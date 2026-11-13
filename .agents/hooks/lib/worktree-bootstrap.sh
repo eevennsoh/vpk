@@ -241,35 +241,42 @@ vpk_bootstrap_clone_node_modules() {
 	[ "$cloned_count" -gt 0 ]
 }
 
-# The completion sentinel lives in the checkout's own git dir, so a node_modules
-# clone never carries the source's sentinel along and `git worktree remove`
-# deletes it with the worktree. Prints nothing outside a git checkout.
-vpk_bootstrap_deps_sentinel_path() {
+# An in-progress marker in the checkout's own git dir: written before a clone or
+# install starts and removed only when it succeeds, so a killed or failed run
+# leaves it behind and the next start redoes the install. A node_modules with no
+# marker is complete, including every checkout bootstrapped before the marker
+# existed. A node_modules clone never carries a source's marker along, and
+# `git worktree remove` deletes it. Prints nothing outside a git checkout.
+vpk_bootstrap_deps_marker_path() {
 	local git_dir
 
 	git_dir="$(git -C "$1" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
 	[ -n "$git_dir" ] || return 1
-	printf '%s/vpk-bootstrap-complete\n' "$git_dir"
+	printf '%s/vpk-bootstrap-in-progress\n' "$git_dir"
 }
 
-vpk_bootstrap_mark_deps_complete() {
-	local sentinel
+vpk_bootstrap_begin_deps() {
+	local marker
 
-	sentinel="$(vpk_bootstrap_deps_sentinel_path "$1")" || return 0
-	: > "$sentinel" 2>/dev/null || true
+	marker="$(vpk_bootstrap_deps_marker_path "$1")" || return 0
+	: > "$marker" 2>/dev/null || true
 }
 
-# Dependencies count as ready only when the last clone or install finished: a
-# node_modules left behind by a killed install has no sentinel. Outside git there
-# is nowhere to keep one, so node_modules alone has to do.
+vpk_bootstrap_finish_deps() {
+	local marker
+
+	marker="$(vpk_bootstrap_deps_marker_path "$1")" || return 0
+	rm -f "$marker"
+}
+
 vpk_bootstrap_deps_ready() {
 	local project_dir="$1"
-	local sentinel
+	local marker
 
 	[ -f "$project_dir/package.json" ] || return 0
 	[ -d "$project_dir/node_modules" ] || return 1
-	sentinel="$(vpk_bootstrap_deps_sentinel_path "$project_dir")" || return 0
-	[ -f "$sentinel" ]
+	marker="$(vpk_bootstrap_deps_marker_path "$project_dir")" || return 0
+	[ ! -e "$marker" ]
 }
 
 vpk_bootstrap_install_dependencies() {
@@ -282,8 +289,9 @@ vpk_bootstrap_install_dependencies() {
 	fi
 
 	vpk_bootstrap_log "Fresh worktree detected - running CI=true pnpm install --prefer-offline..."
+	vpk_bootstrap_begin_deps "$project_dir"
 	if (cd "$project_dir" && CI=true pnpm install --prefer-offline >&2); then
-		vpk_bootstrap_mark_deps_complete "$project_dir"
+		vpk_bootstrap_finish_deps "$project_dir"
 		VPK_BOOTSTRAP_DEPS_WARMED="install"
 		vpk_bootstrap_add_message "Bootstrapped node_modules via pnpm install."
 		return 0
@@ -317,8 +325,9 @@ vpk_bootstrap_warm_dependencies() {
 		[ "$source_dir" != "$project_dir" ] &&
 		vpk_bootstrap_lockfiles_match "$source_dir" "$project_dir"; then
 		vpk_bootstrap_log "Attempting APFS clonefile warmup for node_modules..."
+		vpk_bootstrap_begin_deps "$project_dir"
 		if vpk_bootstrap_clone_node_modules "$source_dir" "$project_dir"; then
-			vpk_bootstrap_mark_deps_complete "$project_dir"
+			vpk_bootstrap_finish_deps "$project_dir"
 			VPK_BOOTSTRAP_DEPS_WARMED="clone"
 			vpk_bootstrap_log "Cloned node_modules from source worktree with cp -c."
 			vpk_bootstrap_add_message "Bootstrapped node_modules via APFS clone."
@@ -341,8 +350,8 @@ vpk_bootstrap_worktree() {
 
 	project_dir="$(cd "$project_dir" && pwd -P)"
 
-	# Every session start lands here; once env files exist and the last
-	# dependency bootstrap finished there is nothing to look up or copy.
+	# Every session start lands here; once env files exist and no dependency
+	# bootstrap was left unfinished there is nothing to look up or copy.
 	if vpk_bootstrap_has_project_env_file "$project_dir" && vpk_bootstrap_deps_ready "$project_dir"; then
 		vpk_bootstrap_log "Worktree already bootstrapped - env files and dependencies present."
 		return 0

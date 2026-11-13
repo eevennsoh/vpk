@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
-const { spawnSync } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
+const { once } = require("node:events");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -174,9 +175,9 @@ function runSessionStartHook({ claudeProjectDir, sessionCwd, env = {} }) {
 	});
 }
 
-function bootstrapSentinel(checkout) {
+function inProgressMarker(checkout) {
 	const gitDir = run("git", ["rev-parse", "--absolute-git-dir"], { cwd: checkout }).stdout.trim();
-	return path.join(gitDir, "vpk-bootstrap-complete");
+	return path.join(gitDir, "vpk-bootstrap-in-progress");
 }
 
 function readLaunchPorts(checkout) {
@@ -372,11 +373,12 @@ test("SessionStart bootstraps the session's worktree when CLAUDE_PROJECT_DIR is 
 	assert.deepEqual(readLaunchPorts(worktreeDir), [3020, 8100, 8020, 3020, 3020]);
 	assert.equal(readLaunchPorts(repoRoot), null);
 	assert.equal(fs.readFileSync(path.join(worktreeDir, ".env.local"), "utf8"), "FIXTURE=true\n");
-	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
-	assert.equal(fs.existsSync(bootstrapSentinel(repoRoot)), false);
+	assert.equal(fs.readFileSync(pnpm.recordPath, "utf8"), "CI=true install --prefer-offline\n");
+	assert.equal(fs.existsSync(inProgressMarker(worktreeDir)), false, "a finished install clears its marker");
+	assert.equal(fs.existsSync(inProgressMarker(repoRoot)), false);
 });
 
-test("SessionStart returns before any lookup once env files and the bootstrap sentinel exist", (t) => {
+test("SessionStart returns before any lookup once env files and a finished bootstrap exist", (t) => {
 	const { repoRoot, tempRoot } = createTempGitRepo(t);
 	const pnpm = createPnpmStub(tempRoot, 0, { createsNodeModules: true });
 	const env = { PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath };
@@ -384,7 +386,7 @@ test("SessionStart returns before any lookup once env files and the bootstrap se
 	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
 	const created = runWorktreeCreateHook(repoRoot, { name: "ready-worktree", base_ref: "HEAD", worktree_path: worktreeDir }, env);
 	assert.equal(created.status, 0, created.stderr);
-	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
+	assert.equal(fs.existsSync(inProgressMarker(worktreeDir)), false);
 	fs.writeFileSync(path.join(repoRoot, ".env.development"), "ADDED_LATER=true\n");
 
 	const result = runSessionStartHook({ claudeProjectDir: repoRoot, sessionCwd: worktreeDir, env });
@@ -395,7 +397,26 @@ test("SessionStart returns before any lookup once env files and the bootstrap se
 	assert.equal(fs.readFileSync(pnpm.recordPath, "utf8"), "CI=true install --prefer-offline\n");
 });
 
-test("node_modules left by a failed install is reinstalled, and only a finished install writes the sentinel", (t) => {
+test("a checkout whose node_modules predates the marker counts as complete and is not reinstalled", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const pnpm = createPnpmStub(tempRoot);
+	const worktreeDir = path.join(tempRoot, "existing-worktree");
+	run("git", ["worktree", "add", "-b", "claude/existing-worktree", worktreeDir, "HEAD"], { cwd: repoRoot });
+	fs.writeFileSync(path.join(worktreeDir, ".env.local"), "FIXTURE=true\n");
+	fs.mkdirSync(path.join(worktreeDir, "node_modules", "fixture"), { recursive: true });
+
+	const result = runSessionStartHook({
+		claudeProjectDir: repoRoot,
+		sessionCwd: worktreeDir,
+		env: { PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath },
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stderr, /Worktree already bootstrapped/u);
+	assert.equal(fs.existsSync(pnpm.recordPath), false, "no install in a checkout that was already complete");
+});
+
+test("node_modules left by a failed install keeps its marker and is reinstalled, which clears it", (t) => {
 	const { repoRoot, tempRoot } = createTempGitRepo(t);
 	const failing = createPnpmStub(path.join(tempRoot, "failing"), 23, { createsNodeModules: true });
 	const worktreeDir = path.join(tempRoot, "interrupted-worktree");
@@ -408,7 +429,7 @@ test("node_modules left by a failed install is reinstalled, and only a finished 
 	);
 	assert.equal(created.status, 0, created.stderr);
 	assert.ok(fs.existsSync(path.join(worktreeDir, "node_modules", ".stub-install")));
-	assert.equal(fs.existsSync(bootstrapSentinel(worktreeDir)), false);
+	assert.ok(fs.existsSync(inProgressMarker(worktreeDir)), "a failed install keeps its marker");
 
 	const passing = createPnpmStub(path.join(tempRoot, "passing"));
 	const env = { PATH: `${passing.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: passing.recordPath };
@@ -416,10 +437,55 @@ test("node_modules left by a failed install is reinstalled, and only a finished 
 	assert.equal(resumed.status, 0, resumed.stderr);
 	assert.match(resumed.stderr, /did not finish/u);
 	assert.equal(fs.readFileSync(passing.recordPath, "utf8"), "CI=true install --prefer-offline\n");
-	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
+	assert.equal(fs.existsSync(inProgressMarker(worktreeDir)), false);
 
 	const settled = runSessionStartHook({ claudeProjectDir: worktreeDir, sessionCwd: worktreeDir, env });
 	assert.equal(settled.status, 0, settled.stderr);
 	assert.match(settled.stderr, /Worktree already bootstrapped/u);
 	assert.equal(fs.readFileSync(passing.recordPath, "utf8"), "CI=true install --prefer-offline\n");
+});
+
+test("SessionStart ignores a payload cwd inside another repository", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const pnpm = createPnpmStub(tempRoot);
+	const otherRepo = path.join(tempRoot, "other-repo");
+	fs.mkdirSync(otherRepo);
+	run("git", ["init", "-q"], { cwd: otherRepo });
+	fs.writeFileSync(path.join(otherRepo, "package.json"), '{"private":true}\n');
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+	fs.mkdirSync(path.join(repoRoot, "node_modules"));
+
+	// The script comes from this repository, as the registered hook command runs it.
+	const result = spawnSync("bash", [path.join(repoRoot, ".agents", "hooks", "setup-worktree.sh")], {
+		cwd: repoRoot,
+		encoding: "utf8",
+		input: JSON.stringify({ hook_event_name: "SessionStart", source: "startup", cwd: otherRepo }),
+		env: { ...process.env, CLAUDE_PROJECT_DIR: repoRoot, PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath },
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.deepEqual(fs.readdirSync(otherRepo).sort(), [".git", "package.json"], "nothing is copied, installed or written there");
+	assert.equal(fs.existsSync(pnpm.recordPath), false);
+	assert.notEqual(readLaunchPorts(repoRoot), null, "the hook falls back to CLAUDE_PROJECT_DIR");
+});
+
+// The test timeout only turns a hang into a failure; t.after still kills the child.
+test("SessionStart returns when stdin is a pipe that never closes", { timeout: 30_000 }, async (t) => {
+	const { repoRoot } = createTempGitRepo(t);
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+	fs.mkdirSync(path.join(repoRoot, "node_modules"));
+	const child = spawn("bash", [path.join(repoRoot, ".agents", "hooks", "setup-worktree.sh")], {
+		cwd: repoRoot,
+		env: { ...process.env, CLAUDE_PROJECT_DIR: repoRoot },
+		stdio: ["pipe", "ignore", "pipe"],
+	});
+	t.after(() => {
+		child.stdin.destroy();
+		if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+	});
+	child.stdin.write(JSON.stringify({ hook_event_name: "SessionStart", cwd: repoRoot }));
+
+	const [code] = await once(child, "exit");
+	assert.equal(code, 0);
+	child.stdin.end();
 });
