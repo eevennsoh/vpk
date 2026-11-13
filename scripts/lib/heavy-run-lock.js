@@ -8,8 +8,8 @@
 // - Acquired atomically: the record is written in full to a private draft and hard-linked into
 //   place; the link fails when the lock exists, so two runs can never both win (a read-then-write
 //   check can: that race broke main once in scripts/build-static-export.mjs).
-// - A holder that died leaves a stale lock; the next run retires it by renaming it aside (only
-//   one competitor wins the rename) and hands it back if its holder turns out to be alive.
+// - A holder that died leaves a stale lock. A waiter removes it only under a reclaim guard, and
+//   only while it still holds the stale record it saw, so a live successor's lock is never moved.
 // - Re-entrant: the holder exports VPK_HEAVY_RUN_LOCK_HOLDER, so the unit runner that `check`
 //   or `ci:pr` starts runs inside its parent's turn instead of waiting for it.
 // - Never blocks CI: with CI set it is a no-op.
@@ -66,12 +66,13 @@ function publish(lockPath, record) {
 	}
 }
 
-// Renames a dead holder's lock aside so the name is free; hands it back if the holder that
-// owns it now is alive (it took the name between our check and the rename).
-function retireStale(lockPath, { alive }) {
-	const claim = `${lockPath}.claim-${process.pid}`;
+// Renames a lock aside and hands it back if its holder is alive. Used only for the reclaim
+// guard below, whose holder keeps it for microseconds; a guard left by a crashed reclaimer is the
+// only thing it ever moves.
+function retireCrashedGuard(guardPath, { alive }) {
+	const claim = `${guardPath}.claim-${process.pid}`;
 	try {
-		fs.renameSync(lockPath, claim);
+		fs.renameSync(guardPath, claim);
 	} catch (error) {
 		if (error.code === "ENOENT") return;
 		throw error;
@@ -80,7 +81,7 @@ function retireStale(lockPath, { alive }) {
 		const claimed = readHolder(claim);
 		if (claimed?.pid && claimed.pid !== process.pid && alive(claimed.pid)) {
 			try {
-				fs.linkSync(claim, lockPath);
+				fs.linkSync(claim, guardPath);
 			} catch (error) {
 				if (error.code !== "EEXIST") throw error;
 			}
@@ -88,6 +89,30 @@ function retireStale(lockPath, { alive }) {
 	} finally {
 		fs.rmSync(claim, { force: true });
 	}
+}
+
+function sameRecord(a, b) {
+	return Boolean(a?.pid && b?.pid) && a.pid === b.pid && a.startedAt === b.startedAt;
+}
+
+// Removes the lock only while it still holds the stale record this run observed. Reclaimers
+// take a guard first (published like the lock itself), so a delayed waiter can never move a
+// live successor's lock: the lock cannot change under the guard, because publishing needs the
+// name to be free and removing someone else's lock needs the guard.
+function reclaimStale(lockPath, stale, { alive }) {
+	const guardPath = `${lockPath}.reclaim`;
+	if (!publish(guardPath, { pid: process.pid, startedAt: new Date().toISOString() })) {
+		const guard = readHolder(guardPath);
+		if (guard?.pid && !alive(guard.pid)) retireCrashedGuard(guardPath, { alive });
+		return false;
+	}
+	try {
+		// An unreadable lock (never written by publish, whose link is atomic) reads the same again.
+		if (sameRecord(readHolder(lockPath), stale) || stale?.unreadable) fs.rmSync(lockPath, { force: true });
+	} finally {
+		fs.rmSync(guardPath, { force: true });
+	}
+	return true;
 }
 
 const NO_LOCK = Object.freeze({ held: false, release() {} });
@@ -125,8 +150,12 @@ async function acquireHeavyRunLock({
 			continue;
 		}
 		const why = !holder.pid ? "the lock is unreadable" : tooOld ? `pid ${holder.pid}'s lock is ${Math.round(age / 60_000)} minutes old` : `pid ${holder.pid} is gone`;
-		log(`heavy-run lock: ${why}; taking over its stale lock`);
-		retireStale(lockPath, { alive: tooOld ? () => false : alive });
+		if (announced !== `stale ${holder.pid}`) {
+			log(`heavy-run lock: ${why}; taking over its stale lock`);
+			announced = `stale ${holder.pid}`;
+		}
+		// Another waiter is reclaiming it: give it a moment rather than spin.
+		if (!reclaimStale(lockPath, holder, { alive })) await new Promise((resolve) => setTimeout(resolve, pollMs));
 	}
 	env[HOLDER_ENV] = String(process.pid);
 	let released = false;
@@ -148,4 +177,5 @@ module.exports = {
 	acquireHeavyRunLock,
 	defaultLockPath,
 	isProcessAlive,
+	reclaimStale,
 };

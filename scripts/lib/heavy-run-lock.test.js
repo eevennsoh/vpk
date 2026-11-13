@@ -3,12 +3,12 @@
 
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
-const { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
+const { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { HOLDER_ENV, LOCK_PATH_ENV, acquireHeavyRunLock } = require("./heavy-run-lock.js");
+const { HOLDER_ENV, LOCK_PATH_ENV, acquireHeavyRunLock, reclaimStale } = require("./heavy-run-lock.js");
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 const LOCK_MODULE = path.join(__dirname, "heavy-run-lock.js");
@@ -142,4 +142,43 @@ test("a lock far older than any heavy run is stale even if its pid now belongs t
 	assert.equal(JSON.parse(readFileSync(ws.lockPath, "utf8")).pid, process.pid);
 	lock.release();
 	assert.equal(existsSync(ws.lockPath), false);
+});
+
+test("a waiter that saw a stale lock never moves a live successor's lock", async (t) => {
+	// B saw holder X dead; meanwhile A reclaimed X and took the lock. B's late reclaim must leave
+	// A's lock exactly as it is (moving it, even briefly, lets a third run publish beside A).
+	const ws = workspace(t);
+	const stale = { pid: 999_999, label: "X", cwd: "/elsewhere", startedAt: "2026-11-13T00:00:00.000Z" };
+	const successor = spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" });
+	t.after(() => successor.kill("SIGKILL"));
+	const live = JSON.stringify({ pid: successor.pid, label: "A", cwd: "/here", startedAt: new Date().toISOString() });
+	writeFileSync(ws.lockPath, live);
+	const before = statSync(ws.lockPath);
+	assert.equal(reclaimStale(ws.lockPath, stale, { alive: () => true }), true);
+	const after = statSync(ws.lockPath);
+	assert.equal(readFileSync(ws.lockPath, "utf8"), live);
+	assert.deepEqual([after.ino, after.ctimeMs, after.nlink], [before.ino, before.ctimeMs, before.nlink], "the lock was not renamed or relinked");
+	assert.equal(existsSync(`${ws.lockPath}.reclaim`), false, "the guard is released");
+
+	// The record B saw is still there: B removes it.
+	writeFileSync(ws.lockPath, JSON.stringify(stale));
+	assert.equal(reclaimStale(ws.lockPath, stale, { alive: () => false }), true);
+	assert.equal(existsSync(ws.lockPath), false);
+});
+
+test("a reclaim guard left by a crashed reclaimer is cleared, one held by a live one is respected", async (t) => {
+	const ws = workspace(t);
+	const stale = { pid: 999_999, startedAt: "2026-11-13T00:00:00.000Z" };
+	writeFileSync(ws.lockPath, JSON.stringify(stale));
+	writeFileSync(`${ws.lockPath}.reclaim`, JSON.stringify({ pid: 999_998, startedAt: "x" }));
+	const alive = (pid) => pid !== 999_998 && pid !== 999_999;
+	assert.equal(reclaimStale(ws.lockPath, stale, { alive }), false, "the guard was busy on this try");
+	assert.equal(existsSync(`${ws.lockPath}.reclaim`), false, "the crashed reclaimer's guard is gone");
+	assert.equal(reclaimStale(ws.lockPath, stale, { alive }), true);
+	assert.equal(existsSync(ws.lockPath), false);
+
+	writeFileSync(ws.lockPath, JSON.stringify(stale));
+	writeFileSync(`${ws.lockPath}.reclaim`, JSON.stringify({ pid: process.pid, startedAt: "x" }));
+	assert.equal(reclaimStale(ws.lockPath, stale, { alive: () => true }), false);
+	assert.equal(existsSync(ws.lockPath), true, "a live reclaimer's turn is left alone");
 });
