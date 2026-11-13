@@ -15,9 +15,14 @@ setopt NULL_GLOB
 SKILL_DIR="${0:A:h:h}"                        # .../vpk-system-clean
 SRC_SH="$SKILL_DIR/scripts/vpk-system-clean.sh"
 DST_SH="$HOME/.local/bin/vpk-system-clean.sh"
+SRC_PROBE="$SKILL_DIR/scripts/codex-thread-recency.js"
+DST_PROBE="$HOME/.local/bin/codex-thread-recency.js"
 USER_ID="$(id -un)"
 LABEL="com.${USER_ID}.vpk-system-clean"
 DST_PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+PRESSURE_LABEL="${LABEL}.pressure"
+DST_PRESSURE_PLIST="$HOME/Library/LaunchAgents/${PRESSURE_LABEL}.plist"
+PRESSURE_INTERVAL=300   # seconds between memory-pressure checks
 SUDOERS="/etc/sudoers.d/vpk-system-clean"
 SCHED_CONF="$HOME/.config/vpk-system-clean/schedule.env"
 REPO_ROOT="$(git -C "$SKILL_DIR" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p' | head -1)"
@@ -29,6 +34,8 @@ fi
 mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
 
 cp "$SRC_SH" "$DST_SH" && chmod +x "$DST_SH" && echo "✓ script -> $DST_SH"
+# The sweep looks for its Codex thread-recency probe next to itself.
+cp "$SRC_PROBE" "$DST_PROBE" && chmod 644 "$DST_PROBE" && echo "✓ probe  -> $DST_PROBE"
 
 # --- resolve schedule ---------------------------------------------------------
 MODE="daily"; HOUR=4; MINUTE=17; INTERVAL=21600; TIMES=""
@@ -102,6 +109,50 @@ if launchctl bootstrap "gui/$(id -u)" "$DST_PLIST"; then
 	echo "✓ launchd agent loaded ($LABEL, ${SCHED_HUMAN})"
 else
 	echo "✗ launchd bootstrap failed"; exit 1
+fi
+
+# --- pressure check: the same script with --pressure-check, run often. It exits
+# at once unless swap or the kernel memory-pressure level is past the sweep's
+# limits, so the full sweep runs early only when the machine needs it.
+cat > "$DST_PRESSURE_PLIST" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>${PRESSURE_LABEL}</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>${DST_SH}</string>
+		<string>--pressure-check</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>${REPO_ROOT}</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>VPK_REPO_ROOT</key>
+		<string>${REPO_ROOT}</string>
+	</dict>
+	<key>StartInterval</key>
+	<integer>${PRESSURE_INTERVAL}</integer>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardOutPath</key>
+	<string>${HOME}/Library/Logs/vpk-system-clean.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>${HOME}/Library/Logs/vpk-system-clean.err.log</string>
+</dict>
+</plist>
+PLIST
+if ! plutil -lint "$DST_PRESSURE_PLIST" >/dev/null; then
+	echo "✗ pressure plist failed validation — aborting load"; exit 1
+fi
+launchctl bootout "gui/$(id -u)/$PRESSURE_LABEL" 2>/dev/null
+if launchctl bootstrap "gui/$(id -u)" "$DST_PRESSURE_PLIST"; then
+	echo "✓ pressure check loaded ($PRESSURE_LABEL, every ${PRESSURE_INTERVAL}s)"
+else
+	echo "✗ pressure check bootstrap failed"; exit 1
 fi
 
 if [[ -f "$SUDOERS" ]]; then
