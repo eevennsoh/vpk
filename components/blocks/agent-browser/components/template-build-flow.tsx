@@ -119,9 +119,11 @@ export function useTemplateBuildFlow({
 			if (state.phase !== "building") {
 				return;
 			}
-			// A null result still falls back to the demo profile, as before this machine existed,
-			// so `error` stays unreachable until the host's null is treated as a failure.
-			const result = onBuildAgent?.(agent, state.options) ?? { profileId: `demo-template-${agent.id}` };
+			// A host's null means the build failed. Without a host (a docs preview) the flow
+			// finishes on a demo profile so the walkthrough still ends on "ready".
+			const result = onBuildAgent
+				? onBuildAgent(agent, state.options)
+				: { profileId: `demo-template-${agent.id}` };
 			dispatch({ type: "build-finished", result });
 		},
 		reducedMotion: false,
@@ -237,9 +239,14 @@ export function TemplateBuildFlow({
 							</Button>
 						</>
 					) : phase === "error" ? (
-						<Button onClick={() => startBuild(true)} type="button">
-							Try again
-						</Button>
+						<>
+							<Button onClick={() => startBuild(true)} type="button">
+								Try again
+							</Button>
+							<Button onClick={cancel} type="button" variant="ghost">
+								Cancel
+							</Button>
+						</>
 					) : (
 						<>
 							<Button disabled type="button">

@@ -102,19 +102,27 @@ test("template build without apps, or with none selected, sends no app ids", asy
 	]);
 });
 
-test("template build falls back to a demo profile without a builder, and (today) when the builder returns null", async (context) => {
+test("template build without a host finishes on a demo profile", async (context) => {
 	const demo = await renderHook(context, { onBuildAgent: undefined });
 	await demo.view.click(demo.view.getByRole("button", { name: "Connect and build" }));
 	await advance(context, STEP_MS * STEP_COUNT);
 	assert.equal(demo.read(), "built:done,done,done,done,done,done:demo-template-rfp-writer");
-	await demo.view.unmount();
+});
 
+test("template build that the host fails (null) ends in error, not ready", async (context) => {
 	const failing = await renderHook(context, { onBuildAgent: () => null });
 	await failing.view.click(failing.view.getByRole("button", { name: "Connect and build" }));
 	await advance(context, STEP_MS * STEP_COUNT);
-	// Pinned as found: `onBuildAgent(...) ?? demo` turns a failed (null) build into the demo
-	// profile, so the error state is unreachable. Fixing that is an owner decision.
-	assert.equal(failing.read(), "built:done,done,done,done,done,done:demo-template-rfp-writer");
+	assert.equal(failing.read(), "error:done,done,done,done,done,todo:none");
+});
+
+test("cancel from a failed build tells only the host", async (context) => {
+	let cancels = 0;
+	const failing = await renderHook(context, { onBuildAgent: () => null, onCancel: () => cancels++ });
+	await failing.view.click(failing.view.getByRole("button", { name: "Connect and build" }));
+	await advance(context, STEP_MS * STEP_COUNT);
+	await failing.view.click(failing.view.getByRole("button", { name: "Cancel flow" }));
+	assert.equal(cancels, 1);
 });
 
 test("cancel runs the built agent's own cancel before the host's, and only once built", async (context) => {
@@ -174,6 +182,30 @@ test("TemplateBuildFlow walks connect → building → ready and opens the built
 	assert.equal(view.getByText("RFP Writer is ready") !== null, true);
 	await view.click(view.getByRole("button", { name: "See agent" }));
 	assert.deepEqual(opened, ["rfp-writer:profile-rfp"]);
+});
+
+test("TemplateBuildFlow shows the error and retries after a failed build", async (context) => {
+	context.mock.timers.enable({ apis: ["setTimeout"] });
+	let attempts = 0;
+	const view = await renderComponent({
+		props: {
+			agent: AGENT,
+			onBuildAgent: () => (++attempts === 1 ? null : { profileId: "second" }),
+			onCancel: () => {},
+			onOpenBuiltAgent: () => {},
+		},
+		source: FLOW_PROBE,
+	});
+	await view.click(view.getByRole("button", { name: "Continue" }));
+	await advance(context, STEP_MS * STEP_COUNT);
+	assert.equal(view.queryByText("We couldn't create this draft. Try again or start from another template.") !== null, true);
+	assert.equal(view.queryByText("RFP Writer is ready"), null);
+	assert.equal(view.queryByRole("button", { name: "Cancel" }) !== null, true, "a failed build can be left as well as retried");
+	await view.click(view.getByRole("button", { name: "Try again" }));
+	assert.equal(view.queryByText("Build your agent") !== null, true);
+	await advance(context, STEP_MS * STEP_COUNT);
+	assert.equal(view.queryByText("RFP Writer is ready") !== null, true);
+	assert.equal(attempts, 2);
 });
 
 test("TemplateBuildFlow cancels from connect and from building", async (context) => {
