@@ -169,7 +169,7 @@ check_stack_budget() {
 	if [[ "$FORCE_START" == "1" ]]; then
 		args+=(--force)
 	fi
-	node scripts/lib/dev-stack-budget.js "${args[@]}"
+	VPK_TMUX_BIN="$TMUX_BIN" node scripts/lib/dev-stack-budget.js "${args[@]}"
 }
 
 # Seed .env.local the same way the non-tmux launchers do, preferring the main
