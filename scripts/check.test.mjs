@@ -28,10 +28,11 @@ test("verify:fast is the guard stage of check, and every guard is still its own 
 	assert.equal(scripts["verify:fast"], "node scripts/check.mjs --guards");
 	assert.equal(scripts.check, "node scripts/check.mjs");
 	assert.match(scripts["ci:pr"], /'pnpm run verify:fast'/u);
-	// The fifteen guards the old `&&` chain ran, in the same order; none may be dropped.
+	// The fifteen guards the old `&&` chain ran, in the same order, plus verify:asset-size
+	// (C-1b) after verify:file-size; none may be dropped.
 	assert.deepEqual(GUARD_SCRIPTS, [
 		"verify:root-artifacts", "verify:url-credentials", "verify:route-manifest", "verify:api-surfaces", "verify:repo-map",
-		"verify:vpk-feature-map", "verify:file-size", "verify:catalog", "verify:lazy-load", "verify:source-guardrails",
+		"verify:vpk-feature-map", "verify:file-size", "verify:asset-size", "verify:catalog", "verify:lazy-load", "verify:source-guardrails",
 		"verify:eslint-suppressions", "verify:cursor-rules", "verify:doc-scripts", "validate:agents", "validate:skills",
 	]);
 	for (const name of GUARD_SCRIPTS) assert.equal(typeof scripts[name], "string", name);

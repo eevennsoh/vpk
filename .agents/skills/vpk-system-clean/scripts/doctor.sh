@@ -5,6 +5,8 @@
 #   doctor.sh            # list every next-server: CPU, memory, port, worktree
 #   doctor.sh --kill     # kill servers sustained-hot above the CPU threshold
 #                        # (and their `next dev` parents) so you can restart clean
+#   doctor.sh --brief    # one line: swap, pressure level, dev stacks, the largest one,
+#                        # and under pressure which stack to stop (scripts/machine-state.js)
 #
 # A next-server pegged at high CPU is a Turbopack watch/recompile thrash loop.
 # Killing it is the reliable live fix; restart your dev server afterward (clear
@@ -13,6 +15,9 @@ set -u
 setopt NULL_GLOB
 
 NEXT_CPU_HOT=150
+if [[ "${1:-}" == "--brief" ]]; then
+	exec node "${0:A:h}/../../../../scripts/machine-state.js" --brief
+fi
 DO_KILL=0; [[ "${1:-}" == "--kill" ]] && DO_KILL=1
 
 cpu_of()  { ps -o %cpu= -p "$1" 2>/dev/null | tr -d ' '; }

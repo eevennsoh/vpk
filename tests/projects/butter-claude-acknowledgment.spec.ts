@@ -46,9 +46,10 @@ test("replying to Claude keeps the agent mention as a chip when reopening the dr
 	const acknowledgment = item.locator('[data-jira-activity-entry-id^="invocation-"]');
 	await expect(acknowledgment.getByText(/I.m looking into this issue now/)).toBeVisible({ timeout: 6_000 });
 	await expect(acknowledgment).toHaveCount(1, { timeout: 6_000 });
-	// Comment actions reveal on hover or keyboard focus.
-	await acknowledgment.hover();
-	const reply = acknowledgment.getByRole("group", { name: "Replies" }).getByRole("button", { name: "Reply", exact: true });
+	// Each reply reveals its own comment actions on hover or keyboard focus.
+	const replies = acknowledgment.getByRole("group", { name: "Replies" });
+	await replies.hover();
+	const reply = replies.getByRole("button", { name: "Reply", exact: true });
 	await reply.click();
 	const editor = acknowledgment.getByRole("textbox", { name: "Leave a reply..." });
 	const mention = editor.locator('[data-mention-category="subagent"]');

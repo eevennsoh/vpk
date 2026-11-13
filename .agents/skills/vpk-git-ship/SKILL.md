@@ -166,8 +166,8 @@ pnpm run ship-status -- --branch <branch> --fetch --json
 git -C <main-checkout> status --short --branch
 ```
 
-`ship-status` (read-only; defined in `scripts/lib/branch-landing.js`) is the
-proof that the work landed and `main` is synced: the flow is done at
+`ship-status` (defined in `scripts/lib/branch-landing.js`; it does not decide
+cleanup) is the proof that the work landed and `main` is synced: the flow is done at
 `main-synced` or `cleaned`. `merged` means the PR landed but the local `main`
 lacks it, with the sync command as its next action. Do not re-derive landing
 from `gh pr view` and `rev-parse` by hand.

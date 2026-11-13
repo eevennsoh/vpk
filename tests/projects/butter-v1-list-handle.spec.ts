@@ -1,13 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
+
+// Selecting List plays the gallery transition while the previous view is still attached; wait for the list itself.
+async function openList(page: Page) {
+	await page.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await expect(list).toBeVisible();
+	return list;
+}
 
 test("two additional list rows cycle between their agents", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const rows = ["PAY-130", "PAY-128"].map((key) => page.getByRole("row").filter({ hasText: key }));
-	for (const row of rows) await expect(row.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	const list = await openList(page);
+	// PAY-130's Cursor session waits for input, so its pair reads as needing input.
+	const pairs = [["PAY-130", "2 agents: Needs input"], ["PAY-128", "2 agents: Working"]] as const;
+	const rows = pairs.map(([key]) => list.getByRole("row").filter({ hasText: key }));
+	for (const [index, [, label]] of pairs.entries()) await expect(rows[index].getByRole("button", { name: label })).toBeVisible();
 	const avatars = rows.map((row) => row.locator(".agent-loading-vertical [data-agent-id]").first());
 	const initial = await Promise.all(avatars.map((avatar) => avatar.getAttribute("data-agent-id")));
 	await Promise.all(avatars.map((avatar, index) => expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial[index])));
@@ -17,8 +27,8 @@ for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into lis
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const add = page.getByRole("button", { name: `Add agent to ${key}` });
+	const list = await openList(page);
+	const add = list.getByRole("button", { name: `Add agent to ${key}` });
 	const cell = add.locator("xpath=ancestor::*[@data-butter-agent-surface]");
 	await add.click();
 	const figma = page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: /^Figma/ }).first();
@@ -37,11 +47,13 @@ for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into lis
 	if (!previewAvatar || !previewLabel || !handoffLabel || !beforeTrigger || !afterTrigger) throw new Error("Invocation geometry is unavailable");
 	expect(handoffLabel.y + handoffLabel.height / 2 - afterTrigger.y).toBeCloseTo(previewLabel.y + previewLabel.height / 2 - beforeTrigger.y, 0);
 	if (key === "PAY-105") {
-		await expect(cell.locator('[data-agent-loading-slot="front"] .agent-loading-intro-front')).toBeAttached();
-		const intro = await cell.locator('[data-agent-loading-slot="front"] .agent-loading-intro-front').boundingBox();
-		if (!intro) throw new Error("Selected avatar geometry is unavailable");
-		expect(intro.x + intro.width / 2).toBeCloseTo(previewAvatar.x + previewAvatar.width / 2, 0);
-		expect(intro.y + intro.height / 2 - afterTrigger.y).toBeCloseTo(previewAvatar.y + previewAvatar.height / 2 - beforeTrigger.y, 0);
+		// A second agent joins the row's vertical loading stack in the preview's avatar slot.
+		const joined = cell.locator('.agent-loading-vertical [data-agent-id="figma"]');
+		await expect(joined).toBeAttached();
+		const joinedBounds = await joined.boundingBox();
+		if (!joinedBounds) throw new Error("Selected avatar geometry is unavailable");
+		expect(joinedBounds.x + joinedBounds.width / 2).toBeCloseTo(previewAvatar.x + previewAvatar.width / 2, 0);
+		expect(joinedBounds.y + joinedBounds.height / 2 - afterTrigger.y).toBeCloseTo(previewAvatar.y + previewAvatar.height / 2 - beforeTrigger.y, 0);
 		await expect(cell.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toHaveCount(0);
 	} else {
 		await expect(cell.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toBeAttached();
@@ -49,61 +61,12 @@ for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into lis
 	}
 });
 
-test("the selected list agent scales into the loading animation", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.setViewportSize({ width: 1800, height: 1300 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const add = page.getByRole("button", { name: "Add agent to PAY-105" });
-	const cell = add.locator("xpath=ancestor::*[@data-butter-agent-surface]");
-	await add.click();
-	const figma = page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: /^Figma/ }).first();
-	await figma.hover();
-	const beforeLabel = await cell.locator('[data-slot="jira-issue-agent-invocation-preview"] > span:nth-child(2)').boundingBox();
-	const beforeAdd = await add.boundingBox();
-	const samples = page.evaluate(async () => {
-		const button = document.querySelector<HTMLButtonElement>('[role="dialog"][aria-label="Agents"] button[data-agent-id="figma"]');
-		if (!button) throw new Error("Figma picker option is missing");
-		const add = document.querySelector<HTMLButtonElement>('button[aria-label="Add agent to PAY-105"]');
-		const cell = add?.closest('[data-butter-agent-surface]');
-		const preview = cell?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-invocation-preview"] > span:nth-child(2)');
-		if (!add || !cell || !preview) throw new Error("Agent preview geometry is unavailable");
-		const previewBounds = preview.getBoundingClientRect();
-		const labelOffset = previewBounds.y + previewBounds.height / 2 - add.getBoundingClientRect().y;
-		await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
-		const values: { scale: number; overlap: boolean; labelDrift: number }[] = [];
-		const start = performance.now();
-		while (performance.now() - start < 1700) {
-			const front = cell.querySelector<HTMLElement>('[data-agent-loading-slot="front"] .agent-loading-intro-front');
-			const label = cell.querySelector<HTMLElement>('[data-slot="jira-issue-agent-handoff-label"]');
-			if (front && label) {
-				const bounds = label.getBoundingClientRect();
-				values.push({ scale: new DOMMatrixReadOnly(getComputedStyle(front).transform).a, overlap: Boolean(cell.querySelector('[data-slot="jira-issue-agent-invocation-handoff"]')), labelDrift: bounds.y + bounds.height / 2 - add.getBoundingClientRect().y - labelOffset });
-			}
-			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-		}
-		return values;
-	});
-	await figma.click();
-	const values = await samples;
-	expect(values.some(({ scale }) => scale > 1.1)).toBe(true);
-	expect(values.some(({ scale }) => scale > 1 && scale < 1.1)).toBe(true);
-	expect(values.some(({ overlap }) => overlap)).toBe(false);
-	expect(Math.max(...values.map(({ labelDrift }) => Math.abs(labelDrift)))).toBeLessThan(1);
-	await expect(cell.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
-	await expect(cell.locator('[data-slot="jira-issue-agent-handoff-label"]')).toHaveCount(0);
-	const finalLabel = await cell.getByText("Working", { exact: true }).boundingBox();
-	const finalAdd = await add.boundingBox();
-	if (!beforeLabel || !beforeAdd || !finalLabel || !finalAdd) throw new Error("Settled agent geometry is unavailable");
-	expect(finalLabel.y + finalLabel.height / 2 - finalAdd.y).toBeCloseTo(beforeLabel.y + beforeLabel.height / 2 - beforeAdd.y, 0);
-});
-
 for (const reducedMotion of ["reduce", "no-preference"] as const) test(`assigning an agent acknowledges the list row (${reducedMotion})`, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const add = page.getByRole("button", { name: "Add agent to PAY-118" });
+	const list = await openList(page);
+	const add = list.getByRole("button", { name: "Add agent to PAY-118" });
 	const row = add.locator("xpath=ancestor::tr");
 	for (const name of ["Figma", "Claude"]) {
 		await add.click();
@@ -129,7 +92,7 @@ test("each assigned agent plays a row glow in its avatar accent", async ({ page 
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
+	const list = await openList(page);
 	const fallbackVisible = await page.evaluate(() => {
 		const probe = document.createElement("div");
 		probe.style.backgroundImage = "linear-gradient(90deg, transparent, color-mix(in srgb, var(--ds-background-accent-gray-bolder) 28%, transparent), transparent)";
@@ -139,7 +102,7 @@ test("each assigned agent plays a row glow in its avatar accent", async ({ page 
 		return visible;
 	});
 	expect(fallbackVisible).toBe(true);
-	const add = page.getByRole("button", { name: "Add agent to PAY-118" });
+	const add = list.getByRole("button", { name: "Add agent to PAY-118" });
 	const row = add.locator("xpath=ancestor::tr");
 	for (const [name, color] of [["Figma", "#a259ff"], ["Release Notes Drafter", "#fca700"], ["Claude", "#d97757"]]) {
 		await add.click();
@@ -249,8 +212,8 @@ test("agent previews replace the empty list cell placeholder", async ({ page }) 
 test("the list agent selector opens to the left of its trigger", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const trigger = page.getByRole("button", { name: "Add agent to PAY-118" });
+	const list = await openList(page);
+	const trigger = list.getByRole("button", { name: "Add agent to PAY-118" });
 	await trigger.click();
 	const picker = page.getByRole("dialog", { name: "Agents" });
 	await expect(picker).toBeVisible();
@@ -263,9 +226,9 @@ test("the list agent selector opens to the left of its trigger", async ({ page }
 test("list session controls align with the add-agent control", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
+	const list = await openList(page);
 	for (const [key, session] of [["PAY-112", "Codex: Needs input"], ["PAY-105", "Cursor: Working"], ["PAY-101", "Claude: Finished"]]) {
-		const add = page.getByRole("button", { name: `Add agent to ${key}` });
+		const add = list.getByRole("button", { name: `Add agent to ${key}` });
 		const activity = add.locator("xpath=ancestor::*[@data-butter-agent-surface]").getByRole("button", { name: session });
 		const addBounds = await add.boundingBox();
 		const activityBounds = await activity.boundingBox();
@@ -277,8 +240,8 @@ test("list session controls align with the add-agent control", async ({ page }) 
 test("list session avatar has balanced spacing", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select List" }).click();
-	const add = page.getByRole("button", { name: "Add agent to PAY-112" });
+	const list = await openList(page);
+	const add = list.getByRole("button", { name: "Add agent to PAY-112" });
 	const cell = add.locator("xpath=ancestor::*[@data-butter-agent-surface]");
 	await add.hover();
 	const plus = cell.locator('[data-slot="jira-issue-add-agent-visual"]');

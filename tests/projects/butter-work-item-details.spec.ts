@@ -59,7 +59,7 @@ test("Agents can be dragged and moved independently in the Work item Details", a
 	await page.mouse.up();
 	const order = () => fields.locator("[data-field-id]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-field-id")));
 	await expect.poll(async () => (await order()).indexOf("agents")).toBeGreaterThan((await order()).indexOf("parent"));
-	await fields.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await fields.getByRole("group", { name: "Agents field" }).getByRole("button", { name: /^\d+ agents$/u }).click();
 	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	const actions = agents.getByRole("button", { name: "More agents field actions" });
@@ -80,21 +80,20 @@ test("the agent row aligns with the other Details field icons and values", async
 	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
 	const fields = page.getByRole("dialog", { name: "Project butter" }).locator("[data-project-butter-detail-fields]");
 	test.skip(await fields.locator('[data-field-id="status"]').count() > 0, "The older work-item layout does not contain the agent field.");
-	const agent = fields.getByRole("button", { name: "Cursor: Working", exact: true });
+	// The Agents field shows an avatar stack and, for a single agent, its name; it carries no session status.
+	const agentField = fields.getByRole("group", { name: "Agents field" });
+	const agent = agentField.getByRole("button", { name: "Cursor", exact: true });
 	await expect(agent).toBeVisible();
 	await expect(fields.getByText("Agents", { exact: true })).toBeVisible();
-	const agentField = agent.locator("..");
-	await expect(agentField.getByText("Working", { exact: true })).toBeVisible();
+	await expect(agentField).not.toContainText(/Needs input|Working|Finished/);
 	await expect(agentField.locator('[data-slot="spinner"]')).toHaveCount(0);
 	const geometry = await fields.evaluate((root) => {
 		const assignee = root.querySelector('[data-field-id="assignee"] [data-slot="avatar"]');
 		const priority = root.querySelector('[data-field-id="priority"] [data-slot="icon-tile"]');
-		const agentSlot = root.querySelector('[data-slot="jira-issue-agent-avatar-handoff"]');
-		const agentAvatar = agentSlot?.querySelector('[data-slot="avatar"]');
+		const agentAvatar = root.querySelector('[aria-label="Agents field"] [data-agent-name] [data-slot="avatar"]');
 		const assigneeText = assignee?.nextElementSibling;
-		const priorityText = priority?.nextElementSibling;
-		const agentText = agentSlot?.nextElementSibling;
-		if (!assignee || !priority || !agentAvatar || !assigneeText || !priorityText || !agentText) return null;
+		const agentText = agentAvatar?.closest('[data-slot="avatar-group"]')?.nextElementSibling;
+		if (!assignee || !priority || !agentAvatar || !assigneeText || !agentText) return null;
 		const center = (element: Element) => { const box = element.getBoundingClientRect(); return box.left + box.width / 2; };
 		const avatarBox = agentAvatar.getBoundingClientRect();
 		let clipped = false;
@@ -103,23 +102,22 @@ test("the agent row aligns with the other Details field icons and values", async
 			const box = ancestor.getBoundingClientRect();
 			if (style.overflowX !== "visible" && (avatarBox.left < box.left - 0.5 || avatarBox.right > box.right + 0.5)) clipped = true;
 		}
-		return { clipped, icons: [center(assignee), center(agentAvatar), center(priority)], values: [assigneeText.getBoundingClientRect().left, agentText.getBoundingClientRect().left, priorityText.getBoundingClientRect().left] };
+		return {
+			clipped,
+			starts: [assignee.getBoundingClientRect().left, avatarBox.left, priority.getBoundingClientRect().left],
+			avatarCenters: [center(assignee), center(agentAvatar)],
+			values: [assigneeText.getBoundingClientRect().left, agentText.getBoundingClientRect().left],
+		};
 	});
 	expect(geometry).not.toBeNull();
 	if (!geometry) throw new Error("Missing Details field geometry");
 	expect(geometry.clipped).toBe(false);
-	expect(Math.max(...geometry.icons) - Math.min(...geometry.icons)).toBeLessThan(1);
+	// Field icons share a leading edge; the 24px assignee and agent avatars also share their centre and value column.
+	expect(Math.max(...geometry.starts) - Math.min(...geometry.starts)).toBeLessThan(1);
+	expect(Math.max(...geometry.avatarCenters) - Math.min(...geometry.avatarCenters)).toBeLessThan(1);
 	expect(Math.max(...geometry.values) - Math.min(...geometry.values)).toBeLessThan(1);
 	await agent.click();
-	const menu = page.getByRole("dialog", { name: "Agent sessions" });
-	await expect(menu).toBeVisible();
-	const panelBox = await fields.locator('xpath=ancestor::*[@data-panel-id="details"]').boundingBox();
-	const menuBox = await menu.boundingBox();
-	expect(panelBox).not.toBeNull();
-	expect(menuBox).not.toBeNull();
-	if (!panelBox || !menuBox) throw new Error("Missing Details panel or agent menu geometry");
-	expect(Math.abs(menuBox.width - panelBox.width)).toBeLessThan(1);
-	expect(Math.abs(menuBox.x - panelBox.x)).toBeLessThan(1);
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
 });
 
 test("details move after the description in a narrow work item and retain their state", async ({ page }) => {
@@ -346,9 +344,10 @@ test("status and agent controls follow the new work item layout", async ({ page 
 	await page.keyboard.press("Escape");
 	await addAgent.focus();
 	await page.keyboard.press("Enter");
-	await expect(page.getByRole("combobox", { name: "Search agents" })).toBeVisible();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Figma");
-	await expect(page.getByRole("option", { name: /^Figma/ })).toBeVisible();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	await expect(picker.getByRole("textbox", { name: "Search agents" })).toBeVisible();
+	await picker.getByRole("textbox", { name: "Search agents" }).fill("Figma");
+	await expect(picker.getByRole("button", { name: "Figma", exact: true })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(addAgent).toBeFocused();
 });

@@ -655,5 +655,12 @@ if [[ -n "$fp" ]]; then
 	fi
 fi
 
+# --- 8. machine-state cache ----------------------------------------------------
+# The SessionStart hook shows dev stacks from this cache (scripts/machine-state.js) when the
+# machine is under pressure; measuring them takes seconds, too slow for the hook. Read-only.
+if [[ -f "$MAIN_WORKTREE/scripts/machine-state.js" ]]; then
+	(cd "$MAIN_WORKTREE" && node scripts/machine-state.js --write-cache) >/dev/null 2>&1 || true
+fi
+
 log "summary: ${MODE_LINE%%|*} mode; killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; almd ${almd_action}; fseventsd ${fse_action}"
 log "run done"

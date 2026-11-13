@@ -21,8 +21,10 @@ export function selectSmokeSpecs(files, readSource) {
 	return files.filter((file) => file.endsWith(".spec.ts") && isSmokeSpec(readSource(file))).sort();
 }
 
-function trackedSpecs() {
-	return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "tests/**/*.spec.ts"], { cwd: REPO_ROOT, encoding: "utf8" })
+// A plain git pathspec lets `*` cross `/` but needs the `/` after `**`, so `tests/**/*.spec.ts`
+// misses specs directly under tests/. Glob magic makes `**/` match zero or more directories.
+export function trackedSpecs(cwd = REPO_ROOT) {
+	return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", ":(glob)tests/**/*.spec.ts"], { cwd, encoding: "utf8" })
 		.split("\n").filter(Boolean);
 }
 

@@ -50,16 +50,23 @@ by hand:
 
 ```bash
 pnpm run clean-candidates -- --fetch --json
-pnpm run ship-status -- --branch <candidate-branch> --json   # one branch
 ```
+
+`ship-status` shows where one branch is on its way to main; it does not apply
+the cleanup blockers, so its `main-synced` is not "removable". Only
+`clean-candidates` decides cleanup.
 
 "Proven landed" is defined once, in `scripts/lib/branch-landing.js`
 (`provenLanded`): the head is an ancestor of `origin/<default>` (`ancestry`); or
 a PR merged into `<default>` carried every local commit (`merged-pr`; squash and
 rebase merges); or merging the head into `origin/<default>` changes nothing
-(`content`: `git merge-tree --write-tree` gives `origin/<default>`'s own tree;
-exact, unlike `git cherry`, which ignores whitespace and merge commits). Commits past a merged PR's
-head are not landed. A read that failed makes the answer `unknown`, which is
+(`content`: `git merge-tree --write-tree` gives `origin/<default>`'s own tree).
+The content proof is git's plain three-way text merge with every merge driver,
+attribute and renormalization setting neutralised (an
+`$GIT_COMMON_DIR/info/attributes` that sets anything makes it unknown). Unlike
+`git cherry` it sees whitespace and merge commits, but it is a merge, not an
+identity check: when the target already holds the head's changes together with
+later edits near them, the merge is clean and the head counts as landed. Commits past a merged PR's head are not landed. A read that failed makes the answer `unknown`, which is
 never removable. `evidence.proof` names the proof and, for a merged PR,
 `evidence.landedBy` its number and `evidence.exactHead` whether the local tip
 equals the PR's recorded head.

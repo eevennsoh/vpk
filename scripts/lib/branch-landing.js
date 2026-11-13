@@ -166,7 +166,7 @@ function deriveBranchLanding(facts) {
 		if (facts.landingInLocalDefault !== true) return result("unknown", `re-run: could not tell whether the local ${facts.defaultBranch} has it`, { ...evidence, missing: ["local default"] });
 		if (facts.localBranchExists === false && !facts.worktree) return result("cleaned", "none", evidence);
 		if (facts.localBranchExists === null) return result("unknown", "re-run: local branches could not be read", { ...evidence, missing: ["local branch"] });
-		return result("main-synced", "clean up with vpk-git-clean (pnpm run clean-candidates)", evidence);
+		return result("main-synced", "nothing left to ship: pnpm run clean-candidates -- --fetch decides whether it can be removed (vpk-git-clean)", evidence);
 	}
 
 	// Not landed. A failed read anywhere on the way leaves it unknown, never "not landed".

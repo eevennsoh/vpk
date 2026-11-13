@@ -46,6 +46,7 @@ repository root:
 | --- | --- |
 | Diagnose a hot dev server | `scripts/doctor.sh` |
 | Restart proven runaway dev servers | `scripts/doctor.sh --kill` |
+| One line on swap, stacks and what to stop | `scripts/doctor.sh --brief` (`pnpm run mem --brief`) |
 | Inspect setup, processes, caches, sessions, or logs | `scripts/status.sh` |
 | Inventory VPK worktree localhost ports | `pnpm ports once` |
 | Stop one confirmed idle private-socket stack | `pnpm ports kill <unique worktree identifier>` |

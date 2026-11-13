@@ -54,7 +54,7 @@ test("one row per status", () => {
 		["checks", facts({ prs: [openPr], gate: { ...passingGate, reviewGateClear: false } }), /^resolve the review conversations on #7$/u],
 		["review-clear", facts({ prs: [openPr], gate: passingGate }), new RegExp(`merge-remote\\.js --pr 7 --head ${HEAD}$`, "u")],
 		["merged", facts({ prs: [mergedPr], commitsPastPrHead: { 7: 0 }, landingInLocalDefault: false }), /^sync main: git fetch origin main:main/u],
-		["main-synced", facts({ prs: [mergedPr], commitsPastPrHead: { 7: 0 }, landingInLocalDefault: true }), /^clean up with vpk-git-clean/u],
+		["main-synced", facts({ prs: [mergedPr], commitsPastPrHead: { 7: 0 }, landingInLocalDefault: true }), /^nothing left to ship: pnpm run clean-candidates/u],
 		["cleaned", facts({ localBranchExists: false, worktree: null, prs: [mergedPr], commitsPastPrHead: { 7: 0 }, landingInLocalDefault: true }), /^none$/u],
 	];
 	for (const [status, input, nextAction] of rows) {

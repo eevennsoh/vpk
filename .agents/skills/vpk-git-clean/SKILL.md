@@ -28,8 +28,9 @@ work, or clean Symphony issue state managed by `vpk-symphony`.
 
 ## Hard invariants
 
-- Prove landing before deletion with `pnpm run clean-candidates -- --json`
-  (read-only). "Proven landed" is defined once, in
+- Prove landing before deletion with `pnpm run clean-candidates -- --fetch --json`
+  (it removes nothing and writes no ref; the header of
+  `scripts/clean-candidates.js` says what it does write). "Proven landed" is defined once, in
   `scripts/lib/branch-landing.js`; do not re-derive it by hand. Only a target
   with status `main-synced` and no blockers is a candidate; `unknown` never is.
   An `upstream gone` marker proves only remote branch deletion.
@@ -109,6 +110,13 @@ exists, retry read-only GitHub commands with
    open PRs by head SHA: prove those as in [evidence.md](references/evidence.md).
    A detached worktree is a target of its own: it is cleanable only by
    ancestry or content (it has no PR) and only with no reflog-only commits.
+   Before removing a worktree whose entry lists `ignoredEnvFiles`, show that
+   list to the owner: removal deletes those files. The owner decides; do not
+   open them.
+   Prune stale remote-tracking refs (`git fetch --prune origin`) only before
+   running the report, and run it again after any prune; the report counts a
+   remote-tracking ref as keeping a commit only after a successful `--fetch`
+   and only while its branch still exists on origin.
    A checked-out marker alone is not a reason to leave a clean, unused,
    landed worktree behind.
 3. For an eligible worktree with an exact-path dev stack, stop that stack before
@@ -140,11 +148,20 @@ exists, retry read-only GitHub commands with
    detached cleanup worktree there; do not switch an active checkout or use
    `-D` to bypass that refusal. Remove a temporary checkout afterward. If
    proof changes or Git still refuses, retain the branch and report why.
-7. Delete a merged remote source branch only when the report says
-   `remoteSafeToDelete: true` for it (`origin/<branch>` has nothing the landed
-   local branch lacks; run with `--fetch` first) and no open PR uses its name or
-   head commit. After remote deletion, prove `git ls-remote --heads` is empty
-   before removing a stale local tracking ref with `git update-ref -d`.
+7. Delete a merged remote source branch only when the report, run with
+   `--fetch`, says `"fetch": "ok"` and `remoteSafeToDelete: true` for it
+   (`origin/<branch>` has nothing the landed local branch lacks), and no open PR
+   uses its name or head commit. Delete it with a lease on the tip the report
+   saw, so a push made since the report is not deleted:
+
+   ```bash
+   git push --force-with-lease=refs/heads/<branch>:<evidence.remoteTip> origin :refs/heads/<branch>
+   ```
+
+   A `stale info` rejection means someone pushed after the report: keep the
+   branch and rerun the report. After remote deletion, prove
+   `git ls-remote --heads` is empty before removing a stale local tracking ref
+   with `git update-ref -d`.
 
 Portless routes left by a removed stack may be removed one alias at a time with
 `portless alias --remove <name>`. Global pruning can kill a different worktree

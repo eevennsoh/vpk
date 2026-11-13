@@ -6,7 +6,7 @@ test.use({ ignoreHTTPSErrors: true });
 test("story point editing uses the custom stepper without native arrows", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
-	await page.getByRole("button", { name: "Edit story points for PAY-118, no estimate" }).click();
+	await page.getByRole("button", { name: "Edit story points for PAY-118, 3" }).click();
 	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
 	await input.fill("4");
 	await input.hover();
