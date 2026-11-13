@@ -80,6 +80,14 @@ if [ -f "$CONTROL_VPK" ] && command -v node >/dev/null 2>&1; then
 	(cd "$PROJECT_DIR" && nohup node "$CONTROL_VPK" cleanup --orphaned-browsers </dev/null >/dev/null 2>&1 &) || true
 fi
 
+# Under memory pressure, one line on swap, dev stacks and which one to stop (R-8). It reads
+# memory live and the stacks from the cache the sweep, `pnpm run mem --brief` and
+# `pnpm run check` write (~0.1 s); it prints nothing otherwise and never stops anything.
+if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ -f "$PROJECT_DIR/scripts/machine-state.js" ] && command -v node >/dev/null 2>&1; then
+	MACHINE_LINE="$(cd "$PROJECT_DIR" && node scripts/machine-state.js --hook 2>/dev/null || true)"
+	[ -n "$MACHINE_LINE" ] && VPK_BOOTSTRAP_MESSAGES+=("$MACHINE_LINE")
+fi
+
 if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ ${#VPK_BOOTSTRAP_MESSAGES[@]} -gt 0 ]; then
 	CONTEXT="${VPK_BOOTSTRAP_MESSAGES[*]}"
 	CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\n')

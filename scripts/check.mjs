@@ -15,6 +15,7 @@ import { buildReverseImports, directImporters, isSourceFile, isTestFile, selectR
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MAIN_HEALTH_SCRIPT = ".agents/skills/vpk-git-ship/scripts/main-health.js";
+const MACHINE_STATE_SCRIPT = "scripts/machine-state.js";
 const DETAIL_LINES = 25;
 
 // The guard list lives in scripts/lib/guard-scripts.js so scripts/lib/package-gates.js can
@@ -265,6 +266,13 @@ async function readMainHealth(run = runShell) {
 	return lines(result.stdout)[0] ?? null;
 }
 
+// One line on swap, dev stacks and pressure (scripts/lib/machine-state.js), beside main health.
+async function readMachineState(run = runShell) {
+	if (!existsSync(path.join(REPO_ROOT, MACHINE_STATE_SCRIPT))) return null;
+	const result = await run(`node ${MACHINE_STATE_SCRIPT} --brief`);
+	return lines(result.stdout)[0] ?? null;
+}
+
 async function includedTests(tests) {
 	// The default unit run's own inclusion rules decide; skipped and legacy-drift suites stay out.
 	const { getTestFileInclusion } = await import("./run-js-unit-tests.mjs");
@@ -291,6 +299,7 @@ export function formatProblem(problem) {
 export function formatReport(report, { detailLines = DETAIL_LINES } = {}) {
 	const out = [];
 	if (report.mainHealth) out.push(report.mainHealth);
+	if (report.machineState) out.push(report.machineState);
 	if (report.change) {
 		out.push(`check: ${report.change.files.length} changed files since ${report.change.base} (${report.change.mergeBase.slice(0, 9)}); ` +
 			`${report.change.importers} direct importers`);
@@ -331,6 +340,7 @@ export async function runCheck({ base = "origin/main", guardsOnly = false, env =
 		return { ok: guards.status !== "failed", seconds: (performance.now() - started) / 1000, stages: [guards] };
 	}
 	const healthPromise = env.CI ? Promise.resolve(null) : readMainHealth();
+	const machinePromise = env.CI ? Promise.resolve(null) : readMachineState();
 	const guardsPromise = runGuards({ env, scripts });
 	const typecheckPromise = runTypecheck({ scripts });
 	const { files, mergeBase } = changedFiles({ base });
@@ -338,12 +348,13 @@ export async function runCheck({ base = "origin/main", guardsOnly = false, env =
 	const readSource = (file) => readFileSync(path.join(REPO_ROOT, file), "utf8");
 	const selection = selectChange({ changed: files, readSource, targets: lintTargets(scripts.lint), tracked });
 	const tests = await includedTests(selection.tests);
-	const [mainHealth, guards, eslint, typecheck, unit] = await Promise.all([
-		healthPromise, guardsPromise, runEslint({ files: selection.lintFiles }), typecheckPromise, runUnit({ tests }),
+	const [mainHealth, machineState, guards, eslint, typecheck, unit] = await Promise.all([
+		healthPromise, machinePromise, guardsPromise, runEslint({ files: selection.lintFiles }), typecheckPromise, runUnit({ tests }),
 	]);
 	const stages = [guards, eslint, typecheck, unit];
 	return {
 		change: { base, files, importers: selection.importers.length, mergeBase },
+		machineState,
 		mainHealth,
 		ok: stages.every((stage) => stage.status !== "failed"),
 		seconds: (performance.now() - started) / 1000,

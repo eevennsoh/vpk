@@ -13,6 +13,9 @@ const SESSION_START_FILES = [
 	".agents/hooks/setup-worktree.sh",
 	"scripts/write-claude-launch-config.js",
 	"scripts/lib/worktree-ports.js",
+	"scripts/machine-state.js",
+	"scripts/lib/machine-state.js",
+	"scripts/lib/memory-pressure.js",
 ];
 
 function run(command, args, options = {}) {
@@ -488,4 +491,34 @@ test("SessionStart returns when stdin is a pipe that never closes", { timeout: 3
 	const [code] = await once(child, "exit");
 	assert.equal(code, 0);
 	child.stdin.end();
+});
+
+// R-8: the machine-state line, from faked memory readings and a cached stack inventory.
+test("SessionStart shows the machine-state line under memory pressure and not otherwise", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const pnpm = createPnpmStub(tempRoot, 0, { createsNodeModules: true });
+	const worktreeDir = path.join(tempRoot, "pressure-worktree");
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+	const baseEnv = { PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath };
+	const created = runWorktreeCreateHook(repoRoot, { name: "pressure-worktree", base_ref: "HEAD", worktree_path: worktreeDir }, baseEnv);
+	assert.equal(created.status, 0, created.stderr);
+	const cache = path.join(tempRoot, "machine-state.json");
+	fs.writeFileSync(cache, JSON.stringify({
+		writtenAt: Date.now(),
+		stacks: [{ worktree: "/w/idle", name: "idle-stack", footprintGb: 9.2, idle: true, inUse: null, stop: "pnpm ports kill vpk-dev-idle-stack" }],
+	}));
+	const context = (memory) => {
+		const result = runSessionStartHook({
+			claudeProjectDir: repoRoot,
+			sessionCwd: worktreeDir,
+			env: { ...baseEnv, VPK_MACHINE_STATE_CACHE: cache, VPK_MEMORY_STATE_FIXTURE: JSON.stringify(memory) },
+		});
+		assert.equal(result.status, 0, result.stderr);
+		return result.stdout.trim() ? JSON.parse(result.stdout).hookSpecificOutput.additionalContext : "";
+	};
+
+	const pressured = context({ swapUsedGb: 20, pressureLevel: 2 });
+	assert.match(pressured, /machine: MEMORY PRESSURE \(swap in use is 20 GB >= 16 GB\)/u);
+	assert.match(pressured, /stop the largest idle stack: pnpm ports kill vpk-dev-idle-stack/u);
+	assert.doesNotMatch(context({ swapUsedGb: 4, pressureLevel: 1 }), /machine:/u);
 });
