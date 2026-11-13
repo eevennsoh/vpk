@@ -118,7 +118,9 @@ zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
 The sweep samples sustained-hot `next-server` and rechecks memory-bloated but
-idle servers. It stops eligible unattached `vpk-dev-*` stacks and their worktree
+idle servers (true CPU average over a settle window). Under memory pressure (swap or
+the kernel pressure level past its limits) it uses lower limits, and a
+separate LaunchAgent runs it every five minutes while pressure lasts. It stops eligible unattached `vpk-dev-*` stacks and their worktree
 routes, deletes only oversized inactive `.next` caches, and stops unattached
 tmux sessions whose worktree path is gone. It also samples old exact-path
 `almd` before TERM and guarded KILL, and restarts oversized `fseventsd` only

@@ -33,7 +33,18 @@ for worktree_root in ${(f)"$(git -C "$MAIN_WORKTREE" worktree list --porcelain 2
 done
 NEXT_DIRS+=( "$HOME"/.superset/worktrees/*/*/.next )
 
-print -- "── dev servers (next-server) ──"
+print -- "── memory pressure ──"
+mode_line=$(VPK_REPO_ROOT="$MAIN_WORKTREE" zsh "${0:A:h}/vpk-system-clean.sh" --print-mode 2>/dev/null)
+mode_line=${mode_line:-"unknown|could not read the sweep's mode"}
+probe_pressure_flag=()
+if [[ "${mode_line%%|*}" == "pressure" ]]; then
+	probe_pressure_flag=( --pressure )
+	print -- "⚠ pressure mode: ${mode_line#*|} — the sweep uses its lower limits"
+else
+	print -- "${mode_line%%|*}: ${mode_line#*|}"
+fi
+
+print -- "\n── dev servers (next-server) ──"
 np=( ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"} )
 if (( ${#np} )); then
 	for p in $np; do
@@ -70,6 +81,11 @@ if launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then
 	print -- "loaded ✓   ${sched:-(scheduled)}"
 else
 	print -- "NOT loaded ✗   (run install.sh to fix)"
+fi
+if launchctl print "gui/$(id -u)/$LABEL.pressure" >/dev/null 2>&1; then
+	print -- "pressure check loaded ✓"
+else
+	print -- "pressure check NOT loaded ✗   (run install.sh to add it)"
 fi
 
 print -- "\n── sudoers (fseventsd auto-reset) ──"
@@ -116,7 +132,7 @@ if command -v tmux >/dev/null 2>&1; then
 			elif [[ -n "$screated" && "$screated" != "0" ]] && (( now_epoch - screated >= IDLE_STACK_MIN_AGE_SECS )); then
 				if [[ "$spath" == "$HOME/.codex/worktrees/"* || ( -n "${CODEX_HOME:-}" && "$spath" == "$CODEX_HOME/worktrees/"* ) ]]; then
 					recency=""
-					[[ -f "$CODEX_RECENCY_PROBE" ]] && recency=$(node "$CODEX_RECENCY_PROBE" --cwd "$spath" 2>/dev/null | head -1)
+					[[ -f "$CODEX_RECENCY_PROBE" ]] && recency=$(node "$CODEX_RECENCY_PROBE" --cwd "$spath" $probe_pressure_flag 2>/dev/null | head -1)
 					[[ "$recency" == *"|"*"|"*"|"* ]] || recency="unknown|-|-|thread-recency probe unavailable"
 					verdict="${recency%%|*}"; probe_rest="${recency#*|}"; newest="${probe_rest%%|*}"; reason="${recency##*|}"
 					[[ "$newest" == <-> ]] && newest="newest $(( newest / 3600 ))h old; " || newest=""

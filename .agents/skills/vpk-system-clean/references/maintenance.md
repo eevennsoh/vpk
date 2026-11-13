@@ -15,7 +15,29 @@ The top of `scripts/vpk-system-clean.sh` defines:
   server candidate. Healthy Next 16.3 servers are generally low single-digit
   GB; a busy compile may peak higher, so the script settles and requires idle
   CPU on its second sample.
+- `NEXT_MEM_IDLE_CPU_MAX` (20): a bloated candidate's cumulative CPU time
+  (`ps -o time=`) is read at the start and end of `NEXT_MEM_SETTLE_SECS`; it
+  counts as idle when that true window average is below the limit. `ps %cpu`
+  is a decaying average: an idle main-checkout server read 7-10% there while
+  its real 30-second average was 1.5%.
 - `KILL_BLOATED_NEXT` (1): set to 0 to report memory candidates only.
+- Pressure mode (values provisional): entered when swap in use reaches
+  `PRESSURE_SWAP_USED_GB` (16) or `kern.memorystatus_vm_pressure_level`
+  reaches `PRESSURE_LEVEL_MIN` (4, critical; level 2 "warn" is common on a
+  healthy machine). It sets the bloat limit to `PRESSURE_NEXT_MEM_MAX_GB` (4),
+  the idle-CPU limit to `PRESSURE_NEXT_MEM_IDLE_CPU_MAX` (50), and asks the
+  Codex probe for `PRESSURE_IDLE_HOURS` (6). In the band only pressure mode
+  adds (4 GB up to the normal 6 GB) a server is restarted only when its
+  worktree shows no live task: not the primary checkout, no guarded tool
+  process with its cwd there, and for a Codex worktree a probe verdict of
+  `idle`. Every run logs its mode, and each `next-server` and stack it keeps
+  with the reason. Install adds a second LaunchAgent,
+  `com.<user>.vpk-system-clean.pressure`, that runs the sweep with
+  `--pressure-check` every 300 seconds; that exits at once unless the machine
+  is under pressure, and skips a run within `PRESSURE_COOLDOWN_SECS` (900) of
+  the last pressure run unless swap grew by `PRESSURE_REGROWTH_GB` (4) since
+  (state in `~/.config/vpk-system-clean/pressure-last-run`). `--print-mode`
+  prints the mode only.
 - `NEXT_MAX_GB` (3): minimum `.next` cache size for deletion, and only while no
   dev server uses that cache.
 - `ALMD_CPU_HOT` (50): CPU floor across all three samples.
@@ -32,8 +54,8 @@ The top of `scripts/vpk-system-clean.sh` defines:
   when `scripts/codex-thread-recency.js` returns `idle` for that worktree
   (threads whose cwd is its root or a directory under it).
   Worktree folder names are ignored.
-- `IDLE_HOURS` (24, provisional) at the top of
-  `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
+- `IDLE_HOURS` (24) and `PRESSURE_IDLE_HOURS` (6), both provisional, at the
+  top of `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
   thread whose cwd is that worktree or a directory under it was last active
   at least this long ago. "Last active" is the newer of the thread's
   `updated_at_ms` and its rollout file's mtime (the column can lag the

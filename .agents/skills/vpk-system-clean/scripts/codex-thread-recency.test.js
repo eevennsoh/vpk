@@ -7,6 +7,8 @@ const test = require("node:test");
 
 const {
 	IDLE_HOURS,
+	PRESSURE_IDLE_HOURS,
+	parseArgs,
 	probeCodexThreadRecency,
 	resolveStateDbPath,
 } = require("./codex-thread-recency.js");
@@ -59,8 +61,12 @@ function probe(codexHome, threads, options = {}) {
 	return probeCodexThreadRecency({ cwd: WORKTREE, dbPath, nowMs: NOW_MS, ...options.probe });
 }
 
-test("the provisional idle threshold is 24 hours", () => {
+test("the provisional idle thresholds are 24 hours, 6 under pressure", () => {
 	assert.equal(IDLE_HOURS, 24);
+	assert.equal(PRESSURE_IDLE_HOURS, 6);
+	assert.equal(parseArgs(["--cwd", WORKTREE, "--pressure"]).idleHours, 6);
+	assert.equal(parseArgs(["--cwd", WORKTREE]).idleHours, undefined);
+	assert.equal(parseArgs(["--idle-hours", "3", "--pressure"]).idleHours, 3);
 });
 
 test("a thread updated minutes ago is active", () => {
