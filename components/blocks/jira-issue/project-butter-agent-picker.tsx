@@ -10,6 +10,7 @@ import { AgentSessionCard, type AgentSessionItem } from "@/components/blocks/age
 import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor";
 import { Popover, PopoverContent } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -168,8 +169,8 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 
 	const submenuActions = submenu && sessionChoicesOnly ? (
 		<>
-			<Button ref={cloudButton} className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
-			<hr className="my-1 border-0 border-t border-border" />
+			<Button ref={cloudButton} data-menu-row="" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
+			<hr className={cn(dropdownStyles.separator, "border-0")} />
 			<div role="group" aria-labelledby={`${submenuId}-existing`}>
 				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
 				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
@@ -185,7 +186,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 						<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => { if (matchingSessions.length === 1) onContinueSession?.(matchingSessions[0]); else { cancelClose(); setChoosingSession(true); setSelectedSessionIndex(0); requestAnimationFrame(() => submenuContent.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus()); } }}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" />} />{matchingSessions.length > 1 ? "Continue to existing session" : "Continue with last session"}</Button>
 						{submenu.agent.id !== "rovo-cli" ? <Button role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button> : null}
 					</div> : !localOnly && submenu.agent.id !== "rovo-cli" ? <Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" />} />Run on cloud</Button> : null}
-					{!localOnly && matchingSessions.length > 0 && RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <hr className="my-1 border-0 border-t border-border" /> : null}
+					{!localOnly && matchingSessions.length > 0 && RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <hr className={cn(dropdownStyles.separator, "border-0")} /> : null}
 					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} onUse={onLocalUse ? () => onLocalUse(submenu.agent.id) : undefined} workspacePositionerClassName={workspacePositionerClassName} /> : RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <>
 					<Button
 						role="menuitem"
@@ -311,7 +312,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 					side="right"
 					align="start"
 					sideOffset={0}
-					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0 p-1", sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto shadow-2xl")}
+					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0", dropdownStyles.surface, dropdownStyles.padding.compact, sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto")}
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}

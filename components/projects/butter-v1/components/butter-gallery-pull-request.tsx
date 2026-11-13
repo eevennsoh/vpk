@@ -55,13 +55,7 @@ const merchantPreview = PULL_REQUEST_CARDS.open.pullRequestPreview;
 if (!merchantPreview) throw new Error("Missing Project Butter pull request preview");
 const MULTIPLE_PULL_REQUESTS: readonly JiraIssuePullRequestItem[] = [
 	{ number: 284, status: "open", preview: merchantPreview },
-	{ number: 282, status: "failed", preview: { title: "Improve payment error messages", author: merchantPreview.author, relativeTime: "2 hours ago", repository: "payments-platform/payments", branch: "rovo/pay-999-payment-errors", targetBranch: "main", filesChanged: 5, additions: 96, deletions: 23, checks: projectButterDevelopmentChecks("failed") } },
-	{ number: 281, status: "draft", preview: { title: "Add onboarding integration tests", author: merchantPreview.author, relativeTime: "1 day ago", repository: "payments-platform/payments", branch: "rovo/pay-999-onboarding-tests", targetBranch: "main", filesChanged: 3, additions: 78, deletions: 6, checks: [
-		{ id: "build", name: "Build", status: "queued", details: "Waiting to build integration tests" },
-		{ id: "tests", name: "Unit tests", status: "queued", details: "Waiting to run onboarding tests" },
-		{ id: "accessibility", name: "Accessibility", status: "queued", details: "Waiting to run accessibility checks" },
-	] } },
-	{ number: 283, status: "merged", preview: { title: "Add Payments SDK migration guide", author: merchantPreview.author, relativeTime: "2 days ago", repository: "payments-platform/payments", branch: "rovo/pay-999-migration-guide", targetBranch: "main", filesChanged: 4, additions: 142, deletions: 18, checks: projectButterDevelopmentChecks("merged") } },
+	{ number: 283, status: "merged", preview: { title: "Add Payments SDK migration guide", href: "https://github.com/payments-platform/payments/pull/283", author: merchantPreview.author, relativeTime: "2 days ago", repository: "payments-platform/payments", branch: "rovo/pay-999-migration-guide", targetBranch: "main", filesChanged: 4, additions: 142, deletions: 18, checks: projectButterDevelopmentChecks("merged") } },
 ];
 const PULL_REQUEST_STATUSES = { open: "Open", failed: "Failed", draft: "Draft", merged: "Merged" } satisfies Record<JiraIssuePullRequestItem["status"], PullRequestStatus>;
 const MULTIPLE_DEVELOPMENT_PULL_REQUESTS = MULTIPLE_PULL_REQUESTS.map(({ number, preview, status }) => ({ ...preview, number, status: PULL_REQUEST_STATUSES[status] }));
@@ -124,6 +118,7 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 					developmentJourney={{ phase, agentName: "Claude", author: { ...CURRENT_USER, assistedBy: { name: "Claude", brandName: "claude" } }, autoFixEnabled: true, autoMergeEnabled: true, pullRequests: status === "multiple" ? MULTIPLE_DEVELOPMENT_PULL_REQUESTS : undefined }}
 					initialPreset="filled"
 					initialPresentation="full-screen"
+					initialRelatedSectionOpen={false}
 					initialSessions={workItem.selection.initialSessions}
 					journeyPhase={phase}
 					journeySession={JOURNEY_SESSION}

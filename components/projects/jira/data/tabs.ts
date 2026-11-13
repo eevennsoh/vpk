@@ -16,6 +16,7 @@ export type { JiraWorkItemView } from "../lib/jira-tab-model";
 
 export interface TabDefinition extends JiraTabSelection {
 	icon: typeof GlobeIcon;
+	placeholder?: string;
 }
 
 const SUMMARY_TAB: TabDefinition = { label: "Summary", icon: GlobeIcon, hasContent: false };

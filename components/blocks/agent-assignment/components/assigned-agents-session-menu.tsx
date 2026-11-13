@@ -10,6 +10,8 @@ import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function AssignedAgentsSessionMenu({
 	onContinueInAgent,
@@ -19,6 +21,7 @@ export function AssignedAgentsSessionMenu({
 	onSelectAgent,
 	onToggleVisibility,
 	rows,
+	teammateSessionsPresentation,
 }: Readonly<{
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
@@ -27,9 +30,11 @@ export function AssignedAgentsSessionMenu({
 	onSelectAgent: (agent: AgentAssignmentAgent) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	rows: readonly AgentAssignmentAgent[];
+	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	return <AgentSessionsMenu
 		items={rows.map(toAssignmentSessionItem)}
+		teammateSessionsPresentation={teammateSessionsPresentation}
 		onContinueInAgent={onContinueInAgent}
 		onDeleteSession={onDeleteSession}
 		onMoreMenuOpenChange={onMoreMenuOpenChange}
@@ -52,6 +57,7 @@ export function AgentSessionsMenu({
 	onRenameSession,
 	onSelectSession,
 	onToggleVisibility,
+	teammateSessionsPresentation,
 }: Readonly<{
 	items: readonly AgentSessionItem[];
 	localSessionAction?: "continue" | "view";
@@ -62,6 +68,7 @@ export function AgentSessionsMenu({
 	onRenameSession?: (item: AgentSessionItem) => void;
 	onSelectSession: (item: AgentSessionItem) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
+	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
@@ -100,20 +107,20 @@ export function AgentSessionsMenu({
 	);
 
 	return (
-		<div className="flex w-full flex-col gap-1 p-1 outline-none" ref={containerRef} tabIndex={-1}>
+		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding.compact)} ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}
 			{teammateItems.length ? (
 				<div>
-					{hasActionableSession ? <hr className="my-1 border-border" /> : null}
+					{hasActionableSession ? <hr className={cn(dropdownStyles.separator, "border-0")} /> : null}
 					{personalItems.length ? (
-						<TeammateSessionsDisclosure items={teammateItems}>
+						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
 						<>
-							<p className="px-3 py-1 text-xs font-medium text-text-subtle">Sessions from your teammates</p>
+							<p className="px-2 pt-3 pb-1 text-xs font-medium text-text-subtle">{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</>
 					)}

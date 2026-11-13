@@ -10,13 +10,14 @@ function renderSection(props = {}) {
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 			const BOARD_ITEM = { code: "PAY-9999", title: "Board item without placeholder" };
-			export default function SectionProbe({ preset = "filled", board = false, active = true }) {
-				const content = useProjectButterContent(preset, board ? BOARD_ITEM : undefined);
+			export default function SectionProbe({ preset = "filled", board = false, active = true, collapsed = false, single = false }) {
+				const state = useProjectButterContent(preset, board ? BOARD_ITEM : undefined, undefined, undefined, undefined, { initialRelatedSectionOpen: !collapsed });
+				const content = single ? { ...state, relatedWork: { children: [], linked: [] } } : state;
 				return <MotionConfig reducedMotion="always">
 					<button type="button" onClick={() => content.openRelatedAdd("attachments")}>Request attachment</button>
 					<button type="button" onClick={() => content.openRelatedAdd("children")}>Request child</button>
 					<button type="button" onClick={() => content.openRelatedAdd("linked")}>Request linked</button>
-					<ProjectButterRelatedWork active={active} content={content} empty={preset === "empty"} />
+					<ProjectButterRelatedWork active={active} alwaysCollapsible={collapsed} content={content} empty={preset === "empty"} />
 				</MotionConfig>;
 			}`,
 		props,
@@ -25,6 +26,24 @@ function renderSection(props = {}) {
 
 const group = (type) => document.querySelector(`[data-component="ContextTableGroup"][data-related-type="${type}"]`);
 const wait = (ms) => React.act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
+
+test("related work starts collapsed and can be expanded, including a single group", async () => {
+	for (const single of [false, true]) {
+		const view = await renderSection({ collapsed: true, single });
+		const expand = view.getByRole("button", { name: "Expand Related work" });
+		assert.equal(expand.getAttribute("aria-expanded"), "false");
+		assert.equal(view.tabOrder().includes("Add attachment"), false);
+		assert.equal(view.getByRole("list", { name: single ? "8 attachments" : "8 attachments, 15 subitems, 8 linked work items" }).getAttribute("data-component"), "RelatedWorkCollapsedSummary");
+		await view.click(expand);
+		assert.equal(view.getByRole("button", { name: "Collapse Related work" }).getAttribute("aria-expanded"), "true");
+		assert.equal(view.queryByRole("button", { name: "Collapse Attachments" }) !== null, true);
+		await view.click(view.getByRole("button", { name: "Collapse Related work" }));
+		await view.click(view.getByRole("button", { name: "Request attachment" }));
+		assert.equal(view.getByRole("button", { name: "Collapse Related work" }).getAttribute("aria-expanded"), "true");
+		assert.equal(view.isFocused(view.getByRole("combobox", { name: "Add attachment" })), true);
+		await view.unmount();
+	}
+});
 
 test("a single visible group hides the Related work heading but keeps the section named", async () => {
 	const view = await renderSection({ preset: "empty" });

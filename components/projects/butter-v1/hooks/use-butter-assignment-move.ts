@@ -54,7 +54,7 @@ export function useButterAssignmentMove({
 			return;
 		}
 		pending.current = { issueKey, update, columnTitle: move.columnTitle, onApplied };
-		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: feedback ?? "none", animation });
+		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: feedback ?? "none", animation, onArrival: onApplied });
 	}, [boardColumns, setBoardColumns]);
 	const onBoardAssignedAgentIdsChange = useCallback((issueKey: string, agentIds: readonly string[]) => {
 		queueUpdate(issueKey, (columns) => applyAssignedAgentIdsToColumns(columns, issueKey, agentIds, catalog));
@@ -80,7 +80,6 @@ export function useButterAssignmentMove({
 			pending.current = undefined;
 			setIssueMoveRequest(undefined);
 			setBoardColumns((current) => assignment.update(current));
-			assignment.onApplied?.();
 			if (!assignment.onApplied) stopFocusRestore.current = restoreAssignedCardFocus(assignment.issueKey);
 		} else {
 			setBoardColumns([...columns]);

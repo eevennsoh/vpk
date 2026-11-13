@@ -658,7 +658,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-sm text-text-subtlest">Spaces</u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<Heading as="h1" className="min-w-0 truncate" size="medium">\{title\}<\/Heading>/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Share"/u);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Expand"/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Automation"/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/className=\{cn\("flex items-center gap-2", compact \? undefined : "ml-auto"\)\}/u,
@@ -702,7 +702,7 @@ test("the board keeps matching 24px gaps above and below the filter controls", (
 	// `mt-6` after the tabs must match the header's `pb-6` below the row.
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
+		/\{viewTabs \? <div[^>]*"mt-2"[^>]*>\{viewTabs\}<\/div> : null\}[\s\S]*"mt-6 flex flex-wrap items-center gap-2 px-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,

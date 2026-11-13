@@ -20,9 +20,19 @@ test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	await expect(lanyard.getByText("Collaborate on code with an AI that gives smart suggestions and reviews.", { exact: true })).toBeVisible();
 	await expect(lanyard.getByRole("heading", { name: "Why recommended" })).toBeVisible();
 	await expect(lanyard.getByText("Claude can help with code suggestions and reviews.", { exact: true })).toBeVisible();
+	const popup = page.locator('[data-slot="hover-card-content"]');
+	await expect(popup).toHaveCSS("box-shadow", "none");
+	await expect(lanyard).toHaveCSS("filter", /drop-shadow/u);
+	await expect(lanyard.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("mask-image", /radial-gradient/u);
+	const issueBounds = await card.boundingBox();
+	const previewBounds = await lanyard.boundingBox();
+	if (!issueBounds || !previewBounds) throw new Error("Issue or agent preview is not visible");
+	expect(previewBounds.x >= issueBounds.x + issueBounds.width || previewBounds.x + previewBounds.width <= issueBounds.x || previewBounds.y >= issueBounds.y + issueBounds.height || previewBounds.y + previewBounds.height <= issueBounds.y).toBe(true);
 	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
 	await cursor.hover();
 	await expect(lanyard.getByRole("heading", { name: "Cursor" })).toBeVisible();
+	await expect(popup).not.toHaveCSS("box-shadow", "none");
+	await expect(lanyard).toHaveCSS("filter", "none");
 	await expect(lanyard).toHaveAttribute("data-variant", "agent");
 	await expect(lanyard.getByRole("heading", { name: "Why recommended" })).toHaveCount(0);
 	await expect(lanyard.getByRole("button")).toHaveCount(0);
@@ -35,6 +45,45 @@ test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	await claude.click();
 	await expect(picker).toBeHidden();
 	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+});
+
+test("agent previews avoid the originating issue when the picker is near the viewport edge", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto(appUrl("/butter-v1"));
+	const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+	await card.getByRole("button", { name: "Add agent to PAY-112" }).focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: "Claude (Recommended)" }).focus();
+	const preview = page.locator('[data-slot="agent-lanyard"]');
+	await expect(preview.getByRole("heading", { name: "Claude" })).toBeVisible();
+	const issueBounds = await card.boundingBox();
+	const previewBounds = await preview.boundingBox();
+	if (!issueBounds || !previewBounds) throw new Error("Issue or agent preview is not visible");
+	expect(previewBounds.x >= issueBounds.x + issueBounds.width || previewBounds.x + previewBounds.width <= issueBounds.x || previewBounds.y >= issueBounds.y + issueBounds.height || previewBounds.y + previewBounds.height <= issueBounds.y).toBe(true);
+	expect(previewBounds.x).toBeGreaterThanOrEqual(0);
+	expect(previewBounds.x + previewBounds.width).toBeLessThanOrEqual(1280);
+});
+
+test("board agent preview follows the hovered and focused row", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1400 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const issue = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+	await issue.getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	const preview = page.locator('[data-slot="agent-lanyard"]');
+	for (const [name, heading, interaction] of [["Claude (Recommended)", "Claude", "hover"], ["Cursor", "Cursor", "hover"], ["Claude (Recommended)", "Claude", "focus"]] as const) {
+		const row = picker.getByRole("button", { name, exact: true });
+		if (interaction === "hover") await row.hover();
+		else await row.focus();
+		await expect(preview.getByRole("heading", { name: heading })).toBeVisible();
+		await expect.poll(async () => {
+			const rowBounds = await row.boundingBox();
+			const previewBounds = await preview.boundingBox();
+			return rowBounds && previewBounds ? Math.abs(previewBounds.y - rowBounds.y) : Infinity;
+		}).toBeLessThan(8);
+	}
 });
 
 const iconInkCenter = (locator: Locator) => locator.evaluate((element) => {

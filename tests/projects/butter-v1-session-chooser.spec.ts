@@ -125,7 +125,7 @@ test("duplicative sessions opens the work item directly", async ({ page }) => {
 	await expect(back).toHaveCSS("border-bottom-right-radius", "0px");
 	await page.getByRole("button", { name: "Open gallery" }).click();
 	await page.getByRole("button", { name: "Select Work item" }).click();
-	await expect(page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Collapse Related work" })).toHaveAttribute("aria-expanded", "true");
+	await expect(page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Expand Related work" })).toHaveAttribute("aria-expanded", "false");
 });
 
 test("hovering sessions animates the activity scroll in the duplicative sessions work item", async ({ page }) => {

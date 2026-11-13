@@ -287,8 +287,9 @@ test("starting an agent from the details field immediately highlights its activi
 		const toast = document.querySelector('[data-slot="sonner-toast"]');
 		assert.notEqual(toast.querySelector('[data-slot="avatar"][data-shape="hexagon"]'), null, "the selected agent's avatar appears in the toast");
 		assert.equal(document.body.textContent.includes("A new session was added to activity."), true);
-		feed.parentElement.getBoundingClientRect = () => ({ top: 900, bottom: 1200, height: 300 });
-		await view.click(view.getByRole("button", { name: "View activity" }));
+		card.getBoundingClientRect = () => ({ top: 900, bottom: 1200, height: 300 });
+		assert.equal(view.queryByRole("button", { name: "Open in chat" }) !== null, true);
+		await view.click(view.getByRole("button", { name: "View session" }));
 		assert.deepEqual(scrolls.at(-1), { top: 1400, behavior: "smooth" });
 	} finally {
 		await view.unmount();
@@ -325,10 +326,34 @@ test("starting an agent with reduced motion does not scroll or animate", async (
 		assert.equal(Boolean(card), true);
 		assert.equal(scrolls.length, 0);
 		assert.equal(card.querySelector("[data-jira-linking-glow-trace], [data-jira-linking-glow-backdrop]"), null);
-		await view.click(view.getByRole("button", { name: "View activity" }));
+		await view.click(view.getByRole("button", { name: "View session" }));
 		assert.equal(scrolls.at(-1)?.behavior, "auto");
 	} finally {
 		await view.unmount();
 		window.matchMedia = originalMatchMedia;
 	}
+});
+
+test("the new session toast opens that session in the host chat", async () => {
+	const opened = [];
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { SidebarProvider } from "@/app/contexts/context-sidebar";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+			export default function TestWorkItem(props) { return <ThemeWrapper><SidebarProvider><ProjectButterJiraWorkItem {...props} /></SidebarProvider></ThemeWrapper>; }`,
+		mocks: { "@/app/contexts": `const controls = { chatSurface: null, openChat() {}, toggleChat() {} };
+			export const useRovoChatControls = () => controls;
+			export const useOptionalRovoChatControls = () => controls;
+			export const useOptionalRovoChat = () => null;` },
+		props: { initialPreset: "filled", onClose() {}, onOpenCloudSession: (session, draft, workItem) => { opened.push({ session, draft, workItem }); return true; }, open: true, cloudAgentSelector: true, shell: "gallery" },
+	});
+	await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+	await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
+	const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
+	await view.click(view.getByRole("button", { name: "Open in chat" }));
+	assert.equal(opened.length, 1);
+	assert.equal(opened[0].session.id, card.dataset.projectButterSessionStart);
+	assert.equal(opened[0].session.agent.name, "Claude");
+	assert.equal(opened[0].workItem.code, "VITA-1");
 });

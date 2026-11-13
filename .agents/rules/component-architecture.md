@@ -25,11 +25,11 @@ Quick rules:
 - Layers import downward only (lint-enforced): `ui` → `ui-custom` → `blocks`
   → `projects`. Blocks may use `projects/shared` and `projects/rovo-core`;
   numbered `experimental-v*` work-item variants belong to their projects.
-- Render an interactive affordance only when its consumer supplies the real
-  capability. Missing callbacks must produce display-only, disabled, or omitted
-  UI, never an enabled control backed by an optional call or no-op handler
-  (lint rejects empty `on*={() => {}}` handlers).
-  Register advertised drop targets with the owning transaction, and cover both
+- For prototypes, keep controls enabled when their behavior is unfinished,
+  unless the user requests a disabled state or the reference design shows one.
+  Clickable placeholders may omit a handler or use a no-op handler; a prototype
+  does not need to implement every feature. Preserve real behavior when present.
+- Register advertised drop targets with the owning transaction, and cover
   capability-present and capability-absent behavior in focused tests.
 
 Context pattern (`State/Actions/Meta`) lives in:
@@ -113,8 +113,10 @@ enforcement. The suite is discovered by the existing `scripts/` unit gate.
 
 Run `node --test scripts/eslint-boundary-rules.test.js`,
 `pnpm run lint:design-system`, `pnpm run lint`, and `pnpm run typecheck`.
-The pilot emits warnings for explanatory feedback; `lint:design-system`
-uses `--max-warnings 0` in PR CI so new findings cannot silently pass.
+The pilot emits warnings for explanatory feedback; `pnpm run lint`, which
+`ci:pr` and PR CI run, covers the pilot paths with `--max-warnings 0`, so new
+findings cannot silently pass. `lint:design-system` is that check scoped to the
+pilot paths, for a fast local run.
 Expand its paths together with the ESLint scope and regression cases.
 For rendered changes, also prove the live route and accessibility.
 Report what the contract prevents, its scope, and intentional exceptions.

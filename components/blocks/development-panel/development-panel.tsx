@@ -37,7 +37,6 @@ export interface DevelopmentPanelProps {
 	pullRequestSettings?: DevelopmentSettingsOptions;
 	onPullRequestOpen?: (number: number) => void;
 	headerExtra?: ReactNode;
-	footerExtra?: ReactNode;
 	surface?: "card" | "inline";
 }
 
@@ -112,7 +111,7 @@ function DevelopmentConnections() {
 	);
 }
 
-export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
+export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
 	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-8 w-full justify-start gap-2 border-0 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Open in</Button>} />;
 	return (
@@ -122,7 +121,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 			headerActions={<div className="flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<DevelopmentSettings {...pullRequestSettings} connections={<DevelopmentConnections />} />{headerExtra}</div>}
 			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button>{openIn}{footerExtra}</div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button>{openIn}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {

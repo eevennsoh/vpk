@@ -34,6 +34,8 @@ export interface PullRequestProps {
 	variant?: PullRequestVariant;
 	/** Flyout only. Omit the lower metadata and actions section when false. */
 	showDetails?: boolean;
+	/** Flyout only. Make the title row toggle the details inline. */
+	onToggleDetails?: () => void;
 	/** Pull request number (shown as `#1306` in subtle text). */
 	number: number;
 	/** Pull request title (shown after the number). */

@@ -231,6 +231,7 @@ export function Gallery({
 		// rather than `100vw` keeps the breakout the width of the Gallery instead of the
 		// window, so stages stay inside the demo shell instead of being clipped by it.
 		<div
+			data-gallery-root=""
 			className={cn(
 				"@container/gallery-stage flex h-full min-h-0 flex-col overflow-hidden",
 				className,
@@ -261,6 +262,7 @@ export function Gallery({
 				{isOpen && showCarouselPicker ? (
 					<motion.div
 						key="gallery-strip"
+						data-gallery-strip=""
 						className="fixed inset-x-0 bottom-0 z-40"
 						variants={STRIP}
 						initial="hidden"

@@ -5,38 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
-test("Annie's session cards remain visible and cannot be continued", async ({ page }) => {
+test("the work item starts with Cursor and Jira Coding agent sessions", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
-	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude"]');
-	const header = thread.locator('[data-slot="jira-activity-comment-header"]').first();
-	const node = thread.locator(":scope > div:first-child");
-	const avatar = node.locator('[data-slot="human-agent-avatar"]');
-	const stem = node.locator("[data-jira-activity-timeline-stem]");
-	await expect(header).toContainText("Annie Cook added Claude");
-	await expect(page.locator('[data-jira-activity-entry-id="agent-added-butter-claude"]')).toHaveCount(0);
-	await expect(header.getByRole("button", { name: "Private to Annie Cook" })).toHaveCount(0);
-	const session = thread.getByTestId("agent-session-row-butter-claude");
-	await expect(session.getByRole("button", { name: /^Review Teamwork onboarding guide/ })).toHaveCount(0);
-	const viewerCard = session.locator("article");
-	await expect(viewerCard).toHaveAttribute("data-slot", "tooltip-trigger");
-	await viewerCard.click();
-	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toHaveCount(0);
-	await expect(avatar).toHaveAttribute("aria-label", "Claude, used by Annie Cook");
-	await expect(avatar.locator('[data-avatar-role="human"]')).toBeVisible();
-	await expect(avatar.locator('[data-avatar-role="agent"]')).toBeVisible();
-	const [headerBox, avatarBox, stemBox] = await Promise.all([header.boundingBox(), avatar.boundingBox(), stem.boundingBox()]);
-	if (!headerBox || !avatarBox || !stemBox) throw new Error("The session header and timeline must be visible");
-	expect(headerBox.height).toBe(32);
-	expect(avatarBox.height).toBe(32);
-	expect(headerBox.y + headerBox.height / 2).toBeCloseTo(avatarBox.y + avatarBox.height / 2, 1);
-	expect(stemBox.y - (avatarBox.y + avatarBox.height)).toBeCloseTo(4, 1);
-	const cursorHeader = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"] [data-slot="jira-activity-comment-header"]').first();
-	await expect(cursorHeader).toContainText("Annie Cook added Cursor");
-	await expect(page.locator('[data-jira-activity-entry-id="agent-added-butter-cursor-forecast"]')).toHaveCount(0);
-	await expect(page.getByTestId("agent-session-row-butter-cursor-forecast").getByRole("button", { name: /^Compare the Q3 revenue forecast/ })).toHaveCount(0);
-	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"] [data-slot="human-agent-avatar"]').first()).toHaveAttribute("aria-label", "Cursor, used by Annie Cook");
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	const field = workItem.getByRole("group", { name: "Agents field" });
+	await expect(field.getByRole("button", { name: "2 agents" })).toBeVisible();
+	await expect(field.getByRole("button", { name: "Cursor, add agent" })).toBeAttached();
+	await expect(field.getByRole("button", { name: "Jira Coding agent, add agent" })).toBeAttached();
+	await expect(field.getByRole("button", { name: /Claude|Jira Scoping agent/ })).toHaveCount(0);
+	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]')).toContainText("Review the onboarding flow");
+	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-claude"]')).toHaveCount(0);
+	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-scoping"]')).toHaveCount(0);
 });
 
 test("starting an agent adds a long-form session card to its activity thread", async ({ page }) => {

@@ -826,7 +826,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	// trigger tag shows the open PR; hover uses surface-hovered only.
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectContent[\s\S]*className="[^"]*rounded-xl p-1"[\s\S]*data-jira-work-item-resource-pull-requests-menu/u,
+		/<SelectContent[\s\S]*className="[^"]*max-w-\[var\(--available-width\)\] p-1"[\s\S]*data-jira-work-item-resource-pull-requests-menu/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,

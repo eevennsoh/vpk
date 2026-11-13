@@ -3,6 +3,39 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("multiple pull requests only show separators around expanded details", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	await page.getByRole("button", { name: "Multiple PRs" }).click();
+	await page.getByRole("button", { name: "Pull requests for PAY-999" }).click();
+	const list = page.getByRole("list", { name: "Pull requests" });
+	const rows = list.getByRole("listitem");
+	const first = rows.nth(0).getByRole("button");
+	await expect(list.getByRole("link")).toHaveCount(0);
+	await expect(rows.nth(0)).toHaveCSS("border-bottom-width", "0px");
+	await expect(rows.nth(1)).toHaveCSS("border-top-width", "0px");
+	await first.click();
+	await expect(first).toHaveAttribute("aria-expanded", "true");
+	await expect(rows.nth(0).getByRole("link", { name: "Add merchant onboarding quickstart" })).toHaveAttribute("href", "https://github.com/payments-platform/payments/pull/284");
+	await expect(rows.nth(1).getByRole("link")).toHaveCount(0);
+	await expect(first).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(first).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+	await expect(rows.nth(0)).toHaveCSS("border-bottom-width", "1px");
+	await rows.nth(1).getByRole("button").click();
+	await expect(rows.nth(0).getByRole("link")).toHaveCount(0);
+	await expect(rows.nth(1).getByRole("link", { name: "Add Payments SDK migration guide" })).toHaveAttribute("href", "https://github.com/payments-platform/payments/pull/283");
+	await expect(rows.nth(0)).toHaveCSS("border-bottom-width", "0px");
+	await expect(rows.nth(1)).toHaveCSS("border-top-width", "1px");
+	const [listBox, firstBox, secondBox, panelBox, contentBox] = await Promise.all([
+		list.boundingBox(), first.boundingBox(), rows.nth(1).boundingBox(),
+		page.getByRole("dialog", { name: "Pull requests for PAY-999" }).boundingBox(),
+		rows.nth(1).locator('[data-pull-request] > div:last-child > :last-child').boundingBox(),
+	]);
+	if (!listBox || !firstBox || !secondBox || !panelBox || !contentBox) throw new Error("Missing pull request layout");
+	expect(secondBox.y - firstBox.y - firstBox.height).toBeCloseTo(firstBox.y - listBox.y, 0);
+	expect(panelBox.y + panelBox.height - contentBox.y - contentBox.height).toBeCloseTo(contentBox.x - panelBox.x, 0);
+});
+
 test("the Development panel gallery item shows the populated interactive panel", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

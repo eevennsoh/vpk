@@ -1,10 +1,32 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type { JgpAgentChatScenario } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
 export type MerchantJourneyPhase = "invoke" | "starting" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+
+export function workItemChatSnapshot(session: ProjectButterSessionItem, summary: string): JgpAgentChatScenario["recordedSession"] {
+	if (session.state !== "running" || session.message !== `Ready to work on ${summary}.`) return undefined;
+	const id = session.id;
+	const thinkingMessageId = `${id}-thinking`;
+	const timestamp = "2026-11-12T00:00:00.000Z";
+	const prompt = session.prompt?.trim();
+	return {
+		thinkingMessageId,
+		messages: [
+			...(prompt && prompt.toLowerCase() !== `@${session.agent.name}`.toLowerCase() ? [{ id: `${id}-user`, role: "user" as const, parts: [{ type: "text" as const, text: prompt, state: "done" as const }] }] : []),
+			{ id: `${id}-update`, role: "assistant", parts: [{ type: "text", text: `I’m reviewing the context for ${summary}. I’ll check the requirements and related work before getting started.`, state: "done" }] },
+			{ id: thinkingMessageId, role: "assistant", parts: [
+				{ type: "data-thinking-status", data: { label: "Working", content: "Checking the requirements and related work.", toolCallId: `${id}-check`, activity: "data", source: "fallback", timestamp } },
+				{ type: "data-thinking-event", id: `${id}-read-start`, data: { eventId: `${id}-read-start`, phase: "start", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${id}-read`, timestamp } },
+				{ type: "data-thinking-event", id: `${id}-read-result`, data: { eventId: `${id}-read-result`, phase: "result", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${id}-read`, outputPreview: "Reviewed the work item and linked context.", timestamp } },
+				{ type: "data-thinking-event", id: `${id}-check-start`, data: { eventId: `${id}-check-start`, phase: "start", toolName: "workspace.review_files", label: "Checking the requirements and related work", toolCallId: `${id}-check`, timestamp } },
+			] },
+		],
+	};
+}
 
 export function merchantJourneyChatSnapshot(activity: JiraIssueAgentActivity): NonNullable<JgpAgentChatScenario["recordedSession"]> {
 	const thinkingMessageId = `${activity.id}-thinking`;
@@ -77,6 +99,7 @@ export function projectMerchantJourneyActivities(activities: readonly JourneyAct
 	if (!source) return activities;
 	const projected: JourneyActivity = {
 		...source,
+		stateTransition: "agent-session",
 		state: phase === "merged" ? "completed" : "working",
 		...(source.merchantJourneyCreated ? { label: phase === "merged" ? "Finished" : "Working" } : {}),
 	};
@@ -98,7 +121,7 @@ export function merchantJourneyAuthoredCard(card: JiraKanbanCardData): JiraKanba
 	};
 }
 
-function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): JourneyCard {
+function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity, deferCompletion = false): JourneyCard {
 	const beforeWork = phase === "invoke";
 	const { merchantJourneyBaseline, ...authored } = card;
 	const assignCurrentUser = !beforeWork && !merchantJourneyBaseline && !card.assignee;
@@ -114,6 +137,24 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 	const hasPullRequest = phase === "pr" || phase === "failed" || phase === "fixing" || phase === "passed" || phase === "merged";
 	const restorePullRequest = card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number;
 	const authoredCard = merchantJourneyAuthoredCard(card);
+	const journeySession = session ?? card.agentActivities?.find((item) => "merchantJourneyCreated" in item && item.merchantJourneyCreated === true)?.id ?? (phase === "merged" ? "PAY-999:merchant-journey" : undefined);
+	const sessionId = typeof journeySession === "string" ? journeySession : journeySession?.id;
+	const activities = projectMerchantJourneyActivities(card.agentActivities, phase === "merged" && deferCompletion ? "passed" : phase, journeySession);
+	const activity = activities?.find((item) => item.id === sessionId);
+	const otherRuns = (card.agentDoneRuns ?? []).filter((run) => run.id !== sessionId);
+	const completedRun = phase === "merged" && !deferCompletion && activity ? {
+		id: activity.id,
+		stateTransition: activity.stateTransition,
+		summary: activity.sessionTitle ?? activity.label,
+		agentName: activity.name,
+		agentAvatarSrc: activity.avatarSrc,
+		agentBrandName: activity.agentBrandName,
+		host: activity.host,
+		invokedBy: activity.invokedBy,
+		issueKey: card.code,
+		issueSummary: card.title,
+		state: "done" as const,
+	} : undefined;
 	return {
 		...authored,
 		...(!beforeWork ? { merchantJourneyBaseline: baseline } : {}),
@@ -124,18 +165,19 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 		pullRequestNumber: hasPullRequest ? PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number : restorePullRequest ? baseline.pullRequestNumber : card.pullRequestNumber,
 		pullRequestPreview: hasPullRequest ? { ...PR_PREVIEW, checks: projectButterDevelopmentChecks(phase) } : restorePullRequest ? baseline.pullRequestPreview : card.pullRequestPreview,
 		pullRequestStatus: hasPullRequest ? (phase === "merged" ? "merged" : phase === "failed" ? "failed" : "open") : restorePullRequest ? baseline.pullRequestStatus : card.pullRequestStatus,
-		agentActivities: projectMerchantJourneyActivities(card.agentActivities, phase, session),
+		agentActivities: activities,
+		agentDoneRuns: completedRun ? [...otherRuns, completedRun] : otherRuns.length ? otherRuns : undefined,
 	};
 }
 
 /** Project journey-owned fields in either direction while retaining authored data. */
-export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnData[], phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): JiraKanbanColumnData[] {
+export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnData[], phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity, deferCompletion = false): JiraKanbanColumnData[] {
 	const source = columns.find((column) => column.cards.some((card) => card.code === "PAY-999"));
 	const card = source?.cards.find((item) => item.code === "PAY-999");
 	if (!source || !card) return [...columns];
 	const destination = phase === "merged" ? "Done" : phase === "invoke" || phase === "starting" ? "To do" : "In progress";
 	if (!columns.some((column) => column.title === destination)) return [...columns];
-	const updated = projectCard(card, phase, session);
+	const updated = projectCard(card, phase, session, deferCompletion);
 	return columns.map((column) => {
 		if (source.title === destination && column === source) return { ...column, cards: column.cards.map((item) => item.code === card.code ? updated : item) };
 		if (column === source) { const cards = column.cards.filter((item) => item.code !== card.code); return { ...column, cards, count: cards.length }; }

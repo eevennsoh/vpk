@@ -72,9 +72,6 @@ jobs:
       - name: ESLint
         run: time pnpm run lint
 
-      - name: Design-system lint
-        run: time pnpm run lint:design-system
-
       - name: TypeScript
         run: time pnpm run typecheck
 

@@ -65,6 +65,7 @@ export interface InFlowAgentSessionColumnProps {
 	advancedTimeline?: boolean;
 	agentSessionColumn: AgentSessionColumnProps;
 	className?: string;
+	muted?: boolean;
 	columnFrame: AgentSessionColumnFrame;
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
@@ -577,6 +578,7 @@ export function InFlowAgentSessionColumn({
 	advancedTimeline = true,
 	agentSessionColumn,
 	className,
+	muted = false,
 	columnFrame,
 	paddingBottom,
 	paddingTop,
@@ -622,12 +624,14 @@ export function InFlowAgentSessionColumn({
 		>
 			<div
 				ref={hostRef}
+				inert={muted || undefined}
 				{...reposition.bindings}
 				data-agent-session-column-expansion={resolveSessionColumnExpansion(isEmbedded, isFullWidth, pinned)}
 				data-agent-session-column-pinned={pinned ? "" : undefined}
 				data-session-column-dragging={reposition.dragging || undefined}
 				className={cn(
 					"z-30 flex min-h-0 shrink-0 self-stretch pointer-events-none",
+					muted ? "opacity-20" : null,
 					reposition.shifted ? "pointer-events-none absolute inset-y-0 left-0" : "relative",
 					// Only the compact default Expand button crosses the sidebar's resize
 					// seam. Lift its host, but leave empty footprint space pointer-inert.

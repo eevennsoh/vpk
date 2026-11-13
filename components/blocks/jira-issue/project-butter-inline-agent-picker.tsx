@@ -1,7 +1,7 @@
 "use client";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { ROVO_AGENT_PROFILES } from "@/app/data/directory/agents";
 import { AgentLanyard, AgentLanyardFirstParty, AgentLanyardHoverContent, AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS, type AgentLanyardAgent } from "@/components/blocks/agent-lanyard";
 import { InlineAgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -27,7 +27,7 @@ function pickerLanyard(agent: AgentSelectorAgent): AgentLanyardAgent {
 	};
 }
 
-export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly<{ agents: readonly AgentSelectorAgent[]; children: ReactNode }>) {
+export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Readonly<{ agents: readonly AgentSelectorAgent[]; children: ReactNode; ref?: RefObject<HTMLDivElement | null> }>) {
 	const invocation = useProjectButterInvocationActions();
 	const pointer = useRef<{ x: number; y: number } | null>(null);
 	const frame = useRef<number | null>(null);
@@ -49,7 +49,7 @@ export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly
 			preview(root, document.elementFromPoint(pointer.current.x, pointer.current.y));
 		});
 	};
-	return <div className="w-full" onPointerMove={(event) => {
+	return <div ref={ref} className="w-full" onPointerMove={(event) => {
 		if (!invocation) return;
 		pointer.current = { x: event.clientX, y: event.clientY };
 		schedulePreview(event.currentTarget);
@@ -66,16 +66,18 @@ export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status, recommendationReason }: Readonly<{
+export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status, recommendationReason, issueTriggerRef }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	status?: string;
 	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
 	recommendationReason?: string;
+	issueTriggerRef?: RefObject<HTMLElement | null>;
 }>) {
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
+	const pickerRef = useRef<HTMLDivElement>(null);
 	const reason = recommendationReason?.trim() || DEFAULT_RECOMMENDATION_REASON;
-	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS}><InlineAgentSelector
+	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS} ref={pickerRef}><InlineAgentSelector
 		agents={CLOUD_AGENTS}
 		recommendedAgentId={RECOMMENDED_AGENT_ID}
 		softwareAgentIds={SOFTWARE_IDS}
@@ -84,7 +86,16 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 		onBrowseAgents={onBrowseAgents}
 		renderAgentTrigger={(agent, trigger) => <HoverCardTrigger handle={handle} payload={agent} delay={150} closeDelay={150} render={trigger} />}
 		status={status}
-	/><HoverCard handle={handle}>{({ payload: agent }) => <AgentLanyardHoverContent variant={agent?.id === RECOMMENDED_AGENT_ID ? "recommended" : "agent"} side="left" align="start" sideOffset={8} positionerClassName="z-[700]" className="[&_[data-slot=agent-lanyard-surface]]:min-h-0 [&_[data-slot=agent-lanyard-surface]_p]:min-h-0">
+	/><HoverCard handle={handle}>{({ payload: agent }) => <AgentLanyardHoverContent variant={agent?.id === RECOMMENDED_AGENT_ID ? "recommended" : "agent"} side="right" align="start" sideOffset={({ side }) => {
+		const row = [...(pickerRef.current?.querySelectorAll<HTMLButtonElement>("button[data-agent-id]") ?? [])].find((item) => item.dataset.agentId === agent?.id);
+		const issue = issueTriggerRef?.current?.closest("[data-butter-agent-surface], article");
+		if (!row || !issue) return 8;
+		const rowRect = row.getBoundingClientRect();
+		const issueRect = issue.getBoundingClientRect();
+		if (side === "left") return Math.max(8, rowRect.left - issueRect.left + 8);
+		if (side === "right") return Math.max(8, issueRect.right - rowRect.right + 8);
+		return 8;
+	}} positionerClassName="z-[700]" className="[&_[data-slot=agent-lanyard-surface]]:min-h-0 [&_[data-slot=agent-lanyard-surface]_p]:min-h-0">
 		{agent ? (() => {
 			const firstParty = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((item) => item.id === agent.id);
 			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={false} />;

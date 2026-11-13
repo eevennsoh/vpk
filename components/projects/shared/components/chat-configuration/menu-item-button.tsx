@@ -23,6 +23,7 @@ export function MenuItemButton({
 	return (
 		<button
 			type="button"
+			data-menu-row=""
 			className={cn(
 				"flex w-full cursor-default items-center gap-3 rounded-md px-4 py-2 text-sm text-left outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 				className,

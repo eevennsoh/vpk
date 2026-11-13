@@ -26,6 +26,7 @@ import {
 	isAssignedAgentAttentionKind,
 	useAssignedAgentAttention,
 } from "@/components/blocks/agent-assignment/components/use-assigned-agent-attention";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -37,7 +38,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
@@ -113,6 +113,7 @@ export interface AgentAssignmentProps {
 	pinnedItemsLabel?: string;
 	positionerClassName?: string;
 	side?: "top" | "right" | "bottom" | "left";
+	teammateSessionsPresentation?: "expanded" | "count";
 	trigger?: ReactElement<{ "aria-expanded"?: boolean }>;
 	triggerLabel?: string;
 	/**
@@ -169,6 +170,7 @@ export function AgentAssignment({
 	pinnedItemsLabel = "Pinned by space",
 	positionerClassName = "z-[502]",
 	side,
+	teammateSessionsPresentation,
 	trigger,
 	triggerLabel = "Edit agents",
 	usedAgentIds = [],
@@ -389,6 +391,7 @@ export function AgentAssignment({
 		/>
 	) : (
 		<AssignedAgentsSessionMenu
+			teammateSessionsPresentation={teammateSessionsPresentation}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}
@@ -441,7 +444,7 @@ export function AgentAssignment({
 		<div
 			className={cn(
 				"w-full outline-none",
-				openMode === "hover" && "overflow-hidden rounded-xl",
+				openMode === "hover" && "overflow-hidden rounded-lg",
 			)}
 			ref={menuRootRef}
 			tabIndex={-1}
@@ -473,12 +476,11 @@ export function AgentAssignment({
 						collisionAvoidance={{ align: "shift" }}
 						aria-label="Agent assignment"
 						role="group"
-						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
+						className={cn(dropdownStyles.surface, "max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible p-0")}
 						positionerClassName={overlayPositionerClassName}
 						ref={hoverPopupRef}
 						side={side ?? "right"}
 						sideOffset={8}
-						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
 						{menuSurface}
 					</HoverCardContent>
@@ -551,11 +553,10 @@ export function AgentAssignment({
 					collisionAvoidance={{ align: "shift" }}
 					onAnchorHidden={dismissWhenAnchorHidden ? () => handleOpenChange(false) : undefined}
 					aria-label="Agent assignment"
-					className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0"
+					className={cn(dropdownStyles.surface, "max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden p-0")}
 					positionerClassName={positionerClassName}
 					side={side}
 					sideOffset={8}
-					style={{ boxShadow: token("elevation.shadow.overlay") }}
 				>
 					{menuSurface}
 				</PopoverContent>

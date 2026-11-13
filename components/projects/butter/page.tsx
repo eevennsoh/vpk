@@ -837,7 +837,6 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 					onAutoFixChange: setAutoFixEnabled,
 					onAutoMergeChange: setAutoMergeEnabled,
 					onFixCheck: () => setPhase("fixing"),
-					onMergePullRequest: () => setPhase("merged"),
 				} : undefined}
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}

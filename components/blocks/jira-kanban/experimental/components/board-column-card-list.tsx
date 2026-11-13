@@ -88,6 +88,9 @@ export function BoardColumnCardList({
 	columnSizing = "fill",
 	count,
 	createdCardArrival,
+	creating = false,
+	createDraft,
+	hideScrollbar = false,
 	insertionArmed,
 	isEmpty,
 	isSessionDragging = false,
@@ -99,6 +102,9 @@ export function BoardColumnCardList({
 	columnSizing?: "fill" | "content";
 	count: number;
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
+	creating?: boolean;
+	createDraft?: ReactNode;
+	hideScrollbar?: boolean;
 	insertionArmed: boolean;
 	isEmpty: boolean;
 	isSessionDragging?: boolean;
@@ -182,6 +188,8 @@ export function BoardColumnCardList({
 			>
 				<ScrollAreaViewport
 					ref={setCardListRef}
+					aria-hidden={creating && !createDraft ? true : undefined}
+					inert={creating && !createDraft ? true : undefined}
 					tabIndex={-1}
 					role="region"
 					aria-label={`${columnTitle} work items`}
@@ -190,6 +198,7 @@ export function BoardColumnCardList({
 					className={cn(
 						// Keep card layers below the sibling scrollbar even when the fade mask is disabled.
 						"isolate min-h-0 min-w-0 overflow-y-auto overscroll-y-contain",
+						hideScrollbar ? "scrollbar-none" : null,
 						// Issue controls own keyboard focus; the viewport is only a scrolling container.
 						"focus-visible:ring-0 focus-visible:outline-none",
 						// Keep the viewport and card focus rings out of the edge fade.
@@ -222,6 +231,7 @@ export function BoardColumnCardList({
 						data-jira-kanban-card-list-content=""
 						style={{ minWidth: 0, gap: chrome.cardList.gap ?? token("space.100") }}
 					>
+						<div inert={creating || undefined} className={cn("flex min-w-0 flex-col", creating ? "opacity-20" : null)} style={{ gap: chrome.cardList.gap ?? token("space.100") }}>
 						{children}
 						{columnSizing === "fill" ? <div
 							aria-hidden={isSessionDragging || undefined}
@@ -231,11 +241,13 @@ export function BoardColumnCardList({
 						>
 							<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
 						</div> : null}
+						</div>
+						{createDraft}
 						{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 					</ScrollAreaContent>
 				</ScrollAreaViewport>
 				{/* Layout projection can change scroll bounds without resizing the content box. */}
-				{hasVerticalOverflow ? <ScrollBar visibility="auto" /> : null}
+				{hasVerticalOverflow && !hideScrollbar ? <ScrollBar visibility="auto" /> : null}
 			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
 	);

@@ -72,13 +72,12 @@ test("read-only settings and absent action capabilities are disabled", async () 
 	assert.equal(view.queryByRole("button", { name: "Fix Accessibility" }), null);
 	await view.press(null, "Escape");
 	await view.rerender({ autoFixEnabled: false, autoMergeEnabled: false, phase: "passed" });
-	assert.equal(view.getByRole("button", { name: "Merge pull request" }).disabled, true);
+	assert.equal(view.queryByRole("button", { name: "Merge pull request" }), null);
 	await view.unmount();
 });
 
-test("manual fix and merge actions call the journey host", async () => {
+test("manual fix calls the journey host", async () => {
 	let fixes = 0;
-	let merges = 0;
 	const view = await renderJourney({ phase: "failed", autoFixEnabled: false, onFixCheck: () => { fixes += 1; } });
 	assert.equal(view.queryByRole("button", { name: "Fix accessibility check" }), null);
 	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
@@ -86,9 +85,6 @@ test("manual fix and merge actions call the journey host", async () => {
 	await view.click(view.getByRole("button", { name: "Fix PR" }));
 	assert.equal(fixes, 1);
 	await view.press(null, "Escape");
-	await view.rerender({ autoFixEnabled: false, autoMergeEnabled: false, phase: "passed", onMergePullRequest: () => { merges += 1; } });
-	await view.click(view.getByRole("button", { name: "Merge pull request" }));
-	assert.equal(merges, 1);
 	await view.unmount();
 });
 

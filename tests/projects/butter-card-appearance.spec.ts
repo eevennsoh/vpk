@@ -5,6 +5,23 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("Butter v1 cards keep the same bottom inset with or without an agent", async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	for (const key of ["PAY-118", "PAY-105"]) {
+		const issue = card(page, key);
+		await expect(issue.locator('[data-slot="jira-issue-assignee-slot"]')).toBeVisible({ timeout: 30_000 });
+		const gap = await issue.evaluate((node) => {
+			const surface = node.querySelector('[data-slot="jira-issue-surface"]');
+			const assignee = node.querySelector('[data-slot="jira-issue-assignee-slot"]');
+			if (!surface || !assignee) throw new Error("Missing work item surface or assignee");
+			return surface.getBoundingClientRect().bottom - assignee.getBoundingClientRect().bottom;
+		});
+		expect(gap).toBeCloseTo(9, 0);
+	}
+});
+
 test("work item breadcrumbs appear on header hover or keyboard focus", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();

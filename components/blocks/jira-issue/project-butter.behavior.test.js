@@ -96,7 +96,7 @@ test("PR icon identifies draft and failed pull requests", async () => {
 });
 
 test("multiple PRs show open, failed, draft, then merged, retaining order within a status", async () => {
-	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, additions: 0, deletions: 0 } });
+	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, href: `https://example.com/pull/${number}`, repository: `repo-${number}`, additions: 0, deletions: 0 } });
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
 		exportName: "ProjectButterSummary",
@@ -104,7 +104,26 @@ test("multiple PRs show open, failed, draft, then merged, retaining order within
 	});
 	await view.click(view.getByRole("button", { name: "Pull requests for PAY-1" }));
 	const list = view.getByRole("list", { name: "Pull requests" });
-	assert.deepEqual(Array.from(list.querySelectorAll("button"), (button) => button.textContent), ["#3 PR 3Open", "#5 PR 5Open", "#4 PR 4Failed", "#2 PR 2Draft", "#1 PR 1Merged"]);
+	assert.deepEqual(Array.from(list.children, (row) => row.textContent), ["#3 PR 3Open", "#5 PR 5Open", "#4 PR 4Failed", "#2 PR 2Draft", "#1 PR 1Merged"]);
+	const first = view.getByRole("button", { name: /#3 PR 3.*Open/u });
+	const second = view.getByRole("button", { name: /#1 PR 1.*Merged/u });
+	assert.equal(list.querySelectorAll("a").length, 0);
+	await view.focus(first);
+	await view.press(first, "Enter");
+	assert.equal(first.getAttribute("aria-expanded"), "true");
+	assert.equal(view.isFocused(first), true);
+	assert.equal(first.closest("[data-pull-request]").textContent.includes("repo-3"), true);
+	assert.equal(view.getByRole("link", { name: "PR 3" }).getAttribute("href"), "https://example.com/pull/3");
+	await view.click(second);
+	assert.equal(first.getAttribute("aria-expanded"), "false");
+	assert.equal(second.getAttribute("aria-expanded"), "true");
+	assert.equal(first.closest("[data-pull-request]").textContent.includes("repo-3"), false);
+	assert.equal(second.closest("[data-pull-request]").textContent.includes("repo-1"), true);
+	assert.equal(view.getByRole("link", { name: "PR 1" }).getAttribute("href"), "https://example.com/pull/1");
+	await view.click(second);
+	assert.equal(second.getAttribute("aria-expanded"), "false");
+	assert.equal(list.querySelectorAll("a").length, 0);
+	await view.unmount();
 });
 
 test("Jira Local Agent remembers the last used agent and copies the work item prompt", async (t) => {
@@ -405,6 +424,52 @@ test("Butter overflow capabilities disable board actions and preserve real card 
 	assert.equal(view.getByRole("menuitem", { name: "Move work item" }).getAttribute("aria-disabled"), "true");
 	await view.click(view.getByRole("menuitem", { name: "Copy key" }));
 	assert.deepEqual(actions, ["copy-key"]);
+});
+
+test("Butter board overflow matches the compact menu and dispatches supported actions", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Test",
+			availableMoreActions: ["copy-key", "add-flag"], onMoreActionSelect: (action) => actions.push(action),
+			moreMenuActions: { onDelete: () => actions.push("delete") },
+		},
+	});
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Delete"]) {
+		assert.equal(view.queryByRole("menuitem", { name }) !== null, true, name);
+	}
+	for (const name of ["Add agent", "Change parent", "Select cover", "Archive", "Select"]) {
+		assert.equal(view.queryByRole("menuitem", { name }), null, name);
+	}
+	assert.notEqual(view.getByRole("menuitem", { name: "Edit summary" }).getAttribute("aria-disabled"), "true");
+	await view.click(view.getByRole("menuitem", { name: "Copy key" }));
+	assert.deepEqual(actions, ["copy-key"]);
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	await view.click(view.getByRole("menuitem", { name: "Add flag" }));
+	assert.deepEqual(actions, ["copy-key", "add-flag"]);
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	await view.click(view.getByRole("menuitem", { name: "Delete" }));
+	assert.deepEqual(actions, ["copy-key", "add-flag", "delete"]);
+});
+
+test("Butter board prototype leaves unfinished actions enabled", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: { appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Test" },
+	});
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Delete"]) {
+		assert.notEqual(view.getByRole("menuitem", { name }).getAttribute("aria-disabled"), "true", name);
+	}
+	await view.focus(view.getByRole("menuitem", { name: "Link" }));
+	await view.press(null, "ArrowRight");
+	for (const name of ["Work item", "Confluence item"]) {
+		assert.notEqual(view.getByRole("menuitem", { name }).getAttribute("aria-disabled"), "true", name);
+	}
 });
 
 test("Butter keeps overflow options enabled while unavailable actions remain no-ops", async () => {

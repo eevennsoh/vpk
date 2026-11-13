@@ -52,7 +52,7 @@ export function ProjectButterMenuAgentSubmenu({ assignment, onRequestClose, trig
 		<DropdownMenuSub onOpenChange={(open) => open ? actions?.open("menu") : actions?.close()}>
 			<DropdownMenuSubTrigger aria-haspopup="dialog">Add agent</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent aria-label="Agents" role="dialog" className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
-				{cloudPicker ? <ProjectButterCloudAgentPicker onAssign={(agent) => { assignAgent(agent); onRequestClose(); }} onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined} /> : <ProjectButterAgentPickerContent
+				{cloudPicker ? <ProjectButterCloudAgentPicker issueTriggerRef={triggerRef} onAssign={(agent) => { assignAgent(agent); onRequestClose(); }} onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined} /> : <ProjectButterAgentPickerContent
 					sessions={assignment.sessions}
 					onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); onRequestClose(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { assignAgent(agent); onRequestClose(); }}
@@ -99,7 +99,7 @@ export function ProjectButterAddAgent({
 		>
 			<AgentAdd open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open("footer") : actions.close())} label={`Add agent to ${issueKey}`} disabled={exiting} triggerRef={triggerRef}>
 				{inlinePicker ? <PopoverContent aria-label="Agents" side={side} align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
-					<ProjectButterCloudAgentPicker onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} />
+					<ProjectButterCloudAgentPicker issueTriggerRef={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} />
 				</PopoverContent> : <ProjectButterAgentPicker
 					side={side}
 					sessions={assignment.sessions}

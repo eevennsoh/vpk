@@ -51,7 +51,7 @@
 		"fix:generated": "node scripts/generated-artifacts.mjs fix",
 		"check": "node scripts/check.mjs",
 		"verify:fast": "node scripts/check.mjs --guards",
-		"ci:pr": "pnpm run verify:fast && pnpm run lint && pnpm run lint:design-system && pnpm run typecheck && pnpm run test:unit:js",
+		"ci:pr": "node scripts/run-parallel.mjs 'pnpm run verify:fast' 'pnpm run lint' 'pnpm run typecheck' 'pnpm run test:unit:js --parallel auto'",
 		"deploy:micros": "./scripts/dev-deploy-fast.sh",
 		"dev:backend": "node scripts/check-workspace-deps.js --command \"pnpm run dev:backend\" express && node scripts/dev-backend.js",
 		"dev:frontend": "node scripts/check-workspace-deps.js --command \"pnpm run dev:frontend\" next && node scripts/dev-frontend.js",

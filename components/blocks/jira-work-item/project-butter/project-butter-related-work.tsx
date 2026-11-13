@@ -11,9 +11,10 @@ import { RelatedWorkSection, useRelatedAddShortcuts, useRelatedHeaderReveal } fr
 import { nextRelatedKey, relatedItemFromRequest, relatedKeyPrefix, type ProjectButterRelatedAddRequest, type ProjectButterRelatedKind, type ProjectButterRelatedListEditor } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
-export function ProjectButterRelatedWork({ active = false, content, empty = false, openRelatedItem, scope, workItemKey = "VITA-1" }: Readonly<{
+export function ProjectButterRelatedWork({ active = false, alwaysCollapsible = false, content, empty = false, openRelatedItem, scope, workItemKey = "VITA-1" }: Readonly<{
 	/** The visible work item: enables the Shift+A/C/K add shortcuts. */
 	active?: boolean;
+	alwaysCollapsible?: boolean;
 	content: ProjectButterContent;
 	empty?: boolean;
 	/** Host lookup from a related key to an opener (Butter board cards). Unresolved keys render as plain text. */
@@ -32,7 +33,7 @@ export function ProjectButterRelatedWork({ active = false, content, empty = fals
 		empty,
 		parentIsSubtask: scope?.parentType === "Subtask",
 	});
-	const reveal = useRelatedHeaderReveal(visibility.count);
+	const reveal = useRelatedHeaderReveal(visibility.count, alwaysCollapsible ? 1 : 2);
 	useRelatedAddShortcuts(active, sectionRef, content.openRelatedAdd);
 	const removal = useAttachmentRemoval(content, sectionRef);
 	function addItem(kind: "children" | "linked", request: ProjectButterRelatedAddRequest) {
