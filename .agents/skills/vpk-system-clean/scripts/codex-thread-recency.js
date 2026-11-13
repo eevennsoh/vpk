@@ -1,21 +1,24 @@
 #!/usr/bin/env node
-// codex-thread-recency.js — read-only probe: is any Codex thread for this exact
-// worktree cwd still in use?
+// codex-thread-recency.js — read-only probe: is any Codex thread working in this
+// worktree (its root or a directory under it) still in use?
 //
 //   node codex-thread-recency.js --cwd <worktree> [--idle-hours <n>] [--db <path>]
 //
 // Prints one line, `verdict|newest_age_secs|thread_count|reason`:
-//   active   a thread for this cwd was updated in the last ACTIVE_WINDOW_SECS
+//   active   a thread here was updated in the last ACTIVE_WINDOW_SECS
 //   recent   the newest thread is younger than the idle threshold
-//   idle     every thread for this cwd is at least the idle threshold old
+//   idle     every thread here is at least the idle threshold old
 //   unknown  no thread matches, the database is missing or unreadable, or its
 //            schema has changed; callers must keep the stack
 //
-// Only `idle` lets a caller stop a stack. The database is opened read-only and
-// nothing under the Codex home is ever written. Exit status is always 0.
+// Only `idle` lets a caller stop a stack. The database is opened read-only, so
+// its contents are never changed and rows still in the write-ahead log are read.
+// SQLite's WAL mode does create the `-shm`/`-wal` sidecar files next to it when
+// they are absent (Codex keeps them while it runs); nothing else under the Codex
+// home is written. Exit status is always 0.
 "use strict";
 
-const { readdirSync } = require("node:fs");
+const { readdirSync, statSync } = require("node:fs");
 const { homedir } = require("node:os");
 const { join } = require("node:path");
 
@@ -38,6 +41,15 @@ function resolveStateDbPath({ codexHome = process.env.CODEX_HOME || join(homedir
 		.filter((entry) => Number.isInteger(entry.version))
 		.sort((a, b) => b.version - a.version)[0];
 	return newest ? join(codexHome, newest.name) : null;
+}
+
+function rolloutMtimeMs(file) {
+	if (typeof file !== "string" || file.length === 0) return 0;
+	try {
+		return statSync(file).mtimeMs;
+	} catch {
+		return 0;
+	}
 }
 
 function unknown(reason, threadCount = "-") {
@@ -67,11 +79,22 @@ function probeCodexThreadRecency({ cwd, idleHours = IDLE_HOURS, dbPath = resolve
 	} catch (error) {
 		return unknown(`Codex state database unreadable (${error.code ?? error.message})`);
 	}
+	// A thread working in a sub-directory is use of the worktree too. substr, not LIKE, so `%` and
+	// `_` in paths stay literal; the trailing separator keeps a sibling such as `<root>-2` out.
+	const root = cwd.length > 1 ? cwd.replace(/\/+$/u, "") : cwd;
+	const under = `${root}/`;
+	const match = "(cwd = ? OR substr(cwd, 1, length(?)) = ?)";
 	let row;
+	let rollouts = [];
 	try {
 		row = db
-			.prepare("SELECT COUNT(*) AS threads, MAX(COALESCE(updated_at_ms, updated_at * 1000)) AS newest FROM threads WHERE cwd = ?")
-			.get(cwd);
+			.prepare(`SELECT COUNT(*) AS threads, MAX(COALESCE(updated_at_ms, updated_at * 1000)) AS newest FROM threads WHERE ${match}`)
+			.get(root, under, under);
+		try {
+			rollouts = db.prepare(`SELECT rollout_path AS path FROM threads WHERE ${match}`).all(root, under, under);
+		} catch {
+			// No rollout_path column: the update times alone decide.
+		}
 	} catch (error) {
 		return unknown(`Codex state schema not recognised (${error.message})`);
 	} finally {
@@ -80,7 +103,9 @@ function probeCodexThreadRecency({ cwd, idleHours = IDLE_HOURS, dbPath = resolve
 
 	const threadCount = Number(row?.threads ?? 0);
 	if (threadCount === 0) return unknown("no Codex thread has this cwd", 0);
-	const newest = Number(row.newest);
+	// updated_at_ms can lag the rollout file a turn keeps writing (seen 11 minutes behind), so
+	// the newer of the two counts. Reading a file's mtime writes nothing.
+	const newest = Math.max(Number(row.newest) || 0, ...rollouts.map((entry) => rolloutMtimeMs(entry.path)));
 	if (!Number.isFinite(newest) || newest <= 0) return unknown("Codex thread has no update time", threadCount);
 
 	const newestAgeSecs = Math.max(0, Math.floor((nowMs - newest) / 1000));

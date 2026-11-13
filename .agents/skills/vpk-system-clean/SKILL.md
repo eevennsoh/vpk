@@ -145,7 +145,8 @@ script-only handoff, report status, the log path
   with no process named exactly `claude`, `caffeinate`, `lazygit`,
   `cursor-agent`, or `codex` whose cwd is that worktree. Worktree names are
   not part of this check. A Codex Desktop worktree is stopped only when the
-  thread-recency probe returns `idle`; it never writes under the Codex home.
+  thread-recency probe returns `idle`. The probe opens Codex's database
+  read-only and never changes it; SQLite may create its `-shm`/`-wal` sidecars.
 - If sandbox permissions block a cache or log path, report the exact failure;
   do not attempt alternate deletion, permission repair, or schedule changes.
 
