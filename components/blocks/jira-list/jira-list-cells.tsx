@@ -8,6 +8,7 @@ import EpicIcon from "@atlaskit/icon/core/epic";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
+import PriorityTrivialIcon from "@atlaskit/icon/core/priority-trivial";
 import StoryIcon from "@atlaskit/icon/core/story";
 import PriorityCriticalIcon from "@atlaskit/icon/core/priority-critical";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
@@ -50,6 +51,7 @@ const PRIORITY_ICONS = {
 	medium: PriorityMediumIcon,
 	minor: PriorityMinorIcon,
 	critical: PriorityCriticalIcon,
+	trivial: PriorityTrivialIcon,
 } as const;
 
 const ISSUE_TYPE_ICONS = {
@@ -133,6 +135,7 @@ export function PriorityGlyph({ priority }: Readonly<{ priority: JiraListPriorit
 				priority === "major" && "text-icon-danger",
 				priority === "medium" && "text-icon-information",
 				priority === "minor" && "text-icon-information",
+				priority === "trivial" && "text-icon-information",
 			)}
 			label={`${priority} priority`}
 			render={<PriorityIcon label="" size="small" />}

@@ -12,11 +12,12 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { motionDuration, motionRecipe } from "@/lib/motion";
 
-export function TeammateSessionsDisclosure({ children, items }: Readonly<{
+export function TeammateSessionsDisclosure({ children, defaultOpen = false, items }: Readonly<{
 	children: ReactNode;
+	defaultOpen?: boolean;
 	items: readonly AgentSessionItem[];
 }>) {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(defaultOpen);
 	const reducedMotion = useReducedMotion();
 	const trigger = useRef<HTMLButtonElement>(null);
 	const panel = useRef<HTMLDivElement>(null);
@@ -40,7 +41,7 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 				ref={trigger}
 				aria-describedby={hintId}
 				aria-label={open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
-				className="relative flex w-full items-center rounded-lg px-3 py-1 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				className="group/teammate-disclosure relative flex w-full items-center rounded-lg px-3 py-1 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				<motion.span
 					className="inline-flex shrink-0"
@@ -53,7 +54,7 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 				<motion.span className="inline-flex min-w-0 text-xs font-medium" data-teammate-disclosure-label="" layout={reducedMotion ? false : "position"} initial={false} animate={open ? "open" : "closed"} variants={{ open: { filter: labelBlur }, closed: { filter: labelBlur } }} transition={{ ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) }}>
 					{open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
 				</motion.span>
-				<span aria-hidden="true" className="ml-auto grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
+				<span aria-hidden="true" className="ml-auto grid size-6 shrink-0 place-items-center opacity-0 group-hover/teammate-disclosure:opacity-100 group-focus-visible/teammate-disclosure:opacity-100" data-teammate-disclosure-chevron="">
 					<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
 				</span>
 			</CollapsibleTrigger>

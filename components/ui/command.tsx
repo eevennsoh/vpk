@@ -34,6 +34,7 @@ function Command({
       data-slot="command"
       className={cn(
         "bg-popover text-popover-foreground rounded-xl p-1 flex size-full flex-col overflow-hidden",
+        "menu-row-spacing",
         className
       )}
       {...props}

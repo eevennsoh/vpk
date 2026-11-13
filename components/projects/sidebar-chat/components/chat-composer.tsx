@@ -23,6 +23,7 @@ import {
 import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui-custom/queue";
 import { Button } from "@/components/ui/button";
@@ -358,7 +359,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									>
 										<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 											<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-1">
+											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
 												<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 												<CustomizeMenu
 													selectedReasoning={selectedReasoning}

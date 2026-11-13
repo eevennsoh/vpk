@@ -113,16 +113,16 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /delay=\{120\}/u);
 	assert.match(source, /closeDelay=\{80\}/u);
 	assert.match(source, /cloneElement\(trigger, \{ "aria-expanded": open \}\)/u);
-	assert.match(source, /import \{ token \} from "@\/lib\/tokens";/u);
-	assert.match(source, /<PopoverContent[\s\S]*style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
+	assert.match(source, /import \{ dropdownStyles \} from "@\/components\/ui\/dropdown-menu";/u);
+	assert.doesNotMatch(source, /boxShadow:/u);
 	assert.match(
 		source,
-		/<TooltipProvider portalContainer=\{hoverPopupRef\}>[\s\S]*<HoverCardContent[\s\S]*className="max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-visible rounded-xl p-0 shadow-none"[\s\S]*ref=\{hoverPopupRef\}/u,
+		/<TooltipProvider portalContainer=\{hoverPopupRef\}>[\s\S]*<HoverCardContent[\s\S]*className=\{cn\(dropdownStyles\.surface, "max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-visible p-0"\)\}[\s\S]*ref=\{hoverPopupRef\}/u,
 	);
-	assert.match(source, /openMode === "hover" && "overflow-hidden rounded-xl"/u);
+	assert.match(source, /openMode === "hover" && "overflow-hidden rounded-lg"/u);
 	assert.match(
 		source,
-		/<PopoverContent[\s\S]*className="max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-hidden rounded-xl p-0"/u,
+		/<PopoverContent[\s\S]*className=\{cn\(dropdownStyles\.surface, "max-h-none w-\[280px\] max-w-\[280px\] gap-0 overflow-hidden p-0"\)\}/u,
 	);
 	assert.doesNotMatch(source, /w-\[360px\]/u);
 	assert.match(source, /className="absolute inset-0 z-0 rounded-md outline-none"/u);
@@ -216,9 +216,9 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /className="rich-text-command-menu-embedded w-full! \[&_\.rich-text-command-menu-list\]:p-0"/u);
 	assert.match(
 		menu,
-		/className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1"/u,
+		/className="sticky bottom-0 z-10 -mx-\(--menu-inset\) flex shrink-0 flex-col border-t border-border bg-popover px-\(--menu-inset\) pt-1"/u,
 	);
-	assert.match(menu, /className="flex w-full flex-col gap-1 p-1 outline-none"/u);
+	assert.match(menu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\.compact\)\}/u);
 	assert.match(menu, /containerRef\.current\?\.focus\(\);/u);
 	assert.doesNotMatch(menu, /firstOption\?\.focus\(\);/u);
 	assert.match(menu, /selectedIndex === -1\s*\? \(step > 0 \? 0 : items\.length - 1\)/u);
@@ -452,7 +452,6 @@ async function loadAgentAssignmentClickHarness() {
 		],
 		["@/components/ui/tooltip", "export function TooltipProvider(props) { return props.children; }"],
 		["@/components/ui/avatar", "export function Avatar(props) { return props.children ?? null; }"],
-		["@/components/ui/vpk-icons", "export function PlusIcon() { return null; }"],
 		["@/lib/tokens", "export function token() { return ''; }"],
 		["@/lib/utils", "export function cn(...values) { return values.filter(Boolean).join(' '); }"],
 		[
@@ -573,6 +572,7 @@ async function loadAgentAssignmentClickHarness() {
 		bundle: true,
 		external: ["react", "react-dom"],
 		format: "cjs",
+		loader: { ".css": "empty" },
 		platform: "node",
 		tsconfig: path.join(process.cwd(), "tsconfig.json"),
 		write: false,

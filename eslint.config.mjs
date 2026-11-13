@@ -3,6 +3,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import { plugin as shadcn } from "@shadcn/lint";
+import { builtinRules } from "eslint/use-at-your-own-risk";
 
 const installedReactVersion = createRequire(import.meta.url)("react/package.json").version;
 
@@ -170,10 +171,6 @@ const hydrationSafeSyntax = [
 ];
 const capabilitySyntax = [
 	{
-		selector: "JSXAttribute[name.name=/^on[A-Z]/] > JSXExpressionContainer > ArrowFunctionExpression[body.type='BlockStatement'][body.body.length=0]",
-		message: "Don't wire a control to a no-op handler. Omit the prop so the control renders display-only or disabled until a real capability exists (component-architecture.md).",
-	},
-	{
 		selector: "JSXOpeningElement[name.name='Toaster']:not(:has(JSXAttribute[name.name='id']))",
 		message: "Give each <Toaster /> a unique id and pass the matching toasterId to toast.* (gotchas-ui.md).",
 	},
@@ -186,6 +183,25 @@ const apiRouteRestrictedSyntax = [
 		message: "Use readJsonBody() from @/app/api/_utils/read-json-body so malformed JSON returns the route's public error shape (api-surfaces.md).",
 	},
 ];
+
+// token-priority.md "Common Mistakes" as checks. Each runs ESLint's own no-restricted-syntax
+// under its own id, so its baseline in eslint-suppressions.json is counted separately and
+// can only shrink, instead of hiding inside the shared no-restricted-syntax total.
+const vpkTokens = {
+	rules: {
+		"no-raw-white-black": builtinRules.get("no-restricted-syntax"),
+		"no-tailwind-heading-type": builtinRules.get("no-restricted-syntax"),
+		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
+	},
+};
+// Whole class names only: opacity overlays such as bg-white/10 stay legal.
+const rawWhiteBlackPattern = "(^|[\\s:])bg-(white|black)($|\\s)";
+// A Tailwind size from text-xl up combined with a bold weight in one class string is a hand-made heading.
+const tailwindHeadingPattern = "(?=.*\\btext-[2-9]?xl\\b)(?=.*\\bfont-(semibold|bold)\\b)";
+const tileRadiusPattern = "\\brounded-\\[25%\\]";
+function classStringSelector(pattern) {
+	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
+}
 
 const eslintConfig = defineConfig([
 	...nextVitals,
@@ -370,6 +386,25 @@ const eslintConfig = defineConfig([
 		files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
 		rules: {
 			"no-restricted-syntax": ["error", ...appRestrictedSyntax],
+		},
+	},
+	{
+		files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+		ignores: ["**/*.test.{ts,tsx}"],
+		plugins: { "vpk-tokens": vpkTokens },
+		rules: {
+			"vpk-tokens/no-raw-white-black": ["error", {
+				selector: classStringSelector(rawWhiteBlackPattern),
+				message: "Raw white/black ignores the theme: use bg-surface or bg-bg-neutral-bold (token-priority.md).",
+			}],
+			"vpk-tokens/no-tailwind-heading-type": ["error", {
+				selector: classStringSelector(tailwindHeadingPattern),
+				message: "Large bold text takes an ADS composite font: style={{ font: token(\"font.heading.*\") }} or components/ui/heading instead of text-*xl with font-semibold/bold (token-priority.md).",
+			}],
+			"vpk-tokens/no-arbitrary-tile-radius": ["error", {
+				selector: classStringSelector(tileRadiusPattern),
+				message: "Use rounded-tile (--ds-radius-tile) instead of rounded-[25%] (token-priority.md).",
+			}],
 		},
 	},
 	{

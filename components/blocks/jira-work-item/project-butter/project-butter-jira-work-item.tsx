@@ -160,8 +160,8 @@ export function ProjectButterJiraWorkItem({
 		defaultReporter,
 		{ currentUser, showAuditInActivity, defaultAssignee, initialRelatedSectionOpen },
 	);
-	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
-	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
@@ -283,17 +283,29 @@ export function ProjectButterJiraWorkItem({
 				title={`${agent.name} started`}
 				description="A new session was added to activity."
 				action={{
-					label: "View activity",
+					label: "View session",
 					onClick: () => {
-						const activity = columnRef.current?.querySelector<HTMLElement>("[data-project-butter-activity]");
-						const scrollport = activityScrollport(activity ?? null);
-						if (activity && scrollport) {
+						const target = [...(columnRef.current?.querySelectorAll<HTMLElement>("[data-project-butter-session-start]") ?? [])].find((element) => element.dataset.projectButterSessionStart === session.id)
+							?? columnRef.current?.querySelector<HTMLElement>("[data-project-butter-activity]");
+						const scrollport = activityScrollport(target ?? null);
+						if (target && scrollport) {
 							scrollport.scrollTo({
-								top: scrollport.scrollTop + activity.getBoundingClientRect().top - scrollport.getBoundingClientRect().top,
+								top: scrollport.scrollTop + target.getBoundingClientRect().top - scrollport.getBoundingClientRect().top,
 								behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
 							});
 						}
 						toast.dismiss(id);
+					},
+				}}
+				secondaryAction={{
+					label: "Open in chat",
+					onClick: async () => {
+						try {
+							if (await openSessionItem(session) === false) throw new Error("Could not open the session");
+							toast.dismiss(id);
+						} catch {
+							toast.error("Could not open the session.", { toasterId });
+						}
 					},
 				}}
 			/>
@@ -309,13 +321,16 @@ export function ProjectButterJiraWorkItem({
 	}
 	function openSession(id: string, draft?: string): boolean | void | Promise<boolean | void> {
 		const session = sessions.find((item) => item.id === id);
-		if (!session || isLocalAgentListItem(session)) return false;
+		return session ? openSessionItem(session, draft) : false;
+	}
+	function openSessionItem(session: ProjectButterSessionItem, draft?: string): boolean | void | Promise<boolean | void> {
+		if (isLocalAgentListItem(session)) return false;
 		if (onOpenCloudSession) {
 			setActiveSessionId(null);
 			return onOpenCloudSession(session, draft, { code: workItem?.code ?? "VITA-1", summary: content.summary });
 		} else {
-			if (draft) setDrafts((current) => ({ ...current, [id]: current[id]?.trim() ? `${current[id].trimEnd()}\n\n${draft}` : draft }));
-			setActiveSessionId(id);
+			if (draft) setDrafts((current) => ({ ...current, [session.id]: current[session.id]?.trim() ? `${current[session.id].trimEnd()}\n\n${draft}` : draft }));
+			setActiveSessionId(session.id);
 			return true;
 		}
 	}
@@ -407,6 +422,7 @@ export function ProjectButterJiraWorkItem({
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						inlineSessionReplies={inlineSessionReplies}
+						alwaysCollapsibleRelatedWork={initialRelatedSectionOpen === false}
 						compact={compact}
 						key={workItem?.code ?? "reference"}
 						active={open}

@@ -9,7 +9,7 @@ import { SessionColumnSlot, SessionColumnDropMarker } from "./components/session
 import { BoardColumnDropRing } from "./components/board-column-drop-ring";
 import { LayoutGroup, useReducedMotion } from "motion/react";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
-import type { AgentSessionItem, AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
 import {
@@ -39,6 +39,8 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumn } from "./components/board-column";
+import { BoardCreateCard } from "./components/board-create-card";
+import { indexBoardSubtasks, nextBoardIssueKey, type BoardWorkItemDraft } from "./lib/board-work-item-options";
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
@@ -59,6 +61,7 @@ import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
 import { useIssueMoveRequest, type JiraKanbanIssueMoveRequest } from "./hooks/use-issue-move-request";
 import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
 import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
+import { useBoardCreateCard } from "./hooks/use-board-create-card";
 import { useBoardIssuePointerDrag } from "./hooks/use-board-issue-pointer-drag";
 import { BoardAutoArrangeAction, BoardAutoArrangeBadge } from "./components/board-auto-arrange";
 import { JIRA_KANBAN_CARD_LAYOUT, JIRA_KANBAN_CARD_MOVE, JIRA_KANBAN_CARD_REFLOW } from "./lib/card-motion";
@@ -86,7 +89,9 @@ import {
 } from "./use-board-agent-session-drag";
 
 import type {
+	JiraKanbanAssigneeData,
 	JiraKanbanCardData,
+	JiraKanbanColumnData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanProps,
 } from "../index";
@@ -135,12 +140,15 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * The owning route supplies the copy.
 	 */
 	createWorkItemDropZoneLabel?: string;
+	createWorkItemColumns?: readonly JiraKanbanColumnData[];
+	createWorkItemAssignees?: readonly JiraKanbanAssigneeData[];
+	onCreateActiveChange?: (active: boolean) => void;
 	/** Content-sized columns with a persistent create footer. */
 	columnSizing?: "fill" | "content";
 	/** Expanded columns share available horizontal space; fixed remains the default. */
 	columnWidth?: BoardColumnWidth;
 	/** Creates a named work item without attaching or capturing an agent session. */
-	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
+	onCreateWorkItem?: (columnTitle: string, draft: BoardWorkItemDraft) => void;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
 	 * the scrollport.
@@ -419,6 +427,9 @@ function ExperimentalJiraKanbanView({
 	assignedAgentIdsByColumn = {},
 	scrollEndInset = 0,
 	boardColumns,
+	createWorkItemColumns,
+	createWorkItemAssignees,
+	onCreateActiveChange,
 	cardGenerativeActionPresentation = "sparkle",
 	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
@@ -511,6 +522,8 @@ function ExperimentalJiraKanbanView({
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
+	const createCard = useBoardCreateCard(onCreateActiveChange);
+	const subtasksByParent = useMemo(() => indexBoardSubtasks(createWorkItemColumns ?? boardColumns), [boardColumns, createWorkItemColumns]);
 	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
 	const [hoveredColumnSessionId, setHoveredColumnSessionId] = useState<string | null>(null);
 	const { highlightedSessionId, hoveredIssueKey } = resolveSessionBoardLinkHoverPreview({
@@ -775,6 +788,7 @@ function ExperimentalJiraKanbanView({
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					<InFlowAgentSessionColumn
+						muted={createCard.column !== null}
 						agentSessionColumn={{
 							...agentSessionColumn,
 							highlightedItemId: highlightedSessionId,
@@ -851,13 +865,17 @@ function ExperimentalJiraKanbanView({
 								columnChrome={columnChrome}
 								columnSizing={columnSizing}
 								count={column.cards.length}
+								creating={createCard.column !== null}
+								createDraft={createCard.column === column.title ? <BoardCreateCard assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft); createCard.close(); }} /> : undefined}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+								hideScrollbar={cardAppearance === "project-butter"}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
 								onCreateWorkItem={onCreateWorkItem}
+								onStartCreate={onCreateWorkItem ? (trigger) => createCard.start(column.title, trigger) : undefined}
 								onToggleAgent={
 									onToggleColumnAgent
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
@@ -871,6 +889,7 @@ function ExperimentalJiraKanbanView({
 								issueMoveVisual={issueMoveVisual}
 							>
 								{column.cards.map((card, cardIndex) => {
+									const childItems = cardAppearance === "project-butter" ? subtasksByParent.get(card.code) : undefined;
 									const isActive = activeCardCode === card.code;
 									const isSelected = selectedCardCodes?.has(card.code) ?? false;
 									const isCardBeingDragged = draggedCardCode === card.code;
@@ -991,6 +1010,11 @@ function ExperimentalJiraKanbanView({
 												moreMenuActions={cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined}
 												selectionBackdrop={selectionBackdrop}
 												subtaskChrome={subtaskChrome}
+														subtasks={childItems?.map((item) => item.subtask)}
+														onSubtaskOpen={onCardClick && childItems ? (subtask) => {
+															const item = childItems.find((child) => child.card.code === subtask.issueKey);
+															if (item) onCardClick(item.card.title, item.card.code, item.card, item.columnTitle);
+														} : undefined}
 											/>
 											</CreatedCardArrivalMotion>
 									);

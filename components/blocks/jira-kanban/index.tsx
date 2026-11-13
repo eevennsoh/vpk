@@ -101,6 +101,7 @@ export interface JiraKanbanCardData {
 	issueType?: "epic" | "task" | "story" | "subtask" | "bug";
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
+	teammateSessionsPresentation?: "expanded" | "count";
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	pullRequestNumber?: number;
 	animatePullRequestOnMount?: boolean;

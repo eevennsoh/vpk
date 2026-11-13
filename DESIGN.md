@@ -299,6 +299,10 @@ repo's semantic Tailwind classes whenever a class exists.
   `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
+- **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
+  including on hover, while keeping the columns scrollable. Why: keep the board
+  visually clean.
+  <!-- 2026-11-13: "on column hover we don't need to show any scrollbar on the column, please hide the scrollbar reveal" -->
 
 ### Responsive behavior
 
@@ -358,8 +362,11 @@ supplied reference copy and layout when reproducing a specific product state.
   names. Use the shared loading appearance; consumers must guard pending actions
   against repeated pointer and keyboard activation. `isLoading` alone does not
   disable keyboard activation.
-- Only enable an action when its consumer supplies the real capability. Missing
-  callbacks should produce display-only, disabled, or omitted UI.
+- **Keep prototype controls enabled when their behavior is unfinished**, unless
+  the user asks for a disabled state or the reference design shows one.
+  Why: a prototype can include clickable placeholders without implementing the
+  feature behind them.
+  <!-- 2026-11-13: "this is just a prototype, it can be a button to no where" -->
 - Associate field errors with their fields; use page-level notices for request
   failures. Empty states should explain the situation and offer a real next step.
 

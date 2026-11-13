@@ -15,9 +15,13 @@ test("CI covers every local PR gate through independent static and four unit job
 	assert.match(jobs.unit, /shard: \[1, 2, 3, 4\]/u);
 	assert.match(jobs.unit, /pnpm run test:unit:js --shard "\$\{\{ matrix.shard \}\}\/4"/u);
 	assert.doesNotMatch(jobs.unit + jobs.static, /needs:|continue-on-error:|--prefix|--file/u);
-	const gates = require("../package.json").scripts["ci:pr"].split(" && ");
-	for (const command of gates) {
-		assert.ok((jobs.static + jobs.unit).includes(`run: time ${command}`), `Missing CI gate: ${command}`);
+	// ci:pr runs its stages concurrently through run-parallel.mjs; each stage's script must run in CI.
+	const ciPr = require("../package.json").scripts["ci:pr"];
+	assert.match(ciPr, /^node scripts\/run-parallel\.mjs /u);
+	const gates = [...ciPr.matchAll(/'pnpm run ([\w:.-]+)[^']*'/gu)].map((match) => match[1]);
+	assert.deepEqual(gates, ["verify:fast", "lint", "typecheck", "test:unit:js"]);
+	for (const name of gates) {
+		assert.ok((jobs.static + jobs.unit).includes(`run: time pnpm run ${name}`), `Missing CI gate: ${name}`);
 	}
 });
 

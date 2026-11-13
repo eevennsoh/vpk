@@ -10,6 +10,7 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
+  dropdownStyles,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
@@ -22,8 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const menubarRowBaseClassName =
-  "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-2 rounded-lg text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed";
+const menubarRowBaseClassName = cn(dropdownStyles.itemBase, "gap-2");
 const menubarRowHeightClassName = "h-8 py-0 whitespace-nowrap";
 const menubarRowHorizontalPaddingClassName = "px-2";
 const menubarWrappingRowClassName = "min-h-8 py-1.5 whitespace-normal break-words";
@@ -277,7 +277,7 @@ function MenubarLabel({
       data-slot="menubar-label"
       data-inset={inset}
       className={cn(
-        "px-1.5 py-1 text-xs font-semibold leading-4 text-text-subtlest data-inset:pl-8",
+        "data-inset:pl-8",
         className,
       )}
       {...props}
@@ -292,7 +292,7 @@ function MenubarSeparator({
   return (
     <DropdownMenuSeparator
       data-slot="menubar-separator"
-      className={cn("bg-border mx-1 my-1 h-px", className)}
+      className={className}
       {...props}
     />
   );
@@ -372,10 +372,7 @@ function MenubarSubContent({
 	return (
 		<DropdownMenuSubContent
 			data-slot="menubar-sub-content"
-			className={cn(
-				"bg-popover text-popover-foreground min-w-32 rounded-xl p-1 shadow-xl origin-(--transform-origin) transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
-				className,
-			)}
+			className={className}
 			{...props}
 		/>
 	);

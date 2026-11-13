@@ -60,4 +60,4 @@ exec pnpm run dev
 - Health endpoint: `curl http://localhost:<backend-port>/api/health` — returns JSON with service status and auth config summary.
 - The `rovo` CLI (Rovo Serve) is not available in cloud VMs — use `pnpm run dev` instead. AI Gateway-backed routes still work when credentials and egress are available.
 - AI Gateway endpoints need outbound HTTPS to `ai-gateway.us-east-1.staging.atl-paas.net`; with restricted egress, gateway-backed features return errors gracefully.
-- `ASAP_PRIVATE_KEY` formatting: see the Gotchas section of `AGENTS.md` (the value already includes quotes and literal `\n` escapes).
+- `ASAP_PRIVATE_KEY` formatting: see `.agents/docs/dev-environment.md` (the value already includes quotes and literal `\n` escapes).

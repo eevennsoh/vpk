@@ -75,7 +75,6 @@ global provider tree.
 Common routes:
 
 - `/` -> `app/page.tsx`
-- `/agents` -> `app/agents/page.tsx` via `components/website/`
 - `/rovo` -> `app/rovo/[[...id]]/page.tsx` via `components/projects/rovo/`
 - `/sidebar-chat` -> `components/projects/sidebar-chat/`
 - `/confluence` -> `components/projects/confluence/`

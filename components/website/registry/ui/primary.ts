@@ -129,9 +129,6 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		{ ssr: false },
 	),
 	lozenge: dynamic(() => import("../../demos/ui/lozenge-demo"), { ssr: false }),
-	"menu-group": dynamic(() => import("../../demos/ui/menu-group-demo"), {
-		ssr: false,
-	}),
 	"page-header": dynamic(() => import("../../demos/ui/page-header-demo"), {
 		ssr: false,
 	}),

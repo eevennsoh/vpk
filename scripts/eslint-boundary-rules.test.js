@@ -141,6 +141,38 @@ export const tokenClasses = "transition-opacity duration-normal ease-out-practic
 	assert.match(findings[3].message, /duration token utility/u);
 });
 
+test("token-priority common mistakes are lint errors under their own rule ids", async () => {
+	const tokenRules = ["vpk-tokens/no-raw-white-black", "vpk-tokens/no-tailwind-heading-type", "vpk-tokens/no-arbitrary-tile-radius"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const surface = <div className="rounded-lg bg-white p-4" />;
+export const scrim = <div className={cn("absolute inset-0", "dark:bg-black")} />;
+export const heading = <h2 className="text-2xl font-semibold text-text">Title</h2>;
+export const tile = <span className={\`size-8 rounded-[25%] \${"bg-blue-400"}\`} />;
+export const glass = <div className="bg-white/10 bg-surface bg-bg-neutral-bold text-white" />;
+export const body = <p className="text-sm font-semibold text-text-subtle">Label</p>;
+export const tileToken = <span className="rounded-tile text-2xl" />;
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", tokenRules);
+	assert.deepEqual(
+		findings.map(({ line, ruleId, severity }) => [line, ruleId, severity]),
+		[
+			[3, "vpk-tokens/no-raw-white-black", 2],
+			[4, "vpk-tokens/no-raw-white-black", 2],
+			[5, "vpk-tokens/no-tailwind-heading-type", 2],
+			[6, "vpk-tokens/no-arbitrary-tile-radius", 2],
+		],
+	);
+	assert.match(findings[0].message, /bg-surface or bg-bg-neutral-bold/u);
+	assert.match(findings[2].message, /font\.heading/u);
+	assert.match(findings[3].message, /rounded-tile/u);
+	// Same scope as the other app rules: app, components, hooks and lib, not their node:test suites.
+	for (const filePath of ["app/demo/lint-contract-fixture.tsx", "hooks/lint-contract-fixture.ts", "lib/lint-contract-fixture.tsx"]) {
+		assert.equal((await ruleFindings('export const c = "bg-black";\n', filePath, tokenRules)).length, 1, filePath);
+	}
+	assert.deepEqual(await ruleFindings('export const c = "bg-black";\n', "components/demo/x.test.ts", tokenRules), []);
+});
+
 test("date formatting names a locale so SSR and hydration agree", async () => {
 	const findings = await syntaxFindings(`
 export const risky = new Intl.DateTimeFormat().format(0) + new Date(0).toLocaleDateString();
@@ -150,7 +182,7 @@ export const safe = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).fo
 	assert.ok(findings.every(({ line, message }) => line === 2 && /explicit locale/u.test(message)));
 });
 
-test("controls need a real capability and toasters need an id", async () => {
+test("prototype placeholder controls are allowed and toasters need an id", async () => {
 	const findings = await syntaxFindings(`
 import { Toaster } from "@/components/ui/sonner";
 declare function save(): void;
@@ -164,9 +196,8 @@ export const Controls = () => (
 	</>
 );
 `);
-	assert.deepEqual(findings.map(({ line }) => line), [6, 9]);
-	assert.match(findings[0].message, /no-op handler/u);
-	assert.match(findings[1].message, /unique id/u);
+	assert.deepEqual(findings.map(({ line }) => line), [9]);
+	assert.match(findings[0].message, /unique id/u);
 });
 
 test("app/api routes parse JSON through readJsonBody", async () => {
@@ -432,6 +463,34 @@ export const Fixture = () => <Button size="compact" className="${classes}" />;`,
 	assert.match(invalid.stdout, /shadcn\/no-restyle/u);
 	const valid = run("w-full");
 	assert.equal(valid.status, 0, valid.stderr);
+});
+
+test("the full lint command applies the pilot to the same paths with the same zero-warning budget", () => {
+	// ci:pr and CI run only `pnpm run lint`; lint:design-system stays as a fast scoped run.
+	const { scripts } = require("../package.json");
+	const [pilotCommand, ...pilotArgs] = scripts["lint:design-system"].split(/\s+/u);
+	const [lintCommand, ...lintArgs] = scripts.lint.split(/\s+/u);
+	assert.equal(pilotCommand, "eslint");
+	assert.equal(lintCommand, "eslint");
+	const options = (args) => args.filter((arg, index) => arg.startsWith("-") || /^\d+$/u.test(arg) && args[index - 1]?.startsWith("-"));
+	const targets = (args) => args.filter((arg) => !options(args).includes(arg));
+	assert.deepEqual(options(lintArgs), options(pilotArgs), "both commands use the same flags (--max-warnings 0)");
+	for (const pilotPath of targets(pilotArgs)) {
+		assert.ok(targets(lintArgs).some((target) => pilotPath === target || pilotPath.startsWith(`${target}/`)), `lint covers ${pilotPath}`);
+	}
+	assert.doesNotMatch(scripts["ci:pr"], /lint:design-system/u);
+	const eslintBin = path.join(path.dirname(require.resolve("eslint/package.json")), "bin/eslint.js");
+	const run = (classes) => spawnSync(process.execPath, [
+		eslintBin, ...options(lintArgs), "--stdin", "--stdin-filename", PILOT_FILE,
+	], {
+		input: `import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button size="compact" className="${classes}" />;`,
+		encoding: "utf8",
+	});
+	const invalid = run("px-2");
+	assert.equal(invalid.status, 1, invalid.stderr);
+	assert.match(invalid.stdout, /shadcn\/no-restyle/u);
+	assert.equal(run("w-full").status, 0);
 });
 
 test("the aligned class merger preserves semantic tokens and conditional class precedence", async () => {

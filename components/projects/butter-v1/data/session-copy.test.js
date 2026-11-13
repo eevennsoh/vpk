@@ -40,6 +40,19 @@ test("merchant session snapshot preserves the request and shows ongoing work", a
 	assert.match(merchantJourneyChatSnapshot({ ...activity, prompt: "@Claude" }).messages[0].parts[0].text, /merchant onboarding/u);
 });
 
+test("new work-item sessions show their instruction and ongoing work without replacing recorded sessions", async () => {
+	const { workItemChatSnapshot } = await loadData();
+	const session = { id: "VITA-1:new", agent: { name: "Claude" }, state: "running", message: "Ready to work on Redesign onboarding.", prompt: "Check keyboard navigation" };
+	const snapshot = workItemChatSnapshot(session, "Redesign onboarding");
+	assert.equal(snapshot.messages[0].parts[0].text, "Check keyboard navigation");
+	assert.match(snapshot.messages[1].parts[0].text, /Redesign onboarding/u);
+	assert.equal(snapshot.messages.at(-1).id, snapshot.thinkingMessageId);
+	assert.equal(snapshot.messages.at(-1).parts.at(-1).data.phase, "start");
+	assert.equal(workItemChatSnapshot({ ...session, state: "complete" }, "Redesign onboarding"), undefined);
+	assert.equal(workItemChatSnapshot({ ...session, message: "Existing session history" }, "Redesign onboarding"), undefined);
+	assert.equal(workItemChatSnapshot({ ...session, prompt: "@Claude" }, "Redesign onboarding").messages[0].role, "assistant");
+});
+
 test("seeded and arriving sessions use stable, work-specific titles", async () => {
 	const data = await loadData();
 	const sessions = [
@@ -81,12 +94,15 @@ test("board activities and detached sessions retain work titles and agent names"
 	}
 });
 
-test("PAY-123 includes Venn's session and two teammate sessions", async () => {
+test("board sessions show the requested ownership, status and menu defaults", async () => {
 	const data = await loadData();
-	const card = data.createButterPayBoardColumns().flatMap((column) => column.cards).find((item) => item.code === "PAY-123");
-	const sessions = card.agentActivities;
-	assert.deepEqual(sessions.filter((session) => session.role === "owner").map((session) => session.invokedBy.name), ["Venn"]);
-	assert.deepEqual(sessions.filter((session) => session.role === "viewer").map((session) => session.invokedBy.name).sort(), ["Jordan Okafor", "Maya Ferreira"]);
+	const cards = data.createButterPayBoardColumns().flatMap((column) => column.cards);
+	const card = (code) => cards.find((item) => item.code === code);
+	assert.equal(card("PAY-107").teammateSessionsPresentation, "count");
+	assert.deepEqual(card("PAY-107").agentActivities.map(({ role, state }) => [role, state]), [["viewer", "working"], ["viewer", "awaiting-input"]]);
+	assert.equal(card("PAY-123").teammateSessionsPresentation, "expanded");
+	assert.deepEqual(card("PAY-123").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["viewer", "awaiting-input", "Jordan Okafor"]]);
+	assert.deepEqual(card("PAY-130").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["owner", "awaiting-input", "Venn"]]);
 });
 
 test("additional work items include their existing subtasks", async () => {

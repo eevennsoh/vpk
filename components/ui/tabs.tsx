@@ -77,9 +77,13 @@ const tabsListVariants = cva(
 
 interface TabsListProps
 	extends TabsPrimitive.List.Props,
-		VariantProps<typeof tabsListVariants> {}
+		VariantProps<typeof tabsListVariants> {
+	animateIndicator?: boolean
+}
 
 function TabsList({
+	animateIndicator = false,
+	children,
 	className,
 	variant = "default",
 	size = "default",
@@ -91,9 +95,16 @@ function TabsList({
 			data-slot="tabs-list"
 			data-size={size}
 			data-variant={variant}
-			className={cn(tabsListVariants({ variant, size, fullWidth }), className)}
+			data-animated-indicator={animateIndicator && variant === "line" ? "" : undefined}
+			className={cn(tabsListVariants({ variant, size, fullWidth }), animateIndicator && variant === "line" ? "relative" : null, className)}
 			{...props}
-		/>
+		>
+			{children}
+			{animateIndicator && variant === "line" ? <TabsPrimitive.Indicator
+				data-slot="tabs-indicator"
+				className="pointer-events-none absolute bottom-0 left-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) bg-border-selected transition-[translate,width,height] duration-normal ease-out-practical group-data-vertical/tabs:inset-y-auto group-data-vertical/tabs:bottom-auto group-data-vertical/tabs:left-auto group-data-vertical/tabs:right-0 group-data-vertical/tabs:top-0 group-data-vertical/tabs:h-(--active-tab-height) group-data-vertical/tabs:w-0.5 group-data-vertical/tabs:translate-x-0 group-data-vertical/tabs:translate-y-(--active-tab-top)"
+			/> : null}
+		</TabsPrimitive.List>
 	)
 }
 
@@ -114,6 +125,7 @@ function TabsTrigger({ className, ...props }: Readonly<TabsTriggerProps>) {
 				// Selected indicator (underline for line variant)
 				"after:content-[''] after:pointer-events-none after:absolute after:opacity-0 after:transition-opacity group-data-vertical/tabs:after:inset-x-auto group-data-vertical/tabs:after:bottom-auto group-data-vertical/tabs:after:h-auto group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:right-0 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100 group-data-[variant=experimental]/tabs-list:data-active:after:opacity-100",
 				tabsLineIndicatorClass,
+				"group-data-animated-indicator/tabs-list:after:hidden",
 				"group-data-[variant=experimental]/tabs-list:after:bg-bg-neutral-bold",
 				className
 			)}

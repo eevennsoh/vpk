@@ -8,7 +8,7 @@ import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 export type JiraIssueChrome = "raised" | "stroke";
 /** Compact keeps 12px glyphs and 16px avatars. Comfortable uses 16px glyphs and 24px avatars. */
 export type JiraIssueIconScale = "compact" | "comfortable";
-export type JiraIssuePriority = "major" | "medium" | "minor" | "critical";
+export type JiraIssuePriority = "major" | "medium" | "minor" | "critical" | "trivial";
 export type JiraIssueAppearance = "default" | "project-butter";
 
 export interface JiraIssueSubtask {

@@ -174,6 +174,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardOnly = false,
 	collapsedColumns: controlledCollapsedColumns,
 	onCollapsedColumnsChange,
+	onBoardCreateActiveChange,
 	autoArrangeEnabled = true,
 	activeCardCode,
 	additionalAgentSessions,
@@ -319,6 +320,11 @@ function ExperimentalJiraKanbanPageContent({
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [boardContentUnderlapsSessionColumn, setBoardContentUnderlapsSessionColumn] = useState(false);
+	const [boardCreateActive, setBoardCreateActive] = useState(false);
+	const handleBoardCreateActiveChange = useCallback((active: boolean) => {
+		setBoardCreateActive(active);
+		onBoardCreateActiveChange?.(active);
+	}, [onBoardCreateActiveChange]);
 	const [localCollapsedColumns, setLocalCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const collapsedColumns = controlledCollapsedColumns ?? localCollapsedColumns;
 	const [focusedCollapsedColumns, setFocusedCollapsedColumns] = useState<CollapsedBoardColumns | null>(
@@ -847,7 +853,7 @@ function ExperimentalJiraKanbanPageContent({
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
-			{boardOnly ? null : <ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
+			{boardOnly ? null : <ExperimentalJiraKanbanBoardHeader muted={boardCreateActive} avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
 				avatarLimit={headerAvatarLimit}
@@ -928,6 +934,7 @@ function ExperimentalJiraKanbanPageContent({
 					>
 						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
 							<InFlowAgentSessionColumn
+								muted={boardCreateActive}
 								advancedTimeline={advancedAgentSessionTimeline}
 								resizable={agentSessionColumnResizable}
 								agentSessionColumn={{
@@ -958,6 +965,7 @@ function ExperimentalJiraKanbanPageContent({
 						</RetainedView>
 						<RetainedView active={!isListContent} retain={retainWorkItemViews}>
 							<ExperimentalJiraKanban addAgentLabel={addAgentLabel}
+								onCreateActiveChange={handleBoardCreateActiveChange}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
@@ -982,6 +990,8 @@ function ExperimentalJiraKanbanPageContent({
 								ariaLabel={ariaLabel}
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
+								createWorkItemColumns={boardColumns}
+								createWorkItemAssignees={assignees}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)

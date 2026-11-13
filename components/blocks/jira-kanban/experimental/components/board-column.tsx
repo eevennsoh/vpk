@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import AddIcon from "@atlaskit/icon/core/add";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Icon } from "@/components/ui/icon";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -42,6 +43,8 @@ function BoardColumnHeader({
 	issueMoveVisual,
 	onCollapse,
 	onCreateAgent,
+	onStartCreate,
+	creating,
 	onToggleAgent,
 	title,
 }: Readonly<{
@@ -58,6 +61,8 @@ function BoardColumnHeader({
 	issueMoveVisual: boolean;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
+	onStartCreate?: (trigger: HTMLElement) => void;
+	creating: boolean;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
 }>) {
@@ -78,11 +83,13 @@ function BoardColumnHeader({
 	return (
 		<div
 			data-slot="board-column-header"
+			inert={creating || undefined}
 			data-transitioning={isTransitioning || undefined}
 			data-issue-drop-hovered={dropHovered || undefined}
 			{...issueDrop.handlers}
 			className={cn(
 				"relative isolate flex min-w-0 items-center gap-2",
+				creating ? "opacity-20" : null,
 				!issueMoveVisual && isTransitioning ? "justify-center" : "justify-between",
 			)}
 			style={{ ...headerStyle, paddingBottom }}
@@ -162,6 +169,7 @@ function BoardColumnHeader({
 							onToggleAgent={onToggleAgent}
 						/>
 					) : null}
+					{onStartCreate ? <Button aria-label={`Create work item in ${title}`} className={cn(BOARD_COLUMN_ACTION_REVEAL, "group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100", "group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100")} onClick={(event) => onStartCreate(event.currentTarget)} size="icon-compact" type="button" variant="ghost"><Icon render={<AddIcon label="" size="small" />} /></Button> : null}
 					<Button
 						aria-disabled
 						aria-label={`${title} column actions`}
@@ -201,6 +209,10 @@ export function BoardColumn({
 	onCollapse,
 	onCreateAgent,
 	onCreateWorkItem,
+	onStartCreate,
+	creating = false,
+	createDraft,
+	hideScrollbar = false,
 	onToggleAgent,
 	sessionDragTransaction,
 	title,
@@ -226,6 +238,10 @@ export function BoardColumn({
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
+	onStartCreate?: (trigger: HTMLElement) => void;
+	creating?: boolean;
+	createDraft?: ReactNode;
+	hideScrollbar?: boolean;
 	onToggleAgent?: (agentId: string) => void;
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
@@ -274,12 +290,14 @@ export function BoardColumn({
 					agents={agents}
 					assignedAgentIds={assignedAgentIds}
 					count={count}
+					creating={creating}
 					dropFeedbackInset={chrome.footer.paddingInline}
 					headerStyle={chrome.header}
 					issueDrop={issueDrop}
 					issueMoveVisual={issueMoveVisual}
 					onCollapse={onCollapse}
 					onCreateAgent={onCreateAgent}
+					onStartCreate={onStartCreate}
 					onToggleAgent={onToggleAgent}
 					title={title}
 				/>
@@ -306,6 +324,9 @@ export function BoardColumn({
 						columnSizing={columnSizing}
 						count={count}
 						createdCardArrival={createdCardArrival}
+						creating={creating}
+						createDraft={createDraft}
+						hideScrollbar={hideScrollbar}
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}
 						isSessionDragging={sessionDragTransaction !== null}
@@ -314,7 +335,7 @@ export function BoardColumn({
 						{children}
 					</BoardColumnCardList>
 
-					<div style={chrome.footer}>{createAction}</div>
+					<div inert={creating || undefined} className={creating ? "opacity-20" : undefined} style={chrome.footer}>{createAction}</div>
 				</div>
 				<BoardIssueTransitionOverlay issueDrop={issueDrop} title={title} moveVisual={issueMoveVisual} />
 			</div>

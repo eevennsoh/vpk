@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import AddMenu from "./add-menu";
 import CustomizeMenu, { type CustomizeMenuProps } from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { composerStyles } from "../data/styles";
@@ -51,7 +53,7 @@ export default function ComposerActions({
 						>
 							<AddIcon label="" />
 						</PopoverTrigger>
-						<PopoverContent side="top" align="start" sideOffset={8} className="w-auto min-w-[200px] p-1">
+						<PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto min-w-[200px] gap-0")}>
 							<AddMenu onClose={() => setIsAddMenuOpen(false)} />
 						</PopoverContent>
 					</Popover> : null}
@@ -68,7 +70,7 @@ export default function ComposerActions({
 						>
 							<CustomizeIcon label="" />
 						</PopoverTrigger>
-						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className={customizeMenuProps.showReasoning === false ? "w-auto p-1" : "w-auto p-2"}>
+						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
 								<PopoverTitle className="sr-only">Customize response</PopoverTitle>
 								<CustomizeMenu {...customizeMenuProps} onClose={() => setIsCustomizeMenuOpen(false)} />
 							</PopoverContent> : null}

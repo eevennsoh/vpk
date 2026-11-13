@@ -41,11 +41,12 @@ test.describe("column scroll fades", () => {
 							const observer = new IntersectionObserver(([entry]) => { observer.disconnect(); resolve(entry.intersectionRect.width); });
 							observer.observe(node);
 						}));
-						expect(visibleWidth).toBeCloseTo(24, 1);
+						expect(visibleWidth).toBeCloseTo(20, 1);
 						const anchor = await list.locator("[data-insertion-line]").boundingBox();
 						const paint = await page.locator("[data-board-insertion-overlay]").boundingBox();
 						expect(paint).not.toBeNull();
 						expect(paint!.x).toBeCloseTo(anchor!.x, 1);
+						expect(paint!.height).toBeCloseTo(2, 1);
 						expect(paint!.y).toBeCloseTo(anchor!.y, 1);
 						expect(paint!.width).toBeCloseTo(anchor!.width, 1);
 						await page.mouse.move(900, 100);

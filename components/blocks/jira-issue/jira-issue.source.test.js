@@ -100,7 +100,7 @@ test("Jira issue label tags rest as default gray and reveal color on card hover"
 test("Jira issue compact visual keeps stroke internals when chrome is raised", () => {
 	assert.match(SOURCE, /compact\?: boolean;/u);
 	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome \|\| appearance === "project-butter";/u);
-	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? "p-3" : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
+	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? cn\("px-3 pt-3", butterCardBottomPadding\) : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
 	assert.match(SOURCE, /usesStrokeChrome=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /compact=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
@@ -479,9 +479,9 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
 	assert.match(SOURCE, /showPriorityIndicator\?: boolean;/);
 	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<span[\s\S]*aria-label=\{`\$\{priority\} priority`\}[\s\S]*buttonVariants\(\{ size: "icon-compact", variant: "ghost" \}\)/);
-	assert.match(SOURCE, /className="relative w-full px-3 pt-3 pb-3 text-left outline-none/);
+	assert.match(SOURCE, /className=\{cn\("relative w-full px-3 pt-3 text-left outline-none/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
-	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? "p-3" : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);
+	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? cn\("px-3 pt-3", butterCardBottomPadding\) : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);
 	assert.match(SUBTASKS_SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);
 	assert.match(SUBTASKS_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/);
 	assert.doesNotMatch(SOURCE, /parentEpicControl \? <JiraIssueSeparator \/> : null/);
