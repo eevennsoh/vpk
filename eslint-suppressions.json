@@ -198,11 +198,6 @@
       "count": 1
     }
   },
-  "components/arts/personal-graph/hooks/use-personal-graph-intro.ts": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/arts/personal-graph/hooks/use-personal-graph-summary.source.test.js": {
     "no-restricted-syntax": {
       "count": 19

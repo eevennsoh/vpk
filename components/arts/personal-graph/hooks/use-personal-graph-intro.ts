@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 
+import { useTimedTransition } from "@/components/hooks/use-timed-transition";
 import {
 	getPersonalGraphIntroPhaseAt,
-	PERSONAL_GRAPH_INTRO_TIMELINE,
+	PERSONAL_GRAPH_INTRO_TRANSITIONS,
 	type PersonalGraphIntroPhase,
 } from "./intro-phase";
 
@@ -14,34 +15,27 @@ interface UsePersonalGraphIntroResult {
 	isReducedMotion: boolean;
 }
 
-function scheduleIntroTimeline(onPhase: (phase: PersonalGraphIntroPhase) => void): () => void {
-	const timeouts = PERSONAL_GRAPH_INTRO_TIMELINE.flatMap((step) => {
-		if (step.at === 0) {
-			onPhase(step.phase);
-			return [];
-		}
-		return [setTimeout(() => onPhase(step.phase), step.at)];
-	});
-
-	return () => {
-		for (const timeout of timeouts) {
-			clearTimeout(timeout);
-		}
-	};
+interface PersonalGraphIntroState {
+	readonly phase: PersonalGraphIntroPhase;
+	readonly replayKey: number;
 }
 
 export function usePersonalGraphIntro(replayKey = 0): UsePersonalGraphIntroResult {
 	const prefersReducedMotion = useReducedMotion() ?? false;
-	const [phase, setPhase] = useState<PersonalGraphIntroPhase>("title");
+	const [intro, setIntro] = useState<PersonalGraphIntroState>({ phase: "title", replayKey });
+	let { phase } = intro;
 
-	useEffect(() => {
-		if (prefersReducedMotion) {
-			setPhase(getPersonalGraphIntroPhaseAt(0, prefersReducedMotion));
-			return;
-		}
+	// A replay starts the timeline over during render, so the stale phase never paints.
+	if (intro.replayKey !== replayKey) {
+		phase = getPersonalGraphIntroPhaseAt(0, prefersReducedMotion);
+		setIntro({ phase, replayKey });
+	}
 
-		return scheduleIntroTimeline(setPhase);
-	}, [prefersReducedMotion, replayKey]);
+	useTimedTransition(phase, PERSONAL_GRAPH_INTRO_TRANSITIONS, {
+		onAdvance: (next) => setIntro((current) => ({ ...current, phase: next })),
+		reducedMotion: prefersReducedMotion,
+		restartKey: replayKey,
+	});
 
 	return { phase, isReducedMotion: prefersReducedMotion };
 }
