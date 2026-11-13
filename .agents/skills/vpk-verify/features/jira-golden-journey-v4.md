@@ -19,16 +19,16 @@ Jira Golden Journey v4 lets a user inspect the Payments SDK v2 migration board i
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
-- Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journey-v4"` and create it before capture.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `pnpm control-vpk url`.
+- Set `EVIDENCE="$(pnpm control-vpk evidence-dir)/jira-golden-journey-v4"` and create it before capture.
 
-- **Open and identify.** Start directly with `control-vpk open-target /jira-golden-journey-v4 --headed` and wait for heading `Jira Design`. Confirm there is no chapter group and no `Reset` button. Region `Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.` is present.
+- **Open and identify.** Start directly with `pnpm control-vpk open-target /jira-golden-journey-v4 --headed` and wait for heading `Jira Design`. Confirm there is no chapter group and no `Reset` button. Region `Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.` is present.
 - **Prove Board markers.** Snapshot and confirm tab `Board` selected, region `Unlink sessions, N sessions`, card `PAY-101`, and a pull-request control whose name includes `#1839`.
-- **Prove List.** Run `control-vpk browser find role tab click --name List`. Region `Payments SDK v2 migration work items list` is present. Return with `control-vpk browser find role tab click --name Board`.
-- **Prove view chrome.** Run `control-vpk browser find role button click --name "Configure board view"` and confirm menuitem `Agent`. Press Escape until the menu closes before another tab click — a leftover menu covers Summary / Work items.
-- **Prove Summary.** Run `control-vpk browser find role tab click --name Summary`. Tab `Summary` is selected and tabpanel `Summary` is present. Return to `Work items`.
-- **Proof and accessibility.** Run `control-vpk browser set viewport 390 844` and `control-vpk browser set media light reduced-motion`. Run `control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/narrow.aria.txt"`, `control-vpk browser screenshot "$EVIDENCE/narrow.png"`, and `control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
-- **Cleanup.** Run `control-vpk cleanup`. There is no Reset control on this route. Evidence remains under the feature directory.
+- **Prove List.** Run `pnpm control-vpk browser find role tab click --name List`. Region `Payments SDK v2 migration work items list` is present. Return with `pnpm control-vpk browser find role tab click --name Board`.
+- **Prove view chrome.** Run `pnpm control-vpk browser find role button click --name "Configure board view"` and confirm menuitem `Agent`. Press Escape until the menu closes before another tab click — a leftover menu covers Summary / Work items.
+- **Prove Summary.** Run `pnpm control-vpk browser find role tab click --name Summary`. Tab `Summary` is selected and tabpanel `Summary` is present. Return to `Work items`.
+- **Proof and accessibility.** Run `pnpm control-vpk browser set viewport 390 844` and `pnpm control-vpk browser set media light reduced-motion`. Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/narrow.aria.txt"`, `pnpm control-vpk browser screenshot "$EVIDENCE/narrow.png"`, and `pnpm control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
+- **Cleanup.** Run `pnpm control-vpk cleanup`. There is no Reset control on this route. Evidence remains under the feature directory.
 
 ## Gotchas
 

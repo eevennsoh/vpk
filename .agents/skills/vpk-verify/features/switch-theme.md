@@ -16,13 +16,13 @@ Switch theme lets a user cycle the header control through light, dark, and syste
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree.
 - The catalog header is visible (`$ORIGIN/` or `$ORIGIN/ui`).
 - Evidence directory `output/agent-browser/vpk-verify/switch-theme/` exists.
 
-- **Read current.** Note the button name. Run `control-vpk browser snapshot -i --compact --depth 5` and keep the `Light theme` / `Dark theme` / `System theme` name. Run `control-vpk browser eval --stdin` with `document.documentElement.getAttribute("data-color-mode")`. Light theme corresponds to `light`; Dark theme to `dark`; System theme to whichever of `light` or `dark` the OS prefers.
-- **Cycle once.** Choose the theme button. Run `control-vpk browser find role button click --name "Light theme"` (or `Dark theme` / `System theme` as currently shown). The button name becomes the next value in the cycle light → dark → system → light, and `data-color-mode` matches the new actual mode.
-- **Proof.** Capture both modes you actually reached. Run `control-vpk browser screenshot output/agent-browser/vpk-verify/switch-theme/after-click.png` and write `data-color-mode` plus the button name to `output/agent-browser/vpk-verify/switch-theme/mode.txt`. The screenshot shows a visibly different surface (header/sidebar) and the VPK chrome.
+- **Read current.** Note the button name. Run `pnpm control-vpk browser snapshot -i --compact --depth 5` and keep the `Light theme` / `Dark theme` / `System theme` name. Run `pnpm control-vpk browser eval --stdin` with `document.documentElement.getAttribute("data-color-mode")`. Light theme corresponds to `light`; Dark theme to `dark`; System theme to whichever of `light` or `dark` the OS prefers.
+- **Cycle once.** Choose the theme button. Run `pnpm control-vpk browser find role button click --name "Light theme"` (or `Dark theme` / `System theme` as currently shown). The button name becomes the next value in the cycle light → dark → system → light, and `data-color-mode` matches the new actual mode.
+- **Proof.** Capture both modes you actually reached. Run `pnpm control-vpk browser screenshot output/agent-browser/vpk-verify/switch-theme/after-click.png` and write `data-color-mode` plus the button name to `output/agent-browser/vpk-verify/switch-theme/mode.txt`. The screenshot shows a visibly different surface (header/sidebar) and the VPK chrome.
 - **Restore.** Cycle the same theme button at most three times until the accessible name captured by **Read current** returns. Confirm `data-color-mode` again, then clean up. Do not write `localStorage`, theme attributes, classes, `colorScheme`, or ADS variables directly.
 
 ## Gotchas

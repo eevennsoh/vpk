@@ -19,15 +19,15 @@ Open Accordion documentation directly to inspect its hero and breadcrumb; separa
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree.
 - The direct object route `/components/ui/accordion` is mapped. Use `/ui` only for explicit catalog-title entry verification.
 - Evidence directory `output/agent-browser/vpk-verify/open-component-doc/` exists.
 
-- **Open directly.** Run `control-vpk open-target /components/ui/accordion`. `control-vpk browser get url` contains `/components/ui/accordion`.
-- **Catalog entry (only when requested).** Run `control-vpk browser open "$ORIGIN/ui"`; on `/ui`, choose Accordion by href. Run `control-vpk browser click "a[href='/components/ui/accordion']"`. `control-vpk browser get url` contains `/components/ui/accordion`.
-- **Confirm hero.** The page shows heading `Accordion`, navigation named `Breadcrumb` containing `Components`, `UI`, and `Accordion`, and heading `Import`. Run `control-vpk browser find role heading text --name Accordion` and `control-vpk browser find role heading text --name Import`.
-- **Breadcrumb back.** Choose the breadcrumb `Components` link by href, not by the bare name `Components`. Run `control-vpk browser click "nav[aria-label='Breadcrumb'] a[href='/']"`. `control-vpk browser get url` is `$ORIGIN/` (projects home), not `/ui` and not the Accordion doc.
-- **Proof.** Recapture the Accordion doc after reopening it if breadcrumb left the page. Run `control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/open-component-doc/accordion.aria.txt` and `control-vpk browser screenshot output/agent-browser/vpk-verify/open-component-doc/accordion.png`. Both artifacts show `Accordion` and `Import`.
+- **Open directly.** Run `pnpm control-vpk open-target /components/ui/accordion`. `pnpm control-vpk browser get url` contains `/components/ui/accordion`.
+- **Catalog entry (only when requested).** Run `pnpm control-vpk browser open "$ORIGIN/ui"`; on `/ui`, choose Accordion by href. Run `pnpm control-vpk browser click "a[href='/components/ui/accordion']"`. `pnpm control-vpk browser get url` contains `/components/ui/accordion`.
+- **Confirm hero.** The page shows heading `Accordion`, navigation named `Breadcrumb` containing `Components`, `UI`, and `Accordion`, and heading `Import`. Run `pnpm control-vpk browser find role heading text --name Accordion` and `pnpm control-vpk browser find role heading text --name Import`.
+- **Breadcrumb back.** Choose the breadcrumb `Components` link by href, not by the bare name `Components`. Run `pnpm control-vpk browser click "nav[aria-label='Breadcrumb'] a[href='/']"`. `pnpm control-vpk browser get url` is `$ORIGIN/` (projects home), not `/ui` and not the Accordion doc.
+- **Proof.** Recapture the Accordion doc after reopening it if breadcrumb left the page. Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/open-component-doc/accordion.aria.txt` and `pnpm control-vpk browser screenshot output/agent-browser/vpk-verify/open-component-doc/accordion.png`. Both artifacts show `Accordion` and `Import`.
 
 ## Gotchas
 

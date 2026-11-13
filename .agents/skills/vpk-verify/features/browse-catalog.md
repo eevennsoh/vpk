@@ -18,14 +18,14 @@ Browse the catalog lets a user see VPK project cards on home, switch category ta
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree.
-- `ORIGIN` is this worktree's URL from `control-vpk url`.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree.
+- `ORIGIN` is this worktree's URL from `pnpm control-vpk url`.
 - Evidence directory `output/agent-browser/vpk-verify/browse-catalog/` exists.
 
-- **Open home.** Open the origin. Run `control-vpk browser open "$ORIGIN/"`. Tab `#home-category-tab-projects` is selected (accessible name starts with `Projects`). At least one `a[href^='/components/projects/']` card title is present (first card follows `Sort: Last updated`, so the name is not stable). Link `VPK` is visible in the component browser.
-- **Switch to UI.** Choose the UI tab by id, not by the name `UI`. Run `control-vpk browser click "#home-category-tab-ui"`. `control-vpk browser get url` is `$ORIGIN/ui`, tab `#home-category-tab-ui` is selected, and `a[href='/components/ui/accordion']` named `Accordion` is present.
-- **Proof.** Capture the UI catalog while that tab is still selected. Run `control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/browse-catalog/ui.aria.txt` and `control-vpk browser screenshot output/agent-browser/vpk-verify/browse-catalog/ui.png`. The artifacts show sidebar `VPK`, selected tab `UI`, and card `Accordion`.
-- **Return via logo.** Choose the rail logo. Run `control-vpk browser click "a[aria-label='Go to projects']"`. `control-vpk browser get url` is `$ORIGIN/projects` and the Projects tab is selected again.
+- **Open home.** Open the origin. Run `pnpm control-vpk browser open "$ORIGIN/"`. Tab `#home-category-tab-projects` is selected (accessible name starts with `Projects`). At least one `a[href^='/components/projects/']` card title is present (first card follows `Sort: Last updated`, so the name is not stable). Link `VPK` is visible in the component browser.
+- **Switch to UI.** Choose the UI tab by id, not by the name `UI`. Run `pnpm control-vpk browser click "#home-category-tab-ui"`. `pnpm control-vpk browser get url` is `$ORIGIN/ui`, tab `#home-category-tab-ui` is selected, and `a[href='/components/ui/accordion']` named `Accordion` is present.
+- **Proof.** Capture the UI catalog while that tab is still selected. Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/browse-catalog/ui.aria.txt` and `pnpm control-vpk browser screenshot output/agent-browser/vpk-verify/browse-catalog/ui.png`. The artifacts show sidebar `VPK`, selected tab `UI`, and card `Accordion`.
+- **Return via logo.** Choose the rail logo. Run `pnpm control-vpk browser click "a[aria-label='Go to projects']"`. `pnpm control-vpk browser get url` is `$ORIGIN/projects` and the Projects tab is selected again.
 
 ## Gotchas
 
