@@ -44,12 +44,12 @@ function descendants(pid) {
 	return found;
 }
 
-// Waits for a condition, bounded; never a fixed sleep.
+// Waits for a condition, bounded, polling every 50 ms; never a fixed sleep.
 async function waitFor(condition, label) {
 	const deadline = Date.now() + WAIT_LIMIT_MS;
 	while (!condition()) {
 		if (Date.now() > deadline) throw new Error(`timed out waiting for ${label}`);
-		await new Promise((resolve) => setImmediate(resolve));
+		await new Promise((resolve) => setTimeout(resolve, 50));
 	}
 }
 
@@ -69,10 +69,9 @@ function skipReason() {
 
 const bin = agentBrowserBin();
 
-test("cleanup closes a browser whose owner session ended and leaves no daemon or Chrome process", {
-	skip: skipReason(),
-	timeout: 120_000,
-}, async (t) => {
+// Starts a browser through control-vpk, owned by a sleeper this test spawns, in a private namespace
+// and registry. Cleanup closes the session and kills anything left, by recorded pid.
+function startRecordedBrowser(t) {
 	// Short: the daemon socket path under the namespace must stay within 103 bytes.
 	const namespace = `vt-${randomUUID().slice(0, 6)}`;
 	const registry = mkdtempSync(join(tmpdir(), "control-vpk-registry-"));
@@ -86,44 +85,74 @@ test("cleanup closes a browser whose owner session ended and leaves no daemon or
 		VPK_BROWSER_REGISTRY_DIR: registry,
 	};
 	delete env.CODEX_THREAD_ID;
-	const browserPids = [];
-	let session = "";
+	const state = { browserPids: [], session: "" };
 	t.after(() => {
-		if (session) spawnSync(bin, ["--session", session, "close"], { env, stdio: "ignore", timeout: 15_000 });
-		for (const pid of browserPids) if (alive(pid)) process.kill(pid, "SIGKILL");
+		for (const pid of state.browserPids) if (alive(pid)) process.kill(pid, "SIGCONT");
+		if (state.session) spawnSync(bin, ["--session", state.session, "close"], { env, stdio: "ignore", timeout: 15_000 });
+		for (const pid of state.browserPids) if (alive(pid)) process.kill(pid, "SIGKILL");
 		if (owner.exitCode === null && owner.signalCode === null) owner.kill("SIGKILL");
 		rmSync(registry, { recursive: true, force: true });
 		rmSync(join(homedir(), ".agent-browser/namespaces", namespace), { recursive: true, force: true });
 	});
-	const controlVpk = (...args) => spawnSync(process.execPath, [CONTROL_VPK, ...args], { encoding: "utf8", env, timeout: 60_000 });
+	const controlVpk = (args, extraEnv = {}) => spawnSync(process.execPath, [CONTROL_VPK, ...args], { encoding: "utf8", env: { ...env, ...extraEnv }, timeout: 60_000 });
 
-	const opened = controlVpk("browser", "open", "data:text/html,%3Ctitle%3Ecleanup%20test%3C%2Ftitle%3E");
+	const opened = controlVpk(["browser", "open", "data:text/html,%3Ctitle%3Ecleanup%20test%3C%2Ftitle%3E"]);
 	assert.equal(opened.status, 0, opened.stderr);
-
 	const [entry] = listBrowserRecords({ dir: registry });
 	assert.ok(entry, "control-vpk recorded the browser it started");
-	session = entry.record.session;
+	state.session = entry.record.session;
 	assert.equal(entry.record.namespace, namespace);
 	assert.equal(entry.record.owner.pid, owner.pid);
 
-	const info = JSON.parse(spawnSync(bin, ["--session", session, "session", "info", "--json"], { encoding: "utf8", env }).stdout);
+	const info = JSON.parse(spawnSync(bin, ["--session", state.session, "session", "info", "--json"], { encoding: "utf8", env }).stdout);
 	const daemonPid = info.data.pid;
+	assert.equal(entry.record.daemon?.pid, daemonPid, "the record holds the daemon's pid");
 	assert.ok(alive(daemonPid), "the agent-browser daemon is running");
-	browserPids.push(daemonPid, ...descendants(daemonPid));
-	assert.ok(browserPids.length > 1, "Chrome runs under the daemon");
+	state.browserPids.push(daemonPid, ...descendants(daemonPid));
+	assert.ok(state.browserPids.length > 1, "Chrome runs under the daemon");
+	return {
+		controlVpk,
+		daemonPid,
+		endOwner: async () => {
+			owner.kill("SIGTERM");
+			await ownerExited;
+		},
+		registry,
+		state,
+	};
+}
 
-	const kept = controlVpk("cleanup", "--orphaned-browsers");
+test("cleanup closes a browser whose owner session ended and leaves no daemon or Chrome process", {
+	skip: skipReason(),
+	timeout: 120_000,
+}, async (t) => {
+	const browser = startRecordedBrowser(t);
+	const kept = browser.controlVpk(["cleanup", "--orphaned-browsers"]);
 	assert.equal(kept.status, 0, kept.stderr);
 	assert.match(kept.stdout, /kept browser .* is alive/u);
-	assert.ok(alive(daemonPid), "a browser with a live owner is left running");
+	assert.ok(alive(browser.daemonPid), "a browser with a live owner is left running");
 
-	owner.kill("SIGTERM");
-	await ownerExited;
-
-	const cleaned = controlVpk("cleanup", "--orphaned-browsers");
+	await browser.endOwner();
+	const cleaned = browser.controlVpk(["cleanup", "--orphaned-browsers"]);
 	assert.equal(cleaned.status, 0, cleaned.stderr);
 	assert.match(cleaned.stdout, /closed browser .* is gone/u);
-	await waitFor(() => browserPids.every((pid) => !alive(pid)), "the daemon and Chrome to exit");
-	assert.deepEqual(listBrowserRecords({ dir: registry }), []);
-	session = "";
+	await waitFor(() => browser.state.browserPids.every((pid) => !alive(pid)), "the daemon and Chrome to exit");
+	assert.deepEqual(listBrowserRecords({ dir: browser.registry }), []);
+	browser.state.session = "";
+});
+
+test("a hung daemon that does not answer its socket is ended by its recorded pid", {
+	skip: skipReason(),
+	timeout: 120_000,
+}, async (t) => {
+	const browser = startRecordedBrowser(t);
+	await browser.endOwner();
+	// SIGSTOP: the daemon still exists but answers nothing, as the incident's orphans did.
+	process.kill(browser.daemonPid, "SIGSTOP");
+	const cleaned = browser.controlVpk(["cleanup", "--orphaned-browsers"], { VPK_VERIFY_BROWSER_TIMEOUT_MS: "3000" });
+	assert.equal(cleaned.status, 0, cleaned.stderr);
+	assert.match(cleaned.stdout, new RegExp(`closed browser .* is gone.*ended daemon pid ${browser.daemonPid}`, "u"));
+	await waitFor(() => browser.state.browserPids.every((pid) => !alive(pid)), "the hung daemon and Chrome to exit");
+	assert.deepEqual(listBrowserRecords({ dir: browser.registry }), []);
+	browser.state.session = "";
 });

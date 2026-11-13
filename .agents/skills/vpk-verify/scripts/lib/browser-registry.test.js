@@ -13,7 +13,7 @@ const {
 	removeBrowserRecord,
 	resolveOwner,
 } = require("./browser-registry.js");
-const { closeBrowserSessionBestEffort, closeOrphanedBrowsers } = require("./browser.js");
+const { closeBrowserSessionBestEffort, closeOrphanedBrowsers, closeRecordedBrowser } = require("./browser.js");
 
 const HOUR = 3_600_000;
 const NOW = Date.UTC(2026, 10, 13, 12, 0, 0);
@@ -74,11 +74,12 @@ test("cleanup --browser keeps this chat's record when the close fails", () => {
 	const forgotten = [];
 	const forget = (session) => forgotten.push(session);
 	const resolveSession = () => "vpk-verify-mine";
-	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 1, stderr: "daemon did not answer", stdout: "" }) }), false);
-	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: null, error: Object.assign(new Error("spawnSync ETIMEDOUT"), { code: "ETIMEDOUT" }) }) }), false);
+	const findRecord = () => null;
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 1, stderr: "daemon did not answer", stdout: "" }) }), false);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: null, error: Object.assign(new Error("spawnSync ETIMEDOUT"), { code: "ETIMEDOUT" }) }) }), false);
 	assert.deepEqual(forgotten, []);
-	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 0, stdout: "✓ Browser closed" }) }), true);
-	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 1, stderr: "No browser session found" }) }), true);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 0, stdout: "✓ Browser closed" }) }), true);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 1, stderr: "No browser session found" }) }), true);
 	assert.deepEqual(forgotten, ["vpk-verify-mine", "vpk-verify-mine"]);
 });
 
@@ -131,7 +132,7 @@ test("orphan cleanup closes and forgets only what it should, and keeps a record 
 		classify,
 		close: (record) => {
 			closed.push(record.session);
-			return record.session !== "stuck";
+			return { closed: record.session !== "stuck" };
 		},
 		records: entries,
 		remove: (entry) => removed.push(entry.file),
@@ -145,7 +146,7 @@ test("orphan cleanup closes and forgets only what it should, and keeps a record 
 	]);
 
 	const dryClosed = [];
-	const dry = closeOrphanedBrowsers({ classify, close: (record) => dryClosed.push(record), dryRun: true, records: entries, remove: () => assert.fail("dry run removed a record") });
+	const dry = closeOrphanedBrowsers({ classify, close: (record) => ({ closed: dryClosed.push(record) > 0 }), dryRun: true, records: entries, remove: () => assert.fail("dry run removed a record") });
 	assert.deepEqual(dryClosed, []);
 	assert.match(dry[1], /^would close browser close/u);
 });
@@ -156,4 +157,72 @@ test("a record file that is not JSON is ignored", () => {
 		assert.deepEqual(listBrowserRecords({ dir }), []);
 		assert.equal(readFileSync(join(dir, "broken.json"), "utf8"), "{");
 	});
+});
+
+// A daemon recorded with its pid and start time; `table` maps pid -> process info as the fake ps sees it.
+function daemonCase({ closeResult, table, afterTerm = {} }) {
+	const record = { session: "vpk-verify-x", worktree: "/wt/x", daemon: { pid: 500, startedAt: "Fri Nov 13 13:00:00 2026", name: "agent-browser-darwin-arm64" } };
+	const processes = { ...table };
+	const signals = [];
+	const outcome = closeRecordedBrowser(record, {
+		children: (pid) => (pid === 500 ? [501] : pid === 501 ? [502] : []),
+		read: (pid) => processes[pid] ?? null,
+		runCommand: () => closeResult,
+		signal: (pid, name) => {
+			signals.push(`${name} ${pid}`);
+			if (name === "SIGCONT") Object.assign(processes, afterTerm);
+		},
+		wait: (condition) => condition(),
+	});
+	return { outcome, signals };
+}
+const LIVE = { 500: { ppid: 1, startedAt: "Fri Nov 13 13:00:00 2026", name: "agent-browser-darwin-arm64" } };
+
+test("a 'failed to connect' close with the daemon still alive is not taken as closed: it is ended by pid", () => {
+	const { outcome, signals } = daemonCase({
+		closeResult: { status: 1, stderr: "Failed to connect to daemon socket" },
+		table: LIVE,
+		afterTerm: { 500: undefined },
+	});
+	assert.deepEqual(signals, ["SIGTERM 500", "SIGTERM 501", "SIGTERM 502", "SIGCONT 500", "SIGCONT 501", "SIGCONT 502"]);
+	assert.equal(outcome.closed, true);
+	assert.match(outcome.detail, /ended daemon pid 500 and 2 descendant/u);
+});
+
+test("a daemon that survives SIGTERM keeps its record and is reported", () => {
+	const { outcome } = daemonCase({ closeResult: { status: 1, stderr: "Failed to connect" }, table: LIVE });
+	assert.equal(outcome.closed, false);
+	assert.match(outcome.detail, /daemon pid 500 still running after SIGTERM/u);
+	const line = closeOrphanedBrowsers({
+		classify: () => ({ action: "close", reason: "owner gone" }),
+		close: () => outcome,
+		records: [{ file: "/r/x.json", record: { session: "vpk-verify-x", worktree: "/wt/x" } }],
+		remove: () => assert.fail("a running daemon's record was removed"),
+	});
+	assert.match(line[0], /^FAILED to close browser vpk-verify-x .*daemon pid 500 still running/u);
+});
+
+test("a daemon pid that is gone, or reused by another process, counts as closed and is never signalled", () => {
+	const gone = daemonCase({ closeResult: { status: 0 }, table: {} });
+	assert.equal(gone.outcome.closed, true);
+	assert.deepEqual(gone.signals, []);
+	const reused = daemonCase({ closeResult: { status: 1, stderr: "Failed to connect" }, table: { 500: { ppid: 1, startedAt: "Fri Nov 13 13:20:00 2026", name: "zsh" } } });
+	assert.equal(reused.outcome.closed, true);
+	assert.deepEqual(reused.signals, []);
+});
+
+test("a recorded pid that is not an agent-browser process is never signalled", () => {
+	const { outcome, signals } = daemonCase({
+		closeResult: { status: 1, stderr: "timeout" },
+		table: { 500: { ppid: 1, startedAt: "Fri Nov 13 13:00:00 2026", name: "python3" } },
+	});
+	assert.equal(outcome.closed, false);
+	assert.deepEqual(signals, []);
+});
+
+test("a record without a daemon pid falls back to the close command's result", () => {
+	const record = { session: "vpk-verify-old", worktree: "/wt/x" };
+	assert.equal(closeRecordedBrowser(record, { runCommand: () => ({ status: 0 }) }).closed, true);
+	assert.equal(closeRecordedBrowser(record, { runCommand: () => ({ status: 1, stderr: "No browser session found" }) }).closed, true);
+	assert.equal(closeRecordedBrowser(record, { runCommand: () => ({ status: 1, stderr: "boom" }) }).closed, false);
 });

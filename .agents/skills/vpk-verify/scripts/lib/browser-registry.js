@@ -102,6 +102,7 @@ function noteBrowserUse(session, {
 	dir = registryDir(),
 	env = process.env,
 	now = Date.now(),
+	daemon,
 	owner,
 	started,
 	worktree = REPO_ROOT,
@@ -118,6 +119,8 @@ function noteBrowserUse(session, {
 		lastUsedAt: new Date(now).toISOString(),
 		startedAt: existing?.startedAt ?? new Date(now).toISOString(),
 		owner: started ? (owner === undefined ? resolveOwner({ env }) : owner) : existing.owner,
+		// The daemon serving the session, { pid, startedAt, name }; null when it could not be read.
+		daemon: started ? (daemon ?? existing?.daemon ?? null) : (existing.daemon ?? null),
 	};
 	fs.mkdirSync(dir, { recursive: true });
 	writeJsonAtomic(file, record);
@@ -135,6 +138,10 @@ function listBrowserRecords({ dir = registryDir() } = {}) {
 		.filter((name) => name.endsWith(".json"))
 		.map((name) => ({ file: path.join(dir, name), record: readRecord(path.join(dir, name)) }))
 		.filter((entry) => entry.record?.session);
+}
+
+function findBrowserRecord(session, { dir = registryDir(), namespace = process.env.AGENT_BROWSER_NAMESPACE || null } = {}) {
+	return readRecord(recordFile(dir, { namespace, session }));
 }
 
 function removeBrowserRecord(session, { dir = registryDir(), namespace = process.env.AGENT_BROWSER_NAMESPACE || null } = {}) {
@@ -161,6 +168,7 @@ module.exports = {
 	BROWSER_IDLE_HOURS,
 	OWNER_NAMES,
 	classifyBrowserRecord,
+	findBrowserRecord,
 	listBrowserRecords,
 	noteBrowserUse,
 	ownerState,
