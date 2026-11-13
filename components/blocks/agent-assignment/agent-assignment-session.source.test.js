@@ -291,7 +291,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/moreMenuOpenRef\.current[\s\S]*reason === "outside-press"[\s\S]*reason === "trigger-hover"/u,
 	);
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
-	assert.match(sessionMenu, /className="flex w-full flex-col gap-1 p-1 outline-none"/u);
+	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\.compact\)\}/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
 	assert.match(mapper, /const invokedBy = agent\.invokedBy;/u);
 	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);

@@ -12,13 +12,12 @@ import type {
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue/types";
-import { PullRequest, PullRequestInlineTitle, PullRequestStatusLozenge } from "@/components/blocks/pull-request/components/pull-request";
+import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
 import type { PullRequestStatus } from "@/components/blocks/pull-request/components/pull-request-types";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MenuBackButton } from "@/components/ui-custom/menu-back-button";
 import { cn } from "@/lib/utils";
 import { motionDuration } from "@/lib/motion";
 import { token } from "@/lib/tokens";
@@ -124,22 +123,14 @@ export function JiraIssuePullRequestCluster({
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const tooltipId = useId();
-	const listRef = useRef<HTMLUListElement>(null);
-	const returnFocusNumber = useRef<number | null>(null);
-	const preview = selected?.preview ?? pullRequestPreview;
-	const number = selected?.number ?? pullRequestNumber;
-	const status = selected?.status ?? pullRequestStatus;
+	const preview = pullRequestPreview;
+	const number = pullRequestNumber;
+	const status = pullRequestStatus;
 	const overlayTitle = preview?.title ?? pullRequestTitle;
 	const accessibleName = hasMultiple ? `Pull requests for ${issueKey}` : `${label} #${pullRequestNumber}: ${overlayTitle}`;
 	const tooltip = hasMultiple ? `${pullRequests?.length} pull requests` : `#${pullRequestNumber} ${pullRequestPreview?.title ?? pullRequestTitle}`;
 	const iconMetrics = resolveJiraIssueIconMetrics(iconScale);
 	const iconRef = useRef<HTMLSpanElement>(null);
-	useLayoutEffect(() => {
-		if (!selected && returnFocusNumber.current !== null) {
-			listRef.current?.querySelector<HTMLButtonElement>(`[data-pr-number="${returnFocusNumber.current}"]`)?.focus();
-			returnFocusNumber.current = null;
-		}
-	}, [selected]);
 	useLayoutEffect(() => {
 		const icon = iconRef.current;
 		if (!animateIcon || !icon) return;
@@ -164,7 +155,7 @@ export function JiraIssuePullRequestCluster({
 	}
 
 	return (
-		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); else { returnFocusNumber.current = null; setSelected(null); } }}>
+		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); else setSelected(null); }}>
 			<Tooltip open={tooltipOpen && !popoverOpen} onOpenChange={setTooltipOpen}>
 			<TooltipTrigger render={<PopoverTrigger
 				render={(
@@ -188,8 +179,8 @@ export function JiraIssuePullRequestCluster({
 			</Tooltip>
 			<PopoverContent
 				align="end"
-				aria-label={hasMultiple && !selected ? `Pull requests for ${issueKey}` : `Pull request #${number} details`}
-				className={cn("w-[320px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none", selected && "gap-0")}
+				aria-label={hasMultiple ? `Pull requests for ${issueKey}` : `Pull request #${number} details`}
+				className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"
 				initialFocus={false}
 				onClick={stopNestedActivation}
 				onPointerDown={stopNestedActivation}
@@ -198,27 +189,35 @@ export function JiraIssuePullRequestCluster({
 				sideOffset={8}
 				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
-				{hasMultiple && !selected ? (
-					<ul aria-label="Pull requests" className="p-1" ref={listRef}>
+				{hasMultiple ? (
+					<ul aria-label="Pull requests" className="divide-y divide-border-disabled py-1">
 						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item) => (
 							<li key={item.number}>
-								<Button className="flex h-auto w-full items-start justify-start gap-3 rounded-md px-2 py-2 text-left whitespace-normal" data-pr-number={item.number} onClick={() => setSelected(item)} variant="ghost">
-									<PullRequestInlineTitle className="flex-1 truncate whitespace-nowrap" number={item.number} title={item.preview.title} />
-									<PullRequestStatusLozenge status={toPullRequestCardStatus(item.status)} />
-								</Button>
+								<PullRequest
+									{...item.preview}
+									additions={item.preview.additions ?? 0}
+									checksExpandable={false}
+									className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none"
+									deletions={item.preview.deletions ?? 0}
+									href={undefined}
+									number={item.number}
+									onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)}
+									showDetails={selected?.number === item.number}
+									showFix={false}
+									status={toPullRequestCardStatus(item.status)}
+									variant="flyout"
+								/>
 							</li>
 						))}
 					</ul>
 				) : (
-					<>
-					{selected ? <MenuBackButton autoFocus className="h-9" iconSize="compact" onClick={() => { returnFocusNumber.current = selected.number; setSelected(null); }} /> : null}
 				<PullRequest
 					additions={preview?.additions ?? 0}
 					author={preview?.author}
 					branch={preview?.branch}
 					checks={preview?.checks}
 					checksExpandable={false}
-					className={cn("border-none bg-transparent shadow-none", selected && "pt-1")}
+					className="border-none bg-transparent shadow-none"
 					deletions={preview?.deletions ?? 0}
 					filesChanged={preview?.filesChanged}
 					href={preview?.href}
@@ -231,7 +230,6 @@ export function JiraIssuePullRequestCluster({
 					title={overlayTitle}
 					variant="flyout"
 				/>
-					</>
 				)}
 			</PopoverContent>
 		</Popover>

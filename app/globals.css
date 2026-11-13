@@ -614,6 +614,12 @@
 	white-space: nowrap;
 }
 
+@utility menu-row-spacing {
+	& :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [data-menu-row]) + :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [data-menu-row]) {
+		margin-block-start: var(--ds-space-025, 0.125rem);
+	}
+}
+
 /* Spotlight tour highlight: a soft brand glow drawn directly on an element the
    spotlight points at but does not wrap (see SpotlightTarget `anchor`). The
    box-shadow follows the element's own border-radius, so no layout/radius

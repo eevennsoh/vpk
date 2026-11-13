@@ -286,8 +286,8 @@ export default function ButterPage(): React.ReactElement {
 	const galleryControls = selectedId === "pull-request"
 		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged" || values[0] === "multiple") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
 			<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
-			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
+			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
 		: null;
 	return (
@@ -990,7 +990,6 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 					onAutoMergeChange: setAutoMergeEnabled,
 					onPullRequestOpen: (number) => { if (number === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number) onStartChecks(); },
 					onFixCheck: () => setPhase("fixing"),
-					onMergePullRequest: () => setPhase("merged"),
 				} : undefined}
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}

@@ -10,6 +10,8 @@ import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function AssignedAgentsSessionMenu({
 	onContinueInAgent,
@@ -105,13 +107,13 @@ export function AgentSessionsMenu({
 	);
 
 	return (
-		<div className="flex w-full flex-col gap-1 p-1 outline-none" ref={containerRef} tabIndex={-1}>
+		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding.compact)} ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}
 			{teammateItems.length ? (
 				<div>
-					{hasActionableSession ? <hr className="my-1 border-border" /> : null}
+					{hasActionableSession ? <hr className={cn(dropdownStyles.separator, "border-0")} /> : null}
 					{personalItems.length ? (
 						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>

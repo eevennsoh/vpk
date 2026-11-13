@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/icon";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const LOCAL_AGENT_IDS = ["claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli", "vscode"];
@@ -59,7 +60,7 @@ export function InlineLocalAgentPicker({ recentAgentId, onLocalUse, presentation
 		</>}
 		renderAgentAction={presentation === "submenu" ? (agent) => agent.id === "rovo-cli" ? <Popover>
 			<PopoverTrigger render={<Button aria-label="Configure Rovo CLI" className="size-6 shrink-0" size="icon" type="button" variant="ghost" />}><Icon aria-hidden render={<CustomizeIcon label="" size="small" />} /></PopoverTrigger>
-			<PopoverContent aria-label="Rovo CLI local options" role="dialog" side="right" align="start" alignOffset={-6} sideOffset={6} initialFocus={false} className="w-70 max-w-[calc(100vw-24px)] gap-0 p-1">
+			<PopoverContent aria-label="Rovo CLI local options" role="dialog" side="right" align="start" alignOffset={-6} sideOffset={6} initialFocus={false} className={cn("w-70 max-w-[calc(100vw-24px)] gap-0", dropdownStyles.surface, dropdownStyles.padding.compact)}>
 				<ProjectButterLocalAgentMenu directoryOnly />
 			</PopoverContent>
 		</Popover> : null : undefined}
