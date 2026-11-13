@@ -32,6 +32,20 @@ test("dictation presentation reducer keeps preview and lifecycle state coherent"
 	);
 });
 
+test("dictation presentation reducer preserves identity when nothing changes", () => {
+	const { reduceDictationPresentation } = loadSidebarChatState();
+	const idle = { isActive: false, transcriptPreview: null };
+	const listening = { isActive: true, transcriptPreview: null };
+	const previewing = { isActive: true, transcriptPreview: "hello" };
+
+	assert.equal(reduceDictationPresentation(idle, { type: "preview", transcript: null }), idle);
+	assert.equal(reduceDictationPresentation(previewing, { type: "preview", transcript: "hello" }), previewing);
+	assert.equal(reduceDictationPresentation(listening, { type: "start" }), listening);
+	assert.equal(reduceDictationPresentation(idle, { type: "stop" }), idle);
+	assert.notEqual(reduceDictationPresentation(previewing, { type: "start" }), previewing, "start clears a leftover preview");
+	assert.deepEqual(reduceDictationPresentation({ isActive: false, transcriptPreview: "stale" }, { type: "stop" }), idle, "stop clears a leftover preview");
+});
+
 test("screen-assistant reducer resets painting and region together", () => {
 	const { reduceScreenAssistantRegion } = loadSidebarChatState();
 	const region = { height: 40, width: 80, x: 12, y: 24 };
