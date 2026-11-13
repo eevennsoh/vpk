@@ -1,0 +1,4 @@
+/* Excalidraw's stylesheet, imported only by excalidraw-runtime.ts so it loads with the runtime.
+   Same file app/globals.css used to import for every route. The package exposes it only
+   through a development/production export condition, which some bundlers do not resolve. */
+@import "../../../../node_modules/@excalidraw/excalidraw/dist/prod/index.css";

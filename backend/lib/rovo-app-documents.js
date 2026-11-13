@@ -7,6 +7,7 @@ const {
 	getRovoAppThreadsRootDir,
 	normalizeThreadId,
 } = require("./rovo-app-storage-paths");
+const { isStorageId } = require("./input-schemas");
 const { getNonEmptyString } = require("./shared-utils");
 
 function createId(prefix) {
@@ -175,7 +176,7 @@ function createRovoAppDocumentManager({ baseDir }) {
 	const listThreadIds = async () => {
 		try {
 			const entries = await fs.readdir(threadsRootDir, { withFileTypes: true });
-			return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+			return entries.filter((entry) => entry.isDirectory() && isStorageId(entry.name)).map((entry) => entry.name);
 		} catch (error) {
 			if (error && error.code === "ENOENT") {
 				return [];

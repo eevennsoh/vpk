@@ -153,13 +153,13 @@ cleanup to `vpk-git-clean` from the main checkout.
 Verify synchronization:
 
 ```bash
-git rev-parse main origin/main
+pnpm run ship-status -- --branch <branch> --json   # status main-synced (or cleaned)
 git -C <main-checkout> status --short --branch   # its current branch must be unchanged
 ```
 
-The two revisions should match after a successful fast-forward. If they do not,
-report whether local `main` diverged or dirty files prevented the update. Do not
-reset, force, or discard the local state.
+`main-synced` proves the local `main` holds the landing commit. If it still
+reads `merged`, report whether local `main` diverged or dirty files prevented
+the update. Do not reset, force, or discard the local state.
 
 ## Batch merge-back
 

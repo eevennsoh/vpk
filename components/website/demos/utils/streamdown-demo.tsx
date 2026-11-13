@@ -6,7 +6,7 @@ import { renderLinkSafetyModal } from "@/components/ui-custom/link-safety-dialog
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
+import { math } from "@/components/ui-custom/streamdown-math";
 import { mermaid } from "@streamdown/mermaid";
 import type { ComponentProps, ReactElement } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

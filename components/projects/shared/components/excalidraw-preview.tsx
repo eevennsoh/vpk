@@ -25,7 +25,7 @@ export function ExcalidrawPreview({
 
 	useEffect(() => {
 		let cancelled = false;
-		import("@excalidraw/excalidraw")
+		import("@/components/projects/shared/components/excalidraw-runtime")
 			.then((m) => {
 				if (!cancelled) {
 					setMod({ Excalidraw: m.Excalidraw, restoreAppState: m.restoreAppState, restoreElements: m.restoreElements });

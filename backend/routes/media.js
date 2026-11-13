@@ -3,6 +3,7 @@
 const express = require("express");
 
 const { createAbortControllerFromRequest } = require("../lib/http-request-abort");
+const { parseOrReject, speechTranscriptionOptionsSchema } = require("../lib/input-schemas");
 const {
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
@@ -138,10 +139,22 @@ function createMediaRouter({
 		});
 
 		try {
-			const { audio, language, mimeType, model, provider } = req.body || {};
+			const { audio, language: rawLanguage, mimeType: rawMimeType, model: rawModel, provider: rawProvider } = req.body || {};
 			if (!audio || typeof audio !== "string") {
 				return res.status(400).json({ error: "Base64 audio data is required" });
 			}
+			// provider and model choose the process and model file whisper loads, and the
+			// model goes into the gateway URL; empty values mean "use the preset", as before.
+			const options = parseOrReject(res, speechTranscriptionOptionsSchema, {
+				language: rawLanguage || undefined,
+				mimeType: rawMimeType || undefined,
+				model: rawModel || undefined,
+				provider: rawProvider || undefined,
+			}, "body");
+			if (!options) {
+				return undefined;
+			}
+			const { language, mimeType, model, provider } = options;
 
 			console.info("[SPEECH-TRANSCRIPTION] Transcribing audio", {
 				language: language || null,

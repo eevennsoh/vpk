@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "../helpers/origin";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 test.use({ ignoreHTTPSErrors: true, viewport: { width: 1720, height: 1100 } });
 
@@ -75,6 +75,7 @@ for (const { contentMode, reducedMotion } of scenarios) {
 			await agent.click();
 			const { offsets, overlaps, traceSeen, glowOwners, incomingOpacities, visibleDelay, firstVisibleAt, firstGlowAt, positions, initialY, reflowDurations } = await observation;
 			await test.info().attach("movement-trajectory", { body: JSON.stringify({ positions, initialY, visibleDelay }), contentType: "application/json" });
+			mkdirSync("output/agent-browser/assignment-feedback", { recursive: true });
 			writeFileSync(`output/agent-browser/assignment-feedback/trajectory-${contentMode}-${issueKey}-${reducedMotion}.json`, JSON.stringify({ positions, initialY, visibleDelay }));
 			expect(offsets.length).toBeGreaterThan(2);
 			expect(Math.max(...offsets)).toBeLessThan(1);

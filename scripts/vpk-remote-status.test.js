@@ -67,6 +67,13 @@ const STATUS_CASES = [
 	["no commits", facts({ git: { ...GIT, ahead: 0 } }), "check git status in the worktree"],
 ];
 
+test("a PR merged into a branch other than main does not land the task (scripts/lib/branch-landing.js)", () => {
+	const intoRelease = facts({ reviews: [dir([exited(0, 200)], { verdict: "ship" })], pr: { number: 12, state: "MERGED", baseRefName: "release" }, git: { ...GIT, aheadOfMergedPr: 0 } });
+	assert.equal(deriveStatus(intoRelease).status, "ready to ship");
+	const intoMain = facts({ pr: { number: 12, state: "MERGED", baseRefName: "main" }, git: { ...GIT, aheadOfMergedPr: 0 } });
+	assert.equal(deriveStatus(intoMain).status, "merged");
+});
+
 for (const [status, input, nextAction] of STATUS_CASES) {
 	test(`deriveStatus: ${status}`, () => {
 		assert.deepEqual(deriveStatus(input), { status, nextAction });

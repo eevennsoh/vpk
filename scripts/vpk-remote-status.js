@@ -20,10 +20,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFile } = require("node:child_process");
 
+const { mergedPrLanding, pickPr } = require("./lib/branch-landing");
+
 const LANES = ["claude", "gpt"];
 const COMMAND_TIMEOUT_MS = 2000;
 // gh makes a network round trip (~1 s); the rest are local and take milliseconds.
 const GH_TIMEOUT_MS = 2500;
+const PRS_PER_BRANCH = 10;
 const EVENTS_TAIL_BYTES = 64 * 1024;
 
 // Statuses in display order; the first group is active work.
@@ -56,10 +59,11 @@ const VERDICTS = ["ship with nits", "request changes", "ship"];
 const APPROVALS = new Set(["ship", "ship with nits"]);
 
 function createRunner({ timeoutMs = COMMAND_TIMEOUT_MS, env = process.env } = {}) {
-	return function runCommand(command, args, { cwd, timeoutMs: callTimeoutMs = timeoutMs } = {}) {
+	return function runCommand(command, args, { cwd, timeoutMs: callTimeoutMs = timeoutMs, env: extraEnv = null } = {}) {
 		return new Promise((resolve) => {
-			execFile(command, args, { cwd, env, timeout: callTimeoutMs, maxBuffer: 16 * 1024 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
-				resolve({ ok: !error, stdout: stdout ?? "", stderr: stderr ?? "" });
+			execFile(command, args, { cwd, env: extraEnv ? { ...env, ...extraEnv } : env, timeout: callTimeoutMs, maxBuffer: 16 * 1024 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
+				// code: the exit status (0 on success), or null when the command never ran or timed out.
+				resolve({ ok: !error, code: error ? (Number.isInteger(error.code) ? error.code : null) : 0, stdout: stdout ?? "", stderr: stderr ?? "" });
 			});
 		});
 	};
@@ -72,7 +76,11 @@ function parseWorktreeList(text) {
 		const entry = {};
 		for (const line of block.split("\n")) {
 			if (line.startsWith("worktree ")) entry.path = line.slice("worktree ".length);
+			else if (line.startsWith("HEAD ")) entry.head = line.slice("HEAD ".length);
 			else if (line.startsWith("branch ")) entry.branch = line.slice("branch ".length).replace(/^refs\/heads\//u, "");
+			else if (line === "detached") entry.detached = true;
+			else if (line === "locked" || line.startsWith("locked ")) entry.locked = true;
+			else if (line === "prunable" || line.startsWith("prunable ")) entry.prunable = line.slice("prunable ".length).trim() || true;
 			else if (line === "bare") entry.bare = true;
 		}
 		return entry;
@@ -254,12 +262,6 @@ function renamedBranch(name, renames, localBranches) {
 	return null;
 }
 
-// The most recently created PR speaks for the branch, whatever its state: an older merged
-// PR must not hide newer work closed unmerged.
-function pickPr(prs) {
-	return [...prs].sort((a, b) => (Date.parse(b.createdAt ?? "") || 0) - (Date.parse(a.createdAt ?? "") || 0) || b.number - a.number)[0] ?? null;
-}
-
 // ── Status derivation (pure) ──────────────────────────────────────────────────
 
 // When a run finished, or when it started if it has not.
@@ -303,11 +305,13 @@ function deriveStatus(task) {
 	return { status, nextAction: nextActionFor(status, task.pr) };
 }
 
-// Work after a merged PR: a worker run that started after it merged, or local commits
-// the PR's head did not carry (git.aheadOfMergedPr, null when unobserved).
+// Work after a merged PR: a worker run that started after it merged, or a merge that does
+// not land the branch (scripts/lib/branch-landing.js: local commits the PR's head did not
+// carry, git.aheadOfMergedPr, or a base other than main). Unobserved (null) is not newer work.
 function mergeHasNewerWork(pr, workerRuns, git) {
 	const mergedAt = Date.parse(pr.mergedAt ?? "");
-	return workerRuns.some((run) => (run.startedAt ?? 0) > mergedAt) || git.aheadOfMergedPr > 0;
+	return workerRuns.some((run) => (run.startedAt ?? 0) > mergedAt) ||
+		mergedPrLanding(pr, { defaultBranch: "main", commitsPastHead: git.aheadOfMergedPr }).landed === false;
 }
 
 // A review's "## Blockers" block the worker's change, not the review: only worker
@@ -639,18 +643,26 @@ async function resolveMainCheckout(runCommand, cwd) {
 // One GraphQL round trip for every branch, matched on headRefName exactly. `gh pr list
 // --head` takes one branch per call, and listing every PR in the repo is slower than
 // this whole script's budget. Returns null when gh fails, so the PR reads "unknown".
-async function fetchPullRequests(runCommand, cwd, branches) {
+async function fetchPullRequests(runCommand, cwd, branches, { timeoutMs = GH_TIMEOUT_MS } = {}) {
 	if (branches.length === 0) return new Map();
 	const vars = branches.map((_, index) => `$b${index}:String!`).join(",");
-	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url createdAt mergedAt headRefOid}}`).join(" ");
+	// Newest first (the connection's default order is oldest first), with the total, so a
+	// branch with more PRs than this page is marked truncated rather than silently cut.
+	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:${PRS_PER_BRANCH},orderBy:{field:CREATED_AT,direction:DESC}){totalCount nodes{number state url createdAt mergedAt headRefOid baseRefName isDraft isCrossRepository mergeCommit{oid}}}`).join(" ");
 	const query = `query($owner:String!,$name:String!,${vars}){repository(owner:$owner,name:$name){${fields}}}`;
 	const args = ["api", "graphql", "-F", "owner={owner}", "-F", "name={repo}", "-f", `query=${query}`];
 	branches.forEach((branch, index) => args.push("-f", `b${index}=${branch}`));
-	const result = await runCommand("gh", args, { cwd, timeoutMs: GH_TIMEOUT_MS });
+	const result = await runCommand("gh", args, { cwd, timeoutMs });
 	if (!result.ok) return null;
 	try {
 		const repository = JSON.parse(result.stdout).data.repository;
-		return new Map(branches.map((branch, index) => [branch, repository[`b${index}`].nodes]));
+		return new Map(branches.map((branch, index) => {
+			const connection = repository[`b${index}`];
+			// A fork's PR with the same branch name is not this branch's PR.
+			const own = connection.nodes.filter((pr) => pr.isCrossRepository !== true);
+			Object.defineProperty(own, "truncated", { value: connection.totalCount > connection.nodes.length });
+			return [branch, own];
+		}));
 	} catch {
 		return null;
 	}
@@ -932,6 +944,7 @@ module.exports = {
 	conventionalBranchFor,
 	createRunner,
 	deriveStatus,
+	fetchPullRequests,
 	formatAge,
 	groupKeyFor,
 	main,

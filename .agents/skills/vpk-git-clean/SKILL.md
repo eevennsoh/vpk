@@ -15,8 +15,9 @@ the exact blockers for everything retained.
 Accept a PR number, branch, worktree path, or a broad landed-work scope. A bare
 `vpk-git-clean` requests a repository-wide cleanup, including eligible branches
 that are still checked out in removable worktrees. Execute the safe set without
-stopping at an inventory or approval gate. Inventory only when the user asks for
-an audit, dry run, or list of candidates.
+stopping at an inventory or approval gate; the one exception is a worktree with
+env files (step 2), which waits for the owner's answer. Inventory only when the
+user asks for an audit, dry run, or list of candidates.
 
 Run from the surviving persistent checkout and use the verified default-branch
 ref as the landing baseline. Do not switch another task's checkout merely to
@@ -28,21 +29,30 @@ work, or clean Symphony issue state managed by `vpk-symphony`.
 
 ## Hard invariants
 
-- Prove landing before deletion using ancestry, merged-PR evidence, or the
-  patch-equivalence fallback in [evidence.md](references/evidence.md). An
-  `upstream gone` marker proves only remote branch deletion. A merged PR proves
-  the candidate tip only when its recorded head SHA matches that tip.
+- Prove landing before deletion with `pnpm run clean-candidates -- --fetch --json`
+  (it removes nothing and writes no local branch, worktree, index or config;
+  with `--fetch` it updates remote-tracking refs; the header of
+  `scripts/clean-candidates.js` says exactly what it writes). Run it outside the
+  Claude sandbox: inside it `.env*` files cannot be read, so every worktree with
+  env files is retained (safe, but nothing is cleaned). "Proven landed" is defined once, in
+  `scripts/lib/branch-landing.js`; do not re-derive it by hand. Only a target
+  with status `main-synced` and no blockers is a candidate; `unknown` never is.
+  An `upstream gone` marker proves only remote branch deletion.
 - Any uncommitted or untracked file makes a worktree ineligible. Treat it as
   user work, regardless of whether the branch itself merged.
 - Never remove or switch the current/default worktree, an open-PR head, an
   ambiguous path, or a worktree with an unresolved interactive process owner.
 - Remove eligible worktrees with plain `git worktree remove`, then delete their
-  source branches. Use `git branch -d` for ancestor heads. For a non-ancestor
-  head, `git branch -D` is allowed only when the local tip exactly matches the
-  head SHA of a merged PR into the default branch, no open PR owns its name or
-  SHA, and no worktree owns the branch. Record the SHA and PR before deletion;
-  a branch-name match or patch-equivalence alone does not authorize `-D`.
-  Never force-remove a worktree or detach one to clear a dirty branch.
+  source branches. A branch may be deleted only when its report says
+  `proof: "ancestry"`, or `proof: "merged-pr"` with `exactHead: true` (the
+  local tip is the head SHA of a merged PR into the default branch), no open PR
+  owns its name or SHA, and no worktree owns the branch. A target proven only
+  by `proof: "content"` needs the owner's go-ahead before any branch deletion.
+  Delete with the report's head as the expected value (step 6), so a commit
+  added since the report is never deleted; record the SHA and PR first. A
+  branch-name match or `git branch -d` alone is no proof (with an upstream set,
+  `-d` deletes a branch merged only into its upstream). Never force-remove a
+  worktree or detach one to clear a dirty branch.
 - Stop only exact-path repository dev processes after the Git and PR checks
   pass. Preserve interactive shells, editors, other agents, and any process
   whose ownership or purpose remains unclear. Never use global
@@ -57,6 +67,7 @@ merged source branch and local worktree/refs. Close an unmerged PR with
 ## Inventory
 
 ```bash
+pnpm run clean-candidates -- --fetch --json
 git status --short --branch
 git branch -vv
 git worktree list --porcelain
@@ -69,6 +80,14 @@ gh pr list --state open --limit 1000 \
 gh api repos/:owner/:repo \
   --jq '{full_name,delete_branch_on_merge,default_branch,private}'
 ```
+
+The same report lists stale worktrees (`stale`: no branch activity and no
+process for `--stale-days`, default 7, each with why it is or is not safe; a
+process check that could not run is never safe) and every `index.lock` with its
+holders (`indexLocks`). It removes nothing except, with
+`--remove-stale-locks`, an `index.lock` no process holds that is older than
+`--lock-min-age-minutes` (default 30), never in the persistent main checkout.
+A stale worktree is still removed only through the workflow below.
 
 Treat `git worktree list --porcelain` and local Git refs as authoritative, even
 when a Git UI shows stale counts after a failed fetch. Query merged PRs for
@@ -85,10 +104,25 @@ exists, retry read-only GitHub commands with
    owning worktree. Classify `upstream gone` separately from landed work.
 2. First delete landed, unused branches; for a landed branch still checked out
    in a worktree, evaluate and remove that worktree before deleting the branch.
-   Prove clean porcelain status, non-current/non-default ownership, committed
-   landing, no open PR by branch or head SHA, registration, and process state.
-   Follow [evidence.md](references/evidence.md). A checked-out marker alone is
-   not a reason to leave a clean, unused, landed worktree behind.
+   Use only targets with `cleanable: true`. The report checks committed
+   landing, tracked/untracked/skip-worktree/assume-unchanged changes, ignored
+   content outside its regenerable list, half-done operations, reflog-only
+   commits, the remote branch tip, every PR on the branch (by name; forks
+   excluded), and current/default/locked/shared worktrees (the full list is in
+   the header of `scripts/clean-candidates.js`). It does not check processes or
+   open PRs by head SHA: prove those as in [evidence.md](references/evidence.md).
+   A detached worktree is a target of its own: it is cleanable only by
+   ancestry or content (it has no PR) and only with no reflog-only commits.
+   A worktree whose entry lists `ignoredEnvFiles` is removed only after the
+   owner has answered for that list in this conversation: removal deletes those
+   files, so show the list and do not open them. Without an answer it stays,
+   reported as waiting on the owner.
+   Prune stale remote-tracking refs (`git fetch --prune origin`) only before
+   running the report, and run it again after any prune; the report counts a
+   remote-tracking ref as keeping a commit only after a successful `--fetch`
+   and only while its branch still exists on origin.
+   A checked-out marker alone is not a reason to leave a clean, unused,
+   landed worktree behind.
 3. For an eligible worktree with an exact-path dev stack, stop that stack before
    removal. From the surviving checkout, prefer the tested
    cwd-scoped helper:
@@ -104,23 +138,46 @@ exists, retry read-only GitHub commands with
    `.dev-backend-port`, `.dev-rovo-port`, and `.dev-rovo-ports` before removal.
    Stop a listener only after `lsof -a -d cwd -p <pid> -Fn` reports the exact
    candidate path. Send TERM, recheck, then KILL only the same surviving PID.
-5. Recheck status, HEAD, PR ownership, and exact-path process state immediately
-   before removal. Remove a registered, clean, landed, process-safe worktree
-   with plain `git worktree remove <path>`. Inside herdr (`HERDR_ENV=1`), first
+5. Immediately before removal, run the report again and require the target to
+   be still `cleanable: true` with the same `head` and `ignoredEnvFiles`; the
+   report applies the ignored-files rule, which plain `git status` does not (it
+   never shows ignored files created since). Then recheck PR ownership and
+   exact-path process state. Remove a registered, clean, landed, process-safe
+   worktree with plain `git worktree remove <path>`. Inside herdr (`HERDR_ENV=1`), first
    read `open_workspace_id` for that path from `herdr worktree list --cwd <repo>`
    and close it with `herdr workspace close <id>` (never `--group`); skip if the
-   workspace hosts a live agent and report it instead. Use `git worktree prune --verbose`
-   only when the directory is already gone and registered admin metadata is stale.
-6. Recheck that no worktree uses the branch, then delete the local ref with
-   `git branch -d <branch>` or the narrow merged-PR `-D` exception above. If
-   `-d` refuses only because the invoking checkout trails the verified default
-   commit, retry from an existing checkout at that commit or a temporary
-   detached cleanup worktree there; do not switch an active checkout or use
-   `-D` to bypass that refusal. Remove a temporary checkout afterward. If
-   proof changes or Git still refuses, retain the branch and report why.
-7. Delete a merged remote source branch only when no open PR uses its name or
-   head commit. After remote deletion, prove `git ls-remote --heads` is empty
-   before removing a stale local tracking ref with `git update-ref -d`.
+   workspace hosts a live agent and report it instead. A registered worktree
+   whose directory is gone is in the report's `missingWorktrees`: remove that
+   entry alone with `git worktree remove <path>`, and only when it says
+   `removeSafe: true` and it is not locked. Never run `git worktree prune`,
+   which drops every stale entry at once, with the only reference to a
+   detached worktree's commits. For `removeSafe: false` or `null`, list the
+   entry for the owner with its `rescue` commands
+   (`git branch rescue/<name> <sha>`) and leave it.
+6. Recheck that no worktree uses the branch (`git worktree list --porcelain`),
+   then delete the local ref with the head the report saw as its expected
+   value; it fails instead of deleting a commit added since the report:
+
+   ```bash
+   git update-ref -d refs/heads/<branch> <evidence.head>
+   ```
+
+   If it fails, or the proof changed, retain the branch, rerun the report, and
+   report why.
+7. Delete a merged remote source branch only when the report, run with
+   `--fetch`, says `"fetch": "ok"` and `remoteSafeToDelete: true` for it
+   (`origin/<branch>` has nothing the landed local branch lacks), and no open PR
+   uses its name or head commit. Delete it with a lease on the tip the report
+   saw, so a push made since the report is not deleted:
+
+   ```bash
+   git push --force-with-lease=refs/heads/<branch>:<evidence.remoteTip> origin :refs/heads/<branch>
+   ```
+
+   A `stale info` rejection means someone pushed after the report: keep the
+   branch and rerun the report. After remote deletion, prove
+   `git ls-remote --heads` is empty before removing a stale local tracking ref
+   with `git update-ref -d`.
 
 Portless routes left by a removed stack may be removed one alias at a time with
 `portless alias --remove <name>`. Global pruning can kill a different worktree

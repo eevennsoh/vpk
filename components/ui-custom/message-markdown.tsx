@@ -14,7 +14,7 @@ import type { ExtraProps, LinkSafetyConfig } from "streamdown";
 import { Streamdown, StreamdownContext } from "streamdown";
 import { cjk } from "@streamdown/cjk";
 import { code as baseCodePlugin } from "@streamdown/code";
-import { math } from "@streamdown/math";
+import { math } from "@/components/ui-custom/streamdown-math";
 import { mermaid } from "@streamdown/mermaid";
 
 import {

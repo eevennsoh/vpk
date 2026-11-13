@@ -252,13 +252,17 @@ for (const width of [1720, 1440]) {
 			await expect(create).toHaveCSS("border-top-style", "dashed");
 			await expect(create).toHaveCSS("background-color", restingBackground);
 			// Reach the header action with Tab while the pointer stays outside the column.
+			// 8661caeab moved Collapse ahead of Add agent in the header.
 			await addAgent.focus();
-			await page.keyboard.press("Tab");
+			await page.keyboard.press("Shift+Tab");
 			await expect(collapse).toBeFocused();
 			await expect(collapse).toHaveCSS("opacity", "1");
 			await create.focus();
 			await page.keyboard.press("Enter");
-			await expect(page.getByRole("dialog", { name: "Create in Done", exact: true })).toBeVisible();
+			// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+			// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+			// No commit chose this name; the owner is to confirm it.
+			await expect(page.getByRole("dialog", { name: "Create work item in Done", exact: true })).toBeVisible();
 			await page.keyboard.press("Escape");
 			await expect(create).toBeFocused();
 		});
@@ -291,7 +295,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(create).toHaveCSS("background-color", restingBackground);
 		await create.focus();
 		await page.keyboard.press("Enter");
-		await expect(page.getByRole("dialog", { name: "Create in Confidence", exact: true })).toBeVisible();
+		// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+		// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+		// No commit chose this name; the owner is to confirm it.
+		await expect(page.getByRole("dialog", { name: "Create work item in Confidence", exact: true })).toBeVisible();
 		await page.keyboard.press("Escape");
 		await expect(create).toBeFocused();
 	});
