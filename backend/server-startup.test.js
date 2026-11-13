@@ -128,3 +128,16 @@ test("logBackendServerReady validates required dependencies", async () => {
 		/refreshRovoAvailability/u,
 	);
 });
+
+test("logBackendServerReady prints the realtime URL without userinfo or query", async () => {
+	const madeUpSecret = "madeUpRealtimeSecret0123456789";
+	const wsUrl = `wss://svc:${madeUpSecret}@realtime.example/v1/realtime${"?"}api-key=${madeUpSecret}`;
+	const dependencies = createBaseDependencies({
+		env: { ASAP_PRIVATE_KEY: "private-key" },
+		getRealtimeConfig: () => ({ apiKey: "", model: "gpt-realtime", voice: "verse", wsUrl }),
+	});
+	await logBackendServerReady(dependencies);
+	const text = flattenedLogText(dependencies.logs);
+	assert.match(text, /OPENAI_REALTIME_WS_URL: wss:\/\/realtime\.example\/v1\/realtime\?\[REDACTED\]/u);
+	assert.equal(text.includes(madeUpSecret), false);
+});

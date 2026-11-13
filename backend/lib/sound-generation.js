@@ -6,6 +6,7 @@ const {
 	resolveGatewayUrl,
 } = require("./ai-gateway-helpers");
 const { getNonEmptyString } = require("./shared-utils");
+const { redactLogText } = require("./log-redaction");
 
 const MAX_INPUT_LENGTH = 4096;
 
@@ -217,7 +218,7 @@ async function synthesizeSound({
 		const errorText = await gatewayResponse.text();
 		throw createHttpError(
 			gatewayResponse.status,
-			parseGatewayErrorMessage(errorText)
+			redactLogText(parseGatewayErrorMessage(errorText))
 		);
 	}
 
