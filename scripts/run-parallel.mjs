@@ -5,10 +5,13 @@
 // command is skipped because another failed. `pnpm run ci:pr` uses it so the gate takes
 // as long as its slowest stage, not the sum of them.
 
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { killChildren, runShell } from "./check.mjs";
+import { killChildren, runShell, serializeUnderPressure } from "./check.mjs";
+
+const { acquireHeavyRunLock } = createRequire(import.meta.url)("./lib/heavy-run-lock.js");
 
 export async function runParallel(commands, { run = runShell, write = (text) => process.stdout.write(text) } = {}) {
 	if (commands.length === 0) throw new Error("Usage: run-parallel.mjs '<command>' ['<command>' ...]");
@@ -36,7 +39,19 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 			process.exit(130);
 		});
 	}
-	runParallel(process.argv.slice(2).filter((argument) => argument !== "--")).then(
+	const commands = process.argv.slice(2).filter((argument) => argument !== "--");
+	(async () => {
+		// The gate is a heavy run: take the machine-wide turn (a no-op in CI) and, under memory
+		// pressure, run the commands one at a time.
+		const serial = serializeUnderPressure({ name: "run-parallel" });
+		if (serial) process.stderr.write(`${serial}\n`);
+		const lock = await acquireHeavyRunLock({ label: `run-parallel (${commands.length} commands)` });
+		try {
+			return await runParallel(commands);
+		} finally {
+			lock.release();
+		}
+	})().then(
 		({ status }) => { process.exitCode = status; },
 		(error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 2; },
 	);

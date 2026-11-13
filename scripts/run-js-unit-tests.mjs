@@ -32,9 +32,16 @@ const VM_MODULE_TEST_MARKERS = [
 const BATCH_TIMINGS = JSON.parse(readFileSync(new URL("./js-unit-test-timings.json", import.meta.url), "utf8")).batches;
 export const UNIT_SHARD_COUNT = 4;
 
-const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses } = createRequire(import.meta.url)("./lib/test-process.js");
+const requireCjs = createRequire(import.meta.url);
+const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses } = requireCjs("./lib/test-process.js");
 // How long a batch's leftover processes get to finish exiting before they count as leaked.
 const LEAK_GRACE_MS = 2_000;
+const { acquireHeavyRunLock } = requireCjs("./lib/heavy-run-lock.js");
+const { pressureReasons, readMemoryState } = requireCjs("./lib/memory-pressure.js");
+// `--parallel auto`: at most this many workers, and one per this many GB of available memory
+// (a worker's batch runs node --test over a directory; 2 GB covers the largest measured).
+const AUTO_PARALLEL_CAP = 8;
+const AUTO_PARALLEL_GB_PER_WORKER = 2;
 
 const LEGACY_DRIFT_TEST_FILE_SET = new Set(LEGACY_DRIFT_TEST_FILES);
 const SKIPPED_TEST_FILE_SET = new Set(Object.keys(SKIPPED_TEST_FILES));
@@ -144,7 +151,7 @@ export function parseTestSelectionArgs(argv) {
 		if (arg === "--parallel" || arg.startsWith("--parallel=")) {
 			const value = arg === "--parallel" ? argv[++index] : arg.slice("--parallel=".length);
 			if (parallel !== undefined || !value) throw new Error("--parallel requires a single value: a positive integer or auto");
-			parallel = resolveParallel(value);
+			parallel = value === "auto" ? "auto" : resolveParallel(value);
 			continue;
 		}
 		// Run every batch even after one fails, so a caller sees all failing suites at once.
@@ -569,8 +576,21 @@ export function testConcurrencyFor(parallel, cpus = availableParallelism()) {
 	return Math.max(1, Math.floor(cpus / parallel));
 }
 
-export function resolveParallel(value, cpus = availableParallelism()) {
-	if (value === "auto") return Math.max(1, Math.min(8, Math.floor(cpus / 2)));
+// `--parallel auto` from cores, available memory and memory pressure: half the cores, at most
+// one worker per AUTO_PARALLEL_GB_PER_WORKER of available memory, capped; one worker (serial)
+// under memory pressure. `note` says why when memory decided.
+export function autoParallel({ cpus = availableParallelism(), memory = readMemoryState() } = {}) {
+	const pressure = pressureReasons(memory);
+	if (pressure.length > 0) return { parallel: 1, note: `js-unit-tests: memory pressure (${pressure.join("; ")}): running batches one at a time` };
+	const byCpu = Math.max(1, Math.min(AUTO_PARALLEL_CAP, Math.floor(cpus / 2)));
+	if (memory.availableGb === null || memory.availableGb === undefined) return { parallel: byCpu, note: null };
+	const byMemory = Math.max(1, Math.floor(memory.availableGb / AUTO_PARALLEL_GB_PER_WORKER));
+	if (byMemory >= byCpu) return { parallel: byCpu, note: null };
+	return { parallel: byMemory, note: `js-unit-tests: --parallel auto: ${byMemory} worker(s) for ${memory.availableGb.toFixed(1)} GB available memory (${AUTO_PARALLEL_GB_PER_WORKER} GB per worker)` };
+}
+
+export function resolveParallel(value, cpus = availableParallelism(), memory = undefined) {
+	if (value === "auto") return autoParallel({ cpus, memory }).parallel;
 	const parsed = Number(value);
 	if (!Number.isInteger(parsed) || parsed < 1) throw new Error("--parallel requires a positive integer or auto");
 	return parsed;
@@ -681,9 +701,21 @@ async function main() {
 	}
 
 	const options = { keepGoing: selection.keepGoing, shard: selection.shard };
-	process.exitCode = selection.parallel
-		? (await runTestFilesParallel(testFiles, { ...options, parallel: selection.parallel })).status
-		: runTestFiles(testFiles, options).status;
+	let parallel = selection.parallel;
+	if (parallel === "auto") {
+		const auto = autoParallel();
+		if (auto.note) console.log(auto.note);
+		parallel = auto.parallel;
+	}
+	// Machine-wide turn for the heavy stage; a no-op in CI and inside check / ci:pr's own turn.
+	const lock = await acquireHeavyRunLock({ label: "unit tests" });
+	try {
+		process.exitCode = parallel
+			? (await runTestFilesParallel(testFiles, { ...options, parallel })).status
+			: runTestFiles(testFiles, options).status;
+	} finally {
+		lock.release();
+	}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
