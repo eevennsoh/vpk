@@ -4,6 +4,7 @@ import type { ComponentType } from "react";
 import { BLOCK_VARIANT_DEMO_ENTRIES } from "./blocks-variants";
 
 export const BLOCK_DEMOS: Record<string, ComponentType> = {
+	"rovo-button": dynamic(() => import("../demos/blocks/rovo-button-demo"), { ssr: false }),
 	agent: dynamic(() => import("../demos/blocks/agent-demo"), { ssr: false }),
 	"skill-config": dynamic(() => import("../demos/blocks/skill-config-demo"), {
 		ssr: false,

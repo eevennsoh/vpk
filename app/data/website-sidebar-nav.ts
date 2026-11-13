@@ -1,7 +1,6 @@
 import type { NavItem, NavSection } from "@/components/website/website-sidebar-nav";
 import { ART_COMPONENTS, UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS } from "@/app/data/component-manifest";
 import { buildNavItems, UI_GROUPS, BLOCK_GROUPS, VISUAL_GROUPS } from "@/app/data/nav-utils";
-import { resolveCustomAdsPackage, resolveBlockAdsPackage, resolveUiAdsPackage, resolveUiAdsTagVariant } from "@/app/data/nav-ads";
 
 export const WEBSITE_STATIC_PAGES: NavItem[] = [];
 
@@ -28,7 +27,7 @@ export const WEBSITE_NAV_SECTIONS: NavSection[] = [
 		title: "UI",
 		href: "/ui",
 		defaultOpen: false,
-		items: buildNavItems(UI_COMPONENTS, "/components/ui/", UI_GROUPS, resolveUiAdsPackage, resolveUiAdsTagVariant),
+		items: buildNavItems(UI_COMPONENTS, "/components/ui/", UI_GROUPS),
 	},
 	{
 		title: "UI — Charts",
@@ -46,14 +45,13 @@ export const WEBSITE_NAV_SECTIONS: NavSection[] = [
 		items: CUSTOM_COMPONENTS.map((component) => ({
 			name: component.name,
 			href: `/components/ui-custom/${component.slug}`,
-			adsPackage: resolveCustomAdsPackage(component.slug),
 		})),
 	},
 	{
 		title: "Blocks",
 		href: "/blocks",
 		defaultOpen: false,
-		items: buildNavItems(BLOCK_COMPONENTS, "/components/blocks/", BLOCK_GROUPS, resolveBlockAdsPackage),
+		items: buildNavItems(BLOCK_COMPONENTS, "/components/blocks/", BLOCK_GROUPS),
 	},
 	{
 		title: "Utils",

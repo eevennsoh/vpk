@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentProps } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -11,15 +11,11 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { Lozenge } from "@/components/ui/lozenge";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
 	name: string;
 	href: string;
-	adsPackage?: string;
-	adsTagVariant?: AdsTagVariant;
 	children?: NavItem[];
 	/** If true, the parent item is not clickable - only the chevron expands children */
 	expandOnly?: boolean;
@@ -44,7 +40,6 @@ export interface WebsiteSidebarNavProps {
 const RAIL_WIDTH = 48;
 const PANEL_WIDTH = 256;
 const VENN_SLACK_PROFILE_URL = "https://atlassian.enterprise.slack.com/user/@WEM1T2SLE";
-type AdsTagVariant = NonNullable<ComponentProps<typeof Lozenge>["variant"]>;
 const NAV_SECTION_TEXT_CLASSNAME = "text-[11px] font-medium tracking-wider text-text-subtle";
 const NAV_SECTION_LINK_CLASSNAME =
 	`flex flex-1 items-center rounded-md py-2 px-3 ${NAV_SECTION_TEXT_CLASSNAME} uppercase no-underline transition-colors data-[active=true]:bg-bg-neutral data-[active=true]:font-semibold data-[active=true]:text-text hover:text-text`;
@@ -63,7 +58,6 @@ export function WebsiteSidebarNav({
 	const pathname = usePathname();
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [adsOnly, setAdsOnly] = useState(false);
 	const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
 		const initial: Record<string, boolean> = {};
 		for (const section of sections) {
@@ -92,7 +86,6 @@ export function WebsiteSidebarNav({
 	});
 
 	const isSearching = searchQuery.length > 0;
-	const isFiltering = isSearching || adsOnly;
 
 	const toggleGroup = useCallback((href: string) => {
 		setOpenGroups((prev) => ({
@@ -103,28 +96,6 @@ export function WebsiteSidebarNav({
 
 	const filteredSections = useMemo(() => {
 		let result = sections;
-
-		// Apply ADS filter
-		if (adsOnly) {
-			result = result
-				.map((section) => {
-					return {
-						...section,
-						items: section.items
-							.map((item) => {
-								if (item.adsPackage) return item;
-								if (!item.children?.length) return null;
-								const adsChildren = item.children.filter((child) => child.adsPackage);
-								if (adsChildren.length > 0) {
-									return { ...item, children: adsChildren };
-								}
-								return null;
-							})
-							.filter((item): item is NavItem => item != null),
-					};
-				})
-				.filter((section) => section.items.length > 0);
-		}
 
 		// Apply search filter
 		if (searchQuery.length > 0) {
@@ -153,7 +124,7 @@ export function WebsiteSidebarNav({
 		}
 
 		return result;
-	}, [sections, searchQuery, adsOnly]);
+	}, [sections, searchQuery]);
 
 	const toggleSection = useCallback((title: string) => {
 		setOpenSections((prev) => ({
@@ -196,12 +167,6 @@ export function WebsiteSidebarNav({
 	const isSectionOpen = (title: string) => !!openSections[title];
 
 	const isGroupOpen = (href: string) => !!openGroups[href];
-
-	const mounted = useSyncExternalStore(
-		() => () => {},
-		() => true,
-		() => false
-	);
 
 	// Preserve sidebar scroll position across navigation
 	const navRef = useRef<HTMLElement>(null);
@@ -308,36 +273,22 @@ export function WebsiteSidebarNav({
 							placeholder="Search..."
 							className="[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
 						/>
-							<InputGroupAddon align="inline-end" className="gap-1">
-								{isSearching ? (
-									<InputGroupButton
-										onClick={() => setSearchQuery("")}
-										aria-label="Clear search"
-										size="icon-xs"
-										shape="circle"
-									>
-										<Icon
-											render={<CrossIcon label="" size="small" />}
-											label="Clear search"
-											className="text-icon-subtlest [&_svg]:size-3"
-										/>
+						{isSearching ? (
+							<InputGroupAddon align="inline-end">
+								<InputGroupButton
+									onClick={() => setSearchQuery("")}
+									aria-label="Clear search"
+									size="icon-xs"
+									shape="circle"
+								>
+									<Icon
+										render={<CrossIcon label="" size="small" />}
+										label="Clear search"
+										className="text-icon-subtlest [&_svg]:size-3"
+									/>
 								</InputGroupButton>
-							) : null}
-							<button
-								type="button"
-								onClick={() => setAdsOnly((prev) => !prev)}
-								aria-label={adsOnly ? "Show all components" : "Show ADS components only"}
-								aria-pressed={adsOnly}
-								className={cn(
-									"rounded-sm px-1.5 py-1 text-[10px] font-semibold leading-tight border transition-colors",
-									adsOnly
-										? "bg-bg-discovery-subtler text-text-discovery border-transparent"
-										: "bg-transparent text-text-subtlest border-border hover:text-text-subtle hover:border-border-bold",
-								)}
-							>
-								ADS
-							</button>
-						</InputGroupAddon>
+							</InputGroupAddon>
+						) : null}
 					</InputGroup>
 				</div>
 
@@ -349,24 +300,22 @@ export function WebsiteSidebarNav({
 				>
 
 					{/* Static pages */}
-					{!isSearching && !adsOnly && staticPages.length > 0 ? <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+					{!isSearching && staticPages.length > 0 ? <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
 							{staticPages.map((page) => (
 								page.children?.length ? (
 									<NavGroupItem
 										key={page.href}
 										item={page}
 										isActive={isActive}
-										isFiltering={false}
+										isSearching={false}
 										isGroupOpen={isGroupOpen(page.href)}
 										onToggleGroup={() => toggleGroup(page.href)}
-										mounted={mounted}
 									/>
 								) : (
 									<NavFlatItem
 										key={page.href}
 										item={page}
 										isActive={isActive(page.href)}
-										mounted={mounted}
 									/>
 								)
 							))}
@@ -375,7 +324,7 @@ export function WebsiteSidebarNav({
 					{/* Collapsible sections */}
 					{filteredSections.map((section) => {
 						const hasItems = section.items.length > 0;
-						const sectionOpen = isFiltering || isSectionOpen(section.title);
+						const sectionOpen = isSearching || isSectionOpen(section.title);
 						return (
 							<div key={section.title}>
 								<div className="flex items-center gap-1">
@@ -392,7 +341,7 @@ export function WebsiteSidebarNav({
 											{section.title}
 										</div>
 									)}
-									{!isFiltering && hasItems ? <button
+									{!isSearching && hasItems ? <button
 											type="button"
 											onClick={() => toggleSection(section.title)}
 											aria-label={sectionOpen ? `Collapse ${section.title}` : `Expand ${section.title}`}
@@ -415,17 +364,15 @@ export function WebsiteSidebarNav({
 													key={item.href}
 													item={item}
 													isActive={isActive}
-													isFiltering={isFiltering}
-													isGroupOpen={isFiltering || isGroupOpen(item.href)}
+													isSearching={isSearching}
+													isGroupOpen={isSearching || isGroupOpen(item.href)}
 													onToggleGroup={() => toggleGroup(item.href)}
-													mounted={mounted}
 												/>
 											) : (
 												<NavFlatItem
 													key={item.href}
 													item={item}
 													isActive={isActive(item.href)}
-													mounted={mounted}
 												/>
 											),
 										)}
@@ -435,7 +382,7 @@ export function WebsiteSidebarNav({
 					})}
 
 					{/* No results */}
-					{isFiltering && filteredSections.length === 0 ? <p className="px-3 py-6 text-sm text-text-subtlest text-center">
+					{isSearching && filteredSections.length === 0 ? <p className="px-3 py-6 text-sm text-text-subtlest text-center">
 							No components found
 						</p> : null}
 				</nav>
@@ -461,36 +408,12 @@ export function WebsiteSidebarNav({
 	);
 }
 
-function AdsTag({
-	adsPackage,
-	mounted,
-	variant = "discovery",
-}: Readonly<{ adsPackage: string; mounted: boolean; variant?: AdsTagVariant }>) {
-	const tag = (
-		<Lozenge
-			variant={variant}
-			className="h-auto cursor-default rounded-sm px-1 py-px text-[10px] leading-tight"
-		>
-			ADS
-		</Lozenge>
-	);
-	if (!mounted) return tag;
-	return (
-		<Tooltip>
-			<TooltipTrigger render={tag} />
-			<TooltipContent side="right">{adsPackage}</TooltipContent>
-		</Tooltip>
-	);
-}
-
 function NavFlatItem({
 	item,
 	isActive,
-	mounted,
 }: Readonly<{
 	item: NavItem;
 	isActive: boolean;
-	mounted: boolean;
 }>) {
 	return (
 		<li>
@@ -500,7 +423,6 @@ function NavFlatItem({
 				className="flex items-center gap-1.5 rounded-md py-2 px-3 text-sm no-underline transition-colors text-text-subtle data-[active=true]:bg-bg-neutral data-[active=true]:font-semibold data-[active=true]:text-text"
 			>
 				<span className="truncate">{item.name}</span>
-				{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 			</Link>
 		</li>
 	);
@@ -509,17 +431,15 @@ function NavFlatItem({
 function NavGroupItem({
 	item,
 	isActive,
-	isFiltering,
+	isSearching,
 	isGroupOpen,
 	onToggleGroup,
-	mounted,
 }: Readonly<{
 	item: NavItem;
 	isActive: (href: string) => boolean;
-	isFiltering: boolean;
+	isSearching: boolean;
 	isGroupOpen: boolean;
 	onToggleGroup: () => void;
-	mounted: boolean;
 }>) {
 	return (
 		<li>
@@ -528,7 +448,6 @@ function NavGroupItem({
 					{item.expandOnly ? (
 						<div className={cn(NAV_GROUP_LABEL_CLASSNAME, "gap-1.5")}>
 							<span className="truncate">{item.name}</span>
-							{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 						</div>
 					) : (
 						<Link
@@ -537,10 +456,9 @@ function NavGroupItem({
 							className={cn(NAV_GROUP_LINK_CLASSNAME, "gap-1.5")}
 						>
 							<span className="truncate">{item.name}</span>
-							{item.adsPackage ? <AdsTag adsPackage={item.adsPackage} mounted={mounted} variant={item.adsTagVariant} /> : null}
 						</Link>
 					)}
-					{!isFiltering ? <CollapsibleTrigger
+					{!isSearching ? <CollapsibleTrigger
 							render={
 								<button
 									type="button"
@@ -565,7 +483,6 @@ function NavGroupItem({
 								key={child.href}
 								item={child}
 								isActive={isActive(child.href)}
-								mounted={mounted}
 							/>
 						))}
 					</ul>

@@ -3,7 +3,6 @@
 import { token } from "@/lib/tokens";
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 import type { ComponentCategory } from "@/app/data/component-manifest";
-import { getAdsDisplayInfo } from "@/app/data/ads-equivalents";
 import { DocHero } from "./components/doc-hero";
 import { DocPreview } from "./components/doc-preview";
 import { DocInstallation } from "./components/doc-installation";
@@ -11,6 +10,7 @@ import { DocUsage } from "./components/doc-usage";
 import { DocPropsTable } from "./components/doc-props-table";
 import { DocExamples } from "./components/doc-examples";
 import { resolveBleedWrapperDividers, shouldBleedExamples } from "./components/preview-layout";
+import { getDocImportReferences, getDocReferenceLinks } from "./components/source-links.server";
 
 interface ComponentDocProps {
 	component: {
@@ -24,8 +24,6 @@ interface ComponentDocProps {
 
 export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 	const { name, slug, importPath, category, detail } = component;
-	const adsInfo = getAdsDisplayInfo(slug);
-	const adsLinks = detail?.adsLinks?.map(link => ({ href: link.url, label: link.label }));
 	const contentContainerStyle = {
 		maxWidth: 860,
 		marginInline: "auto",
@@ -93,10 +91,8 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 					name={name}
 					description={detail?.description}
 					category={category}
-					importPath={importPath}
-					adsLinks={adsLinks}
-					adsUrl={detail?.adsUrl}
-					adsPackage={adsInfo?.displayText}
+					importReferences={getDocImportReferences(importPath)}
+					referenceLinks={getDocReferenceLinks(detail?.adsLinks)}
 				/>
 			</div>
 

@@ -1,7 +1,7 @@
 import type {
 	FloatingRovoButtonInsightRow,
 	FloatingRovoButtonInsightsStage,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 
 /** The row content only — `onSelect` is attached by the hook that owns the state. */
 export type RovoButtonDemoInsightRow = Omit<FloatingRovoButtonInsightRow, "onSelect">;

@@ -10,7 +10,7 @@ const PROJECT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), 
 // component's composition (types → geometry → leaves → surface → entry) so
 // assertions that span sections keep reading top-to-bottom; any file not listed
 // is appended alphabetically so a new module can never be silently skipped.
-const FLOATING_ROVO_BUTTON_DIR = path.join(__dirname, "shared/components/floating-rovo-button");
+const FLOATING_ROVO_BUTTON_DIR = path.join(__dirname, "../blocks/rovo-button");
 const FLOATING_ROVO_BUTTON_FILE_ORDER = [
 	"types.ts",
 	"geometry.ts",

@@ -7,6 +7,7 @@ const {
 	createBackendProcess,
 	createHttpServerShutdownSteps,
 	createRuntimeShutdownSteps,
+	refuseRequestsWhileDraining,
 } = require("./backend-shutdown");
 
 function createDeferred() {
@@ -168,7 +169,7 @@ test("a signal during startup drains, and listen completing afterwards must not 
 	assert.equal(await exited, 0);
 });
 
-test("runtime steps abort in-flight runs, close every browser workspace, then shut the pool", async () => {
+test("runtime steps abort runs, close workspaces, mirrors and the preview in order, then shut the pool", async () => {
 	const calls = [];
 	const live = new AbortController();
 	const alreadyAborted = new AbortController();
@@ -178,23 +179,92 @@ test("runtime steps abort in-flight runs, close every browser workspace, then sh
 		["thread-2", { port: 4101, abortController: alreadyAborted }],
 		["thread-3", { port: 4102 }],
 	]);
+	// Fakes that, like the real owners, find nothing left on a second call.
+	let workspaces = ["ws-1", "ws-2"];
+	let mirrors = 1;
+	let previewOpen = true;
 	const steps = createRuntimeShutdownSteps({
 		activeRequests,
 		browserWorkspaceManager: {
-			deleteWorkspace: async (workspaceId) => calls.push(["deleteWorkspace", workspaceId]),
-			listWorkspaces: () => [{ workspaceId: "ws-1" }, { workspaceId: "ws-2" }],
+			deleteWorkspace: async (workspaceId) => {
+				calls.push(["deleteWorkspace", workspaceId]);
+				workspaces = workspaces.filter((id) => id !== workspaceId);
+			},
+			listWorkspaces: () => workspaces.map((workspaceId) => ({ workspaceId })),
+		},
+		chromiumPreviewManager: {
+			close: async () => {
+				calls.push(["closeChromiumPreview"]);
+				const wasOpen = previewOpen;
+				previewOpen = false;
+				return wasOpen;
+			},
+		},
+		closeAllMirrorBrowsers: async () => {
+			calls.push(["closeAllMirrorBrowsers"]);
+			const closed = mirrors;
+			mirrors = 0;
+			return closed;
 		},
 		shutdownRovoPool: () => calls.push(["shutdownRovoPool"]),
 	});
 
-	assert.deepEqual(steps.map(({ name }) => name), ["abort-runs", "close-browser-workspaces", "shutdown-rovo-pool"]);
-	assert.equal(await steps[0].run(), "1 aborted");
+	assert.deepEqual(steps.map(({ name }) => name), [
+		"abort-runs",
+		"close-browser-workspaces",
+		"close-mirror-browsers",
+		"close-chromium-preview",
+		"shutdown-rovo-pool",
+	]);
+	const details = [];
+	for (const step of steps) details.push(await step.run());
+	assert.deepEqual(details, ["1 aborted", "2 closed", "1 closed", "closed", undefined]);
 	assert.equal(live.signal.aborted, true);
-	assert.equal(await steps[0].run(), "0 aborted", "aborting twice is a no-op");
-	assert.equal(await steps[1].run(), "2 closed");
-	await steps[2].run();
-	assert.deepEqual(calls, [["deleteWorkspace", "ws-1"], ["deleteWorkspace", "ws-2"], ["shutdownRovoPool"]]);
+	assert.deepEqual(calls, [
+		["deleteWorkspace", "ws-1"],
+		["deleteWorkspace", "ws-2"],
+		["closeAllMirrorBrowsers"],
+		["closeChromiumPreview"],
+		["shutdownRovoPool"],
+	]);
+
+	// Run again: every step is a no-op.
+	const again = [];
+	for (const step of steps.slice(0, 4)) again.push(await step.run());
+	assert.deepEqual(again, ["0 aborted", "0 closed", "0 closed", "none open"]);
 	assert.throws(() => createRuntimeShutdownSteps({}), /activeRequests/u);
+	assert.throws(
+		() => createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager: { deleteWorkspace() {}, listWorkspaces() {} }, shutdownRovoPool() {} }),
+		/closeAllMirrorBrowsers/u,
+	);
+});
+
+test("refuseRequestsWhileDraining passes requests through until the drain begins", () => {
+	let draining = false;
+	const handled = [];
+	const handler = refuseRequestsWhileDraining((req) => handled.push(req.url), { isDraining: () => draining });
+	const response = () => {
+		const res = { head: null, body: null };
+		res.writeHead = (status, headers) => {
+			res.head = { status, headers };
+		};
+		res.end = (body) => {
+			res.body = body;
+		};
+		return res;
+	};
+
+	const before = response();
+	handler({ url: "/before" }, before);
+	draining = true;
+	const during = response();
+	handler({ url: "/during" }, during);
+
+	assert.deepEqual(handled, ["/before"]);
+	assert.equal(before.head, null);
+	assert.equal(during.head.status, 503);
+	assert.equal(during.head.headers.Connection, "close");
+	assert.deepEqual(JSON.parse(during.body), { error: "The backend is shutting down." });
 });
 
 test("server steps close the listener first and the remaining sockets last", async () => {

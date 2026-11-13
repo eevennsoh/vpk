@@ -104,3 +104,18 @@ test("screenshot reuses the cached capture until the preview becomes dirty", asy
 		["capture-screenshot"],
 	]);
 });
+
+test("close closes an open preview browser once and is a no-op afterwards", async () => {
+	const manager = new TestChromiumPreviewManager();
+	assert.equal(await manager.close(), true);
+	assert.equal(await manager.close(), false);
+	assert.deepEqual(manager.commands, [["close"]]);
+	assert.equal((await manager.getState()).ready, true, "a later command reopens it, as before");
+});
+
+test("close does nothing when no preview browser was opened", async () => {
+	const manager = new TestChromiumPreviewManager();
+	manager._isBrowserReady = false;
+	assert.equal(await manager.close(), false);
+	assert.deepEqual(manager.commands, []);
+});
