@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer } from "react";
 
-export type ReasoningPhase = "preload" | "thinking" | "completed" | "idle";
+import {
+	createReasoningPhaseState,
+	reasoningPhaseReducer,
+	selectReasoningPhase,
+	type ReasoningPhase,
+} from "./reasoning-phase-machine";
+
+export type { ReasoningPhase } from "./reasoning-phase-machine";
 
 const THINKING_GRADIENT_COLORS = ["#1868db", "#bf63f3", "#fca700"] as const;
 const MS_IN_S = 1000;
@@ -51,9 +58,8 @@ export function getPersistedReasoningDuration(
  * Tracks the reasoning lifecycle through four phases:
  * preload → thinking → completed → idle.
  *
- * Uses refs for transition tracking and deferred state updates to satisfy
- * the react-hooks/set-state-in-effect lint rule (no synchronous setState
- * inside effect bodies).
+ * The lifecycle lives in `reasoning-phase-machine.ts`. Input changes, the auto-idle delay
+ * and the minimum preload hold each arrive as one event.
  */
 export function useReasoningPhase({
 	isStreaming,
@@ -65,135 +71,47 @@ export function useReasoningPhase({
 	persistedStartTime,
 	persistedEndTime,
 }: Readonly<UseReasoningPhaseOptions>): UseReasoningPhaseResult {
-	const persistedStartTimeMs = getTimestampMs(persistedStartTime);
+	const persistedStartMs = getTimestampMs(persistedStartTime);
 	const persistedDuration = getPersistedReasoningDuration(
 		persistedStartTime,
 		persistedEndTime
 	);
-	const startTimeRef = useRef<number | null>(
-		isStreaming ? persistedStartTimeMs : null
+	const [state, dispatch] = useReducer(
+		reasoningPhaseReducer,
+		{ isStreaming, minPreloadMs, persistedDuration, persistedStartMs, responseKey },
+		createReasoningPhaseState,
 	);
-	const completedDurationRef = useRef<number | undefined>(
-		isStreaming ? undefined : persistedDuration
-	);
-	const isCompletedRef = useRef(
-		!isStreaming && persistedDuration !== undefined
-	);
-	const prevStreamingRef = useRef(false);
-	const prevResponseKeyRef = useRef(responseKey);
-	const preloadLockedUntilRef = useRef<number>(0);
 
-	// Single state to trigger re-renders after ref mutations
-	const [, setTick] = useState(0);
-	const bumpTick = () => setTick((t) => t + 1);
-
-	// Track transitions and schedule re-renders
 	useEffect(() => {
-		const isNewResponse = prevResponseKeyRef.current !== responseKey;
-		prevResponseKeyRef.current = responseKey;
+		dispatch({
+			type: "sync",
+			input: { isStreaming, minPreloadMs, persistedDuration, persistedStartMs, responseKey },
+			now: Date.now(),
+		});
+	}, [isStreaming, minPreloadMs, persistedDuration, persistedStartMs, responseKey]);
 
-		if (isNewResponse) {
-			startTimeRef.current = isStreaming
-				? (persistedStartTimeMs ?? Date.now())
-				: null;
-			completedDurationRef.current = isStreaming ? undefined : persistedDuration;
-			isCompletedRef.current = !isStreaming && persistedDuration !== undefined;
-			preloadLockedUntilRef.current = isStreaming && minPreloadMs > 0
-				? Date.now() + minPreloadMs
-				: 0;
-			prevStreamingRef.current = isStreaming;
-			const id = setTimeout(bumpTick, 0);
-			return () => clearTimeout(id);
-		}
-
-		const wasStreaming = prevStreamingRef.current;
-		prevStreamingRef.current = isStreaming;
-
-		if (isStreaming && !wasStreaming) {
-			startTimeRef.current = persistedStartTimeMs ?? Date.now();
-			completedDurationRef.current = undefined;
-			isCompletedRef.current = false;
-			preloadLockedUntilRef.current = minPreloadMs > 0
-				? Date.now() + minPreloadMs
-				: 0;
-			const id = setTimeout(bumpTick, 0);
-			return () => clearTimeout(id);
-		}
-
-		if (!isStreaming && wasStreaming) {
-			const start = startTimeRef.current;
-			if (start !== null) {
-				completedDurationRef.current = Math.ceil(
-					(Date.now() - start) / MS_IN_S
-				);
-				startTimeRef.current = null;
-			}
-			isCompletedRef.current = true;
-			const id = setTimeout(bumpTick, 0);
-			return () => clearTimeout(id);
-		}
-
-		if (
-			!isStreaming &&
-			persistedDuration !== undefined &&
-			(
-				completedDurationRef.current !== persistedDuration ||
-				!isCompletedRef.current
-			)
-		) {
-			completedDurationRef.current = persistedDuration;
-			isCompletedRef.current = true;
-			startTimeRef.current = null;
-			const id = setTimeout(bumpTick, 0);
-			return () => clearTimeout(id);
-		}
-
-		return undefined;
-	}, [
-		isStreaming,
-		minPreloadMs,
-		persistedDuration,
-		persistedStartTimeMs,
-		responseKey,
-	]);
-
-	// Auto-idle: dismiss completed display after a delay
+	const isCompleted = state.lifecycle.kind === "completed";
 	useEffect(() => {
-		if (!isCompletedRef.current || !autoIdle) return;
-
-		const timer = setTimeout(() => {
-			isCompletedRef.current = false;
-			bumpTick();
-		}, autoIdleDelayMs);
-
+		if (!isCompleted || !autoIdle) return undefined;
+		const timer = setTimeout(() => dispatch({ type: "auto-idle" }), autoIdleDelayMs);
 		return () => clearTimeout(timer);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- re-run when phase changes via tick
-	}, [isCompletedRef.current, autoIdle, autoIdleDelayMs]);
+	}, [autoIdle, autoIdleDelayMs, isCompleted]);
 
-	// Minimum preload: schedule re-render when the lock expires
+	const preloadHoldMs = state.preload.locked ? state.preload.holdMs : null;
+	const preloadGeneration = state.preload.generation;
 	useEffect(() => {
-		if (minPreloadMs <= 0) return;
-
-		const remaining = preloadLockedUntilRef.current - Date.now();
-		if (remaining <= 0) return;
-
-		const timer = setTimeout(bumpTick, remaining);
+		if (preloadHoldMs === null) return undefined;
+		const timer = setTimeout(
+			() => dispatch({ type: "preload-elapsed", generation: preloadGeneration }),
+			preloadHoldMs,
+		);
 		return () => clearTimeout(timer);
-	}, [isStreaming, hasMessageText, minPreloadMs]);
+	}, [preloadGeneration, preloadHoldMs]);
 
-	const isPreloadLocked = Date.now() < preloadLockedUntilRef.current;
-	let phase: ReasoningPhase;
-	if (isPreloadLocked) {
-		phase = "preload";
-	} else if (isStreaming) {
-		phase = hasMessageText ? "thinking" : "preload";
-	} else if (isCompletedRef.current) {
-		phase = "completed";
-	} else {
-		phase = "idle";
-	}
-
-	return { phase, duration: completedDurationRef.current };
+	return {
+		phase: selectReasoningPhase(state, { hasMessageText, isStreaming }),
+		duration: state.duration,
+	};
 }
 
 export interface ReasoningPhaseProps {
