@@ -389,18 +389,31 @@ test("server route manifest reports exported route registrars missing from SERVE
 	});
 });
 
+// Dispatches one request through the Express app in-process. No listener is bound, so the
+// guard also runs where binding a local port is not permitted (the agent sandbox).
+function dispatch(app, method, routePath) {
+	const { IncomingMessage, ServerResponse } = require("node:http");
+	const { Duplex } = require("node:stream");
+	return new Promise((resolve, reject) => {
+		const socket = new Duplex({ read() {}, write(_chunk, _encoding, callback) { callback(); } });
+		Object.defineProperty(socket, "remoteAddress", { value: "127.0.0.1" });
+		const req = new IncomingMessage(socket);
+		Object.assign(req, { headers: { host: "127.0.0.1" }, method, url: routePath });
+		req.push(null);
+		const res = new ServerResponse(req);
+		res.assignSocket(socket);
+		res.once("finish", () => resolve(res.statusCode));
+		res.once("error", reject);
+		app(req, res, (error) => (error ? reject(error) : resolve(404)));
+	});
+}
+
 test("removed APIs return 404 from the complete backend route stack", async () => {
-	const http = require("node:http");
 	const app = express();
 	registerBackendAppRoutes(app, createRuntimeRouteStackTestDependencies());
-	const server = http.createServer(app);
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	try {
-		const baseUrl = `http://127.0.0.1:${server.address().port}`;
-		for (const [method, routePath] of [["GET", "/api/jobs"], ["POST", "/api/jobs/run-1/run"], ["GET", "/api/skills"], ["POST", "/api/skills/drafts/draft-1/approve"], ["GET", "/api/wiki/memory-explorer"], ["POST", "/api/wiki/sync"], ["GET", "/api/status/hermes"]]) {
-			assert.equal((await fetch(`${baseUrl}${routePath}`, { method })).status, 404, `${method} ${routePath}`);
-		}
-	} finally {
-		await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+	// Control: a live route answers, so the in-process dispatch is not 404 for everything.
+	assert.notEqual(await dispatch(app, "GET", "/api/health"), 404);
+	for (const [method, routePath] of [["GET", "/api/jobs"], ["POST", "/api/jobs/run-1/run"], ["GET", "/api/skills"], ["POST", "/api/skills/drafts/draft-1/approve"], ["GET", "/api/wiki/memory-explorer"], ["POST", "/api/wiki/sync"], ["GET", "/api/status/hermes"]]) {
+		assert.equal(await dispatch(app, method, routePath), 404, `${method} ${routePath}`);
 	}
 });

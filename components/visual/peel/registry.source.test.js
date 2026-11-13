@@ -56,14 +56,13 @@ test("Peel's demo is registered as an SSR-disabled dynamic import", () => {
 });
 
 /**
- * The motion contract lives in `peel-model.test.ts`, which only runs in CI while
- * it stays classified in the manifest rather than the skipped `legacy-drift` baseline.
+ * The contract lives in `peel-model.test.ts`. Every node:test suite runs in CI unless it is
+ * listed as skipped or frozen as legacy drift, so it must stay off those lists.
  */
-test("the motion model's contract suite is classified for CI", () => {
-	assert.match(
-		readProjectFile("scripts/js-unit-test-manifest.mjs"),
-		/"components\/visual\/peel\/peel-model\.test\.ts"/u,
-	);
+test("the motion model's contract suite runs in CI", async () => {
+	const { getTestFileInclusion } = await import("../../../scripts/run-js-unit-tests.mjs");
+	assert.equal(getTestFileInclusion("components/visual/peel/peel-model.test.ts").included, true);
+	assert.match(readProjectFile("components/visual/peel/peel-model.test.ts"), /node:test/u);
 });
 
 /**

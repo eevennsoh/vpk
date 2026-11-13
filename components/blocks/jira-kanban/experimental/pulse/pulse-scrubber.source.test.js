@@ -8,7 +8,7 @@
  * (`toNearestSnapshotIndex`). Both the spacing and the anchors now come from
  * `buildPulseOutline`, so the marks and the prose cannot disagree — the even
  * insight spacing, the section spread and the anchor ids are asserted in
- * `pulse-outline.test.js`, against the frozen contract that produces them.
+ * `pulse-outline.source.test.js`, against the frozen contract that produces them.
  *
  * What is left here is what the ruler still owns: how a mark is drawn and
  * spoken (`toMarkState`, `toMarkLabel`, `toWeekdayLabel`), where the pointer
@@ -289,7 +289,7 @@ test("Pulse scrubber resolves the nearest outline entry, majors and minors alike
 	// Past the bottom resolves to the FIRST entry holding the largest offset, not
 	// the last: the scan keeps its incumbent on a tie (`distance < shortest`).
 	// With the outline stacking the final insight and its three sections on
-	// offset 1 (see `pulse-outline.test.js`), that is the insight rather than the
+	// offset 1 (see `pulse-outline.source.test.js`), that is the insight rather than the
 	// last section — and it disagrees with `toActiveOutlineIndex`, which resolves
 	// a tie to the last. Both behaviours are defensible; the disagreement only
 	// exists because four marks share a pixel, and it goes away when the

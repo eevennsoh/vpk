@@ -563,7 +563,7 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /disabled=\{actions\./u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<EditIcon label="" size="small" \/>[\s\S]*Rename/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
-	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.test.js.
+	// Order below the separator: work-item picker, then Dismiss. The picker's own contract lives in agent-session-link-work-item.source.test.js.
 	assert.match(SESSION_MORE_MENU_SOURCE, /\{isCloud \? <DropdownMenuSeparator \/> : null\}\s*\{isCloud && showLinkWorkItemMenuItem && canPickWorkItem \?[\s\S]*<DropdownMenuItem[\s\S]*\{dismissLabel\}/u);
 	// Active prototype menus stay enabled; expired Delete requires a capability.
 	assert.match(SESSION_MORE_MENU_SOURCE, /disabled=\{isExpired && actions\.onDelete === undefined\}/u);

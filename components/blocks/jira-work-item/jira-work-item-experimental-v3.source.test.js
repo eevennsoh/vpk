@@ -805,31 +805,31 @@ test("the v3 working-session byline is one shared module, not a per-surface copy
 });
 
 test("the v3 lib test suite is registered so it actually runs in CI", async () => {
-	// Tests under `components/**` are inert unless the unit-test manifest gives
-	// them a CI-included classification (`legacy-drift` entries are listed but
-	// skipped), so a forked test file is worthless until it is classified. Every
+	// Every node:test suite runs unless it is listed as skipped or frozen as
+	// legacy drift (scripts/run-js-unit-tests.mjs), so a forked test file must
+	// exist and stay off those lists. Every
 	// v2 lib test that runs must have a running v3 twin.
-	const { CI_INCLUDED_TEST_CLASSIFICATIONS, TEST_FILE_CLASSIFICATIONS } = await import("../../../scripts/js-unit-test-manifest.mjs");
-	const ciTestFiles = new Set(CI_INCLUDED_TEST_CLASSIFICATIONS.flatMap((classification) => TEST_FILE_CLASSIFICATIONS[classification] ?? []));
-	const registeredV2Tests = [...ciTestFiles]
-		.map((filePath) => /^components\/blocks\/jira-work-item\/experimental-v2\/lib\/([\w-]+\.test\.js)$/u.exec(filePath)?.[1])
-		.filter(Boolean);
+	const { getTestFileInclusion } = await import("../../../scripts/run-js-unit-tests.mjs");
+	const ciTestFiles = { has: (filePath) => fs.existsSync(path.join(process.cwd(), filePath)) && getTestFileInclusion(filePath).included };
+	const v2LibDir = "components/blocks/jira-work-item/experimental-v2/lib";
+	const registeredV2Tests = fs.readdirSync(path.join(process.cwd(), v2LibDir))
+		.filter((name) => /^[\w.-]+\.test\.js$/u.test(name) && ciTestFiles.has(`${v2LibDir}/${name}`));
 
-	assert.ok(registeredV2Tests.length > 0, "expected the v2 lib tests to be registered in the unit-test manifest");
+	assert.ok(registeredV2Tests.length > 0, "expected the v2 lib tests to run in CI");
 
 	for (const testFile of registeredV2Tests) {
 		// A v3 module that only re-exports a shared owner is covered by that owner's test.
-		const moduleFile = path.join(process.cwd(), "components/blocks/jira-work-item/experimental-v3/lib", testFile.replace(/\.test\.js$/u, ".ts"));
+		const moduleFile = path.join(process.cwd(), "components/blocks/jira-work-item/experimental-v3/lib", testFile.replace(/(?:\.source|\.behavior)?\.test\.js$/u, ".ts"));
 		const shim = fs.existsSync(moduleFile)
 			? /^export \{[^}]+\} from "@\/(components\/blocks\/(?!jira-work-item\/)[^"]+)";$/u.exec(fs.readFileSync(moduleFile, "utf8").trim())
 			: null;
 		if (shim) {
-			assert.ok(ciTestFiles.has(`${shim[1]}.test.js`), `${testFile}: v3 re-exports ${shim[1]}, whose test must run in CI`);
+			assert.ok([".test.js", ".source.test.js", ".behavior.test.js"].some((suffix) => ciTestFiles.has(`${shim[1]}${suffix}`)), `${testFile}: v3 re-exports ${shim[1]}, whose test must run in CI`);
 			continue;
 		}
 		assert.ok(
 			ciTestFiles.has(`components/blocks/jira-work-item/experimental-v3/lib/${testFile}`),
-			`${testFile} runs for v2 but its v3 twin is not registered in the unit-test manifest`,
+			`${testFile} runs for v2 but its v3 twin does not run in CI`,
 		);
 		assert.ok(
 			fs.existsSync(path.join(V3_DIR, "lib", testFile)),

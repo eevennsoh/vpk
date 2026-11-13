@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 // Metadata-rail / Activity-chrome / Pull requests contracts for experimental-v2.
-// Split from jira-work-item-experimental-v2.test.js to stay under the 1000-line budget.
+// Split from jira-work-item-experimental-v2.source.test.js to stay under the 1000-line budget.
 
 const BLOCK_DIR = __dirname;
 

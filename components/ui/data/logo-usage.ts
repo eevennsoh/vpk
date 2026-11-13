@@ -25,7 +25,7 @@
  *   border with their base `src` unchanged.
  *
  * `THIRD_PARTY_BORDERLESS_LOGO_IDS` MUST stay in sync with `/public/3p` — the
- * folders that contain a `16-borderless.svg`. `logo-usage.test.js` reads the
+ * folders that contain a `16-borderless.svg`. `logo-usage.source.test.js` reads the
  * directory and fails if the JSON drifts, so new 3P assets can't silently bypass
  * the border treatment. The same test asserts `borderedIds` stays disjoint from
  * `borderlessIds`, since `borderlessIds` is checked first.

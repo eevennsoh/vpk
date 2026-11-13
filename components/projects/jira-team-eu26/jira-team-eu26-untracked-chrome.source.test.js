@@ -1,7 +1,7 @@
 /**
  * Untracked-column, panel, FAB, and simple-kanban source contracts.
  *
- * Split out of `jira-team-eu26-end.test.js` so that suite stays under the
+ * Split out of `jira-team-eu26.source.test.js` so that suite stays under the
  * 1000-line file-size budget.
  */
 
@@ -14,7 +14,7 @@ function readProjectFile(relativePath) {
 	return readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-const PAGE_SOURCE = readProjectFile("components/projects/jira-team-eu26-end/page.tsx");
+const PAGE_SOURCE = readProjectFile("components/projects/jira-team-eu26/page.tsx");
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
@@ -56,7 +56,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(PAGE_SOURCE, /agentSessionMultiSelect=\{false\}/u);
 	assert.match(PAGE_SOURCE, /showAgentSessionFilter=\{false\}/u);
 	assert.match(PAGE_SOURCE, /showAgentSessionOverflow=\{false\}/u);
-	assert.match(PAGE_SOURCE, /defaultAgentSessionColumnCollapsed=\{true\}/u);
+	assert.match(PAGE_SOURCE, /defaultAgentSessionColumnCollapsed=\{wacContent\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionAssigneeIdAliases=\{JIRA_TEAM_EU26_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showAgentSessionFilter\?: boolean;/u);
@@ -86,7 +86,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
+		/style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,

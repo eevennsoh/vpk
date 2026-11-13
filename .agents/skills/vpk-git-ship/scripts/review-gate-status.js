@@ -75,6 +75,7 @@ function isTransientReadFailure(result) {
 
 function isReadOnlyRequest(args) {
 	if (["pr", "repo"].includes(args[0])) return args[1] === "view";
+	if (args[0] === "run") return ["list", "view"].includes(args[1]);
 	if (args[0] !== "api") return false;
 	if (args[1] === "graphql") return args.some((arg) => /^query=\s*(?:query\b|\{)/u.test(arg));
 	const methodIndex = args.findIndex((arg) => arg === "--method" || arg === "-X");
@@ -582,9 +583,13 @@ function formatStatus(status) {
 function billingBlockedNotice(status) {
 	if (status.checks.state !== "billing-blocked") return null;
 	const names = status.checks.billingBlocked.map((check) => check.name).join(", ");
+	// Only exit 3 may substitute local CI; with other blockers the notice must not invite a merge.
+	const next = status.clearExceptBillingBlockedChecks
+		? `Skip GitHub CI: run \`pnpm run ci:pr\` locally on PR head ${status.headRefOid} and merge only if it exits 0.`
+		: "Other gate blockers remain (review threads, merge state, draft or closed PR); clear them before the local CI fallback applies.";
 	return [
 		`GitHub Actions did not run because of account billing (failed payment or spending limit): ${names}.`,
-		`Skip GitHub CI: run \`pnpm run ci:pr\` locally on PR head ${status.headRefOid} and merge only if it exits 0.`,
+		next,
 	].join("\n") + "\n";
 }
 
@@ -625,6 +630,7 @@ module.exports = {
 	isBillingAnnotation,
 	reconcileSnapshot,
 	rerunWorkflowRun,
+	resolveRepository,
 	splitRepository,
 	runGhJson,
 	workflowRunId,

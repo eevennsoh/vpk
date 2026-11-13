@@ -13,13 +13,13 @@
  * The contracts worth protecting are behavioural, so they are executed rather
  * than grepped: the hooks' derivations run for real against the fixture. That
  * is all this file holds. Source-level assertions — what cannot be executed in
- * Node — moved to `pulse-source-contracts.test.js`.
+ * Node — moved to `pulse-source-contracts.source.test.js`.
  *
  * The outline that both the ruler and the article are built from lives in
- * `pulse-outline.test.js`; the ruler's own drawing and pointer gesture live in
- * `pulse-scrubber.test.js`; the fixture is walked in `pulse-fixture.test.js`;
+ * `pulse-outline.source.test.js`; the ruler's own drawing and pointer gesture live in
+ * `pulse-scrubber.source.test.js`; the fixture is walked in `pulse-fixture.source.test.js`;
  * the "Needs input" agent list is in `pulse-attention.test.js`; the
- * "Next best actions" mapping is in `pulse-next-actions.test.js`.
+ * "Next best actions" mapping is in `pulse-next-actions.source.test.js`.
  */
 
 const { test } = require("node:test");

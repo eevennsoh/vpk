@@ -60,7 +60,15 @@ git update-index --refresh
 git status --short --branch
 git worktree list --porcelain
 gh repo view --json nameWithOwner,defaultBranchRef
+node .agents/skills/vpk-git-ship/scripts/main-health.js
 ```
+
+Report the `main health:` line first. `RED` names the failed jobs of the latest
+CI run on `main`: that breakage is not this change's, so do not debug it as
+your own. If this PR's CI later fails in the same job with the same error,
+say so and compare with the `main` run before changing code. `billing-blocked`
+means the local `ci:pr` fallback below will apply. The line answers within a
+5-second deadline; `unknown` (GitHub slow or unreachable) never blocks.
 
 If an injected `GITHUB_TOKEN` is invalid but keyring auth exists, retry read-only
 `gh` commands with `/usr/bin/env -u GITHUB_TOKEN gh ...` before declaring GitHub
@@ -88,10 +96,13 @@ unavailable.
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
 6. Batch review fixes and reconcile conflicts before final validation. Regenerate
-   derived files, then fold any changes into the candidate commit: `node scripts/generate-repo-map.js`,
-   `node scripts/generate-api-surfaces.js`,
-   `node scripts/generate-cursor-rules.js`, and
-   `node scripts/validate-skills.js --update-index`. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
+   derived files with `pnpm run fix:generated`, then fold any changes into the
+   candidate commit. It regenerates only what its checker reports stale (route
+   manifest, API surfaces, Cursor rules, skills index, repo map, lockfile; add
+   `--all` to also prune ESLint suppressions), and `pnpm run generated:status`
+   lists the registry in `scripts/generated-artifacts.mjs`. **On a merge
+   conflict in one of those files, take either side and run `pnpm run
+   fix:generated`;** never hand-merge them. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
    failures). Before pushing the **final reconciled candidate**, run the focused
    tests and ALL colocated exact-file contracts guarding affected source, plus

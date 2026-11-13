@@ -5,7 +5,7 @@
  *
  * The chip's own markup, its motion tokens, and the placeholder class
  * combinations have their own suites alongside this one. Split out of
- * `agent-session.test.js`, which sits at the 1000-line file budget.
+ * `agent-session.source.test.js`, which sits at the 1000-line file budget.
  */
 
 const assert = require("node:assert/strict");

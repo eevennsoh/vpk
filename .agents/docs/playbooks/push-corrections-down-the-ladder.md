@@ -33,7 +33,7 @@ Codex doesn't auto-load `.agents/rules/`, and Cursor attaches only `.mdc` files.
    ./node_modules/.bin/eslint app components backend hooks lib rovo scripts tests types next.config.ts tailwind.config.ts twg-install.test.js --suppress-rule <rule-id>
    ```
 
-   `pnpm run verify:eslint-suppressions` fails any PR in which a rule's suppressed total grows, so the ledger only shrinks. After fixing old violations, run `pnpm run lint -- --prune-suppressions`. Never regenerate suppressions to hide a violation you just introduced.
+   `pnpm run verify:eslint-suppressions` fails any PR in which a rule's suppressed total grows, so the ledger only shrinks. After fixing old violations, run `pnpm run fix:generated --only eslint-suppressions`. Never regenerate suppressions to hide a violation you just introduced.
 5. **Shrink the prose.** Once a rule is enforced, cut its prose to one line that names the check (for example "(lint: `react-hooks/refs`)"). Keep only the judgment that lint can't express.
 6. **Scope any rule text.** Put it in the narrowest `.agents/rules/*.md` file with `paths:` frontmatter, update the AGENTS.md scope table (`scripts/agent-rule-scopes.test.js` checks that they match), and run `node scripts/generate-cursor-rules.js` so Cursor gets the same rule.
 7. **Validate:** `node --test scripts/eslint-boundary-rules.test.js`, `pnpm run lint`, `pnpm run lint:design-system`, `pnpm run typecheck`, and `pnpm run verify:fast`.
