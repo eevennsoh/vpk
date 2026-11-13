@@ -10,6 +10,7 @@ NEXT_CPU_HOT=150
 ALMD_CPU_HOT=50
 ALMD_PATH="/usr/local/bin/almd"
 IDLE_STACK_MIN_AGE_SECS=1800
+CODEX_RECENCY_PROBE="${0:A:h}/codex-thread-recency.js"
 
 resolve_repo_root() {
 	local root
@@ -114,7 +115,16 @@ if command -v tmux >/dev/null 2>&1; then
 				flag=""
 			elif [[ -n "$screated" && "$screated" != "0" ]] && (( now_epoch - screated >= IDLE_STACK_MIN_AGE_SECS )); then
 				if [[ "$spath" == "$HOME/.codex/worktrees/"* || ( -n "${CODEX_HOME:-}" && "$spath" == "$CODEX_HOME/worktrees/"* ) ]]; then
-					flag="  ⚠ Codex Desktop worktree — idle-stack sweep keeps; inspect task status before manual stop"
+					recency=""
+					[[ -f "$CODEX_RECENCY_PROBE" ]] && recency=$(node "$CODEX_RECENCY_PROBE" --cwd "$spath" 2>/dev/null | head -1)
+					[[ "$recency" == *"|"*"|"*"|"* ]] || recency="unknown|-|-|thread-recency probe unavailable"
+					verdict="${recency%%|*}"; probe_rest="${recency#*|}"; newest="${probe_rest%%|*}"; reason="${recency##*|}"
+					[[ "$newest" == <-> ]] && newest="newest $(( newest / 3600 ))h old; " || newest=""
+					if [[ "$verdict" == "idle" ]]; then
+						flag="  ⚠ Codex threads idle (${newest}${reason}) — sweep stops if no tool process has cwd here"
+					else
+						flag="  Codex threads ${verdict} (${newest}${reason}) — sweep keeps"
+					fi
 				else
 					flag="  ⚠ idle candidate — sweep stops if no tool process has cwd here"
 				fi

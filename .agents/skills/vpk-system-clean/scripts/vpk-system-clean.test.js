@@ -9,7 +9,7 @@ const {
 	writeFileSync,
 } = require("node:fs");
 const { tmpdir } = require("node:os");
-const { join } = require("node:path");
+const { dirname, join } = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
@@ -19,6 +19,21 @@ const ZSH_PATH = ["/bin/zsh", "/usr/bin/zsh"].find(existsSync);
 const ZSH_TEST_OPTIONS = {
 	skip: ZSH_PATH ? false : "requires zsh for the macOS maintenance script",
 };
+
+function writeCodexStateDb(path, threads) {
+	const originalEmitWarning = process.emitWarning;
+	process.emitWarning = () => {};
+	const { DatabaseSync } = require("node:sqlite");
+	process.emitWarning = originalEmitWarning;
+	const db = new DatabaseSync(path);
+	db.exec("CREATE TABLE threads (id TEXT PRIMARY KEY, cwd TEXT NOT NULL, updated_at INTEGER NOT NULL, updated_at_ms INTEGER)");
+	const insert = db.prepare("INSERT INTO threads (id, cwd, updated_at, updated_at_ms) VALUES (?, ?, ?, ?)");
+	threads.forEach((thread, index) => {
+		const updatedMs = Date.now() - thread.ageHours * 3600 * 1000;
+		insert.run(`t${index}`, thread.cwd, Math.floor(updatedMs / 1000), updatedMs);
+	});
+	db.close();
+}
 
 function writeExecutable(path, source) {
 	writeFileSync(path, source);
@@ -32,6 +47,7 @@ function runSweep({
 	almd = true,
 	sessions = null,
 	operators = [],
+	codexThreads = null,
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "vpk-system-clean-test-"));
 	const home = join(root, "home");
@@ -48,6 +64,11 @@ function runSweep({
 	mkdirSync(fakeBin, { recursive: true });
 	mkdirSync(zDotDir, { recursive: true });
 	writeFileSync(join(zDotDir, ".zshenv"), "disable kill\n");
+	const codexHome = join(home, ".codex");
+	if (codexThreads !== null) {
+		mkdirSync(codexHome, { recursive: true });
+		writeCodexStateDb(join(codexHome, "state_5.sqlite"), codexThreads(home));
+	}
 
 	const resolvedSessions = typeof sessions === "function" ? sessions(home) : sessions;
 	const resolvedOperators = typeof operators === "function" ? operators(home) : operators;
@@ -171,7 +192,8 @@ printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 			...process.env,
 			FAKE_KILL_LOG: killLog,
 			HOME: home,
-			PATH: `${fakeBin}:/usr/bin:/bin:/usr/sbin:/sbin`,
+			CODEX_HOME: codexHome,
+			PATH: `${fakeBin}:${dirname(process.execPath)}:/usr/bin:/bin:/usr/sbin:/sbin`,
 			VPK_REPO_ROOT: repositoryRoot,
 			ZDOTDIR: zDotDir,
 		},
@@ -322,23 +344,64 @@ test("keeps an old leftover stack that still has a claude operator", ZSH_TEST_OP
 	assert.match(cleanupLog, /kept tmux session vpk-dev-operator on vpk-dev socket \(tool process cwd is /);
 });
 
-test("keeps a Codex Desktop worktree whose live task status is unavailable to the sweep", ZSH_TEST_OPTIONS, () => {
+const codexSession = (home) => [
+	{
+		socket: "vpk-dev",
+		name: "vpk-dev-codex",
+		path: join(home, ".codex/worktrees/89b2/project"),
+		attached: "0",
+		createdAgoSecs: 7200,
+	},
+];
+
+test("keeps a Codex Desktop worktree when the Codex state database is missing", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({ almd: false, sessions: codexSession });
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads unknown: Codex state database not found\)/);
+});
+
+test("keeps a Codex Desktop worktree with no thread for its exact cwd", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, stopLog, result } = runSweep({
 		almd: false,
-		sessions: (home) => [
-			{
-				socket: "vpk-dev",
-				name: "vpk-dev-codex",
-				path: join(home, ".codex/worktrees/89b2/project"),
-				attached: "0",
-				createdAgoSecs: 7200,
-			},
+		sessions: codexSession,
+		codexThreads: (home) => [{ cwd: join(home, ".codex/worktrees/89b2/project/app"), ageHours: 48 }],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads unknown: no Codex thread has this cwd\)/);
+});
+
+test("keeps a Codex Desktop worktree whose newest thread is recent", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: codexSession,
+		codexThreads: (home) => [
+			{ cwd: join(home, ".codex/worktrees/89b2/project"), ageHours: 40 },
+			{ cwd: join(home, ".codex/worktrees/89b2/project"), ageHours: 3 },
 		],
 	});
 
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(stopLog, "");
-	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex Desktop task status unavailable\)/);
+	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads recent: newest Codex thread is younger than 24h\)/);
+});
+
+test("stops a Codex Desktop worktree once every thread for its cwd is idle", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: codexSession,
+		codexThreads: (home) => [
+			{ cwd: join(home, ".codex/worktrees/89b2/project"), ageHours: 26 },
+			{ cwd: join(home, ".codex/worktrees/other/project"), ageHours: 0 },
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(stopLog, /stop session=vpk-dev-codex/);
+	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-codex on vpk-dev socket \(.*; Codex threads idle: every Codex thread is at least 24h old\)/);
 });
 
 test("keeps an attached leftover stack", ZSH_TEST_OPTIONS, () => {

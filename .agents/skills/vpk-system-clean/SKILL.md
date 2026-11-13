@@ -58,8 +58,9 @@ repository root:
 For a bare interactive `vpk-system-clean` request, run the installed sweep,
 then inspect the remaining worktree ports and complete the task-aware manual
 pass below. The scheduled automation and an explicit request to run only the
-installed script stop after the sweep and its proof; they keep Codex Desktop
-worktrees because task activity cannot be inferred from process cwd alone.
+installed script stop after the sweep and its proof; they stop a Codex Desktop
+worktree's stack only when the read-only thread-recency probe finds every
+thread for that cwd idle.
 
 For thresholds, schedules, record formats, launchd/sudoers repair, tuning, and
 uninstall details, read [maintenance.md](references/maintenance.md).
@@ -79,21 +80,22 @@ uninstall details, read [maintenance.md](references/maintenance.md).
 
 ## Unused worktree ports
 
-The unattended sweep closes eligible idle `vpk-dev-*` stacks, but keeps Codex
-Desktop worktrees because process cwd does not show their task activity. For a
+The unattended sweep closes eligible idle `vpk-dev-*` stacks, including Codex
+Desktop worktrees whose threads the recency probe finds idle. For a
 ports-only request, or after a bare interactive full sweep, use `pnpm ports once`
 and `scripts/status.sh` to screen the remaining live stacks. Complete this
 manual pass for each candidate:
 
 1. Keep the primary checkout, attached sessions, stacks under the 30-minute
    grace window, and worktrees with a guarded tool process whose cwd is there.
-2. For a Codex Desktop worktree, use `mcp__codex_app__list_threads` to match
-   tasks by exact cwd. Keep it if any matching task is active, needs attention,
-   was updated in the past 24 hours, or its status is unavailable. For
-   `notLoaded` or idle tasks older than 24 hours, use
-   `mcp__codex_app__read_thread` when available to confirm the
-   last turn completed. If the task is missing from the available listing or
-   completion cannot be confirmed, keep the stack.
+2. For a Codex Desktop worktree, read the verdict `scripts/status.sh` prints
+   (or run `node scripts/codex-thread-recency.js --cwd <worktree>`). The probe
+   reads Codex's local state database read-only and matches threads by exact
+   cwd. Keep the stack unless the verdict is `idle` (every thread older than
+   the probe's `IDLE_HOURS`); `active`, `recent`, and `unknown` (no matching
+   thread, missing database, or unrecognised schema) all mean keep. When
+   `mcp__codex_app__read_thread` is available, also confirm an idle thread's
+   last turn completed.
 3. Confirm each live frontend/backend listener's cwd is that worktree. A stale
    port file can name a port now owned by another worktree; do not stop that
    row as a separate server.
@@ -142,8 +144,8 @@ script-only handoff, report status, the log path
   when unattached, older than the grace window, not the primary checkout, and
   with no process named exactly `claude`, `caffeinate`, `lazygit`,
   `cursor-agent`, or `codex` whose cwd is that worktree. Worktree names are
-  not part of this check. The unattended idle-stack pass keeps Codex Desktop
-  worktrees until a task-aware manual pass confirms they are unused.
+  not part of this check. A Codex Desktop worktree is stopped only when the
+  thread-recency probe returns `idle`; it never writes under the Codex home.
 - If sandbox permissions block a cache or log path, report the exact failure;
   do not attempt alternate deletion, permission repair, or schedule changes.
 

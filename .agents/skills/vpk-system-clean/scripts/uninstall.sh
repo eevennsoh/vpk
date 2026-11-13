@@ -25,6 +25,7 @@ USER_ID="$(id -un)"
 LABEL="com.${USER_ID}.vpk-system-clean"
 PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
 SCRIPT="$HOME/.local/bin/vpk-system-clean.sh"
+PROBE="$HOME/.local/bin/codex-thread-recency.js"
 CONF_DIR="$HOME/.config/vpk-system-clean"
 SUDOERS="/etc/sudoers.d/vpk-system-clean"
 SKILL_DIR="${0:A:h:h}"
@@ -54,6 +55,7 @@ fi
 
 # 3. live script
 [[ -f "$SCRIPT" ]] && act "remove script $SCRIPT" "rm -f '$SCRIPT'" || print -- "• no installed script"
+[[ -f "$PROBE" ]] && act "remove probe  $PROBE" "rm -f '$PROBE'" || print -- "• no installed probe"
 
 # 4. schedule config
 [[ -d "$CONF_DIR" ]] && act "remove config $CONF_DIR" "rm -rf '$CONF_DIR'" || print -- "• no schedule config"

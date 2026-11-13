@@ -22,8 +22,10 @@
 #     `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd
 #     is that worktree — worktree directory names are ignored. Uses the
 #     worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
-#     route). Codex Desktop worktrees are kept unattended because active task
-#     status is not visible through the executable-cwd guard. Never
+#     route). A Codex Desktop worktree is stopped only when the read-only
+#     thread-recency probe finds every Codex thread for that exact cwd idle
+#     past its threshold; no thread, no database, or an unknown schema keeps
+#     it. Never
 #     `portless prune`. Legacy sessions on tmux's default socket get SIGINT
 #     and an exact kill-session; their worktree launcher owns a different socket.
 #  4. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
@@ -70,6 +72,9 @@ ALMD_TERM_GRACE_SECS=5   # allow graceful exit before a guarded SIGKILL fallback
 KILL_RUNAWAY_ALMD=1      # 1 = reset sustained-hot almd; 0 = report only
 IDLE_STACK_MIN_AGE_SECS=1800  # leftover stacks younger than 30m are still warming
 KILL_IDLE_STACKS=1       # 1 = stop idle unattached leftover stacks; 0 = report only
+# Read-only Codex thread-recency probe; install.sh copies it next to this
+# script. Its IDLE_HOURS is the Codex idle threshold.
+CODEX_RECENCY_PROBE="${0:A:h}/codex-thread-recency.js"
 
 resolve_repo_root() {
 	local root
@@ -164,6 +169,19 @@ is_codex_desktop_worktree() {
 	[[ "$root" == "$HOME/.codex/worktrees/"* ]] && return 0
 	[[ -n "${CODEX_HOME:-}" && "$root" == "$CODEX_HOME/worktrees/"* ]] && return 0
 	return 1
+}
+
+# Prints `verdict|newest_age_secs|thread_count|reason` for the Codex threads
+# whose cwd is exactly this worktree. Anything but `idle` means keep the stack.
+codex_thread_recency() {
+	local root="$1" line=""
+	if [[ -f "$CODEX_RECENCY_PROBE" ]]; then
+		line=$(node "$CODEX_RECENCY_PROBE" --cwd "$root" 2>/dev/null | head -1)
+	fi
+	if [[ "$line" != *"|"*"|"*"|"* ]]; then
+		line="unknown|-|-|thread-recency probe unavailable at $CODEX_RECENCY_PROBE"
+	fi
+	print -r -- "$line"
 }
 
 stop_idle_stack() {
@@ -314,18 +332,25 @@ if command -v tmux >/dev/null 2>&1; then
 				log "kept tmux session $sname on $socket socket (tool process cwd is '$spath')"
 				continue
 			fi
+			codex_note=""
 			if is_codex_desktop_worktree "$spath"; then
-				log "kept tmux session $sname on $socket socket (Codex Desktop task status unavailable)"
-				continue
+				recency=$(codex_thread_recency "$spath")
+				verdict="${recency%%|*}"
+				reason="${recency##*|}"
+				if [[ "$verdict" != "idle" ]]; then
+					log "kept tmux session $sname on $socket socket (Codex threads $verdict: $reason)"
+					continue
+				fi
+				codex_note="; Codex threads idle: $reason"
 			fi
 			if (( ! KILL_IDLE_STACKS )); then
-				log "idle tmux session $sname on $socket socket ('$spath', ${sage}s old) — KILL_IDLE_STACKS=0, left running"
+				log "idle tmux session $sname on $socket socket ('$spath', ${sage}s old${codex_note}) — KILL_IDLE_STACKS=0, left running"
 				continue
 			fi
 			if stop_idle_stack "$socket" "$sname" "$spath"; then
 				idle_stopped=$(( idle_stopped + 1 ))
 				socket_idle=$(( socket_idle + 1 ))
-				log "stopped idle tmux session $sname on $socket socket (worktree '$spath', ${sage}s old)"
+				log "stopped idle tmux session $sname on $socket socket (worktree '$spath', ${sage}s old${codex_note})"
 			else
 				log "FAILED to stop idle tmux session $sname on $socket socket (worktree '$spath')"
 			fi
