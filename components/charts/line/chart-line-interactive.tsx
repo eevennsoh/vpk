@@ -53,7 +53,7 @@ export function ChartLineInteractive() {
 								onClick={() => setActiveChart(chart)}
 							>
 								<span className="text-muted-foreground text-xs">{chartConfig[chart].label}</span>
-								<span className="text-lg leading-none font-bold sm:text-3xl">{total[key as keyof typeof total].toLocaleString()}</span>
+								<span className="text-lg leading-none font-bold sm:text-3xl">{total[key as keyof typeof total].toLocaleString("en-US")}</span>
 							</button>
 						);
 					})}
