@@ -757,6 +757,11 @@ class RealtimeSession {
 			this._log("REALTIME", `Invalid JSON from client: ${String(raw).slice(0, 100)}`);
 			return;
 		}
+		// Valid JSON that is not an object (a number, null, an array) has no type to read.
+		if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
+			this._log("REALTIME", `Ignoring a client message that is not an object: ${String(raw).slice(0, 100)}`);
+			return;
+		}
 
 		switch (msg.type) {
 			case "audio_buffer_append":

@@ -7,9 +7,10 @@ const { spawnInGroup } = require("../../scripts/lib/test-process");
 const SERVER_PATH = path.join(__dirname, "..", "server.js");
 
 // Starts the real backend on an ephemeral loopback port and resolves once it logs the
-// port it bound.
-function startBackend(t, { serverPath = SERVER_PATH } = {}) {
-	const env = { ...process.env, NODE_ENV: "development", PORT: "0", DEBUG: "false" };
+// port it bound. `env` adds or overrides variables (an empty string keeps .env.local's
+// value out, since dotenv never overrides a variable that is set).
+function startBackend(t, { serverPath = SERVER_PATH, env: extraEnv = {} } = {}) {
+	const env = { ...process.env, NODE_ENV: "development", PORT: "0", DEBUG: "false", ...extraEnv };
 	delete env.ROVO_PORT;
 	delete env.NODE_TEST_CONTEXT;
 	const child = spawnInGroup(process.execPath, [serverPath], {

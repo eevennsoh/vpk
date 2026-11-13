@@ -7,16 +7,18 @@ const {
 	RUNTIME_SOCKET_TOKEN_TTL_MS,
 	assertRuntimeAdminConfig,
 	createRuntimeAdminControls,
+	decideRuntimeSocketTokenRequest,
 	getRuntimeAdminTokenFromRequest,
 	isRuntimeAdminTokenValid,
 	resolveRuntimeAdminConfig,
 } = require("./runtime-admin");
 
-function createRequest({ headers = {}, query = {} } = {}) {
+function createRequest({ headers = {}, query = {}, remoteAddress = "203.0.113.7" } = {}) {
 	return {
 		get: (name) => headers[name.toLowerCase()],
 		headers,
 		query,
+		socket: { remoteAddress },
 	};
 }
 
@@ -201,4 +203,49 @@ test("runtime socket helpers mint scoped tokens and gate token requester origins
 		statusCode: 403,
 		body: { error: "Runtime socket token origin is not allowed" },
 	}]);
+});
+
+test("decideRuntimeSocketTokenRequest issues socket tokens only to an allowed Origin, a same-origin browser or the runtime admin", () => {
+	const base = {
+		adminTokenValid: false,
+		origin: null,
+		originAllowed: false,
+		remoteAddress: "203.0.113.7",
+		runtimeAdminRequired: true,
+		runtimeAdminToken: "secret",
+		secFetchSite: null,
+	};
+	const cases = [
+		["production, no Origin, no browser header (a script)", {}, "reject", "no-origin"],
+		["production, no Origin, cross-site fetch metadata", { secFetchSite: "cross-site" }, "reject", "no-origin"],
+		["production, no Origin, same-origin browser fetch (the app)", { secFetchSite: "same-origin" }, "issue", "same-origin-browser"],
+		["production, allowed Origin", { origin: "https://app.test", originAllowed: true }, "issue", "allowed-origin"],
+		["production, disallowed Origin even with same-origin metadata", { origin: "https://evil.test", secFetchSite: "same-origin" }, "reject", "origin-not-allowed"],
+		["production, runtime admin token", { adminTokenValid: true }, "issue", "runtime-admin"],
+		["production, loopback caller is not trusted", { remoteAddress: "127.0.0.1" }, "reject", "no-origin"],
+		["development with a token, the Next proxy on loopback", { runtimeAdminRequired: false, remoteAddress: "::ffff:127.0.0.1" }, "issue", "local-proxy"],
+		["development with a token, a LAN caller", { runtimeAdminRequired: false }, "reject", "no-origin"],
+		["development without a token (tokens are empty)", { runtimeAdminRequired: false, runtimeAdminToken: null }, "issue", "tokens-disabled"],
+	];
+	for (const [name, overrides, action, reason] of cases) {
+		assert.deepEqual(decideRuntimeSocketTokenRequest({ ...base, ...overrides }), { action, reason }, name);
+	}
+});
+
+test("the token route refuses a production request with no Origin and accepts the app's same-origin fetch", () => {
+	const controls = createRuntimeAdminControls({
+		allowedOrigins: ["https://allowed.test"],
+		env: { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "secret" },
+	});
+	const run = (headers) => {
+		const response = createResponse();
+		let nextCalls = 0;
+		controls.requireRuntimeSocketTokenRequester(createRequest({ headers: { host: "app.test", ...headers } }), response, () => {
+			nextCalls += 1;
+		});
+		return { nextCalls, payloads: response.payloads };
+	};
+	assert.deepEqual(run({}), { nextCalls: 0, payloads: [{ statusCode: 403, body: { error: "Runtime socket token origin is not allowed" } }] });
+	assert.deepEqual(run({ "sec-fetch-site": "same-origin" }), { nextCalls: 1, payloads: [] });
+	assert.deepEqual(run({ "x-vpk-runtime-admin-token": "secret" }), { nextCalls: 1, payloads: [] });
 });
