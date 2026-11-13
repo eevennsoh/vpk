@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, classifyAsset, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, assertNavigationOk, classifyAsset, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -32,4 +32,12 @@ test("results merge into the matching baseline routes and every budgeted group h
 	assert.equal(merged.routes[0].fetchedPath, "/");
 	assert.equal(merged.routes[1].fetchedJs, undefined);
 	assert.deepEqual(Object.keys(TRANSFER_ROUTES), ["home", "rovo", "studio", "components", "butter", "eu26", "heavy-visual"]);
+});
+
+test("an error page or a missing response fails the collection instead of being measured", () => {
+	assert.doesNotThrow(() => assertNavigationOk(200, "http://x/"));
+	assert.doesNotThrow(() => assertNavigationOk(304, "http://x/"));
+	assert.throws(() => assertNavigationOk(404, "http://x/missing"), /answered 404/u);
+	assert.throws(() => assertNavigationOk(500, "http://x/"), /answered 500/u);
+	assert.throws(() => assertNavigationOk(undefined, "http://x/"), /no response/u);
 });

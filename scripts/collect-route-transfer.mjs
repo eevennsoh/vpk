@@ -68,6 +68,14 @@ export function summarizeRuns(runs) {
 	};
 }
 
+// A route that answers with an error page must fail the collection: its assets would otherwise
+// be recorded as the route's fetched bytes, and a low number would pass the budget.
+export function assertNavigationOk(status, url) {
+	if (typeof status !== "number" || status >= 400) {
+		throw new Error(`${url} answered ${status ?? "no response"}; refusing to record its transfer sizes.`);
+	}
+}
+
 export function classifyAsset(url, origin) {
 	if (!url.startsWith(origin)) return null;
 	const { pathname } = new URL(url);
@@ -93,7 +101,8 @@ async function measureOnce(browser, origin, routePath) {
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, () => {}));
 	});
-	await page.goto(`${origin}${routePath}`, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: "networkidle" });
+	const response = await page.goto(`${origin}${routePath}`, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: "networkidle" });
+	assertNavigationOk(response?.status(), `${origin}${routePath}`);
 	await page.waitForTimeout(QUIET_MS);
 	await page.waitForLoadState("networkidle", { timeout: NAVIGATION_TIMEOUT_MS });
 	await Promise.all(pending);
