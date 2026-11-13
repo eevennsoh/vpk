@@ -24,7 +24,7 @@ function facts(overrides = {}) {
 		pushed: true,
 		unpushed: 0,
 		inOriginDefault: false,
-		patchEquivalent: false,
+		contentLanded: false,
 		prs: [],
 		commitsPastPrHead: {},
 		gate: null,
@@ -113,7 +113,7 @@ test("failed reads are unknown, never a status that permits cleanup", () => {
 		facts({ worktree: { path: "/w", dirty: null } }),
 		facts({ inOriginDefault: null }),
 		facts({ prs: null }),
-		facts({ patchEquivalent: null }),
+		facts({ contentLanded: null }),
 		facts({ prs: [mergedPr], commitsPastPrHead: { 7: null } }),
 		facts({ prs: [{ ...mergedPr, baseRefName: undefined }], commitsPastPrHead: { 7: 0 } }),
 		facts({ inOriginDefault: true, landingInLocalDefault: null }),
@@ -135,7 +135,7 @@ test("proven landed: ancestry, merged PR (squash or merge commit), patch equival
 	const behind = provenLanded(facts({ prs: [{ ...mergedPr, headRefOid: PR_HEAD }], commitsPastPrHead: { 7: 0 } }));
 	assert.deepEqual([behind.landed, behind.exactHead], [true, false]);
 	// Recreated commits: every patch is already on main.
-	assert.equal(provenLanded(facts({ patchEquivalent: true })).proof, "patch-equivalent");
+	assert.equal(provenLanded(facts({ contentLanded: true })).proof, "content");
 	// Merged into another base proves nothing about main.
 	assert.equal(provenLanded(facts({ prs: [{ ...mergedPr, baseRefName: "release" }], commitsPastPrHead: { 7: 0 } })).landed, false);
 	// The latest PR is open but an older merged one carried every commit: landed.

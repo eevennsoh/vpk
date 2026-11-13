@@ -12,7 +12,7 @@ const {
 	collectBranchFacts,
 	createGit,
 	createRunner,
-	fetchDefault,
+	fetchOrigin,
 	listWorktrees,
 	readPullRequests,
 	resolveDefaultBranch,
@@ -50,7 +50,7 @@ async function readGate(pr) {
 async function collectShipStatus({ cwd = process.cwd(), branch: requested = null, fetch = false, runCommand = createRunner({ timeoutMs: 15_000 }), gateReader = readGate } = {}) {
 	const git = createGit(runCommand, cwd);
 	const defaultBranch = await resolveDefaultBranch(git);
-	if (fetch) await fetchDefault(runCommand, cwd, defaultBranch);
+	if (fetch) await fetchOrigin(runCommand, cwd);
 	const current = (await git(["symbolic-ref", "--quiet", "--short", "HEAD"])).stdout.trim() || null;
 	const branch = requested ?? current;
 	const top = (await git(["rev-parse", "--show-toplevel"])).stdout.trim();
@@ -58,7 +58,9 @@ async function collectShipStatus({ cwd = process.cwd(), branch: requested = null
 	const worktree = branch
 		? worktrees.find((entry) => entry.branch === branch) ?? null
 		: worktrees.find((entry) => entry.path === top) ?? null;
-	const localBranchExists = branch ? (await git(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`])).code === 0 : false;
+	// Exit 0 exists, exit 1 does not; anything else (a timeout) is unknown, never "deleted".
+	const shown = branch ? (await git(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`])).code : 1;
+	const localBranchExists = shown === 0 ? true : shown === 1 ? false : null;
 	const prsByBranch = branch ? await readPullRequests(runCommand, cwd, [branch]) : new Map();
 	const prs = prsByBranch === null ? null : prsByBranch.get(branch) ?? [];
 	const latest = prs?.length ? [...prs].sort((a, b) => (Date.parse(b.createdAt ?? "") || 0) - (Date.parse(a.createdAt ?? "") || 0))[0] : null;

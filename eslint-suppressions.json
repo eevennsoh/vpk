@@ -97,9 +97,6 @@
     }
   },
   "components/animate-ui/icons/icon.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
     "react-hooks/refs": {
       "count": 4
     },
@@ -1730,57 +1727,36 @@
     }
   },
   "components/charts/bar/chart-bar-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/line/chart-line-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/pie/chart-pie-donut-with-text.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/pie/chart-pie-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-shape.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-stacked.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-text.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -2690,9 +2666,6 @@
     }
   },
   "components/ui-charts/stat-card-choropleth-01/lib/use-world-data.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
@@ -2754,9 +2727,6 @@
   },
   "components/ui-custom/chain-of-thought.tsx": {
     "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
@@ -2998,9 +2968,6 @@
     }
   },
   "components/ui-custom/rich-text-editor/markdown-source-editor.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -3185,11 +3152,6 @@
       "count": 1
     }
   },
-  "components/ui/chart.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/ui/checkbox.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
@@ -3298,9 +3260,6 @@
   },
   "components/ui/tag.tsx": {
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -3598,9 +3557,6 @@
     }
   },
   "components/website/demos/ui/chart-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }

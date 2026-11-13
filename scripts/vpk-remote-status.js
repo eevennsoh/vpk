@@ -26,6 +26,7 @@ const LANES = ["claude", "gpt"];
 const COMMAND_TIMEOUT_MS = 2000;
 // gh makes a network round trip (~1 s); the rest are local and take milliseconds.
 const GH_TIMEOUT_MS = 2500;
+const PRS_PER_BRANCH = 10;
 const EVENTS_TAIL_BYTES = 64 * 1024;
 
 // Statuses in display order; the first group is active work.
@@ -79,7 +80,7 @@ function parseWorktreeList(text) {
 			else if (line.startsWith("branch ")) entry.branch = line.slice("branch ".length).replace(/^refs\/heads\//u, "");
 			else if (line === "detached") entry.detached = true;
 			else if (line === "locked" || line.startsWith("locked ")) entry.locked = true;
-			else if (line === "prunable" || line.startsWith("prunable ")) entry.prunable = true;
+			else if (line === "prunable" || line.startsWith("prunable ")) entry.prunable = line.slice("prunable ".length).trim() || true;
 			else if (line === "bare") entry.bare = true;
 		}
 		return entry;
@@ -645,7 +646,9 @@ async function resolveMainCheckout(runCommand, cwd) {
 async function fetchPullRequests(runCommand, cwd, branches, { timeoutMs = GH_TIMEOUT_MS } = {}) {
 	if (branches.length === 0) return new Map();
 	const vars = branches.map((_, index) => `$b${index}:String!`).join(",");
-	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:10){nodes{number state url createdAt mergedAt headRefOid baseRefName isDraft mergeCommit{oid}}}`).join(" ");
+	// Newest first (the connection's default order is oldest first), with the total, so a
+	// branch with more PRs than this page is marked truncated rather than silently cut.
+	const fields = branches.map((_, index) => `b${index}:pullRequests(headRefName:$b${index},first:${PRS_PER_BRANCH},orderBy:{field:CREATED_AT,direction:DESC}){totalCount nodes{number state url createdAt mergedAt headRefOid baseRefName isDraft isCrossRepository mergeCommit{oid}}}`).join(" ");
 	const query = `query($owner:String!,$name:String!,${vars}){repository(owner:$owner,name:$name){${fields}}}`;
 	const args = ["api", "graphql", "-F", "owner={owner}", "-F", "name={repo}", "-f", `query=${query}`];
 	branches.forEach((branch, index) => args.push("-f", `b${index}=${branch}`));
@@ -653,7 +656,13 @@ async function fetchPullRequests(runCommand, cwd, branches, { timeoutMs = GH_TIM
 	if (!result.ok) return null;
 	try {
 		const repository = JSON.parse(result.stdout).data.repository;
-		return new Map(branches.map((branch, index) => [branch, repository[`b${index}`].nodes]));
+		return new Map(branches.map((branch, index) => {
+			const connection = repository[`b${index}`];
+			// A fork's PR with the same branch name is not this branch's PR.
+			const own = connection.nodes.filter((pr) => pr.isCrossRepository !== true);
+			Object.defineProperty(own, "truncated", { value: connection.totalCount > connection.nodes.length });
+			return [branch, own];
+		}));
 	} catch {
 		return null;
 	}

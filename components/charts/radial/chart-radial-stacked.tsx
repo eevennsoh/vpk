@@ -41,7 +41,7 @@ export function ChartRadialStacked() {
 										return (
 											<text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
 												<tspan x={viewBox.cx} y={(viewBox.cy || 0) - 16} className="fill-foreground text-2xl font-bold">
-													{totalVisitors.toLocaleString()}
+													{totalVisitors.toLocaleString("en-US")}
 												</tspan>
 												<tspan x={viewBox.cx} y={(viewBox.cy || 0) + 4} className="fill-muted-foreground">
 													Visitors
