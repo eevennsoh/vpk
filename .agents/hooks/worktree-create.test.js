@@ -519,6 +519,8 @@ test("SessionStart shows the machine-state line under memory pressure and not ot
 
 	const pressured = context({ swapUsedGb: 20, pressureLevel: 2 });
 	assert.match(pressured, /machine: MEMORY PRESSURE \(swap in use is 20 GB >= 16 GB\)/u);
-	assert.match(pressured, /stop the largest idle stack: pnpm ports kill vpk-dev-idle-stack/u);
+	// The hook names no stack to stop: its idle verdict is cached from before this session.
+	assert.match(pressured, /run pnpm run mem --brief to see which stack is safe to stop/u);
+	assert.doesNotMatch(pressured, /pnpm ports kill/u);
 	assert.doesNotMatch(context({ swapUsedGb: 4, pressureLevel: 1 }), /machine:/u);
 });

@@ -20,6 +20,11 @@ const path = require("node:path");
 const { pressureReasons, readMemoryState } = require("./memory-pressure.js");
 
 const CACHE_FILE = path.join(os.homedir(), ".config", "vpk-system-clean", "machine-state.json");
+// Provisional: cached stacks older than this are not reported at all. The sweep's pressure
+// check runs every 5 minutes and skips 15 minutes after a run, so a cache written under
+// pressure is at most about 20 minutes old while the pressure lasts.
+const MACHINE_STATE_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
+const CODEX_PROBE = path.resolve(__dirname, "../../.agents/skills/vpk-system-clean/scripts/codex-thread-recency.js");
 
 function cacheFile(env = process.env) {
 	return env.VPK_MACHINE_STATE_CACHE || CACHE_FILE;
@@ -44,17 +49,25 @@ function formatAge(ms) {
 /**
  * The live stacks, reduced to what the line needs. `stacks` come from describeStacks();
  * `worktrees` from getAllWorktreePortInfo(), which names the `pnpm ports kill` handle.
+ * A stack may be named as the one to stop (`idle`) only when every server is quiet, no
+ * live task was seen, it is not the current worktree's own stack, and, for a Codex
+ * worktree, the R-2 thread-recency probe ran and said `idle` (the sweep's own rule).
  */
-function summarizeStacks(stacks, { worktrees = [], killCommand, footprints = new Map() }) {
+function summarizeStacks(stacks, { worktrees = [], killCommand, footprints = new Map(), codexVerdicts = new Map(), currentWorktree = null }) {
 	return stacks.map((stack) => {
 		const worktree = worktrees.find((entry) => path.resolve(entry.path) === stack.worktree) ?? null;
 		const sizes = stack.servers.map((server) => footprints.get(server.pid) ?? null);
+		const codexVerdict = stack.codex ? codexVerdicts.get(stack.worktree) ?? "unknown" : null;
+		const current = currentWorktree !== null && stack.worktree === currentWorktree;
 		return {
 			worktree: stack.worktree,
 			name: worktree?.worktreeName ?? path.basename(stack.worktree),
 			footprintGb: sizes.every((value) => typeof value === "number") ? sizes.reduce((sum, value) => sum + value, 0) : null,
-			idle: stack.quiet && !stack.inUse,
+			idle: stack.quiet && !stack.inUse && !current && (!stack.codex || codexVerdict === "idle"),
 			inUse: stack.inUse ?? null,
+			codex: stack.codex === true,
+			codexVerdict,
+			current,
 			stop: worktree ? killCommand(worktree) : `(cd ${stack.worktree} && pnpm run dev:tmux:stop)`,
 		};
 	});
@@ -65,11 +78,12 @@ function summarizeStacks(stacks, { worktrees = [], killCommand, footprints = new
  *   memory: { swapUsedGb: number | null, pressureLevel: number | null },
  *   stacks: Array<{ name, rssGb, idle, stop }> | null,   // null: no inventory to hand
  *   stacksAgeMs?: number | null,                          // set when the stacks are cached
+ *   advise?: boolean,      // name a stack to stop; false for cached stacks, whose idle verdict is old
  *   limits?: { swapLimitGb?: number, levelMin?: number },
  * }} state
  * @returns {{ pressure: boolean, line: string }}
  */
-function formatMachineLine({ memory, stacks, stacksAgeMs = null, limits = {} }) {
+function formatMachineLine({ memory, stacks, stacksAgeMs = null, advise = true, limits = {} }) {
 	const reasons = pressureReasons(memory, limits);
 	const pressure = reasons.length > 0;
 	const parts = [`swap ${gb(memory.swapUsedGb)} used`, `pressure level ${memory.pressureLevel ?? "?"}`];
@@ -81,12 +95,14 @@ function formatMachineLine({ memory, stacks, stacksAgeMs = null, limits = {} }) 
 		const largest = sized[0];
 		const age = stacksAgeMs === null ? "" : `, as of ${formatAge(stacksAgeMs)} ago`;
 		parts.push(`${stacks.length} dev stack${stacks.length === 1 ? "" : "s"}${largest ? `, largest ${largest.name} ${gb(largest.footprintGb)}` : ""}${age}`);
-		if (pressure) {
+		if (pressure && !advise) {
+			advice = "run pnpm run mem --brief to see which stack is safe to stop";
+		} else if (pressure) {
 			const idle = sized.find((stack) => stack.idle);
 			advice = idle
 				? `stop the largest idle stack: ${idle.stop}`
 				: stacks.length > 0
-					? "no idle stack to stop: every stack shows a live task"
+					? "no stack is safe to name: each is busy, shows a live task, is a Codex worktree whose thread is not idle, or is this worktree's own"
 					: "no dev stack runs; look at other processes";
 		}
 	}
@@ -106,10 +122,32 @@ function writeCache(stacks, { env = process.env, now = Date.now() } = {}) {
 	}
 }
 
-function readCache({ env = process.env } = {}) {
+// The cache, or null when it is missing, unreadable or older than the maximum age.
+function readCache({ env = process.env, now = Date.now(), maxAgeMs = MACHINE_STATE_CACHE_MAX_AGE_MS } = {}) {
 	try {
 		const parsed = JSON.parse(fs.readFileSync(cacheFile(env), "utf8"));
-		return Array.isArray(parsed.stacks) && Number.isFinite(parsed.writtenAt) ? parsed : null;
+		if (!Array.isArray(parsed.stacks) || !Number.isFinite(parsed.writtenAt)) return null;
+		return now - parsed.writtenAt <= maxAgeMs ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+// The R-2 probe's verdict for a Codex worktree: active | recent | idle | unknown.
+function probeCodex(worktree, { pressure }) {
+	try {
+		const { IDLE_HOURS, PRESSURE_IDLE_HOURS, probeCodexThreadRecency } = require(CODEX_PROBE);
+		return probeCodexThreadRecency({ cwd: worktree, idleHours: pressure ? PRESSURE_IDLE_HOURS : IDLE_HOURS }).verdict;
+	} catch {
+		return "unknown";
+	}
+}
+
+function currentWorktreeRoot(cwd) {
+	try {
+		const { spawnSync } = require("node:child_process");
+		const top = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8" });
+		return top.status === 0 ? fs.realpathSync(top.stdout.trim()) : null;
 	} catch {
 		return null;
 	}
@@ -137,7 +175,7 @@ function readFootprintGb(pid) {
 
 // The live inventory and every server's footprint, measured at once (about 4 s).
 // Loaded lazily so the hook path stays light.
-async function collectStacks({ cwd = process.cwd(), env = process.env } = {}) {
+async function collectStacks({ cwd = process.cwd(), env = process.env, pressure = false, probe = probeCodex } = {}) {
 	const { collectInventory, describeStacks, listWorktreeRoots } = require("./dev-stack-budget.js");
 	const { getAllWorktreePortInfo } = require("./worktree-ports.js");
 	const { killCommand } = require("../show-worktree-ports.js");
@@ -150,11 +188,13 @@ async function collectStacks({ cwd = process.cwd(), env = process.env } = {}) {
 	} catch {
 		// Without names the stop command falls back to dev:tmux:stop in the worktree.
 	}
-	return summarizeStacks(stacks, { worktrees, killCommand, footprints });
+	const codexVerdicts = new Map(stacks.filter((stack) => stack.codex).map((stack) => [stack.worktree, probe(stack.worktree, { pressure })]));
+	return summarizeStacks(stacks, { worktrees, killCommand, footprints, codexVerdicts, currentWorktree: currentWorktreeRoot(cwd) });
 }
 
 module.exports = {
 	CACHE_FILE,
+	MACHINE_STATE_CACHE_MAX_AGE_MS,
 	collectStacks,
 	formatMachineLine,
 	parseFootprintGb,
