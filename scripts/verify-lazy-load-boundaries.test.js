@@ -461,3 +461,17 @@ test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mer
 	]);
 	assert.equal(getRuleForImport("@atlaskit/logo-extra", DEFAULT_REACH_TRACKED_RULES), null);
 });
+
+test("a ui demo resolves through the ui registry's primary table", () => {
+	withWorkspace({
+		"app/button/page.tsx": 'const Demo = use(loadDemoComponent("button", "ui"));\n',
+		"components/website/registry/ui.ts": 'import { UI_PRIMARY_DEMOS } from "./ui/primary";\nexport const UI_DEMO = { ...UI_PRIMARY_DEMOS };\n',
+		"components/website/registry/ui/primary.ts": 'export const UI_PRIMARY_DEMOS = {\n\tbutton: dynamic(() => import("../../demos/ui/button-demo"), { ssr: false }),\n};\n',
+		"components/website/demos/ui/button-demo.tsx": "export default function ButtonDemo() { return null; }\n",
+	}, (cwd) => {
+		assert.deepEqual(resolveDemoEntryFiles({ cwd, entryFiles: ["app/button/page.tsx"] }), {
+			resolved: [{ demoFile: "components/website/demos/ui/button-demo.tsx", entryFile: "app/button/page.tsx" }],
+			unresolved: [],
+		});
+	});
+});

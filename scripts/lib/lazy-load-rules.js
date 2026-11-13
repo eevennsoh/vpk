@@ -198,14 +198,17 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 
 // Pages that render a catalog demo through loadDemoComponent("slug", "category") load that demo's
 // module right after hydration, so the demo module is part of the route's first load.
+// The files that hold each category's `slug: dynamic(() => import(...))` entries. ui and
+// ui-custom keep their primary tables in a subfolder.
 const DEMO_REGISTRY_FILES = {
-	arts: "components/website/registry/arts.ts",
-	blocks: "components/website/registry/blocks.ts",
-	projects: "components/website/registry/projects.ts",
-	"ui-charts": "components/website/registry/ui-charts.ts",
-	"ui-custom": "components/website/registry/ui-custom.ts",
-	utility: "components/website/registry/utility.ts",
-	visual: "components/website/registry/visual.ts",
+	arts: ["components/website/registry/arts.ts"],
+	blocks: ["components/website/registry/blocks.ts"],
+	projects: ["components/website/registry/projects.ts"],
+	ui: ["components/website/registry/ui.ts", "components/website/registry/ui/primary.ts"],
+	"ui-charts": ["components/website/registry/ui-charts.ts"],
+	"ui-custom": ["components/website/registry/ui-custom.ts", "components/website/registry/ui-custom/primary.ts"],
+	utility: ["components/website/registry/utility.ts"],
+	visual: ["components/website/registry/visual.ts"],
 };
 
 // Runtimes tracked on reach only (C-8f): they are not banned from a route shell's own imports

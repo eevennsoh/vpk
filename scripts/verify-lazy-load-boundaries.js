@@ -459,11 +459,15 @@ function resolveDemoEntryFiles({ cwd, entryFiles }) {
 		const source = readFileSync(absolutePath, "utf8");
 		for (const match of source.matchAll(/loadDemoComponent\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\)/gu)) {
 			const [, slug, category] = match;
-			const registryFile = DEMO_REGISTRY_FILES[category];
-			const registrySource = registryFile && existsSync(path.join(cwd, registryFile)) ? readFileSync(path.join(cwd, registryFile), "utf8") : "";
 			const key = /^[A-Za-z_$][\w$]*$/u.test(slug) ? `(?:"${escapeRegExp(slug)}"|'${escapeRegExp(slug)}'|${escapeRegExp(slug)})` : `["']${escapeRegExp(slug)}["']`;
-			const demoMatch = new RegExp(`(?:^|[\\s,{])${key}\\s*:\\s*dynamic\\(\\s*\\(\\)\\s*=>\\s*import\\(\\s*["']([^"']+)["']`, "mu").exec(registrySource);
-			const demoFile = demoMatch ? resolveLocalModule(cwd, registryFile, demoMatch[1]) : null;
+			const entryPattern = new RegExp(`(?:^|[\\s,{])${key}\\s*:\\s*dynamic\\(\\s*\\(\\)\\s*=>\\s*import\\(\\s*["']([^"']+)["']`, "mu");
+			let demoFile = null;
+			for (const registryFile of DEMO_REGISTRY_FILES[category] ?? []) {
+				const registrySource = existsSync(path.join(cwd, registryFile)) ? readFileSync(path.join(cwd, registryFile), "utf8") : "";
+				const demoMatch = entryPattern.exec(registrySource);
+				demoFile = demoMatch ? resolveLocalModule(cwd, registryFile, demoMatch[1]) : null;
+				if (demoFile) break;
+			}
 			if (demoFile) {
 				resolved.push({ demoFile, entryFile });
 			} else {
