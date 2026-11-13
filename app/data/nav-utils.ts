@@ -1,5 +1,4 @@
 import type { NavItem } from "@/components/website/website-sidebar-nav";
-import { getAdsDisplayInfo } from "@/app/data/ads-equivalents";
 import { compareByNameNatural } from "@/lib/utils";
 
 export interface ComponentLike {
@@ -26,14 +25,10 @@ function sortNavItemsByName(items: readonly NavItem[]): NavItem[] {
 function createNavItem(
 	component: ComponentLike,
 	hrefPrefix: string,
-	resolveAds: (slug: string) => string | undefined,
-	adsTagVariantResolver?: (slug: string) => NavItem["adsTagVariant"],
 ): NavItem {
 	return {
 		name: component.name,
 		href: `${hrefPrefix}${component.slug}`,
-		adsPackage: resolveAds(component.slug),
-		adsTagVariant: adsTagVariantResolver?.(component.slug),
 	};
 }
 
@@ -41,15 +36,11 @@ function buildChildNavItems(
 	childSlugs: readonly string[],
 	componentsBySlug: ReadonlyMap<string, ComponentLike>,
 	hrefPrefix: string,
-	resolveAds: (slug: string) => string | undefined,
-	adsTagVariantResolver?: (slug: string) => NavItem["adsTagVariant"],
 ): NavItem[] {
 	return childSlugs
 		.map((slug) => componentsBySlug.get(slug))
 		.filter((child): child is ComponentLike => child != null)
-		.map((child) =>
-			createNavItem(child, hrefPrefix, resolveAds, adsTagVariantResolver),
-		);
+		.map((child) => createNavItem(child, hrefPrefix));
 }
 
 /**
@@ -178,8 +169,6 @@ export function buildNavItems(
 	components: readonly ComponentLike[],
 	hrefPrefix: string,
 	groups: Record<string, string[]>,
-	adsResolver?: (slug: string) => string | undefined,
-	adsTagVariantResolver?: (slug: string) => NavItem["adsTagVariant"],
 ): NavItem[] {
 	const childSlugs = new Set<string>();
 	for (const children of Object.values(groups)) {
@@ -187,12 +176,6 @@ export function buildNavItems(
 			childSlugs.add(slug);
 		}
 	}
-
-	const resolveAds =
-		adsResolver ??
-		((slug: string) => {
-			return getAdsDisplayInfo(slug)?.displayText ?? (slug === "switch" ? "Atlassian Design System" : undefined);
-		});
 
 	const componentsBySlug = new Map<string, ComponentLike>();
 	for (const c of components) {
@@ -219,8 +202,6 @@ export function buildNavItems(
 							children,
 							componentsBySlug,
 							hrefPrefix,
-							resolveAds,
-							adsTagVariantResolver,
 						),
 					});
 				}
@@ -231,12 +212,7 @@ export function buildNavItems(
 		// Skip if this parent group was already emitted by an earlier child
 		if (emittedGroups.has(c.slug)) continue;
 
-		const item = createNavItem(
-			c,
-			hrefPrefix,
-			resolveAds,
-			adsTagVariantResolver,
-		);
+		const item = createNavItem(c, hrefPrefix);
 
 		const childSlugsForParent = groups[c.slug];
 		if (childSlugsForParent) {
@@ -245,8 +221,6 @@ export function buildNavItems(
 				childSlugsForParent,
 				componentsBySlug,
 				hrefPrefix,
-				resolveAds,
-				adsTagVariantResolver,
 			);
 		}
 

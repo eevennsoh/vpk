@@ -53,7 +53,6 @@ const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",
 );
-const NAV_ADS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "nav-ads.ts"), "utf8");
 const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
@@ -368,7 +367,6 @@ test("the block is registered across every discovery surface", () => {
 		COMPONENT_MANIFEST_SOURCE,
 		/blockComponent\("pull-request-fix", "Pull Request Fix"\)/u,
 	);
-	assert.match(NAV_ADS_SOURCE, /"pull-request-fix"/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /"pull-request-fix": PULL_REQUEST_FIX_DETAIL/u);
 	assert.match(REGISTRY_SOURCE, /"pull-request-fix": dynamic\(/u);
 });
