@@ -455,7 +455,7 @@ function AgentPublishDropdown({
 					) : null}
 				</span>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="flex max-h-[min(480px,var(--available-height,480px))] w-[360px] flex-col overflow-hidden rounded-2xl p-0">
+			<DropdownMenuContent align="end" className="flex max-h-[min(480px,var(--available-height,480px))] w-[360px] flex-col overflow-hidden p-0">
 				{view === "summary" ? (
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
 						<div className="px-2 pt-2">

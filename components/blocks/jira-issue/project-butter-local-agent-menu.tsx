@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Popover, PopoverContent } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { cn } from "@/lib/utils";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
@@ -144,7 +145,7 @@ export function ProjectButterLocalAgentMenu({
 								<ChevronDownIcon aria-hidden label="" size="small" />
 							</InputGroupAddon>
 						</InputGroup>
-						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className="w-(--anchor-width) min-w-0 gap-0 p-1" positionerClassName={workspacePositionerClassName} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
+						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className={cn("w-(--anchor-width) min-w-0 gap-0", dropdownStyles.surface, dropdownStyles.padding.compact)} positionerClassName={workspacePositionerClassName} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
 								if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setOpen(false); setDraft(null); focusInput(); }
 								if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 									event.preventDefault();
@@ -153,16 +154,16 @@ export function ProjectButterLocalAgentMenu({
 									buttons[(current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
 								}
 							}}>
-							<Button variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" disabled={selecting} onClick={() => { void addWorkspace(); }}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<AddIcon label="" size="small" />} />{selecting ? "Choosing workspace…" : "Add workspace"}</Button>
-							{!query ? <Button aria-current={selected === null ? "true" : undefined} variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" onClick={() => choose(null)}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<FolderClosedIcon label="" size="small" />} />No workspace{selected === null ? <Icon aria-hidden className="ml-auto shrink-0 text-icon-subtle" render={<CheckMarkIcon label="" size="small" />} /> : null}</Button> : null}
+							<Button data-menu-row="" variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" disabled={selecting} onClick={() => { void addWorkspace(); }}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<AddIcon label="" size="small" />} />{selecting ? "Choosing workspace…" : "Add workspace"}</Button>
+							{!query ? <Button data-menu-row="" aria-current={selected === null ? "true" : undefined} variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" onClick={() => choose(null)}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<FolderClosedIcon label="" size="small" />} />No workspace{selected === null ? <Icon aria-hidden className="ml-auto shrink-0 text-icon-subtle" render={<CheckMarkIcon label="" size="small" />} /> : null}</Button> : null}
 							{filtered.map((path) => (
-								<div className="group/workspace-row flex min-w-0 items-center rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" key={path}>
+								<div data-menu-row="" className="group/workspace-row flex min-w-0 items-center rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" key={path}>
 									<button ref={selected === path ? selectedWorkspace : undefined} type="button" aria-current={selected === path ? "true" : undefined} className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-sm px-2 text-left text-sm text-text-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => choose(path)}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<FolderClosedIcon label="" size="small" />} /><span className="min-w-0 truncate">{path}</span></button>
 									<Button aria-label={`Remove ${path}`} className="shrink-0 opacity-0 pointer-events-none transition-opacity duration-fast ease-out-practical group-hover/workspace-row:opacity-100 group-hover/workspace-row:pointer-events-auto group-has-[:focus-visible]/workspace-row:opacity-100 group-has-[:focus-visible]/workspace-row:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" size="icon-compact" variant="ghost" onClick={() => remove(path)}><Icon aria-hidden render={<DeleteIcon label="" size="small" />} /></Button>
 									<span className="flex w-6 shrink-0 items-center justify-center">{selected === path ? <Icon aria-hidden className="text-icon-subtle" render={<CheckMarkIcon label="" size="small" />} /> : null}</span>
 								</div>
 							))}
-							{canCreate ? <Button variant="ghost" className="h-8 w-full justify-start px-2 text-sm font-normal" onClick={() => create()}>Create “{query}”</Button> : null}
+							{canCreate ? <Button data-menu-row="" variant="ghost" className="h-8 w-full justify-start px-2 text-sm font-normal" onClick={() => create()}>Create “{query}”</Button> : null}
 							{folderError ? <p role="alert" className="px-2 py-1 text-xs text-text-danger">{folderError}</p> : null}
 						</PopoverContent>
 					</Popover>

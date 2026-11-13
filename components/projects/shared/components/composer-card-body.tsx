@@ -14,6 +14,7 @@ import {
 import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow } from "@/components/projects/shared/components/rovo-composer-styles";
 import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 import { useCallback, useEffect, useState } from "react";
@@ -198,7 +199,7 @@ export function ComposerCardBody({
 						{hideSourceAndModelControls ? null : (
 							<Popover open={resolvedCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 								<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-1">
+								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
 									<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 									<CustomizeMenu
 										selectedReasoning={resolvedSelectedReasoning}

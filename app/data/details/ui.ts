@@ -74,7 +74,6 @@ import { COMMENT_DETAIL } from "./ui/comment";
 import { DATE_LABEL_DETAIL } from "./ui/date-label";
 import { DATE_PICKER_DETAIL } from "./ui/date-picker";
 import { LOZENGE_DETAIL } from "./ui/lozenge";
-import { MENU_GROUP_DETAIL } from "./ui/menu-group";
 import { PAGE_HEADER_DETAIL } from "./ui/page-header";
 import { PROGRESS_INDICATOR_DETAIL } from "./ui/progress-indicator";
 import { PROGRESS_TRACKER_DETAIL } from "./ui/progress-tracker";
@@ -158,7 +157,6 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	"date-label": DATE_LABEL_DETAIL,
 	"date-picker": DATE_PICKER_DETAIL,
 	lozenge: LOZENGE_DETAIL,
-	"menu-group": MENU_GROUP_DETAIL,
 	"page-header": PAGE_HEADER_DETAIL,
 	"progress-indicator": PROGRESS_INDICATOR_DETAIL,
 	"progress-tracker": PROGRESS_TRACKER_DETAIL,

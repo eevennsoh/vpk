@@ -4559,10 +4559,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 449,
+			"manifestEntryCount": 448,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 443,
+				"live": 442,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5618,7 +5618,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 82,
+				"entryCount": 81,
 				"entries": [
 					{
 						"category": "ui",
@@ -5947,13 +5947,6 @@
 						"slug": "marker",
 						"name": "Marker",
 						"importPath": "@/components/ui/marker",
-						"status": "live"
-					},
-					{
-						"category": "ui",
-						"slug": "menu-group",
-						"name": "Menu",
-						"importPath": "@/components/ui/menu-group",
 						"status": "live"
 					},
 					{

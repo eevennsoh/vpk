@@ -53,7 +53,7 @@ export function JiraLocalAgent({ trigger, ...props }: JiraLocalAgentProps) {
 			{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<Button aria-label="Open local agent" size="icon" variant="ghost" />}>
 				<CodeIcon aria-hidden size="small" />
 			</PopoverTrigger>}
-			<PopoverContent aria-label="Local software agents" align="start" sideOffset={8} initialFocus={(interactionType) => interactionType === "keyboard"} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden rounded-xl p-0 shadow-2xl [&_[cmdk-group]:last-child]:!pb-0" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }}>
+			<PopoverContent aria-label="Local software agents" align="start" sideOffset={8} initialFocus={(interactionType) => interactionType === "keyboard"} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden rounded-lg p-0 shadow-2xl [&_[cmdk-group]:last-child]:!pb-0" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }}>
 				<JiraLocalAgentMenu {...props} />
 			</PopoverContent>
 		</Popover>
