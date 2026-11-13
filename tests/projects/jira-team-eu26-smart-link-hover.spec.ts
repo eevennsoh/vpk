@@ -6,6 +6,9 @@ test.use({ viewport: { width: 1600, height: 1100 }, ignoreHTTPSErrors: true });
 
 test("nested Smart Link tolerates a diagonal pause and keeps its session flyout alive", async ({ page }) => {
 	await page.goto(appUrl("/jira-team-eu26"), { waitUntil: "domcontentloaded" });
+	// 5c96e6a9f opens the Unlink sessions column expanded; collapse it to reach the rail notch.
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await page.getByRole("heading", { name: "Jira Design" }).click();
 	const notch = page.locator('[data-session-id="lw-sync-webhook-gap"]');
 	await expect(notch).toBeVisible({ timeout: 15_000 });
 	const railHitArea = page.locator("[data-agent-session-column-hit-area]");

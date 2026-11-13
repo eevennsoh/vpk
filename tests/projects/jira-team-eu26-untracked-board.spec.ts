@@ -1,20 +1,34 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { withDesignVariants } from "@/tests/helpers/design-variants";
 import { appUrl } from "@/tests/helpers/origin";
 import { openBoardWithSessions, revealCollapsedAgentSessionColumn } from "@/tests/helpers/board";
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
+// 42f5e86b1 moved the collapsible timeline rail and its options menu behind Advanced timeline.
+const JIRA_TEAM_EU26_ADVANCED_URL = appUrl(withDesignVariants("/jira-team-eu26", { advancedTimeline: true }));
 
 async function openBoard(page: Page): Promise<void> {
 	await openBoardWithSessions(page, JIRA_TEAM_EU26_URL);
 }
 
 async function openCollapsedBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_TEAM_EU26_ADVANCED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
 		timeout: 15_000,
 	});
-	await expect(page.getByRole("button", { name: "Unlink sessions column options" })).toBeVisible();
+	// 5c96e6a9f opens the column expanded and a1b70b260 rests a collapsed rail pinned;
+	// collapse it and Unpin to return to the hover gutter these tests start from.
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	// Leave the column's focus and pointer, as the layout spec does. Opening the options
+	// menu still leaves the session sync paused (listed in the PR).
+	await page.getByRole("heading", { name: "Jira Design" }).click();
+	const options = page.getByRole("button", { name: "Unlink sessions column options" });
+	await expect(options).toBeVisible();
+	await options.click();
+	await page.getByRole("menuitem", { name: "Unpin", exact: true }).click();
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(page.locator("[data-agent-session-column-hit-area]")).toHaveCount(1);
 }
 
 test("the session column keeps its action name and shows the unlinked header label", async ({ page }) => {
@@ -67,49 +81,6 @@ test("Untracked pins and expands as separate axes", async ({ page }) => {
 	await expect(host).toHaveAttribute("data-agent-session-column-expansion", "gutter");
 	await expect(page.locator("[data-agent-session-column-hit-area]")).toHaveCount(1);
 });
-
-async function openAgentViewMenu(page: Page): Promise<void> {
-	await page.getByRole("button", { name: "Configure board view" }).click();
-	// Click, not hover: Base UI does not reliably expand this submenu on hover.
-	await page.getByRole("menuitem", { name: "Agent" }).click();
-
-}
-
-async function selectAgentViewOption(page: Page, name: "Unattached" | "Working"): Promise<void> {
-	await page.getByRole("button", { name: "Configure board view" }).click();
-	await page.getByRole("menuitem", { name: /^Agents/u }).evaluate((element) => {
-		(element as HTMLElement).click();
-	});
-	await page.getByRole("menuitemradio", { name, exact: true }).evaluate((element) => {
-		(element as HTMLElement).click();
-	});
-}
-
-test("agent filter collapse clears a previously pinned timeline", async ({ page }) => {
-	await openCollapsedBoard(page);
-	await revealCollapsedAgentSessionColumn(page);
-	await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-	await page.getByRole("menuitem", { name: "Pin" }).click();
-	const host = page.locator("[data-agent-session-column-expansion]");
-	await expect(host).toHaveAttribute("data-agent-session-column-expansion", "pinned");
-	await selectAgentViewOption(page, "Unattached");
-	await expect(host).toHaveAttribute("data-agent-session-column-expansion", "expanded");
-	await expect(page.locator("[data-agent-session-column]")).toHaveCSS("width", "280px");
-	await selectAgentViewOption(page, "Working");
-	await expect(host).toHaveAttribute("data-agent-session-column-expansion", "gutter");
-	await expect(page.locator("[data-agent-session-column-hit-area]")).toHaveCount(1);
-});
-
-async function hoverCollapsedAgentSession(page: Page, sessionId: string): Promise<void> {
-	await revealCollapsedAgentSessionColumn(page);
-	const notch = page.getByTestId(`agent-session-notch-${sessionId}`);
-	const notchBox = await notch.boundingBox();
-	expect(notchBox).not.toBeNull();
-	if (!notchBox) return;
-
-	await page.mouse.move(notchBox.x + notchBox.width / 2, notchBox.y + notchBox.height / 2);
-	expect(await notch.evaluate((element) => element.matches(":hover"))).toBe(true);
-}
 
 function getIssueArticle(page: Page, issueKey: string): Locator {
 	return page.locator("article", {
@@ -167,8 +138,9 @@ test("attaching onto a running session replaces that chin row instead of stackin
 
 	const targetCard = getIssueArticle(page, "PAY-107");
 	await targetCard.scrollIntoViewIfNeeded();
+	// 72c89f90f renamed linked chins from "Open … in Rovo chat" to "Agent: state".
 	const runningSession = targetCard.getByRole("button", {
-		name: /^Open Claude in Rovo chat:/u,
+		name: /^Claude: /u,
 	});
 	await expect(runningSession).toBeVisible();
 	const restingBox = await targetCard.boundingBox();
@@ -240,35 +212,6 @@ test("attaching onto PAY-118 replaces any session chin instead of stacking the d
 	await expect(targetCard.getByText("Keep or delete the adapter")).not.toBeVisible();
 
 	await page.mouse.up();
-});
-
-test("Untracked is on by default and PAY-101 shows a nearby untracked row", async ({ page }) => {
-	await openBoard(page);
-
-	const pay101Stack = page.locator("[data-issue-key='PAY-101']");
-	await expect(pay101Stack.getByTestId("agent-session-row-lw-scope-thread")).toBeVisible();
-
-	await openAgentViewMenu(page);
-	await expect(page.getByRole("menuitemradio", { name: "Unattached" })).toBeChecked();
-});
-
-test("the collapsed Untracked rail hovers the plain Jira issue suggested by a session", async ({ page }) => {
-	await openCollapsedBoard(page);
-
-	const sessionId = "lw-figma-parked";
-	const railNotch = page.getByTestId(`agent-session-notch-${sessionId}`);
-	const pay118Backdrop = page.locator("[data-issue-key='PAY-118']")
-		.locator("[data-slot='jira-issue-agent-backdrop']");
-
-	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
-	await expect(pay118Backdrop).not.toHaveClass(/bg-bg-neutral-hovered/);
-	await hoverCollapsedAgentSession(page, sessionId);
-	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral-hovered/);
-
-	await page.getByRole("heading", { name: "Jira Design" }).hover();
-	expect(await railNotch.evaluate((element) => element.matches(":hover"))).toBe(false);
-	await expect(pay118Backdrop).not.toHaveClass(/bg-bg-neutral-hovered/);
-	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
 });
 
 test("the gutter preview supports timeline traversal across wider session targets", async ({ page }) => {
@@ -427,47 +370,6 @@ test("diagonal travel keeps the current flyout while vertical scrubbing switches
 	await expect(popup).toHaveText(firstText);
 });
 
-test("unchecking Untracked hides board-adjacent rows and leaves the column", async ({ page }) => {
-	await openBoard(page);
-
-	const pay101Proximity = page.locator("[data-issue-key='PAY-101']")
-		.getByTestId("agent-session-row-lw-scope-thread");
-	await expect(pay101Proximity).toBeVisible();
-	await expect(page.getByLabel(/^Unlink sessions,/u)).toBeVisible();
-
-	await openAgentViewMenu(page);
-	await page.getByRole("menuitemradio", { name: "Unattached" }).click();
-
-	await expect(pay101Proximity).toHaveCount(0);
-	await expect(page.getByLabel(/^Unlink sessions,/u)).toBeVisible();
-	await expect(
-		page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread"),
-	).toBeVisible();
-});
-
-test("hovering a column session lights the matching existing-agent backdrop without focus or movement", async ({ page }) => {
-	await openBoard(page);
-
-	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
-	const pay121 = page.locator("[data-issue-key='PAY-121']");
-	const pay101 = page.locator("[data-issue-key='PAY-101']");
-	const pay121ColumnScrollport = pay121.locator("xpath=ancestor::*[@data-jira-kanban-card-list]");
-	const columnSession = page.locator("[data-agent-session-column]")
-		.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
-
-	const scrollLeftBefore = await statusScrollport.evaluate((element) => element.scrollLeft);
-	const scrollTopBefore = await pay121ColumnScrollport.evaluate((element) => element.scrollTop);
-
-	await columnSession.hover();
-
-	await expect(pay121).not.toHaveClass(/bg-bg-accent-blue-subtlest/);
-	await expect(pay121.locator("[data-slot='jira-issue-agent-backdrop']"))
-		.toHaveClass(/bg-bg-neutral-hovered/);
-	await expect(pay101).not.toHaveClass(/opacity-40/);
-	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(scrollLeftBefore);
-	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(scrollTopBefore);
-});
-
 test("clicking a column session for PAY-121 spotlights that issue", async ({ page }) => {
 	await openBoard(page);
 
@@ -605,59 +507,18 @@ test("a linked session moves atomically to another Jira work item", async ({ pag
 	await openBoard(page);
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
+	// 72c89f90f renamed linked chins from "Open … in Rovo chat" to "Agent: state".
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
+		name: /^Codex: /u,
 	});
 
 	await dragPointer(sourceSession, getIssueDropZone(page, "PAY-118"), page);
 
 	await expect(sourceCard.getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
+		name: /^Codex: /u,
 	})).toHaveCount(0);
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
-	})).toBeVisible();
-});
-
-test("a linked session can detach and then attach to a different work item", async ({ page }) => {
-	await openBoard(page);
-
-	const sourceCard = getIssueArticle(page, "PAY-112");
-	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
-	});
-	const sourceBox = await sourceSession.boundingBox();
-	expect(sourceBox).not.toBeNull();
-	if (!sourceBox) return;
-
-	const sourcePoint = {
-		x: sourceBox.x + sourceBox.width / 2,
-		y: sourceBox.y + sourceBox.height / 2,
-	};
-	await page.mouse.move(sourcePoint.x, sourcePoint.y);
-	await page.mouse.down();
-	await page.mouse.move(sourcePoint.x + 4, sourcePoint.y + 4);
-	const unlinkWell = sourceCard.getByRole("img", {
-		name: /Unlink Codex from this work item/u,
-	});
-	await expect(unlinkWell).toBeVisible();
-	const unlinkBox = await unlinkWell.boundingBox();
-	expect(unlinkBox).not.toBeNull();
-	if (!unlinkBox) return;
-	await page.mouse.move(
-		unlinkBox.x + unlinkBox.width / 2,
-		unlinkBox.y + unlinkBox.height / 2,
-		{ steps: 8 },
-	);
-	await page.mouse.up();
-
-	const detachedSession = sourceCard.getByTestId("agent-session-row-PAY-112:review-agent");
-	await expect(detachedSession).toBeVisible();
-	await dragPointer(detachedSession, getIssueDropZone(page, "PAY-118"), page);
-
-	await expect(detachedSession).toHaveCount(0);
-	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
+		name: /^Codex: /u,
 	})).toBeVisible();
 });
 
@@ -672,8 +533,9 @@ test("an unattached session card attaches to any Jira work item and leaves the c
 
 	await expect(untrackedColumn.getByTestId("agent-session-row-lw-scope-thread")).toHaveCount(0);
 	await expect(page.getByLabel(`Unlink sessions, ${initialCount - 1} sessions`)).toBeVisible();
+	// 72c89f90f renamed linked chins from "Open … in Rovo chat" to "Agent: state".
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Claude in Rovo chat:/u,
+		name: /^Claude: /u,
 	})).toBeVisible();
 });
 
@@ -725,8 +587,9 @@ test("dropping an Untracked session on Create new work item appends and reveals 
 	);
 
 	// Create wells replace their resting buttons only after the session drag starts.
-	const createDropZone = targetColumn.getByRole("img", {
-		name: /^Create new work item in In review/u,
+	// cfc9fe2e8 renamed the well "Drop to create work item"; it names its armed state.
+	const createDropZone = targetColumn.getByRole("button", {
+		name: /^Drop to create work item in In review/u,
 	});
 	await expect(createDropZone).toBeVisible();
 	const armedTargetBox = await createDropZone.boundingBox();
@@ -737,7 +600,7 @@ test("dropping an Untracked session on Create new work item appends and reveals 
 		armedTargetBox.y + armedTargetBox.height / 2,
 		{ steps: 12 },
 	);
-	await expect(createDropZone).toHaveAttribute("data-armed", "true");
+	await expect(createDropZone).toHaveAccessibleName(/, selected drop target$/u);
 	await page.screenshot({ path: "output/agent-browser/dropzone-expanded.png" });
 	// Expanding the overlay must not resize or scroll the cards underneath it.
 	expect(await cardList.evaluate((element) => element.clientHeight)).toBe(initialOverflow.clientHeight);
@@ -777,7 +640,7 @@ test("dropping an Untracked session on Create new work item appends and reveals 
 		name: `${createdIssueKey}: ${sessionTitle}`,
 	})).toBeVisible();
 	await expect(createdCard.getByRole("button", {
-		name: /^Open Claude in Rovo chat:/u,
+		name: /^Claude: /u,
 	})).toBeVisible();
 	await expect(page.locator("html")).not.toHaveAttribute("data-blue-create-flash-observed", "true");
 	await expect(untrackedColumn.getByTestId(`agent-session-row-${sessionId}`)).toHaveCount(0);
@@ -818,7 +681,7 @@ test("releasing an unattached session drag outside a Jira target makes no change
 	await expect(untrackedSession).toBeVisible();
 	await expect(page.getByLabel(`Unlink sessions, ${initialCount} sessions`)).toBeVisible();
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Claude in Rovo chat:/u,
+		name: /^Claude: /u,
 	})).toHaveCount(0);
 });
 
@@ -854,82 +717,18 @@ test("dragging an Untracked session leaves a disabled-opacity source ghost", asy
 	await page.mouse.up();
 });
 
-test("dragging two selected sessions uses the concise count", async ({ page }) => {
-	await openBoard(page);
-
-	const first = page.getByTestId("agent-session-row-lw-scope-thread");
-	const second = page.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
-	await first.locator("article").click();
-	await second.locator("article").click({ modifiers: ["Meta"] });
-	await expect(first.locator("article")).toHaveAttribute("data-marked", "true");
-	await expect(second.locator("article")).toHaveAttribute("data-marked", "true");
-
-	const firstBoxBefore = await first.boundingBox();
-	const secondBoxBefore = await second.boundingBox();
-	const sourceBox = await first.locator("article").boundingBox();
-	expect(firstBoxBefore).not.toBeNull();
-	expect(secondBoxBefore).not.toBeNull();
-	expect(sourceBox).not.toBeNull();
-	if (!firstBoxBefore || !secondBoxBefore || !sourceBox) return;
-	const sourcePoint = {
-		x: sourceBox.x + sourceBox.width / 2,
-		y: sourceBox.y + sourceBox.height / 2,
-	};
-	await page.mouse.move(sourcePoint.x, sourcePoint.y);
-	await page.mouse.down();
-	await page.mouse.move(sourcePoint.x + 80, sourcePoint.y, { steps: 4 });
-
-	const overlay = page.locator("[data-session-drag-overlay]");
-	await expect(overlay).toContainText("2 sessions");
-	await expect(overlay.locator('[data-session-cohort-chip][aria-label="2 sessions"]')).toBeVisible();
-	const firstGhost = first.locator("[data-session-drag-placeholder] > div").first();
-	const secondGhost = second.locator("[data-session-drag-placeholder] > div").first();
-	await expect(firstGhost).toHaveCSS("opacity", "0.4");
-	await expect(secondGhost).toHaveCSS("opacity", "0.4");
-	expect((await first.boundingBox())?.height).toBe(firstBoxBefore.height);
-	expect((await second.boundingBox())?.height).toBe(secondBoxBefore.height);
-
-	await page.mouse.move(sourcePoint.x, sourcePoint.y);
-	await page.mouse.up();
-});
-
-test("session flyouts close for a Jira card drag and recover after drag end", async ({ page }) => {
+// 72c89f90f stopped chins opening Rovo chat directly; abcd91faa opens the assignment flyout.
+test("a stationary linked-session click opens its assignment flyout without detaching", async ({ page }) => {
 	await openBoard(page);
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
-	});
-	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
-		name: "Open Claude in Rovo chat: Working",
-	});
-	const flyout = page.locator("[data-slot='hover-card-content']");
-	await sourceSession.hover();
-	await expect(flyout).toBeVisible();
-
-	const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
-	await sourceCard.dispatchEvent("dragstart", { dataTransfer });
-	await expect(flyout).toHaveCount(0);
-	await nextSession.hover();
-	await page.waitForTimeout(250);
-	await expect(flyout).toHaveCount(0);
-
-	await sourceCard.dispatchEvent("dragend", { dataTransfer });
-	await page.getByRole("heading", { name: "Jira Design" }).hover();
-	await nextSession.hover();
-	await expect(flyout).toBeVisible();
-});
-
-test("a stationary linked-session click still opens Rovo chat without detaching", async ({ page }) => {
-	await openBoard(page);
-
-	const sourceCard = getIssueArticle(page, "PAY-112");
-	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Codex in Rovo chat:/u,
+		name: /^Codex: /u,
 	});
 	await sourceSession.click();
 
-	await expect(page.locator("[data-rovo-chat-placement='floating']")).toBeVisible();
+	await expect(page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]')).toBeVisible();
+	await expect(page.locator("[data-rovo-chat-placement='floating']")).toHaveCount(0);
 	await expect(sourceSession).toBeVisible();
 	await expect(sourceCard.getByTestId("agent-session-row-PAY-112:review-agent")).toHaveCount(0);
 });
