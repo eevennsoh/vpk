@@ -353,14 +353,14 @@ function createRovoAppMessageFilePersistence({
 		};
 	}
 
-	// `producedMessages` are the parts the finished run produced (selectRunProducedMessages),
-	// not the stored thread, whose messages a client can write.
-	async function synchronizeThreadGeneratedFiles(thread, { producedMessages = [] } = {}) {
+	// `streamedMessages` are what the finished run's response stream yielded, not the stored
+	// thread or the request's history, whose messages a client can write.
+	async function synchronizeThreadGeneratedFiles(thread, { streamedMessages = [] } = {}) {
 		if (!thread?.id) {
 			return thread;
 		}
 
-		await rovoAppGeneratedFilesManager.recordRunGeneratedFiles(thread.id, producedMessages);
+		await rovoAppGeneratedFilesManager.recordRunGeneratedFiles(thread.id, streamedMessages);
 		await rovoAppGeneratedFilesManager.captureRootFilesToWorkspace(thread.id);
 		return thread;
 	}

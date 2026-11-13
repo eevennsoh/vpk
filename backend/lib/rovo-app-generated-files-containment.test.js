@@ -12,7 +12,6 @@ const path = require("node:path");
 
 const {
 	createRovoAppGeneratedFilesManager,
-	selectRunProducedMessages,
 } = require("./rovo-app-generated-files");
 
 const silentLogger = { info() {}, warn() {} };
@@ -135,32 +134,6 @@ test("capture copies only files that pass the same rules", async (t) => {
 	assert.equal(await exists(path.join(source, "app", "generated", "page.tsx.snapshot")), true);
 	assert.equal(await exists(path.join(source, "notes.txt.snapshot")), false);
 	assert.equal(await exists(path.join(source, "app", "evil.txt.snapshot")), false);
-});
-
-test("a run records only the tool results it produced, never the history the request carried", () => {
-	const observation = (toolCallId, file) => ({
-		type: "data-thinking-event",
-		data: { phase: "result", toolName: "create_file", toolCallId, outputPreview: `Successfully created ${file}.` },
-	});
-	const forged = { id: "user-1", role: "user", parts: [observation("forged", "app/forged.tsx")] };
-	const continued = { id: "assistant-1", role: "assistant", parts: [observation("old", "app/old.tsx")] };
-	const initialMessages = [forged, continued];
-	const finalMessages = [
-		forged,
-		{ ...continued, parts: [...continued.parts, observation("new-in-continued", "app/continued.tsx")] },
-		{ id: "assistant-2", role: "assistant", parts: [observation("new", "app/new.tsx")] },
-	];
-	const produced = selectRunProducedMessages(initialMessages, finalMessages);
-	assert.deepEqual(
-		produced.flatMap((message) => message.parts.map((part) => part.data.toolCallId)),
-		["new-in-continued", "new"],
-	);
-	assert.deepEqual(selectRunProducedMessages(initialMessages, null), []);
-	assert.deepEqual(
-		selectRunProducedMessages(initialMessages, [{ parts: [observation("no-id", "app/x.tsx")] }]),
-		[],
-		"a message without an id cannot be told apart from history",
-	);
 });
 
 test("recording a run's messages writes the manifest the cleanup reads", async (t) => {

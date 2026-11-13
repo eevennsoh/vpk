@@ -347,13 +347,13 @@ test("message file persistence falls back when migration update returns null", a
 test("message file persistence synchronizes generated files for valid threads", async () => {
 	const { calls, service } = createMessageFilePersistenceHarness();
 	const thread = { id: "thread-1", messages: [{ id: "stored", parts: [] }] };
-	const producedMessages = [{ parts: [] }];
+	const streamedMessages = [{ parts: [] }];
 
 	assert.equal(await service.synchronizeThreadGeneratedFiles(undefined), undefined);
-	assert.equal(await service.synchronizeThreadGeneratedFiles(thread, { producedMessages }), thread);
+	assert.equal(await service.synchronizeThreadGeneratedFiles(thread, { streamedMessages }), thread);
 	assert.deepEqual(calls.filter((call) => call[0] !== "persistBrowserScreenshotBuffer"), [
 		// Recorded from what the run produced, never from the stored thread's messages.
-		["recordRunGeneratedFiles", "thread-1", producedMessages],
+		["recordRunGeneratedFiles", "thread-1", streamedMessages],
 		["captureRootFilesToWorkspace", "thread-1"],
 	]);
 });

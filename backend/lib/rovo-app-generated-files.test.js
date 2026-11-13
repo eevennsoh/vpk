@@ -6,7 +6,7 @@ const path = require("node:path");
 
 const {
 	createRovoAppGeneratedFilesManager,
-	extractGeneratedFilesFromThread,
+	extractGeneratedFilesFromStreamedMessages,
 } = require("./rovo-app-generated-files");
 
 const { execFileSync } = require("node:child_process");
@@ -22,10 +22,8 @@ async function createProjectRoot(prefix) {
 	return projectRoot;
 }
 
-test("extractGeneratedFilesFromThread captures file creations from thinking events", async () => {
-	const entries = extractGeneratedFilesFromThread({
-		id: "thread-1",
-		messages: [
+test("extractGeneratedFilesFromStreamedMessages captures file creations from thinking events", async () => {
+	const entries = extractGeneratedFilesFromStreamedMessages([
 			{
 				parts: [
 					{
@@ -40,8 +38,7 @@ test("extractGeneratedFilesFromThread captures file creations from thinking even
 					},
 				],
 			},
-		],
-	});
+		]);
 
 	assert.deepEqual(entries, [
 		{
@@ -116,7 +113,7 @@ test("generated files manager records a run's file creations and relocates untra
 
 test("generated files manager can snapshot root files into the thread workspace without removing them", async () => {
 	const baseDir = await createTempDir("rovo-app-generated-copy-base-");
-	const projectRoot = await createTempDir("rovo-app-generated-copy-project-");
+	const projectRoot = await createProjectRoot("rovo-app-generated-copy-project-");
 	const manager = createRovoAppGeneratedFilesManager({
 		baseDir,
 		projectRoot,

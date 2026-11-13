@@ -132,8 +132,14 @@ function createRovoAppManagedResponseConsumer({
 			}, messagePersistDebounceMs);
 		};
 
+		// What the response stream itself yielded, by message id (the latest version of each).
+		// Generated files are recorded from these only, never from `initialMessages`.
+		const streamedMessagesById = new Map();
 		const parsePromise = collectUiMessagesFromResponseStream({
 			initialMessages,
+			onStreamMessage: (message) => {
+				streamedMessagesById.set(typeof message?.id === "string" ? message.id : "", message);
+			},
 			onMessagesUpdated: schedulePersistedMessages,
 			routeDecisionToSuppress,
 			stream: parseStream,
@@ -188,7 +194,7 @@ function createRovoAppManagedResponseConsumer({
 			});
 		}
 
-		await finalizeRovoAppRun(threadId, run, messages, { initialMessages });
+		await finalizeRovoAppRun(threadId, run, messages, { streamedMessages: [...streamedMessagesById.values()] });
 	}
 
 	return {
