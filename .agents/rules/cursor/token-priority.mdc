@@ -114,9 +114,11 @@ className="duration-medium ease-in-out"
 style={{ transition: "left var(--duration-medium) var(--ease-in-out)" }}
 ```
 
-Checks enforce the mechanical cases: `scripts/design-token-usage.test.js` rejects `duration-[var(…)]` / `ease-[var(…)]`, and lint rejects numeric `duration-NNN`, hand-written `cubic-bezier()`, and inline Motion curve arrays (use `@/lib/motion`). Still on you: hardcoded `200ms`/`0.2s` in CSS → `var(--duration-medium)`, and elements that move together share one duration + easing.
+Checks enforce the mechanical cases: `scripts/design-token-usage.test.js` rejects `duration-[var(…)]` / `ease-[var(…)]` and new hardcoded CSS durations from 1ms to 600ms (`200ms`/`0.2s` → `var(--duration-medium)`), and lint rejects numeric `duration-NNN`, hand-written `cubic-bezier()`, and inline Motion curve arrays (use `@/lib/motion`). Still on you: elements that move together share one duration + easing.
 
 ## Common Mistakes
+
+Lint (`vpk-tokens/*` in `eslint.config.mjs`) rejects new `bg-white` / `bg-black`, `text-*xl` with `font-semibold`/`font-bold` in one class string, and `rounded-[25%]`; existing hits are baselined in `eslint-suppressions.json`.
 
 | Wrong | Correct |
 |---|---|
