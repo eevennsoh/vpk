@@ -1,4 +1,5 @@
 const { createRouteDecisionPart } = require("./route-decision");
+const { redactLogText, redactUrlForLog } = require("./log-redaction");
 
 const LOCAL_MODEL_PORT = parseInt(process.env.LOCAL_MODEL_PORT || "8800", 10);
 const LOCAL_MODEL_BASE_URL = process.env.LOCAL_MODEL_BASE_URL || `http://localhost:${LOCAL_MODEL_PORT}`;
@@ -53,7 +54,7 @@ async function streamLocalModel({ userMessage, conversationHistory, writer }) {
 
 	const url = `${LOCAL_MODEL_BASE_URL}/v1/chat/completions`;
 
-	console.info("[LOCAL-MODEL] Streaming from", url, {
+	console.info("[LOCAL-MODEL] Streaming from", redactUrlForLog(url), {
 		model: LOCAL_MODEL_ID,
 		messageCount: chatMessages.length,
 	});
@@ -67,7 +68,7 @@ async function streamLocalModel({ userMessage, conversationHistory, writer }) {
 	if (!response.ok) {
 		const errorText = await response.text().catch(() => "");
 		throw new Error(
-			`Local model server error (${response.status}): ${errorText.slice(0, 300)}`
+			`Local model server error (${response.status}): ${redactLogText(errorText.slice(0, 300))}`
 		);
 	}
 
