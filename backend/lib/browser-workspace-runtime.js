@@ -968,7 +968,8 @@ class AgentBrowserRuntime {
 
 	async close() {
 		await this.stopScreencast()
-		if (!this._isBrowserReady) {
+		// A command that did not answer (an initial open included) may have left a browser.
+		if (!this._isBrowserReady && !this._caller.hasTimedOut()) {
 			return
 		}
 

@@ -183,3 +183,23 @@ test("a ready workspace whose command never answers crashes and releases its slo
 	assert.equal(fakeAgentBrowser.calls.includes("click @e2"), false, "no command reaches the crashed browser");
 	assert.deepEqual(manager.listWorkspaces(), []);
 });
+
+test("a workspace whose first open never answers still sends close when it is released", async () => {
+	fakeAgentBrowser.hang.clear();
+	fakeAgentBrowser.calls.length = 0;
+	fakeAgentBrowser.kills.length = 0;
+	const timers = createFakeTimers();
+	const manager = createManager(timers);
+
+	fakeAgentBrowser.hang.add("open");
+	const create = manager.createWorkspace({ defaultUrl: "https://example.com" });
+	await until(() => fakeAgentBrowser.calls.includes("open https://example.com"), "open sent");
+	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.open);
+
+	const outcome = await outcomeOf(create);
+	assert.equal(isAgentBrowserCallTimeoutError(outcome.error), true);
+	assert.deepEqual(fakeAgentBrowser.kills, [{ command: "open https://example.com", signal: "SIGKILL" }]);
+	// open started a browser in the daemon before it stopped answering; the release closes it.
+	await until(() => fakeAgentBrowser.calls.includes("close"), "release sends close");
+	assert.deepEqual(manager.listWorkspaces(), []);
+});

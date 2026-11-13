@@ -118,6 +118,7 @@ function createAgentBrowserCaller({ execFileImpl, file, onCrash = null, timers =
 		if (typeof onCrash === "function") onCrash(error.message)
 	}
 	return {
+		hasTimedOut: () => unresponsive !== null,
 		/** @param {ReadonlyArray<unknown>} args */
 		assertAnswering(args) {
 			if (unresponsive && String(args[0]) !== "close") throw unresponsive
