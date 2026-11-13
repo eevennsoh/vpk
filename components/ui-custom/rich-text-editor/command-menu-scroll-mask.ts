@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback, type RefObject } from "react";
 
-import { subscribeToVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
 /**
@@ -11,9 +10,11 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
  */
 export function useCommandMenuScrollMask(): {
 	listProps: {
-		ref: RefObject<HTMLDivElement | null>;
+		onScroll: () => void;
+		ref: RefCallback<HTMLDivElement>;
 		style: CSSProperties;
 	};
+	listRef: RefObject<HTMLDivElement | null>;
 	menuProps: { "data-list-scrolled": "true" | undefined };
 	remeasure: () => void;
 } {
@@ -24,25 +25,25 @@ export function useCommandMenuScrollMask(): {
 		const listElement = listRef.current;
 		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
 	}, []);
-	useEffect(() => {
-		const listElement = listRef.current;
-		if (!listElement) return;
-		return subscribeToVerticalOverflow(listElement, remeasure);
-	}, [remeasure]);
+	const attachList = useCallback((element: HTMLDivElement | null) => {
+		listRef.current = element;
+		if (element) setHasScrolledList(element.scrollTop > 0);
+	}, []);
 
 	const listProps = useMemo(() => ({
-		ref: listRef,
+		onScroll: remeasure,
+		ref: attachList,
 		style: buildScrollMaskStyle({
 			fadeBottom: false,
 			fadeTop: hasScrolledList,
 			fadeSize: "var(--rich-text-command-menu-scroll-mask-fade-size)",
 			scrollbarWidth: "var(--rich-text-command-menu-scrollbar-width)",
 		}),
-	}), [hasScrolledList]);
+	}), [attachList, hasScrolledList, remeasure]);
 	const menuProps = useMemo(
 		() => ({ "data-list-scrolled": hasScrolledList ? ("true" as const) : undefined }),
 		[hasScrolledList],
 	);
 
-	return { listProps, menuProps, remeasure };
+	return { listProps, listRef, menuProps, remeasure };
 }

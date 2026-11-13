@@ -707,10 +707,10 @@ export function RichTextSuggestionMenu({
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const {
 		listProps,
+		listRef,
 		menuProps,
 		remeasure: updateListScrollState,
 	} = useCommandMenuScrollMask();
-	const listRef = listProps.ref;
 	const isNested = Boolean(onBack);
 	const hasHoverActions = items.some((item) => item.hoverActions !== undefined);
 

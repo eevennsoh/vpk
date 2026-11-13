@@ -37,7 +37,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
 import { IconTile, type IconTileIconSize } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
@@ -52,6 +51,7 @@ import {
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "./metadata-picker-styles";
 import {
 	filterMetadataSearchItems,
 	PRIORITY_OPTIONS,
@@ -83,21 +83,6 @@ const PRIORITY_COLOR_CLASSES: Record<PriorityValue, string> = {
 	Low: "text-icon-information",
 	Lowest: "text-icon-information",
 };
-
-/**
- * Keep the positioning popup visually transparent so the shared editor-palette
- * menu remains the single owner of the picker surface, radius, and shadow.
- */
-export const METADATA_PICKER_POPOVER_CLASS =
-	"w-auto gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none dark:shadow-none [[data-color-mode=dark]_&]:shadow-none";
-export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
-/** Clears the property-row focus ring (ring-3 + offset-1 ≈ 4px) below the trigger. */
-export const METADATA_PICKER_SIDE_OFFSET = 8;
-export const PERSON_PICKER_DROPDOWN_CLASS = cn(
-	dropdownStyles.surface,
-	dropdownStyles.padding,
-	"rounded-lg! shadow-2xl! [&_.rich-text-command-menu-list]:p-0! [&_.rich-text-command-menu-item]:h-10!",
-);
 
 export function MetadataSearchPicker({
 	className,

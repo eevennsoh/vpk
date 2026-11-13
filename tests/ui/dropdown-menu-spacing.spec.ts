@@ -18,7 +18,7 @@ test("menu rows use consistent padding and grow with their content", async ({ pa
 
 test("checkbox and radio examples share menu spacing and remain interactive", async ({ page }) => {
 	await page.goto(appUrl("/components/ui/dropdown-menu"));
-	await page.getByRole("button", { name: "Controlled menu", exact: true }).scrollIntoViewIfNeeded();
+	await page.locator('[data-slot="dropdown-menu-trigger"]').filter({ hasText: "Controlled menu" }).scrollIntoViewIfNeeded();
 	await expect(page.getByRole("menu", { name: "Controlled menu" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Menu items", exact: true }).first().click();
@@ -71,7 +71,7 @@ test("agent selector subheadings match dropdown subheadings", async ({ page }) =
 	const selectorStyle = await selectorHeading.evaluate(measure);
 	await expect(selectorHeading).toHaveCSS("padding", "6px 8px");
 	await page.goto(appUrl("/components/ui/dropdown-menu#subheading"));
-	await page.getByRole("button", { name: "Controlled menu", exact: true }).scrollIntoViewIfNeeded();
+	await page.locator('[data-slot="dropdown-menu-trigger"]').filter({ hasText: "Controlled menu" }).scrollIntoViewIfNeeded();
 	await expect(page.getByRole("menu", { name: "Controlled menu" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "View settings", exact: true }).click();
@@ -117,4 +117,28 @@ test("searchable dropdown shares menu spacing and fades only its top edge", asyn
 	await search.fill("Duplicate");
 	await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toBeVisible();
 	await expect(menu.getByRole("menuitem", { name: "Edit", exact: true })).toHaveCount(0);
+});
+
+test("labels picker restores its top fade after opening and reopening", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/artifact-pane"));
+	await page.getByRole("button", { name: "See more", exact: true }).click();
+	const trigger = page.getByRole("button", { name: "Edit labels", exact: true });
+	await trigger.click();
+	const search = page.getByRole("textbox", { name: "Search labels" });
+	for (let index = 0; index < 10; index++) {
+		await search.fill(`test label ${index}`);
+		await search.press("Enter");
+	}
+	const list = page.getByRole("listbox", { name: "Search labels" });
+	await expect.poll(() => list.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(1);
+	const menu = list.locator("..");
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await expect(list).toHaveCSS("mask-image", "none");
+		await list.evaluate((element) => { element.scrollTop = 80; });
+		await expect(menu).toHaveAttribute("data-list-scrolled", "true");
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).toContain("transparent 0,");
+		await page.keyboard.press("Escape");
+		await expect(list).toBeHidden();
+		if (attempt === 0) await trigger.click();
+	}
 });

@@ -8,7 +8,8 @@ import type { JiraKanbanAssigneeData, JiraKanbanCardData, JiraKanbanColumnData }
 import { ButterPriorityIcon } from "@/components/blocks/jira-issue/priority";
 import { getButterSubtaskProgress } from "@/components/blocks/jira-issue/project-butter-model";
 import { PriorityRowField, type PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
-import { MetadataSearchPicker, METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
+import { MetadataSearchPicker } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
+import { METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "@/components/blocks/jira-work-item/team-eu26/components/metadata-picker-styles";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
