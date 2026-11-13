@@ -9,6 +9,8 @@
  * browser workspace remains the authoritative browsing session for the agent.
  */
 
+const { redactLogText, redactUrlForLog } = require("./log-redaction")
+
 const SCREENCAST_INTERVAL_MS = 200
 const SCREENSHOT_QUALITY = 80
 const DEFAULT_VIEWPORT = { width: 1280, height: 900 }
@@ -66,7 +68,7 @@ class HeadlessMirrorBrowser {
 				timeout: NAVIGATE_TIMEOUT_MS,
 			})
 		} catch (error) {
-			console.warn(`[MIRROR] Navigation to ${url} failed:`, error?.message)
+			console.warn(`[MIRROR] Navigation to ${redactUrlForLog(url)} failed:`, redactLogText(error?.message ?? ""))
 		}
 
 		await this._ensureScreencasting()

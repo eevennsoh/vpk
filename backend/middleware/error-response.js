@@ -3,6 +3,8 @@
 
 const { STATUS_CODES } = require("node:http");
 
+const { redactLogText } = require("../lib/log-redaction");
+
 // One JSON error shape for the backend: `{ error: string, code: string }`, plus optional
 // extra fields a route already sends (for example the 413's `reason` and `details`). Routes
 // that return `{ error }` today stay readable: `error` keeps its meaning, `code` is added.
@@ -96,11 +98,12 @@ function decideErrorResponse(error) {
 	};
 }
 
+// The detail goes to the server log only, through the log redaction.
 function describeErrorForLog(error) {
 	if (error instanceof Error) {
-		return error.stack ?? `${error.name}: ${error.message}`;
+		return redactLogText(error.stack ?? `${error.name}: ${error.message}`);
 	}
-	return String(error);
+	return redactLogText(String(error));
 }
 
 /**
@@ -115,7 +118,7 @@ function createFinalErrorHandler({ logger = console } = {}) {
 		if (decision.status >= 500) {
 			logger.error(summary, describeErrorForLog(error));
 		} else {
-			logger.warn(summary, error instanceof Error ? error.message : String(error));
+			logger.warn(summary, redactLogText(error instanceof Error ? error.message : String(error)));
 		}
 		if (res.headersSent) {
 			// The response has started; Express's default handler ends the connection.

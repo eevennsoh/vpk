@@ -81,6 +81,14 @@ gh api repos/:owner/:repo \
   --jq '{full_name,delete_branch_on_merge,default_branch,private}'
 ```
 
+The same report lists stale worktrees (`stale`: no branch activity and no
+process for `--stale-days`, default 7, each with why it is or is not safe; a
+process check that could not run is never safe) and every `index.lock` with its
+holders (`indexLocks`). It removes nothing except, with
+`--remove-stale-locks`, an `index.lock` no process holds that is older than
+`--lock-min-age-minutes` (default 30), never in the persistent main checkout.
+A stale worktree is still removed only through the workflow below.
+
 Treat `git worktree list --porcelain` and local Git refs as authoritative, even
 when a Git UI shows stale counts after a failed fetch. Query merged PRs for
 non-ancestor candidates by exact branch and head SHA rather than relying on a

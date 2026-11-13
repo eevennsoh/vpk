@@ -87,6 +87,21 @@ test("the final handler hands a started response to Express and logs the detail 
 	assert.ok(String(logged[0][2]).includes(SECRET_DETAIL));
 });
 
+test("the final handler's log line goes through the log redaction", () => {
+	const madeUpToken = "madeUpBearerToken0123456789abcdef";
+	const logged = [];
+	const handler = createFinalErrorHandler({
+		logger: { error: (...args) => logged.push(args.join(" ")), warn: (...args) => logged.push(args.join(" ")) },
+	});
+	const res = { headersSent: false, status() { return this; }, json() { return this; } };
+	handler(new Error(`upstream 401: Authorization: Bearer ${madeUpToken}`), { method: "POST", path: "/api/x" }, res, () => {});
+	handler(Object.assign(new Error(`bad request for https://u:${madeUpToken}@h.example/`), { status: 400 }), { method: "POST", path: "/api/x" }, res, () => {});
+	assert.equal(logged.length, 2);
+	for (const line of logged) {
+		assert.equal(line.includes(madeUpToken), false, line);
+	}
+});
+
 // The middleware order of the real backend: security, body limits, routes, final handlers.
 async function withComposedApp(run, { routes = () => {} } = {}) {
 	const app = express();
