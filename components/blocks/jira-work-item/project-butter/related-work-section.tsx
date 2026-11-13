@@ -9,36 +9,36 @@ import type { ProjectButterRelatedKind } from "@/components/blocks/jira-work-ite
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-/** Delay before the Related work heading appears once a second group shows (reference RELATED_HEADER_REVEAL_MS). */
+/** Delay before the Related work heading appears (reference RELATED_HEADER_REVEAL_MS). */
 const RELATED_HEADER_REVEAL_MS = 160;
 
 /**
- * The Related work heading shows only with 2+ visible groups. Crossing from <2 to 2+ waits 160ms
- * and fades in; already 2+ on mount (or reduced motion) shows at once without animation.
+ * The heading appears after the minimum group count is reached. It fades in after 160ms,
+ * or appears immediately if already present on mount or reduced motion is enabled.
  */
-export function useRelatedHeaderReveal(count: number) {
+export function useRelatedHeaderReveal(count: number, minimumGroups = 2) {
 	const reducedMotion = useReducedMotion();
 	const [previous, setPrevious] = useState(count);
-	const [ready, setReady] = useState(count >= 2);
+	const [ready, setReady] = useState(count >= minimumGroups);
 	const [animated, setAnimated] = useState(false);
 	if (previous !== count) {
 		setPrevious(count);
-		if (count < 2) {
+		if (count < minimumGroups) {
 			setReady(false);
 			setAnimated(false);
-		} else if (previous < 2 && reducedMotion) {
+		} else if (previous < minimumGroups && reducedMotion) {
 			setReady(true);
 		}
 	}
 	useEffect(() => {
-		if (count < 2 || ready) return undefined;
+		if (count < minimumGroups || ready) return undefined;
 		const timer = window.setTimeout(() => {
 			setReady(true);
 			setAnimated(true);
 		}, RELATED_HEADER_REVEAL_MS);
 		return () => window.clearTimeout(timer);
-	}, [count, ready]);
-	return { ready: count >= 2 && ready, animated };
+	}, [count, minimumGroups, ready]);
+	return { ready: count >= minimumGroups && ready, animated };
 }
 
 const SHORTCUTS: Readonly<Record<string, ProjectButterRelatedKind>> = { A: "attachments", C: "children", K: "linked" };
@@ -68,7 +68,7 @@ export function useRelatedAddShortcuts(enabled: boolean, scopeRef: RefObject<HTM
 
 /**
  * The Related work section (reference Section with hideTitle/collapsible). With fewer than two groups
- * the h2 is absent, the section keeps the "Related work" name, and the content cannot collapse.
+ * the h2 is normally absent, the section keeps the "Related work" name, and the content cannot collapse.
  */
 export function RelatedWorkSection({ animated, children, collapsedSummary, onOpenChange, open, ready, sectionRef }: Readonly<{
 	/** Fade the heading in (the 160ms reveal); false when it was already shown on mount. */
@@ -79,7 +79,7 @@ export function RelatedWorkSection({ animated, children, collapsedSummary, onOpe
 	onOpenChange: (open: boolean) => void;
 	/** Controlled open state (content.relatedSectionOpen). */
 	open: boolean;
-	/** Heading visible (2+ groups). */
+	/** Whether the heading is visible. */
 	ready: boolean;
 	sectionRef?: RefObject<HTMLElement | null>;
 }>) {

@@ -238,6 +238,7 @@ function createCard({
 	pullRequestNumber,
 	pullRequestStatus,
 	tags,
+	teammateSessionsPresentation,
 	title,
 }: Readonly<{
 	agentActivities?: readonly JiraIssueAgentActivity[];
@@ -249,6 +250,7 @@ function createCard({
 	pullRequestNumber?: number;
 	pullRequestStatus?: JiraKanbanCardData["pullRequestStatus"];
 	tags: JiraKanbanCardData["tags"];
+	teammateSessionsPresentation?: JiraKanbanCardData["teammateSessionsPresentation"];
 	title: string;
 }>): JiraKanbanCardData {
 	return {
@@ -263,6 +265,7 @@ function createCard({
 		pullRequestPreview: attachPullRequestPreview(code, pullRequestNumber),
 		pullRequestStatus,
 		tags,
+		teammateSessionsPresentation,
 		title,
 	};
 }
@@ -448,6 +451,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 			createCard({
 				assignee: PAY_STORY_PEOPLE.maya,
 				code: "PAY-107",
+				teammateSessionsPresentation: "count",
 				priority: "major",
 				pullRequestNumber: 1856,
 				pullRequestStatus: "open",
@@ -477,13 +481,14 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					invokedBy: PAY_STORY_PEOPLE.jordan,
 					label: "Checking webhook retry edge cases",
 					role: "viewer",
-					state: "working",
+					state: "awaiting-input",
 					timeLabel: "2h",
 				})],
 			}),
 			createCard({
 				assignee: PAY_STORY_PEOPLE.jordan,
 				code: "PAY-123",
+				teammateSessionsPresentation: "expanded",
 				priority: "major",
 				tags: [{ text: "fixtures", color: "purple" }],
 				title: "Record the three missing decline-code fixtures",
@@ -515,19 +520,8 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 						label: "Recording decline-code fixtures",
 						labels: ["Recording decline-code fixtures", "Comparing missing decline cases", "Running fixture coverage"],
 						role: "viewer",
-						state: "working",
+						state: "awaiting-input",
 						timeLabel: "36s",
-					}),
-					createActivity({
-						id: "PAY-123:maya-claude",
-						agentName: "Claude",
-						agentBrandName: "claude",
-						host: "cloud",
-						invokedBy: PAY_STORY_PEOPLE.maya,
-						label: "Reviewing decline response examples",
-						role: "viewer",
-						state: "working",
-						timeLabel: "24m",
 					}),
 				],
 			}),
@@ -557,7 +551,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 						label: "Checking localisation fixtures",
 						labels: ["Checking localisation fixtures", "Comparing decline identifiers", "Running locale tests"],
 						role: "owner",
-						state: "working",
+						state: "awaiting-input",
 						timeLabel: "5m",
 					}),
 				],

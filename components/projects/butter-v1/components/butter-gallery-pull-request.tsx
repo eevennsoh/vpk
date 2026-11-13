@@ -124,6 +124,7 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 					developmentJourney={{ phase, agentName: "Claude", author: { ...CURRENT_USER, assistedBy: { name: "Claude", brandName: "claude" } }, autoFixEnabled: true, autoMergeEnabled: true, pullRequests: status === "multiple" ? MULTIPLE_DEVELOPMENT_PULL_REQUESTS : undefined }}
 					initialPreset="filled"
 					initialPresentation="full-screen"
+					initialRelatedSectionOpen={false}
 					initialSessions={workItem.selection.initialSessions}
 					journeyPhase={phase}
 					journeySession={JOURNEY_SESSION}

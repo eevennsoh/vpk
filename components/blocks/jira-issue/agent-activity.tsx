@@ -164,13 +164,11 @@ function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null, complete
 	}
 
 	return {
-		animate: completed
-			? { opacity: 1, transform: "scale(1)", transition: JIRA_ISSUE_MOTION_ENTER }
-			: { opacity: 1, y: 0, transition: JIRA_ISSUE_MOTION_ENTER },
+		animate: { opacity: 1, transform: "translateY(0px)", transition: JIRA_ISSUE_MOTION_ENTER },
 		exit: completed
 			? { opacity: 0, transform: "scale(0.96)", transition: JIRA_ISSUE_FINISHED_EXIT }
-			: { opacity: 0, y: -4, transition: JIRA_ISSUE_MOTION_EXIT },
-		initial: completed ? { opacity: 0, transform: "scale(1)" } : { opacity: 0, y: -4 },
+			: { opacity: 0, transform: "translateY(-4px)", transition: JIRA_ISSUE_MOTION_EXIT },
+		initial: completed ? { opacity: 0, transform: "translateY(0px)" } : { opacity: 0, transform: "translateY(-4px)" },
 	} as const;
 }
 
@@ -686,6 +684,7 @@ function JiraIssueAgentActivityRow({
 		>
 			<JiraIssueAgentRowContent
 				activities={activities}
+				animateStateTransition={animateStateTransition}
 				avatarLayout={avatarLayout}
 				avatarSize={avatarSize}
 				featuredActivity={isViewerRow && activities.length > 1 ? undefined : featuredActivity}

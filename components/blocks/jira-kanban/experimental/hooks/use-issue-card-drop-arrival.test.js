@@ -142,6 +142,38 @@ test("source-column scroll resets do not cancel a Done trace; destination and an
 	}
 });
 
+test("host move reports arrival after the destination entrance finishes", () => {
+	const h = harness({ withMove: true });
+	let arrivals = 0;
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Done", target: {}, animation: "fade", onArrival: () => { arrivals += 1; } });
+	const moving = h.render();
+	assert.equal(arrivals, 0);
+	const arrival = moving.arrivalForColumn("Done");
+	h.flights[0].landed("A");
+	h.render().handleComplete(arrival.id);
+	h.render();
+	assert.equal(arrivals, 1);
+	h.render();
+	assert.equal(arrivals, 1);
+});
+
+test("a host move without motion reports arrival after commit", () => {
+	const h = harness({ withMove: true, enabled: false });
+	const events = [];
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Done", target: {}, onArrival: () => events.push(h.columns().find((column) => column.title === "Done").cards[0].code) });
+	assert.deepEqual(events, ["A"]);
+});
+
+test("a superseded host move settles its callback once", () => {
+	const h = harness({ withMove: true });
+	let arrivals = 0;
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Done", target: {}, onArrival: () => { arrivals += 1; } });
+	h.render();
+	h.api().handleMove({ cardCodes: ["B"], columnTitle: "Review", target: {} });
+	h.render();
+	assert.equal(arrivals, 1);
+});
+
 test("Return captures the held preview before commit and launches arrivals for every destination before paint", () => {
 	const h = harness();
 	h.arrange();

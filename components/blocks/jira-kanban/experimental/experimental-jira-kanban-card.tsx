@@ -157,6 +157,7 @@ function resolveKanbanCardAssignment(
 
 	return {
 		addAgentLabel,
+		teammateSessionsPresentation: card.teammateSessionsPresentation,
 		...(assignmentAgents.length > 0 ? { agents: assignmentAgents } : {}),
 		assignedAgents,
 		defaultPinnedAgentIds: pinnedAgentIds,
