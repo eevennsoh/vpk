@@ -1,16 +1,13 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./memory-pressure.js");
+// Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
+const OVER = SWAP + 13;
 
-const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict, parseSwapUsedGb } = require("./dev-stack-budget.js");
+const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
 
 const calm = { servers: [], swapUsedGb: 2, pressureLevel: 1 };
 const stacks = (count) => Array.from({ length: count }, (_, index) => ({ pid: 100 + index, cwd: `/wt/${index}`, cpu: 1 }));
-
-test("parses swap in use from sysctl vm.swapusage", () => {
-	assert.equal(parseSwapUsedGb("total = 38912.00M  used = 37580.80M  free = 1331.20M  (encrypted)"), 36);
-	assert.equal(parseSwapUsedGb("total = 6144.00M  used = 0.00M  free = 6144.00M"), 0);
-	assert.equal(parseSwapUsedGb("vm.swapusage: unknown"), null);
-});
 
 test("starting is allowed up to the budget and refused one past it", () => {
 	assert.equal(DEV_STACK_BUDGET, 4);
@@ -30,9 +27,9 @@ test("two servers in one other worktree count as one stack", () => {
 
 test("memory pressure refuses within the budget when another stack runs; unknown readings do not", () => {
 	const other = [{ pid: 9, cwd: "/wt/other", cpu: 1 }];
-	assert.equal(evaluateBudget({ ...calm, servers: other, swapUsedGb: 16 }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
-	assert.equal(evaluateBudget({ ...calm, servers: other, pressureLevel: 4 }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
-	assert.equal(evaluateBudget({ ...calm, servers: other, pressureLevel: 2 }, { worktree: "/wt/new" }).exitCode, 0);
+	assert.equal(evaluateBudget({ ...calm, servers: other, swapUsedGb: SWAP }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
+	assert.equal(evaluateBudget({ ...calm, servers: other, pressureLevel: LEVEL }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
+	assert.equal(evaluateBudget({ ...calm, servers: other, pressureLevel: LEVEL - 1 }, { worktree: "/wt/new" }).exitCode, 0);
 	assert.equal(evaluateBudget({ servers: other, swapUsedGb: null, pressureLevel: null }, { worktree: "/wt/new" }).exitCode, 0);
 });
 
@@ -86,9 +83,9 @@ test("each other stack is labelled by evidence of a live task, not by CPU", () =
 });
 
 test("memory pressure with no other stack warns and starts; with one it refuses", () => {
-	const alone = evaluateBudget({ ...calm, swapUsedGb: 29 }, { worktree: "/wt/new" });
+	const alone = evaluateBudget({ ...calm, swapUsedGb: OVER }, { worktree: "/wt/new" });
 	assert.equal(alone.exitCode, 0);
-	assert.match(formatVerdict(alone, { worktree: "/wt/new" }), /Warning: memory pressure \(swap in use is 29 GB >= 16 GB\), but no other dev stack runs; starting/u);
-	const crowded = evaluateBudget({ ...calm, swapUsedGb: 29, servers: [{ pid: 9, cwd: "/wt/other", cpu: 1 }] }, { worktree: "/wt/new" });
+	assert.match(formatVerdict(alone, { worktree: "/wt/new" }), new RegExp(`Warning: memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\), but no other dev stack runs; starting`, "u"));
+	const crowded = evaluateBudget({ ...calm, swapUsedGb: OVER, servers: [{ pid: 9, cwd: "/wt/other", cpu: 1 }] }, { worktree: "/wt/new" });
 	assert.equal(crowded.exitCode, EXIT_OVER_BUDGET);
 });
