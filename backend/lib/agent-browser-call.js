@@ -4,15 +4,34 @@
 // never answers holds the workspace's queue, so a close queued behind it stays
 // "closing" and keeps one of the live-workspace slots.
 
-// Provisional: how long one agent-browser command may take before the backend stops
-// waiting.
-// `open` (and a new tab with a URL) waits for a page load and agent-browser's own
-// navigation timeout, which the open recovery below handles, so it gets longer.
+// agent-browser's own limits (installed README, "Default Timeout"): the daemon gives up on
+// an operation after 25 s, and the CLI stops reading the daemon's answer after 30 s. The
+// CLI then retries read-only commands itself; a command that changes the page is not
+// re-sent and fails with `outcome_unknown`. Our bounds sit clearly above those limits, so
+// whenever the CLI answers (success or its own error) its answer wins, and ours only ends
+// a CLI that never returns.
+const AGENT_BROWSER_DAEMON_OPERATION_TIMEOUT_MS = 25_000
+const AGENT_BROWSER_CLI_READ_TIMEOUT_MS = 30_000
+// The README does not say how many times a read-only command is retried; three CLI reads
+// is an assumption, not a measured value.
+const ASSUMED_READ_ONLY_ATTEMPTS = 3
+const MARGIN_MS = 15_000
+
+// Provisional bounds per command class.
 const AGENT_BROWSER_CALL_TIMEOUT_MS = Object.freeze({
-	open: 60_000,
-	close: 15_000,
-	default: 30_000,
+	// Changes the page or the browser: one CLI read plus a margin.
+	default: AGENT_BROWSER_CLI_READ_TIMEOUT_MS + MARGIN_MS,
+	// Waits on a navigation, which can take the daemon's whole operation timeout before the
+	// page answers; open has its own recovery for agent-browser's timeout error.
+	navigation: 60_000,
+	// Read-only, retried by the CLI.
+	readOnly: ASSUMED_READ_ONLY_ATTEMPTS * AGENT_BROWSER_CLI_READ_TIMEOUT_MS + MARGIN_MS,
 })
+
+const NAVIGATION_COMMANDS = new Set(["open", "reload", "back", "forward"])
+// Commands that only read; `tab` with no subcommand lists tabs. A screenshot changes no
+// page, and is treated as read-only so a slow capture is not mistaken for a hang.
+const READ_ONLY_COMMANDS = new Set(["snapshot", "url", "get", "title", "screenshot", "is"])
 
 /**
  * The bound for one agent-browser command, from its arguments (without --json/--session).
@@ -21,11 +40,11 @@ const AGENT_BROWSER_CALL_TIMEOUT_MS = Object.freeze({
  */
 function resolveAgentBrowserCallTimeoutMs(args) {
 	const [command, subcommand] = args.map((value) => String(value))
-	if (command === "open" || (command === "tab" && subcommand === "new")) {
-		return AGENT_BROWSER_CALL_TIMEOUT_MS.open
+	if (NAVIGATION_COMMANDS.has(command) || (command === "tab" && subcommand === "new")) {
+		return AGENT_BROWSER_CALL_TIMEOUT_MS.navigation
 	}
-	if (command === "close") {
-		return AGENT_BROWSER_CALL_TIMEOUT_MS.close
+	if (READ_ONLY_COMMANDS.has(command) || (command === "tab" && subcommand === undefined) || (command === "stream" && subcommand === "status")) {
+		return AGENT_BROWSER_CALL_TIMEOUT_MS.readOnly
 	}
 	return AGENT_BROWSER_CALL_TIMEOUT_MS.default
 }
@@ -133,6 +152,8 @@ function createAgentBrowserCaller({ execFileImpl, file, onCrash = null, timers =
 module.exports = {
 	AGENT_BROWSER_CALL_TIMEOUT_CODE,
 	AGENT_BROWSER_CALL_TIMEOUT_MS,
+	AGENT_BROWSER_CLI_READ_TIMEOUT_MS,
+	AGENT_BROWSER_DAEMON_OPERATION_TIMEOUT_MS,
 	AgentBrowserCallTimeoutError,
 	createAgentBrowserCaller,
 	isAgentBrowserCallTimeoutError,

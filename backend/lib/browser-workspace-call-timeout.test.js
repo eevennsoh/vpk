@@ -54,6 +54,8 @@ process.env.AGENT_BROWSER_EXECUTABLE_PATH = "/nonexistent/fake-browser-for-tests
 
 const {
 	AGENT_BROWSER_CALL_TIMEOUT_MS,
+	AGENT_BROWSER_CLI_READ_TIMEOUT_MS,
+	AGENT_BROWSER_DAEMON_OPERATION_TIMEOUT_MS,
 	isAgentBrowserCallTimeoutError,
 	resolveAgentBrowserCallTimeoutMs,
 } = require("./agent-browser-call");
@@ -113,21 +115,36 @@ function createManager(timers) {
 	});
 }
 
-test("each agent-browser command class has its own bound, longest for open", () => {
+test("each agent-browser command class has a bound above agent-browser's own limits", () => {
+	const { navigation, readOnly } = AGENT_BROWSER_CALL_TIMEOUT_MS;
 	const cases = [
-		[["open", "https://example.com"], AGENT_BROWSER_CALL_TIMEOUT_MS.open],
-		[["tab", "new", "https://example.com"], AGENT_BROWSER_CALL_TIMEOUT_MS.open],
-		[["tab"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
+		[["open", "https://example.com"], navigation],
+		[["tab", "new", "https://example.com"], navigation],
+		[["reload"], navigation],
+		[["back"], navigation],
+		[["forward"], navigation],
+		[["tab"], readOnly],
+		[["snapshot", "-i"], readOnly],
+		[["get", "text", "@e1"], readOnly],
+		[["screenshot", "/tmp/x.png"], readOnly],
+		[["stream", "status"], readOnly],
 		[["tab", "close", 1], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
-		[["close"], AGENT_BROWSER_CALL_TIMEOUT_MS.close],
+		[["close"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
 		[["click", "@e1"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
-		[["screenshot", "/tmp/x.png"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
+		[["fill", "@e1", "x"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
+		[["stream", "enable"], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
 		[[], AGENT_BROWSER_CALL_TIMEOUT_MS.default],
 	];
 	for (const [args, expected] of cases) {
 		assert.equal(resolveAgentBrowserCallTimeoutMs(args), expected, args.join(" "));
 	}
-	assert.ok(AGENT_BROWSER_CALL_TIMEOUT_MS.open > AGENT_BROWSER_CALL_TIMEOUT_MS.default);
+	// The tool's own error path must win whenever the CLI answers.
+	for (const [name, bound] of Object.entries(AGENT_BROWSER_CALL_TIMEOUT_MS)) {
+		assert.ok(bound > AGENT_BROWSER_CLI_READ_TIMEOUT_MS, `${name} (${bound}) must exceed the CLI read timeout`);
+		assert.ok(bound > AGENT_BROWSER_DAEMON_OPERATION_TIMEOUT_MS, `${name} must exceed the daemon operation timeout`);
+	}
+	assert.ok(navigation >= AGENT_BROWSER_CALL_TIMEOUT_MS.default);
+	assert.ok(readOnly >= 2 * AGENT_BROWSER_CLI_READ_TIMEOUT_MS, "read-only commands are retried by the CLI");
 });
 
 test("a close queued behind a command that never answers completes once the command's bound passes", TEST_TIMEOUT, async () => {
@@ -177,7 +194,7 @@ test("a ready workspace whose command never answers crashes and releases its slo
 
 	// The release sends close, which hangs too, and is bounded as well.
 	await fakeAgentBrowser.sent("close");
-	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.close);
+	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.default);
 	await until(() => timers.pending.size === 0);
 
 	const later = await outcomeOf(manager.clickWorkspaceRef(workspaceId, "@e2"));
@@ -194,7 +211,7 @@ test("a workspace whose first open never answers still sends close when it is re
 	fakeAgentBrowser.hang.add("open");
 	const create = manager.createWorkspace({ defaultUrl: "https://example.com" });
 	await fakeAgentBrowser.sent("open https://example.com");
-	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.open);
+	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.navigation);
 
 	const outcome = await outcomeOf(create);
 	assert.equal(isAgentBrowserCallTimeoutError(outcome.error), true);
