@@ -8,25 +8,31 @@ test("selecting a gallery item animates its highlight", { tag: "@smoke" }, async
 	await page.goto(appUrl("/butter-v1"));
 	const button = page.getByRole("button", { name: "Select Work item" });
 	await expect(button).toBeVisible();
-	const sizes = await button.evaluate(async (element) => {
-		const samples: number[] = [];
-		let start: number | undefined;
-		(element as HTMLButtonElement).click();
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				const surface = element.querySelector<HTMLElement>("[style*='mask-image']");
-				if (surface) {
-					start ??= performance.now();
-					samples.push(surface.getBoundingClientRect().width);
-				}
-				if (start === undefined || performance.now() - start < 1000) requestAnimationFrame(sample);
-				else resolve();
-			};
-			requestAnimationFrame(sample);
-		});
-		return samples;
+	await button.click();
+	const surface = button.locator("[style*='mask-image']").first();
+	await expect(surface).toBeAttached();
+	// The highlight grows on a Web Animation. Read that animation, not how many frames the runner paints;
+	// with fill "forwards" it stays readable even if it has already finished.
+	const reveal = await surface.evaluate(async (element) => {
+		const animation = element.getAnimations().find((candidate) => (candidate.effect as KeyframeEffect | null)?.getKeyframes().some((frame) => "transform" in frame));
+		if (!animation) return null;
+		const keyframes = (animation.effect as KeyframeEffect).getKeyframes();
+		const scale = (frame: ComputedKeyframe) => new DOMMatrixReadOnly(String(frame.transform)).a;
+		const timing = { duration: Number(animation.effect!.getTiming().duration), from: scale(keyframes[0]), to: scale(keyframes[keyframes.length - 1]) };
+		await animation.finished;
+		return timing;
 	});
-	expect(new Set(sizes).size).toBeGreaterThan(2);
+	expect(reveal, "selecting starts a transform animation on the highlight").not.toBeNull();
+	expect(reveal!.duration).toBeGreaterThan(0);
+	expect(reveal!.from).toBeLessThan(1);
+	expect(reveal!.to).toBe(1);
+	// Once it finishes, the highlight covers the whole selected item.
+	const [item, painted] = await Promise.all([button.boundingBox(), surface.boundingBox()]);
+	if (!item || !painted) throw new Error("Expected the selected item and its highlight to have boxes");
+	expect(painted.x).toBeLessThanOrEqual(item.x + 1);
+	expect(painted.y).toBeLessThanOrEqual(item.y + 1);
+	expect(painted.x + painted.width).toBeGreaterThanOrEqual(item.x + item.width - 1);
+	expect(painted.y + painted.height).toBeGreaterThanOrEqual(item.y + item.height - 1);
 });
 
 test("the standalone board hides an open sidebar chat and restores its draft", { tag: "@smoke" }, async ({ page }) => {
