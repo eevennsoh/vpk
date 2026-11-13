@@ -1,13 +1,19 @@
 #!/usr/bin/env node
 "use strict";
 
-// Every local branch and worktree with its landing status, and which ones vpk-git-clean
-// may remove. It removes nothing and writes no ref, worktree, index or config; what it
-// does write (merge-tree's unreferenced objects, and with --fetch the remote-tracking refs)
-// is listed in scripts/lib/branch-facts.js. Removal, and its process-ownership proof, stay
-// with the vpk-git-clean skill.
+// Every local branch and worktree with its landing status and which ones vpk-git-clean
+// may remove, which worktrees are stale (no branch activity and no process for
+// --stale-days), and every index.lock with whether a process holds it. A report: it
+// removes nothing, with one exception behind an explicit flag, --remove-stale-locks,
+// which deletes an index.lock that no process holds, no git command in that worktree
+// owns, and that is older than --lock-min-age-minutes (never in the persistent main
+// checkout). It writes no ref, worktree, index or config; what it does write
+// (merge-tree's unreferenced objects, and with --fetch the remote-tracking refs) is listed
+// in scripts/lib/branch-facts.js. Worktree and branch removal stay with the vpk-git-clean
+// skill.
 //
-//   node scripts/clean-candidates.js [--fetch] [--json]
+//   node scripts/clean-candidates.js [--fetch] [--json] [--stale-days N]
+//     [--remove-stale-locks] [--lock-min-age-minutes N]
 //
 // "cleanable" covers: the branch's committed work is proven landed on origin/<default>
 // and in the local <default>; no tracked, untracked, skip-worktree or assume-unchanged
@@ -17,14 +23,23 @@
 // per-worktree ref reaches (remote-tracking refs count as keeping a commit only after a
 // successful --fetch, and only while their branch still exists on origin); nothing on
 // origin/<branch> the branch lacks; no open PR (and PRs were readable); not the default
-// branch, the persistent main checkout, the current worktree, a locked or shared worktree.
-// It does not cover running processes. remoteSafeToDelete is decided only after a
-// successful --fetch in the same run.
+// branch, the persistent main checkout, the current worktree, a locked or shared worktree;
+// and, for a worktree, no process with its cwd inside it and no activity for --stale-days
+// (a process check that cannot run is never "none"). remoteSafeToDelete is decided only
+// after a successful --fetch in the same run, and only for a cleanable target.
 
 const fs = require("node:fs");
 const path = require("node:path");
 
 const { deriveBranchLanding } = require("./lib/branch-landing");
+const { inspectIndexLocks, removeStaleIndexLocks } = require("./lib/index-locks");
+const { listProcessCwds, processesUnder } = require("./lib/process-holders");
+const {
+	DEFAULT_LOCK_MIN_AGE_MINUTES,
+	DEFAULT_STALE_DAYS,
+	MINUTE_MS,
+	deriveWorktreeStaleness,
+} = require("./lib/worktree-staleness");
 const {
 	DEFAULT_KEEP_REFS,
 	collectBranchFacts,
@@ -42,15 +57,51 @@ const {
 const CONCURRENCY = 8;
 const SHOWN_PATHS = 5;
 
+function positiveNumber(value, flag) {
+	const number = Number(value);
+	if (!Number.isFinite(number) || number <= 0) throw new Error(`${flag} needs a positive number`);
+	return number;
+}
+
 function parseArgs(argv) {
-	const options = { fetch: false, json: false };
-	for (const arg of argv) {
+	const options = {
+		fetch: false,
+		json: false,
+		lockMinAgeMinutes: DEFAULT_LOCK_MIN_AGE_MINUTES,
+		removeStaleLocks: false,
+		staleDays: DEFAULT_STALE_DAYS,
+	};
+	for (let index = 0; index < argv.length; index += 1) {
+		const arg = argv[index];
 		if (arg === "--json") options.json = true;
 		else if (arg === "--fetch") options.fetch = true;
+		else if (arg === "--remove-stale-locks") options.removeStaleLocks = true;
+		else if (arg === "--stale-days") options.staleDays = positiveNumber(argv[++index], arg);
+		else if (arg === "--lock-min-age-minutes") options.lockMinAgeMinutes = positiveNumber(argv[++index], arg);
 		else if (arg === "--help" || arg === "-h") options.help = true;
 		else throw new Error(`unknown argument: ${arg}`);
 	}
 	return options;
+}
+
+function mtimeOrNull(file) {
+	try {
+		return fs.statSync(file).mtimeMs;
+	} catch {
+		return null;
+	}
+}
+
+// The newest of: the head commit, the worktree's HEAD reflog (commits, checkouts,
+// resets) and its index (staging, status refreshes by other tools). null when none reads.
+async function readWorktreeActivity(git, worktreePath, gitDir) {
+	const commitTime = await git(["-C", worktreePath, "log", "-1", "--format=%ct", "HEAD"]);
+	const times = [
+		commitTime.ok && commitTime.stdout.trim() ? Number(commitTime.stdout.trim()) * 1000 : null,
+		gitDir ? mtimeOrNull(path.join(gitDir, "logs", "HEAD")) : null,
+		gitDir ? mtimeOrNull(path.join(gitDir, "index")) : null,
+	].filter((time) => Number.isFinite(time));
+	return times.length ? Math.max(...times) : null;
 }
 
 async function mapLimit(items, limit, fn) {
@@ -138,8 +189,13 @@ function remoteVerdict({ facts, blockers, fetchState }) {
 async function collectCleanCandidates({
 	cwd = process.cwd(),
 	fetch = false,
+	lockMinAgeMinutes = DEFAULT_LOCK_MIN_AGE_MINUTES,
+	now = Date.now(),
+	processCwds: readProcessCwds = listProcessCwds,
+	removeStaleLocks = false,
 	runCommand = createRunner({ timeoutMs: 15_000 }),
 	readPrs = (branches) => readPullRequests(runCommand, cwd, branches),
+	staleDays = DEFAULT_STALE_DAYS,
 } = {}) {
 	const git = createGit(runCommand, cwd);
 	const defaultBranch = await resolveDefaultBranch(git);
@@ -179,7 +235,8 @@ async function collectCleanCandidates({
 		targets.push({ branch: null, worktree: entry, sharedBy: 1, missing: null });
 	}
 
-	const prsByBranch = await readPrs(branches);
+	const [prsByBranch, processCwds] = await Promise.all([readPrs(branches), readProcessCwds()]);
+	const mainCheckoutPath = worktrees[0]?.path;
 	const inspected = await mapLimit(targets, CONCURRENCY, async (target) => {
 		const prs = target.branch === null ? [] : prsByBranch === null ? null : prsByBranch.get(target.branch) ?? [];
 		const facts = await collectBranchFacts({
@@ -191,7 +248,8 @@ async function collectCleanCandidates({
 			localBranchExists: target.branch !== null,
 			keepRefs,
 		});
-		return { target, facts };
+		const lastActivityMs = facts.worktree ? await readWorktreeActivity(git, facts.worktree.path, facts.worktree.gitDir) : null;
+		return { target, facts, lastActivityMs };
 	});
 	// A rebase leaves its branch detached in the worktree doing it; that branch stays too.
 	const rebasing = new Map();
@@ -199,10 +257,24 @@ async function collectCleanCandidates({
 		const operation = facts.worktree?.operation;
 		if (operation?.branch) rebasing.set(operation.branch, facts.worktree.path);
 	}
-	const results = inspected.map(({ target, facts }) => {
+	const results = inspected.map(({ target, facts, lastActivityMs }) => {
 		const derived = deriveBranchLanding(facts);
-		const blockers = cleanBlockers({ derived, facts, target, defaultBranch, currentPath: top, mainCheckoutPath: worktrees[0]?.path, rebasing });
+		const landingBlockers = cleanBlockers({ derived, facts, target, defaultBranch, currentPath: top, mainCheckoutPath, rebasing });
+		// A worktree is a candidate only when its staleness check says safe: one created a
+		// minute ago, or with any process in it, stays whatever its landing.
+		const staleness = facts.worktree
+			? deriveWorktreeStaleness({
+				lastActivityMs,
+				now,
+				staleDays,
+				processes: processesUnder(processCwds, facts.worktree.path, { exclude: [process.pid] })?.map(({ pid, command }) => ({ pid, command })) ?? null,
+				blockers: landingBlockers,
+			})
+			: null;
+		const blockers = landingBlockers.length === 0 && staleness && !staleness.safe ? staleness.reasons : landingBlockers;
 		return {
+			gitDir: facts.worktree?.gitDir ?? null,
+			staleness,
 			branch: target.branch,
 			worktree: target.worktree?.path ?? null,
 			status: derived.status,
@@ -216,6 +288,14 @@ async function collectCleanCandidates({
 			blockers,
 		};
 	});
+	const lockEntries = results.filter((entry) => entry.gitDir).map((entry) => ({
+		worktree: entry.worktree,
+		gitDir: entry.gitDir,
+		protectedCheckout: entry.worktree === mainCheckoutPath,
+	}));
+	const indexLocks = await inspectIndexLocks(lockEntries, { now, minAgeMs: lockMinAgeMinutes * MINUTE_MS, readProcessCwds: async () => processCwds });
+	// The recheck before each unlink reads the process table again.
+	const lockRemovals = removeStaleLocks ? await removeStaleIndexLocks(indexLocks, { readProcessCwds }) : null;
 	return {
 		defaultBranch,
 		fetch: fetchState,
@@ -240,6 +320,19 @@ async function collectCleanCandidates({
 				})),
 			};
 		})),
+		staleDays,
+		processCheck: processCwds === null ? "unavailable" : "ok",
+		stale: results.filter((entry) => entry.staleness?.stale === true).map(({ branch, worktree, staleness }) => ({ branch, worktree, ...staleness })),
+		indexLocks: indexLocks.map(({ worktree, lock, ageMs, holders, worktreeProcesses, decision }) => ({
+			worktree,
+			lock,
+			ageMinutes: Math.floor(ageMs / MINUTE_MS),
+			holders,
+			worktreeProcesses,
+			decision: decision.action,
+			reason: decision.reason,
+		})),
+		lockRemovals,
 	};
 }
 
@@ -273,7 +366,17 @@ function formatCleanCandidates(report) {
 			lines.push(`  missing ${entry.worktree}  ${why}`);
 		}
 	}
-	lines.push("Process ownership is not checked here; vpk-git-clean proves it before removing anything.");
+	lines.push(`stale worktrees (no activity for ${report.staleDays} days${report.processCheck === "ok" ? "" : "; process check unavailable, so none is safe"}): ${report.stale.length}`);
+	for (const entry of report.stale) {
+		lines.push(`  ${entry.safe ? "safe   " : "unsafe "} ${entry.worktree}  idle ${entry.idleDays}d  ${entry.reasons.join("; ")}`);
+	}
+	lines.push(`index.lock files: ${report.indexLocks.length}`);
+	for (const lock of report.indexLocks) {
+		const removal = report.lockRemovals?.find((entry) => entry.lock === lock.lock);
+		const outcome = removal ? (removal.removed ? "removed" : `kept (${removal.reason})`) : lock.decision === "remove" ? "stale (pass --remove-stale-locks to remove)" : "kept";
+		lines.push(`  ${lock.lock}  ${lock.ageMinutes} min  ${outcome}${lock.decision === "keep" && !removal ? `: ${lock.reason}` : ""}`);
+	}
+	lines.push("Worktrees and branches are never removed here; vpk-git-clean proves process ownership and removes them.");
 	return lines.join("\n");
 }
 

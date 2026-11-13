@@ -66,7 +66,16 @@ function setup(t) {
 		return dir;
 	};
 	const runCommand = createRunner({ timeoutMs: 20_000, env });
-	const report = (prs = new Map(), options = {}) => collectCleanCandidates({ cwd: repo, runCommand, readPrs: async () => prs, ...options });
+	// Thirty days on, with no process in any worktree, so R-9's staleness check passes and
+	// each test isolates what it adds.
+	const report = (prs = new Map(), options = {}) => collectCleanCandidates({
+		cwd: repo,
+		runCommand,
+		readPrs: async () => prs,
+		now: Date.now() + 30 * 24 * 60 * 60 * 1000,
+		processCwds: async () => [],
+		...options,
+	});
 	const entry = (result, predicate) => [...result.candidates, ...result.retained].find(predicate);
 	return { root, origin, repo, env, sh, write, commit, landed, report, entry, runCommand };
 }
@@ -294,6 +303,21 @@ test("13: ship-status reads a failed branch lookup as unknown, never as deleted"
 	};
 	const status = await collectShipStatus({ cwd: repo, branch: "feat", runCommand: flaky, gateReader: async () => null });
 	assert.equal(status.status, "unknown");
+});
+
+test("R-9: a landed worktree that is young, or has a process in it, is retained", async (t) => {
+	const { repo, landed, runCommand, entry } = setup(t);
+	const dir = landed("feat");
+	const run = (options) => collectCleanCandidates({ cwd: repo, runCommand, readPrs: async () => new Map(), ...options });
+	const young = entry(await run({ processCwds: async () => [] }), byWorktree(dir));
+	assert.equal(young.cleanable, false);
+	assert.match(young.blockers.join("; "), /^active 0 day\(s\) ago/u);
+	const later = Date.now() + 30 * 24 * 60 * 60 * 1000;
+	const occupied = entry(await run({ now: later, processCwds: async () => [{ pid: 4242, command: "claude", cwd: dir }] }), byWorktree(dir));
+	assert.deepEqual(occupied.blockers, ["pid 4242 (claude) works here"]);
+	const unknown = entry(await run({ now: later, processCwds: async () => null }), byWorktree(dir));
+	assert.deepEqual(unknown.blockers, ["process check unavailable; unknown is never safe"]);
+	assert.equal(entry(await run({ now: later, processCwds: async () => [] }), byWorktree(dir)).cleanable, true);
 });
 
 // Second adversarial review of #2154 (items A to F, and the suspected gaps).
