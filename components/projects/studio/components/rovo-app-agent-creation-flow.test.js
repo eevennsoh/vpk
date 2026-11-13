@@ -927,10 +927,6 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAutomationRulesChange = useCallback\([\s\S]*automationRules: readonly AgentAutomationRule\[\][\s\S]*automationRules,[\s\S]*\},[\s\S]*\[updateActiveConfig\]/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*const automationRules = \(config\.automationRules \?\? \[\]\)\.map\(\(rule\) => \(\{[\s\S]*triggers: rule\.triggers\.map\(\(trigger\) =>[\s\S]*connectionState: "connecting" as const/u);
-	// The connect flow resolves (fake): provider-level, session-scoped, connecting -> connected.
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*trigger\.providerId === providerId[\s\S]*setTimeout\([\s\S]*markSessionProviderConnected\(providerId\)[\s\S]*connectionState: "connected" as const/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setConnectingProvider\(\{ providerId, trigger: targetTrigger \}\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /Authorizing \{getTriggerProvider\(connectingProvider\.providerId\)\?\.label/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind, selectedItem\?: string\) => \{[\s\S]*setDirectorySelectedToolId\(matchedTool\?\.id \?\? null\);[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);

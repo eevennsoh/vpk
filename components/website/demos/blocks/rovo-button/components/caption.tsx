@@ -1,7 +1,7 @@
 import type {
 	FloatingRovoButtonPlacement,
 	FloatingRovoButtonPositioning,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import { cn } from "@/lib/utils";
 
 /**

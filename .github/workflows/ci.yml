@@ -11,8 +11,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to a pull request supersedes its older run. Every push to main (and every
+  # manual dispatch) gets its own group and runs to completion, so each main commit gets a verdict:
+  # with one shared group, a burst of merges cancelled each other's runs.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   static:

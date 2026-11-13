@@ -2194,12 +2194,12 @@
       "count": 148
     }
   },
-  "components/projects/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
+  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/projects/rovo-button/page.source.test.js": {
+  "components/website/demos/blocks/rovo-button/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 52
     }
@@ -2525,22 +2525,22 @@
       "count": 2
     }
   },
-  "components/projects/shared/components/floating-rovo-button/index.tsx": {
+  "components/blocks/rovo-button/index.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
   },
-  "components/projects/shared/components/floating-rovo-button/motion.test.js": {
+  "components/blocks/rovo-button/motion.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/projects/shared/components/floating-rovo-button/nudge.tsx": {
+  "components/blocks/rovo-button/nudge.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/projects/shared/components/floating-rovo-button/surface.tsx": {
+  "components/blocks/rovo-button/surface.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -2648,7 +2648,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 853
+      "count": 850
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {

@@ -7,7 +7,7 @@ import { useRovoChatControls } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
 import JiraWorkItemModal from "@/components/projects/jira/components/jira-work-item-modal";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton from "@/components/blocks/rovo-button";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";

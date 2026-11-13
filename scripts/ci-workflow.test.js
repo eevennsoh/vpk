@@ -46,11 +46,67 @@ test("PR checks always evaluates and rejects failure, cancelled, skipped and mis
 	}
 });
 
+// Evaluates the `${{ }}` expressions the concurrency block uses: context paths, string literals,
+// ==, && and || (GitHub's short-circuit semantics, returning the deciding operand).
+function evaluateExpression(source, context) {
+	const tokens = source.match(/'[^']*'|==|&&|\|\||[\w.]+/gu);
+	let index = 0;
+	const operand = () => {
+		const token = tokens[index++];
+		if (token.startsWith("'")) return token.slice(1, -1);
+		return token.split(".").reduce((value, key) => value?.[key], context) ?? "";
+	};
+	const equality = () => {
+		const left = operand();
+		if (tokens[index] !== "==") return left;
+		index += 1;
+		return left === operand();
+	};
+	const and = () => {
+		let value = equality();
+		while (tokens[index] === "&&") {
+			index += 1;
+			const right = equality();
+			value = value ? right : value;
+		}
+		return value;
+	};
+	let value = and();
+	while (tokens[index] === "||") {
+		index += 1;
+		const right = and();
+		value = value || right;
+	}
+	return value;
+}
+
+function concurrencyFor(context) {
+	const block = workflow.match(/^concurrency:\n((?: {2}.*\n)+)/mu)[1];
+	const field = (name) => block.match(new RegExp(`^  ${name}: (.*)$`, "mu"))[1];
+	const render = (text) => text.replace(/\$\{\{ (.*?) \}\}/gu, (_, expression) => String(evaluateExpression(expression, context)));
+	return { cancel: render(field("cancel-in-progress")) === "true", group: render(field("group")) };
+}
+
+test("only pull-request runs cancel a superseded run; every main push and dispatch runs to completion", () => {
+	const pr = (number, sha) => ({ github: { event_name: "pull_request", ref: `refs/pull/${number}/merge`, sha, workflow: "CI" } });
+	const main = (sha) => ({ github: { event_name: "push", ref: "refs/heads/main", sha, workflow: "CI" } });
+	const dispatch = (ref, sha) => ({ github: { event_name: "workflow_dispatch", ref, sha, workflow: "CI" } });
+	// A pull request's newer push replaces its older run, and only that pull request's.
+	assert.deepEqual(concurrencyFor(pr(7, "a1")), { cancel: true, group: "ci-CI-refs/pull/7/merge" });
+	assert.equal(concurrencyFor(pr(7, "a2")).group, concurrencyFor(pr(7, "a1")).group);
+	assert.notEqual(concurrencyFor(pr(8, "a1")).group, concurrencyFor(pr(7, "a1")).group);
+	// Pushes to main never cancel or queue behind each other, and never share a pull request's group.
+	assert.deepEqual(concurrencyFor(main("b1")), { cancel: false, group: "ci-CI-b1" });
+	assert.notEqual(concurrencyFor(main("b2")).group, concurrencyFor(main("b1")).group);
+	assert.notEqual(concurrencyFor(main("b1")).group, concurrencyFor(pr(7, "b1")).group);
+	// A manual dispatch runs to completion too.
+	assert.deepEqual(concurrencyFor(dispatch("refs/heads/main", "c1")), { cancel: false, group: "ci-CI-c1" });
+});
+
 test("CI retains event coverage, cancellation, ratchets and authenticated frozen setup", () => {
 	assert.match(workflow, /pull_request:/u);
 	assert.match(workflow, /push:\n    branches: \[main\]/u);
 	assert.match(workflow, /workflow_dispatch:/u);
-	assert.match(workflow, /cancel-in-progress: true/u);
 	assert.match(workflow, /permissions:\n  contents: read/u);
 	for (const job of [jobs.static, jobs.unit, jobs.smoke, jobs.perf]) {
 		const steps = ["actions/checkout@", "pnpm/action-setup@", "actions/setup-node@", "node scripts/verify-pnpm-lockfile.js", "node scripts/write-npmrc.mjs", "pnpm install --frozen-lockfile"];
