@@ -106,7 +106,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing, pauseMegaB
 				style={{
 					cursor: "none",
 					opacity: closing ? 0 : 1,
-					transition: `opacity ${closing ? 250 : reducedMotion ? 300 : 0}ms cubic-bezier(0.6, 0, 0.8, 0.6)`,
+					transition: `opacity ${closing ? 250 : reducedMotion ? 300 : 0}ms var(--ease-in)`,
 				}}
 				data-jira-team-eu26-end-finale=""
 			>
