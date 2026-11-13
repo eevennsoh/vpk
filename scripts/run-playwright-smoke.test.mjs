@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { isSmokeSpec, selectSmokeSpecs } from "./run-playwright-smoke.mjs";
+import { isSmokeSpec, selectSmokeSpecs, trackedSpecs } from "./run-playwright-smoke.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -20,10 +22,27 @@ test("only specs that tag a test @smoke are selected", () => {
 	assert.equal(isSmokeSpec('{ tag: "@smoke" }'), true);
 });
 
-test("the smoke suite covers Butter, blocks, UI and a Rovo surface", async () => {
-	const { execFileSync } = await import("node:child_process");
-	const files = execFileSync("git", ["ls-files", "tests/**/*.spec.ts"], { cwd: REPO_ROOT, encoding: "utf8" }).split("\n").filter(Boolean);
-	const smoke = selectSmokeSpecs(files, (file) => readFileSync(path.join(REPO_ROOT, file), "utf8"));
+test("specs directly under tests/ are listed alongside nested ones", (t) => {
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-smoke-specs-"));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" });
+	git("init", "--quiet");
+	mkdirSync(path.join(root, "tests/projects/deep"), { recursive: true });
+	for (const file of ["tests/top.spec.ts", "tests/projects/nested.spec.ts", "tests/projects/deep/deeper.spec.ts", "tests/helpers.ts"]) {
+		writeFileSync(path.join(root, file), "");
+	}
+	git("add", "tests/top.spec.ts", "tests/projects/nested.spec.ts");
+	writeFileSync(path.join(root, "tests/untracked.spec.ts"), "");
+	assert.deepEqual(trackedSpecs(root).sort(), [
+		"tests/projects/deep/deeper.spec.ts",
+		"tests/projects/nested.spec.ts",
+		"tests/top.spec.ts",
+		"tests/untracked.spec.ts",
+	]);
+});
+
+test("the smoke suite covers Butter, blocks, UI and a Rovo surface", () => {
+	const smoke = selectSmokeSpecs(trackedSpecs(REPO_ROOT), (file) => readFileSync(path.join(REPO_ROOT, file), "utf8"));
 	assert.ok(smoke.some((file) => file.startsWith("tests/projects/butter")), "a Butter spec");
 	assert.ok(smoke.some((file) => file.startsWith("tests/blocks/")), "a blocks spec");
 	assert.ok(smoke.some((file) => file.startsWith("tests/ui/")), "a UI spec");
