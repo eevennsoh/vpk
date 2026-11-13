@@ -1,0 +1,43 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict, parseSwapUsedGb } = require("./dev-stack-budget.js");
+
+const calm = { servers: [], swapUsedGb: 2, pressureLevel: 1 };
+const stacks = (count) => Array.from({ length: count }, (_, index) => ({ pid: 100 + index, cwd: `/wt/${index}`, cpu: 1 }));
+
+test("parses swap in use from sysctl vm.swapusage", () => {
+	assert.equal(parseSwapUsedGb("total = 38912.00M  used = 37580.80M  free = 1331.20M  (encrypted)"), 36);
+	assert.equal(parseSwapUsedGb("total = 6144.00M  used = 0.00M  free = 6144.00M"), 0);
+	assert.equal(parseSwapUsedGb("vm.swapusage: unknown"), null);
+});
+
+test("starting is allowed up to the budget and refused one past it", () => {
+	assert.equal(DEV_STACK_BUDGET, 4);
+	assert.equal(evaluateBudget({ ...calm, servers: stacks(3) }, { worktree: "/wt/new" }).exitCode, 0);
+	const over = evaluateBudget({ ...calm, servers: stacks(4) }, { worktree: "/wt/new" });
+	assert.equal(over.exitCode, EXIT_OVER_BUDGET);
+	assert.equal(evaluateBudget({ ...calm, servers: stacks(4) }, { force: true, worktree: "/wt/new" }).exitCode, 0);
+});
+
+test("two servers in one other worktree count as one stack", () => {
+	const servers = [...stacks(3), { pid: 200, cwd: "/wt/0", cpu: 90 }];
+	const verdict = evaluateBudget({ ...calm, servers }, { worktree: "/wt/new" });
+	assert.equal(verdict.exitCode, 0);
+	assert.equal(verdict.otherStacks.length, 3);
+	assert.equal(verdict.otherStacks[0].idle, false, "one busy server makes the stack busy");
+});
+
+test("memory pressure refuses within the budget; unknown readings do not", () => {
+	assert.equal(evaluateBudget({ ...calm, swapUsedGb: 16 }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
+	assert.equal(evaluateBudget({ ...calm, pressureLevel: 4 }, { worktree: "/wt/new" }).exitCode, EXIT_OVER_BUDGET);
+	assert.equal(evaluateBudget({ ...calm, pressureLevel: 2 }, { worktree: "/wt/new" }).exitCode, 0);
+	assert.equal(evaluateBudget({ servers: [], swapUsedGb: null, pressureLevel: null }, { worktree: "/wt/new" }).exitCode, 0);
+});
+
+test("a server in this worktree (or below it) is a duplicate that --force does not override", () => {
+	const verdict = evaluateBudget({ ...calm, servers: [{ pid: 9, cwd: "/wt/new/app", cpu: 1 }] }, { force: true, worktree: "/wt/new" });
+	assert.equal(verdict.exitCode, EXIT_DUPLICATE_SERVER);
+	assert.match(formatVerdict(verdict, { worktree: "/wt/new" }), /pid 9/u);
+	assert.equal(evaluateBudget({ ...calm, servers: [{ pid: 9, cwd: "/wt/new-other", cpu: 1 }] }, { worktree: "/wt/new" }).exitCode, 0);
+});

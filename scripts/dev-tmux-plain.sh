@@ -111,6 +111,66 @@ check_workspace_deps() {
 }
 
 SESSION_NAME="$(resolve_session_name)"
+REPO_ROOT_PHYSICAL="$(pwd -P)"
+FORCE_START=0
+
+# One stack per worktree: sessions are matched to this worktree by their start directory, not
+# by name. A name follows the branch (or the directory when HEAD is detached), so a renamed or
+# newly checked-out branch would otherwise start a second session and next-server beside the
+# first.
+sessions_for_worktree() {
+	local name spath
+	tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null | while IFS='|' read -r name spath; do
+		[[ -n "$name" ]] || continue
+		if [[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" ]]; then
+			printf '%s\n' "$name"
+		fi
+	done
+}
+
+# Use an existing session for this worktree even when it carries another name.
+adopt_worktree_session() {
+	local name
+	tm has-session -t "$SESSION_NAME" 2>/dev/null && return 0
+	while IFS= read -r name; do
+		[[ -n "$name" ]] || continue
+		echo "Adopting tmux session '$name' for this worktree (this checkout would name it '$SESSION_NAME')."
+		SESSION_NAME="$name"
+		return 0
+	done < <(sessions_for_worktree)
+	return 0
+}
+
+stop_named_session() {
+	local name="$1"
+	# Send Ctrl-C first so `portless run` runs its own SIGINT cleanup and removes THIS worktree's
+	# route from ~/.portless/routes.json before the session is killed. (tmux kill-session sends
+	# SIGHUP, which portless does not trap, so the route would otherwise linger until a manual
+	# prune.) This is scoped to this worktree, unlike the global `portless prune`.
+	tm send-keys -t "$name" C-c 2>/dev/null || true
+	sleep 1
+	tm kill-session -t "$name" 2>/dev/null || true
+	echo "Stopped tmux session '$name' (socket: $SOCKET)."
+}
+
+# Stop every other session whose start directory is this worktree.
+stop_duplicate_sessions() {
+	local name
+	while IFS= read -r name; do
+		[[ -n "$name" && "$name" != "$SESSION_NAME" ]] || continue
+		echo "Stopping duplicate tmux session '$name' for this worktree."
+		stop_named_session "$name"
+	done < <(sessions_for_worktree)
+}
+
+# Machine-wide budget before a new stack starts (scripts/lib/dev-stack-budget.js).
+check_stack_budget() {
+	local args=(check --worktree "$REPO_ROOT")
+	if [[ "$FORCE_START" == "1" ]]; then
+		args+=(--force)
+	fi
+	node scripts/lib/dev-stack-budget.js "${args[@]}"
+}
 
 # Seed .env.local the same way the non-tmux launchers do, preferring the main
 # worktree's copy and falling back to the example file.
@@ -204,6 +264,8 @@ launch_session() {
 }
 
 start_session() {
+	adopt_worktree_session
+	stop_duplicate_sessions
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
 		if session_frontend_is_listening; then
 			echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
@@ -213,6 +275,7 @@ start_session() {
 			launch_session
 		fi
 	else
+		check_stack_budget || exit $?
 		launch_session
 	fi
 
@@ -227,20 +290,13 @@ start_session() {
 }
 
 stop_session() {
+	adopt_worktree_session
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		# Send Ctrl-C first so `portless run` runs its own SIGINT cleanup and
-		# removes THIS worktree's route from ~/.portless/routes.json before we
-		# kill the session. (tmux kill-session sends SIGHUP, which portless does
-		# not trap, so the route would otherwise linger until a manual prune.)
-		# This is scoped to this worktree — unlike `portless prune`, which is
-		# global and would risk other worktrees' routes.
-		tm send-keys -t "$SESSION_NAME" C-c 2>/dev/null || true
-		sleep 1
-		tm kill-session -t "$SESSION_NAME" 2>/dev/null || true
-		echo "Stopped tmux session '$SESSION_NAME' (socket: $SOCKET)."
+		stop_named_session "$SESSION_NAME"
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
 	fi
+	stop_duplicate_sessions
 	# Backstop: stop any listener still bound to this exact worktree (cwd-scoped,
 	# never touches other worktrees). Best-effort: never fail the stop.
 	node ./scripts/cleanup-worktree-listeners.js || true
@@ -248,6 +304,7 @@ stop_session() {
 }
 
 attach_session() {
+	adopt_worktree_session
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
 		exec "$TMUX_BIN" -L "$SOCKET" attach -t "$SESSION_NAME"
 	fi
@@ -256,6 +313,7 @@ attach_session() {
 }
 
 status_session() {
+	adopt_worktree_session
 	echo "Session: $SESSION_NAME"
 	echo "Socket:  $SOCKET"
 	echo "tmux:    $TMUX_BIN"
@@ -280,7 +338,10 @@ usage() {
 	echo "launching terminal. Prints the worktree's stable .localhost URL."
 	echo ""
 	echo "Commands:"
-	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)"
+	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)."
+	echo "          One session per worktree path: a session started under another name is adopted,"
+	echo "          extra ones are stopped. A new stack checks the machine-wide budget first;"
+	echo "          start --force (or VPK_DEV_FORCE=1) starts over budget."
 	echo "  stop    Kill the session (letting portless remove this worktree's route) and remove its dev port files"
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "  status  Show session and port state"
@@ -296,6 +357,21 @@ command="${1:-start}"
 if [[ "$command" == "--" ]]; then
 	shift
 	command="${1:-start}"
+fi
+[[ $# -gt 0 ]] && shift
+for arg in "$@"; do
+	case "$arg" in
+		--force) FORCE_START=1 ;;
+		--) ;;
+		*)
+			echo "Unknown option: $arg"
+			usage
+			exit 1
+			;;
+	esac
+done
+if [[ "${VPK_DEV_FORCE:-0}" == "1" ]]; then
+	FORCE_START=1
 fi
 
 case "$command" in
