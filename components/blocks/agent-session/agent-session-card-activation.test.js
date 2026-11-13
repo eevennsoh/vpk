@@ -66,6 +66,7 @@ function loadHarness() {
 			`],
 			["dropdown-menu", `
 				import React from "react";
+				export const dropdownStyles = { surface: "", padding: { compact: "" }, separator: "" };
 				export function DropdownMenu({ children }) { return children; }
 				export function DropdownMenuTrigger({ render, children }) { return React.cloneElement(render, null, children); }
 				export function DropdownMenuContent({ children, anchor, ref, side, align, sideOffset }) { return React.createElement("div", { ref, role: "menu", "data-anchor-kind": anchor ? "explicit" : "trigger", "data-side": side, "data-align": align, "data-side-offset": sideOffset }, children); }

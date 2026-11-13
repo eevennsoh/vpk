@@ -111,7 +111,7 @@ export function GenuiExportMenu({ spec, title, contentType, state }: GenuiExport
 				{exporting ? "Exporting..." : "Export"}
 				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="p-1">
+			<DropdownMenuContent align="start">
 				{formatOptions.map((option) => (
 					<DropdownMenuItem
 						key={option.format}

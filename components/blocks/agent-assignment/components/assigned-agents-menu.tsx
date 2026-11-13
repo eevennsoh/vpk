@@ -14,6 +14,7 @@ import {
 } from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { resolveAssignedAgentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
@@ -21,6 +22,7 @@ import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+import { cn } from "@/lib/utils";
 
 interface AssignedAgentsMenuProps {
 	addAgentLabel: string;
@@ -279,7 +281,7 @@ export function AssignedAgentsMenu({
 
 	return (
 		<div
-			className="flex w-full flex-col gap-1 p-1 outline-none"
+			className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding.compact)}
 			onFocus={handleFocus}
 			onKeyDown={handleKeyDown}
 			ref={containerRef}
@@ -298,7 +300,7 @@ export function AssignedAgentsMenu({
 					title="Assigned agents"
 				/>
 				{onAddAgent ? (
-					<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
+					<div className="sticky bottom-0 z-10 -mx-(--menu-inset) flex shrink-0 flex-col border-t border-border bg-popover px-(--menu-inset) pt-1">
 						<Button
 							className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"
 							onClick={onAddAgent}

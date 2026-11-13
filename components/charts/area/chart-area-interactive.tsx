@@ -85,7 +85,7 @@ export function ChartAreaInteractive() {
 						>
 							<SelectValue placeholder="Last 3 months" />
 						</SelectTrigger>
-						<SelectContent className="rounded-xl">
+						<SelectContent>
 							<SelectItem value="90d" className="rounded-lg">
 								Last 3 months
 							</SelectItem>

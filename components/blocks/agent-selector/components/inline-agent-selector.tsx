@@ -9,6 +9,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
@@ -99,7 +100,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
-		return <div key={agent.id} className="group/agent rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+		return <div key={agent.id} data-menu-row="" className="group/agent rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 			<div className="flex min-h-9 items-center gap-1 pl-2 pr-1.5">
 				{renderAgentTrigger?.(agent, trigger) ?? trigger}
 				{renderAgentAction?.(agent)}
@@ -124,7 +125,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="min-w-0 truncate">{action.label}</span></Button>)}{additionalActions}</div> : null}
 		</div>;
 	};
-	const section = (name: string, items: readonly AgentSelectorAgent[], showMore = false, separateFirst = false) => items.length ? <section aria-label={name}>{showHeadings ? <h3 className="rich-text-command-menu-heading">{name}</h3> : null}{items.flatMap((agent, index) => separateFirst && index === 0 && items.length > 1 ? [row(agent), <hr key="recent-separator" className="my-1 border-0 border-t border-border" />] : [row(agent)])}{showMore && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={(event) => {
+	const section = (name: string, items: readonly AgentSelectorAgent[], showMore = false, separateFirst = false) => items.length ? <section aria-label={name}>{showHeadings ? <h3 className="rich-text-command-menu-heading">{name}</h3> : null}{items.flatMap((agent, index) => separateFirst && index === 0 && items.length > 1 ? [row(agent), <hr key="recent-separator" className={cn(dropdownStyles.separator, "border-0")} />] : [row(agent)])}{showMore && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={(event) => {
 		const revealedIds = new Set(softwareAgents.slice(initialSoftwareLimit).map((agent) => agent.id));
 		setExpanded(true);
 		if (event.detail !== 0) return;
@@ -135,10 +136,10 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 			(buttons.find((button) => revealedIds.has(button.dataset.agentId ?? "")) ?? buttons[0])?.focus();
 		});
 	}}>Show more</button> : null}</section> : null;
-	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("flex w-80 max-w-full flex-col overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground", compact ? "h-auto" : "h-[26rem] max-h-[var(--available-height,26rem)] shadow-2xl")}>
-		{showSearch ? <div className="-mx-1 -mt-1 shrink-0 overflow-hidden rounded-t-xl"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
+	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("menu-row-spacing flex w-80 max-w-full flex-col overflow-hidden rounded-lg bg-popover text-popover-foreground", dropdownStyles.padding.compact, compact ? "h-auto" : cn("h-[26rem] max-h-[var(--available-height,26rem)]", dropdownStyles.surface))}>
+		{showSearch ? <div className="-mx-(--menu-inset) -mt-(--menu-inset) shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
 		<div ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", showTopScrollMask && "scroll-mask-top [--scroll-mask-fade-size:3rem]")}>{recommendedAgent ? row(recommendedAgent) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
-		{onBrowseAgents || onCreateAgent ? <div className="shrink-0 border-t border-border pt-1">{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
+		{onBrowseAgents || onCreateAgent ? <div className="-mx-(--menu-inset) shrink-0 border-t border-border px-(--menu-inset) pt-1">{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 	</div>;
 }

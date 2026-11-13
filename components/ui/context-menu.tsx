@@ -4,6 +4,7 @@ import * as React from "react";
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 
 import { cn } from "@/lib/utils";
+import { dropdownStyles, type MenuSpacing } from "@/components/ui/dropdown-menu";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
@@ -36,12 +37,13 @@ function ContextMenuContent({
   alignOffset = 4,
   side = "right",
   sideOffset = 0,
+  spacing = "compact",
   ...props
 }: ContextMenuPrimitive.Popup.Props &
   Pick<
     ContextMenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
-  >) {
+  > & { spacing?: MenuSpacing }) {
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner
@@ -53,8 +55,11 @@ function ContextMenuContent({
       >
         <ContextMenuPrimitive.Popup
 	          data-slot="context-menu-content"
+              data-menu-spacing={spacing}
 	          className={cn(
-	            "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 bg-popover text-popover-foreground min-w-36 rounded-xl p-1 shadow-xl duration-fast data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 z-[200] max-h-(--available-height) origin-(--transform-origin) overflow-x-hidden overflow-y-auto outline-none",
+	            dropdownStyles.popup,
+	            dropdownStyles.surface,
+              dropdownStyles.padding[spacing],
 	            className,
 	          )}
           {...props}
@@ -82,7 +87,7 @@ function ContextMenuLabel({
       data-slot="context-menu-label"
       data-inset={inset}
       className={cn(
-        "text-muted-foreground px-1.5 py-1 text-xs font-medium data-inset:pl-7",
+        dropdownStyles.label, "data-inset:pl-8",
         className,
       )}
       {...props}
@@ -105,7 +110,8 @@ function ContextMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-text-danger data-[variant=destructive]:focus:bg-bg-danger-subtler-hovered data-[variant=destructive]:focus:text-text-danger data-[variant=destructive]:*:[svg]:text-icon-danger data-[variant=destructive]:focus:*:[svg]:text-icon-danger focus:*:[svg]:text-accent-foreground gap-1.5 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 group/context-menu-item relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        dropdownStyles.itemBase,
+        "group/context-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered h-8 gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         className,
       )}
       {...props}
@@ -132,7 +138,7 @@ function ContextMenuSubTrigger({
       data-slot="context-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground gap-1.5 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 flex cursor-pointer items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-[highlighted]:bg-bg-neutral-subtle-hovered data-popup-open:bg-bg-neutral-subtle-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -151,7 +157,6 @@ function ContextMenuSubContent({
   return (
     <ContextMenuContent
       data-slot="context-menu-sub-content"
-      className="shadow-lg"
       side="right"
       {...props}
     />
@@ -172,7 +177,8 @@ function ContextMenuCheckboxItem({
       data-slot="context-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-checked:text-text data-checked:focus:text-text gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        dropdownStyles.selectableItem,
+        "pr-8 pl-2 data-inset:pl-8",
         className,
       )}
       checked={checked}
@@ -210,7 +216,8 @@ function ContextMenuRadioItem({
       data-slot="context-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-checked:text-text data-checked:focus:text-text gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        dropdownStyles.selectableItem,
+        "pr-8 pl-2 data-inset:pl-8",
         className,
       )}
       {...props}
@@ -232,7 +239,7 @@ function ContextMenuSeparator({
   return (
     <ContextMenuPrimitive.Separator
       data-slot="context-menu-separator"
-      className={cn("bg-border -mx-1 my-1 h-px", className)}
+      className={cn(dropdownStyles.separator, className)}
       {...props}
     />
   );

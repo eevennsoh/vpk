@@ -632,6 +632,7 @@ export function AgentSessionCard({
 				"[[data-marked]+&[data-marked]]:in-[.gap-1]:-mt-1",
 			)}
 			data-marked={isMarked || undefined}
+			data-menu-row=""
 			data-departing={rowMotion.departing}
 			data-testid={"agent-session-row-" + item.id}
 			inert={rowMotion.ariaHidden}

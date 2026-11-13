@@ -113,7 +113,7 @@ function DemoActionsContent() {
 }
 
 export default function DropdownMenuDemo() {
-  return <DropdownMenuDemoDefault />;
+  return <DropdownMenuDemoDensity />;
 }
 
 export function DropdownMenuDemoDefault() {
@@ -176,13 +176,14 @@ export function DropdownMenuDemoDensity() {
         <DropdownMenuTrigger
           render={<Button variant="outline" size="default" className="w-fit" />}
         >
-          Cozy density
+          Spacious
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent spacing="spacious">
           <DropdownMenuGroup>
-            <DropdownMenuItem className="h-11">Dashboard</DropdownMenuItem>
-            <DropdownMenuItem className="h-11">Projects</DropdownMenuItem>
-            <DropdownMenuItem className="h-11">Settings</DropdownMenuItem>
+            <DropdownMenuItem>Dashboard</DropdownMenuItem>
+            <DropdownMenuItem>Projects</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Settings</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -190,13 +191,14 @@ export function DropdownMenuDemoDensity() {
         <DropdownMenuTrigger
           render={<Button variant="outline" size="default" className="w-fit" />}
         >
-          Compact density
+          Compact
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuGroup>
-            <DropdownMenuItem className="h-8">Dashboard</DropdownMenuItem>
-            <DropdownMenuItem className="h-8">Projects</DropdownMenuItem>
-            <DropdownMenuItem className="h-8">Settings</DropdownMenuItem>
+            <DropdownMenuItem>Dashboard</DropdownMenuItem>
+            <DropdownMenuItem>Projects</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Settings</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
