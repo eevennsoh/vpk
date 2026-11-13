@@ -19,3 +19,4 @@ alwaysApply: false
 - When animated panels compute a fixed height before applying `overflow-hidden`, derive constants from the actual rendered geometry (slot size + padding + borders + dividers) instead of desired row names. Validate the measured row/panel height with a focused test or browser measurement so sticky footers and bottom gaps do not get clipped.
 - For ADS Toggle parity work, lock geometry before token polish: use ADS content-box geometry, keep the regular thumb at 12px, and use `@atlaskit/icon/core/check-mark` + `@atlaskit/icon/core/cross` (`size="small"`) wrapped in VPK `Icon`.
 - On pages that render multiple Sonner demos, give each `<Toaster />` a unique `id` (lint requires the `id`) and pass matching `toasterId` in `toast.*` calls so a single action does not render through multiple toasters.
+- Theme switching uses `setGlobalTheme()` from `@atlaskit/tokens`; toggling only the HTML `dark` class does not update ADS tokens.

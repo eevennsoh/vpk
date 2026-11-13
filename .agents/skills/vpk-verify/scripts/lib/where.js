@@ -1,6 +1,7 @@
 "use strict";
 
-// where: file/slug/route -> routes, importers, feature recipes and Playwright specs to re-check.
+// where: file/slug/route -> routes, importers, feature recipes and Playwright specs to re-check,
+// and the .agents/rules files whose scope covers it.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -237,6 +238,29 @@ function fallbackOwner(stem) {
 	return parts[0] === "components" && parts.length >= 3 ? parts.slice(0, 3).join("/") : null;
 }
 
+// .agents/rules/*.md with their `paths:` globs; a rule without paths applies everywhere.
+// Claude Code loads these by scope on its own; Codex and Rovo do not, so `where` names them.
+function readRuleScopes(repoRoot) {
+	const rulesDir = path.join(repoRoot, ".agents", "rules");
+	let files = [];
+	try {
+		files = fs.readdirSync(rulesDir).filter((name) => name.endsWith(".md")).sort();
+	} catch {
+		return [];
+	}
+	return files.map((name) => {
+		const frontmatter = /^---\n([\s\S]*?)\n---\n/u.exec(readText(path.join(rulesDir, name)))?.[1] ?? "";
+		const block = /^paths:\n((?:\s+- .+\n?)+)/mu.exec(frontmatter)?.[1];
+		return { file: `.agents/rules/${name}`, paths: block ? [...block.matchAll(/- "([^"]+)"/gu)].map((match) => match[1]) : null };
+	});
+}
+
+function rulesFor(files, scopes) {
+	return scopes
+		.filter(({ paths }) => paths === null || files.some((file) => paths.some((glob) => path.posix.matchesGlob(file, glob))))
+		.map(({ file }) => file);
+}
+
 function resolveWhere(input, {
 	repoRoot = REPO_ROOT,
 	featuresDir = path.join(repoRoot, ".agents/skills/vpk-verify/features"),
@@ -261,6 +285,7 @@ function resolveWhere(input, {
 	let owner = null;
 	let routes = [];
 	let stem = null;
+	let ruleTargets = null;
 
 	if (raw.startsWith("/")) {
 		kind = "route";
@@ -292,6 +317,7 @@ function resolveWhere(input, {
 			if (entries.length > 0) owner = stem;
 		}
 		owner ??= fallbackOwner(stem);
+		ruleTargets = isDir ? relativeFiles(diskPath, repoRoot) : [file];
 		const pageDir = (page) => path.posix.dirname(page.source);
 		routes = [
 			...catalogRoutes(entries, pages),
@@ -327,6 +353,11 @@ function resolveWhere(input, {
 	const landing = new Set(["/", "/components", ...catalog.map((entry) => `/${entry.category}`)]);
 	const capturable = routes.filter((route) => !route.dynamic && !landing.has(route.route));
 	const primary = capturable.find((route) => route.via === "page") ?? capturable[0];
+	// A slug or route is the owner's files plus the pages that render it.
+	ruleTargets ??= [
+		...(owner ? relativeFiles(path.join(repoRoot, owner), repoRoot) : []),
+		...routes.map((route) => route.source).filter(Boolean),
+	];
 	return {
 		input: String(input),
 		kind,
@@ -340,7 +371,12 @@ function resolveWhere(input, {
 		features: patterns.length ? scanMentions(featureFiles, patterns, repoRoot) : [],
 		specs: patterns.length ? scanMentions(specFiles, patterns, repoRoot) : [],
 		capture: primary ? `control-vpk capture ${primary.route}` : null,
+		rules: rulesFor(ruleTargets, readRuleScopes(repoRoot)),
 	};
+}
+
+function relativeFiles(dir, repoRoot) {
+	return walkFiles(dir, () => true).map((file) => toPosix(path.relative(repoRoot, file)));
 }
 
 function formatWhere(result) {
@@ -369,6 +405,8 @@ function formatWhere(result) {
 		...limited(result.features, mention),
 		"specs",
 		...limited(result.specs, mention),
+		"rules (read before editing; Claude Code loads them itself, Codex and Rovo do not)",
+		...limited(result.rules ?? [], (rule) => `  ${rule}`),
 		...(result.capture ? [`next    ${result.capture}`] : []),
 		"",
 	].join("\n");

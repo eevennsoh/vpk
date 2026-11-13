@@ -200,9 +200,10 @@ test("verifyDocumentedScripts reports provider composition drift", () => {
 test("verifyAgentsFreshnessSection reports missing and incomplete freshness blocks", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-agents-freshness-missing-"));
 	try {
-		writeFileSync(path.join(cwd, "AGENTS.md"), "# Docs\n");
+		mkdirSync(path.join(cwd, ".agents", "rules"), { recursive: true });
+		writeFileSync(path.join(cwd, ".agents", "rules", "testing.md"), "# Docs\n");
 
-		const result = verifyAgentsFreshnessSection({ cwd, files: ["AGENTS.md"] });
+		const result = verifyAgentsFreshnessSection({ cwd, files: [".agents/rules/testing.md"] });
 		assert.equal(result.failures.length, 1);
 		assert.equal(result.failures[0].type, "agents-freshness");
 		assert.match(result.failures[0].message, /validation-freshness:begin/u);
@@ -214,12 +215,11 @@ test("verifyAgentsFreshnessSection reports missing and incomplete freshness bloc
 test("verifyAgentsFreshnessSection accepts the required freshness command and reference set", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-agents-freshness-"));
 	try {
-		writeFileSync(path.join(cwd, "AGENTS.md"), [
+		mkdirSync(path.join(cwd, ".agents", "rules"), { recursive: true });
+		writeFileSync(path.join(cwd, ".agents", "rules", "testing.md"), [
 			"# Docs",
 			"",
 			"<!-- validation-freshness:begin -->",
-			"Last validated: 2026-07-06",
-			"",
 			"- `pnpm run validate:preflight`",
 			"- `pnpm run verify:route-manifest`",
 			"- `pnpm run verify:api-surfaces`",
@@ -241,7 +241,7 @@ test("verifyAgentsFreshnessSection accepts the required freshness command and re
 			"<!-- validation-freshness:end -->",
 		].join("\n"));
 
-		assert.deepEqual(verifyAgentsFreshnessSection({ cwd, files: ["AGENTS.md"] }).failures, []);
+		assert.deepEqual(verifyAgentsFreshnessSection({ cwd, files: [".agents/rules/testing.md"] }).failures, []);
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
@@ -273,4 +273,38 @@ test("parseArgs accepts repeated targets and rejects incomplete options", () => 
 	});
 	assert.throws(() => parseArgs(["--target"]), /requires a value/u);
 	assert.throws(() => parseArgs(["--unknown"]), /Unknown argument/u);
+});
+
+test("verifyDocumentedScripts fails on a backticked repo path that no longer exists", () => {
+	const { spawnSync } = require("node:child_process");
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-doc-paths-"));
+	try {
+		writeFileSync(path.join(cwd, "package.json"), JSON.stringify({ scripts: {} }));
+		writeFileSync(path.join(cwd, ".gitignore"), "output/\n.claude/launch.json\n");
+		mkdirSync(path.join(cwd, "app"), { recursive: true });
+		writeFileSync(path.join(cwd, "app", "providers.tsx"), "export {};\n");
+		mkdirSync(path.join(cwd, "components", "ui"), { recursive: true });
+		writeFileSync(path.join(cwd, "components", "ui", "button.tsx"), "export {};\n");
+		mkdirSync(path.join(cwd, ".agents", "skills", "demo", "scripts"), { recursive: true });
+		writeFileSync(path.join(cwd, ".agents", "skills", "demo", "scripts", "status.sh"), "#!/bin/sh\n");
+		writeFileSync(path.join(cwd, ".agents", "skills", "demo", "SKILL.md"), "Run `scripts/status.sh`; see `app/providers.tsx:3`.\n");
+		writeFileSync(path.join(cwd, "docs.md"), [
+			"Providers live in `app/providers.tsx` and load through `@/app/providers`; buttons in `components/ui/`.",
+			"Screens land in `output/agent-browser/` and previews read `.claude/launch.json`.",
+			"Placeholders: `app/[slug]/page.tsx`, `components/<name>/`, `app/**/*.tsx`.",
+			"Not paths: `origin/main`, `eevennsoh/vpk`, `@atlaskit/tokens`, `https://example.com/a/b`.",
+			"Moved: `components/providers.tsx`.",
+		].join("\n"));
+		for (const args of [["init", "-q"], ["add", "-A"]]) {
+			assert.equal(spawnSync("git", args, { cwd }).status, 0);
+		}
+
+		const result = verifyDocumentedScripts({ cwd, files: ["docs.md", ".agents/skills/demo/SKILL.md"] });
+		assert.deepEqual(
+			result.failures.map(({ filePath, line, message }) => `${filePath}:${line} ${message}`),
+			["docs.md:5 Documented path `components/providers.tsx` does not exist."],
+		);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
 });
