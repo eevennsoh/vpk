@@ -10,6 +10,7 @@ const {
 	DEFAULT_DEFERRED_MODULE_RULES,
 	DEFAULT_FILE_IMPORT_RULES,
 	DEFAULT_LAZY_ONLY_MODULES,
+	DEFAULT_REACH_TRACKED_RULES,
 	DEFAULT_ROUTE_SHELL_FILES,
 	DEFAULT_SINGLE_OWNER_IMPORTS,
 	collectHeavyStaticImportsFromSource,
@@ -423,4 +424,40 @@ test("a package's stylesheet rule covers every .css path it ships, from TS and f
 			["app/layout.tsx", "katex/dist/katex.css"],
 		]);
 	});
+});
+
+test("a package rule matches the package and its subpaths, not a package that shares its prefix", () => {
+	const rules = [{ match: "package", reason: "charting runtime", source: "recharts" }];
+	assert.equal(getRuleForImport("recharts", rules)?.source, "recharts");
+	assert.equal(getRuleForImport("recharts/lib/util", rules)?.source, "recharts");
+	assert.equal(getRuleForImport("recharts-scale", rules), null);
+});
+
+test("reach-tracked runtimes are baselined on reach but stay allowed in a shell's own imports", () => {
+	const reachTrackedRules = [{ match: "package", reason: "charting runtime", source: "recharts" }];
+	withWorkspace({
+		"app/rovo/page.tsx": 'import { LineChart } from "recharts";\nexport default LineChart;\n',
+		"app/page.tsx": 'import Home from "@/components/home";\nexport default Home;\n',
+		"components/home.tsx": "export default function Home() { return null; }\n",
+	}, (cwd) => {
+		const options = { cwd, deferredModuleRules: [], heavyImportRules: [], ...NO_TREE_RULES, reachTrackedRules, routeShellFiles: ["app/page.tsx", "app/rovo/page.tsx"] };
+		assert.deepEqual(verifyLazyLoadBoundaries({ ...options, heavyReachBaseline: { "app/rovo/page.tsx": ["recharts"] } }), []);
+
+		writeFileSync(path.join(cwd, "components/home.tsx"), 'import "recharts";\nexport default function Home() { return null; }\n');
+		const failures = verifyLazyLoadBoundaries({ ...options, heavyReachBaseline: { "app/rovo/page.tsx": ["recharts"] } });
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath, failure.source]), [["heavy-reach-new", "app/page.tsx", "recharts"]]);
+	});
+});
+
+test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mermaid, recharts and the logo maps", () => {
+	assert.deepEqual(DEFAULT_REACH_TRACKED_RULES.map((rule) => `${rule.match}:${rule.source}`), [
+		"package:streamdown",
+		"prefix:@streamdown/",
+		"package:katex",
+		"package:mermaid",
+		"package:recharts",
+		"package:@atlassian/logo-third-party",
+		"package:@atlaskit/logo",
+	]);
+	assert.equal(getRuleForImport("@atlaskit/logo-extra", DEFAULT_REACH_TRACKED_RULES), null);
 });

@@ -275,6 +275,9 @@ function getRuleForImport(importPath, rules = DEFAULT_HEAVY_IMPORT_RULES) {
 		if (rule.match === "prefix") {
 			return importPath.startsWith(rule.source);
 		}
+		if (rule.match === "package") {
+			return importPath === rule.source || importPath.startsWith(`${rule.source}/`);
+		}
 		return importPath === rule.source;
 	}) ?? null;
 }
@@ -660,6 +663,19 @@ function resolveDemoEntryFiles({ cwd, entryFiles }) {
 	return { resolved, unresolved };
 }
 
+// Runtimes tracked on reach only (C-8f): they are not banned from a route shell's own imports
+// (Rovo's shell renders markdown on purpose), but the set of route entries that reach each one
+// is baselined, so they cannot spread to an entry that does not reach them today.
+const DEFAULT_REACH_TRACKED_RULES = [
+	{ match: "package", reason: "markdown streaming runtime", source: "streamdown" },
+	{ match: "prefix", reason: "Streamdown plugin", source: "@streamdown/" },
+	{ match: "package", reason: "math typesetting runtime", source: "katex" },
+	{ match: "package", reason: "diagram runtime", source: "mermaid" },
+	{ match: "package", reason: "charting runtime", source: "recharts" },
+	{ match: "package", reason: "third-party brand logo map", source: "@atlassian/logo-third-party" },
+	{ match: "package", reason: "Atlassian product logo map", source: "@atlaskit/logo" },
+];
+
 const DEFAULT_HEAVY_REACH_BASELINE_PATH = "scripts/lazy-load-heavy-baseline.json";
 const DEFAULT_MAX_REACHABLE_MODULES = 6000;
 
@@ -753,6 +769,7 @@ function verifyLazyLoadBoundaries({
 	lazyOnlyModules = DEFAULT_LAZY_ONLY_MODULES,
 	heavyReachBaseline = null,
 	maxReachableModules = DEFAULT_MAX_REACHABLE_MODULES,
+	reachTrackedRules = DEFAULT_REACH_TRACKED_RULES,
 	onHeavyReachMeasured = null,
 	routeShellFiles = DEFAULT_ROUTE_SHELL_FILES,
 	singleOwnerImports = DEFAULT_SINGLE_OWNER_IMPORTS,
@@ -765,7 +782,7 @@ function verifyLazyLoadBoundaries({
 		for (const { category, entryFile, slug } of unresolved) {
 			failures.push({ category, filePath: entryFile, slug, type: "unresolved-demo-entry" });
 		}
-		const heavyReach = verifyHeavyReach({ baseline: heavyReachBaseline, cwd, entries, heavyImportRules, maxModules: maxReachableModules, readSpecifiers });
+		const heavyReach = verifyHeavyReach({ baseline: heavyReachBaseline, cwd, entries, heavyImportRules: [...heavyImportRules, ...reachTrackedRules], maxModules: maxReachableModules, readSpecifiers });
 		onHeavyReachMeasured?.(heavyReach.measured);
 		failures.push(...heavyReach.failures);
 	}
@@ -961,7 +978,7 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 	}
 
 	if (failures.length === 0) {
-		console.log(`Verified lazy-load boundaries (${routeShellFiles.length} route entries, ${options.heavyImportRules.length} heavy import rules, ${DEFAULT_DEFERRED_MODULE_RULES.length + DEFAULT_LAZY_ONLY_MODULES.length} deferred module rules, ${DEFAULT_SINGLE_OWNER_IMPORTS.length} single-owner imports, ${DEFAULT_FILE_IMPORT_RULES.length} file import rules)`);
+		console.log(`Verified lazy-load boundaries (${routeShellFiles.length} route entries, ${options.heavyImportRules.length} heavy import rules, ${DEFAULT_DEFERRED_MODULE_RULES.length + DEFAULT_LAZY_ONLY_MODULES.length} deferred module rules, ${DEFAULT_SINGLE_OWNER_IMPORTS.length} single-owner imports, ${DEFAULT_FILE_IMPORT_RULES.length} file import rules, ${DEFAULT_REACH_TRACKED_RULES.length} reach-tracked runtimes)`);
 		return;
 	}
 
@@ -981,6 +998,7 @@ module.exports = {
 	DEFAULT_FILE_IMPORT_RULES,
 	DEFAULT_HEAVY_IMPORT_RULES,
 	DEFAULT_LAZY_ONLY_MODULES,
+	DEFAULT_REACH_TRACKED_RULES,
 	DEFAULT_ROUTE_SHELL_FILES,
 	DEFAULT_SINGLE_OWNER_IMPORTS,
 	collectReachableHeavyImports,
