@@ -273,6 +273,16 @@ jobs:
           node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 --runs 3
           node scripts/verify-perf-baseline-budget.js --require-fetched
 
+      - name: Keep the perf baseline
+        # Every measured value plus the scripts and stylesheets each route fetched, for diffing a
+        # failing route against a local run.
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-baseline
+          path: output/perf-baseline.json
+          retention-days: 7
+
   aggregate:
     name: PR checks
     if: ${{ always() }}

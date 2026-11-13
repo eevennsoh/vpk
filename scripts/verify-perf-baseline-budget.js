@@ -267,6 +267,20 @@ function formatBudgetTable(baseline, routeBudgets = DEFAULT_ROUTE_BUDGETS) {
 	return rows.map((row) => row.map((cell, column) => (column >= 2 ? cell.padStart(widths[column]) : cell.padEnd(widths[column]))).join("  ")).join("\n");
 }
 
+// For a route over a fetched budget, the scripts and stylesheets its first run fetched, so the
+// job log shows what to diff against a local run.
+function formatFetchedAssetsForFailures(baseline, failures) {
+	const routeIds = [...new Set(failures.filter((failure) => failure.type === "over-budget" && FETCHED_METRICS.has(failure.metricName)).map((failure) => failure.routeId))];
+	const sections = [];
+	for (const routeId of routeIds) {
+		const route = (baseline.routes ?? []).find((candidate) => candidate.id === routeId);
+		const assets = route?.fetchedRuns?.[0]?.assets;
+		if (!assets) continue;
+		sections.push(`Fetched by ${routeId} (${route.fetchedPath}), first run:\n${assets.map((asset) => `  ${String(asset.bytes).padStart(9)}  ${asset.path}`).join("\n")}`);
+	}
+	return sections.join("\n");
+}
+
 function evaluateRouteLoadTimingFailures(baseline) {
 	if (!baseline.source?.baseUrl) {
 		return [];
@@ -373,6 +387,10 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 		for (const failure of findings) {
 			log(`- ${formatFailure(failure)}`);
 		}
+		const fetchedListing = formatFetchedAssetsForFailures(baseline, findings);
+		if (fetchedListing) {
+			log(fetchedListing);
+		}
 		if (options.warnOnly) {
 			return;
 		}
@@ -407,6 +425,7 @@ module.exports = {
 	ROUTE_BUDGETS_PATH,
 	findRaisedBudgets,
 	formatBudgetTable,
+	formatFetchedAssetsForFailures,
 	formatRaisedBudget,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,

@@ -13,6 +13,7 @@ const {
 	evaluateBuildDurationBudget,
 	findRaisedBudgets,
 	formatBudgetTable,
+	formatFetchedAssetsForFailures,
 	formatRaisedBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
@@ -379,4 +380,12 @@ test("the budget table shows each measured value, its budget and the headroom", 
 		["home", "fetchedCssBytes", "-", "10", "not measured"],
 		["home", "fetchedJsBytes", "50", "100", "50 (50.0%)"],
 	]);
+});
+
+test("a route over its fetched budget lists the assets its first run fetched", () => {
+	const baseline = { routes: [createRoute("home", { fetchedJs: { bytes: 300 }, fetchedPath: "/", fetchedRuns: [{ assets: [{ bytes: 200, kind: "js", path: "/_next/static/chunks/a.js" }, { bytes: 100, kind: "js", path: "/_next/static/chunks/b.js" }] }] })] };
+	const failures = evaluatePerfBaselineBudget(baseline, { home: { fetchedJsBytes: 250 } }, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true });
+	const listing = formatFetchedAssetsForFailures(baseline, failures).split("\n").map((line) => line.trim());
+	assert.deepEqual(listing, ["Fetched by home (/), first run:", "200  /_next/static/chunks/a.js", "100  /_next/static/chunks/b.js"]);
+	assert.equal(formatFetchedAssetsForFailures(baseline, []), "");
 });

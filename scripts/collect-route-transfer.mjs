@@ -161,6 +161,7 @@ async function measureOnce(browser, origin, routePath) {
 		tracker.started(ids.get(request), request.url().replace(origin, ""));
 	});
 	const assetFailures = [];
+	const assets = [];
 	page.on("requestfailed", (request) => {
 		tracker.finished(ids.get(request));
 		if (classifyAsset(request.url(), origin) && request.frame() === page.mainFrame()) {
@@ -177,6 +178,7 @@ async function measureOnce(browser, origin, routePath) {
 			return;
 		}
 		pending.push(response.body().then((body) => {
+			assets.push({ bytes: body.length, kind, path: response.url().replace(origin, "") });
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, (error) => {
 			assetFailures.push(`${response.url().replace(origin, "")} (body unreadable: ${error.message.split("\n")[0]})`);
@@ -188,7 +190,8 @@ async function measureOnce(browser, origin, routePath) {
 	await Promise.all(pending);
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
-	return { blockedFrames, cssBytes, jsBytes, scripts, stylesheets };
+	assets.sort((left, right) => left.path.localeCompare(right.path));
+	return { assets, blockedFrames, cssBytes, jsBytes, scripts, stylesheets };
 }
 
 export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
