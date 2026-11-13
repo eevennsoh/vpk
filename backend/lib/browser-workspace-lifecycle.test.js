@@ -79,11 +79,25 @@ test("only launching, ready and closing workspaces hold a browser; closing ones 
 	assert.deepEqual(listed, ["launching", "ready"]);
 });
 
-test("create decisions reject at the cap", () => {
-	assert.deepEqual(decideBrowserWorkspaceCreate({ liveCount: 0, limit: 4 }), { action: "create" });
-	assert.deepEqual(decideBrowserWorkspaceCreate({ liveCount: 3, limit: 4 }), { action: "create" });
-	assert.deepEqual(decideBrowserWorkspaceCreate({ liveCount: 4, limit: 4 }), { action: "reject", code: CODES.LIMIT });
-	assert.deepEqual(decideBrowserWorkspaceCreate({ liveCount: 5, limit: 4 }), { action: "reject", code: CODES.LIMIT });
+test("create decisions: create below the cap, reclaim the LRU abandoned workspace at it, else reject", () => {
+	const ws = (workspaceId, lastUsedAt, overrides = {}) => ({ workspaceId, status: "ready", lastUsedAt, previewConsumers: 0, pendingCalls: 0, ...overrides });
+	const decide = (workspaces) => decideBrowserWorkspaceCreate({ workspaces, limit: 3 });
+
+	assert.deepEqual(decide([]), { action: "create" });
+	// Crashed and closed workspaces hold no browser and do not count.
+	assert.deepEqual(decide([ws("a", 1), ws("b", 2), ws("c", 3, { status: "crashed" })]), { action: "create" });
+	// At the cap: the least recently used one nobody watches.
+	assert.deepEqual(decide([ws("a", 3), ws("b", 1), ws("c", 2)]), { action: "reclaim", workspaceId: "b" });
+	// Never one with a preview client or session, a call in flight, or not ready.
+	assert.deepEqual(
+		decide([ws("a", 1, { previewConsumers: 1 }), ws("b", 2, { pendingCalls: 1 }), ws("c", 3)]),
+		{ action: "reclaim", workspaceId: "c" },
+	);
+	assert.deepEqual(
+		decide([ws("a", 1, { previewConsumers: 2 }), ws("b", 2, { status: "launching" }), ws("c", 3, { status: "closing" })]),
+		{ action: "reject", code: CODES.LIMIT },
+	);
+	assert.deepEqual(decide([ws("a", 1), ws("b", 2), ws("c", 3), ws("d", 0, { status: "closing" })]), { action: "reclaim", workspaceId: "a" });
 });
 
 test("errors carry stable codes; gone workspaces read as not found", () => {

@@ -646,6 +646,9 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 				getLifecycle() {
 					return { status: "ready", reason: null }
 				},
+				getUsage() {
+					return { workspaceId, status: "ready", lastUsedAt: 0, previewConsumers: 0, pendingCalls: 0 }
+				},
 				peekState() {
 					return this.state
 				},

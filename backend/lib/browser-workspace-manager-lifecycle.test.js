@@ -26,6 +26,7 @@ function createFakeLauncher() {
 	const runtimes = [];
 	const launcher = {
 		runtimes,
+		events: [],
 		closeGate: null,
 		failInitialize: null,
 		failClick: null,
@@ -37,6 +38,7 @@ function createFakeLauncher() {
 				crash: (reason) => onCrash?.(reason),
 				async initialize(url) {
 					runtime.calls.push(["initialize", url]);
+					launcher.events.push(`initialize ${workspaceId}`);
 					if (launcher.failInitialize) {
 						throw launcher.failInitialize;
 					}
@@ -62,6 +64,7 @@ function createFakeLauncher() {
 				async close() {
 					runtime.closeCount += 1;
 					runtime.calls.push(["close"]);
+					launcher.events.push(`close ${workspaceId}`);
 					if (launcher.closeGate) {
 						await launcher.closeGate.promise;
 					}
@@ -265,12 +268,21 @@ test("a failed preview control action does not become an unhandled rejection", a
 	assert.deepEqual(unhandled.map((reason) => reason?.message), []);
 });
 
-test("creating past the live-workspace cap is a typed rejection that launches nothing", async (t) => {
+// A preview WebSocket client: the workspace has a watcher, so it is in use.
+const fakeClient = () => ({ readyState: 1, send() {} });
+
+async function createWatched(manager) {
+	const state = await manager.createWorkspace();
+	await manager.attachWorkspacePreviewClient(state.workspaceId, fakeClient());
+	return state;
+}
+
+test("creating past the cap when every workspace is watched is a typed rejection that launches nothing", async (t) => {
 	const launcher = createFakeLauncher();
 	const manager = createManager(launcher, { maxLiveWorkspaces: 2 });
 	t.after(() => clearInterval(manager._cleanupTimer));
-	const first = await manager.createWorkspace();
-	await manager.createWorkspace();
+	const first = await createWatched(manager);
+	await createWatched(manager);
 
 	assert.equal(await rejectionCode(manager.createWorkspace()), "BROWSER_WORKSPACE_LIMIT");
 	assert.equal(launcher.runtimes.length, 2);
@@ -286,11 +298,82 @@ test("creating past the live-workspace cap is a typed rejection that launches no
 	assert.equal(launcher.runtimes.length, 3);
 });
 
+test("at the cap, the least recently used workspace nobody watches is closed and the create proceeds", async (t) => {
+	let now = 1_000;
+	const launcher = createFakeLauncher();
+	const warnings = [];
+	const manager = createManager(launcher, { maxLiveWorkspaces: 3, nowFn: () => now, logger: { warn: (line) => warnings.push(line) } });
+	t.after(() => clearInterval(manager._cleanupTimer));
+	const watched = await createWatched(manager); // oldest, but a page is watching it
+	now += 10;
+	const abandoned = await manager.createWorkspace(); // a reloaded page's leftover
+	now += 10;
+	const recent = await manager.createWorkspace();
+	now += 10;
+
+	const created = await manager.createWorkspace();
+	const closedIds = launcher.runtimes.filter((runtime) => runtime.closeCount > 0).map((runtime) => runtime.workspaceId);
+	assert.deepEqual(closedIds, [abandoned.workspaceId]);
+	assert.deepEqual(
+		manager.listWorkspaces().map(({ workspaceId }) => workspaceId).sort(),
+		[watched.workspaceId, recent.workspaceId, created.workspaceId].sort(),
+	);
+	assert.equal(warnings.length, 1);
+	// The reclaimed browser was released before its replacement launched.
+	assert.deepEqual(launcher.events.slice(-2), [`close ${abandoned.workspaceId}`, `initialize ${created.workspaceId}`]);
+	assert.equal(await rejectionCode(() => manager.getWorkspaceState(abandoned.workspaceId)), "BROWSER_WORKSPACE_NOT_FOUND");
+});
+
+test("a workspace with a call in flight is not reclaimed", async (t) => {
+	const launcher = createFakeLauncher();
+	const manager = createManager(launcher, { maxLiveWorkspaces: 1 });
+	t.after(() => clearInterval(manager._cleanupTimer));
+	const { workspaceId } = await manager.createWorkspace();
+	const runtime = launcher.runtimes[0];
+	const started = deferred();
+	const gate = deferred();
+	runtime.navigate = async () => {
+		started.resolve();
+		await gate.promise;
+	};
+	const navigating = manager.navigateWorkspace(workspaceId, "https://example.com");
+	await started.promise;
+
+	assert.equal(await rejectionCode(manager.createWorkspace()), "BROWSER_WORKSPACE_LIMIT");
+	gate.resolve();
+	await navigating;
+	assert.equal(runtime.closeCount, 0);
+});
+
+test("two concurrent creates at the cap reclaim two different workspaces, or one is refused", async (t) => {
+	let now = 1_000;
+	const launcher = createFakeLauncher();
+	const manager = createManager(launcher, { maxLiveWorkspaces: 2, nowFn: () => now, logger: { warn() {} } });
+	t.after(() => clearInterval(manager._cleanupTimer));
+	const a = await manager.createWorkspace();
+	now += 10;
+	const b = await manager.createWorkspace();
+	now += 10;
+
+	const both = await Promise.all([rejectionCode(manager.createWorkspace()), rejectionCode(manager.createWorkspace())]);
+	assert.deepEqual(both, ["resolved", "resolved"]);
+	const closed = launcher.runtimes.filter((runtime) => runtime.closeCount > 0).map((runtime) => runtime.workspaceId).sort();
+	assert.deepEqual(closed, [a.workspaceId, b.workspaceId].sort());
+	assert.equal(launcher.runtimes.every((runtime) => runtime.closeCount <= 1), true);
+
+	// Only one abandoned workspace left: one create reclaims it, the other is refused.
+	const [watchedNew] = manager.listWorkspaces();
+	await manager.attachWorkspacePreviewClient(watchedNew.workspaceId, fakeClient());
+	const next = await Promise.all([rejectionCode(manager.createWorkspace()), rejectionCode(manager.createWorkspace())]);
+	assert.deepEqual(next.sort(), ["BROWSER_WORKSPACE_LIMIT", "resolved"]);
+});
+
 test("concurrent creates cannot overshoot the cap", async (t) => {
 	const launcher = createFakeLauncher();
-	const manager = createManager(launcher, { maxLiveWorkspaces: 2 });
+	const manager = createManager(launcher, { maxLiveWorkspaces: 2, logger: { warn() {} } });
 	t.after(() => clearInterval(manager._cleanupTimer));
 
+	// None exist yet, so nothing can be reclaimed: two launch, the third is refused.
 	const results = await Promise.all([1, 2, 3].map(() => rejectionCode(manager.createWorkspace())));
 	assert.deepEqual(results.sort(), ["BROWSER_WORKSPACE_LIMIT", "resolved", "resolved"]);
 	assert.equal(launcher.runtimes.length, 2);

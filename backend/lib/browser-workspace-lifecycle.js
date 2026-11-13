@@ -23,7 +23,8 @@ const INITIAL_BROWSER_WORKSPACE_LIFECYCLE = Object.freeze({ status: "launching",
 // ready or closing). Today one demo (`useBrowserWorkspace`) creates one
 // workspace per mounted page and creates its replacement before deleting the
 // old one, so a page holds at most two; four allows two open pages. Each holds
-// a Chromium. Tune with the owner.
+// a Chromium. At the cap an abandoned workspace is reclaimed before a create is
+// refused (decideBrowserWorkspaceCreate). Tune with the owner.
 const MAX_LIVE_BROWSER_WORKSPACES = 4;
 
 const BROWSER_WORKSPACE_ERROR_CODES = Object.freeze({
@@ -79,10 +80,29 @@ function decideBrowserWorkspaceCall(state) {
 	}
 }
 
-function decideBrowserWorkspaceCreate({ liveCount, limit }) {
-	return liveCount >= limit
-		? { action: "reject", code: BROWSER_WORKSPACE_ERROR_CODES.LIMIT }
-		: { action: "create" };
+// Whether a workspace looks abandoned: ready, nobody watching it (no preview
+// WebSocket client, no WebRTC preview session) and no call queued or running.
+// A reloaded or closed page drops its preview socket and session, but the hook
+// only sends DELETE on unmount, so such a workspace lingers until the idle sweep.
+function isReclaimable(workspace) {
+	return workspace.status === "ready" && workspace.previewConsumers === 0 && workspace.pendingCalls === 0;
+}
+
+/**
+ * What a create gets, from each existing workspace's facts:
+ *   { workspaceId, status, lastUsedAt, previewConsumers, pendingCalls }.
+ * Below the cap: create. At the cap: reclaim the least recently used abandoned
+ * workspace (the caller closes it, then creates). Otherwise reject.
+ */
+function decideBrowserWorkspaceCreate({ workspaces, limit }) {
+	const live = workspaces.filter(holdsBrowser);
+	if (live.length < limit) return { action: "create" };
+	const victim = live
+		.filter(isReclaimable)
+		.sort((a, b) => a.lastUsedAt - b.lastUsedAt || String(a.workspaceId).localeCompare(String(b.workspaceId)))[0];
+	return victim
+		? { action: "reclaim", workspaceId: victim.workspaceId }
+		: { action: "reject", code: BROWSER_WORKSPACE_ERROR_CODES.LIMIT };
 }
 
 class BrowserWorkspaceNotFoundError extends Error {
@@ -145,5 +165,6 @@ module.exports = {
 	isBrowserWorkspaceLimitError,
 	isBrowserWorkspaceNotFoundError,
 	isListed,
+	isReclaimable,
 	transitionBrowserWorkspace,
 };

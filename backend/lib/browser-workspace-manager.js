@@ -145,6 +145,7 @@ class BrowserWorkspace {
 		this._previewSessionFactory = previewSessionFactory
 		this._lifecycle = INITIAL_BROWSER_WORKSPACE_LIFECYCLE
 		this._releasePromise = null
+		this._pendingCalls = 0
 		// AgentBrowserRuntime reports no crashes (agent-browser relaunches its own
 		// daemon); a runtime that can tell calls onCrash once its browser is gone.
 		this._runtime = typeof runtimeFactory === "function"
@@ -227,6 +228,17 @@ class BrowserWorkspace {
 		return this._lifecycle
 	}
 
+	// What the registry's cap decision needs to tell an abandoned workspace from one in use.
+	getUsage() {
+		return {
+			workspaceId: this._workspaceId,
+			status: this._lifecycle.status,
+			lastUsedAt: this._lastUsedAt,
+			previewConsumers: this._previewSessions.size + this._previewClients.size,
+			pendingCalls: this._pendingCalls,
+		}
+	}
+
 	assertCallable() {
 		const decision = decideBrowserWorkspaceCall(this._lifecycle)
 		if (decision.action === "reject") {
@@ -251,10 +263,15 @@ class BrowserWorkspace {
 			return rejected
 		}
 
-		return this._enqueueUnchecked(() => {
+		this._pendingCalls += 1
+		const call = this._enqueueUnchecked(() => {
 			this.assertCallable()
 			return task()
+		}).finally(() => {
+			this._pendingCalls -= 1
 		})
+		call.catch(() => {})
+		return call
 	}
 
 	_enqueueUnchecked(task) {

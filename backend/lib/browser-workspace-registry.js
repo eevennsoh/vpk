@@ -13,7 +13,6 @@ const {
 	BrowserWorkspaceNotFoundError,
 	MAX_LIVE_BROWSER_WORKSPACES,
 	decideBrowserWorkspaceCreate,
-	holdsBrowser,
 	isListed,
 } = require("./browser-workspace-lifecycle")
 
@@ -36,7 +35,9 @@ class BrowserWorkspaceRegistry {
 		nowFn = Date.now,
 		workspaceFactory,
 		maxLiveWorkspaces = MAX_LIVE_BROWSER_WORKSPACES,
+		logger = console,
 	} = {}) {
+		this._logger = logger
 		// Every workspace until its close completes; crashed ones until deleted or swept.
 		this._workspaces = new Map()
 		this._maxLiveWorkspaces = maxLiveWorkspaces
@@ -81,19 +82,22 @@ class BrowserWorkspaceRegistry {
 	}
 
 	async createWorkspace(options = {}) {
-		// Count and insert before the first await, so concurrent creates cannot overshoot.
-		let liveCount = 0
-		for (const workspace of this._workspaces.values()) {
-			if (holdsBrowser(workspace.getLifecycle())) {
-				liveCount += 1
-			}
-		}
+		// Decide, start the reclaim's close, and insert before the first await: the
+		// victim is closing (no longer reclaimable) and the new workspace counts, so
+		// concurrent creates cannot overshoot or reclaim the same workspace twice.
 		const decision = decideBrowserWorkspaceCreate({
-			liveCount,
+			workspaces: Array.from(this._workspaces.values(), (workspace) => workspace.getUsage()),
 			limit: this._maxLiveWorkspaces,
 		})
 		if (decision.action === "reject") {
 			throw new BrowserWorkspaceLimitError(this._maxLiveWorkspaces)
+		}
+		let reclaimed = null
+		if (decision.action === "reclaim") {
+			this._logger.warn?.(
+				`[BROWSER-WORKSPACE] ${this._maxLiveWorkspaces} workspaces open: closing the least recently used one nobody is watching (${decision.workspaceId})`,
+			)
+			reclaimed = this.deleteWorkspace(decision.workspaceId).catch(() => {})
 		}
 
 		const workspaceId = randomUUID()
@@ -105,6 +109,8 @@ class BrowserWorkspaceRegistry {
 
 		this._workspaces.set(workspaceId, workspace)
 		try {
+			// Release the reclaimed browser before launching its replacement.
+			await reclaimed
 			await workspace.initialize(options.defaultUrl || DEFAULT_WORKSPACE_URL)
 			return workspace.peekState()
 		} catch (error) {
