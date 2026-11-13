@@ -45,7 +45,7 @@ async function expectAnchoredBottomRight(page: Page, surface: Locator) {
 	expect(Math.abs(distBottom - EDGE_GAP)).toBeLessThanOrEqual(TOLERANCE);
 }
 
-test.describe("Floating Rovo button default position", { tag: "@smoke" }, () => {
+test.describe("Floating Rovo button default position", () => {
 	test("anchors to the bottom-right corner on load", async ({ page }) => {
 		await openAgentConfig(page);
 

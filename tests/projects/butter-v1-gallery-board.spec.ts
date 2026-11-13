@@ -42,7 +42,7 @@ test("the standalone board hides an open sidebar chat and restores its draft", {
 	await expect(composer).toContainText("Keep this draft");
 });
 
-test("the standalone board is centered and remains scrollable on narrow screens", { tag: "@smoke" }, async ({ page }) => {
+test("the standalone board is centered and remains scrollable on narrow screens", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

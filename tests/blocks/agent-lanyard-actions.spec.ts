@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-test("avatar is centered below the lanyard hole", { tag: "@smoke" }, async ({ page }) => {
+test("avatar is centered below the lanyard hole", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/agent-lanyard"));
 	const card = page.locator('[data-agent-id="claude"]');
 	const cover = await card.locator('[data-slot="agent-lanyard-cutout"]').locator("..").boundingBox();

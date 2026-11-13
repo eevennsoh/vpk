@@ -4,10 +4,9 @@
 // is given before running any test, and one spec that fails to load aborts the whole run,
 // so this passes Playwright only the files that tag a smoke test.
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
