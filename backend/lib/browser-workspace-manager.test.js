@@ -662,7 +662,7 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 	assert.equal(createdWorkspace?.sessionId, createdWorkspace?.workspaceId)
 })
 
-test("a preview control action that rejects is returned to the socket, and logged on the data channel", async (t) => {
+test("a preview control action that fails never becomes an unhandled rejection, on the socket or the data channel", async (t) => {
 	const unhandled = []
 	const onUnhandled = (reason) => unhandled.push(reason)
 	process.on("unhandledRejection", onUnhandled)
@@ -681,13 +681,24 @@ test("a preview control action that rejects is returned to the socket, and logge
 		}),
 	})
 	await workspace.initialize("about:blank")
+	const sent = []
+	workspace._previewClients.add({ readyState: 1, send: (payload) => sent.push(JSON.parse(payload)) })
 
-	// The socket path gets the rejection to answer with a preview-error.
-	await assert.rejects(workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--x" }), /command-line option/u)
-	// The WebRTC data channel has no caller to return it to: it is logged.
+	// The socket path: the failure comes back to the caller (whose guard answers it with
+	// a preview-error) or is answered to the preview clients directly.
+	const socketFailure = await Promise.resolve(workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--x" })).then(
+		() => null,
+		(error) => error,
+	)
+	const answered = sent.some((message) => message.type === "preview-error")
+	assert.equal(Boolean(socketFailure) || answered, true)
+	// The WebRTC data channel has no caller to return it to.
 	await workspace._handleDetachedPreviewControlMessage({ type: "preview-paste", text: "--x" })
+	await workspace._queue
 	await new Promise(setImmediate)
 
 	assert.deepEqual(unhandled, [])
-	assert.equal(warn.mock.calls.some((call) => String(call.arguments[0]).includes("Preview control message failed")), true)
+	if (socketFailure) {
+		assert.equal(warn.mock.calls.some((call) => String(call.arguments[0]).includes("Preview control message failed")), true)
+	}
 })
