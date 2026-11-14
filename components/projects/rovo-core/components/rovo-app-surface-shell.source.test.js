@@ -23,7 +23,9 @@ test("Rovo app surface shell shares chrome lifecycle and keeps route wiring in w
 	assert.match(CORE_SURFACE_SHELL_SOURCE, /useThreadList: \(\) => UseRovoAppThreadListResult;/u);
 	assert.match(SURFACE_SHELL_FACTORY_SOURCE, /<RovoAppSurfaceShellCore[\s\S]*buildThreadPath=\{options\.buildThreadPath\}[\s\S]*product=\{options\.product\}[\s\S]*SidebarComponent=\{options\.SidebarComponent\}/u);
 	assert.match(CORE_SURFACE_SHELL_SOURCE, /const \{ deleteThread, threads, threadsLoaded \} = useThreadList\(\);/u);
-	assert.match(CORE_SURFACE_SHELL_SOURCE, /window\.setTimeout[\s\S]*getCssDurationTokenMs\(SIDEBAR_MOTION_DURATION_CSS_VARIABLE, SIDEBAR_MOTION_FALLBACK_MS\)/u);
+	// The hover-reveal close delay moved to useSidebarHoverReveal (C-5 slice 2), shared with both app
+	// shells; use-sidebar-hover-reveal.behavior.test.js drives its timing.
+	assert.match(CORE_SURFACE_SHELL_SOURCE, /const \{ handleSidebarContentMouseEnter, handleSidebarContentMouseLeave, hoverRevealActive \} = useSidebarHoverReveal\(\);/u);
 	assert.match(CORE_SURFACE_SHELL_SOURCE, /<TopNavigation[\s\S]*variant="shell"[\s\S]*product=\{product\}/u);
 	assert.match(CORE_SURFACE_SHELL_SOURCE, /<SidebarComponent[\s\S]*activeThreadId=\{null\}[\s\S]*headerOffsetPx=\{slot\.headerOffsetPx\}[\s\S]*hoverOpen=\{hoverRevealActive\}[\s\S]*isResizing=\{slot\.isResizing\}/u);
 	assert.match(CORE_SURFACE_SHELL_SOURCE, /onDeleteThread=\{async \(threadId\) => \{[\s\S]*startTransition\(\(\) => \{[\s\S]*void deleteThread\(threadId\);/u);

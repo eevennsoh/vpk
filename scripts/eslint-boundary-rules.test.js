@@ -54,6 +54,30 @@ test("shared app contexts and shared project code depend on rovo-core instead of
 	}
 });
 
+test("rovo-core cannot import the routes it serves or sidebar-chat, but keeps its own and shared imports", async () => {
+	const findings = await importFindings(
+		[
+			'import { A } from "@/components/projects/rovo/a";',
+			'import { B } from "@/components/projects/studio/b";',
+			'import { C } from "@/components/projects/sidebar-chat/c";',
+			'import { D } from "@/components/projects/rovo-core/lib/d";',
+			'import { E } from "@/components/projects/shared/e";',
+			'import { F } from "@/lib/f";',
+			"export const all = [A, B, C, D, E, F];",
+		].join("\n"),
+		"components/projects/rovo-core/lib/lint-contract-fixture.ts",
+	);
+	assert.deepEqual(findings.map(({ line }) => line), [1, 2, 3]);
+	for (const finding of findings) {
+		assert.match(finding.message, /rovo-core is shared by the Rovo and Studio routes/u);
+	}
+	const [deepRelative] = await importFindings(
+		'import { G } from "../../../../lib/g";\nexport const value = G;\n',
+		"components/projects/rovo-core/lib/lint-contract-fixture.ts",
+	);
+	assert.match(deepRelative.message, /Use the @\/ alias/u, "the shared deep-relative rule still applies inside rovo-core");
+});
+
 test("shared UI primitives cannot import app routes or project surfaces", async () => {
 	const findings = await importFindings(
 		'import { A } from "@/app/contexts/a";\nimport { B } from "@/components/projects/jira/b";\nexport const all = [A, B];\n',
@@ -251,6 +275,57 @@ export const Controls = () => (
 		[6, "jsx-a11y/no-aria-hidden-on-focusable"],
 	]);
 	assert.ok(findings.every(({ severity }) => severity === 2));
+});
+
+test("only activation handlers make an element a control; hover, focus and drag handlers track state", async () => {
+	const findings = await ruleFindings(`
+declare function open(): void;
+declare function track(): void;
+declare const isOpen: boolean;
+export const Surfaces = () => (
+	<>
+		<div onMouseDown={() => open()}>Press</div>
+		<section aria-label="Board" onClick={() => open()}>Board</section>
+		<div onMouseEnter={() => track()} onFocus={() => track()} onBlur={() => track()}>Reveal</div>
+		<div onDragOver={() => track()} onDrop={() => track()}>Drop</div>
+		<div role={isOpen ? "button" : undefined} tabIndex={0} onClick={() => open()} onKeyDown={() => open()}>Card</div>
+		<iframe title="Preview" onLoad={() => track()} />
+		<canvas role="img" aria-label="Orb" />
+		<ul role="listbox"><li role="option" aria-selected="false">One</li></ul>
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", [
+		"jsx-a11y/no-interactive-element-to-noninteractive-role",
+		"jsx-a11y/no-noninteractive-element-interactions",
+		"jsx-a11y/no-noninteractive-element-to-interactive-role",
+		"jsx-a11y/no-static-element-interactions",
+	]);
+	assert.deepEqual(findings.map(({ line, ruleId }) => [line, ruleId]).sort(), [
+		[7, "jsx-a11y/no-static-element-interactions"],
+		[8, "jsx-a11y/no-noninteractive-element-interactions"],
+	]);
+	assert.ok(findings.every(({ severity }) => severity === 2));
+});
+
+// eslint.config.mjs copies these four rules' options from eslint-plugin-jsx-a11y's own
+// recommended config (PR 2255): the plugin arrives through eslint-config-next, so it cannot be
+// imported directly. Read the recommended config from the plugin object ESLint resolved, so a
+// plugin upgrade that changes those options fails here instead of drifting silently.
+test("narrowed jsx-a11y rules keep the installed plugin's recommended options", async () => {
+	const config = await eslint.calculateConfigForFile("components/blocks/demo/lint-contract-fixture.tsx");
+	const recommended = config.plugins["jsx-a11y"].configs.recommended.rules;
+	for (const rule of [
+		"jsx-a11y/no-interactive-element-to-noninteractive-role",
+		"jsx-a11y/no-noninteractive-element-interactions",
+		"jsx-a11y/no-noninteractive-element-to-interactive-role",
+		"jsx-a11y/no-static-element-interactions",
+	]) {
+		const [, ...recommendedOptions] = recommended[rule];
+		const [severity, ...configuredOptions] = config.rules[rule];
+		assert.equal(severity, 2, rule);
+		assert.ok(recommendedOptions.length > 0, `${rule}: the plugin no longer recommends options; revisit eslint.config.mjs`);
+		assert.deepEqual(configuredOptions, recommendedOptions, `${rule}: eslint.config.mjs no longer matches eslint-plugin-jsx-a11y's recommended options`);
+	}
 });
 
 test("component tests prove behavior instead of adding source-text regex assertions", async () => {

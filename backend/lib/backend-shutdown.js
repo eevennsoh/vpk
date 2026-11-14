@@ -164,9 +164,9 @@ function refuseRequestsWhileDraining(handler, { isDraining } = {}) {
 
 /**
  * The HTTP server's two steps: stop accepting first, close what is left last.
- * @param {{ getServer: () => import("node:http").Server | null, getWebSocketServers?: () => Array<{ clients: Set<{ terminate(): void }> }> }} options
+ * @param {{ getServer: () => import("node:http").Server | null, getWebSocketServers?: () => Array<{ clients: Set<{ terminate(): void }> }>, getStopHeartbeat?: () => ((() => void) | null) }} options
  */
-function createHttpServerShutdownSteps({ getServer, getWebSocketServers = () => [] } = {}) {
+function createHttpServerShutdownSteps({ getServer, getWebSocketServers = () => [], getStopHeartbeat = () => null } = {}) {
 	let closed = null;
 
 	return {
@@ -185,6 +185,7 @@ function createHttpServerShutdownSteps({ getServer, getWebSocketServers = () => 
 		closeConnections: {
 			name: "close-connections",
 			run: async () => {
+				getStopHeartbeat()?.();
 				let sockets = 0;
 				for (const webSocketServer of getWebSocketServers()) {
 					for (const client of webSocketServer.clients) {

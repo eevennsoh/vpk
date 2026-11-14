@@ -1,27 +1,15 @@
-// The loader imports one category's table at a time; registry/index.ts keeps the combined tables
-// that catalog tooling reads. The two must map every category to the same exports, or a demo
-// would resolve in the catalog and render nothing on its route (or the reverse).
+// The loader imports one category's table at a time, and it is the only map from a category to
+// its tables: catalog tooling (scripts/lib/component-registry.js) reads the same map, so a demo
+// cannot resolve in the catalog and render nothing on its route (or the reverse).
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const read = (file) => readFileSync(path.join(process.cwd(), file), "utf8");
+const { collectRegistryData } = require("../../scripts/lib/component-registry");
 
-function indexMapping() {
-	const source = read("components/website/registry/index.ts");
-	const fileOf = new Map();
-	for (const match of source.matchAll(/import \{([^}]+)\} from "\.\/([^"]+)";/gu)) {
-		for (const name of match[1].split(",").map((entry) => entry.trim()).filter(Boolean)) {
-			fileOf.set(name, match[2]);
-		}
-	}
-	const table = (constName) => {
-		const body = new RegExp(`const ${constName}[^=]*= \\{([^}]+)\\}`, "u").exec(source)[1];
-		return Object.fromEntries([...body.matchAll(/["']?([\w-]+)["']?:\s*(\w+)/gu)].map(([, category, name]) => [category, `${fileOf.get(name)}#${name}`]));
-	};
-	return { demos: table("CATEGORY_REGISTRIES"), variants: table("VARIANT_REGISTRIES") };
-}
+const read = (file) => readFileSync(path.join(process.cwd(), file), "utf8");
+const CATEGORIES = ["arts", "blocks", "projects", "ui", "ui-charts", "ui-custom", "utility", "visual"];
 
 function loaderMapping() {
 	const source = read("components/website/demo-registry-loader.ts");
@@ -29,26 +17,31 @@ function loaderMapping() {
 	const variants = {};
 	for (const match of source.matchAll(/["']?([\w-]+)["']?: \(\) => import\("@\/components\/website\/registry\/([^"]+)"\)\.then\(\(module\) => \(\{ demos: module\.(\w+)(?:, variants: module\.(\w+))? \}\)\)/gu)) {
 		const [, category, file, demoName, variantName] = match;
-		demos[category] = `${file}#${demoName}`;
-		if (variantName) variants[category] = `${file}#${variantName}`;
+		demos[category] = { file, name: demoName };
+		if (variantName) variants[category] = { file, name: variantName };
 	}
 	return { demos, variants };
 }
 
-test("the per-category loader maps every category to the same tables as registry/index.ts", () => {
-	const expected = indexMapping();
-	const actual = loaderMapping();
-	assert.equal(Object.keys(expected.demos).length, 8);
-	assert.deepEqual(sortKeys(actual.demos), sortKeys(expected.demos));
-	assert.deepEqual(sortKeys(actual.variants), sortKeys(expected.variants));
+test("the per-category loader covers every catalog category with tables its files export", () => {
+	const { demos, variants } = loaderMapping();
+	assert.deepEqual(Object.keys(demos).sort(), CATEGORIES);
+	for (const { file, name } of [...Object.values(demos), ...Object.values(variants)]) {
+		assert.match(read(`components/website/registry/${file}.ts`), new RegExp(`export const ${name}\\b`, "u"), `${file}.ts exports ${name}`);
+	}
 });
 
-test("the loader never imports the combined registry", () => {
+test("catalog tooling reads the loader's map: the same categories with and without variants", () => {
+	const { demos, variants } = loaderMapping();
+	const data = collectRegistryData();
+	assert.deepEqual(Object.keys(data.primary).sort(), Object.keys(demos).sort());
+	assert.deepEqual(Object.keys(data.variants).sort(), Object.keys(variants).sort());
+	assert.ok(Object.keys(data.primary.blocks).length > 100);
+});
+
+test("the loader imports only per-category registry files", () => {
 	const source = read("components/website/demo-registry-loader.ts");
-	assert.doesNotMatch(source, /import\(["']@\/components\/website\/registry["']\)/u);
-	assert.doesNotMatch(source, /import\(["']@\/components\/website\/registry\/index["']\)/u);
+	for (const match of source.matchAll(/import\("(@\/components\/website\/registry[^"]*)"\)/gu)) {
+		assert.match(match[1], /^@\/components\/website\/registry\/[\w-]+$/u, match[1]);
+	}
 });
-
-function sortKeys(object) {
-	return Object.fromEntries(Object.entries(object).sort(([left], [right]) => left.localeCompare(right)));
-}

@@ -1,9 +1,12 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
+const { createRovoAppManagedRunLifecycle } = require("./rovo-app-managed-run-lifecycle");
 const {
 	createRovoAppManagedRunProxy,
 } = require("./rovo-app-managed-run-proxy");
+const { createRovoAppRunManager } = require("./rovo-app-runs");
+const { createRovoAppRunStateService } = require("./rovo-app-run-state");
 
 function createResponse() {
 	return {
@@ -30,15 +33,14 @@ function createHarness(overrides = {}) {
 				calls.push(["streamAgentsRfpDemoChatTurn", res, turn, requestBody]);
 			},
 		},
-		clearRovoAppRunState: async (threadId) => {
-			calls.push(["clearRovoAppRunState", threadId]);
-			runs.delete(threadId);
-		},
 		logger: {
 			info: (...args) => calls.push(["logger.info", args]),
 		},
 		persistRovoAppRunState: async (threadId, run) => {
 			calls.push(["persistRovoAppRunState", threadId, run]);
+		},
+		persistRovoAppRunStateInBackground: (threadId, run) => {
+			calls.push(["persistRovoAppRunStateInBackground", threadId, run]);
 		},
 		resolveAgentsRfpDemoChatTurn: (requestBody) => {
 			calls.push(["resolveAgentsRfpDemoChatTurn", requestBody]);
@@ -49,10 +51,6 @@ function createHarness(overrides = {}) {
 				calls.push(["attachSubscriber", threadId, res]);
 				attachOptions = options;
 				return overrides.subscriberId === undefined ? "subscriber-1" : overrides.subscriberId;
-			},
-			cancelRun: (threadId) => {
-				calls.push(["cancelRun", threadId]);
-				runs.delete(threadId);
 			},
 			createRun: (input) => {
 				calls.push(["createRun", input]);
@@ -73,6 +71,13 @@ function createHarness(overrides = {}) {
 			if (overrides.rovoCancelChatError) {
 				throw overrides.rovoCancelChatError;
 			}
+		},
+		settleRovoAppRun: async (run, outcome) => {
+			calls.push(["settleRovoAppRun", run, outcome]);
+			if (runs.get(run?.threadId) === run) {
+				runs.delete(run.threadId);
+			}
+			return true;
 		},
 		shouldReplaceActiveRunForRequest: ({ existingRun, requestBody }) => {
 			calls.push(["shouldReplaceActiveRunForRequest", existingRun, requestBody]);
@@ -104,7 +109,7 @@ test("createRovoAppManagedRunProxy validates required dependencies", () => {
 					streamAgentsRfpDemoChatTurn: () => {},
 				},
 			}),
-		/clearRovoAppRunState/u,
+		/persistRovoAppRunState/u,
 	);
 });
 
@@ -199,7 +204,7 @@ test("proxyRovoAppChatRequest persists detached subscriber run snapshots", async
 	harness.attachOptions.onDetached(detachedRun);
 
 	assert.deepEqual(harness.calls.at(-1), [
-		"persistRovoAppRunState",
+		"persistRovoAppRunStateInBackground",
 		"thread-1",
 		detachedRun,
 	]);
@@ -237,8 +242,8 @@ test("proxyRovoAppChatRequest cancels and clears replaceable active runs before 
 		"getRun",
 		"shouldReplaceActiveRunForRequest",
 		"rovoCancelChat",
-		"cancelRun",
-		"clearRovoAppRunState",
+		"settleRovoAppRun",
+		"getRun",
 		"resolveAgentsRfpDemoChatTurn",
 		"createRun",
 		"attachSubscriber",
@@ -248,6 +253,7 @@ test("proxyRovoAppChatRequest cancels and clears replaceable active runs before 
 		"persistRovoAppRunState",
 	]);
 	assert.deepEqual(calls[2], ["rovoCancelChat", 8006, { timeoutMs: 3_000 }]);
+	assert.deepEqual(calls[3], ["settleRovoAppRun", existingRun, "cancelled"]);
 	assert.equal(calls[6][1].backend, "ai-gateway");
 });
 
@@ -261,6 +267,95 @@ test("proxyRovoAppChatRequest continues replacing active runs when cancel chat f
 
 	await proxy.proxyRovoAppChatRequest({ body: { id: "thread-1" } }, res);
 
-	assert.equal(calls.some(([name]) => name === "cancelRun"), true);
+	assert.equal(calls.some(([name]) => name === "settleRovoAppRun"), true);
 	assert.equal(calls.some(([name]) => name === "startManagedRovoAppRun"), true);
+});
+
+// An SSE response the run manager can write to; ending it fires "close" like a real one.
+function createStreamingResponse() {
+	const listeners = new Map();
+	return {
+		ended: false,
+		writes: [],
+		end() {
+			this.ended = true;
+			listeners.get("close")?.();
+		},
+		flushHeaders() {},
+		json() {
+			return this;
+		},
+		once(eventName, listener) {
+			listeners.set(eventName, listener);
+			return this;
+		},
+		setHeader() {},
+		status() {
+			return this;
+		},
+		write(chunk) {
+			this.writes.push(chunk);
+		},
+	};
+}
+
+test("a run whose every thread write fails ends failed without an unhandled rejection", async (t) => {
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason instanceof Error ? reason.message : String(reason));
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+
+	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
+	const runManager = createRovoAppRunManager({ logger: quiet });
+	let settled;
+	const runSettled = new Promise((resolve) => {
+		settled = resolve;
+	});
+	const state = createRovoAppRunStateService({
+		activeRequests: new Map(),
+		createFailureSseChunks: () => ["failure-chunk"],
+		logger: quiet,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async () => {
+				throw new Error("disk full");
+			},
+		},
+		startNextQueuedRun: () => settled(),
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
+	});
+	const lifecycle = createRovoAppManagedRunLifecycle({
+		executeRovoAppManagedRun: (run) => state.settleRovoAppRun(run, "completed", { messages: [{ id: "assistant-1" }] }),
+		logger: quiet,
+		persistRovoAppRunState: state.persistRovoAppRunState,
+		resolveRovoAppPortAvailability: () => ({}),
+		rovoAppRunManager: runManager,
+		settleRovoAppRun: state.settleRovoAppRun,
+	});
+	const proxy = createRovoAppManagedRunProxy({
+		agentsRfpDemoChatStreamOwner: { streamAgentsRfpDemoChatTurn: () => {} },
+		logger: quiet,
+		persistRovoAppRunState: state.persistRovoAppRunState,
+		persistRovoAppRunStateInBackground: state.persistRovoAppRunStateInBackground,
+		resolveAgentsRfpDemoChatTurn: () => null,
+		rovoAppRunManager: runManager,
+		rovoCancelChat: async () => {},
+		settleRovoAppRun: state.settleRovoAppRun,
+		shouldReplaceActiveRunForRequest: () => false,
+		startManagedRovoAppRun: lifecycle.startManagedRovoAppRun,
+	});
+	const res = createStreamingResponse();
+
+	// The request's own final write fails too; the chat route reports that one.
+	await proxy.proxyRovoAppChatRequest({ body: { id: "thread-1" } }, res).catch(() => {});
+	await runSettled;
+	for (let turn = 0; turn < 5; turn += 1) {
+		await new Promise((resolve) => setImmediate(resolve));
+	}
+
+	assert.equal(runManager.getRun("thread-1"), null);
+	assert.deepEqual(res.writes, ["failure-chunk"]);
+	assert.equal(res.ended, true);
+	assert.deepEqual(unhandled, []);
 });

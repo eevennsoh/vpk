@@ -252,13 +252,24 @@ function verifyHttpTarget(localUrl, run) {
 	return statusCode;
 }
 
+// tmux targets in their exact form: a bare name also matches another session it prefixes
+// (vpk-tunnel-feat would hit vpk-tunnel-feat-2). Session commands take "=name"; window, pane
+// and option commands take "=name:".
+function sessionTarget(sessionName) {
+	return `=${sessionName}`;
+}
+
+function paneTarget(sessionName) {
+	return `=${sessionName}:`;
+}
+
 function tmuxSessionExists(sessionName, run) {
-	const result = run("tmux", ["has-session", "-t", sessionName]);
+	const result = run("tmux", ["has-session", "-t", sessionTarget(sessionName)]);
 	return !result.error && result.status === 0;
 }
 
 function captureSession(sessionName, run) {
-	const result = run("tmux", ["capture-pane", "-p", "-t", sessionName, "-S", "-200"]);
+	const result = run("tmux", ["capture-pane", "-p", "-t", paneTarget(sessionName), "-S", "-200"]);
 	if (result.error || result.status !== 0) return "";
 	return result.stdout;
 }
@@ -268,7 +279,7 @@ function readStoredTunnelBaseUrl(sessionName, run) {
 		"show-options",
 		"-v",
 		"-t",
-		sessionName,
+		paneTarget(sessionName),
 		"@vpk-tunnel-url",
 	]);
 	if (result.error || result.status !== 0) return null;
@@ -276,7 +287,7 @@ function readStoredTunnelBaseUrl(sessionName, run) {
 }
 
 function readStoredTunnelAccess(sessionName, run) {
-	const result = run("tmux", ["show-options", "-v", "-t", sessionName, "@vpk-tunnel-access"]);
+	const result = run("tmux", ["show-options", "-v", "-t", paneTarget(sessionName), "@vpk-tunnel-access"]);
 	const access = result.stdout.trim();
 	return !result.error && result.status === 0 && Object.hasOwn(ACCESS_MESSAGES, access)
 		? access
@@ -288,7 +299,7 @@ function readStoredTunnelPort(sessionName, run) {
 		"show-options",
 		"-v",
 		"-t",
-		sessionName,
+		paneTarget(sessionName),
 		"@vpk-tunnel-port",
 	]);
 	if (result.error || result.status !== 0) return null;
@@ -300,7 +311,7 @@ function storeTunnelBaseUrl(sessionName, tunnelBaseUrl, run) {
 	const result = run("tmux", [
 		"set-option",
 		"-t",
-		sessionName,
+		paneTarget(sessionName),
 		"@vpk-tunnel-url",
 		tunnelBaseUrl,
 	]);
@@ -310,7 +321,7 @@ function storeTunnelBaseUrl(sessionName, tunnelBaseUrl, run) {
 }
 
 function storeTunnelAccess(sessionName, access, run) {
-	const result = run("tmux", ["set-option", "-t", sessionName, "@vpk-tunnel-access", access]);
+	const result = run("tmux", ["set-option", "-t", paneTarget(sessionName), "@vpk-tunnel-access", access]);
 	if (result.error || result.status !== 0) {
 		throw new Error(`Could not persist access mode on scoped tunnel session ${sessionName}.`);
 	}
@@ -320,7 +331,7 @@ function storeTunnelPort(sessionName, port, run) {
 	const result = run("tmux", [
 		"set-option",
 		"-t",
-		sessionName,
+		paneTarget(sessionName),
 		"@vpk-tunnel-port",
 		String(port),
 	]);
@@ -493,11 +504,11 @@ function statusTunnel({ targetUrl = DEFAULT_TARGET_URL, run = createRunner() } =
 }
 
 async function stopTmuxSession(sessionName, run, sleep = delay) {
-	run("tmux", ["send-keys", "-t", sessionName, "C-c"]);
+	run("tmux", ["send-keys", "-t", paneTarget(sessionName), "C-c"]);
 	await sleep(500);
 	if (!tmuxSessionExists(sessionName, run)) return;
 
-	const killed = run("tmux", ["kill-session", "-t", sessionName]);
+	const killed = run("tmux", ["kill-session", "-t", sessionTarget(sessionName)]);
 	if (killed.error || killed.status !== 0) {
 		throw new Error(
 			`Could not stop scoped tunnel session ${sessionName}: ${killed.stderr.trim() || "tmux failed"}`,

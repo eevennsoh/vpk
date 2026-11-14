@@ -1,10 +1,15 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
+const { EventEmitter } = require("node:events");
+
+const { createRovoAppRunManager } = require("./rovo-app-runs");
 const {
 	buildRovoAppActiveRunPayload,
 	createRovoAppRunStateService,
 } = require("./rovo-app-run-state");
+
+const QUIET_LOGGER = { error: () => {}, info: () => {}, warn: () => {} };
 
 function createHarness(overrides = {}) {
 	const calls = [];
@@ -12,15 +17,26 @@ function createHarness(overrides = {}) {
 	const runs = new Map(overrides.runs || []);
 	const dependencies = {
 		activeRequests: {
+			get: () => ({}),
 			delete: (threadId) => {
 				calls.push(["activeRequests.delete", threadId]);
 				return true;
 			},
 		},
+		logger: QUIET_LOGGER,
 		rovoAppRunManager: {
-			clearRun: (threadId) => {
-				calls.push(["clearRun", threadId]);
+			appendChunk: (threadId, chunk) => {
+				calls.push(["appendChunk", threadId, chunk]);
+				return true;
+			},
+			getRun: (threadId) => runs.get(threadId) ?? null,
+			isCurrentRun: (run) => Boolean(run) && runs.get(run.threadId) === run,
+			isLatestRun: (run) => !(overrides.supersededRunIds || []).includes(run?.id),
+			settleRun: (threadId, options) => {
+				calls.push(["settleRun", threadId, options]);
+				const run = runs.get(threadId);
 				runs.delete(threadId);
+				return run ?? null;
 			},
 			hasRun: (threadId) => {
 				calls.push(["hasRun", threadId]);
@@ -32,15 +48,15 @@ function createHarness(overrides = {}) {
 				if (!run) {
 					return null;
 				}
-				const nextRun = {
-					...run,
-					backend,
-				};
-				runs.set(threadId, nextRun);
-				return nextRun;
+				run.backend = backend;
+				return run;
 			},
 		},
 		rovoAppThreadManager: {
+			listThreads: async () => {
+				calls.push(["listThreads"]);
+				return [...threads.values()];
+			},
 			getThread: async (threadId) => {
 				calls.push(["getThread", threadId]);
 				return threads.get(threadId) || null;
@@ -149,8 +165,11 @@ test("createRovoAppRunStateService validates required dependencies", () => {
 			createRovoAppRunStateService({
 				activeRequests: { delete: () => true },
 				rovoAppRunManager: {
-					clearRun: () => {},
+					appendChunk: () => true,
+					getRun: () => null,
 					hasRun: () => false,
+					isCurrentRun: () => false,
+					isLatestRun: () => true,
 				},
 			}),
 		/rovoAppRunManager\.setRunBackend/u,
@@ -160,11 +179,13 @@ test("createRovoAppRunStateService validates required dependencies", () => {
 test("persistRovoAppRunState writes the normalized active run payload", async () => {
 	const run = {
 		id: "run-1",
+		threadId: "thread-1",
 		backend: "rovo",
 		status: "streaming",
 		rovoPort: 8100,
 	};
 	const { calls, service } = createHarness({
+		runs: [["thread-1", run]],
 		threads: [["thread-1", { id: "thread-1", sessionId: "session-1" }]],
 	});
 
@@ -195,18 +216,30 @@ test("persistRovoAppRunState writes the normalized active run payload", async ()
 });
 
 test("persistRovoAppRunState returns null for missing inputs or missing threads", async () => {
-	const { calls, service } = createHarness();
+	const run = { id: "run-1", threadId: "missing" };
+	const { calls, service } = createHarness({ runs: [["missing", run]] });
 
-	assert.equal(await service.persistRovoAppRunState("", { id: "run-1" }), null);
-	assert.equal(await service.persistRovoAppRunState("missing", { id: "run-1" }), null);
+	assert.equal(await service.persistRovoAppRunState("", run), null);
+	assert.equal(await service.persistRovoAppRunState("missing", run), null);
 	assert.equal(calls.length, 1);
 	assert.equal(calls[0][0], "updateThread");
 	assert.equal(calls[0][1], "missing");
 });
 
+test("persistRovoAppRunState stores nothing for a run that is no longer the thread's run", async () => {
+	const settled = { id: "run-old", threadId: "thread-1", status: "completed" };
+	const { calls, service } = createHarness({
+		runs: [["thread-1", { id: "run-new", threadId: "thread-1" }]],
+		threads: [["thread-1", { id: "thread-1" }]],
+	});
+
+	assert.equal(await service.persistRovoAppRunState("thread-1", settled), null);
+	assert.deepEqual(calls, []);
+});
+
 test("persistRovoAppRunBackend updates the run backend before persisting state", async () => {
 	const { calls, service } = createHarness({
-		runs: [["thread-1", { id: "run-1", status: "streaming" }]],
+		runs: [["thread-1", { id: "run-1", threadId: "thread-1", status: "streaming" }]],
 		threads: [["thread-1", { id: "thread-1" }]],
 	});
 
@@ -257,15 +290,16 @@ test("persistRovoAppRunMessagesSnapshot updates only valid existing thread snaps
 	]);
 });
 
-test("finalizeRovoAppRun persists final messages, synchronizes files, clears active request, and starts queued work", async () => {
+test("settleRovoAppRun completed saves final messages, synchronizes files, clears the active request, settles, and starts queued work", async () => {
 	const messages = [{ id: "assistant-1" }];
 	const streamedMessages = [{ id: "assistant-1", parts: [] }];
+	const run = { id: "run-1", threadId: "thread-1" };
 	const { calls, runs, service } = createHarness({
-		runs: [["thread-1", { id: "run-1" }]],
+		runs: [["thread-1", run]],
 		threads: [["thread-1", { id: "thread-1", activeRun: { id: "run-1" } }]],
 	});
 
-	await service.finalizeRovoAppRun("thread-1", { id: "run-1" }, messages, { streamedMessages });
+	assert.equal(await service.settleRovoAppRun(run, "completed", { messages, streamedMessages }), true);
 
 	assert.equal(runs.has("thread-1"), false);
 	assert.deepEqual(calls, [
@@ -279,26 +313,289 @@ test("finalizeRovoAppRun persists final messages, synchronizes files, clears act
 			},
 			{ streamedMessages },
 		],
+		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
 		["activeRequests.delete", "thread-1"],
-		["clearRun", "thread-1"],
 		["startNextQueuedRun"],
 	]);
 });
 
-test("finalizeRovoAppRun falls back to clearing run state without a final message list", async () => {
+test("settleRovoAppRun completed without a final message list only clears the stored run", async () => {
+	const run = { id: "run-1", threadId: "thread-1" };
 	const { calls, service } = createHarness({
-		runs: [["thread-1", { id: "run-1" }]],
+		runs: [["thread-1", run]],
 		threads: [["thread-1", { id: "thread-1", activeRun: { id: "run-1" } }]],
 	});
 
-	await service.finalizeRovoAppRun("thread-1", { id: "run-1" }, null);
+	await service.settleRovoAppRun(run, "completed", { messages: null });
 
 	assert.deepEqual(calls, [
 		["updateThread", "thread-1", { activeRun: null }],
+		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
 		["activeRequests.delete", "thread-1"],
-		["clearRun", "thread-1"],
 		["startNextQueuedRun"],
 	]);
+});
+
+test("settleRovoAppRun failed appends the failure card before clearing; an abort gets no card", async () => {
+	const run = { id: "run-1", threadId: "thread-1" };
+	const { calls, service } = createHarness({
+		runs: [["thread-1", run]],
+		threads: [["thread-1", { id: "thread-1", activeRun: { id: "run-1" } }]],
+		dependencies: { createFailureSseChunks: () => ["failure-chunk"] },
+	});
+
+	await service.settleRovoAppRun(run, "failed", { error: new Error("boom") });
+	assert.deepEqual(calls, [
+		["appendChunk", "thread-1", "failure-chunk"],
+		["updateThread", "thread-1", { activeRun: null }],
+		["settleRun", "thread-1", { outcome: "failed", runId: "run-1", error: "Rovo run failed" }],
+		["activeRequests.delete", "thread-1"],
+		["startNextQueuedRun"],
+	]);
+
+	const abortedRun = { id: "run-2", threadId: "thread-2" };
+	const aborted = createHarness({
+		runs: [["thread-2", abortedRun]],
+		threads: [["thread-2", { id: "thread-2" }]],
+		dependencies: { createFailureSseChunks: () => ["failure-chunk"] },
+	});
+	const abortError = Object.assign(new Error("aborted"), { name: "AbortError" });
+	await aborted.service.settleRovoAppRun(abortedRun, "failed", { error: abortError });
+	assert.equal(aborted.calls.some(([name]) => name === "appendChunk"), false);
+});
+
+function createSubscriber() {
+	const emitter = new EventEmitter();
+	return {
+		ended: false,
+		writes: [],
+		end() {
+			this.ended = true;
+		},
+		flushHeaders() {},
+		once(eventName, listener) {
+			emitter.once(eventName, listener);
+			return this;
+		},
+		setHeader() {},
+		status() {
+			return this;
+		},
+		write(chunk) {
+			this.writes.push(chunk);
+		},
+	};
+}
+
+// The service over the real run manager; thread writes fail while `failWrites.value` is true.
+function createRealRunHarness({ failWrites = false } = {}) {
+	const runManager = createRovoAppRunManager({ logger: QUIET_LOGGER });
+	const activeRequests = new Map();
+	const threadWrites = [];
+	const errors = [];
+	const writeFailure = { value: failWrites };
+	let queuedStarts = 0;
+	const service = createRovoAppRunStateService({
+		activeRequests,
+		createFailureSseChunks: () => ["failure-chunk"],
+		logger: { ...QUIET_LOGGER, error: (...args) => errors.push(args) },
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async (threadId, patch) => {
+				threadWrites.push([threadId, patch]);
+				if (writeFailure.value) {
+					throw new Error("thread store unavailable");
+				}
+				return { id: threadId, ...patch };
+			},
+		},
+		startNextQueuedRun: () => {
+			queuedStarts += 1;
+		},
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
+	});
+	return {
+		activeRequests,
+		errors,
+		getQueuedStarts: () => queuedStarts,
+		runManager,
+		service,
+		threadWrites,
+		writeFailure,
+	};
+}
+
+test("a finished run whose save and clear both fail ends failed instead of rejecting", async () => {
+	const harness = createRealRunHarness({ failWrites: true });
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	const subscriber = createSubscriber();
+	harness.runManager.attachSubscriber("thread-1", subscriber);
+	harness.activeRequests.set("thread-1", { port: 8001 });
+
+	const settled = await harness.service.settleRovoAppRun(run, "completed", { messages: [{ id: "assistant-1" }] });
+
+	assert.equal(settled, true);
+	assert.equal(run.status, "failed");
+	assert.equal(run.error, "Rovo run failed");
+	assert.equal(harness.runManager.getRun("thread-1"), null);
+	assert.equal(harness.activeRequests.has("thread-1"), false);
+	assert.deepEqual(subscriber.writes, ["failure-chunk"]);
+	assert.equal(subscriber.ended, true);
+	assert.deepEqual(harness.threadWrites.map(([, patch]) => Object.keys(patch).sort()), [["activeRun", "messages"], ["activeRun"]]);
+	assert.equal(harness.errors.length, 2);
+	assert.equal(harness.getQueuedStarts(), 1);
+});
+
+test("a late settle of a cancelled run leaves the run that replaced it alone", async () => {
+	for (const [outcome, details] of [
+		["failed", { error: Object.assign(new Error("aborted"), { name: "AbortError" }) }],
+		["completed", { messages: [{ id: "old-assistant" }] }],
+	]) {
+		const harness = createRealRunHarness();
+		const oldRun = harness.runManager.createRun({ threadId: "thread-1" });
+		harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+		harness.runManager.settleRun("thread-1", { outcome: "cancelled" });
+		const replacement = harness.runManager.createRun({ threadId: "thread-1" });
+		harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+		harness.activeRequests.set("thread-1", { port: 8002 });
+
+		assert.equal(await harness.service.settleRovoAppRun(oldRun, outcome, details), false, outcome);
+
+		assert.equal(oldRun.status, "cancelled", outcome);
+		assert.equal(harness.runManager.getRun("thread-1"), replacement, outcome);
+		assert.equal(replacement.status, "streaming", outcome);
+		assert.equal(harness.activeRequests.has("thread-1"), true, outcome);
+		assert.deepEqual(harness.threadWrites, [], outcome);
+		assert.equal(harness.getQueuedStarts(), 0, outcome);
+	}
+});
+
+test("a late settle of a cancelled run with no successor still saves its messages", async () => {
+	const harness = createRealRunHarness();
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "background" });
+	harness.runManager.settleRun("thread-1", { outcome: "cancelled" });
+
+	// Not settled by this call (the cancel did that); its partial messages are still saved.
+	assert.equal(await harness.service.settleRovoAppRun(run, "completed", { messages: [{ id: "partial" }] }), false);
+
+	assert.equal(run.status, "cancelled");
+	assert.deepEqual(harness.threadWrites, [["thread-1", { activeRun: null, messages: [{ id: "partial" }] }]]);
+	assert.equal(harness.getQueuedStarts(), 0);
+});
+
+test("a cancelled run that settles after its successor finished touches nothing", async () => {
+	const harness = createRealRunHarness();
+	const oldRun = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	await harness.service.settleRovoAppRun(oldRun, "cancelled");
+	const successor = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	await harness.service.settleRovoAppRun(successor, "completed", { messages: [{ id: "new-answer" }] });
+	assert.equal(harness.runManager.getRun("thread-1"), null);
+	harness.threadWrites.length = 0;
+	harness.activeRequests.set("thread-1", { port: 8003 });
+	const queuedStartsBefore = harness.getQueuedStarts();
+
+	for (const [outcome, details] of [
+		["completed", { messages: [{ id: "old-partial" }] }],
+		["failed", { error: new Error("late") }],
+		["cancelled", {}],
+	]) {
+		assert.equal(await harness.service.settleRovoAppRun(oldRun, outcome, details), false, outcome);
+	}
+
+	assert.deepEqual(harness.threadWrites, []);
+	assert.equal(harness.activeRequests.has("thread-1"), true);
+	assert.equal(harness.getQueuedStarts(), queuedStartsBefore);
+	assert.equal(successor.status, "completed");
+});
+
+test("a run settles once: a late failure after its cancel has no second set of effects", async () => {
+	const harness = createRealRunHarness();
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	harness.activeRequests.set("thread-1", { port: 8004 });
+
+	assert.equal(await harness.service.settleRovoAppRun(run, "cancelled"), true);
+	assert.equal(run.status, "cancelled");
+	assert.equal(run.abortController.signal.aborted, true);
+	assert.equal(harness.activeRequests.has("thread-1"), false);
+	assert.equal(harness.getQueuedStarts(), 1);
+	assert.equal(harness.threadWrites.length, 1);
+
+	const abortError = Object.assign(new Error("aborted"), { name: "AbortError" });
+	assert.equal(await harness.service.settleRovoAppRun(run, "failed", { error: abortError }), false);
+	assert.equal(await harness.service.settleRovoAppRun(run, "cancelled"), false);
+	assert.equal(run.status, "cancelled");
+	assert.equal(harness.getQueuedStarts(), 1);
+	assert.equal(harness.threadWrites.length, 1);
+});
+
+test("a cancel of a run read before a wait leaves the run that took its place", async () => {
+	const harness = createRealRunHarness();
+	const staleRun = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	// While the canceller waited (on Rovo's cancel), the run finished and a new one started.
+	await harness.service.settleRovoAppRun(staleRun, "completed", { messages: [] });
+	const successor = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	harness.threadWrites.length = 0;
+
+	assert.equal(await harness.service.settleRovoAppRun(staleRun, "cancelled"), false);
+
+	assert.equal(harness.runManager.getRun("thread-1"), successor);
+	assert.equal(successor.status, "streaming");
+	assert.equal(successor.abortController.signal.aborted, false);
+	assert.deepEqual(harness.threadWrites, []);
+});
+
+test("snapshot and backend writes from a replaced run are dropped", async () => {
+	const harness = createRealRunHarness();
+	const oldRun = harness.runManager.createRun({ threadId: "thread-1" });
+	await harness.service.settleRovoAppRun(oldRun, "cancelled");
+	const successor = harness.runManager.createRun({ threadId: "thread-1", backend: "ai-gateway" });
+	harness.threadWrites.length = 0;
+
+	assert.equal(await harness.service.persistRovoAppRunMessagesSnapshot("thread-1", [{ id: "old" }], { run: oldRun }), null);
+	assert.equal(await harness.service.persistRovoAppRunBackend("thread-1", "rovo", { run: oldRun }), null);
+	assert.equal(await harness.service.persistRovoAppRunState("thread-1", oldRun), null);
+	assert.equal(successor.backend, "ai-gateway");
+	assert.deepEqual(harness.threadWrites, []);
+
+	await harness.service.persistRovoAppRunMessagesSnapshot("thread-1", [{ id: "new" }], { run: successor });
+	assert.deepEqual(harness.threadWrites, [["thread-1", { messages: [{ id: "new" }] }]]);
+});
+
+test("sweepOrphanedRovoAppRuns clears stored runs that no live run owns and never throws", async () => {
+	const { calls, service } = createHarness({
+		runs: [["thread-live", { id: "run-live", threadId: "thread-live" }]],
+		threads: [
+			["thread-live", { id: "thread-live", activeRun: { id: "run-live" } }],
+			["thread-orphan", { id: "thread-orphan", activeRun: { id: "run-orphan" } }],
+			["thread-idle", { id: "thread-idle", activeRun: null }],
+		],
+	});
+
+	assert.equal(await service.sweepOrphanedRovoAppRuns(), 1);
+	assert.deepEqual(
+		calls.filter(([name]) => name === "updateThread"),
+		[["updateThread", "thread-orphan", { activeRun: null }]],
+	);
+
+	const failing = createHarness({
+		dependencies: {
+			rovoAppThreadManager: {
+				listThreads: async () => {
+					throw new Error("unreadable");
+				},
+				updateThread: async () => null,
+			},
+		},
+	});
+	assert.equal(await failing.service.sweepOrphanedRovoAppRuns(), 0);
 });
 
 test("reconcileOrphanedRovoAppThread clears activeRun only when no in-memory run exists", async () => {
@@ -323,4 +620,45 @@ test("reconcileOrphanedRovoAppThread clears activeRun only when no in-memory run
 		["hasRun", "thread-orphan"],
 		["updateThread", "thread-orphan", { activeRun: null }],
 	]);
+});
+
+test("a background state write that fails is logged, not left unhandled", async (t) => {
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason);
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+	const harness = createRealRunHarness({ failWrites: true });
+	harness.runManager.createRun({ threadId: "thread-1" });
+	const run = harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+
+	harness.service.persistRovoAppRunStateInBackground("thread-1", run);
+	for (let turn = 0; turn < 5; turn += 1) {
+		await new Promise((resolve) => setImmediate(resolve));
+	}
+
+	assert.equal(harness.threadWrites.length, 1);
+	assert.equal(harness.errors.length, 1);
+	assert.deepEqual(unhandled, []);
+});
+
+test("a cancelled run's active request is aborted before it is removed; a live one is kept", async () => {
+	const harness = createRealRunHarness();
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	// The in-process chat request listens to the run's signal, as dispatchInProcessHttpRequest does.
+	const innerController = new AbortController();
+	run.abortController.signal.addEventListener("abort", () => innerController.abort(), { once: true });
+	harness.activeRequests.set("thread-1", { port: 8005, abortController: innerController });
+
+	await harness.service.settleRovoAppRun(run, "cancelled");
+	assert.equal(innerController.signal.aborted, true);
+	assert.equal(harness.activeRequests.has("thread-1"), false);
+
+	const next = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	const stillRunning = new AbortController();
+	harness.activeRequests.set("thread-1", { port: 8006, abortController: stillRunning });
+	await harness.service.settleRovoAppRun(next, "completed", { messages: [] });
+	// Still running: shutdown and /chat/cancel must still find it; it removes itself when it ends.
+	assert.equal(harness.activeRequests.get("thread-1")?.abortController, stillRunning);
 });

@@ -1,6 +1,8 @@
 // @ts-check
 "use strict";
 
+const { resolveClientAddress, resolveTrustedProxyHops } = require("../lib/client-address");
+
 const AI_COST_RATE_LIMIT_PATHS = [
 	"/api/chat-sdk",
 	"/api/rovo/suggestions",
@@ -12,9 +14,9 @@ const AI_COST_RATE_LIMIT_PATHS = [
 const AI_COST_RATE_LIMIT_MAX = 60;
 const AI_COST_RATE_LIMIT_WINDOW_MS = 60_000;
 
-// Provisional: one bucket per client address. Local development sees one address and a
-// deployment behind a proxy sees the proxy's few addresses, so this only binds under a
-// flood of distinct addresses; 10,000 buckets are about 1 MB.
+// Provisional: one bucket per client address (lib/client-address.js: behind the production
+// load balancer, the address it appends to X-Forwarded-For). This only binds under a flood
+// of distinct addresses; 10,000 buckets are about 1 MB.
 const AI_COST_RATE_LIMIT_MAX_KEYS = 10_000;
 
 /**
@@ -40,7 +42,11 @@ function makeRoomForBucket(buckets, { currentTime, maxKeys }) {
 	}
 }
 
-function createInMemoryRateLimiter({ max, maxKeys = AI_COST_RATE_LIMIT_MAX_KEYS, now = Date.now, windowMs }) {
+function defaultClientKey(req) {
+	return req.ip || req.socket?.remoteAddress || "unknown";
+}
+
+function createInMemoryRateLimiter({ clientKey = defaultClientKey, max, maxKeys = AI_COST_RATE_LIMIT_MAX_KEYS, now = Date.now, windowMs }) {
 	if (!Number.isFinite(max) || max <= 0) {
 		throw new Error("createInMemoryRateLimiter requires a positive max");
 	}
@@ -58,7 +64,7 @@ function createInMemoryRateLimiter({ max, maxKeys = AI_COST_RATE_LIMIT_MAX_KEYS,
 	const buckets = new Map();
 	const limiter = (req, res, next) => {
 		const currentTime = now();
-		const key = req.ip || req.socket?.remoteAddress || "unknown";
+		const key = clientKey(req);
 		const bucket = buckets.get(key);
 		if (!bucket || bucket.resetAt <= currentTime) {
 			// Delete first so a reset bucket moves to the end of the Map's order.
@@ -82,6 +88,8 @@ function createInMemoryRateLimiter({ max, maxKeys = AI_COST_RATE_LIMIT_MAX_KEYS,
 
 function registerAiCostRateLimitMiddleware(app, {
 	createRateLimiter = createInMemoryRateLimiter,
+	env = process.env,
+	logger = console,
 } = {}) {
 	if (!app || typeof app.use !== "function") {
 		throw new Error("registerAiCostRateLimitMiddleware requires an Express app");
@@ -90,7 +98,9 @@ function registerAiCostRateLimitMiddleware(app, {
 		throw new Error("registerAiCostRateLimitMiddleware requires createRateLimiter");
 	}
 
+	const trustedProxyHops = resolveTrustedProxyHops(env, logger);
 	const aiCostRateLimit = createRateLimiter({
+		clientKey: (req) => resolveClientAddress(req, trustedProxyHops),
 		max: AI_COST_RATE_LIMIT_MAX,
 		windowMs: AI_COST_RATE_LIMIT_WINDOW_MS,
 	});

@@ -109,7 +109,6 @@ export function CardDeck({
 
 	return (
 		// A composite widget in stack mode: arrows decide, Enter unpacks; a click on the stack is the pointer twin of Enter.
-		// eslint-disable-next-line jsx-a11y/no-static-element-interactions -- the role is "group" (a composite with the arrow/Enter model above) or "list"; the linter cannot read a conditional role
 		<div
 			aria-keyshortcuts={top ? "ArrowLeft ArrowRight Enter" : undefined}
 			aria-label={listed ? "Suggestions" : top ? `${top.label}: ${top.valueText.replace(/\.$/, "")}. Right arrow accepts, left arrow dismisses, Enter shows every suggestion.` : "Suggestion stack"}

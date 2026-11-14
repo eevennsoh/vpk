@@ -32,7 +32,7 @@ const COLORS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const COMPONENTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../../../app/data/components.ts"),
+	path.join(__dirname, "../../../../app/data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = fs.readFileSync(

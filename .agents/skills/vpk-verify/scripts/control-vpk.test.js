@@ -950,3 +950,20 @@ test("capture keeps collecting evidence when the wait text is missing, then fail
 		assert.equal(manifest.counts.consoleErrors, 0);
 	});
 });
+
+test("launch keeps going when dev:tmux:start reports a stack that is not ready yet", (t) => {
+	const { DEV_TMUX_NOT_READY, runPnpm } = require("./lib/stack.js");
+	const bin = mkdtempSync(path.join(os.tmpdir(), "control-vpk-pnpm-"));
+	t.after(() => rmSync(bin, { recursive: true, force: true }));
+	writeFileSync(path.join(bin, "pnpm"), `#!/bin/sh\nexit ${DEV_TMUX_NOT_READY}\n`, { mode: 0o755 });
+	const previous = process.env.PATH;
+	process.env.PATH = `${bin}:${previous}`;
+	t.after(() => {
+		process.env.PATH = previous;
+	});
+	// Exit 5 means the start launched a stack that was not ready in its own wait: launch then
+	// records it as its own and waits with doctor, instead of exiting and leaving it behind.
+	assert.equal(runPnpm(["run", "dev:tmux:start"], { stdio: "ignore", acceptStatuses: [DEV_TMUX_NOT_READY] }), DEV_TMUX_NOT_READY);
+	const source = readFileSync(CONTROL_VPK, "utf8");
+	assert.match(source, /runPnpm\(\["run", "dev:tmux:start"\], \{ acceptStatuses: \[DEV_TMUX_NOT_READY\] \}\);\n\t\twriteState\(\{ launchedByVerify: !alreadyListening \}\);\n\t\tconst after = await waitForDoctorReady\(\);/);
+});

@@ -87,7 +87,7 @@ function AnswerCard({
 								className="flex items-center gap-3 rounded-lg py-1.5"
 							>
 								<span className="inline-flex size-8 shrink-0 items-center justify-center">
-									<span className="inline-flex size-5 items-center justify-center rounded-[4px] text-sm leading-5 font-medium text-text-subtle">
+									<span className="inline-flex size-5 items-center justify-center rounded-sm text-sm leading-5 font-medium text-text-subtle">
 										{index + 1}.
 									</span>
 								</span>

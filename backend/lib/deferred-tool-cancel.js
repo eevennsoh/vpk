@@ -20,12 +20,10 @@ function releasePausedToolHandle(
 	}
 
 	try {
-		if (markUnhealthy && typeof record.handle.releaseAsUnhealthy === "function") {
-			record.handle.releaseAsUnhealthy(unhealthyReason);
-			return;
-		}
-
-		record.handle.release?.();
+		record.handle.settleLease?.(
+			markUnhealthy ? "unhealthy" : "release",
+			markUnhealthy ? { reason: unhealthyReason } : {},
+		);
 	} catch (error) {
 		logReleaseError(error);
 	}

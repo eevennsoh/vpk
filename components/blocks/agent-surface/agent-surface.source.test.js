@@ -15,7 +15,7 @@ const AGENT_FRAME = "components/blocks/agent/components/agent-frame.tsx";
 
 test("Agent Surface is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("agent-surface", "Agent Surface"\)/u,
 	);
 	assert.match(

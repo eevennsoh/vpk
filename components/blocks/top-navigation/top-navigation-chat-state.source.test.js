@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
+const { readRovoAppShellSource } = require("../../../scripts/lib/rovo-app-shell-sources.js");
 
 const TOP_NAVIGATION_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const USE_TOP_NAVIGATION_SOURCE = fs.readFileSync(path.join(__dirname, "hooks", "use-top-navigation.ts"), "utf8");
@@ -21,14 +22,8 @@ const TOP_NAVIGATION_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "..", "website", "demos", "blocks", "top-navigation-demo.tsx"),
 	"utf8",
 );
-const STUDIO_ROVO_APP_SHELL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "projects", "studio", "components", "rovo-app-shell.tsx"),
-	"utf8",
-);
-const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "projects", "rovo", "components", "rovo-app-shell.tsx"),
-	"utf8",
-);
+const STUDIO_ROVO_APP_SHELL_SOURCE = readRovoAppShellSource("studio");
+const ROVO_APP_SHELL_SOURCE = readRovoAppShellSource("rovo");
 const { DEFAULT_TOP_NAVIGATION_CURRENT_USER } = require("./data/current-user.ts");
 
 test("route-owned viewer identity reaches both responsive profile presentations and preserves Venn by default", () => {

@@ -210,7 +210,7 @@ export function NumberField() {
 	}, [index]);
 
 	return (
-		<Well className="flex items-center justify-center rounded-b-none rounded-t-[2rem] border-b-0 px-2.5 py-8 text-4xl font-semibold text-text">
+		<Well className="flex items-center justify-center rounded-b-none rounded-t-2xl border-b-0 px-2.5 py-8 text-4xl font-semibold text-text">
 			<div ref={containerRef} className="relative">
 				<TextContinuity cursorIndex={step.cursor}>{step.value}</TextContinuity>
 

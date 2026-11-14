@@ -84,7 +84,6 @@ function previewToolInput(toolInput, maxChars) {
 function createExitPlanWidgetEmitter({
 	getIsPlanWidgetLoading = () => false,
 	logger = console,
-	onExplicitPlanPayload = () => {},
 	onPlanWidgetData = () => {},
 	onPlanWidgetLoading = () => {},
 	recordPlanWidgetEmission,
@@ -134,7 +133,6 @@ function createExitPlanWidgetEmitter({
 			return false;
 		}
 
-		onExplicitPlanPayload(planPayload);
 		if (threadId && typeof recordPlanWidgetEmission === "function") {
 			recordPlanWidgetEmission(threadId, {
 				deferredToolCallId: toolCallId,

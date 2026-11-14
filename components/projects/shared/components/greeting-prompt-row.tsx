@@ -146,7 +146,7 @@ export function GreetingPromptRow({
 	// container uses a 12px corner radius and the same hover token as the
 	// palette row.
 	const buttonClassName = cn(
-		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[12px] pl-1.5 pr-3.5 text-left transition-colors",
+		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl pl-1.5 pr-3.5 text-left transition-colors",
 		selected
 			? "bg-bg-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed"
 			: "hover:bg-bg-neutral-subtle-hovered",

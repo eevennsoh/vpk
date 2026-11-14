@@ -25,7 +25,6 @@ function createHarness(overrides = {}) {
 	const emitter = createExitPlanWidgetEmitter({
 		getIsPlanWidgetLoading: () => planWidgetLoading,
 		logger,
-		onExplicitPlanPayload: (payload) => events.push({ type: "explicit", payload }),
 		onPlanWidgetData: (payload) => events.push({ type: "data", payload }),
 		onPlanWidgetLoading: (loading) => {
 			planWidgetLoading = loading;
@@ -163,7 +162,6 @@ test("emits plan widget data, records metadata, and closes active loading", () =
 		},
 	}]);
 	assert.deepEqual(harness.events.map((event) => event.type), [
-		"explicit",
 		"data",
 		"loading",
 	]);

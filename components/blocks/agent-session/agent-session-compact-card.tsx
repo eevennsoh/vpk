@@ -7,7 +7,7 @@ import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-
 import {
 	DEFAULT_PINNED_SPACE_AGENT_IDS,
 	WORK_ITEM_PINNED_ITEMS_LABEL,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+} from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export function AgentSessionAttachedCard({
 		<motion.div
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
 			className={cn(
-				"relative w-[276px] rounded-[10px] bg-bg-neutral",
+				"relative w-[276px] rounded-lg bg-bg-neutral",
 				isNew ? "ring-1 ring-border-discovery" : null,
 			)}
 			data-new={isNew || undefined}

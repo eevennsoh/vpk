@@ -46,7 +46,7 @@ test("managed rovo chat persists the resolved backend before streaming", () => {
 		"requestBody.backendPreference = await resolveRovoAppTurnBackendPreference",
 	);
 	const chatPersistIndex = MANAGED_RUN_CHAT_DISPATCH_SOURCE.indexOf(
-		"await persistRovoAppRunBackend(threadId, requestBody.backendPreference)",
+		"await persistRovoAppRunBackend(threadId, requestBody.backendPreference, { run })",
 		chatPreferenceIndex,
 	);
 	const dispatchIndex = MANAGED_RUN_CHAT_DISPATCH_SOURCE.indexOf(
@@ -71,7 +71,7 @@ test("managed artifact turns persist delegated backend ownership before handling
 		"const artifactBackendPreference",
 	);
 	const artifactPersistIndex = MANAGED_RUN_ARTIFACT_ROUTE_SOURCE.indexOf(
-		"await persistRovoAppRunBackend(threadId, artifactBackendPreference)",
+		"await persistRovoAppRunBackend(threadId, artifactBackendPreference, { run })",
 		artifactPreferenceIndex,
 	);
 	const artifactHandlerIndex = MANAGED_RUN_ARTIFACT_ROUTE_SOURCE.indexOf(

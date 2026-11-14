@@ -119,30 +119,6 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		"]);",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.source.test.js", [
-		`assert.match(SOURCE, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
-		`assert.match(SOURCE, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
-		`assert.match(SOURCE, /import \\{ ${experimentalPascal}JiraWorkItem \\} from "@\\/components\\/blocks\\/jira-work-item\\/${experimentalSlug}\\/${experimentalSlug}-jira-work-item";/u);`,
-		`assert.match(pageSource, /Open experimental v${number} session/u);`,
-		`assert.equal((pageSource.match(/variant="outline"/gu) ?? []).length, ${number});`,
-		`assert.match(pageSource, /onClick=\\{\\(\\) => setActiveVariant\\("${experimentalSlug}"\\)/u);`,
-		`assert.match(pageSource, /<Button type="button" onClick=\\{\\(\\) => setActiveVariant\\("${experimentalSlug}"\\)\\}>/u);`,
-		`assert.match(pageSource, /export function JiraWorkItem${experimentalPascal}Page/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Filled context"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}"/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Empty context"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}-empty"/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Multiple agents running"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}-running"/u);`,
-		`assert.match(detailsSource, /name: "variant"[\\s\\S]*type: "\\\\"default\\\\" \\| \\\\"experimental\\\\" \\| \\\\"${experimentalSlug}\\\\"/u);`,
-		`assert.match(registrySource, /"jira-work-item-demo-${experimentalSlug}": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}-empty": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}-running": dynamic/u);`,
-		`assert.match(demoSource, /export function JiraWorkItemDemo${experimentalPascal}/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="filled" \\/>/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="empty" \\/>/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="running" \\/>/u);`,
-		`assert.match(previewLayoutSource, /"jira-work-item-demo-${experimentalSlug}"/u);`,
-		"",
-	].join("\n"));
 	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js", [
 		`assert.match(indexSource, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(indexSource, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
@@ -221,7 +197,7 @@ function createFixtureWorkspace({
 		`const fixtureVersion = "${identity.version}";\nexport { fixtureVersion };\n`,
 	);
 
-	for (const filePath of ["app/data/components.ts", "app/data/component-manifest.ts"]) {
+	for (const filePath of ["app/data/component-manifest.ts"]) {
 		writeFixtureFile(root, filePath, [
 			...(filePath.endsWith("component-manifest.ts")
 				? ["export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {", "};", ""]
@@ -239,15 +215,6 @@ function createFixtureWorkspace({
 		`\t\tdescription: "${identity.title} fixture.",`,
 		`\t\timportStatement: \`import ${identity.pascal}Page from "@/components/projects/${identity.slug}";\`,`,
 		"\t},",
-		"};",
-		"",
-	].join("\n"));
-	writeFixtureFile(root, "components/website/registry/projects.ts", [
-		"export const PROJECT_DEMOS = {",
-		`\t"${identity.slug}": dynamic(`,
-		`\t\t() => import("../demos/projects/${identity.slug}-demo"),`,
-		"\t\t{ ssr: false },",
-		"\t),",
 		"};",
 		"",
 	].join("\n"));
@@ -291,7 +258,7 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		'\tif (repoMap.state !== "generated") process.exit(2);',
 		'}',
 		'if (kind === "catalog") {',
-		'\tfor (const file of ["app/data/components.ts", "app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts"]) {',
+		'\tfor (const file of ["app/data/component-manifest.ts", "app/data/details/projects.ts"]) {',
 		'\t\tconst source = fs.readFileSync(file, "utf8");',
 		'\t\tif (!source.includes(target)) process.exit(3);',
 		'\t}',
@@ -423,7 +390,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			"components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"components/blocks/jira-work-item/index.tsx",
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
-			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/page.tsx",
 			"components/website/demos/blocks/jira-work-item-demo.tsx",
 			"components/website/registry/blocks-variants.ts",
@@ -483,7 +449,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			/TREES = \["experimental-v2", "experimental-v3", "experimental-v4"\]/u,
 		);
 		for (const contractOwner of [
-			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 		]) {
 			assert.match(prepared(contractOwner), /"experimental-v4": ExperimentalV4JiraWorkItem/u);
@@ -573,8 +538,8 @@ test("planner rejects a symbolic-link registration file", async () => {
 	const root = createFixtureWorkspace({ source: "v1" });
 	const external = mkdtempSync(path.join(os.tmpdir(), "vpk-jira-variant-registration-"));
 	try {
-		const registrationPath = path.join(root, "app/data/components.ts");
-		const externalPath = path.join(external, "components.ts");
+		const registrationPath = path.join(root, "app/data/component-manifest.ts");
+		const externalPath = path.join(external, "component-manifest.ts");
 		writeFileSync(externalPath, readFileSync(registrationPath));
 		rmSync(registrationPath);
 		symlinkSync(externalPath, registrationPath);
@@ -750,17 +715,24 @@ test("mutation rolls back copied paths, registrations, and generated files on va
 		} = await loadGenerator();
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		Object.assign(manifest, addFixtureValidationCommands(root, { failValidation: true }));
-		const componentsBefore = readFileSync(path.join(root, "app/data/components.ts"), "utf8");
+		const componentsBefore = readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8");
 		const repoMapBefore = readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8");
 		const plan = createJiraVariantPlan({ manifest, root, source: "v2", target: "v3" });
 
 		assert.throws(() => applyJiraVariantPlan(plan), /command verify-catalog failed with status 7/u);
 		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
-		assert.equal(readFileSync(path.join(root, "app/data/components.ts"), "utf8"), componentsBefore);
+		assert.equal(readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8"), componentsBefore);
 		assert.equal(readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8"), repoMapBefore);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
+});
+
+test("the registry post-apply step declares every file the generator can write, for rollback", async () => {
+	const { loadVariantManifest } = await loadGenerator();
+	const { REGISTRIES } = require("./generate-catalog-registry.js");
+	const step = loadVariantManifest(DEFAULT_MANIFEST_PATH).postApplyCommands.find((entry) => entry.id === "generate-catalog-registry");
+	assert.deepEqual([...step.writes].sort(), REGISTRIES.map((registry) => registry.file).sort());
 });
 
 test("CLI dry-run JSON is stable and never creates the target", async () => {
@@ -786,7 +758,11 @@ test("CLI dry-run JSON is stable and never creates the target", async () => {
 		assert.equal(summary.mode, "dry-run");
 		assert.match(summary.planFingerprint, /^[a-f0-9]{64}$/u);
 		assert.ok(summary.rewrites.some((entry) => entry.from === "v2" && entry.to === "v3"));
-		assert.deepEqual(summary.postApplyCommands[0].command, ["node", "scripts/generate-repo-map.js"]);
+		// The projects registry is generated from the copied manifest entry before the repo map reads it.
+		assert.deepEqual(summary.postApplyCommands.map((entry) => entry.command), [
+			["node", "scripts/generate-catalog-registry.js"],
+			["node", "scripts/generate-repo-map.js"],
+		]);
 		assert.deepEqual(summary.validationCommands[0].command, [
 			"corepack",
 			"pnpm",

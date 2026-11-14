@@ -47,6 +47,11 @@ export default function DocumentTitle({ title }: Readonly<DocumentTitleProps>) {
 			{/* Title */}
 			<div
 				ref={titleRef}
+				role="textbox"
+				aria-label="Page title"
+				aria-multiline="false"
+				// Already focusable as contentEditable; stated so the textbox role is a tab stop for lint too.
+				tabIndex={0}
 				contentEditable
 				suppressContentEditableWarning
 				onKeyDown={handleTitleKeyDown}

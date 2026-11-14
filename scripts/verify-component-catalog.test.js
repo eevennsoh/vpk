@@ -9,6 +9,7 @@ const {
 	LIFECYCLE_STATUSES,
 	collectDemoFiles,
 	collectRegistryData,
+	findRoutePages,
 	getComponentAddPlan,
 	isTitleCaseName,
 	loadComponentEntries,
@@ -43,12 +44,61 @@ test("component add plan derives split ui registry and detail targets", () => {
 	assert.equal(plan.snippets.detailRecord, '"new-button": NEW_BUTTON_DETAIL,');
 	assert.equal(plan.snippets.manifestEntry, 'uiComponent("new-button", "New Button")');
 	assert.equal(plan.snippets.primaryRegistryEntry, '"new-button": dynamic(() => import("../../demos/ui/new-button-demo"), { ssr: false }),');
+	// app/data/components.ts is derived from the manifest, so the plan never names it.
+	assert.equal(Object.values(plan.paths).flat().includes("app/data/components.ts"), false);
+	assert.deepEqual(plan.paths.routePages, []);
+	// The ui barrel is generated from the manifest and the leaves.
+	assert.equal(plan.generated.detailBarrel, true);
+	assert.equal(plan.generated.primaryRegistry, true);
+	assert.equal(plan.validationCommands[0], "corepack pnpm run fix:generated --only catalog-barrels");
 	assert.deepEqual(plan.status, {
 		detail: false,
 		manifest: false,
 		primaryRegistry: false,
+		routePages: false,
 		variantRegistrySlugs: [],
 	});
+});
+
+test("component add plan for a project names its route page and its inline detail record, not a leaf", () => {
+	const empty = { detailRecords: { projects: {} }, registryData: { primary: { projects: {} }, variants: { projects: {} } } };
+	const plan = getComponentAddPlan({ ...empty, category: "projects", components: [], slug: "new-board" });
+	assert.equal(plan.paths.detailLeaf, null);
+	assert.equal(plan.paths.detailBarrel, "app/data/details/projects.ts");
+	assert.equal(plan.snippets.detailImport, null);
+	assert.equal(plan.snippets.detailRecord, '"new-board": { description: "…" },');
+	assert.deepEqual(plan.paths.routePages, ["app/new-board/page.tsx"]);
+	assert.equal(plan.status.routePages, false);
+	assert.equal(plan.generated.detailBarrel, false);
+	assert.equal(plan.generated.primaryRegistry, true);
+
+	const existing = getComponentAddPlan({ ...empty, category: "projects", components: [], routePages: ["app/butter-v0/page.tsx", "app/butter/page.tsx"], slug: "butter" });
+	assert.deepEqual(existing.paths.routePages, ["app/butter-v0/page.tsx", "app/butter/page.tsx"]);
+	assert.equal(existing.status.routePages, true);
+
+	const art = getComponentAddPlan({ category: "arts", components: [], detailRecords: { arts: {} }, registryData: { primary: { arts: {} }, variants: { arts: {} } }, slug: "new-art" });
+	assert.deepEqual(art.paths.routePages, ["app/arts/new-art/page.tsx"]);
+	assert.equal(art.paths.detailLeaf, null);
+});
+
+test("route pages come from the repo map: catalog-backed pages and pages the entry's folder owns", (t) => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-add-plan-routes-"));
+	t.after(() => rmSync(cwd, { force: true, recursive: true }));
+	mkdirSync(path.join(cwd, ".agents/knowledge"), { recursive: true });
+	writeFileSync(path.join(cwd, ".agents/knowledge/repo-map.json"), JSON.stringify({ appPages: { pages: [
+		{ primaryOwner: { category: "projects", kind: "catalog", slug: "jira" }, source: "app/jira/page.tsx" },
+		{ primaryOwner: { category: "projects", kind: "catalog", slug: "jira-queue" }, source: "app/jira-queue/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/personal-graph/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/arts/personal-graph/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/projects/rovo/page"] }, source: "app/rovo/[[...id]]/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/projects/rovo-core/page"] }, source: "app/rovo-core/page.tsx" },
+	] } }));
+	// A shell owner may be a file inside the entry's folder, but not a sibling folder sharing its prefix.
+	assert.deepEqual(findRoutePages("projects", "rovo", { cwd }), ["app/rovo/[[...id]]/page.tsx"]);
+	assert.deepEqual(findRoutePages("projects", "jira", { cwd }), ["app/jira/page.tsx"]);
+	assert.deepEqual(findRoutePages("arts", "personal-graph", { cwd }), ["app/arts/personal-graph/page.tsx", "app/personal-graph/page.tsx"]);
+	assert.deepEqual(findRoutePages("projects", "missing", { cwd }), []);
+	assert.deepEqual(findRoutePages("projects", "jira", { cwd: path.join(cwd, "nowhere") }), []);
 });
 
 test("component add plan reports existing graph entries and utility demo paths", () => {
@@ -91,6 +141,7 @@ test("component add plan reports existing graph entries and utility demo paths",
 		detail: true,
 		manifest: true,
 		primaryRegistry: true,
+		routePages: false,
 		variantRegistrySlugs: ["agent-browser-empty"],
 	});
 });
@@ -126,7 +177,7 @@ test("component catalog validator reports missing registry imports and example s
 		registryData: {
 			primary: {
 				ui: {
-					button: { imports: ["./demos/ui/definitely-missing-demo"] },
+					button: { imports: [{ importPath: "./demos/ui/definitely-missing-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 					orphan: { imports: [] },
 				},
 			},
@@ -170,12 +221,12 @@ test("component catalog validator accepts primary and variant example slugs", ()
 		registryData: {
 			primary: {
 				ui: {
-					button: { imports: ["./demos/ui/button-demo"] },
+					button: { imports: [{ importPath: "./demos/ui/button-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 			variants: {
 				ui: {
-					"button-demo-variant": { imports: ["./demos/ui/button-group-demo"] },
+					"button-demo-variant": { imports: [{ importPath: "./demos/ui/button-group-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 		},
@@ -303,7 +354,7 @@ test("component catalog validator flags names that are not Title Case", () => {
 		registryData: {
 			primary: {
 				blocks: {
-					"jira-issue": { imports: ["./demos/blocks/jira-issue-demo"] },
+					"jira-issue": { imports: [{ importPath: "./demos/blocks/jira-issue-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 			variants: {
@@ -421,11 +472,11 @@ test("registry import resolver only accepts directories through an index module"
 	try {
 		const registryDir = path.join(cwd, "components/website");
 		mkdirSync(path.join(registryDir, "demos/ui/folder-demo"), { recursive: true });
-		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd), null);
+		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd, "components/website/demo-registry-loader.ts"), null);
 
 		const indexPath = path.join(registryDir, "demos/ui/folder-demo/index.tsx");
 		writeFileSync(indexPath, "export default function Demo() { return null; }\n");
-		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd), indexPath);
+		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd, "components/website/demo-registry-loader.ts"), indexPath);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}
@@ -502,16 +553,16 @@ test("component catalog validator reports orphan demo files absent from registry
 					ui: {
 						button: {
 							imports: [{
-								importPath: "./demos/ui/button-demo",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/ui/button-demo",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},
 					visual: {
 						"shared-shader": {
 							imports: [{
-								importPath: "./demos/visual/shared-shader-demo",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/visual/shared-shader-demo",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},
@@ -520,8 +571,8 @@ test("component catalog validator reports orphan demo files absent from registry
 					ui: {
 						"button-demo-default": {
 							imports: [{
-								importPath: "./demos/ui/button/button-demo-default",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/ui/button/button-demo-default",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},
@@ -541,21 +592,25 @@ test("component catalog validator reports orphan demo files absent from registry
 	}
 });
 
-test("registry collector follows the split registry shim and imported category maps", () => {
+// The category map lives in components/website/demo-registry-loader.ts.
+function writeLoader(cwd, { demos, variants = null }) {
+	const tables = variants ? `{ demos: module.${demos}, variants: module.${variants} }` : `{ demos: module.${demos} }`;
+	writeFileSync(path.join(cwd, "components/website/demo-registry-loader.ts"), [
+		"const CATEGORY_REGISTRY_LOADERS = {",
+		`\tui: () => import("@/components/website/registry/ui").then((module) => (${tables})),`,
+		"};",
+		"",
+	].join("\n"));
+}
+
+test("registry collector reads the category map from the demo loader", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-catalog-split-"));
 	try {
 		const registryDir = path.join(cwd, "components/website/registry");
 		const demoDir = path.join(cwd, "components/website/demos/ui");
 		mkdirSync(registryDir, { recursive: true });
 		mkdirSync(demoDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO, UI_VARIANT_DEMOS as UI_VARIANTS } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO };",
-			"const VARIANT_REGISTRIES = { ui: UI_VARIANTS };",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO", variants: "UI_VARIANT_DEMOS" });
 		writeFileSync(path.join(registryDir, "ui.ts"), [
 			'import dynamic from "next/dynamic";',
 			'import type { ComponentType } from "react";',
@@ -593,14 +648,7 @@ test("registry collector follows spread shards in imported category maps", () =>
 		const demoDir = path.join(cwd, "components/website/demos/ui");
 		mkdirSync(path.join(registryDir, "ui"), { recursive: true });
 		mkdirSync(demoDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO, UI_VARIANT_DEMOS } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO };",
-			"const VARIANT_REGISTRIES = { ui: UI_VARIANT_DEMOS };",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO", variants: "UI_VARIANT_DEMOS" });
 		writeFileSync(path.join(registryDir, "ui.ts"), [
 			'import { UI_BASE_DEMOS } from "./ui/base";',
 			'import { UI_BASE_VARIANT_DEMOS } from "./ui/base-variants";',
@@ -645,22 +693,15 @@ test("registry collector follows spread shards in imported category maps", () =>
 	}
 });
 
-test("registry collector fails clearly for unresolved imported registry maps", () => {
+test("registry collector fails clearly for a table the loader names but the file lacks", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-catalog-missing-import-"));
 	try {
 		const registryDir = path.join(cwd, "components/website/registry");
 		mkdirSync(registryDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO_MISSING } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO_MISSING };",
-			"const VARIANT_REGISTRIES = {};",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO_MISSING" });
 		writeFileSync(path.join(registryDir, "ui.ts"), "export const UI_DEMO = {};\n");
 
-		assert.throws(() => collectRegistryData(cwd), /Could not resolve imported registry object UI_DEMO_MISSING/u);
+		assert.throws(() => collectRegistryData(cwd), /Could not resolve ui demos table UI_DEMO_MISSING in components\/website\/registry\/ui\.ts/u);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}

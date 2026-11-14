@@ -46,7 +46,7 @@ const LIVE_VOICE_STOP_BUTTON_SIZE_CLASS_NAME_BY_SIZE = {
 	"icon-xs": "size-6",
 } as const;
 const CURSOR_RAIL_FRAME_CLASS_NAME_BY_SIZE = {
-	"icon-sm": "relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-[8px]",
+	"icon-sm": "relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-lg",
 	"icon-xs": "relative flex h-6 w-[52px] items-center justify-center overflow-hidden rounded-md",
 } as const;
 const CURSOR_RAIL_INNER_CLASS_NAME_BY_SIZE = {
@@ -364,7 +364,7 @@ export function RovoComposerActionButton({
 								clickyActive ? "text-text-inverse" : undefined,
 							)}
 						>
-							<span aria-hidden="true" className="absolute inset-0 rounded-[8px] bg-bg-neutral" />
+							<span aria-hidden="true" className="absolute inset-0 rounded-lg bg-bg-neutral" />
 							<span
 								aria-hidden="true"
 								className={cn(

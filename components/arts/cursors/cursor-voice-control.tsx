@@ -57,8 +57,8 @@ export function CursorVoiceControl({
 	const { actualTheme } = useTheme();
 
 	return (
-		<div className="relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-[8px]">
-			<span aria-hidden="true" className="absolute inset-0 rounded-[8px] bg-bg-neutral" />
+		<div className="relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-lg">
+			<span aria-hidden="true" className="absolute inset-0 rounded-lg bg-bg-neutral" />
 			{/* Dark background pinned to the right (voice) button. Turning on cursor mode
 			    grows its width leftward so it extends to cover the cursor too. */}
 			<span

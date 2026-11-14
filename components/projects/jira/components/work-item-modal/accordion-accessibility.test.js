@@ -7,6 +7,13 @@ function readComponentSource(fileName) {
 	return fs.readFileSync(path.join(__dirname, fileName), "utf8");
 }
 
+function readModalHeaderSource() {
+	return fs.readFileSync(
+		path.join(__dirname, "../../../../blocks/jira-work-item/components/work-item-modal/modal-header.tsx"),
+		"utf8",
+	);
+}
+
 test("work item modal accordion buttons expose expanded state", () => {
 	assert.match(
 		readComponentSource("details-accordion.tsx"),
@@ -142,7 +149,7 @@ test("work item modal exposes the agent panel under child work items", () => {
 });
 
 test("work item modal title heading matches the 32px status button height", () => {
-	const source = readComponentSource("modal-header.tsx");
+	const source = readModalHeaderSource();
 
 	assert.match(source, /<Heading size="large" style=\{\{ paddingBlock: token\("space\.025"\) \}\}>/);
 });
@@ -165,7 +172,7 @@ test("work item modal shell uses grid rows and independent scrolling columns", (
 });
 
 test("work item modal header keeps breadcrumbs shrinkable and actions fixed", () => {
-	const source = readComponentSource("modal-header.tsx");
+	const source = readModalHeaderSource();
 
 	assert.match(source, /gridTemplateColumns: "minmax\(0, 1fr\) max-content"/);
 	assert.match(source, /<Breadcrumb className="min-w-0 overflow-visible" size="small">/);
@@ -179,7 +186,7 @@ test("work item modal header keeps breadcrumbs shrinkable and actions fixed", ()
 });
 
 test("work item modal breadcrumb identifies its parent with the Jira Epic glyph", () => {
-	const source = readComponentSource("modal-header.tsx");
+	const source = readModalHeaderSource();
 
 	assert.match(source, /import EpicIcon from "@atlaskit\/icon\/core\/epic";/);
 	assert.match(source, /className="text-icon-accent-purple"[\s\S]*render=\{<EpicIcon color="currentColor" label="" \/>\}/);

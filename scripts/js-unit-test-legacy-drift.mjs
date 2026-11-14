@@ -2,7 +2,6 @@ export const LEGACY_DRIFT_TEST_FILES = [
 	"components/arts/awake/city-popover.test.js",
 	"components/arts/awake/index.test.js",
 	"components/arts/personal-graph/personal-graph-glass-panel.test.js",
-	"components/blocks/agent-directory/agent-directory.test.js",
 	"components/blocks/artifact-panel.test.js",
 	"components/blocks/conversation-starter/conversation-starter.test.js",
 	"components/blocks/editor-toolbar/editor-toolbar.test.js",

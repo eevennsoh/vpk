@@ -31,7 +31,7 @@ function CandleBar({ candle }: Readonly<{ candle: Candle }>) {
 				style={{ top: `${(1 - candle.high) * 100}%`, height: `${(candle.high - candle.low) * 100}%` }}
 			/>
 			<div
-				className={cn("absolute inset-x-0 rounded-[1px]", rising ? "bg-chart-success" : "bg-chart-danger")}
+				className={cn("absolute inset-x-0", rising ? "bg-chart-success" : "bg-chart-danger")}
 				style={{ top: `${top * 100}%`, height: `${body * 100}%` }}
 			/>
 		</div>

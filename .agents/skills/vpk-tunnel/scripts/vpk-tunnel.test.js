@@ -331,7 +331,7 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 			[
 				"set-option",
 				"-t",
-				"vpk-tunnel-feature-localhost",
+				"=vpk-tunnel-feature-localhost:",
 				"@vpk-tunnel-url",
 				"https://research.atlastunnel.com",
 			],
@@ -348,7 +348,7 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 			[
 				"set-option",
 				"-t",
-				"vpk-tunnel-feature-localhost",
+				"=vpk-tunnel-feature-localhost:",
 				"@vpk-tunnel-port",
 				"4321",
 			],
@@ -419,10 +419,11 @@ test("stops the target local session and cleans Atlas resources", async () => {
 	assert.deepEqual(
 		calls.filter(([command]) => command === "tmux").map(([, args]) => args.slice(0, 3)),
 		[
-			["has-session", "-t", "vpk-tunnel-feature-localhost"],
-			["send-keys", "-t", "vpk-tunnel-feature-localhost"],
-			["has-session", "-t", "vpk-tunnel-feature-localhost"],
-			["kill-session", "-t", "vpk-tunnel-feature-localhost"],
+			// Exact targets: a bare name would also match a session it prefixes.
+			["has-session", "-t", "=vpk-tunnel-feature-localhost"],
+			["send-keys", "-t", "=vpk-tunnel-feature-localhost:"],
+			["has-session", "-t", "=vpk-tunnel-feature-localhost"],
+			["kill-session", "-t", "=vpk-tunnel-feature-localhost"],
 		],
 	);
 });

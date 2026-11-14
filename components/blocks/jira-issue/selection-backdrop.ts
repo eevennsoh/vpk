@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 export type JiraIssueSelectionBackdrop = "rest" | "single" | "start" | "middle" | "end";
 
 export const JIRA_ISSUE_BACKDROP_STYLE: CSSProperties = {
-	borderRadius: "10px",
+	borderRadius: "8px",
 	transformOrigin: "top center",
 };
 
@@ -20,10 +20,10 @@ export function resolveJiraIssueSelectionBackdrop(mode?: JiraIssueSelectionBackd
 		top: 0,
 		style: {
 			...JIRA_ISSUE_BACKDROP_STYLE,
-			borderTopLeftRadius: joinsBefore ? 0 : "10px",
-			borderTopRightRadius: joinsBefore ? 0 : "10px",
-			borderBottomLeftRadius: joinsAfter ? 0 : "10px",
-			borderBottomRightRadius: joinsAfter ? 0 : "10px",
+			borderTopLeftRadius: joinsBefore ? 0 : "8px",
+			borderTopRightRadius: joinsBefore ? 0 : "8px",
+			borderBottomLeftRadius: joinsAfter ? 0 : "8px",
+			borderBottomRightRadius: joinsAfter ? 0 : "8px",
 		},
 	};
 }

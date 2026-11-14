@@ -318,7 +318,7 @@ function JiraIssueAgentDoneMerged({
 						<button
 							aria-expanded={aggregateOpen}
 							aria-label={hasFailedRun ? `${finishedLabel}, includes errors` : finishedLabel}
-							className="flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+							className="flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-b-md rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
 							data-slot="jira-issue-agent-row"
 							type="button"
 						>

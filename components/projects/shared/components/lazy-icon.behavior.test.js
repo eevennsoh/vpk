@@ -23,11 +23,11 @@ function probeHtml(view) {
 	return view.container.querySelector("[data-probe]").innerHTML;
 }
 
-for (const [size, boxClass, glyph] of [[undefined, "size-4", "medium"], ["small", "size-3", "small"]]) {
+for (const [size, boxClass, glyph] of [[undefined, "height:16px;width:16px", "medium"], ["small", "height:12px;width:12px", "small"]]) {
 	test(`a ${glyph} registry icon reserves its box until its module loads`, async () => {
 		const view = await renderComponent({ source: PROBE, props: { size } });
 
-		const pending = probeHtml(view);
+		const pending = probeHtml(view).replaceAll(" ", "");
 		assert.ok(pending.includes(`aria-hidden="true"`), pending);
 		assert.ok(pending.includes(boxClass), pending);
 		assert.ok(!pending.includes("<svg"), pending);
@@ -36,9 +36,25 @@ for (const [size, boxClass, glyph] of [[undefined, "size-4", "medium"], ["small"
 		await view.rerender({ size });
 		await view.rerender({ size });
 
-		const loaded = probeHtml(view);
+		const loaded = probeHtml(view).replaceAll(" ", "");
 		assert.ok(loaded.includes(`data-glyph="${glyph}"`), loaded);
 		assert.ok(!loaded.includes(boxClass), loaded);
 		await view.unmount();
 	});
 }
+
+test("an icon whose module fails to load keeps its empty box instead of breaking the surface", async () => {
+	const view = await renderComponent({
+		source: `
+import { createLazyIcon } from "@/components/projects/shared/components/lazy-icon";
+const LazyIcon = createLazyIcon(() => Promise.reject(new Error("chunk load failed")));
+export default function Probe() { return <span data-probe><LazyIcon label="" /></span>; }
+`,
+	});
+	await view.rerender({});
+	await view.rerender({});
+	const html = probeHtml(view).replaceAll(" ", "");
+	assert.ok(html.includes("height:16px;width:16px"), html);
+	assert.ok(!html.includes("<svg"), html);
+	await view.unmount();
+});

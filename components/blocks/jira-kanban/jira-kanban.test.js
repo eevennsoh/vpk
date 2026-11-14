@@ -839,7 +839,7 @@ test("Experimental kanban Create is hover-revealed on the column while the defau
 test("Experimental kanban column agent assignment uses the compact trigger and work-item selector", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/components\/work-item-agent-selector";/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

@@ -74,7 +74,7 @@ export type FloatingRovoButtonInsightsStage = "hidden" | "pill" | "card";
  *
  * `title` is a full declarative sentence ("We agreed to delete the adapter, not
  * wrap it"), so the card clamps it to two lines rather than assuming it is
- * short. `chapterLabel` and `timeLabel` sit above it as a single meta line —
+ * short. `chapterLabel` and `timeLabel` sit under it as a single byline —
  * these are moments in a week, and the temporal framing is the whole premise of
  * "since your last visit".
  */

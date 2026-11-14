@@ -27,7 +27,7 @@ test("RFP agent chat details render trigger editor and merged activity timeline 
 	assert.match(DETAILS_SOURCE, /<TriggerDropdown value=\{RFP_DRAFTING_COLUMN_NAME\} \/>/u);
 	assert.match(DETAILS_SOURCE, /<TriggerDropdown showProjectAvatar value=\{RFP_DRAFTING_BOARD_NAME\} \/>/u);
 	assert.match(DETAILS_SOURCE, /src="\/avatar-project\/rocket\.svg"[\s\S]*width=\{12\}[\s\S]*height=\{12\}/u);
-	assert.match(DETAILS_SOURCE, /className="size-3 shrink-0 rounded-\[2px\]"/u);
+	assert.match(DETAILS_SOURCE, /className="size-3 shrink-0 rounded-xs"/u);
 	assert.match(DETAILS_SOURCE, /<div className="flex flex-col items-center" aria-hidden=\{true\}>/u);
 	assert.match(DETAILS_SOURCE, /<div className="my-2 h-7 w-px bg-border" \/>/u);
 	assert.match(DETAILS_SOURCE, /<GenerativeIndicatorIcon label="" size="small" \/>/u);

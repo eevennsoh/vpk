@@ -40,12 +40,6 @@ function createBaseOptions(overrides = {}) {
 				return false;
 			},
 			logger: console,
-			onHasEmittedGenuiWidget: (value) => {
-				events.push(["set-genui", value]);
-			},
-			onShouldEmitMissingStudioAgentResultFailure: (value) => {
-				events.push(["set-missing-agent", value]);
-			},
 			requestUserInputQuestionCardEmitter: {
 				closePendingLoading() {},
 			},
@@ -109,8 +103,6 @@ test("runRovoPostStreamPipeline preserves flush, finalizer, routing, completion 
 		["flush"],
 		["plan-phase", "thread-1"],
 		["finalizers", "assistant text", true, "raw agent text", false],
-		["set-genui", true],
-		["set-missing-agent", true],
 		["has-success", toolFirstExecutionState],
 		["routing", true, true, true],
 		["completion", true, true],

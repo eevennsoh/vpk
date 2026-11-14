@@ -265,11 +265,11 @@ const GRAPH_EDGE_DEFINITIONS: GraphEdgeDefinition[] = [
 ];
 
 const GRAPH_NODE_MARKER_CLASSES: Record<VaultNodeKind, string> = {
-	concept: "rotate-45 rounded-[2px]",
+	concept: "rotate-45 rounded-xs",
 	entity: "rounded-full",
-	raw: "rounded-[2px]",
+	raw: "rounded-xs",
 	source: "rounded-full",
-	synthesis: "rotate-45 rounded-[2px]",
+	synthesis: "rotate-45 rounded-xs",
 };
 
 const GRAPH_KIND_COLORS: Record<VaultNodeKind, string> = {
@@ -362,7 +362,7 @@ function GraphDetailsPanel({
 				<h2 className="line-clamp-2 text-sm font-semibold leading-5">{node.title}</h2>
 				<Button
 					aria-label="Close graph details"
-					className="size-7 shrink-0 rounded-[2px] text-neutral-800 hover:bg-neutral-100"
+					className="size-7 shrink-0 rounded-xs text-neutral-800 hover:bg-neutral-100"
 					onClick={onClose}
 					size="icon"
 					variant="ghost"
@@ -393,7 +393,7 @@ function GraphDetailsPanel({
 					<div className="space-y-2">
 						{relatedNodes.map((relatedNode) => (
 							<button
-								className="flex w-full items-center justify-between gap-3 rounded-[2px] border border-neutral-950/15 px-3 py-2 text-left text-sm text-neutral-950 transition-colors duration-normal ease-out hover:bg-neutral-100"
+								className="flex w-full items-center justify-between gap-3 rounded-xs border border-neutral-950/15 px-3 py-2 text-left text-sm text-neutral-950 transition-colors duration-normal ease-out hover:bg-neutral-100"
 								key={relatedNode.id}
 								onClick={() => onSelectNode(relatedNode.id)}
 								style={{ backgroundColor: ROVO_GRAPH_COLORS.surface }}

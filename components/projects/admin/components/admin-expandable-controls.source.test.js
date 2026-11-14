@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const SIDEBAR_SOURCE = fs.readFileSync(path.join(__dirname, "admin-sidebar-items.tsx"), "utf8");
+const SIDEBAR_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/blocks/product-sidebar/variants/admin-sidebar-items.tsx"), "utf8");
 const AUDIT_LOG_SOURCE = fs.readFileSync(path.join(__dirname, "audit-log-view.tsx"), "utf8");
 
 test("admin sidebar disclosure buttons expose expanded state", () => {

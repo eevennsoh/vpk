@@ -201,7 +201,7 @@ test("medium detached is a 276px stroked white chip with the 32px combo identity
 	assert.match(MEDIUM_CARD_SOURCE, /<IconTile[\s\S]*icon=\{\s*<ArrowUpIcon/u);
 	assert.match(MEDIUM_CARD_SOURCE, /iconSize="medium"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /variant="transparent"/u);
-	assert.match(MEDIUM_CARD_SOURCE, /relative flex h-10 w-\[276px\] max-w-full items-center gap-2 rounded-\[10px\] border border-solid bg-surface px-2 text-left/u);
+	assert.match(MEDIUM_CARD_SOURCE, /relative flex h-10 w-\[276px\] max-w-full items-center gap-2 rounded-lg border border-solid bg-surface px-2 text-left/u);
 	assert.match(MEDIUM_CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /hover:border-border focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<button/u);

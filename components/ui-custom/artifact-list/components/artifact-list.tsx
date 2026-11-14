@@ -171,7 +171,7 @@ function ArtifactListRow({
 			</span>
 			{item.href ? (
 				<a
-					className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
+					className="min-w-0 flex-1 truncate rounded-xs text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
 					href={item.href}
 					title={`#${item.pullRequest.number}: ${item.title}`}
 				>

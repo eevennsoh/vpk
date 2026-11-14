@@ -126,7 +126,6 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		chromiumPreviewManager,
 		clearActiveDeferredToolCall,
 		clearPlanSession,
-		clearRunState,
 		collectUploadIdsFromMessages,
 		createRovoUnavailableError,
 		createRuntimeSocketToken,
@@ -175,7 +174,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		searchThreads,
 		sendGatewayErrorResponse,
 		setAgentMode,
-		startNextQueuedRun,
+		settleRun,
 		streamChatViaRovo,
 		waitForReady,
 	} = dependencies;
@@ -263,7 +262,6 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 	registerRovoAppRoutes(app, {
 		cancelChat,
 		checkpointManager,
-		clearRunState,
 		collectUploadIdsFromMessages,
 		deleteThreadBrowserWorkspace,
 		destroyMirrorBrowser,
@@ -281,7 +279,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		rovoAppUploadManager,
 		rovoAppVoteManager,
 		searchThreads,
-		startNextQueuedRun,
+		settleRun,
 	});
 
 	registerOrchestratorRoutes(app, {

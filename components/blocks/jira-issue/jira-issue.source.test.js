@@ -344,7 +344,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row relative flex min-w-0 items-center"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-\[\[aria-expanded=true\]\]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /inheritChinSurface \? "bg-transparent" : "bg-bg-neutral"/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-md rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /handleOpenChat|createOpenChatHandler|canOpenChat/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{\}\)\}/u);
@@ -716,7 +716,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 		AGENT_ACTIVITY_SOURCE,
 		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview \|\| retainCompletedGutter\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
 	);
-	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
+	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-lg outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 	assert.match(SOURCE, /const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && visibleAgentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasAgentDoneNotification = iconScale !== "comfortable" && hasCompletedAgentChin;/);
@@ -779,7 +779,7 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 		/const finishedIndicator = !hasFailedRun && renderAgentActivityIndicator\s*\n\s*\? renderAgentActivityIndicator\("finished"\)\s*\n\s*: null;/u,
 	);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon[\s\S]*: finishedIndicator \? \(\s*<span[\s\S]*\{finishedIndicator\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-8 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*px-2 py-1[^"]*"/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-8 w-full[^"]*rounded-b-md rounded-t-sm[^"]*px-2 py-1[^"]*"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<IconTile[\s\S]*iconSize="medium"[\s\S]*size="small"[\s\S]*variant="transparent"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="truncate text-sm leading-5 text-text"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="grid size-6 shrink-0 place-items-center text-icon-subtle"/u);

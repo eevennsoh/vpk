@@ -14,7 +14,7 @@ const ARTIFACT_LIST = "components/ui-custom/artifact-list/components/artifact-li
 
 test("Next Best Action is registered as a Blocks component in all four registries", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("next-best-action", "Next Best Action"\)/u,
 	);
 	assert.match(

@@ -11,7 +11,7 @@ const FLOATING_CHAT_HEADER_SOURCE = fs.readFileSync(path.join(__dirname, "floati
 const CHAT_PANEL_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"), "utf8");
 const STREAMING_THINKING_INDICATOR_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/shared/components/streaming-thinking-indicator.tsx"), "utf8");
 const CHAIN_OF_THOUGHT_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/ui-custom/chain-of-thought.tsx"), "utf8");
-const REASONING_LABELS_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/shared/lib/reasoning-labels.ts"), "utf8");
+const REASONING_LABELS_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/ui-custom/lib/reasoning-labels.ts"), "utf8");
 
 async function loadRovoFloatingChatHarness() {
 	const mockModules = new Map([

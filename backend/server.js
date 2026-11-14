@@ -54,10 +54,13 @@ let runtime = null;
 let server = null;
 /** @type {Array<{ clients: Set<{ terminate(): void }> }>} */
 let webSocketServers = [];
+/** @type {(() => void) | null} */
+let stopWebSocketHeartbeat = null;
 
 const serverShutdownSteps = createHttpServerShutdownSteps({
 	getServer: () => server,
 	getWebSocketServers: () => webSocketServers,
+	getStopHeartbeat: () => stopWebSocketHeartbeat,
 });
 
 // starting -> listening -> draining -> stopped. Shutdown order: stop accepting
@@ -104,6 +107,10 @@ async function startServer() {
 		}
 		const address = /** @type {import("node:net").AddressInfo | null} */ (httpServer.address());
 		console.log(`[PROCESS] listening on ${address?.address}:${address?.port}`);
+		// Never rejects; a stored run it misses is still cleared when its thread is read.
+		void currentRuntime.startupTasks.sweepOrphanedRovoAppRuns().then((cleared) => {
+			if (cleared > 0) console.log(`[STARTUP] Cleared ${cleared} stored run(s) left by the previous process`);
+		});
 		await logBackendServerReady(currentRuntime.serverReadyDependencies);
 	});
 
@@ -112,11 +119,12 @@ async function startServer() {
 		process.exit(1);
 	});
 
-	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, {
+	const { browserPreviewWss, realtimeWss, stopHeartbeat } = registerBackendWebSocketRelays(server, {
 		...currentRuntime.webSocketRelayDependencies,
 		isDraining,
 	});
 	webSocketServers = [browserPreviewWss, realtimeWss];
+	stopWebSocketHeartbeat = stopHeartbeat;
 }
 
 void startServer().catch((error) => {

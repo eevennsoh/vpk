@@ -283,7 +283,7 @@ test("paused clarification replay resumes with deny_message before replaying the
 });
 
 test("replay continuation emits changed follow-up questions as a new paused clarification", async () => {
-	const handle = { release() {} };
+	const handle = { settleLease: () => true };
 	const harness = createPausedReplayHarness({
 		pausedToolCallRecord: {
 			kind: "clarification",

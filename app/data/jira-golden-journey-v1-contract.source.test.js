@@ -8,7 +8,7 @@ function readProjectFile(relativePath) {
 }
 
 test("Jira Golden Journey v1 resolves one public slug across catalogs, detail metadata, and its demo route", () => {
-	const components = readProjectFile("app/data/components.ts");
+	const components = readProjectFile("app/data/component-manifest.ts");
 	const manifest = readProjectFile("app/data/component-manifest.ts");
 	const details = readProjectFile("app/data/details/projects.ts");
 	const route = readProjectFile("app/jira-golden-journey-v1/page.tsx");

@@ -14,7 +14,7 @@ const DEMO_SOURCE = readFileSync(
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 const DETAILS_SOURCE = readDetailCategorySource("blocks");
 const COMPONENTS_SOURCE = readFileSync(
-	join(__dirname, "..", "..", "..", "app", "data", "components.ts"),
+	join(__dirname, "..", "..", "..", "app", "data", "component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = readFileSync(

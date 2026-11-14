@@ -30,6 +30,7 @@ function fakes(overrides = {}) {
 			{ name: "vpk-dev-feature-x", path: REPO },
 			{ name: "vpk-dev-other", path: "/repo/other" },
 		],
+		measureNext: () => ({ totalBytes: 11 * 1024 ** 3, devOutputBytes: 6.3 * 1024 ** 3, devCacheBytes: 4.4 * 1024 ** 3, devOtherBytes: 0, buildCacheBytes: 0, buildOutputBytes: 0 }),
 		...overrides,
 	};
 }
@@ -56,6 +57,7 @@ test("a ready worktree reports ok with its ports, its own tmux session and SET/M
 		assert.equal(output.includes("model-value-from-env"), false, "no value from the environment is printed");
 	}
 	assert.match(text, /^ok {3}health {5}\/api\/health OK$/mu);
+	assert.match(text, /^ {5}\.next {6}11\.0 GiB: dev output 6\.3 GiB, dev cache 4\.4 GiB, build cache 0\.0 GiB, build output 0\.0 GiB$/mu);
 	assert.match(text, /^ {7}ASAP_PRIVATE_KEY: SET$/mu);
 });
 

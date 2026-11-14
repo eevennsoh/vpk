@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDefaultThinkingLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getDefaultThinkingLabel } from "@/components/ui-custom/lib/reasoning-labels";
 
 export const THINKING_FALLBACK_LABEL = getDefaultThinkingLabel();
 export const THINKING_FALLBACK_TIMEOUT_MS = 5_000;

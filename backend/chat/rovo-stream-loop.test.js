@@ -10,6 +10,7 @@ const {
 	runRovoStreamRetryLoopWithToolFirstPlanning,
 	waitForRovoRetryDelay,
 } = require("./rovo-stream-loop");
+const { createRovoChatTurn } = require("./rovo-chat-turn-machine");
 
 function createBaseOptions(overrides = {}) {
 	const events = [];
@@ -448,8 +449,7 @@ test("runRovoStreamRetryLoopWithToolFirstPlanning wires live retry state into th
 		enforcement: { mode: "soft-retry" },
 	};
 	const toolFirstRelevanceDomains = ["calendar"];
-	let hasEmittedQuestionCard = false;
-	let hasObservedDeferredToolRequest = false;
+	const turn = createRovoChatTurn();
 	const statusPart = {
 		type: "data-thinking-status",
 		data: { label: "Retrying" },
@@ -457,8 +457,6 @@ test("runRovoStreamRetryLoopWithToolFirstPlanning wires live retry state into th
 
 	const result = await runRovoStreamRetryLoopWithToolFirstPlanning({
 		abortSignal,
-		getHasEmittedQuestionCard: () => hasEmittedQuestionCard,
-		getHasObservedDeferredToolRequest: () => hasObservedDeferredToolRequest,
 		handleAttemptError: async () => ({ action: "continue-after-error" }),
 		hasRelevantToolSuccess: (state) => {
 			events.push(["success", state]);
@@ -479,8 +477,9 @@ test("runRovoStreamRetryLoopWithToolFirstPlanning wires live retry state into th
 		runRovoStreamRetryLoopFn: async (options) => {
 			events.push(["loop", options.initialActiveAttemptMessage]);
 			options.recordToolFirstAttempt({ isRetry: true });
-			hasEmittedQuestionCard = true;
-			hasObservedDeferredToolRequest = true;
+			assert.equal(options.turn, turn);
+			turn.dispatch({ type: "question-card-emitted" });
+			turn.dispatch({ type: "deferred-tool-request-observed" });
 			const hasToolFirstSuccess = options.hasRelevantToolSuccess();
 			const retryPlan = options.resolveRetryPlan({
 				currentToolFirstAttempt: 2,
@@ -497,6 +496,7 @@ test("runRovoStreamRetryLoopWithToolFirstPlanning wires live retry state into th
 		toolFirstRelevanceDomains,
 		toolFirstSoftRetryEnabled: true,
 		totalToolFirstAttempts: 3,
+		turn,
 		userMessageText: "show my meetings",
 		writer: {
 			write(part) {
@@ -529,4 +529,29 @@ test("runRovoStreamRetryLoopWithToolFirstPlanning wires live retry state into th
 	assert.equal(events[3][1].totalToolFirstAttempts, 3);
 	assert.equal(events[3][1].userMessageText, "show my meetings");
 	assert.deepEqual(events[4], ["write", statusPart]);
+});
+
+test("runRovoStreamRetryLoop plans no tool-first retry after a recovery that says stop", async () => {
+	const { events, options } = createBaseOptions({
+		handleAttemptError: async () => ({
+			action: "continue-after-error",
+			shouldContinueToolFirstRetry: false,
+		}),
+		resolveRetryPlan: () => {
+			events.push(["retry-plan"]);
+			return { action: "retry", activeAttemptMessage: { message: "must not run" }, nextAttempt: 2, retryDelayMs: 0, statusPart: { type: "status" } };
+		},
+		runStreamAttempt: async ({ currentToolFirstAttempt }) => {
+			events.push(["stream", currentToolFirstAttempt]);
+			throw new Error("port stuck");
+		},
+	});
+
+	const result = await runRovoStreamRetryLoop(options);
+
+	assert.deepEqual(events, [
+		["record", 1, false],
+		["stream", 1],
+	]);
+	assert.equal(result.currentToolFirstAttempt, 1);
 });

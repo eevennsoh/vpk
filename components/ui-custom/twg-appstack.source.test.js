@@ -8,7 +8,7 @@ const { accessibleName, renderComponent } = require(process.cwd() + "/scripts/li
 
 const ROOT = join(__dirname, "..", "..");
 const SOURCE = readFileSync(join(__dirname, "twg-appstack.tsx"), "utf8");
-const COMPONENTS_SOURCE = readFileSync(join(ROOT, "app/data/components.ts"), "utf8");
+const COMPONENTS_SOURCE = readFileSync(join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const MANIFEST_SOURCE = readFileSync(join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const DETAILS_SOURCE = readDetailCategorySource("ui-custom");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();

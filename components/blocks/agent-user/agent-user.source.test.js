@@ -19,7 +19,7 @@ const INDEX = "components/blocks/agent-user/index.ts";
 
 test("Agent User is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("agent-user", "Agent User"\)/u,
 	);
 	assert.match(

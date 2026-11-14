@@ -141,7 +141,7 @@
 		& :where(.dialkit-slider-hashmarks, .dialkit-slider-fill) { position: absolute; inset: 0; pointer-events: none; }
 		& .dialkit-slider-fill { right: auto; background: var(--dial-surface-active); }
 		& .dialkit-slider-hashmark { position: absolute; top: 50%; width: 1px; height: 8px; transform: translate(-50%, -50%); background: var(--dial-border); }
-		& .dialkit-slider-handle { position: absolute; top: 50%; width: 3px; height: 20px; border-radius: 2px; background: var(--dial-text-primary); pointer-events: none; }
+		& .dialkit-slider-handle { position: absolute; top: 50%; width: 3px; height: 20px; border-radius: var(--ds-radius-xsmall); background: var(--dial-text-primary); pointer-events: none; }
 		& :where(.dialkit-slider-label, .dialkit-slider-value, .dialkit-slider-input) { position: absolute; top: 50%; transform: translateY(-50%); }
 		& .dialkit-slider-label { left: 10px; pointer-events: none; }
 		& :where(.dialkit-slider-value, .dialkit-slider-input) { right: 10px; font-family: var(--ds-font-family-code); text-align: right; }
@@ -164,7 +164,7 @@
 		& .dialkit-easing-curve { fill: none; stroke: var(--dial-text-primary); stroke-width: 2; stroke-linecap: round; }
 		& .dialkit-easing-endpoint { fill: var(--dial-text-secondary); }
 		& .dialkit-easing-handle { position: absolute; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: transparent; transform: translate(-50%, -50%); cursor: grab; touch-action: none; }
-		& .dialkit-easing-handle::after { content: ""; width: 10px; height: 10px; border: 1.5px solid var(--dial-text-secondary); border-radius: 50%; background: var(--dial-glass-bg); }
+		& .dialkit-easing-handle::after { content: ""; width: 10px; height: 10px; border: 1px solid var(--dial-text-secondary); border-radius: 50%; background: var(--dial-glass-bg); }
 		& .dialkit-easing-handle:where(:hover, :focus-visible, [data-dragging])::after { background: var(--dial-text-primary); }
 		& .dialkit-easing-instructions { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 		& .dialkit-spring-viz line { stroke: var(--dial-border); }
@@ -204,7 +204,7 @@
 		& .dialkit-timeline-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 4px; }
 		& .dialkit-timeline-actions .dialkit-preset-manager { width: 110px; }
 		& .dialkit-timeline-chevron[data-open="true"] svg { transform: rotate(180deg); }
-		& .dialkit-timeline-overview { position: relative; flex: 1; min-width: 40px; height: 12px; overflow: clip; border-radius: 6px; background: var(--dial-surface); cursor: col-resize; touch-action: pan-y; }
+		& .dialkit-timeline-overview { position: relative; flex: 1; min-width: 40px; height: 12px; overflow: clip; border-radius: var(--ds-radius-medium); background: var(--dial-surface); cursor: col-resize; touch-action: pan-y; }
 		& :where(.dialkit-timeline-overview-viewport, .dialkit-timeline-overview-progress) { position: absolute; inset-block: 0; pointer-events: none; }
 		& .dialkit-timeline-overview-viewport[data-zoomed] { background: var(--dial-surface-active); box-shadow: inset 0 0 0 1px var(--dial-border); }
 		& .dialkit-timeline-overview-progress { left: 0; background: var(--dial-text-tertiary); opacity: 0.4; }
@@ -232,7 +232,7 @@
 		& .dialkit-timeline-clip[data-dragging] { cursor: grabbing; }
 		& .dialkit-timeline-clip[data-selected] { outline: 2px solid var(--dial-focus-ring); outline-offset: -2px; }
 		& .dialkit-timeline-clip[data-composite] { cursor: pointer; }
-		& .dialkit-timeline-clip-duration { padding: 0 3px; border-radius: 2px; background: var(--ds-surface); color: var(--ds-text); font: 10px var(--ds-font-family-code); font-variant-numeric: tabular-nums; pointer-events: none; white-space: nowrap; }
+		& .dialkit-timeline-clip-duration { padding: 0 3px; border-radius: var(--ds-radius-xsmall); background: var(--ds-surface); color: var(--ds-text); font: 10px var(--ds-font-family-code); font-variant-numeric: tabular-nums; pointer-events: none; white-space: nowrap; }
 		& :where(.dialkit-timeline-clip-ghost, .dialkit-timeline-clip-segment) { display: flex; flex-shrink: 0; height: 100%; }
 		& .dialkit-timeline-clip-ghost { position: absolute; top: 4px; bottom: 4px; height: auto; border-radius: var(--dial-radius); opacity: 0.2; pointer-events: none; }
 		& .dialkit-timeline-clip[data-steps] { padding: 0; justify-content: flex-start; }

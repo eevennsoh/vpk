@@ -69,7 +69,7 @@ function ReasoningSection({ selectedReasoning, onReasoningChange, onClose }: Rea
 			<h3 className={dropdownStyles.label}>Reasoning</h3>
 			<div
 				style={{
-					borderRadius: "12px",
+					borderRadius: token("radius.xlarge"),
 					marginTop: token("space.100"),
 				}}
 			>

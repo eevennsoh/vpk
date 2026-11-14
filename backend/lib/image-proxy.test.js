@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
+	decideImageProxyCacheControl,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
 	isAllowedAtlassianImageUrl,
@@ -195,4 +196,30 @@ test("the token goes only to an image URL on a configured site, on every hop", (
 	]) {
 		assert.equal(auth(url), undefined, url);
 	}
+});
+
+test("a Figma asset URL must be https", () => {
+	assert.equal(parseImageProxyTarget("https://www.figma.com/api/mcp/asset/a").source, "figma");
+	assert.equal(parseImageProxyTarget("http://www.figma.com/api/mcp/asset/a").error, "Image URL is not allowed");
+});
+
+test("a token-fetched image is never cached by a shared cache, nor more loosely than the upstream says", () => {
+	const authenticated = (upstream) => decideImageProxyCacheControl({ authenticated: true, upstream });
+	assert.equal(authenticated("no-store"), "no-store");
+	assert.equal(authenticated("private, no-store, max-age=600"), "no-store");
+	assert.equal(authenticated("no-cache"), "private, no-cache");
+	assert.equal(authenticated("public, no-cache, max-age=60"), "private, no-cache, max-age=60");
+	assert.equal(authenticated("max-age=0, must-revalidate"), "private, max-age=0, must-revalidate");
+	assert.equal(authenticated("public, max-age=86400"), "private, max-age=300");
+	assert.equal(authenticated("public, max-age=60, s-maxage=86400, proxy-revalidate"), "private, max-age=60");
+	assert.equal(authenticated('max-age="120"'), "private, max-age=120");
+	assert.equal(authenticated(null), "private, max-age=300");
+	assert.equal(authenticated(""), "private, max-age=300");
+	for (const upstream of ["no-store", "no-cache", "public, max-age=86400", null, "s-maxage=999"]) {
+		const served = authenticated(upstream);
+		assert.doesNotMatch(served, /public|s-maxage/u, String(upstream));
+	}
+	// Without the token, the upstream's policy or the public default.
+	assert.equal(decideImageProxyCacheControl({ authenticated: false, upstream: "public, max-age=60" }), "public, max-age=60");
+	assert.equal(decideImageProxyCacheControl({ authenticated: false, upstream: null }), "public, max-age=300, stale-while-revalidate=300");
 });

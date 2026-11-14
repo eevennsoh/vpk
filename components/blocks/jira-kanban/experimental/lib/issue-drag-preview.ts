@@ -65,7 +65,7 @@ export function createIssueDragPreview(card: HTMLElement): HTMLElement {
 		transform: "none",
 	});
 	const isolatedBackdrop = backdrop.cloneNode(true) as HTMLElement;
-	Object.assign(isolatedBackdrop.style, { top: "0", bottom: "0", left: "0", right: "0", borderRadius: "10px", opacity: "1" });
+	Object.assign(isolatedBackdrop.style, { top: "0", bottom: "0", left: "0", right: "0", borderRadius: "8px", opacity: "1" });
 	if (inset > 0) {
 		preview.append(isolatedBackdrop);
 	} else {

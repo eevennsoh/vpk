@@ -22,10 +22,11 @@ const { readdirSync, statSync } = require("node:fs");
 const { homedir } = require("node:os");
 const { join } = require("node:path");
 
-// PROVISIONAL until the owner confirms them: a Codex worktree's stack may be
-// stopped once its newest thread is this many hours old, normally and when the
-// sweep runs in memory-pressure mode (`--pressure`). The sweep and status.sh
-// both take them from here.
+// The owner's thresholds (R-2): a Codex worktree's stack may be stopped once its
+// newest thread is this many hours old, normally and when the sweep runs in
+// memory-pressure mode (`--pressure`). The sweep, status.sh and the session
+// hook's machine state all take them from here; SKILL.md and
+// references/maintenance.md state the same numbers (a test checks).
 const IDLE_HOURS = 24;
 const PRESSURE_IDLE_HOURS = 6;
 const ACTIVE_WINDOW_SECS = 15 * 60;

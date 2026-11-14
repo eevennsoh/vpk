@@ -39,11 +39,11 @@ function proximityOf(overrides = {}) {
 }
 
 test("the approach target is the whole card shell, not a strip at its lip", () => {
-	assert.equal(SESSION_FUSION_SHELL_RADIUS_PX, 10);
+	assert.equal(SESSION_FUSION_SHELL_RADIUS_PX, 8);
 	assert.deepEqual(toSessionFusionTarget(proximityOf({ dockRect: SHELL_RECT })), {
 		anchor: { x: 240, y: 372 },
 		height: 144,
-		radius: 10,
+		radius: 8,
 		width: 272,
 	});
 });
@@ -52,7 +52,7 @@ test("an unmeasured shell falls back to the drop-zone bounds", () => {
 	assert.deepEqual(toSessionFusionTarget(proximityOf()), {
 		anchor: { x: 240, y: 360 },
 		height: 120,
-		radius: 10,
+		radius: 8,
 		width: 280,
 	});
 	assert.equal(toSessionFusionTarget(null), null);
@@ -63,7 +63,7 @@ test("an inverted or empty rect cannot produce a negative shape", () => {
 		toSessionFusionTarget(proximityOf({
 			dockRect: { bottom: 0, left: 40, right: 10, top: 50 },
 		})),
-		{ anchor: { x: 25, y: 25 }, height: 0, radius: 10, width: 0 },
+		{ anchor: { x: 25, y: 25 }, height: 0, radius: 8, width: 0 },
 	);
 });
 

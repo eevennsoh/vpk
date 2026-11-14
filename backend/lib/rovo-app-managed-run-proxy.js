@@ -17,26 +17,27 @@ function requireFunction(name, value) {
 
 function createRovoAppManagedRunProxy({
 	agentsRfpDemoChatStreamOwner,
-	clearRovoAppRunState,
 	logger = console,
 	persistRovoAppRunState,
+	persistRovoAppRunStateInBackground,
 	resolveAgentsRfpDemoChatTurn = defaultResolveAgentsRfpDemoChatTurn,
 	rovoAppRunManager,
 	rovoCancelChat,
 	shouldReplaceActiveRunForRequest = defaultShouldReplaceActiveRunForRequest,
+	settleRovoAppRun,
 	startManagedRovoAppRun,
 } = {}) {
 	requireFunction("agentsRfpDemoChatStreamOwner.streamAgentsRfpDemoChatTurn", agentsRfpDemoChatStreamOwner?.streamAgentsRfpDemoChatTurn);
-	requireFunction("clearRovoAppRunState", clearRovoAppRunState);
 	requireFunction("logger.info", logger?.info);
 	requireFunction("persistRovoAppRunState", persistRovoAppRunState);
+	requireFunction("persistRovoAppRunStateInBackground", persistRovoAppRunStateInBackground);
 	requireFunction("resolveAgentsRfpDemoChatTurn", resolveAgentsRfpDemoChatTurn);
 	requireFunction("rovoAppRunManager.attachSubscriber", rovoAppRunManager?.attachSubscriber);
-	requireFunction("rovoAppRunManager.cancelRun", rovoAppRunManager?.cancelRun);
 	requireFunction("rovoAppRunManager.createRun", rovoAppRunManager?.createRun);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoCancelChat", rovoCancelChat);
 	requireFunction("shouldReplaceActiveRunForRequest", shouldReplaceActiveRunForRequest);
+	requireFunction("settleRovoAppRun", settleRovoAppRun);
 	requireFunction("startManagedRovoAppRun", startManagedRovoAppRun);
 
 	async function proxyRovoAppChatRequest(req, res) {
@@ -52,9 +53,9 @@ function createRovoAppManagedRunProxy({
 			if (typeof existingRun?.rovoPort === "number" && existingRun.rovoPort > 0) {
 				await rovoCancelChat(existingRun.rovoPort, { timeoutMs: 3_000 }).catch(() => {});
 			}
-			rovoAppRunManager.cancelRun(threadId);
-			await clearRovoAppRunState(threadId);
-			existingRun = null;
+			// Only the run read above: one that took its place during the wait is kept.
+			await settleRovoAppRun(existingRun, "cancelled");
+			existingRun = rovoAppRunManager.getRun(threadId);
 		}
 
 		const agentsRfpDemoTurn = !existingRun
@@ -79,7 +80,7 @@ function createRovoAppManagedRunProxy({
 				if (!detachedRun) {
 					return;
 				}
-				void persistRovoAppRunState(threadId, detachedRun);
+				persistRovoAppRunStateInBackground(threadId, detachedRun);
 			},
 		});
 		if (!subscriberId) {

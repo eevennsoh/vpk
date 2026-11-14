@@ -344,7 +344,7 @@ function ChatHistoryThreadRow({
 						<DropdownMenuGroup>
 							{showRunIndicator ? (
 								<DropdownMenuItem
-									elemBefore={<span aria-hidden className="size-3 rounded-[2px] bg-current" />}
+									elemBefore={<span aria-hidden className="size-3 rounded-xs bg-current" />}
 									onSelect={() => void onCancelThreadRun(thread.id)}
 								>
 									Cancel run

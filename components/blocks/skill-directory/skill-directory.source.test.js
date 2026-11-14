@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 test("Skill Directory is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("skill-directory", "Skill Directory"\)/u,
 	);
 	assert.match(

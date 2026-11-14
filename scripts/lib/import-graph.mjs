@@ -20,6 +20,23 @@ export function readSpecifiers(source) {
 	return [...source.matchAll(SPECIFIER_PATTERN)].map((match) => match[1]);
 }
 
+// Repo paths written as strings in a test, resolved from the repo root: the entry a test hands
+// to renderComponent ({ entry: "components/x/index.ts" }), or an import inside esbuild stdin text
+// (from "./components/x.tsx", which is relative to the repo root, not to the test's directory).
+const REPO_PATH_STRING = /["'`](?:\.\/)?((?:app|backend|components|hooks|lib|rovo|scripts)\/[^"'`\s]+?)["'`]/gu;
+
+export function readRepoPathStrings(source) {
+	return [...source.matchAll(REPO_PATH_STRING)].map((match) => match[1]);
+}
+
+// A suite that renders or bundles code with esbuild: it runs everything the bundle reaches, so
+// a change deep in that graph can break it.
+const BUNDLING_SUITE = /\brenderComponent\s*\(|\bbuildSync\s*\(|\besbuild\.build\s*\(|\bloadCjsModuleFromText\s*\(/u;
+
+export function isBundlingSuite(source) {
+	return BUNDLING_SUITE.test(source);
+}
+
 // Resolves a relative or `@/` specifier to a tracked path; bare packages resolve to null.
 export function resolveSpecifier(specifier, importer, trackedFiles) {
 	let base;
@@ -42,8 +59,9 @@ export function buildReverseImports(files, readSource) {
 		if (!isSourceFile(file)) continue;
 		let source;
 		try { source = readSource(file); } catch { continue; }
-		for (const specifier of readSpecifiers(source)) {
-			const target = resolveSpecifier(specifier, file, tracked);
+		const targets = readSpecifiers(source).map((specifier) => resolveSpecifier(specifier, file, tracked));
+		if (isTestFile(file)) targets.push(...readRepoPathStrings(source).map((repoPath) => resolveSpecifier(`@/${repoPath}`, file, tracked)));
+		for (const target of targets) {
 			if (!target || target === file) continue;
 			if (!importersOf.has(target)) importersOf.set(target, new Set());
 			importersOf.get(target).add(file);
@@ -58,12 +76,26 @@ export function directImporters(changed, importersOf) {
 	return result;
 }
 
-// Suites worth running for a change: changed suites, suites that import a changed module,
-// suites named after a changed module (`foo.ts` → `foo.test.js`, `foo.behavior.test.js`),
-// and source-contract suites that read a changed source file by path.
+// Suites worth running for a change: changed suites, suites that import a changed module or a
+// module that imports one (two levels; a test's repo-path strings count as imports), suites
+// named after a changed module (`foo.ts` → `foo.test.js`, `foo.behavior.test.js`), and
+// source-contract suites that read a changed source file by path.
+export const RELATED_DEPTH = 2;
+
 export function selectRelatedTests({ changed, importersOf, testFiles, readSource }) {
 	const selected = new Set(changed.filter(isTestFile));
-	for (const importer of directImporters(changed, importersOf)) if (isTestFile(importer)) selected.add(importer);
+	let level = new Set(changed);
+	const seen = new Set(changed);
+	for (let depth = 1; depth <= RELATED_DEPTH; depth += 1) {
+		const next = new Set();
+		for (const importer of directImporters(level, importersOf)) {
+			if (seen.has(importer)) continue;
+			seen.add(importer);
+			if (isTestFile(importer)) selected.add(importer);
+			else next.add(importer);
+		}
+		level = next;
+	}
 	const changedByDir = new Map();
 	for (const file of changed) {
 		const dir = path.posix.dirname(file);
@@ -101,4 +133,22 @@ function stem(file) {
 
 function safeRead(readSource, file) {
 	try { return readSource(file); } catch { return ""; }
+}
+
+// Rendered or bundling suites that depend on a change through any number of imports but were
+// not selected: `check` names them in one line and runs them with `--deep`.
+export function deepBundlingDependents({ changed, importersOf, selected, readSource }) {
+	const chosen = new Set(selected);
+	const seen = new Set(changed);
+	const queue = [...changed];
+	const result = [];
+	while (queue.length > 0) {
+		for (const importer of importersOf.get(queue.shift()) ?? []) {
+			if (seen.has(importer)) continue;
+			seen.add(importer);
+			queue.push(importer);
+			if (isTestFile(importer) && !chosen.has(importer) && isBundlingSuite(safeRead(readSource, importer))) result.push(importer);
+		}
+	}
+	return result.sort();
 }

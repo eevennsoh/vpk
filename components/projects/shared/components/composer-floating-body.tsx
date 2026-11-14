@@ -8,7 +8,7 @@ import { composerTextareaClassName, floatingComposerTextareaClassName } from "@/
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { type MouseEvent, useEffect, useRef } from "react";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { useRovoAppComposerReveal } from "@/components/projects/shared/hooks/use-rovo-app-composer-reveal";
@@ -44,6 +44,10 @@ const TEMPLATES_SWEEP_CONFIG: SvgTraceConfig = {
 // in an active chat session it widens to align with the 800px message column.
 const FLOATING_COMPOSER_MAX_WIDTH_CLASS = "max-w-[600px]";
 const FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS = "max-w-[800px]";
+
+// Pressing a reveal link must not blur the textarea first: the blur would unmount the
+// reveal before the click lands.
+const keepComposerFocus = (event: MouseEvent<HTMLButtonElement>) => event.preventDefault();
 
 export interface ComposerFloatingBodyProps extends ComposerBodyBaseProps {
 	fillWidth: boolean;
@@ -195,16 +199,12 @@ export function ComposerFloatingBody({
 							className="absolute inset-x-0 top-full flex items-center justify-center pt-2"
 							style={{ willChange: "opacity, transform" }}
 						>
-							<span
-								// Prevent the textarea from blurring before a click lands,
-								// which would unmount this reveal mid-interaction.
-								onMouseDown={(event) => event.preventDefault()}
-								className="text-xs text-text-subtlest"
-							>
+							<span className="text-xs text-text-subtlest">
 								{onBrowseTemplates ? (
 									<>
 										<button
 											type="button"
+											onMouseDown={keepComposerFocus}
 											onClick={onBrowseTemplates}
 											className="rounded-xs transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
 										>
@@ -234,6 +234,7 @@ export function ComposerFloatingBody({
 								)}
 								<button
 									type="button"
+									onMouseDown={keepComposerFocus}
 									onClick={onStartFromScratch}
 									className="rounded-xs transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
 								>

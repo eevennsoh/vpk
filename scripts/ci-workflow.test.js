@@ -246,3 +246,11 @@ test("the perf job checks route byte budgets on pushes to main, never on PRs", (
 	assert.match(jobs.perf, /pnpm exec playwright install --with-deps chromium/u);
 	assert.doesNotMatch(jobs.perf, /--warn-only/u);
 });
+
+test("the static job also type-checks with TypeScript 6, the checker next build uses, after the native typecheck", () => {
+	const native = jobs.static.indexOf("run: time pnpm run typecheck\n");
+	const build = jobs.static.indexOf("run: time pnpm run typecheck:build\n");
+	assert.ok(native >= 0, "native typecheck step");
+	assert.ok(build > native, "TypeScript 6 step after the native one");
+	assert.equal(require("../package.json").scripts["typecheck:build"], "node scripts/typecheck-build.mjs");
+});

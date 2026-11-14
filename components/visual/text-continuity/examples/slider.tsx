@@ -152,7 +152,7 @@ const INPUT_CLASS = cn(
 
 /** The pivot is the tail's tip, so the bubble swings from there. */
 const BUBBLE_CLASS = cn(
-	"absolute bottom-5 left-0 -translate-x-1/2 rounded-[14px] bg-primary px-3 py-1.5",
+	"absolute bottom-5 left-0 -translate-x-1/2 rounded-xl bg-primary px-3 py-1.5",
 	"[transform-origin:50%_calc(100%+9px)]",
 	// A square stood on its corner: the point is a rounded corner, not a border trick.
 	"after:absolute after:left-1/2 after:top-full after:-z-1 after:size-4 after:rounded-br after:bg-primary after:content-['']",

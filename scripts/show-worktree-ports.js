@@ -22,6 +22,8 @@ const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
 const { probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
+const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
+const { measureNextDir } = require("./lib/next-dev-output");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -79,9 +81,14 @@ function readRovoPorts(worktreePath) {
 	return single ? [single] : [];
 }
 
+// Next binds "localhost", which can be IPv6 only, so a port counts when either loopback answers.
+async function probeLoopback(port) {
+	return (await probePortAlive(port)) || probePortAlive(port, { host: "::1" });
+}
+
 async function probeOrNull(port) {
 	if (!port) return null;
-	const alive = await probePortAlive(port);
+	const alive = await probeLoopback(port);
 	return alive ? port : null;
 }
 
@@ -451,11 +458,11 @@ function sameWorktreePath(left, right) {
 	}
 }
 
-// Older launchers can name a session from a Cursor worktree hash rather than
-// today's branch/display name. Match the live session by its exact worktree
-// path so the target stop script sends SIGINT to the right Portless owner.
-function runningSessionForWorktree(worktree) {
-	const matches = [];
+// Dev sessions with their start directories: every session on the private vpk-dev socket
+// (only the launchers use it, and VPK_DEV_TMUX_SESSION / _PREFIX can rename a session), and the
+// vpk-dev-* sessions on the default socket (the Rovo stack's; other tmux use lives there too).
+function listDevSessions() {
+	const sessions = [];
 	const tmuxBinary = standaloneTmuxBinary();
 	for (const socket of ["vpk-dev", "default"]) {
 		const args = socket === "default" ? [] : ["-L", socket];
@@ -477,11 +484,21 @@ function runningSessionForWorktree(worktree) {
 			if (separator < 0) continue;
 			const name = line.slice(0, separator);
 			const sessionPath = line.slice(separator + 1);
-			if (name.startsWith("vpk-dev-") && sessionPath && sameWorktreePath(sessionPath, worktree.path)) {
-				matches.push({ name, socket });
+			if (sessionPath && (socket === "vpk-dev" || name.startsWith("vpk-dev-"))) {
+				sessions.push({ name, socket, path: sessionPath });
 			}
 		}
 	}
+	return sessions;
+}
+
+// Older launchers can name a session from a Cursor worktree hash rather than
+// today's branch/display name. Match the live session by its exact worktree
+// path so the target stop script sends SIGINT to the right Portless owner.
+function runningSessionForWorktree(worktree, sessions = listDevSessions()) {
+	const matches = sessions
+		.filter((session) => sameWorktreePath(session.path, worktree.path))
+		.map(({ name, socket }) => ({ name, socket }));
 
 	if (matches.length === 1) return matches[0];
 	if (matches.length > 1) {
@@ -527,6 +544,65 @@ function stopWorktree(worktree) {
 		return 1;
 	}
 	return status ?? 0;
+}
+
+// `pnpm ports --json`: one entry per worktree with a dev stack (and the main checkout), with the
+// state derived from its .dev-stack.json, its tmux sessions and its listening ports.
+async function collectStackRows({
+	worktrees = getAllWorktreePortInfo(),
+	routes = loadPortlessRoutes(),
+	sessions = listDevSessions(),
+	isPortListening = probeLoopback,
+	isRecordedSessionAlive = isSessionAlive,
+	listenerInWorktree,
+	measureNext = measureNextDir,
+	// Sizes walk each worktree's .next (one du pass each), so they are opt-in: `--json --sizes`.
+	sizes = false,
+} = {}) {
+	const rows = await Promise.all(
+		worktrees.map(async (wt) => {
+			const ownSessions = sessions.filter((session) => sameWorktreePath(session.path, wt.path));
+			// A session on a socket other than the two listed (VPK_TMUX_SOCKET) is found through the record.
+			const recorded = readStackRecord(wt.path)?.session;
+			if (ownSessions.length === 0 && recorded?.socket && !["vpk-dev", "default"].includes(recorded.socket)) {
+				if (isRecordedSessionAlive({ worktreePath: wt.path, socket: recorded.socket, sessionName: recorded.name })) {
+					ownSessions.push({ name: recorded.name, socket: recorded.socket, path: wt.path });
+				}
+			}
+			const facts = await collectStackFacts({
+				worktreePath: wt.path,
+				sessionAlive: ownSessions.length > 0,
+				isPortListening,
+				...(listenerInWorktree ? { listenerInWorktree } : {}),
+			});
+			const { status, nextAction, reason } = deriveStackStatus(facts);
+			const service = (name) => {
+				const { port, listening, listenerInWorktree: listenerHere, pid, childPid } = facts.services[name];
+				return { port, listening, listenerInWorktree: listenerHere, pid, childPid };
+			};
+			const frontend = service("frontend");
+			return {
+				name: path.basename(wt.path),
+				path: wt.path,
+				branch: wt.branch || null,
+				isMain: Boolean(wt.isMain),
+				sessionName: sessionNameForWorktree(wt),
+				sessions: ownSessions,
+				status,
+				nextAction,
+				reason,
+				phase: facts.record?.phase ?? null,
+				phaseAt: facts.record?.phaseAt ?? null,
+				frontend,
+				backend: service("backend"),
+				rovoPorts: readRovoPorts(wt.path).map(Number),
+				portlessUrl: frontend.listening ? findPortlessUrl(routes, String(frontend.port)) : null,
+				// Sizes of .next from du (null without one): dev output vs dev cache vs build.
+				...(sizes ? { nextDir: measureNext(wt.path) } : {}),
+			};
+		}),
+	);
+	return rows.filter((row) => row.isMain || row.status !== "absent" || row.rovoPorts.length > 0);
 }
 
 function runKill(query) {
@@ -577,9 +653,17 @@ if (require.main === module) {
 		});
 	} else if (subcommand === "kill") {
 		runKill(process.argv[3]);
+	} else if (subcommand === "--json" || subcommand === "json") {
+		collectStackRows({ sizes: process.argv.includes("--sizes") }).then(
+			(rows) => process.stdout.write(`${JSON.stringify(rows, null, "\t")}\n`),
+			(error) => {
+				console.error(error.message);
+				process.exit(1);
+			},
+		);
 	} else if (subcommand && subcommand !== "once") {
 		console.error(
-			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
+			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports --json [--sizes]\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
 		);
 		process.exit(2);
 	} else {
@@ -591,6 +675,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+	collectStackRows,
+	listDevSessions,
 	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,

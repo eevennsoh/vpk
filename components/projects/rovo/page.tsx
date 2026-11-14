@@ -2,6 +2,8 @@
 
 import { RovoAppQueueBoundary } from "@/app/rovo/rovo-queue-provider";
 import { RovoAppShell } from "@/components/projects/rovo/components/rovo-app-shell";
+// Messages are this page, so the markdown runtime loads with it (C-8g) instead of on first message.
+import "@/components/ui-custom/message-markdown-runtime";
 import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 
 interface RovoPageProps {

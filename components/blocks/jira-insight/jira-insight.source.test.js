@@ -67,7 +67,7 @@ test("Jira Insight timestamps use one explicit timezone across SSR and the brows
 });
 
 test("Jira Insight is registered as a documented block demo", () => {
-	const componentsSource = fs.readFileSync(path.join(__dirname, "../../../app/data/components.ts"), "utf8");
+	const componentsSource = fs.readFileSync(path.join(__dirname, "../../../app/data/component-manifest.ts"), "utf8");
 	const manifestSource = fs.readFileSync(path.join(__dirname, "../../../app/data/component-manifest.ts"), "utf8");
 	const detailsSource = fs.readFileSync(path.join(__dirname, "../../../app/data/details/blocks.ts"), "utf8");
 	const registrySource = fs.readFileSync(path.join(__dirname, "../../website/registry/blocks.ts"), "utf8");

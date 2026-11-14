@@ -186,7 +186,7 @@ test("a call that was queued before a close is rejected instead of running on th
 	await closing;
 	assert.deepEqual(
 		runtime.calls.map(([name, arg]) => (arg ? `${name} ${arg}` : name)),
-		["initialize about:blank", "navigate https://first.example", "close"],
+		["initialize about:blank", "navigate https://first.example/", "close"],
 	);
 });
 

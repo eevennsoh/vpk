@@ -36,7 +36,7 @@ const FLOATING_COMPOSER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components", "projects", "shared", "components", "floating-composer.tsx"),
 	"utf8",
 );
-const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",

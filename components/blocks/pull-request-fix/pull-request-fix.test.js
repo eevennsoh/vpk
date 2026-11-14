@@ -48,7 +48,7 @@ const CONTEXT_TITLE_ACTIONS_SOURCE = fs.readFileSync(
 	),
 	"utf8",
 );
-const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",

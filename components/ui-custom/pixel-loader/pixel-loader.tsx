@@ -142,7 +142,7 @@ export function PixelLoader({
 						key={index}
 						className={cn(
 							"size-[var(--pixel-loader-cell)] bg-current",
-							shape === "dot" ? "rounded-full" : "rounded-[1px]",
+							shape === "dot" ? "rounded-full" : "rounded-none",
 						)}
 						style={{
 							opacity: delay === null ? GHOST_OPACITY : DIM_OPACITY,

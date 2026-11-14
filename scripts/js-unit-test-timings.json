@@ -32,7 +32,6 @@
 		"app/api/personal-graph/source": [1, 0.21],
 		"app/api/personal-graph/twg/expand": [1, 0.21],
 		"app/api/rovo/cancel-deferred-tool": [1, 0.15],
-		"app/api/sprint-board/tasks": [1, 0.22],
 		"app/api/vpk-html": [1, 0.17],
 		"app/api/vpk-html/apply-tokens": [1, 0.21],
 		"app/api/vpk-html/notes": [1, 0.26],

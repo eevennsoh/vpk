@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
 const MESSAGES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-messages.tsx"),
@@ -23,10 +24,7 @@ const AUTOMATION_DISCOVERY_PROMPT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-automation-discovery-prompt.ts"),
 	"utf8",
 );
-const SHELL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "rovo-app-shell.tsx"),
-	"utf8",
-);
+const SHELL_SOURCE = readRovoAppShellSource("studio");
 const GENERATING_AGENTS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-automation-generating-agents.ts"),
 	"utf8",

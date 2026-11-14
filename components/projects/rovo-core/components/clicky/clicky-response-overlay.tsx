@@ -133,7 +133,7 @@ export function ClickyResponseOverlay({
 			transition={{ duration: 0.2, ease: "easeOut" }}
 		>
 			<div
-				className="rounded-[10px] border border-border/50 px-3.5 py-2.5 text-[13px] leading-relaxed text-text"
+				className="rounded-lg border border-border/50 px-3.5 py-2.5 text-[13px] leading-relaxed text-text"
 				style={{
 					backgroundColor: "rgba(23, 25, 24, 0.95)",
 					boxShadow: "0 8px 16px rgba(0, 0, 0, 0.35)",

@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isAtlasTunnelHostname, isReactGrabDisabledPath, shouldDisableReactGrab } from "./dev-react-grab.ts";
+import {
+	DEFAULT_REACT_GRAB_SCRIPT_SRC,
+	isAtlasTunnelHostname,
+	isReactGrabDisabledPath,
+	resolveReactGrabScriptSources,
+	shouldDisableReactGrab,
+} from "./dev-react-grab.ts";
 
 test("treats Atlas Tunnel public and private hosts as share hosts", () => {
 	assert.equal(isAtlasTunnelHostname("esoh-297426c52eae.public.atlastunnel.com"), true);
@@ -34,4 +40,17 @@ test("hides react-grab on Atlas Tunnel hosts even for project routes", () => {
 		}),
 		false,
 	);
+});
+
+test("loads the published React Grab build unless another build is configured", () => {
+	assert.deepEqual(resolveReactGrabScriptSources(undefined), [DEFAULT_REACT_GRAB_SCRIPT_SRC]);
+	assert.deepEqual(resolveReactGrabScriptSources("  "), [DEFAULT_REACT_GRAB_SCRIPT_SRC]);
+	assert.deepEqual(resolveReactGrabScriptSources(DEFAULT_REACT_GRAB_SCRIPT_SRC), [DEFAULT_REACT_GRAB_SCRIPT_SRC]);
+});
+
+test("tries a configured React Grab build first and keeps the published build as fallback", () => {
+	assert.deepEqual(resolveReactGrabScriptSources(" /dev-local/react-grab.global.js "), [
+		"/dev-local/react-grab.global.js",
+		DEFAULT_REACT_GRAB_SCRIPT_SRC,
+	]);
 });

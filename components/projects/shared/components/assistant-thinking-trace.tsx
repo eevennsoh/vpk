@@ -38,7 +38,7 @@ import {
 	getDefaultThinkingLabel,
 	getQuestionsAnsweredLabel,
 	getReasoningSectionTitle,
-} from "@/components/projects/shared/lib/reasoning-labels";
+} from "@/components/ui-custom/lib/reasoning-labels";
 import {
 	areAllThinkingToolCallsSettled,
 	collectAssistantThinkingTraceData,

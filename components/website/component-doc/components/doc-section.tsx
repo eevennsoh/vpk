@@ -23,7 +23,7 @@ export function AnchorLinkButton({ id, label }: Readonly<{ id: string; label: st
 		<button
 			type="button"
 			onClick={() => copyAnchorLink(id)}
-			className="opacity-0 group-hover:opacity-100 text-text-subtlest hover:text-text-subtle transition-opacity"
+			className="inline-flex items-center opacity-0 group-hover:opacity-100 text-text-subtlest hover:text-text-subtle transition-opacity"
 			aria-label={`Copy link to ${label}`}
 		>
 			<LinkIcon label="" size="small" />

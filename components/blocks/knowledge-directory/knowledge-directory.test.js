@@ -32,7 +32,7 @@ function getKnowledgeAppById(apps, id) {
 
 test("Knowledge Directory is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("knowledge-directory", "Knowledge Directory"\)/u,
 	);
 	assert.match(

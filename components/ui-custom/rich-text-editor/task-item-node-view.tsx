@@ -44,19 +44,16 @@ export function RichTextTaskItemNodeView({
 			data-checked={checked ? "true" : "false"}
 			data-type="taskItem"
 		>
-			<span
-				className="rich-text-task-item-checkbox"
-				contentEditable={false}
-				onMouseDown={(event) => {
-					// Preserve editor selection while toggling (TipTap TaskItem default).
-					event.preventDefault();
-				}}
-			>
+			<span className="rich-text-task-item-checkbox" contentEditable={false}>
 				<Checkbox
 					aria-label={ariaLabel}
 					checked={checked}
 					disabled={!editor.isEditable && !canToggleWhenReadOnly}
 					onCheckedChange={handleCheckedChange}
+					onMouseDown={(event) => {
+						// Preserve editor selection while toggling (TipTap TaskItem default).
+						event.preventDefault();
+					}}
 				/>
 			</span>
 			<NodeViewContent as="div" />

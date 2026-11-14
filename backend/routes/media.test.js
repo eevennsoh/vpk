@@ -535,3 +535,46 @@ test("a styled SVG is proxied unchanged, inline, under a policy that keeps its s
 		assert.equal(await response.text(), styledSvg);
 	});
 });
+
+test("an image fetched with the token is served private; others keep the upstream or public policy", async () => {
+	const cases = [
+		["token, no upstream policy", { Authorization: "Bearer made-up-token" }, null, "private, max-age=300"],
+		["token, upstream says public", { Authorization: "Bearer made-up-token" }, "public, max-age=86400", "private, max-age=300"],
+		["token, upstream says no-store", { Authorization: "Bearer made-up-token" }, "no-store", "no-store"],
+		["token, upstream says no-cache", { Authorization: "Bearer made-up-token" }, "no-cache", "private, no-cache"],
+		["no token, upstream policy", {}, "public, max-age=60", "public, max-age=60"],
+		["no token, no policy", {}, null, "public, max-age=300, stale-while-revalidate=300"],
+	];
+	for (const [name, headers, upstreamPolicy, expected] of cases) {
+		await withServer({
+			buildImageProxyHeaders: () => headers,
+			fetchFn: async () => new Response(Buffer.from([1]), {
+				headers: { "content-type": "image/png", ...(upstreamPolicy ? { "cache-control": upstreamPolicy } : {}) },
+				status: 200,
+			}),
+			parseImageProxyTargetFn: () => ({ source: "atlassian", targetUrl: new URL("https://team.atlassian.net/wiki/download/attachments/1/x.png") }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			assert.equal(response.headers.get("cache-control"), expected, name);
+			await response.arrayBuffer();
+		});
+	}
+});
+
+test("one image-proxy request makes at most IMAGE_PROXY_MAX_UPSTREAM_FETCHES upstream requests", async () => {
+	const { IMAGE_PROXY_MAX_UPSTREAM_FETCHES } = require("../lib/image-proxy");
+	let fetches = 0;
+	await withServer({
+		deriveAtlassianImageCandidates: () => Array.from({ length: 7 }, (_, index) => new URL(`https://team.atlassian.net/wiki/download/attachments/1/c${index}.png`)),
+		fetchFn: async (url) => {
+			fetches += 1;
+			return new Response(null, { headers: { location: `${url}x` }, status: 302 });
+		},
+		parseImageProxyTargetFn: () => ({ source: "atlassian", targetUrl: new URL("https://team.atlassian.net/wiki/download/attachments/1/x.png") }),
+	}, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+		assert.equal(response.status, 502);
+		assert.match((await response.json()).error, /gave up after 12 upstream requests/u);
+	});
+	assert.equal(fetches, IMAGE_PROXY_MAX_UPSTREAM_FETCHES);
+});

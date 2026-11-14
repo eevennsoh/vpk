@@ -85,3 +85,12 @@ test("both caps are configurable; an unusable value falls back with a log line",
 	assert.equal(limiter.tryAcquire("10.0.0.1"), null, "a configured per-address cap is enforced");
 	assert.equal(typeof limiter.tryAcquire("10.0.0.2"), "function");
 });
+
+test("behind a trusted proxy, where addresses identify clients, each client gets half the pool", () => {
+	const logger = { warn() {} };
+	const trusted = { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" };
+	assert.deepEqual(resolveConnectionLimits(trusted, logger), { maxTotal: 64, maxPerAddress: 32 });
+	assert.deepEqual(resolveConnectionLimits({ ...trusted, VPK_WS_MAX_CONNECTIONS: "1" }, logger), { maxTotal: 1, maxPerAddress: 1 });
+	assert.deepEqual(resolveConnectionLimits({ NODE_ENV: "production" }, logger), { maxTotal: 64, maxPerAddress: 64 }, "no trusted proxy: addresses are the proxy's");
+	assert.deepEqual(resolveConnectionLimits({ ...trusted, VPK_WS_MAX_CONNECTIONS_PER_ADDRESS: "4" }, logger), { maxTotal: 64, maxPerAddress: 4 });
+});

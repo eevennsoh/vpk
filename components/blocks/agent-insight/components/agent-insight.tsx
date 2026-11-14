@@ -502,7 +502,7 @@ export function AgentInsight({ className, ...props }: Readonly<AgentInsightProps
 							))}
 						</div>
 						<div className="mt-5 rounded-md bg-bg-neutral p-3">
-							<p className="text-xs font-semibold uppercase leading-4 text-text-subtlest">Failure pattern</p>
+							<p className="text-xs font-semibold leading-4 text-text-subtlest">Failure pattern</p>
 							<p className="mt-1 text-sm leading-5 text-text-subtle">
 								Negative feedback is concentrated in conversations where the agent lacks a source citation.
 							</p>

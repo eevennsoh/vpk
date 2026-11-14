@@ -72,11 +72,20 @@ function renderCard(agent, capabilities = {}) {
 	return parseHTML(html).document;
 }
 
-test("brand-backed lanyards render through the shared agent visual", () => {
-	const card = renderCard({ id: "figma", name: "Figma", publisher: "Figma", description: "Design agent", brandName: "figma", action: "chat" });
-	assert.equal(card.querySelector("h3").textContent, "Figma");
-	assert.ok(card.querySelector('[data-slot="avatar"][data-shape="hexagon"] svg'));
-	assert.equal(card.querySelectorAll("img").length, 0);
+// Brand logos load their module on first render (C-8g), so the card is rendered and given the
+// renders that module needs; static markup would stop at the logo's placeholder box.
+test("brand-backed lanyards render through the shared agent visual", async () => {
+	const agent = { id: "figma", name: "Figma", publisher: "Figma", description: "Design agent", brandName: "figma", action: "chat" };
+	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props: { agent } });
+	try {
+		for (let attempt = 0; attempt < 5; attempt += 1) await view.rerender({ agent });
+		const card = view.container;
+		assert.equal(card.querySelector("h3").textContent, "Figma");
+		assert.ok(card.querySelector('[data-slot="avatar"][data-shape="hexagon"] svg'));
+		assert.equal(card.querySelectorAll("img").length, 0);
+	} finally {
+		await view.unmount();
+	}
 });
 
 test("the lanyard cutout paints its recessed shadow separately from the rim and fill", () => {

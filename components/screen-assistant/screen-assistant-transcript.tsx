@@ -53,7 +53,7 @@ export function ScreenAssistantTranscript({
 			style={{ boxShadow: token("elevation.shadow.overlay") }}
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-[10px] font-semibold uppercase tracking-wider text-text-subtlest">
+				<span className="text-[10px] font-semibold text-text-subtlest">
 					Live chat
 				</span>
 				{statusLabel ? (

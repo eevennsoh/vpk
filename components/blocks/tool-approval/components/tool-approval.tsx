@@ -146,15 +146,17 @@ function ToolApprovalStateful({
 				<CardHeader className="border-b border-border/70 pb-3">
 					<div className="flex items-start justify-between gap-3">
 						<div className="min-w-0">
-							<p className="text-[11px] font-semibold tracking-[0.18em] text-text-subtlest uppercase">
-								Tool approval required
-							</p>
-							<h3
-								id={headingId}
-								className="mt-1 text-sm font-semibold text-text"
-							>
-								{activeItem.title}
-							</h3>
+							<div className="flex flex-wrap items-center gap-2">
+								<h3
+									id={headingId}
+									className="text-sm font-semibold text-text"
+								>
+									{activeItem.title}
+								</h3>
+								<Lozenge size="compact" variant="neutral">
+									Approval required
+								</Lozenge>
+							</div>
 							<p className="mt-1 text-sm leading-6 text-text-subtle">
 								{activeItem.description}
 							</p>

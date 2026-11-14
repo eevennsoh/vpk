@@ -146,7 +146,7 @@ function SpotlightTarget({
 								"data-[side=right]:left-0 data-[side=right]:-translate-x-1/2",
 							)}
 						>
-							<span className="block size-3 rotate-45 rounded-[2px] bg-bg-neutral-bold" />
+							<span className="block size-3 rotate-45 rounded-xs bg-bg-neutral-bold" />
 						</PopoverPrimitive.Arrow>
 					</PopoverPrimitive.Popup>
 				</PopoverPrimitive.Positioner>

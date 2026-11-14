@@ -231,14 +231,22 @@ function printDoctor(report) {
 	process.stdout.write(`${JSON.stringify(report, null, "\t")}\n`);
 }
 
-function runPnpm(args, { stdio = "inherit" } = {}) {
+// `dev:tmux:start` exits with this when the stack did not become ready in its wait
+// (scripts/lib/dev-stack-state.js EXIT_NOT_READY). The stack it launched still exists.
+const DEV_TMUX_NOT_READY = 5;
+
+// Exits on a failing status unless the caller accepts it; returns the status.
+function runPnpm(args, { stdio = "inherit", acceptStatuses = [] } = {}) {
 	const result = spawnSync("pnpm", args, { cwd: REPO_ROOT, stdio });
-	if (result.status !== 0) {
-		process.exit(result.status ?? 1);
+	const status = result.status ?? 1;
+	if (status !== 0 && !acceptStatuses.includes(status)) {
+		process.exit(status);
 	}
+	return status;
 }
 
 module.exports = {
+	DEV_TMUX_NOT_READY,
 	collectDoctor,
 	parseCompileTimeoutMs,
 	parseLaunchReadyTimeoutMs,

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 export interface RippleProps {
 	imageSrc?: string;
@@ -335,10 +336,6 @@ type ProgramInfo = {
 	program: WebGLProgram;
 	uniforms: Map<string, WebGLUniformLocation | null>;
 };
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
 
 function getClickLifetime(decay: number): number {
 	const falloff = 0.9 + (0.95 - 0.9) * decay;

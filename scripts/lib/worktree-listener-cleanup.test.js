@@ -12,6 +12,7 @@ test("findListeningPidsForWorktree only returns listeners whose cwd matches the 
 	const worktreePath = "/tmp/repo-a";
 
 	const matchedPids = findListeningPidsForWorktree({
+		protectedPids: new Set([process.pid]),
 		worktreePath,
 		listListeningPidsFn: () => [320, 120, 220, 120],
 		getProcessCwdFn: (pid) => {
@@ -34,6 +35,7 @@ test("findRovoSupervisorPidsForWorktree only returns matching per-port superviso
 	const worktreePath = "/tmp/repo-a";
 
 	const matchedPids = findRovoSupervisorPidsForWorktree({
+		protectedPids: new Set([process.pid]),
 		worktreePath,
 		listProcessInfoFn: () => [
 			{ pid: 120, command: "node scripts/dev-rovo-port.js 8000" },
@@ -64,6 +66,7 @@ test("cleanupListeningProcessesForWorktree escalates only the matching listeners
 	const sleepCalls = [];
 
 	const result = await cleanupListeningProcessesForWorktree({
+		listAncestorPidsFn: () => [],
 		worktreePath: "/tmp/repo-a",
 		listListeningPidsFn: () => [410, 420, 999],
 		listProcessInfoFn: () => [],
@@ -129,6 +132,7 @@ test("cleanupListeningProcessesForWorktree also stops orphaned rovo supervisors 
 	const sleepCalls = [];
 
 	const result = await cleanupListeningProcessesForWorktree({
+		listAncestorPidsFn: () => [],
 		worktreePath: "/tmp/repo-a",
 		listListeningPidsFn: () => [],
 		listProcessInfoFn: () => [
@@ -218,4 +222,22 @@ test("listAncestorPids walks the parent chain from the given pid and stops at la
 	});
 
 	assert.deepEqual(ancestors, [200, 100]);
+});
+
+test("with the process table unreadable, the cleanup signals nothing", async () => {
+	assert.equal(listAncestorPids({ execSyncFn: () => { throw new Error("ps: Operation not permitted"); } }), null);
+	assert.equal(listAncestorPids({ pid: 999, execSyncFn: () => "  1     0\n" }), null, "our own pid missing from the table");
+	const signals = [];
+	const result = await cleanupListeningProcessesForWorktree({
+		worktreePath: "/repo/worktree",
+		listListeningPidsFn: () => [4242],
+		listProcessInfoFn: () => [],
+		getProcessCwdFn: () => "/repo/worktree",
+		listAncestorPidsFn: () => null,
+		killFn: (pid, signal) => signals.push([pid, signal]),
+		sleepFn: async () => {},
+		logger: { log() {}, warn() {} },
+	});
+	assert.equal(result.blocked, true);
+	assert.deepEqual(signals, []);
 });

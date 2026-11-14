@@ -15,8 +15,6 @@ export function SectionHeading({ children }: Readonly<SectionHeadingProps>) {
 				font: token("font.body.small"),
 				fontWeight: token("font.weight.semibold"),
 				color: token("color.text.subtlest"),
-				textTransform: "uppercase" as const,
-				letterSpacing: "0.5px",
 			}}
 		>
 			{children}

@@ -285,9 +285,9 @@ stop_idle_stack() {
 	if [[ "$socket" == "default" ]]; then
 		# The plain launcher uses the private vpk-dev socket. Calling it for a
 		# legacy default-socket session could stop a newer stack in this worktree.
-		tmux_cmd default send-keys -t "$sname" C-c 2>/dev/null || true
+		tmux_cmd default send-keys -t "=$sname:" C-c 2>/dev/null || true
 		sleep 1
-		tmux_cmd default kill-session -t "$sname" 2>/dev/null
+		tmux_cmd default kill-session -t "=$sname" 2>/dev/null
 		return $?
 	fi
 	if [[ -f "$stop_script" ]]; then
@@ -296,9 +296,9 @@ stop_idle_stack() {
 		fi
 		return 1
 	fi
-	tmux_cmd "$socket" send-keys -t "$sname" C-c 2>/dev/null || true
+	tmux_cmd "$socket" send-keys -t "=$sname:" C-c 2>/dev/null || true
 	sleep 1
-	tmux_cmd "$socket" kill-session -t "$sname" 2>/dev/null
+	tmux_cmd "$socket" kill-session -t "=$sname" 2>/dev/null
 }
 
 # Keep the log bounded on a 24/7 box (cap ~500 lines).
@@ -451,7 +451,7 @@ if command -v tmux >/dev/null 2>&1; then
 			[[ -n "$sname" ]] || continue
 			[[ "$sname" == vpk-dev-* ]] || continue
 			if [[ -z "$spath" ]]; then
-				spath=$(tmux_cmd "$socket" display-message -t "$sname" -p '#{pane_current_path}' 2>/dev/null)
+				spath=$(tmux_cmd "$socket" display-message -t "=$sname:" -p '#{pane_current_path}' 2>/dev/null)
 			fi
 
 			if [[ -z "$spath" || ! -d "$spath" ]]; then
@@ -459,9 +459,9 @@ if command -v tmux >/dev/null 2>&1; then
 					log "kept tmux session $sname on $socket socket (orphaned path '${spath:-}' but attached)"
 					continue
 				fi
-				tmux_cmd "$socket" send-keys -t "$sname" C-c 2>/dev/null || true
+				tmux_cmd "$socket" send-keys -t "=$sname:" C-c 2>/dev/null || true
 				sleep 1
-				if tmux_cmd "$socket" kill-session -t "$sname" 2>/dev/null; then
+				if tmux_cmd "$socket" kill-session -t "=$sname" 2>/dev/null; then
 					stale_killed=$(( stale_killed + 1 ))
 					socket_stale=$(( socket_stale + 1 ))
 					log "killed stale tmux session $sname on $socket socket (worktree path '${spath:-}' gone)"

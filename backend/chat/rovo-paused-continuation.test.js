@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
+	abandonPausedRovoToolCall,
 	buildPausedRovoResumeDecisions,
 	runPausedRovoToolContinuation,
 } = require("./rovo-paused-continuation");
@@ -10,7 +11,7 @@ const {
 function createPausedRecord(overrides = {}) {
 	return {
 		handle: {
-			release() {},
+			settleLease: () => true,
 		},
 		kind: "clarification",
 		port: 43124,
@@ -51,8 +52,9 @@ test("runPausedRovoToolContinuation resumes, replays, and releases on success", 
 	let releaseCount = 0;
 	const pausedToolCallRecord = createPausedRecord({
 		handle: {
-			release() {
-				releaseCount += 1;
+			settleLease(disposition) {
+				if (disposition === "release") releaseCount += 1;
+				return true;
 			},
 		},
 	});
@@ -102,8 +104,9 @@ test("runPausedRovoToolContinuation cancels and releases when replay fails", asy
 	let releaseCount = 0;
 	const pausedToolCallRecord = createPausedRecord({
 		handle: {
-			release() {
-				releaseCount += 1;
+			settleLease(disposition) {
+				if (disposition === "release") releaseCount += 1;
+				return true;
 			},
 		},
 	});
@@ -130,4 +133,50 @@ test("runPausedRovoToolContinuation cancels and releases when replay fails", asy
 
 	assert.deepEqual(cancelCalls, [[43124, { timeoutMs: 3_000 }]]);
 	assert.equal(releaseCount, 1);
+});
+
+test("a continuation with no resume decision cancels the paused turn and ends its lease", async () => {
+	const settles = [];
+	const cancels = [];
+	const pausedToolCallRecord = createPausedRecord({
+		handle: {
+			settleLease: (disposition, options) => {
+				settles.push([disposition, options]);
+				return true;
+			},
+		},
+	});
+
+	await assert.rejects(
+		runPausedRovoToolContinuation({
+			pausedToolCallRecord,
+			rovoCancelChat: async (port, options) => {
+				cancels.push([port, options.timeoutMs]);
+			},
+		}),
+		/missing a resume decision/u,
+	);
+
+	assert.deepEqual(cancels, [[43124, 3000]]);
+	assert.deepEqual(settles, [["release", {}]]);
+});
+
+test("an abandoned paused call whose cancel fails is quarantined", async () => {
+	const settles = [];
+	await abandonPausedRovoToolCall(
+		createPausedRecord({
+			handle: {
+				settleLease: (disposition, options) => {
+					settles.push([disposition, options]);
+					return true;
+				},
+			},
+		}),
+		{
+			rovoCancelChat: async () => {
+				throw new Error("cancel failed");
+			},
+		},
+	);
+	assert.deepEqual(settles, [["unhealthy", { reason: "paused tool call abandoned" }]]);
 });

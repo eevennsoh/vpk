@@ -5,7 +5,7 @@ import { Dialog } from "@base-ui/react/dialog";
 
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import { ModalHeader } from "@/components/blocks/jira-work-item/components/work-item-modal/modal-header";
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental/components/experimental-breadcrumb-actions";
 import { ContextTitleBar } from "@/components/blocks/jira-work-item/experimental/components/context-title-bar";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental/components/context-title-actions";

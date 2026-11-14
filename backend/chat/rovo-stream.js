@@ -209,6 +209,16 @@ function createRovoTextOutputController({
 	let bufferedAssistantText = "";
 	let deferredToolFirstText = "";
 	let hasSuppressedLargeAssistantJson = false;
+	// Set after a notice paragraph; the next text starts a new paragraph.
+	let paragraphBreakPending = false;
+
+	const afterPendingParagraphBreak = (delta) => {
+		if (!paragraphBreakPending) {
+			return delta;
+		}
+		paragraphBreakPending = false;
+		return delta.startsWith("\n") ? delta : `\n\n${delta}`;
+	};
 
 	const startTextIfNeeded = () => {
 		if (textStarted) {
@@ -288,10 +298,11 @@ function createRovoTextOutputController({
 		return null;
 	};
 
-	const emitTextDelta = (delta) => {
-		if (!delta) {
+	const emitTextDelta = (nextDelta) => {
+		if (!nextDelta) {
 			return;
 		}
+		const delta = afterPendingParagraphBreak(nextDelta);
 
 		unsuppressedAssistantText += delta;
 
@@ -332,15 +343,30 @@ function createRovoTextOutputController({
 		deferredToolFirstText = "";
 	};
 
-	const emitForcedTextDelta = (delta) => {
-		if (typeof delta !== "string" || delta.length === 0) {
+	const emitForcedTextDelta = (nextDelta) => {
+		if (typeof nextDelta !== "string" || nextDelta.length === 0) {
 			return;
 		}
+		const delta = afterPendingParagraphBreak(nextDelta);
 
 		assistantText += delta;
 		unsuppressedAssistantText += delta;
 		bufferedAssistantText += delta;
 		flushBufferedAssistantText({ force: true });
+	};
+
+	/** A notice as its own paragraph: a break before it after earlier text, and before any text after it. */
+	const emitNoticeParagraph = (notice) => {
+		const text = typeof notice === "string" ? notice.trim() : "";
+		if (!text) {
+			return;
+		}
+		paragraphBreakPending = false;
+		const separator = assistantText.trim().length === 0 || assistantText.endsWith("\n\n")
+			? ""
+			: assistantText.endsWith("\n") ? "\n" : "\n\n";
+		emitForcedTextDelta(`${separator}${text}`);
+		paragraphBreakPending = true;
 	};
 
 	const emitBufferedAssistantTextForTextRoute = () => {
@@ -380,6 +406,7 @@ function createRovoTextOutputController({
 		unsuppressedAssistantText = "";
 		bufferedAssistantText = "";
 		hasSuppressedLargeAssistantJson = false;
+		paragraphBreakPending = false;
 		if (shouldDeferToolFirstText) {
 			deferredToolFirstText = "";
 		}
@@ -394,6 +421,7 @@ function createRovoTextOutputController({
 	return {
 		emitBufferedAssistantTextForTextRoute,
 		emitForcedTextDelta,
+		emitNoticeParagraph,
 		emitTextDelta,
 		emitTextDeltaRaw,
 		finalizeBufferedAssistantText,

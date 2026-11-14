@@ -89,7 +89,7 @@ function getAssistantText(
 
 function ControlSectionLabel({ children }: Readonly<{ children: string }>) {
 	return (
-		<div className="pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-subtlest">
+		<div className="pt-1 text-[10px] font-semibold text-text-subtlest">
 			{children}
 		</div>
 	);

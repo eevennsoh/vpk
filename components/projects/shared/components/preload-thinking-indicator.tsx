@@ -9,7 +9,7 @@ import {
 	ChainOfThoughtStep,
 } from "@/components/ui-custom/chain-of-thought";
 import SearchIcon from "@atlaskit/icon/core/search";
-import { getPreloadShimmerLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getPreloadShimmerLabel } from "@/components/ui-custom/lib/reasoning-labels";
 
 interface PreloadThinkingIndicatorProps {
 	label?: string;

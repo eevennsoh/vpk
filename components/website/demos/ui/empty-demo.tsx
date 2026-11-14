@@ -107,7 +107,7 @@ export function EmptyDemoWithImage() {
 export function EmptyDemoWithImageHorizontal() {
 	return (
 		<Empty
-			className="max-w-[800px] rounded-[12px] border border-dashed border-border bg-surface px-6 py-0"
+			className="max-w-[800px] rounded-xl border border-dashed border-border bg-surface px-6 py-0"
 			orientation="horizontal"
 		>
 			<EmptyMedia>

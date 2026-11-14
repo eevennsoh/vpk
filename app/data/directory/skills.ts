@@ -10,7 +10,9 @@ import {
 } from "./skill-collections";
 import type { DirectoryVisual, SkillIconKey } from "./types";
 import { getSkillIcon } from "./visual";
-import { serializeSkillMd, type FrontmatterEntries } from "./skill-frontmatter";
+import { serializeSkillMd, slugifySkillName, type FrontmatterEntries } from "./skill-frontmatter";
+
+export { slugifySkillName } from "./skill-frontmatter";
 
 /**
  * `SkillIconKey` is the closed set of Atlaskit icon keys directory items can
@@ -236,13 +238,6 @@ export function getSkillIconTileVariant(skill: Pick<SkillDirectorySkill, "collec
 const SKILL_MEDIUM_DATE = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 /** Slugify a display name into a SKILL.md-standard `name` identifier. */
-export function slugifySkillName(name: string): string {
-	return name
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/gu, "-")
-		.replace(/^-|-$/gu, "");
-}
-
 function stripInitialH1(markdown: string): string {
 	return markdown.replace(/^#\s+.+\n+/u, "");
 }

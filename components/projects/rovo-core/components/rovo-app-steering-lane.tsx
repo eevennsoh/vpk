@@ -72,7 +72,7 @@ export function RovoAppSteeringLane({
 	return (
 		<div
 			className={cn(
-				"rounded-[24px] border border-border bg-surface-raised/95 px-4 py-3 shadow-sm backdrop-blur",
+				"rounded-2xl border border-border bg-surface-raised/95 px-4 py-3 shadow-sm backdrop-blur",
 				className,
 			)}
 		>
@@ -84,7 +84,7 @@ export function RovoAppSteeringLane({
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">
 						<p className="font-medium text-sm text-text">{copy.label}</p>
-						<span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] text-text-subtle uppercase tracking-[0.16em]">
+						<span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] text-text-subtle">
 							Voice steer
 						</span>
 					</div>

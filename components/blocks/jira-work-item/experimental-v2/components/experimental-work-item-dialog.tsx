@@ -9,7 +9,7 @@ import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
-import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import { ModalHeader } from "@/components/blocks/jira-work-item/components/work-item-modal/modal-header";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 

@@ -46,14 +46,13 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 		agentsRfpDemoChatStreamOwner: {
 			generateAgentsRfpDemoReportPreview: createNamedFunction("generateAgentsRfpDemoReportPreview", calls),
 		},
-		clearRovoAppRunState: createNamedFunction("clearRovoAppRunState", calls),
 		generateSuggestedQuestions: createNamedFunction("generateSuggestedQuestions", calls),
 		maybeMigratePersistedRovoAppThreadBrowserScreenshots: createNamedFunction("maybeMigrateScreenshots", calls),
 		persistRovoAppMessageFiles: createNamedFunction("persistRovoAppMessageFiles", calls),
 		persistRovoAppRunState: createNamedFunction("persistRovoAppRunState", calls),
 		proxyRovoAppChatRequest: createNamedFunction("proxyRovoAppChatRequest", calls),
 		reconcileOrphanedRovoAppThread: createNamedFunction("reconcileOrphanedRovoAppThread", calls),
-		startNextQueuedRovoAppRun: createNamedFunction("startNextQueuedRovoAppRun", calls),
+		settleRovoAppRun: createNamedFunction("settleRovoAppRun", calls),
 	};
 	const handleChatSdkRequest = createNamedFunction("handleChatSdkRequest", calls);
 	const cancelChat = createNamedFunction("cancelChat", calls);
@@ -131,7 +130,7 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 	);
 	assert.equal(dependencies.collectUploadIdsFromMessages, collectUploadIdsFromMessages);
 	assert.equal(dependencies.proxyRovoAppChatRequest, rovoAppRuntime.proxyRovoAppChatRequest);
-	assert.equal(dependencies.startNextQueuedRun, rovoAppRuntime.startNextQueuedRovoAppRun);
+	assert.equal(dependencies.settleRun, rovoAppRuntime.settleRovoAppRun);
 	assert.equal(dependencies.searchThreads, searchThreads);
 	assert.equal(dependencies.rovoAppThreadManager, backendServices.rovoAppThreadManager);
 	assert.equal(dependencies.runtimePort, runtimePort);

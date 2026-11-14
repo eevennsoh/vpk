@@ -1833,7 +1833,7 @@ export const PromptInputSubmit = ({
   );
 
   if (status === "submitted" || status === "streaming") {
-    Icon = <span aria-hidden className="size-3 rounded-[2px] bg-current" />;
+    Icon = <span aria-hidden className="size-3 rounded-xs bg-current" />;
   } else if (status === "error") {
     Icon = <XIcon className="size-4" />;
   }

@@ -28,7 +28,7 @@ const DEMO_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components", "website", "demos", "blocks", "pull-request-header-demo.tsx"),
 	"utf8",
 );
-const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",

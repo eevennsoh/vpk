@@ -34,7 +34,6 @@ const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs"
 // to import the specific target directly).
 const FILE_BLACKLIST_EXACT = new Set([
 	"components/website/demo-registry-loader.ts",
-	"components/website/registry.ts",
 ]);
 
 function isBlacklistedRelativePath(relPath) {

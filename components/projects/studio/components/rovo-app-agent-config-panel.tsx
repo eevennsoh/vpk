@@ -64,7 +64,7 @@ import type { SubagentBaseAgent } from "@/components/blocks/subagent/data/demo-a
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagent/lib/subagent-prompts";
 import { AgentUser } from "@/components/blocks/agent-user";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
-import { useSubagentNavigatorTop } from "@/components/projects/studio/hooks/use-subagent-navigator-top";
+import { useSubagentNavigatorTop } from "@/components/blocks/subagent/hooks/use-subagent-navigator-top";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	Agent,
@@ -1444,7 +1444,7 @@ export function RovoAppAgentConfigPanel({
 								<AgentMoreOptionsMenu />
 								<Toggle
 									aria-label="Toggle agent test view"
-									className="rounded-[6px] text-text-subtle hover:border-border data-pressed:hover:border-border-selected"
+									className="rounded-md text-text-subtle hover:border-border data-pressed:hover:border-border-selected"
 									data-testid="agent-config-test"
 									data-screen-assistant-target="studio-agent-config-test"
 									onPressedChange={handleTestPressedChange}

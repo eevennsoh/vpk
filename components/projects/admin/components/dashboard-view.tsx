@@ -6,11 +6,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import { Lozenge } from "@/components/ui/lozenge";
+import { ADMIN_ICONS, type AdminIconComponent } from "@/components/blocks/product-sidebar/data/admin-navigation";
 import {
 	ADMIN_DISCOVER_CARDS,
-	ADMIN_ICONS,
 	ADMIN_QUICK_ACTIONS,
-	type AdminIconComponent,
 } from "../data/admin-data";
 import {
 	AdminAreaChart,

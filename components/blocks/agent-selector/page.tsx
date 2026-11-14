@@ -6,7 +6,7 @@ import { useState, type ReactElement } from "react";
 
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
 import { AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS, AGENT_SELECTOR_DEMO_AGENTS } from "@/components/blocks/agent-selector/data/demo-agents";
-import { DEFAULT_PINNED_SPACE_AGENT_IDS, WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS, WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,

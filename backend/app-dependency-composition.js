@@ -59,14 +59,13 @@ function buildBackendAppDependencies({
 	} = gatewayTextGeneration;
 	const {
 		agentsRfpDemoChatStreamOwner,
-		clearRovoAppRunState,
 		generateSuggestedQuestions,
 		maybeMigratePersistedRovoAppThreadBrowserScreenshots,
 		persistRovoAppMessageFiles,
 		persistRovoAppRunState,
 		proxyRovoAppChatRequest,
 		reconcileOrphanedRovoAppThread,
-		startNextQueuedRovoAppRun,
+		settleRovoAppRun,
 	} = rovoAppRuntime;
 	const {
 		getAgentMode,
@@ -103,7 +102,6 @@ function buildBackendAppDependencies({
 		chromiumPreviewManager,
 		clearActiveDeferredToolCall,
 		clearPlanSession,
-		clearRunState: clearRovoAppRunState,
 		collectUploadIdsFromMessages,
 		createRovoUnavailableError,
 		debugLog,
@@ -148,7 +146,7 @@ function buildBackendAppDependencies({
 		searchThreads,
 		sendGatewayErrorResponse,
 		setAgentMode,
-		startNextQueuedRun: startNextQueuedRovoAppRun,
+		settleRun: settleRovoAppRun,
 		streamChatViaRovo,
 		waitForReady,
 	};

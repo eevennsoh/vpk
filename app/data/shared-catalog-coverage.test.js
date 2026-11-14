@@ -13,7 +13,7 @@ function readProjectFile(...segments) {
 
 test("retired shared surfaces have explicit visible catalog demos", () => {
 	const manifestSource = readProjectFile("app/data/component-manifest.ts");
-	const componentSource = readProjectFile("app/data/components.ts");
+	const componentSource = readProjectFile("app/data/component-manifest.ts");
 	const uiDetailsSource = readDetailCategorySource("ui");
 	const utilityDetailsSource = readProjectFile("app/data/details/utility.ts");
 	const blockDetailsSource = readDetailCategorySource("blocks");

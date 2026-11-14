@@ -16,6 +16,7 @@ const GUARD_SCRIPTS = Object.freeze([
 	"verify:lazy-load",
 	"verify:source-guardrails",
 	"verify:eslint-suppressions",
+	"verify:unused-code",
 	"verify:cursor-rules",
 	"verify:doc-scripts",
 	"validate:agents",

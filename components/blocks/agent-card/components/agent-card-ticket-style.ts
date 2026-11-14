@@ -62,7 +62,7 @@ export const EXPANDED_TICKET_BOTTOM_STYLE = {
 
 const EXPANDED_TICKET_ELEVATION_CLASS_NAME = "agent-card-ticket-shadow";
 
-export const EXPANDED_TICKET_WRAPPER_CLASS_NAME = "relative flex min-h-0 flex-auto flex-col rounded-[16px]";
+export const EXPANDED_TICKET_WRAPPER_CLASS_NAME = "relative flex min-h-0 flex-auto flex-col rounded-2xl";
 
 export const EXPANDED_TICKET_SHADOW_CLASS_NAME = cn(
 	"pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",

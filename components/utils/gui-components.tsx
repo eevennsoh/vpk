@@ -384,7 +384,7 @@ export function GUIPanel({ title, values, defaultOpen = true, onPlay, playLabel 
 			<TooltipProvider>
 				<div className="w-full space-y-4">
 					<div className="flex w-full items-center justify-between">
-						<span className="text-[11px] font-semibold uppercase tracking-wider text-text-subtlest">
+						<span className="text-[11px] font-semibold text-text-subtlest">
 							{title}
 						</span>
 						<span className="flex items-center gap-2">
@@ -1554,7 +1554,7 @@ export function GUISection({ title, defaultOpen = true, borderTop = true, childr
 				onClick={() => setOpen((prev) => !prev)}
 				className="flex w-full items-center justify-between pb-1"
 			>
-				<span className="text-[11px] font-semibold uppercase tracking-wider text-text-subtlest">
+				<span className="text-[11px] font-semibold text-text-subtlest">
 					{title}
 				</span>
 				<span

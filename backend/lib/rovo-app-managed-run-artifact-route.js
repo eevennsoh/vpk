@@ -58,7 +58,7 @@ function createRovoAppManagedRunArtifactRouter({
 				requestBody,
 				routingDecision,
 			}));
-		await persistRovoAppRunBackend(threadId, artifactBackendPreference);
+		await persistRovoAppRunBackend(threadId, artifactBackendPreference, { run });
 
 		const handled = await handleRovoAppArtifactToolRequest({
 			activeArtifact,

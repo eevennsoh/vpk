@@ -26,7 +26,7 @@ function listSourceFiles(relativeDir) {
 
 test("Gallery is registered as a website block in both catalog files", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\(\s*"gallery",\s*"Gallery"\s*\)/u,
 	);
 	assert.match(

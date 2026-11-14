@@ -12,7 +12,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { ADMIN_ICONS, ADMIN_INVOICES } from "../data/admin-data";
+import { ADMIN_ICONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { ADMIN_INVOICES } from "../data/admin-data";
 import {
 	AdminCard,
 	AdminCardHeader,

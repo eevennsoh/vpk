@@ -357,7 +357,7 @@ test("Agent Assignment is registered with a catalog demo and documentation", () 
 	const page = readProjectFile("components/blocks/agent-assignment/page.tsx");
 	const demo = readProjectFile("components/website/demos/blocks/agent-assignment-demo.tsx");
 	const details = readProjectFile("app/data/details/blocks/agent-assignment.ts");
-	const components = readProjectFile("app/data/components.ts");
+	const components = readProjectFile("app/data/component-manifest.ts");
 	const manifest = readProjectFile("app/data/component-manifest.ts");
 	const registry = readProjectFile("components/website/registry/blocks.ts");
 	const variantRegistry = readProjectFile("components/website/registry/blocks-variants.ts");

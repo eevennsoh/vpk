@@ -43,11 +43,14 @@ const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/iu;
 const HTTP_URL_PATTERN = /^https?:\/\//iu;
 // `localhost:3000/x` reads as a scheme "localhost:"; it is a host and port.
 const HOST_PORT_PATTERN = /^[A-Za-z0-9.-]+:\d{1,5}(?:[/?#]|$)/u;
+const LOOPBACK_HOST_PATTERN = /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\]|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.localhost)$/iu;
 
 /**
  * The navigation target the browser gets, as `normalizeChromiumPreviewUrl` produced it
  * before, minus every scheme other than http(s): `about:blank`, an http(s) URL as given,
- * or a bare host (`example.com/x`, `localhost:3000/x`) prefixed with https. `file:`,
+ * or a bare host prefixed with https (`example.com/x`), or with http for a loopback host
+ * (`localhost:3000/x`, `127.0.0.1:8080`, `app.localhost`). The result is the parsed URL's
+ * `href`. `file:`,
  * `chrome:`, `javascript:`, `data:` and the rest are rejected. (Before, `host:port` was
  * passed on without a scheme, like any other scheme.)
  * @param {unknown} value
@@ -67,17 +70,23 @@ function parseNavigationUrl(value) {
 	if (SCHEME_PATTERN.test(trimmed) && !HTTP_URL_PATTERN.test(trimmed) && !HOST_PORT_PATTERN.test(trimmed)) {
 		return { ok: false, message: "Only http(s) URLs and about:blank can be opened." };
 	}
-	const url = HTTP_URL_PATTERN.test(trimmed) ? trimmed : `https://${trimmed}`;
+	const hasScheme = HTTP_URL_PATTERN.test(trimmed);
 	let parsed;
 	try {
-		parsed = new URL(url);
+		parsed = new URL(hasScheme ? trimmed : `https://${trimmed}`);
+		// A bare loopback host is the local dev server, which serves plain http.
+		if (!hasScheme && LOOPBACK_HOST_PATTERN.test(parsed.hostname)) {
+			parsed = new URL(`http://${trimmed}`);
+		}
 	} catch {
 		return { ok: false, message: "URL is not valid." };
 	}
 	if (!NAVIGATION_PROTOCOLS.has(parsed.protocol) || !parsed.hostname) {
 		return { ok: false, message: "Only http(s) URLs and about:blank can be opened." };
 	}
-	return { ok: true, url };
+	// The parsed URL's own spelling: tabs and line breaks inside the input are gone, and
+	// nothing reaches agent-browser's arguments that the URL parser did not accept.
+	return { ok: true, url: parsed.href };
 }
 
 // agent-browser reads an option anywhere in its arguments and has no `--` end-of-options

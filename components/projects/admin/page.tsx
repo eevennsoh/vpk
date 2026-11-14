@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import AppLayout from "@/components/projects/page";
-import { AdminProvider, useAdmin } from "./components/admin-context";
+import { AdminProvider, useAdmin } from "@/components/blocks/product-sidebar/variants/admin-context";
 import { AdminView } from "./components/admin-view";
 
 interface AdminProjectPageProps {

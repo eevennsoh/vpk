@@ -1088,3 +1088,39 @@ test("parseGenerativeWidget accepts explicit excalidraw body payloads", () => {
 	assert.equal(widget.body.scene.type, "excalidraw");
 	assert.equal(widget.body.scene.elements.length, 1);
 });
+
+// One parser serves widget bodies and artifact files (artifact-preview.ts). Widgets used to
+// keep array appState/files; Excalidraw reads both as records, so arrays are now dropped.
+test("parseGenerativeWidget drops array appState and files from excalidraw scenes", () => {
+	const widget = parseGenerativeWidget("genui-preview", {
+		title: "Architecture diagram",
+		body: {
+			kind: "excalidraw",
+			scene: {
+				elements: [{ id: "node-1", type: "rectangle", x: 0, y: 0 }],
+				appState: ["viewBackgroundColor"],
+				files: [{ id: "file-1" }],
+			},
+		},
+	});
+
+	assert.equal(widget.body.kind, "excalidraw");
+	assert.deepEqual(widget.body.scene, { elements: [{ id: "node-1", type: "rectangle", x: 0, y: 0 }] });
+});
+
+test("parseGenerativeWidget keeps object appState and files on excalidraw scenes", () => {
+	const widget = parseGenerativeWidget("genui-preview", {
+		title: "Architecture diagram",
+		body: {
+			kind: "excalidraw",
+			scene: {
+				elements: [],
+				appState: { viewBackgroundColor: "#fff" },
+				files: { "file-1": { id: "file-1" } },
+			},
+		},
+	});
+
+	assert.deepEqual(widget.body.scene.appState, { viewBackgroundColor: "#fff" });
+	assert.deepEqual(widget.body.scene.files, { "file-1": { id: "file-1" } });
+});

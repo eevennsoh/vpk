@@ -410,6 +410,10 @@ function createBackendRuntimeComposition({
 			port,
 			refreshRovoAvailability,
 		},
+		// Run once the server listens: clears stored active runs left by the previous process.
+		startupTasks: {
+			sweepOrphanedRovoAppRuns: rovoAppRuntime.sweepOrphanedRovoAppRuns,
+		},
 		shutdownSteps: createRuntimeShutdownSteps({
 			activeRequests,
 			browserWorkspaceManager,

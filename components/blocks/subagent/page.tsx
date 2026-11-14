@@ -11,7 +11,7 @@ import {
 	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/agent";
 import { SubagentNavigator } from "@/components/blocks/subagent/subagent-navigator";
-import { useSubagentNavigatorTop } from "@/components/projects/studio/hooks/use-subagent-navigator-top";
+import { useSubagentNavigatorTop } from "@/components/blocks/subagent/hooks/use-subagent-navigator-top";
 import { ManageSubagentsDialog } from "@/components/blocks/subagent/components/manage-subagents-dialog";
 import {
 	cloneConfig,

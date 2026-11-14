@@ -150,7 +150,7 @@ export function SloshGauge() {
 
 			<div
 				className={cn(
-					"relative h-32 flex-1 cursor-ns-resize touch-none overflow-hidden rounded-[14px] border border-border bg-surface-sunken",
+					"relative h-32 flex-1 cursor-ns-resize touch-none overflow-hidden rounded-xl border border-border bg-surface-sunken",
 					FOCUS_RING,
 				)}
 				ref={tankRef}

@@ -1,3 +1,5 @@
+import { lerp } from "@/lib/math";
+
 /**
  * The river, as pure math.
  *
@@ -179,7 +181,6 @@ const LIGHT_FLOOR_RADII = 0.55;
 const VELOCITY_DT = 1 / 60;
 
 const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
 /** Deterministic PRNG, so a seeded scene replays identically in tests. */

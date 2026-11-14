@@ -39,7 +39,7 @@ import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import {
 	getAwaitingUserResponseLabel,
 	getQuestionsAnsweredLabel,
-} from "@/components/projects/shared/lib/reasoning-labels";
+} from "@/components/ui-custom/lib/reasoning-labels";
 import { resolveThinkingLabelForSurface } from "@/components/projects/shared/lib/thinking-label-policy";
 import {
 	buildThinkingNarrationDetailMap,

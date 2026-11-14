@@ -121,6 +121,7 @@ function createRovoAppManagedRunExecutor({
 			requestBody,
 			requestIsPlanMode,
 			routingDecision,
+			run,
 			signal,
 			stageTrace,
 			threadId,

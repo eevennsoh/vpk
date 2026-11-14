@@ -1,10 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
-const SHELL_FILE = path.join(__dirname, "rovo-app-shell.tsx");
-const SHELL_SOURCE = fs.readFileSync(SHELL_FILE, "utf8");
+const SHELL_SOURCE = readRovoAppShellSource("rovo");
 
 function extractSlice(startMarker, endMarker) {
 	const startIndex = SHELL_SOURCE.indexOf(startMarker);

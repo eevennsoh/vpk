@@ -199,7 +199,7 @@ export function AgentSurface({ className, ...props }: Readonly<AgentSurfaceProps
 			{...props}
 		>
 			<div className="flex flex-col gap-1">
-				<p className="text-xs font-semibold uppercase tracking-wide text-text-subtlest">Surfaces</p>
+				<p className="text-xs font-semibold text-text-subtlest">Surfaces</p>
 				<p className="text-sm leading-5 text-text-subtle">
 					Choose where this agent appears across Atlassian apps and connected channels.
 				</p>

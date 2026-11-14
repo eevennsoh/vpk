@@ -60,6 +60,7 @@ const {
 const { resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
 const { EVIDENCE_DIR, FRONTEND_PORT_FILE, RUN_DIR, readTrimmed } = require("./lib/repo.js");
 const {
+	DEV_TMUX_NOT_READY,
 	collectDoctor,
 	parseLaunchReadyTimeoutMs,
 	printDoctor,
@@ -161,7 +162,9 @@ async function main() {
 			return;
 		}
 		const alreadyListening = before.frontendListening;
-		runPnpm(["run", "dev:tmux:start"]);
+		// A start that was not ready in its own wait still launched a stack: record it as ours so
+		// `cleanup --stack` stops it, and keep waiting with doctor's longer budget.
+		runPnpm(["run", "dev:tmux:start"], { acceptStatuses: [DEV_TMUX_NOT_READY] });
 		writeState({ launchedByVerify: !alreadyListening });
 		const after = await waitForDoctorReady();
 		printDoctor({

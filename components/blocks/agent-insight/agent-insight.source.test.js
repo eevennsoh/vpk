@@ -15,7 +15,7 @@ const RETIRED_STUDIO_FORWARDER = "components/projects/studio/components/agent-in
 
 test("Agent Insight is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("agent-insight", "Agent Insight"\)/u,
 	);
 	assert.match(

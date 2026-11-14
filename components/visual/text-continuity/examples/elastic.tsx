@@ -115,7 +115,7 @@ export function SquishyNumber() {
 	return (
 		<div className="flex h-16 items-stretch">
 			<div
-				className="box-content flex items-center overflow-hidden rounded-l-[14px] border border-border bg-surface-sunken px-3.5"
+				className="box-content flex items-center overflow-hidden rounded-l-xl border border-border bg-surface-sunken px-3.5"
 				ref={boxRef}
 			>
 				{/*
@@ -133,7 +133,7 @@ export function SquishyNumber() {
 
 			<span
 				className={cn(
-					"relative w-3 flex-none cursor-ew-resize touch-none rounded-r-[14px] bg-bg-neutral",
+					"relative w-3 flex-none cursor-ew-resize touch-none rounded-r-xl bg-bg-neutral",
 					"after:absolute after:left-1/2 after:top-1/2 after:h-4 after:w-0.5 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full after:bg-icon-subtlest after:content-['']",
 					"hover:after:bg-icon-brand",
 					FOCUS_RING,

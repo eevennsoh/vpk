@@ -15,6 +15,7 @@ import {
 	getRadialLeafNodeIds,
 	type NeuralGraphLabelStrategy,
 } from "./workflow-label-strategy";
+import { lerp } from "@/lib/math";
 
 export type { NeuralGraphLabelStrategy } from "./workflow-label-strategy";
 
@@ -178,10 +179,6 @@ function getNodeColor(
 ) {
 	if (options.labelStrategy === "workflowTree" || shouldRevealNodeTypeColors(options)) return getNodeTypeColor(node, options);
 	return getResolvedColor(options.params.nodeColor, options);
-}
-
-function lerp(start: number, end: number, progress: number) {
-	return start + (end - start) * progress;
 }
 
 function smoothProgress(progress: number) {

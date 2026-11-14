@@ -68,6 +68,9 @@ const DEFAULT_LAZY_ONLY_MODULES = [
 // it, so it reaches only the routes that can render it. Applies to TS/JS imports and CSS @import.
 // `match: "stylesheet"` covers every .css file the package ships (any path under the package
 // name), so another stylesheet path such as katex/dist/katex.css cannot slip past.
+// `match: "module"` names a repository file instead: every static specifier that resolves to it
+// counts (dynamic import() stays allowed, as for every rule here), and `ownerFiles` lists the
+// files allowed to import it (C-11). A missing target or owner fails the guard.
 const DEFAULT_SINGLE_OWNER_IMPORTS = [
 	{
 		match: "stylesheet",
@@ -93,15 +96,51 @@ const DEFAULT_SINGLE_OWNER_IMPORTS = [
 		reason: "Excalidraw CSS loads with the Excalidraw runtime",
 		source: "@excalidraw/excalidraw",
 	},
+	{
+		match: "module",
+		ownerFiles: [
+			"app/data/details/visual.ts",
+			"components/website/demos/visual/shader-lab-effect-demo.source.test.js",
+			"components/website/demos/visual/shader-lab/definitions.test.ts",
+			"components/website/demos/visual/shader-lab/equality.test.ts",
+		],
+		reason: "the all-layers Shader Lab map is for the server-only details page; a demo imports its own shader-lab/layers module",
+		source: "components/website/demos/visual/shader-lab/index.ts",
+	},
 ];
 
 // Files that must not statically import a module family (C-8d).
+// Shared logo wrappers (and their stylesheets) that logo-wrappers.ts keeps with the page.
+const LOGO_THIRD_PARTY_WRAPPERS = ["@atlassian/logo-third-party/dist/esm/wrapper"];
+const LOGO_PRODUCT_WRAPPERS = ["@atlaskit/logo/dist/esm/utils/icon-wrapper", "@atlaskit/logo/dist/esm/utils/logo-wrapper", "@atlaskit/logo/dist/esm/wrapper"];
+
 const DEFAULT_FILE_IMPORT_RULES = [
+	{
+		// C-8g: the Streamdown runtime (plugins, KaTeX, mermaid) loads with the first message.
+		filePath: "components/ui-custom/message-markdown.tsx",
+		rules: [
+			{ match: "exact", reason: "the markdown runtime loads with the first message, through preloadMessageMarkdown()", source: "./message-markdown-runtime" },
+			{ match: "package", reason: "the markdown runtime loads with the first message", source: "streamdown" },
+			{ match: "prefix", reason: "the markdown runtime loads with the first message", source: "@streamdown/" },
+		],
+	},
 	{
 		filePath: "components/projects/shared/components/icon-registry.tsx",
 		rules: [
 			{ match: "prefix", reason: "registry icons load on first render through createLazyIcon", source: "@atlaskit/icon/" },
 			{ match: "prefix", reason: "registry icons load on first render through createLazyIcon", source: "@atlaskit/icon-lab/" },
+		],
+	},
+	{
+		filePath: "components/ui/data/logo-data.ts",
+		rules: [
+			{ allow: LOGO_PRODUCT_WRAPPERS, match: "package", reason: "product logos load their entrypoint on first render through createLazyGlyph", source: "@atlaskit/logo" },
+		],
+	},
+	{
+		filePath: "components/ui/data/logo-third-party-icons.ts",
+		rules: [
+			{ allow: LOGO_THIRD_PARTY_WRAPPERS, match: "package", reason: "brand logos load their entrypoint on first render through createLazyGlyph", source: "@atlassian/logo-third-party" },
 		],
 	},
 ];
@@ -220,8 +259,16 @@ const DEFAULT_REACH_TRACKED_RULES = [
 	{ match: "package", reason: "math typesetting runtime", source: "katex" },
 	{ match: "package", reason: "diagram runtime", source: "mermaid" },
 	{ match: "package", reason: "charting runtime", source: "recharts" },
-	{ match: "package", reason: "third-party brand logo map", source: "@atlassian/logo-third-party" },
-	{ match: "package", reason: "Atlassian product logo map", source: "@atlaskit/logo" },
+	// The logo packages (C-8g) except the wrappers every logo renders through, which stay with the
+	// page on purpose (components/ui/data/logo-wrappers.ts).
+	{ allow: LOGO_THIRD_PARTY_WRAPPERS, match: "package", reason: "third-party brand logo map", source: "@atlassian/logo-third-party" },
+	{ allow: LOGO_PRODUCT_WRAPPERS, match: "package", reason: "Atlassian product logo map", source: "@atlaskit/logo" },
+	// The directory catalogs (C-8g item 3): the four large JSON files, about 360 KB together.
+	// Imported only by their loaders in app/data/directory (and one golden-journey fixture).
+	...["agent-templates", "knowledge", "skills", "tools"].flatMap((name) => [
+		{ match: "exact", reason: "directory catalog data", source: `./${name}.json` },
+		{ match: "exact", reason: "directory catalog data", source: `@/app/data/directory/${name}.json` },
+	]),
 ];
 
 const DEFAULT_HEAVY_REACH_BASELINE_PATH = "scripts/lazy-load-heavy-baseline.json";

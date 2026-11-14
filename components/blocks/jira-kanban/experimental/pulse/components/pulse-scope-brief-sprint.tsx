@@ -415,7 +415,7 @@ export function PulseSprintBrief({
 					{todayPoint === null ? null : (
 						<span
 							aria-hidden
-							className="pointer-events-none absolute size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-400 outline-[1.5px] outline-surface"
+							className="pointer-events-none absolute size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-400 outline-2 outline-surface"
 							style={{
 								left: `${(todayPoint.x / VIEW_WIDTH) * 100}%`,
 								top: `${todayPoint.y}px`,

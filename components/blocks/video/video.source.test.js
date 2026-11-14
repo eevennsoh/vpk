@@ -10,7 +10,7 @@ function readProjectFile(relativePath) {
 }
 
 test("Video is registered as a block in every catalog surface", () => {
-	assert.match(readProjectFile("app/data/components.ts"), /blockComponent\("video", "Video"\)/u);
+	assert.match(readProjectFile("app/data/component-manifest.ts"), /blockComponent\("video", "Video"\)/u);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("video", "Video"\)/u,

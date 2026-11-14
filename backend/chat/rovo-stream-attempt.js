@@ -34,7 +34,7 @@ async function handleRovoStreamAttemptError({
 	synthesiseDeferredToolResponseFromClarification,
 	threadId,
 	writer,
-	emitForcedTextDelta,
+	emitFailureNotice,
 } = {}) {
 	if (rovoStreamError?.code === "ROVO_PORT_STUCK") {
 		const recoveryPort = rovoStreamError.port || resolvedRovoPort;
@@ -64,7 +64,7 @@ async function handleRovoStreamAttemptError({
 			};
 		}
 
-		emitForcedTextDelta(`\n\n⚠️ ${recoveryDecision.failureText}`);
+		emitFailureNotice(`⚠️ ${recoveryDecision.failureText}`);
 		return {
 			action: "continue-after-error",
 			shouldContinueToolFirstRetry: false,
@@ -152,7 +152,7 @@ function createRovoStreamAttemptErrorHandler({
 	buildInteractiveStuckPortFailureMessage,
 	clarificationSubmission,
 	clarificationToolCallId,
-	emitForcedTextDelta,
+	emitFailureNotice,
 	getListeningPidsForPort,
 	getResolvedRovoPort,
 	handleRovoStreamAttemptErrorFn = handleRovoStreamAttemptError,
@@ -185,7 +185,7 @@ function createRovoStreamAttemptErrorHandler({
 			buildInteractiveStuckPortFailureMessage,
 			clarificationSubmission,
 			clarificationToolCallId,
-			emitForcedTextDelta,
+			emitFailureNotice,
 			forcePortRecoveryAttemptCount,
 			getListeningPidsForPort,
 			handleStreamTextDelta,

@@ -397,7 +397,7 @@ function StudioAgentsEmptyState({
 	onCreateAgent: () => void;
 }>) {
 	return (
-		<Empty className="max-w-[800px] rounded-[12px] border border-dashed border-border bg-surface px-6 py-0" orientation="horizontal">
+		<Empty className="max-w-[800px] rounded-xl border border-dashed border-border bg-surface px-6 py-0" orientation="horizontal">
 			<EmptyMedia>
 				<span aria-hidden="true">
 					<ControlledRovoIllustration illusId="ai" size={96} />

@@ -36,7 +36,7 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 	assert.match(COMPACT_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(COMPACT_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
-	assert.match(COMPACT_CARD_SOURCE, /relative w-\[276px\] rounded-\[10px\] bg-bg-neutral/u);
+	assert.match(COMPACT_CARD_SOURCE, /relative w-\[276px\] rounded-lg bg-bg-neutral/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /relative w-\[276px\][^"]*hover:bg-bg-neutral-hovered/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /relative w-\[276px\][^"]*bg-bg-neutral-subtle/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);

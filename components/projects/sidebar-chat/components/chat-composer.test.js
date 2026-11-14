@@ -397,8 +397,8 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(source, /const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";/u);
 	assert.match(source, /function ComposerActionFrame/u);
 	assert.doesNotMatch(source, /shouldShowRegionPaintControl/u);
-	assert.match(source, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
-	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
+	assert.match(source, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-lg"/u);
+	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-lg bg-bg-neutral" \/>/u);
 	assert.match(source, /"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none"[\s\S]*clickyActive \? "w-16" : "w-8"/u);
 	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);

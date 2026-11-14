@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 import packageMetadata from "./package.json";
+import { DEV_STALE_OUTPUT_MAX_AGE_MS } from "./scripts/lib/next-dev-output.js";
 import { assertStaticExportThroughWrapper } from "./scripts/lib/static-export-guard.js";
 
 assertStaticExportThroughWrapper();
@@ -36,6 +37,13 @@ const nextConfig: NextConfig = {
 		// list (the older framer-motion was); date-fns benefits too. Preserves
 		// types and autocomplete with zero source changes.
 		optimizePackageImports: ["recharts", "motion/react", "date-fns"],
+		// The custom `webpack` hook below would otherwise switch the build to the main process;
+		// the build worker keeps webpack's memory out of it, as before the hook existed.
+		webpackBuildWorker: true,
+		// next dev keeps its output across restarts and prunes only files older than this, only at
+		// start (default 7 days); an active stack writes about a GiB an hour. `dev:tmux:stop` removes
+		// the output itself; this bounds every other start. The Turbopack cache is not affected.
+		turbopackStaleOutputMaxAge: DEV_STALE_OUTPUT_MAX_AGE_MS,
 	},
 
 	turbopack: {
@@ -53,6 +61,23 @@ const nextConfig: NextConfig = {
 	...(process.env.NEXT_OUTPUT === "export" && {
 		output: "export",
 	}),
+	// Button and Spinner are imported by nearly every client entry. Left to the default split,
+	// they land in whichever shared chunk happens to group them, and moving the markdown runtime
+	// out of first load (C-8g) scattered copies of them into app/layout and route chunks. One
+	// named chunk keeps a single copy that every route shares. The two logo maps (C-8g) hold one
+	// loader per logo; they are small enough that the default split copied them into every chunk
+	// that renders a logo, so they get one named chunk as well.
+	webpack: (config, { isServer }) => {
+		if (!isServer && config.optimization?.splitChunks && typeof config.optimization.splitChunks === "object") {
+			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
+			splitChunks.cacheGroups = {
+				...splitChunks.cacheGroups,
+				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner)\.tsx$/ },
+				logoMaps: { chunks: "all", enforce: true, name: "logo-maps", priority: 30, test: /[\\/]components[\\/]ui[\\/](data[\\/]logo-data\.ts|data[\\/]logo-third-party-icons\.ts|lazy-glyph\.tsx)$/ },
+			};
+		}
+		return config;
+	},
 };
 
 export default nextConfig;

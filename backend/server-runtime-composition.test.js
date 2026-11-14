@@ -79,6 +79,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	const handleChatSdkRequest = createNamedFunction("handleChatSdkRequest", calls);
 	const rovoAppRuntime = {
 		proxyRovoAppChatRequest: createNamedFunction("proxyRovoAppChatRequest", calls),
+		sweepOrphanedRovoAppRuns: createNamedFunction("sweepOrphanedRovoAppRuns", calls),
 	};
 	const app = {
 		owner: "express-app",
@@ -213,6 +214,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	assert.equal(chatInput.rovoAppThreadManager, backendServices.rovoAppThreadManager);
 	assert.equal(appDependencyInput.chatSdk.handleChatSdkRequest, handleChatSdkRequest);
 	assert.equal(appDependencyInput.rovoAppRuntime, rovoAppRuntime);
+	assert.equal(result.startupTasks.sweepOrphanedRovoAppRuns, rovoAppRuntime.sweepOrphanedRovoAppRuns);
 	assert.equal(appDependencyInput.runtime.debugMode, true);
 	assert.equal(appDependencyInput.runtime.runtimePort, "9191");
 	assert.equal(appDependencyInput.runtime.logger, logger);

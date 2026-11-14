@@ -1,13 +1,13 @@
-// Static parsing of the demo registry (components/website/registry*): follows the
-// category maps, their imports and spreads, and resolves each entry's demo import.
+// Static parsing of the demo registry (components/website/registry/*): reads the category map
+// in components/website/demo-registry-loader.ts, follows each table's imports and spreads, and
+// resolves each entry's demo import.
 // Shared by scripts/verify-component-catalog.js and scripts/generate-repo-map.js.
 
 const { existsSync, readFileSync, statSync } = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
-const REGISTRY_PATH = "components/website/registry.ts";
-const REGISTRY_INDEX_PATH = "components/website/registry/index.ts";
+const LOADER_PATH = "components/website/demo-registry-loader.ts";
 
 function parseSource(filePath, cwd = process.cwd()) {
 	const source = readFileSync(path.join(cwd, filePath), "utf8");
@@ -225,70 +225,54 @@ function findVariableInitializer(sourceFile, name) {
 	return initializer;
 }
 
-function getRegistryEntryPath(cwd = process.cwd()) {
-	const registrySource = parseSource(REGISTRY_PATH, cwd);
-	if (
-		findVariableInitializer(registrySource, "CATEGORY_REGISTRIES") &&
-		findVariableInitializer(registrySource, "VARIANT_REGISTRIES")
-	) {
-		return REGISTRY_PATH;
-	}
-
-	if (existsSync(path.join(cwd, REGISTRY_INDEX_PATH))) {
-		return REGISTRY_INDEX_PATH;
-	}
-
-	return REGISTRY_PATH;
-}
-
-function getRegistryObject(moduleContext, name, cwd = process.cwd(), moduleCache = new Map()) {
-	let registryObject = null;
-
-	function visit(node) {
-		if (registryObject) {
-			return;
-		}
-		if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.name.text === name) {
-			registryObject = ts.isObjectLiteralExpression(node.initializer) ? node.initializer : null;
-			return;
-		}
-		ts.forEachChild(node, visit);
-	}
-
-	visit(moduleContext.sourceFile);
-	if (!registryObject) {
-		throw new Error(`Could not find ${name} in ${moduleContext.filePath}`);
-	}
-
-	const registries = {};
-	for (const property of registryObject.properties) {
-		if (!ts.isPropertyAssignment(property)) {
-			continue;
-		}
-
+// The per-category loader is the one place that maps a category to its tables:
+// `category: () => import("@/components/website/registry/<file>").then((module) => ({ demos: module.X, variants: module.Y }))`.
+function readLoaderTables(cwd = process.cwd()) {
+	const sourceFile = parseSource(LOADER_PATH, cwd);
+	const loaders = findVariableInitializer(sourceFile, "CATEGORY_REGISTRY_LOADERS");
+	if (!loaders || !ts.isObjectLiteralExpression(loaders)) throw new Error(`Could not find CATEGORY_REGISTRY_LOADERS in ${LOADER_PATH}`);
+	const tables = [];
+	for (const property of loaders.properties) {
+		if (!ts.isPropertyAssignment(property)) continue;
 		const category = getPropertyKey(property.name);
-		const registryLiteral = getObjectLiteralForInitializer(property.initializer, moduleContext, cwd, moduleCache);
-		if (!category || !registryLiteral) {
-			throw new Error(`Could not resolve ${name}.${category ?? "<unknown>"} in ${moduleContext.filePath}`);
-		}
-
-		registries[category] = collectRegistryEntriesFromObject(registryLiteral.objectLiteral, registryLiteral.sourceFile, cwd, moduleCache);
+		let importPath = null;
+		const exportsByRole = {};
+		const visit = (node) => {
+			if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+				importPath = node.arguments[0].text;
+			}
+			if (ts.isPropertyAssignment(node) && ts.isPropertyAccessExpression(node.initializer)) {
+				exportsByRole[getPropertyKey(node.name)] = node.initializer.name.text;
+			}
+			ts.forEachChild(node, visit);
+		};
+		visit(property.initializer);
+		if (!category || !importPath || !exportsByRole.demos) throw new Error(`Could not read the ${category ?? "<unknown>"} loader in ${LOADER_PATH}`);
+		const file = resolveProjectImport(importPath, cwd);
+		if (!file) throw new Error(`${LOADER_PATH}: ${category} imports missing module ${importPath}`);
+		tables.push({ category, demos: exportsByRole.demos, file: normalizeProjectPath(cwd, file), variants: exportsByRole.variants ?? null });
 	}
-
-	return registries;
+	return tables;
 }
 
 function collectRegistryData(cwd = process.cwd()) {
 	const moduleCache = new Map();
-	const registryEntryPath = getRegistryEntryPath(cwd);
-	const moduleContext = getRegistryModule(registryEntryPath, cwd, moduleCache);
-	return {
-		primary: getRegistryObject(moduleContext, "CATEGORY_REGISTRIES", cwd, moduleCache),
-		variants: getRegistryObject(moduleContext, "VARIANT_REGISTRIES", cwd, moduleCache),
-	};
+	const primary = {};
+	const variants = {};
+	for (const table of readLoaderTables(cwd)) {
+		const moduleContext = getRegistryModule(table.file, cwd, moduleCache);
+		for (const [role, name, target] of [["demos", table.demos, primary], ["variants", table.variants, variants]]) {
+			if (!name) continue;
+			const registryLiteral = getObjectLiteralForInitializer(ts.factory.createIdentifier(name), moduleContext, cwd, moduleCache);
+			if (!registryLiteral) throw new Error(`Could not resolve ${table.category} ${role} table ${name} in ${table.file}`);
+			target[table.category] = collectRegistryEntriesFromObject(registryLiteral.objectLiteral, registryLiteral.sourceFile, cwd, moduleCache);
+		}
+	}
+	return { primary, variants };
 }
 
-function resolveRegistryImport(importPath, cwd = process.cwd(), sourceFilePath = REGISTRY_PATH) {
+// sourceFilePath: the repo-relative file the import appears in (every collected import carries it).
+function resolveRegistryImport(importPath, cwd, sourceFilePath) {
 	if (!importPath.startsWith(".")) {
 		return null;
 	}
@@ -318,7 +302,6 @@ function resolveProjectImport(importPath, cwd = process.cwd()) {
 }
 
 module.exports = {
-	REGISTRY_PATH,
 	collectRegistryData,
 	normalizeProjectPath,
 	resolveProjectImport,

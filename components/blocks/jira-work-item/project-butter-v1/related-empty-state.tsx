@@ -29,8 +29,8 @@ export function RelatedEmptyState({ kind, onAdd, onDismiss }: Readonly<{
 		<div className="group/empty-state relative flex min-h-20 items-center justify-center rounded-xl border border-dashed border-border py-2" data-related-empty={kind}>
 			{onDismiss ? <div className="absolute top-2 right-2"><Button aria-label="Dismiss" onClick={onDismiss} size="icon-compact" type="button" variant="ghost"><span className="text-icon-subtlest"><CrossIcon label="" size="small" /></span></Button></div> : null}
 			<div aria-hidden className="relative flex size-12 shrink-0 items-center justify-center">
-				<span className="absolute top-1 left-1 scale-0 text-icon-subtlest opacity-0 transition-[opacity,scale] duration-slow ease-spring group-hover/empty-state:scale-100 group-hover/empty-state:opacity-100"><AiSparkleIcon label="" size="small" /></span>
-				<span className={cn("flex size-6 rotate-[20.761deg] items-center justify-center rounded-full text-icon transition-[rotate] duration-medium ease-spring", circle, hover)}><Icon label="" size="small" /></span>
+				<span className="absolute top-1 left-1 scale-0 text-icon-subtlest opacity-0 transition-[opacity,scale] duration-slow ease-out-practical motion-reduce:transition-none group-hover/empty-state:scale-100 group-hover/empty-state:opacity-100"><AiSparkleIcon label="" size="small" /></span>
+				<span className={cn("flex size-6 rotate-[20.761deg] items-center justify-center rounded-full text-icon transition-[rotate] duration-medium ease-out-practical motion-reduce:transition-none", circle, hover)}><Icon label="" size="small" /></span>
 			</div>
 			<Button data-related-add onClick={onAdd} type="button" variant="ghost">{action}</Button>
 		</div>

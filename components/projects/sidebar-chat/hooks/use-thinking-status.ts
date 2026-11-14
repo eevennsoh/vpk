@@ -17,7 +17,7 @@ import {
 import {
 	resolveThinkingLabelForSurface,
 } from "@/components/projects/shared/lib/thinking-label-policy";
-import { getDefaultThinkingLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getDefaultThinkingLabel } from "@/components/ui-custom/lib/reasoning-labels";
 import {
 	isCompletedAssistantFromPreviousRequest,
 	resolveThinkingIndicatorVisibility,

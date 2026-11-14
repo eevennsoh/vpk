@@ -22,7 +22,7 @@ export function MetadataPathLink({
 	return (
 		<a
 			className={cn(
-				"group min-w-0 truncate rounded-[3px] no-underline decoration-current outline-none",
+				"group min-w-0 truncate rounded-xs no-underline decoration-current outline-none",
 				segmented ? null : "hover:underline focus-visible:underline",
 				className,
 			)}

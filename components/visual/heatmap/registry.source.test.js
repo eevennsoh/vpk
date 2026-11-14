@@ -21,7 +21,7 @@ function readProjectFile(filePath) {
 }
 
 test("Heatmap is registered in the visual catalog and manifest", () => {
-	const componentsSource = readProjectFile("app/data/components.ts");
+	const componentsSource = readProjectFile("app/data/component-manifest.ts");
 	const manifestSource = readProjectFile("app/data/component-manifest.ts");
 
 	assert.match(
@@ -51,7 +51,7 @@ test("Heatmap docs register the main preview and every example demo", () => {
 		assert.match(registrySource, new RegExp(`"${demoSlug}"`, "u"));
 	}
 
-	assert.match(registrySource, /visual: VISUAL_VARIANT_DEMOS/u);
+	assert.match(registrySource, /visual: \(\) => import\("@\/components\/website\/registry\/visual"\)\.then\(\(module\) => \(\{ demos: module\.VISUAL_DEMOS, variants: module\.VISUAL_VARIANT_DEMOS \}\)\)/u);
 });
 
 test("Heatmap example demos are all lazy and browser-only", () => {

@@ -431,29 +431,52 @@ function createRovoAppGeneratedFilesManager({
 		});
 
 	/**
-	 * One git view for one cleanup: the tracked files (one `ls-files -z`) and which of the
-	 * candidates are ignored (one `check-ignore --stdin -z`). A candidate is safe to touch
-	 * only when both answers came back and it is neither. Any failure makes nothing safe.
+	 * One git view for one cleanup: the tracked files and submodules (one `ls-files -s -z`)
+	 * and which of the candidates are ignored (one `check-ignore --stdin -z`). A candidate is
+	 * safe to touch only when both answers came back and it is neither tracked, ignored nor
+	 * inside a submodule. Candidates inside a submodule are left out of `check-ignore`, which
+	 * refuses them (exit 128) and would otherwise make every candidate unsafe. Any other
+	 * failure makes nothing safe.
 	 * @param {string[]} candidatePaths
 	 * @returns {Promise<(requestedPath: string) => boolean>}
 	 */
 	const loadGitView = async (candidatePaths) => {
 		if (candidatePaths.length === 0) return () => false;
-		const listed = await runGitQuery(["ls-files", "-z"]);
+		const listed = await runGitQuery(["ls-files", "-s", "-z"]);
 		if (!listed || listed.code !== 0) return () => false;
-		const tracked = new Set(listed.stdout.split("\0").filter(Boolean).map(foldPath));
-		const checked = await runGitQuery(["check-ignore", "--stdin", "-z"], { input: `${candidatePaths.join("\0")}\0` });
-		if (!checked || (checked.code !== 0 && checked.code !== 1)) return () => false;
-		const ignored = new Set(checked.stdout.split("\0").filter(Boolean));
-		return (requestedPath) => !tracked.has(foldPath(requestedPath)) && !ignored.has(requestedPath);
+		const tracked = new Set();
+		const submoduleRoots = [];
+		for (const record of listed.stdout.split("\0")) {
+			// "<mode> <object> <stage>\t<path>"; a submodule is mode 160000.
+			const tab = record.indexOf("\t");
+			if (tab === -1) continue;
+			const trackedPath = foldPath(record.slice(tab + 1));
+			tracked.add(trackedPath);
+			if (record.startsWith("160000 ")) submoduleRoots.push(trackedPath);
+		}
+		const isInSubmodule = (requestedPath) => {
+			const folded = foldPath(requestedPath);
+			return submoduleRoots.some((root) => folded === root || folded.startsWith(`${root}/`));
+		};
+		const checkable = candidatePaths.filter((candidatePath) => !isInSubmodule(candidatePath));
+		let ignored = new Set();
+		if (checkable.length > 0) {
+			const checked = await runGitQuery(["check-ignore", "--stdin", "-z"], { input: `${checkable.join("\0")}\0` });
+			if (!checked || (checked.code !== 0 && checked.code !== 1)) return () => false;
+			ignored = new Set(checked.stdout.split("\0").filter(Boolean));
+		}
+		return (requestedPath) =>
+			!tracked.has(foldPath(requestedPath)) && !ignored.has(requestedPath) && !isInSubmodule(requestedPath);
 	};
 
+	// Removes the directories a deleted file leaves empty, up to but never including a
+	// top-level directory: the generated-file roots (app/, lib/, …) stay even when empty.
 	const removeEmptyParentDirectories = async (startingDir) => {
 		let currentDir = startingDir;
 
 		while (
 			currentDir.startsWith(`${resolvedProjectRoot}${path.sep}`)
-			&& currentDir !== resolvedProjectRoot
+			&& path.dirname(currentDir) !== resolvedProjectRoot
 		) {
 			try {
 				const entries = await fs.readdir(currentDir);

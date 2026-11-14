@@ -1,11 +1,9 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const {
-	createRovoAppFailureSseChunks,
-	createRovoAppManagedRunLifecycle,
-	createSseDataChunk,
-} = require("./rovo-app-managed-run-lifecycle");
+const { createRovoAppManagedRunLifecycle } = require("./rovo-app-managed-run-lifecycle");
+const { createRovoAppRunManager } = require("./rovo-app-runs");
+const { createRovoAppRunStateService } = require("./rovo-app-run-state");
 
 function flushMicrotasks() {
 	return new Promise((resolve) => setImmediate(resolve));
@@ -25,19 +23,6 @@ function createHarness(overrides = {}) {
 	const runs = new Map(overrides.runs || []);
 	const queuedThreadIds = [...(overrides.queuedThreadIds || [])];
 	const dependencies = {
-		activeRequests: {
-			delete: (threadId) => {
-				calls.push(["activeRequests.delete", threadId]);
-				return true;
-			},
-		},
-		clearRovoAppRunState: async (threadId) => {
-			calls.push(["clearRovoAppRunState", threadId]);
-		},
-		createFailureSseChunks: (error) => {
-			calls.push(["createFailureSseChunks", error]);
-			return ["data: failure\n\n"];
-		},
 		executeRovoAppManagedRun: async (run) => {
 			calls.push(["executeRovoAppManagedRun", run.threadId]);
 		},
@@ -52,17 +37,11 @@ function createHarness(overrides = {}) {
 			return { available: true };
 		},
 		rovoAppRunManager: {
-			appendChunk: (threadId, chunk) => {
-				calls.push(["appendChunk", threadId, chunk]);
-			},
-			clearRun: (threadId) => {
-				calls.push(["clearRun", threadId]);
-				runs.delete(threadId);
-			},
 			getRun: (threadId) => {
 				calls.push(["getRun", threadId]);
 				return runs.get(threadId) || null;
 			},
+			isCurrentRun: (run) => Boolean(run) && runs.get(run.threadId) === run,
 			hasSubscribers: (threadId) => {
 				calls.push(["hasSubscribers", threadId]);
 				return false;
@@ -96,9 +75,10 @@ function createHarness(overrides = {}) {
 					queuedThreadIds.splice(index, 1);
 				}
 			},
-			setRunError: (threadId, message) => {
-				calls.push(["setRunError", threadId, message]);
-			},
+		},
+		settleRovoAppRun: async (run, outcome, details) => {
+			calls.push(["settleRovoAppRun", run.threadId, outcome, details]);
+			return true;
 		},
 		...overrides.dependencies,
 	};
@@ -112,75 +92,104 @@ function createHarness(overrides = {}) {
 	};
 }
 
-test("createSseDataChunk serializes SSE data payloads", () => {
-	assert.equal(
-		createSseDataChunk({ type: "text-delta", delta: "hello" }),
-		"data: {\"type\":\"text-delta\",\"delta\":\"hello\"}\n\n",
-	);
-});
-
-test("createRovoAppFailureSseChunks emits text, widget error, and completion chunks", () => {
-	let tick = 100;
-	const chunks = createRovoAppFailureSseChunks("Failed loudly", {
-		now: () => tick++,
-		nowDate: () => new Date("2026-01-02T03:04:05.000Z"),
-	});
-
-	assert.deepEqual(chunks.map((chunk) => JSON.parse(chunk.slice("data: ".length))), [
-		{ type: "text-start", id: "rovo-app-error-100" },
-		{ type: "text-delta", id: "rovo-app-error-100", delta: "Failed loudly" },
-		{ type: "text-end", id: "rovo-app-error-100" },
-		{
-			type: "data-widget-error",
-			id: "rovo-app-error-widget-101",
-			data: {
-				type: "question-card",
-				code: "future_chat_run_failed",
-				message: "Failed loudly",
-				canRetry: true,
+// The lifecycle over the real run manager and run-state service.
+function createRealLifecycle({ executeRovoAppManagedRun, persistRovoAppRunState } = {}) {
+	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
+	const runManager = createRovoAppRunManager({ logger: quiet });
+	const threadWrites = [];
+	const state = createRovoAppRunStateService({
+		activeRequests: new Map(),
+		createFailureSseChunks: () => ["failure-chunk"],
+		logger: quiet,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async (threadId, patch) => {
+				threadWrites.push(patch);
+				return { id: threadId, ...patch };
 			},
 		},
-		{
-			type: "data-turn-complete",
-			data: { timestamp: "2026-01-02T03:04:05.000Z" },
+		startNextQueuedRun: () => {},
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
+	});
+	const lifecycle = createRovoAppManagedRunLifecycle({
+		executeRovoAppManagedRun: executeRovoAppManagedRun ?? (async () => {}),
+		logger: quiet,
+		persistRovoAppRunState: persistRovoAppRunState ?? state.persistRovoAppRunState,
+		resolveRovoAppPortAvailability: () => ({}),
+		rovoAppRunManager: runManager,
+		settleRovoAppRun: state.settleRovoAppRun,
+	});
+	return { lifecycle, runManager, state, threadWrites };
+}
+
+function createSubscriber() {
+	const listeners = new Map();
+	return {
+		ended: false,
+		writes: [],
+		end() {
+			this.ended = true;
+			listeners.get("close")?.();
 		},
-	]);
+		flushHeaders() {},
+		once(eventName, listener) {
+			listeners.set(eventName, listener);
+			return this;
+		},
+		setHeader() {},
+		status() {
+			return this;
+		},
+		write(chunk) {
+			this.writes.push(chunk);
+		},
+	};
+}
+
+test("failRovoAppRun ends the run failed: its subscriber gets the failure card and the run leaves the registry", async () => {
+	const { lifecycle, runManager, threadWrites } = createRealLifecycle();
+	const run = runManager.createRun({ threadId: "thread-1" });
+	runManager.markRunStarted("thread-1", { status: "streaming" });
+	const subscriber = createSubscriber();
+	runManager.attachSubscriber("thread-1", subscriber);
+
+	await lifecycle.failRovoAppRun(run, new Error("boom"));
+
+	assert.equal(run.status, "failed");
+	assert.equal(run.error, "Rovo run failed");
+	assert.deepEqual(subscriber.writes, ["failure-chunk"]);
+	assert.equal(subscriber.ended, true);
+	assert.equal(runManager.getRun("thread-1"), null);
+	assert.deepEqual(threadWrites, [{ activeRun: null }]);
 });
 
-test("failRovoAppRun records failure chunks, clears state, and starts queued work", async () => {
-	const run = createRun("thread-1");
-	const { calls, lifecycle } = createHarness({
-		runs: [["thread-1", run]],
+test("a run cancelled while its started state is stored does not execute", async () => {
+	let executed = 0;
+	let releaseWrite;
+	const writeHeld = new Promise((resolve) => {
+		releaseWrite = resolve;
 	});
-	const error = new Error("boom");
+	let harness;
+	harness = createRealLifecycle({
+		executeRovoAppManagedRun: async () => {
+			executed += 1;
+		},
+		persistRovoAppRunState: async (threadId, run) => {
+			await writeHeld;
+			return harness.state.persistRovoAppRunState(threadId, run);
+		},
+	});
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
 
-	await lifecycle.failRovoAppRun("thread-1", error);
+	const starting = harness.lifecycle.startManagedRovoAppRun(run);
+	await harness.state.settleRovoAppRun(run, "cancelled");
+	releaseWrite();
+	await starting;
 	await flushMicrotasks();
 
-	assert.deepEqual(calls.slice(0, 7), [
-		["getRun", "thread-1"],
-		["setRunError", "thread-1", "Rovo run failed"],
-		["createFailureSseChunks", error],
-		["appendChunk", "thread-1", "data: failure\n\n"],
-		["clearRovoAppRunState", "thread-1"],
-		["activeRequests.delete", "thread-1"],
-		["clearRun", "thread-1"],
-	]);
-	assert.equal(calls.some(([name]) => name === "listQueuedThreadIds"), true);
-});
-
-test("failRovoAppRun suppresses failure chunks for abort-like errors", async () => {
-	const abortError = new Error("request aborted");
-	abortError.name = "AbortError";
-	const { calls, lifecycle } = createHarness({
-		runs: [["thread-1", createRun("thread-1")]],
-	});
-
-	await lifecycle.failRovoAppRun("thread-1", abortError);
-
-	assert.equal(calls.some(([name]) => name === "createFailureSseChunks"), false);
-	assert.equal(calls.some(([name]) => name === "appendChunk"), false);
-	assert.equal(calls.some(([name]) => name === "clearRun"), true);
+	assert.equal(run.status, "cancelled");
+	assert.equal(executed, 0);
 });
 
 test("startManagedRovoAppRun marks, persists, and executes a run", async () => {
@@ -236,17 +245,80 @@ test("startManagedRovoAppRun logs non-abort execution failures and fails the run
 	await flushMicrotasks();
 
 	assert.equal(calls.some(([name]) => name === "logger.error"), true);
-	assert.equal(calls.some(([name]) => name === "setRunError"), true);
-	assert.equal(calls.some(([name]) => name === "clearRun"), true);
+	assert.deepEqual(calls.find(([name]) => name === "settleRovoAppRun"), ["settleRovoAppRun", "thread-1", "failed", { error: failure }]);
+});
+
+test("startManagedRovoAppRun still executes a run whose started state cannot be stored", async () => {
+	const run = createRun("thread-1");
+	const { calls, lifecycle } = createHarness({
+		runs: [["thread-1", run]],
+		dependencies: {
+			persistRovoAppRunState: async () => {
+				throw new Error("thread store unavailable");
+			},
+		},
+	});
+
+	await lifecycle.startManagedRovoAppRun(run);
+	await flushMicrotasks();
+
+	assert.equal(calls.some(([name]) => name === "logger.error"), true);
+	assert.equal(calls.some(([name]) => name === "executeRovoAppManagedRun"), true);
+	assert.equal(calls.some(([name]) => name === "settleRovoAppRun"), false);
+});
+
+test("a run whose final save and failure clear both fail ends failed without an unhandled rejection", async (t) => {
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason);
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+
+	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
+	const runManager = createRovoAppRunManager({ logger: quiet });
+	let settled;
+	const queueStarted = new Promise((resolve) => {
+		settled = resolve;
+	});
+	const state = createRovoAppRunStateService({
+		activeRequests: new Map(),
+		logger: quiet,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async () => {
+				throw new Error("thread store unavailable");
+			},
+		},
+		startNextQueuedRun: () => settled(),
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
+	});
+	const lifecycle = createRovoAppManagedRunLifecycle({
+		executeRovoAppManagedRun: (markedRun) =>
+			state.settleRovoAppRun(markedRun, "completed", { messages: [{ id: "assistant-1" }] }),
+		logger: quiet,
+		persistRovoAppRunState: async () => null,
+		resolveRovoAppPortAvailability: () => ({}),
+		rovoAppRunManager: runManager,
+		settleRovoAppRun: state.settleRovoAppRun,
+	});
+	const run = runManager.createRun({ threadId: "thread-1" });
+
+	await lifecycle.startManagedRovoAppRun(run);
+	await queueStarted;
+	await flushMicrotasks();
+
+	assert.equal(run.status, "failed");
+	assert.equal(runManager.getRun("thread-1"), null);
+	assert.deepEqual(unhandled, []);
 });
 
 test("startManagedRovoAppRun suppresses logs for aborted execution failures", async () => {
 	const run = createRun("thread-1");
-	run.abortController.abort();
 	const { calls, lifecycle } = createHarness({
 		runs: [["thread-1", run]],
 		dependencies: {
-			executeRovoAppManagedRun: async () => {
+			executeRovoAppManagedRun: async (markedRun) => {
+				markedRun.abortController.abort();
 				throw new Error("execution aborted");
 			},
 		},
@@ -257,7 +329,7 @@ test("startManagedRovoAppRun suppresses logs for aborted execution failures", as
 	await flushMicrotasks();
 
 	assert.equal(calls.some(([name]) => name === "logger.error"), false);
-	assert.equal(calls.some(([name]) => name === "clearRun"), true);
+	assert.equal(calls.some(([name]) => name === "settleRovoAppRun"), true);
 });
 
 test("startNextQueuedRovoAppRun removes stale queued runs and starts the first available run", async () => {

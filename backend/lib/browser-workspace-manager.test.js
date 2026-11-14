@@ -271,17 +271,18 @@ test("browser workspace tracks tab creation and active tab switching", async () 
 
 	await workspace.initialize("https://example.com")
 	const navigated = await workspace.navigate("https://news.ycombinator.com")
-	assert.equal(navigated.url, "https://news.ycombinator.com")
+	// Navigation URLs are the parsed href, so a bare origin gains its "/".
+	assert.equal(navigated.url, "https://news.ycombinator.com/")
 	assert.equal(navigated.canGoBack, true)
 
 	const createdTab = await workspace.createTab("https://example.org")
 	assert.equal(createdTab.activeTabIndex, 1)
 	assert.equal(createdTab.tabs.length, 2)
-	assert.equal(createdTab.url, "https://example.org")
+	assert.equal(createdTab.url, "https://example.org/")
 
 	const switchedBack = await workspace.activateTab(0)
 	assert.equal(switchedBack.activeTabIndex, 0)
-	assert.equal(switchedBack.url, "https://news.ycombinator.com")
+	assert.equal(switchedBack.url, "https://news.ycombinator.com/")
 	assert.equal(switchedBack.canGoBack, true)
 	assert.equal(switchedBack.canGoForward, false)
 })
@@ -295,7 +296,7 @@ test("browser workspace snapshot includes refs for interactive snapshots", async
 	await workspace.initialize("https://example.com")
 	const snapshot = await workspace.snapshot({ interactive: true })
 
-	assert.equal(snapshot.url, "https://example.com")
+	assert.equal(snapshot.url, "https://example.com/")
 	assert.deepEqual(snapshot.refs, {
 		"@e1": {
 			role: "button",

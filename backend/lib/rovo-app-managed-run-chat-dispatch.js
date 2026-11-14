@@ -68,6 +68,7 @@ function createRovoAppManagedRunChatDispatcher({
 		requestBody,
 		requestIsPlanMode,
 		routingDecision,
+		run = null,
 		signal,
 		stageTrace,
 		threadId,
@@ -92,7 +93,7 @@ function createRovoAppManagedRunChatDispatcher({
 			requestBody,
 			routingDecision,
 		});
-		await persistRovoAppRunBackend(threadId, requestBody.backendPreference);
+		await persistRovoAppRunBackend(threadId, requestBody.backendPreference, { run });
 		requestBody.resolvedPlanModeActive = requestIsPlanMode || autoPlanTriggered;
 		requestBody.chatSdkSource = getNonEmptyString(requestBody.chatSdkSource) || "rovo";
 		requestBody.threadId = threadId;

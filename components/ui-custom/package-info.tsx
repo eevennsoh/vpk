@@ -202,7 +202,7 @@ export const PackageInfoDependencies = ({
   ...props
 }: Readonly<PackageInfoDependenciesProps>) => (
   <div className={cn("space-y-2", className)} {...props}>
-    <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <span className="font-medium text-muted-foreground text-xs">
       Dependencies
     </span>
     <div className="space-y-1">{children}</div>

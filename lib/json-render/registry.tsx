@@ -1466,7 +1466,7 @@ export const { registry } = defineRegistry(catalog, {
 												<div className="space-y-3">
 													{tagTaxonomy.map((group) => (
 														<div key={group.label} className="space-y-1.5">
-															<div className="text-xs font-medium uppercase tracking-wide text-text-subtlest">
+															<div className="text-xs font-medium text-text-subtlest">
 																{group.label}
 															</div>
 															<TagGroup className="gap-1.5">

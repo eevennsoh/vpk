@@ -5,6 +5,7 @@ const { getNextDevEnv, getNextDevHostname } = require("./next-dev-env");
 const { getFrontendBasePort, getBackendBasePort } = require("./worktree-ports");
 const { isPortAvailable: probePortAvailable } = require("./rovo-utils");
 const { subscribeProcessSignals } = require("./rovo-supervisor");
+const { clearService, readProcessIdentity, recordService } = require("./dev-stack-state");
 
 // One launch operation owns port records and child lifetime. The backend's health
 // reuse policy and Next's lock/retry policy deliberately remain distinct.
@@ -38,15 +39,51 @@ async function launchDevService(service) {
 		port >= basePort &&
 		port < basePort + maxTries;
 
-	const writePortFile = (port) => {
-		fs.writeFileSync(portFile, String(port));
+	// The port is recorded in .dev-stack.json with this launcher's pid (and the server's, once
+	// spawned), each with its start time and command so a stop can tell them from a later process
+	// that reuses the pid; .dev-<service>-port is written from the same record. A port served by a
+	// process this launcher did not start is recorded without pids. If the record cannot be
+	// written, the port file still is: the stack keeps working, and a stop falls back to the
+	// session and listener cleanup.
+	const identityOf = (pid) => {
+		const identity = pid ? readProcessIdentity(pid) : null;
+		return identity?.state === "alive" ? identity : { start: null, command: null };
+	};
+	const writePortFile = (port, { childPid = null, owned = true } = {}) => {
+		const self = owned ? identityOf(process.pid) : { start: null, command: null };
+		const server = identityOf(childPid);
+		try {
+			// Reusing a server it did not start, this launcher first drops the entry it recorded for
+			// its own failed attempt (a lock race), so the record does not name its exited child;
+			// an entry another launcher has since recorded stays.
+			if (!owned) clearService(process.cwd(), service, { pid: process.pid });
+			recordService(process.cwd(), service, {
+				port,
+				pid: owned ? process.pid : null,
+				pidStart: self.start,
+				pidCommand: self.command,
+				childPid,
+				childStart: childPid ? server.start : null,
+				childCommand: childPid ? server.command : null,
+			});
+		} catch (error) {
+			console.warn(`[dev-${service}] Could not record the dev stack state (${error.message}); writing ${path.basename(portFile)} only.`);
+			fs.writeFileSync(portFile, String(port));
+		}
 	};
 
-	const cleanupPortFile = () => {
+	// `exit` ({ code } or { signal }) when the launcher is leaving for good: the record keeps it, so a
+	// start whose server died reads as degraded at once.
+	const cleanupPortFile = (exit = null) => {
 		try {
-			fs.unlinkSync(portFile);
+			clearService(process.cwd(), service, { pid: process.pid, exit });
 		} catch {
-			// ignore missing file
+			// The record is best effort on the way out; still drop the port file, never mask the exit.
+			try {
+				fs.unlinkSync(portFile);
+			} catch {
+				// Already gone.
+			}
 		}
 	};
 
@@ -116,7 +153,7 @@ async function launchDevService(service) {
 		child.once("error", (error) => {
 			failed = true;
 			disposeSignals();
-			cleanupPortFile();
+			cleanupPortFile({ code: 1 });
 			console.error(error);
 			process.exit(1);
 		});
@@ -129,7 +166,7 @@ async function launchDevService(service) {
 				try {
 					await callback(code, signal);
 				} catch (error) {
-					cleanupPortFile();
+					cleanupPortFile({ code: 1 });
 					console.error(error);
 					process.exit(1);
 				}
@@ -204,6 +241,8 @@ async function launchDevService(service) {
 			}
 		);
 
+		writePortFile(port, { childPid: child.pid ?? null });
+
 		child.stderr?.on("data", (chunk) => {
 			const s = chunk.toString();
 			stderr += s;
@@ -212,7 +251,7 @@ async function launchDevService(service) {
 
 		onExit(port, async (code, signal) => {
 			if (signal) {
-				cleanupPortFile();
+				cleanupPortFile({ signal });
 				process.kill(process.pid, signal);
 				return;
 			}
@@ -242,7 +281,7 @@ async function launchDevService(service) {
 				const runningPort = await resolveRunningFrontendPort(existingPortHint, port);
 				if (runningPort !== null) {
 					if (sessionOwned) {
-						cleanupPortFile();
+						cleanupPortFile({ code: 1 });
 						console.error(
 							`Frontend is already running for this worktree on port ${runningPort}. ` +
 							"Stop the existing frontend before starting a tmux-owned session."
@@ -250,7 +289,7 @@ async function launchDevService(service) {
 						process.exit(1);
 						return;
 					}
-					writePortFile(runningPort);
+					writePortFile(runningPort, { owned: false });
 					console.log(
 						`Next.js dev is already running for this worktree on port ${runningPort}. Reusing existing process.`
 					);
@@ -258,7 +297,7 @@ async function launchDevService(service) {
 					return;
 				}
 
-				cleanupPortFile();
+				cleanupPortFile({ code: 1 });
 				console.error(
 					"Unable to acquire the Next.js dev lock. Another frontend dev process is already running for this worktree."
 				);
@@ -269,7 +308,7 @@ async function launchDevService(service) {
 				return;
 			}
 
-			cleanupPortFile();
+			cleanupPortFile({ code: code ?? 0 });
 			process.exit(code ?? 0);
 		});
 	};
@@ -326,7 +365,7 @@ async function launchDevService(service) {
 						"Stop the existing frontend before starting a tmux-owned session."
 					);
 				}
-				writePortFile(runningPort);
+				writePortFile(runningPort, { owned: false });
 				console.log(
 					`Next.js dev is already running for this worktree on port ${runningPort}. Reusing existing process.`
 				);
@@ -351,7 +390,7 @@ async function launchDevService(service) {
 								"Stop the existing backend before starting a tmux-owned session."
 						);
 					}
-					writePortFile(recordedPort);
+					writePortFile(recordedPort, { owned: false });
 					console.log(`Backend dev server is already running for this worktree on port ${recordedPort}. Reusing existing process.`);
 					console.warn(
 						"[dev-backend] Reuse does not reload .env.local or backend code. " +
@@ -375,7 +414,7 @@ async function launchDevService(service) {
 
 		writePortFile(port);
 
-		const { onExit } = spawnChild(["backend/server.js"], {
+		const { child, onExit } = spawnChild(["backend/server.js"], {
 			stdio: "inherit",
 			env: {
 				...process.env,
@@ -384,8 +423,10 @@ async function launchDevService(service) {
 			},
 		});
 
+		writePortFile(port, { childPid: child.pid ?? null });
+
 		onExit(port, (code, signal) => {
-			cleanupPortFile();
+			cleanupPortFile(signal ? { signal } : { code: code ?? 0 });
 
 			if (signal) {
 				process.kill(process.pid, signal);
@@ -399,7 +440,7 @@ async function launchDevService(service) {
 	try {
 		await (service === "frontend" ? runFrontend() : runBackend());
 	} catch (error) {
-		cleanupPortFile();
+		cleanupPortFile({ code: 1 });
 		throw error;
 	}
 }

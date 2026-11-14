@@ -2,21 +2,22 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
 const ROUTE_SOURCES = [
 	{
 		name: "Studio",
-		shell: "components/projects/studio/components/rovo-app-shell.tsx",
+		product: "studio",
 		realtimeHook: "components/projects/rovo-core/hooks/use-realtime-voice.ts",
 	},
 	{
 		name: "Rovo",
-		shell: "components/projects/rovo/components/rovo-app-shell.tsx",
+		product: "rovo",
 		realtimeHook: "components/projects/rovo-core/hooks/use-realtime-voice.ts",
 	},
 ].map((route) => ({
 	...route,
-	shellSource: fs.readFileSync(path.join(process.cwd(), route.shell), "utf8"),
+	shellSource: readRovoAppShellSource(route.product),
 	realtimeHookSource: fs.readFileSync(path.join(process.cwd(), route.realtimeHook), "utf8"),
 }));
 

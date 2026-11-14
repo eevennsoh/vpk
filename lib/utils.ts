@@ -1,7 +1,13 @@
 export { cn } from "cn";
 
-export function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
+export { clamp } from "./math";
+
+/** "agent-chat" → "Agent Chat". Splits on every hyphen, so empty segments keep their spaces. */
+export function slugToTitleCase(slug: string): string {
+	return slug
+		.split("-")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
 }
 
 export function collapseWhitespace(value: string | null | undefined): string {

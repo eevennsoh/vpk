@@ -67,3 +67,19 @@ test("the file policy is exactly: sandbox, nothing by default, inline styles for
 	assert.equal(directives.has("script-src"), false);
 	assert.deepEqual(directives.get("style-src"), ["'unsafe-inline'"]);
 });
+
+test("a long filename is cut to MAX_FILENAME_CHARS, keeping its extension, without splitting a character", () => {
+	const { MAX_FILENAME_CHARS, buildContentDisposition } = require("./upload-response-headers");
+	const quoted = (header) => header.match(/filename="([^"]*)"/u)[1];
+	const long = `${"a".repeat(500)}.png`;
+	const header = buildContentDisposition("inline", long);
+	assert.equal(quoted(header).length, MAX_FILENAME_CHARS);
+	assert.equal(quoted(header).endsWith(".png"), true);
+	const emoji = `${"😀".repeat(400)}.pdf`;
+	const emojiHeader = buildContentDisposition("attachment", emoji);
+	const extValue = decodeURIComponent(emojiHeader.split("filename*=UTF-8''")[1]);
+	assert.equal(Array.from(extValue).length, MAX_FILENAME_CHARS);
+	assert.equal(extValue.endsWith(".pdf"), true);
+	assert.equal(extValue.includes("\uFFFD"), false);
+	assert.equal(quoted(buildContentDisposition("inline", "short.png")), "short.png");
+});

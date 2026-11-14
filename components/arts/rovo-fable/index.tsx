@@ -70,7 +70,7 @@ export default function RovoFable({
 				</header>
 
 				<div className="grid min-h-0 items-center gap-5 lg:grid-cols-[minmax(0,1fr)_210px]">
-					<div className="mx-auto aspect-square w-full max-w-[min(78svh,860px)] overflow-hidden rounded-[8px] border border-[#f1ead7]/18 bg-[#f1ead7] shadow-[0_32px_80px_rgba(0,0,0,0.36)]">
+					<div className="mx-auto aspect-square w-full max-w-[min(78svh,860px)] overflow-hidden rounded-lg border border-[#f1ead7]/18 bg-[#f1ead7] shadow-[0_32px_80px_rgba(0,0,0,0.36)]">
 						<video
 							autoPlay
 							className="h-full w-full"

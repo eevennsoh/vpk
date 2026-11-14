@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 test("Editor toolbar is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("editor-toolbar", "Editor Toolbar"\)/u,
 	);
 	assert.match(

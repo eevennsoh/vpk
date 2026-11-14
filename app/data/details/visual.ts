@@ -1,13 +1,15 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 import {
+	createShaderLabEffectPropDocs,
+	getShaderLabEffectImportStatement,
+	getShaderLabEffectUsage,
+} from "@/components/website/demos/visual/shader-lab/helpers";
+import { SHADER_LAB_LAYER_DEFINITIONS } from "@/components/website/demos/visual/shader-lab/index";
+import {
 	SHADER_LAB_RUNTIME_LAYER_TYPES,
 	type ShaderLabRuntimeEffectType,
 	type ShaderLabRuntimeLayerType,
-	createShaderLabEffectPropDocs,
-	getShaderLabEffectDescription,
-	getShaderLabEffectImportStatement,
-	getShaderLabEffectUsage,
-} from "@/components/website/demos/visual/shader-lab-effect-definitions";
+} from "@/components/website/demos/visual/shader-lab/types";
 import { MOTION_DETAIL } from "./visual/motion";
 import { TYPOGRAPHY_DETAIL } from "./visual/typography";
 import { COLOR_DETAIL } from "./visual/color";
@@ -73,11 +75,12 @@ function isShaderLabV2EffectType(layerType: ShaderLabRuntimeLayerType): layerTyp
 }
 
 function createShaderLabLayerDetail(layerType: ShaderLabRuntimeLayerType): ComponentDetail {
+	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
 	return {
-		description: getShaderLabEffectDescription(layerType),
-		importStatement: getShaderLabEffectImportStatement(),
-		usage: getShaderLabEffectUsage(layerType),
-		props: createShaderLabEffectPropDocs(layerType),
+		description: definition.description,
+		importStatement: getShaderLabEffectImportStatement(definition),
+		usage: getShaderLabEffectUsage(definition),
+		props: createShaderLabEffectPropDocs(definition),
 	};
 }
 

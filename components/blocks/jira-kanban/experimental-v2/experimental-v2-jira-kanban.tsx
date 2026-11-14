@@ -19,8 +19,8 @@ import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
-import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
-import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/components/work-item-agent-selector";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import {

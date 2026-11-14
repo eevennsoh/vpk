@@ -38,7 +38,6 @@ const REQUIRED_THREAD_MANAGER_METHODS = [
 
 const REQUIRED_RUN_MANAGER_METHODS = [
 	"attachSubscriber",
-	"cancelRun",
 	"getRun",
 	"listRuns",
 	"setRunStatus",
@@ -148,7 +147,6 @@ function createRovoAppRouter({
 	buildThreadSummary = buildRovoAppThreadSummary,
 	cancelChat,
 	checkpointManager,
-	clearRunState,
 	collectUploadIdsFromMessages,
 	deleteThreadBrowserWorkspace,
 	destroyMirrorBrowser,
@@ -172,7 +170,7 @@ function createRovoAppRouter({
 	rovoAppUploadManager,
 	rovoAppVoteManager,
 	searchThreads,
-	startNextQueuedRun,
+	settleRun,
 	toThreadId = createRovoAppThreadId,
 } = {}) {
 	validateManager("rovoAppThreadManager", rovoAppThreadManager, REQUIRED_THREAD_MANAGER_METHODS);
@@ -185,7 +183,6 @@ function createRovoAppRouter({
 	requireFunction("buildFileUrl", buildFileUrl);
 	requireFunction("buildThreadSummary", buildThreadSummary);
 	requireFunction("cancelChat", cancelChat);
-	requireFunction("clearRunState", clearRunState);
 	requireFunction("collectUploadIdsFromMessages", collectUploadIdsFromMessages);
 	requireFunction("deleteThreadBrowserWorkspace", deleteThreadBrowserWorkspace);
 	requireFunction("destroyMirrorBrowser", destroyMirrorBrowser);
@@ -201,7 +198,7 @@ function createRovoAppRouter({
 	requireFunction("requireRuntimeAdmin", requireRuntimeAdmin);
 	requireFunction("resolveGeneratedMediaAbsolutePathFn", resolveGeneratedMediaAbsolutePathFn);
 	requireFunction("searchThreads", searchThreads);
-	requireFunction("startNextQueuedRun", startNextQueuedRun);
+	requireFunction("settleRun", settleRun);
 	requireFunction("toThreadId", toThreadId);
 
 	const router = express.Router();
@@ -532,7 +529,9 @@ function createRovoAppRouter({
 					if (!run) {
 						return;
 					}
-					void persistRunState(threadId, run);
+					void persistRunState(threadId, run).catch((error) => {
+						logger.error?.("[FUTURE-CHAT] Failed to store a run's state:", error);
+					});
 				},
 			});
 			if (!subscriberId) {
@@ -586,10 +585,10 @@ function createRovoAppRouter({
 				await cancelChat(run.rovoPort).catch(() => {});
 			}
 
-			rovoAppRunManager.cancelRun(threadId);
-			await clearRunState(threadId);
-			void startNextQueuedRun();
-			return res.status(200).json({ cancelled: true });
+			// The run read above, not one that took its place during the wait. `cancelled` is
+			// false when that run ended or was replaced while Rovo's cancel was awaited.
+			const cancelled = await settleRun(run, "cancelled");
+			return res.status(200).json({ cancelled });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to cancel run:", error);
 			return res.status(500).json({ error: "Failed to cancel Rovo run" });
@@ -667,7 +666,7 @@ function createRovoAppRouter({
 				if (typeof activeRun.rovoPort === "number" && activeRun.rovoPort > 0) {
 					await cancelChat(activeRun.rovoPort).catch(() => {});
 				}
-				rovoAppRunManager.cancelRun(threadId);
+				await settleRun(activeRun, "cancelled");
 			}
 			const thread = await rovoAppThreadManager.getThread(threadId);
 			const uploadIds = collectUploadIdsFromMessages(thread?.messages);

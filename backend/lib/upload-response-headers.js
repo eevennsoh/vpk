@@ -79,8 +79,21 @@ function encodeExtValue(name) {
 }
 
 // An ASCII-only filename for the quoted parameter, the full name in filename*.
+// A filename longer than this is cut (provisional), keeping an extension of up to 16
+// characters, so a client-chosen name cannot make the header arbitrarily long.
+const MAX_FILENAME_CHARS = 150;
+
+function limitFilename(name) {
+	const characters = Array.from(name);
+	if (characters.length <= MAX_FILENAME_CHARS) return name;
+	const dot = name.lastIndexOf(".");
+	const extension = dot > 0 ? Array.from(name.slice(dot)) : [];
+	const kept = extension.length > 0 && extension.length <= 16 ? extension : [];
+	return characters.slice(0, MAX_FILENAME_CHARS - kept.length).join("") + kept.join("");
+}
+
 function buildContentDisposition(kind, filename) {
-	const name = typeof filename === "string" && filename.trim() ? filename.trim() : "attachment.bin";
+	const name = limitFilename(typeof filename === "string" && filename.trim() ? filename.trim() : "attachment.bin");
 	const asciiName = name.replace(/[^\x20-\x7e]|["\\]/gu, "_");
 	const extValue = encodeExtValue(name);
 	return extValue === null
@@ -104,6 +117,7 @@ function decideUploadResponseHeaders(upload) {
 module.exports = {
 	FILE_RESPONSE_SECURITY_HEADERS,
 	INLINE_MEDIA_TYPES,
+	MAX_FILENAME_CHARS,
 	buildContentDisposition,
 	decideFileMediaType,
 	decideUploadResponseHeaders,

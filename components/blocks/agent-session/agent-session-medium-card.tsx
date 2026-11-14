@@ -76,7 +76,7 @@ export function AgentSessionMediumCard({
 					<button
 						{...bind}
 						className={cn(
-							"relative flex h-10 w-[276px] max-w-full items-center gap-2 rounded-[10px] border border-solid bg-surface px-2 text-left",
+							"relative flex h-10 w-[276px] max-w-full items-center gap-2 rounded-lg border border-solid bg-surface px-2 text-left",
 							"transition-[background-color,border-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
 							"hover:border-border focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 							// Lit from the column, the pointer is nowhere near this row, so it

@@ -29,7 +29,7 @@ import {
 	type TeamEu26TableWorkItem,
 } from "@/components/blocks/jira-work-item/team-eu26/data/high-confidence-work-item";
 import { toWorkItemChildItems } from "@/components/blocks/jira-work-item/team-eu26/lib/child-items-progress";
-import { ChildItemsProgressBar } from "@/components/projects/jira/components/work-item-modal/child-items-progress-bar";
+import { ChildItemsProgressBar } from "@/components/blocks/jira-work-item/components/work-item-modal/child-items-progress-bar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ConfluenceIcon, LoomIcon } from "@/components/ui/logo";
