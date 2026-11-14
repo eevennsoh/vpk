@@ -207,6 +207,62 @@ function createTestWorkspace(options = {}) {
 	})
 }
 
+test("wheel and preview wheel pass only finite, bounded numbers to the runtime", async () => {
+	const wheelCalls = []
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-wheel",
+		sessionId: "workspace-wheel-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async wheel(...args) {
+				wheelCalls.push(args)
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	// JSON.parse("-1e999") is -Infinity, which a socket frame can carry.
+	await workspace.wheel(JSON.parse("-1e999"), Number.NaN)
+	await workspace.previewWheel(JSON.parse("1e999"), -40, "abc", JSON.parse("1e999"))
+	for (const call of wheelCalls) {
+		assert.equal(call.every(Number.isFinite), true, JSON.stringify(call.map(String)))
+	}
+	assert.deepEqual(wheelCalls[0].slice(2), [-100_000, 0])
+	assert.deepEqual(wheelCalls[1], [100_000, 0, 0, 100_000])
+})
+
+test("a preview paste the argument rules refuse is answered with a preview-error, never an unhandled rejection", async (t) => {
+	const { requireBrowserArgument } = require("./input-schemas")
+	const unhandled = []
+	const onUnhandled = (reason) => unhandled.push(reason)
+	process.on("unhandledRejection", onUnhandled)
+	t.after(() => process.off("unhandledRejection", onUnhandled))
+
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-paste",
+		sessionId: "workspace-paste-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async insertText(text) {
+				requireBrowserArgument(text, "Text")
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	const sent = []
+	workspace._previewClients.add({ readyState: 1, send: (payload) => sent.push(JSON.parse(payload)) })
+
+	workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--session=other" })
+	await workspace._queue
+	await new Promise(setImmediate)
+
+	assert.deepEqual(unhandled, [])
+	assert.deepEqual(sent.filter((message) => message.type === "preview-error"), [
+		{ type: "preview-error", message: "Text cannot start like a command-line option." },
+	])
+})
+
 test("browser workspace tracks tab creation and active tab switching", async () => {
 	const workspace = createTestWorkspace({
 		workspaceId: "workspace-tabs",
@@ -660,60 +716,4 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 	await manager.createWorkspace()
 
 	assert.equal(createdWorkspace?.sessionId, createdWorkspace?.workspaceId)
-})
-
-test("wheel and preview wheel pass only finite, bounded numbers to the runtime", async () => {
-	const wheelCalls = []
-	const workspace = new BrowserWorkspace({
-		workspaceId: "workspace-wheel",
-		sessionId: "workspace-wheel-session",
-		delayFn: async () => {},
-		runtimeFactory: () => ({
-			...createFakeRuntime(),
-			async wheel(...args) {
-				wheelCalls.push(args)
-			},
-		}),
-	})
-	await workspace.initialize("about:blank")
-	// JSON.parse("-1e999") is -Infinity, which a socket frame can carry.
-	await workspace.wheel(JSON.parse("-1e999"), Number.NaN)
-	await workspace.previewWheel(JSON.parse("1e999"), -40, "abc", JSON.parse("1e999"))
-	for (const call of wheelCalls) {
-		assert.equal(call.every(Number.isFinite), true, JSON.stringify(call.map(String)))
-	}
-	assert.deepEqual(wheelCalls[0].slice(2), [-100_000, 0])
-	assert.deepEqual(wheelCalls[1], [100_000, 0, 0, 100_000])
-})
-
-test("a preview paste the argument rules refuse is answered with a preview-error, never an unhandled rejection", async (t) => {
-	const { requireBrowserArgument } = require("./input-schemas")
-	const unhandled = []
-	const onUnhandled = (reason) => unhandled.push(reason)
-	process.on("unhandledRejection", onUnhandled)
-	t.after(() => process.off("unhandledRejection", onUnhandled))
-
-	const workspace = new BrowserWorkspace({
-		workspaceId: "workspace-paste",
-		sessionId: "workspace-paste-session",
-		delayFn: async () => {},
-		runtimeFactory: () => ({
-			...createFakeRuntime(),
-			async insertText(text) {
-				requireBrowserArgument(text, "Text")
-			},
-		}),
-	})
-	await workspace.initialize("about:blank")
-	const sent = []
-	workspace._previewClients.add({ readyState: 1, send: (payload) => sent.push(JSON.parse(payload)) })
-
-	workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--session=other" })
-	await workspace._queue
-	await new Promise(setImmediate)
-
-	assert.deepEqual(unhandled, [])
-	assert.deepEqual(sent.filter((message) => message.type === "preview-error"), [
-		{ type: "preview-error", message: "Text cannot start like a command-line option." },
-	])
 })
