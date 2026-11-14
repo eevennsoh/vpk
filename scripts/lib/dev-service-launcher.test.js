@@ -73,8 +73,8 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 				stackRecords.push({ service, ...entry });
 				files.set(path.join(cwd, `.dev-${service}-port`), String(entry.port));
 			},
-			clearService: (cwd, service) => {
-				stackRecords.push({ service, cleared: true });
+			clearService: (cwd, service, options = {}) => {
+				stackRecords.push({ service, cleared: true, ...(options.exit ? { exit: { ...options.exit } } : {}) });
 				files.delete(path.join(cwd, `.dev-${service}-port`));
 			},
 		},
@@ -113,7 +113,7 @@ for (const service of ["frontend", "backend"]) {
 		assert.equal(h.files.has(`/worktree/.dev-${service}-port`), false);
 		assert.equal(h.signalTarget.listenerCount("SIGHUP"), 0);
 		assert.deepEqual(h.killed.at(-1), { pid: 100, signal: "SIGHUP" });
-		assert.deepEqual(h.stackRecords.at(-1), { service, cleared: true });
+		assert.deepEqual(h.stackRecords.at(-1), { service, cleared: true, exit: { signal: "SIGHUP" } });
 	});
 
 	test(`${service} spawn errors clean records and every signal listener`, async () => {
@@ -131,6 +131,7 @@ for (const service of ["frontend", "backend"]) {
 		h.children[0].emit("exit", 7, null);
 		await settle();
 		assert.deepEqual(h.exits, [7]);
+		assert.deepEqual(h.stackRecords.at(-1), { service, cleared: true, exit: { code: 7 } }, "the record keeps how the launcher left");
 		assert.equal(h.files.has(`/worktree/.dev-${service}-port`), false);
 	});
 }

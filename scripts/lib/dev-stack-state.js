@@ -719,6 +719,12 @@ async function stopRecordedProcesses({
 	}
 	result.ours = candidates.map((entry) => entry.pid);
 	const stillOurs = (entries) => entries.filter((entry) => verifyProcess(entry) === true);
+	// Immediately before each signal: still the recorded process, and still in this worktree.
+	const safeToSignal = (entry) => {
+		if (verifyProcess(entry) !== true) return false;
+		const cwd = cwdOf(entry.pid);
+		return cwd !== null && canonicalPath(cwd) === target;
+	};
 
 	const deadline = now() + waitMs;
 	while (stillOurs(candidates).length > 0 && now() < deadline) await sleepFn(pollMs);
@@ -726,7 +732,7 @@ async function stopRecordedProcesses({
 	result.exitedOnTheirOwn = candidates.length - left.length;
 
 	for (const entry of left) {
-		if (verifyProcess(entry) !== true) continue;
+		if (!safeToSignal(entry)) continue;
 		try {
 			killFn(entry.pid, "SIGTERM");
 			result.terminated.push(entry.pid);
@@ -740,7 +746,7 @@ async function stopRecordedProcesses({
 		while (stillOurs(terminated).length > 0 && now() < graceDeadline) await sleepFn(pollMs);
 	}
 	for (const entry of terminated) {
-		if (verifyProcess(entry) !== true) continue;
+		if (!safeToSignal(entry)) continue;
 		try {
 			killFn(entry.pid, "SIGKILL");
 			result.killed.push(entry.pid);

@@ -72,9 +72,11 @@ async function launchDevService(service) {
 		}
 	};
 
-	const cleanupPortFile = () => {
+	// `exit` ({ code } or { signal }) when the launcher is leaving for good: the record keeps it, so a
+	// start whose server died reads as degraded at once.
+	const cleanupPortFile = (exit = null) => {
 		try {
-			clearService(process.cwd(), service, { pid: process.pid });
+			clearService(process.cwd(), service, { pid: process.pid, exit });
 		} catch {
 			// The record is best effort on the way out; still drop the port file, never mask the exit.
 			try {
@@ -151,7 +153,7 @@ async function launchDevService(service) {
 		child.once("error", (error) => {
 			failed = true;
 			disposeSignals();
-			cleanupPortFile();
+			cleanupPortFile({ code: 1 });
 			console.error(error);
 			process.exit(1);
 		});
@@ -164,7 +166,7 @@ async function launchDevService(service) {
 				try {
 					await callback(code, signal);
 				} catch (error) {
-					cleanupPortFile();
+					cleanupPortFile({ code: 1 });
 					console.error(error);
 					process.exit(1);
 				}
@@ -249,7 +251,7 @@ async function launchDevService(service) {
 
 		onExit(port, async (code, signal) => {
 			if (signal) {
-				cleanupPortFile();
+				cleanupPortFile({ signal });
 				process.kill(process.pid, signal);
 				return;
 			}
@@ -279,7 +281,7 @@ async function launchDevService(service) {
 				const runningPort = await resolveRunningFrontendPort(existingPortHint, port);
 				if (runningPort !== null) {
 					if (sessionOwned) {
-						cleanupPortFile();
+						cleanupPortFile({ code: 1 });
 						console.error(
 							`Frontend is already running for this worktree on port ${runningPort}. ` +
 							"Stop the existing frontend before starting a tmux-owned session."
@@ -295,7 +297,7 @@ async function launchDevService(service) {
 					return;
 				}
 
-				cleanupPortFile();
+				cleanupPortFile({ code: 1 });
 				console.error(
 					"Unable to acquire the Next.js dev lock. Another frontend dev process is already running for this worktree."
 				);
@@ -306,7 +308,7 @@ async function launchDevService(service) {
 				return;
 			}
 
-			cleanupPortFile();
+			cleanupPortFile({ code: code ?? 0 });
 			process.exit(code ?? 0);
 		});
 	};
@@ -424,7 +426,7 @@ async function launchDevService(service) {
 		writePortFile(port, { childPid: child.pid ?? null });
 
 		onExit(port, (code, signal) => {
-			cleanupPortFile();
+			cleanupPortFile(signal ? { signal } : { code: code ?? 0 });
 
 			if (signal) {
 				process.kill(process.pid, signal);
@@ -438,7 +440,7 @@ async function launchDevService(service) {
 	try {
 		await (service === "frontend" ? runFrontend() : runBackend());
 	} catch (error) {
-		cleanupPortFile();
+		cleanupPortFile({ code: 1 });
 		throw error;
 	}
 }

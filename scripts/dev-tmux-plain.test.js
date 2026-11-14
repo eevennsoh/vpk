@@ -8,11 +8,21 @@ const { PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
 // Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
 const OVER = SWAP + 13;
 
+const { writeFakeTmux } = require("./lib/fake-tmux.js");
+
 const repoRoot = path.resolve(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts/dev-tmux-plain.sh");
-const frontendPortFile = path.join(repoRoot, ".dev-frontend-port");
-const backendPortFile = path.join(repoRoot, ".dev-backend-port");
-const stackFile = path.join(repoRoot, ".dev-stack.json");
+// The launcher runs in a throwaway worktree (scripts, node_modules and package.json linked from
+// this checkout), so these tests never touch this checkout's port files or stack record, and can
+// never race a live stack here.
+const worktreeRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-tmux-plain-worktree-")));
+for (const entry of ["scripts", "node_modules", "package.json"]) {
+	fs.symlinkSync(path.join(repoRoot, entry), path.join(worktreeRoot, entry));
+}
+test.after(() => fs.rmSync(worktreeRoot, { recursive: true, force: true }));
+const frontendPortFile = path.join(worktreeRoot, ".dev-frontend-port");
+const backendPortFile = path.join(worktreeRoot, ".dev-backend-port");
+const stackFile = path.join(worktreeRoot, ".dev-stack.json");
 // Ports the fake dev server listens on once a session runs `portless run` (see the fake tmux).
 const READY_PORTS = "49150 49151";
 
@@ -63,50 +73,8 @@ function createFakeLauncherEnvironment() {
 	const listenPath = path.join(tempDir, "listening");
 	const cleanupLogPath = path.join(tempDir, "cleanup.log");
 
-	// Sessions live in FAKE_TMUX_STATE as `name|start-directory` lines; every launched dev
-	// server (a send-keys of `portless run`) is appended to FAKE_SERVER_LOG. Targets resolve like
-	// real tmux: `=name` matches exactly; a bare name matches exactly, else as a unique prefix.
-	writeExecutable(tmuxPath, [
-		"#!/usr/bin/env bash",
-		"printf '%s\\n' \"$*\" >> \"$FAKE_TMUX_LOG\"",
-		"state=\"${FAKE_TMUX_STATE:-/dev/null}\"",
-		"command_name=\"\"; target=\"\"; dir=\"\"",
-		// A launched dev server records its two ports and listens on them.
-		"fake_serve() {",
-		"\tset -- ${FAKE_READY_PORTS:-}",
-		"\t[ \"$#\" -eq 2 ] || return 0",
-		"\tprintf '%s' \"$1\" > .dev-frontend-port; printf '%s' \"$2\" > .dev-backend-port",
-		"\tprintf '%s %s\\n' \"$1\" \"$2\" >> \"${FAKE_LISTEN_FILE:-/dev/null}\"",
-		"}",
-		"resolve_target() {",
-		"\tlocal t=\"${1%%:*}\" matches",
-		"\t[ -f \"$state\" ] || return 1",
-		"\tif [ \"${t#=}\" != \"$t\" ]; then t=\"${t#=}\"; grep -q \"^${t}|\" \"$state\" && { echo \"$t\"; return 0; }; return 1; fi",
-		"\tgrep -q \"^${t}|\" \"$state\" && { echo \"$t\"; return 0; }",
-		"\tmatches=$(cut -d'|' -f1 \"$state\" | grep \"^${t}\")",
-		"\t[ -n \"$matches\" ] && [ \"$(printf '%s\\n' \"$matches\" | wc -l | tr -d ' ')\" = 1 ] && { echo \"$matches\"; return 0; }",
-		"\treturn 1",
-		"}",
-		"while [ \"$#\" -gt 0 ]; do",
-		"\tcase \"$1\" in",
-		"\t\thas-session|new-session|send-keys|kill-session|list-sessions) command_name=\"$1\"; shift ;;",
-		"\t\t-t|-s) target=\"$2\"; shift 2 ;;",
-		"\t\t-c) dir=\"$2\"; shift 2 ;;",
-		"\t\t-L|-F) shift 2 ;;",
-		"\t\t*) [ \"$command_name\" = \"send-keys\" ] && case \"$1\" in *\"portless run\"*) name=\"${target#=}\"; echo \"${name%%:*}\" >> \"${FAKE_SERVER_LOG:-/dev/null}\"; fake_serve ;; esac; shift ;;",
-		"\tesac",
-		"done",
-		"case \"$command_name\" in",
-		"\thas-session)",
-		"\t\t[ \"${FAKE_TMUX_HAS_SESSION:-0}\" = \"1\" ] && exit 0",
-		"\t\tresolve_target \"$target\" >/dev/null && exit 0",
-		"\t\texit 1 ;;",
-		"\tnew-session) printf '%s|%s\\n' \"$target\" \"$dir\" >> \"$state\" ;;",
-		"\tkill-session) victim=$(resolve_target \"$target\") || exit 1; grep -v \"^${victim}|\" \"$state\" > \"$state.next\" || true; mv \"$state.next\" \"$state\" ;;",
-		"\tlist-sessions) [ -f \"$state\" ] && cat \"$state\" ;;",
-		"esac",
-		"exit 0",
-	]);
+	// Targets resolve like tmux 3.8 (session vs window/pane targets): scripts/lib/fake-tmux.js.
+	writeFakeTmux(tmuxPath);
 
 	writeExecutable(lsofPath, [
 		"#!/usr/bin/env bash",
@@ -163,7 +131,7 @@ function createFakeLauncherEnvironment() {
 
 function runLauncher(env) {
 	return execFileSync(scriptPath, ["start"], {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -237,7 +205,7 @@ test("dev-tmux plain start does not warn about other running stacks", () => {
 	try {
 		const result = withPortFiles("49127", "49128", () =>
 			spawnSync(scriptPath, ["start"], {
-				cwd: repoRoot,
+				cwd: worktreeRoot,
 				encoding: "utf8",
 				env: {
 					...process.env,
@@ -272,7 +240,7 @@ test("dev-tmux plain start does not warn about other running stacks", () => {
 // server and the machine inventory are all fakes; no real stack starts.
 function startAs(fake, sessionName, extraEnv = {}, args = ["start"]) {
 	return spawnSync(scriptPath, args, {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -308,7 +276,7 @@ test("starting twice in one worktree under the same name ends with one session a
 			assert.equal(second.status, 0, second.stderr);
 			assert.match(second.stdout, /Session 'vpk-dev-branch-a' already running/);
 		});
-		assert.deepEqual(fake.sessions(), [`vpk-dev-branch-a|${repoRoot}`]);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-branch-a|${worktreeRoot}`]);
 		assert.deepEqual(fake.serversLaunched(), ["vpk-dev-branch-a"]);
 	} finally {
 		fake.cleanup();
@@ -326,7 +294,7 @@ test("a start after the branch is renamed adopts the worktree's session instead 
 			assert.match(renamed.stdout, /Adopting tmux session 'vpk-dev-branch-a' for this worktree/);
 			assert.match(renamed.stdout, /Session 'vpk-dev-branch-a' already running/);
 		});
-		assert.deepEqual(fake.sessions(), [`vpk-dev-branch-a|${repoRoot}`]);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-branch-a|${worktreeRoot}`]);
 		assert.deepEqual(fake.serversLaunched(), ["vpk-dev-branch-a"]);
 	} finally {
 		fake.cleanup();
@@ -336,11 +304,11 @@ test("a start after the branch is renamed adopts the worktree's session instead 
 test("a worktree with a directory-named and a branch-named session keeps one and stops the other", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		fs.writeFileSync(fake.statePath, `vpk-dev-e736|${repoRoot}\nvpk-dev-feature-x|${repoRoot}\nvpk-dev-elsewhere|/tmp/other-worktree\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-e736|${worktreeRoot}\nvpk-dev-feature-x|${worktreeRoot}\nvpk-dev-elsewhere|/tmp/other-worktree\n`);
 		const result = withPortFiles("49133", "49134", () => startAs(fake, "vpk-dev-feature-x", { FAKE_LISTEN_PORT: "49133 49134" }));
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stdout, /Stopping duplicate tmux session 'vpk-dev-e736' for this worktree/);
-		assert.deepEqual(fake.sessions(), [`vpk-dev-feature-x|${repoRoot}`, "vpk-dev-elsewhere|/tmp/other-worktree"]);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-feature-x|${worktreeRoot}`, "vpk-dev-elsewhere|/tmp/other-worktree"]);
 		assert.deepEqual(fake.serversLaunched(), []);
 	} finally {
 		fake.cleanup();
@@ -350,7 +318,7 @@ test("a worktree with a directory-named and a branch-named session keeps one and
 test("stop stops every session that belongs to this worktree", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		fs.writeFileSync(fake.statePath, `vpk-dev-e736|${repoRoot}\nvpk-dev-feature-x|${repoRoot}\nvpk-dev-elsewhere|/tmp/other-worktree\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-e736|${worktreeRoot}\nvpk-dev-feature-x|${worktreeRoot}\nvpk-dev-elsewhere|/tmp/other-worktree\n`);
 		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-feature-x", {}, ["stop"]));
 		assert.equal(result.status, 0, result.stderr);
 		assert.deepEqual(fake.sessions(), ["vpk-dev-elsewhere|/tmp/other-worktree"]);
@@ -384,7 +352,7 @@ test("over the stack budget a start refuses, lists the live stacks, and --force 
 			assert.equal(forced.status, 0, forced.stderr);
 			assert.match(forced.stderr, /Starting anyway \(--force\)/);
 		});
-		assert.deepEqual(fake.sessions(), [`vpk-dev-new|${repoRoot}`]);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-new|${worktreeRoot}`]);
 	} finally {
 		fake.cleanup();
 	}
@@ -402,7 +370,7 @@ test("under memory pressure a start refuses within the stack budget while anothe
 		const alone = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: fake.writeInventory({ swapUsedGb: OVER }) }));
 		assert.equal(alone.status, 0, alone.stderr);
 		assert.match(alone.stderr, new RegExp(`Warning: memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\), but no other dev stack runs; starting`));
-		assert.deepEqual(fake.sessions(), [`vpk-dev-new|${repoRoot}`]);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-new|${worktreeRoot}`]);
 	} finally {
 		fake.cleanup();
 	}
@@ -411,7 +379,7 @@ test("under memory pressure a start refuses within the stack budget while anothe
 test("a next-server already serving this worktree outside tmux blocks a second one, even with --force", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		const inventory = fake.writeInventory({ servers: [{ pid: 777, cwd: repoRoot, cpu: 3 }] });
+		const inventory = fake.writeInventory({ servers: [{ pid: 777, cwd: worktreeRoot, cpu: 3 }] });
 		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: inventory }, ["start", "--force"]));
 		assert.equal(result.status, 4);
 		assert.match(result.stderr, /A next-server already serves this worktree outside its tmux session: pid 777/);
@@ -425,7 +393,7 @@ test("a next-server already serving this worktree outside tmux blocks a second o
 test("restarting a session whose frontend died still checks the budget", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		fs.writeFileSync(fake.statePath, `vpk-dev-stale|${repoRoot}\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-stale|${worktreeRoot}\n`);
 		const inventory = fake.writeInventory({ swapUsedGb: OVER, servers: [{ pid: 906, cwd: "/tmp/wt-other", cpu: 1 }] });
 		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-stale", { VPK_DEV_STACK_INVENTORY: inventory }));
 		assert.equal(result.status, 3);
@@ -492,7 +460,7 @@ test("a launched session copies its pane output to the worktree's dev log and ke
 
 		const tmuxLog = fs.readFileSync(fake.tmuxLogPath, "utf8");
 		const pipe = tmuxLog.split("\n").find((line) => line.startsWith("-L vpk-dev pipe-pane -t =vpk-dev-plain-log-test: -o ")) ?? "";
-		assert.ok(pipe.includes(`'${path.join(repoRoot, "scripts/lib/dev-log-filter.js")}' --out '${path.join(logDir, "dev.log")}' --max-bytes '20971520'`), tmuxLog);
+		assert.ok(pipe.includes(`'${path.join(worktreeRoot, "scripts/lib/dev-log-filter.js")}' --out '${path.join(logDir, "dev.log")}' --max-bytes '20971520'`), tmuxLog);
 		assert.equal(fs.readFileSync(path.join(logDir, "dev.previous.log"), "utf8"), "last run\n");
 		assert.equal(fs.existsSync(path.join(logDir, "dev.log")), false, "the fake pane wrote nothing yet");
 		assert.ok(output.includes(`Logs:        ${path.join(logDir, "dev.log")}`), output);
@@ -558,7 +526,7 @@ function recordedStack(frontendPid) {
 	const identity = readProcessIdentity(frontendPid);
 	return {
 		version: 1,
-		worktree: repoRoot,
+		worktree: worktreeRoot,
 		session: { name: "vpk-dev-recorded", socket: "vpk-dev" },
 		phase: "starting",
 		phaseAt: new Date().toISOString(),
@@ -573,9 +541,9 @@ test("stop ends the recorded service processes before it kills the session", asy
 		// Stands in for a launcher that ignores Ctrl-C (the fake tmux delivers none) but exits on SIGTERM.
 		const server = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
 		const exited = new Promise((resolve) => server.once("exit", (_code, signal) => resolve(signal)));
-		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${repoRoot}\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${worktreeRoot}\n`);
 		const result = withPortFiles("49145", null, () =>
-			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(server.pid), FAKE_CWD_ROOT: repoRoot, VPK_DEV_STOP_WAIT_MS: "200" }, ["stop"]),
+			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(server.pid), FAKE_CWD_ROOT: worktreeRoot, VPK_DEV_STOP_WAIT_MS: "200" }, ["stop"]),
 		recordedStack(server.pid));
 		assert.equal(result.status, 0, result.stderr);
 		assert.equal(await Promise.race([exited, new Promise((resolve) => setTimeout(() => resolve("still running after 10 s"), 10_000))]), "SIGTERM");
@@ -592,9 +560,9 @@ test("stop never signals the caller's own process tree, even when the record nam
 	const fake = createFakeLauncherEnvironment();
 	try {
 		// This test process is an ancestor of the stop, as an agent session running it would be.
-		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${repoRoot}\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${worktreeRoot}\n`);
 		const result = withPortFiles("49145", null, () =>
-			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(process.pid), FAKE_CWD_ROOT: repoRoot, VPK_DEV_STOP_WAIT_MS: "0" }, ["stop"]),
+			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(process.pid), FAKE_CWD_ROOT: worktreeRoot, VPK_DEV_STOP_WAIT_MS: "0" }, ["stop"]),
 		recordedStack(process.pid));
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stdout, new RegExp(`Not signalling ${process.pid}: the caller's own process tree`));
@@ -607,7 +575,7 @@ test("stop never signals the caller's own process tree, even when the record nam
 test("status --json stays valid JSON when the worktree's session is adopted under another name", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		fs.writeFileSync(fake.statePath, `vpk-dev-old-branch|${repoRoot}\n`);
+		fs.writeFileSync(fake.statePath, `vpk-dev-old-branch|${worktreeRoot}\n`);
 		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new-branch", {}, ["status", "--json"]));
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stderr, /Adopting tmux session 'vpk-dev-old-branch'/);
@@ -676,6 +644,26 @@ test("stopping a worktree that never started a stack leaves no record behind", (
 			return stop;
 		});
 		assert.equal(result.status, 0, result.stderr);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("status never lists another session's panes, and a session started through a symlink is this worktree's", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, "vpk-dev-feat-2|/tmp/other-worktree\n");
+		const status = withPortFiles(null, null, () => startAs(fake, "vpk-dev-feat", {}, ["status"]));
+		assert.equal(status.status, 0, status.stderr);
+		assert.doesNotMatch(status.stdout, /pane 0/);
+
+		const link = path.join(fake.tempDir, "worktree-link");
+		fs.symlinkSync(worktreeRoot, link);
+		fs.writeFileSync(fake.statePath, `vpk-dev-via-link|${link}\n`);
+		const stop = withPortFiles(null, null, () => startAs(fake, "vpk-dev-other-name", {}, ["stop"]));
+		assert.equal(stop.status, 0, stop.stderr);
+		assert.match(stop.stdout, /Adopting tmux session 'vpk-dev-via-link'/);
+		assert.deepEqual(fake.sessions(), []);
 	} finally {
 		fake.cleanup();
 	}

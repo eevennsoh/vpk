@@ -644,3 +644,25 @@ test("with the process table unreadable, stop signals nothing by pid, even its o
 	assert.equal(code, 0, stdout);
 	assert.match(stdout, /Not signalling recorded processes/);
 });
+
+test("a process that leaves the worktree before the signal is not signalled", async () => {
+	let cwd = "/repo";
+	const signals = [];
+	const result = await stopRecordedProcesses({
+		worktreePath: "/repo",
+		record: stackRecord([61]),
+		waitMs: 0,
+		graceMs: 0,
+		listAncestorPidsFn: () => [],
+		verifyProcess: () => true,
+		getProcessCwdFn: () => {
+			const now = cwd;
+			cwd = "/elsewhere"; // checked once as a candidate, then it moved
+			return now;
+		},
+		killFn: (pid, signal) => signals.push([pid, signal]),
+		sleepFn: async () => {},
+	});
+	assert.deepEqual(result.ours, [61]);
+	assert.deepEqual(signals, []);
+});

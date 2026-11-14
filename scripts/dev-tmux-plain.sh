@@ -128,10 +128,12 @@ stack_state() {
 # newly checked-out branch would otherwise start a second session and next-server beside the
 # first.
 sessions_for_worktree() {
-	local name spath
+	local name spath physical
 	tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null | while IFS='|' read -r name spath; do
 		[[ -n "$name" ]] || continue
-		if [[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" ]]; then
+		# A session started through a symlink matches by its physical path.
+		physical="$(cd "$spath" 2>/dev/null && pwd -P || true)"
+		if [[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" || "$physical" == "$REPO_ROOT_PHYSICAL" ]]; then
 			printf '%s\n' "$name"
 		fi
 	done
@@ -354,7 +356,7 @@ status_session() {
 	# session's existence alone.
 	stack_state status
 	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
-		tm list-panes -t "=$SESSION_NAME" -F "  pane #{pane_index}: #{pane_current_command}"
+		tm list-panes -t "=$SESSION_NAME:" -F "  pane #{pane_index}: #{pane_current_command}"
 	fi
 }
 

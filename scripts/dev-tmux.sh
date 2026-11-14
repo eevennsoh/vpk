@@ -272,7 +272,7 @@ start_session() {
 		tmux select-layout -t "=$SESSION_NAME:$WINDOW_NAME" tiled
 	done
 
-	tmux set-option -t "=$SESSION_NAME" remain-on-exit on
+	tmux set-option -t "=$SESSION_NAME:" remain-on-exit on
 	apply_window_styling
 
 	for index in $(seq 0 $((POOL_SIZE - 1))); do

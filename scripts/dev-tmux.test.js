@@ -272,3 +272,45 @@ test("checkRovoHealth treats 401 auth responses as healthy", async () => {
 		});
 	}
 });
+
+test("rovo:tmux start builds its session with window targets tmux accepts, up to the first Rovo launcher", (t) => {
+	const { writeFakeTmux } = require("./lib/fake-tmux.js");
+	const { spawnSync } = require("node:child_process");
+	// A throwaway worktree, so the start writes no port files into this checkout.
+	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-tmux-rovo-start-")));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const worktree = path.join(root, "wt");
+	const bin = path.join(root, "bin");
+	fs.mkdirSync(worktree);
+	fs.mkdirSync(bin);
+	for (const entry of ["scripts", "node_modules", "package.json"]) {
+		fs.symlinkSync(path.join(repoRoot, entry), path.join(worktree, entry));
+	}
+	writeFakeTmux(path.join(bin, "tmux"));
+	const tmuxLog = path.join(root, "tmux.log");
+	const serverLog = path.join(root, "servers.log");
+	const result = spawnSync(path.join(worktree, "scripts/dev-tmux.sh"), ["start"], {
+		cwd: worktree,
+		encoding: "utf8",
+		env: {
+			...process.env,
+			PATH: `${bin}:${process.env.PATH}`,
+			ROVO_BILLING_URL: "https://example.invalid",
+			ROVO_POOL_SIZE: "1",
+			ROVO_TMUX_SESSION: "vpk-dev-rovo-start-test",
+			// No Rovo answers in a test: the health wait fails at once, after the launcher was sent.
+			ROVO_HEALTHCHECK_MAX_ATTEMPTS: "1",
+			ROVO_HEALTHCHECK_INTERVAL_MS: "0",
+			FAKE_TMUX_STATE: path.join(root, "state"),
+			FAKE_TMUX_LOG: tmuxLog,
+			FAKE_SERVER_LOG: serverLog,
+		},
+	});
+	const log = fs.existsSync(tmuxLog) ? fs.readFileSync(tmuxLog, "utf8") : "";
+	assert.doesNotMatch(result.stderr, /no such window|can't find session/, result.stderr);
+	assert.match(log, /^set-option -t =vpk-dev-rovo-start-test: remain-on-exit on$/mu);
+	assert.match(log, /^send-keys -t =vpk-dev-rovo-start-test:ports\.2 cd .* node scripts\/dev-rovo-port\.js/mu);
+	assert.deepEqual(fs.readFileSync(serverLog, "utf8").trim().split("\n"), ["vpk-dev-rovo-start-test"]);
+	assert.match(result.stderr, /did not become healthy/);
+	assert.equal(fs.existsSync(path.join(worktree, ".env.local")), false, "nothing was seeded into the temp worktree");
+});
