@@ -3,11 +3,10 @@
 // them, and typecheck cannot either because the props are optional. A rendered test of the Studio
 // shell (planned with its state machine) would replace this file.
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
 const test = require("node:test");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
-const studioShell = fs.readFileSync(path.join(__dirname, "rovo-app-shell.tsx"), "utf8");
+const studioShell = readRovoAppShellSource("studio");
 
 test("Studio hands the Agent Directory its template select, build and open-config handlers", () => {
 	assert.match(studioShell, /onSelectTemplateAgent=\{handleTemplateAgentSelect\}/u);

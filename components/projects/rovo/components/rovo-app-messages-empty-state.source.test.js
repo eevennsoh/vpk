@@ -3,13 +3,14 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render-component.js"));
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
 const MESSAGES_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-messages.tsx"), "utf8");
 const CORE_MESSAGES_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-messages.tsx"), "utf8");
 const EMPTY_STATE_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-empty-state.tsx"), "utf8");
 const EMPTY_STATE_CONFIG_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-empty-state-config.ts"), "utf8");
 const SCROLL_SYNC_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-scroll-sync.tsx"), "utf8");
-const SHELL_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-shell.tsx"), "utf8");
+const SHELL_SOURCE = readRovoAppShellSource("rovo");
 
 test("Rovo app empty state switches greeting and illustrations for Max mode", () => {
 	assert.match(MESSAGES_SOURCE, /emptyStateConfig=\{ROVO_APP_DEFAULT_EMPTY_STATE\}/u);
@@ -240,9 +241,9 @@ test("Rovo app shell wires directory autocomplete to composer, messages, and hom
 
 test("Rovo app selected custom agent context is merged into fullscreen submissions", () => {
 	assert.match(SHELL_SOURCE, /const selectedAgentContextDescription = getRovoAgentPromptContext\(selectedAgent\);/u);
-	assert.match(SHELL_SOURCE, /const resolvedContextDescription = mergeContextDescriptions\(\s*contextDescription,\s*selectedAgentContextDescription,\s*\);/u);
+	assert.match(SHELL_SOURCE, /const resolvedContextDescription = mergeRovoContextDescriptions\(\s*contextDescription,\s*selectedAgentContextDescription,\s*\);/u);
 	assert.match(SHELL_SOURCE, /contextDescription: resolvedContextDescription/u);
-	assert.match(SHELL_SOURCE, /function mergeContextDescriptions/u);
+	assert.match(SHELL_SOURCE, /export function mergeRovoContextDescriptions/u);
 	assert.match(SHELL_SOURCE, /const handleRovoAppSuggestionSelect = useCallback/u);
 	assert.match(SHELL_SOURCE, /try \{[\s\S]*await chat\.submitPrompt\(\{[\s\S]*buildPromptOptions\(contextDescription\)[\s\S]*files: \[\],[\s\S]*text: prompt/u);
 	assert.match(SHELL_SOURCE, /catch \{[\s\S]*submitPrompt already sets a user-visible error state\./u);
