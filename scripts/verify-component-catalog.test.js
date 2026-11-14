@@ -178,7 +178,7 @@ test("component catalog validator reports missing registry imports and example s
 		registryData: {
 			primary: {
 				ui: {
-					button: { imports: ["./demos/ui/definitely-missing-demo"] },
+					button: { imports: [{ importPath: "./demos/ui/definitely-missing-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 					orphan: { imports: [] },
 				},
 			},
@@ -222,12 +222,12 @@ test("component catalog validator accepts primary and variant example slugs", ()
 		registryData: {
 			primary: {
 				ui: {
-					button: { imports: ["./demos/ui/button-demo"] },
+					button: { imports: [{ importPath: "./demos/ui/button-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 			variants: {
 				ui: {
-					"button-demo-variant": { imports: ["./demos/ui/button-group-demo"] },
+					"button-demo-variant": { imports: [{ importPath: "./demos/ui/button-group-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 		},
@@ -355,7 +355,7 @@ test("component catalog validator flags names that are not Title Case", () => {
 		registryData: {
 			primary: {
 				blocks: {
-					"jira-issue": { imports: ["./demos/blocks/jira-issue-demo"] },
+					"jira-issue": { imports: [{ importPath: "./demos/blocks/jira-issue-demo", sourceFile: "components/website/demo-registry-loader.ts" }] },
 				},
 			},
 			variants: {
@@ -473,11 +473,11 @@ test("registry import resolver only accepts directories through an index module"
 	try {
 		const registryDir = path.join(cwd, "components/website");
 		mkdirSync(path.join(registryDir, "demos/ui/folder-demo"), { recursive: true });
-		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd), null);
+		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd, "components/website/demo-registry-loader.ts"), null);
 
 		const indexPath = path.join(registryDir, "demos/ui/folder-demo/index.tsx");
 		writeFileSync(indexPath, "export default function Demo() { return null; }\n");
-		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd), indexPath);
+		assert.equal(resolveRegistryImport("./demos/ui/folder-demo", cwd, "components/website/demo-registry-loader.ts"), indexPath);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}
@@ -554,16 +554,16 @@ test("component catalog validator reports orphan demo files absent from registry
 					ui: {
 						button: {
 							imports: [{
-								importPath: "./demos/ui/button-demo",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/ui/button-demo",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},
 					visual: {
 						"shared-shader": {
 							imports: [{
-								importPath: "./demos/visual/shared-shader-demo",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/visual/shared-shader-demo",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},
@@ -572,8 +572,8 @@ test("component catalog validator reports orphan demo files absent from registry
 					ui: {
 						"button-demo-default": {
 							imports: [{
-								importPath: "./demos/ui/button/button-demo-default",
-								sourceFile: "components/website/registry.ts",
+								importPath: "../../demos/ui/button/button-demo-default",
+								sourceFile: "components/website/registry/ui/primary.ts",
 							}],
 						},
 					},

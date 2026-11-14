@@ -13,7 +13,7 @@ Detailed procedures for registering demos, consolidating components, and wiring 
 
 ## Register Demos
 
-The primary demo needs no hand registration: add the manifest line in `app/data/component-manifest.ts` and the demo at `components/website/demos/ui/[slug]-demo.tsx`, then run `pnpm run fix:generated`. That writes the entry into the generated region of `components/website/registry/ui/primary.ts` (ui-custom: `registry/ui-custom/primary.ts`; other categories: `registry/<category>.ts`). `pnpm run catalog:add-plan -- ui/[slug]` prints the exact files.
+The primary demo needs no hand registration: add the manifest line in `app/data/component-manifest.ts` and the demo at `components/website/demos/ui/[slug]-demo.tsx`, then run `pnpm run fix:generated`. That writes the entry into the generated region of `components/website/registry/ui/primary.ts` (ui-custom: `registry/ui-custom/primary.ts`; other categories: `registry/<category>.ts`, except projects, whose registry is hand-written). `pnpm run catalog:add-plan -- ui/[slug]` prints the exact files.
 
 Register example (variant) demos by hand in the matching variants shard, `components/website/registry/ui/variants-*.ts` (ui-custom: `registry/ui-custom/variants-*.ts`). Use the `.then()` wrapper to extract named exports from the shared demo file:
 
@@ -94,7 +94,7 @@ When an ADS component is a thin wrapper or re-export that can be covered by an e
 2. Delete its demo file (`components/website/demos/ui/[slug]-demo.tsx`)
 3. Update `app/data/ads-equivalents.ts` — remove old entry, add ADS package to the target component
 4. Remove the old manifest line from `app/data/component-manifest.ts` and delete its detail leaf `app/data/details/ui/[slug].ts`; update the target component's leaf (`adsUrl`, description)
-5. Remove the old variant registrations from `components/website/registry/ui/variants-*.ts`, then run `pnpm run fix:generated` to rewrite the generated detail barrel and primary registry region
+5. Remove the old variant registrations from `components/website/registry/ui/variants-*.ts` (and any hand-written primary entry below the generated region in `registry/ui/primary.ts`), then run `pnpm run fix:generated` to rewrite the generated detail barrel and primary registry region
 6. Update `lib/json-render/catalog.ts` — remove catalog entry if present
 7. Update `lib/json-render/registry.tsx` — remove renderer and import if present
 8. Update `backend/lib/genui-system-prompt.js` — replace references in AI system prompt

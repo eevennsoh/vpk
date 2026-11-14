@@ -7,8 +7,6 @@ const { existsSync, readFileSync, statSync } = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
-// Base for a registry import that carries no source file of its own.
-const REGISTRY_PATH = "components/website/registry.ts";
 const LOADER_PATH = "components/website/demo-registry-loader.ts";
 
 function parseSource(filePath, cwd = process.cwd()) {
@@ -273,7 +271,8 @@ function collectRegistryData(cwd = process.cwd()) {
 	return { primary, variants };
 }
 
-function resolveRegistryImport(importPath, cwd = process.cwd(), sourceFilePath = REGISTRY_PATH) {
+// sourceFilePath: the repo-relative file the import appears in (every collected import carries it).
+function resolveRegistryImport(importPath, cwd, sourceFilePath) {
 	if (!importPath.startsWith(".")) {
 		return null;
 	}
@@ -303,7 +302,6 @@ function resolveProjectImport(importPath, cwd = process.cwd()) {
 }
 
 module.exports = {
-	REGISTRY_PATH,
 	collectRegistryData,
 	normalizeProjectPath,
 	resolveProjectImport,
