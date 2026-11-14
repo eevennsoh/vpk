@@ -8,8 +8,11 @@ const {
 	NEXT_ACTIONS,
 	STACK_FILE,
 	STACK_STATUSES,
+	canonicalPath,
 	clearService,
 	collectStackFacts,
+	readProcessIdentity,
+	verifyRecordedProcess,
 	deriveStackStatus,
 	readStackRecord,
 	recordPhase,
@@ -30,13 +33,14 @@ const record = (phase, seconds = 5) => ({
 	services: {},
 });
 
-const serving = { listening: true, pidAlive: true, childPidAlive: true };
-const legacyServing = { listening: true, pidAlive: null, childPidAlive: null };
+const serving = { listening: true, listenerInWorktree: true, pidAlive: true, childPidAlive: true };
+const legacyServing = { listening: true, listenerInWorktree: true, pidAlive: null, childPidAlive: null };
+const heldElsewhere = { listening: true, listenerInWorktree: false, pidAlive: null, childPidAlive: null };
 const notYet = { listening: false, pidAlive: true, childPidAlive: true };
 const exited = { listening: false, pidAlive: false, childPidAlive: false };
-const childDied = { listening: true, pidAlive: true, childPidAlive: false };
+const childDied = { listening: true, listenerInWorktree: true, pidAlive: true, childPidAlive: false };
 const missing = { listening: false, pidAlive: null, childPidAlive: null };
-const lingering = { listening: true, pidAlive: false, childPidAlive: true };
+const lingering = { listening: true, listenerInWorktree: true, pidAlive: false, childPidAlive: true };
 
 // [description, facts, expected status]
 const CASES = [
@@ -58,7 +62,9 @@ const CASES = [
 	["a stop that left a process past the stop timeout", { record: record("stopping", 60), sessionAlive: false, services: { frontend: lingering, backend: exited } }, "orphaned"],
 	["a recorded stop with nothing alive", { record: record("stopped"), sessionAlive: false, services: { frontend: missing, backend: missing } }, "stopped"],
 	["the session is gone but next dev still runs", { record: record("starting", 600), sessionAlive: false, services: { frontend: lingering, backend: exited } }, "orphaned"],
-	["no session, no record, but a port file's port listens", { record: null, sessionAlive: false, services: { frontend: legacyServing, backend: missing } }, "orphaned"],
+	["no session, no record, but a server in this worktree holds a port file's port", { record: null, sessionAlive: false, services: { frontend: legacyServing, backend: missing } }, "orphaned"],
+	["no session, and a process in another directory holds a recorded port", { record: record("stopped"), sessionAlive: false, services: { frontend: heldElsewhere, backend: missing } }, "stopped"],
+	["a session whose ports are held by processes elsewhere", { record: record("starting", 600), sessionAlive: true, services: { frontend: heldElsewhere, backend: heldElsewhere } }, "degraded"],
 	["a session after a recorded stop (started by an older launcher)", { record: record("stopped"), sessionAlive: true, services: { frontend: legacyServing, backend: legacyServing } }, "ready"],
 ];
 
@@ -191,23 +197,118 @@ test("collectStackFacts falls back to port files and probes recorded pids", asyn
 		worktreePath: dir,
 		sessionAlive: true,
 		isPortListening: (port) => listeningPorts.has(port),
-		isPidAlive: () => true,
+		listenerInWorktree: () => true,
+		verifyProcess: () => true,
 		now: NOW,
 	});
 	assert.equal(facts.record, null);
-	assert.deepEqual(facts.services.frontend, { port: 3005, pid: null, childPid: null, listening: true, pidAlive: null, childPidAlive: null });
+	assert.deepEqual(facts.services.frontend, { port: 3005, pid: null, childPid: null, listening: true, listenerInWorktree: true, pidAlive: null, childPidAlive: null });
 	assert.equal(facts.services.backend.listening, false);
 
-	recordService(dir, "backend", { port: 8085, pid: 41, childPid: 42 });
+	recordService(dir, "backend", { port: 8085, pid: 41, pidStart: "Sat Nov 14 10:00:00 2026", childPid: 42, childStart: "Sat Nov 14 10:00:01 2026" });
 	listeningPorts.add(8085);
+	const verified = [];
 	facts = await collectStackFacts({
 		worktreePath: dir,
 		sessionAlive: true,
 		isPortListening: (port) => listeningPorts.has(port),
-		isPidAlive: (pid) => pid === 41,
+		listenerInWorktree: () => true,
+		verifyProcess: (query) => {
+			verified.push(query);
+			return query.pid === 41;
+		},
 		now: NOW,
 	});
+	assert.deepEqual(verified.map(({ pid, start }) => [pid, start]), [[41, "Sat Nov 14 10:00:00 2026"], [42, "Sat Nov 14 10:00:01 2026"]]);
 	assert.equal(facts.services.backend.pidAlive, true);
 	assert.equal(facts.services.backend.childPidAlive, false);
 	assert.equal(deriveStackStatus(facts).status, "degraded");
+});
+
+test("a recorded pid counts only while its start time and command still match", () => {
+	const alive = (start, command) => () => ({ state: "alive", start, command });
+	const recorded = { pid: 77, start: "Sat Nov 14 10:32:53 2026", command: "node scripts/dev-frontend.js" };
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive(recorded.start, recorded.command) }), true);
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive("Sat Nov 14 11:00:00 2026", recorded.command) }), false, "the pid was reused");
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive(recorded.start, "zsh") }), false, "another command");
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: () => ({ state: "absent" }) }), false);
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: () => ({ state: "unknown" }) }), null, "unreadable is not ours");
+	assert.equal(verifyRecordedProcess({ pid: 77, start: null, command: null }, { readIdentity: alive("x", "y") }), null, "no identity recorded");
+});
+
+test("readProcessIdentity reads a live process, and reports an unknown or missing one", async (t) => {
+	const { spawnInGroup } = require("./test-process.js");
+	const child = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
+	const identity = readProcessIdentity(child.pid);
+	assert.equal(identity.state, "alive");
+	assert.match(identity.start, /^\w{3} \w{3} \d+ \d{2}:\d{2}:\d{2} \d{4}$/);
+	assert.equal(identity.command, "sleep 300");
+	assert.deepEqual(readProcessIdentity(child.pid, { spawnSyncImpl: () => ({ error: new Error("EPERM") }) }), { state: "unknown" });
+	assert.deepEqual(readProcessIdentity(2 ** 22 + 1, { kill: () => { throw Object.assign(new Error("gone"), { code: "ESRCH" }); } }), { state: "absent" });
+});
+
+test("a launcher reusing a server it did not start keeps the owner's record", (t) => {
+	const dir = tempWorktree(t);
+	recordService(dir, "backend", { port: 8081, pid: 201, pidStart: "Sat Nov 14 10:00:00 2026", childPid: 202 });
+	recordService(dir, "backend", { port: 8081, pid: null });
+	assert.equal(readStackRecord(dir).services.backend.pid, 201);
+	recordService(dir, "backend", { port: 8082, pid: null });
+	assert.equal(readStackRecord(dir).services.backend.pid, null, "a different port is a different server");
+});
+
+test("a worktree reached through a symlink is the same worktree", (t) => {
+	const real = tempWorktree(t);
+	const link = path.join(os.tmpdir(), `dev-stack-link-${process.pid}-${Date.now()}`);
+	fs.symlinkSync(real, link);
+	t.after(() => fs.rmSync(link, { force: true }));
+	recordPhase(link, "starting", { session: { name: "vpk-dev-x", socket: "vpk-dev" } });
+	recordService(real, "frontend", { port: 3001, pid: 101 });
+	const saved = readStackRecord(link);
+	assert.equal(saved.phase, "starting", "the launcher's write through the real path kept the shell's phase");
+	assert.deepEqual(saved.session, { name: "vpk-dev-x", socket: "vpk-dev" });
+	assert.equal(saved.worktree, canonicalPath(real));
+	assert.equal(readStackRecord(real).services.frontend.port, 3001);
+});
+
+test("a lock with a future mtime is stale, and a holder never removes a lock it does not own", (t) => {
+	const dir = tempWorktree(t);
+	const lock = path.join(dir, `${STACK_FILE}.lock`);
+	fs.writeFileSync(lock, "1-someone");
+	const future = new Date(Date.now() + 3_600_000);
+	fs.utimesSync(lock, future, future);
+	assert.equal(withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), "ran");
+
+	// A slow holder whose lock was taken over must not delete the new holder's lock.
+	withStackLock(dir, () => {
+		fs.writeFileSync(lock, "2-next-holder");
+	});
+	assert.equal(fs.readFileSync(lock, "utf8"), "2-next-holder");
+});
+
+test("waiters that find one stale lock never hold it at the same time", async (t) => {
+	const dir = tempWorktree(t);
+	const lock = path.join(dir, `${STACK_FILE}.lock`);
+	fs.writeFileSync(lock, "1-dead");
+	const old = new Date(Date.now() - 60_000);
+	fs.utimesSync(lock, old, old);
+	const { spawn } = require("node:child_process");
+	const modulePath = require.resolve("./dev-stack-state");
+	const inside = path.join(dir, "inside");
+	const violations = path.join(dir, "violations");
+	const worker = () =>
+		new Promise((resolve, reject) => {
+			const code = `const fs = require("node:fs");
+const { withStackLock } = require(${JSON.stringify(modulePath)});
+for (let i = 0; i < 10; i += 1) withStackLock(${JSON.stringify(dir)}, () => {
+	try { fs.writeFileSync(${JSON.stringify(inside)}, "x", { flag: "wx" }); } catch { fs.appendFileSync(${JSON.stringify(violations)}, "overlap\\n"); }
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+	fs.rmSync(${JSON.stringify(inside)}, { force: true });
+});`;
+			const child = spawn(process.execPath, ["-e", code], { stdio: "ignore" });
+			child.once("error", reject);
+			child.once("exit", (status) => (status === 0 ? resolve() : reject(new Error(`worker exited ${status}`))));
+		});
+	await Promise.all([worker(), worker(), worker(), worker()]);
+	assert.equal(fs.existsSync(violations), false, fs.existsSync(violations) ? fs.readFileSync(violations, "utf8") : "");
+	assert.equal(fs.existsSync(lock), false);
 });

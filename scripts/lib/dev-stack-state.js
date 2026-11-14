@@ -12,19 +12,31 @@
 //     "phase": "seeding-env" | "starting" | "stopping" | "stopped",
 //     "phaseAt": "<ISO time>",
 //     "services": {
-//       "frontend": { "port": 3001, "pid": 123, "childPid": 456, "recordedAt": "<ISO time>" },
+//       "frontend": {
+//         "port": 3001,
+//         "pid": 123, "pidStart": "Sat Nov 14 10:32:53 2026", "pidCommand": "node scripts/dev-frontend.js",
+//         "childPid": 456, "childStart": "…", "childCommand": "…",
+//         "recordedAt": "<ISO time>"
+//       },
 //       "backend": { ... }
 //     }
 //   }
 //
 // `pid` is the service launcher (scripts/dev-frontend.js or dev-backend.js), which forwards
-// signals to `childPid` (next dev or the Express server). The `.dev-<service>-port` files stay
-// as a mirror of `services.<service>.port` for the readers that predate this file.
+// signals to `childPid` (next dev or the Express server). Each pid is stored with its identity
+// (start time and command, from `ps`), and a pid counts as the stack's only while both still
+// match: a pid the system has since given to another process is never the stack's. The
+// `.dev-<service>-port` files stay as a mirror of `services.<service>.port`.
+//
+// The worktree path is canonical (realpath) in the record and in every comparison, so a
+// worktree reached through a symlink is one worktree.
 //
 // `deriveStackStatus(facts)` is pure: given the record and what is alive now, it names one of
 // STACK_STATUSES and the next action. `collectStackFacts` gathers those facts with injectable
 // probes.
 
+const { randomUUID } = require("node:crypto");
+const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -67,6 +79,14 @@ const DEFAULT_START_TIMEOUT_MS = 90_000;
 // still marked stopping has stuck processes.
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
 
+function canonicalPath(value) {
+	try {
+		return fs.realpathSync(value);
+	} catch {
+		return path.resolve(value);
+	}
+}
+
 function stackFilePath(worktreePath) {
 	return path.join(worktreePath, STACK_FILE);
 }
@@ -80,6 +100,8 @@ function positiveInteger(value) {
 	return Number.isInteger(number) && number > 0 ? number : null;
 }
 
+const text = (value) => (typeof value === "string" && value.length > 0 ? value : null);
+
 function normalizeService(value) {
 	if (!value || typeof value !== "object") return null;
 	const port = positiveInteger(value.port);
@@ -89,15 +111,19 @@ function normalizeService(value) {
 	return {
 		port,
 		pid,
+		pidStart: pid === null ? null : text(value.pidStart),
+		pidCommand: pid === null ? null : text(value.pidCommand),
 		childPid,
-		recordedAt: typeof value.recordedAt === "string" ? value.recordedAt : null,
+		childStart: childPid === null ? null : text(value.childStart),
+		childCommand: childPid === null ? null : text(value.childCommand),
+		recordedAt: text(value.recordedAt),
 	};
 }
 
 // Anything unreadable, from another version, or for another worktree is treated as no record.
 function normalizeStackRecord(value, { worktreePath = null } = {}) {
 	if (!value || typeof value !== "object" || value.version !== STACK_FILE_VERSION) return null;
-	if (worktreePath && typeof value.worktree === "string" && path.resolve(value.worktree) !== path.resolve(worktreePath)) {
+	if (worktreePath && typeof value.worktree === "string" && canonicalPath(value.worktree) !== canonicalPath(worktreePath)) {
 		return null;
 	}
 	const services = {};
@@ -111,7 +137,7 @@ function normalizeStackRecord(value, { worktreePath = null } = {}) {
 			: null;
 	return {
 		version: STACK_FILE_VERSION,
-		worktree: typeof value.worktree === "string" ? value.worktree : worktreePath,
+		worktree: canonicalPath(typeof value.worktree === "string" ? value.worktree : worktreePath),
 		session,
 		phase: RECORDED_PHASES.includes(value.phase) ? value.phase : null,
 		phaseAt: typeof value.phaseAt === "string" ? value.phaseAt : null,
@@ -130,7 +156,7 @@ function readStackRecord(worktreePath, { fsImpl = fs } = {}) {
 function emptyRecord(worktreePath) {
 	return {
 		version: STACK_FILE_VERSION,
-		worktree: path.resolve(worktreePath),
+		worktree: canonicalPath(worktreePath),
 		session: null,
 		phase: null,
 		phaseAt: null,
@@ -143,23 +169,71 @@ function sleepSync(ms) {
 }
 
 // The frontend and backend launchers record themselves at about the same moment, so every
-// write is a read-modify-write under an exclusive lock file. A lock older than staleMs belongs
-// to a process that died holding it.
+// write is a read-modify-write under an exclusive lock file holding the owner's token
+// ("<pid>-<uuid>"). Only the owner removes it. A lock is stale when its owner pid is gone, when
+// it is older than staleMs, or when its mtime is in the future (a clock change); a stale lock is
+// moved aside under a unique name and checked before it is deleted, so two waiters cannot both
+// take it over.
+function readLockToken(lockPath, fsImpl) {
+	try {
+		return fsImpl.readFileSync(lockPath, "utf8");
+	} catch {
+		return null;
+	}
+}
+
+function lockOwnerGone(token) {
+	const pid = positiveInteger(String(token ?? "").split("-")[0]);
+	if (pid === null) return false;
+	try {
+		process.kill(pid, 0);
+		return false;
+	} catch (error) {
+		return error?.code === "ESRCH";
+	}
+}
+
+function lockIsStale(lockPath, token, { fsImpl, staleMs, now }) {
+	let mtimeMs;
+	try {
+		mtimeMs = fsImpl.statSync(lockPath).mtimeMs;
+	} catch {
+		return false;
+	}
+	const age = now() - mtimeMs;
+	return age > staleMs || age < -1_000 || lockOwnerGone(token);
+}
+
+function takeOverStaleLock(lockPath, observed, ownToken, fsImpl) {
+	const aside = `${lockPath}.${ownToken}.stale`;
+	try {
+		fsImpl.renameSync(lockPath, aside);
+	} catch {
+		return; // Someone else moved or released it.
+	}
+	if (readLockToken(aside, fsImpl) !== observed) {
+		// A fresh lock replaced the stale one before the rename: put it back.
+		try {
+			fsImpl.linkSync(aside, lockPath);
+		} catch {
+			// A newer holder already took the slot.
+		}
+	}
+	fsImpl.rmSync(aside, { force: true });
+}
+
 function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, retryMs = 20, staleMs = 5_000, now = Date.now } = {}) {
 	const lockPath = `${stackFilePath(worktreePath)}.lock`;
+	const token = `${process.pid}-${randomUUID()}`;
 	for (let attempt = 0; ; attempt += 1) {
-		let fd;
 		try {
-			fd = fsImpl.openSync(lockPath, "wx");
+			fsImpl.writeFileSync(lockPath, token, { flag: "wx" });
 		} catch (error) {
 			if (error?.code !== "EEXIST") throw error;
-			try {
-				if (now() - fsImpl.statSync(lockPath).mtimeMs > staleMs) {
-					fsImpl.rmSync(lockPath, { force: true });
-					continue;
-				}
-			} catch {
-				// The holder released it between our open and stat; try again.
+			const observed = readLockToken(lockPath, fsImpl);
+			if (lockIsStale(lockPath, observed, { fsImpl, staleMs, now })) {
+				takeOverStaleLock(lockPath, observed, token, fsImpl);
+				continue;
 			}
 			if (attempt >= retries) throw new Error(`Timed out waiting for ${lockPath}`);
 			sleepSync(retryMs);
@@ -168,8 +242,7 @@ function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, ret
 		try {
 			return callback();
 		} finally {
-			fsImpl.closeSync(fd);
-			fsImpl.rmSync(lockPath, { force: true });
+			if (readLockToken(lockPath, fsImpl) === token) fsImpl.rmSync(lockPath, { force: true });
 		}
 	}
 }
@@ -211,7 +284,9 @@ function updateStackRecord(worktreePath, update, { fsImpl = fs, now = () => new 
 	);
 }
 
-function recordPhase(worktreePath, phase, { session, fsImpl = fs, now } = {}) {
+// `keepService(entry)` keeps an entry a finished stop could not end (the stop skips a pid it
+// cannot verify), so the record still names it.
+function recordPhase(worktreePath, phase, { session, keepService = () => false, fsImpl = fs, now } = {}) {
 	if (!RECORDED_PHASES.includes(phase)) {
 		throw new Error(`Unknown stack phase: ${phase}. Expected one of ${RECORDED_PHASES.join(", ")}.`);
 	}
@@ -223,23 +298,33 @@ function recordPhase(worktreePath, phase, { session, fsImpl = fs, now } = {}) {
 			phase,
 			phaseAt: at.toISOString(),
 			// A fresh start or a finished stop forgets the previous run's processes.
-			services: phase === "seeding-env" || phase === "stopped" ? {} : record.services,
+			services:
+				phase === "seeding-env" || phase === "stopped"
+					? Object.fromEntries(Object.entries(record.services).filter(([, entry]) => phase === "stopped" && keepService(entry)))
+					: record.services,
 		}),
 		{ fsImpl, now },
 	);
 }
 
-function recordService(worktreePath, service, { port, pid, childPid = null }, { fsImpl = fs, now } = {}) {
+// A launcher records itself and its server with their identities (readProcessIdentity). A
+// launcher that only reuses a server it did not start records the port without pids, and never
+// replaces the entry of the launcher that owns that port.
+function recordService(worktreePath, service, { port, pid, childPid = null, pidStart = null, pidCommand = null, childStart = null, childCommand = null }, { fsImpl = fs, now } = {}) {
 	if (!SERVICES.includes(service)) throw new Error(`Unknown dev service: ${service}`);
 	return updateStackRecord(
 		worktreePath,
-		(record, at) => ({
-			...record,
-			services: {
-				...record.services,
-				[service]: { port, pid, childPid, recordedAt: at.toISOString() },
-			},
-		}),
+		(record, at) => {
+			const existing = record.services[service];
+			if (pid === null && existing && existing.port === port && existing.pid !== null) return record;
+			return {
+				...record,
+				services: {
+					...record.services,
+					[service]: { port, pid, pidStart, pidCommand, childPid, childStart, childCommand, recordedAt: at.toISOString() },
+				},
+			};
+		},
 		{ fsImpl, now },
 	);
 }
@@ -261,6 +346,18 @@ function clearService(worktreePath, service, { pid = null, fsImpl = fs, now } = 
 	);
 }
 
+// Every recorded process with its identity: [{ pid, start, command }].
+function recordedProcesses(record) {
+	const processes = new Map();
+	for (const service of SERVICES) {
+		const entry = record?.services?.[service];
+		if (!entry) continue;
+		if (entry.pid) processes.set(entry.pid, { pid: entry.pid, start: entry.pidStart, command: entry.pidCommand });
+		if (entry.childPid) processes.set(entry.childPid, { pid: entry.childPid, start: entry.childStart, command: entry.childCommand });
+	}
+	return [...processes.values()].sort((left, right) => left.pid - right.pid);
+}
+
 // Every process the record names, for `stop` to end before it falls back to the cwd scan.
 function recordedPids(record) {
 	const pids = new Set();
@@ -280,13 +377,23 @@ function elapsedSince(iso, now) {
 
 // A service serves the stack when its port listens and none of its recorded processes has
 // died. A launcher that predates this file records only the port (pid null).
+// pidAlive / childPidAlive: true when the recorded process still runs with its recorded identity,
+// false when it is gone (or its pid now belongs to another process), null when that cannot be
+// told (no pid, no identity recorded, or the process table is unreadable).
+// listenerInWorktree: whether the process listening on the port runs in this worktree (null:
+// unknown). "listening" alone only says something holds the port.
+//
+// A service serves the stack when its port listens, the listener is not known to be elsewhere,
+// and no recorded process is known to be gone.
 function serviceServing(fact) {
-	if (!fact || !fact.listening) return false;
+	if (!fact || !fact.listening || fact.listenerInWorktree === false) return false;
 	return fact.pidAlive !== false && fact.childPidAlive !== false;
 }
 
+// Something of this stack still runs: a verified recorded process, or a listener on its port
+// running in this worktree.
 function serviceAlive(fact) {
-	return Boolean(fact && (fact.pidAlive === true || fact.childPidAlive === true || fact.listening));
+	return Boolean(fact && (fact.pidAlive === true || fact.childPidAlive === true || (fact.listening && fact.listenerInWorktree === true)));
 }
 
 /**
@@ -357,14 +464,55 @@ function readPortFile(worktreePath, service, { fsImpl = fs } = {}) {
 	}
 }
 
-function defaultIsPidAlive(pid) {
+// { state: "absent" } when no live process has the pid (a zombie counts as absent), { state:
+// "unknown" } when that cannot be read (ps blocked or failing), else { state: "alive", start,
+// command } with `start` the ps lstart, whitespace collapsed.
+function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.kill } = {}) {
 	try {
-		process.kill(pid, 0);
-		return true;
+		kill(pid, 0);
 	} catch (error) {
-		// EPERM: the process exists but belongs to someone else.
-		return error?.code === "EPERM";
+		if (error?.code === "ESRCH") return { state: "absent" };
+		if (error?.code !== "EPERM") return { state: "unknown" };
 	}
+	const result = spawnSyncImpl("ps", ["-o", "stat=", "-o", "lstart=", "-o", "command=", "-p", String(pid)], { encoding: "utf8" });
+	if (result.error) return { state: "unknown" };
+	const line = String(result.stdout ?? "").trim();
+	if (line.length === 0) return result.status === 1 ? { state: "absent" } : { state: "unknown" };
+	const match = line.match(/^(\S+)\s+(\w{3}\s+\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.*)$/u);
+	if (!match) return { state: "unknown" };
+	if (match[1].startsWith("Z")) return { state: "absent" };
+	return { state: "alive", start: match[2].replace(/\s+/gu, " "), command: match[3] };
+}
+
+// true: the pid still runs with the recorded identity. false: gone, or the pid now belongs to a
+// process that started at another time or runs another command. null: cannot tell.
+function verifyRecordedProcess({ pid, start, command }, { readIdentity = readProcessIdentity } = {}) {
+	if (!pid) return null;
+	const identity = readIdentity(pid);
+	if (identity.state === "absent") return false;
+	if (identity.state !== "alive" || !start) return null;
+	return identity.start === start && (!command || identity.command === command);
+}
+
+// Whether the process listening on the port runs in this worktree: true, false, or null when
+// the listener or its cwd cannot be read.
+function defaultListenerInWorktree(port, worktreePath, { spawnSyncImpl = spawnSync } = {}) {
+	const listeners = spawnSyncImpl("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], { encoding: "utf8" });
+	if (listeners.error) return null;
+	const pids = String(listeners.stdout ?? "").split(/\s+/u).filter(Boolean);
+	if (pids.length === 0) return null;
+	const target = canonicalPath(worktreePath);
+	let unknown = false;
+	for (const pid of pids) {
+		const cwd = spawnSyncImpl("lsof", ["-a", "-d", "cwd", "-p", pid, "-Fn"], { encoding: "utf8" });
+		const line = String(cwd.stdout ?? "").split("\n").find((entry) => entry.startsWith("n"));
+		if (!line) {
+			unknown = true;
+			continue;
+		}
+		if (canonicalPath(line.slice(1)) === target) return true;
+	}
+	return unknown ? null : false;
 }
 
 /**
@@ -376,8 +524,9 @@ async function collectStackFacts({
 	worktreePath,
 	sessionAlive,
 	fsImpl = fs,
-	isPidAlive = defaultIsPidAlive,
+	verifyProcess = verifyRecordedProcess,
 	isPortListening,
+	listenerInWorktree = defaultListenerInWorktree,
 	now = Date.now(),
 }) {
 	if (typeof isPortListening !== "function") throw new Error("collectStackFacts needs isPortListening");
@@ -387,13 +536,15 @@ async function collectStackFacts({
 		SERVICES.map(async (service) => {
 			const entry = record?.services?.[service] ?? null;
 			const port = entry?.port ?? readPortFile(worktreePath, service, { fsImpl });
+			const listening = port === null ? false : Boolean(await isPortListening(port));
 			services[service] = {
 				port,
 				pid: entry?.pid ?? null,
 				childPid: entry?.childPid ?? null,
-				listening: port === null ? false : Boolean(await isPortListening(port)),
-				pidAlive: entry?.pid ? isPidAlive(entry.pid) : null,
-				childPidAlive: entry?.childPid ? isPidAlive(entry.childPid) : null,
+				listening,
+				listenerInWorktree: listening ? listenerInWorktree(port, worktreePath) : null,
+				pidAlive: entry?.pid ? verifyProcess({ pid: entry.pid, start: entry.pidStart, command: entry.pidCommand }) : null,
+				childPidAlive: entry?.childPid ? verifyProcess({ pid: entry.childPid, start: entry.childStart, command: entry.childCommand }) : null,
 			};
 		}),
 	);
@@ -413,11 +564,15 @@ module.exports = {
 	collectStackFacts,
 	deriveStackStatus,
 	normalizeStackRecord,
+	canonicalPath,
+	readProcessIdentity,
 	readStackRecord,
 	recordPhase,
+	recordedProcesses,
 	recordService,
 	recordedPids,
 	stackFilePath,
 	updateStackRecord,
+	verifyRecordedProcess,
 	withStackLock,
 };
