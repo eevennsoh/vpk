@@ -1,13 +1,15 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 import {
-	SHADER_LAB_LAYER_DEFINITIONS,
-	SHADER_LAB_RUNTIME_LAYER_TYPES,
-	type ShaderLabRuntimeEffectType,
-	type ShaderLabRuntimeLayerType,
 	createShaderLabEffectPropDocs,
 	getShaderLabEffectImportStatement,
 	getShaderLabEffectUsage,
-} from "@/components/website/demos/visual/shader-lab-effect-definitions";
+} from "@/components/website/demos/visual/shader-lab/helpers";
+import { SHADER_LAB_LAYER_DEFINITIONS } from "@/components/website/demos/visual/shader-lab/index";
+import {
+	SHADER_LAB_RUNTIME_LAYER_TYPES,
+	type ShaderLabRuntimeEffectType,
+	type ShaderLabRuntimeLayerType,
+} from "@/components/website/demos/visual/shader-lab/types";
 import { MOTION_DETAIL } from "./visual/motion";
 import { TYPOGRAPHY_DETAIL } from "./visual/typography";
 import { COLOR_DETAIL } from "./visual/color";

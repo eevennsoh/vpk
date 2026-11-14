@@ -63,7 +63,6 @@
 		"components/website/demos/ui/forms-demo.tsx": 1326,
 		"components/website/demos/ui/item-demo.tsx": 1733,
 		"components/website/demos/visual/ascii-demo.tsx": 1279,
-		"components/website/demos/visual/shader-lab-effect-definitions.ts": 2980,
 		"components/website/demos/visual/shaders/ascii.tsx": 1697,
 		"lib/json-render/catalog.ts": 1172,
 		"lib/json-render/registry.tsx": 2408,

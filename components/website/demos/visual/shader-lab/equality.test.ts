@@ -4,7 +4,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 
-import * as shaderLab from "../shader-lab-effect-definitions.ts";
+import * as helpers from "./helpers.ts";
+import { SHADER_LAB_LAYER_DEFINITIONS } from "./index.ts";
+import * as types from "./types.ts";
+
+const shaderLab = { ...helpers, ...types, SHADER_LAB_LAYER_DEFINITIONS };
 
 /**
  * Equality guard for splitting the Shader Lab definitions into one module per layer.
