@@ -57,6 +57,13 @@ export const GENERATED_ARTIFACTS = [
 		check: ["pnpm", "install", "--frozen-lockfile", "--lockfile-only", "--ignore-scripts"],
 	},
 	{
+		id: "unused-code",
+		paths: ["scripts/unused-code-baseline.json"],
+		// Update only drops entries Knip stopped reporting, so the baseline can only shrink.
+		generate: [NODE, "scripts/verify-unused-code.js", "--update"],
+		check: [NODE, "scripts/verify-unused-code.js"],
+	},
+	{
 		id: "eslint-suppressions",
 		paths: ["eslint-suppressions.json"],
 		slow: true,

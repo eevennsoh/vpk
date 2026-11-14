@@ -2,8 +2,9 @@
 
 "use strict";
 
-const { spawnSync } = require("node:child_process");
 const { existsSync, readFileSync } = require("node:fs");
+
+const { isBaseRequired, resolveBaseRef, runGit } = require("./lib/ratchet-base");
 
 const SUPPRESSIONS_FILE = "eslint-suppressions.json";
 const ESLINT_CONFIG_FILE = "eslint.config.mjs";
@@ -43,29 +44,6 @@ function findIntroducedRules(baseConfigSource, currentConfigSource, ruleIds) {
 		if (currentConfigSource.includes(quoted) && !baseConfigSource.includes(quoted)) introduced.add(ruleId);
 	}
 	return introduced;
-}
-
-function runGit(args) {
-	const result = spawnSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-	return result.status === 0 ? result.stdout.trim() : null;
-}
-
-// CI checks out the PR merged into its base, so compare with the base tip there;
-// push builds pass the pre-push tip as VPK_SUPPRESSIONS_BASE (see ci.yml); locally
-// compare with the merge-base so commits that landed on main later don't count.
-function resolveBaseRef({ env = process.env, git = runGit } = {}) {
-	if (env.VPK_SUPPRESSIONS_BASE) {
-		return git(["rev-parse", "--verify", "--quiet", env.VPK_SUPPRESSIONS_BASE]);
-	}
-	if (env.GITHUB_BASE_REF) {
-		return git(["rev-parse", "--verify", "--quiet", `origin/${env.GITHUB_BASE_REF}`]);
-	}
-	return git(["merge-base", "HEAD", "origin/main"]);
-}
-
-// An explicitly named base must resolve: skipping would let the ledger grow unchecked.
-function isBaseRequired(env = process.env) {
-	return Boolean(env.GITHUB_BASE_REF || env.VPK_SUPPRESSIONS_BASE);
 }
 
 function readBaseSuppressions(baseRef, git = runGit) {

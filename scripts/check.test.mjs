@@ -29,11 +29,12 @@ test("verify:fast is the guard stage of check, and every guard is still its own 
 	assert.equal(scripts.check, "node scripts/check.mjs");
 	assert.match(scripts["ci:pr"], /'pnpm run verify:fast'/u);
 	// The fifteen guards the old `&&` chain ran, in the same order, plus verify:asset-size
-	// (C-1b) after verify:file-size; none may be dropped.
+	// (C-1b) after verify:file-size and verify:unused-code (C-10) after the suppressions
+	// ratchet; none may be dropped.
 	assert.deepEqual(GUARD_SCRIPTS, [
 		"verify:root-artifacts", "verify:url-credentials", "verify:route-manifest", "verify:api-surfaces", "verify:repo-map",
 		"verify:vpk-feature-map", "verify:file-size", "verify:asset-size", "verify:catalog", "verify:lazy-load", "verify:source-guardrails",
-		"verify:eslint-suppressions", "verify:cursor-rules", "verify:doc-scripts", "validate:agents", "validate:skills",
+		"verify:eslint-suppressions", "verify:unused-code", "verify:cursor-rules", "verify:doc-scripts", "validate:agents", "validate:skills",
 	]);
 	for (const name of GUARD_SCRIPTS) assert.equal(typeof scripts[name], "string", name);
 	assert.ok(!GUARD_SCRIPTS.some((name) => /(?:^|&&\s*)pnpm\b/u.test(scripts[name])), "a guard that shells out to pnpm cannot run in the sandbox");
@@ -104,6 +105,7 @@ test("problems are reported as file:line rule message fix-command", () => {
 	assert.deepEqual(unit.map(formatProblem), ["lib/a.test.js:7  node:test  adds numbers  fix: node scripts/run-js-unit-tests.mjs --file lib/a.test.js"]);
 	assert.equal(guardFixCommand("verify:repo-map"), "pnpm run fix:generated (then rerun: pnpm run verify:repo-map)");
 	assert.equal(guardFixCommand("verify:lazy-load"), "pnpm run verify:lazy-load");
+	assert.match(guardFixCommand("verify:unused-code"), /use or delete .*pnpm run fix:generated --only unused-code$/u);
 });
 
 test("the summary line prefers the failing test or error over test-runner chatter", () => {

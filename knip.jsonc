@@ -1,0 +1,57 @@
+// Unused-code check (`pnpm run verify:unused-code`, scripts/verify-unused-code.js).
+// Entries are every way this repo starts code. Knip's own plugins add the Next.js App
+// Router files, package.json scripts, CI workflow commands, config files and Playwright
+// specs; the lists below add what those plugins cannot see. A file that is started by a
+// path string (spawned, required by path, named in a manifest) belongs in `entry` with
+// the reason, not in the baseline.
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"workspaces": {
+		".": {
+			"entry": [
+				// Catalog registries and their data: demos load through import() strings.
+				"components/website/registry/**/*.{ts,tsx}",
+				"app/data/**/*.{ts,tsx}",
+				// Every test file, and helpers tests load by path.
+				"**/*.test.{js,mjs,cjs,ts,tsx}",
+				"**/__tests__/**/*.{js,mjs,cjs,ts}",
+				"scripts/fixtures/**/*.{js,mjs,cjs}",
+				// Skill and plugin scripts run by agents, not by package.json.
+				".agents/skills/**/scripts/**/*.{js,mjs,cjs,ts,css}",
+				".agents/herdr/plugins/*/*.js",
+				// Started by path string: Rovo's MCP config (scripts/lib/rovo-config.js), the
+				// agent-browser demo's helper command, dev-tmux*.sh, the dev-rovo hooks and
+				// docs, and the icon registry's generator header.
+				"scripts/browser-workspace-mcp.js",
+				"scripts/chromium-preview-agent.js",
+				"scripts/cleanup-worktree-listeners.js",
+				"scripts/dev-rovo-port.js",
+				"scripts/generate-icon-registry.js"
+			],
+			"project": ["**/*.{js,mjs,cjs,ts,tsx,jsx,mts,css}"],
+			"ignore": [
+				"artifacts/**",
+				"public/**",
+				// Templates copied into generated apps, and eval fixtures read as text.
+				".agents/skills/vpk-build/references/**",
+				".agents/skills/*/assets/**",
+				".agents/skills/*/evals/**"
+			]
+		},
+		"backend": {
+			"entry": [
+				"app.js",
+				"**/*.test.{js,mjs,cjs}",
+				// Spawned by backend/server-shutdown.behavior.test.js.
+				"__fixtures__/**/*.js"
+			],
+			"project": ["**/*.{js,mjs,cjs,ts}"],
+			// backend/lib/rovo-config-loader.js tries the Docker image layout first, where
+			// rovo/ sits next to lib/; the repo layout is the fallback.
+			"ignoreUnresolved": ["../rovo/config"]
+		}
+	},
+	// Duplicate exports (one value exported under two names) are a style question, not
+	// unused code.
+	"exclude": ["duplicates"]
+}
