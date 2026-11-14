@@ -1,4 +1,5 @@
 const express = require("express");
+const { describeAtlassianSiteHostsProblem } = require("./lib/jira-query-inputs");
 const { createLocalFolderRouter } = require("./routes/local-folder");
 const {
 	registerBodyLimitMiddleware,
@@ -89,6 +90,10 @@ function createBackendApp(dependencies = {}, options = {}) {
 	registerBodyLimit(app, { expressImpl });
 
 	logger.log("[STARTUP] Middleware configured");
+	const atlassianSiteHostsProblem = describeAtlassianSiteHostsProblem();
+	if (atlassianSiteHostsProblem) {
+		logger.warn?.(`[STARTUP] ${atlassianSiteHostsProblem}`);
+	}
 
 	registerRoutes(app, {
 		...dependencies,
@@ -246,6 +251,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 
 	registerChromiumPreviewRoutes(app, {
 		chromiumPreviewManager,
+		requireRuntimeAdmin,
 	});
 
 	registerRovoChatProxyRoutes(app, {

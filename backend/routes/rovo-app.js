@@ -13,6 +13,7 @@ const {
 const { sendError } = require("../middleware/error-response");
 const {
 	FILE_RESPONSE_SECURITY_HEADERS,
+	buildContentDisposition,
 	decideUploadResponseHeaders,
 } = require("../lib/upload-response-headers");
 const {
@@ -69,6 +70,7 @@ const REQUIRED_UPLOAD_MANAGER_METHODS = [
 ];
 
 const REQUIRED_GENERATED_FILES_MANAGER_METHODS = [
+	"deleteGeneratedFilesForThreads",
 	"deleteLegacyRootFiles",
 ];
 
@@ -411,10 +413,9 @@ function createRovoAppRouter({
 			}
 
 			const threads = await rovoAppThreadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
-			await Promise.all(
-				// One thread's cleanup never fails delete-all.
-				threads.map((thread) => generatedFilesManager.deleteLegacyRootFiles(thread.id).catch(() => 0)),
-			);
+			// One cleanup for every thread (one git view, one deadline), and it never fails
+			// delete-all.
+			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
 
 			await rovoAppThreadManager.deleteAllThreads();
 			await rovoAppVoteManager.deleteAllVotes();
@@ -595,7 +596,9 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/threads/:threadId/browser-workspace", async (req, res) => {
+	// The state names the thread's open tabs and URLs; like creating and deleting the
+	// workspace, reading it needs runtime admin (every /api/browser-workspaces route does).
+	router.get("/rovo/threads/:threadId/browser-workspace", requireRuntimeAdmin, async (req, res) => {
 		try {
 			const threadId = getString(req.params.threadId);
 			if (!threadId) {
@@ -890,10 +893,7 @@ function createRovoAppRouter({
 			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
 				res.setHeader(name, value);
 			}
-			res.setHeader(
-				"Content-Disposition",
-				`inline; filename="${path.basename(absolutePath)}"`,
-			);
+			res.setHeader("Content-Disposition", buildContentDisposition("inline", path.basename(absolutePath)));
 			return res.sendFile(absolutePath);
 		} catch (error) {
 			if (error?.code === "ENOENT") {

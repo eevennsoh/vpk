@@ -547,6 +547,11 @@ class RealtimeSession {
 
 		if (useGateway) {
 			const token = await getAuthToken();
+			// The client may have gone while the token was fetched; close() already ran
+			// and would never see an upstream socket opened after it.
+			if (this._state === SESSION_STATE.CLOSED) {
+				return;
+			}
 			headers = {
 				Authorization: `bearer ${token}`,
 				"OpenAI-Beta": "realtime=v1",
@@ -756,6 +761,11 @@ class RealtimeSession {
 			msg = JSON.parse(raw);
 		} catch {
 			this._log("REALTIME", `Invalid JSON from client: ${String(raw).slice(0, 100)}`);
+			return;
+		}
+		// Valid JSON that is not an object (a number, null, an array) has no type to read.
+		if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
+			this._log("REALTIME", `Ignoring a client message that is not an object: ${String(raw).slice(0, 100)}`);
 			return;
 		}
 

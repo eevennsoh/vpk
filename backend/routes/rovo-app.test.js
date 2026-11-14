@@ -216,6 +216,9 @@ function createGeneratedFilesManager(state) {
 		backfillFromThread: async (thread) => {
 			state.calls.push({ method: "backfillFromThread", threadId: thread.id });
 		},
+		deleteGeneratedFilesForThreads: async (threadIds) => {
+			state.calls.push({ method: "deleteGeneratedFilesForThreads", threadIds });
+		},
 		deleteLegacyRootFiles: async (threadId) => {
 			state.calls.push({ method: "deleteLegacyRootFiles", threadId });
 		},
@@ -702,6 +705,10 @@ test("thread delete never reads paths from stored messages, and cleanup failures
 		state.calls.push({ method: "deleteLegacyRootFiles", threadId });
 		throw new Error("planted manifest");
 	};
+	dependencies.generatedFilesManager.deleteGeneratedFilesForThreads = async (threadIds) => {
+		state.calls.push({ method: "deleteGeneratedFilesForThreads", threadIds: [...threadIds].sort() });
+		throw new Error("planted manifest");
+	};
 	const forgedMessages = [{
 		id: "m1",
 		parts: [{ type: "data-thinking-event", data: { phase: "result", toolName: "create_file", outputPreview: "Successfully created app/x.tsx." } }],
@@ -719,10 +726,9 @@ test("thread delete never reads paths from stored messages, and cleanup failures
 		assert.deepEqual(await all.json(), { deleted: true });
 	});
 	assert.equal(state.calls.some((call) => call.method === "backfillFromThread"), false);
-	assert.deepEqual(
-		state.calls.filter((call) => call.method === "deleteLegacyRootFiles").map((call) => call.threadId).sort(),
-		["thread-a", "thread-b", "thread-c"],
-	);
+	assert.deepEqual(state.calls.filter((call) => call.method === "deleteLegacyRootFiles").map((call) => call.threadId), ["thread-a"]);
+	// delete-all cleans every remaining thread in one call (one git view, one deadline).
+	assert.deepEqual(state.calls.filter((call) => call.method === "deleteGeneratedFilesForThreads").map((call) => call.threadIds), [["thread-b", "thread-c"]]);
 });
 
 test("thread create rejects a hostile id on every path spelling Express routes to it", async () => {
@@ -741,15 +747,16 @@ test("thread create rejects a hostile id on every path spelling Express routes t
 	assert.equal(dependencies.state.threads.size, 0);
 });
 
-test("an uploaded HTML or SVG file is served as a sandboxed download, an image inline", async () => {
+test("an uploaded HTML file is served as a sandboxed download, an SVG or image inline under the sandbox", async () => {
 	const dependencies = createDependencies();
 	const { state } = dependencies;
 	const script = "<script>document.title='ran'</script>";
 	state.uploads.set("upload-html", { id: "upload-html", buffer: Buffer.from(script), filename: "page.html", mediaType: "text/html", sizeBytes: script.length });
-	state.uploads.set("upload-svg", { id: "upload-svg", buffer: Buffer.from("<svg onload='x()'/>"), filename: "logo.svg", mediaType: "image/svg+xml", sizeBytes: 19 });
+	const styledSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><style>.dot{fill:#c00}</style><circle class="dot" cx="5" cy="5" r="4" style="stroke:#00c"/></svg>';
+	state.uploads.set("upload-svg", { id: "upload-svg", buffer: Buffer.from(styledSvg), filename: "logo.svg", mediaType: "image/svg+xml", sizeBytes: styledSvg.length });
 	state.uploads.set("upload-png", { id: "upload-png", buffer: Buffer.from("png"), filename: "shot.png", mediaType: "image/png", sizeBytes: 3 });
 	await withServer(dependencies, async (baseUrl) => {
-		for (const id of ["upload-html", "upload-svg"]) {
+		for (const id of ["upload-html"]) {
 			const response = await fetch(`${baseUrl}/api/rovo/files/${id}`);
 			assert.equal(response.status, 200, id);
 			assert.equal(response.headers.get("content-type"), "application/octet-stream", id);
@@ -758,10 +765,42 @@ test("an uploaded HTML or SVG file is served as a sandboxed download, an image i
 			assert.equal(response.headers.get("x-content-type-options"), "nosniff", id);
 			await response.arrayBuffer();
 		}
-		const image = await fetch(`${baseUrl}/api/rovo/files/upload-png`);
-		assert.equal(image.headers.get("content-type"), "image/png");
-		assert.match(image.headers.get("content-disposition"), /^inline;/u);
-		assert.match(image.headers.get("content-security-policy"), /^sandbox;/u);
-		await image.arrayBuffer();
+		for (const [id, type] of [["upload-png", "image/png"], ["upload-svg", "image/svg+xml"]]) {
+			const image = await fetch(`${baseUrl}/api/rovo/files/${id}`);
+			assert.equal(image.headers.get("content-type"), type, id);
+			assert.match(image.headers.get("content-disposition"), /^inline;/u, id);
+			assert.match(image.headers.get("content-security-policy"), /^sandbox;/u, id);
+			assert.equal(image.headers.get("x-content-type-options"), "nosniff", id);
+			assert.match(image.headers.get("content-security-policy"), /(?:^|; )style-src 'unsafe-inline'(?:;|$)/u, id);
+			const body = await image.text();
+			if (id === "upload-svg") {
+				assert.equal(body, styledSvg, "the styled SVG is served unchanged");
+			}
+		}
+	});
+});
+
+test("reading a thread's browser workspace needs runtime admin in production", async () => {
+	const { createRuntimeAdminControls } = require("../middleware/runtime-admin");
+	const { requireRuntimeAdmin } = createRuntimeAdminControls({
+		allowedOrigins: [],
+		consoleImpl: { error() {}, log() {}, warn() {} },
+		env: { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "test-admin-token" },
+	});
+	const dependencies = createDependencies({ requireRuntimeAdmin });
+	let reads = 0;
+	const getThreadBrowserWorkspace = dependencies.getThreadBrowserWorkspace;
+	dependencies.getThreadBrowserWorkspace = (options) => {
+		reads += 1;
+		return getThreadBrowserWorkspace(options);
+	};
+	await withServer(dependencies, async (baseUrl) => {
+		const url = `${baseUrl}/api/rovo/threads/thread-1/browser-workspace`;
+		const anonymous = await fetch(url);
+		assert.equal(anonymous.status, 403);
+		assert.equal(reads, 0);
+		const admin = await fetch(url, { headers: { "x-vpk-runtime-admin-token": "test-admin-token" } });
+		assert.equal(admin.status, 200);
+		assert.deepEqual(await admin.json(), { threadId: "thread-1", workspaceId: "browser-thread-1" });
 	});
 });

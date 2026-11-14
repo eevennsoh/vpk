@@ -10,6 +10,7 @@ const {
 	DEFAULT_VIEWPORT,
 	} = require("./browser-workspace-runtime")
 const { BrowserPreviewSession } = require("./browser-preview-session")
+const { toBoundedPointerNumber } = require("./input-schemas")
 const {
 	BrowserWorkspaceNotFoundError,
 	BrowserWorkspaceUnavailableError,
@@ -126,6 +127,12 @@ function tabsAreEqual(currentTabs, nextTabs) {
 	}
 
 	return true
+}
+
+// A preview task that runs on its own (a timer, a data-channel message) has no caller to
+// return a rejection to; it is logged instead of becoming an unhandled rejection.
+function logDetachedPreviewFailure(label, error) {
+	console.warn(`[BROWSER-WORKSPACE] Preview ${label} failed:`, error instanceof Error ? error.message : String(error))
 }
 
 class BrowserWorkspace {
@@ -319,11 +326,11 @@ class BrowserWorkspace {
 		return {
 			x: Math.min(
 				sourceDimensions.width,
-				Math.max(0, Math.round(Number(x) || 0)),
+				toBoundedPointerNumber(x, { min: 0 }),
 			),
 			y: Math.min(
 				sourceDimensions.height,
-				Math.max(0, Math.round(Number(y) || 0)),
+				toBoundedPointerNumber(y, { min: 0 }),
 			),
 		}
 	}
@@ -501,6 +508,30 @@ class BrowserWorkspace {
 		}
 	}
 
+	// A preview action comes from a socket or data-channel message that nobody awaits, so
+	// its failure (a value the argument rules refuse, a closed browser) is answered to the
+	// preview clients instead of rejecting: an unhandled rejection exits the backend.
+	_reportPreviewActionFailure(error) {
+		const message = {
+			type: "preview-error",
+			message: error instanceof Error ? error.message : "Browser preview action failed.",
+		}
+		for (const session of this._previewSessions.values()) {
+			try {
+				session.send(message)
+			} catch {}
+		}
+		const payload = JSON.stringify(message)
+		for (const client of this._previewClients) {
+			if (client.readyState !== 1) {
+				continue
+			}
+			try {
+				client.send(payload)
+			} catch {}
+		}
+	}
+
 	_broadcastPreviewOverlay() {
 		if (!this._hasPreviewConsumers()) {
 			return
@@ -533,7 +564,7 @@ class BrowserWorkspace {
 		this._clearPreviewOverlayActivityTimer()
 		this._previewOverlayActivityTimer = setTimeout(() => {
 			this._previewOverlayActivityTimer = null
-			void this._enqueue(async () => {
+			this._enqueue(async () => {
 				if (!this._previewOverlayState?.activity) {
 					return
 				}
@@ -544,7 +575,7 @@ class BrowserWorkspace {
 					updatedAt: this._now(),
 				}
 				this._broadcastPreviewOverlay()
-			})
+			}).catch((error) => logDetachedPreviewFailure("overlay reset", error))
 		}, PREVIEW_OVERLAY_ACTIVITY_RESET_MS)
 		this._previewOverlayActivityTimer.unref?.()
 	}
@@ -582,7 +613,7 @@ class BrowserWorkspace {
 
 		this._previewSettleTimer = setTimeout(() => {
 			this._previewSettleTimer = null
-			void this._enqueue(async () => {
+			this._enqueue(async () => {
 				if (!this._hasPreviewConsumers()) {
 					return
 				}
@@ -591,7 +622,7 @@ class BrowserWorkspace {
 				this._previewSettledScreenshotRevision += 1
 				this._previewStatus = "steady"
 				this._broadcastPreviewState("steady")
-			})
+			}).catch((error) => logDetachedPreviewFailure("preview settle", error))
 		}, delayMs)
 		this._previewSettleTimer.unref?.()
 	}
@@ -819,35 +850,40 @@ class BrowserWorkspace {
 		await this._runtime.stopScreencast().catch(() => {})
 	}
 
+	// Returns the action's promise: the preview socket answers a rejection (a value the
+	// argument rules refuse, a closed workspace) with a preview-error, and the WebRTC data
+	// channel logs it. A promise nobody handles would exit the backend.
 	_handlePreviewControlMessage(message) {
 		if (!message || typeof message !== "object") {
-			return
+			return undefined
 		}
 
 		switch (message.type) {
 			case "preview-click":
-				void this.previewClick(message.x, message.y)
-				return
+				return this.previewClick(message.x, message.y)
 			case "preview-wheel":
-				void this.previewWheel(message.x, message.y, message.deltaX, message.deltaY)
-				return
+				return this.previewWheel(message.x, message.y, message.deltaX, message.deltaY)
 			case "preview-key":
-				void this.previewKeyEvent(
+				return this.previewKeyEvent(
 					message.eventType,
 					message.key,
 					message.code,
 					message.text,
 				)
-				return
 			case "preview-paste":
-				void this.previewInsertText(message.text)
-				return
+				return this.previewInsertText(message.text)
 			case "preview-sync":
 				this._syncPreviewMessages()
-				return
+				return undefined
 			default:
-				return
+				return undefined
 		}
+	}
+
+	_handleDetachedPreviewControlMessage(message) {
+		return Promise.resolve()
+			.then(() => this._handlePreviewControlMessage(message))
+			.catch((error) => logDetachedPreviewFailure("control message", error))
 	}
 
 	peekState() {
@@ -1010,8 +1046,8 @@ class BrowserWorkspace {
 	click(x, y) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,
@@ -1136,8 +1172,8 @@ class BrowserWorkspace {
 	wheel(deltaX, deltaY) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedDeltaX = Math.round(Number(deltaX) || 0)
-			const resolvedDeltaY = Math.round(Number(deltaY) || 0)
+			const resolvedDeltaX = toBoundedPointerNumber(deltaX)
+			const resolvedDeltaY = toBoundedPointerNumber(deltaY)
 			const targetX = Math.round(this._viewport.width / 2)
 			const targetY = Math.round(this._viewport.height / 2)
 			this._setPreviewOverlay({
@@ -1299,7 +1335,7 @@ class BrowserWorkspace {
 						sessionId,
 						offerSdp: resolvedOfferSdp,
 						onControlMessage: (message) =>
-							this._handlePreviewControlMessage(message),
+							this._handleDetachedPreviewControlMessage(message),
 						onClose: async () => {
 							await this._handlePreviewSessionClose(sessionId)
 						},
@@ -1308,7 +1344,7 @@ class BrowserWorkspace {
 						sessionId,
 						offerSdp: resolvedOfferSdp,
 						onControlMessage: (message) =>
-							this._handlePreviewControlMessage(message),
+							this._handleDetachedPreviewControlMessage(message),
 						onClose: async () => {
 							await this._handlePreviewSessionClose(sessionId)
 						},
@@ -1359,8 +1395,8 @@ class BrowserWorkspace {
 	previewClick(x, y) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,
@@ -1371,16 +1407,16 @@ class BrowserWorkspace {
 			await this._delay(75)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewWheel(x, y, deltaX, deltaY) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
-			const resolvedDeltaX = Math.round(Number(deltaX) || 0)
-			const resolvedDeltaY = Math.round(Number(deltaY) || 0)
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
+			const resolvedDeltaX = toBoundedPointerNumber(deltaX)
+			const resolvedDeltaY = toBoundedPointerNumber(deltaY)
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,
@@ -1394,7 +1430,7 @@ class BrowserWorkspace {
 				resolvedDeltaY,
 			)
 			this._touch()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewKeyEvent(eventType, key, code, text) {
@@ -1417,7 +1453,7 @@ class BrowserWorkspace {
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewInsertText(text) {
@@ -1435,7 +1471,7 @@ class BrowserWorkspace {
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	attachPreviewClient(client) {
