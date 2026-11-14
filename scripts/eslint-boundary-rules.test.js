@@ -307,6 +307,27 @@ export const Surfaces = () => (
 	assert.ok(findings.every(({ severity }) => severity === 2));
 });
 
+// eslint.config.mjs copies these four rules' options from eslint-plugin-jsx-a11y's own
+// recommended config (PR 2255): the plugin arrives through eslint-config-next, so it cannot be
+// imported directly. Read the recommended config from the plugin object ESLint resolved, so a
+// plugin upgrade that changes those options fails here instead of drifting silently.
+test("narrowed jsx-a11y rules keep the installed plugin's recommended options", async () => {
+	const config = await eslint.calculateConfigForFile("components/blocks/demo/lint-contract-fixture.tsx");
+	const recommended = config.plugins["jsx-a11y"].configs.recommended.rules;
+	for (const rule of [
+		"jsx-a11y/no-interactive-element-to-noninteractive-role",
+		"jsx-a11y/no-noninteractive-element-interactions",
+		"jsx-a11y/no-noninteractive-element-to-interactive-role",
+		"jsx-a11y/no-static-element-interactions",
+	]) {
+		const [, ...recommendedOptions] = recommended[rule];
+		const [severity, ...configuredOptions] = config.rules[rule];
+		assert.equal(severity, 2, rule);
+		assert.ok(recommendedOptions.length > 0, `${rule}: the plugin no longer recommends options; revisit eslint.config.mjs`);
+		assert.deepEqual(configuredOptions, recommendedOptions, `${rule}: eslint.config.mjs no longer matches eslint-plugin-jsx-a11y's recommended options`);
+	}
+});
+
 test("component tests prove behavior instead of adding source-text regex assertions", async () => {
 	const findings = await ruleFindings(`
 const assert = require("node:assert/strict");
