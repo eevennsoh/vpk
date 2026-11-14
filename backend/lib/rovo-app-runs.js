@@ -2,14 +2,53 @@ const { randomUUID } = require("node:crypto");
 
 const { isTerminalRunStatus, runReducer } = require("./rovo-app-run-machine");
 
+// How many threads the manager remembers its latest run for (provisional). A run whose
+// thread has been forgotten counts as superseded, so its late writes are dropped; only
+// threads with no live run are forgotten, oldest first.
+const MAX_TRACKED_RUN_THREADS = 1_000;
+
 function toIsoDate(value = Date.now()) {
 	const date = value instanceof Date ? value : new Date(value);
 	return date.toISOString();
 }
 
-function createRovoAppRunManager({ logger = console } = {}) {
+function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRACKED_RUN_THREADS } = {}) {
 	const runs = new Map();
 	const queuedThreadIds = [];
+	// threadId → id of the newest run created for it. It outlives the run, so a run that
+	// was cancelled and replaced is still known to be superseded after its successor ends.
+	const latestRunIdByThread = new Map();
+
+	function rememberLatestRun(run) {
+		latestRunIdByThread.delete(run.threadId);
+		latestRunIdByThread.set(run.threadId, run.id);
+		if (latestRunIdByThread.size <= maxTrackedThreads) {
+			return;
+		}
+		for (const threadId of latestRunIdByThread.keys()) {
+			if (latestRunIdByThread.size <= maxTrackedThreads) {
+				break;
+			}
+			if (!runs.has(threadId)) {
+				latestRunIdByThread.delete(threadId);
+			}
+		}
+	}
+
+	/** True while no newer run has been created for the run's thread. */
+	function isLatestRun(run) {
+		return Boolean(run?.threadId) && latestRunIdByThread.get(run.threadId) === run.id;
+	}
+
+	/** True while the run is registered (not yet settled) and is the thread's run. */
+	function isCurrentRun(run) {
+		return Boolean(run?.threadId) && runs.get(run.threadId) === run;
+	}
+
+	function getRunFor(threadId, runId) {
+		const run = runs.get(threadId);
+		return run && (!runId || run.id === runId) ? run : null;
+	}
 
 	function createRun({ backend = "ai-gateway", threadId, requestBody, requestedPortIndex = null }) {
 		const existingRun = runs.get(threadId);
@@ -41,6 +80,7 @@ function createRovoAppRunManager({ logger = console } = {}) {
 		};
 
 		runs.set(threadId, run);
+		rememberLatestRun(run);
 		return run;
 	}
 
@@ -134,8 +174,9 @@ function createRovoAppRunManager({ logger = console } = {}) {
 		return run;
 	}
 
-	function setRunBackend(threadId, backend) {
-		const run = runs.get(threadId);
+	// With `runId`, only that run is changed.
+	function setRunBackend(threadId, backend, { runId = null } = {}) {
+		const run = getRunFor(threadId, runId);
 		if (!run) {
 			return null;
 		}
@@ -215,8 +256,10 @@ function createRovoAppRunManager({ logger = console } = {}) {
 		return run ? run.subscribers.size > 0 : false;
 	}
 
-	function appendChunk(threadId, chunk) {
-		const run = runs.get(threadId);
+	// With `runId`, the chunk reaches only that run: a superseded run's stream never
+	// writes into the run that replaced it.
+	function appendChunk(threadId, chunk, { runId = null } = {}) {
+		const run = getRunFor(threadId, runId);
 		if (!run) {
 			return false;
 		}
@@ -285,6 +328,8 @@ function createRovoAppRunManager({ logger = console } = {}) {
 		getRun,
 		hasRun,
 		hasSubscribers,
+		isCurrentRun,
+		isLatestRun,
 		listQueuedThreadIds,
 		listRuns,
 		markRunStarted,
@@ -296,5 +341,6 @@ function createRovoAppRunManager({ logger = console } = {}) {
 }
 
 module.exports = {
+	MAX_TRACKED_RUN_THREADS,
 	createRovoAppRunManager,
 };

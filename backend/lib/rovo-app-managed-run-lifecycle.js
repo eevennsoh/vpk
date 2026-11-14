@@ -21,6 +21,7 @@ function createRovoAppManagedRunLifecycle({
 	requireFunction("resolveRovoAppPortAvailability", resolveRovoAppPortAvailability);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoAppRunManager.hasSubscribers", rovoAppRunManager?.hasSubscribers);
+	requireFunction("rovoAppRunManager.isCurrentRun", rovoAppRunManager?.isCurrentRun);
 	requireFunction("rovoAppRunManager.listQueuedThreadIds", rovoAppRunManager?.listQueuedThreadIds);
 	requireFunction("rovoAppRunManager.markRunStarted", rovoAppRunManager?.markRunStarted);
 	requireFunction("rovoAppRunManager.removeQueuedRun", rovoAppRunManager?.removeQueuedRun);
@@ -50,6 +51,10 @@ function createRovoAppManagedRunLifecycle({
 			// The stored active run only helps a reloaded page find the run; the run itself
 			// does not depend on it, so it still starts.
 			logger.error("[FUTURE-CHAT] Failed to store a started run:", error);
+		}
+		// Cancelled (or replaced) while its state was stored: nothing to execute.
+		if (!rovoAppRunManager.isCurrentRun(markedRun) || markedRun.abortController.signal.aborted) {
+			return;
 		}
 		void executeRovoAppManagedRun(markedRun).catch(async (error) => {
 			const wasAborted = markedRun.abortController.signal.aborted;

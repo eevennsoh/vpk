@@ -85,7 +85,6 @@ function createRuntimeRouteStackTestDependencies() {
 		]),
 		clearActiveDeferredToolCall: noop,
 		clearPlanSession: noop,
-		clearRunState: noop,
 		collectUploadIdsFromMessages: () => [],
 		createRovoUnavailableError: () => new Error("Rovo unavailable"),
 		createRuntimeSocketToken: () => "runtime-token",
@@ -163,7 +162,7 @@ function createRuntimeRouteStackTestDependencies() {
 		sendGatewayErrorResponse: noop,
 		setAgentMode: noop,
 		skillsHubClient: {},
-		startNextQueuedRun: noop,
+		settleRun: noop,
 		streamChatViaRovo: noop,
 		waitForReady: noop,
 	};

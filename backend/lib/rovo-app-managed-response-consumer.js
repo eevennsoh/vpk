@@ -70,11 +70,12 @@ function createRovoAppManagedResponseConsumer({
 		const [broadcastStream, parseStream] = response.body.tee();
 		const routeDecisionToSuppress = parseRouteDecisionFromSseChunk(prependChunk);
 		if (prependChunk) {
-			rovoAppRunManager.appendChunk(threadId, prependChunk);
+			rovoAppRunManager.appendChunk(threadId, prependChunk, { runId: run.id });
 		}
 
 		let latestMessagesSnapshot = Array.isArray(initialMessages) ? [...initialMessages] : [];
 		let scheduledPersistTimeout = null;
+		let streamFailed = false;
 		let persistInFlight = null;
 		let hasPendingPersist = false;
 
@@ -100,6 +101,7 @@ function createRovoAppManagedResponseConsumer({
 			persistInFlight = persistRovoAppRunMessagesSnapshot(
 				threadId,
 				snapshotToPersist,
+				{ run },
 			)
 				.catch((error) => {
 					logger.warn("[FUTURE-CHAT] Failed to persist in-flight thread messages:", {
@@ -123,7 +125,7 @@ function createRovoAppManagedResponseConsumer({
 
 		const schedulePersistedMessages = (messages) => {
 			latestMessagesSnapshot = Array.isArray(messages) ? [...messages] : [];
-			if (!threadId || scheduledPersistTimeout !== null) {
+			if (!threadId || streamFailed || scheduledPersistTimeout !== null) {
 				return;
 			}
 
@@ -169,13 +171,25 @@ function createRovoAppManagedResponseConsumer({
 									: null,
 					});
 				}
-				rovoAppRunManager.appendChunk(threadId, value);
+				rovoAppRunManager.appendChunk(threadId, value, { runId: run.id });
 			}
+		} catch (error) {
+			// A stream that fails leaves no snapshot write scheduled after it, and the parse
+			// of the same stream, which fails too, is not left as an unhandled rejection.
+			streamFailed = true;
+			clearScheduledPersist();
+			parsePromise.catch(() => {});
+			throw error;
 		} finally {
 			filteredSseReader.releaseLock();
 		}
 
-		const messages = await parsePromise;
+		let messages;
+		try {
+			messages = await parsePromise;
+		} finally {
+			clearScheduledPersist();
+		}
 		latestMessagesSnapshot = Array.isArray(messages) ? [...messages] : [];
 		await flushPersistedMessages();
 		try {

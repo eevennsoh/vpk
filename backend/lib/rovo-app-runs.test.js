@@ -152,3 +152,40 @@ test("setRunBackend records backend ownership and clears Rovo port for AI Gatewa
 	assert.equal(updatedRun?.rovoPort, null);
 	assert.equal(manager.getRun(run.threadId)?.backend, "ai-gateway");
 });
+
+test("a replaced run stays superseded after its successor ends, and its chunks never reach the successor", () => {
+	const manager = createRovoAppRunManager();
+	const first = manager.createRun({ threadId: "thread-1" });
+	assert.equal(manager.isLatestRun(first), true);
+	assert.equal(manager.isCurrentRun(first), true);
+	manager.settleRun("thread-1", { outcome: "cancelled", runId: first.id });
+	assert.equal(manager.isLatestRun(first), true);
+	assert.equal(manager.isCurrentRun(first), false);
+
+	const second = manager.createRun({ threadId: "thread-1" });
+	const response = createMockResponse();
+	manager.attachSubscriber("thread-1", response);
+	assert.equal(manager.appendChunk("thread-1", "old", { runId: first.id }), false);
+	assert.equal(manager.setRunBackend("thread-1", "rovo", { runId: first.id }), null);
+	assert.equal(manager.appendChunk("thread-1", "new", { runId: second.id }), true);
+	assert.deepEqual(second.bufferedChunks, ["new"]);
+	assert.deepEqual(response.writes, ["new"]);
+	assert.equal(second.backend, "ai-gateway");
+
+	manager.settleRun("thread-1", { outcome: "completed", runId: second.id });
+	assert.equal(manager.isLatestRun(first), false);
+	assert.equal(manager.isLatestRun(second), true);
+});
+
+test("the latest-run record is bounded and forgets only threads with no live run", () => {
+	const manager = createRovoAppRunManager({ maxTrackedThreads: 2 });
+	const live = manager.createRun({ threadId: "live" });
+	const done = manager.createRun({ threadId: "done" });
+	manager.settleRun("done", { outcome: "completed" });
+	const third = manager.createRun({ threadId: "third" });
+
+	assert.equal(manager.isLatestRun(live), true);
+	assert.equal(manager.isLatestRun(third), true);
+	// Forgotten: a forgotten run counts as superseded, so its late writes are dropped.
+	assert.equal(manager.isLatestRun(done), false);
+});

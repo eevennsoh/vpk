@@ -239,3 +239,130 @@ test("consumeRovoAppManagedResponse falls back when the current port header is i
 
 	assert.equal(run.rovoPort, 9876);
 });
+
+// A response whose stream the test feeds: chunks are UI message SSE events.
+function createControlledResponse() {
+	let controller;
+	const stream = new ReadableStream({
+		start(streamController) {
+			controller = streamController;
+		},
+	});
+	const encoder = new TextEncoder();
+	const send = (event) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+	return {
+		close: () => controller.close(),
+		fail: (error) => controller.error(error),
+		response: new Response(stream, { headers: { "content-type": "text/event-stream" } }),
+		send,
+	};
+}
+
+function createRealConsumer() {
+	const { createRovoAppRunManager } = require("./rovo-app-runs");
+	const { createRovoAppRunStateService } = require("./rovo-app-run-state");
+	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
+	const runManager = createRovoAppRunManager({ logger: quiet });
+	const threadWrites = [];
+	const state = createRovoAppRunStateService({
+		activeRequests: new Map(),
+		logger: quiet,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async (threadId, patch) => {
+				threadWrites.push(patch);
+				return { id: threadId, ...patch };
+			},
+		},
+		startNextQueuedRun: () => {},
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
+	});
+	const { consumeRovoAppManagedResponse } = createRovoAppManagedResponseConsumer({
+		logger: quiet,
+		messagePersistDebounceMs: 450,
+		persistRovoAppRunMessagesSnapshot: state.persistRovoAppRunMessagesSnapshot,
+		persistRovoAppRunState: state.persistRovoAppRunState,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: { getThread: async () => null },
+		settleRovoAppRun: state.settleRovoAppRun,
+		syncRovoAppThreadSession: async () => null,
+	});
+	return { consumeRovoAppManagedResponse, runManager, state, threadWrites };
+}
+
+test.before(async () => {
+	await require("./ai-sdk-runtime").loadAiSdk();
+});
+
+async function drain() {
+	for (let turn = 0; turn < 10; turn += 1) {
+		await new Promise((resolve) => setImmediate(resolve));
+	}
+}
+
+test("a replaced run's stream writes nothing into the run that replaced it or into the thread", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	t.after(() => t.mock.timers.reset());
+	const { consumeRovoAppManagedResponse, runManager, state, threadWrites } = createRealConsumer();
+	const oldRun = runManager.createRun({ threadId: "thread-1" });
+	runManager.markRunStarted("thread-1", { status: "streaming" });
+	const upstream = createControlledResponse();
+	const consuming = consumeRovoAppManagedResponse({
+		initialMessages: [],
+		response: upstream.response,
+		run: oldRun,
+		stageTrace: { mark() {} },
+		threadId: "thread-1",
+	});
+	upstream.send({ type: "text-start", id: "text-1" });
+	await drain();
+
+	await state.settleRovoAppRun(oldRun, "cancelled");
+	const successor = runManager.createRun({ threadId: "thread-1" });
+	runManager.markRunStarted("thread-1", { status: "streaming" });
+	threadWrites.length = 0;
+
+	upstream.send({ type: "text-delta", id: "text-1", delta: "old answer" });
+	upstream.send({ type: "text-end", id: "text-1" });
+	await drain();
+	t.mock.timers.tick(1_000);
+	upstream.close();
+	await consuming;
+	await drain();
+
+	assert.deepEqual(successor.bufferedChunks, []);
+	assert.equal(runManager.getRun("thread-1"), successor);
+	assert.deepEqual(threadWrites, []);
+});
+
+test("a stream that fails leaves no snapshot write scheduled and no unhandled rejection", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	t.after(() => t.mock.timers.reset());
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason);
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+	const { consumeRovoAppManagedResponse, runManager, threadWrites } = createRealConsumer();
+	const run = runManager.createRun({ threadId: "thread-1" });
+	runManager.markRunStarted("thread-1", { status: "streaming" });
+	const upstream = createControlledResponse();
+	const consuming = consumeRovoAppManagedResponse({
+		initialMessages: [],
+		response: upstream.response,
+		run,
+		stageTrace: { mark() {} },
+		threadId: "thread-1",
+	});
+	upstream.send({ type: "text-start", id: "text-1" });
+	upstream.send({ type: "text-delta", id: "text-1", delta: "partial" });
+	await drain();
+	upstream.fail(new Error("upstream died"));
+
+	await assert.rejects(consuming, /upstream died/u);
+	t.mock.timers.tick(1_000);
+	await drain();
+
+	assert.deepEqual(threadWrites, []);
+	assert.deepEqual(unhandled, []);
+});

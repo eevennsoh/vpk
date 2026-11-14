@@ -62,6 +62,8 @@ function createRovoAppRunStateService({
 	requireFunction("rovoAppRunManager.appendChunk", rovoAppRunManager?.appendChunk);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoAppRunManager.hasRun", rovoAppRunManager?.hasRun);
+	requireFunction("rovoAppRunManager.isCurrentRun", rovoAppRunManager?.isCurrentRun);
+	requireFunction("rovoAppRunManager.isLatestRun", rovoAppRunManager?.isLatestRun);
 	requireFunction("rovoAppRunManager.setRunBackend", rovoAppRunManager?.setRunBackend);
 	requireFunction("rovoAppRunManager.settleRun", rovoAppRunManager?.settleRun);
 	requireFunction("rovoAppThreadManager.listThreads", rovoAppThreadManager?.listThreads);
@@ -69,8 +71,18 @@ function createRovoAppRunStateService({
 	requireFunction("startNextQueuedRun", startNextQueuedRun);
 	requireFunction("synchronizeRovoAppThreadGeneratedFiles", synchronizeRovoAppThreadGeneratedFiles);
 
+	// A run another run has replaced on its thread. That is remembered after the newer run
+	// ends, so such a run's late writes are always dropped.
+	function isSuperseded(run) {
+		return !rovoAppRunManager.isLatestRun(run);
+	}
+
+	/**
+	 * Stores `run` as the thread's active run, or clears it when `run` is null. A run that is
+	 * no longer the thread's registered run (settled or replaced) is not stored.
+	 */
 	async function persistRovoAppRunState(threadId, run) {
-		if (!threadId) {
+		if (!threadId || (run && !rovoAppRunManager.isCurrentRun(run))) {
 			return null;
 		}
 
@@ -79,13 +91,21 @@ function createRovoAppRunStateService({
 		});
 	}
 
-	async function persistRovoAppRunBackend(threadId, backend) {
-		const run = rovoAppRunManager.setRunBackend(threadId, backend);
-		if (!run) {
+	// Fire-and-forget form for listeners (a subscriber leaving): a failed write is logged.
+	function persistRovoAppRunStateInBackground(threadId, run) {
+		void persistRovoAppRunState(threadId, run).catch((error) => {
+			logger.error("[FUTURE-CHAT] Failed to store a run's state:", error);
+		});
+	}
+
+	/** With `run`, only that run's backend changes. */
+	async function persistRovoAppRunBackend(threadId, backend, { run = null } = {}) {
+		const updatedRun = rovoAppRunManager.setRunBackend(threadId, backend, { runId: run?.id ?? null });
+		if (!updatedRun) {
 			return null;
 		}
 
-		return persistRovoAppRunState(threadId, run);
+		return persistRovoAppRunState(threadId, updatedRun);
 	}
 
 	async function clearRovoAppRunState(threadId) {
@@ -98,8 +118,9 @@ function createRovoAppRunStateService({
 		});
 	}
 
-	async function persistRovoAppRunMessagesSnapshot(threadId, messages) {
-		if (!threadId || !Array.isArray(messages)) {
+	/** With `run`, nothing is written once a newer run has replaced it. */
+	async function persistRovoAppRunMessagesSnapshot(threadId, messages, { run = null } = {}) {
+		if (!threadId || !Array.isArray(messages) || (run && isSuperseded(run))) {
 			return null;
 		}
 
@@ -108,22 +129,36 @@ function createRovoAppRunStateService({
 		});
 	}
 
-	// True when another run now owns the thread: this one was cancelled and a newer request
-	// replaced it. Such a run's late settle must not touch the thread, its stored state or its
-	// active request, which all belong to the new run now.
-	function isSuperseded(run) {
-		const current = rovoAppRunManager.getRun(run.threadId);
-		return current !== null && current !== undefined && current !== run;
+	async function saveFinishedRunMessages(threadId, messages, streamedMessages) {
+		const updatedThread = await rovoAppThreadManager.updateThread(threadId, {
+			activeRun: null,
+			messages,
+		});
+		await synchronizeRovoAppThreadGeneratedFiles(updatedThread, { streamedMessages });
+	}
+
+	async function clearSettledRunState(threadId) {
+		try {
+			await clearRovoAppRunState(threadId);
+		} catch (clearError) {
+			logger.error("[FUTURE-CHAT] Failed to clear a settled run's stored state:", clearError);
+		}
 	}
 
 	/**
-	 * The one way a managed run ends. `completed` saves `messages` (and records generated
-	 * files from `streamedMessages`, what the run's response stream yielded) and clears the
-	 * stored active run in the same write; if that write fails the run ends `failed` instead.
-	 * `failed` appends a failure card unless the error is an abort; `failed` and `cancelled`
-	 * clear the stored active run. Then the run leaves the registry and queued work starts.
-	 * A failed thread write is logged, never thrown: the stored active run is then left for
-	 * reconcileOrphanedRovoAppThread to clear. Resolves true when this call settled the run.
+	 * The one way a managed run ends. Never rejects; a failed thread write is logged and the
+	 * stored active run is left for reconcileOrphanedRovoAppThread to clear.
+	 * - `cancelled`: the run is settled (aborted, subscribers ended) at once, then its stored
+	 *   state is cleared.
+	 * - `completed`: `messages` are saved with the stored active run cleared in one write, and
+	 *   generated files are recorded from `streamedMessages` (what the run's stream yielded);
+	 *   if that fails the run ends `failed` instead.
+	 * - `failed`: a failure card is appended unless the error is an abort, then the stored
+	 *   state is cleared.
+	 * Each settled run clears the thread's active request and starts queued work, once.
+	 * A run that a newer run replaced touches nothing. A run that was already settled (it was
+	 * cancelled) only saves its late partial messages, if it finished with any.
+	 * Resolves true when this call settled the run.
 	 * @param {{ id: string, threadId: string } | null | undefined} run
 	 * @param {"completed" | "failed" | "cancelled"} outcome
 	 * @param {{ error?: unknown, messages?: unknown[], streamedMessages?: unknown[] }} [details]
@@ -134,51 +169,63 @@ function createRovoAppRunStateService({
 		if (!run || !threadId || isSuperseded(run)) {
 			return false;
 		}
+		if (!rovoAppRunManager.isCurrentRun(run)) {
+			if (outcome === "completed" && Array.isArray(messages)) {
+				try {
+					await saveFinishedRunMessages(threadId, messages, streamedMessages);
+				} catch (saveError) {
+					logger.error("[FUTURE-CHAT] Failed to save a cancelled run's messages:", saveError);
+				}
+			}
+			return false;
+		}
+
+		const finish = (finalOutcome, finalError) => {
+			activeRequests.delete(threadId);
+			rovoAppRunManager.settleRun(threadId, {
+				outcome: finalOutcome,
+				runId: run.id,
+				error: finalOutcome === "failed" ? getRovoAppRunFailurePayload(finalError).message : null,
+			});
+			void startNextQueuedRun();
+		};
+
+		if (outcome === "cancelled") {
+			finish("cancelled", null);
+			await clearSettledRunState(threadId);
+			return true;
+		}
 
 		let resolvedOutcome = outcome;
 		let resolvedError = error;
-		let savedThread = false;
 		if (outcome === "completed" && Array.isArray(messages)) {
 			try {
-				const updatedThread = await rovoAppThreadManager.updateThread(threadId, {
-					activeRun: null,
-					messages,
-				});
-				savedThread = true;
-				await synchronizeRovoAppThreadGeneratedFiles(updatedThread, { streamedMessages });
+				await saveFinishedRunMessages(threadId, messages, streamedMessages);
 			} catch (saveError) {
 				logger.error("[FUTURE-CHAT] Failed to save a finished run:", saveError);
 				resolvedOutcome = "failed";
 				resolvedError = saveError;
 			}
-			if (isSuperseded(run)) {
+			// Cancelled while saving: the cancel already settled it.
+			if (!rovoAppRunManager.isCurrentRun(run)) {
 				return false;
+			}
+			if (resolvedOutcome === "completed") {
+				finish("completed", null);
+				return true;
 			}
 		}
 
-		if (resolvedOutcome === "failed" && rovoAppRunManager.getRun(threadId) === run && !isAbortLikeRunFailure(resolvedError)) {
+		if (resolvedOutcome === "failed" && !isAbortLikeRunFailure(resolvedError)) {
 			for (const chunk of createFailureSseChunks(resolvedError)) {
-				rovoAppRunManager.appendChunk(threadId, chunk);
+				rovoAppRunManager.appendChunk(threadId, chunk, { runId: run.id });
 			}
 		}
-		if (!savedThread) {
-			try {
-				await clearRovoAppRunState(threadId);
-			} catch (clearError) {
-				logger.error("[FUTURE-CHAT] Failed to clear a settled run's stored state:", clearError);
-			}
-			if (isSuperseded(run)) {
-				return false;
-			}
+		await clearSettledRunState(threadId);
+		if (!rovoAppRunManager.isCurrentRun(run)) {
+			return false;
 		}
-
-		activeRequests.delete(threadId);
-		rovoAppRunManager.settleRun(threadId, {
-			outcome: resolvedOutcome,
-			runId: run.id,
-			error: resolvedOutcome === "failed" ? getRovoAppRunFailurePayload(resolvedError).message : null,
-		});
-		void startNextQueuedRun();
+		finish(resolvedOutcome, resolvedError);
 		return true;
 	}
 
@@ -225,6 +272,7 @@ function createRovoAppRunStateService({
 		persistRovoAppRunBackend,
 		persistRovoAppRunMessagesSnapshot,
 		persistRovoAppRunState,
+		persistRovoAppRunStateInBackground,
 		reconcileOrphanedRovoAppThread,
 		settleRovoAppRun,
 		sweepOrphanedRovoAppRuns,

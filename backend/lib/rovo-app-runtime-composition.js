@@ -163,6 +163,7 @@ function createRovoAppRuntimeComposition({
 		persistRovoAppRunBackend,
 		persistRovoAppRunMessagesSnapshot,
 		persistRovoAppRunState,
+		persistRovoAppRunStateInBackground,
 		reconcileOrphanedRovoAppThread,
 		settleRovoAppRun,
 		sweepOrphanedRovoAppRuns,
@@ -310,11 +311,12 @@ function createRovoAppRuntimeComposition({
 		proxyRovoAppChatRequest,
 	} = createRovoAppManagedRunProxy({
 		agentsRfpDemoChatStreamOwner,
-		clearRovoAppRunState,
 		logger,
 		persistRovoAppRunState,
+		persistRovoAppRunStateInBackground,
 		rovoAppRunManager,
 		rovoCancelChat,
+		settleRovoAppRun,
 		startManagedRovoAppRun,
 	});
 
@@ -331,6 +333,7 @@ function createRovoAppRuntimeComposition({
 		persistRovoAppRunState,
 		proxyRovoAppChatRequest,
 		reconcileOrphanedRovoAppThread,
+		settleRovoAppRun,
 		startNextQueuedRovoAppRun,
 		sweepOrphanedRovoAppRuns,
 		syncRovoAppThreadSessionFromCurrentPort,

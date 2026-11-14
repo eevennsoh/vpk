@@ -41,6 +41,7 @@ function createHarness(overrides = {}) {
 				calls.push(["getRun", threadId]);
 				return runs.get(threadId) || null;
 			},
+			isCurrentRun: (run) => Boolean(run) && runs.get(run.threadId) === run,
 			hasSubscribers: (threadId) => {
 				calls.push(["hasSubscribers", threadId]);
 				return false;
@@ -91,16 +92,104 @@ function createHarness(overrides = {}) {
 	};
 }
 
-test("failRovoAppRun settles the run as failed with its error", async () => {
-	const run = createRun("thread-1");
-	const { calls, lifecycle } = createHarness({
-		runs: [["thread-1", run]],
+// The lifecycle over the real run manager and run-state service.
+function createRealLifecycle({ executeRovoAppManagedRun, persistRovoAppRunState } = {}) {
+	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
+	const runManager = createRovoAppRunManager({ logger: quiet });
+	const threadWrites = [];
+	const state = createRovoAppRunStateService({
+		activeRequests: new Map(),
+		createFailureSseChunks: () => ["failure-chunk"],
+		logger: quiet,
+		rovoAppRunManager: runManager,
+		rovoAppThreadManager: {
+			listThreads: async () => [],
+			updateThread: async (threadId, patch) => {
+				threadWrites.push(patch);
+				return { id: threadId, ...patch };
+			},
+		},
+		startNextQueuedRun: () => {},
+		synchronizeRovoAppThreadGeneratedFiles: async () => {},
 	});
-	const error = new Error("boom");
+	const lifecycle = createRovoAppManagedRunLifecycle({
+		executeRovoAppManagedRun: executeRovoAppManagedRun ?? (async () => {}),
+		logger: quiet,
+		persistRovoAppRunState: persistRovoAppRunState ?? state.persistRovoAppRunState,
+		resolveRovoAppPortAvailability: () => ({}),
+		rovoAppRunManager: runManager,
+		settleRovoAppRun: state.settleRovoAppRun,
+	});
+	return { lifecycle, runManager, state, threadWrites };
+}
 
-	await lifecycle.failRovoAppRun(run, error);
+function createSubscriber() {
+	const listeners = new Map();
+	return {
+		ended: false,
+		writes: [],
+		end() {
+			this.ended = true;
+			listeners.get("close")?.();
+		},
+		flushHeaders() {},
+		once(eventName, listener) {
+			listeners.set(eventName, listener);
+			return this;
+		},
+		setHeader() {},
+		status() {
+			return this;
+		},
+		write(chunk) {
+			this.writes.push(chunk);
+		},
+	};
+}
 
-	assert.deepEqual(calls, [["settleRovoAppRun", "thread-1", "failed", { error }]]);
+test("failRovoAppRun ends the run failed: its subscriber gets the failure card and the run leaves the registry", async () => {
+	const { lifecycle, runManager, threadWrites } = createRealLifecycle();
+	const run = runManager.createRun({ threadId: "thread-1" });
+	runManager.markRunStarted("thread-1", { status: "streaming" });
+	const subscriber = createSubscriber();
+	runManager.attachSubscriber("thread-1", subscriber);
+
+	await lifecycle.failRovoAppRun(run, new Error("boom"));
+
+	assert.equal(run.status, "failed");
+	assert.equal(run.error, "Rovo run failed");
+	assert.deepEqual(subscriber.writes, ["failure-chunk"]);
+	assert.equal(subscriber.ended, true);
+	assert.equal(runManager.getRun("thread-1"), null);
+	assert.deepEqual(threadWrites, [{ activeRun: null }]);
+});
+
+test("a run cancelled while its started state is stored does not execute", async () => {
+	let executed = 0;
+	let releaseWrite;
+	const writeHeld = new Promise((resolve) => {
+		releaseWrite = resolve;
+	});
+	let harness;
+	harness = createRealLifecycle({
+		executeRovoAppManagedRun: async () => {
+			executed += 1;
+		},
+		persistRovoAppRunState: async (threadId, run) => {
+			await writeHeld;
+			return harness.state.persistRovoAppRunState(threadId, run);
+		},
+	});
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+
+	const starting = harness.lifecycle.startManagedRovoAppRun(run);
+	await harness.state.settleRovoAppRun(run, "cancelled");
+	releaseWrite();
+	await starting;
+	await flushMicrotasks();
+
+	assert.equal(run.status, "cancelled");
+	assert.equal(executed, 0);
 });
 
 test("startManagedRovoAppRun marks, persists, and executes a run", async () => {
@@ -225,11 +314,11 @@ test("a run whose final save and failure clear both fail ends failed without an 
 
 test("startManagedRovoAppRun suppresses logs for aborted execution failures", async () => {
 	const run = createRun("thread-1");
-	run.abortController.abort();
 	const { calls, lifecycle } = createHarness({
 		runs: [["thread-1", run]],
 		dependencies: {
-			executeRovoAppManagedRun: async () => {
+			executeRovoAppManagedRun: async (markedRun) => {
+				markedRun.abortController.abort();
 				throw new Error("execution aborted");
 			},
 		},
