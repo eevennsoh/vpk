@@ -6,7 +6,8 @@
 
 const { before, test } = require("node:test");
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
+const { execFile, execFileSync } = require("node:child_process");
+const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
@@ -106,25 +107,38 @@ test("a real generated file is recorded when the server continues the last assis
 	assert.deepEqual(recordedPaths(finalized.streamedMessages), ["components/new/widget.tsx"]);
 });
 
-test("paths come from structured fields or a one-file result sentence, never from echoed text", () => {
-	const result = (data) => ({ phase: "result", toolName: "create_file", toolCallId: "c1", ...data });
-	const paths = (observation, start) => extractGeneratedFilesFromObservation(observation, start).map((entry) => entry.requestedPath).sort();
-	assert.deepEqual(paths(result({ outputPreview: "Successfully created app/a/page.tsx." })), ["app/a/page.tsx"]);
-	assert.deepEqual(paths(result({ output: { path: "lib/x.ts", content: "see components/other.tsx" } })), ["lib/x.ts"]);
-	assert.deepEqual(paths(result({ outputPreview: "ok" }), { phase: "start", input: JSON.stringify({ file_path: "hooks/use-x.ts" }) }), ["hooks/use-x.ts"]);
-	const echoes = [
-		"Successfully created app/a/page.tsx. It imports components/b.tsx and lib/c.ts.",
-		"--- a/components/x.tsx\n+++ b/components/x.tsx\n@@ import y from 'lib/y.ts'",
-		"export * from \"components/z.tsx\"",
-		"Updated app/a.tsx and app/b.tsx",
+test("only the tool's own success sentence records a file: a create or a move's destination", () => {
+	const result = (toolName, text, extra = {}) => ({ phase: "result", toolName, toolCallId: "c1", outputPreview: text, ...extra });
+	const changes = (observation, start, options) =>
+		extractGeneratedFilesFromObservation(observation, start, options).map((entry) => `${entry.change}:${entry.requestedPath}`);
+	// What Rovo Dev's tools say, from recorded sessions.
+	assert.deepEqual(changes(result("create_file", "Successfully created app/a/page.tsx.")), ["created:app/a/page.tsx"]);
+	assert.deepEqual(changes(result("create_file", "Successfully updated app/a/page.tsx.")), ["refreshed:app/a/page.tsx"], "an overwrite is not a create");
+	assert.deepEqual(changes(result("find_and_replace_code", "Successfully replaced code in app/a/page.tsx:\n\n--- app/a/page.tsx\n+++ app/a/page.tsx\n@@ -1 +1 @@")), ["refreshed:app/a/page.tsx"]);
+	assert.deepEqual(changes(result("move_file", "Successfully moved app/old.tsx to app/new.tsx.")), ["created:app/new.tsx"], "the destination only");
+	assert.deepEqual(changes(result("create_file", "Successfully created /work/project/app/abs.tsx."), null, { projectRoot: "/work/project" }), ["created:app/abs.tsx"]);
+	// A failed or blocked call, other tools and other texts record nothing.
+	const nothing = [
+		result("create_file", "This operation is currently blocked in readonly mode."),
+		result("create_file", "Tool call interrupted."),
+		result("create_file", "Error calling tool 'create_file': Path 'app/x.tsx' already exists"),
+		result("find_and_replace_code", "Error executing tool find_and_replace_code: app/x.tsx: No matches found for find string"),
+		result("create_file", "Created file: app/long/page.tsx"),
+		result("create_file", "File created successfully"),
+		result("create_file", "Successfully created app/a/page.tsx. It imports components/b.tsx."),
+		result("create_file", "Successfully created app/a.tsx and app/b.tsx."),
+		result("create_file", "Successfully created /elsewhere/app/x.tsx.", { }),
+		result("delete_file", "Successfully deleted app/a.tsx."),
+		result("create_file", "ok", { output: { path: "lib/x.ts" } }),
+		{ ...result("create_file", "Successfully created app/a.tsx."), phase: "error" },
 	];
-	for (const text of echoes) {
-		const recorded = paths(result({ outputPreview: text, output: text }));
-		assert.ok(recorded.length === 0, `${JSON.stringify(text)} -> ${recorded}`);
+	for (const observation of nothing) {
+		assert.deepEqual(changes(observation, null, { projectRoot: "/work/project" }), [], JSON.stringify(observation.outputPreview));
 	}
-	assert.deepEqual(paths(result({ output: { nested: { path: "app/deep.tsx" } } })), [], "no recursion into nested objects");
-	assert.deepEqual(paths({ ...result({ outputPreview: "Successfully created app/a.tsx." }), toolName: "delete_file" }), [], "a delete records nothing");
-	assert.deepEqual(paths({ ...result({ outputPreview: "Successfully created app/a.tsx." }), phase: "error" }), []);
+	// A readable call input must name the same file; a start input alone records nothing.
+	assert.deepEqual(changes(result("create_file", "ok"), { phase: "start", input: JSON.stringify({ file_path: "hooks/use-x.ts" }) }), []);
+	assert.deepEqual(changes(result("create_file", "Successfully created app/a.tsx."), { phase: "start", input: JSON.stringify({ file_path: "app/b.tsx" }) }), []);
+	assert.deepEqual(changes(result("create_file", "Successfully created app/a.tsx."), { phase: "start", input: '{"file_path": "app/a.tsx", "initial_content": "cut previ' }), ["created:app/a.tsx"], "a cut preview does not block");
 });
 
 test("a run records at most MAX_FILES_PER_RUN files", () => {
@@ -148,10 +162,16 @@ async function createGitRoot(t) {
 		return absolutePath;
 	};
 	const baseDir = path.join(root, "data");
+	// A manifest written straight to disk, each entry with the identity of what is there now.
 	const plant = async (threadId, requestedPaths) => {
 		const manifestPath = path.join(baseDir, "rovo-app", "threads", threadId, "generated-files.json");
 		await fs.mkdir(path.dirname(manifestPath), { recursive: true });
-		await fs.writeFile(manifestPath, JSON.stringify(requestedPaths.map((requestedPath) => ({ requestedPath }))));
+		const entries = [];
+		for (const requestedPath of requestedPaths) {
+			const content = await fs.readFile(path.join(projectRoot, requestedPath)).catch(() => null);
+			entries.push({ requestedPath, identity: content ? { sha256: crypto.createHash("sha256").update(content).digest("hex"), size: content.length } : undefined });
+		}
+		await fs.writeFile(manifestPath, JSON.stringify(entries));
 	};
 	const manager = (options = {}) => createRovoAppGeneratedFilesManager({ baseDir, projectRoot, logger: { info() {}, warn() {} }, ...options });
 	return { projectRoot, baseDir, write, plant, manager };

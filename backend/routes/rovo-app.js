@@ -69,6 +69,7 @@ const REQUIRED_UPLOAD_MANAGER_METHODS = [
 ];
 
 const REQUIRED_GENERATED_FILES_MANAGER_METHODS = [
+	"deleteGeneratedFilesForThreads",
 	"deleteLegacyRootFiles",
 ];
 
@@ -411,10 +412,9 @@ function createRovoAppRouter({
 			}
 
 			const threads = await rovoAppThreadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
-			await Promise.all(
-				// One thread's cleanup never fails delete-all.
-				threads.map((thread) => generatedFilesManager.deleteLegacyRootFiles(thread.id).catch(() => 0)),
-			);
+			// One cleanup for every thread (one git view, one deadline), and it never fails
+			// delete-all.
+			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
 
 			await rovoAppThreadManager.deleteAllThreads();
 			await rovoAppVoteManager.deleteAllVotes();
