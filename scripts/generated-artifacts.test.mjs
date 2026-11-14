@@ -162,6 +162,9 @@ test("baselines that may only shrink by fixing code are never regenerated", () =
 	assert.deepEqual(suppressions.generate, ["pnpm", "run", "lint", "--prune-suppressions"]);
 	assert.equal(suppressions.generate.includes("--suppress-all"), false);
 	assert.equal(suppressions.slow, true);
+	// The unused-code update keeps only entries the base baseline already had.
+	const unused = GENERATED_ARTIFACTS.find((entry) => entry.id === "unused-code");
+	assert.deepEqual(unused.generate.slice(1), ["scripts/verify-unused-code.js", "--update"]);
 });
 
 test("directory patterns expand to sorted matching files", (t) => {

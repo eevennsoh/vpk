@@ -26,7 +26,8 @@ paths:
   `pnpm run verify:url-credentials`, `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
   `pnpm run verify:repo-map`, `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`,
   `pnpm run verify:catalog`, `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
-  `pnpm run verify:eslint-suppressions`, `pnpm run verify:cursor-rules`,
+  `pnpm run verify:eslint-suppressions`, `pnpm run verify:unused-code`,
+  `pnpm run verify:cursor-rules`,
   `pnpm run verify:doc-scripts`, `pnpm run validate:agents`, `pnpm run validate:skills`.
   Additional checks: `pnpm run lint`, `pnpm run lint:design-system`, `pnpm run typecheck`.
   Reference docs: `.agents/docs/architecture-overview.md`,
