@@ -1,6 +1,7 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
+	ROUTING_CLASSIFIER_TIMEOUT_MS,
 	resolveRoutingDecision,
 	resolveRoutingDecisionFastPath,
 	parseClassifierResponse,
@@ -111,6 +112,49 @@ describe("resolveRoutingDecisionFastPath", () => {
 		}
 	});
 
+	it("returns genui for explicit visualization requests without a verb", () => {
+		const prompts = [
+			"a small bar chart",
+			"Make me a pie chart of fruit sales",
+			"show a dashboard of open incidents",
+			"plot revenue as a line graph",
+			"visualize sign-ups by week",
+			"can you draw a heatmap of commits?",
+		];
+		for (const prompt of prompts) {
+			const result = resolveRoutingDecisionFastPath({ prompt });
+			assert.equal(result?.intent, "genui", `Expected genui for: "${prompt}"`);
+			assert.equal(result.presentation, "genui_card");
+			assert.equal(result.reason, "visualization_noun_match");
+		}
+	});
+
+	it("leaves visualization questions and ambiguous graph/plot wording to the classifier", () => {
+		const prompts = [
+			"what is a bar chart?",
+			"Explain the difference between a histogram and a bar chart",
+			"how do I read this dashboard",
+			"tell me the plot of Hamlet",
+			"teach me graph theory",
+		];
+		for (const prompt of prompts) {
+			assert.equal(resolveRoutingDecisionFastPath({ prompt }), null, `Expected null for: "${prompt}"`);
+		}
+	});
+
+	it("keeps document requests that mention a chart on the artifact path", () => {
+		const result = resolveRoutingDecisionFastPath({ prompt: "write a report with a bar chart of Q3 sales" });
+		assert.equal(result.intent, "artifact_create");
+	});
+
+	it("keeps active-artifact chart edits as artifact updates", () => {
+		const result = resolveRoutingDecisionFastPath({
+			prompt: "add a bar chart",
+			activeArtifact: { id: "doc_1", title: "Report", kind: "text" },
+		});
+		assert.equal(result.intent, "artifact_update");
+	});
+
 	it("returns null for prompts without document verb + noun pattern", () => {
 		assert.equal(resolveRoutingDecisionFastPath({ prompt: "hello" }), null);
 		assert.equal(resolveRoutingDecisionFastPath({ prompt: "show Q3 revenue" }), null);
@@ -202,6 +246,22 @@ describe("resolveRoutingDecision", () => {
 		);
 		assert.equal(result.intent, "chat");
 		assert.equal(result.reason, "classifier_error");
+	});
+
+	it("waits long enough by default for a classifier that answers in about 3 seconds", async (t) => {
+		t.mock.timers.enable({ apis: ["setTimeout"] });
+		const pending = resolveRoutingDecision(
+			{ prompt: "show me revenue by quarter" },
+			{ classify: makeSlowClassify(3000, { intent: "genui", confidence: 0.95, reason: "visualization" }) },
+		);
+		for (let elapsed = 0; elapsed < 3000; elapsed += 100) {
+			await Promise.resolve();
+			t.mock.timers.tick(100);
+		}
+		const result = await pending;
+		assert.ok(ROUTING_CLASSIFIER_TIMEOUT_MS > 3000);
+		assert.equal(result.intent, "genui");
+		assert.equal(result.reason, "visualization");
 	});
 
 	it("falls back to chat on LLM error", async () => {

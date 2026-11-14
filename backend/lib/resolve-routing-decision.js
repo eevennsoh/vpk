@@ -24,6 +24,20 @@ const DOCUMENT_VERB_PATTERN =
 const DOCUMENT_NOUN_PATTERN =
 	/\b(document|doc|plan|brief|proposal|spec|summary|memo|outline|report|email|copy|article|blog|code|component|app|page|ui|table|spreadsheet|sheet|artifact)\b/;
 
+// Explicit visualization requests ("a small bar chart", "plot revenue as a line
+// graph"). Stricter than the prompt-hint patterns elsewhere: bare "graph" and
+// "plot" stay with the classifier ("the plot of Hamlet", "graph theory").
+const VISUALIZATION_NOUN_PATTERN =
+	/\b(charts?|dashboards?|heat\s?maps?|histograms?|treemaps?|candlesticks?|sparklines?|infographics?|visuali[sz]ations?|visuali[sz]e|(?:bar|line|pie|area|radar|donut|doughnut|scatter|bubble|column|stacked)\s+(?:graphs?|plots?))\b/;
+// Questions about a visualization ("what is a pie chart?") are chat.
+const VISUALIZATION_QUESTION_PATTERN =
+	/^(?:what|why|how|when|where|who|which|whats|what's|explain|define|describe|is|are|does|do|should)\b|\bdifference between\b/;
+
+function matchesVisualizationRequest(lowerPrompt) {
+	const trimmedPrompt = lowerPrompt.trim();
+	return VISUALIZATION_NOUN_PATTERN.test(trimmedPrompt) && !VISUALIZATION_QUESTION_PATTERN.test(trimmedPrompt);
+}
+
 /**
  * Attempts to classify a routing decision without calling the LLM.
  * Returns a full RoutingDecision when confident, or `null` when the
@@ -80,13 +94,30 @@ function resolveRoutingDecisionFastPath(context) {
 		};
 	}
 
+	// Explicit chart/dashboard request → genui, without waiting on the classifier
+	if (matchesVisualizationRequest(lowerPrompt)) {
+		return {
+			intent: "genui",
+			presentation: "genui_card",
+			confidence: 1,
+			reason: "visualization_noun_match",
+			origin,
+		};
+	}
+
 	// Ambiguous — fall through to Layer 2
 	return null;
 }
 
 // ---------------------------------------------------------------------------
-// Layer 2 — LLM classifier (< 1500ms budget)
+// Layer 2 — LLM classifier
 // ---------------------------------------------------------------------------
+
+// Sized to the measured latency of the default AI Gateway chat model on this
+// one short JSON classification (about 2-4 s). A budget below that latency
+// always times out, so every ambiguous turn paid the wait and still fell back
+// to chat. Clear intents never reach this layer (see the fast path above).
+const ROUTING_CLASSIFIER_TIMEOUT_MS = 4500;
 
 const CLASSIFIER_SYSTEM_PROMPT = `You are a routing classifier for a chat application with multiple surfaces.
 Classify the user's latest message into exactly one intent:
@@ -178,7 +209,7 @@ function withTimeout(operation, timeoutMs) {
 	const effective =
 		typeof timeoutMs === "number" && Number.isFinite(timeoutMs) && timeoutMs > 0
 			? timeoutMs
-			: 1500;
+			: ROUTING_CLASSIFIER_TIMEOUT_MS;
 
 	return new Promise((resolve, reject) => {
 		const abortController = new AbortController();
@@ -212,10 +243,10 @@ function withTimeout(operation, timeoutMs) {
  * @param {RoutingContext} context
  * @param {Object} [options]
  * @param {Function} [options.classify] — async function({ system, prompt, signal }) => string
- * @param {number}   [options.timeoutMs=1500] — LLM call timeout in ms
+ * @param {number}   [options.timeoutMs=ROUTING_CLASSIFIER_TIMEOUT_MS] — LLM call timeout in ms
  * @returns {Promise<RoutingDecision>}
  */
-async function resolveRoutingDecision(context, { classify, timeoutMs = 1500 } = {}) {
+async function resolveRoutingDecision(context, { classify, timeoutMs = ROUTING_CLASSIFIER_TIMEOUT_MS } = {}) {
 	const origin = context?.origin === "voice" ? "voice" : "text";
 	const confidenceThreshold = origin === "voice" ? 0.8 : 0.7;
 
@@ -296,6 +327,7 @@ async function resolveRoutingDecision(context, { classify, timeoutMs = 1500 } = 
 }
 
 module.exports = {
+	ROUTING_CLASSIFIER_TIMEOUT_MS,
 	resolveRoutingDecision,
 	resolveRoutingDecisionFastPath,
 	// Exported for testing

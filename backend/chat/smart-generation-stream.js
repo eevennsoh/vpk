@@ -118,6 +118,7 @@ function createSmartGenerationStream({
 	SMART_WIDGET_TYPE_GENUI,
 	SMART_WIDGET_TYPE_IMAGE,
 	abortController,
+	backendPreference,
 	buildExcalidrawWidgetPayload,
 	buildExcalidrawWidgetSystemPrompt,
 	buildFallbackGenuiSpecFromText,
@@ -300,6 +301,7 @@ function createSmartGenerationStream({
 							temperature: 0.2,
 							provider,
 							signal: abortController.signal,
+							backendPreference,
 						});
 						throwIfAborted();
 						const normalizedScene = normalizeExcalidrawArtifactOutput(rawSceneText);
@@ -321,6 +323,7 @@ function createSmartGenerationStream({
 							roleMessages,
 							layoutContext: smartLayoutContext,
 							signal: abortController.signal,
+							backendPreference,
 						});
 						throwIfAborted();
 						const summaryText = getNonEmptyString(genuiResult.narrative);
