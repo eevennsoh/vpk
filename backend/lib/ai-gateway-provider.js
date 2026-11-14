@@ -4,6 +4,7 @@ const {
 	detectEndpointType,
 	getGatewayHeaders,
 	getModelId,
+	applyGatewaySamplingOptions,
 	resolveGatewayUrl,
 	describeGatewayCloudIdError,
 	streamBedrockGatewayManualSse,
@@ -158,18 +159,7 @@ function throwIfAborted(signal, message) {
 }
 
 function buildOpenAiCompletionPayload({ model, messages, maxOutputTokens, temperature }) {
-	const payload = { model, messages, stream: false };
-	const isGpt6Sol = /^gpt-6(?:\.\d+)?-sol$/.test(model);
-	if (typeof maxOutputTokens === "number") {
-		// This limit includes reasoning tokens; tiny title budgets can exhaust it
-		// before the model emits any visible text.
-		payload.max_completion_tokens = isGpt6Sol ? Math.max(2048, maxOutputTokens) : maxOutputTokens;
-	}
-	// GPT-6 Sol reasoning models only accept the default temperature.
-	if (typeof temperature === "number" && !isGpt6Sol) {
-		payload.temperature = temperature;
-	}
-	return payload;
+	return applyGatewaySamplingOptions({ model, messages, stream: false }, { maxOutputTokens, temperature });
 }
 
 async function fetchOpenAiCompatibleCompletion({
