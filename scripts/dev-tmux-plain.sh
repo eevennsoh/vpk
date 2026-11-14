@@ -58,31 +58,10 @@ tm() {
 	"$TMUX_BIN" -L "$SOCKET" "$@"
 }
 
-# Per-worktree session name so parallel worktrees don't collide on one socket.
+# Per-worktree session name so parallel worktrees don't collide on one socket. Derived in one
+# place, scripts/lib/dev-tmux-session.js (VPK_DEV_TMUX_SESSION / _PREFIX override it).
 resolve_session_name() {
-	node - <<'NODE'
-const { getWorktreeName } = require("./scripts/lib/worktree-ports");
-
-const sanitizeToken = (value, fallback) => {
-	const normalized = String(value ?? "")
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9_-]+/g, "-")
-		.replace(/^-+|-+$/g, "")
-		.replace(/-{2,}/g, "-");
-	return normalized.length > 0 ? normalized : fallback;
-};
-
-const explicitName = process.env.VPK_DEV_TMUX_SESSION;
-if (typeof explicitName === "string" && explicitName.trim().length > 0) {
-	process.stdout.write(explicitName.trim());
-	process.exit(0);
-}
-
-const prefix = sanitizeToken(process.env.VPK_DEV_TMUX_SESSION_PREFIX || "vpk-dev", "vpk-dev");
-const worktree = sanitizeToken(getWorktreeName() || "main", "main");
-process.stdout.write(`${prefix}-${worktree}`);
-NODE
+	node scripts/lib/dev-tmux-session.js plain
 }
 
 # Resolve the extra args for `portless run` for this worktree: empty on main or a

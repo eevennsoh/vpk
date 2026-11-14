@@ -45,12 +45,9 @@ if [[ "$POOL_SIZE" -lt 1 ]]; then
 	exit 1
 fi
 
+# Derived in one place, scripts/lib/dev-tmux-session.js (ROVO_TMUX_SESSION / _PREFIX override it).
 resolve_session_name() {
-	node - <<'NODE'
-const { resolveDevTmuxSessionName } = require("./scripts/lib/dev-tmux-session");
-
-process.stdout.write(resolveDevTmuxSessionName());
-NODE
+	node scripts/lib/dev-tmux-session.js rovo
 }
 
 SESSION_NAME="$(resolve_session_name)"

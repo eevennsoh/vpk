@@ -105,6 +105,8 @@ tmux-*.log
 .dev-rovo-port
 .dev-rovo-ports
 .dev-rovo-token
+.dev-stack.json
+.dev-stack.json.*
 
 # Rovo-created git worktrees
 .rovo/worktrees/
