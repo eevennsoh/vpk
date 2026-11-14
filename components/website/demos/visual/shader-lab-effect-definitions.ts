@@ -1,115 +1,12 @@
-import type { ShaderLabEffectLayerType, ShaderLabLayerKind, ShaderLabLayerType, ShaderLabParameterValue } from "@basementstudio/shader-lab";
+import type {
+	ShaderLabEffectDefinition,
+	ShaderLabRuntimeEffectType,
+	ShaderLabRuntimeLayerType,
+	ShaderLabRuntimeSourceType,
+} from "./shader-lab/types";
 
-export const SHADER_LAB_BLEND_MODES = [
-	"normal",
-	"multiply",
-	"screen",
-	"overlay",
-	"darken",
-	"lighten",
-	"color-dodge",
-	"color-burn",
-	"hard-light",
-	"soft-light",
-	"difference",
-	"exclusion",
-	"hue",
-	"saturation",
-	"color",
-	"luminosity",
-] as const;
-
-export const SHADER_LAB_COMPOSITE_MODES = ["filter", "mask"] as const;
-export const SHADER_LAB_MASK_SOURCES = ["luminance", "alpha", "red", "green", "blue"] as const;
-export const SHADER_LAB_MASK_MODES = ["multiply", "stencil"] as const;
-
-export type ShaderLabRuntimeEffectType = Exclude<
-	ShaderLabEffectLayerType,
-	"ascii" | "dithering"
->;
-
-export type ShaderLabRuntimeSourceType = "fluid" | "pixel-trail" | "magnify-lens" | "mesh-gradient" | "custom-shader";
-export type ShaderLabRuntimeLayerType = ShaderLabRuntimeEffectType | ShaderLabRuntimeSourceType;
-
-export type ShaderLabEffectParamType = "number" | "select" | "boolean" | "color" | "vec2" | "vec3" | "text";
-
-export type ShaderLabVisibleWhen = Readonly<{
-	key: string;
-	equals?: ShaderLabParameterValue;
-	gte?: number;
-}>;
-
-export type ShaderLabSelectOption = Readonly<{
-	label: string;
-	value: string;
-}>;
-
-export type ShaderLabEffectParamDefinition = Readonly<{
-	key: string;
-	label: string;
-	type: ShaderLabEffectParamType;
-	defaultValue: ShaderLabParameterValue;
-	min?: number;
-	max?: number;
-	step?: number;
-	group?: string;
-	description?: string;
-	options?: readonly ShaderLabSelectOption[];
-	visibleWhen?: ShaderLabVisibleWhen;
-}>;
-
-export type ShaderLabEffectDefinition = Readonly<{
-	type: ShaderLabRuntimeLayerType;
-	runtimeType?: ShaderLabLayerType;
-	kind?: ShaderLabLayerKind;
-	label: string;
-	description: string;
-	params: readonly ShaderLabEffectParamDefinition[];
-}>;
-
-export type ShaderLabPropDoc = Readonly<{
-	name: string;
-	type: string;
-	default?: string;
-	description: string;
-}>;
-
-export const SHADER_LAB_RUNTIME_EFFECT_TYPES = [
-	"bloom",
-	"blob-tracking",
-	"circuit-bent",
-	"directional-blur",
-	"chromatic-aberration",
-	"crt",
-	"displacement-map",
-	"edge-detect",
-	"fluted-glass",
-	"halftone",
-	"ink",
-	"particle-grid",
-	"pattern",
-	"pixelation",
-	"pixel-sorting",
-	"plotter",
-	"posterize",
-	"slice",
-	"smear",
-	"threshold",
-	"voxel"
-] as const satisfies readonly ShaderLabRuntimeEffectType[];
-
-export const SHADER_LAB_RUNTIME_SOURCE_TYPES = [
-	"fluid",
-	"pixel-trail",
-	"magnify-lens",
-	"mesh-gradient",
-	"custom-shader",
-] as const satisfies readonly ShaderLabRuntimeSourceType[];
-
-export const SHADER_LAB_RUNTIME_LAYER_TYPES = [
-	...SHADER_LAB_RUNTIME_EFFECT_TYPES,
-	...SHADER_LAB_RUNTIME_SOURCE_TYPES,
-] as const satisfies readonly ShaderLabRuntimeLayerType[];
+export * from "./shader-lab/helpers";
+export * from "./shader-lab/types";
 
 export const SHADER_LAB_EFFECT_DEFINITIONS = {
 	"blob-tracking": {
@@ -1518,7 +1415,39 @@ export const SHADER_LAB_EFFECT_DEFINITIONS = {
 					"key": "colorMode"
 				}
 			}
-		]
+		],
+		"presetDefaults": {
+			"preset": {
+				"process": {
+					"inkCyan": "#00AEEF",
+					"inkMagenta": "#EC008C",
+					"inkYellow": "#FFF200",
+					"inkKey": "#1a1a1a",
+					"paperColor": "#F5F5F0"
+				},
+				"risograph": {
+					"inkCyan": "#0078BF",
+					"inkMagenta": "#FF48B0",
+					"inkYellow": "#FFE800",
+					"inkKey": "#000000",
+					"paperColor": "#F2F0E6"
+				},
+				"newspaper": {
+					"inkCyan": "#1A6B8A",
+					"inkMagenta": "#8C3A5E",
+					"inkYellow": "#C4A832",
+					"inkKey": "#2B2B2B",
+					"paperColor": "#F0E6D0"
+				},
+				"vintage": {
+					"inkCyan": "#3A7CA5",
+					"inkMagenta": "#A0506A",
+					"inkYellow": "#D4A843",
+					"inkKey": "#3C3228",
+					"paperColor": "#EDE4D4"
+				}
+			}
+		}
 	},
 	"ink": {
 		"type": "ink",
@@ -2869,167 +2798,3 @@ export const SHADER_LAB_LAYER_DEFINITIONS = {
 	...SHADER_LAB_EFFECT_DEFINITIONS,
 	...SHADER_LAB_SOURCE_DEFINITIONS,
 } as const satisfies Record<ShaderLabRuntimeLayerType, ShaderLabEffectDefinition>;
-
-const SHADER_LAB_PRESET_DEFAULTS = {
-	"halftone": {
-		"preset": {
-			"process": {
-				"inkCyan": "#00AEEF",
-				"inkMagenta": "#EC008C",
-				"inkYellow": "#FFF200",
-				"inkKey": "#1a1a1a",
-				"paperColor": "#F5F5F0"
-			},
-			"risograph": {
-				"inkCyan": "#0078BF",
-				"inkMagenta": "#FF48B0",
-				"inkYellow": "#FFE800",
-				"inkKey": "#000000",
-				"paperColor": "#F2F0E6"
-			},
-			"newspaper": {
-				"inkCyan": "#1A6B8A",
-				"inkMagenta": "#8C3A5E",
-				"inkYellow": "#C4A832",
-				"inkKey": "#2B2B2B",
-				"paperColor": "#F0E6D0"
-			},
-			"vintage": {
-				"inkCyan": "#3A7CA5",
-				"inkMagenta": "#A0506A",
-				"inkYellow": "#D4A843",
-				"inkKey": "#3C3228",
-				"paperColor": "#EDE4D4"
-			}
-		}
-	}
-} as const;
-
-export function getShaderLabDefaultParams(layerType: ShaderLabRuntimeLayerType): Record<string, ShaderLabParameterValue> {
-	return Object.fromEntries(
-		SHADER_LAB_LAYER_DEFINITIONS[layerType].params.map((param) => [param.key, param.defaultValue]),
-	) as Record<string, ShaderLabParameterValue>;
-}
-
-export function getShaderLabPresetDefaults(
-	layerType: ShaderLabRuntimeLayerType,
-	key: string,
-	value: ShaderLabParameterValue,
-): Record<string, ShaderLabParameterValue> | null {
-	const effectDefaults = (SHADER_LAB_PRESET_DEFAULTS as Record<string, Record<string, Record<string, Record<string, ShaderLabParameterValue>>>>)[layerType];
-	const keyDefaults = effectDefaults?.[key];
-	if (!keyDefaults || typeof value !== "string") return null;
-	return keyDefaults[value] ?? null;
-}
-
-export function getShaderLabRuntimeLayerType(layerType: ShaderLabRuntimeLayerType): ShaderLabLayerType {
-	const definition: ShaderLabEffectDefinition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
-	return (definition.runtimeType ?? layerType) as ShaderLabLayerType;
-}
-
-export function getShaderLabLayerKind(layerType: ShaderLabRuntimeLayerType): ShaderLabLayerKind {
-	const definition: ShaderLabEffectDefinition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
-	return definition.kind ?? "effect";
-}
-
-export function isShaderLabParamVisible(
-	param: ShaderLabEffectParamDefinition,
-	params: Record<string, ShaderLabParameterValue>,
-): boolean {
-	const condition = param.visibleWhen;
-	if (!condition) return true;
-
-	const value = params[condition.key];
-	if ("equals" in condition) return value === condition.equals;
-	if (typeof condition.gte === "number") return typeof value === "number" && value >= condition.gte;
-	return true;
-}
-
-function formatLabel(value: string): string {
-	return value
-		.split("-")
-		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-		.join(" ");
-}
-
-function quote(value: string): string {
-	return '"' + value + '"';
-}
-
-function formatStringUnion(values: readonly string[]): string {
-	return values.map(quote).join(" | ");
-}
-
-function formatDefaultValue(value: ShaderLabParameterValue): string {
-	if (typeof value === "string") return quote(value);
-	if (Array.isArray(value)) return JSON.stringify(value);
-	return String(value);
-}
-
-function formatParamType(param: ShaderLabEffectParamDefinition): string {
-	if (param.type === "select" && param.options?.length) {
-		return formatStringUnion(param.options.map((option) => option.value));
-	}
-
-	switch (param.type) {
-		case "color":
-		case "text":
-			return "string";
-		case "vec2":
-			return "[number, number]";
-		case "vec3":
-			return "[number, number, number]";
-		default:
-			return param.type;
-	}
-}
-
-function describeVisibleWhen(condition: ShaderLabVisibleWhen): string {
-	if ("equals" in condition) {
-		return " Visible when " + condition.key + " is " + String(condition.equals) + ".";
-	}
-	if (typeof condition.gte === "number") {
-		return " Visible when " + condition.key + " is at least " + condition.gte + ".";
-	}
-	return "";
-}
-
-export function createShaderLabEffectPropDocs(layerType: ShaderLabRuntimeLayerType): ShaderLabPropDoc[] {
-	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
-	const paramDocs = (definition.params as readonly ShaderLabEffectParamDefinition[]).map((param) => ({
-		name: param.key,
-		type: formatParamType(param),
-		default: formatDefaultValue(param.defaultValue),
-		description: (param.description ?? "Shader Lab " + param.label + " parameter.") + (param.visibleWhen ? describeVisibleWhen(param.visibleWhen) : ""),
-	}));
-
-	return [
-		{ name: "layerType", type: quote(layerType), default: quote(layerType), description: "Selects the Shader Lab " + definition.label + " layer." },
-		{ name: "opacity", type: "number", default: "1", description: "Layer opacity." },
-		{ name: "blendMode", type: formatStringUnion(SHADER_LAB_BLEND_MODES), default: quote("normal"), description: "Shader Lab layer blend mode." },
-		{ name: "compositeMode", type: formatStringUnion(SHADER_LAB_COMPOSITE_MODES), default: quote("filter"), description: "Whether the effect filters the source or is composited as a mask." },
-		{ name: "maskSource", type: formatStringUnion(SHADER_LAB_MASK_SOURCES), default: quote("luminance"), description: "Source channel used when compositeMode is mask." },
-		{ name: "maskMode", type: formatStringUnion(SHADER_LAB_MASK_MODES), default: quote("multiply"), description: "Mask compositing behavior used when compositeMode is mask." },
-		{ name: "maskInvert", type: "boolean", default: "false", description: "Inverts the layer mask when compositeMode is mask." },
-		{ name: "hue", type: "number", default: "0", description: "Layer hue rotation in degrees." },
-		{ name: "saturation", type: "number", default: "1", description: "Layer saturation multiplier." },
-		...paramDocs,
-		{ name: "className", type: "string", description: "Optional classes applied to the demo wrapper." },
-	];
-}
-
-export function getShaderLabEffectUsage(layerType: ShaderLabRuntimeLayerType): string {
-	return "<ShaderLabLayer layerType=\"" + layerType + "\" />";
-}
-
-export function getShaderLabEffectImportStatement(): string {
-	return "import { ShaderLabLayer } from \"@/components/website/demos/visual/shader-lab-effect-demo\";";
-}
-
-export function getShaderLabEffectDescription(layerType: ShaderLabRuntimeLayerType): string {
-	return SHADER_LAB_LAYER_DEFINITIONS[layerType].description;
-}
-
-export function optionLabel(value: string): string {
-	return formatLabel(value);
-}

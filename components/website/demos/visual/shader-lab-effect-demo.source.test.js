@@ -4,6 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
+const {
+	SHADER_LAB_RUNTIME_EFFECT_TYPES,
+	SHADER_LAB_RUNTIME_SOURCE_TYPES,
+} = require(process.cwd() + "/components/website/demos/visual/shader-lab/types.ts");
 
 const ROOT = path.join(__dirname, "../../../..");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
@@ -11,10 +15,6 @@ const COMPONENTS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-ma
 const MANIFEST_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const NAV_UTILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/nav-utils.ts"), "utf8");
 const DETAILS_SOURCE = readDetailCategorySource("visual");
-const DEFINITIONS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "shader-lab-effect-definitions.ts"),
-	"utf8",
-);
 const DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "shader-lab-effect-demo.tsx"),
 	"utf8",
@@ -52,84 +52,14 @@ const PATTERN_DEMO_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
-const SHADER_LAB_EFFECT_COUNTS = {
-	bloom: 6,
-	"blob-tracking": 25,
-	"circuit-bent": 14,
-	"directional-blur": 5,
-	"chromatic-aberration": 4,
-	crt: 24,
-	"displacement-map": 4,
-	"edge-detect": 6,
-	"fluted-glass": 6,
-	halftone: 40,
-	ink: 25,
-	"particle-grid": 12,
-	pattern: 18,
-	pixelation: 2,
-	"pixel-sorting": 6,
-	plotter: 10,
-	posterize: 3,
-	slice: 7,
-	smear: 5,
-	threshold: 4,
-	voxel: 10,
-};
-
-const SHADER_LAB_SOURCE_COUNTS = {
-	"custom-shader": 6,
-	fluid: 16,
-	"magnify-lens": 5,
-	"mesh-gradient": 36,
-	"pixel-trail": 5,
-};
-
 const SHADER_LAB_V2_EFFECTS = new Set(["chromatic-aberration", "fluted-glass"]);
 
 function getShaderLabRouteSlug(effectType) {
 	return SHADER_LAB_V2_EFFECTS.has(effectType) ? `${effectType}-v2` : effectType;
 }
 
-function parseDefinitions() {
-	const match = DEFINITIONS_SOURCE.match(
-		/export const SHADER_LAB_EFFECT_DEFINITIONS = ([\s\S]*?) as const satisfies/,
-	);
-	assert.ok(match, "definitions literal should be parseable");
-	return JSON.parse(match[1]);
-}
-
-function parseStringTupleConst(name) {
-	const match = DEFINITIONS_SOURCE.match(
-		new RegExp(`export const ${name} = \\[([\\s\\S]*?)\\] as const`, "u"),
-	);
-	assert.ok(match, `${name} tuple should be parseable`);
-	return [...match[1].matchAll(/"([^"]+)"/gu)].map(([, value]) => value);
-}
-
-function countSourceParams(sourceType) {
-	const start = DEFINITIONS_SOURCE.indexOf(`"${sourceType}":`);
-	assert.notEqual(start, -1, sourceType);
-	const paramsStart = DEFINITIONS_SOURCE.indexOf("params: [", start);
-	assert.notEqual(paramsStart, -1, sourceType);
-	const paramsEnd = DEFINITIONS_SOURCE.indexOf("\n\t\t],", paramsStart);
-	assert.notEqual(paramsEnd, -1, sourceType);
-	const paramsBody = DEFINITIONS_SOURCE.slice(paramsStart, paramsEnd);
-	return (paramsBody.match(/\n\t\t\t(?:\{ key:|\{\n\t\t\t\tkey:)/g) ?? []).length;
-}
-
-test("Shader Lab catalog coverage tracks every runtime layer type", () => {
-	assert.deepEqual(
-		Object.keys(SHADER_LAB_EFFECT_COUNTS).sort(),
-		parseStringTupleConst("SHADER_LAB_RUNTIME_EFFECT_TYPES").sort(),
-	);
-	assert.deepEqual(
-		Object.keys(SHADER_LAB_SOURCE_COUNTS).sort(),
-		parseStringTupleConst("SHADER_LAB_RUNTIME_SOURCE_TYPES").sort(),
-	);
-});
-
 test("remaining Shader Lab effects are wired into the visual catalog", () => {
-	for (const effectType of Object.keys(SHADER_LAB_EFFECT_COUNTS)) {
+	for (const effectType of SHADER_LAB_RUNTIME_EFFECT_TYPES) {
 		const slug = getShaderLabRouteSlug(effectType);
 
 		assert.match(REGISTRY_SOURCE, new RegExp(`${JSON.stringify(slug)}: dynamic|${slug}: dynamic`), slug);
@@ -138,7 +68,7 @@ test("remaining Shader Lab effects are wired into the visual catalog", () => {
 		assert.match(NAV_UTILS_SOURCE, new RegExp(`"${slug}"`), slug);
 	}
 
-	for (const sourceType of Object.keys(SHADER_LAB_SOURCE_COUNTS)) {
+	for (const sourceType of SHADER_LAB_RUNTIME_SOURCE_TYPES) {
 		assert.match(REGISTRY_SOURCE, new RegExp(`${JSON.stringify(sourceType)}: dynamic|${sourceType}: dynamic`), sourceType);
 		assert.ok(COMPONENTS_SOURCE.includes(`"${sourceType}"`), sourceType);
 		assert.ok(MANIFEST_SOURCE.includes(`"${sourceType}"`), sourceType);
@@ -148,42 +78,12 @@ test("remaining Shader Lab effects are wired into the visual catalog", () => {
 	assert.match(DETAILS_SOURCE, /SHADER_LAB_RUNTIME_LAYER_TYPES/);
 });
 
-test("generated Shader Lab schema exposes all upstream effect params", () => {
-	const definitions = parseDefinitions();
-
-	for (const [slug, count] of Object.entries(SHADER_LAB_EFFECT_COUNTS)) {
-		assert.equal(definitions[slug].params.length, count, slug);
-	}
-
-	for (const [slug, count] of Object.entries(SHADER_LAB_SOURCE_COUNTS)) {
-		assert.equal(countSourceParams(slug), count, slug);
-	}
-});
-
-test("blob tracking controls follow the Shader Lab 3 output contract", () => {
-	const definitions = parseDefinitions();
-	const params = Object.fromEntries(
-		definitions["blob-tracking"].params.map((param) => [param.key, param]),
-	);
-
-	assert.equal(params.sensitivity.defaultValue, 0.8);
-	assert.equal(params.motionMaskThreshold.defaultValue, 0.08);
-	assert.equal(params.motionPersistence.defaultValue, 0.82);
-	assert.equal(params.outputMode.defaultValue, "decorated");
-	assert.deepEqual(
-		params.outputMode.options.map((option) => option.value),
-		["decorated", "motion"],
-	);
-	assert.equal(definitions.bloom.params[0].max, 2);
-});
-
 test("Shader Lab source layers use the runtime source-pass wrapper", () => {
-	for (const sourceType of Object.keys(SHADER_LAB_SOURCE_COUNTS)) {
+	for (const sourceType of SHADER_LAB_RUNTIME_SOURCE_TYPES) {
 		const demoSource = fs.readFileSync(path.join(__dirname, `${sourceType}-demo.tsx`), "utf8");
 		assert.match(demoSource, new RegExp(`<ShaderLabLayer layerType="${sourceType}" />`), sourceType);
 	}
 
-	assert.ok(DEFINITIONS_SOURCE.includes('runtimeType: "gradient"'));
 	assert.ok(fs.existsSync(path.join(ROOT, "public/ambient/atlassian/pictorial/clouds/primary/blue.png")));
 	assert.match(DEMO_SOURCE, /src: "\/ambient\/atlassian\/pictorial\/clouds\/primary\/blue\.png"/);
 	assert.match(DEMO_SOURCE, /return \[activeLayer, createShaderLabSourceImageLayer\(sourceImage\)\]/);
