@@ -13,7 +13,7 @@
 
 import type { FileUIPart } from "ai";
 import { motion, useReducedMotion } from "motion/react";
-import { type CSSProperties, startTransition, useCallback, useEffect, useMemo, useReducer, useRef, useState, ViewTransition } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useReducer, useRef, useState, ViewTransition } from "react";
 import { ArtifactPanel } from "@/components/blocks/artifact";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
@@ -49,7 +49,6 @@ import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/
 import { useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
 import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
-import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
 import PromptGallery from "@/components/blocks/prompt-gallery/page";
 import { DEFAULT_PROMPT_GALLERY_SUGGESTIONS } from "@/components/blocks/prompt-gallery/data/suggestions";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
@@ -61,7 +60,6 @@ import {
 	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
 	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
-	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_PADDING_PX,
 	TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX,
 	TOP_NAV_SEARCH_MAX_WIDTH_PX,
@@ -86,7 +84,6 @@ import {
 	type StudioScreenAssistantToolCall,
 	type StudioScreenAssistantToolResponder,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
-import { getCssDurationTokenMs } from "@/components/projects/rovo-core/lib/css-duration";
 import {
 	buildRovoAppRealtimeArtifactContextSummary,
 	buildRovoAppRealtimeResultSummary,
@@ -109,7 +106,7 @@ import type {
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import { useScreenAssistantRegion } from "@/components/projects/sidebar-chat/hooks/use-screen-assistant-region";
 import { reduceDictationPresentation } from "@/components/projects/sidebar-chat/lib/sidebar-chat-state";
-import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { useRovoAppShellSidebarChrome } from "@/components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome";
 import { cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { getLatestDataPart, getLatestUserMessageId, getMessageArtifactResult, getMessageText } from "@/lib/rovo-ui-messages";
@@ -131,10 +128,7 @@ interface RovoAppShellProps {
 	initialThreadId?: string | null;
 }
 
-const ROVO_APP_SIDEBAR_MOTION_DURATION = "--duration-medium";
-const ROVO_APP_SIDEBAR_MOTION_FALLBACK_MS = 200;
-const ROVO_APP_SIDEBAR_MIN_WIDTH = 240;
-const ROVO_APP_SIDEBAR_MAX_WIDTH = 480;
+const ROVO_APP_SIDEBAR_WIDTHS = { defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX, maxWidth: 480, minWidth: 240 } as const;
 
 const HOME_SUGGESTIONS = DEFAULT_PROMPT_GALLERY_SUGGESTIONS.slice(0, 3);
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe what it should do";
@@ -244,70 +238,20 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		[selectedAgentContextDescription],
 	);
 
-	// Bridge the global sidebar context (TopNavigation toggle) with the local
-	// shadcn SidebarProvider so the nav bar button controls the thread sidebar.
-	const globalSidebar = useGlobalSidebar();
-	const globalSidebarVisibleRef = useRef(globalSidebar.isVisible);
-
-	useEffect(() => {
-		if (globalSidebar.isVisible !== globalSidebarVisibleRef.current) {
-			globalSidebarVisibleRef.current = globalSidebar.isVisible;
-			chat.setSidebarOpen(globalSidebar.isVisible);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to global sidebar changes
-	}, [globalSidebar.isVisible]);
-
-	useEffect(() => {
-		if (chat.sidebarOpen !== globalSidebarVisibleRef.current) {
-			globalSidebarVisibleRef.current = chat.sidebarOpen;
-			globalSidebar.setSidebarVisible(chat.sidebarOpen);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to local sidebar changes
-	}, [chat.sidebarOpen]);
-
-	// Hover-reveal: show sidebar temporarily when hovering the toggle button.
-	// Uses a debounced timer so the sidebar stays visible while the mouse
-	// transitions from the toggle button to the sidebar content area.
-	const [hoverRevealActive, setHoverRevealActive] = useState(false);
-	const hoverLeaveTimerRef = useRef<number | null>(null);
-
-	const clearHoverTimer = useCallback(() => {
-		if (hoverLeaveTimerRef.current) {
-			window.clearTimeout(hoverLeaveTimerRef.current);
-			hoverLeaveTimerRef.current = null;
-		}
-	}, []);
-
-	const scheduleSidebarHoverClose = useCallback(() => {
-		clearHoverTimer();
-		hoverLeaveTimerRef.current = window.setTimeout(
-			() => {
-				setHoverRevealActive(false);
-			},
-			getCssDurationTokenMs(ROVO_APP_SIDEBAR_MOTION_DURATION, ROVO_APP_SIDEBAR_MOTION_FALLBACK_MS),
-		);
-	}, [clearHoverTimer]);
-
-	const handleSidebarHoverEnter = useCallback(() => {
-		clearHoverTimer();
-		setHoverRevealActive(true);
-	}, [clearHoverTimer]);
-
-	const handleSidebarHoverLeave = useCallback(() => {
-		scheduleSidebarHoverClose();
-	}, [scheduleSidebarHoverClose]);
-
-	const handleSidebarContentMouseEnter = useCallback(() => {
-		clearHoverTimer();
-	}, [clearHoverTimer]);
-
-	const handleSidebarContentMouseLeave = useCallback(() => {
-		scheduleSidebarHoverClose();
-	}, [scheduleSidebarHoverClose]);
-
-	useEffect(() => {
-		return () => clearHoverTimer();
-	}, [clearHoverTimer]);
+	// Global-sidebar sync, hover reveal, resizable width and header styles.
+	const {
+		handleSidebarContentMouseEnter,
+		handleSidebarContentMouseLeave,
+		handleSidebarHoverEnter,
+		handleSidebarHoverLeave,
+		headerHeightStyle,
+		isHoverOpen,
+		sidebarResize,
+		sidebarStyle: rovoAppSidebarStyle,
+	} = useRovoAppShellSidebarChrome({
+		chat,
+		widths: ROVO_APP_SIDEBAR_WIDTHS,
+	});
 
 	// ⌘⇧O — create a new chat
 	useEffect(() => {
@@ -321,8 +265,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		document.addEventListener("keydown", handleNewChatShortcut);
 		return () => document.removeEventListener("keydown", handleNewChatShortcut);
 	}, []);
-
-	const isHoverOpen = hoverRevealActive && !chat.sidebarOpen;
 
 	const artifactContentRef = useRef<HTMLDivElement | null>(null);
 	const annotationContextRef = useRef<string | null>(null);
@@ -341,20 +283,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const handleComposerSubmitRef = useRef<
 		((payload: { files: FileUIPart[]; text: string }) => void | Promise<void>) | null
 	>(null);
-	const sidebarResize = useSidebarResize({
-		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
-		minWidth: ROVO_APP_SIDEBAR_MIN_WIDTH,
-		maxWidth: ROVO_APP_SIDEBAR_MAX_WIDTH,
-		onCollapse: useCallback(() => {
-			chat.setSidebarOpen(false);
-		}, [chat]),
-	});
-	const rovoAppSidebarStyle = {
-		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
-	} as CSSProperties;
-	const headerHeightStyle: CSSProperties = {
-		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
-	};
 	const [cursorMode, setCursorMode] = useState(false);
 	const [galleryExpanded, setGalleryExpanded] = useState(false);
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
