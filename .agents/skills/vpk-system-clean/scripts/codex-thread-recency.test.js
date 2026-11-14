@@ -61,7 +61,7 @@ function probe(codexHome, threads, options = {}) {
 	return probeCodexThreadRecency({ cwd: WORKTREE, dbPath, nowMs: NOW_MS, ...options.probe });
 }
 
-test("the provisional idle thresholds are 24 hours, 6 under pressure", () => {
+test("the idle thresholds are 24 hours, 6 under pressure", () => {
 	assert.equal(IDLE_HOURS, 24);
 	assert.equal(PRESSURE_IDLE_HOURS, 6);
 	assert.equal(parseArgs(["--cwd", WORKTREE, "--pressure"]).idleHours, 6);
@@ -235,4 +235,20 @@ test("the CLI reads CODEX_HOME, prints one parseable line, and changes nothing b
 		const added = readdirSync(codexHome).filter((name) => !filesBefore.has(name)).sort();
 		assert.ok(added.every((name) => ["state_5.sqlite-shm", "state_5.sqlite-wal"].includes(name)), `unexpected files: ${added.join(", ")}`);
 	});
+});
+
+// The owner chose these thresholds (R-2); the skill, its maintenance reference and the probe
+// must state the same numbers and the same matching rule.
+test("the skill and its maintenance reference state the probe's thresholds and matching rule", () => {
+	const skillDir = join(__dirname, "..");
+	const skill = readFileSync(join(skillDir, "SKILL.md"), "utf8").replace(/\s+/gu, " ");
+	const maintenance = readFileSync(join(skillDir, "references", "maintenance.md"), "utf8").replace(/\s+/gu, " ");
+	const source = readFileSync(join(__dirname, "codex-thread-recency.js"), "utf8");
+	for (const [name, text] of [["SKILL.md", skill], ["maintenance.md", maintenance]]) {
+		assert.ok(text.includes(`${IDLE_HOURS} hours`), `${name} states the normal threshold`);
+		assert.ok(text.includes(`${PRESSURE_IDLE_HOURS} hours under memory pressure`), `${name} states the pressure threshold`);
+		assert.doesNotMatch(text, /exact cwd/u, `${name}: threads under the worktree count too`);
+	}
+	assert.doesNotMatch(maintenance, /PRESSURE_IDLE_HOURS` \(\d+\), both provisional/u);
+	assert.doesNotMatch(source, /PROVISIONAL until the owner/u);
 });
