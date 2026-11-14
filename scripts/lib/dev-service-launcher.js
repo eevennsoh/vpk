@@ -5,6 +5,7 @@ const { getNextDevEnv, getNextDevHostname } = require("./next-dev-env");
 const { getFrontendBasePort, getBackendBasePort } = require("./worktree-ports");
 const { isPortAvailable: probePortAvailable } = require("./rovo-utils");
 const { subscribeProcessSignals } = require("./rovo-supervisor");
+const { clearService, recordService } = require("./dev-stack-state");
 
 // One launch operation owns port records and child lifetime. The backend's health
 // reuse policy and Next's lock/retry policy deliberately remain distinct.
@@ -38,15 +39,18 @@ async function launchDevService(service) {
 		port >= basePort &&
 		port < basePort + maxTries;
 
-	const writePortFile = (port) => {
-		fs.writeFileSync(portFile, String(port));
+	// The port is recorded in .dev-stack.json with this launcher's pid (and the server's, once
+	// spawned); .dev-<service>-port is written from the same record. A port served by a process
+	// this launcher did not start is recorded without pids.
+	const writePortFile = (port, { childPid = null, owned = true } = {}) => {
+		recordService(process.cwd(), service, { port, pid: owned ? process.pid : null, childPid });
 	};
 
 	const cleanupPortFile = () => {
 		try {
-			fs.unlinkSync(portFile);
+			clearService(process.cwd(), service, { pid: process.pid });
 		} catch {
-			// ignore missing file
+			// The record is best effort on the way out; never mask the real exit.
 		}
 	};
 
@@ -204,6 +208,8 @@ async function launchDevService(service) {
 			}
 		);
 
+		writePortFile(port, { childPid: child.pid ?? null });
+
 		child.stderr?.on("data", (chunk) => {
 			const s = chunk.toString();
 			stderr += s;
@@ -250,7 +256,7 @@ async function launchDevService(service) {
 						process.exit(1);
 						return;
 					}
-					writePortFile(runningPort);
+					writePortFile(runningPort, { owned: false });
 					console.log(
 						`Next.js dev is already running for this worktree on port ${runningPort}. Reusing existing process.`
 					);
@@ -326,7 +332,7 @@ async function launchDevService(service) {
 						"Stop the existing frontend before starting a tmux-owned session."
 					);
 				}
-				writePortFile(runningPort);
+				writePortFile(runningPort, { owned: false });
 				console.log(
 					`Next.js dev is already running for this worktree on port ${runningPort}. Reusing existing process.`
 				);
@@ -351,7 +357,7 @@ async function launchDevService(service) {
 								"Stop the existing backend before starting a tmux-owned session."
 						);
 					}
-					writePortFile(recordedPort);
+					writePortFile(recordedPort, { owned: false });
 					console.log(`Backend dev server is already running for this worktree on port ${recordedPort}. Reusing existing process.`);
 					console.warn(
 						"[dev-backend] Reuse does not reload .env.local or backend code. " +
@@ -375,7 +381,7 @@ async function launchDevService(service) {
 
 		writePortFile(port);
 
-		const { onExit } = spawnChild(["backend/server.js"], {
+		const { child, onExit } = spawnChild(["backend/server.js"], {
 			stdio: "inherit",
 			env: {
 				...process.env,
@@ -383,6 +389,8 @@ async function launchDevService(service) {
 				BACKEND_PORT: String(port),
 			},
 		});
+
+		writePortFile(port, { childPid: child.pid ?? null });
 
 		onExit(port, (code, signal) => {
 			cleanupPortFile();

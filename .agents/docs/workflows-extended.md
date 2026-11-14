@@ -13,7 +13,7 @@
 - `pnpm run rovo` — 1 Rovo Serve instance + backend + frontend; `pnpm run rovo -- 6` for the full pool. First run prints a `ROVO_SESSION_TOKEN` to copy into `.env.local`.
 - `pnpm run rovo:tmux:start --1` / `--6` — frontend, backend, and Rovo pool in the detached tmux session; stop with `pnpm run rovo:tmux:stop`.
 - `pnpm run dev:rovo` — Rovo Serve only; `pnpm run dev:frontend` / `pnpm run dev:backend` — single services.
-- `pnpm run dev:tmux:attach` — attach to the detached dev session for logs (detach with `Ctrl-b` then `d`); `pnpm run dev:tmux:status` — non-interactive session/port snapshot; `pnpm run dev:tmux:stop` — stop this worktree only.
+- `pnpm run dev:tmux:attach` — attach to the detached dev session for logs (detach with `Ctrl-b` then `d`); `pnpm run dev:tmux:status` — the stack's derived state (`absent`, `seeding-env`, `starting`, `ready`, `degraded`, `stopping`, `stopped`, `orphaned`) and next action, `--json` for the full record; `pnpm run dev:tmux:stop` — stop this worktree only (Ctrl-C, let the recorded service processes drain, then end what is left). `dev:tmux:start` exits 5 unless the frontend and backend both become ready.
 - Vanilla `portless run` — derives the main and branch hostnames from `package.json`'s package name; use `pnpm ports once` to read the exact URL. Add `--name <worktree-dir>` only when HEAD is detached, and `--script rovo` only when the surface needs Rovo Serve. The `/portless` command resolves this.
 - Tmux/Rovo launchers seed `.env.local` (main worktree copy, then `.env.local.example`); copy or symlink it manually only when starting backend/frontend entrypoints outside these launchers.
 

@@ -78,6 +78,8 @@ const DEFAULT_START_TIMEOUT_MS = 90_000;
 // `stop` sends Ctrl-C, waits, then kills the session and any listener left; past this a stack
 // still marked stopping has stuck processes.
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
+// `dev:tmux:start` exits with this when the stack did not become ready (3 and 4 are the budget's).
+const EXIT_NOT_READY = 5;
 
 function canonicalPath(value) {
 	try {
@@ -658,10 +660,130 @@ async function collectStackFacts({
 	return { record, sessionAlive: Boolean(sessionAlive), services, now };
 }
 
+// End the processes the record names. Called by \`stop\` after it has sent Ctrl-C to the session:
+// first wait up to waitMs for them to exit on their own (the backend drains for up to 10 s),
+// then SIGTERM what is left, then SIGKILL after graceMs. A pid is signalled only when its cwd is
+// this worktree (a recorded pid may have been reused) and never when it is this process or one
+// of its ancestors (an agent session running the stop from this worktree).
+async function stopRecordedProcesses({
+	worktreePath,
+	record = readStackRecord(worktreePath),
+	waitMs = 12_000,
+	graceMs = 2_000,
+	pollMs = 100,
+	killFn = process.kill,
+	isPidAlive = defaultIsPidAlive,
+	getProcessCwdFn,
+	listAncestorPidsFn,
+	sleepFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+	now = Date.now,
+} = {}) {
+	const cleanup = require("./worktree-listener-cleanup");
+	const cwdOf = getProcessCwdFn ?? ((pid) => cleanup.getProcessCwd(pid));
+	const protectedPids = cleanup.getProtectedPids(listAncestorPidsFn ?? (() => cleanup.listAncestorPids()));
+	const target = path.resolve(worktreePath);
+	const recorded = recordedPids(record);
+	const skippedProtected = recorded.filter((pid) => protectedPids.has(pid));
+	const ours = recorded.filter((pid) => !protectedPids.has(pid) && isPidAlive(pid) && cwdOf(pid) === target);
+	const alive = () => ours.filter((pid) => isPidAlive(pid));
+
+	const deadline = now() + waitMs;
+	while (alive().length > 0 && now() < deadline) await sleepFn(pollMs);
+	const exitedOnTheirOwn = ours.length - alive().length;
+
+	const terminated = alive();
+	for (const pid of terminated) {
+		try {
+			killFn(pid, "SIGTERM");
+		} catch {
+			// Already gone.
+		}
+	}
+	if (terminated.length > 0) {
+		const graceDeadline = now() + graceMs;
+		while (alive().length > 0 && now() < graceDeadline) await sleepFn(pollMs);
+	}
+	const killed = alive();
+	for (const pid of killed) {
+		try {
+			killFn(pid, "SIGKILL");
+		} catch {
+			// Exited between the check and the signal.
+		}
+	}
+	return { recorded, ours, skippedProtected, exitedOnTheirOwn, terminated, killed };
+}
+
+function resolveTmuxBinary(env = process.env) {
+	for (const candidate of [env.VPK_TMUX_BIN, "/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/usr/bin/tmux"]) {
+		if (!candidate) continue;
+		try {
+			fs.accessSync(candidate, fs.constants.X_OK);
+			return candidate;
+		} catch {
+			// Try the next one.
+		}
+	}
+	return "tmux";
+}
+
+function samePath(left, right) {
+	const real = (value) => {
+		try {
+			return fs.realpathSync(value);
+		} catch {
+			return path.resolve(value);
+		}
+	};
+	return real(left) === real(right);
+}
+
+// A session belongs to this worktree when it has the given name or starts in its directory.
+function isSessionAlive({ worktreePath, socket = "vpk-dev", sessionName = null, env = process.env, spawnSyncImpl = require("node:child_process").spawnSync }) {
+	const tmux = resolveTmuxBinary(env);
+	const socketArgs = socket && socket !== "default" ? ["-L", socket] : [];
+	if (sessionName && spawnSyncImpl(tmux, [...socketArgs, "has-session", "-t", sessionName], { stdio: "ignore" }).status === 0) {
+		return true;
+	}
+	const listed = spawnSyncImpl(tmux, [...socketArgs, "list-sessions", "-F", "#{session_name}|#{session_path}"], { encoding: "utf8" });
+	if (listed.status !== 0) return false;
+	return String(listed.stdout)
+		.split("\n")
+		.some((line) => {
+			const separator = line.indexOf("|");
+			return separator > 0 && samePath(line.slice(separator + 1), worktreePath);
+		});
+}
+
+function lsofPortListening(port, { spawnSyncImpl = require("node:child_process").spawnSync } = {}) {
+	return spawnSyncImpl("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], { stdio: "ignore" }).status === 0;
+}
+
+async function readStackStatus({ worktreePath, socket, sessionName, env = process.env, isPortListening = lsofPortListening, now = Date.now() } = {}) {
+	const record = readStackRecord(worktreePath);
+	const facts = await collectStackFacts({
+		worktreePath,
+		sessionAlive: isSessionAlive({ worktreePath, socket: socket ?? record?.session?.socket ?? "vpk-dev", sessionName: sessionName ?? record?.session?.name ?? null, env }),
+		isPortListening,
+		now,
+	});
+	const derived = deriveStackStatus(facts);
+	return {
+		worktree: path.resolve(worktreePath),
+		...derived,
+		session: facts.record?.session ?? (sessionName ? { name: sessionName, socket: socket ?? "vpk-dev" } : null),
+		sessionAlive: facts.sessionAlive,
+		phase: facts.record?.phase ?? null,
+		phaseAt: facts.record?.phaseAt ?? null,
+		services: facts.services,
+	};
+}
+
 module.exports = {
 	DEFAULT_START_TIMEOUT_MS,
 	DEFAULT_STOP_TIMEOUT_MS,
 	IDENTITY_FORMAT,
+	EXIT_NOT_READY,
 	NEXT_ACTIONS,
 	RECORDED_PHASES,
 	SERVICES,
@@ -671,6 +793,9 @@ module.exports = {
 	clearService,
 	collectStackFacts,
 	deriveStackStatus,
+	isSessionAlive,
+	readStackStatus,
+	stopRecordedProcesses,
 	normalizeStackRecord,
 	canonicalPath,
 	readProcessIdentity,
@@ -684,3 +809,90 @@ module.exports = {
 	verifyRecordedProcess,
 	withStackLock,
 };
+
+// CLI for the launchers (scripts/dev-tmux-plain.sh) and agents:
+//
+//   node scripts/lib/dev-stack-state.js status [--json]        derived status of the cwd's stack
+//   node scripts/lib/dev-stack-state.js wait-ready [--timeout-ms N]   exit 0 once ready, else 5
+//   node scripts/lib/dev-stack-state.js phase <phase> [--session NAME]
+//   node scripts/lib/dev-stack-state.js stop-recorded [--wait-ms N]
+//
+// Common options: --worktree PATH (default cwd), --socket NAME (default vpk-dev).
+function parseCliArgs(argv) {
+	const [command, ...rest] = argv;
+	const options = { positional: [] };
+	for (let index = 0; index < rest.length; index += 1) {
+		const arg = rest[index];
+		if (arg === "--json") options.json = true;
+		else if (arg.startsWith("--")) {
+			options[arg.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = rest[index + 1];
+			index += 1;
+		} else options.positional.push(arg);
+	}
+	return { command, options };
+}
+
+function describe(report) {
+	const ports = SERVICES.map((service) => `${service}=${report.services[service]?.port ?? "—"}${report.services[service]?.listening ? "" : " (not listening)"}`).join("  ");
+	return `State:   ${report.status} (${report.reason}); next: ${report.nextAction}\nPorts:   ${ports}`;
+}
+
+async function main(argv = process.argv.slice(2)) {
+	const { command, options } = parseCliArgs(argv);
+	const worktreePath = path.resolve(options.worktree ?? process.cwd());
+	const socket = options.socket ?? "vpk-dev";
+	const sessionName = options.session ?? null;
+	if (command === "phase") {
+		const phase = options.positional[0];
+		const current = readStackRecord(worktreePath);
+		recordPhase(worktreePath, phase, { session: sessionName ? { name: sessionName, socket } : current?.session ?? undefined });
+		return 0;
+	}
+	if (command === "status") {
+		const report = await readStackStatus({ worktreePath, socket, sessionName });
+		process.stdout.write(options.json ? `${JSON.stringify(report, null, "\t")}\n` : `${describe(report)}\n`);
+		return 0;
+	}
+	if (command === "wait-ready") {
+		const timeoutMs = Number.parseInt(options.timeoutMs ?? String(DEFAULT_START_TIMEOUT_MS), 10);
+		const deadline = Date.now() + (Number.isFinite(timeoutMs) ? timeoutMs : DEFAULT_START_TIMEOUT_MS);
+		for (;;) {
+			const report = await readStackStatus({ worktreePath, socket, sessionName });
+			if (report.status === "ready") return 0;
+			// Nothing will change by waiting in these states.
+			const settled = !["seeding-env", "starting"].includes(report.status);
+			if (settled || Date.now() >= deadline) {
+				process.stderr.write(`[dev:tmux] Not ready: ${report.status} (${report.reason}).\n`);
+				return EXIT_NOT_READY;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 500));
+		}
+	}
+	if (command === "stop-recorded") {
+		const result = await stopRecordedProcesses({
+			worktreePath,
+			waitMs: Number.parseInt(options.waitMs ?? "12000", 10),
+		});
+		if (result.skippedProtected.length > 0) {
+			process.stdout.write(`[dev:tmux] Not signalling ${result.skippedProtected.join(", ")}: the caller's own process tree.\n`);
+		}
+		if (result.ours.length > 0) {
+			process.stdout.write(
+				`[dev:tmux] Recorded processes: ${result.exitedOnTheirOwn} exited after Ctrl-C, ${result.terminated.length - result.killed.length} after SIGTERM, ${result.killed.length} needed SIGKILL.\n`,
+			);
+		}
+		return 0;
+	}
+	process.stderr.write("Usage: dev-stack-state.js status [--json] | wait-ready [--timeout-ms N] | phase <phase> [--session NAME] | stop-recorded [--wait-ms N]\n");
+	return 2;
+}
+
+if (require.main === module) {
+	main().then(
+		(code) => process.exit(code),
+		(error) => {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exit(1);
+		},
+	);
+}

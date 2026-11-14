@@ -18,6 +18,7 @@ const {
 	recordPhase,
 	recordService,
 	recordedPids,
+	stopRecordedProcesses,
 	withStackLock,
 } = require("./dev-stack-state");
 
@@ -458,4 +459,65 @@ test("an entry recorded in an earlier identity format is reported and kept, neve
 	assert.equal(facts.services.frontend.pidAlive, null, "unknown, not gone");
 	recordPhase(dir, "stopped", { keepService: (entry) => verifyRecordedProcess({ pid: entry.pid, start: entry.pidStart, command: entry.pidCommand }) !== false });
 	assert.equal(readStackRecord(dir).services.frontend?.pid, child.pid, "a finished stop keeps it");
+});
+
+// A fake process table: each pid has a cwd and exits on the signals listed in `exitsOn`
+// (or after `exitsAfterMs` on its own). The clock advances with every sleep.
+function fakeProcesses(table) {
+	let clock = 0;
+	const alive = new Set(Object.keys(table).map(Number));
+	const signals = [];
+	return {
+		signals,
+		options: {
+			isPidAlive: (pid) => alive.has(pid),
+			getProcessCwdFn: (pid) => table[pid]?.cwd ?? null,
+			killFn: (pid, signal) => {
+				signals.push([pid, signal]);
+				if (table[pid]?.exitsOn?.includes(signal)) alive.delete(pid);
+			},
+			sleepFn: async (ms) => {
+				clock += ms;
+				for (const [pid, entry] of Object.entries(table)) {
+					if (entry.exitsAfterMs !== undefined && clock >= entry.exitsAfterMs) alive.delete(Number(pid));
+				}
+			},
+			now: () => clock,
+		},
+	};
+}
+
+const stackRecord = (pids) => ({
+	version: 1,
+	worktree: "/repo",
+	session: null,
+	phase: "stopping",
+	phaseAt: null,
+	services: { frontend: { port: 3001, pid: pids[0], childPid: pids[1] ?? null }, backend: { port: 8081, pid: pids[2] ?? null, childPid: pids[3] ?? null } },
+});
+
+test("stop waits for recorded processes to drain, then SIGTERMs and SIGKILLs what is left", async () => {
+	const fake = fakeProcesses({
+		11: { cwd: "/repo", exitsAfterMs: 300 }, // drains after Ctrl-C
+		12: { cwd: "/repo", exitsOn: ["SIGTERM"] },
+		21: { cwd: "/repo", exitsOn: ["SIGKILL"] }, // ignores SIGTERM
+	});
+	const result = await stopRecordedProcesses({ worktreePath: "/repo", record: stackRecord([11, 12, 21]), waitMs: 1_000, graceMs: 500, listAncestorPidsFn: () => [], ...fake.options });
+	assert.deepEqual(result.ours, [11, 12, 21]);
+	assert.equal(result.exitedOnTheirOwn, 1);
+	assert.deepEqual(result.terminated, [12, 21]);
+	assert.deepEqual(result.killed, [21]);
+	assert.deepEqual(fake.signals, [[12, "SIGTERM"], [21, "SIGTERM"], [21, "SIGKILL"]]);
+});
+
+test("stop never signals the caller's own process tree or a reused pid outside the worktree", async () => {
+	const fake = fakeProcesses({
+		31: { cwd: "/repo", exitsOn: ["SIGTERM"] }, // an agent session that is an ancestor of the stop
+		32: { cwd: "/elsewhere", exitsOn: ["SIGTERM"] }, // the recorded pid now belongs to another process
+		33: { cwd: "/repo", exitsOn: ["SIGTERM"] },
+	});
+	const result = await stopRecordedProcesses({ worktreePath: "/repo", record: stackRecord([31, 32, 33, process.pid]), waitMs: 0, graceMs: 100, listAncestorPidsFn: () => [31], ...fake.options });
+	assert.deepEqual(result.skippedProtected.sort((a, b) => a - b), [31, process.pid].sort((a, b) => a - b));
+	assert.deepEqual(result.ours, [33]);
+	assert.deepEqual(fake.signals, [[33, "SIGTERM"]]);
 });

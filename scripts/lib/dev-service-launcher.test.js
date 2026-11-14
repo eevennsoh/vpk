@@ -18,6 +18,8 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 	const exits = [];
 	const killed = [];
 	const logs = [];
+	// The stack record, reduced to what the launcher writes: each entry and its port-file mirror.
+	const stackRecords = [];
 	const signalTarget = new EventEmitter();
 	Object.assign(signalTarget, {
 		env: { PORT_SEARCH_MAX: "4", VPK_TMUX_OWNED: owned ? "1" : "0" },
@@ -38,6 +40,7 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 			spawns.push({ bin, args, options });
 			const child = new EventEmitter();
 			child.stderr = new EventEmitter();
+			child.pid = 500 + children.length;
 			child.kill = (signal) => killed.push({ child: children.indexOf(child), signal });
 			children.push(child);
 			return child;
@@ -63,6 +66,16 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 		"./worktree-ports": { getFrontendBasePort: () => 4000, getBackendBasePort: () => 8000 },
 		"./rovo-utils": { isPortAvailable: async (port, options) => { probes.push({ port, ...options }); return !busyPorts.has(port); } },
 		"./rovo-supervisor": { subscribeProcessSignals },
+		"./dev-stack-state": {
+			recordService: (cwd, service, entry) => {
+				stackRecords.push({ service, ...entry });
+				files.set(path.join(cwd, `.dev-${service}-port`), String(entry.port));
+			},
+			clearService: (cwd, service) => {
+				stackRecords.push({ service, cleared: true });
+				files.delete(path.join(cwd, `.dev-${service}-port`));
+			},
+		},
 	};
 	const requireDependency = (name) => {
 		assert.equal(name in dependencies, true, `Unexpected dependency ${name}`);
@@ -74,7 +87,7 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 		module: loadedModule, require: requireDependency, process: signalTarget,
 		console: Object.fromEntries(["log", "warn", "error"].map((level) => [level, (...values) => logs.push({ level, message: values.join(" ") })])),
 	});
-	return { launch: loadedModule.exports.launchDevService, files, busyPorts, children, spawns, probes, exits, killed, logs, signalTarget };
+	return { launch: loadedModule.exports.launchDevService, files, stackRecords, busyPorts, children, spawns, probes, exits, killed, logs, signalTarget };
 }
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
@@ -88,6 +101,8 @@ for (const service of ["frontend", "backend"]) {
 		assert.equal(h.spawns.length, 1);
 		assert.equal(h.spawns[0].options.env.PORT, String(base + 1));
 		if (service === "frontend") assert.equal(h.spawns[0].options.env.NEXT_PUBLIC_BACKEND_PORT, "8002");
+		// The stack record names the launcher and the server it spawned.
+		assert.deepEqual(h.stackRecords.at(-1), { service, port: base + 1, pid: 100, childPid: 500 });
 		assert.equal(h.probes.every((probe) => probe.includeLoopback === (service === "frontend")), true);
 		h.signalTarget.emit("SIGHUP");
 		assert.equal(h.killed[0].signal, "SIGHUP");
@@ -96,6 +111,7 @@ for (const service of ["frontend", "backend"]) {
 		assert.equal(h.files.has(`/worktree/.dev-${service}-port`), false);
 		assert.equal(h.signalTarget.listenerCount("SIGHUP"), 0);
 		assert.deepEqual(h.killed.at(-1), { pid: 100, signal: "SIGHUP" });
+		assert.deepEqual(h.stackRecords.at(-1), { service, cleared: true });
 	});
 
 	test(`${service} spawn errors clean records and every signal listener`, async () => {
@@ -123,6 +139,8 @@ test("backend reuses only a healthy recorded server and rejects reuse for sessio
 	await reused.launch("backend");
 	assert.equal(reused.spawns.length, 0);
 	assert.equal(reused.files.get("/worktree/.dev-backend-port"), "8001");
+	// A server this launcher did not start is recorded by port only, so a stop never signals it by pid.
+	assert.deepEqual(reused.stackRecords.at(-1), { service: "backend", port: 8001, pid: null, childPid: null });
 	assert.equal(reused.logs.some((log) => log.message.includes("Reuse does not reload")), true);
 	const owned = harness({ ...options, owned: true });
 	await assert.rejects(owned.launch("backend"), /tmux-owned session/);

@@ -272,6 +272,7 @@ module.exports = {
 	findListeningPidsForWorktree,
 	findRovoSupervisorPidsForWorktree,
 	getProcessCwd,
+	getProtectedPids,
 	listAncestorPids,
 	listProcessInfo,
 	listListeningPids,

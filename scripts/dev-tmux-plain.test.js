@@ -12,16 +12,20 @@ const repoRoot = path.resolve(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts/dev-tmux-plain.sh");
 const frontendPortFile = path.join(repoRoot, ".dev-frontend-port");
 const backendPortFile = path.join(repoRoot, ".dev-backend-port");
+const stackFile = path.join(repoRoot, ".dev-stack.json");
+// Ports the fake dev server listens on once a session runs `portless run` (see the fake tmux).
+const READY_PORTS = "49150 49151";
 
 function writeExecutable(filePath, lines) {
 	fs.writeFileSync(filePath, `${lines.join("\n")}\n`, "utf8");
 	fs.chmodSync(filePath, 0o755);
 }
 
-function withPortFiles(frontendPort, backendPort, callback) {
+function withPortFiles(frontendPort, backendPort, callback, stackRecord = null) {
 	const files = [
 		[frontendPortFile, frontendPort],
 		[backendPortFile, backendPort],
+		[stackFile, stackRecord === null ? null : JSON.stringify(stackRecord)],
 	];
 	const backups = files.map(([filePath]) => ({
 		filePath,
@@ -56,6 +60,7 @@ function createFakeLauncherEnvironment() {
 	const nodePath = path.join(tempDir, "node");
 	const pgrepPath = path.join(tempDir, "pgrep");
 	const tmuxLogPath = path.join(tempDir, "tmux.log");
+	const listenPath = path.join(tempDir, "listening");
 	const cleanupLogPath = path.join(tempDir, "cleanup.log");
 
 	// Sessions live in FAKE_TMUX_STATE as `name|start-directory` lines; every launched dev
@@ -65,13 +70,20 @@ function createFakeLauncherEnvironment() {
 		"printf '%s\\n' \"$*\" >> \"$FAKE_TMUX_LOG\"",
 		"state=\"${FAKE_TMUX_STATE:-/dev/null}\"",
 		"command_name=\"\"; target=\"\"; dir=\"\"",
+		// A launched dev server records its two ports and listens on them.
+		"fake_serve() {",
+		"\tset -- ${FAKE_READY_PORTS:-}",
+		"\t[ \"$#\" -eq 2 ] || return 0",
+		"\tprintf '%s' \"$1\" > .dev-frontend-port; printf '%s' \"$2\" > .dev-backend-port",
+		"\tprintf '%s %s\\n' \"$1\" \"$2\" >> \"${FAKE_LISTEN_FILE:-/dev/null}\"",
+		"}",
 		"while [ \"$#\" -gt 0 ]; do",
 		"\tcase \"$1\" in",
 		"\t\thas-session|new-session|send-keys|kill-session|list-sessions) command_name=\"$1\"; shift ;;",
 		"\t\t-t|-s) target=\"$2\"; shift 2 ;;",
 		"\t\t-c) dir=\"$2\"; shift 2 ;;",
 		"\t\t-L|-F) shift 2 ;;",
-		"\t\t*) [ \"$command_name\" = \"send-keys\" ] && case \"$1\" in *\"portless run\"*) echo \"$target\" >> \"${FAKE_SERVER_LOG:-/dev/null}\" ;; esac; shift ;;",
+		"\t\t*) [ \"$command_name\" = \"send-keys\" ] && case \"$1\" in *\"portless run\"*) echo \"$target\" >> \"${FAKE_SERVER_LOG:-/dev/null}\"; fake_serve ;; esac; shift ;;",
 		"\tesac",
 		"done",
 		"case \"$command_name\" in",
@@ -92,9 +104,9 @@ function createFakeLauncherEnvironment() {
 		"\techo \"n${FAKE_CWD_ROOT}\"",
 		"\texit 0",
 		"fi",
-		"if [ -n \"${FAKE_LISTEN_PORT:-}\" ] && [[ \" $* \" == *\":${FAKE_LISTEN_PORT}\"* ]]; then",
-		"\texit 0",
-		"fi",
+		"for port in ${FAKE_LISTEN_PORT:-} $(cat \"${FAKE_LISTEN_FILE:-/dev/null}\" 2>/dev/null); do",
+		"\t[[ \" $* \" == *\":${port} \"* ]] && exit 0",
+		"done",
 		"exit 1",
 	]);
 
@@ -129,6 +141,7 @@ function createFakeLauncherEnvironment() {
 			fs.writeFileSync(file, JSON.stringify({ servers: [], swapUsedGb: 0, pressureLevel: 1, ...inventory }));
 			return file;
 		},
+		listenPath,
 		tmuxPath,
 		tmuxLogPath,
 		cleanupLogPath,
@@ -144,6 +157,7 @@ function runLauncher(env) {
 		encoding: "utf8",
 		env: {
 			...process.env,
+			FAKE_READY_PORTS: READY_PORTS,
 			...env,
 		},
 	});
@@ -159,7 +173,7 @@ test("dev-tmux plain start reuses a session with a listening frontend port", () 
 				VPK_DEV_TMUX_SESSION: "vpk-dev-plain-test",
 				VPK_DEV_TMUX_WAIT: "1",
 				FAKE_TMUX_HAS_SESSION: "1",
-				FAKE_LISTEN_PORT: "49123",
+				FAKE_LISTEN_PORT: "49123 49124",
 				FAKE_TMUX_LOG: fake.tmuxLogPath,
 				NODE_CLEANUP_LOG: fake.cleanupLogPath,
 			})
@@ -186,6 +200,7 @@ test("dev-tmux plain start restarts an existing session with no listening fronte
 				VPK_DEV_TMUX_WAIT: "0",
 				FAKE_TMUX_HAS_SESSION: "1",
 				FAKE_LISTEN_PORT: "",
+				FAKE_LISTEN_FILE: fake.listenPath,
 				FAKE_TMUX_LOG: fake.tmuxLogPath,
 				NODE_CLEANUP_LOG: fake.cleanupLogPath,
 			})
@@ -221,6 +236,9 @@ test("dev-tmux plain start does not warn about other running stacks", () => {
 					VPK_DEV_TMUX_SESSION: "vpk-dev-plain-test",
 					VPK_DEV_TMUX_WAIT: "0",
 					VPK_DEV_STACK_WARN: "1",
+					FAKE_READY_PORTS: READY_PORTS,
+					FAKE_LISTEN_FILE: fake.listenPath,
+					FAKE_TMUX_STATE: fake.statePath,
 					VPK_DEV_STACK_INVENTORY: fake.writeInventory({ servers: [{ pid: 12345, cwd: "/tmp/other-project", cpu: 1 }] }),
 					FAKE_TMUX_HAS_SESSION: "0",
 					FAKE_PGREP_PIDS: "12345",
@@ -253,6 +271,8 @@ function startAs(fake, sessionName, extraEnv = {}, args = ["start"]) {
 			VPK_DEV_TMUX_SESSION: sessionName,
 			VPK_DEV_TMUX_WAIT: "0",
 			VPK_DEV_STACK_INVENTORY: fake.writeInventory({}),
+			FAKE_READY_PORTS: READY_PORTS,
+			FAKE_LISTEN_FILE: fake.listenPath,
 			FAKE_TMUX_STATE: fake.statePath,
 			FAKE_SERVER_LOG: fake.serverLogPath,
 			FAKE_TMUX_LOG: fake.tmuxLogPath,
@@ -307,7 +327,7 @@ test("a worktree with a directory-named and a branch-named session keeps one and
 	const fake = createFakeLauncherEnvironment();
 	try {
 		fs.writeFileSync(fake.statePath, `vpk-dev-e736|${repoRoot}\nvpk-dev-feature-x|${repoRoot}\nvpk-dev-elsewhere|/tmp/other-worktree\n`);
-		const result = withPortFiles("49133", null, () => startAs(fake, "vpk-dev-feature-x", { FAKE_LISTEN_PORT: "49133" }));
+		const result = withPortFiles("49133", "49134", () => startAs(fake, "vpk-dev-feature-x", { FAKE_LISTEN_PORT: "49133 49134" }));
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stdout, /Stopping duplicate tmux session 'vpk-dev-e736' for this worktree/);
 		assert.deepEqual(fake.sessions(), [`vpk-dev-feature-x|${repoRoot}`, "vpk-dev-elsewhere|/tmp/other-worktree"]);
@@ -416,7 +436,7 @@ test("start ends with the URL to open: the Portless route when one exists, else 
 		VPK_DEV_TMUX_SESSION: "vpk-dev-plain-url-test",
 		VPK_DEV_TMUX_WAIT: "1",
 		FAKE_TMUX_HAS_SESSION: "1",
-		FAKE_LISTEN_PORT: "49127",
+		FAKE_LISTEN_PORT: "49127 49128",
 		FAKE_TMUX_LOG: fake.tmuxLogPath,
 		NODE_CLEANUP_LOG: fake.cleanupLogPath,
 		// Portless routes are read from ~/.portless/routes.json.
@@ -452,6 +472,7 @@ test("a launched session copies its pane output to the worktree's dev log and ke
 				VPK_DEV_TMUX_SESSION: "vpk-dev-plain-log-test",
 				VPK_DEV_TMUX_WAIT: "0",
 				VPK_DEV_LOG_DIR: logDir,
+				FAKE_LISTEN_FILE: fake.listenPath,
 				FAKE_TMUX_STATE: fake.statePath,
 				FAKE_SERVER_LOG: fake.serverLogPath,
 				FAKE_TMUX_LOG: fake.tmuxLogPath,
@@ -466,6 +487,105 @@ test("a launched session copies its pane output to the worktree's dev log and ke
 		assert.equal(fs.existsSync(path.join(logDir, "dev.log")), false, "the fake pane wrote nothing yet");
 		assert.ok(output.includes(`Logs:        ${path.join(logDir, "dev.log")}`), output);
 		assert.deepEqual(fake.serversLaunched(), ["vpk-dev-plain-log-test"]);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+// SM-BT-1: start succeeds only when the stack is ready; stop ends the recorded processes; status
+// is derived from the record, the session and the ports.
+test("start exits 5 when the dev server never listens, and names the state", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-never-ready", { FAKE_READY_PORTS: "" }));
+		assert.equal(result.status, 5, result.stderr);
+		assert.match(result.stderr, /Not ready: (starting|degraded) \(waiting for frontend and backend|Not ready: degraded/);
+		assert.match(result.stdout, /The dev stack is not ready/);
+		assert.doesNotMatch(result.stdout, /http:\/\/localhost/);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("a running session is not ready while its backend does not listen", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const result = withPortFiles("49141", "49142", () =>
+			startAs(fake, "vpk-dev-half", { FAKE_TMUX_HAS_SESSION: "1", FAKE_LISTEN_PORT: "49141" }),
+		);
+		assert.equal(result.status, 5);
+		assert.match(result.stdout, /Session 'vpk-dev-half' already running/);
+		assert.match(result.stderr, /Not ready: degraded \(backend not listening\)/);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("status --json reports the derived state, not only whether the session exists", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const status = (env) => {
+			const result = startAs(fake, "vpk-dev-status", env, ["status", "--json"]);
+			assert.equal(result.status, 0, result.stderr);
+			return JSON.parse(result.stdout);
+		};
+		const half = withPortFiles("49143", "49144", () => status({ FAKE_TMUX_HAS_SESSION: "1", FAKE_LISTEN_PORT: "49143" }));
+		assert.equal(half.status, "degraded");
+		assert.equal(half.nextAction, "restart");
+		assert.equal(half.services.frontend.port, 49143);
+		const ready = withPortFiles("49143", "49144", () => status({ FAKE_TMUX_HAS_SESSION: "1", FAKE_LISTEN_PORT: "49143 49144" }));
+		assert.equal(ready.status, "ready");
+		const absent = withPortFiles(null, null, () => status({}));
+		assert.equal(absent.status, "absent");
+	} finally {
+		fake.cleanup();
+	}
+});
+
+function recordedStack(frontendPid) {
+	return {
+		version: 1,
+		worktree: repoRoot,
+		session: { name: "vpk-dev-recorded", socket: "vpk-dev" },
+		phase: "starting",
+		phaseAt: new Date().toISOString(),
+		services: { frontend: { port: 49145, pid: frontendPid, childPid: null } },
+	};
+}
+
+test("stop ends the recorded service processes before it kills the session", async (t) => {
+	const { spawnInGroup } = require("./lib/test-process.js");
+	const fake = createFakeLauncherEnvironment();
+	try {
+		// Stands in for a launcher that ignores Ctrl-C (the fake tmux delivers none) but exits on SIGTERM.
+		const server = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
+		const exited = new Promise((resolve) => server.once("exit", (_code, signal) => resolve(signal)));
+		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${repoRoot}\n`);
+		const result = withPortFiles("49145", null, () =>
+			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(server.pid), FAKE_CWD_ROOT: repoRoot, VPK_DEV_STOP_WAIT_MS: "200" }, ["stop"]),
+		recordedStack(server.pid));
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(await exited, "SIGTERM");
+		const recorded = result.stdout.indexOf("Recorded processes: 0 exited after Ctrl-C, 1 after SIGTERM, 0 needed SIGKILL");
+		assert.ok(recorded >= 0, result.stdout);
+		assert.ok(recorded < result.stdout.indexOf("Stopped tmux session 'vpk-dev-recorded'"), result.stdout);
+		assert.deepEqual(fake.sessions(), []);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("stop never signals the caller's own process tree, even when the record names it", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		// This test process is an ancestor of the stop, as an agent session running it would be.
+		fs.writeFileSync(fake.statePath, `vpk-dev-recorded|${repoRoot}\n`);
+		const result = withPortFiles("49145", null, () =>
+			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(process.pid), FAKE_CWD_ROOT: repoRoot, VPK_DEV_STOP_WAIT_MS: "0" }, ["stop"]),
+		recordedStack(process.pid));
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(result.stdout, new RegExp(`Not signalling ${process.pid}: the caller's own process tree`));
+		assert.doesNotMatch(result.stdout, /Recorded processes:/);
 	} finally {
 		fake.cleanup();
 	}

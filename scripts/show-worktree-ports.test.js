@@ -9,6 +9,7 @@ const test = require("node:test");
 const SHOW_WORKTREE_PORTS_SCRIPT = path.resolve(__dirname, "show-worktree-ports.js");
 const {
 	browserUrlForRow,
+	collectStackRows,
 	dashboardRowsSignature,
 	defaultBrowserCommand,
 	moveSelectionIndex,
@@ -275,4 +276,48 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 	} finally {
 		fixture.cleanup();
 	}
+});
+
+test("ports --json derives each worktree's stack status from its record, sessions and ports", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-json-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const dir = (name) => {
+		const target = path.join(root, name);
+		fs.mkdirSync(target);
+		return target;
+	};
+	const main = dir("main");
+	const ready = dir("ready");
+	const orphan = dir("orphan");
+	const idle = dir("idle");
+	fs.writeFileSync(path.join(main, ".dev-frontend-port"), "4001");
+	fs.writeFileSync(path.join(ready, ".dev-frontend-port"), "4101");
+	fs.writeFileSync(path.join(ready, ".dev-backend-port"), "8101");
+	fs.writeFileSync(path.join(orphan, ".dev-frontend-port"), "4201");
+	const listening = new Set([4101, 8101, 4201]);
+
+	const rows = await collectStackRows({
+		worktrees: [
+			{ path: main, isMain: true, branch: "main", worktreeName: null },
+			{ path: ready, branch: "feature-ready", worktreeName: "feature-ready" },
+			{ path: orphan, branch: "feature-orphan", worktreeName: "feature-orphan" },
+			{ path: idle, branch: "feature-idle", worktreeName: "feature-idle" },
+		],
+		routes: [{ hostname: "feature-ready.vpk.localhost", port: 4101, pid: process.pid }],
+		sessions: [
+			{ name: "vpk-dev-main", socket: "vpk-dev", path: main },
+			{ name: "vpk-dev-feature-ready", socket: "vpk-dev", path: ready },
+		],
+		isPortListening: (port) => listening.has(port),
+	});
+
+	const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
+	assert.deepEqual(Object.keys(byName).sort(), ["main", "orphan", "ready"], "a worktree with no stack is left out");
+	assert.equal(byName.main.status, "degraded");
+	assert.equal(byName.ready.status, "ready");
+	assert.equal(byName.ready.sessionName, "vpk-dev-feature-ready");
+	assert.equal(byName.ready.portlessUrl, "https://feature-ready.vpk.localhost");
+	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, pid: null, childPid: null });
+	assert.equal(byName.orphan.status, "orphaned");
+	assert.equal(byName.orphan.nextAction, "stop");
 });
