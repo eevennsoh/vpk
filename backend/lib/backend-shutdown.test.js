@@ -297,3 +297,14 @@ test("server steps close the listener first and the remaining sockets last", asy
 	assert.equal(idle.stopAccepting.run(), "not listening");
 	assert.equal(await idle.closeConnections.run(), "0 websocket(s) closed");
 });
+
+test("closing connections stops the WebSocket heartbeat first", async () => {
+	const order = [];
+	const steps = createHttpServerShutdownSteps({
+		getServer: () => null,
+		getWebSocketServers: () => [{ clients: new Set([{ terminate: () => order.push("terminate") }]) }],
+		getStopHeartbeat: () => () => order.push("stop-heartbeat"),
+	});
+	assert.equal(await steps.closeConnections.run(), "1 websocket(s) closed");
+	assert.deepEqual(order, ["stop-heartbeat", "terminate"]);
+});
