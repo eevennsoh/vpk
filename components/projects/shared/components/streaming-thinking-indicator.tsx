@@ -12,7 +12,7 @@ import {
 } from "@/components/ui-custom/chain-of-thought";
 import { CodeBlock } from "@/components/ui-custom/code-block";
 import { AssistantThinkingToolsSection } from "@/components/projects/shared/components/assistant-thinking-tools-section";
-import { getReasoningSectionTitle } from "@/components/projects/shared/lib/reasoning-labels";
+import { getReasoningSectionTitle } from "@/components/ui-custom/lib/reasoning-labels";
 import { cn } from "@/lib/utils";
 
 interface StreamingThinkingIndicatorProps {

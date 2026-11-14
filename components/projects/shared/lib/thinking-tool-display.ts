@@ -4,7 +4,7 @@ import {
 } from "@/lib/rovo-ui-messages";
 import {
 	getQuestionsAnsweredLabel,
-} from "@/components/projects/shared/lib/reasoning-labels";
+} from "@/components/ui-custom/lib/reasoning-labels";
 import { getToolDisplayInfo } from "@/components/projects/shared/lib/tool-icon-resolver";
 
 const TOOL_ACTION_LABELS = new Map<string, string>([
