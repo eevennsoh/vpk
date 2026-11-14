@@ -341,3 +341,25 @@ test("dev sessions include any name on the private socket, and only vpk-dev-* on
 		["vpk-dev:demo", "vpk-dev:vpk-dev-a", "default:vpk-dev-b"],
 	);
 });
+
+test("ports --json finds a session on a custom socket through the stack record", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-socket-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), "4301");
+	fs.writeFileSync(path.join(root, ".dev-backend-port"), "8301");
+	fs.writeFileSync(path.join(root, ".dev-stack.json"), JSON.stringify({ version: 1, worktree: root, session: { name: "demo", socket: "demo-socket" }, phase: "starting", phaseAt: new Date().toISOString(), services: {} }));
+	const probed = [];
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, branch: "feature-socket", worktreeName: "feature-socket" }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => true,
+		isRecordedSessionAlive: (query) => {
+			probed.push(query);
+			return query.socket === "demo-socket" && query.sessionName === "demo";
+		},
+	});
+	assert.equal(rows[0].status, "ready");
+	assert.deepEqual(rows[0].sessions, [{ name: "demo", socket: "demo-socket", path: root }]);
+	assert.equal(probed.length, 1);
+});

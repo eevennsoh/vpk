@@ -22,7 +22,7 @@ const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
 const { probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
-const { collectStackFacts, deriveStackStatus } = require("./lib/dev-stack-state");
+const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -542,10 +542,23 @@ function stopWorktree(worktree) {
 
 // `pnpm ports --json`: one entry per worktree with a dev stack (and the main checkout), with the
 // state derived from its .dev-stack.json, its tmux sessions and its listening ports.
-async function collectStackRows({ worktrees = getAllWorktreePortInfo(), routes = loadPortlessRoutes(), sessions = listDevSessions(), isPortListening = probePortAlive } = {}) {
+async function collectStackRows({
+	worktrees = getAllWorktreePortInfo(),
+	routes = loadPortlessRoutes(),
+	sessions = listDevSessions(),
+	isPortListening = probePortAlive,
+	isRecordedSessionAlive = isSessionAlive,
+} = {}) {
 	const rows = await Promise.all(
 		worktrees.map(async (wt) => {
 			const ownSessions = sessions.filter((session) => sameWorktreePath(session.path, wt.path));
+			// A session on a socket other than the two listed (VPK_TMUX_SOCKET) is found through the record.
+			const recorded = readStackRecord(wt.path)?.session;
+			if (ownSessions.length === 0 && recorded?.socket && !["vpk-dev", "default"].includes(recorded.socket)) {
+				if (isRecordedSessionAlive({ worktreePath: wt.path, socket: recorded.socket, sessionName: recorded.name })) {
+					ownSessions.push({ name: recorded.name, socket: recorded.socket, path: wt.path });
+				}
+			}
 			const facts = await collectStackFacts({ worktreePath: wt.path, sessionAlive: ownSessions.length > 0, isPortListening });
 			const { status, nextAction, reason } = deriveStackStatus(facts);
 			const service = (name) => {
