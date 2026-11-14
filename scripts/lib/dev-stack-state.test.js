@@ -312,3 +312,38 @@ for (let i = 0; i < 10; i += 1) withStackLock(${JSON.stringify(dir)}, () => {
 	assert.equal(fs.existsSync(violations), false, fs.existsSync(violations) ? fs.readFileSync(violations, "utf8") : "");
 	assert.equal(fs.existsSync(lock), false);
 });
+
+test("a waiter never removes a lock that another writer took after the stale one", (t) => {
+	const dir = tempWorktree(t);
+	const lock = path.join(dir, `${STACK_FILE}.lock`);
+	const deadOwner = "999999-00000000-0000-4000-8000-000000000000";
+	const liveOwner = `${process.pid}-11111111-1111-4111-8111-111111111111`;
+	fs.writeFileSync(lock, deadOwner);
+	// Right after the waiter reads the stale token, another writer replaces the stale lock with
+	// its own (the interleaving the review reproduced) and is now inside its callback.
+	let lockReads = 0;
+	const fsImpl = {
+		...fs,
+		readFileSync(file, ...rest) {
+			const value = fs.readFileSync(file, ...rest);
+			if (file === lock && (lockReads += 1) === 1) {
+				fs.rmSync(lock);
+				fs.writeFileSync(lock, liveOwner);
+			}
+			return value;
+		},
+	};
+	assert.throws(() => withStackLock(dir, () => assert.fail("entered while another writer held the lock"), { fsImpl, retries: 3, retryMs: 1 }), /Timed out/);
+	assert.equal(fs.readFileSync(lock, "utf8"), liveOwner, "the live writer's lock is untouched");
+	assert.equal(fs.existsSync(`${lock}.takeover`), false);
+});
+
+test("a live owner keeps its lock however long it holds it, until the lock is abandoned", (t) => {
+	const dir = tempWorktree(t);
+	const lock = path.join(dir, `${STACK_FILE}.lock`);
+	fs.writeFileSync(lock, `${process.pid}-22222222-2222-4222-8222-222222222222`);
+	const old = new Date(Date.now() - 30_000);
+	fs.utimesSync(lock, old, old);
+	assert.throws(() => withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), /Timed out/);
+	assert.equal(withStackLock(dir, () => "ran", { retries: 2, retryMs: 1, abandonedMs: 10_000 }), "ran");
+});

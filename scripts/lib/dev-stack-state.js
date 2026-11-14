@@ -170,10 +170,16 @@ function sleepSync(ms) {
 
 // The frontend and backend launchers record themselves at about the same moment, so every
 // write is a read-modify-write under an exclusive lock file holding the owner's token
-// ("<pid>-<uuid>"). Only the owner removes it. A lock is stale when its owner pid is gone, when
-// it is older than staleMs, or when its mtime is in the future (a clock change); a stale lock is
-// moved aside under a unique name and checked before it is deleted, so two waiters cannot both
-// take it over.
+// ("<pid>-<uuid>"). Only the owner removes it.
+//
+// A lock is stale when its owner pid is gone, when it carries no readable owner and is older
+// than staleMs or dated in the future (a clock change), or when it is older than abandonedMs
+// whatever its owner (a recycled owner pid). A live owner is never displaced sooner, so a slow
+// writer cannot have its lock removed under it.
+//
+// Removing a stale lock happens under a second, short-lived lock (`.lock.takeover`), and only
+// after re-reading that the lock still holds the stale token observed: a waiter can never remove
+// a lock that another writer has since created.
 function readLockToken(lockPath, fsImpl) {
 	try {
 		return fsImpl.readFileSync(lockPath, "utf8");
@@ -182,9 +188,12 @@ function readLockToken(lockPath, fsImpl) {
 	}
 }
 
-function lockOwnerGone(token) {
-	const pid = positiveInteger(String(token ?? "").split("-")[0]);
-	if (pid === null) return false;
+function lockOwnerPid(token) {
+	const match = /^(\d+)-[0-9a-f-]{36}$/u.exec(String(token ?? ""));
+	return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function pidGone(pid) {
 	try {
 		process.kill(pid, 0);
 		return false;
@@ -193,7 +202,7 @@ function lockOwnerGone(token) {
 	}
 }
 
-function lockIsStale(lockPath, token, { fsImpl, staleMs, now }) {
+function lockIsStale(lockPath, token, { fsImpl, staleMs, abandonedMs, now }) {
 	let mtimeMs;
 	try {
 		mtimeMs = fsImpl.statSync(lockPath).mtimeMs;
@@ -201,40 +210,47 @@ function lockIsStale(lockPath, token, { fsImpl, staleMs, now }) {
 		return false;
 	}
 	const age = now() - mtimeMs;
-	return age > staleMs || age < -1_000 || lockOwnerGone(token);
+	if (age > abandonedMs) return true;
+	const owner = lockOwnerPid(token);
+	if (owner !== null) return pidGone(owner);
+	return age > staleMs || age < -1_000;
 }
 
-function takeOverStaleLock(lockPath, observed, ownToken, fsImpl) {
-	const aside = `${lockPath}.${ownToken}.stale`;
+function removeStaleLock(lockPath, observed, ownToken, options) {
+	const { fsImpl } = options;
+	const takeover = `${lockPath}.takeover`;
 	try {
-		fsImpl.renameSync(lockPath, aside);
-	} catch {
-		return; // Someone else moved or released it.
-	}
-	if (readLockToken(aside, fsImpl) !== observed) {
-		// A fresh lock replaced the stale one before the rename: put it back.
+		fsImpl.writeFileSync(takeover, ownToken, { flag: "wx" });
+	} catch (error) {
+		if (error?.code !== "EEXIST") throw error;
+		// A takeover holder only re-reads and removes one file; one older than a second died.
 		try {
-			fsImpl.linkSync(aside, lockPath);
+			if (options.now() - fsImpl.statSync(takeover).mtimeMs > 1_000) fsImpl.rmSync(takeover, { force: true });
 		} catch {
-			// A newer holder already took the slot.
+			// Released meanwhile.
 		}
+		return;
 	}
-	fsImpl.rmSync(aside, { force: true });
+	try {
+		if (readLockToken(lockPath, fsImpl) === observed && lockIsStale(lockPath, observed, options)) {
+			fsImpl.rmSync(lockPath, { force: true });
+		}
+	} finally {
+		if (readLockToken(takeover, fsImpl) === ownToken) fsImpl.rmSync(takeover, { force: true });
+	}
 }
 
-function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, retryMs = 20, staleMs = 5_000, now = Date.now } = {}) {
+function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, retryMs = 20, staleMs = 5_000, abandonedMs = 60_000, now = Date.now } = {}) {
 	const lockPath = `${stackFilePath(worktreePath)}.lock`;
 	const token = `${process.pid}-${randomUUID()}`;
+	const staleness = { fsImpl, staleMs, abandonedMs, now };
 	for (let attempt = 0; ; attempt += 1) {
 		try {
 			fsImpl.writeFileSync(lockPath, token, { flag: "wx" });
 		} catch (error) {
 			if (error?.code !== "EEXIST") throw error;
 			const observed = readLockToken(lockPath, fsImpl);
-			if (lockIsStale(lockPath, observed, { fsImpl, staleMs, now })) {
-				takeOverStaleLock(lockPath, observed, token, fsImpl);
-				continue;
-			}
+			if (lockIsStale(lockPath, observed, staleness)) removeStaleLock(lockPath, observed, token, staleness);
 			if (attempt >= retries) throw new Error(`Timed out waiting for ${lockPath}`);
 			sleepSync(retryMs);
 			continue;
