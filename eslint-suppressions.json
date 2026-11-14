@@ -2813,11 +2813,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/list.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 19
-    }
-  },
   "components/ui-custom/live-waveform.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
       "count": 1
