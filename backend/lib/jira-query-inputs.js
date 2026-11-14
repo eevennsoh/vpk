@@ -27,6 +27,16 @@ function resolveAllowedAtlassianSites(env = process.env) {
 }
 
 /**
+ * The site a Jira request without a siteUrl goes to: the first configured site, so that
+ * setting ATLASSIAN_SITE_HOSTS also moves the default (unset, it stays the demos' site).
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
+ */
+function resolveDefaultAtlassianSite(env = process.env) {
+	return resolveAllowedAtlassianSites(env)[0];
+}
+
+/**
  * @param {unknown} host
  * @param {NodeJS.ProcessEnv} [env]
  */
@@ -94,6 +104,7 @@ module.exports = {
 	requireHoursAgo,
 	requireJiraProjectKey,
 	resolveAllowedAtlassianSites,
+	resolveDefaultAtlassianSite,
 	standupRequestSchema,
 	ticketClassifyRequestSchema,
 };

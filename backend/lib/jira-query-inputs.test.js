@@ -10,6 +10,7 @@ const {
 	requireHoursAgo,
 	requireJiraProjectKey,
 	resolveAllowedAtlassianSites,
+	resolveDefaultAtlassianSite,
 	standupRequestSchema,
 	ticketClassifyRequestSchema,
 } = require("./jira-query-inputs");
@@ -59,4 +60,32 @@ test("request schemas for the JQL inputs", () => {
 	assert.equal(ok(standupRequestSchema, { hoursAgo: "12h OR assignee is EMPTY" }), false);
 	assert.equal(ok(standupRequestSchema, { hoursAgo: 99999 }), false);
 	assert.equal(ok(standupRequestSchema, { projects: ["RFP\") OR (project = X"] }), false);
+});
+
+test("a Jira request without a siteUrl goes to the first configured site", async (t) => {
+	assert.equal(resolveDefaultAtlassianSite({}), "product-fabric.atlassian.net");
+	assert.equal(resolveDefaultAtlassianSite({ ATLASSIAN_SITE_HOSTS: "team.atlassian.net,other.atlassian.net" }), "team.atlassian.net");
+
+	const saved = { hosts: process.env.ATLASSIAN_SITE_HOSTS, token: process.env.ATLASSIAN_API_TOKEN, fetch: globalThis.fetch };
+	const requested = [];
+	process.env.ATLASSIAN_SITE_HOSTS = "team.atlassian.net";
+	process.env.ATLASSIAN_API_TOKEN = "test-only-placeholder";
+	// No request leaves the process: fetch answers with an empty result.
+	globalThis.fetch = async (url) => {
+		requested.push(new URL(String(url)).host);
+		return new Response(JSON.stringify({ issues: [] }), { headers: { "content-type": "application/json" }, status: 200 });
+	};
+	t.after(() => {
+		globalThis.fetch = saved.fetch;
+		for (const [name, value] of [["ATLASSIAN_SITE_HOSTS", saved.hosts], ["ATLASSIAN_API_TOKEN", saved.token]]) {
+			if (value === undefined) delete process.env[name];
+			else process.env[name] = value;
+		}
+	});
+
+	const { generateStandupSummary } = require("./standup-summary");
+	const { classifyTickets } = require("./ticket-classifier");
+	assert.equal((await generateStandupSummary()).siteUrl, "team.atlassian.net");
+	assert.equal((await classifyTickets()).siteUrl, "team.atlassian.net");
+	assert.deepEqual(requested, ["team.atlassian.net", "team.atlassian.net"]);
 });

@@ -273,6 +273,14 @@ ROVO_BILLING_URL=https://product-fabric.atlassian.net
 
 `scripts/dev-rovo.js` passes this value as `--site-url` to `rovo serve`. Override this value when you need a different billing site.
 
+**Atlassian sites for the Jira demos and image proxy (optional):**
+
+```
+ATLASSIAN_SITE_HOSTS=your-site.atlassian.net,another-site.atlassian.net
+```
+
+The server sends `ATLASSIAN_API_TOKEN` only to these `*.atlassian.net` hosts (comma-separated). It is used by the Jira demo routes (standup summary, ticket classification) and by the image proxy for Atlassian images. A request without a `siteUrl` goes to the first host in the list. When the variable is unset or has no valid host, the sites are `product-fabric.atlassian.net` and `hello.atlassian.net`, and the default is `product-fabric.atlassian.net`. A `siteUrl` that is not in the list gets 400.
+
 **Rovo Session Token (required, one-time setup):**
 
 Rovo Serve requires a session token for authentication. The backend sends it as `Authorization: Bearer <token>` on every request to Serve.

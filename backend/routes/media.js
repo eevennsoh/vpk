@@ -9,6 +9,7 @@ const {
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
+	fetchImageProxyUrl,
 	parseImageProxyTarget,
 	readImageProxyResponsePayload,
 } = require("../lib/image-proxy");
@@ -233,12 +234,16 @@ function createMediaRouter({
 				}
 				attemptedUrls.add(currentUrlString);
 
-				const upstreamResponse = await fetchFn(currentUrlString, {
-					method: "GET",
-					headers: buildImageProxyHeaders(currentUrl),
-					redirect: "follow",
+				const fetched = await fetchImageProxyUrl(currentUrl, {
+					buildHeaders: buildImageProxyHeaders,
+					fetchFn,
 					signal: abortController.signal,
 				});
+				if ("refusedStatus" in fetched) {
+					lastStatus = fetched.refusedStatus;
+					continue;
+				}
+				const { response: upstreamResponse, url: finalUrl } = fetched;
 
 				if (!upstreamResponse.ok) {
 					lastStatus = upstreamResponse.status;
@@ -277,7 +282,7 @@ function createMediaRouter({
 					const htmlText = await upstreamResponse.text();
 					for (const derivedUrl of extractAtlassianImageCandidates(
 						htmlText,
-						currentUrl
+						finalUrl
 					)) {
 						candidateQueue.push(derivedUrl);
 					}

@@ -403,3 +403,53 @@ test("image proxy responses are sandboxed and typed by the same rule as uploads"
 		});
 	}
 });
+
+test("image proxy follows redirects one hop at a time and refuses a hop off the allowed hosts", async () => {
+	const targetUrl = new URL("https://www.figma.com/api/mcp/asset/image");
+	const redirect = (location, status = 302) => new Response(null, { headers: { location }, status });
+	const image = () => new Response(Buffer.from([1, 2, 3]), { headers: { "content-type": "image/png" }, status: 200 });
+	const run = async (responses) => {
+		const calls = [];
+		let result;
+		await withServer({
+			buildImageProxyHeaders: (url) => ({ "x-hop": url.hostname }),
+			fetchFn: async (url, options) => {
+				calls.push({ url, redirect: options.redirect, headers: options.headers });
+				return responses.shift()?.() ?? new Response("gone", { status: 404 });
+			},
+			parseImageProxyTargetFn: () => ({ source: "figma", targetUrl }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			result = { status: response.status, body: await response.text() };
+		});
+		return { calls, result };
+	};
+
+	const allowed = await run([() => redirect("https://s3-figma-media.figma.com/asset?sig=1"), image]);
+	assert.equal(allowed.result.status, 200);
+	assert.deepEqual(allowed.calls.map((call) => [call.url, call.redirect, call.headers["x-hop"]]), [
+		["https://www.figma.com/api/mcp/asset/image", "manual", "www.figma.com"],
+		["https://s3-figma-media.figma.com/asset?sig=1", "manual", "s3-figma-media.figma.com"],
+	]);
+
+	for (const location of [
+		"http://169.254.169.254/latest/meta-data/",
+		"https://127.0.0.1/x.png",
+		"https://[::1]/x.png",
+		"https://10.0.0.5/x.png",
+		"http://www.figma.com/insecure.png",
+		"https://evil.test/x.png",
+		"https://figma.com.evil.test/x.png",
+		"https://user:pass@www.figma.com/x.png",
+		"https://",
+	]) {
+		const refused = await run([() => redirect(location)]);
+		assert.equal(refused.calls.length, 1, location);
+		assert.equal(refused.result.status, 502, location);
+		assert.match(refused.result.body, /Image fetch failed \(302\)/u, location);
+	}
+
+	const looping = await run(Array.from({ length: 10 }, (_, index) => () => redirect(`https://www.figma.com/hop/${index}`)));
+	assert.equal(looping.result.status, 502);
+	assert.equal(looping.calls.length, 6, "the first request plus five redirects");
+});
