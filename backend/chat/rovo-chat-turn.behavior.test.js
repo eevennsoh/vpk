@@ -170,7 +170,7 @@ test("a stuck port that cannot recover shows the failure and still completes the
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
-test("on a tool-first retry turn, a stuck port that cannot recover shows a retry that never runs and loses its failure text", async () => {
+test("on a tool-first retry turn, a stuck port that cannot recover shows its failure and plans no retry", async () => {
 	let streams = 0;
 	const turn = await runTurn({
 		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
@@ -186,9 +186,10 @@ test("on a tool-first retry turn, a stuck port that cannot recover shows a retry
 	assert.equal(turn.result.aborted, false);
 	assert.equal(streams, 1);
 	assert.deepEqual(turn.attempts, ["first"]);
-	// Today: the loop still asks the tool-first retry plan after giving up on the port.
-	assert.deepEqual(statusLabels(turn.parts).filter((label) => label.startsWith("Retrying")), ["Retrying integration tools (2/3)"]);
-	assert.doesNotMatch(visibleText(turn.parts), /Rovo is busy/u);
+	// Before: the loop still asked the tool-first retry plan after giving up on the port, so it
+	// showed "Retrying integration tools (2/3)" for a retry that never ran and dropped this text.
+	assert.equal(statusLabels(turn.parts).some((label) => label.startsWith("Retrying")), false);
+	assert.match(visibleText(turn.parts), /⚠️ Rovo is busy\./u);
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
