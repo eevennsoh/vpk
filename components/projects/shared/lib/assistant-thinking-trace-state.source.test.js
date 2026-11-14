@@ -36,7 +36,7 @@ const {
 	shouldCollapseAssistantThinkingTraceOnPhaseChange,
 } = loadTsModule(path.join(__dirname, "assistant-thinking-trace-state.ts"));
 const { getReasoningSectionTitle } = loadTsModule(
-	path.join(__dirname, "../lib/reasoning-labels.ts"),
+	path.join(__dirname, "../../../ui-custom/lib/reasoning-labels.ts"),
 );
 const {
 	getThinkingToolByline,

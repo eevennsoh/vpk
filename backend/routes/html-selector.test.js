@@ -174,7 +174,7 @@ test("html-selector dispatch writes prompt to a temp file and opens a tmux windo
 	assert.equal(fs.readFileSync(writes[0].filePath, "utf8"), prompt);
 
 	assert.deepEqual(execCalls.slice(0, 2), [
-		{ file: "tmux", args: ["has-session", "-t", "vpk-dev-test"] },
+		{ file: "tmux", args: ["has-session", "-t", "=vpk-dev-test"] },
 		{
 			file: "tmux",
 			args: ["new-session", "-d", "-s", "vpk-dev-test", "-n", "agents", "-c", repoRoot],
@@ -188,14 +188,14 @@ test("html-selector dispatch writes prompt to a temp file and opens a tmux windo
 		"-F",
 		"#{window_id}",
 		"-t",
-		"vpk-dev-test:",
+		"=vpk-dev-test:",
 		"-n",
 		"hs-codex-123456",
 		"-c",
 		repoRoot,
 	]);
 	assert.equal(execCalls[3].file, "tmux");
-	assert.deepEqual(execCalls[3].args.slice(0, 3), ["send-keys", "-t", "vpk-dev-test:hs-codex-123456"]);
+	assert.deepEqual(execCalls[3].args.slice(0, 3), ["send-keys", "-t", "=vpk-dev-test:hs-codex-123456"]);
 	assert.match(execCalls[3].args[3], /^cd '.*' && codex-gw -- "\$\(cat '.*prompt\.txt'\)"$/u);
 	assert.equal(execCalls[3].args[4], "Enter");
 	for (const call of execCalls) {

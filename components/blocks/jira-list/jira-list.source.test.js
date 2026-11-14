@@ -41,7 +41,7 @@ const REGISTRY_SOURCE = readFileSync(
 	"utf8",
 );
 const COMPONENTS_SOURCE = readFileSync(
-	join(process.cwd(), "app/data/components.ts"),
+	join(process.cwd(), "app/data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = readFileSync(

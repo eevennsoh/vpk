@@ -11,7 +11,7 @@ const COMPONENT_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const COMPONENTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../data/components.ts"),
+	path.join(__dirname, "../../data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = fs.readFileSync(

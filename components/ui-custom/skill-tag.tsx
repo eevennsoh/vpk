@@ -61,6 +61,7 @@ function SkillTag({
 	focused = false,
 	focusable = false,
 	onClick,
+	onKeyDown,
 	onRemove,
 	removeVariant = "inline",
 	removeButtonLabel = "Remove",
@@ -112,13 +113,19 @@ function SkillTag({
 			}
 			: null;
 	const hasOverlayReveal = Boolean(overlayControl?.isOverlay);
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLSpanElement>) => {
+		onKeyDown?.(event);
+		activateOnEnterOrSpace(event, onClick);
+	};
 	const shouldShowOverlayScrim = hasOverlayReveal;
 
 	return (
 		<span
 			{...props}
+			role={isInteractive ? "button" : props.role}
 			onClick={onClick}
-			tabIndex={focusable ? (tabIndex ?? 0) : tabIndex}
+			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
+			tabIndex={isInteractive || focusable ? (tabIndex ?? 0) : tabIndex}
 			className={cn(
 				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm border border-transparent bg-clip-padding py-1 pl-2.5 align-middle text-xs leading-4 font-normal outline-none transition-[background-color,border-color,box-shadow,color]",
 				surfaceClassName,
@@ -187,6 +194,19 @@ function SkillTag({
 	);
 }
 
+// A tag given onClick acts as a button, as Tag does: Enter and Space activate it. Keys that
+// come from a control inside the tag (its remove or overlay button) are left to that control.
+function activateOnEnterOrSpace(
+	event: React.KeyboardEvent<HTMLSpanElement>,
+	onClick: React.MouseEventHandler<HTMLSpanElement> | undefined,
+) {
+	if (event.defaultPrevented || event.target !== event.currentTarget) return;
+	if (event.key === "Enter" || event.key === " ") {
+		event.preventDefault();
+		onClick?.(event as unknown as React.MouseEvent<HTMLSpanElement>);
+	}
+}
+
 interface SkillTagCountProps extends Omit<React.ComponentProps<"span">, "color"> {
 	count: number;
 }
@@ -196,13 +216,20 @@ interface SkillTagCountProps extends Omit<React.ComponentProps<"span">, "color">
  * shape but drops the icon and colored slash bar, rendering only a "+N" count.
  * Use when there are more skills than horizontal space allows.
  */
-function SkillTagCount({ count, onClick, className, ...props }: Readonly<SkillTagCountProps>) {
+function SkillTagCount({ count, onClick, onKeyDown, className, tabIndex, ...props }: Readonly<SkillTagCountProps>) {
 	const isInteractive = Boolean(onClick);
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLSpanElement>) => {
+		onKeyDown?.(event);
+		activateOnEnterOrSpace(event, onClick);
+	};
 
 	return (
 		<span
 			{...props}
+			role={isInteractive ? "button" : props.role}
 			onClick={onClick}
+			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
+			tabIndex={isInteractive ? (tabIndex ?? 0) : tabIndex}
 			className={cn(
 				"inline-flex h-5 -skew-x-12 items-center justify-center rounded-sm bg-bg-neutral px-1.5 align-middle text-xs leading-4 font-normal text-text-subtle tabular-nums transition-colors",
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed" : "cursor-default",

@@ -4,7 +4,8 @@ import type { ErrorInfo, ReactNode } from "react";
 import { AttachmentItem, AttachmentPreview, Attachment } from "@/components/ui-custom/attachment";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
-import { ArtifactCard, type ArtifactKind } from "@/components/blocks/artifact";
+import { ArtifactCard } from "@/components/blocks/artifact";
+import type { ArtifactKind } from "@/components/ui-custom/lib/artifact-kind";
 import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
@@ -33,7 +34,7 @@ import { PlanWidgetInlineCard } from "@/components/projects/shared/components/pl
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AssistantThinkingTrace, useAssistantThinkingTraceState } from "@/components/projects/shared/components/assistant-thinking-trace";
 import { readAssistantMessage } from "@/components/projects/shared/lib/process-assistant-message";
-import { getPreloadShimmerLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getPreloadShimmerLabel } from "@/components/ui-custom/lib/reasoning-labels";
 import {
 	getMessageInterruption,
 	getMessageText,

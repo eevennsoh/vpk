@@ -94,6 +94,10 @@ function createHeavyImportRule(rawSource) {
 
 function getRuleForImport(importPath, rules = DEFAULT_HEAVY_IMPORT_RULES) {
 	return rules.find((rule) => {
+		// `allow` lists subpaths a rule does not cover (a package's shared, light modules).
+		if (rule.allow?.some((allowed) => importPath.startsWith(allowed))) {
+			return false;
+		}
 		if (rule.match === "prefix") {
 			return importPath.startsWith(rule.source);
 		}

@@ -328,7 +328,7 @@ test("the icon registry may not import an icon statically", () => {
 	});
 });
 
-test("default tree rules cover the C-8a stylesheets and the C-8d icon registry", () => {
+test("default tree rules cover the C-8a stylesheets, the C-8d icon registry and the C-8g logo maps", () => {
 	assert.deepEqual(DEFAULT_LAZY_ONLY_MODULES.map((rule) => rule.targetFile), [
 		"components/projects/shared/components/excalidraw-runtime.ts",
 		"lib/json-render/map-widget-canvas.tsx",
@@ -342,6 +342,8 @@ test("default tree rules cover the C-8a stylesheets and the C-8d icon registry",
 	assert.deepEqual(DEFAULT_FILE_IMPORT_RULES.map((rule) => [rule.filePath, rule.rules.map((entry) => entry.source)]), [
 		["components/ui-custom/message-markdown.tsx", ["./message-markdown-runtime", "streamdown", "@streamdown/"]],
 		["components/projects/shared/components/icon-registry.tsx", ["@atlaskit/icon/", "@atlaskit/icon-lab/"]],
+		["components/ui/data/logo-data.ts", ["@atlaskit/logo"]],
+		["components/ui/data/logo-third-party-icons.ts", ["@atlassian/logo-third-party"]],
 	]);
 });
 
@@ -450,7 +452,7 @@ test("reach-tracked runtimes are baselined on reach but stay allowed in a shell'
 	});
 });
 
-test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mermaid, recharts and the logo maps", () => {
+test("the reach-tracked runtimes are streamdown and its plugins, katex, mermaid, recharts, the logo maps and the directory catalogs", () => {
 	assert.deepEqual(DEFAULT_REACH_TRACKED_RULES.map((rule) => `${rule.match}:${rule.source}`), [
 		"package:streamdown",
 		"prefix:@streamdown/",
@@ -459,6 +461,7 @@ test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mer
 		"package:recharts",
 		"package:@atlassian/logo-third-party",
 		"package:@atlaskit/logo",
+		...["agent-templates", "knowledge", "skills", "tools"].flatMap((name) => [`exact:./${name}.json`, `exact:@/app/data/directory/${name}.json`]),
 	]);
 	assert.equal(getRuleForImport("@atlaskit/logo-extra", DEFAULT_REACH_TRACKED_RULES), null);
 });
@@ -492,4 +495,26 @@ test("a package's stylesheet does not count as reaching its runtime", () => {
 		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath, failure.source]), [["heavy-reach-new", "app/layout.tsx", "streamdown"]]);
 		assert.deepEqual(failures[0].dependencyPath, ["app/layout.tsx", "streamdown"]);
 	});
+});
+
+test("the logo map rules cover every logo module except the wrappers each logo shares", () => {
+	const rules = DEFAULT_REACH_TRACKED_RULES.filter((rule) => /logo map/u.test(rule.reason));
+	assert.equal(rules.length, 2);
+	const covered = (specifier) => collectHeavyStaticImportsFromSource(`import "${specifier}";\n`, "probe.ts", rules).length > 0;
+	for (const specifier of [
+		"@atlaskit/logo",
+		"@atlaskit/logo/jira/icon",
+		"@atlaskit/logo/dist/esm/artifacts/logo-components/jira/icon",
+		"@atlassian/logo-third-party/dist/esm/entry-points/github",
+	]) {
+		assert.equal(covered(specifier), true, specifier);
+	}
+	for (const specifier of [
+		"@atlaskit/logo/dist/esm/utils/icon-wrapper",
+		"@atlaskit/logo/dist/esm/utils/logo-wrapper",
+		"@atlaskit/logo/dist/esm/wrapper",
+		"@atlassian/logo-third-party/dist/esm/wrapper",
+	]) {
+		assert.equal(covered(specifier), false, specifier);
+	}
 });

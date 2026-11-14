@@ -20,7 +20,7 @@
 
 import { ModalBackdrop } from "./modal-backdrop";
 import { ModalContainer, TwoColumnLayout, LeftColumn, RightColumn } from "./modal-container";
-import { ModalHeader, ModalTitle } from "./modal-header";
+import { ModalHeader, ModalTitle } from "@/components/blocks/jira-work-item/components/work-item-modal/modal-header";
 import { Description } from "./description-section";
 import { ChildItemsSection } from "./child-items-section";
 import { AgentPanel } from "./agent-panel";

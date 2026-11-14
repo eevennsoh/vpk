@@ -1,5 +1,5 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { getCyclingWorkingLabel, getDefaultThinkingLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getCyclingWorkingLabel, getDefaultThinkingLabel } from "@/components/ui-custom/lib/reasoning-labels";
 
 interface ResolveThinkingLabelForSurfaceOptions {
 	baseLabel: string;

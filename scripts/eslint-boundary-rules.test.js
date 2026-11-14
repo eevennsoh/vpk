@@ -54,6 +54,30 @@ test("shared app contexts and shared project code depend on rovo-core instead of
 	}
 });
 
+test("rovo-core cannot import the routes it serves or sidebar-chat, but keeps its own and shared imports", async () => {
+	const findings = await importFindings(
+		[
+			'import { A } from "@/components/projects/rovo/a";',
+			'import { B } from "@/components/projects/studio/b";',
+			'import { C } from "@/components/projects/sidebar-chat/c";',
+			'import { D } from "@/components/projects/rovo-core/lib/d";',
+			'import { E } from "@/components/projects/shared/e";',
+			'import { F } from "@/lib/f";',
+			"export const all = [A, B, C, D, E, F];",
+		].join("\n"),
+		"components/projects/rovo-core/lib/lint-contract-fixture.ts",
+	);
+	assert.deepEqual(findings.map(({ line }) => line), [1, 2, 3]);
+	for (const finding of findings) {
+		assert.match(finding.message, /rovo-core is shared by the Rovo and Studio routes/u);
+	}
+	const [deepRelative] = await importFindings(
+		'import { G } from "../../../../lib/g";\nexport const value = G;\n',
+		"components/projects/rovo-core/lib/lint-contract-fixture.ts",
+	);
+	assert.match(deepRelative.message, /Use the @\/ alias/u, "the shared deep-relative rule still applies inside rovo-core");
+});
+
 test("shared UI primitives cannot import app routes or project surfaces", async () => {
 	const findings = await importFindings(
 		'import { A } from "@/app/contexts/a";\nimport { B } from "@/components/projects/jira/b";\nexport const all = [A, B];\n',

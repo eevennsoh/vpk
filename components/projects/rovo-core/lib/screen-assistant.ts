@@ -716,3 +716,28 @@ export function createStudioScreenAssistantSnapshot({
 		visibleTargets,
 	};
 }
+
+/** A screen-assistant tool call the Realtime session asks a shell to run. */
+export type StudioScreenAssistantToolCall = {
+	args: Record<string, unknown>;
+	callId: string;
+	name: string;
+};
+
+export type StudioScreenAssistantToolResponder = (output: unknown, createResponse?: boolean) => void;
+
+/** The centre of a grounded target, in viewport coordinates, for the Clicky cursor to point at. */
+export function getViewportPointFromScreenAssistantTarget(
+	target: StudioScreenAssistantTarget | null | undefined,
+): { x: number; y: number; label: string; coordinateSpace: "viewport" } | null {
+	if (!target?.rect) {
+		return null;
+	}
+
+	return {
+		x: target.rect.x + target.rect.width / 2,
+		y: target.rect.y + target.rect.height / 2,
+		label: target.label ?? target.fieldId ?? target.id ?? "Target",
+		coordinateSpace: "viewport",
+	};
+}

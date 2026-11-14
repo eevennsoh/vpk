@@ -64,7 +64,7 @@ import type { SubagentBaseAgent } from "@/components/blocks/subagent/data/demo-a
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagent/lib/subagent-prompts";
 import { AgentUser } from "@/components/blocks/agent-user";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
-import { useSubagentNavigatorTop } from "@/components/projects/studio/hooks/use-subagent-navigator-top";
+import { useSubagentNavigatorTop } from "@/components/blocks/subagent/hooks/use-subagent-navigator-top";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	Agent,

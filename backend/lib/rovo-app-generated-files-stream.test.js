@@ -53,8 +53,8 @@ function serverResponse({ messageId = "assistant-server", file = "app/generated/
 async function consumeWith(initialMessages, responseOptions) {
 	let finalized = null;
 	const { consumeRovoAppManagedResponse } = createRovoAppManagedResponseConsumer({
-		finalizeRovoAppRun: async (_threadId, _run, messages, options) => {
-			finalized = { messages, ...options };
+		settleRovoAppRun: async (_run, _outcome, details) => {
+			finalized = details;
 		},
 		logger: { info() {}, warn() {} },
 		messagePersistDebounceMs: 60_000,
