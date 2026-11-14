@@ -22,6 +22,11 @@ const {
 	formatDurationMs,
 	main,
 	parseArgs,
+	BUDGET_MARGIN,
+	BUDGET_RAISES,
+	budgetCeiling,
+	findRaiseEntryProblems,
+	findUnsanctionedRaises,
 } = require("./verify-perf-baseline-budget");
 const { resolveBaseRef } = require("./verify-eslint-suppressions");
 
@@ -262,8 +267,45 @@ test("route budgets only go down from the base", () => {
 	}
 	const baseSource = git(["show", `${baseRef}:scripts/perf-route-budgets.json`]);
 	if (baseSource === null) return; // the base predates the file: this change introduces the baseline
-	const raised = findRaisedBudgets(JSON.parse(baseSource).routes);
-	assert.deepEqual(raised, [], `perf route budgets may only go down; raised since ${baseRef.slice(0, 9)}: ${raised.map(formatRaisedBudget).join(", ")}`);
+	const raised = findUnsanctionedRaises(JSON.parse(baseSource).routes);
+	assert.deepEqual(raised, [], `perf route budgets may only go down unless "raises" in perf-route-budgets.json records the change; raised since ${baseRef.slice(0, 9)}: ${raised.map(formatRaisedBudget).join(", ")}`);
+});
+
+test("every recorded budget raise names its reason and stays within the margin", () => {
+	for (const entry of BUDGET_RAISES) assert.deepEqual(findRaiseEntryProblems(entry), []);
+});
+
+test("the margin is a share of the value with an absolute floor for small metrics", () => {
+	const margin = { ratio: 0.03, floors: { routeJsBytes: 5120, assetCount: 2 } };
+	assert.equal(budgetCeiling("routeJsBytes", 63_303, margin), 69_000); // the 5 KB floor beats 3% (1,900)
+	assert.equal(budgetCeiling("routeJsBytes", 400_000, margin), 412_000); // 3% (12,000) beats the floor
+	assert.equal(budgetCeiling("cssBytes", 696_019, margin), 717_000); // no floor: 3%, rounded up
+	assert.equal(budgetCeiling("assetCount", 33, margin), 35); // counts are not rounded
+	assert.equal(budgetCeiling("assetCount", 110, margin), 114);
+	assert.equal(typeof BUDGET_MARGIN.ratio, "number");
+});
+
+test("a raised budget passes only with a matching, reasoned entry within the margin", () => {
+	const margin = { ratio: 0.03, floors: { routeJsBytes: 5120 } };
+	const base = { home: { routeJsBytes: 62_000, cssBytes: 717_000 } };
+	const current = { home: { routeJsBytes: 69_000, cssBytes: 717_000 } };
+	const entry = { route: "home", metric: "routeJsBytes", from: 62_000, to: 69_000, measured: 63_303, reason: "PR 2186, owner's product change", date: "2026-11-14" };
+	const unsanctioned = (raises) => findUnsanctionedRaises(base, current, raises, margin).map(formatRaisedBudget);
+	assert.deepEqual(unsanctioned([entry]), []);
+	assert.deepEqual(unsanctioned([]), ["home.routeJsBytes 62000 -> 69000"], "no entry");
+	assert.deepEqual(unsanctioned([{ ...entry, reason: " " }]), ["home.routeJsBytes 62000 -> 69000"], "empty reason");
+	assert.deepEqual(unsanctioned([{ ...entry, measured: 60_000 }]), ["home.routeJsBytes 62000 -> 69000"], "above measured plus the margin");
+	assert.deepEqual(unsanctioned([{ ...entry, from: 61_000 }]), ["home.routeJsBytes 62000 -> 69000"], "an entry for another change");
+	assert.deepEqual(unsanctioned([{ ...entry, metric: "cssBytes" }]), ["home.routeJsBytes 62000 -> 69000"], "another metric");
+	// An old entry stays as history but cannot cover a later raise of the same budget.
+	const later = { home: { routeJsBytes: 75_000, cssBytes: 717_000 } };
+	assert.deepEqual(findUnsanctionedRaises(current, later, [entry], margin).map(formatRaisedBudget), ["home.routeJsBytes 69000 -> 75000"]);
+	// A removed budget is never covered.
+	assert.deepEqual(findUnsanctionedRaises(base, { home: { cssBytes: 717_000 } }, [{ ...entry, to: null }], margin).map(formatRaisedBudget), ["home.routeJsBytes 62000 -> removed"]);
+	assert.match(findRaiseEntryProblems({ ...entry, reason: "" }, margin).join(), /reason is empty/u);
+	assert.match(findRaiseEntryProblems({ ...entry, measured: 60_000 }, margin).join(), /above measured 60000 plus the margin \(66000\)/u);
+	assert.match(findRaiseEntryProblems({ ...entry, date: "14 Nov" }, margin).join(), /date must be YYYY-MM-DD/u);
+	assert.match(findRaiseEntryProblems({ ...entry, to: 61_000 }, margin).join(), /to must be above from/u);
 });
 
 test("the budget targets sit at or below the budgets", () => {

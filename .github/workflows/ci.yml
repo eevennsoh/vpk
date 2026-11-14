@@ -174,7 +174,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the static export
-        run: time pnpm run build:export
+        # The log feeds the manifest-size budget check after the smoke specs.
+        run: |
+          mkdir -p output
+          set -o pipefail
+          time pnpm run build:export 2>&1 | tee output/export-build.log
 
       - name: Serve the production build
         # The production image copies out/ to backend/public and runs one Express process.
@@ -205,6 +209,16 @@ jobs:
           # 127.0.0.1 would get every same-origin API POST rejected for its Origin.
           PLAYWRIGHT_BASE_URL: http://localhost:8080
         run: time pnpm run test:e2e:smoke
+
+      - name: Route byte budgets (manifest sizes)
+        # The perf job's manifest budgets (route JS, first-load JS, CSS, asset count), read from this
+        # job's export build, so a pull request that would turn main red fails here first. An export
+        # build measures the same CSS and asset counts as the perf job's `next build` and route JS
+        # within 0.05%. Fetched bytes need a browser on `next start` and stay with the perf job.
+        if: ${{ !cancelled() }}
+        run: |
+          node scripts/collect-perf-baseline.js --input output/export-build.log
+          node scripts/verify-perf-baseline-budget.js
 
       - name: Keep the report
         if: ${{ failure() }}
