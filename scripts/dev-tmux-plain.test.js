@@ -195,7 +195,8 @@ test("dev-tmux plain start restarts an existing session with no listening fronte
 		assert.match(tmuxLog, /new-session/);
 		assert.equal(
 			fs.readFileSync(fake.cleanupLogPath, "utf8").trim(),
-			"./scripts/cleanup-worktree-listeners.js"
+			"./scripts/cleanup-worktree-listeners.js",
+			"a restart inside start sweeps listeners but keeps the dev output (only the stop command cleans it)"
 		);
 	} finally {
 		fake.cleanup();

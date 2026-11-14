@@ -1,6 +1,6 @@
 "use strict";
 
-// What a worktree's `.next` holds, and an opt-in clean of the dev output.
+// What a worktree's `.next` holds, and the clean of the dev output that `dev:tmux:stop` runs.
 //
 // Next 16 keeps `next dev` output (`.next/dev/static`, `.next/dev/server`) across restarts and
 // prunes it only at server start, and only files older than
@@ -142,7 +142,7 @@ if (require.main === module) {
 			.readStackStatus({ worktreePath, socket: option("--socket"), sessionName: option("--session") })
 			.then((report) => {
 				const refuse = (why) => {
-					console.error(`[dev:tmux] Not removing the dev output: ${why}.`);
+					console.error(`[dev:tmux] Not removing the dev output: ${why}. A later dev start prunes output older than 24 h.`);
 					process.exit(1);
 				};
 				// Checked first and without lsof or ps: a foreground dev server holds Next's lock.
