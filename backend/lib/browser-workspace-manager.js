@@ -502,6 +502,30 @@ class BrowserWorkspace {
 		}
 	}
 
+	// A preview action comes from a socket or data-channel message that nobody awaits, so
+	// its failure (a value the argument rules refuse, a closed browser) is answered to the
+	// preview clients instead of rejecting: an unhandled rejection exits the backend.
+	_reportPreviewActionFailure(error) {
+		const message = {
+			type: "preview-error",
+			message: error instanceof Error ? error.message : "Browser preview action failed.",
+		}
+		for (const session of this._previewSessions.values()) {
+			try {
+				session.send(message)
+			} catch {}
+		}
+		const payload = JSON.stringify(message)
+		for (const client of this._previewClients) {
+			if (client.readyState !== 1) {
+				continue
+			}
+			try {
+				client.send(payload)
+			} catch {}
+		}
+	}
+
 	_broadcastPreviewOverlay() {
 		if (!this._hasPreviewConsumers()) {
 			return
@@ -1372,7 +1396,7 @@ class BrowserWorkspace {
 			await this._delay(75)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewWheel(x, y, deltaX, deltaY) {
@@ -1395,7 +1419,7 @@ class BrowserWorkspace {
 				resolvedDeltaY,
 			)
 			this._touch()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewKeyEvent(eventType, key, code, text) {
@@ -1418,7 +1442,7 @@ class BrowserWorkspace {
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	previewInsertText(text) {
@@ -1436,7 +1460,7 @@ class BrowserWorkspace {
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
-		})
+		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
 	attachPreviewClient(client) {

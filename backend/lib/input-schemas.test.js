@@ -160,7 +160,7 @@ test("validateStorageIdParam rejects a hostile route parameter before the route 
 });
 
 test("browser arguments: text that agent-browser would read as an option is rejected", () => {
-	const optionLike = ["--help", "--executable-path=/bin/sh", "-h", "--", "-x value", "--session other", " --leading-space", "\t-h", "-5px", "-=", "-/", "-.", "-é"];
+	const optionLike = ["--help", "--executable-path=/bin/sh", "-h", "--", "-x value", "--session other", " --leading-space", "\t-h", "-5px", "-9a", "-=x", "-=", "-/", "-.", "-é", "-1e3x", "-5 items"];
 	const text = ["hello", "-", "-5", "-120", "-0.5", "-.5", "-1e3", "-5 ", "- item", "-\titem", "a --flag", "", "  "];
 	for (const value of optionLike) {
 		assert.equal(isOptionLikeArgument(value), true, value);

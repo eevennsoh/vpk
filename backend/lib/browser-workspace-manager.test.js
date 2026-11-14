@@ -685,3 +685,35 @@ test("wheel and preview wheel pass only finite, bounded numbers to the runtime",
 	assert.deepEqual(wheelCalls[0].slice(2), [-100_000, 0])
 	assert.deepEqual(wheelCalls[1], [100_000, 0, 0, 100_000])
 })
+
+test("a preview paste the argument rules refuse is answered with a preview-error, never an unhandled rejection", async (t) => {
+	const { requireBrowserArgument } = require("./input-schemas")
+	const unhandled = []
+	const onUnhandled = (reason) => unhandled.push(reason)
+	process.on("unhandledRejection", onUnhandled)
+	t.after(() => process.off("unhandledRejection", onUnhandled))
+
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-paste",
+		sessionId: "workspace-paste-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async insertText(text) {
+				requireBrowserArgument(text, "Text")
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	const sent = []
+	workspace._previewClients.add({ readyState: 1, send: (payload) => sent.push(JSON.parse(payload)) })
+
+	workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--session=other" })
+	await workspace._queue
+	await new Promise(setImmediate)
+
+	assert.deepEqual(unhandled, [])
+	assert.deepEqual(sent.filter((message) => message.type === "preview-error"), [
+		{ type: "preview-error", message: "Text cannot start like a command-line option." },
+	])
+})
