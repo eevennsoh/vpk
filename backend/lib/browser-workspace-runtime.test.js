@@ -330,3 +330,25 @@ test("ensureAgentBrowserInstalled skips the install command when a system browse
 
 	assert.equal(installWasCalled, false)
 })
+
+test("browser workspace runtime never passes a request value that reads as an option", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	const isInvalidInput = (error) => error?.status === 400 && error?.code === "INVALID_INPUT"
+	await assert.rejects(runtime.clickRef("--help"), isInvalidInput)
+	await assert.rejects(runtime.fillRef("@e1", "--executable-path=/bin/sh"), isInvalidInput)
+	await assert.rejects(runtime.typeRef("@e1", "-V"), isInvalidInput)
+	await assert.rejects(runtime.selectRef("@e1", ["--x"]), isInvalidInput)
+	await assert.rejects(runtime.press("--version"), isInvalidInput)
+	await assert.rejects(runtime.keyEvent("keyDown", "--headed"), isInvalidInput)
+	await assert.rejects(runtime.insertText("--session=other"), isInvalidInput)
+	assert.deepEqual(runtime.commands, [])
+
+	// Only a whole number may follow a leading "-": "-5 items" reads like a short option.
+	await assert.rejects(runtime.insertText("-5 items"), isInvalidInput)
+	await assert.rejects(runtime.insertText("  --session=other"), isInvalidInput)
+	await runtime.keyEvent("keyDown", "-")
+	await runtime.insertText("-5")
+	await runtime.insertText("- 5 items")
+	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
+})

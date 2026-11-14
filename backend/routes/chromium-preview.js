@@ -44,6 +44,11 @@ function validateChromiumPreviewManager(manager) {
 	}
 }
 
+// A rejected input (a ref, key or text the browser must not receive) is a 400.
+function statusForError(error) {
+	return error?.status === 400 ? 400 : 500;
+}
+
 function createChromiumPreviewRouter({
 	chromiumPreviewManager,
 	getString = getNonEmptyString,
@@ -62,7 +67,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] State error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to read Chromium preview state"),
 			});
 		}
@@ -76,7 +81,7 @@ function createChromiumPreviewRouter({
 			});
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Stream config error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to read Chromium preview stream config"),
 			});
 		}
@@ -99,7 +104,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Navigate error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to navigate Chromium preview"),
 			});
 		}
@@ -113,7 +118,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Viewport error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to resize Chromium preview"),
 			});
 		}
@@ -125,7 +130,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Back error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to go back in Chromium preview"),
 			});
 		}
@@ -137,7 +142,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Forward error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to go forward in Chromium preview"),
 			});
 		}
@@ -149,7 +154,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Reload error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to reload Chromium preview"),
 			});
 		}
@@ -161,7 +166,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Click error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to click inside Chromium preview"),
 			});
 		}
@@ -180,7 +185,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Click ref error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to click Chromium preview ref"),
 			});
 		}
@@ -199,7 +204,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Hover ref error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to hover Chromium preview ref"),
 			});
 		}
@@ -224,7 +229,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Fill ref error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to fill Chromium preview ref"),
 			});
 		}
@@ -249,7 +254,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Type ref error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to type into Chromium preview ref"),
 			});
 		}
@@ -277,7 +282,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Select ref error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to select Chromium preview ref value"),
 			});
 		}
@@ -299,7 +304,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Scroll error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to scroll Chromium preview"),
 			});
 		}
@@ -314,7 +319,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Wheel error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to scroll Chromium preview"),
 			});
 		}
@@ -333,7 +338,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Press error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to send a key to Chromium preview"),
 			});
 		}
@@ -352,7 +357,7 @@ function createChromiumPreviewRouter({
 			return res.json(state);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Type error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to type into Chromium preview"),
 			});
 		}
@@ -365,7 +370,7 @@ function createChromiumPreviewRouter({
 			return res.json(result);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Snapshot error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to capture Chromium preview snapshot"),
 			});
 		}
@@ -390,7 +395,7 @@ function createChromiumPreviewRouter({
 			return res.send(screenshot.buffer);
 		} catch (error) {
 			logger.error?.("[CHROMIUM-PREVIEW] Screenshot error:", error);
-			return res.status(500).json({
+			return res.status(statusForError(error)).json({
 				error: getErrorMessage(error, "Failed to capture Chromium preview screenshot"),
 			});
 		}
@@ -399,7 +404,13 @@ function createChromiumPreviewRouter({
 	return router;
 }
 
-function registerChromiumPreviewRoutes(app, dependencies) {
+// The preview drives a browser on the server, like /api/browser-workspaces, so it needs
+// the same runtime admin authorization (open in local development without a token).
+function registerChromiumPreviewRoutes(app, { requireRuntimeAdmin, ...dependencies } = {}) {
+	if (typeof requireRuntimeAdmin !== "function") {
+		throw new Error("registerChromiumPreviewRoutes requires requireRuntimeAdmin");
+	}
+	app.use("/api/chromium-preview", requireRuntimeAdmin);
 	app.use("/api/chromium-preview", createChromiumPreviewRouter(dependencies));
 }
 
