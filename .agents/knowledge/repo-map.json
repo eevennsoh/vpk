@@ -449,19 +449,19 @@
 					{
 						"method": "GET",
 						"path": "/api/image-proxy",
-						"source": "backend/routes/media.js:202",
+						"source": "backend/routes/media.js:203",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/sound-generation",
-						"source": "backend/routes/media.js:97",
+						"source": "backend/routes/media.js:98",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/speech-transcription",
-						"source": "backend/routes/media.js:139",
+						"source": "backend/routes/media.js:140",
 						"runtimeAdmin": false
 					}
 				]
