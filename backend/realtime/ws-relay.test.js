@@ -26,8 +26,15 @@ function createRequest(url, headers = {}) {
 
 function createSocket() {
 	const socket = {
+		closeListeners: [],
 		destroyed: false,
 		writes: [],
+		once(eventName, listener) {
+			if (eventName === "close") this.closeListeners.push(listener);
+		},
+		emitClose() {
+			for (const listener of this.closeListeners.splice(0)) listener();
+		},
 		destroy() {
 			this.destroyed = true;
 		},
@@ -612,4 +619,31 @@ test("a failed preview attach on a socket whose send and close throw never becom
 	await new Promise(setImmediate);
 	assert.deepEqual(unhandled, []);
 	assert.equal(terminated, true);
+});
+
+test("over the connection cap an upgrade gets 503 before any handshake, and a closed socket frees its slot", () => {
+	const { createConnectionLimiter } = require("./ws-connection-limits");
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies(),
+		connectionLimiter: createConnectionLimiter({ maxTotal: 2, maxPerAddress: 2 }),
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	const open = () => {
+		const socket = createSocket();
+		const request = { ...createRequest("/api/realtime/audio-conversation"), socket: { remoteAddress: "10.0.0.9" } };
+		upgrade(request, socket, Buffer.alloc(0));
+		return socket;
+	};
+	const first = open();
+	open();
+	const third = open();
+	assert.match(third.writes[0], /^HTTP\/1\.1 503 /u);
+	assert.equal(third.destroyed, true);
+	assert.equal(instances[0].handledUpgrades.length, 2, "the refused upgrade never reached the handshake");
+	first.emitClose();
+	open();
+	assert.equal(instances[0].handledUpgrades.length, 3);
 });

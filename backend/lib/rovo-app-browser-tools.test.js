@@ -269,3 +269,27 @@ test("default workspace bindings use the thread session workspace helpers", asyn
 		workspaceId: "workspace-1",
 	})
 })
+
+test("a browser tool call acts on the request's own thread, whatever thread_id the model sends", async () => {
+	const ensured = []
+	const bindings = {
+		async ensureThreadWorkspace(threadId) {
+			ensured.push(threadId)
+			return { state: { title: "", url: "about:blank" }, streamConfig: null, workspaceId: `browser-${threadId}` }
+		},
+		async getThreadWorkspace() {
+			return null
+		},
+		async getThreadWorkspaceScreenshot() {
+			return null
+		},
+	}
+	const writer = { write() {} }
+	const bound = createThreadBrowserBridge({ threadId: "thread-a", writer, workspaceBindings: bindings })
+	assert.equal(await bound.handleToolCallStart({ toolCallId: "c1", toolInput: { thread_id: "thread-b" }, toolName: "browser_navigate" }), true)
+	assert.deepEqual(ensured, ["thread-a"])
+
+	const unbound = createThreadBrowserBridge({ threadId: undefined, writer, workspaceBindings: bindings })
+	assert.equal(await unbound.handleToolCallStart({ toolCallId: "c2", toolInput: { thread_id: "thread-b" }, toolName: "browser_navigate" }), false)
+	assert.deepEqual(ensured, ["thread-a"], "no request thread: nothing opened for the named thread")
+})
