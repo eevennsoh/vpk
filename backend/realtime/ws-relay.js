@@ -3,7 +3,7 @@
 const WebSocket = require("ws");
 
 const { RealtimeSession } = require("../lib/openai-realtime");
-const { createConnectionLimiter, startHeartbeat, trackHeartbeat } = require("./ws-connection-limits");
+const { createConnectionLimiter, resolveConnectionLimits, startHeartbeat, trackHeartbeat } = require("./ws-connection-limits");
 const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
@@ -134,7 +134,7 @@ function registerBackendWebSocketRelays(server, {
 	isAllowedRuntimeSocketOrigin,
 	isDraining = /** @returns {boolean} */ () => false,
 	isRuntimeSocketTokenValid,
-	connectionLimiter = createConnectionLimiter(),
+	connectionLimiter = createConnectionLimiter(resolveConnectionLimits(process.env, consoleImpl)),
 	heartbeatOptions = {},
 	realtimeSessionImpl = RealtimeSession,
 	runtimeAdminRequired,

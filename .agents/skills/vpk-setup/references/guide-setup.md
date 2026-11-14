@@ -273,6 +273,15 @@ ROVO_BILLING_URL=https://product-fabric.atlassian.net
 
 `scripts/dev-rovo.js` passes this value as `--site-url` to `rovo serve`. Override this value when you need a different billing site.
 
+**WebSocket connection caps (optional):**
+
+```
+VPK_WS_MAX_CONNECTIONS=64
+VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=16
+```
+
+The backend's preview and realtime WebSockets together allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` adds a per-client-address cap and is off by default. Set it only where the backend sees each client's own address: behind a proxy every client shares the proxy's address, so it would cap all users together. A value that is not a positive integer is ignored, with a `[STARTUP]` warning.
+
 **Rovo Session Token (required, one-time setup):**
 
 Rovo Serve requires a session token for authentication. The backend sends it as `Authorization: Bearer <token>` on every request to Serve.

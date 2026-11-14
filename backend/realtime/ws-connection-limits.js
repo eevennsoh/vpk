@@ -3,20 +3,50 @@
 // Bounds on the backend's WebSocket servers (BE-F10). Each open socket can hold a partial
 // frame up to its server's maxPayload, so the number of sockets bounds that memory, and a
 // peer that stops answering pings is closed. Provisional values:
-//   64 sockets in total, 16 per client address (both servers together);
+//   64 sockets in total across both servers (about 64 MiB of partial frames at worst);
+//   no separate per-address cap unless one is configured: behind a proxy every client
+//   shares one address (there is no `trust proxy`), so a per-address cap would be a cap
+//   on all users together;
 //   a ping every 30 s, and a socket that has not answered the previous ping is closed.
-// There is no `trust proxy`: the address is the socket's, as the HTTP rate limiter uses, so
-// behind a proxy every client shares one address and the per-address cap is the total.
+// VPK_WS_MAX_CONNECTIONS and VPK_WS_MAX_CONNECTIONS_PER_ADDRESS override the caps.
 const WS_MAX_CONNECTIONS = 64;
-const WS_MAX_CONNECTIONS_PER_ADDRESS = 16;
 const WS_HEARTBEAT_INTERVAL_MS = 30_000;
+
+function parsePositiveInteger(value) {
+	if (typeof value !== "string" || !/^\s*\d+\s*$/u.test(value)) return null;
+	const parsed = Number.parseInt(value, 10);
+	return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
+ * The connection caps from the environment: VPK_WS_MAX_CONNECTIONS (total, default 64) and
+ * VPK_WS_MAX_CONNECTIONS_PER_ADDRESS (default: the total, so no separate cap). A value
+ * that is not a positive integer is logged and the default is used.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {{ warn?: (...args: unknown[]) => void }} [logger]
+ * @returns {{ maxTotal: number, maxPerAddress: number }}
+ */
+function resolveConnectionLimits(env = process.env, logger = console) {
+	const read = (name) => {
+		const raw = env[name];
+		if (raw === undefined || raw === "") return null;
+		const parsed = parsePositiveInteger(raw);
+		if (parsed === null) {
+			logger.warn?.(`[STARTUP] ${name} is not a positive integer; using the default.`);
+		}
+		return parsed;
+	};
+	const maxTotal = read("VPK_WS_MAX_CONNECTIONS") ?? WS_MAX_CONNECTIONS;
+	const configuredPerAddress = read("VPK_WS_MAX_CONNECTIONS_PER_ADDRESS");
+	return { maxTotal, maxPerAddress: configuredPerAddress === null ? maxTotal : Math.min(configuredPerAddress, maxTotal) };
+}
 
 /**
  * @param {{ maxTotal?: number, maxPerAddress?: number }} [options]
  */
 function createConnectionLimiter({
 	maxTotal = WS_MAX_CONNECTIONS,
-	maxPerAddress = WS_MAX_CONNECTIONS_PER_ADDRESS,
+	maxPerAddress = maxTotal,
 } = {}) {
 	let total = 0;
 	const byAddress = new Map();
@@ -94,8 +124,8 @@ function startHeartbeat(servers, {
 module.exports = {
 	WS_HEARTBEAT_INTERVAL_MS,
 	WS_MAX_CONNECTIONS,
-	WS_MAX_CONNECTIONS_PER_ADDRESS,
 	createConnectionLimiter,
+	resolveConnectionLimits,
 	startHeartbeat,
 	trackHeartbeat,
 };
