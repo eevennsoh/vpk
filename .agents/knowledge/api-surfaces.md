@@ -74,7 +74,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/health` | no | `backend/routes/status.js:174` |
 | `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:101` |
 | `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:166` |
-| `GET` | `/api/image-proxy` | no | `backend/routes/media.js:205` |
+| `GET` | `/api/image-proxy` | no | `backend/routes/media.js:206` |
 | `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js:25` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js:72` |
 | `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js:46` |
@@ -127,8 +127,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:696` |
 | `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:712` |
 | `GET` | `/api/sessions/search` | no | `backend/routes/rovo-app.js:286` |
-| `POST` | `/api/sound-generation` | no | `backend/routes/media.js:100` |
-| `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:142` |
+| `POST` | `/api/sound-generation` | no | `backend/routes/media.js:101` |
+| `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:143` |
 | `POST` | `/api/standup` | no | `backend/routes/demos.js:159` |
 | `GET` | `/api/status` | no | `backend/routes/status.js:68` |
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:50` |
