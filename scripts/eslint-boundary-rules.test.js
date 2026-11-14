@@ -277,6 +277,36 @@ export const Controls = () => (
 	assert.ok(findings.every(({ severity }) => severity === 2));
 });
 
+test("only activation handlers make an element a control; hover, focus and drag handlers track state", async () => {
+	const findings = await ruleFindings(`
+declare function open(): void;
+declare function track(): void;
+declare const isOpen: boolean;
+export const Surfaces = () => (
+	<>
+		<div onMouseDown={() => open()}>Press</div>
+		<section aria-label="Board" onClick={() => open()}>Board</section>
+		<div onMouseEnter={() => track()} onFocus={() => track()} onBlur={() => track()}>Reveal</div>
+		<div onDragOver={() => track()} onDrop={() => track()}>Drop</div>
+		<div role={isOpen ? "button" : undefined} tabIndex={0} onClick={() => open()} onKeyDown={() => open()}>Card</div>
+		<iframe title="Preview" onLoad={() => track()} />
+		<canvas role="img" aria-label="Orb" />
+		<ul role="listbox"><li role="option" aria-selected="false">One</li></ul>
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", [
+		"jsx-a11y/no-interactive-element-to-noninteractive-role",
+		"jsx-a11y/no-noninteractive-element-interactions",
+		"jsx-a11y/no-noninteractive-element-to-interactive-role",
+		"jsx-a11y/no-static-element-interactions",
+	]);
+	assert.deepEqual(findings.map(({ line, ruleId }) => [line, ruleId]).sort(), [
+		[7, "jsx-a11y/no-static-element-interactions"],
+		[8, "jsx-a11y/no-noninteractive-element-interactions"],
+	]);
+	assert.ok(findings.every(({ severity }) => severity === 2));
+});
+
 test("component tests prove behavior instead of adding source-text regex assertions", async () => {
 	const findings = await ruleFindings(`
 const assert = require("node:assert/strict");
