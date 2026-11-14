@@ -49,6 +49,14 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 	};
 }
 
+// Frame caps (provisional). ws buffers up to 100 MiB per frame by default and closes a
+// socket that sends more than its cap with 1009.
+// Realtime: an audio chunk is 4096 samples resampled to 24 kHz PCM16, about 6 KiB of
+// base64; the largest client frame is a context_inject carrying thread context text.
+const REALTIME_MAX_PAYLOAD_BYTES = 1024 * 1024;
+// Preview: control messages only (pointer, wheel, key, sync, and paste text).
+const PREVIEW_MAX_PAYLOAD_BYTES = 256 * 1024;
+
 const BROWSER_PREVIEW_PATH = /^\/api\/browser-workspaces\/(?<workspaceId>[^/]+)\/live$/u;
 
 /**
@@ -74,6 +82,47 @@ function parseUpgradeTarget(rawUrl) {
 		return { ok: false };
 	}
 	return isStorageId(workspaceId) ? { ok: true, requestUrl, workspaceId } : { ok: false };
+}
+
+/**
+ * Wraps a socket or server listener. Anything thrown in an event listener (and a rejected
+ * promise it returns) would reach uncaughtException or unhandledRejection, which exit the
+ * backend; here it is logged and `onError` ends that one socket instead.
+ * @param {string} label
+ * @param {(...args: unknown[]) => unknown} listener
+ * @param {{ consoleImpl: Pick<Console, "error">, onError: (...args: unknown[]) => void }} options
+ */
+function guardListener(label, listener, { consoleImpl, onError }) {
+	const fail = (args, error) => {
+		consoleImpl.error(`[WS] ${label} failed:`, error instanceof Error ? error.message : String(error));
+		try {
+			onError(...args);
+		} catch {}
+	};
+	return (...args) => {
+		try {
+			const result = listener(...args);
+			if (result && typeof result.then === "function") {
+				result.then(undefined, (error) => fail(args, error));
+			}
+		} catch (error) {
+			fail(args, error);
+		}
+	};
+}
+
+function closeSocket(ws) {
+	try {
+		ws.close(1011, "Internal error");
+	} catch {
+		ws.terminate?.();
+	}
+}
+
+function sendPreviewError(ws, error, fallback) {
+	try {
+		ws.send(JSON.stringify({ type: "preview-error", message: error instanceof Error ? error.message : fallback }));
+	} catch {}
 }
 
 function registerBackendWebSocketRelays(server, {
@@ -123,8 +172,8 @@ function registerBackendWebSocketRelays(server, {
 		throw new Error("registerBackendWebSocketRelays requires webSocketImpl.Server");
 	}
 
-	const realtimeWss = new webSocketImpl.Server({ noServer: true });
-	const browserPreviewWss = new webSocketImpl.Server({ noServer: true });
+	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
+	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
 	const verifyUpgrade = (requestUrl, request, options) => {
 		return verifyRuntimeSocketUpgrade(requestUrl, request, {
 			isAllowedRuntimeSocketOrigin,
@@ -135,7 +184,7 @@ function registerBackendWebSocketRelays(server, {
 		});
 	};
 
-	server.on("upgrade", (request, socket, head) => {
+	server.on("upgrade", guardListener("upgrade", (request, socket, head) => {
 		// Once shutdown has begun, an upgrade can still arrive on a keep-alive connection
 		// that stayed open; it would start a preview or realtime session after the runs
 		// were aborted. Like refuseRequestsWhileDraining for HTTP, it gets 503.
@@ -183,10 +232,20 @@ function registerBackendWebSocketRelays(server, {
 		}
 
 		socket.destroy();
-	});
+	}, {
+		consoleImpl,
+		onError: (_request, socket) => {
+			if (socket.writable) {
+				rejectUpgrade(socket, 500, "Internal Server Error");
+			} else {
+				socket.destroy();
+			}
+		},
+	}));
 
-	realtimeWss.on("connection", (ws) => {
+	realtimeWss.on("connection", guardListener("realtime connection", (ws) => {
 		consoleImpl.log("[REALTIME] Client connected to /api/realtime/audio-conversation");
+		const onError = () => closeSocket(ws);
 
 		const session = new realtimeSessionImpl(ws, {
 			onLog: (section, message) => {
@@ -198,78 +257,69 @@ function registerBackendWebSocketRelays(server, {
 			},
 		});
 
-		session.connect();
-
-		ws.on("message", (data) => {
+		ws.on("message", guardListener("realtime message", (data) => {
 			session.handleClientMessage(data.toString());
-		});
+		}, { consoleImpl, onError }));
 
-		ws.on("close", () => {
+		ws.on("close", guardListener("realtime close", () => {
 			consoleImpl.log("[REALTIME] Client disconnected");
 			session.close();
-		});
+		}, { consoleImpl, onError: () => {} }));
 
-		ws.on("error", (err) => {
+		ws.on("error", guardListener("realtime socket error", (err) => {
 			consoleImpl.error("[REALTIME] Client WS error:", err.message);
 			session.close();
-		});
-	});
+		}, { consoleImpl, onError: () => {} }));
 
-	browserPreviewWss.on("connection", (ws, _request, workspaceId) => {
+		// connect() is async: a rejection would be unhandled, which exits the backend.
+		return session.connect();
+	}, { consoleImpl, onError: (ws) => closeSocket(ws) }));
+
+	browserPreviewWss.on("connection", guardListener("preview connection", (ws, _request, workspaceId) => {
 		const mirrorBrowser = getMirrorBrowser(workspaceId);
 		if (mirrorBrowser) {
 			mirrorBrowser.attachClient(ws);
 			return;
 		}
 
-		void browserWorkspaceManager.attachWorkspacePreviewClient(workspaceId, ws).catch(
-			(error) => {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Failed to attach browser preview client.";
-				ws.send(
-					JSON.stringify({
-						type: "preview-error",
-						message,
-					}),
-				);
-				ws.close();
-			},
-		);
+		// The error reply goes through the guarded send and close: a throw here (a socket
+		// that already closed) would be an unhandled rejection, which exits the backend.
+		void Promise.resolve()
+			.then(() => browserWorkspaceManager.attachWorkspacePreviewClient(workspaceId, ws))
+			.catch((error) => {
+				sendPreviewError(ws, error, "Failed to attach browser preview client.");
+				try {
+					ws.close();
+				} catch {
+					ws.terminate?.();
+				}
+			});
 
-		ws.on("message", (data) => {
+		ws.on("message", guardListener("preview message", (data) => {
+			let payload;
 			try {
-				const payload = JSON.parse(String(data));
-				void browserWorkspaceManager.handleWorkspacePreviewControlMessage(
-					workspaceId,
-					payload,
-				);
+				payload = JSON.parse(String(data));
 			} catch (error) {
-				ws.send(
-					JSON.stringify({
-						type: "preview-error",
-						message:
-							error instanceof Error
-								? error.message
-								: "Invalid browser preview message.",
-					}),
-				);
+				sendPreviewError(ws, error, "Invalid browser preview message.");
+				return;
 			}
-		});
+			if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+				sendPreviewError(ws, null, "Invalid browser preview message.");
+				return;
+			}
+			// A throw (missing workspace) or a rejected action is answered on the socket.
+			return Promise.resolve()
+				.then(() => browserWorkspaceManager.handleWorkspacePreviewControlMessage(workspaceId, payload))
+				.catch((error) => sendPreviewError(ws, error, "Browser preview action failed."));
+		}, { consoleImpl, onError: () => closeSocket(ws) }));
 
-		ws.on("close", () => {
-			void browserWorkspaceManager
-				.detachWorkspacePreviewClient(workspaceId, ws)
-				.catch(() => {});
-		});
-
-		ws.on("error", () => {
-			void browserWorkspaceManager
-				.detachWorkspacePreviewClient(workspaceId, ws)
-				.catch(() => {});
-		});
-	});
+		const detach = guardListener("preview detach", () =>
+			Promise.resolve()
+				.then(() => browserWorkspaceManager.detachWorkspacePreviewClient(workspaceId, ws))
+				.catch(() => {}), { consoleImpl, onError: () => {} });
+		ws.on("close", detach);
+		ws.on("error", detach);
+	}, { consoleImpl, onError: (ws) => closeSocket(ws) }));
 
 	return {
 		browserPreviewWss,
@@ -278,6 +328,9 @@ function registerBackendWebSocketRelays(server, {
 }
 
 module.exports = {
+	PREVIEW_MAX_PAYLOAD_BYTES,
+	REALTIME_MAX_PAYLOAD_BYTES,
+	guardListener,
 	parseUpgradeTarget,
 	getRuntimeSocketTokenFromUpgrade,
 	registerBackendWebSocketRelays,

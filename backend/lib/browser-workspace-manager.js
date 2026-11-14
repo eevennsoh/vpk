@@ -129,6 +129,12 @@ function tabsAreEqual(currentTabs, nextTabs) {
 	return true
 }
 
+// A preview task that runs on its own (a timer, a data-channel message) has no caller to
+// return a rejection to; it is logged instead of becoming an unhandled rejection.
+function logDetachedPreviewFailure(label, error) {
+	console.warn(`[BROWSER-WORKSPACE] Preview ${label} failed:`, error instanceof Error ? error.message : String(error))
+}
+
 class BrowserWorkspace {
 	constructor({
 		workspaceId,
@@ -558,7 +564,7 @@ class BrowserWorkspace {
 		this._clearPreviewOverlayActivityTimer()
 		this._previewOverlayActivityTimer = setTimeout(() => {
 			this._previewOverlayActivityTimer = null
-			void this._enqueue(async () => {
+			this._enqueue(async () => {
 				if (!this._previewOverlayState?.activity) {
 					return
 				}
@@ -569,7 +575,7 @@ class BrowserWorkspace {
 					updatedAt: this._now(),
 				}
 				this._broadcastPreviewOverlay()
-			})
+			}).catch((error) => logDetachedPreviewFailure("overlay reset", error))
 		}, PREVIEW_OVERLAY_ACTIVITY_RESET_MS)
 		this._previewOverlayActivityTimer.unref?.()
 	}
@@ -607,7 +613,7 @@ class BrowserWorkspace {
 
 		this._previewSettleTimer = setTimeout(() => {
 			this._previewSettleTimer = null
-			void this._enqueue(async () => {
+			this._enqueue(async () => {
 				if (!this._hasPreviewConsumers()) {
 					return
 				}
@@ -616,7 +622,7 @@ class BrowserWorkspace {
 				this._previewSettledScreenshotRevision += 1
 				this._previewStatus = "steady"
 				this._broadcastPreviewState("steady")
-			})
+			}).catch((error) => logDetachedPreviewFailure("preview settle", error))
 		}, delayMs)
 		this._previewSettleTimer.unref?.()
 	}
@@ -844,35 +850,40 @@ class BrowserWorkspace {
 		await this._runtime.stopScreencast().catch(() => {})
 	}
 
+	// Returns the action's promise: the preview socket answers a rejection (a value the
+	// argument rules refuse, a closed workspace) with a preview-error, and the WebRTC data
+	// channel logs it. A promise nobody handles would exit the backend.
 	_handlePreviewControlMessage(message) {
 		if (!message || typeof message !== "object") {
-			return
+			return undefined
 		}
 
 		switch (message.type) {
 			case "preview-click":
-				void this.previewClick(message.x, message.y)
-				return
+				return this.previewClick(message.x, message.y)
 			case "preview-wheel":
-				void this.previewWheel(message.x, message.y, message.deltaX, message.deltaY)
-				return
+				return this.previewWheel(message.x, message.y, message.deltaX, message.deltaY)
 			case "preview-key":
-				void this.previewKeyEvent(
+				return this.previewKeyEvent(
 					message.eventType,
 					message.key,
 					message.code,
 					message.text,
 				)
-				return
 			case "preview-paste":
-				void this.previewInsertText(message.text)
-				return
+				return this.previewInsertText(message.text)
 			case "preview-sync":
 				this._syncPreviewMessages()
-				return
+				return undefined
 			default:
-				return
+				return undefined
 		}
+	}
+
+	_handleDetachedPreviewControlMessage(message) {
+		return Promise.resolve()
+			.then(() => this._handlePreviewControlMessage(message))
+			.catch((error) => logDetachedPreviewFailure("control message", error))
 	}
 
 	peekState() {
@@ -1324,7 +1335,7 @@ class BrowserWorkspace {
 						sessionId,
 						offerSdp: resolvedOfferSdp,
 						onControlMessage: (message) =>
-							this._handlePreviewControlMessage(message),
+							this._handleDetachedPreviewControlMessage(message),
 						onClose: async () => {
 							await this._handlePreviewSessionClose(sessionId)
 						},
@@ -1333,7 +1344,7 @@ class BrowserWorkspace {
 						sessionId,
 						offerSdp: resolvedOfferSdp,
 						onControlMessage: (message) =>
-							this._handlePreviewControlMessage(message),
+							this._handleDetachedPreviewControlMessage(message),
 						onClose: async () => {
 							await this._handlePreviewSessionClose(sessionId)
 						},

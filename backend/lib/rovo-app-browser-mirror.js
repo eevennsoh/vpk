@@ -194,7 +194,11 @@ class HeadlessMirrorBrowser {
 			}
 		})
 
-		void this._ensureScreencasting()
+		// Nobody awaits this: a failed first capture is logged instead of becoming an
+		// unhandled rejection, which would exit the backend.
+		void this._ensureScreencasting().catch((error) => {
+			console.warn("[MIRROR] Screencast start failed:", redactLogText(error?.message ?? String(error)))
+		})
 	}
 
 	getStreamConfig(port) {
