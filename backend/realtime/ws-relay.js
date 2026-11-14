@@ -195,6 +195,7 @@ function registerBackendWebSocketRelays(server, {
 	// raw socket closes (also when the handshake fails). Over a cap the upgrade gets 503.
 	const limits = resolveConnectionLimits(env, consoleImpl);
 	const trustedProxyHops = resolveTrustedProxyHops(env, consoleImpl);
+	consoleImpl.log?.(`[STARTUP] Client addresses: ${trustedProxyHops} trusted proxy hop(s); WebSocket caps per pool: ${limits.maxTotal} total, ${limits.maxPerAddress} per address`);
 	const pools = connectionLimiters ?? {
 		preview: connectionLimiter ?? createConnectionLimiter(limits),
 		realtime: connectionLimiter ?? createConnectionLimiter(limits),

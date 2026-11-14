@@ -212,8 +212,8 @@ function registerOnFakeApp(env) {
 	return limiter;
 }
 
-test("in production one client behind the load balancer cannot use up another client's budget", () => {
-	const limiter = registerOnFakeApp({ NODE_ENV: "production" });
+test("behind the production load balancer one client the load balancer cannot use up another client's budget", () => {
+	const limiter = registerOnFakeApp({ NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" });
 	const res = createResponse();
 	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 5; index += 1) {
 		limiter(proxiedRequest("203.0.113.5"), res, () => {});
@@ -227,7 +227,7 @@ test("in production one client behind the load balancer cannot use up another cl
 });
 
 test("a client cannot pick its own bucket by sending X-Forwarded-For: only the balancer's entry counts", () => {
-	const limiter = registerOnFakeApp({ NODE_ENV: "production" });
+	const limiter = registerOnFakeApp({ NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" });
 	const res = createResponse();
 	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 1; index += 1) {
 		// The client's own header comes first; the balancer appends the real address.
@@ -236,8 +236,8 @@ test("a client cannot pick its own bucket by sending X-Forwarded-For: only the b
 	assert.equal(res.payloads.length, 1);
 });
 
-test("outside production X-Forwarded-For is ignored, so a local caller cannot spoof a bucket", () => {
-	const limiter = registerOnFakeApp({ NODE_ENV: "development" });
+test("without a configured proxy X-Forwarded-For is ignored, so a local caller cannot spoof a bucket", () => {
+	const limiter = registerOnFakeApp({ NODE_ENV: "production" });
 	const res = createResponse();
 	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 1; index += 1) {
 		limiter(proxiedRequest(`192.0.2.${index}`), res, () => {});

@@ -160,8 +160,9 @@ backend stash baseline above; a minimal static-only scaffold requires its own
 appropriate packaging path rather than dummy AI credentials.
 
 Per-client limits key on the address the Micros load balancer appends to
-`X-Forwarded-For` (`VPK_TRUSTED_PROXY_HOPS`, default 1 in production). Leave it
-unset unless the proxy chain in front of the service changes; see the setup
+`X-Forwarded-For`: the descriptor sets `VPK_TRUSTED_PROXY_HOPS: "1"`. Keep it
+when replacing placeholders, and change it only if the proxy chain in front of
+the service changes; the startup log prints the value in use. See the setup
 guide's client-address section.
 
 The shared CSP must permit the existing Atlassian font CDN in `style-src` and

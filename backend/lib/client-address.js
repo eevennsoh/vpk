@@ -10,11 +10,12 @@
 // `req.hostname` and `req.protocol` follow X-Forwarded-Host/-Proto, which a client can set.
 //
 // VPK_TRUSTED_PROXY_HOPS is the number of proxies in front of the backend that append to
-// X-Forwarded-For: 1 by default in production (the load balancer), 0 elsewhere (local
-// development has no balancer, and a header there is the caller's own). With 0 the socket
-// address is used. If the real number is higher, the address resolved is a proxy's, which
-// is the same as not trusting the header at all; it is never one the client chose.
-const PRODUCTION_TRUSTED_PROXY_HOPS = 1;
+// X-Forwarded-For. The Micros service descriptor sets 1 (the load balancer); the default
+// is 0 everywhere else, including a local NODE_ENV=production serve, because a header that
+// no proxy appended is the caller's own. With 0 the socket address is used. If the real
+// number is higher, the address resolved is a proxy's, the same as not trusting the
+// header; a chain shorter than the hop count also falls back to the socket address, so a
+// client never chooses its own address.
 const MAX_TRUSTED_PROXY_HOPS = 8;
 
 /**
@@ -23,7 +24,7 @@ const MAX_TRUSTED_PROXY_HOPS = 8;
  * @returns {number}
  */
 function resolveTrustedProxyHops(env = process.env, logger = console) {
-	const fallback = env.NODE_ENV === "production" ? PRODUCTION_TRUSTED_PROXY_HOPS : 0;
+	const fallback = 0;
 	const raw = env.VPK_TRUSTED_PROXY_HOPS;
 	if (raw === undefined || raw === "") return fallback;
 	if (!/^\s*\d+\s*$/u.test(raw) || Number.parseInt(raw, 10) > MAX_TRUSTED_PROXY_HOPS) {
@@ -48,8 +49,8 @@ function parseForwardedFor(header) {
 
 /**
  * The client address of an HTTP or upgrade request: the socket address, or with `hops`
- * trusted proxies the X-Forwarded-For entry that many hops from the socket (the leftmost
- * entry when the header is shorter). "unknown" when there is no address at all.
+ * trusted proxies the X-Forwarded-For entry that many hops from the socket (the socket
+ * address when the header is shorter). "unknown" when there is no address at all.
  * @param {{ headers?: Record<string, unknown>, socket?: { remoteAddress?: string } }} request
  * @param {number} hops
  * @returns {string}
@@ -60,13 +61,12 @@ function resolveClientAddress(request, hops) {
 		: "unknown";
 	if (!(hops > 0)) return socketAddress;
 	const chain = parseForwardedFor(request?.headers?.["x-forwarded-for"]);
-	if (chain.length === 0) return socketAddress;
-	return chain[Math.max(0, chain.length - hops)];
+	if (chain.length < hops) return socketAddress;
+	return chain[chain.length - hops];
 }
 
 module.exports = {
 	MAX_TRUSTED_PROXY_HOPS,
-	PRODUCTION_TRUSTED_PROXY_HOPS,
 	resolveClientAddress,
 	resolveTrustedProxyHops,
 };

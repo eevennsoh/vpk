@@ -86,11 +86,11 @@ test("both caps are configurable; an unusable value falls back with a log line",
 	assert.equal(typeof limiter.tryAcquire("10.0.0.2"), "function");
 });
 
-test("in production, where addresses identify clients, each client gets WS_MAX_CONNECTIONS_PER_CLIENT sockets", () => {
-	const { WS_MAX_CONNECTIONS_PER_CLIENT } = require("./ws-connection-limits");
-	assert.equal(WS_MAX_CONNECTIONS_PER_CLIENT, 16);
+test("behind a trusted proxy, where addresses identify clients, each client gets half the pool", () => {
 	const logger = { warn() {} };
-	assert.deepEqual(resolveConnectionLimits({ NODE_ENV: "production" }, logger), { maxTotal: 64, maxPerAddress: 16 });
-	assert.deepEqual(resolveConnectionLimits({ NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "0" }, logger), { maxTotal: 64, maxPerAddress: 64 }, "no trusted proxy: addresses are the proxy's");
-	assert.deepEqual(resolveConnectionLimits({ NODE_ENV: "production", VPK_WS_MAX_CONNECTIONS_PER_ADDRESS: "4" }, logger), { maxTotal: 64, maxPerAddress: 4 });
+	const trusted = { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" };
+	assert.deepEqual(resolveConnectionLimits(trusted, logger), { maxTotal: 64, maxPerAddress: 32 });
+	assert.deepEqual(resolveConnectionLimits({ ...trusted, VPK_WS_MAX_CONNECTIONS: "1" }, logger), { maxTotal: 1, maxPerAddress: 1 });
+	assert.deepEqual(resolveConnectionLimits({ NODE_ENV: "production" }, logger), { maxTotal: 64, maxPerAddress: 64 }, "no trusted proxy: addresses are the proxy's");
+	assert.deepEqual(resolveConnectionLimits({ ...trusted, VPK_WS_MAX_CONNECTIONS_PER_ADDRESS: "4" }, logger), { maxTotal: 64, maxPerAddress: 4 });
 });

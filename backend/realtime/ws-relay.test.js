@@ -741,12 +741,12 @@ test("a socket that sends no frame is closed after its first-frame timeout; one 
 	assert.equal(timers[2].cleared, true, "close clears the timeout");
 });
 
-test("in production one client behind the load balancer cannot take every realtime slot", () => {
+test("behind the production load balancer one client cannot take every realtime slot", () => {
 	const server = createFakeServer();
 	const { instances, webSocketImpl } = createFakeWebSocketImpl();
 	registerBackendWebSocketRelays(server, {
 		...createRegistrationDependencies(),
-		env: { NODE_ENV: "production" },
+		env: { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" },
 		webSocketImpl,
 	});
 	const upgrade = server.handlers.get("upgrade");
