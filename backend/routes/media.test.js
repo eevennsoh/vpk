@@ -373,3 +373,165 @@ test("image proxy maps abort errors to a timeout response", async () => {
 		assert.deepEqual(await response.json(), { error: "Image fetch timed out" });
 	});
 });
+
+test("image proxy responses are sandboxed and typed by the same rule as uploads", async () => {
+	const { FILE_RESPONSE_SECURITY_HEADERS } = require("../lib/upload-response-headers");
+	const targetUrl = new URL("https://www.figma.com/api/mcp/asset/image");
+	const cases = [
+		["image/png", "image/png", "inline"],
+		["image/svg+xml", "image/svg+xml", "inline"],
+		["image/jpg", "image/jpeg", "inline"],
+		["image/tiff", "application/octet-stream", "attachment"],
+		["image/svg+xml; charset=utf-8", "image/svg+xml", "inline"],
+	];
+	for (const [upstreamType, servedType, disposition] of cases) {
+		await withServer({
+			fetchFn: async () => new Response("<svg xmlns='http://www.w3.org/2000/svg'><script>parent.x=1</script></svg>", {
+				headers: { "content-type": upstreamType },
+				status: 200,
+			}),
+			parseImageProxyTargetFn: () => ({ source: "figma", targetUrl }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			assert.equal(response.status, 200, upstreamType);
+			assert.equal(response.headers.get("content-type"), servedType, upstreamType);
+			assert.equal(response.headers.get("content-disposition").split(";")[0], disposition, upstreamType);
+			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
+				assert.equal(response.headers.get(name), value, `${upstreamType} ${name}`);
+			}
+			await response.arrayBuffer();
+		});
+	}
+});
+
+test("image proxy follows redirects one hop at a time and refuses a hop off the allowed hosts", async () => {
+	const targetUrl = new URL("https://www.figma.com/api/mcp/asset/image");
+	const redirect = (location, status = 302) => new Response(null, { headers: { location }, status });
+	const image = () => new Response(Buffer.from([1, 2, 3]), { headers: { "content-type": "image/png" }, status: 200 });
+	const run = async (responses) => {
+		const calls = [];
+		let result;
+		await withServer({
+			buildImageProxyHeaders: (url) => ({ "x-hop": url.hostname }),
+			fetchFn: async (url, options) => {
+				calls.push({ url, redirect: options.redirect, headers: options.headers });
+				return responses.shift()?.() ?? new Response("gone", { status: 404 });
+			},
+			parseImageProxyTargetFn: () => ({ source: "figma", targetUrl }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			result = { status: response.status, body: await response.text() };
+		});
+		return { calls, result };
+	};
+
+	const allowed = await run([() => redirect("https://s3-figma-media.figma.com/asset?sig=1"), image]);
+	assert.equal(allowed.result.status, 200);
+	assert.deepEqual(allowed.calls.map((call) => [call.url, call.redirect, call.headers["x-hop"]]), [
+		["https://www.figma.com/api/mcp/asset/image", "manual", "www.figma.com"],
+		["https://s3-figma-media.figma.com/asset?sig=1", "manual", "s3-figma-media.figma.com"],
+	]);
+
+	for (const location of [
+		"http://169.254.169.254/latest/meta-data/",
+		"https://127.0.0.1/x.png",
+		"https://[::1]/x.png",
+		"https://10.0.0.5/x.png",
+		"http://www.figma.com/insecure.png",
+		"https://evil.test/x.png",
+		"https://figma.com.evil.test/x.png",
+		"https://user:pass@www.figma.com/x.png",
+		"https://",
+	]) {
+		const refused = await run([() => redirect(location)]);
+		assert.equal(refused.calls.length, 1, location);
+		assert.equal(refused.result.status, 502, location);
+		assert.match(refused.result.body, /Image fetch failed \(302\)/u, location);
+	}
+
+	const looping = await run(Array.from({ length: 10 }, (_, index) => () => redirect(`https://www.figma.com/hop/${index}`)));
+	assert.equal(looping.result.status, 502);
+	assert.equal(looping.calls.length, 6, "the first request plus five redirects");
+});
+
+test("a redirect to a non-image path on the configured site is fetched without the token", async () => {
+	const { buildImageProxyRequestHeaders } = require("../lib/image-proxy");
+	const env = { ATLASSIAN_API_TOKEN: "made-up-token", ATLASSIAN_SITE_HOSTS: "team.atlassian.net" };
+	const cases = [
+		["cross-site", "https://other.atlassian.net/wiki/download/attachments/1/x.png"],
+		["same-site", "https://team.atlassian.net/wiki/download/attachments/1/x.png"],
+	];
+	for (const [name, start] of cases) {
+		const seen = [];
+		await withServer({
+			buildImageProxyHeaders: (url) => buildImageProxyRequestHeaders(url, env),
+			deriveAtlassianImageCandidates: () => [],
+			fetchFn: async (url, options) => {
+				seen.push([url, options.headers.Authorization ?? null]);
+				return seen.length === 1
+					? new Response(null, { headers: { location: "https://team.atlassian.net/rest/api/3/myself" }, status: 302 })
+					: new Response("{}", { headers: { "content-type": "application/json" }, status: 200 });
+			},
+			parseImageProxyTargetFn: () => ({ source: "atlassian", targetUrl: new URL(start) }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			assert.equal(response.status, 502, name);
+			await response.arrayBuffer();
+		});
+		assert.deepEqual(seen[1], ["https://team.atlassian.net/rest/api/3/myself", null], name);
+		assert.equal(seen[0][1], name === "same-site" ? "Bearer made-up-token" : null, name);
+	}
+});
+
+test("an upstream body that is not an image is read only as a small Atlassian page", async () => {
+	const { IMAGE_PROXY_MAX_HTML_BYTES } = require("../lib/image-proxy");
+	let pulled = 0;
+	// 16 MiB, sent 64 KiB at a time: finite, so an uncapped reader finishes (and fails here).
+	const hugePage = () => new ReadableStream({
+		pull(controller) {
+			if (pulled >= 16 * 1024 * 1024) {
+				controller.close();
+				return;
+			}
+			pulled += 64 * 1024;
+			controller.enqueue(new Uint8Array(64 * 1024));
+		},
+	});
+	for (const source of ["atlassian", "figma"]) {
+		pulled = 0;
+		let extracted = false;
+		await withServer({
+			deriveAtlassianImageCandidates: () => [],
+			extractAtlassianImageCandidates: () => {
+				extracted = true;
+				return [];
+			},
+			fetchFn: async () => new Response(hugePage(), { headers: { "content-type": "text/html" }, status: 200 }),
+			parseImageProxyTargetFn: () => ({ source, targetUrl: new URL("https://team.atlassian.net/wiki/download/attachments/1/x.png") }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			assert.equal(response.status, 502, source);
+			await response.arrayBuffer();
+		});
+		assert.ok(pulled <= IMAGE_PROXY_MAX_HTML_BYTES + 4 * 64 * 1024, `${source} read ${pulled} bytes`);
+		assert.equal(extracted, false, `${source}: an oversized page yields no candidates`);
+	}
+});
+
+test("a styled SVG is proxied unchanged, inline, under a policy that keeps its styles and blocks script", async () => {
+	const styledSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><style>.dot{fill:#c00}</style><circle class="dot" cx="5" cy="5" r="4" style="stroke:#00c"/></svg>';
+	await withServer({
+		fetchFn: async () => new Response(styledSvg, { headers: { "content-type": "image/svg+xml" }, status: 200 }),
+		parseImageProxyTargetFn: () => ({ source: "figma", targetUrl: new URL("https://www.figma.com/api/mcp/asset/styled") }),
+	}, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+		assert.equal(response.status, 200);
+		assert.equal(response.headers.get("content-type"), "image/svg+xml");
+		assert.match(response.headers.get("content-disposition"), /^inline;/u);
+		const policy = response.headers.get("content-security-policy");
+		assert.match(policy, /(?:^|; )style-src 'unsafe-inline'(?:;|$)/u);
+		assert.match(policy, /^sandbox;/u);
+		assert.doesNotMatch(policy, /script-src|allow-scripts/u);
+		assert.equal(await response.text(), styledSvg);
+	});
+});
