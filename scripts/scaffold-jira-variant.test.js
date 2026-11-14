@@ -218,15 +218,6 @@ function createFixtureWorkspace({
 		"};",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/website/registry/projects.ts", [
-		"export const PROJECT_DEMOS = {",
-		`\t"${identity.slug}": dynamic(`,
-		`\t\t() => import("../demos/projects/${identity.slug}-demo"),`,
-		"\t\t{ ssr: false },",
-		"\t),",
-		"};",
-		"",
-	].join("\n"));
 
 	const deferredObject = [
 		"\t{",
@@ -267,7 +258,7 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		'\tif (repoMap.state !== "generated") process.exit(2);',
 		'}',
 		'if (kind === "catalog") {',
-		'\tfor (const file of ["app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts"]) {',
+		'\tfor (const file of ["app/data/component-manifest.ts", "app/data/details/projects.ts"]) {',
 		'\t\tconst source = fs.readFileSync(file, "utf8");',
 		'\t\tif (!source.includes(target)) process.exit(3);',
 		'\t}',
@@ -760,7 +751,11 @@ test("CLI dry-run JSON is stable and never creates the target", async () => {
 		assert.equal(summary.mode, "dry-run");
 		assert.match(summary.planFingerprint, /^[a-f0-9]{64}$/u);
 		assert.ok(summary.rewrites.some((entry) => entry.from === "v2" && entry.to === "v3"));
-		assert.deepEqual(summary.postApplyCommands[0].command, ["node", "scripts/generate-repo-map.js"]);
+		// The projects registry is generated from the copied manifest entry before the repo map reads it.
+		assert.deepEqual(summary.postApplyCommands.map((entry) => entry.command), [
+			["node", "scripts/generate-catalog-registry.js"],
+			["node", "scripts/generate-repo-map.js"],
+		]);
 		assert.deepEqual(summary.validationCommands[0].command, [
 			"corepack",
 			"pnpm",

@@ -7,7 +7,7 @@
 // manifest entry, in manifest order, between the generated-region markers of each category's
 // table. Entries that differ (a named export, a shared demo, another file name) stay by hand
 // below the region, each with its reason; the generator skips a slug the hand-written part
-// already has. Projects are not generated: their registry waits for the owner (C-7).
+// already has.
 // `--check` fails when a region differs from what it would write (pnpm run verify:catalog runs
 // it; pnpm run fix:generated --only catalog-registry rewrites the regions).
 
@@ -19,6 +19,7 @@ const { loadComponentManifest } = require("./verify-component-catalog");
 
 const REGISTRIES = Object.freeze([
 	{ category: "arts", demoDir: "arts", file: "components/website/registry/arts.ts", table: "ARTS_DEMOS" },
+	{ category: "projects", demoDir: "projects", file: "components/website/registry/projects.ts", table: "PROJECT_DEMOS" },
 	{ category: "blocks", demoDir: "blocks", file: "components/website/registry/blocks.ts", table: "BLOCK_DEMOS" },
 	{ category: "ui", demoDir: "ui", file: "components/website/registry/ui/primary.ts", table: "UI_PRIMARY_DEMOS" },
 	{ category: "ui-custom", demoDir: "ui-custom", file: "components/website/registry/ui-custom/primary.ts", table: "UI_CUSTOM_PRIMARY_DEMOS" },

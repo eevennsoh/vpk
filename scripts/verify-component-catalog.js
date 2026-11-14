@@ -66,7 +66,7 @@ const DETAIL_LEAF_CATEGORIES = new Set(["blocks", "ui", "ui-custom", "visual"]);
 // Barrels scripts/generate-catalog-barrels.js writes from the manifest and the leaves.
 const GENERATED_DETAIL_BARREL_CATEGORIES = new Set(["blocks", "ui", "ui-custom"]);
 // Primary registries whose conventional entries scripts/generate-catalog-registry.js writes.
-const GENERATED_REGISTRY_CATEGORIES = new Set(["arts", "blocks", "ui", "ui-custom", "ui-charts", "utility", "visual"]);
+const GENERATED_REGISTRY_CATEGORIES = new Set(["arts", "blocks", "projects", "ui", "ui-custom", "ui-charts", "utility", "visual"]);
 // Categories whose entries may own an App Router page that renders the demo full screen.
 const ROUTE_PAGE_CATEGORIES = new Set(["projects", "arts"]);
 const PRIMARY_REGISTRY_TARGETS = {

@@ -26,13 +26,6 @@ const LEAF_FILE_OVERRIDES = Object.freeze({
 	"ui/icon": "icon-detail",
 });
 
-// Leaves that export a detail no manifest entry uses, each with its reason. A new one fails.
-const UNUSED_LEAVES = Object.freeze({
-	// No catalog entry since b565d0f57; whether to delete them is the owner's call (C-7).
-	"blocks/ide": "detail without a catalog entry",
-	"ui/code": "detail without a catalog entry",
-});
-
 const LEAF_EXPORT = /^export const ([A-Z0-9_]+_DETAIL)\b/mu;
 
 function toObjectKey(slug) {
@@ -71,7 +64,7 @@ function renderBarrel(category, components, { cwd = process.cwd() } = {}) {
 	for (const file of existsSync(leafDir) ? readdirSync(leafDir, { withFileTypes: true }) : []) {
 		if (!file.isFile() || !file.name.endsWith(".ts")) continue;
 		const fileName = file.name.replace(/\.ts$/u, "");
-		if (!used.has(fileName) && !UNUSED_LEAVES[`${category}/${fileName}`] && readLeafExport(category, fileName, cwd)) {
+		if (!used.has(fileName) && readLeafExport(category, fileName, cwd)) {
 			problems.push(`app/data/details/${category}/${file.name} exports a detail but no ${category} manifest entry uses it`);
 		}
 	}
@@ -128,4 +121,4 @@ if (require.main === module) {
 	process.exitCode = main();
 }
 
-module.exports = { BARREL_CATEGORIES, LEAF_FILE_OVERRIDES, UNUSED_LEAVES, main, renderBarrel };
+module.exports = { BARREL_CATEGORIES, LEAF_FILE_OVERRIDES, main, renderBarrel };
