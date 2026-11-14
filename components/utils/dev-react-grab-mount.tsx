@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { shouldDisableReactGrab } from "@/components/utils/dev-react-grab";
+import { resolveReactGrabScriptSources, shouldDisableReactGrab } from "@/components/utils/dev-react-grab";
 
 const REACT_GRAB_SCRIPT_ID = "vpk-dev-react-grab-script";
 const REACT_GRAB_MCP_SCRIPT_ID = "vpk-dev-react-grab-mcp-script";
-const REACT_GRAB_SCRIPT_SRC = "//unpkg.com/react-grab/dist/index.global.js";
+const REACT_GRAB_SCRIPT_SOURCES = resolveReactGrabScriptSources(process.env.NEXT_PUBLIC_REACT_GRAB_SRC);
 const REACT_GRAB_MCP_SCRIPT_SRC = "//unpkg.com/@react-grab/mcp/dist/client.global.js";
 type ReactGrabWindow = Window & {
 	__REACT_GRAB__?: {
@@ -40,10 +40,35 @@ function ensureScript({
 		}
 
 		script.onload = () => resolve();
-		script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+		script.onerror = () => {
+			// A failed tag left in place would make the next attempt look already loaded.
+			script.remove();
+			reject(new Error(`Failed to load script: ${src}`));
+		};
 
 		window.document.head.appendChild(script);
 	});
+}
+
+async function ensureFirstAvailableScript({
+	id,
+	sources,
+	crossOrigin,
+}: Readonly<{
+	id: string;
+	sources: readonly string[];
+	crossOrigin?: string;
+}>): Promise<void> {
+	const [src, ...fallbackSources] = sources;
+	try {
+		await ensureScript({ id, src, crossOrigin });
+	} catch (error) {
+		if (fallbackSources.length === 0) {
+			throw error;
+		}
+		console.warn(`[vpk] React Grab did not load from ${src}; falling back to ${fallbackSources[0]}.`);
+		await ensureFirstAvailableScript({ id, sources: fallbackSources, crossOrigin });
+	}
 }
 
 export function DevReactGrabMount() {
@@ -65,9 +90,9 @@ export function DevReactGrabMount() {
 
 		const loadScripts = async () => {
 			try {
-				await ensureScript({
+				await ensureFirstAvailableScript({
 					id: REACT_GRAB_SCRIPT_ID,
-					src: REACT_GRAB_SCRIPT_SRC,
+					sources: REACT_GRAB_SCRIPT_SOURCES,
 					crossOrigin: "anonymous",
 				});
 
