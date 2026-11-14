@@ -51,3 +51,19 @@ test("a filename that cannot be UTF-8 encoded keeps its ASCII form, and ' ( ) * 
 	const punctuated = decideUploadResponseHeaders({ mediaType: "image/png", filename: "it's (final)*.png" })["Content-Disposition"];
 	assert.equal(punctuated, `inline; filename="it's (final)*.png"; filename*=UTF-8''it%27s%20%28final%29%2A.png`);
 });
+
+test("the file policy is exactly: sandbox, nothing by default, inline styles for SVG, no script", () => {
+	const { FILE_RESPONSE_SECURITY_HEADERS } = require("./upload-response-headers");
+	assert.equal(
+		FILE_RESPONSE_SECURITY_HEADERS["Content-Security-Policy"],
+		"sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'",
+	);
+	const directives = new Map(FILE_RESPONSE_SECURITY_HEADERS["Content-Security-Policy"].split(";").map((part) => {
+		const [name, ...values] = part.trim().split(/\s+/u);
+		return [name, values];
+	}));
+	assert.deepEqual(directives.get("sandbox"), [], "sandbox with no allow-scripts");
+	assert.deepEqual(directives.get("default-src"), ["'none'"]);
+	assert.equal(directives.has("script-src"), false);
+	assert.deepEqual(directives.get("style-src"), ["'unsafe-inline'"]);
+});

@@ -517,3 +517,21 @@ test("an upstream body that is not an image is read only as a small Atlassian pa
 		assert.equal(extracted, false, `${source}: an oversized page yields no candidates`);
 	}
 });
+
+test("a styled SVG is proxied unchanged, inline, under a policy that keeps its styles and blocks script", async () => {
+	const styledSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><style>.dot{fill:#c00}</style><circle class="dot" cx="5" cy="5" r="4" style="stroke:#00c"/></svg>';
+	await withServer({
+		fetchFn: async () => new Response(styledSvg, { headers: { "content-type": "image/svg+xml" }, status: 200 }),
+		parseImageProxyTargetFn: () => ({ source: "figma", targetUrl: new URL("https://www.figma.com/api/mcp/asset/styled") }),
+	}, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+		assert.equal(response.status, 200);
+		assert.equal(response.headers.get("content-type"), "image/svg+xml");
+		assert.match(response.headers.get("content-disposition"), /^inline;/u);
+		const policy = response.headers.get("content-security-policy");
+		assert.match(policy, /(?:^|; )style-src 'unsafe-inline'(?:;|$)/u);
+		assert.match(policy, /^sandbox;/u);
+		assert.doesNotMatch(policy, /script-src|allow-scripts/u);
+		assert.equal(await response.text(), styledSvg);
+	});
+});

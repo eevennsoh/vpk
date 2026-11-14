@@ -746,7 +746,8 @@ test("an uploaded HTML file is served as a sandboxed download, an SVG or image i
 	const { state } = dependencies;
 	const script = "<script>document.title='ran'</script>";
 	state.uploads.set("upload-html", { id: "upload-html", buffer: Buffer.from(script), filename: "page.html", mediaType: "text/html", sizeBytes: script.length });
-	state.uploads.set("upload-svg", { id: "upload-svg", buffer: Buffer.from("<svg onload='x()'/>"), filename: "logo.svg", mediaType: "image/svg+xml", sizeBytes: 19 });
+	const styledSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><style>.dot{fill:#c00}</style><circle class="dot" cx="5" cy="5" r="4" style="stroke:#00c"/></svg>';
+	state.uploads.set("upload-svg", { id: "upload-svg", buffer: Buffer.from(styledSvg), filename: "logo.svg", mediaType: "image/svg+xml", sizeBytes: styledSvg.length });
 	state.uploads.set("upload-png", { id: "upload-png", buffer: Buffer.from("png"), filename: "shot.png", mediaType: "image/png", sizeBytes: 3 });
 	await withServer(dependencies, async (baseUrl) => {
 		for (const id of ["upload-html"]) {
@@ -764,7 +765,11 @@ test("an uploaded HTML file is served as a sandboxed download, an SVG or image i
 			assert.match(image.headers.get("content-disposition"), /^inline;/u, id);
 			assert.match(image.headers.get("content-security-policy"), /^sandbox;/u, id);
 			assert.equal(image.headers.get("x-content-type-options"), "nosniff", id);
-			await image.arrayBuffer();
+			assert.match(image.headers.get("content-security-policy"), /(?:^|; )style-src 'unsafe-inline'(?:;|$)/u, id);
+			const body = await image.text();
+			if (id === "upload-svg") {
+				assert.equal(body, styledSvg, "the styled SVG is served unchanged");
+			}
 		}
 	});
 });

@@ -41,8 +41,11 @@ const MEDIA_TYPE_ALIASES = new Map([
 	["audio/mp3", "audio/mpeg"],
 ]);
 
+// `style-src 'unsafe-inline'` keeps an SVG's own <style> elements and style attributes
+// (fills, strokes, visibility); inline styles cannot run script, and `sandbox` with
+// `default-src 'none'` still blocks script, fetches and every other resource.
 const FILE_RESPONSE_SECURITY_HEADERS = Object.freeze({
-	"Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'",
+	"Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'",
 	"X-Content-Type-Options": "nosniff",
 });
 
