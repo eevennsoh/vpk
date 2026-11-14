@@ -41,6 +41,8 @@ function openScmUrl(url: string) {
 }
 
 function handleScmLinkKeyDown(event: KeyboardEvent<HTMLElement>, url: string) {
+	// Keys from a button inside the row (Copy commit, Fix) belong to that button.
+	if (event.target !== event.currentTarget) return;
 	if (event.key === "Enter" || event.key === " ") {
 		event.preventDefault();
 		openScmUrl(url);
