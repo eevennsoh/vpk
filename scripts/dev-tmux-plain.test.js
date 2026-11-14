@@ -99,6 +99,8 @@ function createFakeLauncherEnvironment() {
 
 	writeExecutable(nodePath, [
 		"#!/usr/bin/env bash",
+		// The dev-output clean is recorded, never run: the tests run in this worktree.
+		"case \"$1\" in *scripts/lib/next-dev-output.js) echo \"$*\" >> \"$NODE_CLEANUP_LOG\"; exit 0 ;; esac",
 		"if [ \"$1\" = \"./scripts/cleanup-worktree-listeners.js\" ]; then",
 		"\techo \"$1\" >> \"$NODE_CLEANUP_LOG\"",
 		"\texit 0",
@@ -680,6 +682,23 @@ test("a start that fails after creating its session stops that session; a start 
 		const notReady = withPortFiles(null, null, () => startAs(fake, "vpk-dev-slow", { FAKE_READY_PORTS: "" }));
 		assert.equal(notReady.status, 5);
 		assert.deepEqual(fake.sessions(), [`vpk-dev-slow|${worktreeRoot}`], "exit 5 leaves the session to come up or be inspected");
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("stop removes the dev output only when asked with --clean-dev-output", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const cleans = () => (fs.existsSync(fake.cleanupLogPath) ? fs.readFileSync(fake.cleanupLogPath, "utf8").split("\n").filter((line) => line.includes("next-dev-output.js")) : []);
+		const plain = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop"]));
+		assert.equal(plain.status, 0, plain.stderr);
+		assert.deepEqual(cleans(), []);
+
+		const cleaned = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop", "--", "--clean-dev-output"]));
+		assert.equal(cleaned.status, 0, cleaned.stderr);
+		assert.equal(cleans().length, 1);
+		assert.match(cleans()[0], new RegExp(`next-dev-output\\.js clean --worktree ${worktreeRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} --socket vpk-dev --session vpk-dev-clean$`));
 	} finally {
 		fake.cleanup();
 	}
