@@ -19,7 +19,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@/components/ui/tabs";
-import { useAdmin } from "./admin-context";
+import { useAdmin } from "@/components/blocks/product-sidebar/variants/admin-context";
 import {
 	AdminCard,
 	AdminPageShell,
