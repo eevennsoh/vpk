@@ -282,6 +282,14 @@ VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=16
 
 The backend's preview and realtime WebSockets together allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` adds a per-client-address cap and is off by default. Set it only where the backend sees each client's own address: behind a proxy every client shares the proxy's address, so it would cap all users together. A value that is not a positive integer is ignored, with a `[STARTUP]` warning.
 
+**Atlassian sites for the Jira demos and image proxy (optional):**
+
+```
+ATLASSIAN_SITE_HOSTS=your-site.atlassian.net,another-site.atlassian.net
+```
+
+The server sends `ATLASSIAN_API_TOKEN` only to these `*.atlassian.net` hosts (comma-separated). It is used by the Jira demo routes (standup summary, ticket classification) and by the image proxy for Atlassian images. A request without a `siteUrl` goes to the first host in the list. An entry may be a bare host, `https://<host>` or `<host>/`. When the variable is unset, the sites are `product-fabric.atlassian.net` and `hello.atlassian.net`, and the default is `product-fabric.atlassian.net`. When it is set but names no valid site (empty, or a typo), the token goes to no site, and the backend logs a `[STARTUP]` warning. A `siteUrl` that is not in the list gets 400.
+
 **Rovo Session Token (required, one-time setup):**
 
 Rovo Serve requires a session token for authentication. The backend sends it as `Authorization: Bearer <token>` on every request to Serve.

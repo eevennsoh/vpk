@@ -1,9 +1,13 @@
 // @ts-check
+const net = require("node:net");
+
 const { isAllowedAtlassianSite } = require("./jira-query-inputs");
 
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";
 const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["figma.com", "www.figma.com"]);
 const IMAGE_PROXY_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
+// An Atlassian page read for image candidates (provisional): a larger page is skipped.
+const IMAGE_PROXY_MAX_HTML_BYTES = 1024 * 1024;
 const ATLASSIAN_HOST_PATTERN = /(^|\.)atlassian\.net$/i;
 const IMAGE_FILE_EXTENSION_PATTERN =
 	/\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:$|[?#])/i;
@@ -306,16 +310,77 @@ function parseImageProxyTarget(value) {
 	};
 }
 
+// Redirects are followed one hop at a time (fetch's own following checks no hop), and
+// each hop must be https to a named host under one of these suffixes. Figma assets and
+// Atlassian attachments redirect to their media hosts; an IP literal, plain http or any
+// other host is refused. Provisional: the media hosts were not observed live here.
+const IMAGE_PROXY_MAX_REDIRECTS = 5;
+const IMAGE_PROXY_REDIRECT_HOST_SUFFIXES = ["figma.com", "atlassian.net", "atlassian.com"];
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+/** @param {URL} url */
+function isAllowedImageProxyRedirectTarget(url) {
+	if (url.protocol !== "https:" || url.username || url.password) {
+		return false;
+	}
+	const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/gu, "").replace(/\.$/u, "");
+	if (!hostname || net.isIP(hostname)) {
+		return false;
+	}
+	return IMAGE_PROXY_REDIRECT_HOST_SUFFIXES.some((suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`));
+}
+
+/**
+ * GET an image-proxy URL, following redirects by hand: every hop is checked, and each
+ * hop's headers are built for that hop (a token never follows a redirect to another host).
+ * @param {URL} startUrl
+ * @param {{ fetchFn: typeof fetch, buildHeaders: (url: URL) => Record<string, string>, signal?: AbortSignal }} options
+ * @returns {Promise<{ response: Response, url: URL } | { refusedStatus: number }>}
+ */
+async function fetchImageProxyUrl(startUrl, { fetchFn, buildHeaders, signal }) {
+	let url = startUrl;
+	for (let hop = 0; ; hop += 1) {
+		const response = await fetchFn(url.toString(), {
+			method: "GET",
+			headers: buildHeaders(url),
+			redirect: "manual",
+			signal,
+		});
+		if (!REDIRECT_STATUSES.has(response.status)) {
+			return { response, url };
+		}
+		await response.body?.cancel?.().catch?.(() => {});
+		/** @type {URL | null} */
+		let next = null;
+		try {
+			const location = response.headers.get("location");
+			next = location ? new URL(location, url) : null;
+		} catch {
+			next = null;
+		}
+		if (!next || hop >= IMAGE_PROXY_MAX_REDIRECTS || !isAllowedImageProxyRedirectTarget(next)) {
+			return { refusedStatus: response.status };
+		}
+		url = next;
+	}
+}
+
 function buildImageProxyRequestHeaders(targetUrl, env = process.env) {
 	const headers = {
 		Accept: "image/*",
 		"User-Agent": "VPK-ImageProxy/1.0",
 	};
 
-	// The token goes only to a configured site over https; other Atlassian hosts are
-	// fetched without it.
+	// The token goes only to an image URL (the attachment and avatar paths the proxy
+	// allows) on a configured site over https. Every redirect hop is checked again, so a
+	// redirect to another path on that site, such as a REST endpoint, is fetched without it.
 	const atlassianApiToken = getNonEmptyString(env.ATLASSIAN_API_TOKEN);
-	if (targetUrl.protocol === "https:" && isAllowedAtlassianSite(targetUrl.hostname, env) && atlassianApiToken) {
+	if (
+		targetUrl.protocol === "https:"
+		&& isAllowedAtlassianSite(targetUrl.hostname, env)
+		&& isAllowedAtlassianImageUrl(targetUrl)
+		&& atlassianApiToken
+	) {
 		headers.Authorization = `Bearer ${atlassianApiToken}`;
 	}
 
@@ -326,8 +391,12 @@ module.exports = {
 	FIGMA_MCP_ASSET_PATH_PREFIX,
 	IMAGE_PROXY_MAX_RESPONSE_BYTES,
 	ImageProxyResponseTooLargeError,
+	IMAGE_PROXY_MAX_HTML_BYTES,
+	IMAGE_PROXY_MAX_REDIRECTS,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
+	fetchImageProxyUrl,
+	isAllowedImageProxyRedirectTarget,
 	extractAtlassianImageCandidatesFromHtml,
 	isAllowedAtlassianImageUrl,
 	parseImageProxyTarget,

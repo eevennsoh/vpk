@@ -21,9 +21,9 @@ function parseSource(filePath, source) {
 	return ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKind);
 }
 
-function getLine(sourceFile, node) {
-	return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
-}
+// `source` is the file only, never a line: a line number would change every entry below
+// any edit, so unrelated PRs would rewrite (and collide on) the generated files. To find
+// a handler, search its file for the route string.
 
 function readProjectFile(cwd, filePath) {
 	return readFileSync(path.join(cwd, filePath), "utf8");
@@ -252,7 +252,7 @@ function collectExpressRoutesFromSource(sourceFile, sourcePath, {
 					method: method.toUpperCase(),
 					path: fullPath,
 					runtimeAdmin: isRuntimeAdminRoute(fullPath, node, runtimeAdminPrefixes),
-					source: `${sourcePath}:${getLine(sourceFile, node)}`,
+					source: sourcePath,
 				});
 			}
 		}
@@ -639,7 +639,7 @@ function collectProxyTargets(functionNode, sourceFile, context, exportedMethod) 
 			targets.push({
 				method,
 				path: targetPath,
-				source: `${context.relativeRouteFile}:${getLine(sourceFile, callExpression)}`,
+				source: context.relativeRouteFile,
 			});
 		}
 	}
@@ -695,7 +695,7 @@ function collectProxyHelperBypasses(functionNode, sourceFile, context, exportedM
 				bypasses.push({
 					method,
 					path: targetPath,
-					source: `${context.relativeRouteFile}:${getLine(sourceFile, node)}`,
+					source: context.relativeRouteFile,
 				});
 			}
 		}
@@ -735,7 +735,7 @@ function collectNextRouteEntries(cwd = process.cwd()) {
 				const entry = {
 					method,
 					nextPath: context.nextPath,
-					source: `${relativeRouteFile}:${getLine(sourceFile, node)}`,
+					source: relativeRouteFile,
 					targets: uniqueSortedRoutes(collectProxyTargets(node, sourceFile, context, method)),
 				};
 				if (proxyHelperBypasses.length > 0) {
