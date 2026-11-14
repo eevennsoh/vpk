@@ -211,15 +211,16 @@ test("describeGatewayCloudIdError explains the staging dummy CloudID workaround"
 });
 
 test("applyGatewaySamplingOptions drops temperature only for OpenAI reasoning models", () => {
-	for (const model of ["gpt-6.1-sol", "gpt-6-sol", "gpt-5", "gpt-5.1-mini", "o3", "o4-mini"]) {
+	for (const model of ["gpt-6.1-sol", "gpt-6-sol", "gpt-5", "gpt-5.1-mini", "gpt-7-sol", "GPT-5.6-Sol", "openai/gpt-5.6-sol", "o3", "o4-mini"]) {
 		const payload = applyGatewaySamplingOptions({ model }, { maxOutputTokens: 220, temperature: 0.1 });
 		assert.equal(Object.hasOwn(payload, "temperature"), false, model);
 		assert.equal(payload.max_completion_tokens, 2048, model);
 	}
-	for (const model of ["gpt-4.1", "gpt-5-chat-latest", "gemini-3-pro-image", ""]) {
+	for (const model of ["gpt-4.1", "gpt-4o", "gpt-5-chat-latest", "gemini-3-pro-image", "openai/gpt-4.1", ""]) {
 		const payload = applyGatewaySamplingOptions({ model }, { maxOutputTokens: 220, temperature: 0.1 });
 		assert.equal(payload.temperature, 0.1, model);
 		assert.equal(payload.max_completion_tokens, 220, model);
 	}
 	assert.deepEqual(applyGatewaySamplingOptions({ model: "gpt-4.1" }), { model: "gpt-4.1" });
+	assert.deepEqual(applyGatewaySamplingOptions({ model: "gpt-4.1" }, { maxOutputTokens: NaN, temperature: NaN }), { model: "gpt-4.1" });
 });

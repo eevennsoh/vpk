@@ -380,21 +380,25 @@ function resolveBaseURL(gatewayUrl) {
 	return resolved.replace(/\/chat\/completions$/, "");
 }
 
-// OpenAI reasoning models (o-series, GPT-5, GPT-6) reject any non-default
+// OpenAI reasoning models (o-series, GPT-5 and later) reject any non-default
 // temperature, and their completion limit also covers reasoning tokens.
 function isOpenAiReasoningModel(model) {
-	return typeof model === "string" && /^(?:o\d|gpt-5|gpt-6)/.test(model) && !/-chat/.test(model);
+	if (typeof model !== "string") {
+		return false;
+	}
+	const normalized = model.trim().toLowerCase().replace(/^[\w.-]+\//, "");
+	return /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(normalized) && !normalized.includes("-chat");
 }
 
 // Every chat-completions payload sets its limits and sampling here, so no
 // call site can send a parameter the configured model rejects.
 function applyGatewaySamplingOptions(payload, { maxOutputTokens, temperature } = {}) {
 	const reasoningModel = isOpenAiReasoningModel(payload.model);
-	if (typeof maxOutputTokens === "number") {
+	if (Number.isFinite(maxOutputTokens)) {
 		// Tiny budgets (titles, classifiers) can be spent on reasoning before any visible text.
 		payload.max_completion_tokens = reasoningModel ? Math.max(2048, maxOutputTokens) : maxOutputTokens;
 	}
-	if (typeof temperature === "number" && !reasoningModel) {
+	if (Number.isFinite(temperature) && !reasoningModel) {
 		payload.temperature = temperature;
 	}
 	return payload;
