@@ -9,32 +9,41 @@
  * identical to the previous single-process behavior.
  */
 
-const { healthCheck } = require("./rovo-client");
+const { healthCheck: defaultHealthCheck } = require("./rovo-client");
 
 const DEFAULT_HEALTH_CHECK_INTERVAL_MS = 30_000;
 const DEFAULT_UNHEALTHY_QUARANTINE_MS = 15_000;
 
 /**
- * @typedef {"available" | "busy" | "cooldown" | "unhealthy"} PortStatus
+ * A port lease (SM-BT-4): available → busy ⇄ reserved → cooldown → available, or → unhealthy
+ * until a health check recovers it. `reserved` is a busy port held for a paused tool call
+ * while the run waits for the user. A lease ends once, through `settleLease`.
+ *
+ * @typedef {"available" | "busy" | "reserved" | "cooldown" | "unhealthy"} PortStatus
  *
  * @typedef {object} PortEntry
  * @property {number} port
  * @property {PortStatus} status
+ * @property {string | null} reason - Why the port is reserved or unhealthy; null otherwise
  * @property {number} lastHealthCheck
  * @property {number | null} acquiredAt
  * @property {number | null} quarantinedUntil
- * @property {boolean} reserved
+ *
+ * @typedef {"release" | "unhealthy"} LeaseDisposition
  *
  * @typedef {object} PortHandle
  * @property {number} port
- * @property {() => void} [markReserved]
- * @property {() => void} release
- * @property {(options?: { quarantineMs?: number }) => void} [releaseAsUnhealthy]
+ * @property {(disposition: LeaseDisposition, options?: { reason?: string, quarantineMs?: number }) => boolean} settleLease
+ *   Ends the lease: "release" returns the port (after its readiness check), "unhealthy"
+ *   quarantines it. Only the first call acts; it returns whether it did.
+ * @property {(reason?: string) => void} [reserve] - Holds the leased port for a paused tool call
+ * @property {() => void} [resume] - The paused tool call's continuation is using the port again
  *
  * @typedef {object} PoolStatus
  * @property {number} total
  * @property {number} available
- * @property {number} busy
+ * @property {number} busy - Busy, reserved and cooling down
+ * @property {number} reserved
  * @property {number} unhealthy
  * @property {PortEntry[]} ports
  */
@@ -49,10 +58,12 @@ const DEFAULT_UNHEALTHY_QUARANTINE_MS = 15_000;
  * @param {number} [options.cooldownMs] - Delay before marking a released port as available (default 0). Used as fallback if waitForReady is not provided.
  * @param {(port: number) => Promise<void>} [options.waitForReady] - Async function that resolves when a port is ready for new requests. Replaces the blind cooldownMs timer with a deterministic readiness check.
  * @param {number} [options.unhealthyQuarantineMs] - Delay before an unhealthy port is reconsidered for acquisition.
+ * @param {(port: number) => Promise<unknown>} [options.healthCheck] - Probes one port (default: Rovo's healthcheck)
  * @returns {{
  *   acquire: (opts?: { timeoutMs?: number; signal?: AbortSignal; preferredPort?: number; avoidPorts?: number[] }) => Promise<PortHandle>;
  *   updatePorts: (newPorts: number[]) => void;
  *   getStatus: () => PoolStatus;
+ *   runHealthChecks: () => Promise<void>;
  *   shutdown: () => void;
  * }}
  */
@@ -63,6 +74,7 @@ function createRovoPool(ports, options = {}) {
 		cooldownMs = 0,
 		waitForReady,
 		unhealthyQuarantineMs = DEFAULT_UNHEALTHY_QUARANTINE_MS,
+		healthCheck = defaultHealthCheck,
 	} = options;
 
 	const entryGenerations = new WeakMap();
@@ -71,10 +83,10 @@ function createRovoPool(ports, options = {}) {
 		const entry = {
 			port,
 			status: "available",
+			reason: null,
 			lastHealthCheck: Date.now(),
 			acquiredAt: null,
 			quarantinedUntil: null,
-			reserved: false,
 		};
 		entryGenerations.set(entry, 0);
 		return entry;
@@ -182,19 +194,25 @@ function createRovoPool(ports, options = {}) {
 		const now = Date.now();
 		advanceEntryGeneration(entry);
 		entry.status = "busy";
+		entry.reason = null;
 		entry.acquiredAt = now;
 		entry.quarantinedUntil = null;
+	}
+
+	// A leased port: the health check and a port-set update leave it alone.
+	function isEntryLeased(entry) {
+		return entry.status === "busy" || entry.status === "reserved" || entry.status === "cooldown";
 	}
 
 	function clearBusyLease(entry) {
 		entry.acquiredAt = null;
 	}
 
-	function quarantineEntry(entry, quarantineMs = unhealthyQuarantineMs) {
+	function quarantineEntry(entry, quarantineMs = unhealthyQuarantineMs, reason = null) {
 		advanceEntryGeneration(entry);
 		entry.status = "unhealthy";
+		entry.reason = typeof reason === "string" && reason.trim() ? reason.trim() : "unhealthy";
 		clearBusyLease(entry);
-		entry.reserved = false;
 		entry.quarantinedUntil =
 			entries.length > 1
 				? Date.now() + Math.max(0, Number.isFinite(quarantineMs) ? quarantineMs : unhealthyQuarantineMs)
@@ -202,24 +220,40 @@ function createRovoPool(ports, options = {}) {
 	}
 
 	function createHandle(entry) {
-		let released = false;
+		let settled = false;
+		const leaseGeneration = getEntryGeneration(entry);
+		const holdsEntry = () => !settled && !shuttingDown && getEntryGeneration(entry) === leaseGeneration;
 		return {
 			port: entry.port,
-			/** Mark this port as reserved for a deferred tool call. */
-			markReserved: () => {
-				entry.reserved = true;
+			reserve: (reason = "paused tool call") => {
+				if (holdsEntry() && entry.status === "busy") {
+					entry.status = "reserved";
+					entry.reason = reason;
+				}
 			},
-			release: () => {
-				if (released) {
-					return;
+			resume: () => {
+				if (holdsEntry() && entry.status === "reserved") {
+					entry.status = "busy";
+					entry.reason = null;
 				}
-				released = true;
+			},
+			settleLease: (disposition, { reason, quarantineMs = unhealthyQuarantineMs } = {}) => {
+				if (settled || (disposition !== "release" && disposition !== "unhealthy")) {
+					return false;
+				}
+				settled = true;
 				if (shuttingDown) {
-					return;
+					return true;
 				}
-				entry.reserved = false;
-				const releaseGeneration = advanceEntryGeneration(entry);
+				if (disposition === "unhealthy") {
+					// Waiters are not notified: the port is not available. The periodic health
+					// check recovers it.
+					quarantineEntry(entry, quarantineMs, reason);
+					return true;
+				}
 
+				const releaseGeneration = advanceEntryGeneration(entry);
+				entry.reason = null;
 				const makeAvailable = (expectedStatus) => {
 					if (!isCurrentEntryState(entry, releaseGeneration, expectedStatus)) {
 						return;
@@ -227,7 +261,6 @@ function createRovoPool(ports, options = {}) {
 					entry.status = "available";
 					clearBusyLease(entry);
 					entry.quarantinedUntil = null;
-					entry.reserved = false;
 					tryNotifyWaiter();
 					if (typeof onPortAvailable === "function") {
 						try { onPortAvailable(); } catch {}
@@ -243,27 +276,16 @@ function createRovoPool(ports, options = {}) {
 						}
 						// Readiness check failed — mark unhealthy so the
 						// periodic health check recovers it later.
-						quarantineEntry(entry);
+						quarantineEntry(entry, unhealthyQuarantineMs, "readiness check failed after release");
 					});
 				} else if (cooldownMs > 0) {
 					entry.status = "cooldown";
 					clearBusyLease(entry);
 					setTimeout(() => makeAvailable("cooldown"), cooldownMs);
 				} else {
-					makeAvailable("busy");
+					makeAvailable(entry.status);
 				}
-			},
-			releaseAsUnhealthy: ({ quarantineMs = unhealthyQuarantineMs } = {}) => {
-				if (released) {
-					return;
-				}
-				released = true;
-				if (shuttingDown) {
-					return;
-				}
-				quarantineEntry(entry, quarantineMs);
-				// Don't notify waiters — port is not available.
-				// The periodic health check will recover it.
+				return true;
 			},
 		};
 	}
@@ -364,7 +386,7 @@ function createRovoPool(ports, options = {}) {
 			if (shuttingDown) {
 				return;
 			}
-			if (entry.status === "busy" || entry.status === "cooldown") {
+			if (isEntryLeased(entry)) {
 				continue;
 			}
 
@@ -381,6 +403,7 @@ function createRovoPool(ports, options = {}) {
 					advanceEntryGeneration(entry);
 				}
 				entry.status = "available";
+				entry.reason = null;
 				entry.quarantinedUntil = null;
 				entry.lastHealthCheck = Date.now();
 				tryNotifyWaiter();
@@ -394,7 +417,7 @@ function createRovoPool(ports, options = {}) {
 				if (entry.status !== "unhealthy") {
 					console.warn(`[ROVO-POOL] Port ${entry.port} is unhealthy`);
 				}
-				quarantineEntry(entry);
+				quarantineEntry(entry, unhealthyQuarantineMs, "health check failed");
 				entry.lastHealthCheck = Date.now();
 			}
 		}
@@ -424,7 +447,7 @@ function createRovoPool(ports, options = {}) {
 		// Remove entries that are no longer needed and not busy
 		for (let i = entries.length - 1; i >= 0; i--) {
 			const entry = entries[i];
-			if (!newSet.has(entry.port) && entry.status !== "busy" && entry.status !== "cooldown") {
+			if (!newSet.has(entry.port) && !isEntryLeased(entry)) {
 				advanceEntryGeneration(entry);
 				entries.splice(i, 1);
 			}
@@ -451,16 +474,19 @@ function createRovoPool(ports, options = {}) {
 	function getStatus() {
 		let available = 0;
 		let busy = 0;
+		let reserved = 0;
 		let unhealthy = 0;
 		for (const entry of entries) {
 			if (entry.status === "available") available++;
-			else if (entry.status === "busy" || entry.status === "cooldown") busy++;
+			else if (isEntryLeased(entry)) busy++;
 			else unhealthy++;
+			if (entry.status === "reserved") reserved++;
 		}
 		return {
 			total: entries.length,
 			available,
 			busy,
+			reserved,
 			unhealthy,
 			ports: entries.map((e) => ({ ...e })),
 		};
@@ -483,13 +509,13 @@ function createRovoPool(ports, options = {}) {
 		for (const entry of entries) {
 			advanceEntryGeneration(entry);
 			entry.status = "available";
+			entry.reason = null;
 			clearBusyLease(entry);
 			entry.quarantinedUntil = null;
-			entry.reserved = false;
 		}
 	}
 
-	return { acquire, updatePorts, getStatus, shutdown };
+	return { acquire, updatePorts, getStatus, runHealthChecks, shutdown };
 }
 
 module.exports = { createRovoPool };
