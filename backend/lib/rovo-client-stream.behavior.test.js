@@ -126,9 +126,11 @@ test("a stream that ends normally is done with its full text", async (t) => {
 			res.end(textPart("world"));
 		},
 	});
-	const { ended, seen } = stream(rovo.port);
+	const { ended, handle, seen } = stream(rovo.port);
+	assert.equal(handle.getPhase(), "queuing");
 
 	assert.equal(await ended, "done");
+	assert.equal(handle.getPhase(), "done");
 	assert.deepEqual(seen.done, ["Hello world"]);
 	assert.deepEqual(seen.errors, []);
 	assert.deepEqual(rovo.requests, ["POST /v3/set_chat_message", "GET /v3/stream_chat"]);
@@ -206,6 +208,51 @@ test("a stream paused at a tool boundary is done with its partial text", async (
 	assert.deepEqual(seen.errors, []);
 });
 
+test("text that arrives while a pause decision is pending is not delivered once the pause disconnects", async (t) => {
+	let streamRes;
+	const rovo = await startRovo(t, {
+		onStream: (res) => {
+			streamRes = res;
+			res.write(textPart("Before the tool. "));
+			res.write(pauseEvent);
+		},
+	});
+	const { ended, seen } = stream(rovo.port, {
+		callbacks: {
+			onPauseToolCalls: async () => {
+				// More of the turn arrives before the decision is made.
+				await new Promise((resolve) => streamRes.write(textPart("after the pause"), resolve));
+				for (let turn = 0; turn < 20; turn += 1) {
+					await new Promise((resolve) => setImmediate(resolve));
+				}
+				return { disconnect: true };
+			},
+		},
+	});
+
+	assert.equal(await ended, "done");
+	assert.deepEqual(seen.done, ["Before the tool. "]);
+	assert.equal(seen.chunks.some((chunk) => chunk.text === "after the pause"), false);
+});
+
+test("a timeout names the phase it happened in", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const silent = await startRovo(t);
+	const first = stream(silent.port, { options: { firstEventTimeoutMs: 5_000, idleTimeoutMs: 9_000 } });
+	await nextStage(first.seen, "rovo_stream_connected");
+	t.mock.timers.tick(5_000);
+	await first.ended;
+
+	const stalled = await startRovo(t, { onStream: (res) => res.write(textPart("partial")) });
+	const second = stream(stalled.port, { options: { firstEventTimeoutMs: 5_000, idleTimeoutMs: 9_000 } });
+	await nextStage(second.seen, "rovo_first_text_delta");
+	t.mock.timers.tick(9_000);
+	await second.ended;
+
+	assert.equal(first.seen.errors[0].phase, "awaiting-first-event");
+	assert.equal(second.seen.errors[0].phase, "streaming");
+});
+
 test("a pause that does not disconnect lets the stream continue to its end", async (t) => {
 	const rovo = await startRovo(t, {
 		onStream: (res) => {
@@ -266,9 +313,11 @@ test("a continuation that reuses the queued turn skips set_chat_message and canc
 	const { handle, seen } = stream(rovo.port, { options: { skipSetChatMessage: true } });
 	await nextStage(seen, "rovo_first_text_delta");
 
+	assert.equal(handle.getPhase(), "streaming");
 	await handle.abort();
 	await rovo.waitFor("POST /v3/cancel");
 
+	assert.equal(handle.getPhase(), "aborted");
 	assert.deepEqual(rovo.requests, ["GET /v3/stream_chat", "POST /v3/cancel"]);
 });
 
@@ -282,10 +331,15 @@ test("a refused stream fails with its HTTP status", async (t) => {
 	assert.match(seen.errors[0].message, /status 503/u);
 	assert.deepEqual(seen.done, []);
 
-	// Today the first-event timer is still armed after the refusal: when it fires it
-	// cancels the turn on Rovo, after the stream has already failed.
+	// The first-event timer stops with the refusal; it used to fire later and cancel the
+	// turn on Rovo after the stream had already failed.
 	t.mock.timers.tick(5_000);
-	await rovo.waitFor("POST /v3/cancel");
+	// A request sent after the tick: a cancel the timer sent would have reached Rovo first.
+	await new Promise((resolve) => {
+		http.get(`http://127.0.0.1:${rovo.port}/probe`, (res) => res.resume().on("end", resolve));
+	});
+	await rovo.waitFor("GET /probe");
+	assert.equal(rovo.requests.includes("POST /v3/cancel"), false);
 	assert.equal(seen.errors.length, 1);
 });
 

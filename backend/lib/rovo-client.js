@@ -1007,6 +1007,11 @@ async function resumeToolCalls(port, decisionsOrInput, options = {}) {
 	return response.data;
 }
 
+// An SSE stream's phase (SM-BT-10): awaiting-first-event → streaming → done | paused |
+// aborted | timeout | failed. The last five are terminal; `finish(reason)` is the one way
+// in, and only its first call acts.
+const SSE_STREAM_TERMINAL_PHASES = Object.freeze(["done", "paused", "aborted", "timeout", "failed"]);
+
 function openSseStream({
 	method = "GET",
 	path,
@@ -1022,18 +1027,17 @@ function openSseStream({
 	firstTextStageName,
 	manualDisconnectLabel,
 }) {
-	let aborted = false;
+	/** @type {"awaiting-first-event" | "streaming" | "done" | "paused" | "aborted" | "timeout" | "failed"} */
+	let phase = "awaiting-first-event";
 	let currentReq = null;
 	let currentRes = null;
-	let streamActivitySeen = false;
 	let streamSilenceTimer = null;
-	let streamSilenceTimedOut = false;
-	let rejectActiveStream = null;
-	let resolveActiveStream = null;
-	let manuallyDisconnected = false;
+	let settleStream = null;
 	const startedAtMs = Date.now();
 	let hasReportedFirstSseEvent = false;
 	let hasReportedFirstTextDelta = false;
+
+	const isFinished = () => SSE_STREAM_TERMINAL_PHASES.includes(phase);
 
 	const clearStreamSilenceTimer = () => {
 		if (streamSilenceTimer !== null) {
@@ -1049,58 +1053,69 @@ function openSseStream({
 		});
 	};
 
+	const destroySockets = (error) => {
+		if (currentRes && !currentRes.destroyed) {
+			currentRes.destroy(error);
+		}
+		if (currentReq) {
+			currentReq.destroy(error);
+		}
+	};
+
+	/**
+	 * Ends the stream once. "done", "paused" and "aborted" resolve it; "timeout" and
+	 * "failed" reject it with `error`. A timeout also cancels the turn on Rovo.
+	 * @param {"done" | "paused" | "aborted" | "timeout" | "failed"} reason
+	 * @param {Error} [error]
+	 */
+	const finish = (reason, error) => {
+		if (isFinished()) {
+			return false;
+		}
+		phase = reason;
+		clearStreamSilenceTimer();
+		if (reason === "timeout") {
+			cancelTimedOutStream();
+			destroySockets(error);
+		} else if (reason === "paused" || reason === "aborted") {
+			destroySockets();
+		}
+		settleStream?.(reason === "timeout" || reason === "failed" ? error : null);
+		return true;
+	};
+
 	const armStreamSilenceTimer = () => {
 		clearStreamSilenceTimer();
-		const timeoutMs = streamActivitySeen ? idleTimeoutMs : firstEventTimeoutMs;
+		if (isFinished()) {
+			return;
+		}
+		const timedOutPhase = phase;
+		const timeoutMs = timedOutPhase === "streaming" ? idleTimeoutMs : firstEventTimeoutMs;
 		streamSilenceTimer = setTimeout(() => {
-			if (aborted || streamSilenceTimedOut || manuallyDisconnected) {
-				return;
-			}
-			streamSilenceTimedOut = true;
-			clearStreamSilenceTimer();
+			streamSilenceTimer = null;
 			const timeoutError = createStreamSilenceTimeoutError({
 				timeoutMs,
-				hadActivity: streamActivitySeen,
+				hadActivity: timedOutPhase === "streaming",
 			});
-			cancelTimedOutStream();
-			if (currentRes && !currentRes.destroyed) {
-				currentRes.destroy(timeoutError);
-			}
-			if (currentReq) {
-				currentReq.destroy(timeoutError);
-			}
-			if (typeof rejectActiveStream === "function") {
-				rejectActiveStream(timeoutError);
-			}
+			timeoutError.phase = timedOutPhase;
+			finish("timeout", timeoutError);
 		}, timeoutMs);
 	};
 
 	const noteStreamActivity = () => {
-		streamActivitySeen = true;
+		if (isFinished()) {
+			return;
+		}
+		phase = "streaming";
 		armStreamSilenceTimer();
 	};
 
 	const disconnect = () => {
-		if (manuallyDisconnected) {
-			return;
-		}
-		manuallyDisconnected = true;
-		aborted = true;
-		clearStreamSilenceTimer();
-		if (currentRes && !currentRes.destroyed) {
-			currentRes.destroy();
-		}
-		if (currentReq) {
-			currentReq.destroy();
-		}
-		if (typeof resolveActiveStream === "function") {
-			resolveActiveStream();
-		}
+		finish("paused");
 	};
 
 	const streamPromise = new Promise((resolve, reject) => {
-		rejectActiveStream = reject;
-		resolveActiveStream = resolve;
+		settleStream = (error) => (error ? reject(error) : resolve());
 
 		const url = new URL(path, getBaseUrlForPort(port));
 		const sseHeaders = {
@@ -1127,10 +1142,13 @@ function openSseStream({
 			}
 
 			if (res.statusCode !== 200) {
+				// Refused: the stream will never produce events, so its timer stops now.
+				clearStreamSilenceTimer();
 				let errData = "";
 				res.on("data", (chunk) => (errData += chunk));
 				res.on("end", () =>
-					reject(
+					finish(
+						"failed",
 						createHttpStatusError(
 							`${timingPrefix} failed (status ${res.statusCode}): ${errData}`,
 							typeof res.statusCode === "number" ? res.statusCode : 0,
@@ -1157,172 +1175,166 @@ function openSseStream({
 			// so the pending event name lives with the stream, not with each chunk.
 			let currentEvent = "";
 
-			res.on("data", (chunk) => {
-				void (async () => {
-					if (aborted) {
+			const handleChunk = async (chunk) => {
+				if (isFinished()) {
+					return;
+				}
+				noteStreamActivity();
+
+				buffer += chunk.toString();
+
+				const lines = buffer.split("\n");
+				buffer = lines.pop() ?? "";
+
+				for (const line of lines) {
+					if (isFinished()) {
 						return;
 					}
-					noteStreamActivity();
+					if (line.startsWith("event: ")) {
+						currentEvent = line.slice(7).trim();
+						continue;
+					}
 
-					buffer += chunk.toString();
+					if (line.startsWith("data: ")) {
+						const rawData = line.slice(6);
+						const currentEventName = currentEvent || "message";
 
-					const lines = buffer.split("\n");
-					buffer = lines.pop() ?? "";
+						if (!hasReportedFirstSseEvent && onTimingStage && firstSseStageName) {
+							hasReportedFirstSseEvent = true;
+							onTimingStage(firstSseStageName, {
+								stageMs: Date.now() - startedAtMs,
+								eventName: currentEventName,
+								port,
+							});
+						}
 
-					for (const line of lines) {
-						if (line.startsWith("event: ")) {
-							currentEvent = line.slice(7).trim();
+						if (callbacks.onEvent) {
+							callbacks.onEvent(currentEvent, rawData);
+						}
+
+						let parsed;
+						try {
+							parsed = JSON.parse(rawData);
+						} catch {
+							if (
+								rawData &&
+								(currentEvent === "text_delta" || currentEvent === "content_block_delta")
+							) {
+								if (
+									!hasReportedFirstTextDelta &&
+									onTimingStage &&
+									firstTextStageName
+								) {
+									hasReportedFirstTextDelta = true;
+									onTimingStage(firstTextStageName, {
+										stageMs: Date.now() - startedAtMs,
+										eventName: currentEventName,
+										chars: rawData.length,
+										port,
+									});
+								}
+								callbacks.onChunk({ type: "text", text: rawData });
+							}
+							currentEvent = "";
 							continue;
 						}
 
-						if (line.startsWith("data: ")) {
-							const rawData = line.slice(6);
-							const currentEventName = currentEvent || "message";
-
-							if (!hasReportedFirstSseEvent && onTimingStage && firstSseStageName) {
-								hasReportedFirstSseEvent = true;
-								onTimingStage(firstSseStageName, {
+						const chunkPayload = extractChunkFromEvent(currentEvent, parsed);
+						if (chunkPayload !== null) {
+							if (
+								chunkPayload.type === "text" &&
+								!hasReportedFirstTextDelta &&
+								onTimingStage &&
+								firstTextStageName
+							) {
+								hasReportedFirstTextDelta = true;
+								onTimingStage(firstTextStageName, {
 									stageMs: Date.now() - startedAtMs,
 									eventName: currentEventName,
+									chars: chunkPayload.text.length,
 									port,
 								});
 							}
+							callbacks.onChunk(chunkPayload);
 
-							if (callbacks.onEvent) {
-								callbacks.onEvent(currentEvent, rawData);
-							}
-
-							try {
-								const parsed = JSON.parse(rawData);
-								const chunkPayload = extractChunkFromEvent(currentEvent, parsed);
-
-								if (chunkPayload !== null) {
-									if (
-										chunkPayload.type === "text" &&
-										!hasReportedFirstTextDelta &&
-										onTimingStage &&
-										firstTextStageName
-									) {
-										hasReportedFirstTextDelta = true;
-										onTimingStage(firstTextStageName, {
-											stageMs: Date.now() - startedAtMs,
+							if (
+								currentEventName === "on_call_tools_start" &&
+								typeof callbacks.onPauseToolCalls === "function"
+							) {
+								const result = await callbacks.onPauseToolCalls(parsed, {
+									port,
+									chunk: chunkPayload,
+									disconnect,
+								});
+								if (result?.disconnect === true) {
+									console.info(
+										"[rovo] Intentionally disconnecting paused SSE stream after tool boundary",
+										{
+											port,
+											toolName: chunkPayload.toolName ?? null,
+											toolCallId: chunkPayload.toolCallId ?? null,
 											eventName: currentEventName,
-											chars: chunkPayload.text.length,
-											port,
-										});
-									}
-									if (chunkPayload.type === "text") {
-										callbacks.onChunk(chunkPayload);
-									} else {
-										callbacks.onChunk(chunkPayload);
-									}
-
-									if (
-										currentEventName === "on_call_tools_start" &&
-										typeof callbacks.onPauseToolCalls === "function"
-									) {
-										const result = await callbacks.onPauseToolCalls(parsed, {
-											port,
-											chunk: chunkPayload,
-											disconnect,
-										});
-										if (result?.disconnect === true) {
-											console.info(
-												"[rovo] Intentionally disconnecting paused SSE stream after tool boundary",
-												{
-													port,
-													toolName: chunkPayload.toolName ?? null,
-													toolCallId: chunkPayload.toolCallId ?? null,
-													eventName: currentEventName,
-												},
-											);
-											disconnect();
-											return;
-										}
-									}
-									currentEvent = "";
-									continue;
-								}
-
-								if (currentEvent === "error" || currentEvent === "exception") {
-									reject(
-										new Error(parsed.message ?? parsed.error ?? JSON.stringify(parsed)),
+										},
 									);
+									disconnect();
 									return;
 								}
-							} catch {
-								if (
-									rawData &&
-									(currentEvent === "text_delta" || currentEvent === "content_block_delta")
-								) {
-									if (
-										!hasReportedFirstTextDelta &&
-										onTimingStage &&
-										firstTextStageName
-									) {
-										hasReportedFirstTextDelta = true;
-										onTimingStage(firstTextStageName, {
-											stageMs: Date.now() - startedAtMs,
-											eventName: currentEventName,
-											chars: rawData.length,
-											port,
-										});
-									}
-									callbacks.onChunk({ type: "text", text: rawData });
-								}
 							}
-
 							currentEvent = "";
 							continue;
 						}
 
-						if (line.trim() === "") {
-							currentEvent = "";
+						if (currentEvent === "error" || currentEvent === "exception") {
+							finish(
+								"failed",
+								new Error(parsed.message ?? parsed.error ?? JSON.stringify(parsed)),
+							);
+							return;
 						}
+
+						currentEvent = "";
+						continue;
 					}
-				})().catch((error) => {
-					clearStreamSilenceTimer();
-					if (typeof rejectActiveStream === "function") {
-						rejectActiveStream(error instanceof Error ? error : new Error(String(error)));
+
+					if (line.trim() === "") {
+						currentEvent = "";
 					}
-				});
+				}
+			};
+
+			// Chunks are handled one at a time, in order: while a pause at a tool boundary
+			// waits for its decision, later chunks wait too, so nothing after a pause that
+			// disconnects is delivered.
+			let chunkQueue = Promise.resolve();
+			res.on("data", (chunk) => {
+				chunkQueue = chunkQueue
+					.then(() => handleChunk(chunk))
+					.catch((error) => {
+						finish("failed", error instanceof Error ? error : new Error(String(error)));
+					});
 			});
 
 			res.on("end", () => {
-				clearStreamSilenceTimer();
-				rejectActiveStream = null;
-				resolve();
+				// The stream ends after every chunk it delivered has been handled.
+				void chunkQueue.then(() => finish("done"));
 			});
 
 			res.on("error", (err) => {
-				clearStreamSilenceTimer();
-				rejectActiveStream = null;
-				if (manuallyDisconnected) {
-					resolve();
-					return;
-				}
-				reject(err);
+				finish("failed", err);
 			});
 		});
 
 		currentReq.setTimeout(0);
 
 		currentReq.on("error", (err) => {
-			clearStreamSilenceTimer();
-			rejectActiveStream = null;
-			if (manuallyDisconnected) {
-				resolve();
-				return;
-			}
-			if (err?.code === "ROVO_STREAM_IDLE_TIMEOUT") {
-				reject(err);
+			if (isFinished()) {
 				return;
 			}
 			if (err?.name === "AbortError" || err?.code === "ABORT_ERR") {
-				reject(createAbortError());
+				finish("failed", createAbortError());
 				return;
 			}
-			reject(new Error(`SSE connection failed: ${err.message}`));
+			finish("failed", new Error(`SSE connection failed: ${err.message}`));
 		});
 
 		armStreamSilenceTimer();
@@ -1335,17 +1347,11 @@ function openSseStream({
 	return {
 		streamPromise,
 		disconnect,
-		wasManuallyDisconnected: () => manuallyDisconnected,
+		getPhase: () => phase,
+		wasManuallyDisconnected: () => phase === "paused",
 		abort: () => {
-			aborted = true;
-			clearStreamSilenceTimer();
 			abortController.abort();
-			if (currentRes && !currentRes.destroyed) {
-				currentRes.destroy();
-			}
-			if (currentReq) {
-				currentReq.destroy();
-			}
+			finish("aborted");
 		},
 	};
 }
@@ -1381,7 +1387,11 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 	const abortController = new AbortController();
 	let activeStreamHandle = null;
 	const skipSetChatMessage = options.skipSetChatMessage === true;
-	let chatOperationActive = skipSetChatMessage;
+	// The turn before its stream opens: restoring (the session) → queuing (the message) →
+	// queued. A continuation reuses a turn that is already queued. Once the stream is open,
+	// its own phase applies (getPhase).
+	/** @type {"restoring" | "queuing" | "queued"} */
+	let turnPhase = skipSetChatMessage ? "queued" : "queuing";
 	let cancelPromise = null;
 	const firstEventTimeoutMs =
 		typeof options.firstEventTimeoutMs === "number" && options.firstEventTimeoutMs > 0
@@ -1406,8 +1416,9 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 		options.enableDeferredTools === true ||
 		options.enable_deferred_tools === true;
 
+	// Only a queued turn exists on Rovo to cancel.
 	const ensureCancellation = ({ timeoutMs = 10_000 } = {}) => {
-		if (!chatOperationActive) {
+		if (turnPhase !== "queued") {
 			return Promise.resolve(null);
 		}
 		if (!cancelPromise) {
@@ -1419,6 +1430,9 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 	const run = async () => {
 		try {
 			if (sessionId) {
+				if (!skipSetChatMessage) {
+					turnPhase = "restoring";
+				}
 				console.log(`[rovo] Restoring session ${sessionId} before sending message...`);
 				await restoreSession(port, sessionId, {
 					timeoutMs: 30_000,
@@ -1429,6 +1443,7 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 			// Step 1: Queue the message unless the caller is continuing an
 			// existing deferred-tool turn that is already queued on the server.
 			if (!skipSetChatMessage) {
+				turnPhase = "queuing";
 				console.log("[rovo] Queuing message via /v3/set_chat_message...");
 				const setChatMessageStartedAtMs = Date.now();
 
@@ -1450,7 +1465,7 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 						setData
 					);
 				}
-				chatOperationActive = true;
+				turnPhase = "queued";
 				console.log("[rovo] Message queued successfully.");
 				if (onTimingStage) {
 					onTimingStage("rovo_set_chat_message_complete", {
@@ -1550,6 +1565,7 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 				activeStreamHandle.disconnect();
 			}
 		},
+		getPhase: () => activeStreamHandle?.getPhase() ?? turnPhase,
 	};
 }
 
