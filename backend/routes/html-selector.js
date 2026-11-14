@@ -54,7 +54,8 @@ async function ensureTmuxSession({
 	sessionName,
 }) {
 	try {
-		await execFileAsync(execFileImpl, "tmux", ["has-session", "-t", sessionName]);
+		// "=name" matches exactly; a bare name would also match a session it prefixes.
+		await execFileAsync(execFileImpl, "tmux", ["has-session", "-t", `=${sessionName}`]);
 		return;
 	} catch {
 		await execFileAsync(execFileImpl, "tmux", [
@@ -135,13 +136,13 @@ function createHtmlSelectorRouter({
 				"-F",
 				"#{window_id}",
 				"-t",
-				`${sessionName}:`,
+				`=${sessionName}:`,
 				"-n",
 				windowName,
 				"-c",
 				repoRoot,
 			]);
-			const windowTarget = String(created.stdout || "").trim() || `${sessionName}:${windowName}`;
+			const windowTarget = String(created.stdout || "").trim() || `=${sessionName}:${windowName}`;
 			await execFileAsync(execFileImpl, "tmux", [
 				"send-keys",
 				"-t",

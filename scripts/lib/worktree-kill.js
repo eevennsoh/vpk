@@ -12,28 +12,25 @@
  */
 
 const path = require("node:path");
-const { sanitizeToken } = require("./dev-tmux-session");
+const { DEFAULT_SESSION_PREFIX, sanitizeToken, sessionNameForWorktreeName } = require("./dev-tmux-session");
 
-const DEFAULT_SESSION_PREFIX = "vpk-dev";
+// The worktree part of the session name: "main" for the main checkout, otherwise the sanitized
+// worktree *display name* (getWorktreeDisplayName), the same name the launchers derive in-cwd
+// through scripts/lib/dev-tmux-session.js. Not the raw `identifier`: for a detached worktree
+// whose dir basename collides with the repo name, the display name walks up to the parent hash
+// dir (e.g. `0ebd`), while `identifier` stays the repository-directory basename.
+function worktreeDisplayName(worktree) {
+	return worktree && typeof worktree.worktreeName === "string" && worktree.worktreeName.length > 0
+		? worktree.worktreeName
+		: "main";
+}
 
-// The token dev-tmux-plain.sh derives from getWorktreeName(): "main" for the
-// main checkout, otherwise the sanitized worktree *display name*. Kept in
-// lockstep with resolve_session_name() in scripts/dev-tmux-plain.sh so the
-// session name we display matches the one the shell independently recomputes
-// in-cwd. Use `worktreeName` (getWorktreeDisplayName), NOT the raw `identifier`:
-// for a detached worktree whose dir basename collides with the repo name, the
-// display name walks up to the parent hash dir (e.g. `0ebd`), while `identifier`
-// stays the repository-directory basename.
 function sessionTokenForWorktree(worktree) {
-	const displayName =
-		worktree && typeof worktree.worktreeName === "string" && worktree.worktreeName.length > 0
-			? worktree.worktreeName
-			: "main";
-	return sanitizeToken(displayName, "main");
+	return sanitizeToken(worktreeDisplayName(worktree), "main");
 }
 
 function sessionNameForWorktree(worktree, { prefix = DEFAULT_SESSION_PREFIX } = {}) {
-	return `${sanitizeToken(prefix, DEFAULT_SESSION_PREFIX)}-${sessionTokenForWorktree(worktree)}`;
+	return sessionNameForWorktreeName(worktreeDisplayName(worktree), { prefix });
 }
 
 // Every string a user might reasonably type to name this worktree, lowercased.
