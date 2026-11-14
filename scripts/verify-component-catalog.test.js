@@ -86,7 +86,11 @@ test("route pages come from the repo map: catalog-backed pages and pages the ent
 		{ primaryOwner: { category: "projects", kind: "catalog", slug: "jira-queue" }, source: "app/jira-queue/page.tsx" },
 		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/personal-graph/page.tsx" },
 		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/arts/personal-graph/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/projects/rovo/page"] }, source: "app/rovo/[[...id]]/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/projects/rovo-core/page"] }, source: "app/rovo-core/page.tsx" },
 	] } }));
+	// A shell owner may be a file inside the entry's folder, but not a sibling folder sharing its prefix.
+	assert.deepEqual(findRoutePages("projects", "rovo", { cwd }), ["app/rovo/[[...id]]/page.tsx"]);
 	assert.deepEqual(findRoutePages("projects", "jira", { cwd }), ["app/jira/page.tsx"]);
 	assert.deepEqual(findRoutePages("arts", "personal-graph", { cwd }), ["app/arts/personal-graph/page.tsx", "app/personal-graph/page.tsx"]);
 	assert.deepEqual(findRoutePages("projects", "missing", { cwd }), []);
