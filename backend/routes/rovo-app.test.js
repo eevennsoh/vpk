@@ -93,10 +93,6 @@ function createThreadManager(state) {
 function createRunManager(state) {
 	return {
 		attachSubscriber: () => "subscriber-1",
-		cancelRun: (threadId) => {
-			state.calls.push({ method: "cancelRun", threadId });
-			state.runs.delete(threadId);
-		},
 		getRun: (threadId) => state.runs.get(threadId) || null,
 		listRuns: () => [...state.runs.values()],
 		setRunStatus: (threadId, status) => {
@@ -107,6 +103,10 @@ function createRunManager(state) {
 			const nextRun = { ...run, status };
 			state.runs.set(threadId, nextRun);
 			return nextRun;
+		},
+		settleRun: (threadId, options) => {
+			state.calls.push({ method: "settleRun", threadId, outcome: options.outcome });
+			state.runs.delete(threadId);
 		},
 	};
 }
@@ -355,9 +355,9 @@ test("rovo app router validates required dependencies", () => {
 	assert.throws(() => createRovoAppRouter(), /rovoAppThreadManager/u);
 	assert.throws(
 		() => createRovoAppRouter(createDependencies({
-			rovoAppRunManager: { ...createRunManager(createState()), cancelRun: null },
+			rovoAppRunManager: { ...createRunManager(createState()), settleRun: null },
 		})),
-		/rovoAppRunManager\.cancelRun/u,
+		/rovoAppRunManager\.settleRun/u,
 	);
 	assert.throws(
 		() => createRovoAppRouter(createDependencies({ requireRuntimeAdmin: null })),
@@ -465,7 +465,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 			"backfillFromThread",
 			"deleteLegacyRootFiles",
 			"cancelChat",
-			"cancelRun",
+			"settleRun",
 			"deleteDocumentsByThread",
 			"deleteThread",
 			"deleteThreadBrowserWorkspace",
@@ -474,7 +474,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 			"destroyMirrorBrowser",
 		].includes(call.method)), [
 			{ method: "cancelChat", port: 8123 },
-			{ method: "cancelRun", threadId: "generated-thread" },
+			{ method: "settleRun", threadId: "generated-thread", outcome: "cancelled" },
 			{ method: "deleteLegacyRootFiles", threadId: "generated-thread" },
 			{ method: "deleteThreadBrowserWorkspace", threadId: "generated-thread" },
 			{ method: "destroyMirrorBrowser", mirrorId: "mirror-generated-thread" },

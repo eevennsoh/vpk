@@ -38,10 +38,10 @@ const REQUIRED_THREAD_MANAGER_METHODS = [
 
 const REQUIRED_RUN_MANAGER_METHODS = [
 	"attachSubscriber",
-	"cancelRun",
 	"getRun",
 	"listRuns",
 	"setRunStatus",
+	"settleRun",
 ];
 
 const REQUIRED_VOTE_MANAGER_METHODS = [
@@ -586,7 +586,7 @@ function createRovoAppRouter({
 				await cancelChat(run.rovoPort).catch(() => {});
 			}
 
-			rovoAppRunManager.cancelRun(threadId);
+			rovoAppRunManager.settleRun(threadId, { outcome: "cancelled" });
 			await clearRunState(threadId);
 			void startNextQueuedRun();
 			return res.status(200).json({ cancelled: true });
@@ -667,7 +667,7 @@ function createRovoAppRouter({
 				if (typeof activeRun.rovoPort === "number" && activeRun.rovoPort > 0) {
 					await cancelChat(activeRun.rovoPort).catch(() => {});
 				}
-				rovoAppRunManager.cancelRun(threadId);
+				rovoAppRunManager.settleRun(threadId, { outcome: "cancelled" });
 			}
 			const thread = await rovoAppThreadManager.getThread(threadId);
 			const uploadIds = collectUploadIdsFromMessages(thread?.messages);

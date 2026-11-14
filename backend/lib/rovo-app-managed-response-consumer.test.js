@@ -48,8 +48,8 @@ function createHarness(overrides = {}) {
 			return finalMessages;
 		},
 		createUiMessageChunkSseStream: ({ stream }) => stream,
-		finalizeRovoAppRun: async (threadId, run, messages) => {
-			calls.push(["finalizeRovoAppRun", threadId, { ...run }, messages]);
+		settleRovoAppRun: async (run, outcome, { messages }) => {
+			calls.push(["settleRovoAppRun", outcome, { ...run }, messages]);
 		},
 		logger: {
 			info: (...args) => calls.push(["info", args]),
@@ -163,9 +163,9 @@ test("consumeRovoAppManagedResponse persists resolved port, chunks, messages, an
 		"thread-1",
 		finalMessages,
 	]);
-	assert.deepEqual(calls.find((call) => call[0] === "finalizeRovoAppRun"), [
-		"finalizeRovoAppRun",
-		"thread-1",
+	assert.deepEqual(calls.find((call) => call[0] === "settleRovoAppRun"), [
+		"settleRovoAppRun",
+		"completed",
 		{
 			id: "run-1",
 			rovoPort: 4321,

@@ -32,7 +32,7 @@ function createRovoAppManagedRunProxy({
 	requireFunction("persistRovoAppRunState", persistRovoAppRunState);
 	requireFunction("resolveAgentsRfpDemoChatTurn", resolveAgentsRfpDemoChatTurn);
 	requireFunction("rovoAppRunManager.attachSubscriber", rovoAppRunManager?.attachSubscriber);
-	requireFunction("rovoAppRunManager.cancelRun", rovoAppRunManager?.cancelRun);
+	requireFunction("rovoAppRunManager.settleRun", rovoAppRunManager?.settleRun);
 	requireFunction("rovoAppRunManager.createRun", rovoAppRunManager?.createRun);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoCancelChat", rovoCancelChat);
@@ -52,7 +52,7 @@ function createRovoAppManagedRunProxy({
 			if (typeof existingRun?.rovoPort === "number" && existingRun.rovoPort > 0) {
 				await rovoCancelChat(existingRun.rovoPort, { timeoutMs: 3_000 }).catch(() => {});
 			}
-			rovoAppRunManager.cancelRun(threadId);
+			rovoAppRunManager.settleRun(threadId, { outcome: "cancelled" });
 			await clearRovoAppRunState(threadId);
 			existingRun = null;
 		}

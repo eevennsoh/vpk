@@ -80,19 +80,55 @@ test("run manager replays buffered chunks to late subscribers and returns to bac
 	]);
 });
 
-test("cancelRun aborts the active run and clears queued entries", () => {
+test("settleRun cancelled aborts the run, ends subscribers, and clears queued entries", () => {
 	const manager = createRovoAppRunManager();
 	const run = manager.createRun({
 		threadId: "thread-2",
 		requestBody: { id: "thread-2", messages: [] },
 		requestedPortIndex: 2,
 	});
+	const response = createMockResponse();
+	manager.attachSubscriber(run.threadId, response);
 
 	manager.enqueueRun(run.threadId);
-	const cancelledRun = manager.cancelRun(run.threadId);
-	assert.equal(cancelledRun?.abortController.signal.aborted, true);
+	const cancelledRun = manager.settleRun(run.threadId, { outcome: "cancelled" });
+	assert.equal(cancelledRun, run);
+	assert.equal(run.status, "cancelled");
+	assert.equal(run.abortController.signal.aborted, true);
+	assert.equal(response.ended, true);
 	assert.equal(manager.getRun(run.threadId), null);
 	assert.deepEqual(manager.listQueuedThreadIds(), []);
+});
+
+test("settleRun settles a run once, and only the run it names", () => {
+	const manager = createRovoAppRunManager();
+	const first = manager.createRun({ threadId: "thread-1" });
+	manager.markRunStarted("thread-1", { status: "background" });
+
+	assert.equal(manager.settleRun("thread-1", { outcome: "completed", runId: "another-run" }), null);
+	assert.equal(manager.getRun("thread-1"), first);
+	assert.equal(manager.settleRun("thread-1", { outcome: "paused" }), null);
+	assert.equal(manager.settleRun("thread-1", { outcome: "failed", runId: first.id, error: new Error("boom") }), first);
+	assert.equal(first.status, "failed");
+	assert.equal(first.error, "boom");
+	assert.equal(first.abortController.signal.aborted, false);
+
+	const second = manager.createRun({ threadId: "thread-1" });
+	assert.notEqual(second, first);
+	assert.equal(manager.settleRun("thread-1", { outcome: "cancelled", runId: first.id }), null);
+	assert.equal(manager.getRun("thread-1"), second);
+	assert.equal(second.status, "queued");
+});
+
+test("a settled run's status no longer follows subscribers or status updates", () => {
+	const manager = createRovoAppRunManager();
+	const run = manager.createRun({ threadId: "thread-1" });
+	manager.markRunStarted("thread-1", { status: "streaming" });
+	manager.settleRun("thread-1", { outcome: "completed" });
+
+	assert.equal(manager.setRunStatus("thread-1", "background"), null);
+	assert.equal(manager.markRunStarted("thread-1", { status: "streaming" }), null);
+	assert.equal(run.status, "completed");
 });
 
 test("setRunBackend records backend ownership and clears Rovo port for AI Gateway runs", () => {

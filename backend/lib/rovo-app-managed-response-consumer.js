@@ -21,7 +21,7 @@ function requireFunction(name, value) {
 function createRovoAppManagedResponseConsumer({
 	collectUiMessagesFromResponseStream = defaultCollectUiMessagesFromResponseStream,
 	createUiMessageChunkSseStream = defaultCreateUiMessageChunkSseStream,
-	finalizeRovoAppRun,
+	settleRovoAppRun,
 	logger = console,
 	messagePersistDebounceMs = DEFAULT_MESSAGE_PERSIST_DEBOUNCE_MS,
 	persistRovoAppRunMessagesSnapshot,
@@ -32,7 +32,7 @@ function createRovoAppManagedResponseConsumer({
 } = {}) {
 	requireFunction("collectUiMessagesFromResponseStream", collectUiMessagesFromResponseStream);
 	requireFunction("createUiMessageChunkSseStream", createUiMessageChunkSseStream);
-	requireFunction("finalizeRovoAppRun", finalizeRovoAppRun);
+	requireFunction("settleRovoAppRun", settleRovoAppRun);
 	requireFunction("logger.info", logger?.info);
 	requireFunction("logger.warn", logger?.warn);
 	requireFunction("persistRovoAppRunMessagesSnapshot", persistRovoAppRunMessagesSnapshot);
@@ -194,7 +194,7 @@ function createRovoAppManagedResponseConsumer({
 			});
 		}
 
-		await finalizeRovoAppRun(threadId, run, messages, { streamedMessages: [...streamedMessagesById.values()] });
+		await settleRovoAppRun(run, "completed", { messages, streamedMessages: [...streamedMessagesById.values()] });
 	}
 
 	return {

@@ -160,13 +160,15 @@ function createRovoAppRuntimeComposition({
 	let startNextQueuedRovoAppRun = () => {};
 	const {
 		clearRovoAppRunState,
-		finalizeRovoAppRun,
 		persistRovoAppRunBackend,
 		persistRovoAppRunMessagesSnapshot,
 		persistRovoAppRunState,
 		reconcileOrphanedRovoAppThread,
+		settleRovoAppRun,
+		sweepOrphanedRovoAppRuns,
 	} = createRovoAppRunStateService({
 		activeRequests,
+		logger,
 		rovoAppRunManager,
 		rovoAppThreadManager,
 		startNextQueuedRun: () => startNextQueuedRovoAppRun(),
@@ -220,12 +222,12 @@ function createRovoAppRuntimeComposition({
 	const {
 		consumeRovoAppManagedResponse,
 	} = createRovoAppManagedResponseConsumer({
-		finalizeRovoAppRun,
 		mapUiMessagesToConversation,
 		persistRovoAppRunMessagesSnapshot,
 		persistRovoAppRunState,
 		rovoAppRunManager,
 		rovoAppThreadManager,
+		settleRovoAppRun,
 		syncRovoAppThreadSession,
 	});
 
@@ -282,13 +284,12 @@ function createRovoAppRuntimeComposition({
 	});
 
 	const rovoAppManagedRunLifecycle = createRovoAppManagedRunLifecycle({
-		activeRequests,
-		clearRovoAppRunState,
 		executeRovoAppManagedRun,
 		logger,
 		persistRovoAppRunState,
 		resolveRovoAppPortAvailability,
 		rovoAppRunManager,
+		settleRovoAppRun,
 	});
 	const {
 		startManagedRovoAppRun,
@@ -331,6 +332,7 @@ function createRovoAppRuntimeComposition({
 		proxyRovoAppChatRequest,
 		reconcileOrphanedRovoAppThread,
 		startNextQueuedRovoAppRun,
+		sweepOrphanedRovoAppRuns,
 		syncRovoAppThreadSessionFromCurrentPort,
 		withStudioAgentGatewayFallbackTimeout,
 	};

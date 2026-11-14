@@ -139,7 +139,7 @@ function createRuntimeRouteStackTestDependencies() {
 			"listDocuments",
 			"patchDocumentMetadata",
 		]),
-		rovoAppRunManager: createMethodBag(["attachSubscriber", "cancelRun", "getRun", "listRuns", "setRunStatus"]),
+		rovoAppRunManager: createMethodBag(["attachSubscriber", "getRun", "listRuns", "setRunStatus", "settleRun"]),
 		rovoAppThreadManager: createMethodBag([
 			"createThread",
 			"deleteAllThreads",

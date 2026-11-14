@@ -50,8 +50,8 @@ function createHarness(overrides = {}) {
 				attachOptions = options;
 				return overrides.subscriberId === undefined ? "subscriber-1" : overrides.subscriberId;
 			},
-			cancelRun: (threadId) => {
-				calls.push(["cancelRun", threadId]);
+			settleRun: (threadId, options) => {
+				calls.push(["settleRun", threadId, options]);
 				runs.delete(threadId);
 			},
 			createRun: (input) => {
@@ -237,7 +237,7 @@ test("proxyRovoAppChatRequest cancels and clears replaceable active runs before 
 		"getRun",
 		"shouldReplaceActiveRunForRequest",
 		"rovoCancelChat",
-		"cancelRun",
+		"settleRun",
 		"clearRovoAppRunState",
 		"resolveAgentsRfpDemoChatTurn",
 		"createRun",
@@ -248,6 +248,7 @@ test("proxyRovoAppChatRequest cancels and clears replaceable active runs before 
 		"persistRovoAppRunState",
 	]);
 	assert.deepEqual(calls[2], ["rovoCancelChat", 8006, { timeoutMs: 3_000 }]);
+	assert.deepEqual(calls[3], ["settleRun", "thread-1", { outcome: "cancelled" }]);
 	assert.equal(calls[6][1].backend, "ai-gateway");
 });
 
@@ -261,6 +262,6 @@ test("proxyRovoAppChatRequest continues replacing active runs when cancel chat f
 
 	await proxy.proxyRovoAppChatRequest({ body: { id: "thread-1" } }, res);
 
-	assert.equal(calls.some(([name]) => name === "cancelRun"), true);
+	assert.equal(calls.some(([name]) => name === "settleRun"), true);
 	assert.equal(calls.some(([name]) => name === "startManagedRovoAppRun"), true);
 });

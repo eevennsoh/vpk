@@ -1,9 +1,5 @@
 "use strict";
 
-const {
-	getRovoAppRunFailurePayload,
-} = require("./rovo-app-run-failure");
-
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
 		throw new Error(`createRovoAppManagedRunLifecycle requires ${name}`);
@@ -11,98 +7,30 @@ function requireFunction(name, value) {
 	return value;
 }
 
-function createSseDataChunk(payload) {
-	return `data: ${JSON.stringify(payload)}\n\n`;
-}
-
-function createRovoAppFailureSseChunks(
-	errorOrMessage,
-	{
-		now = () => Date.now(),
-		nowDate = () => new Date(),
-	} = {},
-) {
-	const failurePayload = getRovoAppRunFailurePayload(
-		errorOrMessage,
-		typeof errorOrMessage === "string" ? errorOrMessage : undefined,
-	);
-	const text = failurePayload.message;
-	const textId = `rovo-app-error-${now()}`;
-	return [
-		createSseDataChunk({ type: "text-start", id: textId }),
-		createSseDataChunk({ type: "text-delta", id: textId, delta: text }),
-		createSseDataChunk({ type: "text-end", id: textId }),
-		createSseDataChunk({
-			type: "data-widget-error",
-			id: `rovo-app-error-widget-${now()}`,
-			data: {
-				type: "question-card",
-				code: failurePayload.code,
-				message: text,
-				details: failurePayload.details,
-				canRetry: failurePayload.canRetry,
-			},
-		}),
-		createSseDataChunk({
-			type: "data-turn-complete",
-			data: { timestamp: nowDate().toISOString() },
-		}),
-	];
-}
-
 function createRovoAppManagedRunLifecycle({
-	activeRequests,
-	clearRovoAppRunState,
-	createFailureSseChunks = createRovoAppFailureSseChunks,
 	executeRovoAppManagedRun,
 	logger = console,
 	persistRovoAppRunState,
 	resolveRovoAppPortAvailability,
 	rovoAppRunManager,
+	settleRovoAppRun,
 } = {}) {
-	requireFunction("activeRequests.delete", activeRequests?.delete);
-	requireFunction("clearRovoAppRunState", clearRovoAppRunState);
-	requireFunction("createFailureSseChunks", createFailureSseChunks);
 	requireFunction("executeRovoAppManagedRun", executeRovoAppManagedRun);
 	requireFunction("logger.error", logger?.error);
 	requireFunction("persistRovoAppRunState", persistRovoAppRunState);
 	requireFunction("resolveRovoAppPortAvailability", resolveRovoAppPortAvailability);
-	requireFunction("rovoAppRunManager.appendChunk", rovoAppRunManager?.appendChunk);
-	requireFunction("rovoAppRunManager.clearRun", rovoAppRunManager?.clearRun);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoAppRunManager.hasSubscribers", rovoAppRunManager?.hasSubscribers);
 	requireFunction("rovoAppRunManager.listQueuedThreadIds", rovoAppRunManager?.listQueuedThreadIds);
 	requireFunction("rovoAppRunManager.markRunStarted", rovoAppRunManager?.markRunStarted);
 	requireFunction("rovoAppRunManager.removeQueuedRun", rovoAppRunManager?.removeQueuedRun);
-	requireFunction("rovoAppRunManager.setRunError", rovoAppRunManager?.setRunError);
+	requireFunction("settleRovoAppRun", settleRovoAppRun);
 
 	let isProcessingRovoAppRunQueue = false;
 
-	async function failRovoAppRun(threadId, error) {
-		const failurePayload = getRovoAppRunFailurePayload(error);
-		const message = failurePayload.message;
-		const isAbortLike =
-			typeof error === "object"
-			&& error !== null
-			&& (
-				("name" in error && error.name === "AbortError")
-				|| /abort/i.test(message)
-			);
-		const run = rovoAppRunManager.getRun(threadId);
-		if (run) {
-			rovoAppRunManager.setRunError(threadId, message);
-			if (!isAbortLike) {
-				for (const chunk of createFailureSseChunks(error)) {
-					rovoAppRunManager.appendChunk(threadId, chunk);
-				}
-			}
-		}
-		await clearRovoAppRunState(threadId);
-		if (threadId) {
-			activeRequests.delete(threadId);
-		}
-		rovoAppRunManager.clearRun(threadId);
-		void startNextQueuedRovoAppRun();
+	// Settling never throws, so a run whose failure cannot be saved still ends.
+	async function failRovoAppRun(run, error) {
+		await settleRovoAppRun(run, "failed", { error });
 	}
 
 	async function startManagedRovoAppRun(run) {
@@ -116,13 +44,19 @@ function createRovoAppManagedRunLifecycle({
 			return;
 		}
 
-		await persistRovoAppRunState(run.threadId, markedRun);
+		try {
+			await persistRovoAppRunState(run.threadId, markedRun);
+		} catch (error) {
+			// The stored active run only helps a reloaded page find the run; the run itself
+			// does not depend on it, so it still starts.
+			logger.error("[FUTURE-CHAT] Failed to store a started run:", error);
+		}
 		void executeRovoAppManagedRun(markedRun).catch(async (error) => {
 			const wasAborted = markedRun.abortController.signal.aborted;
 			if (!wasAborted) {
 				logger.error("[FUTURE-CHAT] Managed run failed:", error);
 			}
-			await failRovoAppRun(markedRun.threadId, error);
+			await failRovoAppRun(markedRun, error);
 		});
 	}
 
@@ -162,7 +96,5 @@ function createRovoAppManagedRunLifecycle({
 }
 
 module.exports = {
-	createRovoAppFailureSseChunks,
 	createRovoAppManagedRunLifecycle,
-	createSseDataChunk,
 };
