@@ -9,7 +9,9 @@ const {
 	quoteJqlString,
 	requireHoursAgo,
 	requireJiraProjectKey,
+	describeAtlassianSiteHostsProblem,
 	resolveAllowedAtlassianSites,
+	resolveDefaultAtlassianSite,
 	standupRequestSchema,
 	ticketClassifyRequestSchema,
 } = require("./jira-query-inputs");
@@ -17,7 +19,14 @@ const {
 test("the server's token goes only to configured Atlassian sites", () => {
 	assert.deepEqual(resolveAllowedAtlassianSites({}), [...DEFAULT_ATLASSIAN_SITE_HOSTS]);
 	assert.deepEqual(resolveAllowedAtlassianSites({ ATLASSIAN_SITE_HOSTS: " Team.atlassian.net, evil.example ,," }), ["team.atlassian.net"]);
-	assert.deepEqual(resolveAllowedAtlassianSites({ ATLASSIAN_SITE_HOSTS: "evil.example" }), [...DEFAULT_ATLASSIAN_SITE_HOSTS]);
+	// Set but naming no site: no site at all, never the built-in ones.
+	for (const value of ["", ",", " , ", "evil.example", "mine.atlassian.net.evil.example", "http://mine.atlassian.net", "https://mine.atlassian.net/rest", "mine.atlassian.net:8443"]) {
+		assert.deepEqual(resolveAllowedAtlassianSites({ ATLASSIAN_SITE_HOSTS: value }), [], JSON.stringify(value));
+	}
+	// A full URL or a trailing slash names the same site.
+	for (const value of ["https://mine.atlassian.net", "mine.atlassian.net/", "https://Mine.atlassian.net/", " mine.atlassian.net "]) {
+		assert.deepEqual(resolveAllowedAtlassianSites({ ATLASSIAN_SITE_HOSTS: value }), ["mine.atlassian.net"], JSON.stringify(value));
+	}
 	const cases = [
 		["product-fabric.atlassian.net", {}, true],
 		["hello.atlassian.net", {}, true],
@@ -59,4 +68,41 @@ test("request schemas for the JQL inputs", () => {
 	assert.equal(ok(standupRequestSchema, { hoursAgo: "12h OR assignee is EMPTY" }), false);
 	assert.equal(ok(standupRequestSchema, { hoursAgo: 99999 }), false);
 	assert.equal(ok(standupRequestSchema, { projects: ["RFP\") OR (project = X"] }), false);
+});
+
+test("a Jira request without a siteUrl goes to the first configured site", async (t) => {
+	assert.equal(resolveDefaultAtlassianSite({}), "product-fabric.atlassian.net");
+	assert.equal(resolveDefaultAtlassianSite({ ATLASSIAN_SITE_HOSTS: "team.atlassian.net,other.atlassian.net" }), "team.atlassian.net");
+
+	const saved = { hosts: process.env.ATLASSIAN_SITE_HOSTS, token: process.env.ATLASSIAN_API_TOKEN, fetch: globalThis.fetch };
+	const requested = [];
+	process.env.ATLASSIAN_SITE_HOSTS = "team.atlassian.net";
+	process.env.ATLASSIAN_API_TOKEN = "test-only-placeholder";
+	// No request leaves the process: fetch answers with an empty result.
+	globalThis.fetch = async (url) => {
+		requested.push(new URL(String(url)).host);
+		return new Response(JSON.stringify({ issues: [] }), { headers: { "content-type": "application/json" }, status: 200 });
+	};
+	t.after(() => {
+		globalThis.fetch = saved.fetch;
+		for (const [name, value] of [["ATLASSIAN_SITE_HOSTS", saved.hosts], ["ATLASSIAN_API_TOKEN", saved.token]]) {
+			if (value === undefined) delete process.env[name];
+			else process.env[name] = value;
+		}
+	});
+
+	const { generateStandupSummary } = require("./standup-summary");
+	const { classifyTickets } = require("./ticket-classifier");
+	assert.equal((await generateStandupSummary()).siteUrl, "team.atlassian.net");
+	assert.equal((await classifyTickets()).siteUrl, "team.atlassian.net");
+	assert.deepEqual(requested, ["team.atlassian.net", "team.atlassian.net"]);
+});
+
+test("a set ATLASSIAN_SITE_HOSTS with nothing usable is reported, and the default site is none", () => {
+	assert.equal(describeAtlassianSiteHostsProblem({}), null);
+	assert.equal(describeAtlassianSiteHostsProblem({ ATLASSIAN_SITE_HOSTS: "mine.atlassian.net" }), null);
+	assert.match(describeAtlassianSiteHostsProblem({ ATLASSIAN_SITE_HOSTS: "" }), /names no \*\.atlassian\.net site/u);
+	assert.match(describeAtlassianSiteHostsProblem({ ATLASSIAN_SITE_HOSTS: "mine.atlasian.net" }), /names no/u);
+	assert.match(describeAtlassianSiteHostsProblem({ ATLASSIAN_SITE_HOSTS: "mine.atlassian.net,typo" }), /1 entry\(ies\)/u);
+	assert.equal(resolveDefaultAtlassianSite({ ATLASSIAN_SITE_HOSTS: "typo" }), null);
 });

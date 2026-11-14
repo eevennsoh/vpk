@@ -180,3 +180,19 @@ test("image candidates found in a page are fetched over https only, and the toke
 	const configured = buildImageProxyRequestHeaders(new URL("https://team.atlassian.net/wiki/download/attachments/1/x.png"), { ...env, ATLASSIAN_SITE_HOSTS: "team.atlassian.net" });
 	assert.equal(configured.Authorization, "Bearer made-up-token");
 });
+
+test("the token goes only to an image URL on a configured site, on every hop", () => {
+	const env = { ATLASSIAN_API_TOKEN: "made-up-token", ATLASSIAN_SITE_HOSTS: "team.atlassian.net" };
+	const auth = (url) => buildImageProxyRequestHeaders(new URL(url), env).Authorization;
+	assert.equal(auth("https://team.atlassian.net/wiki/download/attachments/1/x.png"), "Bearer made-up-token");
+	assert.equal(auth("https://team.atlassian.net/secure/useravatar?avatarId=1"), "Bearer made-up-token");
+	for (const url of [
+		"https://team.atlassian.net/rest/api/3/myself",
+		"https://team.atlassian.net/wiki/download/attachments/1/notes.txt",
+		"https://team.atlassian.net/wiki/rest/api/content",
+		"http://team.atlassian.net/wiki/download/attachments/1/x.png",
+		"https://other.atlassian.net/wiki/download/attachments/1/x.png",
+	]) {
+		assert.equal(auth(url), undefined, url);
+	}
+});

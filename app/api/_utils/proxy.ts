@@ -168,6 +168,15 @@ export async function proxyToBackend(
 		headers.set("Content-Length", contentLength);
 	}
 
+	// File responses (uploads, generated media) are sandboxed by the backend; the proxy
+	// serves them on the app's origin, so it keeps that sandbox and nosniff.
+	for (const name of ["Content-Security-Policy", "X-Content-Type-Options"]) {
+		const value = response.headers.get(name);
+		if (value) {
+			headers.set(name, value);
+		}
+	}
+
 	return new NextResponse(response.body, {
 		status: response.status,
 		headers,
