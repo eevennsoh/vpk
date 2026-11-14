@@ -40,7 +40,7 @@ import type {
  * morphing into that exact surface, so a different radius would read as a
  * second shape sitting behind the card instead of as the card itself.
  */
-export const SESSION_FUSION_SHELL_RADIUS_PX = 10;
+export const SESSION_FUSION_SHELL_RADIUS_PX = 8;
 
 /**
  * Matches `rounded-md` on `JiraIssueAgentActivityRow` and the attach-chin

@@ -1444,7 +1444,7 @@ export function RovoAppAgentConfigPanel({
 								<AgentMoreOptionsMenu />
 								<Toggle
 									aria-label="Toggle agent test view"
-									className="rounded-[6px] text-text-subtle hover:border-border data-pressed:hover:border-border-selected"
+									className="rounded-md text-text-subtle hover:border-border data-pressed:hover:border-border-selected"
 									data-testid="agent-config-test"
 									data-screen-assistant-target="studio-agent-config-test"
 									onPressedChange={handleTestPressedChange}

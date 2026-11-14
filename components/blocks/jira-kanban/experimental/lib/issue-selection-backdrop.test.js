@@ -66,7 +66,7 @@ test("joined wells meet without overlap and expose their adjoining edges", () =>
 	assert.equal(end.top, 0);
 	assert.equal(end.joinsBefore, true);
 	assert.equal(end.joinsAfter, false);
-	assert.equal(end.style.borderBottomLeftRadius, "10px");
+	assert.equal(end.style.borderBottomLeftRadius, "8px");
 	assert.equal("height" in middle.style, false);
 	assert.equal("margin" in middle.style, false);
 });

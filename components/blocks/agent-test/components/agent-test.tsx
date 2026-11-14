@@ -771,10 +771,10 @@ function AgentTestAutomationGreetingRow({
 	// invalid HTML, so the row wrapper is a `<div>` that owns the hover surface
 	// and the `group/automation-row` reveal context.
 	return (
-		<div className="group/automation-row flex w-full items-center rounded-[12px] pl-1.5 pr-2 transition-colors hover:bg-bg-neutral-subtle-hovered">
+		<div className="group/automation-row flex w-full items-center rounded-xl pl-1.5 pr-2 transition-colors hover:bg-bg-neutral-subtle-hovered">
 			<button
 				aria-label={`Test ${label}`}
-				className="flex min-w-0 flex-1 items-center gap-3 rounded-[12px] py-2 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
+				className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-2 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
 				disabled={!hasTrigger}
 				onClick={onRun}
 				type="button"

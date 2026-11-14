@@ -98,6 +98,15 @@ const DEFAULT_SINGLE_OWNER_IMPORTS = [
 // Files that must not statically import a module family (C-8d).
 const DEFAULT_FILE_IMPORT_RULES = [
 	{
+		// C-8g: the Streamdown runtime (plugins, KaTeX, mermaid) loads with the first message.
+		filePath: "components/ui-custom/message-markdown.tsx",
+		rules: [
+			{ match: "exact", reason: "the markdown runtime loads with the first message, through preloadMessageMarkdown()", source: "./message-markdown-runtime" },
+			{ match: "package", reason: "the markdown runtime loads with the first message", source: "streamdown" },
+			{ match: "prefix", reason: "the markdown runtime loads with the first message", source: "@streamdown/" },
+		],
+	},
+	{
 		filePath: "components/projects/shared/components/icon-registry.tsx",
 		rules: [
 			{ match: "prefix", reason: "registry icons load on first render through createLazyIcon", source: "@atlaskit/icon/" },

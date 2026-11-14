@@ -67,7 +67,7 @@ const CHIN_SELECTOR = '[data-slot="jira-issue-attach-chin"]';
 const ROW_SELECTOR = '[data-slot="jira-issue-agent-row"]';
 
 /** Matches `AGENT_ACTIVITY_SHELL_STYLE.borderRadius` on the real card. */
-const SHELL_RADIUS_PX = 10;
+const SHELL_RADIUS_PX = 8;
 /** Matches `radius.large` on the issue's main card surface. */
 const SURFACE_RADIUS_PX = 8;
 /** Matches `rounded-md` on the activity row and attach-chin slot. */

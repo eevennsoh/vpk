@@ -6,7 +6,7 @@ import { code as baseCodePlugin } from "@streamdown/code";
 import { math } from "@/components/ui-custom/streamdown-math";
 import { mermaid } from "@streamdown/mermaid";
 import { Streamdown } from "streamdown";
-import { streamdownComponents } from "@/components/ui-custom/message-markdown";
+import { streamdownComponents } from "@/components/ui-custom/message-markdown-runtime";
 import { fetchPage, updatePage } from "./lib/personal-graph-api";
 import type { PageBody, VaultNode } from "./lib/personal-graph-types";
 

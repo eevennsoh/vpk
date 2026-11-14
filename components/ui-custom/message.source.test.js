@@ -3,7 +3,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const MESSAGE_MARKDOWN_SOURCE = fs.readFileSync(path.join(__dirname, "message-markdown.tsx"), "utf8");
+const MESSAGE_MARKDOWN_SOURCE = fs.readFileSync(path.join(__dirname, "message-markdown-runtime.tsx"), "utf8");
+// MarkdownAnchor lives in the light module (no Streamdown dependency); the rest is the runtime.
+const MESSAGE_MARKDOWN_LIGHT = fs.readFileSync(path.join(__dirname, "message-markdown.tsx"), "utf8");
 
 test("message markdown headings use typeset flow instead of Streamdown heading classes", () => {
 	assert.match(MESSAGE_MARKDOWN_SOURCE, /!plain && "typeset typeset-chat"/u);
@@ -13,12 +15,9 @@ test("message markdown headings use typeset flow instead of Streamdown heading c
 });
 
 test("chat markdown anchors use ADS text-link chrome without default underline", () => {
-	const anchorStart = MESSAGE_MARKDOWN_SOURCE.indexOf("function MarkdownAnchor");
+	const anchorStart = MESSAGE_MARKDOWN_LIGHT.indexOf("function MarkdownAnchor");
 	assert.ok(anchorStart > -1, "expected MarkdownAnchor");
-	const anchorSource = MESSAGE_MARKDOWN_SOURCE.slice(
-		anchorStart,
-		MESSAGE_MARKDOWN_SOURCE.indexOf("Renders a bare HTML element", anchorStart),
-	);
+	const anchorSource = MESSAGE_MARKDOWN_LIGHT.slice(anchorStart);
 	assert.match(anchorSource, /void className/u);
 	assert.match(
 		anchorSource,

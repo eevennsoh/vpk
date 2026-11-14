@@ -54,10 +54,13 @@ let runtime = null;
 let server = null;
 /** @type {Array<{ clients: Set<{ terminate(): void }> }>} */
 let webSocketServers = [];
+/** @type {(() => void) | null} */
+let stopWebSocketHeartbeat = null;
 
 const serverShutdownSteps = createHttpServerShutdownSteps({
 	getServer: () => server,
 	getWebSocketServers: () => webSocketServers,
+	getStopHeartbeat: () => stopWebSocketHeartbeat,
 });
 
 // starting -> listening -> draining -> stopped. Shutdown order: stop accepting
@@ -112,11 +115,12 @@ async function startServer() {
 		process.exit(1);
 	});
 
-	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, {
+	const { browserPreviewWss, realtimeWss, stopHeartbeat } = registerBackendWebSocketRelays(server, {
 		...currentRuntime.webSocketRelayDependencies,
 		isDraining,
 	});
 	webSocketServers = [browserPreviewWss, realtimeWss];
+	stopWebSocketHeartbeat = stopHeartbeat;
 }
 
 void startServer().catch((error) => {

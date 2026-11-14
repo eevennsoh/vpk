@@ -496,7 +496,7 @@ export function AgentCard({
 			<AgentCardShell
 				active={active}
 				className={cn(
-					"rounded-[16px] after:rounded-[16px] [&_[data-slot=agent-card-select]]:rounded-[16px]",
+					"rounded-2xl after:rounded-2xl [&_[data-slot=agent-card-select]]:rounded-2xl",
 					className,
 				)}
 				onSelect={onSelect}
@@ -596,7 +596,7 @@ export function AgentCard({
 			<AgentCardShell
 				active={active}
 				className={cn(
-					"gap-0 overflow-clip rounded-[16px] bg-transparent p-0 after:rounded-[16px] after:border-0 [&_[data-slot=agent-card-select]]:rounded-[16px]",
+					"gap-0 overflow-clip rounded-2xl bg-transparent p-0 after:rounded-2xl after:border-0 [&_[data-slot=agent-card-select]]:rounded-2xl",
 					className,
 				)}
 				onSelect={onSelect}
@@ -605,7 +605,7 @@ export function AgentCard({
 				<div className="relative flex min-h-0 flex-auto flex-col overflow-visible" style={coverStyle}>
 					<div
 						className={cn(
-							"relative z-10 flex shrink-0 flex-col rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 text-text-inverse",
+							"relative z-10 flex shrink-0 flex-col rounded-t-2xl bg-[var(--agent-card-cover-color)] px-4 text-text-inverse",
 							isExperimentalTemplate ? "gap-2 pt-3 pb-4" : "gap-3 pt-4 pb-4",
 						)}
 						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_BOTTOM_MASK_STYLE}
@@ -739,7 +739,7 @@ export function AgentCard({
 					</div>
 
 					<div
-						className="relative z-10 flex min-h-0 flex-auto flex-col rounded-b-[16px] bg-[var(--agent-card-detail-color)]"
+						className="relative z-10 flex min-h-0 flex-auto flex-col rounded-b-2xl bg-[var(--agent-card-detail-color)]"
 						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_TOP_MASK_STYLE}
 					>
 						<div
@@ -811,7 +811,7 @@ export function AgentCard({
 		<AgentCardShell
 			active={active}
 			className={cn(
-				"gap-0 overflow-visible rounded-[16px] bg-transparent p-0 after:rounded-[16px] after:border-0 [&_[data-slot=agent-card-select]]:rounded-[16px]",
+				"gap-0 overflow-visible rounded-2xl bg-transparent p-0 after:rounded-2xl after:border-0 [&_[data-slot=agent-card-select]]:rounded-2xl",
 				className,
 			)}
 			hoverShadow="none"
@@ -825,14 +825,14 @@ export function AgentCard({
 					data-slot="agent-card-ticket-shadow"
 				>
 					<div
-						className="size-full rounded-[16px] bg-surface"
+						className="size-full rounded-2xl bg-surface"
 						data-slot="agent-card-ticket-shadow-shape"
 						style={EXPANDED_TICKET_SHADOW_STYLE}
 					/>
 				</div>
 				<div className="relative z-10 shrink-0" ref={ticketHeaderRef}>
 					<div
-						className="relative z-10 overflow-hidden rounded-t-[16px] border-x border-t border-border bg-surface [&_[data-slot=agent-card-banner]>div:first-child]:mb-[-1px] [&_[data-slot=agent-card-banner]>div:first-child]:h-[49px]"
+						className="relative z-10 overflow-hidden rounded-t-2xl border-x border-t border-border bg-surface [&_[data-slot=agent-card-banner]>div:first-child]:mb-[-1px] [&_[data-slot=agent-card-banner]>div:first-child]:h-[49px]"
 						data-slot="agent-card-sticky-header"
 						style={EXPANDED_TICKET_TOP_STYLE}
 					>
@@ -893,7 +893,7 @@ export function AgentCard({
 					    inner div owns wheel/drag scrolling; plain clicks are forwarded to onSelect
 					    (see handleBodyClick), while interactive descendants keep their behavior. */}
 					<div
-						className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-hidden rounded-b-[16px] border-x border-b border-border bg-surface"
+						className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-hidden rounded-b-2xl border-x border-b border-border bg-surface"
 						data-slot="agent-card-scroll"
 						onClick={onSelect ? handleBodyClick : undefined}
 						style={EXPANDED_TICKET_BOTTOM_STYLE}

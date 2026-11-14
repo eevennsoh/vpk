@@ -27,7 +27,7 @@ function TileLeadingAvatar({ label = "" }: Readonly<{ label?: string; size?: "sm
 function TileLeadingProjectAvatar() {
 	return (
 		<Tile aria-hidden label="" variant="transparent" size="small" isSnug>
-			<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" src="/avatar-project/rocket.svg" width={20} height={20} />
+			<Image alt="" aria-hidden className="rounded-md border border-border object-cover" src="/avatar-project/rocket.svg" width={20} height={20} />
 		</Tile>
 	);
 }
