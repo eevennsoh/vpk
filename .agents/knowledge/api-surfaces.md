@@ -237,7 +237,6 @@ Generated from `backend/routes/route-manifest.json`.
 | `GET` | `/api/sessions/search` | `GET /api/sessions/search` | `app/api/sessions/search/route.ts` |
 | `POST` | `/api/sound-generation` | `POST /api/sound-generation` | `app/api/sound-generation/route.ts` |
 | `POST` | `/api/speech-transcription` | `POST /api/speech-transcription` | `app/api/speech-transcription/route.ts` |
-| `POST` | `/api/sprint-board/tasks` |  | `app/api/sprint-board/tasks/route.ts` |
 | `POST` | `/api/standup` | `POST /api/standup` | `app/api/standup/route.ts` |
 | `GET` | `/api/status` | `GET /api/status` | `app/api/status/route.ts` |
 | `GET` | `/api/status/rovo` | `GET /api/status/rovo` | `app/api/status/rovo/route.ts` |

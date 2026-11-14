@@ -27,10 +27,6 @@ const LOCAL_NEXT_API_ROUTES = new Map([
 		"GET /api/realtime/ws-url",
 		"Route-local dev helper: resolves the direct backend WebSocket URL because the Next proxy cannot proxy WebSocket upgrades.",
 	],
-	[
-		"POST /api/sprint-board/tasks",
-		"Route-local demo mutation handler; it does not proxy to the Express backend.",
-	],
 ]);
 
 const PROXY_TARGET_FANOUT_EXCEPTIONS = [
