@@ -53,7 +53,8 @@ function createHarness() {
 		consumeRovoAppManagedResponse: async () => {},
 		dispatchRovoAppManagedRunChat: async () => {},
 		executeRovoAppManagedRun: async () => {},
-		finalizeRovoAppRun: async () => {},
+		settleRovoAppRun: async () => true,
+		sweepOrphanedRovoAppRuns: async () => 0,
 		generatePlanMetadataViaGateway: async () => ({ title: "Plan" }),
 		generateRovoAppArtifactText: async () => "artifact",
 		generateRovoAppArtifactTitleFromContent: async () => "Artifact",
@@ -168,7 +169,8 @@ function createHarness() {
 			captured.runStateService = input;
 			return {
 				clearRovoAppRunState: values.clearRovoAppRunState,
-				finalizeRovoAppRun: values.finalizeRovoAppRun,
+				settleRovoAppRun: values.settleRovoAppRun,
+				sweepOrphanedRovoAppRuns: values.sweepOrphanedRovoAppRuns,
 				persistRovoAppRunBackend: values.persistRovoAppRunBackend,
 				persistRovoAppRunMessagesSnapshot: values.persistRovoAppRunMessagesSnapshot,
 				persistRovoAppRunState: values.persistRovoAppRunState,
@@ -212,6 +214,8 @@ test("createRovoAppRuntimeComposition wires managed-run callbacks through the li
 	assert.equal(captured.managedResponseConsumer.syncRovoAppThreadSession, values.syncRovoAppThreadSession);
 	assert.equal(captured.managedRunChatDispatcher.dispatchChatSdkRequestInProcess, dependencies.dispatchChatSdkRequestInProcess);
 	assert.equal(captured.managedRunProxy.startManagedRovoAppRun, values.startManagedRovoAppRun);
+	assert.equal(captured.managedResponseConsumer.settleRovoAppRun, values.settleRovoAppRun);
+	assert.equal(captured.managedRunLifecycle.settleRovoAppRun, values.settleRovoAppRun);
 
 	const run = { threadId: "thread-1" };
 	await captured.managedRunProxy.startManagedRovoAppRun(run);
@@ -225,6 +229,7 @@ test("createRovoAppRuntimeComposition wires managed-run callbacks through the li
 	assert.equal(result.startNextQueuedRovoAppRun, values.startNextQueuedRovoAppRun);
 	assert.equal(result.handleRovoAppArtifactToolRequest, values.handleRovoAppArtifactToolRequest);
 	assert.equal(result.persistRovoAppBrowserScreenshotBuffer, values.persistRovoAppBrowserScreenshotBuffer);
+	assert.equal(result.sweepOrphanedRovoAppRuns, values.sweepOrphanedRovoAppRuns);
 });
 
 test("createRovoAppRuntimeComposition validates required live dependencies", () => {
