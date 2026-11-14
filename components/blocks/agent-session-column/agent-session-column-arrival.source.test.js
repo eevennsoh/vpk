@@ -189,7 +189,7 @@ test("circle dots use the same resting color regardless of unread state", () => 
 test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// duration-slow + bold ease-out: the flag recipe, because an arrival is a
 	// notification of work showing up.
-	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /duration: motionDuration\.slow,\s*ease: motionEase\.out/u);
 	// Enters from above, where sync lives; two properties, never three.
 	assert.match(ARRIVAL_MOTION_SOURCE, /AGENT_SESSION_ARRIVAL_OFFSET_PX = -8/u);
 	// Past the cap the group lands together instead of stepping in.

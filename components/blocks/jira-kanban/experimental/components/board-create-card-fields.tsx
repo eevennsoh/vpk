@@ -105,9 +105,9 @@ export function BoardCreateCardFields({ assignees: availableAssignees = [], colu
 			<div className="contents">
 				{selectedTags.map((tag) => <span className="rounded-sm border border-border px-1 text-xs text-text-subtle" key={tag}>{tag}</span>)}
 				<Popover open={tagsOpen} onOpenChange={(open) => { setTagsOpen(open); if (!open) setTagQuery(""); }}>
-					<PopoverTrigger render={<Chip label="Add tags"><Icon render={<AddIcon label="" size="small" />} /> Tags</Chip>} />
-					<PopoverContent align="start" aria-label="Choose tags">
-						<input aria-label="Add tag" className="h-8 w-full rounded-md border border-border bg-surface px-2 text-sm" onChange={(event) => setTagQuery(event.target.value)} onKeyDown={(event) => {
+					<PopoverTrigger render={<Chip label="Add labels"><Icon render={<AddIcon label="" size="small" />} /> Labels</Chip>} />
+					<PopoverContent align="start" aria-label="Choose labels">
+						<input aria-label="Add label" className="h-8 w-full rounded-md border border-border bg-surface px-2 text-sm" onChange={(event) => setTagQuery(event.target.value)} onKeyDown={(event) => {
 							if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
 							event.preventDefault();
 							const query = tagQuery.trim();
@@ -117,7 +117,7 @@ export function BoardCreateCardFields({ assignees: availableAssignees = [], colu
 							setTagQuery("");
 						}} value={tagQuery} />
 						{tagQuery.trim() && !tags.some((tag) => tag.toLowerCase() === tagQuery.trim().toLowerCase()) ? <Button size="compact" type="button" variant="ghost" onClick={() => { onChange({ tags: [...selectedTags, tagQuery.trim()] }); setTagQuery(""); }}>Create “{tagQuery.trim()}”</Button> : null}
-						<div aria-label="Tags" className="max-h-48 overflow-auto" role="group">{tags.filter((tag) => tag.toLowerCase().includes(tagQuery.trim().toLowerCase())).map((tag) => <label className="flex items-center gap-2 px-2 py-1.5" key={tag}><input checked={selectedTags.includes(tag)} onChange={() => onChange({ tags: toggle(selectedTags, tag) })} type="checkbox" />{tag}</label>)}</div>
+						<div aria-label="Labels" className="max-h-48 overflow-auto" role="group">{tags.filter((tag) => tag.toLowerCase().includes(tagQuery.trim().toLowerCase())).map((tag) => <label className="flex items-center gap-2 px-2 py-1.5" key={tag}><input checked={selectedTags.includes(tag)} onChange={() => onChange({ tags: toggle(selectedTags, tag) })} type="checkbox" />{tag}</label>)}</div>
 					</PopoverContent>
 				</Popover>
 				<Popover>

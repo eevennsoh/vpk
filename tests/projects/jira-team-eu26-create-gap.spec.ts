@@ -4,6 +4,45 @@ import { resolveAppOrigin } from "@/tests/helpers/origin";
 
 const origin = resolveAppOrigin();
 
+test("a scrolled board keeps its insertion rule behind the unlinked sessions column", async ({ page }) => {
+	await page.setViewportSize({ width: 1200, height: 1000 });
+	await page.goto(`${origin}/butter-v1`);
+	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
+	const sessionColumn = page.locator("[data-agent-session-column]");
+	await expect(sessionColumn).toBeVisible();
+	const board = page.locator("[data-jira-kanban-scrollport]");
+	await board.evaluate((element) => { element.scrollLeft = 150; });
+	const cards = page.locator('[data-jira-kanban-column="To do"] [data-board-agent-session-drop-zone="issue"]');
+	const gap = await cards.nth(1).evaluate((card) => {
+		const previous = card.parentElement?.previousElementSibling?.querySelector('[data-board-agent-session-drop-zone="issue"]');
+		if (!previous) throw new Error("Missing preceding card");
+		const nextBox = card.getBoundingClientRect();
+		const previousBox = previous.getBoundingClientRect();
+		return { x: nextBox.right - 40, y: (previousBox.bottom + nextBox.top) / 2 };
+	});
+	await page.mouse.move(gap.x, gap.y);
+	const overlay = page.locator("[data-board-insertion-overlay]");
+	await expect(overlay).toBeVisible();
+	const paint = await overlay.evaluate((line) => {
+		const column = document.querySelector<HTMLElement>("[data-agent-session-column]");
+		if (!column || !(line instanceof HTMLElement)) throw new Error("Missing insertion or session column");
+		const lineBox = line.getBoundingClientRect();
+		const columnBox = column.getBoundingClientRect();
+		const x = Math.max(lineBox.left + 1, columnBox.left + 1);
+		if (x >= Math.min(lineBox.right, columnBox.right)) throw new Error("Insertion does not overlap the session column");
+		line.style.pointerEvents = "auto";
+		const painted = document.elementFromPoint(x, lineBox.top + lineBox.height / 2);
+		const paintedOnTop = painted !== null && line.contains(painted);
+		const visiblePart = document.elementFromPoint(lineBox.right - 20, lineBox.top + lineBox.height / 2);
+		const paintedOverBoard = visiblePart !== null && line.contains(visiblePart);
+		line.style.removeProperty("pointer-events");
+		return { paintedOnTop, paintedOverBoard };
+	});
+	expect(paint.paintedOnTop).toBe(false);
+	expect(paint.paintedOverBoard).toBe(true);
+	await expect(overlay).toBeVisible();
+});
+
 test.describe("column scroll fades", () => {
 	test.use({ ignoreHTTPSErrors: true });
 	for (const width of [1440, 1720]) {

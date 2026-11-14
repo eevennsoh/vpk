@@ -328,7 +328,7 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(NOTCH_SOURCE, /group-hover\/notch:bg-icon/u);
 	assert.match(NOTCH_SOURCE, /toAgentSessionNotchTone\(/u);
 	assert.doesNotMatch(NOTCH_SOURCE, /toAgentSessionNotchOpacity|transition-opacity/u);
-	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /duration: motionDuration\.slow,\s*ease: motionEase\.out/u);
 });
 
 test("the row reveals one … menu where Agent List puts its hover pair", () => {

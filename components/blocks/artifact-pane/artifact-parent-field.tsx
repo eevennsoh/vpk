@@ -18,7 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tag } from "@/components/ui/tag";
 import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
 import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
-import { cn } from "@/lib/utils";
 
 type ArtifactEpicColor = "blue" | "green" | "purple";
 
@@ -86,13 +85,14 @@ export function ArtifactParentField({
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
+				aria-label="Change parent"
 				className={METADATA_PICKER_POPOVER_CLASS}
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<div className="[&_.rich-text-command-menu-item:hover]:bg-bg-neutral-subtle-hovered!">
 					<MetadataSearchPicker
-						className={cn(ARTIFACT_PICKER_DROPDOWN_CLASS, "[&_.rich-text-command-menu-item]:h-10!")}
+						className={ARTIFACT_PICKER_DROPDOWN_CLASS}
 						emptyLabel="No work items found"
 						items={items}
 						onEscape={() => setOpen(false)}
