@@ -1,4 +1,4 @@
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 /**
  * Timing, gating and easing rules for the Jira linking.

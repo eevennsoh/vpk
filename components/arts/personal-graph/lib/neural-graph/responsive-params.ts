@@ -4,7 +4,7 @@ import {
 	type NeuralGraphNumberKey,
 	type NeuralGraphParams,
 } from "./params";
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 export interface ResponsivePersonalGraphViewport {
 	height: number;

@@ -1,5 +1,5 @@
 import { ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 // Subsets of each shader's prop surface — only the knobs we randomize.
 // Kept local so this module doesn't depend on shader internals.

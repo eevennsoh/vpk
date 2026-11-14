@@ -6,7 +6,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 export const DEFAULT_ACTIVE_GRADIENT: readonly [string, string] = [
 	"#bef264",

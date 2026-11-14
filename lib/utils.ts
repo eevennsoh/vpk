@@ -1,14 +1,6 @@
 export { cn } from "cn";
 
-/** `min` wins when the range is inverted (`min > max`); NaN stays NaN. */
-export function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
-
-/** Linear interpolation: `from` at `amount` 0, `to` at 1, extrapolating outside 0–1. */
-export function lerp(from: number, to: number, amount: number): number {
-	return from + (to - from) * amount;
-}
+export { clamp } from "./math";
 
 /** "agent-chat" → "Agent Chat". Splits on every hyphen, so empty segments keep their spaces. */
 export function slugToTitleCase(slug: string): string {

@@ -1,7 +1,7 @@
 import { getNeuralOrigin, type NeuralCamera, type NeuralViewport } from "./camera";
 import type { NeuralGraphLayout, NeuralLayoutNode } from "./layout";
 import type { NeuralGraphParams } from "./params";
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 export const NEURAL_GRAPH_FIT_PADDING = 48;
 

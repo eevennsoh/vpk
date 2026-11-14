@@ -1,4 +1,4 @@
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 // The choreography: one repeating cycle that assembles the teamwork graph,
 // collapses it into the Rovo mark, settles the camera square-on, extrudes the

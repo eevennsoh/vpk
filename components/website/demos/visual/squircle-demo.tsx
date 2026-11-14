@@ -7,7 +7,7 @@ import { token } from "@/lib/tokens";
 
 import Squircle from "./shaders/squircle";
 import { SQUIRCLE_DEFAULT_SMOOTHNESS } from "./shaders/squircle-shape";
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 function withAlpha(color: string, alpha: number): string {
 	const normalized = color.trim();

@@ -34,7 +34,8 @@ import {
 import LiquidGlass, {
 	type LiquidGlassProps,
 } from "@/components/website/demos/visual/shaders/liquid-glass";
-import { clamp, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 import { useControllableState } from "@/hooks/use-controllable-state";
 

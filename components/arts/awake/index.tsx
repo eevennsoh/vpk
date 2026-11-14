@@ -39,7 +39,8 @@ import { Spinner } from "@/components/ui/spinner";
 import {
 	ReturnIcon,
 } from "@/components/ui/vpk-icons";
-import { cn, lerp } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
 import { flushSync } from "react-dom";
 

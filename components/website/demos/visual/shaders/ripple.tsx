@@ -4,7 +4,8 @@ import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
-import { clamp, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 export interface RippleProps {
 	imageSrc?: string;

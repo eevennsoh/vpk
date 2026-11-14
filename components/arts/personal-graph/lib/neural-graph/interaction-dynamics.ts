@@ -1,5 +1,5 @@
 import type { NeuralPoint, NeuralViewport } from "./camera";
-import { clamp, lerp } from "@/lib/utils";
+import { clamp, lerp } from "@/lib/math";
 
 export interface NeuralGraphInteractionSettings {
 	enabled: boolean;

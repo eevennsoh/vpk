@@ -15,7 +15,7 @@ import {
 	getRadialLeafNodeIds,
 	type NeuralGraphLabelStrategy,
 } from "./workflow-label-strategy";
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 export type { NeuralGraphLabelStrategy } from "./workflow-label-strategy";
 

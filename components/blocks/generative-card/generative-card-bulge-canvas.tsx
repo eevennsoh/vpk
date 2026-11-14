@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import { memo, useEffect, useRef } from "react";
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XLINK_NS = "http://www.w3.org/1999/xlink";

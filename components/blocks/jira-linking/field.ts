@@ -1,4 +1,4 @@
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 /**
  * Pure model behind the session-to-work-item fusion effect.

@@ -7,7 +7,8 @@ import {
 	useReducedMotion,
 } from "motion/react";
 
-import { clamp, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 import { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";
 
 export { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";

@@ -2,7 +2,7 @@ import type { PlayOptions, SoundDefinition } from "@web-kits/audio";
 import type { NeuralPoint, NeuralViewport } from "./camera";
 import type { NeuralHitTestResult, NeuralRayHitTestResult } from "./interaction";
 import type { NeuralGraphParams } from "./params";
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 export interface NeuralRaySoundSettings {
 	cooldownMs: number;

@@ -1,4 +1,4 @@
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 /**
  * The river, as pure math.

@@ -18,7 +18,8 @@
 import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { motionDuration, motionEase } from "@/lib/motion";
-import { cn, lerp } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 import {
 	BURST_DURATION_S,

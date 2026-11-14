@@ -34,7 +34,7 @@ export function easeInQuart(t: number) {
 	return c * c * c * c;
 }
 
-export { lerp } from "@/lib/utils";
+export { lerp } from "@/lib/math";
 
 export function getSpotIllustrationUrl(id: string, theme: "light" | "dark", baseUrl: string): string {
 	return `${baseUrl}spot-illustrations/${theme}/${id}.svg`;

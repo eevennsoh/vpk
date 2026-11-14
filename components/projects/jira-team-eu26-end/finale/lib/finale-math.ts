@@ -9,7 +9,7 @@ export function clamp(value: number, min = 0, max = 1): number {
 	return value < min ? min : value > max ? max : value;
 }
 
-export { lerp } from "@/lib/utils";
+export { lerp } from "@/lib/math";
 
 /** Linear 0→1 progress of `time` through the window [start, end]. */
 export function progress(time: number, start: number, end: number): number {

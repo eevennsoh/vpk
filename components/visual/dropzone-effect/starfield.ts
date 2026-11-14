@@ -19,7 +19,7 @@ import * as THREE from "three";
 import { mulberry32 } from "./flow-model";
 import type { DropzoneLayout } from "./tuning";
 import { STAR_SIZE_MAX, STAR_SIZE_MIN } from "./tuning";
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 /**
  * How far past the frame edge the field extends, at every depth. A quarter of a

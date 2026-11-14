@@ -1,4 +1,4 @@
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 
 export const SQUIRCLE_DEFAULT_SMOOTHNESS = 100;
 export const SQUIRCLE_CORNER_SHAPE_FALLBACK = 0.566;

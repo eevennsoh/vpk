@@ -12,7 +12,7 @@ import {
 	type NeuralGraphNode,
 	type NeuralGraphStore,
 } from "./store";
-import { lerp } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 
 export interface NeuralLayoutNode extends NeuralPoint {
 	alpha: number;
