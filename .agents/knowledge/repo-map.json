@@ -24,13 +24,13 @@
 					{
 						"method": "GET",
 						"path": "/api/agent-mode",
-						"source": "backend/routes/agent-mode.js:70",
+						"source": "backend/routes/agent-mode.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agent-mode",
-						"source": "backend/routes/agent-mode.js:42",
+						"source": "backend/routes/agent-mode.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -43,31 +43,31 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-title",
-						"source": "backend/routes/ai-utilities.js:181",
+						"source": "backend/routes/ai-utilities.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/genui-description-summary",
-						"source": "backend/routes/ai-utilities.js:246",
+						"source": "backend/routes/ai-utilities.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/plan-title",
-						"source": "backend/routes/ai-utilities.js:213",
+						"source": "backend/routes/ai-utilities.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/suggestions",
-						"source": "backend/routes/ai-utilities.js:99",
+						"source": "backend/routes/ai-utilities.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/studio/agent-data-flow",
-						"source": "backend/routes/ai-utilities.js:144",
+						"source": "backend/routes/ai-utilities.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -80,73 +80,73 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:138",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:154",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:198",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:176",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:411",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:499",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session",
-						"source": "backend/routes/browser-workspaces.js:336",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session/:sessionId",
-						"source": "backend/routes/browser-workspaces.js:375",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:220",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:242",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex",
-						"source": "backend/routes/browser-workspaces.js:304",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate",
-						"source": "backend/routes/browser-workspaces.js:272",
+						"source": "backend/routes/browser-workspaces.js",
 						"runtimeAdmin": true
 					}
 				]
@@ -159,13 +159,13 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-cancel",
-						"source": "backend/routes/chat-control.js:42",
+						"source": "backend/routes/chat-control.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/cancel-deferred-tool",
-						"source": "backend/routes/chat-control.js:52",
+						"source": "backend/routes/chat-control.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -178,7 +178,7 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-sdk",
-						"source": "backend/routes/chat-sdk.js:17",
+						"source": "backend/routes/chat-sdk.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -191,7 +191,7 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-sdk/skip-question",
-						"source": "backend/routes/chat-skip-question.js:60",
+						"source": "backend/routes/chat-skip-question.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -204,115 +204,115 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview",
-						"source": "backend/routes/chromium-preview.js:64",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview",
-						"source": "backend/routes/chromium-preview.js:90",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/back",
-						"source": "backend/routes/chromium-preview.js:127",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/click",
-						"source": "backend/routes/chromium-preview.js:163",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/click-ref",
-						"source": "backend/routes/chromium-preview.js:175",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/fill-ref",
-						"source": "backend/routes/chromium-preview.js:213",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/forward",
-						"source": "backend/routes/chromium-preview.js:139",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/hover-ref",
-						"source": "backend/routes/chromium-preview.js:194",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/press",
-						"source": "backend/routes/chromium-preview.js:328",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/reload",
-						"source": "backend/routes/chromium-preview.js:151",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/screenshot",
-						"source": "backend/routes/chromium-preview.js:379",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/scroll",
-						"source": "backend/routes/chromium-preview.js:291",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/select-ref",
-						"source": "backend/routes/chromium-preview.js:263",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/snapshot",
-						"source": "backend/routes/chromium-preview.js:366",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/stream",
-						"source": "backend/routes/chromium-preview.js:76",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/type",
-						"source": "backend/routes/chromium-preview.js:347",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/type-ref",
-						"source": "backend/routes/chromium-preview.js:238",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/viewport",
-						"source": "backend/routes/chromium-preview.js:113",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/wheel",
-						"source": "backend/routes/chromium-preview.js:313",
+						"source": "backend/routes/chromium-preview.js",
 						"runtimeAdmin": true
 					}
 				]
@@ -325,67 +325,67 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/agent/apply",
-						"source": "backend/routes/demos.js:226",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-						"source": "backend/routes/demos.js:240",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/reset",
-						"source": "backend/routes/demos.js:214",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:186",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:198",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/vpk-html-report",
-						"source": "backend/routes/demos.js:81",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:146",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:120",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:133",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/standup",
-						"source": "backend/routes/demos.js:159",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/ticket-classify",
-						"source": "backend/routes/demos.js:93",
+						"source": "backend/routes/demos.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -398,13 +398,13 @@
 					{
 						"method": "POST",
 						"path": "/api/genui-chat",
-						"source": "backend/routes/genui.js:33",
+						"source": "backend/routes/genui.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/genui-export",
-						"source": "backend/routes/genui.js:39",
+						"source": "backend/routes/genui.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -417,13 +417,13 @@
 					{
 						"method": "POST",
 						"path": "/api/html-selector/dispatch",
-						"source": "backend/routes/html-selector.js:101",
+						"source": "backend/routes/html-selector.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/html-selector/tokens",
-						"source": "backend/routes/html-selector.js:166",
+						"source": "backend/routes/html-selector.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -436,7 +436,7 @@
 					{
 						"method": "POST",
 						"path": "/api/local-folder",
-						"source": "backend/routes/local-folder.js:25",
+						"source": "backend/routes/local-folder.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -449,19 +449,19 @@
 					{
 						"method": "GET",
 						"path": "/api/image-proxy",
-						"source": "backend/routes/media.js:198",
+						"source": "backend/routes/media.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/sound-generation",
-						"source": "backend/routes/media.js:93",
+						"source": "backend/routes/media.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/speech-transcription",
-						"source": "backend/routes/media.js:135",
+						"source": "backend/routes/media.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -474,19 +474,19 @@
 					{
 						"method": "DELETE",
 						"path": "/api/orchestrator/log",
-						"source": "backend/routes/orchestrator.js:72",
+						"source": "backend/routes/orchestrator.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/log",
-						"source": "backend/routes/orchestrator.js:46",
+						"source": "backend/routes/orchestrator.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/timeline",
-						"source": "backend/routes/orchestrator.js:59",
+						"source": "backend/routes/orchestrator.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -499,109 +499,109 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/capture",
-						"source": "backend/routes/personal-graph.js:609",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/explorer",
-						"source": "backend/routes/personal-graph.js:425",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/ingest",
-						"source": "backend/routes/personal-graph.js:658",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/log",
-						"source": "backend/routes/personal-graph.js:642",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:548",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:561",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/raw",
-						"source": "backend/routes/personal-graph.js:575",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/search",
-						"source": "backend/routes/personal-graph.js:625",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:450",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:464",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/summarize",
-						"source": "backend/routes/personal-graph.js:654",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/chat",
-						"source": "backend/routes/personal-graph.js:479",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/expand",
-						"source": "backend/routes/personal-graph.js:515",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/refresh",
-						"source": "backend/routes/personal-graph.js:493",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/unprocessed-count",
-						"source": "backend/routes/personal-graph.js:597",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/vault",
-						"source": "backend/routes/personal-graph.js:141",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/reset",
-						"source": "backend/routes/personal-graph.js:167",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/select",
-						"source": "backend/routes/personal-graph.js:153",
+						"source": "backend/routes/personal-graph.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -614,7 +614,7 @@
 					{
 						"method": "GET",
 						"path": "/api/realtime/audio-conversation-token",
-						"source": "backend/routes/realtime.js:26",
+						"source": "backend/routes/realtime.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -627,175 +627,175 @@
 					{
 						"method": "GET",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:306",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:319",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/checkpoints/:id",
-						"source": "backend/routes/rovo-app.js:352",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints/:id/rollback",
-						"source": "backend/routes/rovo-app.js:338",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/background-streams",
-						"source": "backend/routes/rovo-app.js:512",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/detach",
-						"source": "backend/routes/rovo-app.js:490",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:808",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:732",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:755",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/files/:fileId",
-						"source": "backend/routes/rovo-app.js:853",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/files/upload",
-						"source": "backend/routes/rovo-app.js:824",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/generated-media",
-						"source": "backend/routes/rovo-app.js:872",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:211",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:229",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/cancel",
-						"source": "backend/routes/rovo-app.js:572",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/detach",
-						"source": "backend/routes/rovo-app.js:548",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/runs/:threadId/stream",
-						"source": "backend/routes/rovo-app.js:522",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:407",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:265",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:367",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:661",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:431",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:449",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:646",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:600",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:619",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:695",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PATCH",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:711",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/sessions/search",
-						"source": "backend/routes/rovo-app.js:285",
+						"source": "backend/routes/rovo-app.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -808,7 +808,7 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/chat",
-						"source": "backend/routes/rovo-chat-proxy.js:24",
+						"source": "backend/routes/rovo-chat-proxy.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -821,25 +821,25 @@
 					{
 						"method": "GET",
 						"path": "/api/health",
-						"source": "backend/routes/status.js:174",
+						"source": "backend/routes/status.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/status",
-						"source": "backend/routes/status.js:68",
+						"source": "backend/routes/status.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/status/rovo",
-						"source": "backend/routes/status.js:50",
+						"source": "backend/routes/status.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/healthcheck",
-						"source": "backend/routes/status.js:173",
+						"source": "backend/routes/status.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -852,37 +852,37 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:476",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:477",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "backend/routes/vpk-html.js:381",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:402",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:423",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "backend/routes/vpk-html.js:446",
+						"source": "backend/routes/vpk-html.js",
 						"runtimeAdmin": false
 					}
 				]
@@ -895,24 +895,24 @@
 					{
 						"method": "GET",
 						"path": "/api/agent-mode",
-						"source": "app/api/agent-mode/route.ts:5",
+						"source": "app/api/agent-mode/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/agent-mode",
-								"source": "app/api/agent-mode/route.ts:7"
+								"source": "app/api/agent-mode/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/agent-mode",
-						"source": "app/api/agent-mode/route.ts:13",
+						"source": "app/api/agent-mode/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agent-mode",
-								"source": "app/api/agent-mode/route.ts:19"
+								"source": "app/api/agent-mode/route.ts"
 							}
 						]
 					}
@@ -926,12 +926,12 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/agent/apply",
-						"source": "app/api/agents/rfp-demo/agent/apply/route.ts:5",
+						"source": "app/api/agents/rfp-demo/agent/apply/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agents/rfp-demo/agent/apply",
-								"source": "app/api/agents/rfp-demo/agent/apply/route.ts:14"
+								"source": "app/api/agents/rfp-demo/agent/apply/route.ts"
 							}
 						]
 					}
@@ -945,12 +945,12 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-						"source": "app/api/agents/rfp-demo/events/ticket-entered-column/route.ts:5",
+						"source": "app/api/agents/rfp-demo/events/ticket-entered-column/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-								"source": "app/api/agents/rfp-demo/events/ticket-entered-column/route.ts:11"
+								"source": "app/api/agents/rfp-demo/events/ticket-entered-column/route.ts"
 							}
 						]
 					}
@@ -964,12 +964,12 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/reset",
-						"source": "app/api/agents/rfp-demo/reset/route.ts:5",
+						"source": "app/api/agents/rfp-demo/reset/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agents/rfp-demo/reset",
-								"source": "app/api/agents/rfp-demo/reset/route.ts:14"
+								"source": "app/api/agents/rfp-demo/reset/route.ts"
 							}
 						]
 					}
@@ -983,24 +983,24 @@
 					{
 						"method": "GET",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "app/api/agents/rfp-demo/state/route.ts:11",
+						"source": "app/api/agents/rfp-demo/state/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/agents/rfp-demo/state",
-								"source": "app/api/agents/rfp-demo/state/route.ts:12"
+								"source": "app/api/agents/rfp-demo/state/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "app/api/agents/rfp-demo/state/route.ts:21",
+						"source": "app/api/agents/rfp-demo/state/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agents/rfp-demo/state",
-								"source": "app/api/agents/rfp-demo/state/route.ts:28"
+								"source": "app/api/agents/rfp-demo/state/route.ts"
 							}
 						]
 					}
@@ -1014,12 +1014,12 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/vpk-html-report",
-						"source": "app/api/agents/rfp-demo/vpk-html-report/route.ts:5",
+						"source": "app/api/agents/rfp-demo/vpk-html-report/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/agents/rfp-demo/vpk-html-report",
-								"source": "app/api/agents/rfp-demo/vpk-html-report/route.ts:11"
+								"source": "app/api/agents/rfp-demo/vpk-html-report/route.ts"
 							}
 						]
 					}
@@ -1033,24 +1033,24 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts:31",
+						"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/browser-workspaces/:workspaceId/:action",
-								"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts:43"
+								"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts:49",
+						"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/browser-workspaces/:workspaceId/:action",
-								"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts:70"
+								"source": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts"
 							}
 						]
 					}
@@ -1064,12 +1064,12 @@
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session/:sessionId",
-						"source": "app/api/browser-workspaces/[workspaceId]/preview-session/[sessionId]/route.ts:10",
+						"source": "app/api/browser-workspaces/[workspaceId]/preview-session/[sessionId]/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/browser-workspaces/:workspaceId/preview-session/:sessionId",
-								"source": "app/api/browser-workspaces/[workspaceId]/preview-session/[sessionId]/route.ts:16"
+								"source": "app/api/browser-workspaces/[workspaceId]/preview-session/[sessionId]/route.ts"
 							}
 						]
 					}
@@ -1083,12 +1083,12 @@
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session",
-						"source": "app/api/browser-workspaces/[workspaceId]/preview-session/route.ts:11",
+						"source": "app/api/browser-workspaces/[workspaceId]/preview-session/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/browser-workspaces/:workspaceId/preview-session",
-								"source": "app/api/browser-workspaces/[workspaceId]/preview-session/route.ts:21"
+								"source": "app/api/browser-workspaces/[workspaceId]/preview-session/route.ts"
 							}
 						]
 					}
@@ -1102,24 +1102,24 @@
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "app/api/browser-workspaces/[workspaceId]/route.ts:21",
+						"source": "app/api/browser-workspaces/[workspaceId]/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/browser-workspaces/:workspaceId",
-								"source": "app/api/browser-workspaces/[workspaceId]/route.ts:27"
+								"source": "app/api/browser-workspaces/[workspaceId]/route.ts"
 							}
 						]
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "app/api/browser-workspaces/[workspaceId]/route.ts:9",
+						"source": "app/api/browser-workspaces/[workspaceId]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/browser-workspaces/:workspaceId",
-								"source": "app/api/browser-workspaces/[workspaceId]/route.ts:15"
+								"source": "app/api/browser-workspaces/[workspaceId]/route.ts"
 							}
 						]
 					}
@@ -1133,12 +1133,12 @@
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate",
-						"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/activate/route.ts:10",
+						"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/activate/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate",
-								"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/activate/route.ts:16"
+								"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/activate/route.ts"
 							}
 						]
 					}
@@ -1152,12 +1152,12 @@
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex",
-						"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/route.ts:10",
+						"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex",
-								"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/route.ts:16"
+								"source": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/route.ts"
 							}
 						]
 					}
@@ -1171,24 +1171,24 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts:11",
+						"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/browser-workspaces/:workspaceId/tabs",
-								"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts:17"
+								"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts:23",
+						"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/browser-workspaces/:workspaceId/tabs",
-								"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts:33"
+								"source": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts"
 							}
 						]
 					}
@@ -1202,24 +1202,24 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces",
-						"source": "app/api/browser-workspaces/route.ts:5",
+						"source": "app/api/browser-workspaces/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/browser-workspaces",
-								"source": "app/api/browser-workspaces/route.ts:6"
+								"source": "app/api/browser-workspaces/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces",
-						"source": "app/api/browser-workspaces/route.ts:12",
+						"source": "app/api/browser-workspaces/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/browser-workspaces",
-								"source": "app/api/browser-workspaces/route.ts:18"
+								"source": "app/api/browser-workspaces/route.ts"
 							}
 						]
 					}
@@ -1233,12 +1233,12 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-cancel",
-						"source": "app/api/chat-cancel/route.ts:4",
+						"source": "app/api/chat-cancel/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chat-cancel",
-								"source": "app/api/chat-cancel/route.ts:6"
+								"source": "app/api/chat-cancel/route.ts"
 							}
 						]
 					}
@@ -1252,12 +1252,12 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-sdk",
-						"source": "app/api/chat-sdk/route.ts:51",
+						"source": "app/api/chat-sdk/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chat-sdk",
-								"source": "app/api/chat-sdk/route.ts:64"
+								"source": "app/api/chat-sdk/route.ts"
 							}
 						]
 					}
@@ -1271,12 +1271,12 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-sdk/skip-question",
-						"source": "app/api/chat-sdk/skip-question/route.ts:5",
+						"source": "app/api/chat-sdk/skip-question/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chat-sdk/skip-question",
-								"source": "app/api/chat-sdk/skip-question/route.ts:11"
+								"source": "app/api/chat-sdk/skip-question/route.ts"
 							}
 						]
 					}
@@ -1290,12 +1290,12 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-title",
-						"source": "app/api/chat-title/route.ts:5",
+						"source": "app/api/chat-title/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chat-title",
-								"source": "app/api/chat-title/route.ts:9"
+								"source": "app/api/chat-title/route.ts"
 							}
 						]
 					}
@@ -1309,12 +1309,12 @@
 					{
 						"method": "POST",
 						"path": "/api/checkpoints/:id/rollback",
-						"source": "app/api/checkpoints/[id]/rollback/route.ts:4",
+						"source": "app/api/checkpoints/[id]/rollback/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/checkpoints/:id/rollback",
-								"source": "app/api/checkpoints/[id]/rollback/route.ts:9"
+								"source": "app/api/checkpoints/[id]/rollback/route.ts"
 							}
 						]
 					}
@@ -1328,12 +1328,12 @@
 					{
 						"method": "DELETE",
 						"path": "/api/checkpoints/:id",
-						"source": "app/api/checkpoints/[id]/route.ts:4",
+						"source": "app/api/checkpoints/[id]/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/checkpoints/:id",
-								"source": "app/api/checkpoints/[id]/route.ts:9"
+								"source": "app/api/checkpoints/[id]/route.ts"
 							}
 						]
 					}
@@ -1347,24 +1347,24 @@
 					{
 						"method": "GET",
 						"path": "/api/checkpoints",
-						"source": "app/api/checkpoints/route.ts:5",
+						"source": "app/api/checkpoints/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/checkpoints",
-								"source": "app/api/checkpoints/route.ts:6"
+								"source": "app/api/checkpoints/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints",
-						"source": "app/api/checkpoints/route.ts:12",
+						"source": "app/api/checkpoints/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/checkpoints",
-								"source": "app/api/checkpoints/route.ts:16"
+								"source": "app/api/checkpoints/route.ts"
 							}
 						]
 					}
@@ -1378,12 +1378,12 @@
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/:action",
-						"source": "app/api/chromium-preview/[action]/route.ts:22",
+						"source": "app/api/chromium-preview/[action]/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chromium-preview/:action",
-								"source": "app/api/chromium-preview/[action]/route.ts:43"
+								"source": "app/api/chromium-preview/[action]/route.ts"
 							}
 						]
 					}
@@ -1397,24 +1397,24 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview",
-						"source": "app/api/chromium-preview/route.ts:5",
+						"source": "app/api/chromium-preview/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/chromium-preview",
-								"source": "app/api/chromium-preview/route.ts:6"
+								"source": "app/api/chromium-preview/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview",
-						"source": "app/api/chromium-preview/route.ts:12",
+						"source": "app/api/chromium-preview/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/chromium-preview",
-								"source": "app/api/chromium-preview/route.ts:18"
+								"source": "app/api/chromium-preview/route.ts"
 							}
 						]
 					}
@@ -1428,12 +1428,12 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/screenshot",
-						"source": "app/api/chromium-preview/screenshot/route.ts:4",
+						"source": "app/api/chromium-preview/screenshot/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/chromium-preview/screenshot",
-								"source": "app/api/chromium-preview/screenshot/route.ts:7"
+								"source": "app/api/chromium-preview/screenshot/route.ts"
 							}
 						]
 					}
@@ -1447,12 +1447,12 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/snapshot",
-						"source": "app/api/chromium-preview/snapshot/route.ts:4",
+						"source": "app/api/chromium-preview/snapshot/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/chromium-preview/snapshot",
-								"source": "app/api/chromium-preview/snapshot/route.ts:7"
+								"source": "app/api/chromium-preview/snapshot/route.ts"
 							}
 						]
 					}
@@ -1466,12 +1466,12 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/stream",
-						"source": "app/api/chromium-preview/stream/route.ts:3",
+						"source": "app/api/chromium-preview/stream/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/chromium-preview/stream",
-								"source": "app/api/chromium-preview/stream/route.ts:4"
+								"source": "app/api/chromium-preview/stream/route.ts"
 							}
 						]
 					}
@@ -1485,12 +1485,12 @@
 					{
 						"method": "POST",
 						"path": "/api/genui-chat",
-						"source": "app/api/genui-chat/route.ts:16",
+						"source": "app/api/genui-chat/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/genui-chat",
-								"source": "app/api/genui-chat/route.ts:23"
+								"source": "app/api/genui-chat/route.ts"
 							}
 						]
 					}
@@ -1504,12 +1504,12 @@
 					{
 						"method": "POST",
 						"path": "/api/genui-description-summary",
-						"source": "app/api/genui-description-summary/route.ts:5",
+						"source": "app/api/genui-description-summary/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/genui-description-summary",
-								"source": "app/api/genui-description-summary/route.ts:9"
+								"source": "app/api/genui-description-summary/route.ts"
 							}
 						]
 					}
@@ -1523,12 +1523,12 @@
 					{
 						"method": "POST",
 						"path": "/api/genui-export",
-						"source": "app/api/genui-export/route.ts:13",
+						"source": "app/api/genui-export/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/genui-export",
-								"source": "app/api/genui-export/route.ts:19"
+								"source": "app/api/genui-export/route.ts"
 							}
 						]
 					}
@@ -1542,12 +1542,12 @@
 					{
 						"method": "GET",
 						"path": "/api/health",
-						"source": "app/api/health/route.ts:3",
+						"source": "app/api/health/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/health",
-								"source": "app/api/health/route.ts:4"
+								"source": "app/api/health/route.ts"
 							}
 						]
 					}
@@ -1561,12 +1561,12 @@
 					{
 						"method": "POST",
 						"path": "/api/html-selector/dispatch",
-						"source": "app/api/html-selector/dispatch/route.ts:6",
+						"source": "app/api/html-selector/dispatch/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/html-selector/dispatch",
-								"source": "app/api/html-selector/dispatch/route.ts:17"
+								"source": "app/api/html-selector/dispatch/route.ts"
 							}
 						]
 					}
@@ -1580,12 +1580,12 @@
 					{
 						"method": "GET",
 						"path": "/api/html-selector/tokens",
-						"source": "app/api/html-selector/tokens/route.ts:3",
+						"source": "app/api/html-selector/tokens/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/html-selector/tokens",
-								"source": "app/api/html-selector/tokens/route.ts:4"
+								"source": "app/api/html-selector/tokens/route.ts"
 							}
 						]
 					}
@@ -1599,24 +1599,24 @@
 					{
 						"method": "DELETE",
 						"path": "/api/orchestrator/log",
-						"source": "app/api/orchestrator/log/route.ts:21",
+						"source": "app/api/orchestrator/log/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/orchestrator/log",
-								"source": "app/api/orchestrator/log/route.ts:22"
+								"source": "app/api/orchestrator/log/route.ts"
 							}
 						]
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/log",
-						"source": "app/api/orchestrator/log/route.ts:4",
+						"source": "app/api/orchestrator/log/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/orchestrator/log",
-								"source": "app/api/orchestrator/log/route.ts:15"
+								"source": "app/api/orchestrator/log/route.ts"
 							}
 						]
 					}
@@ -1630,12 +1630,12 @@
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/timeline",
-						"source": "app/api/orchestrator/timeline/route.ts:4",
+						"source": "app/api/orchestrator/timeline/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/orchestrator/timeline",
-								"source": "app/api/orchestrator/timeline/route.ts:15"
+								"source": "app/api/orchestrator/timeline/route.ts"
 							}
 						]
 					}
@@ -1649,12 +1649,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/capture",
-						"source": "app/api/personal-graph/capture/route.ts:6",
+						"source": "app/api/personal-graph/capture/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/capture",
-								"source": "app/api/personal-graph/capture/route.ts:16"
+								"source": "app/api/personal-graph/capture/route.ts"
 							}
 						]
 					}
@@ -1668,12 +1668,12 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/explorer",
-						"source": "app/api/personal-graph/explorer/route.ts:3",
+						"source": "app/api/personal-graph/explorer/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/explorer",
-								"source": "app/api/personal-graph/explorer/route.ts:4"
+								"source": "app/api/personal-graph/explorer/route.ts"
 							}
 						]
 					}
@@ -1687,12 +1687,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/ingest",
-						"source": "app/api/personal-graph/ingest/route.ts:6",
+						"source": "app/api/personal-graph/ingest/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/ingest",
-								"source": "app/api/personal-graph/ingest/route.ts:18"
+								"source": "app/api/personal-graph/ingest/route.ts"
 							}
 						]
 					}
@@ -1706,12 +1706,12 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/log",
-						"source": "app/api/personal-graph/log/route.ts:3",
+						"source": "app/api/personal-graph/log/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/log",
-								"source": "app/api/personal-graph/log/route.ts:4"
+								"source": "app/api/personal-graph/log/route.ts"
 							}
 						]
 					}
@@ -1725,24 +1725,24 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "app/api/personal-graph/page/[...slug]/route.ts:10",
+						"source": "app/api/personal-graph/page/[...slug]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/page/*slug",
-								"source": "app/api/personal-graph/page/[...slug]/route.ts:13"
+								"source": "app/api/personal-graph/page/[...slug]/route.ts"
 							}
 						]
 					},
 					{
 						"method": "PUT",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "app/api/personal-graph/page/[...slug]/route.ts:19",
+						"source": "app/api/personal-graph/page/[...slug]/route.ts",
 						"targets": [
 							{
 								"method": "PUT",
 								"path": "/api/personal-graph/page/*slug",
-								"source": "app/api/personal-graph/page/[...slug]/route.ts:31"
+								"source": "app/api/personal-graph/page/[...slug]/route.ts"
 							}
 						]
 					}
@@ -1756,12 +1756,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/raw",
-						"source": "app/api/personal-graph/raw/route.ts:7",
+						"source": "app/api/personal-graph/raw/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/raw",
-								"source": "app/api/personal-graph/raw/route.ts:16"
+								"source": "app/api/personal-graph/raw/route.ts"
 							}
 						]
 					}
@@ -1775,12 +1775,12 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/search",
-						"source": "app/api/personal-graph/search/route.ts:4",
+						"source": "app/api/personal-graph/search/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/search",
-								"source": "app/api/personal-graph/search/route.ts:7"
+								"source": "app/api/personal-graph/search/route.ts"
 							}
 						]
 					}
@@ -1794,24 +1794,24 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/source",
-						"source": "app/api/personal-graph/source/route.ts:5",
+						"source": "app/api/personal-graph/source/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/source",
-								"source": "app/api/personal-graph/source/route.ts:6"
+								"source": "app/api/personal-graph/source/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/source",
-						"source": "app/api/personal-graph/source/route.ts:12",
+						"source": "app/api/personal-graph/source/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/source",
-								"source": "app/api/personal-graph/source/route.ts:26"
+								"source": "app/api/personal-graph/source/route.ts"
 							}
 						]
 					}
@@ -1825,12 +1825,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/summarize",
-						"source": "app/api/personal-graph/summarize/route.ts:6",
+						"source": "app/api/personal-graph/summarize/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/summarize",
-								"source": "app/api/personal-graph/summarize/route.ts:16"
+								"source": "app/api/personal-graph/summarize/route.ts"
 							}
 						]
 					}
@@ -1844,12 +1844,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/chat",
-						"source": "app/api/personal-graph/twg/chat/route.ts:5",
+						"source": "app/api/personal-graph/twg/chat/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/chat",
-								"source": "app/api/personal-graph/twg/chat/route.ts:14"
+								"source": "app/api/personal-graph/twg/chat/route.ts"
 							}
 						]
 					}
@@ -1863,12 +1863,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/expand",
-						"source": "app/api/personal-graph/twg/expand/route.ts:6",
+						"source": "app/api/personal-graph/twg/expand/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/expand",
-								"source": "app/api/personal-graph/twg/expand/route.ts:20"
+								"source": "app/api/personal-graph/twg/expand/route.ts"
 							}
 						]
 					}
@@ -1882,12 +1882,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/refresh",
-						"source": "app/api/personal-graph/twg/refresh/route.ts:4",
+						"source": "app/api/personal-graph/twg/refresh/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/refresh",
-								"source": "app/api/personal-graph/twg/refresh/route.ts:11"
+								"source": "app/api/personal-graph/twg/refresh/route.ts"
 							}
 						]
 					}
@@ -1901,12 +1901,12 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/unprocessed-count",
-						"source": "app/api/personal-graph/unprocessed-count/route.ts:3",
+						"source": "app/api/personal-graph/unprocessed-count/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/unprocessed-count",
-								"source": "app/api/personal-graph/unprocessed-count/route.ts:4"
+								"source": "app/api/personal-graph/unprocessed-count/route.ts"
 							}
 						]
 					}
@@ -1920,12 +1920,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/reset",
-						"source": "app/api/personal-graph/vault/reset/route.ts:4",
+						"source": "app/api/personal-graph/vault/reset/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/vault/reset",
-								"source": "app/api/personal-graph/vault/reset/route.ts:10"
+								"source": "app/api/personal-graph/vault/reset/route.ts"
 							}
 						]
 					}
@@ -1939,12 +1939,12 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/vault",
-						"source": "app/api/personal-graph/vault/route.ts:3",
+						"source": "app/api/personal-graph/vault/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/vault",
-								"source": "app/api/personal-graph/vault/route.ts:4"
+								"source": "app/api/personal-graph/vault/route.ts"
 							}
 						]
 					}
@@ -1958,12 +1958,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/select",
-						"source": "app/api/personal-graph/vault/select/route.ts:4",
+						"source": "app/api/personal-graph/vault/select/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/vault/select",
-								"source": "app/api/personal-graph/vault/select/route.ts:10"
+								"source": "app/api/personal-graph/vault/select/route.ts"
 							}
 						]
 					}
@@ -1977,12 +1977,12 @@
 					{
 						"method": "POST",
 						"path": "/api/plan-title",
-						"source": "app/api/plan-title/route.ts:5",
+						"source": "app/api/plan-title/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/plan-title",
-								"source": "app/api/plan-title/route.ts:9"
+								"source": "app/api/plan-title/route.ts"
 							}
 						]
 					}
@@ -1996,12 +1996,12 @@
 					{
 						"method": "GET",
 						"path": "/api/realtime/audio-conversation-token",
-						"source": "app/api/realtime/audio-conversation-token/route.ts:3",
+						"source": "app/api/realtime/audio-conversation-token/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/realtime/audio-conversation-token",
-								"source": "app/api/realtime/audio-conversation-token/route.ts:4"
+								"source": "app/api/realtime/audio-conversation-token/route.ts"
 							}
 						]
 					}
@@ -2015,7 +2015,7 @@
 					{
 						"method": "GET",
 						"path": "/api/realtime/ws-url",
-						"source": "app/api/realtime/ws-url/route.ts:12",
+						"source": "app/api/realtime/ws-url/route.ts",
 						"targets": []
 					}
 				]
@@ -2028,12 +2028,12 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/background-streams",
-						"source": "app/api/rovo/background-streams/route.ts:3",
+						"source": "app/api/rovo/background-streams/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/background-streams",
-								"source": "app/api/rovo/background-streams/route.ts:4"
+								"source": "app/api/rovo/background-streams/route.ts"
 							}
 						]
 					}
@@ -2047,12 +2047,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/cancel-deferred-tool",
-						"source": "app/api/rovo/cancel-deferred-tool/route.ts:4",
+						"source": "app/api/rovo/cancel-deferred-tool/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/cancel-deferred-tool",
-								"source": "app/api/rovo/cancel-deferred-tool/route.ts:15"
+								"source": "app/api/rovo/cancel-deferred-tool/route.ts"
 							}
 						]
 					}
@@ -2066,12 +2066,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/chat",
-						"source": "app/api/rovo/chat/route.ts:5",
+						"source": "app/api/rovo/chat/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/chat",
-								"source": "app/api/rovo/chat/route.ts:11"
+								"source": "app/api/rovo/chat/route.ts"
 							}
 						]
 					}
@@ -2085,12 +2085,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/detach",
-						"source": "app/api/rovo/detach/route.ts:5",
+						"source": "app/api/rovo/detach/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/detach",
-								"source": "app/api/rovo/detach/route.ts:11"
+								"source": "app/api/rovo/detach/route.ts"
 							}
 						]
 					}
@@ -2104,36 +2104,36 @@
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/documents",
-						"source": "app/api/rovo/documents/route.ts:47",
+						"source": "app/api/rovo/documents/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/rovo/documents",
-								"source": "app/api/rovo/documents/route.ts:50"
+								"source": "app/api/rovo/documents/route.ts"
 							}
 						]
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/documents",
-						"source": "app/api/rovo/documents/route.ts:9",
+						"source": "app/api/rovo/documents/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/documents",
-								"source": "app/api/rovo/documents/route.ts:21"
+								"source": "app/api/rovo/documents/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/documents",
-						"source": "app/api/rovo/documents/route.ts:32",
+						"source": "app/api/rovo/documents/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/documents",
-								"source": "app/api/rovo/documents/route.ts:40"
+								"source": "app/api/rovo/documents/route.ts"
 							}
 						]
 					}
@@ -2147,12 +2147,12 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/files/:fileId",
-						"source": "app/api/rovo/files/[fileId]/route.ts:8",
+						"source": "app/api/rovo/files/[fileId]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/files/:fileId",
-								"source": "app/api/rovo/files/[fileId]/route.ts:10"
+								"source": "app/api/rovo/files/[fileId]/route.ts"
 							}
 						]
 					}
@@ -2166,12 +2166,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/files/upload",
-						"source": "app/api/rovo/files/upload/route.ts:5",
+						"source": "app/api/rovo/files/upload/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/files/upload",
-								"source": "app/api/rovo/files/upload/route.ts:11"
+								"source": "app/api/rovo/files/upload/route.ts"
 							}
 						]
 					}
@@ -2185,12 +2185,12 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/generated-media",
-						"source": "app/api/rovo/generated-media/route.ts:4",
+						"source": "app/api/rovo/generated-media/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/generated-media",
-								"source": "app/api/rovo/generated-media/route.ts:10"
+								"source": "app/api/rovo/generated-media/route.ts"
 							}
 						]
 					}
@@ -2204,24 +2204,24 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/messages",
-						"source": "app/api/rovo/messages/route.ts:6",
+						"source": "app/api/rovo/messages/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/messages",
-								"source": "app/api/rovo/messages/route.ts:9"
+								"source": "app/api/rovo/messages/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/messages",
-						"source": "app/api/rovo/messages/route.ts:18",
+						"source": "app/api/rovo/messages/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/messages",
-								"source": "app/api/rovo/messages/route.ts:24"
+								"source": "app/api/rovo/messages/route.ts"
 							}
 						]
 					}
@@ -2235,12 +2235,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/cancel",
-						"source": "app/api/rovo/runs/[threadId]/cancel/route.ts:7",
+						"source": "app/api/rovo/runs/[threadId]/cancel/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/runs/:threadId/cancel",
-								"source": "app/api/rovo/runs/[threadId]/cancel/route.ts:12"
+								"source": "app/api/rovo/runs/[threadId]/cancel/route.ts"
 							}
 						]
 					}
@@ -2254,12 +2254,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/detach",
-						"source": "app/api/rovo/runs/[threadId]/detach/route.ts:7",
+						"source": "app/api/rovo/runs/[threadId]/detach/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/runs/:threadId/detach",
-								"source": "app/api/rovo/runs/[threadId]/detach/route.ts:12"
+								"source": "app/api/rovo/runs/[threadId]/detach/route.ts"
 							}
 						]
 					}
@@ -2273,12 +2273,12 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/runs/:threadId/stream",
-						"source": "app/api/rovo/runs/[threadId]/stream/route.ts:7",
+						"source": "app/api/rovo/runs/[threadId]/stream/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/runs/:threadId/stream",
-								"source": "app/api/rovo/runs/[threadId]/stream/route.ts:12"
+								"source": "app/api/rovo/runs/[threadId]/stream/route.ts"
 							}
 						]
 					}
@@ -2292,12 +2292,12 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/suggestions",
-						"source": "app/api/rovo/suggestions/route.ts:6",
+						"source": "app/api/rovo/suggestions/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/suggestions",
-								"source": "app/api/rovo/suggestions/route.ts:12"
+								"source": "app/api/rovo/suggestions/route.ts"
 							}
 						]
 					}
@@ -2311,36 +2311,36 @@
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "app/api/rovo/threads/[threadId]/route.ts:35",
+						"source": "app/api/rovo/threads/[threadId]/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/rovo/threads/:threadId",
-								"source": "app/api/rovo/threads/[threadId]/route.ts:37"
+								"source": "app/api/rovo/threads/[threadId]/route.ts"
 							}
 						]
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "app/api/rovo/threads/[threadId]/route.ts:10",
+						"source": "app/api/rovo/threads/[threadId]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/threads/:threadId",
-								"source": "app/api/rovo/threads/[threadId]/route.ts:12"
+								"source": "app/api/rovo/threads/[threadId]/route.ts"
 							}
 						]
 					},
 					{
 						"method": "PUT",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "app/api/rovo/threads/[threadId]/route.ts:21",
+						"source": "app/api/rovo/threads/[threadId]/route.ts",
 						"targets": [
 							{
 								"method": "PUT",
 								"path": "/api/rovo/threads/:threadId",
-								"source": "app/api/rovo/threads/[threadId]/route.ts:28"
+								"source": "app/api/rovo/threads/[threadId]/route.ts"
 							}
 						]
 					}
@@ -2354,36 +2354,36 @@
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads",
-						"source": "app/api/rovo/threads/route.ts:31",
+						"source": "app/api/rovo/threads/route.ts",
 						"targets": [
 							{
 								"method": "DELETE",
 								"path": "/api/rovo/threads",
-								"source": "app/api/rovo/threads/route.ts:34"
+								"source": "app/api/rovo/threads/route.ts"
 							}
 						]
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads",
-						"source": "app/api/rovo/threads/route.ts:6",
+						"source": "app/api/rovo/threads/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/threads",
-								"source": "app/api/rovo/threads/route.ts:9"
+								"source": "app/api/rovo/threads/route.ts"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads",
-						"source": "app/api/rovo/threads/route.ts:18",
+						"source": "app/api/rovo/threads/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/rovo/threads",
-								"source": "app/api/rovo/threads/route.ts:24"
+								"source": "app/api/rovo/threads/route.ts"
 							}
 						]
 					}
@@ -2397,24 +2397,24 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/votes",
-						"source": "app/api/rovo/votes/route.ts:6",
+						"source": "app/api/rovo/votes/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/rovo/votes",
-								"source": "app/api/rovo/votes/route.ts:9"
+								"source": "app/api/rovo/votes/route.ts"
 							}
 						]
 					},
 					{
 						"method": "PATCH",
 						"path": "/api/rovo/votes",
-						"source": "app/api/rovo/votes/route.ts:18",
+						"source": "app/api/rovo/votes/route.ts",
 						"targets": [
 							{
 								"method": "PATCH",
 								"path": "/api/rovo/votes",
-								"source": "app/api/rovo/votes/route.ts:24"
+								"source": "app/api/rovo/votes/route.ts"
 							}
 						]
 					}
@@ -2428,12 +2428,12 @@
 					{
 						"method": "GET",
 						"path": "/api/sessions/search",
-						"source": "app/api/sessions/search/route.ts:4",
+						"source": "app/api/sessions/search/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/sessions/search",
-								"source": "app/api/sessions/search/route.ts:16"
+								"source": "app/api/sessions/search/route.ts"
 							}
 						]
 					}
@@ -2447,12 +2447,12 @@
 					{
 						"method": "POST",
 						"path": "/api/sound-generation",
-						"source": "app/api/sound-generation/route.ts:5",
+						"source": "app/api/sound-generation/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/sound-generation",
-								"source": "app/api/sound-generation/route.ts:9"
+								"source": "app/api/sound-generation/route.ts"
 							}
 						]
 					}
@@ -2466,12 +2466,12 @@
 					{
 						"method": "POST",
 						"path": "/api/speech-transcription",
-						"source": "app/api/speech-transcription/route.ts:5",
+						"source": "app/api/speech-transcription/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/speech-transcription",
-								"source": "app/api/speech-transcription/route.ts:9"
+								"source": "app/api/speech-transcription/route.ts"
 							}
 						]
 					}
@@ -2485,7 +2485,7 @@
 					{
 						"method": "POST",
 						"path": "/api/sprint-board/tasks",
-						"source": "app/api/sprint-board/tasks/route.ts:20",
+						"source": "app/api/sprint-board/tasks/route.ts",
 						"targets": []
 					}
 				]
@@ -2498,12 +2498,12 @@
 					{
 						"method": "POST",
 						"path": "/api/standup",
-						"source": "app/api/standup/route.ts:5",
+						"source": "app/api/standup/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/standup",
-								"source": "app/api/standup/route.ts:9"
+								"source": "app/api/standup/route.ts"
 							}
 						]
 					}
@@ -2517,12 +2517,12 @@
 					{
 						"method": "GET",
 						"path": "/api/status",
-						"source": "app/api/status/route.ts:3",
+						"source": "app/api/status/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/status",
-								"source": "app/api/status/route.ts:4"
+								"source": "app/api/status/route.ts"
 							}
 						]
 					}
@@ -2536,12 +2536,12 @@
 					{
 						"method": "GET",
 						"path": "/api/status/rovo",
-						"source": "app/api/status/rovo/route.ts:3",
+						"source": "app/api/status/rovo/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/status/rovo",
-								"source": "app/api/status/rovo/route.ts:4"
+								"source": "app/api/status/rovo/route.ts"
 							}
 						]
 					}
@@ -2555,12 +2555,12 @@
 					{
 						"method": "POST",
 						"path": "/api/studio/agent-data-flow",
-						"source": "app/api/studio/agent-data-flow/route.ts:6",
+						"source": "app/api/studio/agent-data-flow/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/studio/agent-data-flow",
-								"source": "app/api/studio/agent-data-flow/route.ts:12"
+								"source": "app/api/studio/agent-data-flow/route.ts"
 							}
 						]
 					}
@@ -2574,12 +2574,12 @@
 					{
 						"method": "POST",
 						"path": "/api/ticket-classify",
-						"source": "app/api/ticket-classify/route.ts:5",
+						"source": "app/api/ticket-classify/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/ticket-classify",
-								"source": "app/api/ticket-classify/route.ts:9"
+								"source": "app/api/ticket-classify/route.ts"
 							}
 						]
 					}
@@ -2593,12 +2593,12 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "app/api/vpk-html/[...assetPath]/route.ts:10",
+						"source": "app/api/vpk-html/[...assetPath]/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/vpk-html/*assetPath",
-								"source": "app/api/vpk-html/[...assetPath]/route.ts:15"
+								"source": "app/api/vpk-html/[...assetPath]/route.ts"
 							}
 						]
 					}
@@ -2612,12 +2612,12 @@
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "app/api/vpk-html/apply-tokens/route.ts:6",
+						"source": "app/api/vpk-html/apply-tokens/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/vpk-html/apply-tokens",
-								"source": "app/api/vpk-html/apply-tokens/route.ts:17"
+								"source": "app/api/vpk-html/apply-tokens/route.ts"
 							}
 						]
 					}
@@ -2631,24 +2631,24 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "app/api/vpk-html/notes/route.ts:6",
+						"source": "app/api/vpk-html/notes/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/vpk-html/notes",
-								"source": "app/api/vpk-html/notes/route.ts:9"
+								"source": "app/api/vpk-html/notes/route.ts"
 							}
 						]
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "app/api/vpk-html/notes/route.ts:15",
+						"source": "app/api/vpk-html/notes/route.ts",
 						"targets": [
 							{
 								"method": "PUT",
 								"path": "/api/vpk-html/notes",
-								"source": "app/api/vpk-html/notes/route.ts:28"
+								"source": "app/api/vpk-html/notes/route.ts"
 							}
 						]
 					}
@@ -2662,12 +2662,12 @@
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "app/api/vpk-html/publish-gist/route.ts:6",
+						"source": "app/api/vpk-html/publish-gist/route.ts",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/vpk-html/publish-gist",
-								"source": "app/api/vpk-html/publish-gist/route.ts:17"
+								"source": "app/api/vpk-html/publish-gist/route.ts"
 							}
 						]
 					}
@@ -2681,12 +2681,12 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "app/api/vpk-html/route.ts:4",
+						"source": "app/api/vpk-html/route.ts",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/vpk-html",
-								"source": "app/api/vpk-html/route.ts:7"
+								"source": "app/api/vpk-html/route.ts"
 							}
 						]
 					}
