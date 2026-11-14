@@ -6,24 +6,32 @@ import { pinVersion, readPinnedVersions, vpkGrabTarballUrl } from "./update-vpk-
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("the react-grab dependency and the loaded script are the same vpk-grab release", () => {
-	const { dependency, loaderVersion } = readPinnedVersions({
+test("the react-grab dependency, its allowBuilds entry and the loaded script are the same vpk-grab release", () => {
+	const { dependency, loaderVersion, allowBuildsKey } = readPinnedVersions({
 		packageJsonText: read("../package.json"),
 		loaderText: read("../components/utils/dev-react-grab.ts"),
+		workspaceText: read("../pnpm-workspace.yaml"),
 	});
 	assert.ok(loaderVersion, "dev-react-grab.ts declares VPK_GRAB_VERSION");
 	assert.equal(dependency, vpkGrabTarballUrl(loaderVersion));
+	// Without a matching key, pnpm 11 fails every install with ERR_PNPM_IGNORED_BUILDS.
+	assert.equal(allowBuildsKey, vpkGrabTarballUrl(loaderVersion));
 });
 
 test("pinVersion moves the dependency and the loader together", () => {
 	const current = {
 		packageJsonText: `{ "dependencies": { "react-grab": "${vpkGrabTarballUrl("0.2.0-vpk.1")}" } }`,
 		loaderText: 'export const VPK_GRAB_VERSION = "0.2.0-vpk.1";\n',
+		workspaceText: `allowBuilds:\n  react-grab@${vpkGrabTarballUrl("0.2.0-vpk.1")}: false\n  sharp: false\n`,
 	};
 	const next = pinVersion(current, "0.3.0-vpk.1");
-	assert.deepEqual(readPinnedVersions(next), { dependency: vpkGrabTarballUrl("0.3.0-vpk.1"), loaderVersion: "0.3.0-vpk.1" });
+	assert.deepEqual(readPinnedVersions(next), {
+		dependency: vpkGrabTarballUrl("0.3.0-vpk.1"),
+		loaderVersion: "0.3.0-vpk.1",
+		allowBuildsKey: vpkGrabTarballUrl("0.3.0-vpk.1"),
+	});
 });
 
 test("pinVersion refuses files it cannot find the pins in", () => {
-	assert.throws(() => pinVersion({ packageJsonText: "{}", loaderText: 'export const VPK_GRAB_VERSION = "1";' }, "2"), /no react-grab dependency/u);
+	assert.throws(() => pinVersion({ packageJsonText: "{}", loaderText: 'export const VPK_GRAB_VERSION = "1";', workspaceText: "" }, "2"), /no react-grab dependency/u);
 });

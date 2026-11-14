@@ -126,7 +126,8 @@ allowBuilds:
   msw: false
   node-llama-cpp: false
   protobufjs: true
-  react-grab: true
+  # vpk-grab ships no install script; update:vpk-grab moves this key with the release.
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz: false
   sharp: false
   tree-sitter-go: true
   tree-sitter-javascript: true
