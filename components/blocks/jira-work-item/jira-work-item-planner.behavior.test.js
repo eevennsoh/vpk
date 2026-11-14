@@ -112,26 +112,55 @@ test("collapsing the metadata panel locks the toggle and title actions until the
 	await view.unmount();
 });
 
-test("hovering the collapsed metadata toggle previews the rail; pressing it docks the panel instead", async (context) => {
+function metadataPreview() {
+	return document.querySelector('[aria-label="Work item details preview"]');
+}
+
+// Hover is a pointer path happy-dom does not synthesise, so dispatch the events a mouse sends.
+async function hover(element) {
+	await React.act(async () => {
+		for (const type of ["pointerover", "pointerenter", "mouseover", "mouseenter", "pointermove", "mousemove"]) {
+			const init = { bubbles: !type.endsWith("enter"), pointerType: "mouse" };
+			element.dispatchEvent(type.startsWith("pointer") && typeof PointerEvent === "function" ? new PointerEvent(type, init) : new MouseEvent(type, init));
+		}
+	});
+}
+
+// The popover's open delay runs on the mocked timers, so advance mocked time until the condition
+// holds (bounded) instead of sleeping real time.
+async function tickUntil(context, condition, maxMs = 2_000) {
+	for (let elapsed = 0; elapsed < maxMs && !condition(); elapsed += 20) {
+		await React.act(async () => {
+			context.mock.timers.tick(20);
+		});
+	}
+	return condition();
+}
+
+test("hovering the collapsed metadata toggle previews the rail", async (context) => {
 	context.mock.timers.enable({ apis: ["setTimeout"] });
 	const view = await renderWorkItem("filled");
 	await view.click(metadataToggle(view));
-	await tick(context, 400);
-	const tabs = () => [...document.querySelectorAll('[role="tab"]')].filter((tab) => tab.textContent === "Details").length;
-	const docked = tabs();
+	assert.equal(await tickUntil(context, () => accessibleName(metadataToggle(view)) === "Show metadata panel"), true, "the panel collapses");
+	assert.equal(metadataPreview() === null, true, "no preview before hovering");
 
-	const toggle = metadataToggle(view);
-	await React.act(async () => {
-		for (const type of ["pointerenter", "mouseenter", "pointerover", "mouseover", "pointermove", "mousemove"]) {
-			toggle.dispatchEvent(new MouseEvent(type, { bubbles: type.endsWith("over") || type.endsWith("move") }));
-		}
-	});
-	await tick(context, 300);
-	assert.equal(tabs(), docked + 1, "hover opens a preview of the metadata rail");
+	await hover(metadataToggle(view));
+	assert.equal(await tickUntil(context, () => metadataPreview() !== null), true, "hover opens the preview after its delay");
+	const previewTabs = [...metadataPreview().querySelectorAll('[role="tab"]')].map((tab) => tab.textContent);
+	assert.equal(previewTabs.includes("Details"), true, "the preview is the metadata rail");
+	await view.unmount();
+});
+
+test("pressing the collapsed metadata toggle docks the panel instead of previewing it", async (context) => {
+	context.mock.timers.enable({ apis: ["setTimeout"] });
+	const view = await renderWorkItem("filled");
+	await view.click(metadataToggle(view));
+	assert.equal(await tickUntil(context, () => accessibleName(metadataToggle(view)) === "Show metadata panel"), true);
 
 	await view.click(metadataToggle(view));
-	await tick(context, 400);
-	assert.equal(accessibleName(metadataToggle(view)), "Hide metadata panel", "a press docks the panel");
+	assert.equal(await tickUntil(context, () => accessibleName(metadataToggle(view)) === "Hide metadata panel"), true, "a press docks the panel");
+	assert.equal(metadataToggle(view).getAttribute("aria-expanded"), "true");
+	assert.equal(metadataPreview() === null, true, "a press never opens the hover preview");
 	await view.unmount();
 });
 
