@@ -102,7 +102,7 @@ export default function ChatHeader({
 								<DropdownMenuGroup>
 									{isStreaming ? (
 										<DropdownMenuItem
-											elemBefore={<span aria-hidden className="size-3 rounded-[2px] bg-current" />}
+											elemBefore={<span aria-hidden className="size-3 rounded-xs bg-current" />}
 											onClick={onStop}
 										>
 											Cancel

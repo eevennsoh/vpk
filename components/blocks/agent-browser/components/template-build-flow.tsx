@@ -203,7 +203,7 @@ export function TemplateBuildFlow({
 		return (
 			<section
 				aria-label={`Build ${agent.name}`}
-				className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
+				className="flex h-[515px] w-full flex-col rounded-2xl border border-border bg-surface-raised p-5"
 			>
 				<div className="flex min-h-0 flex-1 flex-col">
 					<p style={{ font: token("font.heading.small") }} className="text-text">
@@ -265,7 +265,7 @@ export function TemplateBuildFlow({
 	return (
 		<section
 			aria-label={`Connect apps for ${agent.name}`}
-			className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
+			className="flex h-[515px] w-full flex-col rounded-2xl border border-border bg-surface-raised p-5"
 		>
 			<div className="flex min-h-0 flex-1 flex-col">
 				<p style={{ font: token("font.heading.small") }} className="text-text">

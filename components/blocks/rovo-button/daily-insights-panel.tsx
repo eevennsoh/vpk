@@ -47,13 +47,12 @@ function FloatingRovoButtonDailyInsightsRowBody({ row }: Readonly<{ row: Floatin
 	return (
 		<span className={DAILY_INSIGHTS_ROW_CLASSES.body}>
 			<span className={DAILY_INSIGHTS_ROW_CLASSES.textColumn}>
-				{/* A tracked uppercase eyebrow, echoing Pulse's own `PROJECT_LABEL`
-				    (components/blocks/jira-kanban/experimental/pulse/experimental-pulse.tsx:79)
-				    — this card summarises Pulse, so the meta line adopts the voice of
-				    the article the reader is about to open. Deliberate echo, not a
-				    one-off. The separation from the header subtitle is categorical
-				    rather than dimensional: both are 12px, but one is a tracked label
-				    and the other is sentence-case chrome prose. */}
+				{/* 16px against the 12px meta line: the headlines own the content
+				    layer, and the wider glyphs push more of each sentence onto the
+				    second line so the right edge reads less ragged at the 295px
+				    measure. */}
+				<span className={DAILY_INSIGHTS_ROW_CLASSES.title}>{row.title}</span>
+				{/* A sentence-case byline under the headline, not an eyebrow above it. */}
 				<span className={DAILY_INSIGHTS_ROW_CLASSES.metaLine}>
 					<span className={DAILY_INSIGHTS_ROW_CLASSES.chapterLabel}>{row.chapterLabel}</span>
 					<span aria-hidden="true" className={DAILY_INSIGHTS_ROW_CLASSES.metaSeparator}>
@@ -61,11 +60,6 @@ function FloatingRovoButtonDailyInsightsRowBody({ row }: Readonly<{ row: Floatin
 					</span>
 					<span className={DAILY_INSIGHTS_ROW_CLASSES.timeLabel}>{row.timeLabel}</span>
 				</span>
-				{/* 16px against the 12px meta line: the headlines own the content
-				    layer, and the wider glyphs push more of each sentence onto the
-				    second line so the right edge reads less ragged at the 295px
-				    measure. */}
-				<span className={DAILY_INSIGHTS_ROW_CLASSES.title}>{row.title}</span>
 			</span>
 			{/* Persistent rather than hover-revealed: a cue that only appears on hover
 			    still leaves the row looking inert at rest, which is the thing it is
@@ -194,9 +188,8 @@ export function FloatingRovoButtonDailyInsightsPanelInner({
 			>
 				<div className="flex min-w-0 flex-col gap-0.5">
 					{/* 20 / 16 / 12 size ramp across title, row headline, and the two 12px
-					    lines. The subtitle and the row meta share a size on purpose: they
-					    are told apart by kind, not by scale — sentence-case chrome prose
-					    here, a tracked uppercase label there. */}
+					    lines. The subtitle and the row byline share a size on purpose:
+					    position tells them apart, not scale. */}
 					<h2 id={titleId} className="min-w-0 truncate text-text-inverse" style={{ font: token("font.heading.medium") }}>
 						{countLabel}
 					</h2>

@@ -41,10 +41,10 @@ test("List.Cell applies padding, the row-wide hover highlight, and edge corner r
 		/px-2 transition-colors group-hover\/row:bg-bg-neutral-subtle-hovered/,
 	);
 	// Edge cells round the outer corners on the first/last rows.
-	assert.match(SOURCE, /edge === "leading" && isFirst && "rounded-tl-\[12px\]"/);
-	assert.match(SOURCE, /edge === "leading" && isLast && "rounded-bl-\[12px\]"/);
-	assert.match(SOURCE, /edge === "trailing" && isFirst && "rounded-tr-\[12px\]"/);
-	assert.match(SOURCE, /edge === "trailing" && isLast && "rounded-br-\[12px\]"/);
+	assert.match(SOURCE, /edge === "leading" && isFirst && "rounded-tl-xl"/);
+	assert.match(SOURCE, /edge === "leading" && isLast && "rounded-bl-xl"/);
+	assert.match(SOURCE, /edge === "trailing" && isFirst && "rounded-tr-xl"/);
+	assert.match(SOURCE, /edge === "trailing" && isLast && "rounded-br-xl"/);
 });
 
 test("List.Table supplies row position so cells can round outer corners", () => {

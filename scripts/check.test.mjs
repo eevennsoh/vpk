@@ -105,7 +105,7 @@ test("problems are reported as file:line rule message fix-command", () => {
 	assert.deepEqual(unit.map(formatProblem), ["lib/a.test.js:7  node:test  adds numbers  fix: node scripts/run-js-unit-tests.mjs --file lib/a.test.js"]);
 	assert.equal(guardFixCommand("verify:repo-map"), "pnpm run fix:generated (then rerun: pnpm run verify:repo-map)");
 	assert.equal(guardFixCommand("verify:lazy-load"), "pnpm run verify:lazy-load");
-	assert.match(guardFixCommand("verify:unused-code"), /use or delete .*pnpm run fix:generated --only unused-code$/u);
+	assert.match(guardFixCommand("verify:unused-code"), /use or delete .*knip\.jsonc `entry`.*pnpm run fix:generated --only unused-code$/u);
 });
 
 test("the summary line prefers the failing test or error over test-runner chatter", () => {

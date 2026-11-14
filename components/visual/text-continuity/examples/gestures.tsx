@@ -115,7 +115,7 @@ export function HoldToConfirm() {
 		<button
 			type="button"
 			className={cn(
-				"relative overflow-hidden rounded-[14px] bg-surface-raised px-6 py-3 touch-none select-none hover:bg-surface-raised-hovered",
+				"relative overflow-hidden rounded-xl bg-surface-raised px-6 py-3 touch-none select-none hover:bg-surface-raised-hovered",
 				FOCUS_RING,
 			)}
 			ref={buttonRef}
@@ -459,7 +459,7 @@ export function TrailingTag() {
 
 	return (
 		<div
-			className="relative grid h-36 w-full max-w-88 cursor-crosshair touch-none grid-cols-3 grid-rows-2 overflow-hidden rounded-[14px] border border-border bg-surface-sunken"
+			className="relative grid h-36 w-full max-w-88 cursor-crosshair touch-none grid-cols-3 grid-rows-2 overflow-hidden rounded-xl border border-border bg-surface-sunken"
 			ref={fieldRef}
 			onPointerMove={follow}
 			onPointerDown={follow}
@@ -476,7 +476,7 @@ export function TrailingTag() {
 
 			{/* Hung from the point it is following, so a sideways move swings it. */}
 			<div
-				className="pointer-events-none absolute left-0 top-0 rounded-[10px] bg-primary px-2.5 py-1.5 [transform-origin:50%_-8px] before:absolute before:bottom-full before:left-1/2 before:h-2 before:w-px before:bg-primary before:content-['']"
+				className="pointer-events-none absolute left-0 top-0 rounded-lg bg-primary px-2.5 py-1.5 [transform-origin:50%_-8px] before:absolute before:bottom-full before:left-1/2 before:h-2 before:w-px before:bg-primary before:content-['']"
 				ref={tagRef}
 			>
 				<TextContinuity className="text-[0.8125rem] font-bold text-primary-foreground">{ZONES[zone]!}</TextContinuity>

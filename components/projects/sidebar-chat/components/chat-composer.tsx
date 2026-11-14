@@ -1,5 +1,6 @@
 "use client";
 
+import { preloadMessageMarkdownForReply } from "@/components/projects/rovo-core/hooks/use-preload-message-markdown";
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
@@ -318,7 +319,12 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							mentionSources={mentionSources}
 							onPrefillMentionConsumed={onPrefillMentionConsumed}
 							prefillMentionRequest={prefillMentionRequest}
-							onChange={(event) => onPromptChange(event.currentTarget.value)}
+							onChange={(event) => {
+								if (event.currentTarget.value) {
+									preloadMessageMarkdownForReply();
+								}
+								onPromptChange(event.currentTarget.value);
+							}}
 							onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 							placeholder={placeholder}

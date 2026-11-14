@@ -148,7 +148,7 @@ export function ApprovalCard({ onSelect, onDismiss, isSubmitting = false }: Read
 								>
 									<span
 										className={cn(
-											"inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border bg-surface text-sm leading-5 font-medium",
+											"inline-flex size-5 shrink-0 items-center justify-center rounded-sm border bg-surface text-sm leading-5 font-medium",
 											isSelected ? "border-border-selected text-text-selected" : "border-border text-text",
 										)}
 									>

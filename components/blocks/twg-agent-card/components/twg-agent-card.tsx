@@ -153,14 +153,14 @@ export function TWGAgentCard({
 	return (
 		<AgentCardShell
 			className={cn(
-				"h-[553px] w-[368px] max-w-[368px] gap-0 overflow-hidden rounded-[16px] bg-surface p-0 after:rounded-[16px] [&_[data-slot=agent-card-select]]:rounded-[16px]",
+				"h-[553px] w-[368px] max-w-[368px] gap-0 overflow-hidden rounded-2xl bg-surface p-0 after:rounded-2xl [&_[data-slot=agent-card-select]]:rounded-2xl",
 				className,
 			)}
 			onSelect={onSelect}
 			selectLabel={selectLabel}
 		>
 			<div
-				className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[16px]"
+				className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl"
 				data-slot="twg-agent-card"
 			>
 				<div className="relative z-10 flex shrink-0 items-center gap-3 px-4 pt-4">

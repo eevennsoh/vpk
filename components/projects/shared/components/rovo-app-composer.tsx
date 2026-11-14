@@ -15,6 +15,7 @@ import {
 	QueueList,
 } from "@/components/ui-custom/queue";
 import { textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
+import { preloadMessageMarkdownForReply } from "@/components/projects/rovo-core/hooks/use-preload-message-markdown";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import ChatContextBar from "@/components/projects/shared/components/chat-context-bar";
@@ -303,8 +304,15 @@ function RovoAppComposerInner({
 }
 
 export function RovoAppComposer(props: Readonly<RovoAppComposerProps>) {
+	const { onTextChange } = props;
+	const handleInputChange = (value: string) => {
+		if (value) {
+			preloadMessageMarkdownForReply();
+		}
+		onTextChange?.(value);
+	};
 	return (
-		<PromptInputProvider onInputChange={props.onTextChange}>
+		<PromptInputProvider onInputChange={handleInputChange}>
 			<RovoAppComposerInner {...props} />
 		</PromptInputProvider>
 	);

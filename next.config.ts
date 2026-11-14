@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
 		// list (the older framer-motion was); date-fns benefits too. Preserves
 		// types and autocomplete with zero source changes.
 		optimizePackageImports: ["recharts", "motion/react", "date-fns"],
+		// The custom `webpack` hook below would otherwise switch the build to the main process;
+		// the build worker keeps webpack's memory out of it, as before the hook existed.
+		webpackBuildWorker: true,
 	},
 
 	turbopack: {
@@ -53,6 +56,20 @@ const nextConfig: NextConfig = {
 	...(process.env.NEXT_OUTPUT === "export" && {
 		output: "export",
 	}),
+	// Button and Spinner are imported by nearly every client entry. Left to the default split,
+	// they land in whichever shared chunk happens to group them, and moving the markdown runtime
+	// out of first load (C-8g) scattered copies of them into app/layout and route chunks. One
+	// named chunk keeps a single copy that every route shares.
+	webpack: (config, { isServer }) => {
+		if (!isServer && config.optimization?.splitChunks && typeof config.optimization.splitChunks === "object") {
+			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
+			splitChunks.cacheGroups = {
+				...splitChunks.cacheGroups,
+				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner)\.tsx$/ },
+			};
+		}
+		return config;
+	},
 };
 
 export default nextConfig;

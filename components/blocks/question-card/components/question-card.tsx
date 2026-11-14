@@ -121,7 +121,7 @@ function QuestionOptionRow({
 				<span
 					data-slot="question-card-option-index"
 					className={cn(
-						"inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border bg-surface text-sm leading-5 font-medium",
+						"inline-flex size-5 shrink-0 items-center justify-center rounded-sm border bg-surface text-sm leading-5 font-medium",
 						selected ? "border-border-selected text-text-selected" : "border-border text-text",
 					)}
 				>
@@ -407,7 +407,7 @@ function QuestionCardContent({
 				>
 					{showCustomInput ? (
 						<div className="flex min-w-0 flex-1 items-center gap-4 pl-2">
-							<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-border bg-surface text-sm leading-5 font-medium text-text">{customOptionIndex + 1}</span>
+							<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm border border-border bg-surface text-sm leading-5 font-medium text-text">{customOptionIndex + 1}</span>
 							<Input
 								ref={customInputRef}
 								variant="none"

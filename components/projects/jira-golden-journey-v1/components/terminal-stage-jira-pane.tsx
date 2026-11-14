@@ -76,7 +76,7 @@ function JiraSection({
 }: Readonly<{ label: string; items: readonly TerminalWorkItem[]; selectedKey: string | null }>): React.ReactElement | null {
 	return items.length > 0 ? (
 		<div className="mb-3">
-			<p className="mb-1 text-[11px] uppercase tracking-wide text-text-subtlest">{label}</p>
+			<p className="mb-1 text-[11px] text-text-subtlest">{label}</p>
 			{items.map((item) => (
 				<JiraRow key={item.key} item={item} selected={item.key === selectedKey} />
 			))}

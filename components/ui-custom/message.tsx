@@ -457,7 +457,7 @@ export function MessageBranchPage({
 }
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- Re-exporting colocated markdown API from the shared module so existing message.tsx consumers keep working.
-export { MessageResponse, streamdownComponents, streamdownPlugins } from "./message-markdown";
+export { MessageResponse, preloadMessageMarkdown, streamdownComponents } from "./message-markdown";
 export type { MessageResponseProps } from "./message-markdown";
 
 export type MessageToolbarProps = ComponentProps<"div">;

@@ -184,7 +184,7 @@ export function ChatTimelineNavigator({
 						boxSizing: "border-box",
 						width: TIMELINE_OPEN_WIDTH_PX,
 						height: openHeight,
-						borderRadius: 12,
+						borderRadius: token("radius.xlarge"),
 						backgroundColor: shellBackgroundColor,
 						boxShadow: shellBoxShadow,
 					}}

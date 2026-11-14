@@ -70,7 +70,7 @@ export function JiraActivityEvent({
 						<button
 							type="button"
 							className={cn(
-								"min-w-0 truncate rounded-[3px] text-left text-text",
+								"min-w-0 truncate rounded-xs text-left text-text",
 								"no-underline decoration-current outline-none hover:underline focus-visible:underline",
 								"focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
