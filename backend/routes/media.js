@@ -6,10 +6,12 @@ const express = require("express");
 const { createAbortControllerFromRequest } = require("../lib/http-request-abort");
 const { parseOrReject, speechTranscriptionOptionsSchema } = require("../lib/input-schemas");
 const {
+	IMAGE_PROXY_MAX_HTML_BYTES,
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
+	fetchImageProxyUrl,
 	parseImageProxyTarget,
 	readImageProxyResponsePayload,
 } = require("../lib/image-proxy");
@@ -17,6 +19,11 @@ const { resolveSpeechPayloadFromAudioRequest } = require("../lib/audio-input-ext
 const { synthesizeSound } = require("../lib/sound-generation");
 const { transcribeAudio } = require("../lib/speech-transcription");
 const { getNonEmptyString } = require("../lib/shared-utils");
+const {
+	FILE_RESPONSE_SECURITY_HEADERS,
+	buildContentDisposition,
+	decideFileMediaType,
+} = require("../lib/upload-response-headers");
 
 const SOUND_GENERATION_INPUT_MAX_CHARS = 4096;
 const IMAGE_PROXY_TIMEOUT_MS = 15_000;
@@ -230,15 +237,20 @@ function createMediaRouter({
 				}
 				attemptedUrls.add(currentUrlString);
 
-				const upstreamResponse = await fetchFn(currentUrlString, {
-					method: "GET",
-					headers: buildImageProxyHeaders(currentUrl),
-					redirect: "follow",
+				const fetched = await fetchImageProxyUrl(currentUrl, {
+					buildHeaders: buildImageProxyHeaders,
+					fetchFn,
 					signal: abortController.signal,
 				});
+				if ("refusedStatus" in fetched) {
+					lastStatus = fetched.refusedStatus;
+					continue;
+				}
+				const { response: upstreamResponse, url: finalUrl } = fetched;
 
 				if (!upstreamResponse.ok) {
 					lastStatus = upstreamResponse.status;
+					await upstreamResponse.body?.cancel?.().catch?.(() => {});
 					continue;
 				}
 
@@ -251,8 +263,16 @@ function createMediaRouter({
 					const upstreamCacheControl = getString(
 						upstreamResponse.headers.get("cache-control")
 					);
+					// The upstream's type is served by the same rule as an upload: an image
+					// type outside that list is a download with a neutral type, and the
+					// response is sandboxed either way, since it is served on this origin.
+					const served = decideFileMediaType(contentType);
 
-					res.setHeader("Content-Type", contentType);
+					res.setHeader("Content-Type", served.contentType);
+					res.setHeader("Content-Disposition", buildContentDisposition(served.inline ? "inline" : "attachment", "image"));
+					for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
+						res.setHeader(name, value);
+					}
 					res.setHeader("Content-Length", String(payload.length));
 					res.setHeader(
 						"Cache-Control",
@@ -262,14 +282,26 @@ function createMediaRouter({
 					return res.status(200).send(payload);
 				}
 
-				if (source === "atlassian") {
-					const htmlText = await upstreamResponse.text();
-					for (const derivedUrl of extractAtlassianImageCandidates(
-						htmlText,
-						currentUrl
-					)) {
-						candidateQueue.push(derivedUrl);
+				// A body that is not an image is read only as an Atlassian page, and only up
+				// to IMAGE_PROXY_MAX_HTML_BYTES; anything else is dropped unread.
+				if (source !== "atlassian") {
+					await upstreamResponse.body?.cancel?.().catch?.(() => {});
+					continue;
+				}
+				let htmlText;
+				try {
+					htmlText = (await readImageProxyPayload(upstreamResponse, { maxBytes: IMAGE_PROXY_MAX_HTML_BYTES })).toString("utf8");
+				} catch (error) {
+					if (error instanceof imageProxyResponseTooLargeError) {
+						continue;
 					}
+					throw error;
+				}
+				for (const derivedUrl of extractAtlassianImageCandidates(
+					htmlText,
+					finalUrl
+				)) {
+					candidateQueue.push(derivedUrl);
 				}
 			}
 

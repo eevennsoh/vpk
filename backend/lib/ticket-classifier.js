@@ -7,13 +7,12 @@
 // ---------------------------------------------------------------------------
 
 const {
-	DEFAULT_ATLASSIAN_SITE_HOST,
+	resolveDefaultAtlassianSite,
 	isAllowedAtlassianSite,
 	quoteJqlString,
 	requireJiraProjectKey,
 } = require("./jira-query-inputs");
 
-const DEFAULT_SITE_URL = DEFAULT_ATLASSIAN_SITE_HOST;
 const DEFAULT_PROJECT = "SUPPORT";
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -408,7 +407,7 @@ function buildClassificationResult(classified, siteUrl, project) {
  * Classify support tickets from Jira.
  *
  * @param {object} options
- * @param {string}   [options.siteUrl]          - Jira site (default: product-fabric.atlassian.net)
+ * @param {string}   [options.siteUrl]          - Jira site (default: the first ATLASSIAN_SITE_HOSTS entry, else product-fabric.atlassian.net)
  * @param {string}   [options.project]          - Jira project key (default: SUPPORT)
  * @param {string[]} [options.excludeStatuses]  - Statuses to exclude (default: Done, Closed, Resolved)
  * @param {number}   [options.limit]            - Max tickets to fetch (default: 25, max: 100)
@@ -416,7 +415,7 @@ function buildClassificationResult(classified, siteUrl, project) {
  * @returns {Promise<object>} ClassificationResult
  */
 async function classifyTickets({
-	siteUrl = DEFAULT_SITE_URL,
+	siteUrl = resolveDefaultAtlassianSite(),
 	project = DEFAULT_PROJECT,
 	excludeStatuses,
 	limit,
