@@ -49,6 +49,7 @@ test("component add plan derives split ui registry and detail targets", () => {
 	assert.deepEqual(plan.paths.routePages, []);
 	// The ui barrel is generated from the manifest and the leaves.
 	assert.equal(plan.generated.detailBarrel, true);
+	assert.equal(plan.generated.primaryRegistry, true);
 	assert.equal(plan.validationCommands[0], "corepack pnpm run fix:generated --only catalog-barrels");
 	assert.deepEqual(plan.status, {
 		detail: false,
@@ -69,6 +70,8 @@ test("component add plan for a project names its route page and its inline detai
 	assert.deepEqual(plan.paths.routePages, ["app/new-board/page.tsx"]);
 	assert.equal(plan.status.routePages, false);
 	assert.equal(plan.generated.detailBarrel, false);
+	// The projects registry is not generated yet (owner decision: it holds frozen projects).
+	assert.equal(plan.generated.primaryRegistry, false);
 
 	const existing = getComponentAddPlan({ ...empty, category: "projects", components: [], routePages: ["app/butter-v0/page.tsx", "app/butter/page.tsx"], slug: "butter" });
 	assert.deepEqual(existing.paths.routePages, ["app/butter-v0/page.tsx", "app/butter/page.tsx"]);
