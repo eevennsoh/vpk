@@ -6,6 +6,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
+const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
@@ -36,11 +37,18 @@ async function createFixture(t) {
 	return { root, projectRoot, outside, baseDir, write };
 }
 
-// A manifest written straight to disk, as one planted by an older backend would be.
-async function plantManifest(baseDir, threadId, requestedPaths) {
+// A manifest written straight to disk. Each entry carries the identity of whatever is at
+// its path now, as a planted manifest could, so these tests exercise the path rules alone.
+async function plantManifest(baseDir, threadId, requestedPaths, projectRoot = path.resolve(baseDir, "..", "..")) {
 	const manifestPath = path.join(baseDir, "rovo-app", "threads", threadId, "generated-files.json");
 	await fs.mkdir(path.dirname(manifestPath), { recursive: true });
-	await fs.writeFile(manifestPath, JSON.stringify(requestedPaths.map((requestedPath) => ({ requestedPath }))));
+	const entries = [];
+	for (const requestedPath of requestedPaths) {
+		const content = await fs.readFile(path.resolve(projectRoot, requestedPath)).catch(() => null);
+		const identity = content ? { sha256: crypto.createHash("sha256").update(content).digest("hex"), size: content.length } : undefined;
+		entries.push({ requestedPath, identity });
+	}
+	await fs.writeFile(manifestPath, JSON.stringify(entries));
 }
 
 async function exists(absolutePath) {
