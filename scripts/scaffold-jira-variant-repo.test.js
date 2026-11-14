@@ -18,7 +18,11 @@ function writeFixtureFile(root, relativePath, content) {
 }
 
 function versionIdentity(number) {
-	return { slug: `jira-golden-journey-v${number}`, version: `v${number}` };
+	return {
+		experimentalSlug: `experimental-v${number}`,
+		slug: `jira-golden-journey-v${number}`,
+		version: `v${number}`,
+	};
 }
 
 async function loadGenerator() {
@@ -75,6 +79,17 @@ test("the next variant scaffolds end to end from this repository's current sourc
 	const source = `v${latestRepoVariantVersion()}`;
 	const target = versionIdentity(Number(source.slice(1)) + 1);
 	const repoPlan = createJiraVariantPlan({ manifest, root: process.cwd(), source, target: target.version });
+	// Which path runs depends on the repo: when the next experimental block was
+	// added on its own (experimental-v5 today), this exercises reuse against real
+	// sources; otherwise it copies a fresh block. The fixture reuse tests in
+	// scaffold-jira-variant.test.js are the durable guard for the reuse path.
+	const nextBlockExists = existsSync(
+		path.join(process.cwd(), "components/blocks/jira-work-item", target.experimentalSlug),
+	);
+	assert.deepEqual(
+		repoPlan.reusedTargets.map((entry) => entry.id),
+		nextBlockExists ? ["experimental-block"] : [],
+	);
 	const root = copyRepoPlanInputs(repoPlan, manifest);
 	try {
 		const stubbed = stubRepoCommands(root, manifest, { failValidation: false });

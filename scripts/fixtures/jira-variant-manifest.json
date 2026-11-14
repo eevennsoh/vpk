@@ -5,7 +5,7 @@
 		{
 			"id": "experimental-block",
 			"path": "components/blocks/jira-work-item/{targetExperimentalSlug}",
-			"registeredMarker": "{targetExperimentalSlug}"
+			"registeredMarkers": ["{targetExperimentalSlug}", "{targetExperimentalPascal}"]
 		}
 	],
 	"copyTemplates": [

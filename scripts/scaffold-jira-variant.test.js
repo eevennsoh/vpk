@@ -847,25 +847,36 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 	}
 });
 
-function addExistingTargetBlockVariant(root, version) {
+/**
+ * Registers an existing target block variant the way a hand-written variant
+ * would: every reusable registration rule's target text is present in its file.
+ * `omit` drops the registrations whose target text contains that substring.
+ */
+function addExistingTargetBlockVariant(root, version, { omit } = {}) {
 	const target = versionIdentity(version);
+	const source = versionIdentity(target.previousVersion);
+	const values = {
+		sourceExperimentalPascal: source.experimentalPascal,
+		sourceExperimentalSlug: source.experimentalSlug,
+		sourcePreviousVersion: source.previousVersion,
+		sourceVersion: source.version,
+		targetExperimentalPascal: target.experimentalPascal,
+		targetExperimentalSlug: target.experimentalSlug,
+	};
+	const expand = (text) => text.replace(/\{(\w+)\}/gu, (match, key) => values[key] ?? match);
 	writeFixtureFile(
 		root,
 		`components/blocks/jira-work-item/${target.experimentalSlug}/${target.experimentalSlug}-jira-work-item.tsx`,
 		`export { ExperimentalV1JiraWorkItem as ${target.experimentalPascal}JiraWorkItem } from "./shared";\n`,
 	);
-	for (const file of [
-		"components/blocks/jira-work-item/index.tsx",
-		"components/blocks/jira-work-item/page.tsx",
-		"components/website/demos/blocks/jira-work-item-demo.tsx",
-		"components/website/registry/blocks.ts",
-		"components/website/registry/blocks-variants.ts",
-		"app/data/details/blocks/jira-work-item.ts",
-		"app/preview/blocks/[slug]/layout.tsx",
-		"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
-	]) {
-		const absolutePath = path.join(root, file);
-		writeFileSync(absolutePath, `${readFileSync(absolutePath, "utf8")}// registered: "${target.experimentalSlug}"\n`);
+	const manifest = JSON.parse(readFileSync(DEFAULT_MANIFEST_PATH, "utf8"));
+	for (const rule of manifest.registrations) {
+		if (!rule.reusableTarget) continue;
+		const text = expand(rule.target ?? rule.targetStart ?? rule.targetMarker);
+		if (omit && text.includes(omit)) continue;
+		const absolutePath = path.join(root, rule.file);
+		if (!existsSync(absolutePath)) continue;
+		writeFileSync(absolutePath, `${readFileSync(absolutePath, "utf8")}// registered: ${text}\n`);
 	}
 	return target;
 }
@@ -881,7 +892,7 @@ test("planner reuses an experimental block variant that already exists for the t
 		assert.deepEqual(summary.reusedTargets, [{
 			id: "experimental-block",
 			path: "components/blocks/jira-work-item/experimental-v5",
-			registeredMarker: "experimental-v5",
+			registeredMarkers: ["experimental-v5", "ExperimentalV5"],
 		}]);
 		assert.ok(summary.copies.some((entry) => entry.target === "components/projects/jira-golden-journey-v5/page.tsx"));
 		assert.ok(summary.copies.every((entry) => !entry.target.startsWith("components/blocks/jira-work-item/")));
@@ -905,6 +916,46 @@ test("planner refuses to reuse a target block variant that is not registered", a
 		assert.throws(
 			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
 			/existing experimental-block target components\/blocks\/jira-work-item\/experimental-v5 is not registered in components\/blocks\/jira-work-item\/index\.tsx/u,
+		);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("planner refuses to reuse a target block variant missing one demo registration", async () => {
+	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v4" });
+	try {
+		addExistingTargetBlockVariant(root, "v5", { omit: "jira-work-item-demo-experimental-v5-empty" });
+		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		assert.throws(
+			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
+			/is not registered in components\/website\/registry\/blocks-variants\.ts: missing jira-work-item-demo-experimental-v5-empty/u,
+		);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("a stray or longer slug mention does not count as a registration", async () => {
+	const root = createFixtureWorkspace({ source: "v4" });
+	try {
+		writeFixtureFile(
+			root,
+			"components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item.tsx",
+			"export const orphan = true;\n",
+		);
+		const indexPath = path.join(root, "components/blocks/jira-work-item/index.tsx");
+		writeFileSync(indexPath, `${readFileSync(indexPath, "utf8")}// see "experimental-v50" and ExperimentalV50JiraWorkItem\n`);
+		const { createJiraVariantPlan, loadVariantManifest, registrationTokens } = await loadGenerator();
+		assert.deepEqual(
+			registrationTokens("\t\"jira-work-item-demo-experimental-v5-empty\": dynamic(", ["experimental-v5"]),
+			["jira-work-item-demo-experimental-v5-empty"],
+		);
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		assert.throws(
+			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
+			/is not registered in components\/blocks\/jira-work-item\/index\.tsx: missing /u,
 		);
 	} finally {
 		rmSync(root, { force: true, recursive: true });

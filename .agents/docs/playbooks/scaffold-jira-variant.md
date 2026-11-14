@@ -26,8 +26,11 @@ An experimental Work Item block variant can exist before its project: for
 example `experimental-v5` was added on its own and already has its demos and
 catalog entries. When the target block directory exists, the plan reports it
 under `reusedTargets`, leaves that tree and its registrations untouched, and
-only checks that every block registration file already names the target slug.
-A block directory that exists but is not registered stops the plan.
+checks each skipped registration individually: every identifier it would have
+written that names the target (for example
+`jira-work-item-demo-experimental-v5-empty` or `ExperimentalV5JiraWorkItem`)
+must already appear as a whole token in its file. A block directory that is
+missing any one of those registrations stops the plan and names what is missing.
 
 Stop if a target
 project path exists, a rewrite is ambiguous, source content changed during planning, or any

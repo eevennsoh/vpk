@@ -271,7 +271,10 @@ function resolveReusedTargets({ manifest, root, values }) {
 	const declared = new Map();
 	for (const template of manifest.reusableTargets ?? []) {
 		const entry = expandManifestTemplates(template, values);
-		if (!entry.id || !entry.path || !entry.registeredMarker || declared.has(entry.id)) {
+		const markers = entry.registeredMarkers;
+		const validMarkers = Array.isArray(markers) && markers.length > 0
+			&& markers.every((marker) => typeof marker === "string" && marker.length > 0);
+		if (!entry.id || !entry.path || !validMarkers || declared.has(entry.id)) {
 			throw new Error(`invalid reusable target: ${JSON.stringify(template)}`);
 		}
 		declared.set(entry.id, entry);
@@ -285,10 +288,49 @@ function resolveReusedTargets({ manifest, root, values }) {
 	for (const entry of declared.values()) {
 		const resolved = resolveWorkspacePath(root, entry.path, "reusable target");
 		if (existsSync(resolved.absolutePath)) {
-			reused.push({ id: entry.id, path: entry.path, registeredMarker: entry.registeredMarker });
+			reused.push({ id: entry.id, path: entry.path, registeredMarkers: entry.registeredMarkers });
 		}
 	}
 	return reused.sort((left, right) => left.id.localeCompare(right.id));
+}
+
+/**
+ * The text a registration rule would have written for its target, and the text
+ * it copies from.
+ */
+function registrationRuleTexts(rule) {
+	if (rule.kind === "line" || rule.kind === "replace") {
+		return { source: rule.source, target: rule.target };
+	}
+	if (rule.kind === "block") return { source: rule.start, target: rule.targetStart };
+	return { source: rule.sourceMarker, target: rule.targetMarker };
+}
+
+const REGISTRATION_TOKEN_PATTERN = /[A-Za-z0-9_@/.-]+/gu;
+
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+/**
+ * The identifiers a skipped registration rule would have written for a reused
+ * target: every token of its target text that names one of the target's
+ * markers (for example `jira-work-item-demo-experimental-v5-empty` or
+ * `ExperimentalV5JiraWorkItem`). Checking these tokens rather than the exact
+ * target text tolerates formatting drift in hand-registered variants, while
+ * still catching a single missing registration.
+ */
+export function registrationTokens(target, markers) {
+	const tokens = new Set();
+	for (const token of target.match(REGISTRATION_TOKEN_PATTERN) ?? []) {
+		const trimmed = token.replace(/^[./-]+|[./-]+$/gu, "");
+		if (markers.some((marker) => trimmed.includes(marker))) tokens.add(trimmed);
+	}
+	return [...tokens];
+}
+
+function containsToken(content, token) {
+	return new RegExp(`(?<![A-Za-z0-9_-])${escapeRegExp(token)}(?![A-Za-z0-9_-])`, "u").test(content);
 }
 
 function assertReusedRegistration(root, rule, reusedTarget) {
@@ -298,10 +340,17 @@ function assertReusedRegistration(root, rule, reusedTarget) {
 		throw new Error(`registration file does not exist: ${rule.file}`);
 	}
 	assertRegularFile(resolved.absolutePath, `registration file ${rule.file}`);
-	const marker = reusedTarget.registeredMarker;
-	if (!rule.optional && !readFileSync(resolved.absolutePath, "utf8").includes(marker)) {
+	const { source, target } = registrationRuleTexts(rule);
+	if (typeof target !== "string") return;
+	// Rules whose output names no marker (prose rewrites) register nothing.
+	const tokens = registrationTokens(target, reusedTarget.registeredMarkers);
+	if (tokens.length === 0) return;
+	const content = readFileSync(resolved.absolutePath, "utf8");
+	if (rule.optional && typeof source === "string" && !content.includes(source)) return;
+	const missing = tokens.filter((token) => !containsToken(content, token));
+	if (missing.length > 0) {
 		throw new Error(
-			`existing ${reusedTarget.id} target ${reusedTarget.path} is not registered in ${rule.file}: expected ${marker}`,
+			`existing ${reusedTarget.id} target ${reusedTarget.path} is not registered in ${rule.file}: missing ${missing.join(", ")}`,
 		);
 	}
 }
