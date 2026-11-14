@@ -39,6 +39,7 @@ class HeadlessMirrorBrowser {
 		this._page = null
 		this._screencastInterval = null
 		this._screencastCapturePromise = null
+		this._screencastStarting = null
 		this._clients = new Set()
 		this._lastFrameData = null
 		this._lastMetadata = null
@@ -83,12 +84,25 @@ class HeadlessMirrorBrowser {
 		return this._screencastInterval !== null
 	}
 
-	async _ensureScreencasting() {
+	// Two attaches at once share one start: a second call while the first capture is
+	// pending would otherwise start a second interval.
+	_ensureScreencasting() {
+		if (this._screencastInterval) return Promise.resolve()
+		if (!this._screencastStarting) {
+			this._screencastStarting = this._startScreencasting().finally(() => {
+				this._screencastStarting = null
+			})
+		}
+		return this._screencastStarting
+	}
+
+	async _startScreencasting() {
 		if (this._screencastInterval) return
 		if (!this._page) return
 		if (this._clients.size === 0) return
 
 		await this._captureAndBroadcast()
+		if (this._screencastInterval || this._clients.size === 0) return
 		this._screencastInterval = setInterval(() => {
 			void this._captureAndBroadcast().catch(() => {})
 		}, SCREENCAST_INTERVAL_MS)

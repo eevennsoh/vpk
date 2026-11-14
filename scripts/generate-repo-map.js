@@ -173,13 +173,11 @@ function addOwnerRoute(ownerMap, kind, route) {
 		ownerMap.set(key, {
 			kind,
 			owner,
-			routeCount: 0,
 			routes: [],
 		});
 	}
 	const record = ownerMap.get(key);
 	record.routes.push(route);
-	record.routeCount += 1;
 }
 
 function buildRouteMap(routeManifest) {
@@ -206,12 +204,11 @@ function buildRouteMap(routeManifest) {
 			);
 		});
 
+	// No route counts: two PRs that each add a route would both change them, and nothing
+	// reads them (count `owners[].routes` instead).
 	return {
 		summary: {
-			backendRouteCount: backendRoutes.length,
-			nextApiRouteCount: nextApiRoutes.length,
 			ownerCount: owners.length,
-			runtimeAdminRouteCount: backendRoutes.filter((route) => route.runtimeAdmin === true).length,
 		},
 		owners,
 	};
