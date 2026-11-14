@@ -1,3 +1,4 @@
+// @ts-check
 const fs = require("node:fs/promises");
 
 const {
@@ -19,6 +20,7 @@ function safeJsonParse(rawValue) {
 function createRovoAppVoteManager({ baseDir }) {
 	const threadsRootDir = getRovoAppThreadsRootDir(baseDir);
 	const legacyVotesRootDir = getRovoAppLegacyVotesDir(baseDir);
+	/** @type {Promise<void> | null} */
 	let initializationPromise = null;
 
 	const getThreadVotePath = (threadId) =>

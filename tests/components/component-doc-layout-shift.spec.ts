@@ -39,4 +39,8 @@ test("a component doc page does not jump when its preview demo loads", { tag: "@
 		}));
 	}));
 	expect(total).toBeLessThan(MAX_LAYOUT_SHIFT);
+	// Once the demo has rendered, the hold rule is gone, so its :has() selectors cost nothing while the demo runs.
+	// (Text locators skip <style> contents, so this reads textContent directly.)
+	await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("style")]
+		.filter((style) => style.textContent?.includes("doc-preview-hold-release")).length)).toBe(0);
 });

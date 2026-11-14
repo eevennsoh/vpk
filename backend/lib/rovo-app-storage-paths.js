@@ -1,3 +1,4 @@
+// @ts-check
 const path = require("node:path");
 
 const { requireStorageId } = require("./input-schemas");
