@@ -52,6 +52,13 @@ test("runtime-control mutations require runtime admin authorization", () => {
 		assert.equal(route.runtimeAdmin, true, `${route.method} ${route.path} should require runtime admin`);
 	}
 
+	// The Chromium preview drives a server-side browser too (BE-F5).
+	const chromiumPreviewRoutes = routeManifest.backendRoutes.filter((entry) => entry.path.startsWith("/api/chromium-preview"));
+	assert.ok(chromiumPreviewRoutes.length > 0, "chromium preview routes should remain registered");
+	for (const route of chromiumPreviewRoutes) {
+		assert.equal(route.runtimeAdmin, true, `${route.method} ${route.path} should require runtime admin`);
+	}
+
 });
 
 test("realtime token minting is reachable through the runtime socket origin gate", () => {
