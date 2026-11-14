@@ -67,7 +67,7 @@ test("realtime token minting is reachable through the runtime socket origin gate
 	});
 	assert.ok(route, "GET /api/realtime/audio-conversation-token should be registered");
 	assert.equal(route.runtimeAdmin, false);
-	assert.match(route.source, /^backend\/routes\/realtime\.js:/u);
+	assert.equal(route.source, "backend/routes/realtime.js");
 	assert.match(
 		realtimeRouteSource,
 		/router\.get\("\/audio-conversation-token", requireRuntimeSocketTokenRequester/u,
