@@ -44,6 +44,12 @@ export const GENERATED_ARTIFACTS = [
 		check: [NODE, "scripts/validate-skills.js"],
 	},
 	{
+		id: "catalog-barrels",
+		paths: ["app/data/details/blocks.ts", "app/data/details/ui.ts", "app/data/details/ui-custom.ts"],
+		generate: [NODE, "scripts/generate-catalog-barrels.js"],
+		check: [NODE, "scripts/generate-catalog-barrels.js", "--check"],
+	},
+	{
 		id: "repo-map",
 		paths: [".agents/knowledge/repo-map.json"],
 		generate: [NODE, "scripts/generate-repo-map.js"],
