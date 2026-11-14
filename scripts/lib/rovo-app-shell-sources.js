@@ -23,6 +23,8 @@ const SHARED_SHELL_CODE_FILES = [
 	// C-5 slice 2: sidebar chrome.
 	"components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome.ts",
 	"components/projects/rovo-core/hooks/use-sidebar-hover-reveal.ts",
+	// C-5 slice 3: artifact workspace.
+	"components/projects/rovo-core/hooks/use-rovo-app-shell-artifact-workspace.ts",
 ];
 
 const ROVO_APP_SHELL_SOURCE_FILES = Object.freeze({
