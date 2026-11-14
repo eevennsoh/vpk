@@ -41,7 +41,7 @@ function createManager(overrides = {}) {
 async function withServer(dependencies, run) {
 	const app = express();
 	app.use(express.json({ limit: "1mb" }));
-	registerChromiumPreviewRoutes(app, dependencies);
+	registerChromiumPreviewRoutes(app, { requireRuntimeAdmin: (_req, _res, next) => next(), ...dependencies });
 
 	const server = http.createServer(app);
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -273,4 +273,32 @@ test("chromium preview rejects a file:, javascript: or chrome: URL before the ma
 		}
 	});
 	assert.equal(navigateCalls, 0);
+});
+
+test("chromium preview routes sit behind runtime admin authorization", async () => {
+	let navigateCalls = 0;
+	await withServer({
+		chromiumPreviewManager: createManager({
+			navigate: async () => {
+				navigateCalls += 1;
+				return {};
+			},
+		}),
+		requireRuntimeAdmin: (req, res, next) => (req.get("x-runtime-admin") === "ok" ? next() : res.status(403).json({ error: "Runtime admin authorization required" })),
+	}, async (baseUrl) => {
+		const refused = await fetch(`${baseUrl}/api/chromium-preview`, {
+			body: JSON.stringify({ url: "http://127.0.0.1:9/" }),
+			headers: { "content-type": "application/json" },
+			method: "POST",
+		});
+		assert.equal(refused.status, 403);
+		const allowed = await fetch(`${baseUrl}/api/chromium-preview`, {
+			body: JSON.stringify({ url: "https://example.test/" }),
+			headers: { "content-type": "application/json", "x-runtime-admin": "ok" },
+			method: "POST",
+		});
+		assert.equal(allowed.status, 200);
+	});
+	assert.equal(navigateCalls, 1);
+	assert.throws(() => registerChromiumPreviewRoutes(express(), { chromiumPreviewManager: createManager() }), /requireRuntimeAdmin/u);
 });
