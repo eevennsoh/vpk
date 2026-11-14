@@ -1,158 +1,56 @@
 import type { Spec } from "@json-render/react";
+import {
+	findBestDescriptionInSpec,
+	findBestTitleInSpec,
+	getElementProps,
+	getSpecTraversalKeys,
+	resolveGenuiDescriptionFromSpec,
+	resolveGenuiTitleFromSpec,
+} from "@/components/projects/shared/lib/generative-widget-spec-query";
+import {
+	DEFAULT_DESCRIPTION,
+	clipText,
+	getNonEmptyString,
+	isObjectRecord,
+	readFirstNonEmptyString,
+} from "@/components/projects/shared/lib/generative-widget-text";
+import type {
+	GenerativeContentType,
+	GenerativeWidgetActionItem,
+	GenerativeWidgetMetadata,
+	GenerativeWidgetPrimaryActionPayload,
+	ParsedGenerativeWidget,
+	ParsedGenerativeWidgetBase,
+	ParsedGenerativeWidgetSource,
+	PreviewAudioBody,
+	PreviewBody,
+	PreviewExcalidrawScene,
+	PreviewImageBody,
+	PreviewVideoBody,
+	PreviewVideoClip,
+	PreviewVideoTrack,
+} from "@/components/projects/shared/lib/generative-widget-types";
+import { isJsonRenderBody } from "@/components/projects/shared/lib/generative-widget-types";
 
-export interface ParsedGenerativeWidgetSource {
-	name?: string;
-	logoSrc?: string;
-}
+export type {
+	ParsedGenerativeWidgetSource,
+	GenerativeWidgetActionItem,
+	PreviewImageSource,
+	PreviewVideoTrack,
+	PreviewVideoClip,
+	PreviewVideoComposition,
+	PreviewVideoFile,
+	PreviewExcalidrawScene,
+	PreviewBody,
+	ParsedGenerativeWidget,
+	PreviewAudioBody,
+	PreviewImageBody,
+	PreviewVideoBody,
+	GenerativeWidgetMetadata,
+	GenerativeWidgetPrimaryActionPayload,
+	GenerativeContentType,
+} from "@/components/projects/shared/lib/generative-widget-types";
 
-export interface GenerativeWidgetActionItem {
-	label: string;
-	href?: string;
-}
-
-interface ParsedGenerativeWidgetBase {
-	title?: string;
-	description?: string;
-	primaryActionLabel?: string;
-	actions?: GenerativeWidgetActionItem[];
-	source: ParsedGenerativeWidgetSource | null;
-	contentTypeHint?: string;
-	iconHint?: string;
-}
-
-export interface PreviewImageSource {
-	url: string;
-	mimeType?: string;
-}
-
-export interface PreviewVideoTrack {
-	id: string;
-	name: string;
-	type: string;
-	enabled: boolean;
-}
-
-export interface PreviewVideoClip {
-	id: string;
-	trackId: string;
-	component: string;
-	props: Record<string, unknown>;
-	from: number;
-	durationInFrames: number;
-}
-
-export interface PreviewVideoComposition {
-	id: string;
-	fps: number;
-	width: number;
-	height: number;
-	durationInFrames: number;
-}
-
-export interface PreviewVideoFile {
-	videoUrl: string;
-	mimeType?: string;
-	posterUrl?: string;
-	fileName?: string;
-}
-
-export interface PreviewExcalidrawScene {
-	type?: string;
-	version?: number;
-	source?: string;
-	elements: unknown[];
-	appState?: Record<string, unknown> | null;
-	files?: Record<string, unknown>;
-}
-
-export type PreviewBody =
-	| {
-		kind: "json-render";
-		spec: Spec;
-	}
-	| {
-		kind: "audio";
-		audioUrl: string;
-		mimeType?: string;
-		transcript?: string;
-	}
-	| {
-		kind: "image";
-		images: PreviewImageSource[];
-		prompt?: string;
-	}
-	| {
-		kind: "video";
-		videoUrl?: string;
-		mimeType?: string;
-		posterUrl?: string;
-		fileName?: string;
-		composition?: PreviewVideoComposition;
-		tracks?: PreviewVideoTrack[];
-		clips?: PreviewVideoClip[];
-		audio?: { tracks: unknown[] };
-	}
-	| {
-		kind: "text";
-		text: string;
-		markdown?: boolean;
-	}
-	| {
-		kind: "code";
-		code: string;
-		language?: string;
-	}
-	| {
-		kind: "html";
-		html: string;
-		summary?: string;
-	}
-	| {
-		kind: "app-url";
-		url: string;
-		summary?: string;
-	}
-	| {
-		kind: "excalidraw";
-		scene: PreviewExcalidrawScene;
-	}
-	| {
-		kind: "json";
-		value: unknown;
-	};
-
-export interface ParsedGenerativeWidget extends ParsedGenerativeWidgetBase {
-	type: "genui-preview";
-	body: PreviewBody;
-	summary?: string;
-}
-
-export interface PreviewAudioBody {
-	kind: "audio";
-	audioUrl: string;
-	mimeType?: string;
-	transcript?: string;
-}
-
-export interface PreviewImageBody {
-	kind: "image";
-	images: PreviewImageSource[];
-	prompt?: string;
-}
-
-export interface PreviewVideoBody {
-	kind: "video";
-	videoUrl?: string;
-	mimeType?: string;
-	posterUrl?: string;
-	fileName?: string;
-	composition?: PreviewVideoComposition;
-	tracks?: PreviewVideoTrack[];
-	clips?: PreviewVideoClip[];
-	audio?: { tracks: unknown[] };
-}
-
-type JsonRenderPreviewBody = Extract<PreviewBody, { kind: "json-render" }>;
 const GENERATED_MEDIA_ROUTE = "/api/rovo/generated-media";
 const GENERATED_VIDEO_PATH_PATTERN =
 	/(?:^|[\s"'`])((?:\.\/)?media\/videos\/[^\s"'`]+?\.(?:mp4|webm|mov|m4v|ogv))(?:$|[\s"'`])/giu;
@@ -257,30 +155,6 @@ function findGeneratedVideoPathInValue(value: unknown, depth = 0): string | unde
 	return undefined;
 }
 
-function isJsonRenderBody(body: PreviewBody): body is JsonRenderPreviewBody {
-	return body.kind === "json-render";
-}
-
-export interface GenerativeWidgetMetadata {
-	contentType: GenerativeContentType;
-	title: string;
-	description: string;
-	primaryActionLabel?: string;
-	actions?: GenerativeWidgetActionItem[];
-	actionLabels?: string[];
-	source: ParsedGenerativeWidgetSource | null;
-	iconHint?: string;
-	iconHintText?: string;
-}
-
-export interface GenerativeWidgetPrimaryActionPayload {
-	widgetType: "genui-preview";
-	actionLabel: string;
-	title: string;
-	description: string;
-	formState: Record<string, unknown>;
-}
-
 const GENERATIVE_CONTENT_TYPE_HINT_KEYS = [
 	"contentType",
 	"generatedContentType",
@@ -288,32 +162,6 @@ const GENERATIVE_CONTENT_TYPE_HINT_KEYS = [
 	"outputType",
 	"widgetContentType",
 ] as const;
-
-export type GenerativeContentType =
-	| "image"
-	| "memory"
-	| "skill"
-	| "text"
-	| "translation"
-	| "message"
-	| "calendar"
-	| "chart-bar"
-	| "chart-line"
-	| "chart-area"
-	| "chart-pie"
-	| "chart-radar"
-	| "chart-scatter"
-	| "chart"
-	| "feed"
-	| "sound"
-	| "video"
-	| "work-item"
-	| "page"
-	| "board"
-	| "table"
-	| "code"
-	| "ui"
-	| "other";
 
 const CONTENT_TYPE_HINT_MATCHERS: ReadonlyArray<{
 	pattern: RegExp;
@@ -459,7 +307,7 @@ const ELEMENT_TYPE_CONTENT_MATCHERS: ReadonlyArray<{
 	{ pattern: /\bvideo\b/i, contentType: "video" },
 	{ pattern: /\bchart\b/i, contentType: "chart" },
 ];
-const DEFAULT_DESCRIPTION = "Generated from your request";
+
 const LOW_SIGNAL_WIDGET_DESCRIPTION_PATTERNS: ReadonlyArray<RegExp> = [
 	/^generated from\b/i,
 	/^upcoming events from google calendar\b/i,
@@ -507,12 +355,7 @@ const ACTION_HREF_KEYS = [
 	"editUrl",
 ] as const;
 const URL_PATTERN = /https?:\/\/[^\s<>"'`]+/gi;
-const SYSTEM_INSTRUCTIONS_BLOCK_PATTERN =
-	/\[\s*System Instructions\s*\][\s\S]*?\[\s*End System Instructions\s*\]/gi;
-const SYSTEM_INSTRUCTIONS_MARKER_PATTERN =
-	/\[\s*(?:End\s+)?System Instructions\s*\]/gi;
-const LEAKED_SYSTEM_PROMPT_PATTERN =
-	/^you are (?:an?|the)\s+(?:ui generator|helpful assistant)\b/i;
+
 const SANITIZED_SPEC_TEXT_PROP_KEYS = [
 	"title",
 	"description",
@@ -524,28 +367,6 @@ const SANITIZED_SPEC_TEXT_PROP_KEYS = [
 	"caption",
 	"placeholder",
 ] as const;
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
-}
-
-function stripSystemInstructionArtifacts(value: string): string {
-	return value
-		.replace(SYSTEM_INSTRUCTIONS_BLOCK_PATTERN, " ")
-		.replace(SYSTEM_INSTRUCTIONS_MARKER_PATTERN, " ");
-}
-
-function getNonEmptyString(value: unknown): string | undefined {
-	if (typeof value !== "string") {
-		return undefined;
-	}
-
-	const trimmed = stripSystemInstructionArtifacts(value).trim();
-	if (LEAKED_SYSTEM_PROMPT_PATTERN.test(trimmed)) {
-		return undefined;
-	}
-	return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function normalizeSentence(value: string): string {
 	return value
@@ -695,20 +516,6 @@ function resolveContentTypeFromElementProps(
 	}
 
 	return resolveContentTypeFromHint(hintText);
-}
-
-function readFirstNonEmptyString(
-	record: Record<string, unknown>,
-	keys: readonly string[]
-): string | undefined {
-	for (const key of keys) {
-		const value = getNonEmptyString(record[key]);
-		if (value) {
-			return value;
-		}
-	}
-
-	return undefined;
 }
 
 function readActionHref(
@@ -931,14 +738,6 @@ function selectBestUrlForAction(label: string, candidates: readonly string[]): s
 	}
 
 	return bestCandidate?.url ?? candidates[0];
-}
-
-function clipText(text: string, maxLength: number): string {
-	if (text.length <= maxLength) {
-		return text;
-	}
-
-	return `${text.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function parseExplicitSource(payload: Record<string, unknown>): ParsedGenerativeWidgetSource | null {
@@ -1628,172 +1427,6 @@ function resolveContentType(widget: ParsedGenerativeWidget): GenerativeContentTy
 	}
 
 	return explicitHint ?? inferredContentType;
-}
-
-function getSpecTraversalKeys(spec: Spec): string[] {
-	const keys: string[] = [];
-	const visited = new Set<string>();
-	const elements = spec.elements ?? {};
-
-	const visit = (key: string) => {
-		if (!key || visited.has(key)) {
-			return;
-		}
-
-		visited.add(key);
-		keys.push(key);
-
-		const element = elements[key];
-		if (!isObjectRecord(element) || !Array.isArray(element.children)) {
-			return;
-		}
-
-		for (const childKey of element.children) {
-			if (typeof childKey === "string" && childKey.trim().length > 0) {
-				visit(childKey);
-			}
-		}
-	};
-
-	visit(spec.root);
-	for (const key of Object.keys(elements)) {
-		visit(key);
-	}
-
-	return keys;
-}
-
-function getElementProps(element: Record<string, unknown>): Record<string, unknown> | null {
-	return isObjectRecord(element.props) ? element.props : null;
-}
-
-interface SpecTitleCandidate {
-	text: string;
-	propName: string;
-	key: string;
-	score: number;
-	index: number;
-}
-
-function findBestTitleInSpec(widget: ParsedGenerativeWidget): SpecTitleCandidate | null {
-	if (!isJsonRenderBody(widget.body)) {
-		return null;
-	}
-
-	const traversalKeys = getSpecTraversalKeys(widget.body.spec);
-	let best: SpecTitleCandidate | null = null;
-
-	for (const [index, key] of traversalKeys.entries()) {
-		const element = widget.body.spec.elements[key];
-		if (!isObjectRecord(element)) {
-			continue;
-		}
-
-		const elementType = getNonEmptyString(element.type);
-		const props = getElementProps(element);
-		if (!elementType || !props) {
-			continue;
-		}
-
-		let candidateText: string | undefined;
-		let propName = "title";
-		let score = 0;
-		if (elementType === "PageHeader") {
-			candidateText = getNonEmptyString(props.title);
-			score = 140;
-		} else if (elementType === "Heading") {
-			candidateText = getNonEmptyString(props.text);
-			propName = "text";
-			const headingLevel = getNonEmptyString(props.level);
-			score = headingLevel === "h1" ? 130 : headingLevel === "h2" ? 125 : 120;
-		} else if (elementType === "Card") {
-			candidateText = getNonEmptyString(props.title);
-			score = 110;
-		} else {
-			candidateText = getNonEmptyString(props.title);
-			if (!candidateText) {
-				candidateText = getNonEmptyString(props.text);
-				propName = "text";
-			}
-			score = 80;
-		}
-
-		if (!candidateText) {
-			continue;
-		}
-
-		if (!best || score > best.score || (score === best.score && index < best.index)) {
-			best = { text: candidateText, propName, key, score, index };
-		}
-	}
-
-	return best;
-}
-
-function resolveGenuiTitleFromSpec(widget: ParsedGenerativeWidget): string | undefined {
-	return findBestTitleInSpec(widget)?.text;
-}
-
-interface SpecDescriptionCandidate {
-	text: string;
-	propName: string;
-	key: string;
-	score: number;
-	index: number;
-}
-
-function findBestDescriptionInSpec(widget: ParsedGenerativeWidget): SpecDescriptionCandidate | null {
-	if (!isJsonRenderBody(widget.body)) {
-		return null;
-	}
-
-	const traversalKeys = getSpecTraversalKeys(widget.body.spec);
-	let best: SpecDescriptionCandidate | null = null;
-
-	for (const [index, key] of traversalKeys.entries()) {
-		const element = widget.body.spec.elements[key];
-		if (!isObjectRecord(element)) {
-			continue;
-		}
-
-		const elementType = getNonEmptyString(element.type);
-		const props = getElementProps(element);
-		if (!elementType || !props) {
-			continue;
-		}
-
-		let candidateText: string | undefined;
-		let propName = "description";
-		let score = 0;
-		if (elementType === "PageHeader") {
-			candidateText = getNonEmptyString(props.description);
-			score = 140;
-		} else if (elementType === "Card") {
-			candidateText = getNonEmptyString(props.description);
-			score = 120;
-		} else if (elementType === "Text") {
-			candidateText = getNonEmptyString(props.content);
-			propName = "content";
-			score = 100;
-		} else {
-			candidateText = getNonEmptyString(props.description);
-			score = 80;
-		}
-
-		if (!candidateText || candidateText.length < 12) {
-			continue;
-		}
-
-		if (!best || score > best.score || (score === best.score && index < best.index)) {
-			best = { text: candidateText, propName, key, score, index };
-		}
-	}
-
-	return best;
-}
-
-function resolveGenuiDescriptionFromSpec(widget: ParsedGenerativeWidget): string | undefined {
-	return findBestDescriptionInSpec(widget)?.text;
 }
 
 function scorePrimaryActionLabel(
