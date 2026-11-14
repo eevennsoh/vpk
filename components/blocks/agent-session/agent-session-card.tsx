@@ -145,12 +145,12 @@ function resolveAgentSessionCardMotion({
 		animate: waitingForArrival ? { opacity: 0, y: arrivalStartOffset }
 			: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [arrivalStartOffset, "0%"] }
-				: { opacity: 1, y: "0%" },
+				? { opacity: [0, 1], y: [arrivalStartOffset, "calc(0% - 0px)"] }
+				: { opacity: 1, y: "calc(0% - 0px)" },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		// Keep measuring settled rows even when filtering places them immediately.
-		layout: shouldReduceMotion || isDeparting || shouldPlayStatusReentry ? false : "position" as const,
+		// Arriving rows own their travel; layout projection moves the siblings making room.
+		layout: shouldReduceMotion || isDeparting || shouldPlayArrival ? false : "position" as const,
 		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
 			: {

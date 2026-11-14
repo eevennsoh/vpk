@@ -46,8 +46,9 @@ test("column header creates an inline work item with editable fields", async ({ 
 	await expect(page.locator('[aria-label="To do work items"]')).not.toHaveAttribute("aria-hidden", "true");
 	await draft.getByRole("textbox", { name: "Work item summary" }).fill("New checkout task");
 	await draft.getByRole("button", { name: "Work item type: task" }).click();
+	await page.getByRole("menu", { name: "Work item type: task", exact: true }).evaluate((menu) => Promise.all(menu.getAnimations({ subtree: true }).map((animation) => animation.finished)));
 	await page.getByRole("menuitem", { name: "Story" }).hover();
-	await expect(draft.getByRole("button", { name: "Work item type: task" }).locator('[data-slot="icon"][aria-label="story"]')).toBeVisible();
+	await expect(draft.getByRole("button", { name: "Work item type: task" }).getByRole("img", { name: "story", exact: true })).toBeVisible();
 	await page.getByRole("menuitem", { name: "Story" }).click();
 	await draft.getByRole("button", { name: "Add subtasks" }).click();
 	await page.getByRole("textbox", { name: "Search subtasks" }).fill("PAY-201");
@@ -55,17 +56,17 @@ test("column header creates an inline work item with editable fields", async ({ 
 	await draft.getByRole("button", { name: "Add parent" }).click();
 	await page.getByRole("textbox", { name: "Search parents" }).fill("PAY-999");
 	await page.getByRole("radio", { name: /PAY-999/ }).click();
-	await draft.getByRole("button", { name: "Add tags" }).click();
-	await page.getByRole("textbox", { name: "Add tag" }).fill("proof-tag");
+	await draft.getByRole("button", { name: "Add labels" }).click();
+	await page.getByRole("textbox", { name: "Add label" }).fill("proof-tag");
 	await page.getByRole("button", { name: "Create “proof-tag”" }).click();
 	await page.keyboard.press("Escape");
 	await expect(draft).toContainText("0/1");
 	await expect(draft).toContainText("proof-tag");
 	await draft.getByRole("button", { name: "Priority: Medium" }).click();
-	await page.getByRole("button", { name: /Lowest/ }).click();
+	await page.getByRole("menuitem", { name: "Lowest", exact: true }).click();
 	await expect(draft.getByRole("button", { name: "Priority: Lowest" })).toBeVisible();
 	await draft.getByRole("button", { name: "Set assignee" }).click();
-	await page.getByRole("radio", { name: "Venn" }).click();
+	await page.getByRole("option", { name: "Venn", exact: true }).click();
 	await expect(draft.getByRole("button", { name: "Assignee: Venn" })).toBeVisible();
 	await draft.getByRole("button", { name: "Set due date" }).click();
 	const today = await page.evaluate(() => {

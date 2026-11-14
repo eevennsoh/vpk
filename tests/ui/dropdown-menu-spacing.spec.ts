@@ -196,6 +196,7 @@ test("parent picker rows follow dropdown spacing and select a work item", async 
 	await page.goto(appUrl("/components/blocks/artifact-pane"));
 	await page.getByRole("button", { name: "See more", exact: true }).click();
 	await page.getByRole("button", { name: "Change parent" }).click();
+	await expect(page.getByRole("dialog", { name: "Change parent", exact: true })).toBeVisible();
 	const list = page.getByRole("listbox", { name: "Search work items" });
 	const rows = list.getByRole("option");
 	await expect(rows.first()).toBeVisible();

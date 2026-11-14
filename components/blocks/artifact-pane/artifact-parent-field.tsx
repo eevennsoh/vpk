@@ -85,6 +85,7 @@ export function ArtifactParentField({
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
+				aria-label="Change parent"
 				className={METADATA_PICKER_POPOVER_CLASS}
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}

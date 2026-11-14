@@ -1,7 +1,9 @@
+import { motionDuration, motionEase } from "@/lib/motion";
+
 /** Shared arrival timing for every Agent Session footprint. */
 export const AGENT_SESSION_ARRIVAL_TRANSITION = {
-	duration: 0.25,
-	ease: [0, 0.4, 0, 1] as [number, number, number, number],
+	duration: motionDuration.slow,
+	ease: motionEase.out,
 };
 
 /** Vertical travel for Large and Medium arrivals; sessions enter from sync above. */
@@ -9,12 +11,12 @@ export const AGENT_SESSION_ARRIVAL_OFFSET_PX = -8;
 
 /** Top entries and the rows making room share duration-slowest + ease-in-out. */
 export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {
-	duration: 0.6,
-	ease: [0.4, 0, 0, 1] as [number, number, number, number],
+	duration: motionDuration.slowest,
+	ease: motionEase.inOut,
 };
 
-/** Enter a full row from above so its lower edge follows the opening space. */
-export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "-100%";
+/** Keep both calc terms in every target so single and batched offsets interpolate. */
+export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "calc(-100% - 0px)";
 
 /** Prepend a whole batch above the old first row before its siblings move down. */
 export function toAgentSessionTopArrivalOffset(batchSize: number, rowGapPx: number): string {

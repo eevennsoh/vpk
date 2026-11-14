@@ -148,30 +148,33 @@ test("returning to the journey does not replay settled session arrivals", async 
 	expect(frames.every(({ opacity, y }) => opacity >= 0.99 && Math.abs(y) < 1), JSON.stringify(frames)).toBe(true);
 });
 
-test("new sessions still animate into the journey column", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/butter-v1"));
-	const frames = await page.evaluate(async () => {
-		const samples: { opacity: number; y: number }[] = [];
-		let appearedAt: number | undefined;
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				const row = document.querySelector('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
-				if (row) {
-					appearedAt ??= performance.now();
-					const style = getComputedStyle(row);
-					samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 });
-				}
-				if (appearedAt === undefined || performance.now() - appearedAt < 900) requestAnimationFrame(sample);
-				else resolve();
-			};
-			requestAnimationFrame(sample);
+for (const [kind, random] of [["single", 0], ["batched", 0.99]] as const) {
+	test(`new ${kind} sessions still animate into the journey column`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.addInitScript((value) => { Math.random = () => value; }, random);
+		await page.goto(appUrl("/butter-v1"));
+		const frames = await page.evaluate(async () => {
+			const samples: { opacity: number; y: number }[] = [];
+			let appearedAt: number | undefined;
+			await new Promise<void>((resolve) => {
+				const sample = () => {
+					const row = document.querySelector('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
+					if (row) {
+						appearedAt ??= performance.now();
+						const style = getComputedStyle(row);
+						samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 });
+					}
+					if (appearedAt === undefined || performance.now() - appearedAt < 900) requestAnimationFrame(sample);
+					else resolve();
+				};
+				requestAnimationFrame(sample);
+			});
+			return samples;
 		});
-		return samples;
+		expect(frames.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(frames)).toBe(true);
+		expect(frames.at(-1)).toEqual({ opacity: 1, y: 0 });
 	});
-	expect(frames.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(frames)).toBe(true);
-	expect(frames.at(-1)).toEqual({ opacity: 1, y: 0 });
-});
+}
 
 test("a changed session animates back into the top of the journey column", async ({ page }) => {
 	test.setTimeout(75_000);
