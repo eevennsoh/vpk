@@ -1,330 +1,170 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- MarkdownImage renders arbitrary markdown image payloads where Next Image sizing/loading would change the rendering contract. */
+import type { ComponentProps, ComponentType, MouseEvent, ReactNode } from "react";
+import { Component, memo, Suspense, use, useState } from "react";
 
-import type {
-	ComponentProps,
-	MouseEvent,
-	ReactElement,
-	ReactNode,
-} from "react";
-import { Children, cloneElement, Fragment, isValidElement, memo, use } from "react";
-import type { BundledLanguage } from "shiki";
-import type { ExtraProps, LinkSafetyConfig } from "streamdown";
-import { Streamdown, StreamdownContext } from "streamdown";
-import { cjk } from "@streamdown/cjk";
-import { code as baseCodePlugin } from "@streamdown/code";
-import { math } from "@/components/ui-custom/streamdown-math";
-import { mermaid } from "@streamdown/mermaid";
-
-import {
-	CodeBlock,
-	CodeBlockActions,
-	CodeBlockCopyButton,
-	CodeBlockDownloadButton,
-	CodeBlockFilename,
-	CodeBlockHeader,
-	CodeBlockTitle,
-} from "@/components/ui-custom/code-block";
-import { resolveImageRenderSrc } from "@/lib/image-proxy";
+import type { MessageResponseProps } from "./message-markdown-runtime";
 import { cn } from "@/lib/utils";
 
-const linkSafetyConfig: LinkSafetyConfig = {
-	enabled: true,
-	onLinkCheck: () => true,
-};
+export type { MessageResponseProps } from "./message-markdown-runtime";
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
-	/**
-	 * Opt out of the baked-in typeset typography container. Use for flat
-	 * surfaces (e.g. single-line user bubbles) that should inherit ambient
-	 * text styles instead of the prose hierarchy.
-	 */
-	plain?: boolean;
-};
+type MarkdownRuntime = Pick<typeof import("./message-markdown-runtime"), "MessageResponse" | "streamdownComponents">;
 
-/**
- * Wraps the Shiki code plugin to skip languages not in the Shiki bundle.
- * Without this, languages like "spec" (used by GenUI) cause a ShikiError
- * when Shiki tries to create a highlighter for an unknown language.
- */
-const safeCodePlugin: typeof baseCodePlugin = {
-	...baseCodePlugin,
-	highlight(options, callback) {
-		if (!baseCodePlugin.supportsLanguage(options.language)) {
-			return null;
+// The Streamdown runtime with its plugins (math with KaTeX, mermaid, code, CJK) is about 1.2 MB,
+// so it loads with the first message that renders instead of with every route that can show
+// one. A route whose page is messages (Rovo, Studio) imports the runtime statically instead; the
+// runtime registers itself when it evaluates, so messages there render without a lazy boundary.
+let loadedRuntime: MarkdownRuntime | null = null;
+let runtimeLoad: Promise<MarkdownRuntime> | null = null;
+let runtimeLoadFailed = false;
+
+class MessageMarkdownLoadError extends Error {}
+
+export function registerMessageMarkdownRuntime(runtime: MarkdownRuntime) {
+	loadedRuntime = runtime;
+	runtimeLoad = Promise.resolve(runtime);
+	runtimeLoadFailed = false;
+}
+
+function loadRuntime(): Promise<MarkdownRuntime> {
+	runtimeLoad ??= import("./message-markdown-runtime").then(
+		(runtime) => {
+			loadedRuntime = runtime;
+			return runtime;
+		},
+		(error: unknown) => {
+			runtimeLoadFailed = true;
+			throw new MessageMarkdownLoadError("The message markdown runtime failed to load", { cause: error });
+		},
+	);
+	return runtimeLoad;
+}
+
+// A failed load stays cached until a message has shown its fallback for it: React re-renders a
+// suspended message before committing, and a fresh import on each of those would refetch a failing
+// chunk in a loop. After that, the next render that needs the runtime loads it again.
+function forgetFailedRuntimeLoad() {
+	if (runtimeLoadFailed) {
+		runtimeLoad = null;
+		runtimeLoadFailed = false;
+	}
+}
+
+// For user intent that predicts a reply (opening a chat, typing); retries a load that failed.
+export function preloadMessageMarkdown(): Promise<MarkdownRuntime> {
+	forgetFailedRuntimeLoad();
+	return loadRuntime();
+}
+
+function DeferredMessageResponse(props: Readonly<MessageResponseProps>) {
+	// Always through use(): skipping it once the runtime has loaded would change the hooks a
+	// suspended render called.
+	const RuntimeMessageResponse = use(loadRuntime()).MessageResponse;
+	return <RuntimeMessageResponse {...props} />;
+}
+
+type LoadBoundaryProps = Readonly<{ children: ReactNode; fallback: ReactNode; retryKey: unknown }>;
+
+// Catches only a failed runtime load: the message shows its text unformatted, and the next render
+// with new props (the next streamed chunk, for one) tries the load again. Render errors from the
+// runtime itself go on to the boundaries above, as they do when the runtime is imported directly.
+class MessageMarkdownLoadBoundary extends Component<LoadBoundaryProps, { error: unknown }> {
+	state = { error: null as unknown };
+
+	static getDerivedStateFromError(error: unknown) {
+		return { error };
+	}
+
+	componentDidCatch() {
+		forgetFailedRuntimeLoad();
+	}
+
+	componentDidUpdate(previous: LoadBoundaryProps) {
+		if (this.state.error !== null && previous.retryKey !== this.props.retryKey) {
+			this.setState({ error: null });
 		}
-		return baseCodePlugin.highlight(options, callback);
-	},
-};
+	}
+
+	render() {
+		if (this.state.error === null) {
+			return this.props.children;
+		}
+		if (!(this.state.error instanceof MessageMarkdownLoadError)) {
+			throw this.state.error;
+		}
+		return this.props.fallback;
+	}
+}
+
+// While the runtime loads, the message keeps its box with the text laid out but not shown, so
+// raw markdown never flashes and the content does not jump when the formatted text lands. If the
+// load failed, the text is shown as it is rather than not at all.
+function MessageResponsePlainText({ children, className, plain, state }: Readonly<Pick<MessageResponseProps, "children" | "className" | "plain"> & { state: "pending" | "unavailable" }>) {
+	return (
+		<div
+			aria-busy={state === "pending" ? "true" : undefined}
+			className={cn(!plain && "typeset typeset-chat", state === "pending" && "invisible", "size-full whitespace-pre-wrap", className)}
+			data-message-markdown={state}
+		>
+			{typeof children === "string" ? children : null}
+		</div>
+	);
+}
+
+export const MessageResponse = memo(function MessageResponse(props: Readonly<MessageResponseProps>) {
+	// Decided once per instance: an instance never switches from the lazy path to the direct one,
+	// which would remount a streaming message.
+	const [runtimeAtMount] = useState(() => loadedRuntime);
+	if (runtimeAtMount) {
+		const RuntimeMessageResponse = runtimeAtMount.MessageResponse;
+		return <RuntimeMessageResponse {...props} />;
+	}
+	const plainText = (state: "pending" | "unavailable") => (
+		<MessageResponsePlainText className={props.className} plain={props.plain} state={state}>{props.children}</MessageResponsePlainText>
+	);
+	// `props` is a new object exactly when this memoized component re-renders with new props.
+	return (
+		<MessageMarkdownLoadBoundary fallback={plainText("unavailable")} retryKey={props}>
+			<Suspense fallback={plainText("pending")}>
+				<DeferredMessageResponse {...props} />
+			</Suspense>
+		</MessageMarkdownLoadBoundary>
+	);
+});
+
+// Streamdown renders these only inside a MessageResponse (or another Streamdown), so the
+// runtime is already loaded when they render; each forwards to the runtime's component of the
+// same name. The keys must match the runtime's map (message-markdown.behavior.test.js).
+const STREAMDOWN_COMPONENT_NAMES = [
+	"a", "code", "inlineCode", "p", "pre", "img",
+	"h1", "h2", "h3", "h4", "h5", "h6",
+	"ul", "ol", "li", "blockquote", "hr",
+	"table", "thead", "tbody", "tr", "th", "td",
+] as const;
+
+type StreamdownComponentName = (typeof STREAMDOWN_COMPONENT_NAMES)[number];
+type StreamdownComponentMap = MarkdownRuntime["streamdownComponents"];
+
+function createStreamdownComponentProxy<Name extends StreamdownComponentName>(name: Name): StreamdownComponentMap[Name] {
+	function StreamdownComponentProxy(props: Record<string, unknown>) {
+		const runtime = loadedRuntime ?? use(loadRuntime());
+		const Component = runtime.streamdownComponents[name] as ComponentType<Record<string, unknown>>;
+		return <Component {...props} />;
+	}
+	StreamdownComponentProxy.displayName = `StreamdownComponent(${name})`;
+	return StreamdownComponentProxy as unknown as StreamdownComponentMap[Name];
+}
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This module intentionally exports colocated non-component API used by consumers.
-export const streamdownPlugins = { cjk, code: safeCodePlugin, math, mermaid };
+export const streamdownComponents = Object.fromEntries(
+	STREAMDOWN_COMPONENT_NAMES.map((name) => [name, createStreamdownComponentProxy(name)]),
+) as unknown as StreamdownComponentMap;
 
-const inlineStreamTags = new Set([
-	"a",
-	"abbr",
-	"acronym",
-	"b",
-	"bdi",
-	"bdo",
-	"br",
-	"cite",
-	"code",
-	"data",
-	"del",
-	"em",
-	"i",
-	"kbd",
-	"mark",
-	"q",
-	"rp",
-	"rt",
-	"ruby",
-	"s",
-	"samp",
-	"small",
-	"span",
-	"strong",
-	"sub",
-	"sup",
-	"time",
-	"u",
-	"var",
-	"img",
-]);
-
-function hasBlockMarkdownContent(children: ReactNode): boolean {
-	return Children.toArray(children).some((child) => {
-		if (
-			child === null ||
-			child === undefined ||
-			typeof child === "boolean" ||
-			typeof child === "string" ||
-			typeof child === "number"
-		) {
-			return false;
-		}
-
-		if (!isValidElement(child)) {
-			return false;
-		}
-
-		const element = child as ReactElement<{ children?: ReactNode }>;
-
-		if (element.type === Fragment) {
-			return hasBlockMarkdownContent(element.props.children);
-		}
-
-		if (typeof element.type === "string") {
-			return !inlineStreamTags.has(element.type);
-		}
-
-		return true;
-	});
-}
-
-type MarkdownParagraphProps = ComponentProps<"p"> & { node?: unknown };
-
-function MarkdownParagraph({
-	children,
-	className,
-	...props
-}: Readonly<MarkdownParagraphProps>) {
-	const { node, ...htmlProps } = props;
-	void node;
-	void className;
-
-	const blockContent = hasBlockMarkdownContent(children);
-
-	const Element = blockContent ? "div" : "p";
-
-	return (
-		<Element {...htmlProps}>
-			{children}
-		</Element>
-	);
-}
-
-type MarkdownImageProps = ComponentProps<"img"> & { node?: unknown };
 type MarkdownAnchorProps = ComponentProps<"a"> & { node?: unknown };
 
-type MarkdownInlineCodeProps = ComponentProps<"code"> & { node?: unknown };
-
-type MarkdownCodeBlockProps = ComponentProps<"code"> & ExtraProps;
-
-const CODE_LANGUAGE_PATTERN = /language-([^\s]+)/u;
-const CODE_TITLE_PATTERN =
-	/(?:^|\s)(?:title|filename)=["']([^"']+)["']/u;
-const CODE_NO_LINE_NUMBERS_PATTERN = /(?:^|\s)noLineNumbers(?:\s|$)/u;
-const INLINE_CODE_BACKTICK_PATTERN = /`+/gu;
-type StreamdownCodeLanguage = Parameters<typeof safeCodePlugin.supportsLanguage>[0];
-
-const getCodeFenceLanguage = (className?: string) => {
-	const match = className?.match(CODE_LANGUAGE_PATTERN);
-	return match?.[1]?.toLowerCase() ?? "text";
-};
-
-const getCodeFenceTitle = (meta?: string) => {
-	const match = meta?.match(CODE_TITLE_PATTERN);
-	return match?.[1];
-};
-
-const getCodeFenceMeta = (node?: MarkdownCodeBlockProps["node"]) => {
-	const metastring = node?.properties?.metastring;
-	return typeof metastring === "string" ? metastring : undefined;
-};
-
-const getInlineCodeText = (children: ReactNode) =>
-	Children.toArray(children)
-		.map((child) => {
-			if (typeof child === "string" || typeof child === "number") {
-				return String(child);
-			}
-
-			return "";
-		})
-		.join("");
-
-const getInlineCodeFence = (content: string) => {
-	let longestBacktickRun = 0;
-
-	for (const match of content.matchAll(INLINE_CODE_BACKTICK_PATTERN)) {
-		longestBacktickRun = Math.max(longestBacktickRun, match[0].length);
-	}
-
-	return "`".repeat(longestBacktickRun + 1);
-};
-
-const toBundledLanguage = (language: string): BundledLanguage =>
-	safeCodePlugin.supportsLanguage(language as StreamdownCodeLanguage)
-		? (language as BundledLanguage)
-		: "markdown";
-
-function MarkdownInlineCode({
-	children,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownInlineCodeProps>) {
-	void node;
-	const { isAnimating, mode } = use(StreamdownContext);
-	const isStreamingInlineCode = mode === "streaming" && isAnimating;
-
-	if (isStreamingInlineCode) {
-		const inlineCodeText = getInlineCodeText(children);
-		const inlineCodeFence = getInlineCodeFence(inlineCodeText);
-
-		return (
-			<code
-				className={cn(
-					"rounded-none bg-transparent px-0 py-0 font-mono text-inherit",
-					className,
-				)}
-				data-inline-code-state="streaming"
-				{...props}
-			>
-				{inlineCodeFence}{children}{inlineCodeFence}
-			</code>
-		);
-	}
-
-	return (
-		<code
-			className={cn(
-				"rounded bg-muted px-1.5 py-0.5 font-mono text-sm",
-				className,
-			)}
-			data-inline-code-state="complete"
-			{...props}
-		>
-			{children}
-		</code>
-	);
-}
-
-function MarkdownCodeBlock({
-	children,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownCodeBlockProps>) {
-	const code = typeof children === "string" ? children : "";
-	const rawLanguage = getCodeFenceLanguage(className);
-	const meta = getCodeFenceMeta(node);
-
-	if (rawLanguage === "mermaid" || rawLanguage === "mmd") {
-		const mermaidMarkdown = ["```mermaid", code.trim(), "```"].join("\n");
-
-		return (
-			<Streamdown
-				className="not-typeset text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_p]:m-0"
-				components={{
-					img: MarkdownImage,
-					inlineCode: MarkdownInlineCode,
-					p: MarkdownParagraph,
-				}}
-				controls
-				linkSafety={linkSafetyConfig}
-				mode="static"
-				plugins={streamdownPlugins}
-			>
-				{mermaidMarkdown}
-			</Streamdown>
-		);
-	}
-
-	const language = toBundledLanguage(rawLanguage);
-	const title = getCodeFenceTitle(meta) ?? rawLanguage;
-	const showLineNumbers = meta ? !CODE_NO_LINE_NUMBERS_PATTERN.test(meta) : true;
-
-	return (
-		<CodeBlock
-			className="not-typeset"
-			code={code}
-			language={language}
-			showLineNumbers={showLineNumbers}
-			{...props}
-		>
-			<CodeBlockHeader>
-				<CodeBlockTitle>
-					<CodeBlockFilename>{title}</CodeBlockFilename>
-				</CodeBlockTitle>
-				<CodeBlockActions>
-					<CodeBlockDownloadButton />
-					<CodeBlockCopyButton />
-				</CodeBlockActions>
-			</CodeBlockHeader>
-		</CodeBlock>
-	);
-}
-
-function MarkdownImage({
-	src,
-	alt,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownImageProps>) {
-	void node;
-	const resolvedSrc = resolveImageRenderSrc(src);
-	if (!resolvedSrc) {
-		return null;
-	}
-
-	return (
-		<img
-			{...props}
-			src={resolvedSrc}
-			alt={typeof alt === "string" ? alt : ""}
-			loading={props.loading ?? "lazy"}
-			referrerPolicy={props.referrerPolicy ?? "no-referrer"}
-			className={cn("h-auto max-w-full rounded-md", className)}
-		/>
-	);
-}
-
-function MarkdownAnchor({
+// Links in chat markdown. Kept outside the runtime: it needs nothing from Streamdown, and canvas
+// links ("#rovo-canvas-<id>") open the artifact through a window event.
+export function MarkdownAnchor({
 	href,
 	onClick,
 	node,
@@ -373,100 +213,3 @@ function MarkdownAnchor({
 		/>
 	);
 }
-
-/**
- * Renders a bare HTML element for a Streamdown block tag, stripping the `node`
- * hint and Streamdown's hardcoded utility `className`. Dropping the class lets
- * typeset's zero-specificity `:where()` rules own block typography instead of
- * losing to Streamdown's baked-in utilities.
- */
-type BareElementProps = ExtraProps & {
-	className?: string;
-	children?: ReactNode;
-};
-
-const bareEl = (tag: string) =>
-	function BareElement({
-		node,
-		className,
-		...rest
-	}: Readonly<BareElementProps>) {
-		void node;
-		void className;
-		const Element = tag as unknown as (
-			props: Readonly<BareElementProps>,
-		) => ReactElement;
-		return <Element {...rest} />;
-	};
-
-/**
- * Unwrap the `<pre>` that react-markdown wraps fenced code in. MarkdownCodeBlock
- * already renders a self-contained (`not-typeset`) CodeBlock, so a surviving
- * `<pre>` wrapper would be styled by typeset's `:where(pre)` rules and double-box
- * the highlighted output.
- *
- * Streamdown 2.x marks fenced (block) code by cloning the child `<code>` with
- * `data-block` from its default `pre` renderer. When `components.inlineCode` is
- * set, Streamdown routes `"data-block" in props` → `code`, else → `inlineCode`.
- * We must preserve that marker while still omitting the `<pre>` element, or
- * mermaid/fenced blocks fall through to MarkdownInlineCode (raw gray text).
- */
-function MarkdownPre({ children }: Readonly<{ children?: ReactNode }>) {
-	if (isValidElement(children)) {
-		return cloneElement(children as ReactElement<Record<string, unknown>>, {
-			"data-block": "true",
-		});
-	}
-	return <>{children}</>;
-}
-
-// react-doctor-disable-next-line react-doctor/only-export-components -- This module intentionally exports colocated non-component API used by consumers.
-export const streamdownComponents = {
-	a: MarkdownAnchor,
-	code: MarkdownCodeBlock,
-	inlineCode: MarkdownInlineCode,
-	p: MarkdownParagraph,
-	pre: MarkdownPre,
-	img: MarkdownImage,
-	h1: bareEl("h1"),
-	h2: bareEl("h2"),
-	h3: bareEl("h3"),
-	h4: bareEl("h4"),
-	h5: bareEl("h5"),
-	h6: bareEl("h6"),
-	ul: bareEl("ul"),
-	ol: bareEl("ol"),
-	li: bareEl("li"),
-	blockquote: bareEl("blockquote"),
-	hr: bareEl("hr"),
-	table: bareEl("table"),
-	thead: bareEl("thead"),
-	tbody: bareEl("tbody"),
-	tr: bareEl("tr"),
-	th: bareEl("th"),
-	td: bareEl("td"),
-};
-
-export const MessageResponse = memo(
-	function MessageResponse({ className, plain, ...props }: Readonly<MessageResponseProps>) {
-		return (
-			<Streamdown
-				animated={{
-					animation: "blurIn",
-					duration: 220,
-					easing: "ease-out",
-				}}
-				className={cn(
-					!plain && "typeset typeset-chat",
-					"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden",
-					className,
-				)}
-				mode="streaming"
-				plugins={streamdownPlugins}
-				components={streamdownComponents}
-				linkSafety={linkSafetyConfig}
-				{...props}
-			/>
-		);
-	},
-);

@@ -12,6 +12,7 @@ import { Fragment, useEffect, useMemo, useCallback, useReducer, useRef, useState
 import type { FileUIPart } from "ai";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
+import { preloadMessageMarkdownForReply } from "@/components/projects/rovo-core/hooks/use-preload-message-markdown";
 import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
@@ -577,6 +578,13 @@ export default function ChatPanel({ onClose, agentCreator,
 		toggleHistory,
 		unpinFloating,
 	} = useRovoChat();
+	// The chat's markdown runtime loads when the chat opens (sidebar or floating), not with the
+	// route that mounts this panel, so the answer to a first message is not held up by it.
+	useEffect(() => {
+		if (chatSurface) {
+			preloadMessageMarkdownForReply();
+		}
+	}, [chatSurface]);
 	const panelRef = useRef<HTMLDivElement | null>(null);
 	const artifactDialogFloatingPinRef = useRef(false);
 	const reportedArtifactResultKeysRef = useLazyRef<Set<string>>(() => new Set());
