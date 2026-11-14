@@ -1,33 +1,21 @@
 "use client";
 
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
-import { lazy, Suspense, type ComponentType } from "react";
+import type { ComponentType } from "react";
 
-import { cn } from "@/lib/utils";
+import { createLazyGlyph } from "@/components/ui/lazy-glyph";
 
 export type IconComponent = (props: NewCoreIconProps) => JSX.Element;
 
 type IconModule = Readonly<{ default: ComponentType<NewCoreIconProps> }>;
 
 /**
- * Holds the glyph's box (ADS icons are 16px, 12px at `size="small"`) while the icon module
- * loads, so an icon that arrives late never moves the content around it.
+ * An icon component that downloads its module on first render. Until it arrives, the glyph's box
+ * (ADS icons are 16px, 12px at `size="small"`) is held empty.
  */
-function IconPlaceholder({ size }: Readonly<Pick<NewCoreIconProps, "size">>) {
-	return <span aria-hidden className={cn("inline-block shrink-0", size === "small" ? "size-3" : "size-4")} />;
-}
-
-/** An icon component that downloads its module on first render. */
 export function createLazyIcon(load: () => Promise<IconModule>): IconComponent {
-	const LoadedIcon = lazy(load);
-
-	function LazyIcon(props: NewCoreIconProps) {
-		return (
-			<Suspense fallback={<IconPlaceholder size={props.size} />}>
-				<LoadedIcon {...props} />
-			</Suspense>
-		);
-	}
-
-	return LazyIcon;
+	return createLazyGlyph<NewCoreIconProps>(
+		() => load().then((module) => module.default),
+		(props) => (props.size === "small" ? 12 : 16),
+	) as unknown as IconComponent;
 }

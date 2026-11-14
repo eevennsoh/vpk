@@ -157,3 +157,29 @@ test("recording a run's messages writes the manifest the cleanup reads", async (
 	assert.equal(await manager.deleteLegacyRootFiles("thread-1"), 1);
 	assert.equal(await exists(generated), false);
 });
+
+test("a candidate inside a submodule is kept without stopping the cleanup of the others", async (t) => {
+	const { projectRoot, baseDir, write } = await createFixture(t);
+	const generated = await write("app/generated/page.tsx", "generated");
+	const inSubmodule = await write("lib/vendored/generated.ts", "generated");
+	// A submodule entry in the index, as `git submodule add` leaves it.
+	execFileSync("git", ["update-index", "--add", "--cacheinfo", `160000,${"1".repeat(40)},lib/vendored`], { cwd: projectRoot });
+	await plantManifest(baseDir, "thread-1", ["app/generated/page.tsx", "lib/vendored/generated.ts"]);
+	const manager = createRovoAppGeneratedFilesManager({ baseDir, projectRoot, logger: silentLogger });
+
+	assert.equal(await manager.deleteLegacyRootFiles("thread-1"), 1);
+	assert.equal(await exists(generated), false);
+	assert.equal(await exists(inSubmodule), true);
+});
+
+test("deleting a generated file removes the directories it leaves empty but never a top-level root", async (t) => {
+	const { projectRoot, baseDir, write } = await createFixture(t);
+	const generated = await write("lib/generated/deep/helper.ts", "generated");
+	await plantManifest(baseDir, "thread-1", ["lib/generated/deep/helper.ts"]);
+	const manager = createRovoAppGeneratedFilesManager({ baseDir, projectRoot, logger: silentLogger });
+
+	assert.equal(await manager.deleteLegacyRootFiles("thread-1"), 1);
+	assert.equal(await exists(generated), false);
+	assert.equal(await exists(path.join(projectRoot, "lib", "generated")), false);
+	assert.equal(await exists(path.join(projectRoot, "lib")), true);
+});

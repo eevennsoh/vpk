@@ -107,6 +107,10 @@ async function startServer() {
 		}
 		const address = /** @type {import("node:net").AddressInfo | null} */ (httpServer.address());
 		console.log(`[PROCESS] listening on ${address?.address}:${address?.port}`);
+		// Never rejects; a stored run it misses is still cleared when its thread is read.
+		void currentRuntime.startupTasks.sweepOrphanedRovoAppRuns().then((cleared) => {
+			if (cleared > 0) console.log(`[STARTUP] Cleared ${cleared} stored run(s) left by the previous process`);
+		});
 		await logBackendServerReady(currentRuntime.serverReadyDependencies);
 	});
 

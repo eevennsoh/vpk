@@ -5,17 +5,13 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/admin/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -23,16 +19,11 @@
 		"app/arts/personal-graph/page.tsx": [
 			"@web-kits/audio"
 		],
-		"app/arts/rovo-p5/page.tsx": [
-			"@atlaskit/logo"
-		],
 		"app/butter-v0/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -42,8 +33,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -53,8 +42,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -67,8 +54,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -83,8 +68,6 @@
 			"./skills.json",
 			"./tools.json",
 			"@/app/data/directory/skills.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -94,8 +77,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -105,8 +86,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -116,8 +95,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -127,8 +104,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -138,8 +113,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -149,8 +122,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki",
@@ -161,8 +132,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -172,8 +141,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -186,22 +153,14 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
-		],
-		"app/preview/blocks/agent-card/page.tsx": [
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
 		],
 		"app/preview/blocks/agent-profile-card/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
@@ -210,8 +169,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -221,8 +178,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -232,8 +187,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -243,8 +196,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
@@ -253,8 +204,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
@@ -263,8 +212,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
@@ -273,8 +220,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -284,23 +229,15 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
-		],
-		"app/preview/blocks/twg-agent-card/page.tsx": [
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
 		],
 		"app/preview/projects/jira-for-you/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -309,20 +246,13 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
-		],
-		"app/rovo-p5/page.tsx -> components/website/demos/arts/rovo-p5-demo.tsx": [
-			"@atlaskit/logo"
+			"./tools.json"
 		],
 		"app/rovo/[[...id]]/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
@@ -333,25 +263,19 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/sandbox/screen-assistant/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/search/page.tsx -> components/website/demos/projects/search-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -360,17 +284,13 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/sidebar-chat/page.tsx -> components/website/demos/projects/sidebar-chat-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -379,17 +299,13 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/skills/page.tsx -> components/website/demos/projects/skills-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -399,8 +315,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
@@ -411,9 +325,7 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"app/visual/[slug]/page.tsx": [
 			"shiki"
@@ -423,8 +335,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -434,8 +344,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -445,8 +353,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -455,17 +361,13 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
+			"./tools.json"
 		],
 		"components/projects/jira-for-you/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -476,8 +378,6 @@
 			"./skills.json",
 			"./tools.json",
 			"@/app/data/directory/skills.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -487,8 +387,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -498,8 +396,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -509,8 +405,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -520,8 +414,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -531,8 +423,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -542,8 +432,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki",
@@ -554,8 +442,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -565,8 +451,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -576,25 +460,17 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
 			"shiki",
 			"streamdown"
 		],
-		"components/projects/search/page.tsx": [
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party"
-		],
 		"components/projects/sidebar-chat/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -604,8 +480,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"recharts",
 			"shiki"
@@ -615,8 +489,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@atlaskit/logo",
-			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
