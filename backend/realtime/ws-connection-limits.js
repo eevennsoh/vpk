@@ -1,17 +1,21 @@
 "use strict";
 
+const { resolveTrustedProxyHops } = require("../lib/client-address");
+
 // Bounds on the backend's WebSocket servers (BE-F10). Each open socket can hold a partial
 // frame up to its server's maxPayload, so the number of sockets bounds that memory, and a
 // peer that stops answering pings is closed. Provisional values:
 //   64 sockets in total across both servers (about 64 MiB of partial frames at worst);
-//   no separate per-address cap unless one is configured: behind a proxy every client
-//   shares one address (there is no `trust proxy`), so a per-address cap would be a cap
-//   on all users together;
+//   16 sockets per client address when addresses identify clients (production, where the
+//   address is the load balancer's X-Forwarded-For entry; see lib/client-address.js), so
+//   one client cannot hold every slot; otherwise (local development, where every socket
+//   comes from loopback, or VPK_TRUSTED_PROXY_HOPS=0) no separate per-address cap;
 //   a ping every 30 s, and a socket that has not answered the previous ping is closed.
 // VPK_WS_MAX_CONNECTIONS and VPK_WS_MAX_CONNECTIONS_PER_ADDRESS override the caps, and
 // the realtime and preview servers each get their own pool of that size, so preview use
 // cannot starve realtime (worst case about 64 MiB + 16 MiB of partial frames).
 const WS_MAX_CONNECTIONS = 64;
+const WS_MAX_CONNECTIONS_PER_CLIENT = 16;
 const WS_HEARTBEAT_INTERVAL_MS = 30_000;
 // One socket token (it lives RUNTIME_SOCKET_TOKEN_TTL_MS, 60 s, in middleware/runtime-admin.js)
 // may hold at most this many sockets, so one token cannot take every slot.
@@ -29,8 +33,9 @@ function parsePositiveInteger(value) {
 
 /**
  * The connection caps from the environment: VPK_WS_MAX_CONNECTIONS (total, default 64) and
- * VPK_WS_MAX_CONNECTIONS_PER_ADDRESS (default: the total, so no separate cap). A value
- * that is not a positive integer is logged and the default is used.
+ * VPK_WS_MAX_CONNECTIONS_PER_ADDRESS (default: WS_MAX_CONNECTIONS_PER_CLIENT when proxy
+ * hops are trusted, else the total, so no separate cap). A value that is not a positive
+ * integer is logged and the default is used.
  * @param {NodeJS.ProcessEnv} [env]
  * @param {{ warn?: (...args: unknown[]) => void }} [logger]
  * @returns {{ maxTotal: number, maxPerAddress: number }}
@@ -47,7 +52,8 @@ function resolveConnectionLimits(env = process.env, logger = console) {
 	};
 	const maxTotal = read("VPK_WS_MAX_CONNECTIONS") ?? WS_MAX_CONNECTIONS;
 	const configuredPerAddress = read("VPK_WS_MAX_CONNECTIONS_PER_ADDRESS");
-	return { maxTotal, maxPerAddress: configuredPerAddress === null ? maxTotal : Math.min(configuredPerAddress, maxTotal) };
+	const defaultPerAddress = resolveTrustedProxyHops(env, logger) > 0 ? WS_MAX_CONNECTIONS_PER_CLIENT : maxTotal;
+	return { maxTotal, maxPerAddress: Math.min(configuredPerAddress ?? defaultPerAddress, maxTotal) };
 }
 
 /**
@@ -170,6 +176,7 @@ module.exports = {
 	WS_FIRST_FRAME_TIMEOUT_MS,
 	WS_HEARTBEAT_INTERVAL_MS,
 	WS_MAX_CONNECTIONS,
+	WS_MAX_CONNECTIONS_PER_CLIENT,
 	WS_MAX_CONNECTIONS_PER_TOKEN,
 	armFirstFrameTimeout,
 	createConnectionLimiter,

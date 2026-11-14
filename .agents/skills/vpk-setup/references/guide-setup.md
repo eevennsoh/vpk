@@ -273,14 +273,17 @@ ROVO_BILLING_URL=https://product-fabric.atlassian.net
 
 `scripts/dev-rovo.js` passes this value as `--site-url` to `rovo serve`. Override this value when you need a different billing site.
 
-**WebSocket connection caps (optional):**
+**Client addresses and WebSocket connection caps (optional):**
 
 ```
+VPK_TRUSTED_PROXY_HOPS=1
 VPK_WS_MAX_CONNECTIONS=64
 VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=16
 ```
 
-The backend's preview and realtime WebSockets together allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` adds a per-client-address cap and is off by default. Set it only where the backend sees each client's own address: behind a proxy every client shares the proxy's address, so it would cap all users together. A value that is not a positive integer is ignored, with a `[STARTUP]` warning.
+Per-client limits (the AI-cost rate limiter and the WebSocket caps) key on the client address. `VPK_TRUSTED_PROXY_HOPS` is the number of proxies in front of the backend that append to `X-Forwarded-For`: 1 by default in production (the Micros load balancer), 0 elsewhere. With 0 the socket address is used and the header is ignored; otherwise the entry that many hops from the socket is the client, and entries a client sent itself are never used. Express's `trust proxy` is not set, so `X-Forwarded-Host` and `X-Forwarded-Proto` stay ignored. Set 0 if the backend is ever reachable without a proxy in front; a value above the real number of proxies lets a client choose its own address.
+
+The preview and realtime WebSockets each allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` caps sockets per client address: 16 by default when proxy hops are trusted (production), so one client cannot hold every slot, and off (the total) otherwise, since in local development every socket comes from loopback. A value that is not a positive integer is ignored, with a `[STARTUP]` warning.
 
 **Atlassian sites for the Jira demos and image proxy (optional):**
 
