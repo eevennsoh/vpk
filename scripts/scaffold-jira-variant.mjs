@@ -21,6 +21,12 @@ import {
 	normalizeRelativePath,
 	resolveWorkspacePath,
 } from "./lib/jira-variant-filesystem.mjs";
+import { prepareRegistrationRule } from "./lib/jira-variant-registration-rules.mjs";
+import {
+	assertNoAmbiguousTargetIdentifiers,
+	assertNoSourceIdentifiers,
+	rewriteText,
+} from "./lib/jira-variant-text.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_MANIFEST_PATH = path.join(
@@ -113,18 +119,6 @@ function expandManifestTemplates(value, values) {
 	return value;
 }
 
-function countOccurrences(content, value) {
-	if (!value) return 0;
-	let count = 0;
-	let cursor = 0;
-	while (true) {
-		const index = content.indexOf(value, cursor);
-		if (index < 0) return count;
-		count += 1;
-		cursor = index + value.length;
-	}
-}
-
 function resolveRewriteRules(manifest, values) {
 	const rules = (manifest.rewrites ?? []).map((entry) => ({
 		from: expandTemplate(entry.from, values),
@@ -143,53 +137,6 @@ function resolveRewriteRules(manifest, values) {
 	return rules.sort((left, right) => {
 		return right.from.length - left.from.length || left.from.localeCompare(right.from);
 	});
-}
-
-function rewriteText(content, rewriteRules) {
-	let output = content;
-	let rewriteCount = 0;
-	for (const { from, to } of rewriteRules) {
-		const count = countOccurrences(output, from);
-		if (count === 0) continue;
-		output = output.replaceAll(from, to);
-		rewriteCount += count;
-	}
-	return { content: output, rewriteCount };
-}
-
-function sourceIdentifiers(identity) {
-	return [
-		identity.pascal,
-		identity.upper,
-		identity.camel,
-		identity.title,
-		identity.slug,
-		identity.experimentalPascal,
-		identity.experimentalUpper,
-		identity.experimentalCamel,
-		identity.experimentalSlug,
-		identity.version,
-	].sort((left, right) => right.length - left.length || left.localeCompare(right));
-}
-
-function targetIdentifiers(identity) {
-	return sourceIdentifiers(identity);
-}
-
-function assertNoAmbiguousTargetIdentifiers(content, target, filePath) {
-	const identifier = targetIdentifiers(target).find((candidate) => content.includes(candidate));
-	if (identifier) {
-		throw new Error(
-			`ambiguous rewrite in ${filePath}: source content already contains target identifier ${identifier}`,
-		);
-	}
-}
-
-function assertNoSourceIdentifiers(content, source, filePath) {
-	const identifier = sourceIdentifiers(source).find((candidate) => content.includes(candidate));
-	if (identifier) {
-		throw new Error(`unresolved source identifier in ${filePath}: ${identifier}`);
-	}
 }
 
 function isTextFile(filePath) {
@@ -229,11 +176,12 @@ function prepareCopyOperation({
 	};
 }
 
-function prepareCopyOperations({ manifest, rewriteRules, root, source, target, values }) {
+function prepareCopyOperations({ manifest, reusedTargetsById, rewriteRules, root, source, target, values }) {
 	const operations = [];
 	const targetRoots = new Set();
 	const skipped = [];
 	for (const template of manifest.copyTemplates ?? []) {
+		if (template.reusableTarget && reusedTargetsById.has(template.reusableTarget)) continue;
 		if (template.sourceGlob) {
 			const sourceGlob = expandTemplate(template.sourceGlob, values);
 			const matches = listGlobMatches(root, sourceGlob);
@@ -312,205 +260,62 @@ function prepareCopyOperations({ manifest, rewriteRules, root, source, target, v
 	};
 }
 
-function findMatchingDelimiter(content, startIndex, open, close) {
-	let depth = 0;
-	let quote = null;
-	let escaped = false;
-	let lineComment = false;
-	let blockComment = false;
-	for (let index = startIndex; index < content.length; index += 1) {
-		const char = content[index];
-		const next = content[index + 1];
-		if (lineComment) {
-			if (char === "\n") lineComment = false;
-			continue;
+/**
+ * Resolves which reusable targets already exist in the workspace. A reusable
+ * target (for example an experimental block variant that was added on its own,
+ * before the matching project) keeps its files and registrations as they are:
+ * the plan skips the copies and registrations tagged with its id and only
+ * checks that every registration file already names the existing target.
+ */
+function resolveReusedTargets({ manifest, root, values }) {
+	const declared = new Map();
+	for (const template of manifest.reusableTargets ?? []) {
+		const entry = expandManifestTemplates(template, values);
+		if (!entry.id || !entry.path || !entry.registeredMarker || declared.has(entry.id)) {
+			throw new Error(`invalid reusable target: ${JSON.stringify(template)}`);
 		}
-		if (blockComment) {
-			if (char === "*" && next === "/") {
-				blockComment = false;
-				index += 1;
-			}
-			continue;
-		}
-		if (quote) {
-			if (escaped) {
-				escaped = false;
-				continue;
-			}
-			if (char === "\\") {
-				escaped = true;
-				continue;
-			}
-			if (char === quote) quote = null;
-			continue;
-		}
-		if (char === "/" && next === "/") {
-			lineComment = true;
-			index += 1;
-			continue;
-		}
-		if (char === "/" && next === "*") {
-			blockComment = true;
-			index += 1;
-			continue;
-		}
-		if (char === '"' || char === "'" || char === "`") {
-			quote = char;
-			continue;
-		}
-		if (char === open) depth += 1;
-		if (char === close) {
-			depth -= 1;
-			if (depth === 0) return index;
+		declared.set(entry.id, entry);
+	}
+	for (const entry of [...(manifest.copyTemplates ?? []), ...(manifest.registrations ?? [])]) {
+		if (entry.reusableTarget && !declared.has(entry.reusableTarget)) {
+			throw new Error(`unknown reusable target: ${entry.reusableTarget}`);
 		}
 	}
-	throw new Error(`unclosed ${open}${close} block at offset ${startIndex}`);
+	const reused = [];
+	for (const entry of declared.values()) {
+		const resolved = resolveWorkspacePath(root, entry.path, "reusable target");
+		if (existsSync(resolved.absolutePath)) {
+			reused.push({ id: entry.id, path: entry.path, registeredMarker: entry.registeredMarker });
+		}
+	}
+	return reused.sort((left, right) => left.id.localeCompare(right.id));
 }
 
-function extractArrayObjects(content, arrayStart) {
-	const startCount = countOccurrences(content, arrayStart);
-	if (startCount !== 1) {
-		throw new Error(`registration array anchor must occur exactly once: ${arrayStart}`);
+function assertReusedRegistration(root, rule, reusedTarget) {
+	const resolved = resolveWorkspacePath(root, rule.file, "registration file");
+	if (!existsSync(resolved.absolutePath)) {
+		if (rule.optional) return;
+		throw new Error(`registration file does not exist: ${rule.file}`);
 	}
-	const anchorIndex = content.indexOf(arrayStart);
-	const openIndex = content.indexOf("[", anchorIndex);
-	const closeIndex = findMatchingDelimiter(content, openIndex, "[", "]");
-	const objects = [];
-	for (let cursor = openIndex + 1; cursor < closeIndex; cursor += 1) {
-		if (content[cursor] !== "{") continue;
-		const endBrace = findMatchingDelimiter(content, cursor, "{", "}");
-		let end = endBrace + 1;
-		while (end < closeIndex && /[ \t]/u.test(content[end])) end += 1;
-		if (content[end] === ",") end += 1;
-		objects.push({ content: content.slice(cursor, end), end, start: cursor });
-		cursor = end - 1;
+	assertRegularFile(resolved.absolutePath, `registration file ${rule.file}`);
+	const marker = reusedTarget.registeredMarker;
+	if (!rule.optional && !readFileSync(resolved.absolutePath, "utf8").includes(marker)) {
+		throw new Error(
+			`existing ${reusedTarget.id} target ${reusedTarget.path} is not registered in ${rule.file}: expected ${marker}`,
+		);
 	}
-	return { closeIndex, objects };
 }
 
-function prepareRegistrationRule(content, rule, rewriteRules, source) {
-	if (rule.kind === "replace") {
-		const sourceCount = countOccurrences(content, rule.source);
-		if (countOccurrences(content, rule.target) > 0) {
-			if (rule.optional && sourceCount === 0) {
-				return { content, insertedCount: 0 };
-			}
-			throw new Error(`target registration already exists in ${rule.file}`);
-		}
-		if (sourceCount === 0 && rule.optional) {
-			return { content, insertedCount: 0 };
-		}
-		if (sourceCount !== 1) {
-			throw new Error(
-				`registration replacement is missing or ambiguous in ${rule.file}: ${rule.source}`,
-			);
-		}
-		return {
-			content: content.replace(rule.source, rule.target),
-			insertedCount: 1,
-		};
-	}
-
-	if (rule.kind === "line") {
-		if (countOccurrences(content, rule.target) > 0) {
-			throw new Error(`target registration already exists in ${rule.file}`);
-		}
-		if (countOccurrences(content, rule.source) !== 1) {
-			throw new Error(`registration source is missing or ambiguous in ${rule.file}`);
-		}
-		return {
-			content: content.replace(rule.source, `${rule.source}\n${rule.target}`),
-			insertedCount: 1,
-		};
-	}
-
-	if (rule.kind === "block") {
-		if (countOccurrences(content, rule.targetStart) > 0) {
-			throw new Error(`target registration already exists in ${rule.file}`);
-		}
-		if (countOccurrences(content, rule.start) !== 1) {
-			throw new Error(`registration block is missing or ambiguous in ${rule.file}`);
-		}
-		const start = content.indexOf(rule.start);
-		const endMarker = content.indexOf(rule.end, start);
-		if (endMarker < 0) {
-			throw new Error(`registration block end is missing in ${rule.file}`);
-		}
-		const end = endMarker + rule.end.length;
-		const sourceBlock = content.slice(start, end);
-		let targetBlock = rewriteText(sourceBlock, rewriteRules).content;
-		for (const replacement of rule.postRewrites ?? []) {
-			const replacementCount = countOccurrences(targetBlock, replacement.from);
-			if (replacementCount === 0 && !replacement.optional) {
-				throw new Error(`registration post-rewrite source is missing in ${rule.file}`);
-			}
-			targetBlock = targetBlock.replaceAll(replacement.from, replacement.to);
-		}
-		assertNoSourceIdentifiers(targetBlock, source, rule.file);
-		return {
-			content: `${content.slice(0, end)}\n${targetBlock}${content.slice(end)}`,
-			insertedCount: 1,
-		};
-	}
-
-	if (rule.kind === "matching-lines") {
-		if (content.includes(rule.targetMarker)) {
-			throw new Error(`target registration already exists in ${rule.file}`);
-		}
-		let insertedCount = 0;
-		const lines = content.split("\n").flatMap((line) => {
-			if (!line.includes(rule.sourceMarker)) return [line];
-			insertedCount += 1;
-			const targetLine = rewriteText(line, rewriteRules).content;
-			return rule.replaceSource ? [targetLine] : [line, targetLine];
-		});
-		if (insertedCount === 0 && !rule.optional) {
-			throw new Error(
-				`registration source lines are missing in ${rule.file}: ${rule.sourceMarker}`,
-			);
-		}
-		return { content: lines.join("\n"), insertedCount };
-	}
-
-	if (rule.kind === "array-object-all") {
-		const { objects } = extractArrayObjects(content, rule.arrayStart);
-		if (objects.some((entry) => entry.content.includes(rule.targetMarker))) {
-			throw new Error(`target registration already exists in ${rule.file}`);
-		}
-		const matches = objects.filter((entry) => entry.content.includes(rule.sourceMarker));
-		if (matches.length === 0) {
-			if (rule.optional) return { content, insertedCount: 0 };
-			throw new Error(`registration source objects are missing in ${rule.file}`);
-		}
-		const targetBlocks = matches.map((entry) => {
-			let targetBlock = rewriteText(entry.content, rewriteRules).content;
-			for (const replacement of rule.postRewrites ?? []) {
-				const replacementCount = countOccurrences(targetBlock, replacement.from);
-				if (replacementCount === 0 && !replacement.optional) {
-					throw new Error(`registration post-rewrite source is missing in ${rule.file}`);
-				}
-				targetBlock = targetBlock.replaceAll(replacement.from, replacement.to);
-			}
-			return targetBlock;
-		});
-		for (const targetBlock of targetBlocks) {
-			assertNoSourceIdentifiers(targetBlock, source, rule.file);
-		}
-		const insertionIndex = matches.at(-1).end;
-		return {
-			content: `${content.slice(0, insertionIndex)}\n${targetBlocks.join("\n")}${content.slice(insertionIndex)}`,
-			insertedCount: targetBlocks.length,
-		};
-	}
-
-	throw new Error(`unsupported registration kind: ${rule.kind}`);
-}
-
-function prepareRegistrationOperations({ manifest, rewriteRules, root, source, values }) {
+function prepareRegistrationOperations({ manifest, reusedTargetsById, rewriteRules, root, source, values }) {
 	const fileOperations = new Map();
 	const summaries = [];
 	for (const template of manifest.registrations ?? []) {
 		const rule = expandManifestTemplates(template, values);
+		if (rule.reusableTarget && reusedTargetsById.has(rule.reusableTarget)) {
+			assertReusedRegistration(root, rule, reusedTargetsById.get(rule.reusableTarget));
+			summaries.push({ file: rule.file, insertedCount: 0, kind: rule.kind, reused: true, skipped: true });
+			continue;
+		}
 		const resolved = resolveWorkspacePath(root, rule.file, "registration file");
 		if (!existsSync(resolved.absolutePath)) {
 			if (rule.optional) {
@@ -574,9 +379,20 @@ export function createJiraVariantPlan({
 	}
 	const values = buildTemplateValues(source, target);
 	const rewriteRules = resolveRewriteRules(manifest, values);
-	const copies = prepareCopyOperations({ manifest, rewriteRules, root: absoluteRoot, source, target, values });
+	const reusedTargets = resolveReusedTargets({ manifest, root: absoluteRoot, values });
+	const reusedTargetsById = new Map(reusedTargets.map((entry) => [entry.id, entry]));
+	const copies = prepareCopyOperations({
+		manifest,
+		reusedTargetsById,
+		rewriteRules,
+		root: absoluteRoot,
+		source,
+		target,
+		values,
+	});
 	const registrations = prepareRegistrationOperations({
 		manifest,
+		reusedTargetsById,
 		rewriteRules,
 		root: absoluteRoot,
 		source,
@@ -588,6 +404,7 @@ export function createJiraVariantPlan({
 		postApplyCommands: structuredClone(manifest.postApplyCommands ?? []),
 		registrationOperations: registrations.operations,
 		registrationSummaries: registrations.summaries,
+		reusedTargets,
 		rewriteRules,
 		root: absoluteRoot,
 		schemaVersion: 1,
@@ -621,6 +438,7 @@ export function summarizePlan(plan) {
 			sourceHash: operation.sourceHash,
 		})),
 		registrations: structuredClone(plan.registrationSummaries),
+		reusedTargets: structuredClone(plan.reusedTargets),
 		rewrites: structuredClone(plan.rewriteRules),
 		schemaVersion: plan.schemaVersion,
 		skippedCopySources: [...plan.skippedCopySources],
@@ -877,6 +695,7 @@ function formatPlanText(summary) {
 		`Jira variant dry run: ${summary.source.version} -> ${summary.target.version}`,
 		`Copies: ${summary.copies.length}`,
 		`Registrations: ${summary.registrations.filter((entry) => !entry.skipped).length}`,
+		...summary.reusedTargets.map((entry) => `Reusing existing ${entry.id}: ${entry.path}`),
 		`Post-apply commands: ${summary.postApplyCommands.map((entry) => entry.id).join(", ")}`,
 		`Validations: ${summary.validationCommands.map((entry) => entry.id).join(", ")}`,
 		`Plan fingerprint: ${summary.planFingerprint}`,

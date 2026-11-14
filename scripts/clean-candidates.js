@@ -73,8 +73,6 @@ function parseArgs(argv) {
 	};
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
-		// pnpm forwards a literal `--` from `pnpm run <script> -- --flag`.
-		if (arg === "--") continue;
 		if (arg === "--json") options.json = true;
 		else if (arg === "--fetch") options.fetch = true;
 		else if (arg === "--remove-stale-locks") options.removeStaleLocks = true;

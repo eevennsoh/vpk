@@ -1,16 +1,26 @@
 {
 	"schemaVersion": 1,
 	"family": "jira-golden-journey",
+	"reusableTargets": [
+		{
+			"id": "experimental-block",
+			"path": "components/blocks/jira-work-item/{targetExperimentalSlug}",
+			"registeredMarker": "{targetExperimentalSlug}"
+		}
+	],
 	"copyTemplates": [
 		{
 			"source": "components/projects/{sourceSlug}",
 			"target": "components/projects/{targetSlug}"
 		},
 		{
+			"reusableTarget": "experimental-block",
 			"source": "components/blocks/jira-work-item/{sourceExperimentalSlug}",
 			"target": "components/blocks/jira-work-item/{targetExperimentalSlug}"
 		},
 		{
+			"optional": true,
+			"reusableTarget": "experimental-block",
 			"sourceGlob": "components/blocks/jira-work-item/jira-work-item-{sourceExperimentalSlug}*.test.js"
 		},
 		{
@@ -101,18 +111,21 @@
 		{
 			"file": "components/blocks/jira-work-item/index.tsx",
 			"kind": "line",
+			"reusableTarget": "experimental-block",
 			"source": "import { {sourceExperimentalPascal}JiraWorkItem } from \"@/components/blocks/jira-work-item/{sourceExperimentalSlug}/{sourceExperimentalSlug}-jira-work-item\";",
 			"target": "import { {targetExperimentalPascal}JiraWorkItem } from \"@/components/blocks/jira-work-item/{targetExperimentalSlug}/{targetExperimentalSlug}-jira-work-item\";"
 		},
 		{
 			"file": "components/blocks/jira-work-item/index.tsx",
 			"kind": "replace",
+			"reusableTarget": "experimental-block",
 			"source": " | \"{sourceExperimentalSlug}\";",
 			"target": " | \"{sourceExperimentalSlug}\" | \"{targetExperimentalSlug}\";"
 		},
 		{
 			"file": "components/blocks/jira-work-item/index.tsx",
 			"kind": "line",
+			"reusableTarget": "experimental-block",
 			"source": "\t\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,",
 			"target": "\t\"{targetExperimentalSlug}\": {targetExperimentalPascal}JiraWorkItem,"
 		},
@@ -120,12 +133,14 @@
 			"end": "\n\t\t\t</Button>",
 			"file": "components/blocks/jira-work-item/page.tsx",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "\t\t\t<Button type=\"button\" onClick={() => setActiveVariant(\"{sourceExperimentalSlug}\")}>",
 			"targetStart": "\t\t\t<Button type=\"button\" onClick={() => setActiveVariant(\"{targetExperimentalSlug}\")}>"
 		},
 		{
 			"file": "components/blocks/jira-work-item/page.tsx",
 			"kind": "replace",
+			"reusableTarget": "experimental-block",
 			"source": "<Button type=\"button\" onClick={() => setActiveVariant(\"{sourceExperimentalSlug}\")}>",
 			"target": "<Button type=\"button\" variant=\"outline\" onClick={() => setActiveVariant(\"{sourceExperimentalSlug}\")}>"
 		},
@@ -133,6 +148,7 @@
 			"end": "\n}",
 			"file": "components/blocks/jira-work-item/page.tsx",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "export function JiraWorkItem{sourceExperimentalPascal}Page() {",
 			"targetStart": "export function JiraWorkItem{targetExperimentalPascal}Page() {"
 		},
@@ -140,6 +156,7 @@
 			"end": "\n}",
 			"file": "components/website/demos/blocks/jira-work-item-demo.tsx",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "export function JiraWorkItemDemo{sourceExperimentalPascal}() {",
 			"targetStart": "export function JiraWorkItemDemo{targetExperimentalPascal}() {"
 		},
@@ -147,6 +164,7 @@
 			"end": "\n}",
 			"file": "components/website/demos/blocks/jira-work-item-demo.tsx",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "export function JiraWorkItemDemo{sourceExperimentalPascal}Empty() {",
 			"targetStart": "export function JiraWorkItemDemo{targetExperimentalPascal}Empty() {"
 		},
@@ -154,6 +172,7 @@
 			"end": "\n}",
 			"file": "components/website/demos/blocks/jira-work-item-demo.tsx",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "export function JiraWorkItemDemo{sourceExperimentalPascal}Running() {",
 			"targetStart": "export function JiraWorkItemDemo{targetExperimentalPascal}Running() {"
 		},
@@ -161,6 +180,7 @@
 			"end": "\n\t),",
 			"file": "components/website/registry/blocks.ts",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "\t\"jira-work-item-demo-{sourceExperimentalSlug}\": dynamic(",
 			"targetStart": "\t\"jira-work-item-demo-{targetExperimentalSlug}\": dynamic("
 		},
@@ -168,6 +188,7 @@
 			"end": "\n\t),",
 			"file": "components/website/registry/blocks-variants.ts",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "\t\"jira-work-item-demo-{sourceExperimentalSlug}\": dynamic(",
 			"targetStart": "\t\"jira-work-item-demo-{targetExperimentalSlug}\": dynamic("
 		},
@@ -175,6 +196,7 @@
 			"end": "\n\t),",
 			"file": "components/website/registry/blocks-variants.ts",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "\t\"jira-work-item-demo-{sourceExperimentalSlug}-empty\": dynamic(",
 			"targetStart": "\t\"jira-work-item-demo-{targetExperimentalSlug}-empty\": dynamic("
 		},
@@ -182,6 +204,7 @@
 			"end": "\n\t),",
 			"file": "components/website/registry/blocks-variants.ts",
 			"kind": "block",
+			"reusableTarget": "experimental-block",
 			"start": "\t\"jira-work-item-demo-{sourceExperimentalSlug}-running\": dynamic(",
 			"targetStart": "\t\"jira-work-item-demo-{targetExperimentalSlug}-running\": dynamic("
 		},
@@ -189,6 +212,7 @@
 			"file": "app/data/details/blocks/jira-work-item.ts",
 			"kind": "replace",
 			"optional": true,
+			"reusableTarget": "experimental-block",
 			"source": "description: \"Jira work-item surface with a standard current-state variant, an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents, plus experimental v2 and {sourceVersion} forks of that surface for independent iteration.\"",
 			"target": "description: \"Jira work-item surface with a standard current-state variant and independently versioned experimental forks for agent/chat iteration.\""
 		},
@@ -196,6 +220,7 @@
 			"file": "app/data/details/blocks/jira-work-item.ts",
 			"kind": "replace",
 			"optional": true,
+			"reusableTarget": "experimental-block",
 			"source": "description: \"Opt-in layout variation. The default variant keeps the current Jira sessions surface; experimental-v2 is an independent fork of the experimental surface, and {sourceExperimentalSlug} is an independent fork of {sourcePreviousVersion}.\"",
 			"target": "description: \"Opt-in layout variation with independently versioned experimental component trees.\""
 		},
@@ -203,6 +228,7 @@
 			"file": "app/data/details/blocks/jira-work-item.ts",
 			"kind": "replace",
 			"optional": true,
+			"reusableTarget": "experimental-block",
 			"source": "description: \"Jira work-item surface plus experimental v2 and {sourceVersion} forks of that surface for independent iteration.\"",
 			"target": "description: \"Jira work-item surface with independently versioned experimental forks.\""
 		},
@@ -210,6 +236,7 @@
 			"file": "app/data/details/blocks/jira-work-item.ts",
 			"kind": "replace",
 			"optional": true,
+			"reusableTarget": "experimental-block",
 			"source": "variantDescription: \"{sourceExperimentalSlug} is an independent fork of {sourcePreviousVersion}.\"",
 			"target": "variantDescription: \"Experimental variants use independent component trees.\""
 		},
@@ -229,48 +256,41 @@
 					"to": "the source variant"
 				}
 			],
+			"reusableTarget": "experimental-block",
 			"sourceMarker": "jira-work-item-demo-{sourceExperimentalSlug}",
 			"targetMarker": "jira-work-item-demo-{targetExperimentalSlug}"
 		},
 		{
 			"file": "app/data/details/blocks/jira-work-item.ts",
 			"kind": "replace",
+			"reusableTarget": "experimental-block",
 			"source": "\\\"{sourceExperimentalSlug}\\\"\"",
 			"target": "\\\"{sourceExperimentalSlug}\\\" | \\\"{targetExperimentalSlug}\\\"\""
 		},
 		{
 			"file": "app/preview/blocks/[slug]/layout.tsx",
 			"kind": "line",
+			"reusableTarget": "experimental-block",
 			"source": "\t\"jira-work-item-demo-{sourceExperimentalSlug}\",",
 			"target": "\t\"jira-work-item-demo-{targetExperimentalSlug}\","
 		},
 		{
-			"file": "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
-			"kind": "replace",
-			"source": ", \"{sourceExperimentalSlug}\"];",
-			"target": ", \"{sourceExperimentalSlug}\", \"{targetExperimentalSlug}\"];"
-		},
-		{
-			"file": "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
-			"kind": "replace",
-			"source": "tree === \"{sourceExperimentalSlug}\"",
-			"target": "tree === \"{sourceExperimentalSlug}\" || tree === \"{targetExperimentalSlug}\""
-		},
-		{
 			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 			"kind": "replace",
+			"reusableTarget": "experimental-block",
 			"source": "\"{sourceExperimentalSlug}\";/u",
 			"target": "\"{sourceExperimentalSlug}\" \\| \"{targetExperimentalSlug}\";/u"
 		},
 		{
 			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 			"kind": "replace",
+			"reusableTarget": "experimental-block",
 			"source": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u",
 			"target": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\"{targetExperimentalSlug}\": {targetExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u"
 		},
 		{
 			"arrayStart": "const DEFAULT_DEFERRED_MODULE_RULES = [",
-			"file": "scripts/verify-lazy-load-boundaries.js",
+			"file": "scripts/lib/lazy-load-rules.js",
 			"kind": "array-object-all",
 			"optional": true,
 			"sourceMarker": "{sourceSlug}",
@@ -281,6 +301,13 @@
 			"file": "scripts/verify-lazy-load-boundaries.test.js",
 			"kind": "array-object-all",
 			"optional": true,
+			"sourceMarker": "{sourceSlug}",
+			"targetMarker": "{targetSlug}"
+		},
+		{
+			"file": "scripts/lazy-load-heavy-baseline.json",
+			"kind": "json-object-entries",
+			"objectKey": "entries",
 			"sourceMarker": "{sourceSlug}",
 			"targetMarker": "{targetSlug}"
 		}

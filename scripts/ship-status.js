@@ -25,8 +25,6 @@ function parseArgs(argv) {
 	const options = { branch: null, fetch: false, json: false };
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
-		// pnpm forwards a literal `--` from `pnpm run <script> -- --flag`.
-		if (arg === "--") continue;
 		if (arg === "--json") options.json = true;
 		else if (arg === "--fetch") options.fetch = true;
 		else if (arg === "--branch") options.branch = argv[++index] ?? null;

@@ -153,7 +153,7 @@ cleanup to `vpk-git-clean` from the main checkout.
 Verify synchronization:
 
 ```bash
-pnpm run ship-status --branch <branch> --json   # status main-synced (or cleaned)
+pnpm run ship-status -- --branch <branch> --json   # status main-synced (or cleaned)
 git -C <main-checkout> status --short --branch   # its current branch must be unchanged
 ```
 

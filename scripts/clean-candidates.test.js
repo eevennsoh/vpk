@@ -3,8 +3,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { cleanBlockers, parseArgs } = require("./clean-candidates");
-const { parseArgs: parseShipStatusArgs } = require("./ship-status");
+const { cleanBlockers } = require("./clean-candidates");
 
 const synced = (evidence = {}) => ({ status: "main-synced", nextAction: "clean up", evidence: { openPrs: [], ...evidence } });
 const target = { branch: "feature", worktree: { path: "/w/feature" } };
@@ -24,9 +23,4 @@ test("a landed branch is retained when its pull requests could not be read", () 
 test("the default branch, the main checkout and the current worktree are always retained", () => {
 	assert.deepEqual(cleanBlockers({ derived: synced(), target: { branch: "main", worktree: { path: "/w/main" } }, ...where }), ["default branch", "persistent main checkout"]);
 	assert.deepEqual(cleanBlockers({ derived: synced(), target: { branch: "x", worktree: { path: "/w/current" } }, ...where }), ["current worktree"]);
-});
-
-test("clean-candidates and ship-status ignore the `--` pnpm forwards from `pnpm run <script> -- --flag`", () => {
-	assert.equal(parseArgs(["--", "--fetch", "--json"]).fetch, true);
-	assert.deepEqual(parseShipStatusArgs(["--", "--branch", "feature", "--json"]), { branch: "feature", fetch: false, json: true });
 });

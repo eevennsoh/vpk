@@ -162,7 +162,7 @@ the branch, commit, and PR so the user can resume the same flow.
 Before handoff, capture:
 
 ```bash
-pnpm run ship-status --branch <branch> --fetch --json
+pnpm run ship-status -- --branch <branch> --fetch --json
 git -C <main-checkout> status --short --branch
 ```
 
