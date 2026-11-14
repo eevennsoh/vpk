@@ -155,7 +155,7 @@
 .tiptap-editor pre {
 	background-color: var(--ds-surface-sunken, #f6f8fa);
 	border: none;
-	border-radius: 6px;
+	border-radius: var(--ds-radius-medium);
 	padding: 16px;
 	margin-top: 0;
 	margin-bottom: 16px;
@@ -178,7 +178,7 @@
 .tiptap-editor code {
 	background-color: var(--ds-background-neutral, rgba(175, 184, 193, 0.2));
 	border: none;
-	border-radius: 6px;
+	border-radius: var(--ds-radius-medium);
 	padding: 0.2em 0.4em;
 	margin: 0;
 	font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -636,7 +636,7 @@
 	align-items: center;
 	column-gap: 12px;
 	border: 0;
-	border-radius: 8px;
+	border-radius: var(--ds-radius-large);
 	background: transparent;
 	/* The byline variant uses a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
 	   (label, with any description revealing in place on hover/selection) fit

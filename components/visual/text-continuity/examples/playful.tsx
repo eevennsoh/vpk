@@ -285,7 +285,7 @@ export function PullToCount() {
 
 				<div
 					className={cn(
-						"relative cursor-grab touch-none select-none rounded-[14px] bg-primary px-4.5 py-2 active:cursor-grabbing",
+						"relative cursor-grab touch-none select-none rounded-xl bg-primary px-4.5 py-2 active:cursor-grabbing",
 						FOCUS_RING,
 					)}
 					ref={chipRef}

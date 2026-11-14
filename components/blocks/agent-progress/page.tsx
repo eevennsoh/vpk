@@ -182,7 +182,7 @@ function TaskGroupRow({
 					}}
 					className="inline-flex items-center gap-1 rounded-sm px-1"
 				>
-					<span className="inline-flex h-4 min-w-6 items-center justify-center rounded-[2px] bg-bg-neutral px-1 text-xs text-text">{count}</span>
+					<span className="inline-flex h-4 min-w-6 items-center justify-center rounded-xs bg-bg-neutral px-1 text-xs text-text">{count}</span>
 					{expanded ? <ChevronDownIcon label="" size="small" /> : <ChevronRightIcon label="" size="small" />}
 				</button>
 			</div>

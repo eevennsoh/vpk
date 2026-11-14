@@ -62,7 +62,7 @@ export function Memory({
 				</DialogDescription>
 
 				<div className="flex items-center gap-3 rounded-lg bg-surface-sunken px-3 py-2">
-					<Lozenge variant="discovery">INTERNAL ONLY</Lozenge>
+					<Lozenge variant="discovery">Internal only</Lozenge>
 					<p className="flex-1 text-sm text-text-subtle">
 						Help us improve Rovo&apos;s memory management experience.
 					</p>

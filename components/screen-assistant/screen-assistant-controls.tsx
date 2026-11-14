@@ -42,7 +42,7 @@ export function ScreenAssistantControls({
 			)}
 			style={{ boxShadow: token("elevation.shadow.overlay") }}
 		>
-			<span className="text-[10px] font-semibold uppercase tracking-wider text-text-subtlest">
+			<span className="text-[10px] font-semibold text-text-subtlest">
 				Screen assistant
 			</span>
 
@@ -90,7 +90,7 @@ export function ScreenAssistantControls({
 
 			{showHarnessControls ? (
 				<div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-text-subtlest">
+					<span className="text-[10px] font-semibold text-text-subtlest">
 						Offline harness
 					</span>
 					<div className="flex flex-wrap gap-1.5">

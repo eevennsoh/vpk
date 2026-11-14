@@ -48,7 +48,7 @@ const avatarVariants = cva(
 			},
 			shape: {
 				circle: "rounded-full after:rounded-full",
-				square: "rounded-[6px] after:rounded-[6px]",
+				square: "rounded-md after:rounded-md",
 				hexagon: "isolate overflow-visible after:border-0",
 			},
 		},
@@ -314,7 +314,7 @@ function AvatarImage({ className, ...props }: Readonly<AvatarImageProps>) {
 		<AvatarPrimitive.Image
 			data-slot="avatar-image"
 			className={cn(
-				"rounded-full aspect-square size-full object-cover group-data-[shape=square]/avatar:rounded-[6px]",
+				"rounded-full aspect-square size-full object-cover group-data-[shape=square]/avatar:rounded-md",
 				"group-data-[shape=hexagon]/avatar:rounded-none",
 				className
 			)}
@@ -333,7 +333,7 @@ function AvatarFallback({
 		<AvatarPrimitive.Fallback
 			data-slot="avatar-fallback"
 			className={cn(
-				"bg-muted text-foreground rounded-full flex size-full items-center justify-center text-sm group-data-[size=xxs]/avatar:text-[6px] group-data-[size=xs]/avatar:text-[8px] group-data-[size=sm]/avatar:text-xs group-data-[size=xl]/avatar:text-lg group-data-[size=2xl]/avatar:text-3xl group-data-[shape=square]/avatar:rounded-[6px]",
+				"bg-muted text-foreground rounded-full flex size-full items-center justify-center text-sm group-data-[size=xxs]/avatar:text-[6px] group-data-[size=xs]/avatar:text-[8px] group-data-[size=sm]/avatar:text-xs group-data-[size=xl]/avatar:text-lg group-data-[size=2xl]/avatar:text-3xl group-data-[shape=square]/avatar:rounded-md",
 				"group-data-[shape=hexagon]/avatar:rounded-none",
 				className
 			)}

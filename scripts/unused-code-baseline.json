@@ -132,6 +132,7 @@
 		"components/blocks/jira-work-item/team-eu26/lib/development-repositories.ts",
 		"components/blocks/jira-work-item/team-eu26/lib/pull-request-check-elapsed.ts",
 		"components/blocks/omnibar/index.ts",
+		"components/blocks/product-sidebar/components/section-heading.tsx",
 		"components/blocks/prompt-gallery/index.ts",
 		"components/blocks/question-card/lib/cancel-deferred-tool.ts",
 		"components/blocks/question-card/page.tsx",
@@ -213,24 +214,10 @@
 		"lib/rovo-runtime-types.ts"
 	],
 	"dependencies": [
-		"backend/package.json#jsonwebtoken",
-		"package.json#@json-render/ink",
-		"package.json#@json-render/react-three-fiber",
-		"package.json#@json-render/remotion",
-		"package.json#@json-render/yaml",
-		"package.json#@radix-ui/react-slider",
-		"package.json#@radix-ui/react-use-controllable-state",
-		"package.json#@tobilu/qmd",
-		"package.json#cors",
-		"package.json#ink",
-		"package.json#next-themes",
-		"package.json#remotion",
-		"package.json#use-stick-to-bottom"
+		"backend/package.json#jsonwebtoken"
 	],
 	"devDependencies": [
-		"package.json#@react-grab/mcp",
-		"package.json#emojibase-data",
-		"package.json#portless"
+		"package.json#@react-grab/mcp"
 	],
 	"optionalPeerDependencies": [],
 	"unlisted": [

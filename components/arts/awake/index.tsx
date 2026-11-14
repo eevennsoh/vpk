@@ -40,6 +40,7 @@ import {
 	ReturnIcon,
 } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
+import { lerp } from "@/lib/math";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
 import { flushSync } from "react-dom";
 
@@ -753,10 +754,6 @@ const ROW_ANCHOR_LARGE: SizeAnchor = {
 // overflow their parent in row mode — otherwise `overflow-hidden` on the
 // outer container clips the leftmost card (the city slider).
 const ROW_LAYOUT_MIN_WIDTH = ROW_ANCHOR_SMALL.containerWidth;
-
-function lerp(a: number, b: number, t: number): number {
-	return a + (b - a) * t;
-}
 
 function clamp01(t: number): number {
 	if (t < 0) return 0;

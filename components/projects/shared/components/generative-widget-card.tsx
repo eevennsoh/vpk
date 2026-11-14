@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -280,7 +281,7 @@ function GenerativeCardInnerGlowShell({
 					style={{
 						position: "absolute",
 						inset: ringInset,
-						borderRadius: 12,
+						borderRadius: token("radius.xlarge"),
 						borderWidth: thickness,
 						borderStyle: "solid",
 						borderColor: "transparent",

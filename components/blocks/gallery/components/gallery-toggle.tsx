@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 // 24×24 squircle button with a 12×12 icon.
 const TOGGLE_SIZE = 24;
 const GALLERY_CONTROL_BUTTON_CLASS_NAME =
-	"inline-flex cursor-pointer border-0 bg-transparent p-0 text-icon-inverse outline-none transition-opacity duration-normal ease-out-practical hover:opacity-90 active:opacity-80 motion-reduce:transition-none rounded-[10px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+	"inline-flex cursor-pointer border-0 bg-transparent p-0 text-icon-inverse outline-none transition-opacity duration-normal ease-out-practical hover:opacity-90 active:opacity-80 motion-reduce:transition-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const GALLERY_CONTROL_ICON_CLASS_NAME = "size-3 [&>span]:size-3! [&_svg]:size-3!";
 
 export type GalleryTheme = "light" | "dark" | "system";
