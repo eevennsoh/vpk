@@ -75,8 +75,8 @@ function createHarness(overrides = {}) {
 		startNextQueuedRun: () => {
 			calls.push(["startNextQueuedRun"]);
 		},
-		synchronizeRovoAppThreadGeneratedFiles: async (thread) => {
-			calls.push(["synchronizeRovoAppThreadGeneratedFiles", thread]);
+		synchronizeRovoAppThreadGeneratedFiles: async (thread, options) => {
+			calls.push(["synchronizeRovoAppThreadGeneratedFiles", thread, options]);
 		},
 		...overrides.dependencies,
 	};
@@ -259,12 +259,13 @@ test("persistRovoAppRunMessagesSnapshot updates only valid existing thread snaps
 
 test("finalizeRovoAppRun persists final messages, synchronizes files, clears active request, and starts queued work", async () => {
 	const messages = [{ id: "assistant-1" }];
+	const streamedMessages = [{ id: "assistant-1", parts: [] }];
 	const { calls, runs, service } = createHarness({
 		runs: [["thread-1", { id: "run-1" }]],
 		threads: [["thread-1", { id: "thread-1", activeRun: { id: "run-1" } }]],
 	});
 
-	await service.finalizeRovoAppRun("thread-1", { id: "run-1" }, messages);
+	await service.finalizeRovoAppRun("thread-1", { id: "run-1" }, messages, { streamedMessages });
 
 	assert.equal(runs.has("thread-1"), false);
 	assert.deepEqual(calls, [
@@ -276,6 +277,7 @@ test("finalizeRovoAppRun persists final messages, synchronizes files, clears act
 				activeRun: null,
 				messages,
 			},
+			{ streamedMessages },
 		],
 		["activeRequests.delete", "thread-1"],
 		["clearRun", "thread-1"],

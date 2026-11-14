@@ -3,6 +3,8 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
+const { isStorageId } = require("./input-schemas");
+
 const AGENTS_RFP_DEMO_VERSION = 1;
 const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
 const RFP_DRAFTING_AGENT_NAME = "RFP Drafter";
@@ -367,7 +369,8 @@ function normalizeWorkItemState(rawWorkItem, code, fallbackStatus) {
 		agentStatus,
 		agentStartedAt: getNonEmptyString(rawWorkItem.agentStartedAt),
 		agentReadyAt: getNonEmptyString(rawWorkItem.agentReadyAt),
-		agentSessionThreadId: getNonEmptyString(rawWorkItem.agentSessionThreadId),
+		// A thread id becomes a directory name when the demo resets; any other shape is dropped.
+		agentSessionThreadId: isStorageId(getNonEmptyString(rawWorkItem.agentSessionThreadId)) ? getNonEmptyString(rawWorkItem.agentSessionThreadId) : null,
 		agentJobRunId: getNonEmptyString(rawWorkItem.agentJobRunId),
 		generatedAttachment: normalizeAttachment(rawWorkItem.generatedAttachment),
 		agentComment: normalizeAgentComment(rawWorkItem.agentComment),

@@ -96,13 +96,15 @@ function createRovoAppRunStateService({
 		});
 	}
 
-	async function finalizeRovoAppRun(threadId, run, messages) {
+	// `streamedMessages`: what the run's response stream yielded (see the managed response
+	// consumer); generated files are recorded from those only.
+	async function finalizeRovoAppRun(threadId, run, messages, { streamedMessages = [] } = {}) {
 		if (threadId && Array.isArray(messages)) {
 			const updatedThread = await rovoAppThreadManager.updateThread(threadId, {
 				activeRun: null,
 				messages,
 			});
-			await synchronizeRovoAppThreadGeneratedFiles(updatedThread);
+			await synchronizeRovoAppThreadGeneratedFiles(updatedThread, { streamedMessages });
 		} else {
 			await clearRovoAppRunState(threadId);
 		}
