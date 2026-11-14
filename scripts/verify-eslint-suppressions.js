@@ -60,7 +60,7 @@ function main() {
 	const current = JSON.parse(readFileSync(SUPPRESSIONS_FILE, "utf8"));
 	const baseRef = resolveBaseRef();
 	if (!baseRef) {
-		const message = "ESLint suppression ratchet: base ref unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
+		const message = "ESLint suppression ratchet: base ref unavailable (fetch origin/main, check out with fetch-depth: 2 in CI, or set VPK_SUPPRESSIONS_BASE).";
 		if (isBaseRequired()) {
 			console.error(message);
 			process.exitCode = 1;

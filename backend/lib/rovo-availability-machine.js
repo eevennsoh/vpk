@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // Rovo Serve availability as one state value, owned by rovo-availability-service.js.

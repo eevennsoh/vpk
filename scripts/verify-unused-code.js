@@ -181,7 +181,7 @@ function writeBaseline(findings, { cwd = REPO_ROOT } = {}) {
 function resolveBase({ cwd = REPO_ROOT, env = process.env, git = runGit } = {}) {
 	const baseRef = resolveBaseRef({ env, git: (args) => git(args, { cwd }) });
 	if (!baseRef) {
-		const message = "Unused code: base ref unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
+		const message = "Unused code: base ref unavailable (fetch origin/main, check out with fetch-depth: 2 in CI, or set VPK_SUPPRESSIONS_BASE).";
 		if (isBaseRequired(env)) throw new Error(message);
 		return { base: null, baseRef: null, warning: `${message} Skipping the shrink-only comparison.` };
 	}

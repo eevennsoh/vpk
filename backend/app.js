@@ -246,6 +246,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 
 	registerChromiumPreviewRoutes(app, {
 		chromiumPreviewManager,
+		requireRuntimeAdmin,
 	});
 
 	registerRovoChatProxyRoutes(app, {

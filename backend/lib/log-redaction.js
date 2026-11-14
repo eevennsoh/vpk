@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // Redaction for what the backend writes to its logs (C-9d): the credential patterns of

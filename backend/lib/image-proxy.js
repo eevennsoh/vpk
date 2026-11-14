@@ -1,3 +1,4 @@
+// @ts-check
 const { isAllowedAtlassianSite } = require("./jira-query-inputs");
 
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";

@@ -301,7 +301,7 @@ export function assertLegacyDriftDidNotGrow({ env = process.env, git = gitOutput
 	const { isBaseRequired, resolveBaseRef } = createRequire(import.meta.url)("./verify-eslint-suppressions.js");
 	const baseRef = resolveBaseRef({ env, git: (args) => git(args)?.trim() ?? null });
 	if (!baseRef) {
-		const message = "js-unit-tests: legacy-drift ratchet base unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
+		const message = "js-unit-tests: legacy-drift ratchet base unavailable (fetch origin/main, check out with fetch-depth: 2 in CI, or set VPK_SUPPRESSIONS_BASE).";
 		if (isBaseRequired(env)) throw new Error(message);
 		log(`${message} Skipping.`);
 		return;

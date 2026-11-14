@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const AI_COST_RATE_LIMIT_PATHS = [

@@ -1,3 +1,4 @@
+// @ts-check
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -16,6 +17,7 @@ function createId() {
 	return `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** @param {Date | number | string} [value] */
 function toIsoDate(value = Date.now()) {
 	const date = value instanceof Date ? value : new Date(value);
 	return date.toISOString();
@@ -105,6 +107,7 @@ function createRovoAppUploadManager({ baseDir }) {
 	const legacyUploadsRootDir = getRovoAppLegacyUploadsRootDir(baseDir);
 	const legacyMetadataRootDir = path.join(legacyUploadsRootDir, "metadata");
 	const legacyFilesRootDir = path.join(legacyUploadsRootDir, "files");
+	/** @type {Promise<void> | null} */
 	let initializationPromise = null;
 
 	const resolveThreadId = (threadId) =>
