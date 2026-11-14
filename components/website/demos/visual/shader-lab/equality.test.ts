@@ -55,16 +55,17 @@ function computeFingerprints(): Fingerprints {
 	const layers: Record<string, Record<string, string>> = {};
 
 	for (const layerType of shaderLab.SHADER_LAB_RUNTIME_LAYER_TYPES) {
-		const propDocs = shaderLab.createShaderLabEffectPropDocs(layerType);
+		const definition = definitions[layerType];
+		const propDocs = shaderLab.createShaderLabEffectPropDocs(definition);
 		layers[layerType] = {
-			definition: hash(withoutPresetDefaults(definitions[layerType])),
-			defaultParams: hash(shaderLab.getShaderLabDefaultParams(layerType)),
-			runtimeType: hash(shaderLab.getShaderLabRuntimeLayerType(layerType)),
-			kind: hash(shaderLab.getShaderLabLayerKind(layerType)),
+			definition: hash(withoutPresetDefaults(definition)),
+			defaultParams: hash(shaderLab.getShaderLabDefaultParams(definition)),
+			runtimeType: hash(shaderLab.getShaderLabRuntimeLayerType(definition)),
+			kind: hash(shaderLab.getShaderLabLayerKind(definition)),
 			propDocs: hash(propDocs.filter((doc) => doc.name !== API_PROP_NAME)),
 			apiPropDoc: hash(propDocs.filter((doc) => doc.name === API_PROP_NAME)),
-			description: hash(shaderLab.getShaderLabEffectDescription(layerType)),
-			usage: hash(shaderLab.getShaderLabEffectUsage(layerType)),
+			description: hash(definition.description),
+			usage: hash(shaderLab.getShaderLabEffectUsage(definition)),
 			importStatement: hash(shaderLab.getShaderLabEffectImportStatement()),
 		};
 	}
@@ -81,7 +82,7 @@ function computeFingerprints(): Fingerprints {
 			runtimeSourceTypes: shaderLab.SHADER_LAB_RUNTIME_SOURCE_TYPES,
 		}),
 		halftonePresets: hash(
-			HALFTONE_PRESET_VALUES.map((value) => shaderLab.getShaderLabPresetDefaults("halftone", "preset", value)),
+			HALFTONE_PRESET_VALUES.map((value) => shaderLab.getShaderLabPresetDefaults(definitions.halftone, "preset", value)),
 		),
 		layers,
 	};
@@ -96,8 +97,10 @@ test("Shader Lab layer order, mode tuples and runtime tuples are unchanged", () 
 
 test("Shader Lab halftone preset defaults are unchanged", () => {
 	assert.equal(actual.halftonePresets, FIXTURE.halftonePresets);
-	assert.equal(shaderLab.getShaderLabPresetDefaults("halftone", "preset", "unknown"), null);
-	assert.equal(shaderLab.getShaderLabPresetDefaults("bloom", "preset", "process"), null);
+	const definitions = shaderLab.SHADER_LAB_LAYER_DEFINITIONS;
+	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.halftone, "preset", "unknown"), null);
+	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.halftone, "preset", 1), null);
+	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.bloom, "preset", "process"), null);
 });
 
 test("Shader Lab fingerprints cover exactly the recorded layers", () => {

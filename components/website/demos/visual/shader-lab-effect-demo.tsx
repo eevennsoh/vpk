@@ -214,8 +214,8 @@ function getShaderLabDemoLayers({
 
 export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerProps) {
 	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
-	const layerKind = getShaderLabLayerKind(layerType);
-	const runtimeLayerType = getShaderLabRuntimeLayerType(layerType);
+	const layerKind = getShaderLabLayerKind(definition);
+	const runtimeLayerType = getShaderLabRuntimeLayerType(definition);
 	const [visible, setVisible] = useState(true);
 	const [opacity, setOpacity] = useState(1);
 	const [blendMode, setBlendMode] = useState<ShaderLabBlendMode>("normal");
@@ -228,7 +228,7 @@ export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerPr
 	const [sourceImage, setSourceImage] = useState<ShaderLabSourceImage>(DEFAULT_SHADER_LAB_SOURCE_IMAGE);
 	const uploadedSourceUrlRef = useRef<string | null>(null);
 	const [params, setParams] = useState<Record<string, ShaderLabParameterValue>>(() => (
-		getShaderLabDefaultParams(layerType)
+		getShaderLabDefaultParams(definition)
 	));
 
 	const usesSourceImage = shaderLabLayerUsesSourceImage(layerKind, layerType);
@@ -261,14 +261,14 @@ export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerPr
 
 	const updateParam = useCallback((key: string, value: ShaderLabParameterValue) => {
 		setParams((current) => {
-			const presetDefaults = getShaderLabPresetDefaults(layerType, key, value);
+			const presetDefaults = getShaderLabPresetDefaults(definition, key, value);
 			return {
 				...current,
 				[key]: value,
 				...(presetDefaults ?? {}),
 			};
 		});
-	}, [layerType]);
+	}, [definition]);
 
 	const config = useMemo<ShaderLabConfig>(() => ({
 		composition: {
