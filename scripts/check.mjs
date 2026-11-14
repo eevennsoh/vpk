@@ -245,12 +245,20 @@ export function parseNodeTestFailures(output) {
 	return problems;
 }
 
-// `deep`: also run the rendered and bundling suites that depend on the change more deeply, in
-// parallel. check already holds the machine-wide heavy-run turn, which the runner inherits.
+// From this many suites the unit runner's `--parallel auto` clearly beats running them one batch
+// at a time on this machine (provisional; measured 2026-11-14 at a 1-minute load of 14–29):
+// 20 suites 6.6–30.7 s serial against 2.9–6.1 s parallel; 10 suites 7.5–18.8 s against
+// 5.5–16.2 s; 5 suites 2.3–16.4 s against 1.5–15.1 s. `--parallel auto` sizes its workers
+// from free memory and cores.
+export const PARALLEL_FROM_SUITES = 20;
+
+// `deep`: also run the rendered and bundling suites that depend on the change more deeply.
+// A selection of PARALLEL_FROM_SUITES or more (a deep run always is, or nearly) runs in
+// parallel; check already holds the machine-wide heavy-run turn, which the runner inherits.
 export async function runUnit({ tests, deep = [], run = runShell }) {
 	const all = [...new Set([...tests, ...deep])].sort();
 	if (all.length === 0) return { details: [], id: "unit", label: "no related suites", problems: [], seconds: 0, status: "skipped" };
-	const parallel = deep.length > 0 ? " --parallel auto" : "";
+	const parallel = deep.length > 0 || all.length >= PARALLEL_FROM_SUITES ? " --parallel auto" : "";
 	const result = await run(`node scripts/run-js-unit-tests.mjs --keep-going${parallel} ${all.map((file) => `--file '${file}'`).join(" ")}`);
 	const output = `${result.stdout}${result.stderr}`;
 	const problems = result.status === 0 ? [] : parseNodeTestFailures(output);

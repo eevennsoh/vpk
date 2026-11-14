@@ -19,6 +19,7 @@ import {
 	parseTypecheckOutput,
 	runGuards,
 	runShell,
+	PARALLEL_FROM_SUITES,
 	runUnit,
 } from "./check.mjs";
 
@@ -190,4 +191,18 @@ test("--deep runs the deeper suites with the related ones, in parallel", async (
 	const deep = await runUnit({ tests: ["a.test.js"], deep: ["b.test.js", "a.test.js"], run });
 	assert.equal(deep.label, "1 related + 2 deep suites");
 	assert.match(commands[1], /^node scripts\/run-js-unit-tests\.mjs --keep-going --parallel auto --file 'a\.test\.js' --file 'b\.test\.js'$/u);
+});
+
+test("a large related selection runs in parallel; a small one runs one batch at a time", async () => {
+	const commands = [];
+	const run = async (command) => {
+		commands.push(command);
+		return { seconds: 1, status: 0, stderr: "", stdout: "" };
+	};
+	const suites = (count) => Array.from({ length: count }, (_, index) => `s${String(index).padStart(3, "0")}.test.js`);
+	await runUnit({ tests: suites(PARALLEL_FROM_SUITES - 1), run });
+	await runUnit({ tests: suites(PARALLEL_FROM_SUITES), run });
+	assert.doesNotMatch(commands[0], /--parallel/u, "below the threshold");
+	assert.match(commands[1], /^node scripts\/run-js-unit-tests\.mjs --keep-going --parallel auto /u, "at the threshold");
+	assert.equal(PARALLEL_FROM_SUITES, 20);
 });
