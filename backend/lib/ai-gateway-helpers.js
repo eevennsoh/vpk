@@ -380,6 +380,26 @@ function resolveBaseURL(gatewayUrl) {
 	return resolved.replace(/\/chat\/completions$/, "");
 }
 
+// OpenAI reasoning models (o-series, GPT-5, GPT-6) reject any non-default
+// temperature, and their completion limit also covers reasoning tokens.
+function isOpenAiReasoningModel(model) {
+	return typeof model === "string" && /^(?:o\d|gpt-5|gpt-6)/.test(model) && !/-chat/.test(model);
+}
+
+// Every chat-completions payload sets its limits and sampling here, so no
+// call site can send a parameter the configured model rejects.
+function applyGatewaySamplingOptions(payload, { maxOutputTokens, temperature } = {}) {
+	const reasoningModel = isOpenAiReasoningModel(payload.model);
+	if (typeof maxOutputTokens === "number") {
+		// Tiny budgets (titles, classifiers) can be spent on reasoning before any visible text.
+		payload.max_completion_tokens = reasoningModel ? Math.max(2048, maxOutputTokens) : maxOutputTokens;
+	}
+	if (typeof temperature === "number" && !reasoningModel) {
+		payload.temperature = temperature;
+	}
+	return payload;
+}
+
 function getModelId(gatewayUrl, envVars = getEnvVars()) {
 	if (!gatewayUrl || typeof gatewayUrl !== "string") {
 		return "";
@@ -620,12 +640,7 @@ async function streamGoogleGatewayManualSse({
 		messages: resolvedMessages,
 		stream: true,
 	};
-	if (typeof maxOutputTokens === "number") {
-		payload.max_completion_tokens = maxOutputTokens;
-	}
-	if (typeof temperature === "number") {
-		payload.temperature = temperature;
-	}
+	applyGatewaySamplingOptions(payload, { maxOutputTokens, temperature });
 	if (Array.isArray(responseModalities)) {
 		const normalizedModalities = responseModalities
 			.filter((value) => typeof value === "string")
@@ -749,6 +764,8 @@ module.exports = {
 	detectEndpointType,
 	getGatewayHeaders,
 	getModelId,
+	isOpenAiReasoningModel,
+	applyGatewaySamplingOptions,
 	resolveGatewayUrl,
 	resolveBaseURL,
 	extractGatewayImageData,

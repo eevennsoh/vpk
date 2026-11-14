@@ -12,6 +12,7 @@ const {
 	isDummyGatewayCloudId,
 	isStagingAiGatewayUrl,
 	getModelId,
+	applyGatewaySamplingOptions,
 } = require("./ai-gateway-helpers");
 
 test("OpenAI gateway resolves GPT-6.1 Sol by default and honors model overrides", () => {
@@ -207,4 +208,18 @@ test("describeGatewayCloudIdError explains the staging dummy CloudID workaround"
 		/internal-dummy-<use-case-id>/u,
 	);
 	assert.equal(describeGatewayCloudIdError("other failure"), "other failure");
+});
+
+test("applyGatewaySamplingOptions drops temperature only for OpenAI reasoning models", () => {
+	for (const model of ["gpt-6.1-sol", "gpt-6-sol", "gpt-5", "gpt-5.1-mini", "o3", "o4-mini"]) {
+		const payload = applyGatewaySamplingOptions({ model }, { maxOutputTokens: 220, temperature: 0.1 });
+		assert.equal(Object.hasOwn(payload, "temperature"), false, model);
+		assert.equal(payload.max_completion_tokens, 2048, model);
+	}
+	for (const model of ["gpt-4.1", "gpt-5-chat-latest", "gemini-3-pro-image", ""]) {
+		const payload = applyGatewaySamplingOptions({ model }, { maxOutputTokens: 220, temperature: 0.1 });
+		assert.equal(payload.temperature, 0.1, model);
+		assert.equal(payload.max_completion_tokens, 220, model);
+	}
+	assert.deepEqual(applyGatewaySamplingOptions({ model: "gpt-4.1" }), { model: "gpt-4.1" });
 });
