@@ -1114,6 +1114,11 @@ class RealtimeSession {
 			this._log("REALTIME", `Invalid JSON from OpenAI: ${String(data).slice(0, 100)}`);
 			return;
 		}
+		// Valid JSON that is not an object (null, a number, an array) has no type to read.
+		if (!event || typeof event !== "object" || Array.isArray(event)) {
+			this._log("REALTIME", `Ignoring an upstream message that is not an object: ${String(data).slice(0, 100)}`);
+			return;
+		}
 
 		const normalizedEventType = normalizeOpenAIEventType(event.type);
 

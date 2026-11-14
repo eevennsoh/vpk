@@ -118,8 +118,8 @@ function createManager(timers) {
 test("each agent-browser command class has a bound above agent-browser's own limits", () => {
 	const { navigation, readOnly } = AGENT_BROWSER_CALL_TIMEOUT_MS;
 	const cases = [
-		[["open", "https://example.com"], navigation],
-		[["tab", "new", "https://example.com"], navigation],
+		[["open", "https://example.com/"], navigation],
+		[["tab", "new", "https://example.com/"], navigation],
 		[["reload"], navigation],
 		[["back"], navigation],
 		[["forward"], navigation],
@@ -210,12 +210,12 @@ test("a workspace whose first open never answers still sends close when it is re
 
 	fakeAgentBrowser.hang.add("open");
 	const create = manager.createWorkspace({ defaultUrl: "https://example.com" });
-	await fakeAgentBrowser.sent("open https://example.com");
+	await fakeAgentBrowser.sent("open https://example.com/");
 	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.navigation);
 
 	const outcome = await outcomeOf(create);
 	assert.equal(isAgentBrowserCallTimeoutError(outcome.error), true);
-	assert.deepEqual(fakeAgentBrowser.kills, [{ command: "open https://example.com", signal: "SIGKILL" }]);
+	assert.deepEqual(fakeAgentBrowser.kills, [{ command: "open https://example.com/", signal: "SIGKILL" }]);
 	// open started a browser in the daemon before it stopped answering; the release closes it.
 	await fakeAgentBrowser.sent("close");
 	assert.deepEqual(manager.listWorkspaces(), []);
