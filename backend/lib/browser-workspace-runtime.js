@@ -679,12 +679,18 @@ class AgentBrowserRuntime {
 					return
 				}
 
-				callback({
-					buffer: Buffer.from(parsedMessage.data, "base64"),
-					metadata: this._normalizeNativeStreamMetadata(
-						parsedMessage.metadata,
-					),
-				})
+				// A throw from this listener (a bad frame, a closed preview client) would
+				// reach uncaughtException and exit the backend; the frame is dropped instead.
+				try {
+					callback({
+						buffer: Buffer.from(parsedMessage.data, "base64"),
+						metadata: this._normalizeNativeStreamMetadata(
+							parsedMessage.metadata,
+						),
+					})
+				} catch (error) {
+					console.warn("[BROWSER-WORKSPACE] Native stream frame dropped:", error instanceof Error ? error.message : String(error))
+				}
 			})
 
 			socket.on("close", () => {
