@@ -41,13 +41,15 @@ const lingering = { listening: true, pidAlive: false, childPidAlive: true };
 // [description, facts, expected status]
 const CASES = [
 	["no record, no session, nothing alive", { record: null, sessionAlive: false, services: { frontend: missing, backend: missing } }, "absent"],
-	["a session preparing .env.local", { record: record("seeding-env"), sessionAlive: true, services: { frontend: missing, backend: missing } }, "seeding-env"],
+	["the launcher preparing .env.local before it creates the session", { record: record("seeding-env"), sessionAlive: false, services: { frontend: missing, backend: missing } }, "seeding-env"],
+	["preparing .env.local, then the launcher died", { record: record("seeding-env", 120), sessionAlive: false, services: {} }, "stopped"],
 	["preparing .env.local for longer than the start timeout", { record: record("seeding-env", 120), sessionAlive: true, services: {} }, "degraded"],
 	["a session whose servers have not listened yet", { record: record("starting"), sessionAlive: true, services: { frontend: notYet, backend: notYet } }, "starting"],
 	["only the backend listens so far", { record: record("starting"), sessionAlive: true, services: { frontend: notYet, backend: serving } }, "starting"],
 	["both services listen with live processes", { record: record("starting"), sessionAlive: true, services: { frontend: serving, backend: serving } }, "ready"],
 	["a stack from before this file: ports listen, no pids", { record: null, sessionAlive: true, services: { frontend: legacyServing, backend: legacyServing } }, "ready"],
 	["still not listening after the start timeout", { record: record("starting", 120), sessionAlive: true, services: { frontend: notYet, backend: serving } }, "degraded"],
+	["the frontend exited seconds into the start", { record: record("starting", 5), sessionAlive: true, services: { frontend: exited, backend: notYet } }, "degraded"],
 	["the frontend exited while the session runs", { record: record("starting", 600), sessionAlive: true, services: { frontend: exited, backend: serving } }, "degraded"],
 	["next dev died but its launcher still holds the port", { record: record("starting", 600), sessionAlive: true, services: { frontend: childDied, backend: serving } }, "degraded"],
 	["a session with no record and nothing listening", { record: null, sessionAlive: true, services: { frontend: missing, backend: missing } }, "degraded"],

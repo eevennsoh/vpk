@@ -319,30 +319,34 @@ function deriveStackStatus({
 		return result("orphaned", `the stop did not finish within ${stopTimeoutMs / 1000} s; still alive: ${sessionAlive ? ["session", ...alive].join(", ") : alive.join(", ")}`);
 	}
 
+	// The launcher prepares .env.local before it creates the session.
+	if (phase === "seeding-env" && sinceChange <= startTimeoutMs) {
+		return result("seeding-env", "the launcher is preparing .env.local");
+	}
+
 	if (!sessionAlive) {
 		if (alive.length > 0) return result("orphaned", `${alive.join(" and ")} still run without a tmux session`);
 		return record ? result("stopped", "no session and no stack process") : result("absent", "this worktree has no dev stack record or session");
 	}
 
 	if (phase === "seeding-env") {
-		return sinceChange <= startTimeoutMs
-			? result("seeding-env", "the launcher is preparing .env.local")
-			: result("degraded", `still preparing the environment after ${startTimeoutMs / 1000} s`);
+		return result("degraded", `still preparing the environment after ${startTimeoutMs / 1000} s`);
 	}
 
-	if (notServing.length === 0) return result("ready", "frontend and backend listen and their processes are alive");
+	if (notServing.length === 0) {
+		const recorded = SERVICES.some((service) => typeof services[service]?.pidAlive === "boolean");
+		return result("ready", recorded ? "frontend and backend listen and their recorded processes are alive" : "frontend and backend listen (no processes recorded)");
+	}
+
+	// A recorded process that has exited is degraded at once, even inside the start grace period.
+	const dead = notServing.filter((service) => services[service]?.pidAlive === false || services[service]?.childPidAlive === false);
+	if (dead.length > 0) return result("degraded", `${dead.join(" and ")} exited while the session runs`);
 
 	if (phase === "starting" && sinceChange <= startTimeoutMs) {
 		return result("starting", `waiting for ${notServing.join(" and ")}`);
 	}
 
-	const dead = notServing.filter((service) => services[service]?.pidAlive === false || services[service]?.childPidAlive === false);
-	return result(
-		"degraded",
-		dead.length > 0
-			? `${dead.join(" and ")} exited while the session runs`
-			: `${notServing.join(" and ")} not listening${phase === "starting" ? ` after ${startTimeoutMs / 1000} s` : ""}`,
-	);
+	return result("degraded", `${notServing.join(" and ")} not listening${phase === "starting" ? ` after ${startTimeoutMs / 1000} s` : ""}`);
 }
 
 function readPortFile(worktreePath, service, { fsImpl = fs } = {}) {
