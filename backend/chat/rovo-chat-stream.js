@@ -11,6 +11,7 @@ const {
 
 } = require("./rovo-stream-loop");
 const { createRovoBrowserToolEventRouter } = require("./rovo-browser-tool-events");
+const { createRovoChatTurn } = require("./rovo-chat-turn-machine");
 const { createRovoStreamTextDeltaHandler } = require("./rovo-stream-text-delta");
 const { createLazyRovoThinkingStatusEmitter } = require("./rovo-thinking-events");
 const { runRovoPostStreamPipeline } = require("./rovo-post-stream-pipeline");
@@ -205,6 +206,9 @@ function createRovoTurnRunner(dependencies = {}) {
 			return { aborted: true };
 		}
 		signal?.addEventListener("abort", onAbort, { once: true });
+		// The turn's one owner of what it has shown and seen, its phase and its recovery counts.
+		const turn = createRovoChatTurn();
+		const facts = () => turn.getState().facts;
 		try {
 			const writerTelemetry = instrumentChatSdkWriter({
 				stageTrace,
@@ -212,23 +216,8 @@ function createRovoTurnRunner(dependencies = {}) {
 			});
 			const textId = `text-${Date.now()}`;
 			const widgetId = `widget-${Date.now()}`;
-			let resolvedRovoPort = null;
-			let hasEmittedQuestionCard = false;
-			let hasEmittedPlanWidget = false;
-			let hasEmittedGenuiWidget = false;
-			let hasSeenPlanWidgetSignal = false;
-			let hasEmittedPlanLoadingState = false;
-			let hasExplicitPlanPayload = false;
-			let hasObservedToolExecution = false;
 			/** @type {Set<string>} */
 			const bashQuestionCardWorkaroundCallIds = new Set();
-			let hasObservedDeferredToolRequest = false;
-			// ── Output Routing: Two-step GenUI state ──
-			// Track whether non-question-card tool calls were observed during
-			// the Rovo stream. When true, post-stream processing triggers
-			// the two-step GenUI flow (BE-001).
-			let hasObservedActionableToolCall = false;
-			let hasObservedRelevantActionableToolCall = false;
 			const toolFirstExecutionState = createToolFirstExecutionState(toolFirstPolicy);
 			const toolFirstFullOutputs = [];
 			const toolObservationEntries = [];
@@ -257,6 +246,7 @@ function createRovoTurnRunner(dependencies = {}) {
 			const {
 				emitBufferedAssistantTextForTextRoute,
 				emitForcedTextDelta,
+				emitNoticeParagraph,
 				emitTextDelta,
 				emitTextDeltaRaw,
 				finalizeBufferedAssistantText,
@@ -283,7 +273,7 @@ function createRovoTurnRunner(dependencies = {}) {
 				getNonEmptyString,
 				isRequestUserInputTool,
 				onQuestionCardEmitted: () => {
-					hasEmittedQuestionCard = true;
+					turn.dispatch({ type: "question-card-emitted" });
 				},
 				requestOrigin,
 				sharedQuestionMetaStore: _requestUserInputQuestionMetaStore,
@@ -294,18 +284,15 @@ function createRovoTurnRunner(dependencies = {}) {
 			const rovoMarkerStream = createRovoMarkerStreamAdapter({
 				creationMode,
 				emitTextDelta,
-				getHasEmittedPlanWidget: () => hasEmittedPlanWidget,
+				getHasEmittedPlanWidget: () => facts().plan.data,
 				onGenuiWidgetEmitted: () => {
-					hasEmittedGenuiWidget = true;
+					turn.dispatch({ type: "genui-widget-emitted" });
 				},
 				onPlanWidgetData: () => {
-					hasEmittedPlanWidget = true;
-					hasSeenPlanWidgetSignal = true;
-					hasExplicitPlanPayload = true;
+					turn.dispatch({ type: "plan-data" });
 				},
 				onPlanWidgetLoading: (loading) => {
-					hasSeenPlanWidgetSignal = true;
-					hasEmittedPlanLoadingState = loading;
+					turn.dispatch({ type: "plan-loading", loading });
 				},
 				onQuestionCardEmitted: (questionCardWidgetId) => {
 					requestUserInputQuestionCardEmitter.markQuestionCardEmitted(questionCardWidgetId);
@@ -329,18 +316,14 @@ function createRovoTurnRunner(dependencies = {}) {
 				resetAssistantTextForRetryAttemptState();
 			};
 			const exitPlanWidgetEmitter = createExitPlanWidgetEmitter({
-				getIsPlanWidgetLoading: () => hasEmittedPlanLoadingState,
+				getIsPlanWidgetLoading: () => facts().plan.loading,
 				logger: console,
-				onExplicitPlanPayload: () => {
-					hasExplicitPlanPayload = true;
-				},
+				// Every plan card this turn shows carries its payload, so "explicit" is the plan data fact.
 				onPlanWidgetData: () => {
-					hasEmittedPlanWidget = true;
-					hasSeenPlanWidgetSignal = true;
+					turn.dispatch({ type: "plan-data" });
 				},
 				onPlanWidgetLoading: (loading) => {
-					hasSeenPlanWidgetSignal = true;
-					hasEmittedPlanLoadingState = loading;
+					turn.dispatch({ type: "plan-loading", loading });
 				},
 				recordPlanWidgetEmission,
 				threadId,
@@ -381,8 +364,6 @@ function createRovoTurnRunner(dependencies = {}) {
 				rawDeferredToolResponse,
 				userMessageText,
 			});
-			let pausedToolCallHandled = false;
-			let hasBlockedPlanFeedbackExecutionTool = false;
 			const browserBridge = createThreadBrowserBridge({
 				screenshotStore: {
 					async persistScreenshot({ buffer, contentType, threadId: screenshotThreadId, }) {
@@ -418,10 +399,10 @@ function createRovoTurnRunner(dependencies = {}) {
 				emitRequestUserInputQuestionCard,
 				emitRequestUserInputQuestionCardFromResult,
 				extractCommandFromArgs,
-				getHasBlockedPlanFeedbackExecutionTool: () => hasBlockedPlanFeedbackExecutionTool,
-				getPausedToolCallHandled: () => pausedToolCallHandled,
+				getHasBlockedPlanFeedbackExecutionTool: () => facts().planFeedbackToolBlocked,
+				getPausedToolCallHandled: () => facts().pausedToolCallHandled,
 				getPlanFeedbackToolGuard,
-				getResolvedRovoPort: () => resolvedRovoPort,
+				getResolvedRovoPort: () => facts().port,
 				handleReplayDeferredToolRequest,
 				hasPausedApprovalToolCall,
 				hasPausedClarificationToolCall,
@@ -435,26 +416,26 @@ function createRovoTurnRunner(dependencies = {}) {
 				normalizeRovoThinkingEvent,
 				normalizeRovoThinkingStatus,
 				onBlockedPlanFeedbackExecutionTool: () => {
-					hasBlockedPlanFeedbackExecutionTool = true;
+					turn.dispatch({ type: "plan-feedback-tool-blocked" });
 				},
 				onEmittedThinkingStatus: lazyThinkingStatusEmitter.markEmitted,
 				onObservedActionableToolCall: () => {
-					hasObservedActionableToolCall = true;
+					turn.dispatch({ type: "tool-call-observed", relevant: false });
 				},
 				onObservedDeferredToolRequest: () => {
-					hasObservedDeferredToolRequest = true;
+					turn.dispatch({ type: "deferred-tool-request-observed" });
 				},
 				onObservedRelevantActionableToolCall: () => {
-					hasObservedRelevantActionableToolCall = true;
+					turn.dispatch({ type: "tool-call-observed", relevant: true });
 				},
 				onObservedToolExecution: () => {
-					hasObservedToolExecution = true;
+					turn.dispatch({ type: "tool-execution-observed" });
 				},
 				onPausedToolCallHandled: () => {
-					pausedToolCallHandled = true;
+					turn.dispatch({ type: "paused-tool-call-handled" });
 				},
 				onResolvedRovoPort: (port) => {
-					resolvedRovoPort = port;
+					turn.dispatch({ type: "port-acquired", port });
 				},
 				onTextDelta: handleStreamTextDelta,
 				pausedContinuationToolCallId,
@@ -489,9 +470,13 @@ function createRovoTurnRunner(dependencies = {}) {
 				buildInteractiveStuckPortFailureMessage,
 				clarificationSubmission,
 				clarificationToolCallId,
-				emitForcedTextDelta,
+				// Text the marker stream still holds back goes out first, so the notice follows it.
+				emitFailureNotice: (notice) => {
+					rovoMarkerStream.flush();
+					emitNoticeParagraph(notice);
+				},
 				getListeningPidsForPort,
-				getResolvedRovoPort: () => resolvedRovoPort,
+				getResolvedRovoPort: () => facts().port,
 				handleStreamTextDelta,
 				hasPausedClarificationToolCall,
 				interactiveChatForcePortRecoveryMaxAttempts: INTERACTIVE_CHAT_FORCE_PORT_RECOVERY_MAX_ATTEMPTS,
@@ -511,8 +496,6 @@ function createRovoTurnRunner(dependencies = {}) {
 			});
 			await runRovoStreamRetryLoopWithToolFirstPlanning({
 				abortSignal: abortController.signal,
-				getHasEmittedQuestionCard: () => hasEmittedQuestionCard,
-				getHasObservedDeferredToolRequest: () => hasObservedDeferredToolRequest,
 				handleAttemptError: handleRovoStreamAttemptErrorForLoop,
 				hasRelevantToolSuccess,
 				initialActiveAttemptMessage,
@@ -526,9 +509,12 @@ function createRovoTurnRunner(dependencies = {}) {
 				toolFirstRelevanceDomains,
 				toolFirstSoftRetryEnabled,
 				totalToolFirstAttempts,
+				turn,
 				userMessageText,
 				writer,
 			});
+			turn.dispatch({ type: "post-stream-started" });
+			const endOfStreamFacts = facts();
 			const postStreamPipelineResult = await runRovoPostStreamPipeline({
 				abortSignal: abortController.signal,
 				browserBridge,
@@ -588,19 +574,19 @@ function createRovoTurnRunner(dependencies = {}) {
 				getReadonlyBlockedWriteToolNames,
 				getUnsuppressedAssistantText,
 				handleDirectRovoMediaFences,
-				hasEmittedGenuiWidget,
-				hasEmittedPlanLoadingState,
-				hasEmittedPlanWidget,
-				hasEmittedQuestionCard,
-				hasExplicitPlanPayload,
-				hasObservedActionableToolCall,
-				hasObservedDeferredToolRequest,
-				hasObservedRelevantActionableToolCall,
-				hasObservedToolExecution,
+				hasEmittedGenuiWidget: endOfStreamFacts.genuiWidget,
+				hasEmittedPlanLoadingState: endOfStreamFacts.plan.loading,
+				hasEmittedPlanWidget: endOfStreamFacts.plan.data,
+				hasEmittedQuestionCard: endOfStreamFacts.questionCard,
+				hasExplicitPlanPayload: endOfStreamFacts.plan.data,
+				hasObservedActionableToolCall: endOfStreamFacts.actionableToolCall,
+				hasObservedDeferredToolRequest: endOfStreamFacts.deferredToolRequest,
+				hasObservedRelevantActionableToolCall: endOfStreamFacts.relevantActionableToolCall,
+				hasObservedToolExecution: endOfStreamFacts.toolExecution,
 				hasQueuedPrompts,
 				hasRelevantToolObservation,
 				hasRelevantToolSuccess,
-				hasSeenPlanWidgetSignal,
+				hasSeenPlanWidgetSignal: endOfStreamFacts.plan.signal,
 				hasToolObservationEntries,
 				isCreateIntentRequestPrompt,
 				isPlainObject,
@@ -619,9 +605,6 @@ function createRovoTurnRunner(dependencies = {}) {
 				looksLikeWriteBlockedTurn,
 				mapUiMessagesToRoleContent,
 				messages,
-				onHasEmittedGenuiWidget: (value) => {
-					hasEmittedGenuiWidget = value;
-				},
 				parseClassifierIntentPayload,
 				provider,
 				rawModel,
@@ -634,7 +617,7 @@ function createRovoTurnRunner(dependencies = {}) {
 				resolvePlanExecutionCompletionFn: resolvePlanExecutionCompletion,
 				resolveRovoNonStrictPostStreamRouting,
 				resolvedPlanModeActive,
-				resolvedRovoPort,
+				resolvedRovoPort: endOfStreamFacts.port,
 				resolveRovoRouteToolsDetected,
 				resolveToolFirstWidgetContentType,
 				resolveToolFirstWidgetSource,
@@ -667,7 +650,11 @@ function createRovoTurnRunner(dependencies = {}) {
 				writer,
 				writeTextEndIfStarted,
 			});
+			turn.dispatch({ type: postStreamPipelineResult.aborted ? "aborted" : "completed" });
 			return postStreamPipelineResult;
+		} catch (error) {
+			turn.dispatch({ type: "failed" });
+			throw error;
 		} finally {
 			signal?.removeEventListener("abort", onAbort);
 			// Do not remove a newer turn that acquired this thread while this one finished.

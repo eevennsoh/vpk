@@ -1,5 +1,7 @@
 "use strict";
 
+const { createRovoChatTurn } = require("./rovo-chat-turn-machine");
+
 function buildRovoInitialActiveAttemptMessage({
 	rawDeferredToolResponse,
 	userMessageText,
@@ -61,94 +63,81 @@ function waitForRovoRetryDelay(delayMs, {
 
 async function runRovoStreamRetryLoop({
 	abortSignal,
-	forcePortRecoveryAttemptCount = 0,
 	handleAttemptError,
 	hasRelevantToolSuccess,
-	hasRetriedAsDeferredToolResponse = false,
 	initialActiveAttemptMessage,
-	initialToolFirstAttempt = 1,
 	logger = console,
 	recordToolFirstAttempt,
 	resetAssistantTextForRetryAttempt,
 	resolveRetryPlan,
 	runStreamAttempt,
-	stuckPortRecoveryRetryCount = 0,
+	turn = createRovoChatTurn(),
 	waitForRetryDelay = waitForRovoRetryDelay,
 	writeStatusPart,
 } = {}) {
-	let activeAttemptMessage = initialActiveAttemptMessage;
-	let currentToolFirstAttempt = initialToolFirstAttempt;
-	let shouldContinueToolFirstRetry = true;
+	// The turn owns the attempt, its recovery counts and the facts its callbacks record.
+	const loopTurn = turn;
+	loopTurn.dispatch({
+		type: "attempt-started",
+		activeAttemptMessage: initialActiveAttemptMessage,
+		attempt: 1,
+	});
 
-	while (shouldContinueToolFirstRetry) {
+	for (;;) {
+		const { activeAttemptMessage, attempt: currentToolFirstAttempt } = loopTurn.getState();
+		loopTurn.dispatch({ type: "attempt-started" });
 		recordToolFirstAttempt({
 			activeAttemptMessage,
 			currentToolFirstAttempt,
 			isRetry: currentToolFirstAttempt > 1,
 		});
 
-		let streamTimedOut = false;
+		let resetAssistantText = false;
 		try {
 			await runStreamAttempt({
 				activeAttemptMessage,
 				currentToolFirstAttempt,
 			});
+			loopTurn.dispatch({ type: "attempt-finished" });
 		} catch (rovoStreamError) {
+			const { recovery } = loopTurn.getState();
 			const recoveryResult = await handleAttemptError({
 				activeAttemptMessage,
 				currentToolFirstAttempt,
-				forcePortRecoveryAttemptCount,
-				hasRetriedAsDeferredToolResponse,
+				forcePortRecoveryAttemptCount: recovery.forcePortRecoveryAttempts,
+				hasRetriedAsDeferredToolResponse: recovery.retriedAsDeferredToolResponse,
 				rovoStreamError,
-				stuckPortRecoveryRetryCount,
+				stuckPortRecoveryRetryCount: recovery.stuckPortRetries,
 			});
-			if (recoveryResult.stuckPortRecoveryRetryCount !== undefined) {
-				stuckPortRecoveryRetryCount =
-					recoveryResult.stuckPortRecoveryRetryCount;
-			}
-			if (recoveryResult.forcePortRecoveryAttemptCount !== undefined) {
-				forcePortRecoveryAttemptCount =
-					recoveryResult.forcePortRecoveryAttemptCount;
-			}
-			if (recoveryResult.activeAttemptMessage) {
-				activeAttemptMessage = recoveryResult.activeAttemptMessage;
-			}
-			if (recoveryResult.hasRetriedAsDeferredToolResponse) {
-				hasRetriedAsDeferredToolResponse = true;
-			}
-			if (recoveryResult.shouldContinueToolFirstRetry === false) {
-				shouldContinueToolFirstRetry = false;
-			}
-			if (recoveryResult.action === "stream-timeout") {
-				streamTimedOut = true;
-			}
-			if (recoveryResult.action === "retry-stream") {
-				if (recoveryResult.resetAssistantText) {
-					resetAssistantTextForRetryAttempt();
-				}
-				continue;
-			}
+			resetAssistantText = recoveryResult.resetAssistantText === true;
+			loopTurn.dispatch({ type: "attempt-failed", recovery: recoveryResult });
 		}
 
-		if (streamTimedOut) {
-			shouldContinueToolFirstRetry = false;
+		const { activeAttemptMessage: attemptMessageAfterRecovery, next } = loopTurn.getState();
+		if (next === "rerun") {
+			if (resetAssistantText) {
+				resetAssistantTextForRetryAttempt();
+			}
 			continue;
+		}
+		if (next !== "plan-retry") {
+			break;
 		}
 
 		const hasToolFirstSuccess = hasRelevantToolSuccess();
 		const retryPlan = resolveRetryPlan({
-			activeAttemptMessage,
+			activeAttemptMessage: attemptMessageAfterRecovery,
 			currentToolFirstAttempt,
 			hasToolFirstSuccess,
 		});
 		if (retryPlan.action !== "retry") {
-			shouldContinueToolFirstRetry = false;
-			continue;
+			break;
 		}
 
 		logger.info("[TOOL-FIRST] Retrying tool-grounded response", {
 			...retryPlan.logData,
 		});
+		loopTurn.dispatch({ type: "retry-scheduled" });
 		writeStatusPart(retryPlan.statusPart);
 		resetAssistantTextForRetryAttempt();
 
@@ -156,27 +145,28 @@ async function runRovoStreamRetryLoop({
 			await waitForRetryDelay(retryPlan.retryDelayMs, { abortSignal });
 		}
 		if (abortSignal?.aborted) {
-			shouldContinueToolFirstRetry = false;
-			continue;
+			break;
 		}
 
-		activeAttemptMessage = retryPlan.activeAttemptMessage;
-		currentToolFirstAttempt = retryPlan.nextAttempt;
+		loopTurn.dispatch({
+			type: "attempt-started",
+			activeAttemptMessage: retryPlan.activeAttemptMessage,
+			attempt: retryPlan.nextAttempt,
+		});
 	}
 
+	const { activeAttemptMessage, attempt, recovery } = loopTurn.getState();
 	return {
 		activeAttemptMessage,
-		currentToolFirstAttempt,
-		forcePortRecoveryAttemptCount,
-		hasRetriedAsDeferredToolResponse,
-		stuckPortRecoveryRetryCount,
+		currentToolFirstAttempt: attempt,
+		forcePortRecoveryAttemptCount: recovery.forcePortRecoveryAttempts,
+		hasRetriedAsDeferredToolResponse: recovery.retriedAsDeferredToolResponse,
+		stuckPortRecoveryRetryCount: recovery.stuckPortRetries,
 	};
 }
 
 async function runRovoStreamRetryLoopWithToolFirstPlanning({
 	abortSignal,
-	getHasEmittedQuestionCard = () => false,
-	getHasObservedDeferredToolRequest = () => false,
 	handleAttemptError,
 	hasRelevantToolSuccess: hasRelevantToolSuccessFn,
 	initialActiveAttemptMessage,
@@ -191,6 +181,7 @@ async function runRovoStreamRetryLoopWithToolFirstPlanning({
 	toolFirstRelevanceDomains,
 	toolFirstSoftRetryEnabled = false,
 	totalToolFirstAttempts = 1,
+	turn = createRovoChatTurn(),
 	userMessageText,
 	writer,
 } = {}) {
@@ -211,9 +202,8 @@ async function runRovoStreamRetryLoopWithToolFirstPlanning({
 		}) => resolveRovoToolFirstRetryPlan({
 			abortSignal,
 			currentToolFirstAttempt,
-			hasEmittedQuestionCard: getHasEmittedQuestionCard(),
-			hasObservedDeferredToolRequest:
-				getHasObservedDeferredToolRequest(),
+			hasEmittedQuestionCard: turn.getState().facts.questionCard,
+			hasObservedDeferredToolRequest: turn.getState().facts.deferredToolRequest,
 			hasToolFirstSuccess,
 			toolFirstExecutionState,
 			toolFirstPolicy,
@@ -223,6 +213,7 @@ async function runRovoStreamRetryLoopWithToolFirstPlanning({
 			userMessageText,
 		}),
 		resetAssistantTextForRetryAttempt,
+		turn,
 		writeStatusPart: (statusPart) => {
 			writer.write(statusPart);
 		},
