@@ -1,6 +1,6 @@
 // Pins the public runtime surface of `generative-widget.ts`, which stays the entry
-// point for every importer while its implementation lives in sibling modules.
-// The 16 exported type names are covered by `pnpm run typecheck` through those importers.
+// point for every importer even when its implementation moves into sibling modules.
+// Exported type names are checked by `pnpm run typecheck` wherever an importer uses them.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -50,5 +50,7 @@ test("createBodyOnlySpec keys its cache on title and description for one spec", 
 	const redescribed = createBodyOnlySpec({ ...widget, description: "Different description" });
 	assert.notEqual(retitled, first);
 	assert.notEqual(redescribed, first);
+	assert.equal(createBodyOnlySpec({ ...widget, title: "Different title" }), retitled);
+	assert.equal(createBodyOnlySpec({ ...widget, description: "Different description" }), redescribed);
 	assert.equal(createBodyOnlySpec({ ...widget }), first);
 });

@@ -8,7 +8,10 @@
 // json-render catalog demos, and synthetic cases for every body kind, content-type
 // matcher row, action and URL rule.
 //
-// Re-record only when a behaviour change is intended:
+// Enrichment runs with no tool-call observations, so it passes the widget through;
+// profile photos have their own suite.
+//
+// Re-record only when a behaviour change is intended (refused under CI):
 //   UPDATE_GENERATIVE_WIDGET_GOLDEN=1 node --import ./scripts/lib/register-alias-hook.mjs \
 //     --test components/projects/shared/lib/generative-widget.golden.test.js
 const test = require("node:test");
@@ -102,7 +105,13 @@ function computeCorpus() {
 	);
 }
 
-if (process.env.UPDATE_GENERATIVE_WIDGET_GOLDEN === "1") {
+const isUpdating = process.env.UPDATE_GENERATIVE_WIDGET_GOLDEN === "1";
+
+if (isUpdating) {
+	if (process.env.CI) {
+		throw new Error("UPDATE_GENERATIVE_WIDGET_GOLDEN is refused under CI; re-record locally.");
+	}
+
 	writeFileSync(EXPECTED_PATH, `${JSON.stringify(computeCorpus(), null, "\t")}\n`);
 }
 
@@ -119,13 +128,11 @@ test("golden expected output covers exactly the fixture corpus", () => {
 	);
 });
 
-test("every golden fixture produces its recorded card chain output", () => {
+test("every golden fixture produces its recorded card chain output", { skip: isUpdating && "re-recorded this run; rerun without UPDATE_GENERATIVE_WIDGET_GOLDEN" }, async (t) => {
 	const expected = JSON.parse(readFileSync(EXPECTED_PATH, "utf8"));
 	for (const fixture of readFixtures()) {
-		assert.deepEqual(
-			toComparable(runFixture(fixture)),
-			expected[fixture.name],
-			`golden mismatch for ${fixture.name}`
-		);
+		await t.test(fixture.name, () => {
+			assert.deepEqual(toComparable(runFixture(fixture)), expected[fixture.name]);
+		});
 	}
 });
