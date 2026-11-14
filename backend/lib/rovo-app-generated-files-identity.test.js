@@ -106,6 +106,25 @@ test("a created file changed since its run is kept, and a later run's edit drops
 	assert.equal(await exists(editedInSameRun), false, "created and edited in one run: its final content is recorded");
 });
 
+test("a legacy entry without an identity never gains one from an update or a replace", async (t) => {
+	const { write, manager, baseDir } = await createFixture(t);
+	// A manifest written by the earlier recorder, which also registered edits to a
+	// developer's existing file.
+	const developersFile = await write("app/existing/edited.tsx", "the developer's untracked file");
+	const manifestPath = path.join(baseDir, "rovo-app", "threads", "thread-1", "generated-files.json");
+	await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+	await fs.writeFile(manifestPath, JSON.stringify([{ requestedPath: "app/existing/edited.tsx", toolName: "find_and_replace_code" }]));
+	const files = manager();
+
+	await files.recordRunGeneratedFiles("thread-1", run(
+		["find_and_replace_code", "Successfully replaced code in app/existing/edited.tsx:\n\n--- diff"],
+		["create_file", "Successfully updated app/existing/edited.tsx."],
+	));
+	assert.deepEqual(await files.readManifest("thread-1"), [], "the legacy entry is given up, not adopted");
+	assert.equal(await files.deleteLegacyRootFiles("thread-1"), 0);
+	assert.equal(await fs.readFile(developersFile, "utf8"), "the developer's untracked file");
+});
+
 test("a result path that only normalizes to the developer's file is never recorded", async (t) => {
 	const { write, manager } = await createFixture(t);
 	const developersFile = await write("lib/a.ts", "the developer's untracked file");
