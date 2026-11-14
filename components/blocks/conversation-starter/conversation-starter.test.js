@@ -16,7 +16,7 @@ const DATA = "components/blocks/conversation-starter/data/starters.ts";
 
 test("Conversation Starter is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("conversation-starter", "Conversation Starter"\)/u,
 	);
 	assert.match(

@@ -11,7 +11,7 @@ const INDEX_SOURCE = readRepoFile("components/ui-custom/rovo-sparkle/index.ts");
 const DEMO_SOURCE = readRepoFile("components/website/demos/ui-custom/rovo-sparkle-demo.tsx");
 const DETAILS_SOURCE = readRepoFile("app/data/details/ui-custom/rovo-sparkle.ts");
 const DETAILS_REGISTRY_SOURCE = readRepoFile("app/data/details/ui-custom.ts");
-const COMPONENTS_SOURCE = readRepoFile("app/data/components.ts");
+const COMPONENTS_SOURCE = readRepoFile("app/data/component-manifest.ts");
 const MANIFEST_SOURCE = readRepoFile("app/data/component-manifest.ts");
 const PRIMARY_REGISTRY_SOURCE = readRepoFile("components/website/registry/ui-custom/primary.ts");
 

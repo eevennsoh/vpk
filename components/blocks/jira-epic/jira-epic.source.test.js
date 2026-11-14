@@ -7,7 +7,7 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(join(process.cwd(), "components/website/demos/blocks/jira-epic-demo.tsx"), "utf8");
 const DETAILS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "details", "blocks", "jira-epic.ts"), "utf8");
 const DETAILS_INDEX_SOURCE = readFileSync(join(process.cwd(), "app", "data", "details", "blocks.ts"), "utf8");
-const COMPONENTS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENTS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const MANIFEST_SOURCE = readFileSync(join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const REGISTRY_SOURCE = readFileSync(join(process.cwd(), "components", "website", "registry", "blocks.ts"), "utf8");
 
@@ -53,5 +53,5 @@ test("JiraEpic block is wired into docs detail, demo registry, and catalogs", ()
 	assert.match(DETAILS_INDEX_SOURCE, /"jira-epic": JIRA_EPIC_DETAIL/u);
 	assert.match(COMPONENTS_SOURCE, /blockComponent\("jira-epic", "Jira Epic"\)/u);
 	assert.match(MANIFEST_SOURCE, /blockComponent\("jira-epic", "Jira Epic"\)/u);
-	assert.match(REGISTRY_SOURCE, /"jira-epic": dynamic\(\(\) => import\("\.\.\/demos\/blocks\/jira-epic-demo"\), \{\s*ssr: false,\s*\}\)/u);
+	assert.match(REGISTRY_SOURCE, /"jira-epic": dynamic\(\(\) => import\("\.\.\/demos\/blocks\/jira-epic-demo"\), \{\s*ssr: false,?\s*\}\)/u);
 });

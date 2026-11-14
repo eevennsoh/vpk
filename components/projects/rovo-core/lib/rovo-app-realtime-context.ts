@@ -1,15 +1,17 @@
+// Context the Rovo app shells inject into, and read back from, a Realtime voice session. Not the
+// same as rovo-core/lib/rovo-realtime-thread-summary.ts, which the voice hook injects on connect.
 import {
 	getMessageArtifactResult,
 	getMessageText,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 
-const STUDIO_REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
-export const STUDIO_REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
+const ROVO_APP_REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
+export const ROVO_APP_REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 
-type StudioRealtimeMessage = Pick<RovoUIMessage, "parts" | "role">;
+type RovoAppRealtimeMessage = Pick<RovoUIMessage, "parts" | "role">;
 
-export type StudioRealtimeStatusInput = {
+export type RovoAppRealtimeStatusInput = {
 	connectionState?: string;
 	connectionStatus?: string;
 	isReconnecting?: boolean;
@@ -19,10 +21,10 @@ export type StudioRealtimeStatusInput = {
 	voiceState: string;
 };
 
-export function buildStudioRealtimeThreadSummary(messages: ReadonlyArray<StudioRealtimeMessage>): string {
+export function buildRovoAppRealtimeThreadSummary(messages: ReadonlyArray<RovoAppRealtimeMessage>): string {
 	const summary = messages
 		.filter((message) => message.role === "user" || message.role === "assistant")
-		.slice(-STUDIO_REALTIME_THREAD_SUMMARY_MAX_MESSAGES)
+		.slice(-ROVO_APP_REALTIME_THREAD_SUMMARY_MAX_MESSAGES)
 		.map((message) => {
 			const text = getMessageText(message).trim();
 			const artifact = getMessageArtifactResult(message);
@@ -42,15 +44,16 @@ export function buildStudioRealtimeThreadSummary(messages: ReadonlyArray<StudioR
 	return summary.slice(0, 2_000);
 }
 
-export function buildStudioRealtimeResultSummary(message: Pick<RovoUIMessage, "parts">): string {
+/** What a delegated turn produced, told back to the voice session in the product's name ("Rovo", "Studio"). */
+export function buildRovoAppRealtimeResultSummary(message: Pick<RovoUIMessage, "parts">, productName: string): string {
 	const text = getMessageText(message);
 	const artifact = getMessageArtifactResult(message);
-	const summary = artifact ? `Studio ${artifact.action === "update" ? "updated" : "created"} artifact "${artifact.title}". ${text || ""}` : text || "Studio completed the task.";
+	const summary = artifact ? `${productName} ${artifact.action === "update" ? "updated" : "created"} artifact "${artifact.title}". ${text || ""}` : text || `${productName} completed the task.`;
 
-	return summary.slice(0, STUDIO_REALTIME_RESULT_SUMMARY_MAX_CHARS);
+	return summary.slice(0, ROVO_APP_REALTIME_RESULT_SUMMARY_MAX_CHARS);
 }
 
-export function buildStudioRealtimeArtifactContextSummary(input: {
+export function buildRovoAppRealtimeArtifactContextSummary(input: {
 	annotationContext: string | null;
 	document: {
 		id: string;
@@ -67,7 +70,7 @@ export function buildStudioRealtimeArtifactContextSummary(input: {
 		.join("\n");
 }
 
-export function resolveStudioRealtimeStatusMessage(realtime: StudioRealtimeStatusInput): string | null {
+export function resolveRovoAppRealtimeStatusMessage(realtime: RovoAppRealtimeStatusInput): string | null {
 	const directStatus = typeof realtime.statusMessage === "string" && realtime.statusMessage.trim() ? realtime.statusMessage.trim() : null;
 	if (directStatus) {
 		return directStatus;
@@ -91,7 +94,7 @@ export function resolveStudioRealtimeStatusMessage(realtime: StudioRealtimeStatu
 	return null;
 }
 
-export function resolveStudioRealtimeSessionIdentity(realtime: StudioRealtimeStatusInput, activeThreadId: string | null, runtimeThreadId: string): string | null {
+export function resolveRovoAppRealtimeSessionIdentity(realtime: RovoAppRealtimeStatusInput, activeThreadId: string | null, runtimeThreadId: string): string | null {
 	const candidates = [realtime.sessionId, realtime.sessionKey, realtime.connectionState, realtime.connectionStatus];
 
 	const explicitIdentity = candidates.find((candidate) => {

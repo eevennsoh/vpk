@@ -10,7 +10,7 @@ function readProjectFile(relativePath) {
 
 test("Studio is registered in project catalog and demo surfaces", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/projectComponent\("studio", "Studio"\)/u,
 	);
 	assert.match(

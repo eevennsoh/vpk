@@ -11,7 +11,7 @@ const { createRoot } = require("react-dom/client");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const ROOT = path.join(__dirname, "../../../..");
-const COMPONENTS = fs.readFileSync(path.join(ROOT, "app/data/components.ts"), "utf8");
+const COMPONENTS = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const MANIFEST = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const DETAILS_INDEX = fs.readFileSync(path.join(ROOT, "app/data/details/visual.ts"), "utf8");
 const DETAIL = fs.readFileSync(path.join(ROOT, "app/data/details/visual/gooey.ts"), "utf8");

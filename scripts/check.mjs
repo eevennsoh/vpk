@@ -2,7 +2,8 @@
 
 // `pnpm run check`: one "am I done?" command for a change. It runs, concurrently, every
 // repository guard, ESLint on changed files and their direct importers, the full typecheck,
-// and the unit suites related to the change, then prints one summary of every problem.
+// and the unit suites related to the change (two levels of imports; `--deep` adds the rendered
+// and bundling suites that depend on it more deeply), then prints one summary of every problem.
 // `pnpm run verify:fast` is `check --guards`. `pnpm run ci:pr` stays the merge gate.
 
 import { spawn, spawnSync } from "node:child_process";
@@ -11,7 +12,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildReverseImports, directImporters, isSourceFile, isTestFile, selectRelatedTests } from "./lib/import-graph.mjs";
+import { buildReverseImports, deepBundlingDependents, directImporters, isSourceFile, isTestFile, selectRelatedTests } from "./lib/import-graph.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MAIN_HEALTH_SCRIPT = ".agents/skills/vpk-git-ship/scripts/main-health.js";
@@ -244,9 +245,21 @@ export function parseNodeTestFailures(output) {
 	return problems;
 }
 
-async function runUnit({ tests, run = runShell }) {
-	if (tests.length === 0) return { details: [], id: "unit", label: "no related suites", problems: [], seconds: 0, status: "skipped" };
-	const result = await run(`node scripts/run-js-unit-tests.mjs --keep-going ${tests.map((file) => `--file '${file}'`).join(" ")}`);
+// From this many suites the unit runner's `--parallel auto` clearly beats running them one batch
+// at a time on this machine (provisional; measured 2026-11-14 at a 1-minute load of 14–29):
+// 20 suites 6.6–30.7 s serial against 2.9–6.1 s parallel; 10 suites 7.5–18.8 s against
+// 5.5–16.2 s; 5 suites 2.3–16.4 s against 1.5–15.1 s. `--parallel auto` sizes its workers
+// from free memory and cores.
+export const PARALLEL_FROM_SUITES = 20;
+
+// `deep`: also run the rendered and bundling suites that depend on the change more deeply.
+// A selection of PARALLEL_FROM_SUITES or more (a deep run always is, or nearly) runs in
+// parallel; check already holds the machine-wide heavy-run turn, which the runner inherits.
+export async function runUnit({ tests, deep = [], run = runShell }) {
+	const all = [...new Set([...tests, ...deep])].sort();
+	if (all.length === 0) return { details: [], id: "unit", label: "no related suites", problems: [], seconds: 0, status: "skipped" };
+	const parallel = deep.length > 0 || all.length >= PARALLEL_FROM_SUITES ? " --parallel auto" : "";
+	const result = await run(`node scripts/run-js-unit-tests.mjs --keep-going${parallel} ${all.map((file) => `--file '${file}'`).join(" ")}`);
 	const output = `${result.stdout}${result.stderr}`;
 	const problems = result.status === 0 ? [] : parseNodeTestFailures(output);
 	if (result.status !== 0 && problems.length === 0) {
@@ -255,7 +268,7 @@ async function runUnit({ tests, run = runShell }) {
 	return {
 		details: result.status === 0 ? [] : [{ title: "unit", text: output }],
 		id: "unit",
-		label: `${tests.length} related suites`,
+		label: deep.length > 0 ? `${tests.length} related + ${deep.length} deep suites` : `${tests.length} related suites`,
 		problems,
 		seconds: result.seconds,
 		status: result.status === 0 ? "passed" : "failed",
@@ -290,7 +303,8 @@ export function selectChange({ changed, tracked, readSource, targets }) {
 		.filter((file) => isSourceFile(file) && inLintTargets(file, targets) && existsSync(path.join(REPO_ROOT, file)))
 		.sort();
 	const tests = selectRelatedTests({ changed, importersOf, readSource, testFiles: universe.filter(isTestFile) });
-	return { importers, lintFiles, tests };
+	const deep = deepBundlingDependents({ changed, importersOf, readSource, selected: tests });
+	return { deep, importers, lintFiles, tests };
 }
 
 export function formatProblem(problem) {
@@ -309,6 +323,11 @@ export function formatReport(report, { detailLines = DETAIL_LINES } = {}) {
 	for (const stage of report.stages) {
 		out.push(`${stage.id.padEnd(10)}${stage.status.padEnd(8)}${stage.label}${stage.seconds ? ` (${stage.seconds.toFixed(1)}s)` : ""}`);
 	}
+	// Never silent about what it skipped: rendered or bundling suites deeper than the two levels run.
+	const notRun = report.change?.deepNotRun ?? 0;
+	if (notRun > 0) {
+		out.push(`unit      ${notRun} rendered or bundling suite${notRun === 1 ? "" : "s"} depend on this change more deeply and were not run: pnpm run check -- --deep`);
+	}
 	const problems = report.stages.flatMap((stage) => stage.problems);
 	for (const detail of report.stages.flatMap((stage) => stage.details)) {
 		out.push("", `--- ${detail.title} ---`, tail(detail.text, detailLines));
@@ -319,22 +338,23 @@ export function formatReport(report, { detailLines = DETAIL_LINES } = {}) {
 }
 
 export function parseArgs(argv) {
-	const options = { base: "origin/main", guardsOnly: false, json: false };
+	const options = { base: "origin/main", deep: false, guardsOnly: false, json: false };
 	for (let index = 0; index < argv.length; index += 1) {
 		const argument = argv[index];
 		if (argument === "--") continue;
 		if (argument === "--guards") options.guardsOnly = true;
 		else if (argument === "--json") options.json = true;
+		else if (argument === "--deep") options.deep = true;
 		else if (argument === "--base") {
 			options.base = argv[index + 1];
 			if (!options.base) throw new Error("--base requires a ref");
 			index += 1;
-		} else throw new Error(`Unknown argument: ${argument}\nUsage: check.mjs [--guards] [--json] [--base <ref>]`);
+		} else throw new Error(`Unknown argument: ${argument}\nUsage: check.mjs [--guards] [--json] [--deep] [--base <ref>]`);
 	}
 	return options;
 }
 
-export async function runCheck({ base = "origin/main", guardsOnly = false, env = process.env } = {}) {
+export async function runCheck({ base = "origin/main", deep = false, guardsOnly = false, env = process.env } = {}) {
 	const started = performance.now();
 	const { scripts } = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
 	if (guardsOnly) {
@@ -350,12 +370,13 @@ export async function runCheck({ base = "origin/main", guardsOnly = false, env =
 	const readSource = (file) => readFileSync(path.join(REPO_ROOT, file), "utf8");
 	const selection = selectChange({ changed: files, readSource, targets: lintTargets(scripts.lint), tracked });
 	const tests = await includedTests(selection.tests);
+	const deepTests = await includedTests(selection.deep);
 	const [mainHealth, machineState, guards, eslint, typecheck, unit] = await Promise.all([
-		healthPromise, machinePromise, guardsPromise, runEslint({ files: selection.lintFiles }), typecheckPromise, runUnit({ tests }),
+		healthPromise, machinePromise, guardsPromise, runEslint({ files: selection.lintFiles }), typecheckPromise, runUnit({ tests, deep: deep ? deepTests : [] }),
 	]);
 	const stages = [guards, eslint, typecheck, unit];
 	return {
-		change: { base, files, importers: selection.importers.length, mergeBase },
+		change: { base, deepNotRun: deep ? 0 : deepTests.length, files, importers: selection.importers.length, mergeBase },
 		machineState,
 		mainHealth,
 		ok: stages.every((stage) => stage.status !== "failed"),

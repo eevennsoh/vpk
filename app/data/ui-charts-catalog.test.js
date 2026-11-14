@@ -74,7 +74,6 @@ test("ui-charts catalog section is wired through data, routes, previews, and reg
 
 	for (const slug of EXPECTED_SLUGS) {
 		assert.match(manifestSource, new RegExp(`uiChartComponent\\("${slug}"`, "u"));
-		assert.match(componentSource, new RegExp(`uiChartComponent\\("${slug}"`, "u"));
 		assert.match(detailsSource, new RegExp(`"${slug}": chartDetail`, "u"));
 		assert.match(registrySource, new RegExp(`"${slug}": dynamic\\(\\(\\) => import\\("\\./demos/ui-charts/${slug}-demo"`, "u"));
 		assert.equal(

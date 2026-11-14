@@ -399,6 +399,8 @@ export default function AgentsProgress({
 			)}
 			onClick={isInteractive ? handleCardActivate : undefined}
 			onKeyDown={isInteractive ? (e: React.KeyboardEvent) => {
+				// Keys from the Stop/Delete/Retry buttons inside the card belong to them.
+				if (e.target !== e.currentTarget) return;
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
 					handleCardActivate();

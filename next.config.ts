@@ -59,13 +59,16 @@ const nextConfig: NextConfig = {
 	// Button and Spinner are imported by nearly every client entry. Left to the default split,
 	// they land in whichever shared chunk happens to group them, and moving the markdown runtime
 	// out of first load (C-8g) scattered copies of them into app/layout and route chunks. One
-	// named chunk keeps a single copy that every route shares.
+	// named chunk keeps a single copy that every route shares. The two logo maps (C-8g) hold one
+	// loader per logo; they are small enough that the default split copied them into every chunk
+	// that renders a logo, so they get one named chunk as well.
 	webpack: (config, { isServer }) => {
 		if (!isServer && config.optimization?.splitChunks && typeof config.optimization.splitChunks === "object") {
 			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
 			splitChunks.cacheGroups = {
 				...splitChunks.cacheGroups,
 				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner)\.tsx$/ },
+				logoMaps: { chunks: "all", enforce: true, name: "logo-maps", priority: 30, test: /[\\/]components[\\/]ui[\\/](data[\\/]logo-data\.ts|data[\\/]logo-third-party-icons\.ts|lazy-glyph\.tsx)$/ },
 			};
 		}
 		return config;

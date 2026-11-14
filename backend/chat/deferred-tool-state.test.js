@@ -78,7 +78,7 @@ test("registers and takes paused Rovo tool calls", () => {
 		ttlMs: 1_000,
 	});
 	const handle = {
-		release() {},
+		settleLease: () => true,
 	};
 
 	const record = state.registerPausedRovoToolCall({
@@ -113,8 +113,9 @@ test("releases a paused Rovo tool handle when clearing without cancel", () => {
 		toolCallId: "paused-release",
 		port: 8125,
 		handle: {
-			release() {
-				releases.push("release");
+			settleLease(disposition) {
+				releases.push(disposition);
+				return true;
 			},
 		},
 	});
@@ -136,8 +137,8 @@ test("cancels an existing paused Rovo tool call before replacing it", async () =
 		ttlMs: 1_000,
 		waitForReady: async () => {},
 	});
-	const firstHandle = { release() {} };
-	const secondHandle = { release() {} };
+	const firstHandle = { settleLease: () => true };
+	const secondHandle = { settleLease: () => true };
 
 	const first = state.registerPausedRovoToolCall({
 		toolCallId: "paused-replace",
@@ -177,7 +178,7 @@ test("expires paused Rovo tool calls through the cancellation path", async () =>
 	state.registerPausedRovoToolCall({
 		toolCallId: "paused-ttl",
 		port: 8128,
-		handle: { release() {} },
+		handle: { settleLease: () => true },
 	});
 
 	assert.equal(state.pausedRovoToolCallStore.has("paused-ttl"), true);

@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 test("Code List is registered as a UI Custom component in all four registries", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/customComponent\("code-list", "Code List"\)/u,
 	);
 	assert.match(

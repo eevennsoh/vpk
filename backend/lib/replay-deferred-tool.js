@@ -71,7 +71,9 @@ async function handleReplayDeferredToolRequest({
 
 	const toolCallId = getNonEmptyString(interactivePart.tool_call_id);
 	const toolName = getNonEmptyString(interactivePart.tool_name);
-	const handle = control?.reservePort?.() ?? null;
+	// Reserve the port only for a pause that can be registered; an invalid one must not
+	// take the lease from the stream.
+	const handle = toolCallId && toolName ? control?.reservePort?.() ?? null : null;
 	if (!toolCallId || !toolName || !handle) {
 		return {
 			handled: false,
@@ -105,33 +107,44 @@ async function handleReplayDeferredToolRequest({
 		}
 	}
 
-	if (isClarificationTool && toolInput && typeof emitRequestUserInputQuestionCard === "function") {
-		emitRequestUserInputQuestionCard({
-			toolName: "ask_user_questions",
-			toolCallId,
-			questionInput: toolInput,
-			source: "deferred_tool_request",
-		});
-	}
+	try {
+		if (isClarificationTool && toolInput && typeof emitRequestUserInputQuestionCard === "function") {
+			emitRequestUserInputQuestionCard({
+				toolName: "ask_user_questions",
+				toolCallId,
+				questionInput: toolInput,
+				source: "deferred_tool_request",
+			});
+		}
 
-	if (!isClarificationTool && toolInput && typeof emitExitPlanWidget === "function") {
-		emitExitPlanWidget({
-			toolCallId,
-			toolInput,
-			source: "deferred_tool_request",
-		});
-	}
+		if (!isClarificationTool && toolInput && typeof emitExitPlanWidget === "function") {
+			emitExitPlanWidget({
+				toolCallId,
+				toolInput,
+				source: "deferred_tool_request",
+			});
+		}
 
-	if (typeof registerPausedToolCall === "function") {
-		registerPausedToolCall({
-			toolCallId,
-			port: control.port,
-			handle,
-			threadId,
-			sessionId: pausedSessionId,
-			sessionMode: pausedSessionMode,
-			kind,
-		});
+		if (typeof registerPausedToolCall === "function") {
+			registerPausedToolCall({
+				toolCallId,
+				port: control.port,
+				handle,
+				threadId,
+				sessionId: pausedSessionId,
+				sessionMode: pausedSessionMode,
+				kind,
+			});
+		}
+	} catch (error) {
+		// The lease was handed to this pause; nothing will resume or release it now. The
+		// paused turn is still on the port, so it is quarantined for the health check.
+		handle.settleLease?.("unhealthy", { reason: "paused tool call could not be registered" });
+		throw error;
+	}
+	if (typeof registerPausedToolCall !== "function") {
+		// No store will keep this pause, so its lease ends here.
+		handle.settleLease?.("unhealthy", { reason: "paused tool call could not be registered" });
 	}
 
 	return {
