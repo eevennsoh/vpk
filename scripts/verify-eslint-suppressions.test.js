@@ -60,7 +60,7 @@ test("a rule the change introduces may baseline its existing violations once", (
 	assert.deepEqual([...findIntroducedRules(null, currentConfig, ["vpk-tokens/no-raw-white-black"])], []);
 });
 
-test("CI compares with the PR base tip; local runs use the merge-base", () => {
+test("a PR run compares its merge commit with its first parent; PR heads and local runs use the merge-base", () => {
 	const calls = [];
 	const git = (args) => {
 		calls.push(args.join(" "));
@@ -70,10 +70,19 @@ test("CI compares with the PR base tip; local runs use the merge-base", () => {
 	resolveBaseRef({ env: {}, git });
 	resolveBaseRef({ env: { VPK_SUPPRESSIONS_BASE: "HEAD~1" }, git });
 	assert.deepEqual(calls, [
-		"rev-parse --verify --quiet origin/main",
+		"rev-parse --verify --quiet HEAD^2",
+		"rev-parse --verify --quiet HEAD^1",
 		"merge-base HEAD origin/main",
 		"rev-parse --verify --quiet HEAD~1",
 	]);
+	// HEAD is the PR head, not a merge: compare with its merge-base with the named base.
+	calls.length = 0;
+	const headOnly = (args) => {
+		calls.push(args.join(" "));
+		return args.at(-1) === "HEAD^2" ? null : "def456";
+	};
+	assert.equal(resolveBaseRef({ env: { GITHUB_BASE_REF: "release/x" }, git: headOnly }), "def456");
+	assert.deepEqual(calls, ["rev-parse --verify --quiet HEAD^2", "merge-base HEAD origin/release/x"]);
 });
 
 test("a push build compares with its pre-push tip and fails when that base is missing", () => {

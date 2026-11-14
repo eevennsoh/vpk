@@ -24,9 +24,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const menubarRowBaseClassName = cn(dropdownStyles.itemBase, "gap-2");
-const menubarRowHeightClassName = "h-8 py-0 whitespace-nowrap";
+const menubarSingleLineClassName = "whitespace-nowrap";
 const menubarRowHorizontalPaddingClassName = "px-2";
-const menubarWrappingRowClassName = "min-h-8 py-1.5 whitespace-normal break-words";
+const menubarWrappingRowClassName = "whitespace-normal break-words";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
   return (
@@ -136,7 +136,7 @@ function MenubarItem({
       className={cn(
         "group/menubar-item",
         menubarRowBaseClassName,
-        shouldWrapText ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        shouldWrapText ? menubarWrappingRowClassName : menubarSingleLineClassName,
         menubarRowHorizontalPaddingClassName,
         "data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_[data-slot=icon]]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled data-[variant=destructive]:[&_svg]:text-icon-danger [&>svg:first-child]:box-content [&>svg:first-child]:size-4 [&>svg:first-child]:p-1 [&>[data-slot=icon]:first-child]:box-content [&>[data-slot=icon]:first-child]:size-4 [&>[data-slot=icon]:first-child]:p-1 [&_[data-slot=icon]]:text-icon-subtle [&>[data-slot=icon]:first-child_svg]:text-icon-subtle data-disabled:[&_[data-slot=icon]]:text-icon-disabled data-disabled:[&>[data-slot=icon]:first-child_svg]:text-icon-disabled data-[variant=destructive]:[&_[data-slot=icon]]:text-icon-danger data-[variant=destructive]:[&>[data-slot=icon]:first-child_svg]:text-icon-danger",
         className,
@@ -194,7 +194,7 @@ function MenubarCheckboxItem({
       data-inset={inset}
       className={cn(
         menubarRowBaseClassName,
-        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        allowTextWrap ? menubarWrappingRowClassName : menubarSingleLineClassName,
         "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
@@ -242,7 +242,7 @@ function MenubarRadioItem({
       data-inset={inset}
       className={cn(
         menubarRowBaseClassName,
-        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        allowTextWrap ? menubarWrappingRowClassName : menubarSingleLineClassName,
         "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
@@ -355,7 +355,7 @@ function MenubarSubTrigger({
       data-slot="menubar-sub-trigger"
       data-inset={inset}
       className={cn(
-        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        allowTextWrap ? menubarWrappingRowClassName : menubarSingleLineClassName,
         menubarRowHorizontalPaddingClassName,
         "rounded-lg focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled [&>svg:first-child]:box-content [&>svg:first-child]:size-4 [&>svg:first-child]:p-1 [&_[data-slot=icon]]:shrink-0 [&_[data-slot=icon]]:text-icon-subtle [&>[data-slot=icon]:first-child]:box-content [&>[data-slot=icon]:first-child]:size-4 [&>[data-slot=icon]:first-child]:p-1 [&>[data-slot=icon]:first-child_svg]:text-icon-subtle data-disabled:[&_[data-slot=icon]]:text-icon-disabled data-disabled:[&>[data-slot=icon]:first-child_svg]:text-icon-disabled",
         className,

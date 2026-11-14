@@ -9,6 +9,7 @@ import {
 } from "frimousse";
 
 import { cn } from "@/lib/utils";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 
 export interface EmojiPickerPanelProps {
 	onSelect: (emoji: string) => void;
@@ -29,7 +30,7 @@ function PanelCategoryHeader({
 		<div
 			{...props}
 			className={cn(
-				"h-7 bg-surface px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest",
+				"h-7 bg-surface", dropdownStyles.label,
 				className,
 			)}
 		>

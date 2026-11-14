@@ -11,11 +11,15 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { FavoriteButton } from "@/components/blocks/agent-selector/components/favorite-button";
+import { cn } from "@/lib/utils";
 
 const softwareIds = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"];
 const softwareAgents = softwareIds.flatMap((id) => BUTTER_PICKER_AGENTS.filter((agent) => agent.id === id));
@@ -31,6 +35,8 @@ export function FavoritesPreview() {
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const focusFrame = useRef<number | null>(null);
 	const root = useRef<HTMLDivElement>(null);
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const listMaskStyle = { ...buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: false, fadeSize: "3rem" }), "--scroll-mask-top-fade-size": "3rem" };
 	const submenuContent = useRef<HTMLDivElement>(null);
 	const cancelClose = () => { if (closeTimer.current !== null) clearTimeout(closeTimer.current); closeTimer.current = null; };
 	const closeLater = () => { cancelClose(); closeTimer.current = setTimeout(() => setSubmenu(null), 180); };
@@ -74,21 +80,21 @@ export function FavoritesPreview() {
 		);
 	};
 	return (
-		<div ref={root} className="flex h-[26rem] w-80 max-w-full flex-col overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground shadow-2xl">
-			<div className="-mx-1 -mt-1 mb-1 shrink-0 overflow-hidden rounded-t-xl"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={(value) => { setQuery(value); setSubmenu(null); }} onClear={() => setQuery("")} /></div>
-			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+		<div ref={root} className={cn("flex h-[26rem] w-80 max-w-full flex-col overflow-hidden bg-popover text-popover-foreground", dropdownStyles.surface, dropdownStyles.padding)}>
+			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={(value) => { setQuery(value); setSubmenu(null); }} onClear={() => setQuery("")} /></div>
+			<div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" style={listMaskStyle}>
 				{favoriteAgents.length ? <section aria-label="Favorites"><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">Favorites</h3>{favoriteAgents.map(renderRow)}</section> : null}
 				{shownSoftware.length ? <section aria-label="Software agents"><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">Software agents</h3>{shownSoftware.map(renderRow)}{!query && !expanded && availableSoftware.length > 3 ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null}
 				{availableOther.length ? <section aria-label="Other agents"><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">Other agents</h3>{availableOther.map(renderRow)}</section> : null}
 				{!favoriteAgents.length && !shownSoftware.length && !availableOther.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}
 			</div>
-			<div className="shrink-0 border-t border-border pt-1"><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle"><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle"><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button></div>
+			<div className="shrink-0"><DropdownMenuSeparator className="mt-0" /><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle"><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle"><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button></div>
 			<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) setSubmenu(null); }}>
-				{submenu ? <PopoverContent ref={submenuContent} anchor={submenu.anchor} aria-label={`Run ${submenu.agent.name} on`} role="menu" initialFocus={false} finalFocus={false} side="right" align="start" sideOffset={0} className="w-70 gap-0 p-1" onPointerEnter={cancelClose} onPointerLeave={closeLater} onKeyDown={(event) => {
+				{submenu ? <PopoverContent ref={submenuContent} anchor={submenu.anchor} aria-label={`Run ${submenu.agent.name} on`} role="menu" initialFocus={false} finalFocus={false} side="right" align="start" sideOffset={0} className={cn("w-70 gap-0", dropdownStyles.surface, dropdownStyles.padding)} onPointerEnter={cancelClose} onPointerLeave={closeLater} onKeyDown={(event) => {
 					if (event.key === "Escape" || event.key === "ArrowLeft") { event.preventDefault(); event.stopPropagation(); setSubmenu(null); submenu.anchor.querySelector<HTMLButtonElement>("button")?.focus(); }
 					else if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]; const index = items.findIndex((item) => item === document.activeElement); items[(index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus(); }
 				}}>
-					{submenu.agent.id === "test-agent" ? <><div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div><Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<AiChatIcon label="" size="small" />} />Continue with last session</Button><Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<AddIcon label="" size="small" />} />Start a new session</Button><hr className="my-1 border-0 border-t border-border" /></> : <Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<CloudIcon label="" size="small" />} />Run on cloud</Button>}
+					{submenu.agent.id === "test-agent" ? <><div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div><Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<AiChatIcon label="" size="small" />} />Continue with last session</Button><Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<AddIcon label="" size="small" />} />Start a new session</Button><DropdownMenuSeparator /></> : <Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal"><Icon aria-hidden render={<CloudIcon label="" size="small" />} />Run on cloud</Button>}
 					<Button role="menuitem" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" aria-disabled={submenu.agent.id === "release-agent" ? true : undefined}><Icon aria-hidden render={<ScreenIcon label="" size="small" />} />{submenuLabels[submenu.agent.id]}</Button>
 				</PopoverContent> : null}
 			</Popover>

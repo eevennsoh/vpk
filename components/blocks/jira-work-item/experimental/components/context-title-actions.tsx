@@ -10,6 +10,7 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -118,7 +119,8 @@ export function ContextTitleActions({
 								))}
 							</DropdownMenuGroup>
 						</div>
-						<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
+						<div className="sticky bottom-0 bg-surface-overlay p-1 [--menu-inset:var(--ds-space-050,0.25rem)]">
+							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								className="gap-0.5"
 								elemBefore={<CopyIcon label="" size="small" />}

@@ -26,6 +26,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          # The ratchets compare a pull request's merge commit with its first parent.
+          fetch-depth: 2
 
       - name: Fetch PR base for ratchet checks
         if: github.event_name == 'pull_request'
@@ -91,6 +94,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          # The ratchets compare a pull request's merge commit with its first parent.
+          fetch-depth: 2
 
       - name: Fetch PR base for ratchet checks
         if: github.event_name == 'pull_request'

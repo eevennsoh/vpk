@@ -3,10 +3,21 @@ import type { ComponentType } from "react";
 
 export const UI_MENU_VARIANT_DEMOS: Record<string, ComponentType> = {
 	// Dropdown Menu
+	"dropdown-menu-demo-search": dynamic(
+		() => import("../../demos/ui/dropdown-menu-search-demo").then((mod) => ({ default: mod.DropdownMenuDemoSearch })),
+		{ ssr: false },
+	),
 	"dropdown-menu-demo-default": dynamic(
 		() =>
 			import("../../demos/ui/dropdown-menu-demo").then((mod) => ({
 				default: mod.DropdownMenuDemoDefault,
+			})),
+		{ ssr: false },
+	),
+	"dropdown-menu-demo-subheading": dynamic(
+		() =>
+			import("../../demos/ui/dropdown-menu-demo").then((mod) => ({
+				default: mod.DropdownMenuDemoSubheading,
 			})),
 		{ ssr: false },
 	),
@@ -17,10 +28,10 @@ export const UI_MENU_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"dropdown-menu-demo-density": dynamic(
+	"dropdown-menu-demo-item-sizing": dynamic(
 		() =>
 			import("../../demos/ui/dropdown-menu-demo").then((mod) => ({
-				default: mod.DropdownMenuDemoDensity,
+				default: mod.DropdownMenuDemoItemSizing,
 			})),
 		{ ssr: false },
 	),

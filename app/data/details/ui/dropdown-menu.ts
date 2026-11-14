@@ -21,12 +21,6 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
 </DropdownMenu>`,
     props: [
       {
-        name: "spacing",
-        type: '"compact" | "spacious"',
-        default: '"compact"',
-        description: "Menu content inset: 6px compact or 8px spacious.",
-      },
-      {
         name: "variant",
         type: '"default" | "destructive"',
         default: '"default"',
@@ -78,6 +72,7 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
         description: "Element that opens the menu.",
       },
       { name: "DropdownMenuContent", description: "Floating menu container." },
+      { name: "DropdownMenuSearchField", description: "Reusable search field for popup menus; the host owns filtering and list navigation." },
       { name: "DropdownMenuItem", description: "Individual menu item." },
       {
         name: "DropdownMenuCheckboxItem",
@@ -86,6 +81,7 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
       { name: "DropdownMenuRadioGroup", description: "Radio group container." },
       { name: "DropdownMenuRadioItem", description: "Radio selection item." },
       { name: "DropdownMenuLabel", description: "Group label." },
+      { name: "DropdownMenuSubheading", description: "Reusable subheading text; set spacing with className." },
       { name: "DropdownMenuSeparator", description: "Visual separator." },
       { name: "DropdownMenuShortcut", description: "Keyboard shortcut text." },
       { name: "DropdownMenuSub", description: "Sub-menu container." },
@@ -97,6 +93,11 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
     ],
     examples: [
       {
+        title: "Search",
+        description: "Filter actions using the shared menu search field and dropdown items.",
+        demoSlug: "dropdown-menu-demo-search",
+      },
+      {
         title: "Appearance",
         description: "Default and tall menu appearances.",
         demoSlug: "dropdown-menu-demo-appearance",
@@ -107,9 +108,14 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
         demoSlug: "dropdown-menu-demo-default",
       },
       {
-        title: "Density",
-        description: "Spacious and compact menu insets.",
-        demoSlug: "dropdown-menu-demo-density",
+        title: "Subheading",
+        description: "Group menu items with reusable subheadings.",
+        demoSlug: "dropdown-menu-demo-subheading",
+      },
+      {
+        title: "Item sizing",
+        description: "Rows have 6px vertical padding and grow to fit their content.",
+        demoSlug: "dropdown-menu-demo-item-sizing",
       },
       {
         title: "Tall",

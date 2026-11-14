@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // Schemas for request and socket inputs that reach a file path, a process spawn or an

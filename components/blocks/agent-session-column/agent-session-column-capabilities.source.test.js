@@ -78,7 +78,7 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_SECTIONS_SOURCE, /className="rich-text-command-menu-heading"/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /role="presentation"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /uppercase leading-4/u);
-	assert.match(FILTER_MENU_SOURCE, /w-max min-w-\[min\(20rem,calc\(100vw-32px\)\)\] max-w-\[calc\(100vw-32px\)\] gap-0 rounded-xl p-1/u);
+	assert.match(FILTER_MENU_SOURCE, /w-max min-w-\[min\(20rem,calc\(100vw-32px\)\)\] max-w-\[calc\(100vw-32px\)\] gap-0", dropdownStyles\.surface, dropdownStyles\.padding/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /className="w-80 max-w-\[calc\(100vw-32px\)\] p-3"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="Yes"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="No"/u);

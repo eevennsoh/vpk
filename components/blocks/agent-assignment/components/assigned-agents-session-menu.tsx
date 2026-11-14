@@ -10,7 +10,7 @@ import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
-import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 export function AssignedAgentsSessionMenu({
@@ -107,20 +107,20 @@ export function AgentSessionsMenu({
 	);
 
 	return (
-		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding.compact)} ref={containerRef} tabIndex={-1}>
+		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding)} ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}
 			{teammateItems.length ? (
 				<div>
-					{hasActionableSession ? <hr className={cn(dropdownStyles.separator, "border-0")} /> : null}
+					{hasActionableSession ? <DropdownMenuSeparator /> : null}
 					{personalItems.length ? (
 						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
 						<>
-							<p className="px-2 pt-3 pb-1 text-xs font-medium text-text-subtle">{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
+							<p className={dropdownStyles.label}>{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</>
 					)}

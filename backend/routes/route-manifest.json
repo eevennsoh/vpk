@@ -341,7 +341,7 @@
 			"method": "GET",
 			"path": "/api/image-proxy",
 			"runtimeAdmin": false,
-			"source": "backend/routes/media.js:197"
+			"source": "backend/routes/media.js:198"
 		},
 		{
 			"method": "POST",
@@ -491,7 +491,7 @@
 			"method": "GET",
 			"path": "/api/rovo/background-streams",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:513"
+			"source": "backend/routes/rovo-app.js:512"
 		},
 		{
 			"method": "POST",
@@ -509,7 +509,7 @@
 			"method": "POST",
 			"path": "/api/rovo/detach",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:491"
+			"source": "backend/routes/rovo-app.js:490"
 		},
 		{
 			"method": "DELETE",
@@ -563,19 +563,19 @@
 			"method": "POST",
 			"path": "/api/rovo/runs/:threadId/cancel",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:573"
+			"source": "backend/routes/rovo-app.js:572"
 		},
 		{
 			"method": "POST",
 			"path": "/api/rovo/runs/:threadId/detach",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:549"
+			"source": "backend/routes/rovo-app.js:548"
 		},
 		{
 			"method": "GET",
 			"path": "/api/rovo/runs/:threadId/stream",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:523"
+			"source": "backend/routes/rovo-app.js:522"
 		},
 		{
 			"method": "POST",
@@ -605,37 +605,37 @@
 			"method": "DELETE",
 			"path": "/api/rovo/threads/:threadId",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:660"
+			"source": "backend/routes/rovo-app.js:659"
 		},
 		{
 			"method": "GET",
 			"path": "/api/rovo/threads/:threadId",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:432"
+			"source": "backend/routes/rovo-app.js:431"
 		},
 		{
 			"method": "PUT",
 			"path": "/api/rovo/threads/:threadId",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:450"
+			"source": "backend/routes/rovo-app.js:449"
 		},
 		{
 			"method": "DELETE",
 			"path": "/api/rovo/threads/:threadId/browser-workspace",
 			"runtimeAdmin": true,
-			"source": "backend/routes/rovo-app.js:645"
+			"source": "backend/routes/rovo-app.js:644"
 		},
 		{
 			"method": "GET",
 			"path": "/api/rovo/threads/:threadId/browser-workspace",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:599"
+			"source": "backend/routes/rovo-app.js:598"
 		},
 		{
 			"method": "POST",
 			"path": "/api/rovo/threads/:threadId/browser-workspace",
 			"runtimeAdmin": true,
-			"source": "backend/routes/rovo-app.js:618"
+			"source": "backend/routes/rovo-app.js:617"
 		},
 		{
 			"method": "GET",
@@ -659,13 +659,13 @@
 			"method": "POST",
 			"path": "/api/sound-generation",
 			"runtimeAdmin": false,
-			"source": "backend/routes/media.js:92"
+			"source": "backend/routes/media.js:93"
 		},
 		{
 			"method": "POST",
 			"path": "/api/speech-transcription",
 			"runtimeAdmin": false,
-			"source": "backend/routes/media.js:134"
+			"source": "backend/routes/media.js:135"
 		},
 		{
 			"method": "POST",

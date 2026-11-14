@@ -15,6 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor";
+import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
+import { cn } from "@/lib/utils";
 
 const LABEL_COLORS = ["blue", "green", "purple", "orange", "teal", "magenta", "yellow"] as const satisfies readonly TagColor[];
 
@@ -131,7 +133,7 @@ export function ArtifactLabelsField({
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<div
-					className="rich-text-command-menu rich-text-command-menu-borderless"
+					className={cn("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS, "[&_.rich-text-command-menu-item]:h-8!")}
 					data-has-header="true"
 					{...menuProps}
 				>

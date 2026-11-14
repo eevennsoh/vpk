@@ -15,6 +15,7 @@ import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandPrimitiveInput } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
 import type { AtlassianLogoName } from "@/components/ui/logo";
@@ -25,6 +26,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";
 import { useActiveAgentOption } from "@/components/blocks/agent-selector/components/use-active-agent-option";
@@ -74,13 +76,8 @@ export interface AgentSelectorProps {
 	query?: string;
 	searchPlaceholder?: string;
 	/**
-	 * Search field treatment.
-	 *
-	 * - `"boxed"` (default) — the bordered `CommandInput` used across directory
-	 *   and toolbar surfaces.
-	 * - `"palette"` — the borderless 32px editor-palette search bar shared with
-	 *   the "/" and "@" command menus and the work-item metadata pickers, so a
-	 *   selector opened from those surfaces reads as one family.
+	 * Search layout. Both variants use the shared menu search field; `"palette"`
+	 * also applies editor-palette spacing and heading behavior.
 	 */
 	searchVariant?: "boxed" | "palette";
 	/** Use the editor-palette spacing for grouped headings. */
@@ -171,7 +168,7 @@ const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
-const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal";
+const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 rounded-lg border-0 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
 // The trailing `auto` column reserves a lane for CommandItem's check icon,
@@ -183,7 +180,7 @@ const ACTION_LABEL_CLASS = "text-text-subtle";
 // (e.g. the stop control's 6px padding + 4px `mr-1` = 10px would become 22px).
 // So we add the third column only when `showCheckIcon` is true.
 const AGENT_ROW_BASE_CLASS =
-	"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1.5 pl-2 text-left";
+	"grid w-full items-center gap-3 rounded-lg py-1.5 pr-1.5 pl-2 text-left";
 const AGENT_ROW_CHECK_COLS = "grid-cols-[24px_minmax(0,1fr)_auto]";
 const AGENT_ROW_PLAIN_COLS = "grid-cols-[24px_minmax(0,1fr)]";
 const AGENT_COPY_CLASS =
@@ -338,7 +335,6 @@ function AgentSelectorItem({
 				pinningAppearance === "favorite" && "group/agent",
 				"data-selected:bg-bg-neutral-subtle-hovered",
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
-				!showByline && "h-9",
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
 			disabled={isDisabled}
@@ -399,9 +395,8 @@ function AgentSelectorItem({
 				{isInProgress ? (
 					// The rainbow spinner marks a running agent at rest; hovering/focusing
 					// the row crossfades it to a red stop control. The 24px slot is fixed
-					// (no width collapse) so the spinner is always visible. `mr-1` adds the
-					// 4px that makes the trailing gap (6px row padding + 4px) equal the
-					// 10px top/bottom gap of the 24px chip inside the 44px row.
+					// (no width collapse) so the spinner is always visible. `mr-1`
+					// aligns its trailing inset with the other row controls.
 					<span className="relative ml-2 mr-1 grid size-6 shrink-0 place-items-center">
 						<span className="pointer-events-none col-start-1 row-start-1 transition-opacity duration-fast ease-out-practical group-hover/command-item:opacity-0 group-has-[[data-slot=button]:focus-visible]/command-item:opacity-0 motion-reduce:transition-none">
 							<Spinner label={`${agent.name} running`} size="sm" variant="rainbow" />
@@ -442,9 +437,8 @@ function AgentSelectorItem({
 						className="shrink-0 overflow-hidden"
 						style={{
 							marginLeft: showPinButton ? 8 : 0,
-							// 4px right gap (only when shown) so the total trailing gap
-							// (6px row padding + 4px) equals the 10px top/bottom gap of the
-							// 24px chip inside the 44px row. When the single-select check
+							// 4px right gap aligns the trailing inset with other controls.
+							// When the single-select check
 							// follows the pin, the pin is no longer the trailing element:
 							// drop this to 0 so the check's own `ml-1` (4px) alone defines
 							// the pin↔check gap, instead of stacking to 8px.
@@ -544,7 +538,7 @@ function AgentSelectorGroup({
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
 		<CommandGroup
-			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest")}
+			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest", paletteHeading && "!py-0")}
 			heading={heading}
 		>
 			{agents.map((agent) => (
@@ -637,6 +631,7 @@ export function AgentSelector({
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const listMaskStyle = { ...buildScrollMaskStyle({ fadeTop: listOverflow.showTopScrollMask, fadeBottom: false, fadeSize: "3rem" }), "--scroll-mask-top-fade-size": "3rem" };
 	const { activeOptionId, ref: activeOptionRef } = useActiveAgentOption(listOverflow.ref, !showSearch);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
@@ -712,24 +707,28 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-lg p-1", className)} label={searchPlaceholder} shouldFilter={false}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-lg", dropdownStyles.padding, className)} label={searchPlaceholder} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
-				<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
-					{selectedActions.map((action) => (
-						<Button
-							className={ACTION_BUTTON_CLASS}
-							key={action.id}
-							onClick={action.onSelect}
-							type="button"
-							variant="ghost"
-						>
-							<span className={ACTION_ICON_CLASS}>
-								{action.icon}
-							</span>
-							<span className={ACTION_LABEL_CLASS}>{action.label}</span>
-						</Button>
-					))}
-				</div>
+				<>
+					<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col" role="group">
+						{selectedActions.map((action) => (
+							<Button
+								className={ACTION_BUTTON_CLASS}
+								data-menu-row=""
+								key={action.id}
+								onClick={action.onSelect}
+								type="button"
+								variant="ghost"
+							>
+								<span className={ACTION_ICON_CLASS}>
+									{action.icon}
+								</span>
+								<span className={ACTION_LABEL_CLASS}>{action.label}</span>
+							</Button>
+						))}
+					</div>
+					<DropdownMenuSeparator />
+				</>
 			) : null}
 			{showSearch ? <div className={cn("shrink-0", hasSelectedAgentActions && !heading && "pt-4")}>
 				{heading ? (
@@ -740,7 +739,7 @@ export function AgentSelector({
 					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-lg", !sections && "mb-1")}>
+					<div className={cn("-mx-(--menu-inset) -mt-(--menu-inset) overflow-hidden rounded-t-lg", !sections && "mb-0.5")}>
 						<RichTextCommandMenuSearchField
 							activeDescendantId={activeOptionId ?? null}
 							autoFocus
@@ -756,7 +755,6 @@ export function AgentSelector({
 				) : (
 					<CommandInput
 						aria-label={searchPlaceholder}
-						inputGroupClassName="has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&>[data-align=inline-start]]:pl-3 has-[>[data-align=inline-start]]:[&>input]:pl-3"
 						onValueChange={handleQueryChange}
 						placeholder={searchPlaceholder}
 						value={resolvedQuery}
@@ -771,15 +769,11 @@ export function AgentSelector({
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
 					separatePinned && "[&_[cmdk-group]]:!py-0",
-					// Fade the list under the sticky search header once it has scrolled,
-					// matching the editor-palette command menus. `scroll-mask-top` keeps
-					// the scrollbar gutter opaque so only the content column fades; the
-					// fade size is raised from the 24px default to the palette's 48px so
-					// a selector opened next to a "/" menu fades identically.
-					listOverflow.showTopScrollMask
-						&& "scroll-mask-top overscroll-contain [--scroll-mask-fade-size:3rem]",
+					hasFooterActions && "[&_[cmdk-group]:last-child]:!pb-0",
+					"overscroll-contain",
 				)}
 				ref={activeOptionRef}
+				style={listMaskStyle}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				{sectionLayout ? (<>
@@ -829,7 +823,7 @@ export function AgentSelector({
 					submenuRole={submenuRole}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
-				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <hr className="my-1 border-0 border-t border-border" /> : null}
+				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <DropdownMenuSeparator aria-hidden="true" /> : null}
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
 					agents={moreAgents}
@@ -853,10 +847,12 @@ export function AgentSelector({
 				</>)}
 			</CommandList>
 			{hasFooterActions ? (
-				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
+				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col bg-popover">
+					<DropdownMenuSeparator className="mt-0" />
 					{onBrowseAgents ? (
 						<Button
 							className={ACTION_BUTTON_CLASS}
+							data-menu-row=""
 							onClick={onBrowseAgents}
 							type="button"
 							variant="ghost"
@@ -870,6 +866,7 @@ export function AgentSelector({
 					{onCreateAgent ? (
 						<Button
 							className={ACTION_BUTTON_CLASS}
+							data-menu-row=""
 							onClick={onCreateAgent}
 							type="button"
 							variant="ghost"

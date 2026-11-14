@@ -7,6 +7,7 @@
 import { token } from "@/lib/tokens";
 import { SwitchIndicator } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { MenuItemButton, CircleIcon } from "./menu-item-button";
 import { REASONING_OPTIONS, FILTER_BY_APPS_ICON, SELECTED_CHECK_ICON } from "./customize-menu-data";
 import GlobeIcon from "@atlaskit/icon/core/globe";
@@ -65,11 +66,7 @@ interface ReasoningSectionProps {
 function ReasoningSection({ selectedReasoning, onReasoningChange, onClose }: Readonly<ReasoningSectionProps>) {
 	return (
 		<div>
-			<div style={{ padding: `${token("space.050")} ${token("space.200")} 0` }}>
-				<h3 style={{ font: token("font.heading.xxsmall") }} className="text-text-subtle">
-					Reasoning
-				</h3>
-			</div>
+			<h3 className={dropdownStyles.label}>Reasoning</h3>
 			<div
 				style={{
 					borderRadius: "12px",
@@ -106,7 +103,7 @@ interface SourcesSectionProps {
 function SourcesSection({ webResultsEnabled, onWebResultsChange, companyKnowledgeEnabled, onCompanyKnowledgeChange, onClose }: Readonly<SourcesSectionProps>) {
 	return (
 		<div className="min-w-64">
-			<h3 className="px-2 pt-1 pb-2 text-xs font-semibold text-text-subtle">Sources</h3>
+			<h3 className={dropdownStyles.label}>Sources</h3>
 			<SourceToggleRow icon={<GlobeIcon label="" />} label="Include web results" checked={webResultsEnabled} onCheckedChange={() => onWebResultsChange(!webResultsEnabled)} />
 			<SourceToggleRow
 				icon={<OfficeBuildingIcon label="" />}

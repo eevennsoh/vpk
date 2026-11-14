@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Secret exfiltration blocking for tool outputs.
  *

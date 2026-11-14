@@ -50,15 +50,21 @@ function runGit(args) {
 	return result.status === 0 ? result.stdout.trim() : null;
 }
 
-// CI checks out the PR merged into its base, so compare with the base tip there;
-// push builds pass the pre-push tip as VPK_SUPPRESSIONS_BASE (see ci.yml); locally
-// compare with the merge-base so commits that landed on main later don't count.
+// The ratchet base is the commit the change is measured from, so only what the change itself does
+// counts. Push builds pass the pre-push tip as VPK_SUPPRESSIONS_BASE (see ci.yml). A pull_request
+// run checks out GitHub's merge of the PR into its base, so HEAD^1 is the base that merge was built
+// on and HEAD^1..HEAD is exactly the PR's change. Comparing with the base tip instead counted every
+// baseline drop that landed on the base after that merge as a raise by the PR. A checkout of the
+// PR head itself, and local runs, compare with the merge-base.
 function resolveBaseRef({ env = process.env, git = runGit } = {}) {
 	if (env.VPK_SUPPRESSIONS_BASE) {
 		return git(["rev-parse", "--verify", "--quiet", env.VPK_SUPPRESSIONS_BASE]);
 	}
 	if (env.GITHUB_BASE_REF) {
-		return git(["rev-parse", "--verify", "--quiet", `origin/${env.GITHUB_BASE_REF}`]);
+		if (git(["rev-parse", "--verify", "--quiet", "HEAD^2"])) {
+			return git(["rev-parse", "--verify", "--quiet", "HEAD^1"]);
+		}
+		return git(["merge-base", "HEAD", `origin/${env.GITHUB_BASE_REF}`]);
 	}
 	return git(["merge-base", "HEAD", "origin/main"]);
 }
@@ -82,7 +88,7 @@ function main() {
 	const current = JSON.parse(readFileSync(SUPPRESSIONS_FILE, "utf8"));
 	const baseRef = resolveBaseRef();
 	if (!baseRef) {
-		const message = "ESLint suppression ratchet: base ref unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
+		const message = "ESLint suppression ratchet: base ref unavailable (fetch origin/main, check out with fetch-depth: 2 in CI, or set VPK_SUPPRESSIONS_BASE).";
 		if (isBaseRequired()) {
 			console.error(message);
 			process.exitCode = 1;

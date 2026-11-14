@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { Button } from "@/components/ui/button";
 import { OpenIn } from "@/components/ui-custom/open-in";
-import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
@@ -28,8 +28,8 @@ export function JiraLocalAgentMenu({ presentation = "submenu", workItem, onLocal
 	return (
 		<>
 			<InlineLocalAgentPicker onLocalUse={(id) => { setLastUsedAgentId(id); onLocalUse?.(id); }} presentation={presentation} recentAgentId={lastUsedAgentId} />
-			<div className="px-1 pb-1">
-				<hr className={cn(dropdownStyles.separator, "mt-0 border-0")} />
+			<div className="px-1.5 pb-1.5 [--menu-inset:var(--ds-space-075,0.375rem)]">
+				<DropdownMenuSeparator />
 				<div className="px-2"><ProjectButterDevelopmentActions {...workItem} presentation="menu" showStartCoding={false} /></div>
 			</div>
 		</>
