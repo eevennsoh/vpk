@@ -227,9 +227,11 @@ test("collectStackFacts falls back to port files and probes recorded pids", asyn
 
 test("a recorded pid counts only while its start time and command still match", () => {
 	const alive = (start, command) => () => ({ state: "alive", start, command });
-	const recorded = { pid: 77, start: "Sat Nov 14 10:32:53 2026", command: "node scripts/dev-frontend.js" };
+	const recorded = { pid: 77, start: "id2:utc:Sat Nov 14 10:32:53 2026", command: "node scripts/dev-frontend.js" };
 	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive(recorded.start, recorded.command) }), true);
-	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive("Sat Nov 14 11:00:00 2026", recorded.command) }), false, "the pid was reused");
+	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive("id2:utc:Sat Nov 14 11:00:00 2026", recorded.command) }), false, "the pid was reused");
+	// A start recorded in an earlier format (local-time lstart, untagged) cannot be compared.
+	assert.equal(verifyRecordedProcess({ ...recorded, start: "Sat Nov 14 10:32:53 2026" }, { readIdentity: alive(recorded.start, recorded.command) }), null, "an old format is unknown, not gone");
 	assert.equal(verifyRecordedProcess(recorded, { readIdentity: alive(recorded.start, "zsh") }), false, "another command");
 	assert.equal(verifyRecordedProcess(recorded, { readIdentity: () => ({ state: "absent" }) }), false);
 	assert.equal(verifyRecordedProcess(recorded, { readIdentity: () => ({ state: "unknown" }) }), null, "unreadable is not ours");
@@ -242,7 +244,7 @@ test("readProcessIdentity reads a live process, and reports an unknown or missin
 	const identity = readProcessIdentity(child.pid);
 	assert.equal(identity.state, "alive");
 	// Linux reads /proc (boot id + start ticks); elsewhere ps lstart in UTC.
-	assert.match(identity.start, process.platform === "linux" ? /^[\w-]+\+\d+$/ : /^\w{3} \w{3} \d+ \d{2}:\d{2}:\d{2} \d{4}$/);
+	assert.match(identity.start, process.platform === "linux" ? /^id2:linux:[\w-]+\+\d+$/ : /^id2:utc:\w{3} \w{3} \d+ \d{2}:\d{2}:\d{2} \d{4}$/);
 	assert.equal(identity.command, "sleep 300");
 	assert.deepEqual(readProcessIdentity(child.pid, { platform: "darwin", spawnSyncImpl: () => ({ error: new Error("EPERM") }) }), { state: "unknown" });
 	assert.deepEqual(readProcessIdentity(child.pid, { platform: "linux", readFile: () => { throw new Error("EACCES"); } }), { state: "unknown" });
@@ -351,7 +353,7 @@ test("a verifiably live owner keeps its lock however old, and a recycled owner p
 	assert.throws(() => withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), /Timed out/, "an hour-old lock of a live owner is not taken");
 
 	// The same pid, but another process now (it started at another time): the owner is gone.
-	fs.writeFileSync(lock, JSON.stringify({ token: "recycled", pid: process.pid, start: "Mon Jan 1 00:00:00 2024", command: me.command }));
+	fs.writeFileSync(lock, JSON.stringify({ token: "recycled", pid: process.pid, start: "id2:utc:Mon Jan 1 00:00:00 2024", command: me.command }));
 	assert.equal(withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), "ran");
 });
 
@@ -423,7 +425,7 @@ test("a process whose identity cannot be read is unknown, never gone", () => {
 	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "darwin", spawnSyncImpl: () => ({ status: 0, stdout: "S  Sa 14 Nov 10:00:00 2026  node\n" }) }), { state: "unknown" });
 	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "linux", readFile: () => { throw new Error("EACCES"); } }), { state: "unknown" });
 	const proc = { "/proc/42/stat": "42 (node) S 1 42 42 0 -1 4194560 1 0 0 0 0 0 0 0 20 0 1 0 987654 1000 100", "/proc/sys/kernel/random/boot_id": "b00t\n", "/proc/42/cmdline": "node\0server.js\0" };
-	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "linux", readFile: (file) => proc[file] }), { state: "alive", start: "b00t+987654", command: "node server.js" });
+	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "linux", readFile: (file) => proc[file] }), { state: "alive", start: "id2:linux:b00t+987654", command: "node server.js" });
 	assert.equal(verifyRecordedProcess({ pid: 42, start: "x", command: "y" }, { readIdentity: () => ({ state: "unknown" }) }), null);
 });
 
@@ -444,4 +446,16 @@ test("a launcher's recorded exit makes the stack degraded at once", (t) => {
 	assert.match(status.reason, /frontend \(code 1\) exited/);
 	recordService(dir, "frontend", { port: 3001, pid: 103 });
 	assert.equal(readStackRecord(dir).exits.frontend, undefined, "a new launch clears the exit");
+});
+
+test("an entry recorded in an earlier identity format is reported and kept, never dropped", async (t) => {
+	const dir = tempWorktree(t);
+	const { spawnInGroup } = require("./test-process.js");
+	const child = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
+	// Written by an earlier head: a local-time lstart, untagged.
+	recordService(dir, "frontend", { port: 3001, pid: child.pid, pidStart: "Sat Nov 14 10:32:53 2026", pidCommand: "sleep 300" });
+	const facts = await collectStackFacts({ worktreePath: dir, sessionAlive: false, isPortListening: () => false, listenerInWorktree: () => null });
+	assert.equal(facts.services.frontend.pidAlive, null, "unknown, not gone");
+	recordPhase(dir, "stopped", { keepService: (entry) => verifyRecordedProcess({ pid: entry.pid, start: entry.pidStart, command: entry.pidCommand }) !== false });
+	assert.equal(readStackRecord(dir).services.frontend?.pid, child.pid, "a finished stop keeps it");
 });

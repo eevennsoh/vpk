@@ -553,6 +553,10 @@ function readPortFile(worktreePath, service, { fsImpl = fs } = {}) {
 // { state: "unknown" } whenever the process exists but its identity cannot be read (ps blocked,
 // failing or printing something else): never "absent", so a record is never dropped and a
 // process never treated as gone because a probe failed.
+// Every identity this module writes starts with this tag. A recorded start in any other form (an
+// earlier format, a hand-written record) cannot be compared and reads as unknown, never as gone.
+const IDENTITY_FORMAT = "id2:";
+
 function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.kill, platform = process.platform, readFile = fs.readFileSync } = {}) {
 	try {
 		kill(pid, 0);
@@ -568,7 +572,7 @@ function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.ki
 			const bootId = String(readFile("/proc/sys/kernel/random/boot_id", "utf8")).trim();
 			const command = String(readFile(`/proc/${pid}/cmdline`, "utf8")).split("\0").filter(Boolean).join(" ");
 			if (!/^\d+$/u.test(fields[19] ?? "") || !command) return { state: "unknown" };
-			return { state: "alive", start: `${bootId}+${fields[19]}`, command };
+			return { state: "alive", start: `${IDENTITY_FORMAT}linux:${bootId}+${fields[19]}`, command };
 		} catch {
 			return { state: "unknown" };
 		}
@@ -582,7 +586,7 @@ function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.ki
 	const match = line.match(/^(\S+)\s+(\w{3}\s+\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.*)$/u);
 	if (!match) return { state: "unknown" };
 	if (match[1].startsWith("Z")) return { state: "absent" };
-	return { state: "alive", start: match[2].replace(/\s+/gu, " "), command: match[3] };
+	return { state: "alive", start: `${IDENTITY_FORMAT}utc:${match[2].replace(/\s+/gu, " ")}`, command: match[3] };
 }
 
 // true: the pid still runs with the recorded identity. false: gone, or the pid now belongs to a
@@ -591,7 +595,8 @@ function verifyRecordedProcess({ pid, start, command }, { readIdentity = readPro
 	if (!pid) return null;
 	const identity = readIdentity(pid);
 	if (identity.state === "absent") return false;
-	if (identity.state !== "alive" || !start) return null;
+	// No identity recorded, or one in another format: it cannot be compared, so it is unknown.
+	if (identity.state !== "alive" || !start || !start.startsWith(IDENTITY_FORMAT)) return null;
 	return identity.start === start && (!command || identity.command === command);
 }
 
@@ -656,6 +661,7 @@ async function collectStackFacts({
 module.exports = {
 	DEFAULT_START_TIMEOUT_MS,
 	DEFAULT_STOP_TIMEOUT_MS,
+	IDENTITY_FORMAT,
 	NEXT_ACTIONS,
 	RECORDED_PHASES,
 	SERVICES,
