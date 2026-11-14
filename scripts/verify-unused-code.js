@@ -12,9 +12,10 @@
 // removes: it keeps the entries Knip still reports that the base baseline already had.
 //
 // A new or stale entry the base commit already had (main changed code without updating the
-// baseline, or two changes raced) is not this change's. Once the base commit has a baseline,
-// Knip also runs on an extract of the base tree: problems that tree shows against its own
-// baseline are printed as a warning instead of failing, and the report's delta comes from it.
+// baseline, or two changes raced) is not this change's. When the comparison finds one, Knip
+// also runs on an extract of the base tree: problems that tree shows against its own baseline
+// are printed as a warning instead of failing. A passing run skips that second pass and prints
+// the export and type counts alone; `--report-delta` adds their delta against the base tree.
 //
 // A legitimate new entry point (started by a path string, a spawn, a manifest) is an `entry`
 // line in knip.jsonc with its reason, never a baseline entry.
@@ -284,10 +285,12 @@ function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env
 		error(`Unused code: ${BASELINE_FILE} is missing. Restore it from main; it is never regenerated from scratch.`);
 		return 1;
 	}
-	// With a base baseline the base tree is analysed too: for the report's delta, and so a
-	// problem the base already had is not blamed on this change.
-	const baseFindings = resolved.base ? baseKnip(resolved.baseRef, { cwd, knip }) : null;
+	// The base tree costs an extract and a second Knip pass, so it is analysed only when
+	// needed: to tell a new or stale problem the base already had from this change's own, or
+	// when `--report-delta` asks for the export and type delta.
 	let problems = compareFindings({ base: resolved.base, baseline, current });
+	const needsBase = resolved.base && (argv.includes("--report-delta") || problems.some((problem) => problem.type !== "grown"));
+	const baseFindings = needsBase ? baseKnip(resolved.baseRef, { cwd, knip }) : null;
 	if (baseFindings && problems.some((problem) => problem.type !== "grown")) {
 		const { inherited, own } = splitInherited(problems, { base: resolved.base, baseFindings });
 		if (inherited.length > 0) {
