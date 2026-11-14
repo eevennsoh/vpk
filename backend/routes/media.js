@@ -16,6 +16,11 @@ const { resolveSpeechPayloadFromAudioRequest } = require("../lib/audio-input-ext
 const { synthesizeSound } = require("../lib/sound-generation");
 const { transcribeAudio } = require("../lib/speech-transcription");
 const { getNonEmptyString } = require("../lib/shared-utils");
+const {
+	FILE_RESPONSE_SECURITY_HEADERS,
+	buildContentDisposition,
+	decideFileMediaType,
+} = require("../lib/upload-response-headers");
 
 const SOUND_GENERATION_INPUT_MAX_CHARS = 4096;
 const IMAGE_PROXY_TIMEOUT_MS = 15_000;
@@ -249,8 +254,16 @@ function createMediaRouter({
 					const upstreamCacheControl = getString(
 						upstreamResponse.headers.get("cache-control")
 					);
+					// The upstream's type is served by the same rule as an upload: an image
+					// type outside that list is a download with a neutral type, and the
+					// response is sandboxed either way, since it is served on this origin.
+					const served = decideFileMediaType(contentType);
 
-					res.setHeader("Content-Type", contentType);
+					res.setHeader("Content-Type", served.contentType);
+					res.setHeader("Content-Disposition", buildContentDisposition(served.inline ? "inline" : "attachment", "image"));
+					for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
+						res.setHeader(name, value);
+					}
 					res.setHeader("Content-Length", String(payload.length));
 					res.setHeader(
 						"Cache-Control",

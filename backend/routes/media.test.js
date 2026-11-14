@@ -373,3 +373,33 @@ test("image proxy maps abort errors to a timeout response", async () => {
 		assert.deepEqual(await response.json(), { error: "Image fetch timed out" });
 	});
 });
+
+test("image proxy responses are sandboxed and typed by the same rule as uploads", async () => {
+	const { FILE_RESPONSE_SECURITY_HEADERS } = require("../lib/upload-response-headers");
+	const targetUrl = new URL("https://www.figma.com/api/mcp/asset/image");
+	const cases = [
+		["image/png", "image/png", "inline"],
+		["image/svg+xml", "image/svg+xml", "inline"],
+		["image/jpg", "image/jpeg", "inline"],
+		["image/tiff", "application/octet-stream", "attachment"],
+		["image/svg+xml; charset=utf-8", "image/svg+xml", "inline"],
+	];
+	for (const [upstreamType, servedType, disposition] of cases) {
+		await withServer({
+			fetchFn: async () => new Response("<svg xmlns='http://www.w3.org/2000/svg'><script>parent.x=1</script></svg>", {
+				headers: { "content-type": upstreamType },
+				status: 200,
+			}),
+			parseImageProxyTargetFn: () => ({ source: "figma", targetUrl }),
+		}, async (baseUrl) => {
+			const response = await fetch(`${baseUrl}/api/image-proxy?src=x`);
+			assert.equal(response.status, 200, upstreamType);
+			assert.equal(response.headers.get("content-type"), servedType, upstreamType);
+			assert.equal(response.headers.get("content-disposition").split(";")[0], disposition, upstreamType);
+			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
+				assert.equal(response.headers.get(name), value, `${upstreamType} ${name}`);
+			}
+			await response.arrayBuffer();
+		});
+	}
+});

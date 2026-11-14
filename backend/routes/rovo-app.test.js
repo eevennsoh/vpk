@@ -694,7 +694,7 @@ test("an ordinary UUID or prefixed thread id still reaches the route", async () 
 	});
 });
 
-test("an uploaded HTML or SVG file is served as a sandboxed download, an image inline", async () => {
+test("an uploaded HTML file is served as a sandboxed download, an SVG or image inline under the sandbox", async () => {
 	const dependencies = createDependencies();
 	const { state } = dependencies;
 	const script = "<script>document.title='ran'</script>";
@@ -702,7 +702,7 @@ test("an uploaded HTML or SVG file is served as a sandboxed download, an image i
 	state.uploads.set("upload-svg", { id: "upload-svg", buffer: Buffer.from("<svg onload='x()'/>"), filename: "logo.svg", mediaType: "image/svg+xml", sizeBytes: 19 });
 	state.uploads.set("upload-png", { id: "upload-png", buffer: Buffer.from("png"), filename: "shot.png", mediaType: "image/png", sizeBytes: 3 });
 	await withServer(dependencies, async (baseUrl) => {
-		for (const id of ["upload-html", "upload-svg"]) {
+		for (const id of ["upload-html"]) {
 			const response = await fetch(`${baseUrl}/api/rovo/files/${id}`);
 			assert.equal(response.status, 200, id);
 			assert.equal(response.headers.get("content-type"), "application/octet-stream", id);
@@ -711,10 +711,13 @@ test("an uploaded HTML or SVG file is served as a sandboxed download, an image i
 			assert.equal(response.headers.get("x-content-type-options"), "nosniff", id);
 			await response.arrayBuffer();
 		}
-		const image = await fetch(`${baseUrl}/api/rovo/files/upload-png`);
-		assert.equal(image.headers.get("content-type"), "image/png");
-		assert.match(image.headers.get("content-disposition"), /^inline;/u);
-		assert.match(image.headers.get("content-security-policy"), /^sandbox;/u);
-		await image.arrayBuffer();
+		for (const [id, type] of [["upload-png", "image/png"], ["upload-svg", "image/svg+xml"]]) {
+			const image = await fetch(`${baseUrl}/api/rovo/files/${id}`);
+			assert.equal(image.headers.get("content-type"), type, id);
+			assert.match(image.headers.get("content-disposition"), /^inline;/u, id);
+			assert.match(image.headers.get("content-security-policy"), /^sandbox;/u, id);
+			assert.equal(image.headers.get("x-content-type-options"), "nosniff", id);
+			await image.arrayBuffer();
+		}
 	});
 });
