@@ -119,30 +119,6 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		"]);",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.source.test.js", [
-		`assert.match(SOURCE, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
-		`assert.match(SOURCE, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
-		`assert.match(SOURCE, /import \\{ ${experimentalPascal}JiraWorkItem \\} from "@\\/components\\/blocks\\/jira-work-item\\/${experimentalSlug}\\/${experimentalSlug}-jira-work-item";/u);`,
-		`assert.match(pageSource, /Open experimental v${number} session/u);`,
-		`assert.equal((pageSource.match(/variant="outline"/gu) ?? []).length, ${number});`,
-		`assert.match(pageSource, /onClick=\\{\\(\\) => setActiveVariant\\("${experimentalSlug}"\\)/u);`,
-		`assert.match(pageSource, /<Button type="button" onClick=\\{\\(\\) => setActiveVariant\\("${experimentalSlug}"\\)\\}>/u);`,
-		`assert.match(pageSource, /export function JiraWorkItem${experimentalPascal}Page/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Filled context"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}"/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Empty context"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}-empty"/u);`,
-		`assert.match(detailsSource, /title: "Experimental v${number} · Multiple agents running"[\\s\\S]*demoSlug: "jira-work-item-demo-${experimentalSlug}-running"/u);`,
-		`assert.match(detailsSource, /name: "variant"[\\s\\S]*type: "\\\\"default\\\\" \\| \\\\"experimental\\\\" \\| \\\\"${experimentalSlug}\\\\"/u);`,
-		`assert.match(registrySource, /"jira-work-item-demo-${experimentalSlug}": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}-empty": dynamic/u);`,
-		`assert.match(blockVariantRegistrySource, /"jira-work-item-demo-${experimentalSlug}-running": dynamic/u);`,
-		`assert.match(demoSource, /export function JiraWorkItemDemo${experimentalPascal}/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="filled" \\/>/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="empty" \\/>/u);`,
-		`assert.match(demoSource, /<JiraWorkItem variant="${experimentalSlug}" initialExperimentalPreset="running" \\/>/u);`,
-		`assert.match(previewLayoutSource, /"jira-work-item-demo-${experimentalSlug}"/u);`,
-		"",
-	].join("\n"));
 	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js", [
 		`assert.match(indexSource, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(indexSource, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
@@ -423,7 +399,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			"components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"components/blocks/jira-work-item/index.tsx",
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
-			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/page.tsx",
 			"components/website/demos/blocks/jira-work-item-demo.tsx",
 			"components/website/registry/blocks-variants.ts",
@@ -483,7 +458,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			/TREES = \["experimental-v2", "experimental-v3", "experimental-v4"\]/u,
 		);
 		for (const contractOwner of [
-			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 		]) {
 			assert.match(prepared(contractOwner), /"experimental-v4": ExperimentalV4JiraWorkItem/u);
