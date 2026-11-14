@@ -25,7 +25,7 @@ import NodeIcon from "@atlaskit/icon/core/node";
 import { createContext, memo, use, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 
-import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/components/ui-custom/lib/reasoning-labels";
 import { token } from "@/lib/tokens";
 
 interface ChainOfThoughtContextValue {

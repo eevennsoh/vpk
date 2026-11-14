@@ -61,6 +61,12 @@ const CATEGORY_SOURCE_ROOTS = {
 const DEMO_CATEGORY_DIRS = {
 	utility: "utils",
 };
+const COMPONENT_ENTRIES_FILE = "app/data/components.ts";
+// Categories whose details live one file per slug under app/data/details/<category>/ and are
+// imported by the barrel; the others write their detail records inline in the barrel.
+const DETAIL_LEAF_CATEGORIES = new Set(["blocks", "ui", "ui-custom", "visual"]);
+// Categories whose entries may own an App Router page that renders the demo full screen.
+const ROUTE_PAGE_CATEGORIES = new Set(["projects", "arts"]);
 const PRIMARY_REGISTRY_TARGETS = {
 	ui: "components/website/registry/ui/primary.ts",
 	"ui-custom": "components/website/registry/ui-custom/primary.ts",
@@ -274,11 +280,28 @@ function getManifestEntrySnippet(category, slug, name, importPath) {
 	return `${MANIFEST_HELPERS[category]}("${slug}", "${name}")`;
 }
 
+const REPO_MAP_PATH = ".agents/knowledge/repo-map.json";
+
+// App Router pages that render this entry, read from the generated repo map (verify:repo-map
+// keeps it current): a catalog-backed page that loads this slug, or a page whose shell owner
+// is the entry's source folder or a file in it (e.g. components/projects/rovo/page).
+function findRoutePages(category, slug, { cwd = process.cwd(), sourcePath = `${CATEGORY_SOURCE_ROOTS[category]}/${slug}` } = {}) {
+	const repoMapFile = path.join(cwd, REPO_MAP_PATH);
+	if (!existsSync(repoMapFile)) return [];
+	const pages = JSON.parse(readFileSync(repoMapFile, "utf8")).appPages?.pages ?? [];
+	return pages
+		.filter(({ primaryOwner: owner }) => (owner?.kind === "catalog" && owner.category === category && owner.slug === slug)
+			|| (owner?.kind === "shell" && (owner.sources ?? []).some((source) => source === sourcePath || source.startsWith(`${sourcePath}/`))))
+		.map((page) => page.source)
+		.sort();
+}
+
 function getComponentAddPlan({
 	category,
 	components,
 	detailRecords,
 	registryData,
+	routePages = [],
 	slug,
 }) {
 	if (!DETAIL_MODULES[category]) {
@@ -294,7 +317,8 @@ function getComponentAddPlan({
 	const sourcePath = toProjectPathFromImport(importPath);
 	const demoCategoryDir = getDemoCategoryDir(category);
 	const demoPath = `components/website/demos/${demoCategoryDir}/${slug}-demo.tsx`;
-	const detailLeafPath = `app/data/details/${category}/${slug}.ts`;
+	const hasDetailLeaf = DETAIL_LEAF_CATEGORIES.has(category);
+	const detailLeafPath = hasDetailLeaf ? `app/data/details/${category}/${slug}.ts` : null;
 	const detailBarrelPath = DETAIL_MODULES[category].entry;
 	const detailExportName = toDetailExportName(slug);
 	const primaryRegistryPath = getPrimaryRegistryTarget(category);
@@ -306,6 +330,12 @@ function getComponentAddPlan({
 		.filter((variantSlug) => variantSlug === slug || variantSlug.startsWith(`${slug}-`))
 		.sort((left, right) => left.localeCompare(right));
 
+	// A route page only for projects and arts; an existing entry lists the pages that render it.
+	const routePagePaths = ROUTE_PAGE_CATEGORIES.has(category)
+		? (routePages.length > 0 ? routePages : [category === "arts" ? `app/arts/${slug}/page.tsx` : `app/${slug}/page.tsx`])
+		: [];
+	const manifestEntry = getManifestEntrySnippet(category, slug, component?.name ?? toTitleCase(slug), importPath);
+
 	return {
 		category,
 		detailExportName,
@@ -313,23 +343,28 @@ function getComponentAddPlan({
 		key,
 		name: component?.name ?? toTitleCase(slug),
 		paths: {
+			componentEntries: COMPONENT_ENTRIES_FILE,
 			detailBarrel: detailBarrelPath,
 			detailLeaf: detailLeafPath,
 			demo: demoPath,
 			manifest: COMPONENT_MANIFEST_ENTRY,
 			primaryRegistry: primaryRegistryPath,
+			routePages: routePagePaths,
 			source: sourcePath,
 			variantRegistry: variantRegistryPath,
 		},
 		slug,
 		snippets: {
-			detailImport: `import { ${detailExportName} } from "./${category}/${slug}";`,
-			detailRecord: `"${slug}": ${detailExportName},`,
-			manifestEntry: getManifestEntrySnippet(category, slug, component?.name ?? toTitleCase(slug), importPath),
+			// The catalog entries file repeats the manifest call with the same helper names.
+			componentEntry: manifestEntry,
+			detailImport: hasDetailLeaf ? `import { ${detailExportName} } from "./${category}/${slug}";` : null,
+			detailRecord: hasDetailLeaf ? `"${slug}": ${detailExportName},` : `"${slug}": { description: "…" },`,
+			manifestEntry,
 			primaryRegistryEntry: `"${slug}": dynamic(() => import("${primaryRegistryImportPath}"), { ssr: false }),`,
 		},
 		status: {
 			detail: Boolean(detail),
+			routePages: routePages.length > 0,
 			manifest: Boolean(component),
 			primaryRegistry: Boolean(primaryRegistryEntry),
 			variantRegistrySlugs,
@@ -372,20 +407,30 @@ function printComponentAddPlan(plan) {
 	console.log(`- manifest entry: ${existing(plan.status.manifest)}`);
 	console.log(`- detail record: ${existing(plan.status.detail)}`);
 	console.log(`- primary registry entry: ${existing(plan.status.primaryRegistry)}`);
+	if (plan.paths.routePages.length > 0) console.log(`- route page: ${existing(plan.status.routePages)}`);
 	console.log(`- related variant demos: ${plan.status.variantRegistrySlugs.length > 0 ? plan.status.variantRegistrySlugs.join(", ") : "none"}`);
 	console.log("");
 	console.log("Edit targets:");
 	console.log(`- component source: ${plan.paths.source ?? plan.importPath}`);
 	console.log(`- manifest: ${plan.paths.manifest}`);
-	console.log(`- detail leaf: ${plan.paths.detailLeaf}`);
-	console.log(`- detail barrel: ${plan.paths.detailBarrel}`);
+	console.log(`- catalog entries: ${plan.paths.componentEntries}`);
+	if (plan.paths.detailLeaf) {
+		console.log(`- detail leaf: ${plan.paths.detailLeaf}`);
+		console.log(`- detail barrel: ${plan.paths.detailBarrel}`);
+	} else {
+		console.log(`- detail record (inline, no leaf file): ${plan.paths.detailBarrel}`);
+	}
 	console.log(`- primary demo: ${plan.paths.demo}`);
 	console.log(`- primary registry: ${plan.paths.primaryRegistry}`);
 	console.log(`- variant registry: ${plan.paths.variantRegistry}`);
+	for (const routePage of plan.paths.routePages) {
+		console.log(`- route page: ${routePage}${plan.status.routePages ? "" : " (new: copy an existing route page, e.g. app/jira/page.tsx, then pnpm run fix:generated --only repo-map)"}`);
+	}
 	console.log("");
 	console.log("Useful snippets:");
 	console.log(`- manifest: ${plan.snippets.manifestEntry}`);
-	console.log(`- detail import: ${plan.snippets.detailImport}`);
+	console.log(`- catalog entries: ${plan.snippets.componentEntry}`);
+	if (plan.snippets.detailImport) console.log(`- detail import: ${plan.snippets.detailImport}`);
 	console.log(`- detail record: ${plan.snippets.detailRecord}`);
 	console.log(`- primary registry: ${plan.snippets.primaryRegistryEntry}`);
 	console.log("");
@@ -657,6 +702,7 @@ function main() {
 			components,
 			detailRecords,
 			registryData,
+			routePages: findRoutePages(addPlanTarget.category, addPlanTarget.slug),
 		}));
 		return;
 	}
@@ -693,6 +739,7 @@ module.exports = {
 	LIFECYCLE_STATUSES,
 	collectDemoFiles,
 	collectRegistryData,
+	findRoutePages,
 	getComponentAddPlan,
 	isTitleCaseName,
 	loadComponentEntries,

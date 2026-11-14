@@ -49,11 +49,9 @@ test("cancelPausedDeferredToolCallRecord waits for readiness before releasing th
 		{
 			port: 8123,
 			handle: {
-				release: () => {
-					calls.push(["release"]);
-				},
-				releaseAsUnhealthy: () => {
-					calls.push(["releaseAsUnhealthy"]);
+				settleLease: (disposition, options) => {
+					calls.push([disposition, options]);
+					return true;
 				},
 			},
 		},
@@ -85,7 +83,7 @@ test("cancelPausedDeferredToolCallRecord waits for readiness before releasing th
 	assert.deepEqual(calls, [
 		["cancel", 8123, 3000],
 		["wait", 8123],
-		["release"],
+		["release", {}],
 	]);
 });
 
@@ -97,11 +95,9 @@ test("cancelPausedDeferredToolCallRecord marks the handle unhealthy on cancellat
 			{
 				port: 8123,
 				handle: {
-					release: () => {
-						calls.push(["release"]);
-					},
-					releaseAsUnhealthy: (reason) => {
-						calls.push(["releaseAsUnhealthy", reason]);
+					settleLease: (disposition, options) => {
+						calls.push([disposition, options]);
+						return true;
 					},
 				},
 			},
@@ -118,6 +114,6 @@ test("cancelPausedDeferredToolCallRecord marks the handle unhealthy on cancellat
 	);
 
 	assert.deepEqual(calls, [
-		["releaseAsUnhealthy", "paused tool cleanup failed"],
+		["unhealthy", { reason: "paused tool cleanup failed" }],
 	]);
 });

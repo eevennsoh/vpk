@@ -283,11 +283,6 @@
       "count": 1
     }
   },
-  "components/blocks/agent-assignment/page.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-bento/components/home-starter-bento.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
@@ -331,7 +326,7 @@
   },
   "components/blocks/agent-directory/agent-directory.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 4
     }
   },
   "components/blocks/agent-directory/page.tsx": {
@@ -379,11 +374,6 @@
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/agent-selector/page.tsx": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -481,11 +471,6 @@
       "count": 1
     }
   },
-  "components/blocks/agent-session/agent-session-compact-card.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-session/agent-session-drag-host.source.test.js": {
     "no-restricted-syntax": {
       "count": 59
@@ -524,11 +509,6 @@
   "components/blocks/agent-session/agent-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 513
-    }
-  },
-  "components/blocks/agent-session/page.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "components/blocks/agent-state/agent-state.test.js": {
@@ -933,9 +913,6 @@
   "components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental-v2/page.tsx": {
@@ -951,11 +928,6 @@
   "components/blocks/jira-kanban/experimental/board-untracked-proximity.source.test.js": {
     "no-restricted-syntax": {
       "count": 169
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/board-column-agent-assignment.tsx": {
-    "no-restricted-imports": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
@@ -1005,11 +977,6 @@
   },
   "components/blocks/jira-kanban/experimental/components/session-column-placement.tsx": {
     "react-hooks/refs": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -1198,11 +1165,6 @@
       "count": 1
     }
   },
-  "components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/jira-work-item/experimental-v2/components/floating-session-surface.tsx": {
     "no-restricted-imports": {
       "count": 3
@@ -1268,11 +1230,6 @@
       "count": 1
     }
   },
-  "components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/jira-work-item/experimental-v3/components/floating-session-surface.tsx": {
     "no-restricted-imports": {
       "count": 3
@@ -1322,11 +1279,6 @@
       "count": 1
     }
   },
-  "components/blocks/jira-work-item/experimental/components/experimental-work-item-dialog.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/jira-work-item/experimental/components/floating-session-surface.tsx": {
     "no-restricted-imports": {
       "count": 2
@@ -1373,11 +1325,6 @@
   "components/blocks/jira-work-item/team-eu26/components/floating-session-surface.tsx": {
     "no-restricted-imports": {
       "count": 3
-    }
-  },
-  "components/blocks/jira-work-item/team-eu26/components/high-confidence-work-item-body.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/panel-content-motion.ts": {
@@ -1608,11 +1555,6 @@
   },
   "components/blocks/subagent/components/manage-subagents-dialog.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/blocks/subagent/page.tsx": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -2685,9 +2627,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/agent-loading-model.test.js": {
+  "components/ui-custom/agent-loading.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 1
     }
   },
   "components/ui-custom/agent-loading.tsx": {
@@ -2726,9 +2668,6 @@
     }
   },
   "components/ui-custom/chain-of-thought.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -2869,24 +2808,9 @@
       "count": 3
     }
   },
-  "components/ui-custom/lib/artifact-annotations.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/lib/artifact-versions.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/ui-custom/link-safety-dialog.tsx": {
     "jsx-a11y/no-noninteractive-element-interactions": {
       "count": 1
-    }
-  },
-  "components/ui-custom/list.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 19
     }
   },
   "components/ui-custom/live-waveform.tsx": {
@@ -2894,9 +2818,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/message.source.test.js": {
+  "components/ui-custom/message-markdown.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 2
     }
   },
   "components/ui-custom/persona.tsx": {
@@ -2947,11 +2871,6 @@
   "components/ui-custom/queue.tsx": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/ui-custom/reasoning.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "components/ui-custom/rich-text-editor/extensions.ts": {
