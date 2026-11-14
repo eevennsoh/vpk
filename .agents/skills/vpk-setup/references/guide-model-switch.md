@@ -15,7 +15,7 @@ model routing.
 | Provider | Model ID | Endpoint Path |
 |----------|----------|---------------|
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
-| **GPT** | `gpt-6.1-sol` | `/v1/openai/v1/chat/completions` |
+| **GPT** | default in `backend/lib/openai-model.js` | `/v1/openai/v1/chat/completions` |
 | **Gemini (Google)** | `gemini-3-pro-image` | `/v1/google/publishers/google/v1/chat/completions` |
 | **TTS (Audio Speech)** | `tts-latest` | `/v1/google/v1/text:synthesize` (when model maps to `vendor: GOOGLE`) |
 
@@ -145,7 +145,17 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 
 ## Default Models
 
-OpenAI gateway requests use `OPENAI_MODEL`, defaulting to `gpt-6.1-sol`.
+OpenAI gateway requests use `DEFAULT_OPENAI_MODEL` from `backend/lib/openai-model.js`,
+so no model config is needed. When a new GPT model ships, update that one constant.
+The gateway does not expose a model list to this use case, so the default is not
+discovered at runtime. `OPENAI_MODEL` is an explicit override. The backend start
+log names the model in use and where it came from (`default`, `.env.local`, or
+`process-env`, meaning it was already set before `.env.local` loaded: a shell
+export or a deploy). Startup and `pnpm run doctor` warn when an override is older
+than the default, repeats it, or is set in the process environment and hides the
+`.env.local` value, even as an empty export (dotenv never replaces a variable
+that is already set). `pnpm run rovo:tmux` does not export `.env.local`'s
+`OPENAI_MODEL` into its panes, so the backend reads that file itself.
 Bedrock and Google model IDs are resolved from their configured endpoint URLs.
 
 ---
@@ -163,18 +173,19 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 
 ### For GPT Models
 
-Set the URL to the OpenAI endpoint and select the model in `.env.local`:
+Set the URL to the OpenAI endpoint in `.env.local`. The model follows the code default:
 
 ```bash
 AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/openai/v1/chat/completions
-OPENAI_MODEL=gpt-6.1-sol
+# Only to pin a different model on purpose:
+# OPENAI_MODEL=<model-id>
 ```
 
-Restart the backend after changing these values. GPT-6.1 Sol is available via
-AI Gateway v1 and v2 and shares the `gpt-sol-family` quota. VPK uses the existing
-v1 chat completions integration. VPK omits temperature for GPT-6 Sol models
-and reserves a minimum 2,048 completion tokens because that budget includes
-reasoning as well as visible output.
+Restart the backend after changing these values. VPK uses the v1 chat
+completions integration. For every OpenAI reasoning model (o-series and GPT-5
+or later, except `-chat` variants) VPK omits temperature and reserves at least 2,048 completion tokens,
+because that budget covers reasoning as well as visible output. The rule is
+family-based in `applyGatewaySamplingOptions`, so new models need no special case.
 
 ---
 
@@ -207,7 +218,7 @@ Provider mappings can vary by environment, so treat Atlas CLI output as the sour
 - `anthropic.claude-opus-4-6` (most capable)
 
 **GPT:**
-- `gpt-6.1-sol` (latest)
+- The current default is `DEFAULT_OPENAI_MODEL` in `backend/lib/openai-model.js`.
 
 **Gemini (Google):**
 - `gemini-3-pro-image` (image generation + text)
@@ -299,16 +310,18 @@ pnpm run dev
 
 ```json
 {
-  "model": "gpt-6.1-sol",
+  "model": "<DEFAULT_OPENAI_MODEL>",
   "messages": [
     { "role": "system", "content": "You are an AI assistant..." },
     { "role": "user", "content": "Hello" }
   ],
-  "max_completion_tokens": 2000,
-  "temperature": 1,
+  "max_completion_tokens": 2048,
   "stream": true
 }
 ```
+
+Chat requests stream (`"stream": true`); one-shot generation through the AI SDK
+provider sends the same payload with `"stream": false`.
 
 ### Gemini (Google) Payload Format
 

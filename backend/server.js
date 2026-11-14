@@ -3,12 +3,17 @@
 console.log("[STARTUP] Server process starting...");
 console.error("[STARTUP] Startup initiated");
 
-// Try to load .env.local if it exists, but don't fail if it doesn't
-try {
-	require("dotenv").config({ path: require("path").join(__dirname, "..", ".env.local") });
-	console.log("[STARTUP] .env.local loaded");
-} catch {
-	console.log("[STARTUP] .env.local not found, using environment variables only");
+// Load .env.local if it exists, but don't fail if it doesn't. The loader records where
+// OPENAI_MODEL came from (dotenv never replaces a variable that is already set).
+{
+	const { describeOpenAiModelWarnings, loadEnvFileWithModelOrigin, resolveOpenAiModel } = require("./lib/openai-model");
+	const envFile = loadEnvFileWithModelOrigin({ envPath: require("path").join(__dirname, "..", ".env.local") });
+	console.log(envFile.error ? "[STARTUP] .env.local not found, using environment variables only" : "[STARTUP] .env.local loaded");
+	const openAiModel = resolveOpenAiModel(process.env);
+	console.log(`[STARTUP] OpenAI gateway model ${openAiModel.model} (source: ${openAiModel.source})`);
+	for (const warning of describeOpenAiModelWarnings(openAiModel)) {
+		console.warn(`[STARTUP] Warning: ${warning}`);
+	}
 }
 
 const {

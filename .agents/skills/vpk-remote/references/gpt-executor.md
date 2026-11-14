@@ -38,7 +38,7 @@ mkdir -p "$worker_root/home"
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
   CODEX_HOME="$worker_root/home" \
   codex exec --ignore-user-config -C "$PWD" \
-  -m gpt-5.6-sol \
+  -m "<model>" \
   -c 'model_provider="openai-gw"' \
   -c 'model_reasoning_effort="high"' \
   -c 'approval_policy="never"' \
@@ -96,7 +96,7 @@ worker_root="$PWD/output/remote-gpt/vpk-<type>-<slug>"
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
   CODEX_HOME="$worker_root/home" \
   codex exec --ignore-user-config \
-  -m gpt-5.6-sol \
+  -m "<model>" \
   -c 'model_provider="openai-gw"' \
   -c 'model_reasoning_effort="high"' \
   -c 'approval_policy="never"' \
@@ -117,7 +117,8 @@ or immediately after fan-out** (the selected session is ambiguous).
 
 ## Advisor consults
 
-This lane serves advisor consults at `gpt-5.6-sol` `xhigh` when the work
+This lane serves advisor consults on the `sol` model (resolved from
+`defaults.env`, never a pinned ID) at `xhigh` when the work
 under review came from the **Claude** lane, including plans written by the
 Claude planner itself — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an

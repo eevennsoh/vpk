@@ -207,10 +207,10 @@ test("Labels hides selected values and supports creating labels", async () => {
 	await view.click(view.getByRole("option", { name: "Add marketing-campaign" }));
 	assert.equal(view.queryByRole("option", { name: "Remove marketing-campaign" }), null);
 	assert.equal(view.queryByRole("option", { name: "Add marketing-campaign" }), null);
-	assert.equal(view.queryByRole("button", { name: "Edit labels" }).textContent.includes("marketing-campaign"), true);
+	assert.notEqual(view.queryByRole("button", { name: "Remove marketing-campaign" }), null);
 	await view.fill(view.getByRole("textbox", { name: "Search labels" }), "new-label");
 	await view.click(view.getByRole("option", { name: "Add new-label" }));
-	assert.equal(view.getByRole("button", { name: "Edit labels" }).textContent.includes("new-label"), true);
+	assert.notEqual(view.queryByRole("button", { name: "Remove new-label" }), null);
 	await view.press(null, "Escape");
 	await fieldAction(view, "Labels", "Clear labels");
 	await view.click(view.getByRole("button", { name: "Edit labels" }));

@@ -54,12 +54,12 @@ test("inline creation preserves parent, tags, subtasks and footer choices", asyn
 	await view.click(view.getByRole("checkbox", { name: "PAY-2 Child item" }));
 	assert.equal(view.queryByRole("button", { name: "Add subtasks" }) !== null, true);
 	await view.click(view.getByRole("checkbox", { name: "PAY-2 Child item" }));
-	await view.click(view.getByRole("button", { name: "Add tags" }));
+	await view.click(view.getByRole("button", { name: "Add labels" }));
 	await view.click(view.getByRole("checkbox", { name: "checkout" }));
 	await view.click(view.getByRole("checkbox", { name: "checkout" }));
 	await view.click(view.getByRole("checkbox", { name: "checkout" }));
-	await view.fill(view.getByRole("textbox", { name: "Add tag" }), "new tag");
-	await view.press(view.getByRole("textbox", { name: "Add tag" }), "Enter");
+	await view.fill(view.getByRole("textbox", { name: "Add label" }), "new tag");
+	await view.press(view.getByRole("textbox", { name: "Add label" }), "Enter");
 	await view.click(view.getByRole("button", { name: "Add parent" }));
 	await view.click(view.getByRole("radio", { name: "PAY-1 Parent item" }));
 	await view.click(view.getByRole("button", { name: "Parent, PAY-1 Parent item" }));

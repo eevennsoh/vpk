@@ -17,12 +17,23 @@ if (result.createdFrom === "main-worktree") {
 }
 NODE
 
-# Load .env.local if it exists
+# Load .env.local if it exists. OPENAI_MODEL is the exception: the backend loads .env.local
+# itself with dotenv, which never replaces a variable already in its environment, so exporting
+# the file's value here (into the tmux server and every pane) would make it look like a shell
+# override and keep a stale value alive after .env.local changes. An OPENAI_MODEL the caller
+# exported itself is kept, and wins over the file as it does under dotenv.
+OPENAI_MODEL_FROM_CALLER="${OPENAI_MODEL+set}"
+OPENAI_MODEL_CALLER_VALUE="${OPENAI_MODEL-}"
 if [ -f .env.local ]; then
 	set -a
 	# shellcheck disable=SC1091
 	source .env.local
 	set +a
+fi
+if [ -n "$OPENAI_MODEL_FROM_CALLER" ]; then
+	export OPENAI_MODEL="$OPENAI_MODEL_CALLER_VALUE"
+else
+	unset OPENAI_MODEL
 fi
 
 WINDOW_NAME="ports"
@@ -278,6 +289,11 @@ start_session() {
 	tmux new-session -d -s "$SESSION_NAME" -n "$WINDOW_NAME"
 	CREATED_SESSION="$SESSION_NAME"
 	trap stop_session_created_by_failed_start EXIT
+	# A tmux server started by an earlier launch can still carry an OPENAI_MODEL in its global
+	# environment; keep it out of this session's panes so the backend reads .env.local itself.
+	if [ -z "$OPENAI_MODEL_FROM_CALLER" ]; then
+		tmux set-environment -t "=$SESSION_NAME" -r OPENAI_MODEL
+	fi
 
 	local total_panes
 	total_panes=$((POOL_SIZE + 2))

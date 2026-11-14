@@ -14,12 +14,13 @@ const {
 	getModelId,
 	applyGatewaySamplingOptions,
 } = require("./ai-gateway-helpers");
+const { DEFAULT_OPENAI_MODEL } = require("./openai-model");
 
-test("OpenAI gateway resolves GPT-6.1 Sol by default and honors model overrides", () => {
+test("OpenAI gateway resolves the code default and honors explicit model overrides", () => {
 	const url = "https://ai-gateway.sgw.staging.atl-paas.net/v1/openai/v1/chat/completions";
-	assert.equal(getModelId(url, {}), "gpt-6.1-sol");
+	assert.equal(getModelId(url, {}), DEFAULT_OPENAI_MODEL);
 	assert.equal(getModelId(url, { OPENAI_MODEL: " gpt-6-sol " }), "gpt-6-sol");
-	assert.equal(getModelId(url, { OPENAI_MODEL: "  " }), "gpt-6.1-sol");
+	assert.equal(getModelId(url, { OPENAI_MODEL: "  " }), DEFAULT_OPENAI_MODEL);
 });
 
 test("OpenAI model selection preserves URL-owned models and unknown endpoints", () => {
@@ -200,6 +201,16 @@ test("getAIGatewayConfigReport reports CloudID kinds without values", () => {
 	assert.equal(report.AI_GATEWAY_CLOUD_ID, "SET");
 	assert.equal(report.AI_GATEWAY_CLOUD_ID_KIND, "UUID");
 	assert.equal(report.AI_GATEWAY_CLOUD_ID_RESOLVED_KIND, "DUMMY");
+	assert.equal(report.OPENAI_MODEL_DEFAULT, DEFAULT_OPENAI_MODEL);
+	assert.equal(report.OPENAI_MODEL_SOURCE, "default");
+	assert.deepEqual(report.OPENAI_MODEL_WARNINGS, []);
+});
+
+test("getAIGatewayConfigReport labels a stale override without echoing its value", () => {
+	const report = getAIGatewayConfigReport({ AI_GATEWAY_URL: STAGING_BEDROCK_URL, OPENAI_MODEL: "gpt-1.0-sol" });
+	assert.equal(report.OPENAI_MODEL_STATUS, "override-older-than-default");
+	assert.equal(report.OPENAI_MODEL_WARNINGS.length, 1);
+	assert.equal(JSON.stringify(report).includes("gpt-1.0-sol"), false);
 });
 
 test("describeGatewayCloudIdError explains the staging dummy CloudID workaround", () => {

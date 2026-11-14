@@ -148,29 +148,69 @@ test("returning to the journey does not replay settled session arrivals", async 
 	expect(frames.every(({ opacity, y }) => opacity >= 0.99 && Math.abs(y) < 1), JSON.stringify(frames)).toBe(true);
 });
 
-test("new sessions still animate into the journey column", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/butter-v1"));
-	const frames = await page.evaluate(async () => {
-		const samples: { opacity: number; y: number }[] = [];
-		let appearedAt: number | undefined;
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				const row = document.querySelector('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
-				if (row) {
-					appearedAt ??= performance.now();
-					const style = getComputedStyle(row);
-					samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 });
-				}
-				if (appearedAt === undefined || performance.now() - appearedAt < 900) requestAnimationFrame(sample);
-				else resolve();
-			};
-			requestAnimationFrame(sample);
+for (const [kind, random] of [["single", 0], ["batched", 0.99]] as const) {
+	test(`new ${kind} sessions still animate into the journey column`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.addInitScript((value) => { Math.random = () => value; }, random);
+		await page.goto(appUrl("/butter-v1"));
+		const frames = await page.evaluate(async () => {
+			const samples: { opacity: number; y: number }[] = [];
+			let appearedAt: number | undefined;
+			await new Promise<void>((resolve) => {
+				const sample = () => {
+					const row = document.querySelector('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
+					if (row) {
+						appearedAt ??= performance.now();
+						const style = getComputedStyle(row);
+						samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 });
+					}
+					if (appearedAt === undefined || performance.now() - appearedAt < 900) requestAnimationFrame(sample);
+					else resolve();
+				};
+				requestAnimationFrame(sample);
+			});
+			return samples;
 		});
-		return samples;
+		expect(frames.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(frames)).toBe(true);
+		expect(frames.at(-1)).toEqual({ opacity: 1, y: 0 });
 	});
-	expect(frames.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(frames)).toBe(true);
-	expect(frames.at(-1)).toEqual({ opacity: 1, y: 0 });
+}
+
+test("a changed session animates back into the top of the journey column", async ({ page }) => {
+	test.setTimeout(75_000);
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.addInitScript(() => { Math.random = () => 0; });
+	await page.goto(appUrl("/butter-v1"), { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 20_000 });
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	const samples = await page.evaluate(async () => {
+		const frames: { leaving: boolean; index: number; opacity: number; y: number; overlap: number }[] = [];
+		const started = performance.now();
+		let departed = false;
+		let returnedAt: number | undefined;
+		while (performance.now() - started < 55_000) {
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			const row = document.querySelector<HTMLElement>('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
+			if (!row) continue;
+			const leaving = row.hasAttribute("data-departing");
+			const index = Array.from(row.parentElement?.children ?? []).indexOf(row);
+			const style = getComputedStyle(row);
+			if (leaving && index > 0) departed = true;
+			if (!departed) continue;
+			if (!leaving && index === 0) returnedAt ??= performance.now();
+			const next = row.nextElementSibling;
+			const box = row.getBoundingClientRect();
+			const nextBox = next?.getBoundingClientRect();
+			frames.push({ leaving, index, opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42, overlap: nextBox ? Math.max(0, box.bottom - nextBox.top) : 0 });
+			if (returnedAt !== undefined && performance.now() - returnedAt > 1_200) break;
+		}
+		return frames;
+	});
+	expect(samples.some(({ leaving }) => leaving), JSON.stringify(samples)).toBe(true);
+	expect(samples.some(({ leaving, index, opacity, y }) => !leaving && index === 0 && opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(samples)).toBe(true);
+	const visibleReentry = samples.filter(({ leaving, index, opacity }) => !leaving && index === 0 && opacity > 0.2);
+	expect(Math.max(...visibleReentry.map(({ overlap }) => overlap)), JSON.stringify(visibleReentry)).toBeLessThan(2);
+	expect(samples.at(-1)?.opacity).toBe(1);
 });
 
 test("gallery reveals can be interrupted and closed without leaving stale highlights", async ({ page }) => {

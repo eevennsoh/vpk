@@ -15,6 +15,11 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const {
+	describeOpenAiModelWarnings,
+	resolveOpenAiModel,
+} = require("../backend/lib/openai-model");
+
 const REPO_ROOT = path.resolve(__dirname, "..");
 const ENV_FILES = [".env.local", ".env"];
 const TMUX_SOCKET = "vpk-dev";
@@ -42,6 +47,25 @@ function envSettingsFromHealth(health) {
 	return settings;
 }
 
+// The OpenAI model in labels only: the built-in default, and warnings about any override. An
+// OPENAI_MODEL in this process came from its environment (nothing here loads .env.local): the
+// shell, or a launcher that exported it, which is the one that silently beats .env.local in the
+// backend. rovo:tmux no longer exports .env.local's OPENAI_MODEL into its panes. The running backend adds what it resolved.
+function summarizeOpenAiModel(env, health) {
+	const shellValue = typeof env.OPENAI_MODEL === "string" ? env.OPENAI_MODEL.trim() : "";
+	const shell = resolveOpenAiModel({ OPENAI_MODEL: shellValue }, { origin: { shellValue } });
+	const backend = health?.llmRouting?.aiGatewayConfig;
+	const backendWarnings = Array.isArray(backend?.OPENAI_MODEL_WARNINGS)
+		? backend.OPENAI_MODEL_WARNINGS.filter((warning) => typeof warning === "string")
+		: [];
+	return {
+		default: shell.defaultModel,
+		shellOverride: shellValue ? shell.status : "not set",
+		backendSource: typeof backend?.OPENAI_MODEL_SOURCE === "string" ? backend.OPENAI_MODEL_SOURCE : null,
+		warnings: [...new Set([...describeOpenAiModelWarnings(shell), ...backendWarnings])],
+	};
+}
+
 function parseJson(text) {
 	try {
 		return JSON.parse(text);
@@ -67,6 +91,7 @@ async function collectDoctorReport({
 	stack = () => require("../.agents/skills/vpk-verify/scripts/lib/stack.js").collectDoctor(),
 	tmuxSessions = listTmuxSessions,
 	measureNext = () => require("./lib/next-dev-output").measureNextDir(repoRoot),
+	env = process.env,
 } = {}) {
 	const preflightReport = summarizePreflight(preflight());
 	const portInfo = getPortInfo();
@@ -99,6 +124,7 @@ async function collectDoctorReport({
 			settings: envSettingsFromHealth(healthJson),
 			settingsSource: healthJson ? "/api/health" : "unavailable: the backend is not answering, so only file presence is known",
 		},
+		openAiModel: summarizeOpenAiModel(env, healthJson),
 		health: {
 			ok: healthJson?.status === "OK",
 			status: health?.status ?? null,
@@ -141,6 +167,9 @@ function formatDoctorReport(report) {
 	} else {
 		lines.push(`       settings ${report.env.settingsSource}`);
 	}
+	const model = report.openAiModel;
+	lines.push(`     model      default ${model.default}; shell OPENAI_MODEL ${model.shellOverride}; backend source ${model.backendSource ?? "unknown"}`);
+	for (const warning of model.warnings) lines.push(`       warning: ${warning}`);
 	lines.push(`${mark(report.health.ok)} health     /api/health ${report.health.ok ? "OK" : (report.health.error ?? `status ${report.health.status}`)}`);
 	if (!report.stack.ok) lines.push("next   pnpm run dev:tmux:start");
 	return `${lines.join("\n")}\n`;
@@ -167,4 +196,5 @@ module.exports = {
 	envSettingsFromHealth,
 	formatDoctorReport,
 	main,
+	summarizeOpenAiModel,
 };

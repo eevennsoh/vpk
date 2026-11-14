@@ -31,7 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
-	AGENT_SESSION_TOP_ARRIVAL_TRANSFORM,
+	AGENT_SESSION_TOP_ARRIVAL_OFFSET,
 	AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
@@ -121,7 +121,7 @@ function useAgentSessionDepartureFocus({
 function resolveAgentSessionCardMotion({
 	animateLayout,
 	arrivalDelaySeconds,
-	arrivalStartTransform,
+	arrivalStartOffset,
 	isDeparting,
 	isTransferSource,
 	shouldPlayArrival,
@@ -132,7 +132,7 @@ function resolveAgentSessionCardMotion({
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
-	arrivalStartTransform: string;
+	arrivalStartOffset: string;
 	isDeparting: boolean;
 	isTransferSource: boolean;
 	shouldPlayArrival: boolean;
@@ -142,15 +142,15 @@ function resolveAgentSessionCardMotion({
 	waitingForArrival: boolean;
 }>) {
 	return {
-		animate: waitingForArrival ? { opacity: 0, transform: arrivalStartTransform }
+		animate: waitingForArrival ? { opacity: 0, y: arrivalStartOffset }
 			: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
-				? { opacity: [0, 1], transform: [arrivalStartTransform, "translateY(0%)"] }
-				: { opacity: 1, transform: "translateY(0%)" },
+				? { opacity: [0, 1], y: [arrivalStartOffset, "calc(0% - 0px)"] }
+				: { opacity: 1, y: "calc(0% - 0px)" },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		// Keep measuring settled rows even when filtering places them immediately.
-		layout: shouldReduceMotion || isDeparting || shouldPlayStatusReentry ? false : "position" as const,
+		// Arriving rows own their travel; layout projection moves the siblings making room.
+		layout: shouldReduceMotion || isDeparting || shouldPlayArrival ? false : "position" as const,
 		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
 			: {
@@ -166,7 +166,7 @@ function resolveAgentSessionCardMotion({
 function useAgentSessionCardTransition({
 	animateLayout,
 	arrivalDelaySeconds,
-	arrivalStartTransform,
+	arrivalStartOffset,
 	hasAnimatedIdentity,
 	isArriving,
 	isDeparting,
@@ -178,7 +178,7 @@ function useAgentSessionCardTransition({
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
-	arrivalStartTransform: string;
+	arrivalStartOffset: string;
 	hasAnimatedIdentity: boolean;
 	isArriving: boolean;
 	isDeparting: boolean;
@@ -229,7 +229,7 @@ function useAgentSessionCardTransition({
 		rowMotion: resolveAgentSessionCardMotion({
 			animateLayout,
 			arrivalDelaySeconds,
-			arrivalStartTransform,
+			arrivalStartOffset,
 			isDeparting,
 			isTransferSource,
 			shouldPlayArrival,
@@ -244,7 +244,7 @@ function useAgentSessionCardTransition({
 export function AgentSessionCard({
 	animateLayout = true,
 	arrivalDelaySeconds,
-	arrivalStartTransform = AGENT_SESSION_TOP_ARRIVAL_TRANSFORM,
+	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
 	captured = false,
 	density = "short",
 	flyoutHandle,
@@ -295,7 +295,7 @@ export function AgentSessionCard({
 }: Readonly<{
 	animateLayout?: boolean;
 	arrivalDelaySeconds?: number;
-	arrivalStartTransform?: string;
+	arrivalStartOffset?: string;
 	captured?: boolean;
 	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led short row. */
 	density?: AgentSessionDensity;
@@ -467,7 +467,7 @@ export function AgentSessionCard({
 	} = useAgentSessionCardTransition({
 		animateLayout,
 		arrivalDelaySeconds,
-		arrivalStartTransform,
+		arrivalStartOffset,
 		hasAnimatedIdentity: (!isTitleLed || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
 		isArriving,
 		isDeparting,

@@ -57,6 +57,7 @@ export function BoardCardInsertionLine({
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
 	const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
+	const overlayHost = anchor?.closest("[data-jira-auto-arrange-scope]") ?? anchor?.ownerDocument.body;
 
 	return (
 		<div
@@ -81,9 +82,9 @@ export function BoardCardInsertionLine({
 			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border-selected" /> : null}
 			{/* Keep the rule and its inert + marker outside the viewport mask.
 			    Hovering a seam must not reveal every faded card in the column. */}
-			{marker === "add" && anchor ? createPortal(<div
+			{marker === "add" && overlayHost ? createPortal(<div
 				aria-hidden
-				className="pointer-events-none fixed z-30 h-0.5 rounded-full bg-border-selected"
+				className="pointer-events-none fixed z-20 h-0.5 rounded-full bg-border-selected"
 				data-board-insertion-overlay={position}
 				style={{
 					// Unresolved or fully clipped anchors must not paint a stray rule.
@@ -100,7 +101,7 @@ export function BoardCardInsertionLine({
 				>
 					<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
 				</span>
-			</div>, anchor.ownerDocument.body) : null}
+			</div>, overlayHost) : null}
 		</div>
 	);
 }

@@ -1,8 +1,9 @@
 /**
- * Experimental v4 renders the experimental v3 implementation under its own
- * variant name. The v4 and v5 trees were full copies of v3 that differed only
- * by the version token, so they now share v3's code; the variant, its demos
- * and its catalog entries stay selectable.
+ * This experimental variant renders the experimental v3 implementation under
+ * its own variant name. Its tree was a full copy of v3 that differed only by
+ * the version token, so it now shares v3's code; the variant, its demos and its
+ * catalog entries stay selectable. The comment names no sibling version, so the
+ * Jira variant scaffolder can copy this file without ambiguous rewrites.
  */
 export {
 	ExperimentalV3JiraWorkItem as ExperimentalV4JiraWorkItem,
