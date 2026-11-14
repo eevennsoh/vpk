@@ -728,6 +728,13 @@ test("mutation rolls back copied paths, registrations, and generated files on va
 	}
 });
 
+test("the registry post-apply step declares every file the generator can write, for rollback", async () => {
+	const { loadVariantManifest } = await loadGenerator();
+	const { REGISTRIES } = require("./generate-catalog-registry.js");
+	const step = loadVariantManifest(DEFAULT_MANIFEST_PATH).postApplyCommands.find((entry) => entry.id === "generate-catalog-registry");
+	assert.deepEqual([...step.writes].sort(), REGISTRIES.map((registry) => registry.file).sort());
+});
+
 test("CLI dry-run JSON is stable and never creates the target", async () => {
 	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v2" });
 	try {

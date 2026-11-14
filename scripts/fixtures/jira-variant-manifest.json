@@ -293,7 +293,14 @@
 			],
 			"id": "generate-catalog-registry",
 			"writes": [
-				"components/website/registry/projects.ts"
+				"components/website/registry/arts.ts",
+				"components/website/registry/blocks.ts",
+				"components/website/registry/projects.ts",
+				"components/website/registry/ui-charts.ts",
+				"components/website/registry/ui-custom/primary.ts",
+				"components/website/registry/ui/primary.ts",
+				"components/website/registry/utility.ts",
+				"components/website/registry/visual.ts"
 			]
 		},
 		{

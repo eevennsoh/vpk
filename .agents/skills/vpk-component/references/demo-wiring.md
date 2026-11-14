@@ -13,7 +13,7 @@ Detailed procedures for registering demos, consolidating components, and wiring 
 
 ## Register Demos
 
-The primary demo needs no hand registration: add the manifest line in `app/data/component-manifest.ts` and the demo at `components/website/demos/ui/[slug]-demo.tsx`, then run `pnpm run fix:generated`. That writes the entry into the generated region of `components/website/registry/ui/primary.ts` (ui-custom: `registry/ui-custom/primary.ts`; other categories: `registry/<category>.ts`, except projects, whose registry is hand-written). `pnpm run catalog:add-plan -- ui/[slug]` prints the exact files.
+The primary demo needs no hand registration: add the manifest line in `app/data/component-manifest.ts` and the demo at `components/website/demos/ui/[slug]-demo.tsx`, then run `pnpm run fix:generated`. That writes the entry into the generated region of `components/website/registry/ui/primary.ts` (ui-custom: `registry/ui-custom/primary.ts`; other categories, including projects: `registry/<category>.ts`). `pnpm run catalog:add-plan -- ui/[slug]` prints the exact files.
 
 Register example (variant) demos by hand in the matching variants shard, `components/website/registry/ui/variants-*.ts` (ui-custom: `registry/ui-custom/variants-*.ts`). Use the `.then()` wrapper to extract named exports from the shared demo file:
 
