@@ -548,6 +548,7 @@ async function collectStackRows({
 	sessions = listDevSessions(),
 	isPortListening = probePortAlive,
 	isRecordedSessionAlive = isSessionAlive,
+	listenerInWorktree,
 } = {}) {
 	const rows = await Promise.all(
 		worktrees.map(async (wt) => {
@@ -559,11 +560,16 @@ async function collectStackRows({
 					ownSessions.push({ name: recorded.name, socket: recorded.socket, path: wt.path });
 				}
 			}
-			const facts = await collectStackFacts({ worktreePath: wt.path, sessionAlive: ownSessions.length > 0, isPortListening });
+			const facts = await collectStackFacts({
+				worktreePath: wt.path,
+				sessionAlive: ownSessions.length > 0,
+				isPortListening,
+				...(listenerInWorktree ? { listenerInWorktree } : {}),
+			});
 			const { status, nextAction, reason } = deriveStackStatus(facts);
 			const service = (name) => {
-				const { port, listening, pid, childPid } = facts.services[name];
-				return { port, listening, pid, childPid };
+				const { port, listening, listenerInWorktree: listenerHere, pid, childPid } = facts.services[name];
+				return { port, listening, listenerInWorktree: listenerHere, pid, childPid };
 			};
 			const frontend = service("frontend");
 			return {

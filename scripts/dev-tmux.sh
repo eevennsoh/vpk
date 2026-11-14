@@ -51,6 +51,7 @@ resolve_session_name() {
 }
 
 SESSION_NAME="$(resolve_session_name)"
+# Targets use tmux's exact form ("=name"): a bare name also matches a session it prefixes.
 
 check_workspace_deps() {
 	node scripts/check-workspace-deps.js --command "pnpm run rovo:tmux:start" next express
@@ -190,15 +191,15 @@ apply_window_styling() {
 	backend_port="${ports_pair##* }"
 	local pane_border_format
 
-	tmux set-window-option -t "$SESSION_NAME:$WINDOW_NAME" pane-border-status top
-	tmux set-window-option -t "$SESSION_NAME:$WINDOW_NAME" pane-border-style "fg=colour238"
-	tmux set-window-option -t "$SESSION_NAME:$WINDOW_NAME" pane-active-border-style "fg=colour39"
+	tmux set-window-option -t "=$SESSION_NAME:$WINDOW_NAME" pane-border-status top
+	tmux set-window-option -t "=$SESSION_NAME:$WINDOW_NAME" pane-border-style "fg=colour238"
+	tmux set-window-option -t "=$SESSION_NAME:$WINDOW_NAME" pane-active-border-style "fg=colour39"
 
 	pane_border_format="#{?#{==:#{pane_index},0},#[fg=green,bold] #{pane_title},#{?#{==:#{pane_index},1},#[fg=yellow,bold] #{pane_title},#[fg=cyan,bold] rovo:#{pane_title}}}#[default]"
-	tmux set-window-option -t "$SESSION_NAME:$WINDOW_NAME" pane-border-format "$pane_border_format"
+	tmux set-window-option -t "=$SESSION_NAME:$WINDOW_NAME" pane-border-format "$pane_border_format"
 
-	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.0" -T "frontend:${frontend_port}" 2>/dev/null || true
-	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.1" -T "backend:${backend_port}" 2>/dev/null || true
+	tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.0" -T "frontend:${frontend_port}" 2>/dev/null || true
+	tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.1" -T "backend:${backend_port}" 2>/dev/null || true
 
 	if [[ -f "$PORTS_FILE" || -f "$PORT_FILE" ]]; then
 		local rovo_ports_raw
@@ -212,7 +213,7 @@ apply_window_styling() {
 			local port
 			pane=$((index + 2))
 			port="${rovo_ports[$index]}"
-			tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.$pane" -T "$port" 2>/dev/null || true
+			tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.$pane" -T "$port" 2>/dev/null || true
 		done
 	fi
 }
@@ -224,7 +225,7 @@ start_session() {
 	fi
 	check_workspace_deps
 
-	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		# Ensure port files exist even when reattaching — they may have been
 		# cleaned up by a prior stop or lost across restarts while the tmux
 		# session (and its Rovo processes) kept running.
@@ -233,7 +234,7 @@ start_session() {
 		fi
 		apply_window_styling
 		echo "Session '$SESSION_NAME' already exists. Attaching..."
-		exec tmux attach -t "$SESSION_NAME"
+		exec tmux attach -t "=$SESSION_NAME"
 	fi
 
 	cleanup_worktree_listeners
@@ -267,39 +268,39 @@ start_session() {
 	total_panes=$((POOL_SIZE + 2))
 
 	for _ in $(seq 1 $((total_panes - 1))); do
-		tmux split-window -t "$SESSION_NAME:$WINDOW_NAME"
-		tmux select-layout -t "$SESSION_NAME:$WINDOW_NAME" tiled
+		tmux split-window -t "=$SESSION_NAME:$WINDOW_NAME"
+		tmux select-layout -t "=$SESSION_NAME:$WINDOW_NAME" tiled
 	done
 
-	tmux set-option -t "$SESSION_NAME" remain-on-exit on
+	tmux set-option -t "=$SESSION_NAME" remain-on-exit on
 	apply_window_styling
 
 	for index in $(seq 0 $((POOL_SIZE - 1))); do
 		pane=$((index + 2))
 		port="${rovo_ports[$index]}"
-		tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.$pane" -T "$port"
+		tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.$pane" -T "$port"
 		cmd="cd \"$REPO_ROOT\" && node scripts/dev-rovo-port.js \"$port\""
-		tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.$pane" "$cmd" C-m
+		tmux send-keys -t "=$SESSION_NAME:$WINDOW_NAME.$pane" "$cmd" C-m
 	done
 
 	wait_for_rovo_health "${rovo_ports[@]}"
 
-	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.0" -T "frontend:${frontend_port}"
-	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.1" -T "backend:${backend_port}"
-	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.1" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:backend" C-m
-	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.0" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:frontend" C-m
+	tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.0" -T "frontend:${frontend_port}"
+	tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.1" -T "backend:${backend_port}"
+	tmux send-keys -t "=$SESSION_NAME:$WINDOW_NAME.1" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:backend" C-m
+	tmux send-keys -t "=$SESSION_NAME:$WINDOW_NAME.0" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:frontend" C-m
 
-	tmux select-layout -t "$SESSION_NAME:$WINDOW_NAME" tiled
-	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.0"
+	tmux select-layout -t "=$SESSION_NAME:$WINDOW_NAME" tiled
+	tmux select-pane -t "=$SESSION_NAME:$WINDOW_NAME.0"
 
 	echo "Session '$SESSION_NAME' started with $total_panes panes (frontend, backend, $POOL_SIZE rovo ports)."
-	echo "Attach with: tmux attach -t $SESSION_NAME"
-	exec tmux attach -t "$SESSION_NAME"
+	echo "Attach with: tmux attach -t =$SESSION_NAME"
+	exec tmux attach -t "=$SESSION_NAME"
 }
 
 stop_session() {
-	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-		tmux kill-session -t "$SESSION_NAME"
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		tmux kill-session -t "=$SESSION_NAME"
 		echo "Stopped tmux session '$SESSION_NAME'."
 	else
 		echo "No tmux session named '$SESSION_NAME' found."
@@ -311,7 +312,7 @@ stop_session() {
 }
 
 style_session() {
-	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		apply_window_styling
 		echo "Applied pane styling to '$SESSION_NAME:$WINDOW_NAME'."
 		return
@@ -322,9 +323,9 @@ style_session() {
 }
 
 attach_session() {
-	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		apply_window_styling
-		exec tmux attach -t "$SESSION_NAME"
+		exec tmux attach -t "=$SESSION_NAME"
 	fi
 
 	echo "No tmux session named '$SESSION_NAME' found."
@@ -333,9 +334,9 @@ attach_session() {
 
 status_session() {
 	echo "Session: $SESSION_NAME"
-	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		echo "tmux: running"
-		tmux list-panes -t "$SESSION_NAME:$WINDOW_NAME" -F "pane #{pane_index}: #{pane_current_command} (#{pane_dead_status})"
+		tmux list-panes -t "=$SESSION_NAME:$WINDOW_NAME" -F "pane #{pane_index}: #{pane_current_command} (#{pane_dead_status})"
 	else
 		echo "tmux: stopped"
 	fi

@@ -310,6 +310,8 @@ test("ports --json derives each worktree's stack status from its record, session
 			{ name: "vpk-dev-feature-ready", socket: "vpk-dev", path: ready },
 		],
 		isPortListening: (port) => listening.has(port),
+		// The orphan's port is held by a process in that worktree.
+		listenerInWorktree: (port, worktreePath) => listening.has(port) && worktreePath !== idle,
 	});
 
 	const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
@@ -318,7 +320,7 @@ test("ports --json derives each worktree's stack status from its record, session
 	assert.equal(byName.ready.status, "ready");
 	assert.equal(byName.ready.sessionName, "vpk-dev-feature-ready");
 	assert.equal(byName.ready.portlessUrl, "https://feature-ready.vpk.localhost");
-	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, pid: null, childPid: null });
+	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, listenerInWorktree: true, pid: null, childPid: null });
 	assert.equal(byName.orphan.status, "orphaned");
 	assert.equal(byName.orphan.nextAction, "stop");
 });
@@ -354,6 +356,7 @@ test("ports --json finds a session on a custom socket through the stack record",
 		routes: [],
 		sessions: [],
 		isPortListening: () => true,
+		listenerInWorktree: () => true,
 		isRecordedSessionAlive: (query) => {
 			probed.push(query);
 			return query.socket === "demo-socket" && query.sessionName === "demo";
@@ -362,4 +365,18 @@ test("ports --json finds a session on a custom socket through the stack record",
 	assert.equal(rows[0].status, "ready");
 	assert.deepEqual(rows[0].sessions, [{ name: "demo", socket: "demo-socket", path: root }]);
 	assert.equal(probed.length, 1);
+});
+
+test("ports --json does not call a port held by another directory's process an orphan", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-held-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), "4401");
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => true,
+		listenerInWorktree: () => false,
+	});
+	assert.notEqual(rows[0].status, "orphaned");
 });

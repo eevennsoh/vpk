@@ -5,7 +5,7 @@ const { getNextDevEnv, getNextDevHostname } = require("./next-dev-env");
 const { getFrontendBasePort, getBackendBasePort } = require("./worktree-ports");
 const { isPortAvailable: probePortAvailable } = require("./rovo-utils");
 const { subscribeProcessSignals } = require("./rovo-supervisor");
-const { clearService, recordService } = require("./dev-stack-state");
+const { clearService, readProcessIdentity, recordService } = require("./dev-stack-state");
 
 // One launch operation owns port records and child lifetime. The backend's health
 // reuse policy and Next's lock/retry policy deliberately remain distinct.
@@ -40,17 +40,44 @@ async function launchDevService(service) {
 		port < basePort + maxTries;
 
 	// The port is recorded in .dev-stack.json with this launcher's pid (and the server's, once
-	// spawned); .dev-<service>-port is written from the same record. A port served by a process
-	// this launcher did not start is recorded without pids.
+	// spawned), each with its start time and command so a stop can tell them from a later process
+	// that reuses the pid; .dev-<service>-port is written from the same record. A port served by a
+	// process this launcher did not start is recorded without pids. If the record cannot be
+	// written, the port file still is: the stack keeps working, and a stop falls back to the
+	// session and listener cleanup.
+	const identityOf = (pid) => {
+		const identity = pid ? readProcessIdentity(pid) : null;
+		return identity?.state === "alive" ? identity : { start: null, command: null };
+	};
 	const writePortFile = (port, { childPid = null, owned = true } = {}) => {
-		recordService(process.cwd(), service, { port, pid: owned ? process.pid : null, childPid });
+		const self = owned ? identityOf(process.pid) : { start: null, command: null };
+		const server = identityOf(childPid);
+		try {
+			recordService(process.cwd(), service, {
+				port,
+				pid: owned ? process.pid : null,
+				pidStart: self.start,
+				pidCommand: self.command,
+				childPid,
+				childStart: childPid ? server.start : null,
+				childCommand: childPid ? server.command : null,
+			});
+		} catch (error) {
+			console.warn(`[dev-${service}] Could not record the dev stack state (${error.message}); writing ${path.basename(portFile)} only.`);
+			fs.writeFileSync(portFile, String(port));
+		}
 	};
 
 	const cleanupPortFile = () => {
 		try {
 			clearService(process.cwd(), service, { pid: process.pid });
 		} catch {
-			// The record is best effort on the way out; never mask the real exit.
+			// The record is best effort on the way out; still drop the port file, never mask the exit.
+			try {
+				fs.unlinkSync(portFile);
+			} catch {
+				// Already gone.
+			}
 		}
 	};
 

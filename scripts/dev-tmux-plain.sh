@@ -53,7 +53,8 @@ if [[ -z "$TMUX_BIN" ]]; then
 fi
 
 # All tmux invocations go through the private socket so we never touch a managed
-# server.
+# server. Session targets use tmux's exact form ("=name", "=name:" for a pane): a bare name
+# also matches another session whose name it prefixes (vpk-dev-feat would hit vpk-dev-feat-2).
 tm() {
 	"$TMUX_BIN" -L "$SOCKET" "$@"
 }
@@ -99,6 +100,20 @@ SESSION_NAME="$(resolve_session_name)"
 REPO_ROOT_PHYSICAL="$(pwd -P)"
 FORCE_START=0
 JSON_OUTPUT=0
+
+# Waits are whole numbers, checked before anything starts: seconds for the start, ms for the
+# stop's drain.
+is_whole_number() { [[ "$1" =~ ^[0-9]+$ ]]; }
+START_WAIT_SECONDS="${VPK_DEV_TMUX_WAIT:-90}"
+STOP_WAIT_MS="${VPK_DEV_STOP_WAIT_MS:-12000}"
+if ! is_whole_number "$START_WAIT_SECONDS"; then
+	echo "VPK_DEV_TMUX_WAIT must be a whole number of seconds, got '$START_WAIT_SECONDS'." >&2
+	exit 2
+fi
+if ! is_whole_number "$STOP_WAIT_MS"; then
+	echo "VPK_DEV_STOP_WAIT_MS must be a whole number of milliseconds, got '$STOP_WAIT_MS'." >&2
+	exit 2
+fi
 # start exits with this when the stack does not become ready (scripts/lib/dev-stack-state.js).
 EXIT_NOT_READY=5
 
@@ -125,7 +140,7 @@ sessions_for_worktree() {
 # Use an existing session for this worktree even when it carries another name.
 adopt_worktree_session() {
 	local name
-	tm has-session -t "$SESSION_NAME" 2>/dev/null && return 0
+	tm has-session -t "=$SESSION_NAME" 2>/dev/null && return 0
 	while IFS= read -r name; do
 		[[ -n "$name" ]] || continue
 		echo "Adopting tmux session '$name' for this worktree (this checkout would name it '$SESSION_NAME')."
@@ -141,14 +156,14 @@ stop_named_session() {
 	# route from ~/.portless/routes.json before the session is killed. (tmux kill-session sends
 	# SIGHUP, which portless does not trap, so the route would otherwise linger until a manual
 	# prune.) This is scoped to this worktree, unlike the global `portless prune`.
-	tm send-keys -t "$name" C-c 2>/dev/null || true
+	tm send-keys -t "=$name:" C-c 2>/dev/null || true
 	# The recorded service processes get time to drain after Ctrl-C (the backend takes up to
 	# 10 s), then SIGTERM and SIGKILL, before the session is killed.
 	if [[ "$recorded" == "recorded" ]]; then
-		stack_state stop-recorded --wait-ms "${VPK_DEV_STOP_WAIT_MS:-12000}" || true
+		stack_state stop-recorded --wait-ms "$STOP_WAIT_MS" || true
 	fi
 	sleep 1
-	tm kill-session -t "$name" 2>/dev/null || true
+	tm kill-session -t "=$name" 2>/dev/null || true
 	echo "Stopped tmux session '$name' (socket: $SOCKET)."
 }
 
@@ -203,25 +218,6 @@ session_frontend_is_listening() {
 	port_is_listening "$port"
 }
 
-# Poll until the frontend records a port AND that port is actually listening.
-# Prints the port on success; prints whatever was recorded (possibly empty) and
-# returns 1 on timeout.
-wait_for_frontend() {
-	local attempts="${VPK_DEV_TMUX_WAIT:-90}"
-	local port=""
-	local i
-	for ((i = 0; i < attempts; i++)); do
-		port="$(read_port "$FRONTEND_PORT_FILE")"
-		if port_is_listening "$port"; then
-			printf '%s' "$port"
-			return 0
-		fi
-		sleep 1
-	done
-	printf '%s' "$port"
-	return 1
-}
-
 print_endpoints() {
 	local fe="$1" be url
 	be="$(read_port "$BACKEND_PORT_FILE")"
@@ -241,14 +237,14 @@ print_endpoints() {
 
 print_controls() {
 	echo "  Logs:        $DEV_LOG_FILE"
-	echo "  Attach:      $TMUX_BIN -L $SOCKET attach -t $SESSION_NAME   (detach: Ctrl-b then d)"
+	echo "  Attach:      $TMUX_BIN -L $SOCKET attach -t =$SESSION_NAME   (detach: Ctrl-b then d)"
 	echo "               pnpm run dev:tmux:attach"
 	echo "  Stop:        pnpm run dev:tmux:stop"
 }
 
 launch_session() {
 	check_workspace_deps
-	# Clear stale port files so wait_for_frontend doesn't latch onto a dead
+	# Clear stale port files so the readiness wait doesn't latch onto a dead
 	# port from a previous run.
 	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
 	stack_state phase seeding-env
@@ -263,12 +259,12 @@ launch_session() {
 	# be another worktree's.
 	local node_bin
 	node_bin="$(command -v node)"
-	tm pipe-pane -t "$SESSION_NAME" -o "'$node_bin' '$REPO_ROOT/scripts/lib/dev-log-filter.js' --out '$DEV_LOG_FILE' --max-bytes '$DEV_LOG_MAX_BYTES'"
+	tm pipe-pane -t "=$SESSION_NAME:" -o "'$node_bin' '$REPO_ROOT/scripts/lib/dev-log-filter.js' --out '$DEV_LOG_FILE' --max-bytes '$DEV_LOG_MAX_BYTES'"
 	# Launch the dev stack THROUGH portless so this worktree gets a stable
 	# .localhost URL. `portless run` with no command runs the package.json
 	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
 	# only when HEAD is detached.
-	tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && CI=true pnpm exec portless run ${portless_args}" C-m
+	tm send-keys -t "=$SESSION_NAME:" "cd \"$REPO_ROOT\" && CI=true pnpm exec portless run ${portless_args}" C-m
 	stack_state phase starting
 	echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
 }
@@ -276,7 +272,7 @@ launch_session() {
 start_session() {
 	adopt_worktree_session
 	stop_duplicate_sessions
-	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		if session_frontend_is_listening; then
 			echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
 		else
@@ -291,15 +287,15 @@ start_session() {
 	fi
 
 	echo "Waiting for the frontend and backend to come up..."
-	local port
-	port="$(wait_for_frontend)" || true
-	# Ready means the frontend and backend both listen and their recorded processes are alive.
-	local wait_ms=$(( ${VPK_DEV_TMUX_WAIT:-90} * 1000 ))
-	if ! stack_state wait-ready --timeout-ms "$wait_ms"; then
+	# One deadline for the whole start. Ready means the frontend and backend both listen in this
+	# worktree and their recorded processes are alive.
+	if ! stack_state wait-ready --timeout-ms "$(( START_WAIT_SECONDS * 1000 ))"; then
 		echo "The dev stack is not ready — check the logs, or run: pnpm run dev:tmux:status"
 		print_controls
 		exit "$EXIT_NOT_READY"
 	fi
+	local port
+	port="$(read_port "$FRONTEND_PORT_FILE")"
 	print_endpoints "$port"
 	print_controls
 	# The URL to open is the last line, so a caller (or an agent) can take it with `tail -1`.
@@ -316,7 +312,7 @@ start_session() {
 stop_session() {
 	adopt_worktree_session
 	stack_state phase stopping || true
-	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
 		stop_named_session "$SESSION_NAME" recorded
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
@@ -333,8 +329,8 @@ stop_session() {
 
 attach_session() {
 	adopt_worktree_session
-	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		exec "$TMUX_BIN" -L "$SOCKET" attach -t "$SESSION_NAME"
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		exec "$TMUX_BIN" -L "$SOCKET" attach -t "=$SESSION_NAME"
 	fi
 	echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'. Start it with: pnpm run dev:tmux:start"
 	exit 1
@@ -357,8 +353,8 @@ status_session() {
 	# State is derived from the stack record, the session and the listening ports, not from the
 	# session's existence alone.
 	stack_state status
-	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		tm list-panes -t "$SESSION_NAME" -F "  pane #{pane_index}: #{pane_current_command}"
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		tm list-panes -t "=$SESSION_NAME" -F "  pane #{pane_index}: #{pane_current_command}"
 	fi
 }
 

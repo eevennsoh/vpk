@@ -8,7 +8,7 @@ const { subscribeProcessSignals } = require("./rovo-supervisor");
 
 // Substitute local OS dependencies at the implementation's require seam. Tests
 // invoke the same complete launch operation as both CLI entry points.
-function harness({ recorded, lock = false, occupied = [], healthy = true, owned = false } = {}) {
+function harness({ recorded, lock = false, occupied = [], healthy = true, owned = false, failRecord = false } = {}) {
 	const files = new Map(Object.entries(recorded ?? {}).map(([name, value]) => [`/worktree/${name}`, value]));
 	if (lock) files.set("/worktree/.next/dev/lock", "locked");
 	const busyPorts = new Set(occupied);
@@ -67,7 +67,9 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 		"./rovo-utils": { isPortAvailable: async (port, options) => { probes.push({ port, ...options }); return !busyPorts.has(port); } },
 		"./rovo-supervisor": { subscribeProcessSignals },
 		"./dev-stack-state": {
+			readProcessIdentity: (pid) => ({ state: "alive", start: `start-${pid}`, command: `command-${pid}` }),
 			recordService: (cwd, service, entry) => {
+				if (failRecord) throw new Error("lock timed out");
 				stackRecords.push({ service, ...entry });
 				files.set(path.join(cwd, `.dev-${service}-port`), String(entry.port));
 			},
@@ -102,7 +104,7 @@ for (const service of ["frontend", "backend"]) {
 		assert.equal(h.spawns[0].options.env.PORT, String(base + 1));
 		if (service === "frontend") assert.equal(h.spawns[0].options.env.NEXT_PUBLIC_BACKEND_PORT, "8002");
 		// The stack record names the launcher and the server it spawned.
-		assert.deepEqual(h.stackRecords.at(-1), { service, port: base + 1, pid: 100, childPid: 500 });
+		assert.deepEqual(h.stackRecords.at(-1), { service, port: base + 1, pid: 100, pidStart: "start-100", pidCommand: "command-100", childPid: 500, childStart: "start-500", childCommand: "command-500" });
 		assert.equal(h.probes.every((probe) => probe.includeLoopback === (service === "frontend")), true);
 		h.signalTarget.emit("SIGHUP");
 		assert.equal(h.killed[0].signal, "SIGHUP");
@@ -140,7 +142,7 @@ test("backend reuses only a healthy recorded server and rejects reuse for sessio
 	assert.equal(reused.spawns.length, 0);
 	assert.equal(reused.files.get("/worktree/.dev-backend-port"), "8001");
 	// A server this launcher did not start is recorded by port only, so a stop never signals it by pid.
-	assert.deepEqual(reused.stackRecords.at(-1), { service: "backend", port: 8001, pid: null, childPid: null });
+	assert.deepEqual(reused.stackRecords.at(-1), { service: "backend", port: 8001, pid: null, pidStart: null, pidCommand: null, childPid: null, childStart: null, childCommand: null });
 	assert.equal(reused.logs.some((log) => log.message.includes("Reuse does not reload")), true);
 	const owned = harness({ ...options, owned: true });
 	await assert.rejects(owned.launch("backend"), /tmux-owned session/);
@@ -209,3 +211,15 @@ test("port exhaustion fails without spawning or keeping stale records", async ()
 	assert.equal(h.spawns.length, 0);
 	assert.equal(h.files.has("/worktree/.dev-backend-port"), false);
 });
+
+for (const service of ["frontend", "backend"]) {
+	test(`${service} keeps running with a port file when the stack record cannot be written`, async () => {
+		const base = service === "frontend" ? 4000 : 8000;
+		const h = harness({ failRecord: true });
+		await h.launch(service);
+		assert.equal(h.spawns.length, 1, "the server was started");
+		assert.equal(h.exits.length, 0, "the launcher did not exit and leave its server behind");
+		assert.equal(h.files.get(`/worktree/.dev-${service}-port`), String(base));
+		assert.equal(h.logs.some((log) => log.level === "warn" && log.message.includes("Could not record the dev stack state")), true);
+	});
+}

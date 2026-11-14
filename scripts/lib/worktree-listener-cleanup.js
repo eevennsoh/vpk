@@ -115,7 +115,8 @@ function getProcessCwd(pid, { execSyncFn = execSync } = {}) {
 
 // The cleanup's own ancestors (the shell, pnpm, and an agent session such as Claude Code that
 // listens on a port with its cwd in the worktree) must never be signalled: killing them ends
-// the caller's session.
+// the caller's session. Returns null when the process table cannot be read (ps blocked or
+// failing), so callers can refuse to signal instead of guessing.
 function listAncestorPids({ pid = process.pid, execSyncFn = execSync } = {}) {
 	let output;
 	try {
@@ -124,7 +125,7 @@ function listAncestorPids({ pid = process.pid, execSyncFn = execSync } = {}) {
 			stdio: ["pipe", "pipe", "pipe"],
 		});
 	} catch {
-		return [];
+		return null;
 	}
 
 	const parentByPid = new Map();
@@ -135,6 +136,8 @@ function listAncestorPids({ pid = process.pid, execSyncFn = execSync } = {}) {
 		}
 	}
 
+	// Our own parent must be in the table; if it is not, the table is not what it seems.
+	if (!parentByPid.has(pid)) return null;
 	const ancestors = [];
 	let current = parentByPid.get(pid);
 	while (Number.isInteger(current) && current > 1 && !ancestors.includes(current)) {
@@ -144,8 +147,10 @@ function listAncestorPids({ pid = process.pid, execSyncFn = execSync } = {}) {
 	return ancestors;
 }
 
+// null when the ancestors cannot be read: then nothing may be signalled.
 function getProtectedPids(listAncestorPidsFn = listAncestorPids) {
-	return new Set([process.pid, ...listAncestorPidsFn()]);
+	const ancestors = listAncestorPidsFn();
+	return Array.isArray(ancestors) ? new Set([process.pid, ...ancestors]) : null;
 }
 
 function findListeningPidsForWorktree({
@@ -155,6 +160,7 @@ function findListeningPidsForWorktree({
 	protectedPids = getProtectedPids(),
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
+	if (protectedPids === null) return [];
 
 	return getUniqueSortedPids(
 		listListeningPidsFn()
@@ -170,6 +176,7 @@ function findRovoSupervisorPidsForWorktree({
 	protectedPids = getProtectedPids(),
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
+	if (protectedPids === null) return [];
 
 	return getUniqueSortedPids(
 		listProcessInfoFn()
@@ -193,6 +200,10 @@ async function cleanupListeningProcessesForWorktree({
 } = {}) {
 	const normalizedWorktreePath = path.resolve(worktreePath);
 	const protectedPids = getProtectedPids(listAncestorPidsFn);
+	if (protectedPids === null) {
+		logger.warn?.(`[cleanup] Not stopping any process for ${normalizedWorktreePath}: the process table cannot be read, so this cleanup's own process tree cannot be told apart.`);
+		return { ...buildCleanupResult({ worktreePath: normalizedWorktreePath, matchedListenerPids: [], matchedSupervisorPids: [] }), blocked: true };
+	}
 	const matchedListenerPids = findListeningPidsForWorktree({
 		worktreePath: normalizedWorktreePath,
 		listListeningPidsFn,

@@ -80,6 +80,14 @@ const DEFAULT_START_TIMEOUT_MS = 90_000;
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
 // `dev:tmux:start` exits with this when the stack did not become ready (3 and 4 are the budget's).
 const EXIT_NOT_READY = 5;
+// How long a non-waiting state must hold before wait-ready gives up early.
+const SETTLE_MS = 3_000;
+
+function parseNonNegativeInteger(value, name) {
+	if (/^\d+$/u.test(String(value ?? ""))) return Number.parseInt(value, 10);
+	process.stderr.write(`${name} must be a whole number of milliseconds, got "${value}".\n`);
+	return null;
+}
 
 function canonicalPath(value) {
 	try {
@@ -660,11 +668,16 @@ async function collectStackFacts({
 	return { record, sessionAlive: Boolean(sessionAlive), services, now };
 }
 
-// End the processes the record names. Called by \`stop\` after it has sent Ctrl-C to the session:
+// End the processes the record names. Called by `stop` after it has sent Ctrl-C to the session:
 // first wait up to waitMs for them to exit on their own (the backend drains for up to 10 s),
-// then SIGTERM what is left, then SIGKILL after graceMs. A pid is signalled only when its cwd is
-// this worktree (a recorded pid may have been reused) and never when it is this process or one
-// of its ancestors (an agent session running the stop from this worktree).
+// then SIGTERM what is left, then SIGKILL after graceMs.
+//
+// A recorded pid is signalled only when, at that moment, it still runs with its recorded start
+// time and command (verifyRecordedProcess) and its cwd is this worktree; it is checked again
+// before SIGTERM and again before SIGKILL. Nothing is signalled by pid when the caller's own
+// process tree cannot be read (it could not be told apart), and never the caller or one of its
+// ancestors (an agent session running the stop). A pid that cannot be verified is left alone
+// and reported; the session kill and the cwd-scoped listener sweep still run after this.
 async function stopRecordedProcesses({
 	worktreePath,
 	record = readStackRecord(worktreePath),
@@ -672,7 +685,7 @@ async function stopRecordedProcesses({
 	graceMs = 2_000,
 	pollMs = 100,
 	killFn = process.kill,
-	isPidAlive = defaultIsPidAlive,
+	verifyProcess = verifyRecordedProcess,
 	getProcessCwdFn,
 	listAncestorPidsFn,
 	sleepFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -680,38 +693,62 @@ async function stopRecordedProcesses({
 } = {}) {
 	const cleanup = require("./worktree-listener-cleanup");
 	const cwdOf = getProcessCwdFn ?? ((pid) => cleanup.getProcessCwd(pid));
-	const protectedPids = cleanup.getProtectedPids(listAncestorPidsFn ?? (() => cleanup.listAncestorPids()));
-	const target = path.resolve(worktreePath);
-	const recorded = recordedPids(record);
-	const skippedProtected = recorded.filter((pid) => protectedPids.has(pid));
-	const ours = recorded.filter((pid) => !protectedPids.has(pid) && isPidAlive(pid) && cwdOf(pid) === target);
-	const alive = () => ours.filter((pid) => isPidAlive(pid));
+	const recorded = recordedProcesses(record);
+	const result = { recorded: recorded.map((entry) => entry.pid), ours: [], skippedProtected: [], unverified: [], exitedOnTheirOwn: 0, terminated: [], killed: [], blocked: null };
+	if (recorded.length === 0) return result;
+	const ancestors = (listAncestorPidsFn ?? (() => cleanup.listAncestorPids()))();
+	if (!Array.isArray(ancestors)) {
+		return { ...result, blocked: "the process table cannot be read, so the caller's own processes cannot be told apart" };
+	}
+	const protectedPids = new Set([process.pid, ...ancestors]);
+	const target = canonicalPath(worktreePath);
+	const candidates = [];
+	for (const entry of recorded) {
+		if (protectedPids.has(entry.pid)) {
+			result.skippedProtected.push(entry.pid);
+			continue;
+		}
+		const verdict = verifyProcess(entry);
+		if (verdict === false) continue; // Gone, or the pid now belongs to another process.
+		const cwd = verdict === true ? cwdOf(entry.pid) : null;
+		if (verdict === null || cwd === null || canonicalPath(cwd) !== target) {
+			result.unverified.push(entry.pid);
+			continue;
+		}
+		candidates.push(entry);
+	}
+	result.ours = candidates.map((entry) => entry.pid);
+	const stillOurs = (entries) => entries.filter((entry) => verifyProcess(entry) === true);
 
 	const deadline = now() + waitMs;
-	while (alive().length > 0 && now() < deadline) await sleepFn(pollMs);
-	const exitedOnTheirOwn = ours.length - alive().length;
+	while (stillOurs(candidates).length > 0 && now() < deadline) await sleepFn(pollMs);
+	const left = stillOurs(candidates);
+	result.exitedOnTheirOwn = candidates.length - left.length;
 
-	const terminated = alive();
-	for (const pid of terminated) {
+	for (const entry of left) {
+		if (verifyProcess(entry) !== true) continue;
 		try {
-			killFn(pid, "SIGTERM");
+			killFn(entry.pid, "SIGTERM");
+			result.terminated.push(entry.pid);
 		} catch {
 			// Already gone.
 		}
 	}
+	const terminated = left.filter((entry) => result.terminated.includes(entry.pid));
 	if (terminated.length > 0) {
 		const graceDeadline = now() + graceMs;
-		while (alive().length > 0 && now() < graceDeadline) await sleepFn(pollMs);
+		while (stillOurs(terminated).length > 0 && now() < graceDeadline) await sleepFn(pollMs);
 	}
-	const killed = alive();
-	for (const pid of killed) {
+	for (const entry of terminated) {
+		if (verifyProcess(entry) !== true) continue;
 		try {
-			killFn(pid, "SIGKILL");
+			killFn(entry.pid, "SIGKILL");
+			result.killed.push(entry.pid);
 		} catch {
 			// Exited between the check and the signal.
 		}
 	}
-	return { recorded, ours, skippedProtected, exitedOnTheirOwn, terminated, killed };
+	return result;
 }
 
 function resolveTmuxBinary(env = process.env) {
@@ -742,7 +779,8 @@ function samePath(left, right) {
 function isSessionAlive({ worktreePath, socket = "vpk-dev", sessionName = null, env = process.env, spawnSyncImpl = require("node:child_process").spawnSync }) {
 	const tmux = resolveTmuxBinary(env);
 	const socketArgs = socket && socket !== "default" ? ["-L", socket] : [];
-	if (sessionName && spawnSyncImpl(tmux, [...socketArgs, "has-session", "-t", sessionName], { stdio: "ignore" }).status === 0) {
+	// "=name" matches exactly; a bare name would also match another session as a prefix.
+	if (sessionName && spawnSyncImpl(tmux, [...socketArgs, "has-session", "-t", `=${sessionName}`], { stdio: "ignore" }).status === 0) {
 		return true;
 	}
 	const listed = spawnSyncImpl(tmux, [...socketArgs, "list-sessions", "-F", "#{session_name}|#{session_path}"], { encoding: "utf8" });
@@ -759,17 +797,29 @@ function lsofPortListening(port, { spawnSyncImpl = require("node:child_process")
 	return spawnSyncImpl("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], { stdio: "ignore" }).status === 0;
 }
 
-async function readStackStatus({ worktreePath, socket, sessionName, env = process.env, isPortListening = lsofPortListening, now = Date.now(), startTimeoutMs = DEFAULT_START_TIMEOUT_MS } = {}) {
+async function readStackStatus({
+	worktreePath,
+	socket,
+	sessionName,
+	env = process.env,
+	isPortListening = lsofPortListening,
+	listenerInWorktree,
+	verifyProcess,
+	now = Date.now(),
+	startTimeoutMs = DEFAULT_START_TIMEOUT_MS,
+} = {}) {
 	const record = readStackRecord(worktreePath);
 	const facts = await collectStackFacts({
 		worktreePath,
 		sessionAlive: isSessionAlive({ worktreePath, socket: socket ?? record?.session?.socket ?? "vpk-dev", sessionName: sessionName ?? record?.session?.name ?? null, env }),
 		isPortListening,
+		...(listenerInWorktree ? { listenerInWorktree } : {}),
+		...(verifyProcess ? { verifyProcess } : {}),
 		now,
 	});
 	const derived = deriveStackStatus({ ...facts, startTimeoutMs });
 	return {
-		worktree: path.resolve(worktreePath),
+		worktree: canonicalPath(worktreePath),
 		...derived,
 		session: facts.record?.session ?? (sessionName ? { name: sessionName, socket: socket ?? "vpk-dev" } : null),
 		sessionAlive: facts.sessionAlive,
@@ -845,7 +895,16 @@ async function main(argv = process.argv.slice(2)) {
 	if (command === "phase") {
 		const phase = options.positional[0];
 		const current = readStackRecord(worktreePath);
-		recordPhase(worktreePath, phase, { session: sessionName ? { name: sessionName, socket } : current?.session ?? undefined });
+		// A stop in a worktree that never started a stack leaves no record behind.
+		if (!current && (phase === "stopping" || phase === "stopped")) return 0;
+		recordPhase(worktreePath, phase, {
+			session: sessionName ? { name: sessionName, socket } : current?.session ?? undefined,
+			// Keep the entries whose processes still run (a stop that could not verify them).
+			keepService: (entry) =>
+				[{ pid: entry.pid, start: entry.pidStart, command: entry.pidCommand }, { pid: entry.childPid, start: entry.childStart, command: entry.childCommand }].some(
+					(candidate) => candidate.pid && verifyRecordedProcess(candidate) !== false,
+				),
+		});
 		return 0;
 	}
 	if (command === "status") {
@@ -854,17 +913,20 @@ async function main(argv = process.argv.slice(2)) {
 		return 0;
 	}
 	if (command === "wait-ready") {
-		const parsed = Number.parseInt(options.timeoutMs ?? String(DEFAULT_START_TIMEOUT_MS), 10);
-		const timeoutMs = Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_START_TIMEOUT_MS;
+		const timeoutMs = parseNonNegativeInteger(options.timeoutMs ?? String(DEFAULT_START_TIMEOUT_MS), "--timeout-ms");
+		if (timeoutMs === null) return 2;
 		const deadline = Date.now() + timeoutMs;
+		let settledSince = null;
 		for (;;) {
 			// The start grace period is the caller's wait, so a longer VPK_DEV_TMUX_WAIT is not cut
 			// short by the default 90 s.
 			const report = await readStackStatus({ worktreePath, socket, sessionName, startTimeoutMs: Math.max(timeoutMs, DEFAULT_START_TIMEOUT_MS) });
 			if (report.status === "ready") return 0;
-			// Nothing will change by waiting in these states.
-			const settled = !["seeding-env", "starting"].includes(report.status);
-			if (settled || Date.now() >= deadline) {
+			// A state that is not waiting ends the wait once it has held for SETTLE_MS, so a launcher
+			// retrying on another port (a moment of degraded) does not fail the start.
+			if (["seeding-env", "starting"].includes(report.status)) settledSince = null;
+			else settledSince ??= Date.now();
+			if (Date.now() >= deadline || (settledSince !== null && Date.now() - settledSince >= SETTLE_MS)) {
 				process.stderr.write(`[dev:tmux] Not ready: ${report.status} (${report.reason}).\n`);
 				return EXIT_NOT_READY;
 			}
@@ -872,10 +934,16 @@ async function main(argv = process.argv.slice(2)) {
 		}
 	}
 	if (command === "stop-recorded") {
-		const result = await stopRecordedProcesses({
-			worktreePath,
-			waitMs: Number.parseInt(options.waitMs ?? "12000", 10),
-		});
+		const waitMs = parseNonNegativeInteger(options.waitMs ?? "12000", "--wait-ms");
+		if (waitMs === null) return 2;
+		const result = await stopRecordedProcesses({ worktreePath, waitMs });
+		if (result.blocked) {
+			process.stdout.write(`[dev:tmux] Not signalling recorded processes: ${result.blocked}. The session and listener cleanup still run.\n`);
+			return 0;
+		}
+		if (result.unverified.length > 0) {
+			process.stdout.write(`[dev:tmux] Not signalling ${result.unverified.join(", ")}: cannot confirm they are still this stack's processes.\n`);
+		}
 		if (result.skippedProtected.length > 0) {
 			process.stdout.write(`[dev:tmux] Not signalling ${result.skippedProtected.join(", ")}: the caller's own process tree.\n`);
 		}

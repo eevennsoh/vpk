@@ -64,7 +64,8 @@ function createFakeLauncherEnvironment() {
 	const cleanupLogPath = path.join(tempDir, "cleanup.log");
 
 	// Sessions live in FAKE_TMUX_STATE as `name|start-directory` lines; every launched dev
-	// server (a send-keys of `portless run`) is appended to FAKE_SERVER_LOG.
+	// server (a send-keys of `portless run`) is appended to FAKE_SERVER_LOG. Targets resolve like
+	// real tmux: `=name` matches exactly; a bare name matches exactly, else as a unique prefix.
 	writeExecutable(tmuxPath, [
 		"#!/usr/bin/env bash",
 		"printf '%s\\n' \"$*\" >> \"$FAKE_TMUX_LOG\"",
@@ -77,22 +78,31 @@ function createFakeLauncherEnvironment() {
 		"\tprintf '%s' \"$1\" > .dev-frontend-port; printf '%s' \"$2\" > .dev-backend-port",
 		"\tprintf '%s %s\\n' \"$1\" \"$2\" >> \"${FAKE_LISTEN_FILE:-/dev/null}\"",
 		"}",
+		"resolve_target() {",
+		"\tlocal t=\"${1%%:*}\" matches",
+		"\t[ -f \"$state\" ] || return 1",
+		"\tif [ \"${t#=}\" != \"$t\" ]; then t=\"${t#=}\"; grep -q \"^${t}|\" \"$state\" && { echo \"$t\"; return 0; }; return 1; fi",
+		"\tgrep -q \"^${t}|\" \"$state\" && { echo \"$t\"; return 0; }",
+		"\tmatches=$(cut -d'|' -f1 \"$state\" | grep \"^${t}\")",
+		"\t[ -n \"$matches\" ] && [ \"$(printf '%s\\n' \"$matches\" | wc -l | tr -d ' ')\" = 1 ] && { echo \"$matches\"; return 0; }",
+		"\treturn 1",
+		"}",
 		"while [ \"$#\" -gt 0 ]; do",
 		"\tcase \"$1\" in",
 		"\t\thas-session|new-session|send-keys|kill-session|list-sessions) command_name=\"$1\"; shift ;;",
 		"\t\t-t|-s) target=\"$2\"; shift 2 ;;",
 		"\t\t-c) dir=\"$2\"; shift 2 ;;",
 		"\t\t-L|-F) shift 2 ;;",
-		"\t\t*) [ \"$command_name\" = \"send-keys\" ] && case \"$1\" in *\"portless run\"*) echo \"$target\" >> \"${FAKE_SERVER_LOG:-/dev/null}\"; fake_serve ;; esac; shift ;;",
+		"\t\t*) [ \"$command_name\" = \"send-keys\" ] && case \"$1\" in *\"portless run\"*) name=\"${target#=}\"; echo \"${name%%:*}\" >> \"${FAKE_SERVER_LOG:-/dev/null}\"; fake_serve ;; esac; shift ;;",
 		"\tesac",
 		"done",
 		"case \"$command_name\" in",
 		"\thas-session)",
 		"\t\t[ \"${FAKE_TMUX_HAS_SESSION:-0}\" = \"1\" ] && exit 0",
-		"\t\tgrep -q \"^${target}|\" \"$state\" 2>/dev/null && exit 0",
+		"\t\tresolve_target \"$target\" >/dev/null && exit 0",
 		"\t\texit 1 ;;",
 		"\tnew-session) printf '%s|%s\\n' \"$target\" \"$dir\" >> \"$state\" ;;",
-		"\tkill-session) [ -f \"$state\" ] && { grep -v \"^${target}|\" \"$state\" > \"$state.next\" || true; mv \"$state.next\" \"$state\"; } ;;",
+		"\tkill-session) victim=$(resolve_target \"$target\") || exit 1; grep -v \"^${victim}|\" \"$state\" > \"$state.next\" || true; mv \"$state.next\" \"$state\" ;;",
 		"\tlist-sessions) [ -f \"$state\" ] && cat \"$state\" ;;",
 		"esac",
 		"exit 0",
@@ -481,7 +491,7 @@ test("a launched session copies its pane output to the worktree's dev log and ke
 		);
 
 		const tmuxLog = fs.readFileSync(fake.tmuxLogPath, "utf8");
-		const pipe = tmuxLog.split("\n").find((line) => line.startsWith("-L vpk-dev pipe-pane -t vpk-dev-plain-log-test -o ")) ?? "";
+		const pipe = tmuxLog.split("\n").find((line) => line.startsWith("-L vpk-dev pipe-pane -t =vpk-dev-plain-log-test: -o ")) ?? "";
 		assert.ok(pipe.includes(`'${path.join(repoRoot, "scripts/lib/dev-log-filter.js")}' --out '${path.join(logDir, "dev.log")}' --max-bytes '20971520'`), tmuxLog);
 		assert.equal(fs.readFileSync(path.join(logDir, "dev.previous.log"), "utf8"), "last run\n");
 		assert.equal(fs.existsSync(path.join(logDir, "dev.log")), false, "the fake pane wrote nothing yet");
@@ -542,14 +552,17 @@ test("status --json reports the derived state, not only whether the session exis
 	}
 });
 
+// The record a launcher writes: the pid with its start time and command.
 function recordedStack(frontendPid) {
+	const { readProcessIdentity } = require("./lib/dev-stack-state.js");
+	const identity = readProcessIdentity(frontendPid);
 	return {
 		version: 1,
 		worktree: repoRoot,
 		session: { name: "vpk-dev-recorded", socket: "vpk-dev" },
 		phase: "starting",
 		phaseAt: new Date().toISOString(),
-		services: { frontend: { port: 49145, pid: frontendPid, childPid: null } },
+		services: { frontend: { port: 49145, pid: frontendPid, pidStart: identity.start ?? null, pidCommand: identity.command ?? null, childPid: null } },
 	};
 }
 
@@ -565,7 +578,7 @@ test("stop ends the recorded service processes before it kills the session", asy
 			startAs(fake, "vpk-dev-recorded", { FAKE_CWD_PID: String(server.pid), FAKE_CWD_ROOT: repoRoot, VPK_DEV_STOP_WAIT_MS: "200" }, ["stop"]),
 		recordedStack(server.pid));
 		assert.equal(result.status, 0, result.stderr);
-		assert.equal(await exited, "SIGTERM");
+		assert.equal(await Promise.race([exited, new Promise((resolve) => setTimeout(() => resolve("still running after 10 s"), 10_000))]), "SIGTERM");
 		const recorded = result.stdout.indexOf("Recorded processes: 0 exited after Ctrl-C, 1 after SIGTERM, 0 needed SIGKILL");
 		assert.ok(recorded >= 0, result.stdout);
 		assert.ok(recorded < result.stdout.indexOf("Stopped tmux session 'vpk-dev-recorded'"), result.stdout);
@@ -600,6 +613,69 @@ test("status --json stays valid JSON when the worktree's session is adopted unde
 		assert.match(result.stderr, /Adopting tmux session 'vpk-dev-old-branch'/);
 		const report = JSON.parse(result.stdout);
 		assert.equal(report.sessionAlive, true);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("a stop never kills another worktree's session whose name starts with this one's", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, "vpk-dev-feat-2|/tmp/other-worktree\n");
+		const stop = withPortFiles(null, null, () => startAs(fake, "vpk-dev-feat", {}, ["stop"]));
+		assert.equal(stop.status, 0, stop.stderr);
+		assert.match(stop.stdout, /No tmux session 'vpk-dev-feat'/);
+		const status = withPortFiles(null, null, () => startAs(fake, "vpk-dev-feat", {}, ["status", "--json"]));
+		assert.equal(JSON.parse(status.stdout).sessionAlive, false);
+		assert.deepEqual(fake.sessions(), ["vpk-dev-feat-2|/tmp/other-worktree"]);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("start and stop refuse a wait that is not a whole number, before touching any session", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		for (const value of ["abc", "1.5", "10s", "-1"]) {
+			const start = withPortFiles(null, null, () => startAs(fake, "vpk-dev-wait", { VPK_DEV_TMUX_WAIT: value }));
+			assert.equal(start.status, 2, value);
+			assert.match(start.stderr, /VPK_DEV_TMUX_WAIT must be a whole number of seconds/);
+			const stop = withPortFiles(null, null, () => startAs(fake, "vpk-dev-wait", { VPK_DEV_STOP_WAIT_MS: value }, ["stop"]));
+			assert.equal(stop.status, 2, value);
+			assert.match(stop.stderr, /VPK_DEV_STOP_WAIT_MS must be a whole number of milliseconds/);
+		}
+		assert.deepEqual(fake.sessions(), []);
+		assert.equal(fs.existsSync(fake.tmuxLogPath) ? /new-session|kill-session/.test(fs.readFileSync(fake.tmuxLogPath, "utf8")) : false, false);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("a stack that stays degraded ends the start after a few seconds, not the whole wait", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const started = Date.now();
+		const result = withPortFiles("49151", "49152", () =>
+			startAs(fake, "vpk-dev-settle", { FAKE_TMUX_HAS_SESSION: "1", FAKE_LISTEN_PORT: "49151", VPK_DEV_TMUX_WAIT: "20" }),
+		);
+		const elapsed = Date.now() - started;
+		assert.equal(result.status, 5);
+		assert.match(result.stderr, /Not ready: degraded/);
+		assert.ok(elapsed >= 3_000 && elapsed < 15_000, `ended after ${elapsed} ms`);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("stopping a worktree that never started a stack leaves no record behind", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const result = withPortFiles(null, null, () => {
+			const stop = startAs(fake, "vpk-dev-never", {}, ["stop"]);
+			assert.equal(fs.existsSync(stackFile), false);
+			return stop;
+		});
+		assert.equal(result.status, 0, result.stderr);
 	} finally {
 		fake.cleanup();
 	}
