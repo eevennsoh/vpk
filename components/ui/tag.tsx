@@ -326,7 +326,8 @@ function Tag({
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLSpanElement>) => {
 		onKeyDown?.(event);
-		if (event.defaultPrevented || !isInteractive || disabled) {
+		// Keys from the remove or overlay button inside the tag belong to that button.
+		if (event.defaultPrevented || !isInteractive || disabled || event.target !== event.currentTarget) {
 			return;
 		}
 		if (event.key === "Enter" || event.key === " ") {

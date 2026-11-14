@@ -1718,11 +1718,6 @@
       "count": 1
     }
   },
-  "components/projects/confluence/components/document-title.tsx": {
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
   "components/projects/jira-for-you/jira-for-you-details.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
@@ -2382,7 +2377,7 @@
   },
   "components/projects/shared/components/composer-floating-body.tsx": {
     "jsx-a11y/no-static-element-interactions": {
-      "count": 2
+      "count": 1
     }
   },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
@@ -2923,11 +2918,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/rich-text-editor/task-item-node-view.tsx": {
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
   "components/ui-custom/rich-text-editor/toolbar.tsx": {
     "no-restricted-imports": {
       "count": 1
@@ -2972,9 +2962,6 @@
     }
   },
   "components/ui-custom/skill-tag.tsx": {
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 2
-    },
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
     },
