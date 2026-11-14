@@ -16,6 +16,8 @@
 				"**/*.test.{js,mjs,cjs,ts,tsx}",
 				"**/__tests__/**/*.{js,mjs,cjs,ts}",
 				"scripts/fixtures/**/*.{js,mjs,cjs}",
+				// Type-level contracts the repository typecheck compiles; nothing imports them.
+				"**/*.typecheck.ts",
 				// Skill and plugin scripts run by agents, not by package.json.
 				".agents/skills/**/scripts/**/*.{js,mjs,cjs,ts,css}",
 				".agents/herdr/plugins/*/*.js",
