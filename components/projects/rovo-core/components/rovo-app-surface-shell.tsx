@@ -8,21 +8,11 @@ import TopNavigation, {
 	type ShellSidebarSlotState,
 } from "@/components/blocks/top-navigation/page";
 import type { UseRovoAppThreadListResult } from "@/components/projects/rovo-core/hooks/use-rovo-app-thread-list";
+import { getCssDurationTokenMs } from "@/components/projects/rovo-core/lib/css-duration";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 
 const SIDEBAR_MOTION_DURATION_CSS_VARIABLE = "--duration-medium";
 const SIDEBAR_MOTION_FALLBACK_MS = 200;
-
-function getCssDurationTokenMs(tokenName: string, fallbackMs: number): number {
-	if (typeof window === "undefined") {
-		return fallbackMs;
-	}
-	const tokenValue = window
-		.getComputedStyle(document.documentElement)
-		.getPropertyValue(tokenName);
-	const parsed = Number.parseFloat(tokenValue);
-	return Number.isFinite(parsed) ? parsed : fallbackMs;
-}
 
 export interface RovoAppSurfaceShellSidebarProps {
 	activeThreadId: string | null;

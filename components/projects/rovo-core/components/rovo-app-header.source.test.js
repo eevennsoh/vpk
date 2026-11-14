@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
 const ROOT_DIR = process.cwd();
 
@@ -10,7 +11,7 @@ function readProjectFile(filePath) {
 }
 
 const CORE_HEADER_SOURCE = readProjectFile("components/projects/rovo-core/components/rovo-app-header.tsx");
-const ROVO_SHELL_SOURCE = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
+const ROVO_SHELL_SOURCE = readRovoAppShellSource("rovo");
 const STUDIO_HEADER_SOURCE = readProjectFile("components/projects/studio/components/rovo-app-header.tsx");
 
 test("Rovo app header shares the core header while Studio owns send mode", () => {

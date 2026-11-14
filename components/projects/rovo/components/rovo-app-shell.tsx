@@ -46,7 +46,7 @@ import { deriveRovoAppTimelineItems } from "@/components/projects/rovo-core/lib/
 import { buildRovoAppThreadPath } from "@/components/projects/rovo/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
-import { type RovoRealtimeShellAdapter, useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
+import { useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
 import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
@@ -81,9 +81,32 @@ import {
 	activateStudioScreenAssistantTarget,
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
+	getViewportPointFromScreenAssistantTarget,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantTarget,
+	type StudioScreenAssistantToolCall,
+	type StudioScreenAssistantToolResponder,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
+import { getCssDurationTokenMs } from "@/components/projects/rovo-core/lib/css-duration";
+import {
+	buildRovoAppRealtimeArtifactContextSummary,
+	buildRovoAppRealtimeResultSummary,
+	buildRovoAppRealtimeThreadSummary,
+	resolveRovoAppRealtimeSessionIdentity,
+	resolveRovoAppRealtimeStatusMessage,
+} from "@/components/projects/rovo-core/lib/rovo-app-realtime-context";
+import type {
+	ExtendedDelegationRequest,
+	RealtimeAssistantTextCompletedPayload,
+	RealtimeAssistantTextPayload,
+	RealtimeInjectContextPayload,
+	RealtimeSpeechTranscriptPayload,
+	RealtimeVoiceShellOptions,
+	RealtimeVoiceShellResult,
+	RovoAppRealtimeShellAdapter,
+	ScrollActiveTimelineSelection,
+	TypedScrollAnchorSource,
+} from "@/components/projects/rovo-core/lib/rovo-app-shell-types";
+import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import { useScreenAssistantRegion } from "@/components/projects/sidebar-chat/hooks/use-screen-assistant-region";
 import { reduceDictationPresentation } from "@/components/projects/sidebar-chat/lib/sidebar-chat-state";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
@@ -118,221 +141,6 @@ const DEFAULT_COMPOSER_PLACEHOLDER = "Describe what it should do";
 // Fullscreen Rovo renders directory matches as a two-column grid; 8 keeps it at
 // four rows per column while other prompt surfaces can show the default 9.
 const ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT = 8;
-const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
-const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
-
-function parseCssDurationMs(value: string): number | null {
-	const trimmedValue = value.trim();
-
-	if (!trimmedValue) {
-		return null;
-	}
-
-	if (trimmedValue.endsWith("ms")) {
-		const durationMs = Number.parseFloat(trimmedValue.slice(0, -2));
-		return Number.isFinite(durationMs) ? durationMs : null;
-	}
-
-	if (trimmedValue.endsWith("s")) {
-		const durationSeconds = Number.parseFloat(trimmedValue.slice(0, -1));
-		return Number.isFinite(durationSeconds) ? durationSeconds * 1000 : null;
-	}
-
-	const numericDuration = Number.parseFloat(trimmedValue);
-	return Number.isFinite(numericDuration) ? numericDuration : null;
-}
-
-function getCssDurationTokenMs(tokenName: string, fallbackMs: number): number {
-	if (typeof window === "undefined") {
-		return fallbackMs;
-	}
-
-	const tokenValue = window.getComputedStyle(document.documentElement).getPropertyValue(tokenName);
-
-	return parseCssDurationMs(tokenValue) ?? fallbackMs;
-}
-
-function mergeContextDescriptions(...parts: Array<string | null | undefined>): string | undefined {
-	const mergedParts = parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part));
-
-	return mergedParts.length > 0 ? mergedParts.join("\n\n") : undefined;
-}
-
-type RealtimeInjectContextPayload = {
-	type: string;
-	content?: string;
-	role?: string;
-	summary?: string;
-	[key: string]: unknown;
-};
-
-type RovoAppRealtimeShellAdapter = RovoRealtimeShellAdapter<ReturnType<typeof useRovoApp>> & {
-	delegateToRovo?: (messageId: string, options?: Record<string, unknown>) => Promise<void>;
-	submitRealtimeText?: (payload: { contextDescription?: string; files: FileUIPart[]; text: string }) => Promise<void>;
-};
-
-type ExtendedDelegationRequest = DelegationRequest & {
-	delegatedMessageId?: string;
-	messageId?: string;
-	realtimeMessageId?: string;
-};
-
-type RealtimeSpeechTranscriptPayload =
-	| string
-	| {
-			delta?: string;
-			messageId?: string;
-			text?: string;
-			transcript?: string;
-	  };
-
-type RealtimeAssistantTextPayload =
-	| string
-	| {
-			delta?: string;
-			displayOnly?: boolean;
-			messageId?: string;
-			replace?: boolean;
-			source?: "text" | "audio_transcript";
-			text?: string;
-	  };
-
-type RealtimeAssistantTextCompletedPayload =
-	| string
-	| {
-			messageId?: string;
-			text?: string;
-	  };
-
-type RealtimeVoiceShellOptions = Parameters<typeof useRealtimeVoice>[0] & {
-	onAssistantTextCompleted?: (payload: string | { messageId?: string; text?: string }) => void;
-	onAssistantTextDelta?: (payload: string | { delta?: string; displayOnly?: boolean; messageId?: string; replace?: boolean; source?: "text" | "audio_transcript"; text?: string }) => void;
-	onSpeechTranscriptCompleted?: (payload: string | { messageId?: string; transcript?: string; text?: string }) => void;
-	onSpeechTranscriptDelta?: (payload: string | { delta?: string; messageId?: string; text?: string }) => void;
-	onTextResponseStart?: (payload?: { messageId?: string }) => void;
-};
-
-type RealtimeVoiceShellResult = ReturnType<typeof useRealtimeVoice> & {
-	connectionState?: string;
-	connectionStatus?: string;
-	currentAssistantMessageId?: string | null;
-	currentUserMessageId?: string | null;
-	isReconnecting?: boolean;
-	sendTextInput?: (payload: { contextDescription?: string; messageId?: string; text: string }) => Promise<void>;
-	sessionId?: string;
-	sessionKey?: string;
-	statusMessage?: string | null;
-};
-
-type RovoScreenAssistantToolCall = {
-	args: Record<string, unknown>;
-	callId: string;
-	name: string;
-};
-
-type RovoScreenAssistantToolResponder = (output: unknown, createResponse?: boolean) => void;
-
-type TypedScrollAnchorSource = "none" | "standard" | "realtime";
-
-type ScrollActiveTimelineSelection = {
-	latestTimelineMessageId: string | null;
-	messageId: string;
-	runtimeThreadId: string | null;
-};
-
-function buildRealtimeThreadSummary(messages: ReadonlyArray<ReturnType<typeof useRovoApp>["messages"][number]>): string {
-	const summary = messages
-		.filter((message) => message.role === "user" || message.role === "assistant")
-		.slice(-REALTIME_THREAD_SUMMARY_MAX_MESSAGES)
-		.map((message) => {
-			const text = getMessageText(message).trim();
-			const artifact = getMessageArtifactResult(message);
-			const fragments = [text || null, artifact ? `${artifact.action === "update" ? "Updated" : "Created"} artifact "${artifact.title}".` : null].filter((fragment): fragment is string =>
-				Boolean(fragment),
-			);
-
-			if (fragments.length === 0) {
-				return null;
-			}
-
-			return `${message.role}: ${fragments.join(" ")}`.trim();
-		})
-		.filter((line): line is string => Boolean(line))
-		.join("\n");
-
-	return summary.slice(0, 2_000);
-}
-
-function buildRealtimeArtifactContextSummary(input: {
-	annotationContext: string | null;
-	document: {
-		id: string;
-		kind: string;
-		title: string;
-	} | null;
-}): string | null {
-	if (!input.document) {
-		return null;
-	}
-
-	return [`Artifact open: ${input.document.title}`, `Document ID: ${input.document.id}`, `Kind: ${input.document.kind}`, input.annotationContext ? input.annotationContext : null]
-		.filter((part): part is string => Boolean(part))
-		.join("\n");
-}
-
-function resolveRealtimeStatusMessage(realtime: RealtimeVoiceShellResult): string | null {
-	const directStatus = typeof realtime.statusMessage === "string" && realtime.statusMessage.trim() ? realtime.statusMessage.trim() : null;
-	if (directStatus) {
-		return directStatus;
-	}
-
-	const connectionState =
-		typeof realtime.connectionState === "string" && realtime.connectionState.trim()
-			? realtime.connectionState.trim().toLowerCase()
-			: typeof realtime.connectionStatus === "string" && realtime.connectionStatus.trim()
-				? realtime.connectionStatus.trim().toLowerCase()
-				: null;
-
-	if (connectionState === "reconnecting" || realtime.isReconnecting) {
-		return "Reconnecting voice...";
-	}
-
-	if (connectionState === "disconnected") {
-		return "Voice disconnected";
-	}
-
-	return null;
-}
-
-function resolveRealtimeSessionIdentity(realtime: RealtimeVoiceShellResult, activeThreadId: string | null, runtimeThreadId: string): string | null {
-	const candidates = [realtime.sessionId, realtime.sessionKey, realtime.connectionState, realtime.connectionStatus];
-
-	const explicitIdentity = candidates.find((candidate) => {
-		return typeof candidate === "string" && candidate.trim().length > 0;
-	});
-
-	if (explicitIdentity) {
-		return explicitIdentity;
-	}
-
-	return realtime.voiceState !== "idle" ? `${activeThreadId ?? runtimeThreadId}:${realtime.voiceState}` : null;
-}
-
-function getViewportPointFromScreenAssistantTarget(
-	target: StudioScreenAssistantTarget | null | undefined,
-): { x: number; y: number; label: string; coordinateSpace: "viewport" } | null {
-	if (!target?.rect) {
-		return null;
-	}
-
-	return {
-		x: target.rect.x + target.rect.width / 2,
-		y: target.rect.y + target.rect.height / 2,
-		label: target.label ?? target.fieldId ?? target.id ?? "Target",
-		coordinateSpace: "viewport",
-	};
-}
-
 function RovoAppDirectoryAutocompleteShortcut({
 	index,
 }: Readonly<{
@@ -425,7 +233,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const buildPromptOptions = useCallback(
 		(contextDescription?: string) => {
 
-			const resolvedContextDescription = mergeContextDescriptions(
+			const resolvedContextDescription = mergeRovoContextDescriptions(
 				contextDescription,
 				selectedAgentContextDescription,
 			);
@@ -817,8 +625,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 	const handleScreenAssistantToolCall = useCallback(
 		(
-			{ name, args }: RovoScreenAssistantToolCall,
-			respond: RovoScreenAssistantToolResponder,
+			{ name, args }: StudioScreenAssistantToolCall,
+			respond: StudioScreenAssistantToolResponder,
 		) => {
 			switch (name) {
 				case "get_screen_state": {
@@ -906,7 +714,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 					try {
 					const c = chatRef.current as RovoAppRealtimeShellAdapter;
-					const contextDescription = mergeContextDescriptions(request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined, annotationContextRef.current);
+					const contextDescription = mergeRovoContextDescriptions(request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined, annotationContextRef.current);
 					const extendedRequest = request as ExtendedDelegationRequest;
 					const delegatedMessageId = extendedRequest.delegatedMessageId ?? extendedRequest.realtimeMessageId ?? extendedRequest.messageId ?? realtimeConversation.userMessageId;
 
@@ -1057,9 +865,9 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		injectContext: realtime.injectContext,
 	});
 
-	const realtimeStatusMessage = resolveRealtimeStatusMessage(realtime);
+	const realtimeStatusMessage = resolveRovoAppRealtimeStatusMessage(realtime);
 	const shouldChatVoiceModeBeEnabled = isRealtimeActive;
-	const realtimeSessionIdentity = resolveRealtimeSessionIdentity(realtime, chat.activeThreadId, chat.runtimeThreadId);
+	const realtimeSessionIdentity = resolveRovoAppRealtimeSessionIdentity(realtime, chat.activeThreadId, chat.runtimeThreadId);
 	const wasRealtimeStreamingRef = useRef(false);
 	const dictationState = resolveComposerDictationState({
 		active: isDictationActive,
@@ -1081,12 +889,9 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		if (wasRealtimeStreamingRef.current && !chat.isStreaming && isRealtimeActive) {
 			const lastAssistantMessage = [...chat.messages].reverse().find((m) => m.role === "assistant");
 			if (lastAssistantMessage) {
-				const text = getMessageText(lastAssistantMessage);
-				const artifact = getMessageArtifactResult(lastAssistantMessage);
-				const summary = artifact ? `Rovo ${artifact.action === "update" ? "updated" : "created"} artifact "${artifact.title}". ${text || ""}` : text || "Rovo completed the task.";
 				injectRealtimeContext({
 					type: "thread_message",
-					content: summary.slice(0, REALTIME_RESULT_SUMMARY_MAX_CHARS),
+					content: buildRovoAppRealtimeResultSummary(lastAssistantMessage, "Rovo"),
 				});
 			}
 		}
@@ -1104,7 +909,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			return;
 		}
 
-		const summary = buildRealtimeThreadSummary(chat.messages);
+		const summary = buildRovoAppRealtimeThreadSummary(chat.messages);
 		if (summary) {
 			injectRealtimeContext({
 				type: "thread_context",
@@ -1492,7 +1297,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			return;
 		}
 
-		const artifactContext = buildRealtimeArtifactContextSummary({
+		const artifactContext = buildRovoAppRealtimeArtifactContextSummary({
 			annotationContext: annotationContextRef.current,
 			document: workspaceDocument
 				? {

@@ -80,7 +80,6 @@ import {
 	adoptStudioGenerationTranscript,
 	createStudioAgentEditCards,
 } from "@/components/projects/studio/lib/studio-chat-helpers";
-import { mergeContextDescriptions } from "@/components/projects/studio/lib/studio-context-descriptions";
 import {
 	normalizeStudioAgentResult,
 	resolveRegisteredStudioAgentId,
@@ -95,13 +94,6 @@ import {
 	resolveStudioAgentOnboardingGuideCommand,
 	STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS,
 } from "@/components/projects/studio/lib/studio-agent-onboarding-guide";
-import {
-	buildStudioRealtimeArtifactContextSummary,
-	buildStudioRealtimeResultSummary,
-	buildStudioRealtimeThreadSummary,
-	resolveStudioRealtimeSessionIdentity,
-	resolveStudioRealtimeStatusMessage,
-} from "@/components/projects/studio/lib/studio-realtime-context";
 import { buildFallbackTemplatePrompt } from "@/components/projects/studio/lib/studio-template-prompts";
 import { getStudioAutomationGeneratingAgents } from "@/components/projects/studio/lib/studio-automation-generating-agents";
 import { prepareStudioAgentDraftPatch } from "@/components/projects/studio/lib/studio-agent-draft-patch";
@@ -127,7 +119,7 @@ import {
 } from "@/components/projects/studio/lib/agent-creation-domain-scope";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
-import { type RovoRealtimeShellAdapter, useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
+import { useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
 import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
 import { LeftNavigation } from "@/components/blocks/top-navigation/components/left-navigation";
@@ -157,9 +149,32 @@ import {
 	activateStudioScreenAssistantTarget,
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
+	getViewportPointFromScreenAssistantTarget,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantTarget,
+	type StudioScreenAssistantToolCall,
+	type StudioScreenAssistantToolResponder,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
+import { getCssDurationTokenMs } from "@/components/projects/rovo-core/lib/css-duration";
+import {
+	buildRovoAppRealtimeArtifactContextSummary,
+	buildRovoAppRealtimeResultSummary,
+	buildRovoAppRealtimeThreadSummary,
+	resolveRovoAppRealtimeSessionIdentity,
+	resolveRovoAppRealtimeStatusMessage,
+} from "@/components/projects/rovo-core/lib/rovo-app-realtime-context";
+import type {
+	ExtendedDelegationRequest,
+	RealtimeAssistantTextCompletedPayload,
+	RealtimeAssistantTextPayload,
+	RealtimeInjectContextPayload,
+	RealtimeSpeechTranscriptPayload,
+	RealtimeVoiceShellOptions,
+	RealtimeVoiceShellResult,
+	RovoAppRealtimeShellAdapter,
+	ScrollActiveTimelineSelection,
+	TypedScrollAnchorSource,
+} from "@/components/projects/rovo-core/lib/rovo-app-shell-types";
+import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import { useScreenAssistantRegion } from "@/components/projects/sidebar-chat/hooks/use-screen-assistant-region";
 import { reduceDictationPresentation } from "@/components/projects/sidebar-chat/lib/sidebar-chat-state";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
@@ -267,37 +282,6 @@ const STUDIO_LIVE_CHAT_ANCHOR_RESOLVE_FRAMES = 180;
 const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM = "onboarding";
 const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE = "rovo-cursor";
 
-function parseCssDurationMs(value: string): number | null {
-	const trimmedValue = value.trim();
-
-	if (!trimmedValue) {
-		return null;
-	}
-
-	if (trimmedValue.endsWith("ms")) {
-		const durationMs = Number.parseFloat(trimmedValue.slice(0, -2));
-		return Number.isFinite(durationMs) ? durationMs : null;
-	}
-
-	if (trimmedValue.endsWith("s")) {
-		const durationSeconds = Number.parseFloat(trimmedValue.slice(0, -1));
-		return Number.isFinite(durationSeconds) ? durationSeconds * 1000 : null;
-	}
-
-	const numericDuration = Number.parseFloat(trimmedValue);
-	return Number.isFinite(numericDuration) ? numericDuration : null;
-}
-
-function getCssDurationTokenMs(tokenName: string, fallbackMs: number): number {
-	if (typeof window === "undefined") {
-		return fallbackMs;
-	}
-
-	const tokenValue = window.getComputedStyle(document.documentElement).getPropertyValue(tokenName);
-
-	return parseCssDurationMs(tokenValue) ?? fallbackMs;
-}
-
 function getStudioAgentCreationThreadTitle(thread: { title: string } | null): string {
 	const title = thread?.title.trim();
 
@@ -322,85 +306,11 @@ type StudioSubmitPromptPayload = Parameters<ReturnType<typeof useRovoApp>["submi
 	creationMode?: "agent";
 };
 
-type RealtimeInjectContextPayload = {
-	type: string;
-	content?: string;
-	role?: string;
-	summary?: string;
-	[key: string]: unknown;
-};
-
-type RovoAppRealtimeShellAdapter = RovoRealtimeShellAdapter<ReturnType<typeof useRovoApp>> & {
-	delegateToRovo?: (messageId: string, options?: Record<string, unknown>) => Promise<void>;
-	submitRealtimeText?: (payload: { contextDescription?: string; files: FileUIPart[]; text: string }) => Promise<void>;
-};
-
 function waitForDeterministicTrace(ms: number): Promise<void> {
 	return new Promise((resolve) => {
 		window.setTimeout(resolve, ms);
 	});
 }
-
-type ExtendedDelegationRequest = DelegationRequest & {
-	delegatedMessageId?: string;
-	messageId?: string;
-	realtimeMessageId?: string;
-};
-
-type RealtimeSpeechTranscriptPayload =
-	| string
-	| {
-			delta?: string;
-			messageId?: string;
-			text?: string;
-			transcript?: string;
-	  };
-
-type RealtimeAssistantTextPayload =
-	| string
-	| {
-			delta?: string;
-			displayOnly?: boolean;
-			messageId?: string;
-			replace?: boolean;
-			source?: "text" | "audio_transcript";
-			text?: string;
-	  };
-
-type RealtimeAssistantTextCompletedPayload =
-	| string
-	| {
-			messageId?: string;
-			text?: string;
-	  };
-
-type RealtimeVoiceShellOptions = Parameters<typeof useRealtimeVoice>[0] & {
-	onAssistantTextCompleted?: (payload: string | { messageId?: string; text?: string }) => void;
-	onAssistantTextDelta?: (payload: string | { delta?: string; displayOnly?: boolean; messageId?: string; replace?: boolean; source?: "text" | "audio_transcript"; text?: string }) => void;
-	onSpeechTranscriptCompleted?: (payload: string | { messageId?: string; transcript?: string; text?: string }) => void;
-	onSpeechTranscriptDelta?: (payload: string | { delta?: string; messageId?: string; text?: string }) => void;
-	onTextResponseStart?: (payload?: { messageId?: string }) => void;
-};
-
-type RealtimeVoiceShellResult = ReturnType<typeof useRealtimeVoice> & {
-	connectionState?: string;
-	connectionStatus?: string;
-	currentAssistantMessageId?: string | null;
-	currentUserMessageId?: string | null;
-	isReconnecting?: boolean;
-	sendTextInput?: (payload: { contextDescription?: string; messageId?: string; text: string }) => Promise<void>;
-	sessionId?: string;
-	sessionKey?: string;
-	statusMessage?: string | null;
-};
-
-type StudioScreenAssistantToolCall = {
-	args: Record<string, unknown>;
-	callId: string;
-	name: string;
-};
-
-type StudioScreenAssistantToolResponder = (output: unknown, createResponse?: boolean) => void;
 
 type StudioScreenAssistantTestWindow = Window & {
 	__VPK_E2E_SCREEN_ASSISTANT__?: boolean;
@@ -409,29 +319,6 @@ type StudioScreenAssistantTestWindow = Window & {
 		streamAssistantText: (chunks: string[]) => Promise<{ ok: true }>;
 	};
 };
-
-type TypedScrollAnchorSource = "none" | "standard" | "realtime";
-
-type ScrollActiveTimelineSelection = {
-	latestTimelineMessageId: string | null;
-	messageId: string;
-	runtimeThreadId: string | null;
-};
-
-function getViewportPointFromScreenAssistantTarget(
-	target: StudioScreenAssistantTarget | null | undefined,
-): { x: number; y: number; label: string; coordinateSpace: "viewport" } | null {
-	if (!target?.rect) {
-		return null;
-	}
-
-	return {
-		x: target.rect.x + target.rect.width / 2,
-		y: target.rect.y + target.rect.height / 2,
-		label: target.label ?? target.fieldId ?? target.id ?? "Target",
-		coordinateSpace: "viewport",
-	};
-}
 
 export function RovoAppShell({ embedded = false, headingAs = "h1", initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const nav = useTopNavigation();
@@ -462,7 +349,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const buildPromptOptions = useCallback(
 		(contextDescription?: string) => {
 
-			const resolvedContextDescription = mergeContextDescriptions(
+			const resolvedContextDescription = mergeRovoContextDescriptions(
 				contextDescription,
 				selectedAgentContextDescription,
 			);
@@ -1802,7 +1689,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 					try {
 					const c = chatRef.current as RovoAppRealtimeShellAdapter;
-					const contextDescription = mergeContextDescriptions(request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined, annotationContextRef.current);
+					const contextDescription = mergeRovoContextDescriptions(request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined, annotationContextRef.current);
 					const extendedRequest = request as ExtendedDelegationRequest;
 					const delegatedMessageId = extendedRequest.delegatedMessageId ?? extendedRequest.realtimeMessageId ?? extendedRequest.messageId ?? realtimeConversation.userMessageId;
 
@@ -1976,9 +1863,9 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		injectContext: realtime.injectContext,
 	});
 
-	const realtimeStatusMessage = resolveStudioRealtimeStatusMessage(realtime);
+	const realtimeStatusMessage = resolveRovoAppRealtimeStatusMessage(realtime);
 	const shouldChatVoiceModeBeEnabled = isRealtimeActive;
-	const realtimeSessionIdentity = resolveStudioRealtimeSessionIdentity(realtime, chat.activeThreadId, chat.runtimeThreadId);
+	const realtimeSessionIdentity = resolveRovoAppRealtimeSessionIdentity(realtime, chat.activeThreadId, chat.runtimeThreadId);
 	const wasRealtimeStreamingRef = useRef(false);
 	const dictationState = resolveComposerDictationState({
 		active: isDictationActive,
@@ -2002,7 +1889,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			if (lastAssistantMessage) {
 				injectRealtimeContext({
 					type: "thread_message",
-					content: buildStudioRealtimeResultSummary(lastAssistantMessage),
+					content: buildRovoAppRealtimeResultSummary(lastAssistantMessage, "Studio"),
 				});
 			}
 		}
@@ -2020,7 +1907,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			return;
 		}
 
-		const summary = buildStudioRealtimeThreadSummary(chat.messages);
+		const summary = buildRovoAppRealtimeThreadSummary(chat.messages);
 		if (summary) {
 			injectRealtimeContext({
 				type: "thread_context",
@@ -2106,7 +1993,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				!isAutomationDiscoveryDemoPrompt;
 			const creationTemplate = shouldStartStudioAgentCreation ? (creationTemplateRef.current ?? undefined) : undefined;
 			const studioAgentCreationContext = shouldStartStudioAgentCreation ? buildStudioAgentCreationContext(text, creationTemplate) : undefined;
-			const contextDescription = mergeContextDescriptions(annotationContextRef.current, studioAgentCreationContext);
+			const contextDescription = mergeRovoContextDescriptions(annotationContextRef.current, studioAgentCreationContext);
 			const promptOptions = buildPromptOptions(contextDescription);
 			const latestUserMessageIdBeforeSubmit = getLatestUserMessageId(chat.messages);
 			if (isRealtimeActive) {
@@ -2998,7 +2885,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			return;
 		}
 
-		const artifactContext = buildStudioRealtimeArtifactContextSummary({
+		const artifactContext = buildRovoAppRealtimeArtifactContextSummary({
 			annotationContext: annotationContextRef.current,
 			document: workspaceDocument
 				? {
