@@ -323,7 +323,7 @@ test("ports --json derives each worktree's stack status from its record, session
 	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, listenerInWorktree: true, pid: null, childPid: null });
 	assert.equal(byName.orphan.status, "orphaned");
 	assert.equal(byName.orphan.nextAction, "stop");
-	assert.equal(byName.ready.nextDir, null, "a worktree without .next reports no sizes");
+	assert.equal("nextDir" in byName.ready, false, "sizes are opt-in");
 });
 
 test("dev sessions include any name on the private socket, and only vpk-dev-* on the default one", (t) => {
@@ -403,4 +403,23 @@ test("ports --json counts a frontend that listens only on IPv6 loopback", async 
 		listenerInWorktree: () => true,
 	});
 	assert.equal(rows[0].frontend.listening, true);
+});
+
+test("ports --json --sizes adds each worktree's .next split", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-sizes-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const measured = [];
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => false,
+		sizes: true,
+		measureNext: (worktreePath) => {
+			measured.push(worktreePath);
+			return { totalBytes: 1 };
+		},
+	});
+	assert.deepEqual(measured, [root]);
+	assert.deepEqual(rows[0].nextDir, { totalBytes: 1 });
 });

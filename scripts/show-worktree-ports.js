@@ -556,6 +556,8 @@ async function collectStackRows({
 	isRecordedSessionAlive = isSessionAlive,
 	listenerInWorktree,
 	measureNext = measureNextDir,
+	// Sizes walk each worktree's .next (one du pass each), so they are opt-in: `--json --sizes`.
+	sizes = false,
 } = {}) {
 	const rows = await Promise.all(
 		worktrees.map(async (wt) => {
@@ -596,7 +598,7 @@ async function collectStackRows({
 				rovoPorts: readRovoPorts(wt.path).map(Number),
 				portlessUrl: frontend.listening ? findPortlessUrl(routes, String(frontend.port)) : null,
 				// Sizes of .next from du (null without one): dev output vs dev cache vs build.
-				nextDir: measureNext(wt.path),
+				...(sizes ? { nextDir: measureNext(wt.path) } : {}),
 			};
 		}),
 	);
@@ -652,7 +654,7 @@ if (require.main === module) {
 	} else if (subcommand === "kill") {
 		runKill(process.argv[3]);
 	} else if (subcommand === "--json" || subcommand === "json") {
-		collectStackRows().then(
+		collectStackRows({ sizes: process.argv.includes("--sizes") }).then(
 			(rows) => process.stdout.write(`${JSON.stringify(rows, null, "\t")}\n`),
 			(error) => {
 				console.error(error.message);
@@ -661,7 +663,7 @@ if (require.main === module) {
 		);
 	} else if (subcommand && subcommand !== "once") {
 		console.error(
-			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports --json\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
+			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports --json [--sizes]\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
 		);
 		process.exit(2);
 	} else {

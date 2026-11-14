@@ -78,3 +78,59 @@ test("the clean command refuses while the stack runs, and cleans once it is stop
 	assert.equal(fs.existsSync(path.join(root, ".next/dev/static")), false);
 	assert.ok(fs.existsSync(path.join(root, ".next/dev/cache/turbopack/v16/00001.sst")));
 });
+
+function cleanCli(root, env) {
+	return spawnSync(process.execPath, [SCRIPT, "clean", "--worktree", root, "--socket", "vpk-dev", "--session", "vpk-dev-x"], { encoding: "utf8", env });
+}
+
+function noSessionTmux(t) {
+	const bin = fs.mkdtempSync(path.join(os.tmpdir(), "next-dev-output-nosession-"));
+	t.after(() => fs.rmSync(bin, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(bin, "tmux"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+	return bin;
+}
+
+test("clean refuses while next dev holds its lock, even with no session, no record and no lsof", (t) => {
+	const root = fixture(t);
+	const bin = noSessionTmux(t);
+	// A foreground \`pnpm run dev\`: Next's lock names a live pid (this test process stands in for it).
+	fs.writeFileSync(path.join(root, ".next/dev/lock"), JSON.stringify({ pid: process.pid, port: 4999 }));
+	// PATH holds only the fake tmux and node: no lsof, no ps.
+	fs.symlinkSync(process.execPath, path.join(bin, "node"));
+	const held = cleanCli(root, { ...process.env, PATH: bin, VPK_TMUX_BIN: path.join(bin, "tmux") });
+	assert.equal(held.status, 1);
+	assert.match(held.stderr, new RegExp(`next dev \\(pid ${process.pid}\\) holds its dev lock`));
+	assert.ok(fs.existsSync(path.join(root, ".next/dev/static")), "nothing was removed");
+
+	// A lock left by a server that has exited does not block.
+	fs.writeFileSync(path.join(root, ".next/dev/lock"), JSON.stringify({ pid: 2 ** 22 + 9, port: 4999 }));
+	const stale = cleanCli(root, { ...process.env, VPK_TMUX_BIN: path.join(bin, "tmux") });
+	assert.equal(stale.status, 0, stale.stderr);
+	assert.equal(fs.existsSync(path.join(root, ".next/dev/static")), false);
+});
+
+test("clean refuses when a recorded process cannot be confirmed gone", (t) => {
+	const root = fixture(t);
+	const bin = noSessionTmux(t);
+	// Recorded without an identity (it cannot be verified), on a live pid.
+	fs.writeFileSync(path.join(root, ".dev-stack.json"), JSON.stringify({ version: 1, worktree: fs.realpathSync(root), session: null, phase: "stopped", phaseAt: new Date().toISOString(), services: { frontend: { port: 4998, pid: process.pid, childPid: null } } }));
+	const result = cleanCli(root, { ...process.env, VPK_TMUX_BIN: path.join(bin, "tmux") });
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /frontend has a recorded process that cannot be confirmed gone/);
+	assert.ok(fs.existsSync(path.join(root, ".next/dev/static")));
+});
+
+test("sizes come from one du pass over .next", (t) => {
+	const root = fixture(t);
+	const calls = [];
+	const { spawnSync: realSpawnSync } = require("node:child_process");
+	const sizes = measureNextDir(root, {
+		tree: (nextDir) => {
+			calls.push(nextDir);
+			const { duTree } = require("./next-dev-output");
+			return duTree(nextDir, { spawnSyncImpl: realSpawnSync });
+		},
+	});
+	assert.equal(calls.length, 1);
+	assert.ok(sizes.devOutputBytes > 0 && sizes.devCacheBytes > 0 && sizes.buildCacheBytes > 0);
+});

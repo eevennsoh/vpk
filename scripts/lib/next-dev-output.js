@@ -20,25 +20,34 @@ const path = require("node:path");
 // The directories Next itself prunes at dev start (TURBOPACK_OUTPUT_DIRS sit under these two).
 const DEV_OUTPUT_DIRS = ["dev/static", "dev/server"];
 
-function duBytes(target, { spawnSyncImpl = spawnSync } = {}) {
-	if (!fs.existsSync(target)) return 0;
-	const result = spawnSyncImpl("du", ["-sk", target], { encoding: "utf8" });
-	const kib = Number.parseInt(String(result.stdout ?? ""), 10);
-	return Number.isFinite(kib) ? kib * 1024 : 0;
+// One `du` pass over `.next`, two levels deep: KiB per path, keyed relative to `.next` ("" for
+// `.next` itself, "dev", "dev/static", "cache", …). Sizes only; no file is read.
+function duTree(nextDir, { spawnSyncImpl = spawnSync } = {}) {
+	const result = spawnSyncImpl("du", ["-k", "-d", "2", nextDir], { encoding: "utf8" });
+	const sizes = new Map();
+	for (const line of String(result.stdout ?? "").split("\n")) {
+		const match = /^(\d+)\s+(.+)$/u.exec(line);
+		if (!match) continue;
+		const relative = path.relative(nextDir, match[2]);
+		if (!relative.startsWith("..")) sizes.set(relative.split(path.sep).join("/"), Number(match[1]) * 1024);
+	}
+	return sizes;
 }
 
 /**
- * Byte counts of a worktree's `.next`, from `du` (allocated size, no file contents read).
- * Returns null when there is no `.next`.
+ * Byte counts of a worktree's `.next`, from one depth-limited `du` (allocated size, no file
+ * contents read). Returns null when there is no `.next`.
  */
-function measureNextDir(worktreePath, { measure = duBytes } = {}) {
+function measureNextDir(worktreePath, { tree = duTree } = {}) {
 	const nextDir = path.join(worktreePath, ".next");
 	if (!fs.existsSync(nextDir)) return null;
-	const total = measure(nextDir);
-	const dev = measure(path.join(nextDir, "dev"));
-	const devOutput = DEV_OUTPUT_DIRS.reduce((sum, dir) => sum + measure(path.join(nextDir, dir)), 0);
-	const devCache = measure(path.join(nextDir, "dev", "cache"));
-	const buildCache = measure(path.join(nextDir, "cache"));
+	const sizes = tree(nextDir);
+	const size = (relative) => sizes.get(relative) ?? 0;
+	const total = size("");
+	const dev = size("dev");
+	const devOutput = DEV_OUTPUT_DIRS.reduce((sum, dir) => sum + size(dir), 0);
+	const devCache = size("dev/cache");
+	const buildCache = size("cache");
 	return {
 		totalBytes: total,
 		devOutputBytes: devOutput,
@@ -49,12 +58,37 @@ function measureNextDir(worktreePath, { measure = duBytes } = {}) {
 	};
 }
 
+// `next dev` holds `.next/dev/lock` while it runs; the file names its pid. A lock whose pid is
+// alive (or cannot be checked) means a dev server may be serving these files, whether or not a
+// tmux session or a stack record knows about it (a foreground `pnpm run dev`).
+function nextDevServerHolding(worktreePath, { readFile = fs.readFileSync, kill = process.kill } = {}) {
+	let content;
+	try {
+		content = readFile(path.join(worktreePath, ".next", "dev", "lock"), "utf8");
+	} catch (error) {
+		return error?.code === "ENOENT" ? null : { pid: null, reason: "its dev lock cannot be read" };
+	}
+	let pid = null;
+	try {
+		pid = Number.parseInt(JSON.parse(content).pid, 10);
+	} catch {
+		// Not Next's JSON lock.
+	}
+	if (!Number.isInteger(pid) || pid <= 0) return { pid: null, reason: "its dev lock names no process" };
+	try {
+		kill(pid, 0);
+	} catch (error) {
+		if (error?.code === "ESRCH") return null;
+	}
+	return { pid, reason: `next dev (pid ${pid}) holds its dev lock` };
+}
+
 /**
  * Remove `.next/dev/static` and `.next/dev/server` and keep `.next/dev/cache`. Next prunes the
  * same directories at its next start; doing it at stop frees a stopped worktree's disk too.
  * The caller must make sure no dev server runs in the worktree.
  */
-function cleanDevOutput(worktreePath, { measure = duBytes, rmSync = fs.rmSync } = {}) {
+function cleanDevOutput(worktreePath, { measure = (target) => duTree(target).get("") ?? 0, rmSync = fs.rmSync } = {}) {
 	const nextDir = path.join(worktreePath, ".next");
 	const removed = [];
 	let freedBytes = 0;
@@ -82,7 +116,9 @@ module.exports = {
 	DEV_OUTPUT_DIRS,
 	cleanDevOutput,
 	describeNextDir,
+	duTree,
 	measureNextDir,
+	nextDevServerHolding,
 };
 
 if (require.main === module) {
@@ -97,10 +133,17 @@ if (require.main === module) {
 		require("./dev-stack-state")
 			.readStackStatus({ worktreePath, socket: option("--socket"), sessionName: option("--session") })
 			.then((report) => {
-				if (!["stopped", "absent"].includes(report.status)) {
-					console.error(`[dev:tmux] Not removing the dev output: the stack is ${report.status} (${report.reason}).`);
+				const refuse = (why) => {
+					console.error(`[dev:tmux] Not removing the dev output: ${why}.`);
 					process.exit(1);
-				}
+				};
+				// Checked first and without lsof or ps: a foreground dev server holds Next's lock.
+				const holder = nextDevServerHolding(worktreePath);
+				if (holder) refuse(holder.reason);
+				if (!["stopped", "absent"].includes(report.status)) refuse(`the stack is ${report.status} (${report.reason})`);
+				// A recorded process that cannot be verified may still be serving.
+				const unverified = Object.entries(report.services).filter(([, fact]) => (fact.pid && fact.pidAlive !== false) || (fact.childPid && fact.childPidAlive !== false));
+				if (unverified.length > 0) refuse(`${unverified.map(([service]) => service).join(" and ")} has a recorded process that cannot be confirmed gone`);
 				const { removed, freedBytes } = cleanDevOutput(worktreePath);
 				console.log(
 					removed.length > 0
