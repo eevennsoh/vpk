@@ -2818,9 +2818,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/message.source.test.js": {
+  "components/ui-custom/message-markdown.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 2
     }
   },
   "components/ui-custom/persona.tsx": {
