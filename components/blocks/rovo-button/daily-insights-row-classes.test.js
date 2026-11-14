@@ -8,9 +8,8 @@ const {
 } = require("./daily-insights-row-classes.ts");
 
 // The longest chapter name in the real board fixture is "Ship readiness" (14
-// characters), which fits on one line. This is roughly twice that, and once the
-// meta line renders it as an uppercase tracked eyebrow it is far wider than the
-// 295px card can show — so it is the case the contract below exists for.
+// characters), which fits on one line. This is roughly twice that, the case
+// the contract below exists for.
 const LONG_CHAPTER_LABEL = "Cross-region failover rehearsal";
 const LONGEST_PRODUCTION_CHAPTER_LABEL = "Ship readiness";
 

@@ -129,10 +129,10 @@ export interface ListCellProps extends TableCellProps {
 function ListCell({ edge, className, ...props }: Readonly<ListCellProps>) {
 	const { isFirst, isLast } = React.use(ListRowPositionContext)
 	const radiusClass = cn(
-		edge === "leading" && isFirst && "rounded-tl-[12px]",
-		edge === "leading" && isLast && "rounded-bl-[12px]",
-		edge === "trailing" && isFirst && "rounded-tr-[12px]",
-		edge === "trailing" && isLast && "rounded-br-[12px]",
+		edge === "leading" && isFirst && "rounded-tl-xl",
+		edge === "leading" && isLast && "rounded-bl-xl",
+		edge === "trailing" && isFirst && "rounded-tr-xl",
+		edge === "trailing" && isLast && "rounded-br-xl",
 	)
 	// Edge cells get outer padding so the first/last content sits visually
 	// balanced against the rounded card corners; inner cells use 8px. The

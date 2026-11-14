@@ -8,11 +8,9 @@
 		"app/admin/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/arts/personal-graph/page.tsx": [
 			"@web-kits/audio"
@@ -23,29 +21,23 @@
 		"app/butter-v0/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/butter-v1/page.tsx -> components/website/demos/projects/butter-v1-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/components/[category]/[slug]/page.tsx": [
 			"shiki"
@@ -53,11 +45,9 @@
 		"app/confluence/page.tsx -> components/website/demos/projects/confluence-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/cursors/page.tsx -> components/website/demos/arts/cursors-demo.tsx": [
 			"@react-three/fiber",
@@ -66,84 +56,66 @@
 		"app/jira-golden-journey-v0/page.tsx -> components/website/demos/projects/jira-golden-journey-v0-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-golden-journey-v1/page.tsx -> components/website/demos/projects/jira-golden-journey-v1-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-golden-journey-v2/page.tsx -> components/website/demos/projects/jira-golden-journey-v2-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-golden-journey-v3/page.tsx -> components/website/demos/projects/jira-golden-journey-v3-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-golden-journey-v4/page.tsx -> components/website/demos/projects/jira-golden-journey-v4-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-queue/page.tsx -> components/website/demos/projects/jira-queue-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira-team-eu26-end/page.tsx -> components/website/demos/projects/jira-team-eu26-end-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
 			"shiki",
-			"streamdown",
 			"three"
 		],
 		"app/jira-team-eu26/page.tsx -> components/website/demos/projects/jira-team-eu26-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/jira/page.tsx -> components/website/demos/projects/jira-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/personal-graph/page.tsx": [
 			"@web-kits/audio"
@@ -151,10 +123,8 @@
 		"app/preview/blocks/agent-bento/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/agent-card/page.tsx": [
 			"@atlaskit/logo",
@@ -163,79 +133,61 @@
 		"app/preview/blocks/agent-profile-card/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/agent/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/code-review/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/jira-kanban-experimental-v2/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/jira-kanban-experimental/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/jira-kanban/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/jira-list/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/skill-config/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/trigger-config/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/preview/blocks/twg-agent-card/page.tsx": [
 			"@atlaskit/logo",
@@ -244,11 +196,9 @@
 		"app/preview/projects/jira-for-you/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/rovo-button/layout.tsx": [
 			"@atlaskit/logo",
@@ -277,11 +227,9 @@
 		"app/search/page.tsx -> components/website/demos/projects/search-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/sidebar-chat/layout.tsx": [
 			"@atlaskit/logo",
@@ -290,11 +238,9 @@
 		"app/sidebar-chat/page.tsx -> components/website/demos/projects/sidebar-chat-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/skills/layout.tsx": [
 			"@atlaskit/logo",
@@ -303,11 +249,9 @@
 		"app/skills/page.tsx -> components/website/demos/projects/skills-demo.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"app/studio/[[...id]]/page.tsx": [
 			"@atlaskit/logo",
@@ -328,29 +272,23 @@
 		"components/projects/admin/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/butter-v1/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/butter/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/confluence/page.tsx": [
 			"@atlaskit/logo",
@@ -359,93 +297,73 @@
 		"components/projects/jira-for-you/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-golden-journey-v0/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-golden-journey-v1/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-golden-journey-v2/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-golden-journey-v3/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-golden-journey-v4/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-queue/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira-team-eu26-end/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
 			"shiki",
-			"streamdown",
 			"three"
 		],
 		"components/projects/jira-team-eu26/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/jira/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/rovo/page.tsx": [
 			"@atlaskit/logo",
@@ -463,20 +381,16 @@
 		"components/projects/sidebar-chat/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/skills/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
-			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
-			"streamdown"
+			"shiki"
 		],
 		"components/projects/studio/page.tsx": [
 			"@atlaskit/logo",

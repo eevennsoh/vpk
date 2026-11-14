@@ -404,7 +404,7 @@ export const PlanTaskItem = ({ index, label, blockedByLabels, blockedByText, age
 		className={cn("flex min-h-8 shrink-0 items-center gap-4 rounded-lg px-2 py-1.5", className)}
 		data-slot="plan-task-item"
 	>
-		<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-surface text-sm leading-5 font-medium text-text">{index}.</span>
+		<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-surface text-sm leading-5 font-medium text-text">{index}.</span>
 		<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 			<span className="text-sm leading-5 font-medium text-text">{label}</span>
 			{blockedByText ? <span className="text-xs leading-4 text-text-subtlest">{blockedByText}</span> : null}

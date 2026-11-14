@@ -340,6 +340,7 @@ test("default tree rules cover the C-8a stylesheets and the C-8d icon registry",
 		["stylesheet", "@excalidraw/excalidraw", "components/projects/shared/components/excalidraw-runtime.css"],
 	]);
 	assert.deepEqual(DEFAULT_FILE_IMPORT_RULES.map((rule) => [rule.filePath, rule.rules.map((entry) => entry.source)]), [
+		["components/ui-custom/message-markdown.tsx", ["./message-markdown-runtime", "streamdown", "@streamdown/"]],
 		["components/projects/shared/components/icon-registry.tsx", ["@atlaskit/icon/", "@atlaskit/icon-lab/"]],
 	]);
 });

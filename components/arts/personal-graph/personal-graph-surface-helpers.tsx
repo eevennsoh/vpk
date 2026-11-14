@@ -2,11 +2,11 @@ import { cn } from "@/lib/utils";
 import type { VaultNodeKind } from "./lib/personal-graph-types";
 
 const NODE_KIND_MARKERS: Record<VaultNodeKind, string> = {
-	concept: "rotate-45 rounded-[2px] bg-orange-300",
+	concept: "rotate-45 rounded-xs bg-orange-300",
 	entity: "rounded-full bg-green-500",
-	raw: "rounded-[2px] bg-red-500",
+	raw: "rounded-xs bg-red-500",
 	source: "rounded-full bg-blue-600",
-	synthesis: "rotate-45 rounded-[2px] bg-purple-600",
+	synthesis: "rotate-45 rounded-xs bg-purple-600",
 };
 
 export function GraphNodeMarker({
