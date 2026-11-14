@@ -124,12 +124,9 @@ test("builds deterministic route owners and component categories", () => {
 		routeManifestPath: "backend/routes/route-manifest.json",
 	});
 
-	assert.deepEqual(repoMap.routes.summary, {
-		backendRouteCount: 2,
-		nextApiRouteCount: 1,
-		ownerCount: 2,
-		runtimeAdminRouteCount: 1,
-	});
+	// No route counts (they made route-adding PRs collide); the routes themselves are listed.
+	assert.deepEqual(repoMap.routes.summary, { ownerCount: 2 });
+	assert.equal(repoMap.routes.owners.some((owner) => "routeCount" in owner), false);
 	assert.deepEqual(repoMap.routes.owners.map((owner) => `${owner.kind}:${owner.owner}`), [
 		"backend:backend/routes/jobs.js",
 		"next-api:app/api/jobs/route.ts",

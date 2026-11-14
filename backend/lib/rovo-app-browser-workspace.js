@@ -4,7 +4,14 @@ const path = require("node:path")
 const { createHash } = require("node:crypto")
 const { execFile } = require("node:child_process")
 const { promisify } = require("node:util")
-const { requireAgentBrowserRef, requireBrowserArgument, requirePreviewKey } = require("./input-schemas")
+const {
+	createInvalidInputError,
+	parseNavigationUrl,
+	requireAgentBrowserRef,
+	requireBrowserArgument,
+	requirePreviewKey,
+} = require("./input-schemas")
+const { normalizeScrollDirection, normalizeScrollDistance } = require("./chromium-preview")
 
 const execFileAsync = promisify(execFile)
 
@@ -327,22 +334,24 @@ async function getRovoAppThreadBrowserWorkspace({
 // agent-browser arguments from an agent's tool call. They follow the same rules as the
 // HTTP and socket paths: a ref is a snapshot ref, a key is a key, and no value may start
 // like an option (agent-browser has no end-of-options marker).
-function getBodyText(body, key, message) {
-	return requireBrowserArgument(requireNonEmptyString(body[key], message), key)
-}
-
 function getBodyStringArray(body, key) {
 	return Array.isArray(body[key]) ? body[key].map((value) => requireBrowserArgument(String(value), key)) : []
 }
 
-function getOptionalBodyArg(body, key) {
-	return body[key] ? [requireBrowserArgument(String(body[key]), key)] : []
+// A URL an agent may open: http(s), a bare host, or about:blank, as in the HTTP routes.
+// file:, chrome:, javascript: and the rest are refused before they reach agent-browser.
+function requireNavigationUrl(value) {
+	const parsed = parseNavigationUrl(value)
+	if (!parsed.ok) {
+		throw createInvalidInputError(parsed.message)
+	}
+	return requireBrowserArgument(parsed.url, "url")
 }
 
 async function buildWorkspaceActionCommandArgs(threadId, action, body) {
 	switch (action) {
 		case "navigate":
-			return ["open", getBodyText(body, "url", "A non-empty url is required.")]
+			return ["open", requireNavigationUrl(body.url)]
 		case "back":
 			return ["back"]
 		case "forward":
@@ -361,14 +370,17 @@ async function buildWorkspaceActionCommandArgs(threadId, action, body) {
 			return ["select", requireAgentBrowserRef(body.ref), ...getBodyStringArray(body, "values")]
 		case "press":
 			return ["press", requirePreviewKey(body.key)]
-		case "scroll":
-			return [
-				"scroll",
-				getBodyText(body, "direction", "A non-empty direction is required."),
-				...getOptionalBodyArg(body, "pixels"),
-			]
+		case "scroll": {
+			let direction
+			try {
+				direction = normalizeScrollDirection(body.direction)
+			} catch (error) {
+				throw createInvalidInputError(error instanceof Error ? error.message : "A scroll direction is required.")
+			}
+			return ["scroll", direction, String(normalizeScrollDistance(body.pixels))]
+		}
 		case "tab-new":
-			return ["tab", "new", ...getOptionalBodyArg(body, "url")]
+			return ["tab", "new", ...(body.url ? [requireNavigationUrl(body.url)] : [])]
 		case "tab-select":
 			return ["tab", await resolveTabIdentifier(threadId, body.tabIndex)]
 		case "tab-close":

@@ -516,4 +516,6 @@ module.exports = {
 	ChromiumPreviewManager,
 	chromiumPreviewManager,
 	normalizeChromiumPreviewUrl: normalizeUrl,
+	normalizeScrollDirection,
+	normalizeScrollDistance,
 };

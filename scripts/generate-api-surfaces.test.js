@@ -54,7 +54,9 @@ test("buildGeneratedSection renders backend and Next API route tables", () => {
 
 	assert.match(section, new RegExp(GENERATED_BEGIN, "u"));
 	assert.match(section, new RegExp(GENERATED_END, "u"));
-	assert.match(section, /Backend routes: 2; runtime-admin routes: 1; Next API routes: 1/u);
+	// No counts in the header: two route-adding PRs would both change that line.
+	assert.match(section, /Generated from `backend\/routes\/route-manifest\.json`\.\n/u);
+	assert.doesNotMatch(section, /Backend routes: \d/u);
 	assert.match(section, /\| `GET` \| `\/api\/health` \| no \| `backend\/server\.js:20` \|/u);
 	assert.match(section, /\| `POST` \| `\/api\/jobs` \| yes \| `backend\/routes\/jobs\.js:10` \|/u);
 	assert.match(section, /\| `POST` \| `\/api\/jobs` \| `POST \/api\/jobs` \| `app\/api\/jobs\/route\.ts:4` \|/u);
