@@ -1,4 +1,4 @@
-import { slugifySkillName } from "@/app/data/directory/skills";
+import { slugifySkillName } from "@/app/data/directory/skill-frontmatter";
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,

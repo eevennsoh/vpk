@@ -110,3 +110,68 @@ test("a failed runtime load shows the text and is retried on the next render, no
 	assert.equal(view.container.querySelector("[data-runtime-message] strong")?.textContent, "first chunk and more");
 	await view.unmount();
 });
+
+// The runtime's own MessageResponse, rendered as a chat reply: what a reader gets from a heading,
+// a link and the code fences.
+const RUNTIME_PROBE = `
+import { MessageResponse } from "@/components/ui-custom/message-markdown-runtime";
+export default function Probe({ plain, text }) { return <MessageResponse mode="static" plain={plain}>{text}</MessageResponse>; }
+`;
+
+async function renderReply(text, props = {}) {
+	const view = await renderComponent({ props: { ...props, text }, source: RUNTIME_PROBE });
+	for (let attempt = 0; attempt < 10 && view.container.firstElementChild?.childElementCount === 0; attempt += 1) {
+		await view.rerender({ ...props, text });
+	}
+	return view;
+}
+
+function classesOf(element) {
+	return (element?.getAttribute("class") ?? "").split(/\s+/u).filter(Boolean);
+}
+
+test("chat markdown headings are bare elements inside the typeset chat container", async () => {
+	const view = await renderReply("# Title\n\nBody");
+	const container = view.container.firstElementChild;
+	assert.equal(classesOf(container).includes("typeset"), true);
+	assert.equal(classesOf(container).includes("typeset-chat"), true);
+	const heading = view.getByRole("heading", { name: "Title" });
+	assert.equal(heading.tagName, "H1");
+	assert.equal(heading.hasAttribute("class"), false, "typeset owns heading typography, not Streamdown classes");
+	await view.unmount();
+});
+
+test("a plain reply opts out of the typeset container", async () => {
+	const view = await renderReply("# Title", { plain: true });
+	const container = view.container.firstElementChild;
+	assert.equal(classesOf(container).includes("typeset"), false);
+	assert.equal(classesOf(container).includes("typeset-chat"), false);
+	await view.unmount();
+});
+
+test("chat markdown links carry ADS text-link chrome instead of Streamdown's underline", async () => {
+	const view = await renderReply("See [docs](https://example.com).");
+	const link = view.getByRole("link", { name: "docs" });
+	assert.equal(link.getAttribute("class"), "text-link no-underline hover:underline active:text-link-pressed");
+	await view.unmount();
+});
+
+test("a fenced code block renders as a code block, not as inline code", async () => {
+	const view = await renderReply("Before `tick`.\n\n```text\nhello\n```\n");
+	const block = view.container.querySelector('[data-block="true"]');
+	assert.equal(block === null, false, "the fence reaches the code-block renderer");
+	assert.equal(block.textContent.includes("hello"), true);
+	assert.equal(view.getAllByRole("button", { name: "Download code" }).length, 1);
+	const inline = [...view.container.querySelectorAll("[data-inline-code-state]")].map((node) => node.textContent);
+	assert.deepEqual(inline, ["tick"], "only the backtick span is inline code");
+	await view.unmount();
+});
+
+for (const language of ["mermaid", "mmd"]) {
+	test(`a ${language} fence renders the mermaid diagram block`, async () => {
+		const view = await renderReply(`\`\`\`${language}\ngraph TD; A-->B\n\`\`\`\n`);
+		assert.equal(view.container.querySelectorAll('[data-streamdown="mermaid-block"]').length, 1);
+		assert.equal(view.container.querySelectorAll("[data-inline-code-state]").length, 0);
+		await view.unmount();
+	});
+}
