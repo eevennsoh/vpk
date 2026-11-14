@@ -540,6 +540,8 @@ test("an image fetched with the token is served private; others keep the upstrea
 	const cases = [
 		["token, no upstream policy", { Authorization: "Bearer made-up-token" }, null, "private, max-age=300"],
 		["token, upstream says public", { Authorization: "Bearer made-up-token" }, "public, max-age=86400", "private, max-age=300"],
+		["token, upstream says no-store", { Authorization: "Bearer made-up-token" }, "no-store", "no-store"],
+		["token, upstream says no-cache", { Authorization: "Bearer made-up-token" }, "no-cache", "private, no-cache"],
 		["no token, upstream policy", {}, "public, max-age=60", "public, max-age=60"],
 		["no token, no policy", {}, null, "public, max-age=300, stale-while-revalidate=300"],
 	];

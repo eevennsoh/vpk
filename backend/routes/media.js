@@ -10,6 +10,7 @@ const {
 	IMAGE_PROXY_MAX_UPSTREAM_FETCHES,
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
+	decideImageProxyCacheControl,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
 	fetchImageProxyUrl,
@@ -282,14 +283,9 @@ function createMediaRouter({
 						res.setHeader(name, value);
 					}
 					res.setHeader("Content-Length", String(payload.length));
-					// An image fetched with the server's token is never cacheable by a shared
-					// cache, whatever the upstream said.
-					res.setHeader(
-						"Cache-Control",
-						authenticated
-							? "private, max-age=300"
-							: upstreamCacheControl || "public, max-age=300, stale-while-revalidate=300"
-					);
+					// An image fetched with the server's token is never stored by a shared
+					// cache, and never cached longer or more loosely than the upstream allows.
+					res.setHeader("Cache-Control", decideImageProxyCacheControl({ authenticated, upstream: upstreamCacheControl }));
 
 					return res.status(200).send(payload);
 				}

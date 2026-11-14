@@ -379,6 +379,46 @@ async function fetchImageProxyUrl(startUrl, { fetchFn, buildHeaders, signal, bud
 	}
 }
 
+const IMAGE_PROXY_PUBLIC_CACHE_CONTROL = "public, max-age=300, stale-while-revalidate=300";
+const IMAGE_PROXY_PRIVATE_MAX_AGE_SECONDS = 300;
+
+/**
+ * The Cache-Control the proxy serves. Without the token, the upstream's (or a public
+ * default). With the token, never anything a shared cache may store, and never weaker than
+ * the upstream: `no-store` stays `no-store`; otherwise `private`, plus `no-cache` and
+ * `must-revalidate` when the upstream had them, and a `max-age` no larger than the
+ * upstream's or 300 s. `public`, `s-maxage` and other shared-cache directives are dropped.
+ * @param {{ authenticated: boolean, upstream: string | null | undefined }} input
+ * @returns {string}
+ */
+function decideImageProxyCacheControl({ authenticated, upstream }) {
+	const upstreamValue = typeof upstream === "string" ? upstream.trim() : "";
+	if (!authenticated) {
+		return upstreamValue || IMAGE_PROXY_PUBLIC_CACHE_CONTROL;
+	}
+	const directives = new Map();
+	for (const part of upstreamValue.split(",")) {
+		const [rawName, ...rawValue] = part.trim().split("=");
+		const name = rawName.trim().toLowerCase();
+		if (name) directives.set(name, rawValue.join("=").trim().replace(/^"|"$/gu, ""));
+	}
+	if (directives.has("no-store")) {
+		return "no-store";
+	}
+	const result = ["private"];
+	if (directives.has("no-cache")) {
+		result.push("no-cache");
+	}
+	const upstreamMaxAge = /^\d+$/u.test(directives.get("max-age") ?? "") ? Number(directives.get("max-age")) : null;
+	if (upstreamMaxAge !== null || !directives.has("no-cache")) {
+		result.push(`max-age=${Math.min(upstreamMaxAge ?? IMAGE_PROXY_PRIVATE_MAX_AGE_SECONDS, IMAGE_PROXY_PRIVATE_MAX_AGE_SECONDS)}`);
+	}
+	if (directives.has("must-revalidate")) {
+		result.push("must-revalidate");
+	}
+	return result.join(", ");
+}
+
 function buildImageProxyRequestHeaders(targetUrl, env = process.env) {
 	const headers = {
 		Accept: "image/*",
@@ -409,6 +449,7 @@ module.exports = {
 	IMAGE_PROXY_MAX_REDIRECTS,
 	IMAGE_PROXY_MAX_UPSTREAM_FETCHES,
 	buildImageProxyRequestHeaders,
+	decideImageProxyCacheControl,
 	deriveAtlassianImageCandidatesFromUrl,
 	fetchImageProxyUrl,
 	isAllowedImageProxyRedirectTarget,
