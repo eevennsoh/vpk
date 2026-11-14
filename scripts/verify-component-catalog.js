@@ -64,6 +64,8 @@ const DEMO_CATEGORY_DIRS = {
 // Categories whose details live one file per slug under app/data/details/<category>/ and are
 // imported by the barrel; the others write their detail records inline in the barrel.
 const DETAIL_LEAF_CATEGORIES = new Set(["blocks", "ui", "ui-custom", "visual"]);
+// Barrels scripts/generate-catalog-barrels.js writes from the manifest and the leaves.
+const GENERATED_DETAIL_BARREL_CATEGORIES = new Set(["blocks", "ui", "ui-custom"]);
 // Categories whose entries may own an App Router page that renders the demo full screen.
 const ROUTE_PAGE_CATEGORIES = new Set(["projects", "arts"]);
 const PRIMARY_REGISTRY_TARGETS = {
@@ -338,6 +340,7 @@ function getComponentAddPlan({
 	return {
 		category,
 		detailExportName,
+		generated: { detailBarrel: GENERATED_DETAIL_BARREL_CATEGORIES.has(category) },
 		importPath,
 		key,
 		name: component?.name ?? toTitleCase(slug),
@@ -366,6 +369,7 @@ function getComponentAddPlan({
 			variantRegistrySlugs,
 		},
 		validationCommands: [
+			...(GENERATED_DETAIL_BARREL_CATEGORIES.has(category) ? ["corepack pnpm run fix:generated --only catalog-barrels"] : []),
 			"corepack pnpm run verify:catalog",
 			"corepack pnpm run test:catalog",
 			"corepack pnpm run verify:repo-map",
@@ -411,7 +415,9 @@ function printComponentAddPlan(plan) {
 	console.log(`- manifest: ${plan.paths.manifest}`);
 	if (plan.paths.detailLeaf) {
 		console.log(`- detail leaf: ${plan.paths.detailLeaf}`);
-		console.log(`- detail barrel: ${plan.paths.detailBarrel}`);
+		console.log(plan.generated.detailBarrel
+			? `- detail barrel: ${plan.paths.detailBarrel} (generated: pnpm run fix:generated --only catalog-barrels)`
+			: `- detail barrel: ${plan.paths.detailBarrel}`);
 	} else {
 		console.log(`- detail record (inline, no leaf file): ${plan.paths.detailBarrel}`);
 	}
@@ -424,8 +430,10 @@ function printComponentAddPlan(plan) {
 	console.log("");
 	console.log("Useful snippets:");
 	console.log(`- manifest: ${plan.snippets.manifestEntry}`);
-	if (plan.snippets.detailImport) console.log(`- detail import: ${plan.snippets.detailImport}`);
-	console.log(`- detail record: ${plan.snippets.detailRecord}`);
+	if (!plan.generated.detailBarrel) {
+		if (plan.snippets.detailImport) console.log(`- detail import: ${plan.snippets.detailImport}`);
+		console.log(`- detail record: ${plan.snippets.detailRecord}`);
+	}
 	console.log(`- primary registry: ${plan.snippets.primaryRegistryEntry}`);
 	console.log("");
 	console.log("Validation:");
