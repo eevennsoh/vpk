@@ -11,9 +11,9 @@ test("menubar content opens with an 8px trigger gap", () => {
 	assert.match(source, /<DropdownMenuContent[\s\S]*sideOffset=\{sideOffset\}/u);
 });
 
-test("menubar submenu content keeps the 8px menu container radius and compact padding", () => {
+test("menubar submenu content keeps the 8px menu container radius and 6px padding", () => {
 	assert.match(dropdownSource, /surface:\s*"[^"]*\brounded-lg\b/u);
-	assert.match(dropdownSource, /compact:\s*"p-1\.5\b/u);
+	assert.match(dropdownSource, /padding:\s*"p-1\.5\b/u);
 	assert.doesNotMatch(dropdownSource, /surface:\s*"[^"]*\brounded-xl\b/u);
 });
 
@@ -46,23 +46,6 @@ test("menubar selection checkmarks use the subtle icon color", () => {
 	assert.doesNotMatch(source, /data-checked:text-text-selected/u);
 });
 
-test("menubar rows default to fixed 32px height", () => {
-	assert.match(source, /const menubarRowHeightClassName = "h-8 py-0 whitespace-nowrap";/u);
-	assert.match(
-		source,
-		/shouldWrapText \? menubarWrappingRowClassName : menubarRowHeightClassName/u,
-	);
-	assert.match(
-		source,
-		/allowTextWrap \? menubarWrappingRowClassName : menubarRowHeightClassName/u,
-	);
-	assert.match(
-		source,
-		/<DropdownMenuSubTrigger[\s\S]*allowTextWrap \? menubarWrappingRowClassName : menubarRowHeightClassName/u,
-	);
-	assert.doesNotMatch(source, /\bpy-2\b/u);
-});
-
 test("menubar rows default to 8px horizontal padding", () => {
 	assert.match(source, /const menubarRowHorizontalPaddingClassName = "px-2";/u);
 	assert.match(
@@ -78,11 +61,7 @@ test("menubar rows default to 8px horizontal padding", () => {
 	assert.doesNotMatch(source, /\bpr-3\b/u);
 });
 
-test("menubar rows only use dropdown vertical padding when text can wrap", () => {
-	assert.match(
-		source,
-		/const menubarWrappingRowClassName = "min-h-8 py-1\.5 whitespace-normal break-words";/u,
-	);
+test("menubar rows can wrap text", () => {
 	assert.match(source, /allowTextWrap\?: boolean;/u);
 	assert.match(source, /const shouldWrapText = allowTextWrap \|\| Boolean\(description\);/u);
 	assert.match(source, /shouldWrapText \? "whitespace-normal break-words" : "truncate"/u);

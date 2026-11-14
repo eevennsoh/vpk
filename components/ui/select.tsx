@@ -3,7 +3,7 @@
 import type { ComponentProps } from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
-import { dropdownStyles, type MenuSpacing } from "@/components/ui/dropdown-menu"
+import { dropdownStyles } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/ui/icon"
 import {
 	SelectTag,
@@ -125,7 +125,6 @@ interface SelectContentProps
 			SelectPrimitive.Positioner.Props,
 			"align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
 		> {
-	spacing?: MenuSpacing
 	showScrollButtons?: boolean
 	/** Positioner stacking class. Defaults to `isolate z-[200]`; raise above dialogs (e.g. `z-[502]`). */
 	positionerClassName?: string
@@ -140,7 +139,6 @@ function SelectContent({
 	alignOffset = 0,
 	alignItemWithTrigger = true,
 	showScrollButtons = true,
-	spacing = "compact",
 	positionerClassName,
 	"aria-label": ariaLabel,
 	...props
@@ -157,12 +155,11 @@ function SelectContent({
 			>
 				<SelectPrimitive.Popup
 					data-slot="select-content"
-					data-menu-spacing={spacing}
 					data-align-trigger={alignItemWithTrigger}
 					className={cn(
 						dropdownStyles.popup,
 						dropdownStyles.surface,
-						dropdownStyles.padding[spacing],
+						dropdownStyles.padding,
 						"relative isolate data-[align-trigger=true]:w-(--anchor-width) data-[align-trigger=true]:animate-none",
 						className
 					)}

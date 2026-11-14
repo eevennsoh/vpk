@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 import {
 	EMPTY_AGENT_SESSION_COLUMN_FILTER,
@@ -98,7 +99,7 @@ export function AgentSessionColumnFilterMenu({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="w-max min-w-[min(20rem,calc(100vw-32px))] max-w-[calc(100vw-32px)] gap-0 rounded-xl p-1"
+				className={cn("w-max min-w-[min(20rem,calc(100vw-32px))] max-w-[calc(100vw-32px)] gap-0", dropdownStyles.surface, dropdownStyles.padding)}
 			>
 				<PopoverTitle className="sr-only">Filter sessions</PopoverTitle>
 				<div className="flex flex-col">

@@ -617,6 +617,12 @@
 	& :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [data-menu-row]) + :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [data-menu-row]) {
 		margin-block-start: var(--ds-space-025, 0.125rem);
 	}
+
+	& :is([data-slot="select-label"], [data-slot="dropdown-menu-label"], [data-slot="context-menu-label"], [data-slot="menubar-label"]):not(:first-child):not([data-slot$="-separator"] + *),
+	& :is([data-slot="select-group"], [data-slot="dropdown-menu-group"], [data-slot="context-menu-group"], [data-slot="menubar-group"]):not(:first-child):not([data-slot$="-separator"] + *) > :is([data-slot="select-label"], [data-slot="dropdown-menu-label"], [data-slot="context-menu-label"], [data-slot="menubar-label"]):first-child,
+	& [data-menu-group]:not(:first-child):not([data-slot$="-separator"] + *) > [data-menu-heading]:first-child {
+		margin-block-start: var(--ds-space-075, 0.375rem);
+	}
 }
 
 /* Spotlight tour highlight: a soft brand glow drawn directly on an element the

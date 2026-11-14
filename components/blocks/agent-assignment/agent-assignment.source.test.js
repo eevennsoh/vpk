@@ -216,9 +216,9 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /className="rich-text-command-menu-embedded w-full! \[&_\.rich-text-command-menu-list\]:p-0"/u);
 	assert.match(
 		menu,
-		/className="sticky bottom-0 z-10 -mx-\(--menu-inset\) flex shrink-0 flex-col border-t border-border bg-popover px-\(--menu-inset\) pt-1"/u,
+		/className="sticky bottom-0 z-10 -mx-\(--menu-inset\) flex shrink-0 flex-col bg-popover px-\(--menu-inset\)">\s*<DropdownMenuSeparator className="mt-0" \/>/u,
 	);
-	assert.match(menu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\.compact\)\}/u);
+	assert.match(menu, /className=\{cn\("flex w-full flex-col gap-0 outline-none", dropdownStyles\.padding\)\}/u);
 	assert.match(menu, /containerRef\.current\?\.focus\(\);/u);
 	assert.doesNotMatch(menu, /firstOption\?\.focus\(\);/u);
 	assert.match(menu, /selectedIndex === -1\s*\? \(step > 0 \? 0 : items\.length - 1\)/u);

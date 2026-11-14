@@ -3012,9 +3012,6 @@
     },
     "no-restricted-syntax": {
       "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 5
     }
   },
   "components/ui-custom/rich-text-editor/task-item-node-view.tsx": {

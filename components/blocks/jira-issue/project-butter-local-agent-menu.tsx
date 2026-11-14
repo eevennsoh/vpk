@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { cn } from "@/lib/utils";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
@@ -129,8 +129,9 @@ export function ProjectButterLocalAgentMenu({
 			</div>
 			<span className="sr-only" role="status">{copied ? "Command copied" : ""}</span>
 			</> : null}
-			<div className={cn(!directoryOnly && "mt-1 border-t border-border")}>
-				<div className="px-2 pt-3 pb-2 text-xs font-semibold text-text-subtlest">
+			<div>
+				{!directoryOnly ? <DropdownMenuSeparator /> : null}
+				<div className={dropdownStyles.label}>
 					<label htmlFor={inputId}>Choose your directory</label>
 				</div>
 				<div className="px-2 pb-2">
@@ -145,7 +146,7 @@ export function ProjectButterLocalAgentMenu({
 								<ChevronDownIcon aria-hidden label="" size="small" />
 							</InputGroupAddon>
 						</InputGroup>
-						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className={cn("w-(--anchor-width) min-w-0 gap-0", dropdownStyles.surface, dropdownStyles.padding.compact)} positionerClassName={workspacePositionerClassName} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
+						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className={cn("w-(--anchor-width) min-w-0 gap-0", dropdownStyles.surface, dropdownStyles.padding)} positionerClassName={workspacePositionerClassName} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
 								if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setOpen(false); setDraft(null); focusInput(); }
 								if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 									event.preventDefault();

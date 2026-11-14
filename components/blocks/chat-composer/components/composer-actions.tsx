@@ -53,7 +53,7 @@ export default function ComposerActions({
 						>
 							<AddIcon label="" />
 						</PopoverTrigger>
-						<PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto min-w-[200px] gap-0")}>
+						<PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding, "w-auto min-w-[200px] gap-0")}>
 							<AddMenu onClose={() => setIsAddMenuOpen(false)} />
 						</PopoverContent>
 					</Popover> : null}
@@ -70,7 +70,7 @@ export default function ComposerActions({
 						>
 							<CustomizeIcon label="" />
 						</PopoverTrigger>
-						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
+						{customizeMenuProps ? <PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding, "w-auto")}>
 								<PopoverTitle className="sr-only">Customize response</PopoverTitle>
 								<CustomizeMenu {...customizeMenuProps} onClose={() => setIsCustomizeMenuOpen(false)} />
 							</PopoverContent> : null}
