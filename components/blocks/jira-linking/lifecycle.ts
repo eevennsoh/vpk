@@ -1,3 +1,5 @@
+import { lerp } from "@/lib/utils";
+
 /**
  * Timing, gating and easing rules for the Jira linking.
  *
@@ -134,10 +136,6 @@ export function advanceJiraLinkingVelocity(
 		x: previous.x + (sample.x - previous.x) * amount,
 		y: previous.y + (sample.y - previous.y) * amount,
 	};
-}
-
-function lerp(from: number, to: number, amount: number): number {
-	return from + (to - from) * amount;
 }
 
 /** Cubic ease-in-out, matching the curve the fuse travels its balls on. */

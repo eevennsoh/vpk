@@ -18,7 +18,7 @@
 import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { motionDuration, motionEase } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { cn, lerp } from "@/lib/utils";
 
 import {
 	BURST_DURATION_S,
@@ -121,8 +121,6 @@ type Pose = {
 };
 
 type PaintedPose = Pose & { velocity: number; at: number };
-
-const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
 
 /** Snake head and tail `t` of the way to fully retracted. */
 function retractLines(pose: Pose, t: number): Pick<Pose, "drawFrac" | "retractFrac"> {

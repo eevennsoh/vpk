@@ -7,7 +7,7 @@ import {
 	useReducedMotion,
 } from "motion/react";
 
-import { cn } from "@/lib/utils";
+import { clamp, cn } from "@/lib/utils";
 import { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";
 
 export { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";
@@ -55,10 +55,6 @@ function mapRange(
 
 	const percentage = (value - fromLow) / (fromHigh - fromLow);
 	return toLow + percentage * (toHigh - toLow);
-}
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
 }
 
 function getPresetImageUrl(presetIndex: number): string {

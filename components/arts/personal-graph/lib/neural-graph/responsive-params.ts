@@ -4,6 +4,7 @@ import {
 	type NeuralGraphNumberKey,
 	type NeuralGraphParams,
 } from "./params";
+import { lerp } from "@/lib/utils";
 
 export interface ResponsivePersonalGraphViewport {
 	height: number;
@@ -75,10 +76,6 @@ const MEDIUM_PERSONAL_GRAPH_PARAMS = {
 	tiltX: -3,
 	tiltZ: -5,
 } as const satisfies ResponsivePersonalGraphNumericPreset;
-
-function lerp(start: number, end: number, progress: number) {
-	return start + (end - start) * progress;
-}
 
 function getResponsiveWidthProgress(width: number, startWidth: number, endWidth: number) {
 	return clamp((width - startWidth) / Math.max(1, endWidth - startWidth), 0, 1);

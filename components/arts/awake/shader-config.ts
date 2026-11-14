@@ -1,4 +1,5 @@
 import { ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
+import { clamp } from "@/lib/utils";
 
 // Subsets of each shader's prop surface — only the knobs we randomize.
 // Kept local so this module doesn't depend on shader internals.
@@ -136,10 +137,6 @@ function jitterPct(base: number, amount: number): number {
 // Absolute jitter: base ± delta.
 function jitterAbs(base: number, delta: number): number {
 	return base + (Math.random() * 2 - 1) * delta;
-}
-
-function clamp(n: number, lo: number, hi: number): number {
-	return Math.max(lo, Math.min(hi, n));
 }
 
 // Partial Fisher–Yates: pick `count` distinct indices in [0, length),

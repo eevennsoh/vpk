@@ -2,6 +2,7 @@
 
 import type { RefObject } from "react";
 import { memo, useEffect, useRef } from "react";
+import { clamp } from "@/lib/utils";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -30,10 +31,6 @@ function getDistortionStrength(progress: number): number {
 	const release = 1.0 - smoothstep(0.94, 1.0, progress);
 	const plateau = 0.85 + Math.sin(progress * Math.PI) * 0.15;
 	return Math.max(0, attack * release * plateau);
-}
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
 }
 
 type DistortionFilterHandle = {

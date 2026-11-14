@@ -19,6 +19,7 @@ import * as THREE from "three";
 import { mulberry32 } from "./flow-model";
 import type { DropzoneLayout } from "./tuning";
 import { STAR_SIZE_MAX, STAR_SIZE_MIN } from "./tuning";
+import { lerp } from "@/lib/utils";
 
 /**
  * How far past the frame edge the field extends, at every depth. A quarter of a
@@ -41,8 +42,6 @@ const BRIGHTNESS_MIN = 0.12;
 /** Faint warm white, and faint blue-white. `aHue` mixes between the two. */
 const COLOR_WARM = new THREE.Color(1.0, 0.94, 0.86);
 const COLOR_COOL = new THREE.Color(0.8, 0.88, 1.0);
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const vertexShader = /* glsl */ `
 uniform float uTime;

@@ -6,6 +6,8 @@ import {
 	type ReactNode,
 } from "react";
 
+import { lerp } from "@/lib/utils";
+
 export const DEFAULT_ACTIVE_GRADIENT: readonly [string, string] = [
 	"#bef264",
 	"#10b981",
@@ -101,7 +103,6 @@ export function createNotchPath(
 ): string {
 	const { x1, y1, x2, y2, x3, y3, x4, y4 } = points;
 
-	const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 	const dist = (ax: number, ay: number, bx: number, by: number) =>
 		Math.hypot(bx - ax, by - ay);
 

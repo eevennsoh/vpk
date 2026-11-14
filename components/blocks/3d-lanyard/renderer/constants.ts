@@ -5,7 +5,7 @@ export const swingStart = 1.2, swingPeriod = 4.8, swingCycles = 2;
 export const duration = Math.round((swingStart + swingPeriod * swingCycles) * 1000) / 1000;
 export const dimensions: Record<LanyardFormat, readonly [number, number]> = { portrait: [1080, 1440], wide: [1920, 1080], square: [1440, 1440] };
 
-export const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+export { clamp } from "@/lib/utils";
 export const DEG = Math.PI / 180;
 export const GRAVITY = 4400, RELEASE = .05, FALL = 1120;
 // Figma 40:17760: 360 × 480 card, centered on the existing hook axis.

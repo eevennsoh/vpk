@@ -1,4 +1,5 @@
 import type { NeuralPoint, NeuralViewport } from "./camera";
+import { clamp, lerp } from "@/lib/utils";
 
 export interface NeuralGraphInteractionSettings {
 	enabled: boolean;
@@ -57,14 +58,6 @@ export function isRayOnlyNeuralGraphInteraction(
 	interaction: NeuralGraphInteractionState | null | undefined,
 ): boolean {
 	return Boolean(interaction?.activeRayNodeId && !interaction.activeNodeId);
-}
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
-
-function lerp(from: number, to: number, amount: number): number {
-	return from + (to - from) * amount;
 }
 
 export function clampNeuralGraphInteractionSettings(

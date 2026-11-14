@@ -2,6 +2,7 @@ import type { PlayOptions, SoundDefinition } from "@web-kits/audio";
 import type { NeuralPoint, NeuralViewport } from "./camera";
 import type { NeuralHitTestResult, NeuralRayHitTestResult } from "./interaction";
 import type { NeuralGraphParams } from "./params";
+import { clamp } from "@/lib/utils";
 
 export interface NeuralRaySoundSettings {
 	cooldownMs: number;
@@ -99,10 +100,6 @@ export const NEURAL_NODE_HOVER_SOUND_DEFINITION: SoundDefinition = {
 		{ type: "compressor", threshold: -16, knee: 12, ratio: 2.2, attack: 0.004, release: 0.12 },
 	],
 };
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
 
 function normalize(value: number, min: number, max: number): number {
 	if (max <= min) return 0;

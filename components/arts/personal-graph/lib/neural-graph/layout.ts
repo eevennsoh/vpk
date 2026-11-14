@@ -12,6 +12,7 @@ import {
 	type NeuralGraphNode,
 	type NeuralGraphStore,
 } from "./store";
+import { lerp } from "@/lib/utils";
 
 export interface NeuralLayoutNode extends NeuralPoint {
 	alpha: number;
@@ -54,10 +55,6 @@ const DEG_TO_RAD = Math.PI / 180;
 const FULL_RADIAL_ARC_EPSILON = 0.001;
 const RELAXATION_ITERATIONS = 18;
 const TAU = Math.PI * 2;
-
-function lerp(start: number, end: number, progress: number) {
-	return start + (end - start) * progress;
-}
 
 function clampFocusProgress(value = 0) {
 	if (!Number.isFinite(value)) return 0;

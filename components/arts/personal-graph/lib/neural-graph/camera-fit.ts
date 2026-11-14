@@ -1,6 +1,7 @@
 import { getNeuralOrigin, type NeuralCamera, type NeuralViewport } from "./camera";
 import type { NeuralGraphLayout, NeuralLayoutNode } from "./layout";
 import type { NeuralGraphParams } from "./params";
+import { lerp } from "@/lib/utils";
 
 export const NEURAL_GRAPH_FIT_PADDING = 48;
 
@@ -11,10 +12,6 @@ const NEURAL_GRAPH_RADIAL_LABEL_FIT_PADDING_MAX = 360;
 const NEURAL_GRAPH_RADIAL_LABEL_FIT_PADDING_MIN = 160;
 const NEURAL_GRAPH_RADIAL_LABEL_FIT_PADDING_RATIO = 0.3;
 const ZERO_EXTENT_EPSILON = 0.0001;
-
-function lerp(start: number, end: number, progress: number) {
-	return start + (end - start) * progress;
-}
 
 export interface NeuralLayoutBounds {
 	maxX: number;

@@ -30,7 +30,7 @@ export const DEFAULT_DURATION = 3200;
 export const MIN_DURATION = 400;
 
 export const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-export const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+export { lerp } from "@/lib/utils";
 export const smooth = (a: number, b: number, x: number) => {
 	const q = clamp01((x - a) / (b - a));
 	return q * q * (3 - 2 * q);

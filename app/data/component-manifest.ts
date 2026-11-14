@@ -1,4 +1,4 @@
-import { compareByNameNatural } from "@/lib/utils";
+import { compareByNameNatural, slugToTitleCase } from "@/lib/utils";
 
 export type ComponentCategory =
 	| "ui-charts"
@@ -99,16 +99,9 @@ function catalogEntries(entries: readonly ComponentManifestEntry[]): ComponentMa
 	return entries.map(withLifecycle).sort(compareByNameNatural);
 }
 
-function toTitleCase(slug: string): string {
-	return slug
-		.split("-")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ");
-}
-
 function customComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/ui-custom/${slug}`,
 		category: "ui-custom",
@@ -117,7 +110,7 @@ function customComponent(slug: string, name?: string): ComponentManifestEntry {
 
 function uiChartComponent(slug: string, name?: string, importPath?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: importPath ?? `@/components/ui-charts/${slug}`,
 		category: "ui-charts",
@@ -126,7 +119,7 @@ function uiChartComponent(slug: string, name?: string, importPath?: string): Com
 
 function uiComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/ui/${slug}`,
 		category: "ui",
@@ -135,7 +128,7 @@ function uiComponent(slug: string, name?: string): ComponentManifestEntry {
 
 function blockComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/blocks/${slug}`,
 		category: "blocks",
@@ -144,7 +137,7 @@ function blockComponent(slug: string, name?: string): ComponentManifestEntry {
 
 function projectComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/projects/${slug}`,
 		category: "projects",
@@ -153,7 +146,7 @@ function projectComponent(slug: string, name?: string): ComponentManifestEntry {
 
 function artComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/arts/${slug}`,
 		category: "arts",
@@ -162,7 +155,7 @@ function artComponent(slug: string, name?: string): ComponentManifestEntry {
 
 function utilityComponent(slug: string, name?: string): ComponentManifestEntry {
 	return {
-		name: name ?? toTitleCase(slug),
+		name: name ?? slugToTitleCase(slug),
 		slug,
 		importPath: `@/components/website/demos/utils/${slug}-demo`,
 		category: "utility",

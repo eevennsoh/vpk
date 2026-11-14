@@ -1,3 +1,5 @@
+import { lerp } from "@/lib/utils";
+
 /**
  * Pure model behind the session-to-work-item fusion effect.
  *
@@ -148,10 +150,6 @@ function clamp01(value: number): number {
 		return 0;
 	}
 	return Math.min(Math.max(value, 0), 1);
-}
-
-function lerp(from: number, to: number, amount: number): number {
-	return from + (to - from) * amount;
 }
 
 /** Standard cubic ease-in-out, so the fuse leaves and lands softly. */
