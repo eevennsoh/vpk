@@ -18,9 +18,8 @@ type DemoTable = Readonly<Record<string, ComponentType>>;
 type CategoryRegistry = Readonly<{ demos: DemoTable; variants?: DemoTable }>;
 
 // One dynamic import per category, so a route that renders one demo fetches only that category's
-// table instead of every category's (about 1 MB). components/website/registry/index.ts keeps the
-// combined tables that catalog tooling reads; demo-registry-loader.source.test.js keeps the two
-// mappings equal.
+// table instead of every category's (about 1 MB). This map is also the one catalog tooling reads
+// (scripts/lib/component-registry.js); demo-registry-loader.source.test.js checks both.
 const CATEGORY_REGISTRY_LOADERS: Readonly<Record<DemoCategory, () => Promise<CategoryRegistry>>> = {
 	arts: () => import("@/components/website/registry/arts").then((module) => ({ demos: module.ARTS_DEMOS })),
 	blocks: () => import("@/components/website/registry/blocks").then((module) => ({ demos: module.BLOCK_DEMOS, variants: module.BLOCK_VARIANT_DEMOS })),

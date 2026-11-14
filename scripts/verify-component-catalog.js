@@ -5,7 +5,6 @@ const os = require("node:os");
 const path = require("node:path");
 const { buildSync } = require("esbuild");
 const {
-	REGISTRY_PATH,
 	collectRegistryData,
 	normalizeProjectPath,
 	resolveProjectImport,
@@ -553,8 +552,7 @@ function validateComponentCatalog({
 					}));
 				}
 				for (const importReference of entry.imports) {
-					const importPath = typeof importReference === "string" ? importReference : importReference.importPath;
-					const sourceFile = typeof importReference === "string" ? REGISTRY_PATH : importReference.sourceFile;
+					const { importPath, sourceFile } = importReference;
 					if (!resolveRegistryImport(importPath, cwd, sourceFile)) {
 						diagnostics.push(createDiagnostic("error", `${registryKind} registry ${category}/${slug} imports missing module ${importPath}.`, {
 							category,
@@ -574,8 +572,7 @@ function validateComponentCatalog({
 		for (const registry of Object.values(registries)) {
 			for (const entry of Object.values(registry)) {
 				for (const importReference of entry.imports) {
-					const importPath = typeof importReference === "string" ? importReference : importReference.importPath;
-					const sourceFile = typeof importReference === "string" ? REGISTRY_PATH : importReference.sourceFile;
+					const { importPath, sourceFile } = importReference;
 					const resolvedImport = resolveRegistryImport(importPath, cwd, sourceFile);
 					if (resolvedImport) {
 						referencedDemoFiles.add(normalizeProjectPath(cwd, resolvedImport));

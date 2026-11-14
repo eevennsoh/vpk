@@ -77,9 +77,10 @@ semantics. Update all consumers before removing replaced code.
 ### 4. Wire canonical demos and docs
 
 Put the source-of-truth demo in the matching `components/website/demos/ui*`
-folder, register it in `components/website/registry.ts`, and add the matching
-detail metadata. Keep named exports, registry keys, and `demoSlug` values
-aligned. Feature surfaces should reuse this canonical pattern.
+folder as `<slug>-demo.tsx`, add the manifest line and the detail leaf, then run
+`pnpm run fix:generated` (it writes the primary registry entry and the detail
+barrel; `pnpm run catalog:add-plan -- <category>/<slug>` lists the files).
+Keep named exports, registry keys, and `demoSlug` values aligned. Feature surfaces should reuse this canonical pattern.
 
 ### 5. Validate
 

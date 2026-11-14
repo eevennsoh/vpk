@@ -25,7 +25,7 @@ new file. Known locks include:
 - ADS InlineMessage is represented by VPK `Alert` and `HoverCard` demos rather
   than a separate primitive.
 
-For ADS Toggle parity, set `switch.adsUrl` in `app/data/details/ui.ts`, map
+For ADS Toggle parity, set `adsUrl` in `app/data/details/ui/switch.ts`, map
 `switch` to `@atlaskit/toggle` in `app/data/ads-equivalents.ts`, and ensure the
 `toggle` entries contain neither mapping. Verify `/components/ui/switch` shows
 the package link and `/components/ui/toggle` does not.

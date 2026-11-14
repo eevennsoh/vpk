@@ -2,8 +2,8 @@ const { readFileSync } = require("node:fs");
 const path = require("node:path");
 
 const REGISTRY_SOURCE_FILES = [
-	"components/website/registry.ts",
-	"components/website/registry/index.ts",
+	// The category map: which table each category loads (formerly registry/index.ts).
+	"components/website/demo-registry-loader.ts",
 	"components/website/registry/ui.ts",
 	"components/website/registry/ui/primary.ts",
 	"components/website/registry/ui/variants-actions.ts",

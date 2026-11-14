@@ -201,7 +201,6 @@
 		"components/ui/form.tsx",
 		"components/ui/forms.tsx",
 		"components/ui/progress-bar.tsx",
-		"components/website/registry.ts",
 		"lib/rovo-runtime-status.ts",
 		"lib/rovo-runtime-types.ts"
 	],
