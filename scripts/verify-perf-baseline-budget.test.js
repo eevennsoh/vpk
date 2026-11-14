@@ -23,6 +23,7 @@ const {
 	main,
 	parseArgs,
 } = require("./verify-perf-baseline-budget");
+const { resolveBaseRef } = require("./verify-eslint-suppressions");
 
 function createRoute(id, overrides = {}) {
 	return {
@@ -153,10 +154,102 @@ test("findRaisedBudgets treats a removed metric or route as raised", () => {
 	assert.deepEqual(routeRemoved, [{ baseLimit: 500_000, limit: null, metricName: "cssBytes", routeId: "one-off" }]);
 });
 
+// A throwaway repository whose budgets file plays perf-route-budgets.json. checkoutPrMerge() builds
+// HEAD the way a pull_request run gets it: GitHub's merge of the PR head into a base commit.
+function createRatchetRepo(t) {
+	const root = mkdtempSync(path.join(os.tmpdir(), "vpk-ratchet-"));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const env = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@example.com", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@example.com" };
+	const attempt = (...args) => spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], { cwd: root, encoding: "utf8", env });
+	const run = (...args) => {
+		const result = attempt(...args);
+		if (result.status !== 0) throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
+		return result.stdout.trim();
+	};
+	const git = (args) => {
+		const result = spawnSync("git", args, { cwd: root, encoding: "utf8", env, stdio: ["ignore", "pipe", "ignore"] });
+		return result.status === 0 ? result.stdout.trim() : null;
+	};
+	const commit = (message, budget, file = "budgets.json") => {
+		writeFileSync(path.join(root, file), file === "budgets.json" ? JSON.stringify({ home: { fetchedJsBytes: budget } }) : message);
+		run("add", file);
+		run("commit", "-q", "-m", message);
+		return run("rev-parse", "HEAD");
+	};
+	run("init", "-q", "-b", "main");
+	const main0 = commit("main0", 1_252_000);
+	return {
+		attempt,
+		git,
+		run,
+		commit,
+		main0,
+		checkoutPrMerge(baseCommit, prBranch) {
+			run("checkout", "-q", "--detach", baseCommit);
+			run("merge", "-q", "--no-ff", "--no-edit", prBranch);
+		},
+		raised(env) {
+			const baseRef = resolveBaseRef({ env, git });
+			const read = (ref) => JSON.parse(git(["show", `${ref}:budgets.json`]));
+			return findRaisedBudgets(read(baseRef), read("HEAD")).map(formatRaisedBudget);
+		},
+	};
+}
+
+const PR_RUN = { GITHUB_BASE_REF: "main" };
+
+test("a pull request that does not touch the budgets passes after the base lowers them", (t) => {
+	const repo = createRatchetRepo(t);
+	repo.run("checkout", "-q", "-b", "pr");
+	repo.commit("unrelated", 0, "other.txt");
+	repo.run("checkout", "-q", "main");
+	const main1 = repo.commit("lower budgets", 1_250_000);
+	repo.run("update-ref", "refs/remotes/origin/main", main1);
+	// The run's merge commit was built before main lowered the budget; origin/main is fetched later.
+	repo.checkoutPrMerge(repo.main0, "pr");
+	assert.deepEqual(repo.raised(PR_RUN), []);
+	// Comparing with the base tip, as before, blamed the pull request for main's own drop.
+	const tip = JSON.parse(repo.git(["show", "origin/main:budgets.json"]));
+	const head = JSON.parse(repo.git(["show", "HEAD:budgets.json"]));
+	assert.deepEqual(findRaisedBudgets(tip, head).map(formatRaisedBudget), ["home.fetchedJsBytes 1250000 -> 1252000"]);
+	// A checkout of the PR head itself compares with its merge-base.
+	repo.run("checkout", "-q", "pr");
+	assert.deepEqual(repo.raised(PR_RUN), []);
+});
+
+test("a pull request that raises a budget fails, and one that lowers it passes", (t) => {
+	const repo = createRatchetRepo(t);
+	repo.run("checkout", "-q", "-b", "raise");
+	repo.commit("raise", 1_300_000);
+	repo.run("checkout", "-q", "main");
+	repo.run("checkout", "-q", "-b", "lower");
+	repo.commit("lower", 1_200_000);
+	repo.checkoutPrMerge(repo.main0, "raise");
+	assert.deepEqual(repo.raised(PR_RUN), ["home.fetchedJsBytes 1252000 -> 1300000"]);
+	repo.checkoutPrMerge(repo.main0, "lower");
+	assert.deepEqual(repo.raised(PR_RUN), []);
+});
+
+test("a raise behind a merge of the base still fails", (t) => {
+	const repo = createRatchetRepo(t);
+	repo.run("checkout", "-q", "-b", "pr");
+	repo.commit("raise", 1_300_000);
+	repo.run("checkout", "-q", "main");
+	const main1 = repo.commit("lower budgets", 1_250_000);
+	repo.run("checkout", "-q", "pr");
+	// Merge main into the branch and keep the raised value through the conflict.
+	assert.notEqual(repo.attempt("merge", "-q", "--no-edit", "main").status, 0, "the merge conflicts on the budget");
+	repo.run("checkout", "--ours", "budgets.json");
+	repo.run("add", "budgets.json");
+	repo.run("commit", "-q", "--no-edit");
+	repo.checkoutPrMerge(main1, "pr");
+	assert.deepEqual(repo.raised(PR_RUN), ["home.fetchedJsBytes 1250000 -> 1300000"]);
+});
+
 // Same base as the other shrink-only baselines: the PR base in CI, the pre-push tip on a push to
 // main, the merge base with origin/main locally.
 test("route budgets only go down from the base", () => {
-	const { isBaseRequired, resolveBaseRef } = require("./verify-eslint-suppressions");
+	const { isBaseRequired } = require("./verify-eslint-suppressions");
 	const repoRoot = path.resolve(__dirname, "..");
 	const git = (args) => {
 		const result = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });

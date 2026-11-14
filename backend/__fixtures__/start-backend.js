@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const path = require("node:path");
@@ -10,6 +11,7 @@ const SERVER_PATH = path.join(__dirname, "..", "server.js");
 // port it bound. `env` adds or overrides variables (an empty string keeps .env.local's
 // value out, since dotenv never overrides a variable that is set).
 function startBackend(t, { serverPath = SERVER_PATH, env: extraEnv = {} } = {}) {
+	/** @type {NodeJS.ProcessEnv} */
 	const env = { ...process.env, NODE_ENV: "development", PORT: "0", DEBUG: "false", ...extraEnv };
 	delete env.ROVO_PORT;
 	delete env.NODE_TEST_CONTEXT;
@@ -42,7 +44,7 @@ function startBackend(t, { serverPath = SERVER_PATH, env: extraEnv = {} } = {}) 
 			exited.then(({ code, signal }) => reject(new Error(`backend exited (${code ?? signal}) before ${pattern}:\n${lines.join("\n")}`)));
 		});
 	const listening = waitForLine(/^\[PROCESS\] listening on \S+:\d+$/u).then((line) => {
-		const [, host, port] = /^\[PROCESS\] listening on (\S+):(\d+)$/u.exec(line);
+		const [, host, port] = /** @type {RegExpExecArray} */ (/^\[PROCESS\] listening on (\S+):(\d+)$/u.exec(line));
 		return { host, port: Number(port) };
 	});
 	return { child, exited, lines, listening, waitForLine };

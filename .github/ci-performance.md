@@ -56,7 +56,9 @@ commands' options and actual rule configuration. Static validation still runs
 alongside unit shards, so the timing target remains plausible but unmeasured.
 
 Static and unit jobs both fetch the PR base or pre-push tip and retain the same
-`VPK_SUPPRESSIONS_BASE` mapping. Workflow tests execute the fetch commands with a
+`VPK_SUPPRESSIONS_BASE` mapping. Both check out with `fetch-depth: 2`: on a pull
+request the ratchets compare GitHub's merge commit with its first parent, so a
+branch that is behind its base is not blamed for baseline drops that landed there. Workflow tests execute the fetch commands with a
 fake Git function and compare both jobs' environments. All 25 aggregate result
 combinations still require success from both dependencies. A failed required
 `PR checks` is rerunnable only when every other nonpassing check in its known

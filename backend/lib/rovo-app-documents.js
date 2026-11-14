@@ -1,3 +1,4 @@
+// @ts-check
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -14,6 +15,7 @@ function createId(prefix) {
 	return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** @param {Date | number | string} [value] */
 function toIsoDate(value = Date.now()) {
 	const date = value instanceof Date ? value : new Date(value);
 	return date.toISOString();
@@ -141,6 +143,7 @@ function normalizeDocument(rawDocument) {
 function createRovoAppDocumentManager({ baseDir }) {
 	const threadsRootDir = getRovoAppThreadsRootDir(baseDir);
 	const legacyDocumentsRootDir = getRovoAppLegacyDocumentsDir(baseDir);
+	/** @type {Promise<void> | null} */
 	let initializationPromise = null;
 
 	const getDocumentPath = (threadId, documentId) =>
@@ -284,6 +287,7 @@ function createRovoAppDocumentManager({ baseDir }) {
 		return documents.filter(Boolean);
 	};
 
+	/** @param {{ threadId?: string }} [options] */
 	const listDocuments = async ({ threadId } = {}) => {
 		await ensureInitialized();
 		const normalizedThreadId = normalizeThreadId(threadId);

@@ -51,8 +51,8 @@ function createMessageFilePersistenceHarness({
 			};
 		}),
 		rovoAppGeneratedFilesManager: {
-			backfillFromThread: async (thread) => {
-				calls.push(["backfillFromThread", thread]);
+			recordRunGeneratedFiles: async (threadId, producedMessages) => {
+				calls.push(["recordRunGeneratedFiles", threadId, producedMessages]);
 			},
 			captureRootFilesToWorkspace: async (threadId) => {
 				calls.push(["captureRootFilesToWorkspace", threadId]);
@@ -189,7 +189,7 @@ test("collects unique upload IDs from file and browser screenshot message parts"
 test("message file persistence validates required dependencies", () => {
 	assert.throws(
 		() => createRovoAppMessageFilePersistence(),
-		/rovoAppGeneratedFilesManager\.backfillFromThread/u,
+		/rovoAppGeneratedFilesManager\.recordRunGeneratedFiles/u,
 	);
 });
 
@@ -346,12 +346,14 @@ test("message file persistence falls back when migration update returns null", a
 
 test("message file persistence synchronizes generated files for valid threads", async () => {
 	const { calls, service } = createMessageFilePersistenceHarness();
-	const thread = { id: "thread-1", messages: [] };
+	const thread = { id: "thread-1", messages: [{ id: "stored", parts: [] }] };
+	const streamedMessages = [{ parts: [] }];
 
 	assert.equal(await service.synchronizeThreadGeneratedFiles(undefined), undefined);
-	assert.equal(await service.synchronizeThreadGeneratedFiles(thread), thread);
+	assert.equal(await service.synchronizeThreadGeneratedFiles(thread, { streamedMessages }), thread);
 	assert.deepEqual(calls.filter((call) => call[0] !== "persistBrowserScreenshotBuffer"), [
-		["backfillFromThread", thread],
+		// Recorded from what the run produced, never from the stored thread's messages.
+		["recordRunGeneratedFiles", "thread-1", streamedMessages],
 		["captureRootFilesToWorkspace", "thread-1"],
 	]);
 });

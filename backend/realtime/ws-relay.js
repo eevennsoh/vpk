@@ -131,7 +131,7 @@ function registerBackendWebSocketRelays(server, {
 	debugMode = false,
 	getMirrorBrowser,
 	isAllowedRuntimeSocketOrigin,
-	isDraining = () => false,
+	isDraining = /** @returns {boolean} */ () => false,
 	isRuntimeSocketTokenValid,
 	realtimeSessionImpl = RealtimeSession,
 	runtimeAdminRequired,

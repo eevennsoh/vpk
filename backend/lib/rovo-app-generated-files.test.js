@@ -6,17 +6,24 @@ const path = require("node:path");
 
 const {
 	createRovoAppGeneratedFilesManager,
-	extractGeneratedFilesFromThread,
+	extractGeneratedFilesFromStreamedMessages,
 } = require("./rovo-app-generated-files");
+
+const { execFileSync } = require("node:child_process");
 
 async function createTempDir(prefix) {
 	return fs.mkdtemp(path.join(os.tmpdir(), prefix));
 }
 
-test("extractGeneratedFilesFromThread captures file creations from thinking events", async () => {
-	const entries = extractGeneratedFilesFromThread({
-		id: "thread-1",
-		messages: [
+// A project root that is a git repository: outside one, every file counts as tracked.
+async function createProjectRoot(prefix) {
+	const projectRoot = await createTempDir(prefix);
+	execFileSync("git", ["init", "-q"], { cwd: projectRoot });
+	return projectRoot;
+}
+
+test("extractGeneratedFilesFromStreamedMessages captures file creations from thinking events", async () => {
+	const entries = extractGeneratedFilesFromStreamedMessages([
 			{
 				parts: [
 					{
@@ -31,8 +38,7 @@ test("extractGeneratedFilesFromThread captures file creations from thinking even
 					},
 				],
 			},
-		],
-	});
+		]);
 
 	assert.deepEqual(entries, [
 		{
@@ -47,9 +53,9 @@ test("extractGeneratedFilesFromThread captures file creations from thinking even
 	]);
 });
 
-test("generated files manager backfills manifest entries and relocates untracked root files", async () => {
+test("generated files manager records a run's file creations and relocates untracked root files", async () => {
 	const baseDir = await createTempDir("rovo-app-generated-base-");
-	const projectRoot = await createTempDir("rovo-app-generated-project-");
+	const projectRoot = await createProjectRoot("rovo-app-generated-project-");
 	const manager = createRovoAppGeneratedFilesManager({
 		baseDir,
 		projectRoot,
@@ -63,25 +69,22 @@ test("generated files manager backfills manifest entries and relocates untracked
 		"utf8",
 	);
 
-	await manager.backfillFromThread({
-		id: "thread-1",
-		messages: [
-			{
-				parts: [
-					{
-						type: "data-thinking-event",
-						data: {
-							phase: "result",
-							toolName: "create_file",
-							toolCallId: "tool-1",
-							timestamp: "2026-03-30T00:00:00.000Z",
-							outputPreview: "Successfully created app/chat/page.tsx.",
-						},
+	await manager.recordRunGeneratedFiles("thread-1", [
+		{
+			parts: [
+				{
+					type: "data-thinking-event",
+					data: {
+						phase: "result",
+						toolName: "create_file",
+						toolCallId: "tool-1",
+						timestamp: "2026-03-30T00:00:00.000Z",
+						outputPreview: "Successfully created app/chat/page.tsx.",
 					},
-				],
-			},
-		],
-	});
+				},
+			],
+		},
+	]);
 
 	const syncResult = await manager.syncThreadWorkspace("thread-1");
 	assert.equal(syncResult.movedCount, 1);
@@ -110,7 +113,7 @@ test("generated files manager backfills manifest entries and relocates untracked
 
 test("generated files manager can snapshot root files into the thread workspace without removing them", async () => {
 	const baseDir = await createTempDir("rovo-app-generated-copy-base-");
-	const projectRoot = await createTempDir("rovo-app-generated-copy-project-");
+	const projectRoot = await createProjectRoot("rovo-app-generated-copy-project-");
 	const manager = createRovoAppGeneratedFilesManager({
 		baseDir,
 		projectRoot,

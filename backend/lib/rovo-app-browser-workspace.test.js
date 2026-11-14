@@ -2,6 +2,7 @@ const test = require("node:test")
 const assert = require("node:assert/strict")
 
 const {
+	buildWorkspaceActionCommandArgs,
 	getRovoAppThreadBrowserSessionName,
 	getRovoAppThreadBrowserWorkspaceId,
 	urlsLooselyMatch,
@@ -39,4 +40,25 @@ test("thread browser workspace url matching ignores hashes and trailing slashes"
 		),
 		false,
 	)
+})
+
+test("MCP workspace actions build agent-browser arguments by the same rules as the HTTP and socket paths", async () => {
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "click-ref", { ref: "@e3" }), ["click", "@e3"])
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "fill-ref", { ref: "e1", text: "- item" }), ["fill", "e1", "- item"])
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "press", { key: "Shift+-" }), ["press", "Shift+-"])
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "scroll", { direction: "down", pixels: 300 }), ["scroll", "down", "300"])
+	const hostile = [
+		["navigate", { url: "--executable-path=/bin/sh" }],
+		["click-ref", { ref: "--help" }],
+		["fill-ref", { ref: "e1", text: "--session other" }],
+		["type-ref", { ref: "e1 --x", text: "hi" }],
+		["select-ref", { ref: "e1", values: ["ok", " --x"] }],
+		["press", { key: "--help" }],
+		["scroll", { direction: "-x" }],
+		["scroll", { direction: "down", pixels: "--x" }],
+		["tab-new", { url: "--x" }],
+	]
+	for (const [action, body] of hostile) {
+		await assert.rejects(buildWorkspaceActionCommandArgs("thread-1", action, body), (error) => error.status === 400, `${action} ${JSON.stringify(body)}`)
+	}
 })

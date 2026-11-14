@@ -12,7 +12,7 @@ ride along each time (see the Contextual Rules section of `AGENTS.md`). Source o
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 18; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 37; Next API routes: 103.
 
 ### Backend Routes
 
@@ -46,25 +46,25 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js:318` |
 | `DELETE` | `/api/checkpoints/:id` | yes | `backend/routes/rovo-app.js:351` |
 | `POST` | `/api/checkpoints/:id/rollback` | yes | `backend/routes/rovo-app.js:337` |
-| `GET` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:59` |
-| `POST` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:85` |
-| `POST` | `/api/chromium-preview/back` | no | `backend/routes/chromium-preview.js:122` |
-| `POST` | `/api/chromium-preview/click` | no | `backend/routes/chromium-preview.js:158` |
-| `POST` | `/api/chromium-preview/click-ref` | no | `backend/routes/chromium-preview.js:170` |
-| `POST` | `/api/chromium-preview/fill-ref` | no | `backend/routes/chromium-preview.js:208` |
-| `POST` | `/api/chromium-preview/forward` | no | `backend/routes/chromium-preview.js:134` |
-| `POST` | `/api/chromium-preview/hover-ref` | no | `backend/routes/chromium-preview.js:189` |
-| `POST` | `/api/chromium-preview/press` | no | `backend/routes/chromium-preview.js:323` |
-| `POST` | `/api/chromium-preview/reload` | no | `backend/routes/chromium-preview.js:146` |
-| `GET` | `/api/chromium-preview/screenshot` | no | `backend/routes/chromium-preview.js:374` |
-| `POST` | `/api/chromium-preview/scroll` | no | `backend/routes/chromium-preview.js:286` |
-| `POST` | `/api/chromium-preview/select-ref` | no | `backend/routes/chromium-preview.js:258` |
-| `GET` | `/api/chromium-preview/snapshot` | no | `backend/routes/chromium-preview.js:361` |
-| `GET` | `/api/chromium-preview/stream` | no | `backend/routes/chromium-preview.js:71` |
-| `POST` | `/api/chromium-preview/type` | no | `backend/routes/chromium-preview.js:342` |
-| `POST` | `/api/chromium-preview/type-ref` | no | `backend/routes/chromium-preview.js:233` |
-| `POST` | `/api/chromium-preview/viewport` | no | `backend/routes/chromium-preview.js:108` |
-| `POST` | `/api/chromium-preview/wheel` | no | `backend/routes/chromium-preview.js:308` |
+| `GET` | `/api/chromium-preview` | yes | `backend/routes/chromium-preview.js:64` |
+| `POST` | `/api/chromium-preview` | yes | `backend/routes/chromium-preview.js:90` |
+| `POST` | `/api/chromium-preview/back` | yes | `backend/routes/chromium-preview.js:127` |
+| `POST` | `/api/chromium-preview/click` | yes | `backend/routes/chromium-preview.js:163` |
+| `POST` | `/api/chromium-preview/click-ref` | yes | `backend/routes/chromium-preview.js:175` |
+| `POST` | `/api/chromium-preview/fill-ref` | yes | `backend/routes/chromium-preview.js:213` |
+| `POST` | `/api/chromium-preview/forward` | yes | `backend/routes/chromium-preview.js:139` |
+| `POST` | `/api/chromium-preview/hover-ref` | yes | `backend/routes/chromium-preview.js:194` |
+| `POST` | `/api/chromium-preview/press` | yes | `backend/routes/chromium-preview.js:328` |
+| `POST` | `/api/chromium-preview/reload` | yes | `backend/routes/chromium-preview.js:151` |
+| `GET` | `/api/chromium-preview/screenshot` | yes | `backend/routes/chromium-preview.js:379` |
+| `POST` | `/api/chromium-preview/scroll` | yes | `backend/routes/chromium-preview.js:291` |
+| `POST` | `/api/chromium-preview/select-ref` | yes | `backend/routes/chromium-preview.js:263` |
+| `GET` | `/api/chromium-preview/snapshot` | yes | `backend/routes/chromium-preview.js:366` |
+| `GET` | `/api/chromium-preview/stream` | yes | `backend/routes/chromium-preview.js:76` |
+| `POST` | `/api/chromium-preview/type` | yes | `backend/routes/chromium-preview.js:347` |
+| `POST` | `/api/chromium-preview/type-ref` | yes | `backend/routes/chromium-preview.js:238` |
+| `POST` | `/api/chromium-preview/viewport` | yes | `backend/routes/chromium-preview.js:113` |
+| `POST` | `/api/chromium-preview/wheel` | yes | `backend/routes/chromium-preview.js:313` |
 | `DELETE` | `/api/claim-test` | no | `backend/routes/demos.js:146` |
 | `GET` | `/api/claim-test` | no | `backend/routes/demos.js:120` |
 | `POST` | `/api/claim-test` | no | `backend/routes/demos.js:133` |
@@ -74,7 +74,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/health` | no | `backend/routes/status.js:174` |
 | `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:101` |
 | `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:166` |
-| `GET` | `/api/image-proxy` | no | `backend/routes/media.js:197` |
+| `GET` | `/api/image-proxy` | no | `backend/routes/media.js:198` |
 | `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js:25` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js:72` |
 | `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js:46` |
@@ -99,10 +99,10 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/personal-graph/vault/select` | no | `backend/routes/personal-graph.js:153` |
 | `POST` | `/api/plan-title` | no | `backend/routes/ai-utilities.js:213` |
 | `GET` | `/api/realtime/audio-conversation-token` | no | `backend/routes/realtime.js:26` |
-| `GET` | `/api/rovo/background-streams` | no | `backend/routes/rovo-app.js:513` |
+| `GET` | `/api/rovo/background-streams` | no | `backend/routes/rovo-app.js:512` |
 | `POST` | `/api/rovo/cancel-deferred-tool` | no | `backend/routes/chat-control.js:52` |
 | `POST` | `/api/rovo/chat` | no | `backend/routes/rovo-chat-proxy.js:24` |
-| `POST` | `/api/rovo/detach` | no | `backend/routes/rovo-app.js:491` |
+| `POST` | `/api/rovo/detach` | no | `backend/routes/rovo-app.js:490` |
 | `DELETE` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:806` |
 | `GET` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:730` |
 | `POST` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:753` |
@@ -111,24 +111,24 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/rovo/generated-media` | no | `backend/routes/rovo-app.js:870` |
 | `GET` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:210` |
 | `POST` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:228` |
-| `POST` | `/api/rovo/runs/:threadId/cancel` | no | `backend/routes/rovo-app.js:573` |
-| `POST` | `/api/rovo/runs/:threadId/detach` | no | `backend/routes/rovo-app.js:549` |
-| `GET` | `/api/rovo/runs/:threadId/stream` | no | `backend/routes/rovo-app.js:523` |
+| `POST` | `/api/rovo/runs/:threadId/cancel` | no | `backend/routes/rovo-app.js:572` |
+| `POST` | `/api/rovo/runs/:threadId/detach` | no | `backend/routes/rovo-app.js:548` |
+| `GET` | `/api/rovo/runs/:threadId/stream` | no | `backend/routes/rovo-app.js:522` |
 | `POST` | `/api/rovo/suggestions` | no | `backend/routes/ai-utilities.js:99` |
 | `DELETE` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:406` |
 | `GET` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:264` |
 | `POST` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:366` |
-| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:660` |
-| `GET` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:432` |
-| `PUT` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:450` |
-| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:645` |
-| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | no | `backend/routes/rovo-app.js:599` |
-| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:618` |
+| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:659` |
+| `GET` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:431` |
+| `PUT` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:449` |
+| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:644` |
+| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | no | `backend/routes/rovo-app.js:598` |
+| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:617` |
 | `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:693` |
 | `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:709` |
 | `GET` | `/api/sessions/search` | no | `backend/routes/rovo-app.js:284` |
-| `POST` | `/api/sound-generation` | no | `backend/routes/media.js:92` |
-| `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:134` |
+| `POST` | `/api/sound-generation` | no | `backend/routes/media.js:93` |
+| `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:135` |
 | `POST` | `/api/standup` | no | `backend/routes/demos.js:159` |
 | `GET` | `/api/status` | no | `backend/routes/status.js:68` |
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:50` |
