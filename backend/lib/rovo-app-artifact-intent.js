@@ -112,7 +112,7 @@ Rules:
 - Prefer "createDocument" for explicit mentions of "artifact", "document", "memo", "spec", "proposal", "code", "component", "table", or "sheet" unless the user is clearly only asking about them.
 - For "updateDocument", preserve the current artifact title unless the user clearly asks to rename it.
 - For generic follow-ups like "create an artifact about it", infer a sensible title from the previous conversation instead of echoing that phrase literally.
-- Choose kind "html" for self-contained HTML reports, "code" for coding artifacts, "sheet" for tables/spreadsheets, otherwise "text" unless image creation is explicitly requested.${streamingArtifact ? '\n- When cancelStreaming is requested: set it to true if the user wants to modify/replace the currently generating artifact (e.g., "make it shorter", "change that", "rewrite it"). Set it to false if the user wants a completely separate new artifact (e.g., "write a doc about Tesla" while an Apple doc is generating).' : ""}
+- Choose kind "html" for self-contained HTML reports, "code" for coding artifacts, "sheet" when a table or spreadsheet is the whole deliverable (a document that contains a table is "text"), otherwise "text" unless image creation is explicitly requested.${streamingArtifact ? '\n- When cancelStreaming is requested: set it to true if the user wants to modify/replace the currently generating artifact (e.g., "make it shorter", "change that", "rewrite it"). Set it to false if the user wants a completely separate new artifact (e.g., "write a doc about Tesla" while an Apple doc is generating).' : ""}
 
 ${activeArtifactBlock}
 
