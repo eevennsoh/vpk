@@ -283,11 +283,6 @@
       "count": 1
     }
   },
-  "components/blocks/agent-assignment/page.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-bento/components/home-starter-bento.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
@@ -379,11 +374,6 @@
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/agent-selector/page.tsx": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
@@ -481,11 +471,6 @@
       "count": 1
     }
   },
-  "components/blocks/agent-session/agent-session-compact-card.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-session/agent-session-drag-host.source.test.js": {
     "no-restricted-syntax": {
       "count": 59
@@ -524,11 +509,6 @@
   "components/blocks/agent-session/agent-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 513
-    }
-  },
-  "components/blocks/agent-session/page.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "components/blocks/agent-state/agent-state.test.js": {
@@ -933,9 +913,6 @@
   "components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
-    },
-    "no-restricted-imports": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental-v2/page.tsx": {
@@ -951,11 +928,6 @@
   "components/blocks/jira-kanban/experimental/board-untracked-proximity.source.test.js": {
     "no-restricted-syntax": {
       "count": 169
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/board-column-agent-assignment.tsx": {
-    "no-restricted-imports": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
@@ -1005,11 +977,6 @@
   },
   "components/blocks/jira-kanban/experimental/components/session-column-placement.tsx": {
     "react-hooks/refs": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx": {
-    "no-restricted-imports": {
       "count": 1
     }
   },
