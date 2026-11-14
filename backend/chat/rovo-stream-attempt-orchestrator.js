@@ -4,6 +4,7 @@ const {
 	runFreshRovoStreamTurn,
 } = require("./rovo-fresh-stream-turn");
 const {
+	abandonPausedRovoToolCall,
 	runPausedRovoToolContinuation,
 } = require("./rovo-paused-continuation");
 const {
@@ -254,7 +255,16 @@ function createRovoStreamAttemptRunner({
 			takePausedRovoToolCall: options.takePausedRovoToolCall,
 		});
 
-		const streamCommonOptions = buildRovoStreamCommonOptions(options);
+		let streamCommonOptions;
+		try {
+			streamCommonOptions = buildRovoStreamCommonOptions(options);
+		} catch (error) {
+			// A paused record taken above would otherwise keep its port reserved for good.
+			if (pausedToolCallRecord) {
+				await abandonPausedRovoToolCall(pausedToolCallRecord, { rovoCancelChat: options.rovoCancelChat });
+			}
+			throw error;
+		}
 
 		if (pausedToolCallRecord) {
 			await runPausedRovoToolContinuationFn({

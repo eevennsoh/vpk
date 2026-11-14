@@ -38,6 +38,22 @@ function buildPausedRovoResumeDecisions({
 	return [];
 }
 
+/**
+ * Ends a paused tool call that will not be resumed: cancels its turn on Rovo and ends its
+ * port lease (released after a cancel that worked, quarantined otherwise).
+ */
+async function abandonPausedRovoToolCall(pausedToolCallRecord, { rovoCancelChat } = {}) {
+	let cancelled = false;
+	try {
+		await rovoCancelChat?.(pausedToolCallRecord?.port, { timeoutMs: 3_000 });
+		cancelled = typeof rovoCancelChat === "function";
+	} catch {}
+	pausedToolCallRecord?.handle?.settleLease?.(
+		cancelled ? "release" : "unhealthy",
+		cancelled ? {} : { reason: "paused tool call abandoned" },
+	);
+}
+
 async function runPausedRovoToolContinuation({
 	adaptClarificationAnswersForToolContract,
 	approvalSubmission,
@@ -57,22 +73,29 @@ async function runPausedRovoToolContinuation({
 	streamCommonOptions = {},
 	threadId,
 } = {}) {
-	const resumeDecisions = buildPausedRovoResumeDecisions({
-		adaptClarificationAnswersForToolContract,
-		approvalSubmission,
-		buildApprovalResumeDecision,
-		buildClarificationResumeDecision,
-		buildClarificationResumeDenyMessage,
-		clarificationSubmission,
-		hasPausedApprovalToolCall,
-		hasPausedClarificationToolCall,
-		pausedToolCallRecord,
-	});
-
-	if (resumeDecisions.length === 0) {
-		throw new Error(
-			`Paused tool continuation ${pausedToolCallRecord.toolCallId} is missing a resume decision.`,
-		);
+	let resumeDecisions;
+	try {
+		resumeDecisions = buildPausedRovoResumeDecisions({
+			adaptClarificationAnswersForToolContract,
+			approvalSubmission,
+			buildApprovalResumeDecision,
+			buildClarificationResumeDecision,
+			buildClarificationResumeDenyMessage,
+			clarificationSubmission,
+			hasPausedApprovalToolCall,
+			hasPausedClarificationToolCall,
+			pausedToolCallRecord,
+		});
+		if (resumeDecisions.length === 0) {
+			throw new Error(
+				`Paused tool continuation ${pausedToolCallRecord.toolCallId} is missing a resume decision.`,
+			);
+		}
+	} catch (error) {
+		// The record was already taken from the store, so no one else can resume this
+		// paused turn: cancel it and end its lease.
+		await abandonPausedRovoToolCall(pausedToolCallRecord, { rovoCancelChat });
+		throw error;
 	}
 
 	let replayCompleted = false;
@@ -127,12 +150,13 @@ async function runPausedRovoToolContinuation({
 					timeoutMs: 3_000,
 				}).catch(() => {});
 			}
-			pausedToolCallRecord.handle?.release?.();
+			pausedToolCallRecord.handle?.settleLease?.("release");
 		}
 	}
 }
 
 module.exports = {
+	abandonPausedRovoToolCall,
 	buildPausedRovoResumeDecisions,
 	runPausedRovoToolContinuation,
 };
