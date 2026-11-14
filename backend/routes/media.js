@@ -6,6 +6,7 @@ const express = require("express");
 const { createAbortControllerFromRequest } = require("../lib/http-request-abort");
 const { parseOrReject, speechTranscriptionOptionsSchema } = require("../lib/input-schemas");
 const {
+	IMAGE_PROXY_MAX_HTML_BYTES,
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
@@ -249,6 +250,7 @@ function createMediaRouter({
 
 				if (!upstreamResponse.ok) {
 					lastStatus = upstreamResponse.status;
+					await upstreamResponse.body?.cancel?.().catch?.(() => {});
 					continue;
 				}
 
@@ -280,14 +282,26 @@ function createMediaRouter({
 					return res.status(200).send(payload);
 				}
 
-				if (source === "atlassian") {
-					const htmlText = await upstreamResponse.text();
-					for (const derivedUrl of extractAtlassianImageCandidates(
-						htmlText,
-						finalUrl
-					)) {
-						candidateQueue.push(derivedUrl);
+				// A body that is not an image is read only as an Atlassian page, and only up
+				// to IMAGE_PROXY_MAX_HTML_BYTES; anything else is dropped unread.
+				if (source !== "atlassian") {
+					await upstreamResponse.body?.cancel?.().catch?.(() => {});
+					continue;
+				}
+				let htmlText;
+				try {
+					htmlText = (await readImageProxyPayload(upstreamResponse, { maxBytes: IMAGE_PROXY_MAX_HTML_BYTES })).toString("utf8");
+				} catch (error) {
+					if (error instanceof imageProxyResponseTooLargeError) {
+						continue;
 					}
+					throw error;
+				}
+				for (const derivedUrl of extractAtlassianImageCandidates(
+					htmlText,
+					finalUrl
+				)) {
+					candidateQueue.push(derivedUrl);
 				}
 			}
 

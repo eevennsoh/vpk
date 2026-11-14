@@ -6,6 +6,8 @@ const { isAllowedAtlassianSite } = require("./jira-query-inputs");
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";
 const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["figma.com", "www.figma.com"]);
 const IMAGE_PROXY_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
+// An Atlassian page read for image candidates (provisional): a larger page is skipped.
+const IMAGE_PROXY_MAX_HTML_BYTES = 1024 * 1024;
 const ATLASSIAN_HOST_PATTERN = /(^|\.)atlassian\.net$/i;
 const IMAGE_FILE_EXTENSION_PATTERN =
 	/\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:$|[?#])/i;
@@ -369,10 +371,16 @@ function buildImageProxyRequestHeaders(targetUrl, env = process.env) {
 		"User-Agent": "VPK-ImageProxy/1.0",
 	};
 
-	// The token goes only to a configured site over https; other Atlassian hosts are
-	// fetched without it.
+	// The token goes only to an image URL (the attachment and avatar paths the proxy
+	// allows) on a configured site over https. Every redirect hop is checked again, so a
+	// redirect to another path on that site, such as a REST endpoint, is fetched without it.
 	const atlassianApiToken = getNonEmptyString(env.ATLASSIAN_API_TOKEN);
-	if (targetUrl.protocol === "https:" && isAllowedAtlassianSite(targetUrl.hostname, env) && atlassianApiToken) {
+	if (
+		targetUrl.protocol === "https:"
+		&& isAllowedAtlassianSite(targetUrl.hostname, env)
+		&& isAllowedAtlassianImageUrl(targetUrl)
+		&& atlassianApiToken
+	) {
 		headers.Authorization = `Bearer ${atlassianApiToken}`;
 	}
 
@@ -383,6 +391,7 @@ module.exports = {
 	FIGMA_MCP_ASSET_PATH_PREFIX,
 	IMAGE_PROXY_MAX_RESPONSE_BYTES,
 	ImageProxyResponseTooLargeError,
+	IMAGE_PROXY_MAX_HTML_BYTES,
 	IMAGE_PROXY_MAX_REDIRECTS,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
