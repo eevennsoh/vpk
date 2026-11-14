@@ -447,14 +447,34 @@ function singleOwnerFiles(rule) {
 	return rule.ownerFiles ?? [rule.ownerFile];
 }
 
+// Only a file inside the target's directory, or one whose text names the directory (index
+// targets) or the file stem, can hold a specifier that resolves to a module rule's target.
+function couldImportModule(filePath, source, rule) {
+	const targetDir = path.dirname(rule.source);
+	if (filePath.startsWith(`${targetDir}/`)) {
+		return true;
+	}
+	const stem = path.basename(rule.source, path.extname(rule.source));
+	return source.includes(stem === "index" ? path.basename(targetDir) : stem);
+}
+
 function verifySingleOwnerImports({ cwd, rules }) {
 	const failures = [];
-	const moduleTails = new Map(rules.filter((rule) => rule.match === "module").map((rule) => [rule, moduleSpecifierTails(rule.source)]));
+	const moduleRules = rules.filter((rule) => rule.match === "module");
+	// A module rule whose target or owner no longer exists would match nothing and pass silently.
+	for (const rule of moduleRules) {
+		for (const filePath of [rule.source, ...singleOwnerFiles(rule)]) {
+			if (!existsSync(path.join(cwd, filePath))) {
+				failures.push({ filePath, type: "missing-guarded-file" });
+			}
+		}
+	}
+	const moduleTails = new Map(moduleRules.map((rule) => [rule, moduleSpecifierTails(rule.source)]));
 	const sourceFiles = walkSourceTree(cwd, SOURCE_ROOTS, (filePath) => SOURCE_MODULE_EXTENSIONS.includes(path.extname(filePath)) || filePath.endsWith(".css"));
 	for (const filePath of sourceFiles) {
 		const source = readFileSync(path.join(cwd, filePath), "utf8");
 		const candidateRules = rules.filter((rule) => (rule.match === "module"
-			? !filePath.endsWith(".css")
+			? !filePath.endsWith(".css") && couldImportModule(filePath, source, rule)
 			: source.includes(rule.source)));
 		if (candidateRules.length === 0) {
 			continue;
@@ -471,7 +491,7 @@ function verifySingleOwnerImports({ cwd, rules }) {
 				? importPaths.find((candidate) => moduleRuleImportMatches({ cwd, filePath, importPath: candidate, rule, tails: moduleTails.get(rule) }))
 				: importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
 			if (importPath) {
-				failures.push({ filePath, importPath, ownerFile: ownerFiles.join(" or "), reason: rule.reason, type: "single-owner-import" });
+				failures.push({ filePath, importPath, moduleRule: rule.match === "module", ownerFile: ownerFiles.join(" or "), reason: rule.reason, type: "single-owner-import" });
 			}
 		}
 	}
@@ -756,7 +776,8 @@ function formatFailure(failure) {
 		return `${failure.filePath}:${failure.line}:${failure.column}: ${failure.kind} of "${failure.importPath}" is not allowed here: ${failure.reason}.`;
 	}
 	if (failure.type === "single-owner-import") {
-		return `${failure.filePath}: imports "${failure.importPath}", which only ${failure.ownerFile} may import (${failure.reason}). Import from the owner instead.`;
+		const advice = failure.moduleRule ? "" : " Import from the owner instead.";
+		return `${failure.filePath}: imports "${failure.importPath}", which only ${failure.ownerFile} may import (${failure.reason}).${advice}`;
 	}
 	if (failure.type === "deferred-module-statically-reachable") {
 		return `${failure.filePath}: ${failure.targetFile} is statically reachable via ${failure.dependencyPath.join(" -> ")}; ${failure.reason}.`;

@@ -352,6 +352,24 @@ test("a module rule matches every spelling that resolves to the file and allows 
 			["components/lab/layers/d.ts", ".."],
 		]);
 		assert.match(formatFailure(failures[0]), /only app\/details\.ts or components\/lab\/index\.test\.ts may import/u);
+		assert.doesNotMatch(formatFailure(failures[0]), /Import from the owner/u);
+	});
+});
+
+test("a module rule fails when its target or an owner no longer exists", () => {
+	const singleOwnerImports = [{
+		match: "module",
+		ownerFiles: ["app/details.ts", "app/gone.ts"],
+		reason: "the all-layers map is server-only",
+		source: "components/lab/moved.ts",
+	}];
+	withWorkspace({ "app/details.ts": "export const details = 1;\n" }, (cwd) => {
+		const options = { cwd, deferredModuleRules: [], fileImportRules: [], heavyImportRules: [], lazyOnlyModules: [], routeShellFiles: [], singleOwnerImports };
+		const failures = verifyLazyLoadBoundaries(options);
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath]), [
+			["missing-guarded-file", "components/lab/moved.ts"],
+			["missing-guarded-file", "app/gone.ts"],
+		]);
 	});
 });
 
@@ -384,6 +402,7 @@ test("default tree rules cover the C-8a stylesheets, the C-8d icon registry and 
 	]);
 	assert.deepEqual(DEFAULT_SINGLE_OWNER_IMPORTS.at(-1).ownerFiles, [
 		"app/data/details/visual.ts",
+		"components/website/demos/visual/shader-lab-effect-demo.source.test.js",
 		"components/website/demos/visual/shader-lab/definitions.test.ts",
 		"components/website/demos/visual/shader-lab/equality.test.ts",
 	]);
