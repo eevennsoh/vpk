@@ -97,7 +97,7 @@ export function createShaderLabEffectPropDocs(definition: ShaderLabEffectDefinit
 	}));
 
 	return [
-		{ name: "layerType", type: quote(definition.type), default: quote(definition.type), description: "Selects the Shader Lab " + definition.label + " layer." },
+		{ name: "definition", type: "typeof " + getShaderLabLayerExportName(definition), description: "The Shader Lab " + definition.label + " layer definition, imported from its layer module." },
 		{ name: "opacity", type: "number", default: "1", description: "Layer opacity." },
 		{ name: "blendMode", type: formatStringUnion(SHADER_LAB_BLEND_MODES), default: quote("normal"), description: "Shader Lab layer blend mode." },
 		{ name: "compositeMode", type: formatStringUnion(SHADER_LAB_COMPOSITE_MODES), default: quote("filter"), description: "Whether the effect filters the source or is composited as a mask." },
@@ -111,12 +111,24 @@ export function createShaderLabEffectPropDocs(definition: ShaderLabEffectDefinit
 	];
 }
 
-export function getShaderLabEffectUsage(definition: ShaderLabEffectDefinition): string {
-	return "<ShaderLabLayer layerType=\"" + definition.type + "\" />";
+/** The constant a layer module exports, e.g. `BLOOM_LAYER` from `shader-lab/layers/bloom`. */
+export function getShaderLabLayerExportName(definition: ShaderLabEffectDefinition): string {
+	return definition.type.toUpperCase().replace(/[^A-Z0-9]/gu, "_") + "_LAYER";
 }
 
-export function getShaderLabEffectImportStatement(): string {
-	return "import { ShaderLabLayer } from \"@/components/website/demos/visual/shader-lab-effect-demo\";";
+function getShaderLabComponentName(definition: ShaderLabEffectDefinition): string {
+	return getShaderLabLayerKind(definition) === "source" ? "ShaderLabLayer" : "ShaderLabEffect";
+}
+
+export function getShaderLabEffectUsage(definition: ShaderLabEffectDefinition): string {
+	return "<" + getShaderLabComponentName(definition) + " definition={" + getShaderLabLayerExportName(definition) + "} />";
+}
+
+export function getShaderLabEffectImportStatement(definition: ShaderLabEffectDefinition): string {
+	return [
+		"import { " + getShaderLabComponentName(definition) + " } from \"@/components/website/demos/visual/shader-lab-effect-demo\";",
+		"import { " + getShaderLabLayerExportName(definition) + " } from \"@/components/website/demos/visual/shader-lab/layers/" + definition.type + "\";",
+	].join("\n");
 }
 
 export function optionLabel(value: string): string {

@@ -3449,7 +3449,7 @@
   },
   "components/website/demos/visual/shader-lab-effect-demo.source.test.js": {
     "no-restricted-syntax": {
-      "count": 39
+      "count": 36
     }
   },
   "components/website/demos/visual/shaders-paper-demo.source.test.js": {

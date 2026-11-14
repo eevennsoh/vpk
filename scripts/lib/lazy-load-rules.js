@@ -68,6 +68,9 @@ const DEFAULT_LAZY_ONLY_MODULES = [
 // it, so it reaches only the routes that can render it. Applies to TS/JS imports and CSS @import.
 // `match: "stylesheet"` covers every .css file the package ships (any path under the package
 // name), so another stylesheet path such as katex/dist/katex.css cannot slip past.
+// `match: "module"` names a repository file instead: every static specifier that resolves to it
+// counts (dynamic import() stays allowed, as for every rule here), and `ownerFiles` lists the
+// files allowed to import it (C-11). A missing target or owner fails the guard.
 const DEFAULT_SINGLE_OWNER_IMPORTS = [
 	{
 		match: "stylesheet",
@@ -92,6 +95,17 @@ const DEFAULT_SINGLE_OWNER_IMPORTS = [
 		ownerFile: "components/projects/shared/components/excalidraw-runtime.css",
 		reason: "Excalidraw CSS loads with the Excalidraw runtime",
 		source: "@excalidraw/excalidraw",
+	},
+	{
+		match: "module",
+		ownerFiles: [
+			"app/data/details/visual.ts",
+			"components/website/demos/visual/shader-lab-effect-demo.source.test.js",
+			"components/website/demos/visual/shader-lab/definitions.test.ts",
+			"components/website/demos/visual/shader-lab/equality.test.ts",
+		],
+		reason: "the all-layers Shader Lab map is for the server-only details page; a demo imports its own shader-lab/layers module",
+		source: "components/website/demos/visual/shader-lab/index.ts",
 	},
 ];
 

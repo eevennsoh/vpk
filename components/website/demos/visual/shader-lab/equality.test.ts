@@ -15,7 +15,9 @@ const shaderLab = { ...helpers, ...types, SHADER_LAB_LAYER_DEFINITIONS };
  * `equality.fixture.json` was recorded from the single-file definitions on main at
  * f9c730479, before any of them moved. Every later move must keep each layer's
  * fingerprint identical. Usage, import statement and the API prop row are recorded
- * separately because the component API change is expected to change only those.
+ * separately because the component API change was expected to change only those: when
+ * demos switched to passing their layer module's definition (`definition={BLOOM_LAYER}`),
+ * those three fields were re-recorded for every layer and no other fingerprint changed.
  */
 
 type Fingerprints = Readonly<{
@@ -29,7 +31,7 @@ const FIXTURE: Fingerprints = JSON.parse(
 	readFileSync(path.join(import.meta.dirname, "equality.fixture.json"), "utf8"),
 );
 
-const API_PROP_NAME = "layerType";
+const API_PROP_NAME = "definition";
 const HALFTONE_PRESET_VALUES = ["process", "risograph", "newspaper", "vintage"] as const;
 
 function canonical(value: unknown): unknown {
@@ -70,7 +72,7 @@ function computeFingerprints(): Fingerprints {
 			apiPropDoc: hash(propDocs.filter((doc) => doc.name === API_PROP_NAME)),
 			description: hash(definition.description),
 			usage: hash(shaderLab.getShaderLabEffectUsage(definition)),
-			importStatement: hash(shaderLab.getShaderLabEffectImportStatement()),
+			importStatement: hash(shaderLab.getShaderLabEffectImportStatement(definition)),
 		};
 	}
 

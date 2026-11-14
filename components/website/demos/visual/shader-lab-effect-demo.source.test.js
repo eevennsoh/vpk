@@ -4,8 +4,11 @@ const path = require("node:path");
 const test = require("node:test");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
+const { getShaderLabEffectUsage } = require(process.cwd() + "/components/website/demos/visual/shader-lab/helpers.ts");
+const { SHADER_LAB_LAYER_DEFINITIONS } = require(process.cwd() + "/components/website/demos/visual/shader-lab/index.ts");
 const {
 	SHADER_LAB_RUNTIME_EFFECT_TYPES,
+	SHADER_LAB_RUNTIME_LAYER_TYPES,
 	SHADER_LAB_RUNTIME_SOURCE_TYPES,
 } = require(process.cwd() + "/components/website/demos/visual/shader-lab/types.ts");
 
@@ -31,24 +34,12 @@ const CHROMATIC_ABERRATION_CONFIG_SOURCE = fs.readFileSync(
 	path.join(__dirname, "shaders/chromatic-aberration-config.ts"),
 	"utf8",
 );
-const CHROMATIC_ABERRATION_V2_DEMO_SOURCE = fs.readFileSync(
-	path.join(__dirname, "chromatic-aberration-v2-demo.tsx"),
-	"utf8",
-);
 const FLUTED_GLASS_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "fluted-glass-demo.tsx"),
 	"utf8",
 );
-const FLUTED_GLASS_V2_DEMO_SOURCE = fs.readFileSync(
-	path.join(__dirname, "fluted-glass-v2-demo.tsx"),
-	"utf8",
-);
 const PATTERN_TILE_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "pattern-tile-demo.tsx"),
-	"utf8",
-);
-const PATTERN_DEMO_SOURCE = fs.readFileSync(
-	path.join(__dirname, "pattern-demo.tsx"),
 	"utf8",
 );
 
@@ -78,11 +69,17 @@ test("remaining Shader Lab effects are wired into the visual catalog", () => {
 	assert.match(DETAILS_SOURCE, /SHADER_LAB_RUNTIME_LAYER_TYPES/);
 });
 
-test("Shader Lab source layers use the runtime source-pass wrapper", () => {
-	for (const sourceType of SHADER_LAB_RUNTIME_SOURCE_TYPES) {
-		const demoSource = fs.readFileSync(path.join(__dirname, `${sourceType}-demo.tsx`), "utf8");
-		assert.match(demoSource, new RegExp(`<ShaderLabLayer layerType="${sourceType}" />`), sourceType);
+test("every Shader Lab demo renders its documented usage with its own layer module", () => {
+	for (const layerType of SHADER_LAB_RUNTIME_LAYER_TYPES) {
+		const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
+		const demoSource = fs.readFileSync(path.join(__dirname, `${getShaderLabRouteSlug(layerType)}-demo.tsx`), "utf8");
+		assert.ok(demoSource.includes(getShaderLabEffectUsage(definition)), layerType);
+		assert.ok(demoSource.includes(`from "./shader-lab/layers/${layerType}";`), layerType);
+		assert.ok(!demoSource.includes("shader-lab/index"), layerType);
 	}
+});
+
+test("Shader Lab effects composite over a replaceable default source image", () => {
 
 	assert.ok(fs.existsSync(path.join(ROOT, "public/ambient/atlassian/pictorial/clouds/primary/blue.png")));
 	assert.match(DEMO_SOURCE, /src: "\/ambient\/atlassian\/pictorial\/clouds\/primary\/blue\.png"/);
@@ -185,8 +182,5 @@ test("Shader Lab variants use v2 routes for existing VPK shader names", () => {
 		assert.ok(NAV_UTILS_SOURCE.includes(`"${slug}"`), slug);
 	}
 
-	assert.match(CHROMATIC_ABERRATION_V2_DEMO_SOURCE, /<ShaderLabEffect effectType="chromatic-aberration" \/>/);
-	assert.match(FLUTED_GLASS_V2_DEMO_SOURCE, /<ShaderLabEffect effectType="fluted-glass" \/>/);
-	assert.match(PATTERN_DEMO_SOURCE, /<ShaderLabEffect effectType="pattern" \/>/);
 	assert.match(DETAILS_SOURCE, /SHADER_LAB_V2_EFFECT_DETAILS/);
 });

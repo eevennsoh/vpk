@@ -22,14 +22,14 @@ import {
 	isShaderLabParamVisible,
 	optionLabel,
 } from "./shader-lab/helpers";
-import { SHADER_LAB_LAYER_DEFINITIONS } from "./shader-lab/index";
 import {
 	SHADER_LAB_BLEND_MODES,
 	SHADER_LAB_COMPOSITE_MODES,
 	SHADER_LAB_MASK_MODES,
 	SHADER_LAB_MASK_SOURCES,
+	type ShaderLabEffectDefinition,
+	type ShaderLabEffectLayerDefinition,
 	type ShaderLabEffectParamDefinition,
-	type ShaderLabRuntimeEffectType,
 	type ShaderLabRuntimeLayerType,
 } from "./shader-lab/types";
 
@@ -37,13 +37,15 @@ type ShaderLabMaskSource = (typeof SHADER_LAB_MASK_SOURCES)[number];
 type ShaderLabMaskMode = (typeof SHADER_LAB_MASK_MODES)[number];
 
 type ShaderLabEffectProps = Readonly<{
-	effectType: ShaderLabRuntimeEffectType;
+	/** An effect layer module's definition, e.g. `BLOOM_LAYER` from `./shader-lab/layers/bloom`. */
+	definition: ShaderLabEffectLayerDefinition;
 	className?: string;
 	style?: CSSProperties;
 }>;
 
 type ShaderLabLayerProps = Readonly<{
-	layerType: ShaderLabRuntimeLayerType;
+	/** A layer module's definition, e.g. `FLUID_LAYER` from `./shader-lab/layers/fluid`. */
+	definition: ShaderLabEffectDefinition;
 	className?: string;
 	style?: CSSProperties;
 }>;
@@ -214,8 +216,8 @@ function getShaderLabDemoLayers({
 	return [activeLayer];
 }
 
-export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerProps) {
-	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
+export function ShaderLabLayer({ definition, className, style }: ShaderLabLayerProps) {
+	const layerType = definition.type;
 	const layerKind = getShaderLabLayerKind(definition);
 	const runtimeLayerType = getShaderLabRuntimeLayerType(definition);
 	const [visible, setVisible] = useState(true);
@@ -597,10 +599,6 @@ export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerPr
 	);
 }
 
-export function ShaderLabEffect({ effectType, className, style }: ShaderLabEffectProps) {
-	return <ShaderLabLayer layerType={effectType} className={className} style={style} />;
-}
-
-export default function ShaderLabEffectDemo({ effectType }: ShaderLabEffectProps) {
-	return <ShaderLabEffect effectType={effectType} />;
+export function ShaderLabEffect({ definition, className, style }: ShaderLabEffectProps) {
+	return <ShaderLabLayer definition={definition} className={className} style={style} />;
 }

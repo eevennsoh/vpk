@@ -313,6 +313,66 @@ test("a stylesheet with one owner may not be imported by another module or style
 	});
 });
 
+test("a module rule matches every spelling that resolves to the file and allows each listed owner", () => {
+	const singleOwnerImports = [{
+		match: "module",
+		ownerFiles: ["app/details.ts", "components/lab/index.test.ts"],
+		reason: "the all-layers map is server-only",
+		source: "components/lab/index.ts",
+	}];
+	const files = {
+		"app/details.ts": 'import { ALL } from "@/components/lab/index";\nexport const details = ALL;\n',
+		"components/lab/index.test.ts": 'import { ALL } from "./index.ts";\nexport const all = ALL;\n',
+		"components/lab/index.ts": 'export const ALL = {};\n',
+		"components/lab/layers/bloom.ts": 'import type { ALL } from "..";\nexport const BLOOM = {} satisfies Partial<typeof ALL>;\n',
+		"components/lab/bloom-demo.tsx": 'import { BLOOM } from "./layers/bloom";\nexport default BLOOM;\n',
+		"components/other/index.ts": 'export const OTHER = {};\n',
+		"components/other/use.ts": 'import { OTHER } from "./index";\nexport default OTHER;\n',
+	};
+	withWorkspace(files, (cwd) => {
+		const options = { cwd, deferredModuleRules: [], fileImportRules: [], heavyImportRules: [], lazyOnlyModules: [], routeShellFiles: [], singleOwnerImports };
+		assert.deepEqual(verifyLazyLoadBoundaries(options), []);
+
+		const spellings = {
+			"components/lab/a-demo.tsx": "@/components/lab",
+			"components/lab/b-demo.tsx": "./index",
+			"components/lab/c-demo.tsx": "./index.ts",
+			"components/lab/layers/d.ts": "..",
+			"components/e.ts": "./lab",
+		};
+		for (const [filePath, specifier] of Object.entries(spellings)) {
+			writeFileSync(path.join(cwd, filePath), `import { ALL } from "${specifier}";\nexport default ALL;\n`);
+		}
+		const failures = verifyLazyLoadBoundaries(options);
+		assert.deepEqual(failures.map((failure) => [failure.filePath, failure.importPath]).sort(), [
+			["components/e.ts", "./lab"],
+			["components/lab/a-demo.tsx", "@/components/lab"],
+			["components/lab/b-demo.tsx", "./index"],
+			["components/lab/c-demo.tsx", "./index.ts"],
+			["components/lab/layers/d.ts", ".."],
+		]);
+		assert.match(formatFailure(failures[0]), /only app\/details\.ts or components\/lab\/index\.test\.ts may import/u);
+		assert.doesNotMatch(formatFailure(failures[0]), /Import from the owner/u);
+	});
+});
+
+test("a module rule fails when its target or an owner no longer exists", () => {
+	const singleOwnerImports = [{
+		match: "module",
+		ownerFiles: ["app/details.ts", "app/gone.ts"],
+		reason: "the all-layers map is server-only",
+		source: "components/lab/moved.ts",
+	}];
+	withWorkspace({ "app/details.ts": "export const details = 1;\n" }, (cwd) => {
+		const options = { cwd, deferredModuleRules: [], fileImportRules: [], heavyImportRules: [], lazyOnlyModules: [], routeShellFiles: [], singleOwnerImports };
+		const failures = verifyLazyLoadBoundaries(options);
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath]), [
+			["missing-guarded-file", "components/lab/moved.ts"],
+			["missing-guarded-file", "app/gone.ts"],
+		]);
+	});
+});
+
 test("the icon registry may not import an icon statically", () => {
 	const fileImportRules = [{ filePath: "components/registry.tsx", rules: [{ match: "prefix", reason: "registry icons load on first render", source: "@atlaskit/icon/" }] }];
 	withWorkspace({
@@ -338,6 +398,13 @@ test("default tree rules cover the C-8a stylesheets, the C-8d icon registry and 
 		["exact", "@streamdown/math", "components/ui-custom/streamdown-math.ts"],
 		["stylesheet", "leaflet", "lib/json-render/map-widget-canvas.tsx"],
 		["stylesheet", "@excalidraw/excalidraw", "components/projects/shared/components/excalidraw-runtime.css"],
+		["module", "components/website/demos/visual/shader-lab/index.ts", undefined],
+	]);
+	assert.deepEqual(DEFAULT_SINGLE_OWNER_IMPORTS.at(-1).ownerFiles, [
+		"app/data/details/visual.ts",
+		"components/website/demos/visual/shader-lab-effect-demo.source.test.js",
+		"components/website/demos/visual/shader-lab/definitions.test.ts",
+		"components/website/demos/visual/shader-lab/equality.test.ts",
 	]);
 	assert.deepEqual(DEFAULT_FILE_IMPORT_RULES.map((rule) => [rule.filePath, rule.rules.map((entry) => entry.source)]), [
 		["components/ui-custom/message-markdown.tsx", ["./message-markdown-runtime", "streamdown", "@streamdown/"]],

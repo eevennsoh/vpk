@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { getShaderLabRuntimeLayerType } from "./helpers.ts";
+import {
+	getShaderLabEffectImportStatement,
+	getShaderLabEffectUsage,
+	getShaderLabLayerExportName,
+	getShaderLabRuntimeLayerType,
+} from "./helpers.ts";
 import { SHADER_LAB_LAYER_DEFINITIONS } from "./index.ts";
 import {
 	SHADER_LAB_RUNTIME_EFFECT_TYPES,
+	SHADER_LAB_RUNTIME_LAYER_TYPES,
 	SHADER_LAB_RUNTIME_SOURCE_TYPES,
 	type ShaderLabEffectParamDefinition,
 } from "./types.ts";
@@ -78,4 +84,28 @@ test("Shader Lab sources are source layers and mesh gradient runs on the gradien
 	}
 	assert.equal(getShaderLabRuntimeLayerType(SHADER_LAB_LAYER_DEFINITIONS["mesh-gradient"]), "gradient");
 	assert.equal(getShaderLabRuntimeLayerType(SHADER_LAB_LAYER_DEFINITIONS.bloom), "bloom");
+});
+
+test("each layer module exports its definition under the documented name", async () => {
+	for (const layerType of SHADER_LAB_RUNTIME_LAYER_TYPES) {
+		const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
+		const layerModule: Record<string, unknown> = await import(`./layers/${layerType}.ts`);
+		assert.deepEqual(Object.keys(layerModule), [getShaderLabLayerExportName(definition)], layerType);
+		assert.equal(layerModule[getShaderLabLayerExportName(definition)], definition, layerType);
+	}
+});
+
+test("Shader Lab docs show the component, definition and both imports a demo uses", () => {
+	assert.equal(getShaderLabEffectUsage(SHADER_LAB_LAYER_DEFINITIONS.bloom), "<ShaderLabEffect definition={BLOOM_LAYER} />");
+	assert.equal(
+		getShaderLabEffectImportStatement(SHADER_LAB_LAYER_DEFINITIONS.bloom),
+		'import { ShaderLabEffect } from "@/components/website/demos/visual/shader-lab-effect-demo";\n'
+			+ 'import { BLOOM_LAYER } from "@/components/website/demos/visual/shader-lab/layers/bloom";',
+	);
+	assert.equal(getShaderLabEffectUsage(SHADER_LAB_LAYER_DEFINITIONS["pixel-trail"]), "<ShaderLabLayer definition={PIXEL_TRAIL_LAYER} />");
+	assert.equal(
+		getShaderLabEffectImportStatement(SHADER_LAB_LAYER_DEFINITIONS["pixel-trail"]),
+		'import { ShaderLabLayer } from "@/components/website/demos/visual/shader-lab-effect-demo";\n'
+			+ 'import { PIXEL_TRAIL_LAYER } from "@/components/website/demos/visual/shader-lab/layers/pixel-trail";',
+	);
 });

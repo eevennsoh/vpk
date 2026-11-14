@@ -78,7 +78,7 @@ function createShaderLabLayerDetail(layerType: ShaderLabRuntimeLayerType): Compo
 	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
 	return {
 		description: definition.description,
-		importStatement: getShaderLabEffectImportStatement(),
+		importStatement: getShaderLabEffectImportStatement(definition),
 		usage: getShaderLabEffectUsage(definition),
 		props: createShaderLabEffectPropDocs(definition),
 	};

@@ -420,12 +420,62 @@ function singleOwnerImportMatches(importPath, rule) {
 	return specifier === rule.source;
 }
 
+// The last path segments a specifier could end with and still resolve to `targetFile`
+// ("index" files also resolve from their directory), so most specifiers skip resolution.
+function moduleSpecifierTails(targetFile) {
+	const extension = path.extname(targetFile);
+	const stem = path.basename(targetFile, extension);
+	const tails = new Set([stem, `${stem}${extension}`]);
+	if (stem === "index") {
+		for (const tail of [path.basename(path.dirname(targetFile)), ".", ".."]) {
+			tails.add(tail);
+		}
+	}
+	return tails;
+}
+
+// A "module" rule names a repository file; any spelling that resolves to it counts
+// (`@/…`, relative, with or without extension, or its directory for an index file).
+function moduleRuleImportMatches({ cwd, filePath, importPath, rule, tails }) {
+	if (!tails.has(path.basename(importPath))) {
+		return false;
+	}
+	return resolveLocalModule(cwd, filePath, importPath) === path.normalize(rule.source);
+}
+
+function singleOwnerFiles(rule) {
+	return rule.ownerFiles ?? [rule.ownerFile];
+}
+
+// Only a file inside the target's directory, or one whose text names the directory (index
+// targets) or the file stem, can hold a specifier that resolves to a module rule's target.
+function couldImportModule(filePath, source, rule) {
+	const targetDir = path.dirname(rule.source);
+	if (filePath.startsWith(`${targetDir}/`)) {
+		return true;
+	}
+	const stem = path.basename(rule.source, path.extname(rule.source));
+	return source.includes(stem === "index" ? path.basename(targetDir) : stem);
+}
+
 function verifySingleOwnerImports({ cwd, rules }) {
 	const failures = [];
+	const moduleRules = rules.filter((rule) => rule.match === "module");
+	// A module rule whose target or owner no longer exists would match nothing and pass silently.
+	for (const rule of moduleRules) {
+		for (const filePath of [rule.source, ...singleOwnerFiles(rule)]) {
+			if (!existsSync(path.join(cwd, filePath))) {
+				failures.push({ filePath, type: "missing-guarded-file" });
+			}
+		}
+	}
+	const moduleTails = new Map(moduleRules.map((rule) => [rule, moduleSpecifierTails(rule.source)]));
 	const sourceFiles = walkSourceTree(cwd, SOURCE_ROOTS, (filePath) => SOURCE_MODULE_EXTENSIONS.includes(path.extname(filePath)) || filePath.endsWith(".css"));
 	for (const filePath of sourceFiles) {
 		const source = readFileSync(path.join(cwd, filePath), "utf8");
-		const candidateRules = rules.filter((rule) => source.includes(rule.source));
+		const candidateRules = rules.filter((rule) => (rule.match === "module"
+			? !filePath.endsWith(".css") && couldImportModule(filePath, source, rule)
+			: source.includes(rule.source)));
 		if (candidateRules.length === 0) {
 			continue;
 		}
@@ -433,12 +483,15 @@ function verifySingleOwnerImports({ cwd, rules }) {
 			? collectCssImports(source)
 			: collectRuntimeStaticModuleSpecifiers(source, filePath);
 		for (const rule of candidateRules) {
-			if (filePath === rule.ownerFile) {
+			const ownerFiles = singleOwnerFiles(rule);
+			if (ownerFiles.includes(filePath)) {
 				continue;
 			}
-			const importPath = importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
+			const importPath = rule.match === "module"
+				? importPaths.find((candidate) => moduleRuleImportMatches({ cwd, filePath, importPath: candidate, rule, tails: moduleTails.get(rule) }))
+				: importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
 			if (importPath) {
-				failures.push({ filePath, importPath, ownerFile: rule.ownerFile, reason: rule.reason, type: "single-owner-import" });
+				failures.push({ filePath, importPath, moduleRule: rule.match === "module", ownerFile: ownerFiles.join(" or "), reason: rule.reason, type: "single-owner-import" });
 			}
 		}
 	}
@@ -723,7 +776,8 @@ function formatFailure(failure) {
 		return `${failure.filePath}:${failure.line}:${failure.column}: ${failure.kind} of "${failure.importPath}" is not allowed here: ${failure.reason}.`;
 	}
 	if (failure.type === "single-owner-import") {
-		return `${failure.filePath}: imports "${failure.importPath}", which only ${failure.ownerFile} may import (${failure.reason}). Import from the owner instead.`;
+		const advice = failure.moduleRule ? "" : " Import from the owner instead.";
+		return `${failure.filePath}: imports "${failure.importPath}", which only ${failure.ownerFile} may import (${failure.reason}).${advice}`;
 	}
 	if (failure.type === "deferred-module-statically-reachable") {
 		return `${failure.filePath}: ${failure.targetFile} is statically reachable via ${failure.dependencyPath.join(" -> ")}; ${failure.reason}.`;
