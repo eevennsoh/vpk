@@ -11,8 +11,10 @@ const {
 	BASELINE_FILE,
 	collectFindings,
 	compareFindings,
+	knipAtBase,
 	main,
 	normalizeBaseline,
+	runKnip,
 	shrinkBaseline,
 } = require("./verify-unused-code");
 
@@ -45,7 +47,7 @@ function scratch(t, baseline) {
 	return cwd;
 }
 
-function run(cwd, { argv = [], knipReport = TODAY, base = null } = {}) {
+function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = null } = {}) {
 	const out = [];
 	const err = [];
 	const git = (args) => {
@@ -53,7 +55,11 @@ function run(cwd, { argv = [], knipReport = TODAY, base = null } = {}) {
 		if (args[0] === "show") return base === null ? null : JSON.stringify(base);
 		return null;
 	};
-	const status = main(argv, { cwd, env: {}, error: (line) => err.push(line), git, knip: () => knipReport, log: (line) => out.push(line) });
+	const baseKnip = () => {
+		if (!baseReport) throw new Error("the base tree should not be analysed when nothing fails");
+		return collectFindings(baseReport);
+	};
+	const status = main(argv, { baseKnip, cwd, env: {}, error: (line) => err.push(line), git, knip: () => knipReport, log: (line) => out.push(line) });
 	return { status, stderr: err.join("\n"), stdout: out.join("\n") };
 }
 
@@ -77,7 +83,7 @@ test("a new unused file fails with its path", (t) => {
 	const baseline = collectFindings(TODAY);
 	const cwd = scratch(t, baseline);
 	const knipReport = report([...TODAY_ENTRIES, { file: "components/new-orphan.tsx", files: ["components/new-orphan.tsx"] }]);
-	const result = run(cwd, { base: baseline, knipReport });
+	const result = run(cwd, { base: baseline, baseReport: TODAY, knipReport });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /1 new finding/u);
 	assert.match(result.stderr, /^- unused file: components\/new-orphan\.tsx$/mu);
@@ -92,7 +98,7 @@ test("a removed entry with a stale baseline fails with the command to refresh it
 		{ file: "lib/helpers.ts", exports: ["oldHelper"] },
 		{ file: "package.json", dependencies: ["left-pad"] },
 	]);
-	const result = run(cwd, { base: baseline, knipReport });
+	const result = run(cwd, { base: baseline, baseReport: TODAY, knipReport });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /^- unused file: components\/dead\.tsx$/mu);
 	assert.match(result.stderr, /pnpm run fix:generated --only unused-code/u);
@@ -111,6 +117,30 @@ test("a baseline that gained an entry over the merge-base fails, even when Knip 
 	assert.match(result.stderr, /may only shrink, but it gained 2 entries over base01234/u);
 	assert.match(result.stderr, /^- unused file: components\/dead\.tsx$/mu);
 	assert.match(result.stderr, /^- unused dependency: package\.json#left-pad$/mu);
+});
+
+test("problems the base tree already had are a warning, not this change's failure", (t) => {
+	const baseline = collectFindings(TODAY);
+	const cwd = scratch(t, baseline);
+	// Main used oldHelper and orphaned lib/late.ts without updating the baseline; this
+	// change is unrelated, so the merged tree inherits both problems.
+	const mainTree = report([
+		{ file: "components/dead.tsx", files: ["components/dead.tsx"] },
+		{ file: "lib/late.ts", files: ["lib/late.ts"] },
+		{ file: "package.json", dependencies: ["left-pad"] },
+	]);
+	const result = run(cwd, { base: baseline, baseReport: mainTree, knipReport: mainTree });
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /2 problem\(s\) already present at base01234, not this change's/u);
+	assert.match(result.stdout, /^- unused export: lib\/helpers\.ts#oldHelper$/mu);
+	assert.match(result.stdout, /^- unused file: lib\/late\.ts$/mu);
+
+	// The change's own new finding still fails next to the inherited ones.
+	const withOwn = report([...TODAY_ENTRIES.slice(0, 1), { file: "lib/late.ts", files: ["lib/late.ts"] }, { file: "lib/mine.ts", files: ["lib/mine.ts"] }, TODAY_ENTRIES[2]]);
+	const own = run(cwd, { base: baseline, baseReport: mainTree, knipReport: withOwn });
+	assert.equal(own.status, 1);
+	assert.match(own.stderr, /^- unused file: lib\/mine\.ts$/mu);
+	assert.doesNotMatch(own.stderr, /lib\/late\.ts/u);
 });
 
 test("--update never adds: new findings stay out and still fail", (t) => {
@@ -144,6 +174,26 @@ test("compare and shrink treat every category alike", () => {
 	assert.deepEqual(compareFindings({ baseline, current }), [{ category: "exports", entry: "a.ts#y", type: "stale" }]);
 	assert.deepEqual(shrinkBaseline({ allowed: baseline, current }), current);
 	assert.deepEqual(shrinkBaseline({ allowed: null, current }), current);
+});
+
+test("the base tree is Knip-analysed from an extract of the base commit", (t) => {
+	const repo = mkdtempSync(path.join(tmpdir(), "vpk-unused-code-repo-"));
+	t.after(() => rmSync(repo, { force: true, recursive: true }));
+	const git = (...args) => {
+		const result = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", ...args], { cwd: repo, encoding: "utf8" });
+		assert.equal(result.status, 0, result.stderr);
+		return result.stdout.trim();
+	};
+	git("init", "-q");
+	writeFileSync(path.join(repo, "package.json"), JSON.stringify({ name: "scratch", main: "index.js", private: true }));
+	writeFileSync(path.join(repo, "index.js"), "module.exports = 1;\n");
+	writeFileSync(path.join(repo, "orphan.js"), "module.exports = 2;\n");
+	git("add", ".");
+	git("commit", "-q", "-m", "base");
+	const baseRef = git("rev-parse", "HEAD");
+	rmSync(path.join(repo, "orphan.js"));
+	const findings = knipAtBase(baseRef, { cwd: repo, knip: ({ cwd }) => runKnip({ cwd, knipRoot: REPO_ROOT }) });
+	assert.deepEqual(findings.files, ["orphan.js"]);
 });
 
 // Real Knip on a scratch project: guards the JSON shape collectFindings reads.

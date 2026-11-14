@@ -717,3 +717,44 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 
 	assert.equal(createdWorkspace?.sessionId, createdWorkspace?.workspaceId)
 })
+
+test("a preview control action that fails never becomes an unhandled rejection, on the socket or the data channel", async (t) => {
+	const unhandled = []
+	const onUnhandled = (reason) => unhandled.push(reason)
+	process.on("unhandledRejection", onUnhandled)
+	t.after(() => process.off("unhandledRejection", onUnhandled))
+	const warn = t.mock.method(console, "warn", () => {})
+
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-reject",
+		sessionId: "workspace-reject-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async insertText() {
+				throw Object.assign(new Error("Text cannot start like a command-line option."), { status: 400 })
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	const sent = []
+	workspace._previewClients.add({ readyState: 1, send: (payload) => sent.push(JSON.parse(payload)) })
+
+	// The socket path: the failure comes back to the caller (whose guard answers it with
+	// a preview-error) or is answered to the preview clients directly.
+	const socketFailure = await Promise.resolve(workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--x" })).then(
+		() => null,
+		(error) => error,
+	)
+	const answered = sent.some((message) => message.type === "preview-error")
+	assert.equal(Boolean(socketFailure) || answered, true)
+	// The WebRTC data channel has no caller to return it to.
+	await workspace._handleDetachedPreviewControlMessage({ type: "preview-paste", text: "--x" })
+	await workspace._queue
+	await new Promise(setImmediate)
+
+	assert.deepEqual(unhandled, [])
+	if (socketFailure) {
+		assert.equal(warn.mock.calls.some((call) => String(call.arguments[0]).includes("Preview control message failed")), true)
+	}
+})

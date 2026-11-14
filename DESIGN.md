@@ -197,6 +197,11 @@ theme mode and ADS token resolution can change the final values.
 `text-text-subtle`, and `border-border-bold`. Raw `var(--ds-...)` values are
 escape hatches, not the normal authoring path.
 
+**The accent-is-not-status rule.** Mapped hue classes such as `bg-red-50` or
+`text-green-600` are decoration for tags, file types, avatars, and categories.
+Do not use them for errors, warnings, success, or selection; use the matching
+semantic family, such as `bg-bg-danger` with `text-text-danger`.
+
 **The nested identity rule.** A project or art-specific `DESIGN.md` may define
 its own color character, but it must still resolve through the shared token
 system unless the surface is intentionally experimental.
@@ -254,6 +259,12 @@ step obvious without adding explanatory chrome.
 - **Case:** Use sentence case for product UI headings, buttons, tabs, menu
   items, tooltips, empty states, tags, lozenges, badges, and table headers.
   Preserve proper nouns such as Jira, Confluence, Trello, Atlassian, and VPK.
+- **No all caps or eyebrows:** Do not uppercase or letter-space text in product
+  surfaces, blocks, or shared components, including section labels, lozenges,
+  tags, badges, and table headers. Do not place a small overline label above a
+  heading. When a heading needs a category, put a Lozenge (status) or Tag
+  (classification) beside it, or a byline under it. Art and website surfaces
+  can opt in as part of their own identity.
 - **Actions:** Buttons and calls to action use imperative verbs such as "Save",
   "Delete", "Connect", or "Create agent". Avoid "Submit", "OK", "Click here",
   and generic action labels that do not describe the result.
@@ -269,7 +280,8 @@ step obvious without adding explanatory chrome.
   idioms or cultural metaphors that obscure the meaning across locales.
 - **Tone during friction:** Keep errors, destructive confirmations, and billing
   copy direct and calm. Reserve playful copy for appropriate success or welcome
-  moments.
+  moments. Do not apologize ("Sorry", "Unfortunately") unless the system caused
+  the problem, and keep it brief when it did.
 
 ## 5. Layout, shape, and focus
 
@@ -301,9 +313,13 @@ repo's semantic Tailwind classes whenever a class exists.
   `--menu-inset` to the surrounding menu's inset.
   <!-- 2026-11-14: "for any separators, rather than a border bottom, we should be using this treatment" -->
 - **Radius by component intent:** Use the established shared primitive radius
-  first. Buttons and nav items stay in the medium radius family, inputs in the
-  large family, cards in the shared `rounded-xl` contract, avatars and pills in
-  the full radius family, and tile components in the tile radius family.
+  first, then the step for the component's class in
+  [Radius by component](#radius-by-component). Choose by what the component
+  is, not by taste.
+- **Border width:** Resting borders, dividers, and outlines are 1px. Use 2px
+  only for a selected marker, such as the tab underline, together with the
+  selected colors. Do not thicken a resting border for emphasis or use
+  fractional widths such as 1.5px.
 - **Focus anatomy:** Preserve shared Button, Input, and Textarea focused borders
   and 3px rings. Native controls and links use the global 2px outline with a 2px
   offset. Keep the applicable treatment visible and shaped to the control.
@@ -320,6 +336,25 @@ repo's semantic Tailwind classes whenever a class exists.
   including on hover, while keeping the columns scrollable. Why: keep the board
   visually clean.
   <!-- 2026-11-13: "on column hover we don't need to show any scrollbar on the column, please hide the scrollbar reveal" -->
+
+### Radius by component
+
+Sizes are the default values of the mapped `--ds-radius-*` tokens.
+
+| Class | Default | Use for |
+| --- | --- | --- |
+| `rounded-xs` | 2px | Badges, tag counts and remove buttons, square avatar labels |
+| `rounded-sm` | 4px | Lozenges, tags, checkboxes, keyboard shortcuts, date labels |
+| `rounded-md` | 6px | Buttons, toggles, select triggers, tabs, nav items, tooltips, alerts |
+| `rounded-lg` | 8px | Inputs, textareas, menu and picker rows, popovers, dropdown and context menus, hover cards |
+| `rounded-xl` | 12px | Cards, dialogs, drawers, command palettes |
+| `rounded-2xl` | 16px | Large media and showcase containers; `rounded-3xl` and `rounded-4xl` resolve to the same value |
+| `rounded-full` | pill | Avatars, pills, circular buttons, switches, radios, rounded tags |
+| `rounded-tile` | 25% | Tile and IconTile only |
+
+Map a Figma radius to the nearest step instead of adding an arbitrary value such
+as `rounded-[10px]`. The exception is a shared primitive that defines per-size
+radii, such as square avatars.
 
 ### Responsive behavior
 
@@ -483,7 +518,10 @@ supplied reference copy and layout when reproducing a specific product state.
   scaling the glyph.
 - **Color:** Standalone icons inherit `currentColor` from a semantic icon role.
   Pair `text-icon-subtle` with `text-text-subtle` and `text-icon-danger` with
-  `text-text-danger`; matching roles can resolve to different colors.
+  `text-text-danger`; matching roles can resolve to different colors. Chevrons,
+  bullets, sort arrows, and other secondary indicators use `text-icon-subtle`
+  or `text-icon-subtlest`; do not use `text-icon-brand` as a general emphasis
+  color.
 - **Accessibility:** Icon-only buttons need an accessible name. Decorative icons
   sitting beside visible text should be hidden from assistive technology.
 
@@ -505,6 +543,10 @@ supplied reference copy and layout when reproducing a specific product state.
   and a clear next-step action when one exists.
 - **Charts:** Use chart token mappings for series and include a label, legend,
   pattern, or shape cue so data remains understandable without color alone.
+  Assign the categorical colors in order, `chart-1` through `chart-8`, unless
+  there is a reason to remap. When a series represents a status, use the
+  semantic chart colors: `chart-success`, `chart-warning`, `chart-danger`,
+  `chart-information`, `chart-discovery`, and `chart-neutral`.
 
 ### Motion and interaction
 
@@ -520,6 +562,10 @@ supplied reference copy and layout when reproducing a specific product state.
 - **Reduced motion:** Duration and easing aliases do not automatically respect
   `prefers-reduced-motion`. Add explicit CSS guards or `useReducedMotion()` to
   disable non-essential motion or replace it with instant state changes.
+- **Spring and bounce:** `ease-spring` belongs to the role recipes in
+  [Motion decisions](.agents/rules/motion-decisions.md), currently avatar hover.
+  Do not add bounce, elastic, or overshoot easing to product surfaces; art
+  surfaces can own expressive easing.
 - **Focus of motion:** Use one focal animation when multiple elements change.
   Dense dashboards and repeated work surfaces should not run idle decorative
   loops.
@@ -577,5 +623,7 @@ feature code.
 - **Don't** default every page section to a card or nest cards inside cards.
 - **Don't** use decorative side-stripe borders, gradient text, generic
   glassmorphism, or repeated identical icon-heading-text card grids.
+- **Don't** use the hero-metric template (oversized number, tiny label,
+  decorative gradient) or sparklines with no labeled metric or legend.
 - **Don't** let one art surface's palette, shader, or motion language become a
   shared primitive unless it is intentionally extracted into the toolkit.

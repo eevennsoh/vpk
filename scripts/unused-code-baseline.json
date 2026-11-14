@@ -400,7 +400,6 @@
 		"backend/lib/rovo-app-artifact-routing.js#getLatestRovoAppDocumentContent",
 		"backend/lib/rovo-app-availability.js#DEFAULT_ROVO_APP_ROVO_STARTUP_GRACE_MS",
 		"backend/lib/rovo-app-availability.js#ROVO_APP_ROVO_STARTUP_POLL_MS",
-		"backend/lib/rovo-app-browser-mirror.js#HeadlessMirrorBrowser",
 		"backend/lib/rovo-app-browser-mirror.js#getOrCreateMirrorBrowser",
 		"backend/lib/rovo-app-browser-mirror.js#mirrorBrowsers",
 		"backend/lib/rovo-app-browser-tools.js#getBaseBrowserToolName",

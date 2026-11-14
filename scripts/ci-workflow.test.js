@@ -215,7 +215,7 @@ test("the browser smoke job serves a production build and runs only the @smoke s
 	const steps = stepsFor(jobs.smoke);
 	const order = ["Install dependencies", "Build the static export", "Serve the production build", "Install Chromium", "Smoke specs"];
 	assert.deepEqual(steps.map((step) => step.name).filter((name) => order.includes(name)), order);
-	assert.match(jobs.smoke, /run: time pnpm run build:export/u);
+	assert.match(jobs.smoke, /set -o pipefail\n\s+time pnpm run build:export 2>&1 \| tee output\/export-build\.log/u);
 	assert.match(jobs.smoke, /cp -R out backend\/public/u);
 	assert.match(jobs.smoke, /VPK_RUNTIME_ADMIN_TOKEN="\$\(openssl rand -hex 32\)" NODE_ENV=production PORT=8080 nohup node backend\/server.js/u, "a throwaway admin token, generated in the step");
 	assert.doesNotMatch(jobs.smoke, /secrets\.VPK_RUNTIME_ADMIN_TOKEN/u);
@@ -227,6 +227,14 @@ test("the browser smoke job serves a production build and runs only the @smoke s
 	assert.equal(smoke.env.PLAYWRIGHT_BASE_URL, "http://localhost:8080");
 	assert.equal(require("../package.json").scripts["test:e2e:smoke"], "node scripts/run-playwright-smoke.mjs");
 	assert.doesNotMatch(workflow, /pull_request_target/u);
+	// Pull requests check the manifest budgets from the build this job already made; no second build.
+	const budgets = steps.find((step) => step.name === "Route byte budgets (manifest sizes)");
+	assert.ok(budgets);
+	assert.ok(steps.indexOf(budgets) > steps.findIndex((step) => step.name === "Smoke specs"));
+	assert.equal(budgets.condition, "${{ !cancelled() }}");
+	assert.match(jobs.smoke, /run: \|\n\s+node scripts\/collect-perf-baseline\.js --input output\/export-build\.log\n\s+node scripts\/verify-perf-baseline-budget\.js\n/u);
+	assert.doesNotMatch(jobs.smoke, /verify-perf-baseline-budget\.js --(?:warn-only|require-fetched)/u);
+	assert.equal((jobs.smoke.match(/pnpm run build/gu) ?? []).length, 1);
 });
 
 test("the perf job checks route byte budgets on pushes to main, never on PRs", () => {

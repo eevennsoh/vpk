@@ -765,3 +765,28 @@ test("an uploaded HTML or SVG file is served as a sandboxed download, an image i
 		await image.arrayBuffer();
 	});
 });
+
+test("reading a thread's browser workspace needs runtime admin in production", async () => {
+	const { createRuntimeAdminControls } = require("../middleware/runtime-admin");
+	const { requireRuntimeAdmin } = createRuntimeAdminControls({
+		allowedOrigins: [],
+		consoleImpl: { error() {}, log() {}, warn() {} },
+		env: { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "test-admin-token" },
+	});
+	const dependencies = createDependencies({ requireRuntimeAdmin });
+	let reads = 0;
+	const getThreadBrowserWorkspace = dependencies.getThreadBrowserWorkspace;
+	dependencies.getThreadBrowserWorkspace = (options) => {
+		reads += 1;
+		return getThreadBrowserWorkspace(options);
+	};
+	await withServer(dependencies, async (baseUrl) => {
+		const url = `${baseUrl}/api/rovo/threads/thread-1/browser-workspace`;
+		const anonymous = await fetch(url);
+		assert.equal(anonymous.status, 403);
+		assert.equal(reads, 0);
+		const admin = await fetch(url, { headers: { "x-vpk-runtime-admin-token": "test-admin-token" } });
+		assert.equal(admin.status, 200);
+		assert.deepEqual(await admin.json(), { threadId: "thread-1", workspaceId: "browser-thread-1" });
+	});
+});

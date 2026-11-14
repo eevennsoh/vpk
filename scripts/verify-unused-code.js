@@ -7,11 +7,17 @@
 // --only unused-code`); and the baseline may not gain entries over the one at the base
 // commit (scripts/lib/ratchet-base.js), so hand-adding an entry fails too. `--update` only
 // removes: it keeps the entries Knip still reports that the base baseline already had.
+//
+// A new or stale entry the base commit already had (main changed code without updating the
+// baseline, or two changes raced) is not this change's: when the comparison fails, Knip also
+// runs on the base tree, and problems that tree shows against its own baseline are printed as
+// a warning instead of failing the change.
 
 "use strict";
 
 const { spawnSync } = require("node:child_process");
-const { existsSync, readFileSync, writeFileSync } = require("node:fs");
+const { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } = require("node:fs");
+const { tmpdir } = require("node:os");
 const path = require("node:path");
 
 const { isBaseRequired, resolveBaseRef, runGit } = require("./lib/ratchet-base");
@@ -149,9 +155,9 @@ function summarize(findings) {
 		.join(", ");
 }
 
-function runKnip({ cwd = REPO_ROOT } = {}) {
+function runKnip({ cwd = REPO_ROOT, knipRoot = cwd } = {}) {
 	// The package exports neither its bin nor package.json, so take the linked install.
-	const knip = path.join(cwd, "node_modules", "knip", "bin", "knip.js");
+	const knip = path.join(knipRoot, "node_modules", "knip", "bin", "knip.js");
 	const result = spawnSync(process.execPath, [knip, "--reporter", "json", "--no-progress", "--no-exit-code", "--no-config-hints"], {
 		cwd,
 		encoding: "utf8",
@@ -162,6 +168,39 @@ function runKnip({ cwd = REPO_ROOT } = {}) {
 		throw new Error(`knip exited with ${result.status ?? result.signal}:\n${result.stderr || result.stdout}`);
 	}
 	return JSON.parse(result.stdout);
+}
+
+// Knip's findings for the base commit's tree: an extract of that commit (without the asset
+// folders Knip ignores) that borrows this checkout's installed packages.
+function knipAtBase(baseRef, { cwd = REPO_ROOT, knip = runKnip } = {}) {
+	const dir = mkdtempSync(path.join(tmpdir(), "vpk-unused-code-base-"));
+	try {
+		const excludes = ["artifacts", "public", "media", ".agents/skills/vpk-html/assets", "**/.env*"].map((pattern) => `':(exclude,glob)${pattern}'`).join(" ");
+		const extract = spawnSync("/bin/sh", ["-c", `git archive ${baseRef} -- . ${excludes} | tar -x -C '${dir}'`], { cwd, encoding: "utf8" });
+		if (extract.status !== 0) throw new Error(`could not extract ${baseRef}: ${extract.stderr}`);
+		for (const modules of ["node_modules", "backend/node_modules"]) {
+			if (existsSync(path.join(cwd, modules)) && existsSync(path.dirname(path.join(dir, modules)))) {
+				symlinkSync(path.join(cwd, modules), path.join(dir, modules));
+			}
+		}
+		return collectFindings(knip({ cwd: dir, knipRoot: cwd }));
+	} finally {
+		rmSync(dir, { force: true, recursive: true });
+	}
+}
+
+function problemKey({ category, entry, type }) {
+	return `${type}\0${category}\0${entry}`;
+}
+
+// Splits failures into this change's and those the base tree already shows against its own
+// baseline. Grown entries are always this change's.
+function splitInherited(problems, { base, baseFindings }) {
+	const inherited = new Set(compareFindings({ baseline: base, current: baseFindings }).map(problemKey));
+	return {
+		inherited: problems.filter((problem) => problem.type !== "grown" && inherited.has(problemKey(problem))),
+		own: problems.filter((problem) => problem.type === "grown" || !inherited.has(problemKey(problem))),
+	};
 }
 
 function readBaselineAt(baseRef, { cwd = REPO_ROOT, git = runGit } = {}) {
@@ -188,7 +227,7 @@ function resolveBase({ cwd = REPO_ROOT, env = process.env, git = runGit } = {}) 
 	return { base: readBaselineAt(baseRef, { cwd, git }), baseRef, warning: null };
 }
 
-function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env, knip = runKnip, git = runGit, log = console.log, error = console.error } = {}) {
+function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env, knip = runKnip, baseKnip = knipAtBase, git = runGit, log = console.log, error = console.error } = {}) {
 	const update = argv.includes("--update");
 	const started = performance.now();
 	let resolved;
@@ -225,7 +264,15 @@ function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env
 		error(`Unused code: ${BASELINE_FILE} is missing. Restore it from main; it is never regenerated from scratch.`);
 		return 1;
 	}
-	const problems = compareFindings({ base: resolved.base, baseline, current });
+	let problems = compareFindings({ base: resolved.base, baseline, current });
+	if (resolved.base && problems.some((problem) => problem.type !== "grown")) {
+		const { inherited, own } = splitInherited(problems, { base: resolved.base, baseFindings: baseKnip(resolved.baseRef, { cwd, knip }) });
+		if (inherited.length > 0) {
+			log(`Unused code: ${inherited.length} problem(s) already present at ${resolved.baseRef.slice(0, 9)}, not this change's (refresh with ${UPDATE_COMMAND} when convenient):`);
+			log(formatProblems(inherited, { baseRef: resolved.baseRef }));
+		}
+		problems = own;
+	}
 	if (problems.length > 0) {
 		error(formatProblems(problems, { baseRef: resolved.baseRef }));
 		return 1;
@@ -247,7 +294,10 @@ module.exports = {
 	collectFindings,
 	compareFindings,
 	formatProblems,
+	knipAtBase,
 	main,
 	normalizeBaseline,
+	runKnip,
 	shrinkBaseline,
+	splitInherited,
 };
