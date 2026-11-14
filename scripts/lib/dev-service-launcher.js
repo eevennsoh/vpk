@@ -53,6 +53,10 @@ async function launchDevService(service) {
 		const self = owned ? identityOf(process.pid) : { start: null, command: null };
 		const server = identityOf(childPid);
 		try {
+			// Reusing a server it did not start, this launcher first drops the entry it recorded for
+			// its own failed attempt (a lock race), so the record does not name its exited child;
+			// an entry another launcher has since recorded stays.
+			if (!owned) clearService(process.cwd(), service, { pid: process.pid });
 			recordService(process.cwd(), service, {
 				port,
 				pid: owned ? process.pid : null,

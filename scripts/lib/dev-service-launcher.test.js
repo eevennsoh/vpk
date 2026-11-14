@@ -201,6 +201,13 @@ test("frontend handles a lock acquired during spawn by locating the running serv
 		await settle();
 		assert.deepEqual(h.exits, [owned ? 1 : 0]);
 		assert.equal(h.files.has("/worktree/.dev-frontend-port"), !owned);
+		if (!owned) {
+			// The failed attempt's own entry is dropped before the reused server is recorded.
+			assert.deepEqual(h.stackRecords.slice(-2), [
+				{ service: "frontend", cleared: true },
+				{ service: "frontend", port: 4000, pid: null, pidStart: null, pidCommand: null, childPid: null, childStart: null, childCommand: null },
+			]);
+		}
 		assert.equal(h.signalTarget.listenerCount("SIGHUP"), 0);
 	}
 });
