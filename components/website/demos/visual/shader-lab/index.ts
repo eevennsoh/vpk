@@ -1,4 +1,8 @@
-/** Every Shader Lab layer definition, keyed by layer type. Each definition lives in its own `./layers` module. */
+/**
+ * Every Shader Lab layer definition, keyed by layer type. Only the server-only visual details
+ * page and tests may import the whole set (`verify:lazy-load` single-owner rule); a demo
+ * imports its own `./layers` module so its chunk carries one layer.
+ */
 import type {
 	ShaderLabEffectDefinition,
 	ShaderLabRuntimeEffectType,

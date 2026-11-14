@@ -420,12 +420,42 @@ function singleOwnerImportMatches(importPath, rule) {
 	return specifier === rule.source;
 }
 
+// The last path segments a specifier could end with and still resolve to `targetFile`
+// ("index" files also resolve from their directory), so most specifiers skip resolution.
+function moduleSpecifierTails(targetFile) {
+	const extension = path.extname(targetFile);
+	const stem = path.basename(targetFile, extension);
+	const tails = new Set([stem, `${stem}${extension}`]);
+	if (stem === "index") {
+		for (const tail of [path.basename(path.dirname(targetFile)), ".", ".."]) {
+			tails.add(tail);
+		}
+	}
+	return tails;
+}
+
+// A "module" rule names a repository file; any spelling that resolves to it counts
+// (`@/…`, relative, with or without extension, or its directory for an index file).
+function moduleRuleImportMatches({ cwd, filePath, importPath, rule, tails }) {
+	if (!tails.has(path.basename(importPath))) {
+		return false;
+	}
+	return resolveLocalModule(cwd, filePath, importPath) === path.normalize(rule.source);
+}
+
+function singleOwnerFiles(rule) {
+	return rule.ownerFiles ?? [rule.ownerFile];
+}
+
 function verifySingleOwnerImports({ cwd, rules }) {
 	const failures = [];
+	const moduleTails = new Map(rules.filter((rule) => rule.match === "module").map((rule) => [rule, moduleSpecifierTails(rule.source)]));
 	const sourceFiles = walkSourceTree(cwd, SOURCE_ROOTS, (filePath) => SOURCE_MODULE_EXTENSIONS.includes(path.extname(filePath)) || filePath.endsWith(".css"));
 	for (const filePath of sourceFiles) {
 		const source = readFileSync(path.join(cwd, filePath), "utf8");
-		const candidateRules = rules.filter((rule) => source.includes(rule.source));
+		const candidateRules = rules.filter((rule) => (rule.match === "module"
+			? !filePath.endsWith(".css")
+			: source.includes(rule.source)));
 		if (candidateRules.length === 0) {
 			continue;
 		}
@@ -433,12 +463,15 @@ function verifySingleOwnerImports({ cwd, rules }) {
 			? collectCssImports(source)
 			: collectRuntimeStaticModuleSpecifiers(source, filePath);
 		for (const rule of candidateRules) {
-			if (filePath === rule.ownerFile) {
+			const ownerFiles = singleOwnerFiles(rule);
+			if (ownerFiles.includes(filePath)) {
 				continue;
 			}
-			const importPath = importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
+			const importPath = rule.match === "module"
+				? importPaths.find((candidate) => moduleRuleImportMatches({ cwd, filePath, importPath: candidate, rule, tails: moduleTails.get(rule) }))
+				: importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
 			if (importPath) {
-				failures.push({ filePath, importPath, ownerFile: rule.ownerFile, reason: rule.reason, type: "single-owner-import" });
+				failures.push({ filePath, importPath, ownerFile: ownerFiles.join(" or "), reason: rule.reason, type: "single-owner-import" });
 			}
 		}
 	}

@@ -73,6 +73,9 @@ export type ShaderLabEffectDefinition = Readonly<{
 	presetDefaults?: ShaderLabPresetDefaults;
 }>;
 
+/** A definition whose layer is a runtime effect, as `ShaderLabEffect` requires. */
+export type ShaderLabEffectLayerDefinition = ShaderLabEffectDefinition & Readonly<{ type: ShaderLabRuntimeEffectType }>;
+
 export type ShaderLabPropDoc = Readonly<{
 	name: string;
 	type: string;
