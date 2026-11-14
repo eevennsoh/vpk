@@ -1009,7 +1009,16 @@ async function resumeToolCalls(port, decisionsOrInput, options = {}) {
 
 // An SSE stream's phase (SM-BT-10): awaiting-first-event → streaming → done | paused |
 // aborted | timeout | failed. The last five are terminal; `finish(reason)` is the one way
-// in, and only its first call acts.
+// in, and only its first call acts. Every ending but `done` closes the connection. A cancel
+// is sent to Rovo only when the turn may still be running there and nothing else will end
+// it, and never once the stream has ended:
+//   done               no cancel (Rovo ended the turn)
+//   paused             no cancel (the paused tool call owns the turn)
+//   aborted            no cancel here (sendMessageStreaming cancels a queued turn)
+//   timeout            cancel
+//   failed: refused    no cancel (the stream never started)
+//   failed: connection no cancel (the connection broke; as before)
+//   failed: error event, or an exception in our own handling of the stream: cancel
 const SSE_STREAM_TERMINAL_PHASES = Object.freeze(["done", "paused", "aborted", "timeout", "failed"]);
 
 function openSseStream({
@@ -1029,6 +1038,8 @@ function openSseStream({
 }) {
 	/** @type {"awaiting-first-event" | "streaming" | "done" | "paused" | "aborted" | "timeout" | "failed"} */
 	let phase = "awaiting-first-event";
+	// Rovo has ended the stream: from then on no cancel is sent for this turn.
+	let streamEnded = false;
 	let currentReq = null;
 	let currentRes = null;
 	let streamSilenceTimer = null;
@@ -1064,21 +1075,24 @@ function openSseStream({
 
 	/**
 	 * Ends the stream once. "done", "paused" and "aborted" resolve it; "timeout" and
-	 * "failed" reject it with `error`. A timeout also cancels the turn on Rovo.
+	 * "failed" reject it with `error`. Every reason but "done" closes the connection;
+	 * `cancel` (default: only for a timeout) also cancels the turn on Rovo, unless the
+	 * stream has already ended.
 	 * @param {"done" | "paused" | "aborted" | "timeout" | "failed"} reason
 	 * @param {Error} [error]
+	 * @param {{ cancel?: boolean }} [options]
 	 */
-	const finish = (reason, error) => {
+	const finish = (reason, error, { cancel = reason === "timeout" } = {}) => {
 		if (isFinished()) {
 			return false;
 		}
 		phase = reason;
 		clearStreamSilenceTimer();
-		if (reason === "timeout") {
+		if (cancel && !streamEnded) {
 			cancelTimedOutStream();
-			destroySockets(error);
-		} else if (reason === "paused" || reason === "aborted") {
-			destroySockets();
+		}
+		if (reason !== "done") {
+			destroySockets(reason === "timeout" ? error : undefined);
 		}
 		settleStream?.(reason === "timeout" || reason === "failed" ? error : null);
 		return true;
@@ -1142,11 +1156,11 @@ function openSseStream({
 			}
 
 			if (res.statusCode !== 200) {
-				// Refused: the stream will never produce events, so its timer stops now.
+				// Refused: the stream will never produce events, so no turn is cancelled. It
+				// fails when its body ends, breaks off, or stalls past the first-event timeout.
 				clearStreamSilenceTimer();
 				let errData = "";
-				res.on("data", (chunk) => (errData += chunk));
-				res.on("end", () =>
+				const failRefused = () =>
 					finish(
 						"failed",
 						createHttpStatusError(
@@ -1155,8 +1169,13 @@ function openSseStream({
 							path,
 							errData,
 						),
-					),
-				);
+						{ cancel: false },
+					);
+				res.on("data", (chunk) => (errData += chunk));
+				res.on("end", failRefused);
+				res.on("close", failRefused);
+				res.on("error", failRefused);
+				streamSilenceTimer = setTimeout(failRefused, firstEventTimeoutMs);
 				return;
 			}
 
@@ -1179,7 +1198,6 @@ function openSseStream({
 				if (isFinished()) {
 					return;
 				}
-				noteStreamActivity();
 
 				buffer += chunk.toString();
 
@@ -1288,6 +1306,7 @@ function openSseStream({
 							finish(
 								"failed",
 								new Error(parsed.message ?? parsed.error ?? JSON.stringify(parsed)),
+								{ cancel: true },
 							);
 							return;
 						}
@@ -1307,15 +1326,34 @@ function openSseStream({
 			// disconnects is delivered.
 			let chunkQueue = Promise.resolve();
 			res.on("data", (chunk) => {
+				// Data counts as activity when it arrives, even while an earlier chunk waits on
+				// a pause decision.
+				noteStreamActivity();
 				chunkQueue = chunkQueue
 					.then(() => handleChunk(chunk))
 					.catch((error) => {
-						finish("failed", error instanceof Error ? error : new Error(String(error)));
+						// Our own handling failed (a callback, or a pause decision that threw):
+						// the turn may still be running on Rovo, so it is ended there too.
+						finish("failed", error instanceof Error ? error : new Error(String(error)), { cancel: true });
 					});
 			});
 
 			res.on("end", () => {
-				// The stream ends after every chunk it delivered has been handled.
+				// The stream ends after every chunk it delivered has been handled. A pause
+				// decision still pending is waited for, bounded by the idle timeout, and
+				// nothing is cancelled: Rovo has already ended the stream.
+				streamEnded = true;
+				clearStreamSilenceTimer();
+				if (!isFinished()) {
+					streamSilenceTimer = setTimeout(() => {
+						const error = new Error(
+							`Rovo stream ended but its pending tool pause decision did not complete within ${Math.max(1, Math.ceil(idleTimeoutMs / 1000))}s`,
+						);
+						error.code = "ROVO_STREAM_PAUSE_DECISION_TIMEOUT";
+						error.phase = "ended";
+						finish("failed", error);
+					}, idleTimeoutMs);
+				}
 				void chunkQueue.then(() => finish("done"));
 			});
 
@@ -1388,9 +1426,9 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 	let activeStreamHandle = null;
 	const skipSetChatMessage = options.skipSetChatMessage === true;
 	// The turn before its stream opens: restoring (the session) → queuing (the message) →
-	// queued. A continuation reuses a turn that is already queued. Once the stream is open,
-	// its own phase applies (getPhase).
-	/** @type {"restoring" | "queuing" | "queued"} */
+	// queued, or failed / aborted before the stream opened. A continuation reuses a turn that
+	// is already queued. Once the stream is open, its own phase applies (getPhase).
+	/** @type {"restoring" | "queuing" | "queued" | "failed" | "aborted"} */
 	let turnPhase = skipSetChatMessage ? "queued" : "queuing";
 	let cancelPromise = null;
 	const firstEventTimeoutMs =
@@ -1418,6 +1456,9 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 
 	// Only a queued turn exists on Rovo to cancel.
 	const ensureCancellation = ({ timeoutMs = 10_000 } = {}) => {
+		if (cancelPromise) {
+			return cancelPromise;
+		}
 		if (turnPhase !== "queued") {
 			return Promise.resolve(null);
 		}
@@ -1543,6 +1584,9 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 				callbacks.onDone(fullText);
 			}
 		} catch (err) {
+			if (!activeStreamHandle) {
+				turnPhase = abortController.signal.aborted ? "aborted" : "failed";
+			}
 			if (!abortController.signal.aborted) {
 				console.error("[rovo] Stream error:", err);
 				callbacks.onError(err instanceof Error ? err : new Error(String(err)));
@@ -1555,10 +1599,14 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 	return {
 		abort: async () => {
 			abortController.abort();
+			// Asked before the phase changes, so a queued turn is still cancelled.
+			const cancellation = ensureCancellation({ timeoutMs: 10_000 });
 			if (activeStreamHandle) {
 				activeStreamHandle.abort();
+			} else {
+				turnPhase = "aborted";
 			}
-			return ensureCancellation({ timeoutMs: 10_000 });
+			return cancellation;
 		},
 		disconnect: () => {
 			if (activeStreamHandle) {

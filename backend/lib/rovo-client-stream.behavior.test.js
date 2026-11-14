@@ -21,8 +21,9 @@ function listen(server) {
  * A Rovo stand-in: set_chat_message answers 200 (or `setChatStatus`), cancel answers 200,
  * and stream_chat is handed to `onStream(res)` after its SSE headers (or `streamStatus`).
  */
-async function startRovo(t, { onStream = () => {}, setChatStatus = 200, streamStatus = 200 } = {}) {
+async function startRovo(t, { onStream = () => {}, onRefusedStream = null, setChatStatus = 200, streamStatus = 200 } = {}) {
 	const requests = [];
+	let streamClosedBeforeEnd = 0;
 	const waiters = [];
 	const notify = () => {
 		for (const waiter of [...waiters]) {
@@ -47,6 +48,17 @@ async function startRovo(t, { onStream = () => {}, setChatStatus = 200, streamSt
 			return;
 		}
 		if (req.url.startsWith("/v3/stream_chat")) {
+			res.on("close", () => {
+				if (!res.writableEnded) {
+					streamClosedBeforeEnd += 1;
+					requests.push("CLOSED /v3/stream_chat");
+					notify();
+				}
+			});
+			if (onRefusedStream) {
+				onRefusedStream(res);
+				return;
+			}
 			if (streamStatus !== 200) {
 				res.writeHead(streamStatus, { "Content-Type": "application/json" });
 				res.end(JSON.stringify({ detail: "stream refused" }));
@@ -69,6 +81,8 @@ async function startRovo(t, { onStream = () => {}, setChatStatus = 200, streamSt
 	return {
 		port,
 		requests,
+		/** How many stream responses the client closed before Rovo ended them. */
+		closedByClient: () => streamClosedBeforeEnd,
 		/** Resolves once `count` requests matching `line` were seen. */
 		waitFor: (line, count = 1) =>
 			new Promise((resolve) => {
@@ -318,7 +332,7 @@ test("a continuation that reuses the queued turn skips set_chat_message and canc
 	await rovo.waitFor("POST /v3/cancel");
 
 	assert.equal(handle.getPhase(), "aborted");
-	assert.deepEqual(rovo.requests, ["GET /v3/stream_chat", "POST /v3/cancel"]);
+	assert.deepEqual(rovo.requests.filter((line) => !line.startsWith("CLOSED")), ["GET /v3/stream_chat", "POST /v3/cancel"]);
 });
 
 test("a refused stream fails with its HTTP status", async (t) => {
@@ -364,4 +378,187 @@ test("an error event fails the stream with its message", async (t) => {
 	assert.equal(await ended, "error");
 	assert.equal(seen.errors[0].message, "model overloaded");
 	assert.deepEqual(seen.done, []);
+});
+
+// Sends a request after the test's last action: anything the client sent before it
+// (a cancel) has reached the stand-in by the time this one has.
+function probe(rovo) {
+	return new Promise((resolve) => {
+		http.get(`http://127.0.0.1:${rovo.port}/probe`, (res) => res.resume().on("end", resolve));
+	}).then(() => rovo.waitFor("GET /probe"));
+}
+
+const cancels = (rovo) => rovo.requests.filter((line) => line === "POST /v3/cancel").length;
+
+test("a refused stream whose body breaks off fails with its status and cancels nothing", async (t) => {
+	const rovo = await startRovo(t, {
+		onRefusedStream: (res) => {
+			res.writeHead(503, { "Content-Type": "text/plain", "Content-Length": "100" });
+			res.write("partial", () => res.socket.destroy());
+		},
+	});
+	const { ended, handle, seen } = stream(rovo.port);
+
+	assert.equal(await ended, "error");
+	assert.equal(seen.errors[0].statusCode, 503);
+	assert.equal(handle.getPhase(), "failed");
+	await probe(rovo);
+	assert.equal(cancels(rovo), 0);
+});
+
+test("a refused stream whose body stalls fails at the first-event timeout and cancels nothing", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const rovo = await startRovo(t, {
+		onRefusedStream: (res) => {
+			res.writeHead(503, { "Content-Type": "text/plain", "Content-Length": "100" });
+			res.write("partial");
+		},
+	});
+	const { ended, seen } = stream(rovo.port, { options: { firstEventTimeoutMs: 5_000 } });
+	await nextStage(seen, "rovo_set_chat_message_complete");
+	await rovo.waitFor("GET /v3/stream_chat");
+	for (let turn = 0; turn < 20; turn += 1) {
+		await new Promise((resolve) => setImmediate(resolve));
+	}
+
+	t.mock.timers.tick(5_000);
+
+	assert.equal(await ended, "error");
+	assert.equal(seen.errors[0].statusCode, 503);
+	await probe(rovo);
+	assert.equal(cancels(rovo), 0);
+});
+
+test("a pause decision that throws fails the turn, closes the stream and cancels the turn once", async (t) => {
+	const rovo = await startRovo(t, {
+		onStream: (res) => {
+			res.write(textPart("Before. "));
+			res.write(pauseEvent);
+		},
+	});
+	const { ended, seen } = stream(rovo.port, {
+		callbacks: {
+			onPauseToolCalls: async () => {
+				throw new Error("resume_tool_calls failed");
+			},
+		},
+	});
+
+	assert.equal(await ended, "error");
+	assert.equal(seen.errors[0].message, "resume_tool_calls failed");
+	await rovo.waitFor("CLOSED /v3/stream_chat");
+	await rovo.waitFor("POST /v3/cancel");
+	await probe(rovo);
+	assert.equal(cancels(rovo), 1);
+});
+
+test("an error event closes a stream Rovo holds open and cancels the turn once; nothing after it is delivered", async (t) => {
+	const rovo = await startRovo(t, {
+		onStream: (res) => {
+			res.write(sse("error", { message: "model overloaded" }));
+			res.write(textPart("after the error"));
+		},
+	});
+	const { ended, seen } = stream(rovo.port);
+
+	assert.equal(await ended, "error");
+	await rovo.waitFor("CLOSED /v3/stream_chat");
+	await probe(rovo);
+	assert.equal(cancels(rovo), 1);
+	assert.equal(seen.chunks.some((chunk) => chunk.text === "after the error"), false);
+});
+
+test("data that arrives while a pause decision is pending keeps the stream alive", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	let streamRes;
+	const rovo = await startRovo(t, {
+		onStream: (res) => {
+			streamRes = res;
+			res.write(textPart("Before. "));
+			res.write(pauseEvent);
+		},
+	});
+	let decide;
+	const decision = new Promise((resolve) => {
+		decide = resolve;
+	});
+	let pauseSeen;
+	const pauseReached = new Promise((resolve) => {
+		pauseSeen = resolve;
+	});
+	const { ended, seen } = stream(rovo.port, {
+		callbacks: {
+			onPauseToolCalls: async () => {
+				pauseSeen();
+				await decision;
+				return { disconnect: false };
+			},
+		},
+		options: { firstEventTimeoutMs: 9_000, idleTimeoutMs: 9_000 },
+	});
+	await pauseReached;
+
+	for (let step = 0; step < 3; step += 1) {
+		t.mock.timers.tick(5_000);
+		await new Promise((resolve) => streamRes.write(textPart(`more ${step}. `), resolve));
+		for (let turn = 0; turn < 20; turn += 1) {
+			await new Promise((resolve) => setImmediate(resolve));
+		}
+	}
+	assert.deepEqual(seen.errors, []);
+	decide();
+	streamRes.end();
+
+	assert.equal(await ended, "done");
+	assert.deepEqual(seen.done, ["Before. more 0. more 1. more 2. "]);
+	assert.equal(cancels(rovo), 0);
+});
+
+test("a stream that ends during a pending pause decision waits for it and never cancels", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	for (const decisionCompletes of [true, false]) {
+		const rovo = await startRovo(t, {
+			onStream: (res) => {
+				res.write(textPart("Before. "));
+				res.end(pauseEvent);
+			},
+		});
+		let decide;
+		const decision = new Promise((resolve) => {
+			decide = resolve;
+		});
+		const { ended, seen } = stream(rovo.port, {
+			callbacks: { onPauseToolCalls: () => decision.then(() => ({ disconnect: false })) },
+			options: { firstEventTimeoutMs: 9_000, idleTimeoutMs: 9_000 },
+		});
+		await nextStage(seen, "rovo_first_sse_event");
+		for (let turn = 0; turn < 20; turn += 1) {
+			await new Promise((resolve) => setImmediate(resolve));
+		}
+
+		t.mock.timers.tick(5_000);
+		if (decisionCompletes) {
+			decide();
+			assert.equal(await ended, "done", "decision completes");
+		} else {
+			t.mock.timers.tick(5_000);
+			assert.equal(await ended, "error", "decision never completes");
+			assert.equal(seen.errors[0].code, "ROVO_STREAM_PAUSE_DECISION_TIMEOUT");
+			decide();
+		}
+		await probe(rovo);
+		assert.equal(cancels(rovo), 0, String(decisionCompletes));
+	}
+});
+
+test("a turn that ends before its stream opens reports a terminal phase", async (t) => {
+	const refused = await startRovo(t, { setChatStatus: 500 });
+	const failed = stream(refused.port);
+	await failed.ended;
+	assert.equal(failed.handle.getPhase(), "failed");
+
+	const rovo = await startRovo(t);
+	const { handle } = stream(rovo.port);
+	await handle.abort();
+	assert.equal(handle.getPhase(), "aborted");
 });
