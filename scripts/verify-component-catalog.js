@@ -66,6 +66,8 @@ const DEMO_CATEGORY_DIRS = {
 const DETAIL_LEAF_CATEGORIES = new Set(["blocks", "ui", "ui-custom", "visual"]);
 // Barrels scripts/generate-catalog-barrels.js writes from the manifest and the leaves.
 const GENERATED_DETAIL_BARREL_CATEGORIES = new Set(["blocks", "ui", "ui-custom"]);
+// Primary registries whose conventional entries scripts/generate-catalog-registry.js writes.
+const GENERATED_REGISTRY_CATEGORIES = new Set(["arts", "blocks", "ui", "ui-custom", "ui-charts", "utility", "visual"]);
 // Categories whose entries may own an App Router page that renders the demo full screen.
 const ROUTE_PAGE_CATEGORIES = new Set(["projects", "arts"]);
 const PRIMARY_REGISTRY_TARGETS = {
@@ -340,7 +342,7 @@ function getComponentAddPlan({
 	return {
 		category,
 		detailExportName,
-		generated: { detailBarrel: GENERATED_DETAIL_BARREL_CATEGORIES.has(category) },
+		generated: { detailBarrel: GENERATED_DETAIL_BARREL_CATEGORIES.has(category), primaryRegistry: GENERATED_REGISTRY_CATEGORIES.has(category) },
 		importPath,
 		key,
 		name: component?.name ?? toTitleCase(slug),
@@ -370,6 +372,7 @@ function getComponentAddPlan({
 		},
 		validationCommands: [
 			...(GENERATED_DETAIL_BARREL_CATEGORIES.has(category) ? ["corepack pnpm run fix:generated --only catalog-barrels"] : []),
+			...(GENERATED_REGISTRY_CATEGORIES.has(category) ? ["corepack pnpm run fix:generated --only catalog-registry"] : []),
 			"corepack pnpm run verify:catalog",
 			"corepack pnpm run test:catalog",
 			"corepack pnpm run verify:repo-map",
@@ -422,7 +425,9 @@ function printComponentAddPlan(plan) {
 		console.log(`- detail record (inline, no leaf file): ${plan.paths.detailBarrel}`);
 	}
 	console.log(`- primary demo: ${plan.paths.demo}`);
-	console.log(`- primary registry: ${plan.paths.primaryRegistry}`);
+	console.log(plan.generated.primaryRegistry
+		? `- primary registry: ${plan.paths.primaryRegistry} (generated for a <slug>-demo demo: pnpm run fix:generated --only catalog-registry; anything else by hand below the region)`
+		: `- primary registry: ${plan.paths.primaryRegistry}`);
 	console.log(`- variant registry: ${plan.paths.variantRegistry}`);
 	for (const routePage of plan.paths.routePages) {
 		console.log(`- route page: ${routePage}${plan.status.routePages ? "" : " (new: copy an existing route page, e.g. app/jira/page.tsx, then pnpm run fix:generated --only repo-map)"}`);
@@ -434,7 +439,7 @@ function printComponentAddPlan(plan) {
 		if (plan.snippets.detailImport) console.log(`- detail import: ${plan.snippets.detailImport}`);
 		console.log(`- detail record: ${plan.snippets.detailRecord}`);
 	}
-	console.log(`- primary registry: ${plan.snippets.primaryRegistryEntry}`);
+	if (!plan.generated.primaryRegistry) console.log(`- primary registry: ${plan.snippets.primaryRegistryEntry}`);
 	console.log("");
 	console.log("Validation:");
 	for (const command of plan.validationCommands) {
