@@ -1,7 +1,7 @@
 "use client";
 
-import type { ComponentProps, ComponentType, MouseEvent } from "react";
-import { lazy, memo, Suspense, use, useState } from "react";
+import type { ComponentProps, ComponentType, MouseEvent, ReactNode } from "react";
+import { Component, memo, Suspense, use, useState } from "react";
 
 import type { MessageResponseProps } from "./message-markdown-runtime";
 import { cn } from "@/lib/utils";
@@ -14,39 +14,97 @@ type MarkdownRuntime = Pick<typeof import("./message-markdown-runtime"), "Messag
 // so it loads with the first message that renders instead of with every route that can show
 // one. A route whose page is messages (Rovo, Studio) imports the runtime statically instead; the
 // runtime registers itself when it evaluates, so messages there render without a lazy boundary.
-// A failed load is forgotten, so the next render retries it.
 let loadedRuntime: MarkdownRuntime | null = null;
 let runtimeLoad: Promise<MarkdownRuntime> | null = null;
+let runtimeLoadFailed = false;
+
+class MessageMarkdownLoadError extends Error {}
 
 export function registerMessageMarkdownRuntime(runtime: MarkdownRuntime) {
 	loadedRuntime = runtime;
-	runtimeLoad ??= Promise.resolve(runtime);
+	runtimeLoad = Promise.resolve(runtime);
+	runtimeLoadFailed = false;
 }
 
-export function preloadMessageMarkdown(): Promise<MarkdownRuntime> {
+function loadRuntime(): Promise<MarkdownRuntime> {
 	runtimeLoad ??= import("./message-markdown-runtime").then(
 		(runtime) => {
 			loadedRuntime = runtime;
 			return runtime;
 		},
 		(error: unknown) => {
-			runtimeLoad = null;
-			throw error;
+			runtimeLoadFailed = true;
+			throw new MessageMarkdownLoadError("The message markdown runtime failed to load", { cause: error });
 		},
 	);
 	return runtimeLoad;
 }
 
-const LazyMessageResponse = lazy(() => preloadMessageMarkdown().then((runtime) => ({ default: runtime.MessageResponse })));
+// A failed load stays cached until a message has shown its fallback for it: React re-renders a
+// suspended message before committing, and a fresh import on each of those would refetch a failing
+// chunk in a loop. After that, the next render that needs the runtime loads it again.
+function forgetFailedRuntimeLoad() {
+	if (runtimeLoadFailed) {
+		runtimeLoad = null;
+		runtimeLoadFailed = false;
+	}
+}
+
+// For user intent that predicts a reply (opening a chat, typing); retries a load that failed.
+export function preloadMessageMarkdown(): Promise<MarkdownRuntime> {
+	forgetFailedRuntimeLoad();
+	return loadRuntime();
+}
+
+function DeferredMessageResponse(props: Readonly<MessageResponseProps>) {
+	// Always through use(): skipping it once the runtime has loaded would change the hooks a
+	// suspended render called.
+	const RuntimeMessageResponse = use(loadRuntime()).MessageResponse;
+	return <RuntimeMessageResponse {...props} />;
+}
+
+type LoadBoundaryProps = Readonly<{ children: ReactNode; fallback: ReactNode; retryKey: unknown }>;
+
+// Catches only a failed runtime load: the message shows its text unformatted, and the next render
+// with new props (the next streamed chunk, for one) tries the load again. Render errors from the
+// runtime itself go on to the boundaries above, as they do when the runtime is imported directly.
+class MessageMarkdownLoadBoundary extends Component<LoadBoundaryProps, { error: unknown }> {
+	state = { error: null as unknown };
+
+	static getDerivedStateFromError(error: unknown) {
+		return { error };
+	}
+
+	componentDidCatch() {
+		forgetFailedRuntimeLoad();
+	}
+
+	componentDidUpdate(previous: LoadBoundaryProps) {
+		if (this.state.error !== null && previous.retryKey !== this.props.retryKey) {
+			this.setState({ error: null });
+		}
+	}
+
+	render() {
+		if (this.state.error === null) {
+			return this.props.children;
+		}
+		if (!(this.state.error instanceof MessageMarkdownLoadError)) {
+			throw this.state.error;
+		}
+		return this.props.fallback;
+	}
+}
 
 // While the runtime loads, the message keeps its box with the text laid out but not shown, so
-// raw markdown never flashes and the content does not jump when the formatted text lands.
-function MessageResponsePending({ children, className, plain }: Readonly<Pick<MessageResponseProps, "children" | "className" | "plain">>) {
+// raw markdown never flashes and the content does not jump when the formatted text lands. If the
+// load failed, the text is shown as it is rather than not at all.
+function MessageResponsePlainText({ children, className, plain, state }: Readonly<Pick<MessageResponseProps, "children" | "className" | "plain"> & { state: "pending" | "unavailable" }>) {
 	return (
 		<div
-			aria-busy="true"
-			className={cn(!plain && "typeset typeset-chat", "invisible size-full whitespace-pre-wrap", className)}
-			data-message-markdown="pending"
+			aria-busy={state === "pending" ? "true" : undefined}
+			className={cn(!plain && "typeset typeset-chat", state === "pending" && "invisible", "size-full whitespace-pre-wrap", className)}
+			data-message-markdown={state}
 		>
 			{typeof children === "string" ? children : null}
 		</div>
@@ -61,10 +119,16 @@ export const MessageResponse = memo(function MessageResponse(props: Readonly<Mes
 		const RuntimeMessageResponse = runtimeAtMount.MessageResponse;
 		return <RuntimeMessageResponse {...props} />;
 	}
+	const plainText = (state: "pending" | "unavailable") => (
+		<MessageResponsePlainText className={props.className} plain={props.plain} state={state}>{props.children}</MessageResponsePlainText>
+	);
+	// `props` is a new object exactly when this memoized component re-renders with new props.
 	return (
-		<Suspense fallback={<MessageResponsePending className={props.className} plain={props.plain}>{props.children}</MessageResponsePending>}>
-			<LazyMessageResponse {...props} />
-		</Suspense>
+		<MessageMarkdownLoadBoundary fallback={plainText("unavailable")} retryKey={props}>
+			<Suspense fallback={plainText("pending")}>
+				<DeferredMessageResponse {...props} />
+			</Suspense>
+		</MessageMarkdownLoadBoundary>
 	);
 });
 
@@ -83,7 +147,7 @@ type StreamdownComponentMap = MarkdownRuntime["streamdownComponents"];
 
 function createStreamdownComponentProxy<Name extends StreamdownComponentName>(name: Name): StreamdownComponentMap[Name] {
 	function StreamdownComponentProxy(props: Record<string, unknown>) {
-		const runtime = loadedRuntime ?? use(preloadMessageMarkdown());
+		const runtime = loadedRuntime ?? use(loadRuntime());
 		const Component = runtime.streamdownComponents[name] as ComponentType<Record<string, unknown>>;
 		return <Component {...props} />;
 	}
