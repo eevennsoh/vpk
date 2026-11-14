@@ -91,13 +91,13 @@ test("Team EU26 filled preset renders the high-confidence sections and details r
 	);
 	assert.match(
 		bodySource,
-		/import \{ ChildItemsProgressBar \} from "@\/components\/projects\/jira\/components\/work-item-modal\/child-items-progress-bar"/u,
+		/import \{ ChildItemsProgressBar \} from "@\/components\/blocks\/jira-work-item\/components\/work-item-modal\/child-items-progress-bar"/u,
 	);
 	assert.match(bodySource, /const childItems = toWorkItemChildItems\(TEAM_EU26_SUBITEMS, statuses\)/u);
 	assert.match(bodySource, /<ChildItemsProgressBar items=\{childItems\} \/>/u);
 	assert.match(
 		fs.readFileSync(
-			path.join(process.cwd(), "components/projects/jira/components/work-item-modal/child-items-progress-bar.tsx"),
+			path.join(process.cwd(), "components/blocks/jira-work-item/components/work-item-modal/child-items-progress-bar.tsx"),
 			"utf8",
 		),
 		/aria-valuemax=\{100\}[\s\S]*aria-valuemin=\{0\}[\s\S]*aria-valuenow=\{donePercent\}[\s\S]*role="progressbar"/u,

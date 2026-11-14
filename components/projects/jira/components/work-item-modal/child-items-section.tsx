@@ -8,7 +8,7 @@ import Heading from "@/components/ui/heading";
 import { useWorkItemData, type WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
 
 import { ChildItemRow } from "./child-item-row";
-import { ChildItemsProgressBar } from "./child-items-progress-bar";
+import { ChildItemsProgressBar } from "@/components/blocks/jira-work-item/components/work-item-modal/child-items-progress-bar";
 import { ChildItemsTableHeader } from "./child-items-table-header";
 import AddIcon from "@atlaskit/icon/core/add";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";

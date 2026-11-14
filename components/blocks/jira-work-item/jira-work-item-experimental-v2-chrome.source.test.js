@@ -172,7 +172,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	const modalHeaderSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/jira/components/work-item-modal/modal-header.tsx"),
+		path.join(BLOCK_DIR, "components/work-item-modal/modal-header.tsx"),
 		"utf8",
 	);
 	const titleActionsSource = readBlockFile("experimental-v2/components/context-title-actions.tsx");
