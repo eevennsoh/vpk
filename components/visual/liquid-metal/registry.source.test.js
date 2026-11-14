@@ -40,5 +40,5 @@ test("Liquid Metal docs register the main preview and visual example demos", () 
 		assert.match(detailsSource, new RegExp(`demoSlug: "${demoSlug}"`, "u"));
 		assert.match(registrySource, new RegExp(`"${demoSlug}"`, "u"));
 	}
-	assert.match(registrySource, /visual: VISUAL_VARIANT_DEMOS/u);
+	assert.match(registrySource, /visual: \(\) => import\("@\/components\/website\/registry\/visual"\)\.then\(\(module\) => \(\{ demos: module\.VISUAL_DEMOS, variants: module\.VISUAL_VARIANT_DEMOS \}\)\)/u);
 });

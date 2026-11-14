@@ -66,8 +66,8 @@ test("ui-charts catalog section is wired through data, routes, previews, and reg
 	assert.match(loaderSource, /\| "ui-charts"/u);
 	assert.match(registrySource, /const UI_CHARTS_DEMO/u);
 	assert.match(registrySource, /const UI_CHARTS_VARIANT_DEMOS/u);
-	assert.match(registrySource, /"ui-charts": UI_CHARTS_DEMO/u);
-	assert.match(registrySource, /"ui-charts": UI_CHARTS_VARIANT_DEMOS/u);
+	assert.match(registrySource, /"ui-charts": \(\) => import\("@\/components\/website\/registry\/ui-charts"\)\.then\(\(module\) => \(\{ demos: module\.UI_CHARTS_DEMO,/u);
+	assert.match(registrySource, /demos: module\.UI_CHARTS_DEMO, variants: module\.UI_CHARTS_VARIANT_DEMOS \}/u);
 	assert.match(detailsSource, /export const UI_CHART_DETAILS/u);
 	assert.match(sidebarSource, /title: "UI — Charts"/u);
 	assert.match(titleSource, /"ui-charts": "UI — Charts"/u);

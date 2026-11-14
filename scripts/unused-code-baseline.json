@@ -234,7 +234,6 @@
 		"components/utils/design-config-injector.tsx",
 		"components/utils/make-preview-react-grab-mount.tsx",
 		"components/website/demos/visual/shaders/liquid-gradient.tsx",
-		"components/website/registry.ts",
 		"lib/design-config-bridge.ts",
 		"lib/rovo-runtime-status.ts",
 		"lib/rovo-runtime-types.ts"

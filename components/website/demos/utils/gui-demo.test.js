@@ -13,7 +13,7 @@ const { renderComponent } = require(path.join(ROOT, "scripts/lib/render-componen
 test("GUI utility docs expose a rendered full-config example", () => {
 	assert.match(DETAILS_SOURCE, /examplesContentWidth: "full"/);
 	assert.match(DETAILS_SOURCE, /title: "Full config"[\s\S]*demoSlug: "gui-demo-full-config"/);
-	assert.match(REGISTRY_SOURCE, /utility: UTILITY_VARIANT_DEMOS/);
+	assert.match(REGISTRY_SOURCE, /utility: \(\) => import\("@\/components\/website\/registry\/utility"\)\.then\(\(module\) => \(\{ demos: module\.UTILITY_DEMOS, variants: module\.UTILITY_VARIANT_DEMOS \}\)\)/);
 	assert.match(REGISTRY_SOURCE, /const UTILITY_VARIANT_DEMOS[\s\S]*"gui-demo-full-config": dynamic\(/);
 	assert.match(REGISTRY_SOURCE, /default: mod\.GUIFullConfigDemo/);
 	assert.match(DEMO_SOURCE, /export function GUIFullConfigDemo\(\)/);

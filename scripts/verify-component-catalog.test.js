@@ -593,21 +593,25 @@ test("component catalog validator reports orphan demo files absent from registry
 	}
 });
 
-test("registry collector follows the split registry shim and imported category maps", () => {
+// The category map lives in components/website/demo-registry-loader.ts.
+function writeLoader(cwd, { demos, variants = null }) {
+	const tables = variants ? `{ demos: module.${demos}, variants: module.${variants} }` : `{ demos: module.${demos} }`;
+	writeFileSync(path.join(cwd, "components/website/demo-registry-loader.ts"), [
+		"const CATEGORY_REGISTRY_LOADERS = {",
+		`\tui: () => import("@/components/website/registry/ui").then((module) => (${tables})),`,
+		"};",
+		"",
+	].join("\n"));
+}
+
+test("registry collector reads the category map from the demo loader", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-catalog-split-"));
 	try {
 		const registryDir = path.join(cwd, "components/website/registry");
 		const demoDir = path.join(cwd, "components/website/demos/ui");
 		mkdirSync(registryDir, { recursive: true });
 		mkdirSync(demoDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO, UI_VARIANT_DEMOS as UI_VARIANTS } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO };",
-			"const VARIANT_REGISTRIES = { ui: UI_VARIANTS };",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO", variants: "UI_VARIANT_DEMOS" });
 		writeFileSync(path.join(registryDir, "ui.ts"), [
 			'import dynamic from "next/dynamic";',
 			'import type { ComponentType } from "react";',
@@ -645,14 +649,7 @@ test("registry collector follows spread shards in imported category maps", () =>
 		const demoDir = path.join(cwd, "components/website/demos/ui");
 		mkdirSync(path.join(registryDir, "ui"), { recursive: true });
 		mkdirSync(demoDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO, UI_VARIANT_DEMOS } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO };",
-			"const VARIANT_REGISTRIES = { ui: UI_VARIANT_DEMOS };",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO", variants: "UI_VARIANT_DEMOS" });
 		writeFileSync(path.join(registryDir, "ui.ts"), [
 			'import { UI_BASE_DEMOS } from "./ui/base";',
 			'import { UI_BASE_VARIANT_DEMOS } from "./ui/base-variants";',
@@ -697,22 +694,15 @@ test("registry collector follows spread shards in imported category maps", () =>
 	}
 });
 
-test("registry collector fails clearly for unresolved imported registry maps", () => {
+test("registry collector fails clearly for a table the loader names but the file lacks", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-catalog-missing-import-"));
 	try {
 		const registryDir = path.join(cwd, "components/website/registry");
 		mkdirSync(registryDir, { recursive: true });
-		writeFileSync(path.join(cwd, "components/website/registry.ts"), 'export { getDemoComponent } from "./registry/index";\n');
-		writeFileSync(path.join(registryDir, "index.ts"), [
-			'import { UI_DEMO_MISSING } from "./ui";',
-			"const CATEGORY_REGISTRIES = { ui: UI_DEMO_MISSING };",
-			"const VARIANT_REGISTRIES = {};",
-			"export function getDemoComponent() { return null; }",
-			"",
-		].join("\n"));
+		writeLoader(cwd, { demos: "UI_DEMO_MISSING" });
 		writeFileSync(path.join(registryDir, "ui.ts"), "export const UI_DEMO = {};\n");
 
-		assert.throws(() => collectRegistryData(cwd), /Could not resolve imported registry object UI_DEMO_MISSING/u);
+		assert.throws(() => collectRegistryData(cwd), /Could not resolve ui demos table UI_DEMO_MISSING in components\/website\/registry\/ui\.ts/u);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}
