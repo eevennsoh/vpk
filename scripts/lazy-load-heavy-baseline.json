@@ -210,9 +210,11 @@
 		"app/rovo/[[...id]]/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
+			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki"
+			"shiki",
+			"streamdown"
 		],
 		"app/rovo/layout.tsx": [
 			"@atlaskit/logo",
@@ -254,9 +256,11 @@
 		"app/studio/[[...id]]/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
+			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki"
+			"shiki",
+			"streamdown"
 		],
 		"app/studio/layout.tsx": [
 			"@atlaskit/logo",
@@ -364,9 +368,11 @@
 		"components/projects/rovo/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
+			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki"
+			"shiki",
+			"streamdown"
 		],
 		"components/projects/search/page.tsx": [
 			"@atlaskit/logo",
@@ -389,9 +395,11 @@
 		"components/projects/studio/page.tsx": [
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
+			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki"
+			"shiki",
+			"streamdown"
 		]
 	}
 }

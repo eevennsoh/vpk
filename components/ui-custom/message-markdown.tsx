@@ -1,20 +1,27 @@
 "use client";
 
 import type { ComponentProps, ComponentType, MouseEvent } from "react";
-import { lazy, memo, Suspense, use } from "react";
+import { lazy, memo, Suspense, use, useState } from "react";
 
 import type { MessageResponseProps } from "./message-markdown-runtime";
 import { cn } from "@/lib/utils";
 
 export type { MessageResponseProps } from "./message-markdown-runtime";
 
-type MarkdownRuntime = typeof import("./message-markdown-runtime");
+type MarkdownRuntime = Pick<typeof import("./message-markdown-runtime"), "MessageResponse" | "streamdownComponents">;
 
 // The Streamdown runtime with its plugins (math with KaTeX, mermaid, code, CJK) is about 1.2 MB,
 // so it loads with the first message that renders instead of with every route that can show
-// one. A failed load is forgotten, so the next render retries it.
+// one. A route whose page is messages (Rovo, Studio) imports the runtime statically instead; the
+// runtime registers itself when it evaluates, so messages there render without a lazy boundary.
+// A failed load is forgotten, so the next render retries it.
 let loadedRuntime: MarkdownRuntime | null = null;
 let runtimeLoad: Promise<MarkdownRuntime> | null = null;
+
+export function registerMessageMarkdownRuntime(runtime: MarkdownRuntime) {
+	loadedRuntime = runtime;
+	runtimeLoad ??= Promise.resolve(runtime);
+}
 
 export function preloadMessageMarkdown(): Promise<MarkdownRuntime> {
 	runtimeLoad ??= import("./message-markdown-runtime").then(
@@ -47,6 +54,13 @@ function MessageResponsePending({ children, className, plain }: Readonly<Pick<Me
 }
 
 export const MessageResponse = memo(function MessageResponse(props: Readonly<MessageResponseProps>) {
+	// Decided once per instance: an instance never switches from the lazy path to the direct one,
+	// which would remount a streaming message.
+	const [runtimeAtMount] = useState(() => loadedRuntime);
+	if (runtimeAtMount) {
+		const RuntimeMessageResponse = runtimeAtMount.MessageResponse;
+		return <RuntimeMessageResponse {...props} />;
+	}
 	return (
 		<Suspense fallback={<MessageResponsePending className={props.className} plain={props.plain}>{props.children}</MessageResponsePending>}>
 			<LazyMessageResponse {...props} />

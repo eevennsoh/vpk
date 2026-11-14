@@ -27,7 +27,7 @@ import {
 } from "@/components/ui-custom/code-block";
 import { resolveImageRenderSrc } from "@/lib/image-proxy";
 import { cn } from "@/lib/utils";
-import { MarkdownAnchor } from "./message-markdown";
+import { MarkdownAnchor, registerMessageMarkdownRuntime } from "./message-markdown";
 
 const linkSafetyConfig: LinkSafetyConfig = {
 	enabled: true,
@@ -419,3 +419,5 @@ export const MessageResponse = memo(
 		);
 	},
 );
+
+registerMessageMarkdownRuntime({ MessageResponse, streamdownComponents });
