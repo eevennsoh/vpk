@@ -7,14 +7,13 @@
 // ---------------------------------------------------------------------------
 
 const {
-	DEFAULT_ATLASSIAN_SITE_HOST,
+	resolveDefaultAtlassianSite,
 	isAllowedAtlassianSite,
 	quoteJqlString,
 	requireHoursAgo,
 	requireJiraProjectKey,
 } = require("./jira-query-inputs");
 
-const DEFAULT_SITE_URL = DEFAULT_ATLASSIAN_SITE_HOST;
 const DEFAULT_HOURS_AGO = 24;
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -222,7 +221,7 @@ function buildStandupSummary(items, siteUrl, timeWindowHours) {
  * Generate a standup summary from Jira activity.
  *
  * @param {object} options
- * @param {string}   [options.siteUrl]    - Jira site (default: product-fabric.atlassian.net)
+ * @param {string}   [options.siteUrl]    - Jira site (default: the first ATLASSIAN_SITE_HOSTS entry, else product-fabric.atlassian.net)
  * @param {number}   [options.hoursAgo]   - Time window in hours (default: 24)
  * @param {string[]} [options.projects]   - Filter by Jira project keys
  * @param {number}   [options.limit]      - Max results (default: 50, max: 100)
@@ -230,7 +229,7 @@ function buildStandupSummary(items, siteUrl, timeWindowHours) {
  * @returns {Promise<object>} StandupSummary
  */
 async function generateStandupSummary({
-	siteUrl = DEFAULT_SITE_URL,
+	siteUrl = resolveDefaultAtlassianSite(),
 	hoursAgo = DEFAULT_HOURS_AGO,
 	projects = [],
 	limit,

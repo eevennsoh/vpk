@@ -13,6 +13,7 @@ const {
 const { sendError } = require("../middleware/error-response");
 const {
 	FILE_RESPONSE_SECURITY_HEADERS,
+	buildContentDisposition,
 	decideUploadResponseHeaders,
 } = require("../lib/upload-response-headers");
 const {
@@ -892,10 +893,7 @@ function createRovoAppRouter({
 			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
 				res.setHeader(name, value);
 			}
-			res.setHeader(
-				"Content-Disposition",
-				`inline; filename="${path.basename(absolutePath)}"`,
-			);
+			res.setHeader("Content-Disposition", buildContentDisposition("inline", path.basename(absolutePath)));
 			return res.sendFile(absolutePath);
 		} catch (error) {
 			if (error?.code === "ENOENT") {
