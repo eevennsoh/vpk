@@ -101,6 +101,17 @@ test("Shader Lab halftone preset defaults are unchanged", () => {
 	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.halftone, "preset", "unknown"), null);
 	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.halftone, "preset", 1), null);
 	assert.equal(shaderLab.getShaderLabPresetDefaults(definitions.bloom, "preset", "process"), null);
+
+	const definitionsWithPresets = Object.values(definitions)
+		.filter((definition) => "presetDefaults" in definition)
+		.map((definition) => definition.type);
+	assert.deepEqual(definitionsWithPresets, ["halftone"]);
+	assert.deepEqual(Object.keys(definitions.halftone.presetDefaults), ["preset"]);
+	const presetOptions = definitions.halftone.params
+		.find((param) => param.key === "preset")
+		?.options?.map((option) => option.value);
+	assert.deepEqual(presetOptions, [...HALFTONE_PRESET_VALUES, "custom"]);
+	assert.deepEqual(Object.keys(definitions.halftone.presetDefaults.preset), [...HALFTONE_PRESET_VALUES]);
 });
 
 test("Shader Lab fingerprints cover exactly the recorded layers", () => {
