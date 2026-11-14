@@ -8,12 +8,11 @@ const generativeWidget = require("./generative-widget.ts");
 
 const { createBodyOnlySpec, parseGenerativeWidget } = generativeWidget;
 
-test("generative-widget exports exactly the six runtime functions", () => {
+test("generative-widget exports exactly the five runtime functions", () => {
 	assert.deepEqual(Object.keys(generativeWidget).sort(), [
 		"buildGenerativeWidgetSubmitPrompt",
 		"createBodyOnlySpec",
 		"formatGenerativeWidgetCardDescription",
-		"parseExcalidrawPreviewScene",
 		"parseGenerativeWidget",
 		"resolveGenerativeWidgetMetadata",
 	]);

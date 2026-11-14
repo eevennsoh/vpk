@@ -312,15 +312,22 @@ export function parseVideoPreviewBody(value: unknown): PreviewVideoBody | null {
 	return body;
 }
 
+function isNonArrayRecord(value: unknown): value is Record<string, unknown> {
+	return isObjectRecord(value) && !Array.isArray(value);
+}
+
+// The one Excalidraw scene parser, for widget bodies and artifact file content alike.
+// Strings are read like every other widget string (trimmed, empty or leaked system-prompt
+// text dropped); appState and files must be objects, as Excalidraw reads them as records.
 export function parseExcalidrawPreviewScene(value: unknown): PreviewExcalidrawScene | null {
-	if (!isObjectRecord(value) || !Array.isArray(value.elements)) {
+	if (!isNonArrayRecord(value) || !Array.isArray(value.elements)) {
 		return null;
 	}
 
 	const type = getNonEmptyString(value.type);
 	const source = getNonEmptyString(value.source);
-	const appState = isObjectRecord(value.appState) ? value.appState : null;
-	const files = isObjectRecord(value.files) ? value.files : undefined;
+	const appState = isNonArrayRecord(value.appState) ? value.appState : null;
+	const files = isNonArrayRecord(value.files) ? value.files : undefined;
 	const version = typeof value.version === "number" ? value.version : undefined;
 
 	return {
