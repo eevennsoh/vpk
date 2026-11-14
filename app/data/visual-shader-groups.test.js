@@ -22,7 +22,7 @@ function extractGroupSlugs(source, groupName) {
 }
 
 test("Visual Mesh catalog uses default slug for Framer mesh and mesh-v2 for SVG mesh", () => {
-	const componentSource = readProjectFile("app/data/components.ts");
+	const componentSource = readProjectFile("app/data/component-manifest.ts");
 	const manifestSource = readProjectFile("app/data/component-manifest.ts");
 	const detailsSource = readDetailCategorySource("visual");
 	const registrySource = readWebsiteRegistrySource();

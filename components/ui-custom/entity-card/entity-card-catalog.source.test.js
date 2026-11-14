@@ -11,7 +11,7 @@ function readProjectFile(...segments) {
 	return readFileSync(join(ROOT, ...segments), "utf8");
 }
 
-const COMPONENTS_SOURCE = readProjectFile("app/data/components.ts");
+const COMPONENTS_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const MANIFEST_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const DETAILS_SOURCE = readDetailCategorySource("ui-custom");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();

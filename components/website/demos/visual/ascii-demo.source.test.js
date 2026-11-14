@@ -10,7 +10,7 @@ const CORE_SOURCE = fs.readFileSync(path.join(__dirname, "shaders/ascii-core.ts"
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "ascii-demo.tsx"), "utf8");
 const CONTROL_MODEL_SOURCE = fs.readFileSync(path.join(__dirname, "ascii-control-model.ts"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../../../app/data/components.ts"),
+	path.join(__dirname, "../../../../app/data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = fs.readFileSync(

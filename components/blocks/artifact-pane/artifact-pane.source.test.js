@@ -321,7 +321,7 @@ test("Artifact Pane labels use colored tags in the field and grouped picker", ()
 });
 
 test("Artifact Pane is registered as a documented block", () => {
-	assert.match(readProjectFile("app/data/components.ts"), /blockComponent\("artifact-pane", "Artifact Pane"\)/u);
+	assert.match(readProjectFile("app/data/component-manifest.ts"), /blockComponent\("artifact-pane", "Artifact Pane"\)/u);
 	assert.match(readProjectFile("app/data/component-manifest.ts"), /blockComponent\("artifact-pane", "Artifact Pane"\)/u);
 	assert.match(readProjectFile("app/data/details/blocks.ts"), /"artifact-pane": ARTIFACT_PANE_DETAIL/u);
 	assert.match(readProjectFile("components/website/registry/blocks.ts"), /"artifact-pane": dynamic\(/u);

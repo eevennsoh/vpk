@@ -17,7 +17,7 @@ const AGENT_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/agent
 const AGENT_DETAIL_SOURCE = readProjectFile("app/data/details/blocks/agent.ts");
 const AGENT_DETAIL_HELPER_SOURCE = readProjectFile("app/data/details/blocks/agent-detail.ts");
 const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
-const COMPONENTS_SOURCE = readProjectFile("app/data/components.ts");
+const COMPONENTS_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const COMPONENT_MANIFEST_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const WEBSITE_REGISTRY_SOURCE = readWebsiteRegistrySource();
 

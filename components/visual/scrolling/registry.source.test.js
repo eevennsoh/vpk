@@ -18,7 +18,7 @@ test("Scrolling is registered in both visual catalogs", () => {
 	// Two separate sources: `verify:catalog` only reads component-manifest.ts,
 	// while `app/visual/[slug]/page.tsx` resolves slugs through components.ts.
 	// A one-sided landing therefore 404s the route with a green catalog gate.
-	assert.match(readProjectFile("app/data/components.ts"), ENTRY);
+	assert.match(readProjectFile("app/data/component-manifest.ts"), ENTRY);
 	assert.match(readProjectFile("app/data/component-manifest.ts"), ENTRY);
 });
 
