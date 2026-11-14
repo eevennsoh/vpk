@@ -61,7 +61,7 @@ test("a frame over the size cap closes that socket with 1009 and leaves the back
 	t.after(() => socket.terminate());
 	const closed = once(socket, "close");
 	socket.on("error", () => {});
-	socket.send("x".repeat(3 * 1024 * 1024));
+	socket.send("x".repeat(2 * 1024 * 1024));
 	const [code] = await closed;
 	assert.equal(code, 1009);
 	const health = await fetch(`http://${host}:${port}/healthcheck`);

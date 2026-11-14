@@ -49,10 +49,13 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 	};
 }
 
-// The largest legitimate frames are a pasted clipboard text on the preview socket and an
-// injected thread context on the realtime socket; audio chunks are a few KiB. ws closes a
-// socket that sends more with 1009 instead of buffering it (its default is 100 MiB).
-const WS_MAX_PAYLOAD_BYTES = 2 * 1024 * 1024;
+// Frame caps (provisional). ws buffers up to 100 MiB per frame by default and closes a
+// socket that sends more than its cap with 1009.
+// Realtime: an audio chunk is 4096 samples resampled to 24 kHz PCM16, about 6 KiB of
+// base64; the largest client frame is a context_inject carrying thread context text.
+const REALTIME_MAX_PAYLOAD_BYTES = 1024 * 1024;
+// Preview: control messages only (pointer, wheel, key, sync, and paste text).
+const PREVIEW_MAX_PAYLOAD_BYTES = 256 * 1024;
 
 const BROWSER_PREVIEW_PATH = /^\/api\/browser-workspaces\/(?<workspaceId>[^/]+)\/live$/u;
 
@@ -169,8 +172,8 @@ function registerBackendWebSocketRelays(server, {
 		throw new Error("registerBackendWebSocketRelays requires webSocketImpl.Server");
 	}
 
-	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
-	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
+	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
+	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
 	const verifyUpgrade = (requestUrl, request, options) => {
 		return verifyRuntimeSocketUpgrade(requestUrl, request, {
 			isAllowedRuntimeSocketOrigin,
@@ -325,7 +328,8 @@ function registerBackendWebSocketRelays(server, {
 }
 
 module.exports = {
-	WS_MAX_PAYLOAD_BYTES,
+	PREVIEW_MAX_PAYLOAD_BYTES,
+	REALTIME_MAX_PAYLOAD_BYTES,
 	guardListener,
 	parseUpgradeTarget,
 	getRuntimeSocketTokenFromUpgrade,

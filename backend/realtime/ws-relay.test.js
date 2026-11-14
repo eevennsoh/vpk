@@ -4,7 +4,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-	WS_MAX_PAYLOAD_BYTES,
+	PREVIEW_MAX_PAYLOAD_BYTES,
+	REALTIME_MAX_PAYLOAD_BYTES,
 	getRuntimeSocketTokenFromUpgrade,
 	guardListener,
 	registerBackendWebSocketRelays,
@@ -569,14 +570,14 @@ test("preview control messages that are not objects, or whose action rejects, ar
 	}
 });
 
-test("both WebSocket servers cap a frame at WS_MAX_PAYLOAD_BYTES", () => {
+test("both WebSocket servers cap a frame: realtime at 1 MiB, preview at 256 KiB", () => {
 	const { instances, webSocketImpl } = createFakeWebSocketImpl();
 	registerBackendWebSocketRelays(createFakeServer(), { ...createRegistrationDependencies(), webSocketImpl });
 	assert.equal(instances.length, 2);
-	for (const instance of instances) {
-		assert.deepEqual(instance.options, { noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
-	}
-	assert.equal(WS_MAX_PAYLOAD_BYTES, 2 * 1024 * 1024);
+	assert.deepEqual(instances[0].options, { noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
+	assert.deepEqual(instances[1].options, { noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
+	assert.equal(REALTIME_MAX_PAYLOAD_BYTES, 1024 * 1024);
+	assert.equal(PREVIEW_MAX_PAYLOAD_BYTES, 256 * 1024);
 });
 
 test("a failed preview attach on a socket whose send and close throw never becomes an unhandled rejection", async (t) => {

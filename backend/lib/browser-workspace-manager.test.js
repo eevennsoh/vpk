@@ -661,3 +661,33 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 
 	assert.equal(createdWorkspace?.sessionId, createdWorkspace?.workspaceId)
 })
+
+test("a preview control action that rejects is returned to the socket, and logged on the data channel", async (t) => {
+	const unhandled = []
+	const onUnhandled = (reason) => unhandled.push(reason)
+	process.on("unhandledRejection", onUnhandled)
+	t.after(() => process.off("unhandledRejection", onUnhandled))
+	const warn = t.mock.method(console, "warn", () => {})
+
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-reject",
+		sessionId: "workspace-reject-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async insertText() {
+				throw Object.assign(new Error("Text cannot start like a command-line option."), { status: 400 })
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+
+	// The socket path gets the rejection to answer with a preview-error.
+	await assert.rejects(workspace._handlePreviewControlMessage({ type: "preview-paste", text: "--x" }), /command-line option/u)
+	// The WebRTC data channel has no caller to return it to: it is logged.
+	await workspace._handleDetachedPreviewControlMessage({ type: "preview-paste", text: "--x" })
+	await new Promise(setImmediate)
+
+	assert.deepEqual(unhandled, [])
+	assert.equal(warn.mock.calls.some((call) => String(call.arguments[0]).includes("Preview control message failed")), true)
+})
