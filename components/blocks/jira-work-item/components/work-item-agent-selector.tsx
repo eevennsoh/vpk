@@ -2,7 +2,7 @@
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import { WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 
 interface WorkItemAgentSelectorProps {
 	agents?: readonly AgentSelectorAgent[];
