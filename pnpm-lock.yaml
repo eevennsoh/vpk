@@ -538,8 +538,8 @@ importers:
         specifier: ^8.5.30
         version: 8.5.31
       react-grab:
-        specifier: ^0.2.0
-        version: 0.2.0(react@19.3.1)
+        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz
+        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz(@types/react@19.3.0)(react@19.3.1)
       shadcn:
         specifier: ^4.22.0
         version: 4.22.0(supports-color@10.2.2)
@@ -3752,6 +3752,11 @@ packages:
     peerDependencies:
       '@types/react': '*'
 
+  '@types/react-reconciler@0.33.1':
+    resolution: {integrity: sha512-0kF59ji2mKuHUd5wytHSpmORybMYVerJvq0K10pz9ZFoOlJ3e+w1LBjLshWpCrokeyQOioRodNbO4PH4ddvRfg==}
+    peerDependencies:
+      '@types/react': '*'
+
   '@types/react@18.3.31':
     resolution: {integrity: sha512-vfEqpXTvwT91yhmwdfouStN2hSKwTvyRs8qpLfADyrq/kxDw0hZM7Wk9Ug1FELj8hIby+S/+kQCSRFF32nv2Qw==}
 
@@ -4368,10 +4373,10 @@ packages:
     peerDependencies:
       react: '>=17.0.1'
 
-  bippy@0.6.1:
-    resolution: {integrity: sha512-ky4m94Y/KfsddjGkKTsV4uFjZqkJjpOjQ2t5gKPdX6XH1MNxMNX5FrVefsxV4lpjemEmEdwe0e0YbzAMNs3oUQ==}
+  bippy@0.7.3:
+    resolution: {integrity: sha512-C3yYBkcthd9kMXJwwwR69+ICGruw+R/Mcoq1LqsoscEoPe1OshyhYjMtYmtpoDSiJX40a867qhG4TT7g4mMIdQ==}
     peerDependencies:
-      react: '>=17.0.1'
+      react: '>=16.0.0'
 
   body-parser@2.4.0:
     resolution: {integrity: sha512-Ifk1KcLrxaGt1occQagQNFNNOqRt1LFuehEnHHzB8Z6cRgIxRU1TBaiIsUiCdA+gy5PL7Y1IX31DNKkRmxtXjQ==}
@@ -7457,8 +7462,9 @@ packages:
       react:
         optional: true
 
-  react-grab@0.2.0:
-    resolution: {integrity: sha512-ohhsfXD4qN0j6cMQd56aaVJBPDF3kUdviF/Od1Eak/rEIXQ3svQ4gjkwTfuTZwTBnxHRL16p9JqdlVQO5nUHqA==}
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz:
+    resolution: {integrity: sha512-IY3bXRFUQQO3/m4clqF0gp7pdp0xGQA9BVz/YbOhTdZUqgjH+5W5hikKCaUIzEVC7yHKCBf6uPaQ4iwChTssBQ==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz}
+    version: 0.2.0-vpk.2
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -12064,6 +12070,10 @@ snapshots:
     dependencies:
       '@types/react': 19.3.0
 
+  '@types/react-reconciler@0.33.1(@types/react@19.3.0)':
+    dependencies:
+      '@types/react': 19.3.0
+
   '@types/react@18.3.31':
     dependencies:
       '@types/prop-types': 15.7.15
@@ -12425,7 +12435,7 @@ snapshots:
       jsonc-parser: 3.3.1
       picocolors: 1.1.1
       prompts: 2.4.2
-      yaml: 2.9.0
+      yaml: 2.9.1
 
   ai@7.0.143(zod@4.6.7):
     dependencies:
@@ -12610,9 +12620,12 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  bippy@0.6.1(react@19.3.1):
+  bippy@0.7.3(@types/react@19.3.0)(react@19.3.1):
     dependencies:
+      '@types/react-reconciler': 0.33.1(@types/react@19.3.0)
       react: 19.3.1
+    transitivePeerDependencies:
+      - '@types/react'
 
   body-parser@2.4.0(supports-color@10.2.2):
     dependencies:
@@ -16292,12 +16305,14 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  react-grab@0.2.0(react@19.3.1):
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       '@react-grab/cli': 0.2.0
-      bippy: 0.6.1(react@19.3.1)
+      bippy: 0.7.3(@types/react@19.3.0)(react@19.3.1)
     optionalDependencies:
       react: 19.3.1
+    transitivePeerDependencies:
+      - '@types/react'
 
   react-is@16.13.1: {}
 
