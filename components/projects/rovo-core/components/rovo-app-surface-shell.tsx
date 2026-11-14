@@ -1,18 +1,15 @@
 "use client";
 
 import type { ComponentType, ReactNode } from "react";
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import TopNavigation, {
 	type ShellSidebarSlotState,
 } from "@/components/blocks/top-navigation/page";
 import type { UseRovoAppThreadListResult } from "@/components/projects/rovo-core/hooks/use-rovo-app-thread-list";
-import { getCssDurationTokenMs } from "@/components/projects/rovo-core/lib/css-duration";
+import { useSidebarHoverReveal } from "@/components/projects/rovo-core/hooks/use-sidebar-hover-reveal";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
-
-const SIDEBAR_MOTION_DURATION_CSS_VARIABLE = "--duration-medium";
-const SIDEBAR_MOTION_FALLBACK_MS = 200;
 
 export interface RovoAppSurfaceShellSidebarProps {
 	activeThreadId: string | null;
@@ -53,34 +50,7 @@ export function RovoAppSurfaceShellCore({
 	const router = useRouter();
 	const { deleteThread, threads, threadsLoaded } = useThreadList();
 
-	const [hoverRevealActive, setHoverRevealActive] = useState(false);
-	const hoverLeaveTimerRef = useRef<number | null>(null);
-
-	const clearHoverTimer = useCallback(() => {
-		if (hoverLeaveTimerRef.current) {
-			window.clearTimeout(hoverLeaveTimerRef.current);
-			hoverLeaveTimerRef.current = null;
-		}
-	}, []);
-
-	const scheduleSidebarHoverClose = useCallback(() => {
-		clearHoverTimer();
-		hoverLeaveTimerRef.current = window.setTimeout(() => {
-			setHoverRevealActive(false);
-		}, getCssDurationTokenMs(SIDEBAR_MOTION_DURATION_CSS_VARIABLE, SIDEBAR_MOTION_FALLBACK_MS));
-	}, [clearHoverTimer]);
-
-	const handleSidebarContentMouseEnter = useCallback(() => {
-		clearHoverTimer();
-	}, [clearHoverTimer]);
-
-	const handleSidebarContentMouseLeave = useCallback(() => {
-		scheduleSidebarHoverClose();
-	}, [scheduleSidebarHoverClose]);
-
-	useEffect(() => {
-		return () => clearHoverTimer();
-	}, [clearHoverTimer]);
+	const { handleSidebarContentMouseEnter, handleSidebarContentMouseLeave, hoverRevealActive } = useSidebarHoverReveal();
 
 	return (
 		<TopNavigation

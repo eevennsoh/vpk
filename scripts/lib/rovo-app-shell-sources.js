@@ -13,13 +13,18 @@ const path = require("node:path");
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 
-// Files that now own code both shells used to carry (C-5 slice 1: pure helpers and types).
+// Files that now own code both shells used to carry. Slice 1: pure helpers and types.
 const SHARED_SHELL_CODE_FILES = [
 	"components/projects/rovo-core/lib/css-duration.ts",
 	"components/projects/rovo-core/lib/rovo-app-realtime-context.ts",
 	"components/projects/rovo-core/lib/rovo-app-shell-types.ts",
 	"components/projects/rovo-core/lib/screen-assistant.ts",
 	"lib/rovo-context.ts",
+	// C-5 slice 2: sidebar chrome.
+	"components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome.ts",
+	"components/projects/rovo-core/hooks/use-sidebar-hover-reveal.ts",
+	// C-5 slice 3: artifact workspace.
+	"components/projects/rovo-core/hooks/use-rovo-app-shell-artifact-workspace.ts",
 ];
 
 const ROVO_APP_SHELL_SOURCE_FILES = Object.freeze({

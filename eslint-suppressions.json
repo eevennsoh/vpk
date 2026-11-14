@@ -2349,7 +2349,7 @@
       "count": 17
     },
     "react-hooks/set-state-in-effect": {
-      "count": 11
+      "count": 6
     }
   },
   "components/projects/search/components/search-result-card.tsx": {
@@ -2509,7 +2509,7 @@
       "count": 24
     },
     "react-hooks/set-state-in-effect": {
-      "count": 15
+      "count": 10
     }
   },
   "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
