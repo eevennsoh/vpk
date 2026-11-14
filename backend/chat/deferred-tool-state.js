@@ -112,31 +112,19 @@ function createDeferredToolCallState({
 		unhealthy = false,
 		unhealthyReason = "paused tool cleanup failed",
 	} = {}) {
-		const releaseHandle = () => {
-			try {
-				record.handle?.release?.();
-			} catch (error) {
-				logger.warn?.("[ROVO-PAUSE] Failed to release reserved port handle:", error);
-			}
-		};
-		const releaseHandleAsUnhealthy = () => {
-			try {
-				if (typeof record.handle?.releaseAsUnhealthy === "function") {
-					record.handle.releaseAsUnhealthy(unhealthyReason);
-					return;
-				}
-				record.handle?.release?.();
-			} catch (error) {
-				logger.warn?.("[ROVO-PAUSE] Failed to release unhealthy reserved port handle:", error);
-			}
-		};
-
-		if (unhealthy) {
-			releaseHandleAsUnhealthy();
-			return;
+		try {
+			record.handle?.settleLease?.(
+				unhealthy ? "unhealthy" : "release",
+				unhealthy ? { reason: unhealthyReason } : {},
+			);
+		} catch (error) {
+			logger.warn?.(
+				unhealthy
+					? "[ROVO-PAUSE] Failed to release unhealthy reserved port handle:"
+					: "[ROVO-PAUSE] Failed to release reserved port handle:",
+				error,
+			);
 		}
-
-		releaseHandle();
 	}
 
 	function clearPausedRovoToolCall(toolCallId, { cancel = false } = {}) {

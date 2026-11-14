@@ -329,6 +329,19 @@ const eslintConfig = defineConfig([
 		},
 	},
 	{
+		// rovo-core is the layer both routes build on, so it must not reach back into either of them
+		// (or into sidebar-chat, which itself sits on rovo-core). Route policy enters through adapters,
+		// options and callbacks.
+		files: ["components/projects/rovo-core/**/*.{js,jsx,ts,tsx}"],
+		rules: {
+			"no-restricted-imports": restrictedImports({
+				group: ["@/components/projects/rovo/**", "@/components/projects/studio/**", "@/components/projects/sidebar-chat/**"],
+				message:
+					"rovo-core is shared by the Rovo and Studio routes and must not import them or sidebar-chat. Pass route policy in through an adapter, option or callback.",
+			}),
+		},
+	},
+	{
 		files: [
 			"app/contexts/**/*.{js,jsx,ts,tsx}",
 			"components/projects/shared/**/*.{js,jsx,ts,tsx}",

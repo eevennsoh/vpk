@@ -9,6 +9,8 @@ const test = require("node:test");
 const SHOW_WORKTREE_PORTS_SCRIPT = path.resolve(__dirname, "show-worktree-ports.js");
 const {
 	browserUrlForRow,
+	collectStackRows,
+	listDevSessions,
 	dashboardRowsSignature,
 	defaultBrowserCommand,
 	moveSelectionIndex,
@@ -275,4 +277,149 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 	} finally {
 		fixture.cleanup();
 	}
+});
+
+test("ports --json derives each worktree's stack status from its record, sessions and ports", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-json-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const dir = (name) => {
+		const target = path.join(root, name);
+		fs.mkdirSync(target);
+		return target;
+	};
+	const main = dir("main");
+	const ready = dir("ready");
+	const orphan = dir("orphan");
+	const idle = dir("idle");
+	fs.writeFileSync(path.join(main, ".dev-frontend-port"), "4001");
+	fs.writeFileSync(path.join(ready, ".dev-frontend-port"), "4101");
+	fs.writeFileSync(path.join(ready, ".dev-backend-port"), "8101");
+	fs.writeFileSync(path.join(orphan, ".dev-frontend-port"), "4201");
+	const listening = new Set([4101, 8101, 4201]);
+
+	const rows = await collectStackRows({
+		worktrees: [
+			{ path: main, isMain: true, branch: "main", worktreeName: null },
+			{ path: ready, branch: "feature-ready", worktreeName: "feature-ready" },
+			{ path: orphan, branch: "feature-orphan", worktreeName: "feature-orphan" },
+			{ path: idle, branch: "feature-idle", worktreeName: "feature-idle" },
+		],
+		routes: [{ hostname: "feature-ready.vpk.localhost", port: 4101, pid: process.pid }],
+		sessions: [
+			{ name: "vpk-dev-main", socket: "vpk-dev", path: main },
+			{ name: "vpk-dev-feature-ready", socket: "vpk-dev", path: ready },
+		],
+		isPortListening: (port) => listening.has(port),
+		// The orphan's port is held by a process in that worktree.
+		listenerInWorktree: (port, worktreePath) => listening.has(port) && worktreePath !== idle,
+	});
+
+	const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
+	assert.deepEqual(Object.keys(byName).sort(), ["main", "orphan", "ready"], "a worktree with no stack is left out");
+	assert.equal(byName.main.status, "degraded");
+	assert.equal(byName.ready.status, "ready");
+	assert.equal(byName.ready.sessionName, "vpk-dev-feature-ready");
+	assert.equal(byName.ready.portlessUrl, "https://feature-ready.vpk.localhost");
+	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, listenerInWorktree: true, pid: null, childPid: null });
+	assert.equal(byName.orphan.status, "orphaned");
+	assert.equal(byName.orphan.nextAction, "stop");
+	assert.equal("nextDir" in byName.ready, false, "sizes are opt-in");
+});
+
+test("dev sessions include any name on the private socket, and only vpk-dev-* on the default one", (t) => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ports-sessions-"));
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	const tmux = path.join(dir, "tmux");
+	fs.writeFileSync(tmux, [
+		"#!/bin/sh",
+		'if [ "$1" = "-L" ]; then printf "demo|/wt/custom\\nvpk-dev-a|/wt/a\\n"; else printf "vpk-dev-b|/wt/b\\nnotes|/home\\n"; fi',
+		"",
+	].join("\n"));
+	fs.chmodSync(tmux, 0o755);
+	const previous = process.env.VPK_TMUX_BIN;
+	process.env.VPK_TMUX_BIN = tmux;
+	t.after(() => (previous === undefined ? delete process.env.VPK_TMUX_BIN : (process.env.VPK_TMUX_BIN = previous)));
+	assert.deepEqual(
+		listDevSessions().map(({ name, socket }) => `${socket}:${name}`),
+		["vpk-dev:demo", "vpk-dev:vpk-dev-a", "default:vpk-dev-b"],
+	);
+});
+
+test("ports --json finds a session on a custom socket through the stack record", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-socket-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), "4301");
+	fs.writeFileSync(path.join(root, ".dev-backend-port"), "8301");
+	fs.writeFileSync(path.join(root, ".dev-stack.json"), JSON.stringify({ version: 1, worktree: root, session: { name: "demo", socket: "demo-socket" }, phase: "starting", phaseAt: new Date().toISOString(), services: {} }));
+	const probed = [];
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, branch: "feature-socket", worktreeName: "feature-socket" }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => true,
+		listenerInWorktree: () => true,
+		isRecordedSessionAlive: (query) => {
+			probed.push(query);
+			return query.socket === "demo-socket" && query.sessionName === "demo";
+		},
+	});
+	assert.equal(rows[0].status, "ready");
+	assert.deepEqual(rows[0].sessions, [{ name: "demo", socket: "demo-socket", path: root }]);
+	assert.equal(probed.length, 1);
+});
+
+test("ports --json does not call a port held by another directory's process an orphan", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-held-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), "4401");
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => true,
+		listenerInWorktree: () => false,
+	});
+	assert.notEqual(rows[0].status, "orphaned");
+});
+
+test("ports --json counts a frontend that listens only on IPv6 loopback", async (t) => {
+	const server = net.createServer();
+	const listening = await new Promise((resolve) => {
+		server.once("error", () => resolve(false));
+		server.listen(0, "::1", () => resolve(true));
+	});
+	if (!listening) {
+		t.skip("no IPv6 loopback on this machine");
+		return;
+	}
+	t.after(() => server.close());
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-ipv6-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), String(server.address().port));
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [{ name: "vpk-dev-main", socket: "vpk-dev", path: root }],
+		listenerInWorktree: () => true,
+	});
+	assert.equal(rows[0].frontend.listening, true);
+});
+
+test("ports --json --sizes adds each worktree's .next split", async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-sizes-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const measured = [];
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [],
+		isPortListening: () => false,
+		sizes: true,
+		measureNext: (worktreePath) => {
+			measured.push(worktreePath);
+			return { totalBytes: 1 };
+		},
+	});
+	assert.deepEqual(measured, [root]);
+	assert.deepEqual(rows[0].nextDir, { totalBytes: 1 });
 });

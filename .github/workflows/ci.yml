@@ -81,6 +81,11 @@ jobs:
       - name: TypeScript
         run: time pnpm run typecheck
 
+      # TypeScript 6, the checker `next build` uses: the native TypeScript 7 above can accept code
+      # that TypeScript 6 rejects (inference), which otherwise fails only at the smoke build.
+      - name: TypeScript 6 (next build's checker)
+        run: time pnpm run typecheck:build
+
   unit:
     name: Unit shard ${{ matrix.shard }}/4
     runs-on: ubuntu-latest

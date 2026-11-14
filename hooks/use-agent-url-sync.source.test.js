@@ -2,12 +2,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { readRovoAppShellSource } = require("../scripts/lib/rovo-app-shell-sources.js");
 
 const HOOK_SOURCE = fs.readFileSync(path.join(__dirname, "use-agent-url-sync.ts"), "utf8");
-const SHELL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "components", "projects", "studio", "components", "rovo-app-shell.tsx"),
-	"utf8",
-);
+const SHELL_SOURCE = readRovoAppShellSource("studio");
 
 // Regression: restoring an agent from `?agent=` on load/back-forward must let the
 // surface restore its per-agent view (the studio config pane). Without this the

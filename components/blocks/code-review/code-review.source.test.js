@@ -621,7 +621,7 @@ test("Code Review is registered as a website block in both catalog files", () =>
 		/blockComponent\(\s*"code-review",\s*"Code Review"\s*\)/u,
 	);
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\(\s*"code-review",\s*"Code Review"\s*\)/u,
 	);
 });

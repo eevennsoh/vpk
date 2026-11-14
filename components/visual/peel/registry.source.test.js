@@ -23,7 +23,7 @@ function readProjectFile(filePath) {
 test("Peel is registered in both the visual catalog and the manifest", () => {
 	const pattern = /visualComponent\("peel", "Peel", "@\/components\/visual\/peel"\)/u;
 
-	assert.match(readProjectFile("app/data/components.ts"), pattern);
+	assert.match(readProjectFile("app/data/component-manifest.ts"), pattern);
 	assert.match(readProjectFile("app/data/component-manifest.ts"), pattern);
 });
 

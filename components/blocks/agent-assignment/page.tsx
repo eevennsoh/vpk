@@ -12,7 +12,7 @@ import {
 import {
 	DEFAULT_PINNED_SPACE_AGENT_IDS,
 	WORK_ITEM_PINNED_ITEMS_LABEL,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+} from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { SONNER_TOAST_AUTO_DISMISS_MS } from "@/components/ui/sonner";
 
 export default function AgentAssignmentPage({

@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 test("Artifact List is registered as a UI Custom component in all four registries", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/customComponent\("artifact-list", "Artifact List"\)/u,
 	);
 	assert.match(

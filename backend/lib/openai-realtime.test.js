@@ -586,7 +586,7 @@ test("manual barge-in sends response.cancel only in manual mode", () => {
 		},
 	}));
 	manual.openaiMessages.length = 0;
-	manual.session._activeResponseId = "response-manual";
+	manual.session._respond({ type: "created", id: "response-manual" });
 
 	sendOpenAIEvent(manual.session, {
 		type: "input_audio_buffer.speech_started",
@@ -596,7 +596,7 @@ test("manual barge-in sends response.cancel only in manual mode", () => {
 	assert.deepEqual(manual.openaiMessages, [{ type: "response.cancel" }]);
 
 	const defaults = createReadySession();
-	defaults.session._activeResponseId = "response-default";
+	defaults.session._respond({ type: "created", id: "response-default" });
 
 	sendOpenAIEvent(defaults.session, {
 		type: "input_audio_buffer.speech_started",
@@ -626,8 +626,8 @@ test("manual barge-in clears stale pending response creation", (t) => {
 		type: "conversation.item.input_audio_transcription.completed",
 		transcript: "stale turn",
 	});
-	session._activeResponseId = "response-active";
-	session._pendingResponseCreate = true;
+	session._respond({ type: "created", id: "response-active" });
+	session._respond({ type: "request" });
 
 	sendOpenAIEvent(session, {
 		type: "input_audio_buffer.speech_started",
@@ -638,7 +638,7 @@ test("manual barge-in clears stale pending response creation", (t) => {
 		response: { id: "response-active" },
 	});
 
-	assert.equal(session._pendingResponseCreate, false);
+	assert.equal(session.response.pending, null);
 	assert.deepEqual(openaiMessages, [{ type: "response.cancel" }]);
 	assert.equal(
 		clientMessages.some((message) => message.type === "transcription_completed"),
@@ -653,8 +653,8 @@ test("manual barge-in clears stale pending response creation", (t) => {
 test("stale response cancel errors clear active response state without notifying client", () => {
 	const { session, clientMessages, logEntries } = createReadySession();
 
-	session._activeResponseId = "response-stale";
-	session._pendingResponseCreate = true;
+	session._respond({ type: "created", id: "response-stale" });
+	session._respond({ type: "request" });
 
 	sendOpenAIEvent(session, {
 		type: "error",
@@ -664,8 +664,8 @@ test("stale response cancel errors clear active response state without notifying
 		},
 	});
 
-	assert.equal(session._activeResponseId, null);
-	assert.equal(session._pendingResponseCreate, false);
+	assert.equal(session.response.phase, "idle");
+	assert.equal(session.response.pending, null);
 	assert.deepEqual(clientMessages, []);
 	assert.ok(
 		logEntries.some((entry) =>
@@ -974,6 +974,8 @@ test("session refresh closes the upstream connection before max lifetime", (t) =
 		reason: "session refresh",
 	});
 	assert.equal(session._plannedCloseReason, "session_refresh");
+	assert.equal(session.state, SESSION_STATE.REFRESHING);
+	assert.equal(session.isReady, false);
 
 	session._clearSessionMaintenanceTimers();
 	t.mock.timers.reset();

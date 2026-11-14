@@ -313,8 +313,9 @@ test("chat SDK handler resumes and replays paused Rovo clarification continuatio
 		createdAt: Date.now(),
 		expiresAt: Date.now() + 30_000,
 		handle: {
-			release() {
-				releaseCount += 1;
+			settleLease(disposition) {
+				if (disposition === "release") releaseCount += 1;
+				return true;
 			},
 		},
 		kind: "clarification",

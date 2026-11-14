@@ -13,7 +13,7 @@ function readProjectFile(filePath) {
 }
 
 test("Liquid Metal is registered in the visual catalog and manifest", () => {
-	const componentsSource = readProjectFile("app/data/components.ts");
+	const componentsSource = readProjectFile("app/data/component-manifest.ts");
 	const manifestSource = readProjectFile("app/data/component-manifest.ts");
 
 	assert.match(

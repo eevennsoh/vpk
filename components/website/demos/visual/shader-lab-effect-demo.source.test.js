@@ -7,7 +7,7 @@ const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/
 
 const ROOT = path.join(__dirname, "../../../..");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
-const COMPONENTS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/components.ts"), "utf8");
+const COMPONENTS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const MANIFEST_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const NAV_UTILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/nav-utils.ts"), "utf8");
 const DETAILS_SOURCE = readDetailCategorySource("visual");

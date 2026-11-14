@@ -12,8 +12,6 @@ const {
 
 async function runRovoPostStreamPipeline({
 	flushRovoMarkerStream,
-	onHasEmittedGenuiWidget,
-	onShouldEmitMissingStudioAgentResultFailure,
 	runRovoPostStreamFinalizers = defaultRunRovoPostStreamFinalizers,
 	runRovoPostStreamRouting = defaultRunRovoPostStreamRouting,
 	completeRovoPostTurn = defaultCompleteRovoPostTurn,
@@ -92,14 +90,6 @@ async function runRovoPostStreamPipeline({
 			postStreamFinalizerResult,
 		};
 	}
-
-	onHasEmittedGenuiWidget?.(
-		postStreamFinalizerResult.hasEmittedGenuiWidget,
-	);
-	onShouldEmitMissingStudioAgentResultFailure?.(
-		postStreamFinalizerResult
-			.shouldEmitMissingStudioAgentResultFailure,
-	);
 
 	const postStreamRoutingResult = await runRovoPostStreamRouting({
 		abortSignal: options.abortSignal,

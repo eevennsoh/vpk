@@ -8,7 +8,7 @@ const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/
 const SHADER_SOURCE = fs.readFileSync(path.join(__dirname, "shaders/dithering.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "dithering-demo.tsx"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../../../app/data/components.ts"),
+	path.join(__dirname, "../../../../app/data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = fs.readFileSync(

@@ -19,6 +19,9 @@
 # local reference clones (TipTap docs/source, etc.)
 /.reference/
 
+# local builds of dev-only tooling (see NEXT_PUBLIC_REACT_GRAB_SRC in .env.local.example)
+/public/dev-local/
+
 # browser automation artifacts
 /screenshots
 /public/screenshots/
@@ -105,6 +108,8 @@ tmux-*.log
 .dev-rovo-port
 .dev-rovo-ports
 .dev-rovo-token
+.dev-stack.json
+.dev-stack.json.*
 
 # Rovo-created git worktrees
 .rovo/worktrees/
