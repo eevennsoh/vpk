@@ -6,7 +6,7 @@
 
 const { before, test } = require("node:test");
 const assert = require("node:assert/strict");
-const { execFile, execFileSync } = require("node:child_process");
+const { execFileSync } = require("node:child_process");
 const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const os = require("node:os");

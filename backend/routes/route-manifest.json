@@ -149,25 +149,25 @@
 			"method": "GET",
 			"path": "/api/checkpoints",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:305"
+			"source": "backend/routes/rovo-app.js:306"
 		},
 		{
 			"method": "POST",
 			"path": "/api/checkpoints",
 			"runtimeAdmin": true,
-			"source": "backend/routes/rovo-app.js:318"
+			"source": "backend/routes/rovo-app.js:319"
 		},
 		{
 			"method": "DELETE",
 			"path": "/api/checkpoints/:id",
 			"runtimeAdmin": true,
-			"source": "backend/routes/rovo-app.js:351"
+			"source": "backend/routes/rovo-app.js:352"
 		},
 		{
 			"method": "POST",
 			"path": "/api/checkpoints/:id/rollback",
 			"runtimeAdmin": true,
-			"source": "backend/routes/rovo-app.js:337"
+			"source": "backend/routes/rovo-app.js:338"
 		},
 		{
 			"method": "GET",
@@ -551,13 +551,13 @@
 			"method": "GET",
 			"path": "/api/rovo/messages",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:210"
+			"source": "backend/routes/rovo-app.js:211"
 		},
 		{
 			"method": "POST",
 			"path": "/api/rovo/messages",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:228"
+			"source": "backend/routes/rovo-app.js:229"
 		},
 		{
 			"method": "POST",
@@ -587,19 +587,19 @@
 			"method": "DELETE",
 			"path": "/api/rovo/threads",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:406"
+			"source": "backend/routes/rovo-app.js:407"
 		},
 		{
 			"method": "GET",
 			"path": "/api/rovo/threads",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:264"
+			"source": "backend/routes/rovo-app.js:265"
 		},
 		{
 			"method": "POST",
 			"path": "/api/rovo/threads",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:366"
+			"source": "backend/routes/rovo-app.js:367"
 		},
 		{
 			"method": "DELETE",
@@ -653,7 +653,7 @@
 			"method": "GET",
 			"path": "/api/sessions/search",
 			"runtimeAdmin": false,
-			"source": "backend/routes/rovo-app.js:284"
+			"source": "backend/routes/rovo-app.js:285"
 		},
 		{
 			"method": "POST",
