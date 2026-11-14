@@ -210,3 +210,51 @@ test("mention visuals use complete new avatars for every first-party lanyard age
 		kind: "third-party", name: "claude",
 	});
 });
+
+// Moved from the Agent Directory suite: the directory cards read these fields straight from the
+// unified catalog, so every agent carries its stats and the catalog spans every attribution kind.
+test("every catalog agent carries the directory card's stats, and every attribution kind is present", () => {
+	for (const kind of ["company", "team", "person"]) {
+		assert.ok(
+			AGENTS_JSON.some((agent) => agent.attributionKind === kind),
+			`unified catalog should have a ${kind}-attributed agent`,
+		);
+	}
+	for (const agent of AGENTS_JSON) {
+		assert.equal(typeof agent.rating, "number", `agent ${agent.id} should have rating`);
+		assert.equal(typeof agent.feedbackCount, "number", `agent ${agent.id} should have feedbackCount`);
+		assert.equal(typeof agent.chatCount, "number", `agent ${agent.id} should have chatCount`);
+		assert.equal(typeof agent.verified, "boolean", `agent ${agent.id} should have verified`);
+	}
+});
+
+test("the RFP Drafter keeps its directory card fields", () => {
+	const rfpDrafter = AGENTS_JSON.find((agent) => agent.id === "rfp-drafting-agent");
+	assert.ok(rfpDrafter, "RFP Drafter should exist in the unified catalog");
+	assert.deepEqual(
+		{
+			name: rfpDrafter.name,
+			byline: rfpDrafter.byline,
+			avatarSrc: rfpDrafter.avatarSrc,
+			description: rfpDrafter.description,
+			attributionKind: rfpDrafter.attributionKind,
+			favorite: rfpDrafter.favorite,
+			rating: rfpDrafter.rating,
+			feedbackCount: rfpDrafter.feedbackCount,
+			chatCount: rfpDrafter.chatCount,
+			verified: rfpDrafter.verified,
+		},
+		{
+			name: "RFP Drafter",
+			byline: "Custom agent by Maya Chen",
+			avatarSrc: "/avatar-agent-new/lime/feature-flag.svg",
+			description: "Drafts first-pass RFP response packages for Enterprise RFP Response",
+			attributionKind: "person",
+			favorite: true,
+			rating: 4.1,
+			feedbackCount: 1370,
+			chatCount: 8364,
+			verified: false,
+		},
+	);
+});

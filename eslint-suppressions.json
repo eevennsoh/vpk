@@ -324,11 +324,6 @@
       "count": 2
     }
   },
-  "components/blocks/agent-directory/agent-directory.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
   "components/blocks/agent-directory/page.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
