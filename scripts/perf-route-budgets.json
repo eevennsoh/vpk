@@ -1,15 +1,27 @@
 {
 	"routes": {
-		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 62000, "fetchedJsBytes": 1250000, "fetchedCssBytes": 717000 },
+		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 69000, "fetchedJsBytes": 1250000, "fetchedCssBytes": 717000 },
 		"rovo": { "assetCount": 110, "cssBytes": 778000, "firstLoadJsBytes": 7125000, "routeJsBytes": 105000, "fetchedJsBytes": 7583000, "fetchedCssBytes": 778000 },
 		"studio": { "assetCount": 116, "cssBytes": 778000, "firstLoadJsBytes": 7616000, "routeJsBytes": 105000, "fetchedJsBytes": 8073000, "fetchedCssBytes": 778000 },
-		"components": { "assetCount": 55, "cssBytes": 729000, "firstLoadJsBytes": 2504000, "routeJsBytes": 125000, "fetchedJsBytes": 2632000, "fetchedCssBytes": 729000 },
-		"butter": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 63000, "fetchedJsBytes": 9406000, "fetchedCssBytes": 778000 },
-		"eu26": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 63000, "fetchedJsBytes": 8708000, "fetchedCssBytes": 778000 },
-		"heavy-visual": { "assetCount": 37, "cssBytes": 717000, "firstLoadJsBytes": 934000, "routeJsBytes": 91000, "fetchedJsBytes": 2613000, "fetchedCssBytes": 738000 }
+		"components": { "assetCount": 55, "cssBytes": 729000, "firstLoadJsBytes": 2504000, "routeJsBytes": 135000, "fetchedJsBytes": 2632000, "fetchedCssBytes": 729000 },
+		"butter": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 71000, "fetchedJsBytes": 9406000, "fetchedCssBytes": 778000 },
+		"eu26": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 71000, "fetchedJsBytes": 8708000, "fetchedCssBytes": 778000 },
+		"heavy-visual": { "assetCount": 37, "cssBytes": 717000, "firstLoadJsBytes": 934000, "routeJsBytes": 99000, "fetchedJsBytes": 2613000, "fetchedCssBytes": 738000 }
 	},
 	"targets": {
-		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-14 at about 3% over a production build of main after C-8a and C-8d), not a goal. Met and removed: Rovo first-load JS 7,100,000 (6,917,433 after C-8d). The CSS target is met on home, butter, eu26 and heavy-visual (696,019); rovo, studio (754,612) and components (707,178) are still above it.",
+		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-14 at about 3% over a production build of main after C-8a and C-8d; route JS on home, components, butter, eu26 and heavy-visual raised the same day for PR 2186, see raises below), not a goal. Met and removed: Rovo first-load JS 7,100,000 (6,917,433 after C-8d). The CSS target is met on home, butter, eu26 and heavy-visual (696,019); rovo, studio (754,612) and components (707,178) are still above it.",
 		"*": { "cssBytes": 700000 }
-	}
+	},
+	"margin": {
+		"note": "How far a budget may sit above the measured value it is set from: the larger of ratio x the value and the metric's floor, rounded up to a whole thousand bytes (counts are not rounded). Provisional; the owner decides. Builds of unchanged code measure the same bytes, so the margin is room for ordinary product changes, not noise: on the nine main runs from bf64b91f8 to 00de69100, single merges added 0.5 to 5.7 KB of route JS, which 3% of a 60 KB route (about 1.8 KB) cannot absorb.",
+		"ratio": 0.03,
+		"floors": { "routeJsBytes": 5120, "assetCount": 2 }
+	},
+	"raises": [
+		{ "route": "home", "metric": "routeJsBytes", "from": 62000, "to": 69000, "measured": 63303, "reason": "PR 2186, owner's product change", "date": "2026-11-14", "measuredIn": "main 00de69100, Actions run 43528746792" },
+		{ "route": "components", "metric": "routeJsBytes", "from": 125000, "to": 135000, "measured": 129101, "reason": "PR 2186, owner's product change", "date": "2026-11-14", "measuredIn": "main 00de69100, Actions run 43528746792" },
+		{ "route": "butter", "metric": "routeJsBytes", "from": 63000, "to": 71000, "measured": 65095, "reason": "PR 2186, owner's product change", "date": "2026-11-14", "measuredIn": "main 00de69100, Actions run 43528746792" },
+		{ "route": "eu26", "metric": "routeJsBytes", "from": 63000, "to": 71000, "measured": 65103, "reason": "PR 2186, owner's product change", "date": "2026-11-14", "measuredIn": "main 00de69100, Actions run 43528746792" },
+		{ "route": "heavy-visual", "metric": "routeJsBytes", "from": 91000, "to": 99000, "measured": 92889, "reason": "PR 2186, owner's product change", "date": "2026-11-14", "measuredIn": "main 00de69100, Actions run 43528746792" }
+	]
 }

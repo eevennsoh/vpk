@@ -17,12 +17,57 @@ const DEFAULT_BUILD_DURATION_BUDGET = {
 const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "heavy-visual"];
 
 // Route budgets live in perf-route-budgets.json, a shrink-only baseline: a unit test fails when a
-// value rises above the merge base. They were last lowered on 2026-11-14 (C-8e) to about 3% over a
+// value rises above the merge base, unless a reviewed entry in the file's "raises" records exactly
+// that change, with a reason, within the file's "margin" of the value it was measured at. They were last lowered on 2026-11-14 (C-8e) to about 3% over a
 // production build of main, as a ceiling that stops further growth. The file's "targets" are the
 // limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57, July 2026).
 // The Rovo first-load target of 7,100,000 bytes was met by C-8d and removed.
 const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");
-const { routes: DEFAULT_ROUTE_BUDGETS, targets: ROUTE_BUDGET_TARGETS } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
+const {
+	routes: DEFAULT_ROUTE_BUDGETS,
+	targets: ROUTE_BUDGET_TARGETS,
+	margin: BUDGET_MARGIN,
+	raises: BUDGET_RAISES = [],
+} = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
+const BUDGET_METRICS = new Set(["assetCount", "cssBytes", "firstLoadJsBytes", "routeJsBytes", "fetchedJsBytes", "fetchedCssBytes"]);
+
+// The highest budget a measured value supports: the measurement plus the file's margin (a share of
+// the value, or the metric's absolute floor when that is larger), rounded up to a whole thousand
+// bytes. Counts get the margin added without rounding.
+function budgetCeiling(metricName, measured, margin = BUDGET_MARGIN) {
+	const allowance = Math.max(Math.ceil(measured * margin.ratio), margin.floors?.[metricName] ?? 0);
+	return metricName === "assetCount" ? measured + allowance : Math.ceil((measured + allowance) / 1000) * 1000;
+}
+
+// Problems with a recorded raise. Every entry stays in the file as history and must stay valid.
+function findRaiseEntryProblems(entry, margin = BUDGET_MARGIN) {
+	const problems = [];
+	const label = `${entry?.route ?? "?"}.${entry?.metric ?? "?"}`;
+	if (typeof entry?.route !== "string" || entry.route === "") problems.push(`${label}: route is missing`);
+	if (!BUDGET_METRICS.has(entry?.metric)) problems.push(`${label}: metric must be one of ${[...BUDGET_METRICS].join(", ")}`);
+	for (const field of ["from", "to", "measured"]) {
+		if (!Number.isInteger(entry?.[field]) || entry[field] < 0) problems.push(`${label}: ${field} must be a whole number`);
+	}
+	if (Number.isInteger(entry?.from) && Number.isInteger(entry?.to) && entry.to <= entry.from) problems.push(`${label}: to must be above from`);
+	if (typeof entry?.reason !== "string" || entry.reason.trim() === "") problems.push(`${label}: reason is empty`);
+	if (typeof entry?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(entry.date)) problems.push(`${label}: date must be YYYY-MM-DD`);
+	if (problems.length === 0 && entry.to > budgetCeiling(entry.metric, entry.measured, margin)) {
+		problems.push(`${label}: to ${entry.to} is above measured ${entry.measured} plus the margin (${budgetCeiling(entry.metric, entry.measured, margin)})`);
+	}
+	return problems;
+}
+
+// Raised budgets that no valid recorded raise covers. An entry covers exactly one change: the same
+// route and metric, from the base value to the current value, so an old entry cannot cover a new raise.
+function findUnsanctionedRaises(baseRoutes, currentRoutes = DEFAULT_ROUTE_BUDGETS, raises = BUDGET_RAISES, margin = BUDGET_MARGIN) {
+	return findRaisedBudgets(baseRoutes, currentRoutes).filter((raised) => !raises.some((entry) =>
+		raised.limit !== null
+		&& entry.route === raised.routeId
+		&& entry.metric === raised.metricName
+		&& entry.from === raised.baseLimit
+		&& entry.to === raised.limit
+		&& findRaiseEntryProblems(entry, margin).length === 0));
+}
 
 // Budget values that are higher than in the base copy of perf-route-budgets.json. A route or metric
 // that the base budgets and the current file drops counts as raised (to no limit at all).
@@ -423,7 +468,12 @@ module.exports = {
 	FIXED_ROUTE_IDS,
 	ROUTE_BUDGET_TARGETS,
 	ROUTE_BUDGETS_PATH,
+	BUDGET_MARGIN,
+	BUDGET_RAISES,
+	budgetCeiling,
+	findRaiseEntryProblems,
 	findRaisedBudgets,
+	findUnsanctionedRaises,
 	formatBudgetTable,
 	formatFetchedAssetsForFailures,
 	formatRaisedBudget,
