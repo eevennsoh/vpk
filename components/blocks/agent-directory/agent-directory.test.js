@@ -247,7 +247,7 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	// the checkmark icons are evenly spaced in every phase.
 	assert.match(greetingPromptRowSource, /selected\?: boolean;/u);
 	assert.match(greetingPromptRowSource, /selected = false,/u);
-	assert.match(greetingPromptRowSource, /grid h-11 w-full grid-cols-\[32px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] pl-1\.5 pr-3\.5 text-left transition-colors/u);
+	assert.match(greetingPromptRowSource, /grid h-11 w-full grid-cols-\[32px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-xl pl-1\.5 pr-3\.5 text-left transition-colors/u);
 	assert.match(greetingPromptRowSource, /selected[\s\S]*\? "bg-bg-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed"[\s\S]*: "hover:bg-bg-neutral-subtle-hovered"/u);
 	assert.match(greetingPromptRowSource, /aria-pressed=\{selected \|\| undefined\}/u);
 	assert.doesNotMatch(source, /<MotionConfig/u);
@@ -290,8 +290,8 @@ test("Agent Directory sidebar nav uses the shared SidebarNavItem primitive", () 
 	// sidebar rows read consistently with the 3p logos (which carry their own tile).
 	assert.match(source, /if \(item\.logoName\)[\s\S]*<Tile label=\{item\.label\} variant="transparent" size="small" hasBorder className="shrink-0">[\s\S]*<AtlassianLogo name=\{item\.logoName\} label=\{item\.label\} size="xsmall" themeAware \/>[\s\S]*<\/Tile>/u);
 	assert.match(source, /if \(item\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)/u);
-	assert.match(source, /if \(option\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)[\s\S]*<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-\[6px\] border border-border object-cover" height=\{20\} src=\{option\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
-	assert.match(source, /<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-\[6px\] border border-border object-cover" height=\{20\} src=\{item\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
+	assert.match(source, /if \(option\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)[\s\S]*<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-md border border-border object-cover" height=\{20\} src=\{option\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
+	assert.match(source, /<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-md border border-border object-cover" height=\{20\} src=\{item\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
 	assert.match(source, /<Avatar size="sm" shape="square" className="shrink-0 after:border-0">/u);
 	assert.match(source, /export interface AgentBrowserSidebarItem/u);
 	assert.match(source, /items\?: readonly AgentBrowserSidebarItem\[\];/u);
@@ -592,7 +592,7 @@ test("Agent Card expanded template uses the shared template detail body without 
 	assert.doesNotMatch(theme, /agent-card-ticket-seam[\s\S]*background: var\(--color-surface\);/u);
 	assert.doesNotMatch(theme, /agent-card-ticket-seam[\s\S]*filter: drop-shadow\(0 8px 12px rgb\(30 31 33 \/ 0\.15\)\);/u);
 	assert.match(card, /const EXPANDED_TICKET_ELEVATION_CLASS_NAME = "agent-card-ticket-shadow";/u);
-	assert.match(card, /const EXPANDED_TICKET_WRAPPER_CLASS_NAME = "relative flex min-h-0 flex-auto flex-col rounded-\[16px\]";/u);
+	assert.match(card, /const EXPANDED_TICKET_WRAPPER_CLASS_NAME = "relative flex min-h-0 flex-auto flex-col rounded-2xl";/u);
 	assert.match(card, /const EXPANDED_TICKET_SHADOW_CLASS_NAME = cn\(/u);
 	assert.match(card, /group-hover\/card:opacity-100 group-focus-within\/card:opacity-100/u);
 	assert.match(card, /const EXPANDED_TICKET_SHADOW_STYLE = \{/u);
@@ -612,7 +612,7 @@ test("Agent Card expanded template uses the shared template detail body without 
 	assert.match(card, /ticket\.style\.setProperty\("--agent-card-ticket-seam-y"/u);
 	assert.match(card, /new ResizeObserver\(updateSeamOffset\)/u);
 	assert.match(card, /<AgentCardTicketSeam \/>[\s\S]*data-slot="agent-card-scroll"/u);
-	assert.match(card, /"gap-0 overflow-visible rounded-\[16px\] bg-transparent p-0 after:rounded-\[16px\] after:border-0 \[&_\[data-slot=agent-card-select\]\]:rounded-\[16px\]"/u);
+	assert.match(card, /"gap-0 overflow-visible rounded-2xl bg-transparent p-0 after:rounded-2xl after:border-0 \[&_\[data-slot=agent-card-select\]\]:rounded-2xl"/u);
 	assert.match(card, /hoverShadow="none"/u);
 	assert.match(card, /data-slot="agent-card-ticket"/u);
 	assert.match(card, /data-slot="agent-card-ticket" ref=\{ticketRef\}/u);
@@ -622,7 +622,7 @@ test("Agent Card expanded template uses the shared template detail body without 
 	assert.doesNotMatch(card, /EXPANDED_TICKET_SURFACE_CLASS_NAME/u);
 	assert.match(card, /\[&_\[data-slot=agent-card-banner\]>div:first-child\]:mb-\[-1px\]/u);
 	assert.match(card, /\[&_\[data-slot=agent-card-banner\]>div:first-child\]:h-\[49px\]/u);
-	assert.match(card, /"relative z-10 overflow-hidden rounded-t-\[16px\] border-x border-t border-border bg-surface [^"]*"[\s\S]*data-slot="agent-card-sticky-header"[\s\S]*style=\{EXPANDED_TICKET_TOP_STYLE\}/u);
+	assert.match(card, /"relative z-10 overflow-hidden rounded-t-2xl border-x border-t border-border bg-surface [^"]*"[\s\S]*data-slot="agent-card-sticky-header"[\s\S]*style=\{EXPANDED_TICKET_TOP_STYLE\}/u);
 	assert.match(card, /data-slot="agent-card-scroll"[\s\S]*style=\{EXPANDED_TICKET_BOTTOM_STYLE\}/u);
 	assert.doesNotMatch(card, /EXPANDED_TICKET_SHAPE_CLASS_NAME/u);
 	assert.doesNotMatch(card, /active && "border-transparent"/u);

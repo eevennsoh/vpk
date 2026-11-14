@@ -90,8 +90,6 @@
       font-size: 0.8125em;
       line-height: 1.5;
       font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
       color: var(--typeset-muted);
       margin-block-start: calc(var(--typeset-flow) / 0.8125);
     }

@@ -46,7 +46,7 @@ export function SkillInvocationCard({
 		>
 			<div className="flex items-center gap-1.5 text-icon-subtle">
 				<SkillIcon label="" size="small" color="currentColor" />
-				<span className="text-xs font-semibold tracking-wide text-text-subtlest uppercase">
+				<span className="text-xs font-semibold text-text-subtlest">
 					Skill invoked
 				</span>
 			</div>

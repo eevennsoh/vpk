@@ -1,7 +1,6 @@
 /**
  * Row class assignments, named so the truncation contract can be asserted
- * without a browser. Same idiom as Pulse's own `PROJECT_LABEL`
- * (components/blocks/jira-kanban/experimental/pulse/experimental-pulse.tsx:79).
+ * without a browser.
  *
  * The contract: in a flex row with truncating text, exactly one segment absorbs
  * the overflow and every other segment holds its size. Here the chapter label
@@ -10,17 +9,16 @@
  * a flex item's default `min-width: auto` refuses to go below its content, so a
  * missing `min-w-0` anywhere in that chain pushes the time label out of the row
  * and knocks the chevron out of its column instead of ellipsizing the chapter.
+ * Truncating is the intended outcome; losing the time or the chevron is not.
  *
- * This matters more since the meta line became an uppercase tracked eyebrow:
- * `uppercase` plus `tracking-[0.12em]` is materially wider than sentence case,
- * so chapter names that used to fit now truncate. Truncating is the intended
- * outcome; losing the time or the chevron is not.
+ * The meta line is a sentence-case byline under the title, per DESIGN.md's
+ * "No all caps or eyebrows" rule.
  */
 export const DAILY_INSIGHTS_ROW_CLASSES = {
 	/** Wrappers between the row and the chapter label. All must shrink. */
 	body: "flex min-w-0 items-center gap-2 px-4 py-3 text-left",
 	textColumn: "flex min-w-0 flex-1 flex-col gap-0.5",
-	metaLine: "flex min-w-0 items-center gap-1 text-xs leading-4 font-semibold tracking-[0.12em] uppercase text-text-subtle",
+	metaLine: "flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle",
 	/** The one segment allowed to absorb overflow. */
 	chapterLabel: "min-w-0 truncate",
 	/** Fixed metadata: these hold their width so the chapter owns the ellipsis. */
