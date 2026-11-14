@@ -285,14 +285,14 @@ const REPO_MAP_PATH = ".agents/knowledge/repo-map.json";
 
 // App Router pages that render this entry, read from the generated repo map (verify:repo-map
 // keeps it current): a catalog-backed page that loads this slug, or a page whose shell owner
-// is the entry's source folder.
+// is the entry's source folder or a file in it (e.g. components/projects/rovo/page).
 function findRoutePages(category, slug, { cwd = process.cwd(), sourcePath = `${CATEGORY_SOURCE_ROOTS[category]}/${slug}` } = {}) {
 	const repoMapFile = path.join(cwd, REPO_MAP_PATH);
 	if (!existsSync(repoMapFile)) return [];
 	const pages = JSON.parse(readFileSync(repoMapFile, "utf8")).appPages?.pages ?? [];
 	return pages
 		.filter(({ primaryOwner: owner }) => (owner?.kind === "catalog" && owner.category === category && owner.slug === slug)
-			|| (owner?.kind === "shell" && (owner.sources ?? []).includes(sourcePath)))
+			|| (owner?.kind === "shell" && (owner.sources ?? []).some((source) => source === sourcePath || source.startsWith(`${sourcePath}/`))))
 		.map((page) => page.source)
 		.sort();
 }
