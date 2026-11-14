@@ -114,7 +114,8 @@ if ! is_whole_number "$STOP_WAIT_MS"; then
 	echo "VPK_DEV_STOP_WAIT_MS must be a whole number of milliseconds, got '$STOP_WAIT_MS'." >&2
 	exit 2
 fi
-CLEAN_DEV_OUTPUT=0
+# stop removes the next dev output by default (stop --keep-dev-output skips it).
+CLEAN_DEV_OUTPUT=1
 # start exits with this when the stack does not become ready (scripts/lib/dev-stack-state.js).
 EXIT_NOT_READY=5
 
@@ -345,8 +346,12 @@ stop_session() {
 	node ./scripts/cleanup-worktree-listeners.js || true
 	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
 	stack_state phase stopped || true
-	# Opt-in: drop this worktree's next dev output (it grows about a GiB an hour and Next prunes it
-	# only at a later start), keeping the Turbopack cache so the next start stays warm.
+}
+
+# After `stop` only (a restart inside `start` keeps it): drop this worktree's next dev output (it
+# grows about a GiB an hour and Next prunes it only at a later start), keeping the Turbopack cache
+# so the next start stays warm. The clean refuses while any dev server could still be serving it.
+clean_dev_output() {
 	if [[ "$CLEAN_DEV_OUTPUT" == "1" ]]; then
 		node "$REPO_ROOT/scripts/lib/next-dev-output.js" clean --worktree "$REPO_ROOT" --socket "$SOCKET" --session "$SESSION_NAME" || true
 	fi
@@ -398,7 +403,7 @@ usage() {
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "          Exits $EXIT_NOT_READY unless the frontend and backend both become ready (VPK_DEV_TMUX_WAIT seconds)."
 	echo "  stop    Ctrl-C the session, let the recorded service processes drain, then end what is left"
-	echo "          stop --clean-dev-output also removes .next/dev/static and .next/dev/server (keeps the cache)"
+	echo "          Then removes .next/dev/static and .next/dev/server and keeps the cache; stop --keep-dev-output skips that"
 	echo "  status  Show the derived stack state (status --json for the full record)"
 	echo ""
 	echo "Environment overrides:"
@@ -418,7 +423,7 @@ for arg in "$@"; do
 	case "$arg" in
 		--force) FORCE_START=1 ;;
 		--json) JSON_OUTPUT=1 ;;
-		--clean-dev-output) CLEAN_DEV_OUTPUT=1 ;;
+		--keep-dev-output) CLEAN_DEV_OUTPUT=0 ;;
 		--) ;;
 		*)
 			echo "Unknown option: $arg"
@@ -433,7 +438,10 @@ fi
 
 case "$command" in
 	start) start_session ;;
-	stop) stop_session ;;
+	stop)
+		stop_session
+		clean_dev_output
+		;;
 	attach) attach_session ;;
 	status) status_session ;;
 	-h | --help | help) usage ;;

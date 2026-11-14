@@ -1583,11 +1583,6 @@
       "count": 1
     }
   },
-  "components/preview/blocks/frame-demo/Frame2087327905.tsx": {
-    "vpk-tokens/no-raw-white-black": {
-      "count": 1
-    }
-  },
   "components/projects/admin/components/admin-context.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1

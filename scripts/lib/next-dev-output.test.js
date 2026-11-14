@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { cleanDevOutput, describeNextDir, measureNextDir } = require("./next-dev-output");
+const { DEV_STALE_OUTPUT_MAX_AGE_MS, cleanDevOutput, describeNextDir, measureNextDir } = require("./next-dev-output");
 
 const SCRIPT = path.join(__dirname, "next-dev-output.js");
 
@@ -39,6 +39,15 @@ test("sizes split .next into dev output, dev cache, build cache and build output
 	assert.ok(sizes.totalBytes >= sizes.devOutputBytes + sizes.devCacheBytes + sizes.buildCacheBytes + sizes.buildOutputBytes);
 	assert.equal(measureNextDir(path.join(root, "missing")), null);
 	assert.equal(describeNextDir(null), "no .next");
+});
+
+test("next dev prunes dev output older than a day at any start", async () => {
+	// Loaded the way next dev loads it, so a renamed or misplaced option fails here.
+	const loadConfig = require("next/dist/server/config").default;
+	const { PHASE_DEVELOPMENT_SERVER } = require("next/constants");
+	const config = await loadConfig(PHASE_DEVELOPMENT_SERVER, path.join(__dirname, "..", ".."), { silent: true });
+	assert.equal(DEV_STALE_OUTPUT_MAX_AGE_MS, 24 * 60 * 60 * 1000);
+	assert.equal(config.experimental.turbopackStaleOutputMaxAge, DEV_STALE_OUTPUT_MAX_AGE_MS);
 });
 
 test("cleaning removes the dev output and keeps the dev cache and the build", (t) => {
