@@ -87,3 +87,12 @@ test("artifact content that is a JSON array is not an excalidraw scene", () => {
 
 	assert.equal(body.kind, "text");
 });
+
+test("the shared scene parser rejects a top-level array even when it carries elements", () => {
+	const { parseExcalidrawPreviewScene } = require("./generative-widget-preview-body.ts");
+	const array = [];
+	array.elements = ELEMENTS;
+
+	assert.equal(parseExcalidrawPreviewScene(array), null);
+	assert.equal(parseExcalidrawPreviewScene([{ elements: ELEMENTS }]), null);
+});
