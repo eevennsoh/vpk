@@ -66,7 +66,8 @@ test("MCP workspace actions build agent-browser arguments by the same rules as t
 })
 
 test("MCP navigate and new-tab URLs follow the HTTP routes' rule, and scroll is normalized", async () => {
-	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "navigate", { url: "example.com" }), ["open", "https://example.com"])
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "navigate", { url: "example.com" }), ["open", "https://example.com/"])
+	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "navigate", { url: "localhost:3000/x" }), ["open", "http://localhost:3000/x"])
 	assert.deepEqual(await buildWorkspaceActionCommandArgs("thread-1", "navigate", { url: "about:blank" }), ["open", "about:blank"])
 	// An option-looking value becomes an https URL, never an argument starting with "-".
 	const [, optionLike] = await buildWorkspaceActionCommandArgs("thread-1", "navigate", { url: "--executable-path=/bin/sh" })

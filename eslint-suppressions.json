@@ -230,6 +230,11 @@
       "count": 1
     }
   },
+  "components/arts/personal-graph/personal-graph-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
   "components/arts/personal-graph/personal-graph-source-picker.tsx": {
     "no-restricted-syntax": {
       "count": 3

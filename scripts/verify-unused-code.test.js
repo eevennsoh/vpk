@@ -43,11 +43,11 @@ function scratch(t, baseline) {
 	const cwd = mkdtempSync(path.join(tmpdir(), "vpk-unused-code-"));
 	t.after(() => rmSync(cwd, { force: true, recursive: true }));
 	mkdirSync(path.join(cwd, "scripts"));
-	if (baseline) writeFileSync(path.join(cwd, BASELINE_FILE), JSON.stringify(baseline));
+	if (baseline) writeFileSync(path.join(cwd, BASELINE_FILE), JSON.stringify(normalizeBaseline(baseline)));
 	return cwd;
 }
 
-function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = null } = {}) {
+function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = TODAY } = {}) {
 	const out = [];
 	const err = [];
 	const git = (args) => {
@@ -55,10 +55,7 @@ function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = nul
 		if (args[0] === "show") return base === null ? null : JSON.stringify(base);
 		return null;
 	};
-	const baseKnip = () => {
-		if (!baseReport) throw new Error("the base tree should not be analysed when nothing fails");
-		return collectFindings(baseReport);
-	};
+	const baseKnip = () => collectFindings(baseReport);
 	const status = main(argv, { baseKnip, cwd, env: {}, error: (line) => err.push(line), git, knip: () => knipReport, log: (line) => out.push(line) });
 	return { status, stderr: err.join("\n"), stdout: out.join("\n") };
 }
@@ -76,7 +73,8 @@ test("an unchanged tree passes", (t) => {
 	const cwd = scratch(t, baseline);
 	const result = run(cwd, { base: baseline });
 	assert.equal(result.status, 0, result.stderr);
-	assert.match(result.stdout, /Verified unused code only shrinks \(3 baselined/u);
+	assert.match(result.stdout, /only shrink \(2 baselined: 1 files, 1 dependencies/u);
+	assert.match(result.stdout, /reported, not enforced\): 1 exports \(0 vs base01234\)/u);
 });
 
 test("a new unused file fails with its path", (t) => {
@@ -122,25 +120,53 @@ test("a baseline that gained an entry over the merge-base fails, even when Knip 
 test("problems the base tree already had are a warning, not this change's failure", (t) => {
 	const baseline = collectFindings(TODAY);
 	const cwd = scratch(t, baseline);
-	// Main used oldHelper and orphaned lib/late.ts without updating the baseline; this
-	// change is unrelated, so the merged tree inherits both problems.
-	const mainTree = report([
-		{ file: "components/dead.tsx", files: ["components/dead.tsx"] },
+	// Main deleted components/dead.tsx and orphaned lib/late.ts without updating the
+	// baseline; this change is unrelated, so the merged tree inherits both problems.
+	const mainEntries = [
+		{ file: "lib/helpers.ts", exports: ["oldHelper"] },
 		{ file: "lib/late.ts", files: ["lib/late.ts"] },
 		{ file: "package.json", dependencies: ["left-pad"] },
-	]);
+	];
+	const mainTree = report(mainEntries);
 	const result = run(cwd, { base: baseline, baseReport: mainTree, knipReport: mainTree });
 	assert.equal(result.status, 0, result.stderr);
 	assert.match(result.stdout, /2 problem\(s\) already present at base01234, not this change's/u);
-	assert.match(result.stdout, /^- unused export: lib\/helpers\.ts#oldHelper$/mu);
+	assert.match(result.stdout, /^- unused file: components\/dead\.tsx$/mu);
 	assert.match(result.stdout, /^- unused file: lib\/late\.ts$/mu);
 
 	// The change's own new finding still fails next to the inherited ones.
-	const withOwn = report([...TODAY_ENTRIES.slice(0, 1), { file: "lib/late.ts", files: ["lib/late.ts"] }, { file: "lib/mine.ts", files: ["lib/mine.ts"] }, TODAY_ENTRIES[2]]);
-	const own = run(cwd, { base: baseline, baseReport: mainTree, knipReport: withOwn });
+	const own = run(cwd, { base: baseline, baseReport: mainTree, knipReport: report([...mainEntries, { file: "lib/mine.ts", files: ["lib/mine.ts"] }]) });
 	assert.equal(own.status, 1);
 	assert.match(own.stderr, /^- unused file: lib\/mine\.ts$/mu);
 	assert.doesNotMatch(own.stderr, /lib\/late\.ts/u);
+});
+
+test("a new unused export does not fail; it is counted against the base and listed", (t) => {
+	const baseline = collectFindings(TODAY);
+	const cwd = scratch(t, baseline);
+	const knipReport = report([...TODAY_ENTRIES, { file: "lib/new.ts", exports: ["fresh"] }]);
+	const result = run(cwd, { base: baseline, knipReport });
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /reported, not enforced\): 2 exports \(\+1 vs base01234\)/u);
+	assert.match(result.stdout, /^New since base01234:$/mu);
+	assert.match(result.stdout, /^- unused export: lib\/new\.ts#fresh$/mu);
+	assert.equal(JSON.parse(readFileSync(path.join(cwd, BASELINE_FILE), "utf8")).exports, undefined);
+});
+
+test("a new unused dependency still fails", (t) => {
+	const baseline = collectFindings(TODAY);
+	const cwd = scratch(t, baseline);
+	const knipReport = report([...TODAY_ENTRIES, { file: "package.json", dependencies: ["left-pad", "is-even"] }]);
+	const result = run(cwd, { base: baseline, knipReport });
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /^- unused dependency: package\.json#is-even$/mu);
+});
+
+test("without a base the report has counts but no delta", (t) => {
+	const cwd = scratch(t, collectFindings(TODAY));
+	const result = run(cwd, {});
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /reported, not enforced\): 1 exports\.$/mu);
 });
 
 test("--update never adds: new findings stay out and still fail", (t) => {
@@ -148,7 +174,7 @@ test("--update never adds: new findings stay out and still fail", (t) => {
 	const cwd = scratch(t, base);
 	const result = run(cwd, { argv: ["--update"], base });
 	assert.equal(result.status, 1);
-	assert.deepEqual(normalizeBaseline(JSON.parse(readFileSync(path.join(cwd, BASELINE_FILE), "utf8"))), base);
+	assert.deepEqual(normalizeBaseline(JSON.parse(readFileSync(path.join(cwd, BASELINE_FILE), "utf8"))), normalizeBaseline(base));
 	assert.match(result.stderr, /components\/dead\.tsx/u);
 });
 
@@ -158,7 +184,7 @@ test("--update keeps the base's entries when the working baseline is conflicted"
 	writeFileSync(path.join(cwd, BASELINE_FILE), "<<<<<<< ours\n{}\n=======\n{}\n>>>>>>> theirs\n");
 	const result = run(cwd, { argv: ["--update"], base });
 	assert.equal(result.status, 0, result.stderr);
-	assert.deepEqual(normalizeBaseline(JSON.parse(readFileSync(path.join(cwd, BASELINE_FILE), "utf8"))), base);
+	assert.deepEqual(normalizeBaseline(JSON.parse(readFileSync(path.join(cwd, BASELINE_FILE), "utf8"))), normalizeBaseline(base));
 });
 
 test("a missing baseline fails instead of regenerating one", (t) => {
@@ -168,12 +194,13 @@ test("a missing baseline fails instead of regenerating one", (t) => {
 	assert.match(result.stderr, /is missing/u);
 });
 
-test("compare and shrink treat every category alike", () => {
-	const current = collectFindings(report([{ file: "a.ts", exports: ["x"] }]));
-	const baseline = collectFindings(report([{ file: "a.ts", exports: ["x", "y"] }]));
-	assert.deepEqual(compareFindings({ baseline, current }), [{ category: "exports", entry: "a.ts#y", type: "stale" }]);
-	assert.deepEqual(shrinkBaseline({ allowed: baseline, current }), current);
-	assert.deepEqual(shrinkBaseline({ allowed: null, current }), current);
+test("only enforced categories are compared and baselined", () => {
+	const current = collectFindings(report([{ file: "a.ts", exports: ["x"] }, { file: "b.ts", files: ["b.ts"] }]));
+	const baseline = normalizeBaseline(collectFindings(report([{ file: "a.ts", exports: ["x", "y"] }, { file: "b.ts", files: ["b.ts"] }, { file: "c.ts", files: ["c.ts"] }])));
+	assert.deepEqual(compareFindings({ baseline, current }), [{ category: "files", entry: "c.ts", type: "stale" }]);
+	assert.deepEqual(shrinkBaseline({ allowed: baseline, current }).files, ["b.ts"]);
+	assert.equal(shrinkBaseline({ allowed: null, current }).exports, undefined);
+	assert.equal(normalizeBaseline({ exports: ["a.ts#x"], files: [] }).exports, undefined);
 });
 
 test("the base tree is Knip-analysed from an extract of the base commit", (t) => {

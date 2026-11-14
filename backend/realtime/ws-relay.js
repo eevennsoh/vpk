@@ -3,7 +3,14 @@
 const WebSocket = require("ws");
 
 const { RealtimeSession } = require("../lib/openai-realtime");
-const { createConnectionLimiter, resolveConnectionLimits, startHeartbeat, trackHeartbeat } = require("./ws-connection-limits");
+const {
+	WS_FIRST_FRAME_TIMEOUT_MS,
+	armFirstFrameTimeout,
+	createConnectionLimiter,
+	resolveConnectionLimits,
+	startHeartbeat,
+	trackHeartbeat,
+} = require("./ws-connection-limits");
 const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
@@ -40,7 +47,7 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 
 	const socketToken = getRuntimeSocketTokenFromUpgrade(requestUrl, paramName);
 	if (isRuntimeSocketTokenValid(socketToken, scope)) {
-		return { ok: true };
+		return { ok: true, socketToken };
 	}
 
 	return {
@@ -134,8 +141,11 @@ function registerBackendWebSocketRelays(server, {
 	isAllowedRuntimeSocketOrigin,
 	isDraining = /** @returns {boolean} */ () => false,
 	isRuntimeSocketTokenValid,
-	connectionLimiter = createConnectionLimiter(resolveConnectionLimits(process.env, consoleImpl)),
+	connectionLimiter = null,
+	connectionLimiters = null,
+	firstFrameTimeouts = WS_FIRST_FRAME_TIMEOUT_MS,
 	heartbeatOptions = {},
+	timerOptions = {},
 	realtimeSessionImpl = RealtimeSession,
 	runtimeAdminRequired,
 	runtimeAdminToken,
@@ -178,12 +188,23 @@ function registerBackendWebSocketRelays(server, {
 	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
 	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
 	const stopHeartbeat = startHeartbeat([realtimeWss, browserPreviewWss], heartbeatOptions);
-	// One slot per socket, across both servers, held until the raw socket closes (also when
-	// the handshake fails). Over a cap the upgrade gets 503.
-	const acquireConnectionSlot = (request, socket) => {
-		const release = connectionLimiter.tryAcquire(request.socket?.remoteAddress);
+	// Each server has its own pool, so preview use cannot starve realtime. A slot is taken
+	// only after the origin and token checks, per address and per token, and held until the
+	// raw socket closes (also when the handshake fails). Over a cap the upgrade gets 503.
+	const limits = resolveConnectionLimits(process.env, consoleImpl);
+	const pools = connectionLimiters ?? {
+		preview: connectionLimiter ?? createConnectionLimiter(limits),
+		realtime: connectionLimiter ?? createConnectionLimiter(limits),
+	};
+	const acquireConnectionSlot = (pool, request, socket, socketToken) => {
+		const release = pools[pool].tryAcquire(request.socket?.remoteAddress, socketToken ?? null);
 		if (!release) {
 			rejectUpgrade(socket, 503, "Service Unavailable");
+			return false;
+		}
+		// A socket that is already gone would never emit "close" again.
+		if (socket.destroyed) {
+			release();
 			return false;
 		}
 		socket.once?.("close", release);
@@ -225,7 +246,7 @@ function registerBackendWebSocketRelays(server, {
 				rejectUpgrade(socket, verification.statusCode, verification.message);
 				return;
 			}
-			if (!acquireConnectionSlot(request, socket)) {
+			if (!acquireConnectionSlot("preview", request, socket, verification.socketToken)) {
 				return;
 			}
 			browserPreviewWss.handleUpgrade(request, socket, head, (ws) => {
@@ -243,7 +264,7 @@ function registerBackendWebSocketRelays(server, {
 				rejectUpgrade(socket, verification.statusCode, verification.message);
 				return;
 			}
-			if (!acquireConnectionSlot(request, socket)) {
+			if (!acquireConnectionSlot("realtime", request, socket, verification.socketToken)) {
 				return;
 			}
 			realtimeWss.handleUpgrade(request, socket, head, (ws) => {
@@ -266,6 +287,7 @@ function registerBackendWebSocketRelays(server, {
 
 	realtimeWss.on("connection", guardListener("realtime connection", (ws) => {
 		trackHeartbeat(ws);
+		const firstFrame = armFirstFrameTimeout(ws, firstFrameTimeouts.realtime, timerOptions);
 		consoleImpl.log("[REALTIME] Client connected to /api/realtime/audio-conversation");
 		const onError = () => closeSocket(ws);
 
@@ -280,10 +302,12 @@ function registerBackendWebSocketRelays(server, {
 		});
 
 		ws.on("message", guardListener("realtime message", (data) => {
+			firstFrame.seen();
 			session.handleClientMessage(data.toString());
 		}, { consoleImpl, onError }));
 
 		ws.on("close", guardListener("realtime close", () => {
+			firstFrame.clear();
 			consoleImpl.log("[REALTIME] Client disconnected");
 			session.close();
 		}, { consoleImpl, onError: () => {} }));
@@ -304,6 +328,7 @@ function registerBackendWebSocketRelays(server, {
 			mirrorBrowser.attachClient(ws);
 			return;
 		}
+		const firstFrame = armFirstFrameTimeout(ws, firstFrameTimeouts.preview, timerOptions);
 
 		// The error reply goes through the guarded send and close: a throw here (a socket
 		// that already closed) would be an unhandled rejection, which exits the backend.
@@ -319,6 +344,7 @@ function registerBackendWebSocketRelays(server, {
 			});
 
 		ws.on("message", guardListener("preview message", (data) => {
+			firstFrame.seen();
 			let payload;
 			try {
 				payload = JSON.parse(String(data));
@@ -337,7 +363,7 @@ function registerBackendWebSocketRelays(server, {
 		}, { consoleImpl, onError: () => closeSocket(ws) }));
 
 		const detach = guardListener("preview detach", () =>
-			Promise.resolve()
+			Promise.resolve(firstFrame.clear())
 				.then(() => browserWorkspaceManager.detachWorkspacePreviewClient(workspaceId, ws))
 				.catch(() => {}), { consoleImpl, onError: () => {} });
 		ws.on("close", detach);
