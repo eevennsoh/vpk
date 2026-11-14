@@ -4,6 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
+const { readRovoAppShellSource } = require("../../../scripts/lib/rovo-app-shell-sources.js");
 
 function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
@@ -40,7 +41,7 @@ test("Agent Template renders the strategy dialog layout with entity-card cards",
 	const pageSource = readProjectFile("components/blocks/agent-template/page.tsx");
 	const demoAgentsSource = readProjectFile("components/blocks/agent-template/data/demo-template-agents.ts");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agent-template/data/sidebar-groups.ts");
-	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
+	const studioShellSource = readRovoAppShellSource("studio");
 	const studioHomeStarterBentoSource = readProjectFile("components/projects/studio/components/rovo-app-home-starter-bento.tsx");
 	const studioTemplatePromptsSource = readProjectFile("components/projects/studio/lib/studio-template-prompts.ts");
 	const expandedCardSource = readProjectFile("components/ui-custom/entity-card/agent-expanded.tsx");

@@ -10,7 +10,7 @@ const {
 
 function createBaseOptions(overrides = {}) {
 	const state = {
-		forcedTextDeltas: [],
+		failureNotices: [],
 		loggerWarnings: [],
 		streamTextDeltas: [],
 		writtenParts: [],
@@ -63,8 +63,8 @@ function createBaseOptions(overrides = {}) {
 					state.writtenParts.push(part);
 				},
 			},
-			emitForcedTextDelta: (delta) => {
-				state.forcedTextDeltas.push(delta);
+			emitFailureNotice: (notice) => {
+				state.failureNotices.push(notice);
 			},
 			...overrides,
 		},
@@ -98,7 +98,7 @@ test("handleRovoStreamAttemptError retries after stuck-port recovery", async () 
 	assert.deepEqual(state.writtenParts, [
 		{ type: "data-thinking-status", data: { label: "Retry" } },
 	]);
-	assert.deepEqual(state.forcedTextDeltas, []);
+	assert.deepEqual(state.failureNotices, []);
 });
 
 test("handleRovoStreamAttemptError emits stuck-port failure text and stops retry loop", async () => {
@@ -123,7 +123,7 @@ test("handleRovoStreamAttemptError emits stuck-port failure text and stops retry
 	assert.deepEqual(state.writtenParts, [
 		{ type: "data-thinking-status", data: { label: "Failed" } },
 	]);
-	assert.deepEqual(state.forcedTextDeltas, ["\n\n⚠️ Could not recover"]);
+	assert.deepEqual(state.failureNotices, ["⚠️ Could not recover"]);
 });
 
 test("handleRovoStreamAttemptError retries after in-progress timeout recovery", async () => {
@@ -267,7 +267,7 @@ test("createRovoStreamAttemptErrorHandler resolves live port and forwards retry 
 		buildInteractiveStuckPortFailureMessage: () => "stuck",
 		clarificationSubmission: { sessionId: "session-1" },
 		clarificationToolCallId: "tool-1",
-		emitForcedTextDelta: () => {},
+		emitFailureNotice: () => {},
 		getListeningPidsForPort: () => [],
 		getResolvedRovoPort: () => resolvedRovoPort,
 		handleRovoStreamAttemptErrorFn: async (options) => {

@@ -2,9 +2,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readRovoAppShellSource } = require("../../../../scripts/lib/rovo-app-shell-sources.js");
 
 const WRAPPER_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-composer.tsx"), "utf8");
-const SHELL_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-shell.tsx"), "utf8");
+const SHELL_SOURCE = readRovoAppShellSource("rovo");
 const CLICKY_VOICE_HOOK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-core/hooks/use-default-clicky-voice.ts"),
 	"utf8",

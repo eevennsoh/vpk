@@ -17,11 +17,9 @@
 	- `components/arts/`
 	- `components/visual/`
 3. Add one manifest entry in `app/data/component-manifest.ts`.
-4. Add `app/data/details/<category>/<slug>.ts`, then import it from `app/data/details/<category>.ts`.
-5. Add the demo module under `components/website/demos/<category>/`.
-6. Register the primary demo in `components/website/registry/<category>.ts`, except:
-	- `ui`: use `components/website/registry/ui/primary.ts`.
-	- `ui-custom`: use `components/website/registry/ui-custom/primary.ts`.
+4. Add the detail: `app/data/details/<category>/<slug>.ts` for blocks, ui, ui-custom and visual; an inline record in `app/data/details/<category>.ts` for projects, arts, utility and ui-charts. The blocks, ui and ui-custom barrels are generated; do not edit them. The visual barrel `app/data/details/visual.ts` is hand-written: import the visual leaf there.
+5. Add the demo module as `components/website/demos/<category>/<slug>-demo.tsx`.
+6. Run `corepack pnpm run fix:generated`. It writes the detail barrel and the primary registry entry (the generated region of `components/website/registry/<category>.ts`, or `registry/ui/primary.ts`, `registry/ui-custom/primary.ts`). Write by hand, below the generated region with a one-line reason, a primary entry that is not `<slug>-demo` with a default export. Projects are still registered by hand in `components/website/registry/projects.ts`, and need a route page (`app/<slug>/page.tsx`).
 7. Register example-only variants in the category registry or matching shard:
 	- `ui`: `components/website/registry/ui/variants-*.ts`.
 	- `ui-custom`: `components/website/registry/ui-custom/variants-*.ts`.
