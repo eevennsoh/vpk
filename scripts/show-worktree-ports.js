@@ -80,9 +80,14 @@ function readRovoPorts(worktreePath) {
 	return single ? [single] : [];
 }
 
+// Next binds "localhost", which can be IPv6 only, so a port counts when either loopback answers.
+async function probeLoopback(port) {
+	return (await probePortAlive(port)) || probePortAlive(port, { host: "::1" });
+}
+
 async function probeOrNull(port) {
 	if (!port) return null;
-	const alive = await probePortAlive(port);
+	const alive = await probeLoopback(port);
 	return alive ? port : null;
 }
 
@@ -546,7 +551,7 @@ async function collectStackRows({
 	worktrees = getAllWorktreePortInfo(),
 	routes = loadPortlessRoutes(),
 	sessions = listDevSessions(),
-	isPortListening = probePortAlive,
+	isPortListening = probeLoopback,
 	isRecordedSessionAlive = isSessionAlive,
 	listenerInWorktree,
 } = {}) {

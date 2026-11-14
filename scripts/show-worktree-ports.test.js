@@ -380,3 +380,26 @@ test("ports --json does not call a port held by another directory's process an o
 	});
 	assert.notEqual(rows[0].status, "orphaned");
 });
+
+test("ports --json counts a frontend that listens only on IPv6 loopback", async (t) => {
+	const server = net.createServer();
+	const listening = await new Promise((resolve) => {
+		server.once("error", () => resolve(false));
+		server.listen(0, "::1", () => resolve(true));
+	});
+	if (!listening) {
+		t.skip("no IPv6 loopback on this machine");
+		return;
+	}
+	t.after(() => server.close());
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "ports-ipv6-"));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(root, ".dev-frontend-port"), String(server.address().port));
+	const rows = await collectStackRows({
+		worktrees: [{ path: root, isMain: true, branch: "main", worktreeName: null }],
+		routes: [],
+		sessions: [{ name: "vpk-dev-main", socket: "vpk-dev", path: root }],
+		listenerInWorktree: () => true,
+	});
+	assert.equal(rows[0].frontend.listening, true);
+});
