@@ -2,6 +2,7 @@
 
 import { RovoAppQueueBoundary } from "@/app/studio/rovo-queue-provider";
 import { RovoAppShell } from "@/components/projects/studio/components/rovo-app-shell";
+import { usePreloadMessageMarkdownForThread } from "@/components/projects/rovo-core/hooks/use-preload-message-markdown";
 import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 
 interface StudioPageProps {
@@ -15,6 +16,7 @@ export default function StudioPage({
 	headingAs = "h1",
 	initialThreadId = null,
 }: Readonly<StudioPageProps>) {
+	usePreloadMessageMarkdownForThread(initialThreadId);
 	return (
 		<RovoAppQueueBoundary>
 			<RovoAppShell
