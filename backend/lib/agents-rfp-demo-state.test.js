@@ -492,3 +492,20 @@ test("state manager serializes concurrent ticket move updates", async (t) => {
 	const files = await fs.readdir(path.join(tempDir, "agents-rfp-demo"));
 	assert.deepEqual(files, ["state.json"]);
 });
+
+test("backend normalization drops an agent session thread id that is not a storage id", () => {
+	const workItem = (agentSessionThreadId) => ({ status: "RFP Intake", attachments: [], agentAssignmentIds: [], agentSessionThreadId });
+	const normalized = normalizeAgentsRfpDemoState({
+		...createDefaultAgentsRfpDemoState(),
+		workItems: {
+			"RFP-101": workItem("agents-rfp-demo-rfp-101"),
+			"RFP-102": workItem("../../outside"),
+			"RFP-103": workItem("a/b"),
+			"RFP-104": workItem(42),
+		},
+	});
+	assert.equal(normalized.workItems["RFP-101"].agentSessionThreadId, "agents-rfp-demo-rfp-101");
+	for (const code of ["RFP-102", "RFP-103", "RFP-104"]) {
+		assert.equal(normalized.workItems[code].agentSessionThreadId, null, code);
+	}
+});

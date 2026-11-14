@@ -141,10 +141,14 @@ function upsertMessage(messages, nextMessage) {
 	);
 }
 
+// `onStreamMessage` receives each message exactly as the response stream yielded it:
+// built from the stream's chunks alone, before it is merged into `initialMessages`
+// (which hold the request's history and may come from a client).
 async function collectUiMessagesFromResponseStream({
 	initialMessages = [],
 	onChunk,
 	onMessagesUpdated,
+	onStreamMessage,
 	routeDecisionToSuppress,
 	stream,
 }) {
@@ -158,6 +162,9 @@ async function collectUiMessagesFromResponseStream({
 				routeDecisionToSuppress,
 			}),
 		})) {
+			if (typeof onStreamMessage === "function") {
+				onStreamMessage(message);
+			}
 			messages.splice(0, messages.length, ...upsertMessage(messages, message));
 			if (typeof onMessagesUpdated === "function") {
 				void Promise.resolve(onMessagesUpdated([...messages])).catch(() => {});

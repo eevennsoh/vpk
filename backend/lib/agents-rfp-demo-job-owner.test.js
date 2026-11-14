@@ -71,9 +71,6 @@ function createHarness({
 			},
 		},
 		rovoAppGeneratedFilesManager: {
-			backfillFromThread: async (thread) => {
-				calls.push(["backfillFromThread", thread.id]);
-			},
 			deleteLegacyRootFiles: async (threadId) => {
 				calls.push(["deleteLegacyRootFiles", threadId]);
 			},
@@ -147,7 +144,6 @@ test("deleteAgentsRfpDemoThread cleans existing thread resources before deleting
 	assert.deepEqual(harness.calls.map((call) => call[0]), [
 		"getThread",
 		"collectUploads",
-		"backfillFromThread",
 		"deleteLegacyRootFiles",
 		"deleteWorkspace",
 		"destroyMirror",

@@ -150,6 +150,10 @@ test("static and unit jobs preserve the same base fetches and validation environ
 		assert.deepEqual(result.stdout.trim().split("\n"), ["fetch", "--no-tags", "--depth=1", "origin",
 			isPr ? "+refs/heads/release/test:refs/remotes/origin/release/test" : "a".repeat(40)]);
 	}
+	// The ratchets compare a pull request's merge commit with its first parent (resolveBaseRef).
+	for (const job of [jobs.static, jobs.unit]) {
+		assert.match(job, /uses: actions\/checkout@v\d+\n\s+with:\n(?:\s+#.*\n)*\s+fetch-depth: 2\n/u);
+	}
 	const guards = staticSteps.find((step) => step.name === "Repository guards");
 	const units = unitSteps.find((step) => step.name === "Unit tests");
 	assert.deepEqual(units.env, guards.env);

@@ -1,3 +1,4 @@
+// @ts-check
 const net = require("node:net");
 
 const { isAllowedAtlassianSite } = require("./jira-query-inputs");
@@ -347,6 +348,7 @@ async function fetchImageProxyUrl(startUrl, { fetchFn, buildHeaders, signal }) {
 			return { response, url };
 		}
 		await response.body?.cancel?.().catch?.(() => {});
+		/** @type {URL | null} */
 		let next = null;
 		try {
 			const location = response.headers.get("location");

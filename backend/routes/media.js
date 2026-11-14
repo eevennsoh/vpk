@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const express = require("express");
@@ -220,6 +221,7 @@ function createMediaRouter({
 					: []),
 			];
 			const attemptedUrls = new Set();
+			/** @type {number | null} */
 			let lastStatus = null;
 
 			while (candidateQueue.length > 0 && attemptedUrls.size < 8) {

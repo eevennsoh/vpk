@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, Suspense, use } from "react";
+import { createElement, Suspense, use, useCallback, useEffect, useRef, useState } from "react";
 import { token } from "@/lib/tokens";
 import type { DemoLayout } from "@/app/data/component-detail-types";
 import {
@@ -25,9 +25,15 @@ interface DocPreviewProps {
 // jumping down under it (Chrome counts no layout shift for transparent content). Pending means the
 // skeleton is showing, or nothing but React's client-render marker precedes the sentinel placed
 // after the demo. The hold lifts after 3s in case a demo never renders.
+//
+// The rule's :has() subjects are re-checked on every DOM change inside the article, which made a
+// busy demo's style recalcs about 40% slower, so the <style> is removed once the demo has rendered
+// (or after the same 3s), leaving nothing to re-check while the demo runs.
+const PENDING_SENTINEL = ":nth-child(1 of :not(template, [data-doc-preview-pending]))";
+const HOLD_RELEASE_TIMEOUT_MS = 3000;
 const HOLD_SECTIONS_AFTER_PREVIEW_CSS = `article:is(
 	:has([data-doc-preview-pending]),
-	:has(#preview [data-doc-preview-sentinel]:nth-child(1 of :not(template, [data-doc-preview-pending])))
+	:has(#preview [data-doc-preview-sentinel]${PENDING_SENTINEL})
 ) > :has(#preview, [data-doc-preview-pending]) ~ * {
 	opacity: 0;
 	animation: doc-preview-hold-release 0s linear 3s forwards;
@@ -36,6 +42,29 @@ const HOLD_SECTIONS_AFTER_PREVIEW_CSS = `article:is(
 
 function HoldSectionsAfterPreview() {
 	return <style>{HOLD_SECTIONS_AFTER_PREVIEW_CSS}</style>;
+}
+
+/** Placed after the demo; reports once the demo has rendered an element ahead of it. */
+function PreviewSentinel({ onDemoRendered }: Readonly<{ onDemoRendered: () => void }>) {
+	const sentinelRef = useRef<HTMLSpanElement>(null);
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+		const slot = sentinel?.parentElement;
+		if (!sentinel || !slot) return undefined;
+		const rendered = () => !sentinel.matches(PENDING_SENTINEL);
+		if (rendered()) {
+			onDemoRendered();
+			return undefined;
+		}
+		const observer = new MutationObserver(() => {
+			if (!rendered()) return;
+			observer.disconnect();
+			onDemoRendered();
+		});
+		observer.observe(slot, { childList: true });
+		return () => observer.disconnect();
+	}, [onDemoRendered]);
+	return <span ref={sentinelRef} data-doc-preview-sentinel="" hidden />;
 }
 
 function PreviewSkeleton() {
@@ -67,7 +96,8 @@ function ResolvedDocPreview({
 	slug,
 	category,
 	demoLayout,
-}: Readonly<DocPreviewProps>) {
+	onDemoRendered,
+}: Readonly<DocPreviewProps & { onDemoRendered: () => void }>) {
 	const Demo = use(loadDemoComponent(slug, category));
 
 	if (!Demo) {
@@ -94,18 +124,26 @@ function ResolvedDocPreview({
 				<Suspense fallback={<PreviewSkeleton />}>
 					{createElement(Demo)}
 				</Suspense>
-				<span data-doc-preview-sentinel="" hidden />
+				<PreviewSentinel onDemoRendered={onDemoRendered} />
 			</DemoPreviewShell>
 		</DocSection>
 	);
 }
 
 export function DocPreview(props: Readonly<DocPreviewProps>) {
+	// Keyed by page so a client-side navigation to another doc page holds again.
+	const previewKey = `${props.category}:${props.slug}`;
+	const [releasedKey, setReleasedKey] = useState<string | null>(null);
+	const releaseHold = useCallback(() => setReleasedKey(previewKey), [previewKey]);
+	useEffect(() => {
+		const timeout = window.setTimeout(releaseHold, HOLD_RELEASE_TIMEOUT_MS);
+		return () => window.clearTimeout(timeout);
+	}, [releaseHold]);
 	return (
 		<>
-			<HoldSectionsAfterPreview />
+			{releasedKey === previewKey ? null : <HoldSectionsAfterPreview />}
 			<Suspense fallback={<PreviewSkeleton />}>
-				<ResolvedDocPreview {...props} />
+				<ResolvedDocPreview {...props} onDemoRendered={releaseHold} />
 			</Suspense>
 		</>
 	);

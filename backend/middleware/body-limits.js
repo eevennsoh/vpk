@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const express = require("express");
@@ -68,7 +69,7 @@ function createPayloadTooLargeHandler() {
 					"The request included more data than this endpoint can process, often from inline image/file data in chat history. You can continue chatting after starting a new thread or trimming history.",
 			});
 		}
-		if (error?.type === "entity.parse.failed" || (error instanceof SyntaxError && error?.status === 400)) {
+		if (error?.type === "entity.parse.failed" || (error instanceof SyntaxError && /** @type {SyntaxError & { status?: number }} */ (error).status === 400)) {
 			return sendError(res, 400, ERROR_CODES.INVALID_JSON, "Invalid JSON request body.");
 		}
 
