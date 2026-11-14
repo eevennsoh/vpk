@@ -1,17 +1,23 @@
 #!/usr/bin/env node
 
-// Shrink-only ratchet over Knip (knip.jsonc): unused files, exports, types and
-// dependencies. Today's findings live in scripts/unused-code-baseline.json. A finding the
-// baseline does not record fails with its path; a recorded entry Knip no longer reports is
+// Shrink-only ratchet over Knip (knip.jsonc). Enforced: unused files, unused and unlisted
+// dependencies, unlisted binaries and unresolved imports; today's findings of those live in
+// scripts/unused-code-baseline.json. Unused exports and exported types are only reported
+// (their counts and the delta against the base commit), never enforced: whether an export
+// nothing imports yet should fail is an owner decision. An enforced finding the baseline
+// does not record fails with its path; a recorded entry Knip no longer reports is
 // stale and fails until the baseline drops it (`--update`, also `pnpm run fix:generated
 // --only unused-code`); and the baseline may not gain entries over the one at the base
 // commit (scripts/lib/ratchet-base.js), so hand-adding an entry fails too. `--update` only
 // removes: it keeps the entries Knip still reports that the base baseline already had.
 //
 // A new or stale entry the base commit already had (main changed code without updating the
-// baseline, or two changes raced) is not this change's: when the comparison fails, Knip also
-// runs on the base tree, and problems that tree shows against its own baseline are printed as
-// a warning instead of failing the change.
+// baseline, or two changes raced) is not this change's. Once the base commit has a baseline,
+// Knip also runs on an extract of the base tree: problems that tree shows against its own
+// baseline are printed as a warning instead of failing, and the report's delta comes from it.
+//
+// A legitimate new entry point (started by a path string, a spawn, a manifest) is an `entry`
+// line in knip.jsonc with its reason, never a baseline entry.
 
 "use strict";
 
@@ -26,9 +32,10 @@ const REPO_ROOT = path.resolve(__dirname, "..");
 const BASELINE_FILE = "scripts/unused-code-baseline.json";
 const UPDATE_COMMAND = "pnpm run fix:generated --only unused-code";
 
-// Knip's JSON issue keys, in report order. `files` entries are paths; the rest are
-// `<file>#<name>` (a dependency's file is the package.json that lists it).
-const CATEGORIES = Object.freeze([
+// Knip's JSON issue keys. `files` entries are paths; the rest are `<file>#<name>` (a
+// dependency's file is the package.json that lists it). ENFORCED ones are baselined and
+// may only shrink; REPORTED ones are counted and compared with the base, never failed on.
+const ENFORCED = Object.freeze([
 	"files",
 	"dependencies",
 	"devDependencies",
@@ -36,14 +43,10 @@ const CATEGORIES = Object.freeze([
 	"unlisted",
 	"binaries",
 	"unresolved",
-	"exports",
-	"nsExports",
-	"types",
-	"nsTypes",
-	"enumMembers",
-	"namespaceMembers",
 	"catalog",
 ]);
+const REPORTED = Object.freeze(["exports", "nsExports", "types", "nsTypes", "enumMembers", "namespaceMembers"]);
+const CATEGORIES = Object.freeze([...ENFORCED, ...REPORTED]);
 
 const LABELS = Object.freeze({
 	binaries: "unlisted binary",
@@ -62,9 +65,6 @@ const LABELS = Object.freeze({
 	unresolved: "unresolved import",
 });
 
-function emptyFindings() {
-	return Object.fromEntries(CATEGORIES.map((category) => [category, []]));
-}
 
 function memberName(item) {
 	return item.parentSymbol ? `${item.parentSymbol}.${item.name}` : item.name;
@@ -84,10 +84,9 @@ function collectFindings(report) {
 	return Object.fromEntries(CATEGORIES.map((category) => [category, [...sets[category]].sort()]));
 }
 
+// The baseline holds only the enforced categories; anything else in the file is ignored.
 function normalizeBaseline(baseline) {
-	const findings = emptyFindings();
-	for (const category of CATEGORIES) findings[category] = [...(baseline?.[category] ?? [])].sort();
-	return findings;
+	return Object.fromEntries(ENFORCED.map((category) => [category, [...(baseline?.[category] ?? [])].sort()]));
 }
 
 function difference(left, right) {
@@ -100,7 +99,7 @@ function difference(left, right) {
 // base commit's baseline did not (grown).
 function compareFindings({ base = null, baseline, current }) {
 	const problems = [];
-	for (const category of CATEGORIES) {
+	for (const category of ENFORCED) {
 		for (const entry of difference(current[category], baseline[category])) problems.push({ category, entry, type: "new" });
 		for (const entry of difference(baseline[category], current[category])) problems.push({ category, entry, type: "stale" });
 		if (base) {
@@ -114,8 +113,8 @@ function compareFindings({ base = null, baseline, current }) {
 // allowed baseline is the base commit's when there is one, so a conflicted or hand-edited
 // working copy cannot carry entries in; with no baseline anywhere, this change introduces it.
 function shrinkBaseline({ allowed, current }) {
-	if (!allowed) return current;
-	return Object.fromEntries(CATEGORIES.map((category) => {
+	return Object.fromEntries(ENFORCED.map((category) => {
+		if (!allowed) return [category, [...current[category]]];
 		const keep = new Set(allowed[category]);
 		return [category, current[category].filter((entry) => keep.has(entry))];
 	}));
@@ -145,14 +144,36 @@ function formatProblems(problems, { baseRef = null } = {}) {
 	return lines.join("\n");
 }
 
-function countFindings(findings) {
-	return CATEGORIES.reduce((sum, category) => sum + findings[category].length, 0);
+function countFindings(findings, categories = ENFORCED) {
+	return categories.reduce((sum, category) => sum + findings[category].length, 0);
 }
 
-function summarize(findings) {
-	return CATEGORIES.filter((category) => findings[category].length > 0)
+function summarize(findings, categories = ENFORCED) {
+	return categories.filter((category) => findings[category].length > 0)
 		.map((category) => `${findings[category].length} ${category}`)
 		.join(", ");
+}
+
+const REPORT_LIST_LIMIT = 20;
+
+// The report-only half: counts of unused exports and types, the delta against the base
+// tree, and the entries that are new since the base, so they can be worked down.
+function formatReport(current, { baseFindings = null, baseRef = null } = {}) {
+	const parts = REPORTED.filter((category) => current[category].length > 0 || baseFindings?.[category]?.length > 0).map((category) => {
+		const count = current[category].length;
+		if (!baseFindings) return `${count.toLocaleString("en-US")} ${category}`;
+		const delta = count - baseFindings[category].length;
+		return `${count.toLocaleString("en-US")} ${category} (${delta > 0 ? "+" : ""}${delta} vs ${baseRef.slice(0, 9)})`;
+	});
+	const lines = [`Unused exports and types (reported, not enforced): ${parts.join(", ") || "none"}.`];
+	if (baseFindings) {
+		const added = REPORTED.flatMap((category) => difference(current[category], baseFindings[category]).map((entry) => `- ${LABELS[category]}: ${entry}`));
+		if (added.length > 0) {
+			lines.push(`New since ${baseRef.slice(0, 9)}:`, ...added.slice(0, REPORT_LIST_LIMIT));
+			if (added.length > REPORT_LIST_LIMIT) lines.push(`- … and ${added.length - REPORT_LIST_LIMIT} more`);
+		}
+	}
+	return lines.join("\n");
 }
 
 function runKnip({ cwd = REPO_ROOT, knipRoot = cwd } = {}) {
@@ -239,7 +260,6 @@ function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env
 	}
 	if (resolved.warning) error(resolved.warning);
 	const current = collectFindings(knip({ cwd }));
-	const seconds = ((performance.now() - started) / 1000).toFixed(1);
 
 	if (update) {
 		let working = null;
@@ -264,23 +284,30 @@ function main(argv = process.argv.slice(2), { cwd = REPO_ROOT, env = process.env
 		error(`Unused code: ${BASELINE_FILE} is missing. Restore it from main; it is never regenerated from scratch.`);
 		return 1;
 	}
+	// With a base baseline the base tree is analysed too: for the report's delta, and so a
+	// problem the base already had is not blamed on this change.
+	const baseFindings = resolved.base ? baseKnip(resolved.baseRef, { cwd, knip }) : null;
 	let problems = compareFindings({ base: resolved.base, baseline, current });
-	if (resolved.base && problems.some((problem) => problem.type !== "grown")) {
-		const { inherited, own } = splitInherited(problems, { base: resolved.base, baseFindings: baseKnip(resolved.baseRef, { cwd, knip }) });
+	if (baseFindings && problems.some((problem) => problem.type !== "grown")) {
+		const { inherited, own } = splitInherited(problems, { base: resolved.base, baseFindings });
 		if (inherited.length > 0) {
 			log(`Unused code: ${inherited.length} problem(s) already present at ${resolved.baseRef.slice(0, 9)}, not this change's (refresh with ${UPDATE_COMMAND} when convenient):`);
 			log(formatProblems(inherited, { baseRef: resolved.baseRef }));
 		}
 		problems = own;
 	}
+	const report = formatReport(current, { baseFindings, baseRef: resolved.baseRef });
 	if (problems.length > 0) {
 		error(formatProblems(problems, { baseRef: resolved.baseRef }));
+		log(report);
 		return 1;
 	}
 	const baseNote = resolved.base
 		? `${countFindings(resolved.base) - countFindings(baseline)} fixed vs ${resolved.baseRef.slice(0, 9)}`
 		: resolved.baseRef ? `${resolved.baseRef.slice(0, 9)} has no baseline; this change introduces it` : "no base to compare";
-	log(`Verified unused code only shrinks (${countFindings(baseline)} baselined: ${summarize(baseline) || "none"}; ${baseNote}; ${seconds} s).`);
+	const seconds = ((performance.now() - started) / 1000).toFixed(1);
+	log(`Verified unused files and dependencies only shrink (${countFindings(baseline)} baselined: ${summarize(baseline) || "none"}; ${baseNote}; ${seconds} s).`);
+	log(report);
 	return 0;
 }
 
@@ -291,9 +318,12 @@ if (require.main === module) {
 module.exports = {
 	BASELINE_FILE,
 	CATEGORIES,
+	ENFORCED,
+	REPORTED,
 	collectFindings,
 	compareFindings,
 	formatProblems,
+	formatReport,
 	knipAtBase,
 	main,
 	normalizeBaseline,
