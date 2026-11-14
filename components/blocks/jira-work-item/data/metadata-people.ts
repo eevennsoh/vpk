@@ -13,7 +13,7 @@
  * for names the work-item fixtures reference that aren't in the directory.
  */
 
-import { SAMPLE_AGENT_PEOPLE } from "@/app/data/directory";
+import { SAMPLE_AGENT_PEOPLE } from "@/app/data/directory/people";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 
 /**
