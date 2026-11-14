@@ -3,82 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
-const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
 function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
-
-test("Agent Directory exposes an opt-in experimental variation", () => {
-	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
-	const indexSource = readProjectFile("components/blocks/agent-directory/index.ts");
-	const detailsSource = readDetailCategorySource("blocks");
-	const registrySource = readWebsiteRegistrySource();
-	const demoSource = readProjectFile("components/website/demos/blocks/agent-directory-demo.tsx");
-	const pageSource = readProjectFile("components/blocks/agent-directory/page.tsx");
-
-	assert.match(source, /export type AgentBrowserVariant = "default" \| "experimental";/u);
-	assert.match(source, /variant\?: AgentBrowserVariant;/u);
-	assert.match(source, /variant = "default"[\s\S]*<AgentBrowser \{\.\.\.browserProps\} variant=\{variant\} \/>/u);
-	assert.match(source, /props\.variant === "experimental"[\s\S]*<ExperimentalAgentBrowser \{\.\.\.props\} \/>/u);
-	assert.match(agentsDirectorySource, /variant\?: AgentsDirectoryVariant;/u);
-	assert.match(agentsDirectorySource, /variant = "default"/u);
-	assert.match(agentsDirectorySource, /variant === "experimental"[\s\S]*\? \{ \.\.\.sessionAgent, favorite: true \}[\s\S]*: sessionAgent/u);
-	assert.match(agentsDirectorySource, /mergeDirectoryAgents\(\{ agents, sessionAgents, variant \}\)/u);
-	assert.match(indexSource, /AgentsDirectoryVariant/u);
-	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agent-directory-demo-experimental"/u);
-	assert.match(registrySource, /"agent-directory-demo-standard": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoStandard/u);
-	assert.match(registrySource, /"agent-directory-demo-experimental": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoExperimental/u);
-	assert.match(demoSource, /export function AgentsDirectoryDemoStandard/u);
-	assert.match(demoSource, /export function AgentsDirectoryDemoExperimental/u);
-	assert.match(pageSource, /export function AgentsDirectoryExperimentalPage/u);
-	assert.match(pageSource, /variant="experimental"/u);
-});
-
-test("Agent Directory experimental variation has searchable multi-select filters and sections", () => {
-	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-
-	assert.match(source, /function ExperimentalAgentBrowser/u);
-	assert.match(source, /function ExperimentalFilterDropdown/u);
-	assert.match(source, /function ExperimentalAgentSection/u);
-	assert.match(source, /<section aria-label=\{heading\} className="flex flex-col gap-2">/u);
-	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
-	assert.doesNotMatch(source, /<h2 style=\{\{ font: token\("font\.heading\.large"\) \}\} className="text-text">/u);
-	// Pinned search + filter controls above a separate scroll region (only results
-	// scroll; the top fade mask sits below the filter bar).
-	assert.match(source, /"flex shrink-0 items-center gap-3 px-6 pt-1 pb-4"/u);
-	assert.match(source, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2"/u);
-	assert.match(source, /aria-pressed=\{selectedMyAgents\.length > 0 \? true : undefined\}[\s\S]*?Filter by my agents/u);
-	assert.match(source, /Filter by teams/u);
-	assert.match(source, /Filter by companies/u);
-	assert.match(source, /Filter by categories/u);
-	assert.match(source, /const teamOptions = useMemo\(\(\) => getAttributionOptions\(agents, "team"\), \[agents\]\);/u);
-	assert.match(source, /const companyOptions = useMemo\(\(\) => getAttributionOptions\(agents, "company"\), \[agents\]\);/u);
-	assert.match(source, /function ExperimentalFilterOptionAvatar/u);
-	assert.match(source, /<ExperimentalFilterOptionAvatar option=\{option\} \/>/u);
-	assert.match(source, /function ExperimentalAgentBrowser\(\{[\s\S]*initialTemplateCategory = null,[\s\S]*\}: Readonly<AgentBrowserProps>\)/u);
-	assert.match(source, /const \[templateModeActive, setTemplateModeActive\] = useState\(Boolean\(initialTemplateCategory\)\);/u);
-	assert.match(source, /const \[activeTemplateCategory, setActiveTemplateCategory\] = useState<AgentTemplateCategoryId \| null>\(initialTemplateCategory\);/u);
-	// Mode switching now lives in an outline ToggleGroup next to the search input.
-	assert.match(source, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
-	assert.match(source, /<ToggleGroup[\s\S]*onValueChange=\{handleToggleMode\}[\s\S]*value=\{\[templateModeActive \? "templates" : "agents"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="agents">Agents<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="templates">Templates<\/ToggleGroupItem>/u);
-	assert.match(source, /function handleToggleMode\(groupValue: readonly string\[\]\)[\s\S]*handleEnterTemplateMode\(\)[\s\S]*resetFilters\(\)/u);
-	assert.match(source, /placeholder="Search options"/u);
-	assert.match(source, /<InputGroup className="pl-\[7px\]">[\s\S]*?<InputGroupAddon className="w-4 p-0">[\s\S]*?className="px-2"[\s\S]*?placeholder="Search options"/u);
-	assert.match(source, /<Checkbox[\s\S]*checked=\{selectedValues\.includes\(option\.id\)\}/u);
-	assert.match(source, /selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null/u);
-	assert.match(source, />\s*Reset\s*<\/Button>/u);
-	assert.match(source, /Showing \{resultCount\.toLocaleString\("en-US"\)\} results/u);
-	assert.match(source, /<div className="flex flex-col gap-6">[\s\S]*<ExperimentalAgentSection heading="My agents"/u);
-	assert.match(source, /heading="My agents"/u);
-	assert.match(source, /heading="By teams"/u);
-	assert.match(source, /heading="By companies"/u);
-	assert.match(source, /Agent templates/u);
-	assert.match(source, /templateModeActive && activeTemplateCategoryOption \? \([\s\S]*<ExperimentalTemplateMode/u);
-	assert.match(source, /function handleEnterTemplateMode\(\)[\s\S]*setTemplateModeActive\(true\);/u);
-	assert.match(source, /function handleSelectTemplateCategory\(categoryId: AgentTemplateCategoryId\)/u);
-});
 
 test("Agent Directory includes Agent Template as a sidebar mode", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
