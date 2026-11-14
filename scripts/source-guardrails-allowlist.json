@@ -205,16 +205,16 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/projects/rovo/components/rovo-app-shell.tsx",
+			"filePath": "components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome.ts",
 			"occurrence": 1,
-			"reason": "existing baseline",
+			"reason": "moved from both rovo-app-shell.tsx files (C-5 slice 2); each sidebar sync effect must react to one side only, or the two echo each other",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to global sidebar changes",
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/projects/rovo/components/rovo-app-shell.tsx",
+			"filePath": "components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome.ts",
 			"occurrence": 1,
-			"reason": "existing baseline",
+			"reason": "moved from both rovo-app-shell.tsx files (C-5 slice 2); each sidebar sync effect must react to one side only, or the two echo each other",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to local sidebar changes",
 			"type": "eslint-disable"
 		},
@@ -322,20 +322,6 @@
 			"reason": "existing baseline",
 			"text": "type SkillStarterIcon = ComponentType<any>;",
 			"type": "broad-any"
-		},
-		{
-			"filePath": "components/projects/studio/components/rovo-app-shell.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to global sidebar changes",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/projects/studio/components/rovo-app-shell.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to local sidebar changes",
-			"type": "eslint-disable"
 		},
 		{
 			"filePath": "components/ui-charts/path-stroke-utils.ts",
