@@ -668,31 +668,6 @@
       "count": 1
     }
   },
-  "components/blocks/dashboard/components/analytics-kpi-cards.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/blocks/dashboard/components/chart-user-distribution.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/blocks/dashboard/components/chart-user-segments.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/blocks/dashboard/components/performance-cards.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/blocks/dashboard/components/product-kpi-cards.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
   "components/blocks/dashboard/components/section-cards.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -811,11 +786,6 @@
   },
   "components/blocks/jira-dragging/index.tsx": {
     "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-dropzone/use-jira-dropzone-collapse-hold.ts": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1163,11 +1133,6 @@
     }
   },
   "components/blocks/jira-work-item/data/metadata-crew.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-work-item/data/session-agents.ts": {
     "no-restricted-imports": {
       "count": 1
     }
