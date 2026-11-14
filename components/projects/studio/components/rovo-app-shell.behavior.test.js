@@ -1,6 +1,8 @@
 // Characterization of the /studio shell as a user meets it: the real page inside its layout's
 // providers, against an in-memory backend. These pin behaviour before C-5 moves shell code
 // into rovo-core and before SM-FE-14 models the Studio main surface.
+// Assertions compare booleans and strings, never elements: formatting a failed assertion on a
+// happy-dom node walks the whole window graph and can hang (scripts/lib/render-component.js).
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
@@ -26,17 +28,17 @@ const dialogNames = () => [...document.querySelectorAll("[role=dialog]")].map((d
 test("the agents home shows the starter bento, a composer and the agents table, with the seeded demo agent", async () => {
 	const { view } = await renderStudio();
 
-	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }), "agents home heading");
-	assert.ok(view.queryByRole("textbox", { name: "Message" }), "message composer");
-	assert.ok(view.queryByRole("button", { name: "Use prompt starter: Decision Director" }), "bento prompt starter");
-	assert.ok(view.queryByRole("button", { name: "Browse all agents" }), "bento browse action");
+	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }) !== null, "agents home heading");
+	assert.ok(view.queryByRole("textbox", { name: "Message" }) !== null, "message composer");
+	assert.ok(view.queryByRole("button", { name: "Use prompt starter: Decision Director" }) !== null, "bento prompt starter");
+	assert.ok(view.queryByRole("button", { name: "Browse all agents" }) !== null, "bento browse action");
 	for (const tab of ["My agents", "By teams", "By companies"]) {
-		assert.ok(view.queryByRole("button", { name: tab }), `agents table tab ${tab}`);
+		assert.ok(view.queryByRole("button", { name: tab }) !== null, `agents table tab ${tab}`);
 	}
-	assert.ok(view.queryByRole("button", { name: "Edit RFP Drafter" }), "the seeded RFP demo agent is listed");
-	assert.ok(view.queryByRole("button", { name: "Create agent" }), "sidebar create action");
-	assert.ok(view.queryByRole("button", { name: "View all agents" }), "sidebar agents link");
-	assert.equal(view.queryByRole("button", { name: "Write a JQL query" }), null, "Rovo's prompt gallery is not part of Studio");
+	assert.ok(view.queryByRole("button", { name: "Edit RFP Drafter" }) !== null, "the seeded RFP demo agent is listed");
+	assert.ok(view.queryByRole("button", { name: "Create agent" }) !== null, "sidebar create action");
+	assert.ok(view.queryByRole("button", { name: "View all agents" }) !== null, "sidebar agents link");
+	assert.equal(view.queryByRole("button", { name: "Write a JQL query" }) === null, true, "Rovo's prompt gallery is not part of Studio");
 	assert.equal(sidebarState(), "expanded");
 });
 
@@ -46,7 +48,7 @@ test("the sidebar collapses and expands again from the header toggle", async () 
 	await view.click(view.getByRole("button", { name: "Collapse sidebar" }));
 	await waitFor(() => sidebarState() === "collapsed", "the sidebar to collapse");
 	assert.equal(sidebarState(), "collapsed");
-	assert.ok(view.queryByRole("button", { name: "Expand sidebar" }), "the toggle now offers to expand");
+	assert.ok(view.queryByRole("button", { name: "Expand sidebar" }) !== null, "the toggle now offers to expand");
 
 	await view.click(view.getByRole("button", { name: "Expand sidebar" }));
 	await waitFor(() => sidebarState() === "expanded", "the sidebar to expand");
@@ -64,7 +66,7 @@ test("Browse all agents opens the agent directory and Escape closes it", async (
 	await view.press(null, "Escape");
 	await waitFor(() => dialogNames() === "", "the directory dialog to close");
 	assert.equal(dialogNames(), "");
-	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }), "back on the agents home");
+	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }) !== null, "back on the agents home");
 });
 
 test("a sidebar agent opens its config pane; Ask Rovo opens the docked chat; View all agents returns home", async () => {
@@ -74,22 +76,22 @@ test("a sidebar agent opens its config pane; Ask Rovo opens the docked chat; Vie
 	await waitFor(() => view.queryByRole("button", { name: "Publish" }) !== null, "the config pane to open");
 	// Give any automatic Ask Rovo opening the same chance it gets in the Create agent test.
 	await settle(300);
-	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }), null, "home is replaced by the config pane");
+	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }) === null, true, "home is replaced by the config pane");
 	for (const control of ["Publish", "Edit agent name", "Toggle agent test view"]) {
-		assert.ok(view.queryByRole("button", { name: control }), `config pane control ${control}`);
+		assert.ok(view.queryByRole("button", { name: control }) !== null, `config pane control ${control}`);
 	}
-	assert.ok(view.queryByRole("textbox", { name: "Agent instructions" }), "instructions editor");
-	assert.equal(view.queryByRole("heading", { name: "Improve your agent?" }), null, "the docked Ask Rovo chat starts closed (inert)");
+	assert.ok(view.queryByRole("textbox", { name: "Agent instructions" }) !== null, "instructions editor");
+	assert.equal(view.queryByRole("heading", { name: "Improve your agent?" }) === null, true, "the docked Ask Rovo chat starts closed (inert)");
 
 	await view.click(view.getByRole("button", { name: "Ask Rovo" }));
 	await waitFor(() => view.queryByRole("heading", { name: "Improve your agent?" }) !== null, "the docked Ask Rovo chat to open");
-	assert.ok(view.queryByRole("heading", { name: "Improve your agent?" }), "Ask Rovo greeting in the docked chat");
-	assert.ok(view.queryByRole("textbox", { name: "Chat message input" }), "Ask Rovo composer");
+	assert.ok(view.queryByRole("heading", { name: "Improve your agent?" }) !== null, "Ask Rovo greeting in the docked chat");
+	assert.ok(view.queryByRole("textbox", { name: "Chat message input" }) !== null, "Ask Rovo composer");
 
 	await view.click(view.getByRole("button", { name: "View all agents" }));
 	await waitFor(() => view.queryByRole("heading", { name: HOME_HEADING }) !== null, "the agents home");
-	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }), "back on the agents home");
-	assert.equal(view.queryByRole("button", { name: "Publish" }), null, "config pane is closed");
+	assert.ok(view.queryByRole("heading", { name: HOME_HEADING }) !== null, "back on the agents home");
+	assert.equal(view.queryByRole("button", { name: "Publish" }) === null, true, "config pane is closed");
 });
 
 test("Create agent opens a blank Untitled agent with the Ask Rovo chat already open", async () => {
@@ -97,10 +99,10 @@ test("Create agent opens a blank Untitled agent with the Ask Rovo chat already o
 
 	await view.click(view.getByRole("button", { name: "Create agent" }));
 	await waitFor(() => view.queryByRole("heading", { name: "Improve your agent?" }) !== null, "the new agent with Ask Rovo open");
-	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }), null, "home is replaced by the new agent's config");
+	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }) === null, true, "home is replaced by the new agent's config");
 	assert.equal(view.getByRole("button", { name: "Edit agent name" }).textContent.trim(), "Untitled agent");
-	assert.ok(view.queryByRole("heading", { name: "Improve your agent?" }), "Ask Rovo opens with the new agent");
-	assert.ok(view.queryByRole("textbox", { name: "Chat message input" }), "Ask Rovo composer");
+	assert.ok(view.queryByRole("heading", { name: "Improve your agent?" }) !== null, "Ask Rovo opens with the new agent");
+	assert.ok(view.queryByRole("textbox", { name: "Chat message input" }) !== null, "Ask Rovo composer");
 });
 
 test("a bento starter fills the composer; Enter starts agent creation and the conversation replaces home", async () => {
@@ -114,8 +116,8 @@ test("a bento starter fills the composer; Enter starts agent creation and the co
 
 	await view.press(composer, "Enter");
 	await waitFor(() => view.queryByText("Let's build it.") !== null, "the streamed reply");
-	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }), null, "home view is gone");
-	assert.ok(view.queryByText("Let's build it."), "the streamed reply is shown");
+	assert.equal(view.queryByRole("heading", { name: HOME_HEADING }) === null, true, "home view is gone");
+	assert.ok(view.queryByText("Let's build it.") !== null, "the streamed reply is shown");
 	assert.equal(backend.state.chatRequests.length, 1, "one chat request");
 	const [request] = backend.state.chatRequests;
 	assert.equal(request.messages.at(-1).parts[0].text, DECISION_DIRECTOR_PROMPT, "the prompt is the last user message sent");
@@ -129,17 +131,17 @@ test("a saved thread with an artifact shows its card; opening it shows the artif
 	const { view } = await renderStudio({ backend, props: { initialThreadId: ARTIFACT_THREAD.id } });
 	await waitFor(() => view.queryByText("I drafted the notes.") !== null, "the saved thread to load");
 
-	assert.ok(view.queryByText("I drafted the notes."), "the saved assistant turn is shown");
-	assert.equal(view.queryByRole("button", { name: "Close artifact" }), null, "no pane before opening");
+	assert.ok(view.queryByText("I drafted the notes.") !== null, "the saved assistant turn is shown");
+	assert.equal(view.queryByRole("button", { name: "Close artifact" }) === null, true, "no pane before opening");
 
 	await view.click(view.getByRole("button", { name: "Open created document Release notes draft" }));
 	await waitFor(() => view.queryByRole("button", { name: "Close artifact" }) !== null, "the artifact pane to open");
 	for (const control of ["Close artifact", "Version history", "Edit artifact", "Copy artifact content", "Delete artifact"]) {
-		assert.ok(view.queryByRole("button", { name: control }), `artifact pane control ${control}`);
+		assert.ok(view.queryByRole("button", { name: control }) !== null, `artifact pane control ${control}`);
 	}
 
 	await view.click(view.getByRole("button", { name: "Close artifact" }));
 	await waitFor(() => view.queryByRole("button", { name: "Close artifact" }) === null, "the artifact pane to close");
-	assert.equal(view.queryByRole("button", { name: "Close artifact" }), null, "the pane closes");
-	assert.ok(view.queryByText("I drafted the notes."), "the conversation stays");
+	assert.equal(view.queryByRole("button", { name: "Close artifact" }) === null, true, "the pane closes");
+	assert.ok(view.queryByText("I drafted the notes.") !== null, "the conversation stays");
 });
