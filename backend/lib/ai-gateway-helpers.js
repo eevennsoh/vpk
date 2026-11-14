@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const { redactLogText, redactUrlForLog } = require("./log-redaction");
+const { describeOpenAiModelWarnings, resolveOpenAiModel } = require("./openai-model");
 
 const DEBUG = process.env.DEBUG === "true";
 
@@ -120,6 +121,7 @@ function describeGatewayCloudIdKind(value) {
 function getAIGatewayConfigReport(envVars = getEnvVars()) {
 	const realtimeConfig = getRealtimeConfig();
 	const resolvedCloudId = resolveGatewayCloudId(envVars);
+	const openAiModel = resolveOpenAiModel(envVars);
 	return {
 		AI_GATEWAY_URL: envVars.AI_GATEWAY_URL ? "SET" : "MISSING",
 		AI_GATEWAY_URL_GOOGLE: envVars.AI_GATEWAY_URL_GOOGLE ? "SET" : "MISSING",
@@ -131,6 +133,11 @@ function getAIGatewayConfigReport(envVars = getEnvVars()) {
 		ASAP_ISSUER: process.env.ASAP_ISSUER ? "SET" : "MISSING",
 		ASAP_KID: process.env.ASAP_KID ? "SET" : "MISSING",
 		ASAP_PRIVATE_KEY: process.env.ASAP_PRIVATE_KEY ? "SET" : "MISSING",
+		// Labels only: the default comes from code, the rest describe the override without its value.
+		OPENAI_MODEL_DEFAULT: openAiModel.defaultModel,
+		OPENAI_MODEL_SOURCE: openAiModel.source,
+		OPENAI_MODEL_STATUS: openAiModel.status,
+		OPENAI_MODEL_WARNINGS: describeOpenAiModelWarnings(openAiModel),
 		OPENAI_REALTIME_MODEL: realtimeConfig.model,
 		OPENAI_REALTIME_WS_URL: realtimeConfig.wsUrl ? "SET" : "MISSING",
 		OPENAI_REALTIME_VOICE: realtimeConfig.voice,
@@ -425,7 +432,7 @@ function getModelId(gatewayUrl, envVars = getEnvVars()) {
 	}
 
 	if (/\/v1\/openai\//.test(gatewayUrl)) {
-		return envVars.OPENAI_MODEL?.trim() || "gpt-6.1-sol";
+		return resolveOpenAiModel(envVars).model;
 	}
 
 	return "";

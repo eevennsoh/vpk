@@ -4,7 +4,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { collectDoctorReport, formatDoctorReport, main } = require("./doctor.js");
+const { collectDoctorReport, formatDoctorReport, main, summarizeOpenAiModel } = require("./doctor.js");
+const { DEFAULT_OPENAI_MODEL } = require("../backend/lib/openai-model");
 
 const REPO = "/repo/worktree";
 
@@ -30,6 +31,7 @@ function fakes(overrides = {}) {
 			{ name: "vpk-dev-feature-x", path: REPO },
 			{ name: "vpk-dev-other", path: "/repo/other" },
 		],
+		env: {},
 		measureNext: () => ({ totalBytes: 11 * 1024 ** 3, devOutputBytes: 6.3 * 1024 ** 3, devCacheBytes: 4.4 * 1024 ** 3, devOtherBytes: 0, buildCacheBytes: 0, buildOutputBytes: 0 }),
 		...overrides,
 	};
@@ -109,4 +111,28 @@ test("doctor rejects an unknown argument before collecting anything", async (t) 
 	await main(["--yaml"]);
 	assert.equal(process.exitCode, 2);
 	assert.match(writes.join(""), /Usage: pnpm run doctor \[--json\]/u);
+});
+
+test("doctor warns when the shell exports an OPENAI_MODEL older than the default, without printing it", async () => {
+	const report = await collectDoctorReport(fakes({ env: { OPENAI_MODEL: "gpt-1.0-shellvalue" } }));
+	assert.equal(report.openAiModel.default, DEFAULT_OPENAI_MODEL);
+	assert.equal(report.openAiModel.shellOverride, "override-older-than-default");
+	const text = formatDoctorReport(report);
+	assert.match(text, /^ {7}warning: OPENAI_MODEL from your shell names an older model than the built-in default/mu);
+	assert.equal(text.includes("gpt-1.0-shellvalue"), false);
+	assert.equal(JSON.stringify(report).includes("gpt-1.0-shellvalue"), false);
+});
+
+test("doctor reports no model warning when nothing overrides the default", async () => {
+	const report = await collectDoctorReport(fakes());
+	assert.deepEqual(report.openAiModel, { default: DEFAULT_OPENAI_MODEL, shellOverride: "not set", backendSource: null, warnings: [] });
+	assert.match(formatDoctorReport(report), new RegExp(`^ {5}model {6}default ${DEFAULT_OPENAI_MODEL.replace(/\./gu, "\\.")}; shell OPENAI_MODEL not set; backend source unknown$`, "mu"));
+});
+
+test("doctor relays the backend's value-free model warnings and source", () => {
+	const summary = summarizeOpenAiModel({}, {
+		llmRouting: { aiGatewayConfig: { OPENAI_MODEL_SOURCE: ".env.local", OPENAI_MODEL_WARNINGS: ["backend warning", 42] } },
+	});
+	assert.equal(summary.backendSource, ".env.local");
+	assert.deepEqual(summary.warnings, ["backend warning"]);
 });

@@ -3,12 +3,28 @@
 console.log("[STARTUP] Server process starting...");
 console.error("[STARTUP] Startup initiated");
 
+// Captured before dotenv runs: dotenv never replaces a variable the shell already set, so this is
+// how the startup report can tell a shell export apart from the .env.local value.
+const shellOpenAiModel = process.env.OPENAI_MODEL;
+/** @type {Record<string, string> | undefined} */
+let envFileValues;
+
 // Try to load .env.local if it exists, but don't fail if it doesn't
 try {
-	require("dotenv").config({ path: require("path").join(__dirname, "..", ".env.local") });
+	envFileValues = require("dotenv").config({ path: require("path").join(__dirname, "..", ".env.local") }).parsed;
 	console.log("[STARTUP] .env.local loaded");
 } catch {
 	console.log("[STARTUP] .env.local not found, using environment variables only");
+}
+
+{
+	const { describeOpenAiModelWarnings, recordOpenAiModelEnvOrigin, resolveOpenAiModel } = require("./lib/openai-model");
+	recordOpenAiModelEnvOrigin({ shellValue: shellOpenAiModel, envFileValue: envFileValues?.OPENAI_MODEL });
+	const openAiModel = resolveOpenAiModel(process.env);
+	console.log(`[STARTUP] OpenAI gateway model ${openAiModel.model} (source: ${openAiModel.source})`);
+	for (const warning of describeOpenAiModelWarnings(openAiModel)) {
+		console.warn(`[STARTUP] Warning: ${warning}`);
+	}
 }
 
 const {
