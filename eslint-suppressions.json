@@ -1558,11 +1558,6 @@
       "count": 1
     }
   },
-  "components/blocks/subagent/page.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/blocks/subagent/subagent-navigator.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
