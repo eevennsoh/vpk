@@ -174,11 +174,13 @@ function createRovoAppManagedResponseConsumer({
 				rovoAppRunManager.appendChunk(threadId, value, { runId: run.id });
 			}
 		} catch (error) {
-			// A stream that fails leaves no snapshot write scheduled after it, and the parse
-			// of the same stream, which fails too, is not left as an unhandled rejection.
+			// A stream that fails saves what it has once, now (the new user message and any
+			// partial answer), and leaves nothing scheduled after it. The parse of the same
+			// stream, which fails too, is not left as an unhandled rejection.
 			streamFailed = true;
 			clearScheduledPersist();
 			parsePromise.catch(() => {});
+			await flushPersistedMessages();
 			throw error;
 		} finally {
 			filteredSseReader.releaseLock();

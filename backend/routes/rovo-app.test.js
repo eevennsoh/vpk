@@ -310,10 +310,11 @@ function createDependencies(overrides = {}) {
 		},
 		settleRun: async (run, outcome) => {
 			state.calls.push({ method: "settleRun", runId: run?.id ?? null, threadId: run?.threadId ?? null, outcome });
-			if (run && state.runs.get(run.threadId) === run) {
+			const isCurrent = Boolean(run) && state.runs.get(run.threadId) === run;
+			if (isCurrent) {
 				state.runs.delete(run.threadId);
 			}
-			return true;
+			return isCurrent;
 		},
 		syncHermesJobsForRovoThreads: async (threadId = null) => {
 			state.calls.push({ method: "syncHermesJobsForRovoThreads", threadId });
@@ -799,5 +800,24 @@ test("reading a thread's browser workspace needs runtime admin in production", a
 		const admin = await fetch(url, { headers: { "x-vpk-runtime-admin-token": "test-admin-token" } });
 		assert.equal(admin.status, 200);
 		assert.deepEqual(await admin.json(), { threadId: "thread-1", workspaceId: "browser-thread-1" });
+	});
+});
+
+test("cancelling a run that was replaced while Rovo's cancel was awaited reports cancelled false", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	const original = { id: "run-original", threadId: "thread-1", status: "streaming", rovoPort: 9124 };
+	const replacement = { id: "run-replacement", threadId: "thread-1", status: "streaming", rovoPort: 9125 };
+	state.runs.set("thread-1", original);
+	dependencies.cancelChat = async () => {
+		state.runs.set("thread-1", replacement);
+	};
+
+	await withServer(dependencies, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/rovo/runs/thread-1/cancel`, { method: "POST" });
+		assert.equal(response.status, 200);
+		assert.deepEqual(await response.json(), { cancelled: false });
+		assert.equal(state.runs.get("thread-1"), replacement);
+		assert.ok(state.calls.some((call) => call.method === "settleRun" && call.runId === "run-original"));
 	});
 });

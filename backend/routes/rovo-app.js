@@ -585,9 +585,10 @@ function createRovoAppRouter({
 				await cancelChat(run.rovoPort).catch(() => {});
 			}
 
-			// The run read above, not one that took its place during the wait.
-			await settleRun(run, "cancelled");
-			return res.status(200).json({ cancelled: true });
+			// The run read above, not one that took its place during the wait. `cancelled` is
+			// false when that run ended or was replaced while Rovo's cancel was awaited.
+			const cancelled = await settleRun(run, "cancelled");
+			return res.status(200).json({ cancelled });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to cancel run:", error);
 			return res.status(500).json({ error: "Failed to cancel Rovo run" });

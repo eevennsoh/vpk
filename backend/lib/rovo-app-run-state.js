@@ -181,12 +181,19 @@ function createRovoAppRunStateService({
 		}
 
 		const finish = (finalOutcome, finalError) => {
-			activeRequests.delete(threadId);
+			// Settling a cancelled run aborts it, and its abort reaches the in-process chat
+			// request, whose controller is the thread's active request. Only an active request
+			// that is already aborted is removed: a live one belongs to a stream that is still
+			// running (shutdown and /chat/cancel find it there), and removes itself when it ends.
 			rovoAppRunManager.settleRun(threadId, {
 				outcome: finalOutcome,
 				runId: run.id,
 				error: finalOutcome === "failed" ? getRovoAppRunFailurePayload(finalError).message : null,
 			});
+			const activeRequest = activeRequests.get(threadId);
+			if (activeRequest && activeRequest.abortController?.signal?.aborted !== false) {
+				activeRequests.delete(threadId);
+			}
 			void startNextQueuedRun();
 		};
 

@@ -17,6 +17,7 @@ function createHarness(overrides = {}) {
 	const runs = new Map(overrides.runs || []);
 	const dependencies = {
 		activeRequests: {
+			get: () => ({}),
 			delete: (threadId) => {
 				calls.push(["activeRequests.delete", threadId]);
 				return true;
@@ -312,8 +313,8 @@ test("settleRovoAppRun completed saves final messages, synchronizes files, clear
 			},
 			{ streamedMessages },
 		],
-		["activeRequests.delete", "thread-1"],
 		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
+		["activeRequests.delete", "thread-1"],
 		["startNextQueuedRun"],
 	]);
 });
@@ -329,8 +330,8 @@ test("settleRovoAppRun completed without a final message list only clears the st
 
 	assert.deepEqual(calls, [
 		["updateThread", "thread-1", { activeRun: null }],
-		["activeRequests.delete", "thread-1"],
 		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
+		["activeRequests.delete", "thread-1"],
 		["startNextQueuedRun"],
 	]);
 });
@@ -347,8 +348,8 @@ test("settleRovoAppRun failed appends the failure card before clearing; an abort
 	assert.deepEqual(calls, [
 		["appendChunk", "thread-1", "failure-chunk"],
 		["updateThread", "thread-1", { activeRun: null }],
-		["activeRequests.delete", "thread-1"],
 		["settleRun", "thread-1", { outcome: "failed", runId: "run-1", error: "Rovo run failed" }],
+		["activeRequests.delete", "thread-1"],
 		["startNextQueuedRun"],
 	]);
 
@@ -638,4 +639,26 @@ test("a background state write that fails is logged, not left unhandled", async 
 	assert.equal(harness.threadWrites.length, 1);
 	assert.equal(harness.errors.length, 1);
 	assert.deepEqual(unhandled, []);
+});
+
+test("a cancelled run's active request is aborted before it is removed; a live one is kept", async () => {
+	const harness = createRealRunHarness();
+	const run = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	// The in-process chat request listens to the run's signal, as dispatchInProcessHttpRequest does.
+	const innerController = new AbortController();
+	run.abortController.signal.addEventListener("abort", () => innerController.abort(), { once: true });
+	harness.activeRequests.set("thread-1", { port: 8005, abortController: innerController });
+
+	await harness.service.settleRovoAppRun(run, "cancelled");
+	assert.equal(innerController.signal.aborted, true);
+	assert.equal(harness.activeRequests.has("thread-1"), false);
+
+	const next = harness.runManager.createRun({ threadId: "thread-1" });
+	harness.runManager.markRunStarted("thread-1", { status: "streaming" });
+	const stillRunning = new AbortController();
+	harness.activeRequests.set("thread-1", { port: 8006, abortController: stillRunning });
+	await harness.service.settleRovoAppRun(next, "completed", { messages: [] });
+	// Still running: shutdown and /chat/cancel must still find it; it removes itself when it ends.
+	assert.equal(harness.activeRequests.get("thread-1")?.abortController, stillRunning);
 });

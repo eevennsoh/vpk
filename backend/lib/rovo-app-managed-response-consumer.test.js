@@ -336,32 +336,68 @@ test("a replaced run's stream writes nothing into the run that replaced it or in
 	assert.deepEqual(threadWrites, []);
 });
 
-test("a stream that fails leaves no snapshot write scheduled and no unhandled rejection", async (t) => {
+// A run whose stream fails after it has streamed part of an answer.
+async function failMidAnswer(t, { cancelBeforeFailing = false, replaceBeforeFailing = false } = {}) {
 	t.mock.timers.enable({ apis: ["setTimeout"] });
 	t.after(() => t.mock.timers.reset());
 	const unhandled = [];
 	const onUnhandled = (reason) => unhandled.push(reason);
 	process.on("unhandledRejection", onUnhandled);
 	t.after(() => process.off("unhandledRejection", onUnhandled));
-	const { consumeRovoAppManagedResponse, runManager, threadWrites } = createRealConsumer();
+	const { consumeRovoAppManagedResponse, runManager, state, threadWrites } = createRealConsumer();
 	const run = runManager.createRun({ threadId: "thread-1" });
 	runManager.markRunStarted("thread-1", { status: "streaming" });
 	const upstream = createControlledResponse();
 	const consuming = consumeRovoAppManagedResponse({
-		initialMessages: [],
+		initialMessages: [{ id: "u-new", role: "user", parts: [{ type: "text", text: "the new question" }] }],
 		response: upstream.response,
 		run,
 		stageTrace: { mark() {} },
 		threadId: "thread-1",
 	});
+	upstream.send({ type: "start", messageId: "assistant-1" });
 	upstream.send({ type: "text-start", id: "text-1" });
-	upstream.send({ type: "text-delta", id: "text-1", delta: "partial" });
+	upstream.send({ type: "text-delta", id: "text-1", delta: "partial answer" });
 	await drain();
-	upstream.fail(new Error("upstream died"));
+	if (cancelBeforeFailing || replaceBeforeFailing) {
+		await state.settleRovoAppRun(run, "cancelled");
+		threadWrites.length = 0;
+	}
+	if (replaceBeforeFailing) {
+		runManager.createRun({ threadId: "thread-1" });
+	}
+	const error = cancelBeforeFailing || replaceBeforeFailing
+		? Object.assign(new Error("aborted"), { name: "AbortError" })
+		: new Error("socket hang up");
+	upstream.fail(error);
 
-	await assert.rejects(consuming, /upstream died/u);
+	await assert.rejects(consuming, (thrown) => thrown === error);
+	const writesAtFailure = threadWrites.length;
 	t.mock.timers.tick(1_000);
 	await drain();
+	return { threadWrites, unhandled, writesAtFailure };
+}
+
+const snapshotIds = (write) => write.messages.map((message) => message.id);
+const snapshotText = (write) => JSON.stringify(write.messages);
+
+for (const [name, options] of [
+	["a live run's stream that fails", {}],
+	["a cancelled run's stream that fails with an abort", { cancelBeforeFailing: true }],
+]) {
+	test(`${name} saves the new message and the partial answer once`, async (t) => {
+		const { threadWrites, unhandled, writesAtFailure } = await failMidAnswer(t, options);
+
+		assert.equal(threadWrites.length, 1);
+		assert.equal(writesAtFailure, 1);
+		assert.deepEqual(snapshotIds(threadWrites[0]), ["u-new", "assistant-1"]);
+		assert.match(snapshotText(threadWrites[0]), /partial answer/u);
+		assert.deepEqual(unhandled, []);
+	});
+}
+
+test("a replaced run's stream that fails saves nothing", async (t) => {
+	const { threadWrites, unhandled } = await failMidAnswer(t, { replaceBeforeFailing: true });
 
 	assert.deepEqual(threadWrites, []);
 	assert.deepEqual(unhandled, []);
