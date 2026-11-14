@@ -119,3 +119,33 @@ test("close does nothing when no preview browser was opened", async () => {
 	assert.equal(await manager.close(), false);
 	assert.deepEqual(manager.commands, []);
 });
+
+test("no request value that reads as an agent-browser option reaches its arguments", async () => {
+	const manager = new TestChromiumPreviewManager();
+	const isInvalidInput = (error) => error?.status === 400 && error?.code === "INVALID_INPUT";
+	await assert.rejects(manager.clickRef("--help"), isInvalidInput);
+	await assert.rejects(manager.hoverRef("#selector"), isInvalidInput);
+	await assert.rejects(manager.fillRef("@e1", "--executable-path=/bin/sh"), isInvalidInput);
+	await assert.rejects(manager.typeRef("@e1", "-h"), isInvalidInput);
+	await assert.rejects(manager.selectRef("@e1", ["ok", "--session=other"]), isInvalidInput);
+	await assert.rejects(manager.press("--version"), isInvalidInput);
+	await assert.rejects(manager.insertText("--headed"), isInvalidInput);
+	assert.deepEqual(manager.commands, []);
+
+	await manager.typeRef("@e1", "-5");
+	await manager.insertText("-");
+	await manager.press("Control+a");
+	assert.deepEqual(manager.commands, [["type", "@e1", "-5"], ["keyboard", "inserttext", "-"], ["press", "Control+a"]]);
+});
+
+test("wheel sends finite, bounded deltas to agent-browser", async () => {
+	const manager = new TestChromiumPreviewManager();
+
+	await manager.wheel(JSON.parse("-1e999"), Number.NaN);
+	await manager.wheel("12.6", JSON.parse("1e999"));
+
+	assert.deepEqual(manager.commands, [
+		["mouse", "wheel", "0", "-100000"],
+		["mouse", "wheel", "100000", "13"],
+	]);
+});
