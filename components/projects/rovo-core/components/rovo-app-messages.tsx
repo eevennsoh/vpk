@@ -33,7 +33,7 @@ import { PlanWidgetInlineCard } from "@/components/projects/shared/components/pl
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AssistantThinkingTrace, useAssistantThinkingTraceState } from "@/components/projects/shared/components/assistant-thinking-trace";
 import { readAssistantMessage } from "@/components/projects/shared/lib/process-assistant-message";
-import { getPreloadShimmerLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getPreloadShimmerLabel } from "@/components/ui-custom/lib/reasoning-labels";
 import {
 	getMessageInterruption,
 	getMessageText,
