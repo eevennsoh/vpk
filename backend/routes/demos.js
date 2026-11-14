@@ -19,7 +19,7 @@ const {
 const { sendError } = require("../middleware/error-response");
 
 // The Jira host gets the server's Atlassian API token, so only a configured site is
-// accepted (ATLASSIAN_SITE_HOSTS, or the default site); absent means the default site.
+// accepted (ATLASSIAN_SITE_HOSTS, or the default sites); absent means the first of them.
 function parseSiteUrlOrReject(res, siteUrl) {
 	if (siteUrl === undefined) {
 		return { ok: true, siteUrl: undefined };

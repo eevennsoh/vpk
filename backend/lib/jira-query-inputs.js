@@ -12,18 +12,67 @@ const DEFAULT_ATLASSIAN_SITE_HOST = "product-fabric.atlassian.net";
 const DEFAULT_ATLASSIAN_SITE_HOSTS = Object.freeze([DEFAULT_ATLASSIAN_SITE_HOST, "hello.atlassian.net"]);
 const ATLASSIAN_SITE_HOST_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.atlassian\.net$/u;
 
+// One ATLASSIAN_SITE_HOSTS entry as a host: `mine.atlassian.net`, `https://mine.atlassian.net`
+// or `mine.atlassian.net/` all name the same site; anything else is null.
+function parseAtlassianSiteEntry(entry) {
+	const trimmed = entry.trim();
+	if (!trimmed) return null;
+	let host;
+	try {
+		const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+		if (url.protocol !== "https:" || url.username || url.password || url.port || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) {
+			return null;
+		}
+		host = url.hostname.toLowerCase();
+	} catch {
+		return null;
+	}
+	return ATLASSIAN_SITE_HOST_PATTERN.test(host) ? host : null;
+}
+
 /**
- * The Atlassian sites the server's token may be sent to: `ATLASSIAN_SITE_HOSTS`
- * (comma-separated hosts) when set, otherwise DEFAULT_ATLASSIAN_SITE_HOSTS.
+ * The Atlassian sites the server's token may be sent to: the hosts in
+ * `ATLASSIAN_SITE_HOSTS` (comma-separated) when it is set, otherwise
+ * DEFAULT_ATLASSIAN_SITE_HOSTS. Set but with nothing usable in it, no site is allowed:
+ * a typo never sends the token to the built-in sites.
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {string[]}
  */
 function resolveAllowedAtlassianSites(env = process.env) {
-	const configured = String(env.ATLASSIAN_SITE_HOSTS ?? "")
-		.split(",")
-		.map((host) => host.trim().toLowerCase())
-		.filter((host) => ATLASSIAN_SITE_HOST_PATTERN.test(host));
-	return configured.length > 0 ? configured : [...DEFAULT_ATLASSIAN_SITE_HOSTS];
+	if (env.ATLASSIAN_SITE_HOSTS === undefined) {
+		return [...DEFAULT_ATLASSIAN_SITE_HOSTS];
+	}
+	const hosts = String(env.ATLASSIAN_SITE_HOSTS).split(",").map(parseAtlassianSiteEntry).filter(Boolean);
+	return [...new Set(hosts)];
+}
+
+/**
+ * A startup warning when ATLASSIAN_SITE_HOSTS is set but some entry is not a site, or
+ * none is; null when it is unset or every entry is usable.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string | null}
+ */
+function describeAtlassianSiteHostsProblem(env = process.env) {
+	if (env.ATLASSIAN_SITE_HOSTS === undefined) return null;
+	const entries = String(env.ATLASSIAN_SITE_HOSTS).split(",").map((entry) => entry.trim()).filter(Boolean);
+	const usable = entries.filter((entry) => parseAtlassianSiteEntry(entry));
+	if (usable.length === 0) {
+		return "ATLASSIAN_SITE_HOSTS is set but names no *.atlassian.net site, so the Atlassian API token is sent to no site (Jira demos and Atlassian images run without it).";
+	}
+	if (usable.length < entries.length) {
+		return `ATLASSIAN_SITE_HOSTS has ${entries.length - usable.length} entry(ies) that are not *.atlassian.net sites; they are ignored.`;
+	}
+	return null;
+}
+
+/**
+ * The site a Jira request without a siteUrl goes to: the first configured site, so that
+ * setting ATLASSIAN_SITE_HOSTS also moves the default (unset, it stays the demos' site).
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string | null}
+ */
+function resolveDefaultAtlassianSite(env = process.env) {
+	return resolveAllowedAtlassianSites(env)[0] ?? null;
 }
 
 /**
@@ -89,11 +138,13 @@ module.exports = {
 	DEFAULT_ATLASSIAN_SITE_HOST,
 	DEFAULT_ATLASSIAN_SITE_HOSTS,
 	MAX_HOURS_AGO,
+	describeAtlassianSiteHostsProblem,
 	isAllowedAtlassianSite,
 	quoteJqlString,
 	requireHoursAgo,
 	requireJiraProjectKey,
 	resolveAllowedAtlassianSites,
+	resolveDefaultAtlassianSite,
 	standupRequestSchema,
 	ticketClassifyRequestSchema,
 };
