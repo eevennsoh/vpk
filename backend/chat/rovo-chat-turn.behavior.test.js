@@ -382,3 +382,35 @@ test("a pause handed to the paused tool call disconnects the stream and ends the
 	assert.equal(turn.endOfTurnFacts.hasEmittedQuestionCard, true);
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
+
+test("plan data without an explicit plan payload never reaches the plan finalizer", async () => {
+	// Both ways a turn shows a plan card carry its payload, so the finalizer's branch for implicit
+	// plan data (loading still open, no explicit payload) cannot run from this runner.
+	const planDataMarker = `WIDGET_DATA:${JSON.stringify({ type: "plan", title: "Plan", markdown: "# Plan\n- Step one" })}\n`;
+	const streams = {
+		"exit_plan_mode tool input": async ({ onPortAcquired, onToolCallStart }) => {
+			onPortAcquired(43123);
+			onToolCallStart({ toolCallId: "plan-1", toolName: "exit_plan_mode", isDeferredToolRequest: true, toolInput: { plan: "# Plan\n- Step one" } });
+		},
+		"plan marker after loading": async ({ onPortAcquired, onTextDelta }) => {
+			onPortAcquired(43123);
+			onTextDelta("WIDGET_LOADING:plan\n");
+			onTextDelta(planDataMarker);
+		},
+	};
+	for (const [source, streamViaRovo] of Object.entries(streams)) {
+		let planFacts = null;
+		const turn = await runTurn({
+			finalizeRovoPlanWidgetPostStream: (facts) => {
+				planFacts = facts;
+				return { closedLoading: false, emittedError: false };
+			},
+			streamViaRovo,
+		});
+		assert.equal(planFacts.hasEmittedPlanWidget, true, source);
+		assert.equal(planFacts.hasExplicitPlanPayload, true, source);
+		assert.equal(planFacts.hasSeenPlanWidgetSignal, true, source);
+		assert.equal(planFacts.hasEmittedPlanLoadingState, false, source);
+		assert.deepEqual(widgetParts(turn.parts, "plan").filter((part) => part === "data"), ["data"], source);
+	}
+});
