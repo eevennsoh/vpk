@@ -2869,16 +2869,6 @@
       "count": 3
     }
   },
-  "components/ui-custom/lib/artifact-annotations.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/lib/artifact-versions.ts": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "components/ui-custom/link-safety-dialog.tsx": {
     "jsx-a11y/no-noninteractive-element-interactions": {
       "count": 1
