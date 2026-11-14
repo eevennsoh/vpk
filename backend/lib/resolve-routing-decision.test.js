@@ -2,6 +2,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
 	ROUTING_CLASSIFIER_TIMEOUT_MS,
+	VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS,
 	resolveRoutingDecision,
 	resolveRoutingDecisionFastPath,
 	parseClassifierResponse,
@@ -112,14 +113,16 @@ describe("resolveRoutingDecisionFastPath", () => {
 		}
 	});
 
-	it("returns genui for explicit visualization requests without a verb", () => {
+	it("returns genui for explicit visualization requests", () => {
 		const prompts = [
 			"a small bar chart",
+			"bar chart of fruit sales",
 			"Make me a pie chart of fruit sales",
-			"show a dashboard of open incidents",
+			"show a dashboard of weekly sign-ups",
 			"plot revenue as a line graph",
-			"visualize sign-ups by week",
 			"can you draw a heatmap of commits?",
+			"Please create a histogram of response times",
+			"visualize sign-ups by week as a bar chart",
 		];
 		for (const prompt of prompts) {
 			const result = resolveRoutingDecisionFastPath({ prompt });
@@ -129,16 +132,55 @@ describe("resolveRoutingDecisionFastPath", () => {
 		}
 	});
 
-	it("leaves visualization questions and ambiguous graph/plot wording to the classifier", () => {
+	it("leaves discussion, troubleshooting, tool and ambiguous chart wording to the classifier", () => {
 		const prompts = [
-			"what is a bar chart?",
-			"Explain the difference between a histogram and a bar chart",
 			"how do I read this dashboard",
 			"tell me the plot of Hamlet",
 			"teach me graph theory",
+			"navigate to the analytics dashboard",
+			"my Jira dashboard is broken, can you help",
+			"summarize the incidents on my dashboard",
+			"chart my open Jira issues by status",
+			"help me chart a course for my career",
+			"chart a course for Q4 hiring",
+			"org chart for my team",
+			"I need to visualize myself succeeding",
+			"my dashboard wont load, any idea?",
+			"the chart is wrong, why?",
+			"can you explain this chart",
+			"please explain the bar chart above",
+			"I hate pie charts",
+			"recharts line chart not rendering",
+			"Chart.js vs Recharts?",
+			"fix the bug in my chart component",
+			"Can you visualize what a monad is?",
+			"show me a chart?",
 		];
 		for (const prompt of prompts) {
 			assert.equal(resolveRoutingDecisionFastPath({ prompt }), null, `Expected null for: "${prompt}"`);
+		}
+	});
+
+	it("answers greetings and concept questions as chat without the classifier", () => {
+		const prompts = [
+			"hello",
+			"Thanks!",
+			"sounds good",
+			"what is a monad?",
+			"what is a bar chart?",
+			"Hey, what is a bar chart?",
+			"Explain the difference between a histogram and a bar chart",
+			"tell me about pie charts",
+			"can you explain what a histogram is",
+		];
+		for (const prompt of prompts) {
+			const result = resolveRoutingDecisionFastPath({ prompt });
+			assert.notEqual(result?.intent, "genui", `Expected no genui for: "${prompt}"`);
+		}
+		for (const prompt of prompts.slice(0, 8)) {
+			const result = resolveRoutingDecisionFastPath({ prompt });
+			assert.equal(result?.intent, "chat", `Expected chat for: "${prompt}"`);
+			assert.equal(result.reason, "conversational_match");
 		}
 	});
 
@@ -156,7 +198,6 @@ describe("resolveRoutingDecisionFastPath", () => {
 	});
 
 	it("returns null for prompts without document verb + noun pattern", () => {
-		assert.equal(resolveRoutingDecisionFastPath({ prompt: "hello" }), null);
 		assert.equal(resolveRoutingDecisionFastPath({ prompt: "show Q3 revenue" }), null);
 		assert.equal(resolveRoutingDecisionFastPath({ prompt: "what is the weather" }), null);
 	});
@@ -186,7 +227,7 @@ describe("resolveRoutingDecision", () => {
 
 	it("accepts LLM chat classifications", async () => {
 		const result = await resolveRoutingDecision(
-			{ prompt: "hello" },
+			{ prompt: "the weather in Sydney" },
 			{ classify: makeMockClassify({ intent: "chat", confidence: 0.95, reason: "conversational" }) },
 		);
 		assert.equal(result.intent, "chat");
@@ -262,6 +303,22 @@ describe("resolveRoutingDecision", () => {
 		assert.ok(ROUTING_CLASSIFIER_TIMEOUT_MS > 3000);
 		assert.equal(result.intent, "genui");
 		assert.equal(result.reason, "visualization");
+	});
+
+	it("keeps the shorter budget for voice turns", async (t) => {
+		t.mock.timers.enable({ apis: ["setTimeout"] });
+		const pending = resolveRoutingDecision(
+			{ prompt: "show me revenue by quarter", origin: "voice" },
+			{ classify: makeSlowClassify(3000, { intent: "genui", confidence: 0.95, reason: "visualization" }) },
+		);
+		for (let elapsed = 0; elapsed < 3000; elapsed += 100) {
+			await Promise.resolve();
+			t.mock.timers.tick(100);
+		}
+		const result = await pending;
+		assert.ok(VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS < 3000);
+		assert.equal(result.intent, "chat");
+		assert.equal(result.reason, "classifier_error");
 	});
 
 	it("falls back to chat on LLM error", async () => {

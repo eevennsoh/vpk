@@ -4,7 +4,7 @@ const test = require("node:test");
 const {
 	createRovoAppManagedRunRouteResolver,
 } = require("./rovo-app-managed-run-routing");
-const { ROUTING_CLASSIFIER_TIMEOUT_MS } = require("./resolve-routing-decision");
+const { VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS } = require("./resolve-routing-decision");
 
 function createHarness(overrides = {}) {
 	const calls = [];
@@ -215,7 +215,7 @@ test("resolveRovoAppManagedRunRoute passes classifier context and gateway option
 			provider: "openai",
 			signal,
 		},
-		{ classify: calls[1][2].classify, timeoutMs: ROUTING_CLASSIFIER_TIMEOUT_MS },
+		{ classify: calls[1][2].classify, timeoutMs: VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS },
 	]);
 	assert.deepEqual(
 		calls.find(([name]) => name === "generateTextViaGateway"),

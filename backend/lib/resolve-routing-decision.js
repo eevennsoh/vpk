@@ -24,18 +24,53 @@ const DOCUMENT_VERB_PATTERN =
 const DOCUMENT_NOUN_PATTERN =
 	/\b(document|doc|plan|brief|proposal|spec|summary|memo|outline|report|email|copy|article|blog|code|component|app|page|ui|table|spreadsheet|sheet|artifact)\b/;
 
-// Explicit visualization requests ("a small bar chart", "plot revenue as a line
-// graph"). Stricter than the prompt-hint patterns elsewhere: bare "graph" and
-// "plot" stay with the classifier ("the plot of Hamlet", "graph theory").
-const VISUALIZATION_NOUN_PATTERN =
-	/\b(charts?|dashboards?|heat\s?maps?|histograms?|treemaps?|candlesticks?|sparklines?|infographics?|visuali[sz]ations?|visuali[sz]e|(?:bar|line|pie|area|radar|donut|doughnut|scatter|bubble|column|stacked)\s+(?:graphs?|plots?))\b/;
-// Questions about a visualization ("what is a pie chart?") are chat.
-const VISUALIZATION_QUESTION_PATTERN =
-	/^(?:what|why|how|when|where|who|which|whats|what's|explain|define|describe|is|are|does|do|should)\b|\bdifference between\b/;
+// Explicit requests to make a visualization ("a small bar chart", "make me a
+// pie chart of fruit sales", "plot revenue as a line graph"). These skip the
+// classifier, so they must read as a request to draw something and nothing
+// else. Bare "graph" and "plot" stay with the classifier ("the plot of Hamlet",
+// "graph theory"), and so does anything that needs tools or is a discussion.
+const VISUALIZATION_NOUN_SOURCE = String.raw`(?:charts?|dashboards?|heat\s?maps?|histograms?|treemaps?|sparklines?|infographics?|visuali[sz]ations?|(?:bar|line|pie|area|radar|donut|doughnut|scatter|bubble|column|stacked)\s+(?:graphs?|plots?))`;
+const REQUEST_PREFIX_SOURCE = String.raw`^(?:(?:hey|hi|ok|okay)[,!.]?\s+)?(?:please\s+)?(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?`;
+// "<verb> ... <noun>": the noun must follow the verb, so "chart a course" and
+// "chart my issues" (verb, no visualization noun) do not match.
+const VISUALIZATION_VERB_REQUEST_PATTERN = new RegExp(
+	`${REQUEST_PREFIX_SOURCE}(?:make|draw|plot|create|build|generate|render|sketch|design|show|give\\s+me|graph|chart|visuali[sz]e)\\b.*?\\b${VISUALIZATION_NOUN_SOURCE}\\b`,
+);
+// "<a> <descriptor>* <noun> [of|for|...]": a bare noun phrase such as "a small
+// bar chart" or "pie chart of fruit sales". No leading "the" ("the chart is
+// wrong") and only known descriptors ("org chart" stays with the classifier).
+const VISUALIZATION_NOUN_PHRASE_PATTERN = new RegExp(
+	`^(?:an?\\s+)?(?:(?:small|simple|quick|basic|sample|interactive|nice|clean|grouped|horizontal|vertical|bar|line|pie|area|radar|donut|doughnut|scatter|bubble|column|stacked|gantt|funnel|waterfall|kpi)\\s+){0,3}${VISUALIZATION_NOUN_SOURCE}(?:\\s+(?:of|for|showing|comparing|with|by|that)\\b.*|\\s*[:,-].*|[\\s.!]*)$`,
+);
+// Discussion, troubleshooting, navigation and product-data turns. These need
+// tools or a conversation, not a GenUI card with made-up data.
+const VISUALIZATION_EXCLUSION_PATTERN =
+	/\b(?:explain|why|what|how|tell\s+me\s+about|bug|broken|fix|error|wrong|debug|not\s+(?:rendering|working|loading|showing)|won'?t|wont|doesn'?t|isn'?t|can'?t|vs\.?|versus|recharts|chart\.?js|d3|library|component|jira|confluence|bitbucket|issues?|incidents?|tickets?|navigate|open|go\s+to|log\s*in|org\s+chart|course)\b/;
+const POLITE_QUESTION_PATTERN = /^(?:(?:hey|hi|ok|okay)[,!.]?\s+)?(?:please\s+)?(?:can|could|would|will)\s+you\b/;
 
 function matchesVisualizationRequest(lowerPrompt) {
 	const trimmedPrompt = lowerPrompt.trim();
-	return VISUALIZATION_NOUN_PATTERN.test(trimmedPrompt) && !VISUALIZATION_QUESTION_PATTERN.test(trimmedPrompt);
+	if (VISUALIZATION_EXCLUSION_PATTERN.test(trimmedPrompt)) {
+		return false;
+	}
+	// A question is a question unless it is a polite request ("can you ...?").
+	if (trimmedPrompt.includes("?") && !POLITE_QUESTION_PATTERN.test(trimmedPrompt)) {
+		return false;
+	}
+	return VISUALIZATION_VERB_REQUEST_PATTERN.test(trimmedPrompt) || VISUALIZATION_NOUN_PHRASE_PATTERN.test(trimmedPrompt);
+}
+
+// Greetings and acknowledgements ("hello", "thanks!", "sounds good") and
+// concept questions ("what is a monad?", "explain closures") are chat. The
+// classifier answers chat for these too, so skipping it only saves its latency.
+const CONVERSATIONAL_ACK_PATTERN =
+	/^(?:hi|hello|hey|yo|thanks|thank\s+you|thx|ty|ok|okay|cool|great|nice|awesome|perfect|sounds\s+good|got\s+it|yes|yep|yeah|no|nope|sure|bye|goodbye|good\s+(?:morning|afternoon|evening|night))(?:\s+(?:there|rovo|so\s+much|again|all))?[\s!.,]*$/;
+const CONCEPT_QUESTION_PATTERN =
+	/^(?:(?:hey|hi)[,!.]?\s+)?(?:what(?:'s|\s+is|\s+are)\s+(?:an?\s+)|whats\s+an?\s+|explain\b|define\b|tell\s+me\s+about\b|who\s+(?:is|was)\b|why\b)/;
+
+function matchesConversationalChat(lowerPrompt) {
+	const trimmedPrompt = lowerPrompt.trim();
+	return CONVERSATIONAL_ACK_PATTERN.test(trimmedPrompt) || CONCEPT_QUESTION_PATTERN.test(trimmedPrompt);
 }
 
 /**
@@ -94,6 +129,17 @@ function resolveRoutingDecisionFastPath(context) {
 		};
 	}
 
+	// Greetings, acknowledgements and concept questions → chat
+	if (matchesConversationalChat(lowerPrompt)) {
+		return {
+			intent: "chat",
+			presentation: "text",
+			confidence: 1,
+			reason: "conversational_match",
+			origin,
+		};
+	}
+
 	// Explicit chart/dashboard request → genui, without waiting on the classifier
 	if (matchesVisualizationRequest(lowerPrompt)) {
 		return {
@@ -116,8 +162,17 @@ function resolveRoutingDecisionFastPath(context) {
 // Sized to the measured latency of the default AI Gateway chat model on this
 // one short JSON classification (about 2-4 s). A budget below that latency
 // always times out, so every ambiguous turn paid the wait and still fell back
-// to chat. Clear intents never reach this layer (see the fast path above).
+// to chat. Clear intents, greetings and concept questions never reach this
+// layer (see the fast path above), and route_decision_resolved traces record
+// the stage time of each decision.
 const ROUTING_CLASSIFIER_TIMEOUT_MS = 4500;
+// Voice turns keep the earlier, shorter budget: first-token delay matters most
+// there, and a voice turn that times out still answers as chat.
+const VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS = 1500;
+
+function resolveRoutingClassifierTimeoutMs(origin) {
+	return origin === "voice" ? VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS : ROUTING_CLASSIFIER_TIMEOUT_MS;
+}
 
 const CLASSIFIER_SYSTEM_PROMPT = `You are a routing classifier for a chat application with multiple surfaces.
 Classify the user's latest message into exactly one intent:
@@ -243,11 +298,12 @@ function withTimeout(operation, timeoutMs) {
  * @param {RoutingContext} context
  * @param {Object} [options]
  * @param {Function} [options.classify] — async function({ system, prompt, signal }) => string
- * @param {number}   [options.timeoutMs=ROUTING_CLASSIFIER_TIMEOUT_MS] — LLM call timeout in ms
+ * @param {number}   [options.timeoutMs] — LLM call timeout in ms (default by origin, see resolveRoutingClassifierTimeoutMs)
  * @returns {Promise<RoutingDecision>}
  */
-async function resolveRoutingDecision(context, { classify, timeoutMs = ROUTING_CLASSIFIER_TIMEOUT_MS } = {}) {
+async function resolveRoutingDecision(context, { classify, timeoutMs } = {}) {
 	const origin = context?.origin === "voice" ? "voice" : "text";
+	const effectiveTimeoutMs = timeoutMs ?? resolveRoutingClassifierTimeoutMs(origin);
 	const confidenceThreshold = origin === "voice" ? 0.8 : 0.7;
 
 	// Layer 1 — deterministic fast path
@@ -281,7 +337,7 @@ async function resolveRoutingDecision(context, { classify, timeoutMs = ROUTING_C
 					}),
 					signal,
 				}),
-			timeoutMs,
+			effectiveTimeoutMs,
 		);
 
 		const parsed = parseClassifierResponse(rawOutput);
@@ -328,6 +384,8 @@ async function resolveRoutingDecision(context, { classify, timeoutMs = ROUTING_C
 
 module.exports = {
 	ROUTING_CLASSIFIER_TIMEOUT_MS,
+	VOICE_ROUTING_CLASSIFIER_TIMEOUT_MS,
+	resolveRoutingClassifierTimeoutMs,
 	resolveRoutingDecision,
 	resolveRoutingDecisionFastPath,
 	// Exported for testing

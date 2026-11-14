@@ -487,3 +487,35 @@ test("chat SDK handler resumes superseded approval tools before fresh Rovo strea
 	]);
 	assert.deepEqual(cancelCalls, [[43125, { timeoutMs: 5_000 }]]);
 });
+
+test("chat SDK handler passes the turn's backend to smart GenUI generation", async () => {
+	const genuiCalls = [];
+	const { dependencies } = createContractDependencies({
+		resolveChatSdkRequestState: () =>
+			createRequestState({
+				backendPreference: "ai-gateway",
+				latestUserMessage: "a small bar chart",
+			}),
+		resolveSmartRouteGate: () => ({
+			forceSmartAudioRoute: false,
+			isCreateIntentRequestPrompt: false,
+			isTaskLikeRequest: false,
+			prefersGenuiCardExperience: true,
+			smartIntentResult: { intent: "genui", confidence: 1, reason: "test" },
+			smartRoutingActive: true,
+		}),
+		generateSmartGenuiResult: async (options) => {
+			genuiCalls.push(options);
+			return { spec: null, narrative: "Bar chart" };
+		},
+	});
+	const { handlerPromise, response } = await dispatchWithDependencies({
+		body: { backendPreference: "ai-gateway", messages: [] },
+		headers: { [STAGE_TRACE_ID_HEADER]: "trace-contract-smart-genui" },
+	}, dependencies);
+	await handlerPromise;
+	await response.text();
+
+	assert.equal(genuiCalls.length, 1);
+	assert.equal(genuiCalls[0].backendPreference, "ai-gateway");
+});

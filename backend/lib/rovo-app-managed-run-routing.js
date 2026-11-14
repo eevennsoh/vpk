@@ -4,7 +4,7 @@ const {
 	assessPromptComplexityForPlanMode: defaultAssessPromptComplexityForPlanMode,
 } = require("./plan-mode-complexity-heuristic");
 const {
-	ROUTING_CLASSIFIER_TIMEOUT_MS,
+	resolveRoutingClassifierTimeoutMs,
 	resolveRoutingDecision: defaultResolveRoutingDecision,
 } = require("./resolve-routing-decision");
 const {
@@ -111,7 +111,7 @@ function createRovoAppManagedRunRouteResolver({
 								signal: classifySignal,
 								backendPreference: "ai-gateway",
 							}),
-						timeoutMs: ROUTING_CLASSIFIER_TIMEOUT_MS,
+						timeoutMs: resolveRoutingClassifierTimeoutMs(requestOrigin),
 					},
 				);
 			} catch {
