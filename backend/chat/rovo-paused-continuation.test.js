@@ -10,7 +10,7 @@ const {
 function createPausedRecord(overrides = {}) {
 	return {
 		handle: {
-			release() {},
+			settleLease: () => true,
 		},
 		kind: "clarification",
 		port: 43124,
@@ -51,8 +51,9 @@ test("runPausedRovoToolContinuation resumes, replays, and releases on success", 
 	let releaseCount = 0;
 	const pausedToolCallRecord = createPausedRecord({
 		handle: {
-			release() {
-				releaseCount += 1;
+			settleLease(disposition) {
+				if (disposition === "release") releaseCount += 1;
+				return true;
 			},
 		},
 	});
@@ -102,8 +103,9 @@ test("runPausedRovoToolContinuation cancels and releases when replay fails", asy
 	let releaseCount = 0;
 	const pausedToolCallRecord = createPausedRecord({
 		handle: {
-			release() {
-				releaseCount += 1;
+			settleLease(disposition) {
+				if (disposition === "release") releaseCount += 1;
+				return true;
 			},
 		},
 	});

@@ -33,7 +33,7 @@ test("handleReplayDeferredToolRequest surfaces replayed ask_user_questions as a 
 	const planWidgetCalls = [];
 	const registerCalls = [];
 	const syncCalls = [];
-	const handle = { release() {} };
+	const handle = { settleLease: () => true };
 
 	const result = await handleReplayDeferredToolRequest({
 		rawEvent: {
@@ -128,7 +128,7 @@ test("handleReplayDeferredToolRequest surfaces replayed exit_plan_mode as a new 
 	const questionCardCalls = [];
 	const planWidgetCalls = [];
 	const registerCalls = [];
-	const handle = { release() {} };
+	const handle = { settleLease: () => true };
 
 	const result = await handleReplayDeferredToolRequest({
 		rawEvent: {

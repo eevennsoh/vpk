@@ -56,6 +56,10 @@ const {
 const {
 	enqueueTextGeneration,
 } = require("./rovo-gateway-text-generation-queue");
+const {
+	createRovoPortLease,
+	createUnpooledPortHandle,
+} = require("./rovo-port-lease");
 
 /** @type {import("./rovo-pool").Pool | null} */
 let _pool = null;
@@ -77,11 +81,7 @@ function initPool(pool) {
  * @param {AbortSignal} [opts.signal]
  * @param {number} [opts.preferredPort]
  * @param {number[]} [opts.avoidPorts]
- * @returns {Promise<{
- *   port: number;
- *   release: () => void;
- *   releaseAsUnhealthy?: (options?: { quarantineMs?: number }) => void;
- * }>}
+ * @returns {Promise<import("./rovo-pool").PortHandle>}
  */
 async function acquirePort({
 	timeoutMs = 30_000,
@@ -90,11 +90,7 @@ async function acquirePort({
 	avoidPorts,
 } = {}) {
 	if (!_pool) {
-		const resolvedPort = getRovoPort();
-		return {
-			port: resolvedPort,
-			release: () => {},
-		};
+		return createUnpooledPortHandle(getRovoPort());
 	}
 	return _pool.acquire({ timeoutMs, signal, preferredPort, avoidPorts });
 }
@@ -136,7 +132,7 @@ async function acquirePort({
  * @param {boolean} [params.failOnError] - Reject on non-409 stream errors instead of writing inline warning text
  * @param {(stage: string, details?: object) => void} [params.onTimingStage] - Optional callback for low-level timing milestones
  * @param {number} [params.port] - Reuse an existing reserved port instead of acquiring one
- * @param {{ port: number; release?: () => void; releaseAsUnhealthy?: () => void }} [params.portHandle] - Reserved handle paired with `port`
+ * @param {import("./rovo-pool").PortHandle} [params.portHandle] - Reserved handle paired with `port`
  * @returns {Promise<void>}
  */
 async function streamViaRovo({
@@ -193,18 +189,11 @@ async function streamViaRovo({
 		providedPort > 0 &&
 		providedPortHandle &&
 		typeof providedPortHandle === "object";
+	if (usingProvidedPort) {
+		providedPortHandle.resume?.();
+	}
 	const handle = usingProvidedPort
-		? {
-			port: providedPort,
-			release:
-				typeof providedPortHandle.release === "function"
-					? () => providedPortHandle.release()
-					: () => {},
-			releaseAsUnhealthy:
-				typeof providedPortHandle.releaseAsUnhealthy === "function"
-					? () => providedPortHandle.releaseAsUnhealthy()
-					: undefined,
-		}
+		? { ...providedPortHandle, port: providedPort }
 		: await acquirePort({
 			timeoutMs: waitForTurn
 				? WAIT_FOR_TURN_TIMEOUT_MS
@@ -226,25 +215,9 @@ async function streamViaRovo({
 		onPortAcquired(handle.port);
 	}
 
-	let portStuck = false;
-	let preservePortHandle = false;
+	// One owner of the port's lease; a paused tool call can take it over (handOff).
+	const lease = createRovoPortLease(handle, { logPrefix: "streamViaRovo" });
 	let abortedBySignal = false;
-	let handleReleased = false;
-
-	const releaseHandleAsUnhealthy = (reason) => {
-		if (handleReleased || preservePortHandle) {
-			return;
-		}
-		handleReleased = true;
-		if (_pool && typeof handle.releaseAsUnhealthy === "function") {
-			if (typeof reason === "string" && reason.trim()) {
-				console.warn(`[streamViaRovo] Marking port ${handle.port} unhealthy: ${reason.trim()}`);
-			}
-			handle.releaseAsUnhealthy();
-			return;
-		}
-		handle.release();
-	};
 
 	try {
 		const attempt = (port) =>
@@ -298,10 +271,7 @@ async function streamViaRovo({
 								port,
 								disconnect: control.disconnect,
 								resume: (decisions) => resumeToolCalls(port, decisions),
-								reservePort: () => {
-									preservePortHandle = true;
-									return handle;
-								},
+								reservePort: () => lease.handOff(),
 							},
 						});
 					},
@@ -407,18 +377,17 @@ async function streamViaRovo({
 				await attempt(handle.port);
 			} catch (err) {
 				if (isChatInProgressError(err)) {
-					portStuck = true;
 					console.error(
 						`[streamViaRovo] Port ${handle.port} stuck (409) — cancelling turn, marking unhealthy`
 					);
 					try {
 						await cancelChat(handle.port, { timeoutMs: 3_000 });
 					} catch {}
-					releaseHandleAsUnhealthy("chat in progress after wait-for-turn");
+					lease.settle("unhealthy", "chat in progress after wait-for-turn");
 					throw createPortStuckError(handle.port);
 				}
 				if (err?.code === "ROVO_ABORT_CANCEL_FAILED") {
-					releaseHandleAsUnhealthy(err.message);
+					lease.settle("unhealthy", err.message);
 				}
 				throw err;
 			}
@@ -459,7 +428,7 @@ async function streamViaRovo({
 					});
 				}
 				if (err?.code === "ROVO_ABORT_CANCEL_FAILED") {
-					releaseHandleAsUnhealthy(err.message);
+					lease.settle("unhealthy", err.message);
 				}
 				throw err;
 			}
@@ -467,10 +436,9 @@ async function streamViaRovo({
 	} finally {
 		// Run post-stream callback (e.g. suggestion generation) while
 		// we still hold the port handle — avoids re-acquisition contention.
-		// Skip if port is stuck — no point generating suggestions on a broken port.
+		// Skip once the lease is settled (a stuck port) or handed to a paused tool call.
 		if (
-			!portStuck &&
-			!preservePortHandle &&
+			lease.isHeld() &&
 			!abortedBySignal &&
 			!signal?.aborted &&
 			typeof onComplete === "function"
@@ -485,8 +453,7 @@ async function streamViaRovo({
 			}
 		}
 		if (
-			!portStuck &&
-			!preservePortHandle &&
+			lease.isHeld() &&
 			!abortedBySignal &&
 			!signal?.aborted &&
 			cancelOnComplete
@@ -499,14 +466,13 @@ async function streamViaRovo({
 						error instanceof Error ? error.message : String(error)
 					}`
 				);
-				releaseHandleAsUnhealthy(
+				lease.settle(
+					"unhealthy",
 					error instanceof Error ? error.message : String(error)
 				);
 			}
 		}
-		if (!preservePortHandle && !handleReleased) {
-			handle.release();
-		}
+		lease.settle("release");
 	}
 }
 
@@ -680,7 +646,10 @@ async function replayViaRovo({
 						port,
 						disconnect: control.disconnect,
 						resume: (decisions) => resumeToolCalls(port, decisions),
-						reservePort: () => portHandle ?? null,
+						reservePort: () => {
+							portHandle?.reserve?.("paused tool call");
+							return portHandle ?? null;
+						},
 					},
 				});
 			},
@@ -756,7 +725,7 @@ async function generateTextViaRovo({
 	});
 
 	let portKnownStuck = false;
-	let handleReleased = false;
+	const lease = createRovoPortLease(handle, { logPrefix: "generateTextViaRovo" });
 	let abortCleanupPromise = null;
 
 	const captureAbortCleanupPromise = (error) => {
@@ -770,20 +739,7 @@ async function generateTextViaRovo({
 		}
 	};
 
-	const releaseHandleAsUnhealthy = (reason) => {
-		if (handleReleased) {
-			return;
-		}
-		handleReleased = true;
-		if (_pool && typeof handle.releaseAsUnhealthy === "function") {
-			if (typeof reason === "string" && reason.trim()) {
-				console.warn(`[generateTextViaRovo] Marking port ${handle.port} unhealthy: ${reason.trim()}`);
-			}
-			handle.releaseAsUnhealthy();
-			return;
-		}
-		handle.release();
-	};
+
 
 	try {
 		const syncOptions = {
@@ -902,7 +858,7 @@ async function generateTextViaRovo({
 				console.warn(
 					`[generateTextViaRovo] port ${stuckPort} got 409 — marking unhealthy`
 				);
-				releaseHandleAsUnhealthy("chat in progress conflict");
+				lease.settle("unhealthy", "chat in progress conflict");
 
 				// Fire-and-forget cancel attempt — don't kill the process
 				cancelChat(stuckPort, { timeoutMs: 3_000 }).catch(() => {});
@@ -922,20 +878,17 @@ async function generateTextViaRovo({
 					}
 				}
 				if (cleanupError) {
-					releaseHandleAsUnhealthy(
+					lease.settle(
+						"unhealthy",
 						cleanupError instanceof Error ? cleanupError.message : String(cleanupError)
 					);
-				} else if (!handleReleased) {
-					handleReleased = true;
-					handle.release();
+				} else {
+					lease.settle("release");
 				}
 			} else if (waitForTurn) {
 				// In wait-for-turn mode the request completed naturally; avoid
 				// extra cancellation churn and release the port immediately.
-				if (!handleReleased) {
-					handleReleased = true;
-					handle.release();
-				}
+				lease.settle("release");
 			} else {
 				// Normal completion — cancel any lingering session and release.
 				try {
@@ -946,20 +899,15 @@ async function generateTextViaRovo({
 							error instanceof Error ? error.message : String(error)
 						}`
 					);
-					releaseHandleAsUnhealthy(
+					lease.settle(
+						"unhealthy",
 						error instanceof Error ? error.message : String(error)
 					);
 				}
-				if (!handleReleased) {
-					handleReleased = true;
-					handle.release();
-				}
+				lease.settle("release");
 			}
 		} else {
-			if (!handleReleased) {
-				handleReleased = true;
-				handle.release();
-			}
+			lease.settle("release");
 		}
 	}
 }

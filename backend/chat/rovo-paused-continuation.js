@@ -127,7 +127,7 @@ async function runPausedRovoToolContinuation({
 					timeoutMs: 3_000,
 				}).catch(() => {});
 			}
-			pausedToolCallRecord.handle?.release?.();
+			pausedToolCallRecord.handle?.settleLease?.("release");
 		}
 	}
 }

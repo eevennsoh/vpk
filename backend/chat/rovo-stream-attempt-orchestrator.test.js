@@ -220,7 +220,7 @@ test("buildRovoStreamCommonOptions preserves callback wiring and common stream f
 
 test("createRovoStreamAttemptRunner dispatches paused continuations with stream common options", async () => {
 	const record = {
-		handle: { release() {} },
+		handle: { settleLease: () => true },
 		kind: "approval",
 		port: 3200,
 		toolCallId: "tool-1",
