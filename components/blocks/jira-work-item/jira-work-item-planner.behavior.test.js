@@ -237,7 +237,7 @@ import { ActivityComposer } from "@/components/blocks/jira-work-item/experimenta
 import { RFP_101_WORK_ITEM } from "@/components/projects/jira/data/rfp-work-items";
 function Sessions() {
 	const state = useJiraWorkItemState();
-	return <pre data-sessions="">{JSON.stringify(state.sessions.map((session) => ({ agentId: session.agentId, agentName: session.agentName, command: session.command, title: session.title })))}</pre>;
+	return <pre data-sessions="">{JSON.stringify(state.sessions.map((session) => ({ agentId: session.agentId, agentName: session.agentName, command: session.command, replies: session.messages.filter((message) => message.role === "human").map((message) => message.content), title: session.title })))}</pre>;
 }
 export default function Probe() {
 	return <ThemeWrapper><JiraWorkItemProvider initialPreset="empty" workItem={RFP_101_WORK_ITEM}><PanelLayoutProvider><ActivityComposer /><Sessions /></PanelLayoutProvider></JiraWorkItemProvider></ThemeWrapper>;
@@ -249,10 +249,14 @@ test("Use skills starts a Rovo session running the picked skill", async () => {
 	await view.click(button(view, "Use skills"));
 	await view.click([...document.querySelectorAll('[role="option"]')].find((node) => node.textContent.includes("Summarize comments")));
 	assert.deepEqual(JSON.parse(document.querySelector("[data-sessions]").textContent), [
-		{ agentId: "skill:summarize-comments", agentName: "Rovo", command: "/Summarize comments", title: "Summarize comments" },
+		{ agentId: "skill:summarize-comments", agentName: "Rovo", command: "/Summarize comments", replies: ["/Summarize comments"], title: "Summarize comments" },
 	]);
 	await view.unmount();
 });
+
+function leafWithText(text) {
+	return [...document.querySelectorAll("*")].find((node) => node.children.length === 0 && node.textContent === text);
+}
 
 function composerSessions() {
 	return JSON.parse(document.querySelector("[data-sessions]").textContent);
@@ -269,7 +273,7 @@ test("picking an agent from the context pill starts its session with an @agent c
 	await view.unmount();
 });
 
-// Tag appends its text to the remove label.
+// Tag names its remove button "<removeButtonLabel> <tag text>".
 const REMOVE_NEW_SESSION = "Continue in existing session instead New session";
 
 // Mention a working agent again and choose "Start a new session" from the target menu.
@@ -284,11 +288,12 @@ async function chooseNewSessionFor(view, followUp) {
 	assert.equal(document.querySelector("[data-jira-work-item-session-target-menu]") === null, true, "choosing closes the menu");
 }
 
-test("after choosing Start a new session, a removable New session tag sits by submit and the prompt opens a new session", async () => {
+test("after choosing Start a new session, a removable New session tag sits by submit and the prompt opens a new session", async (context) => {
+	// Session scripts advance on timers; frozen, the first session stays working.
+	context.mock.timers.enable({ apis: ["setInterval", "setTimeout"] });
 	const view = await renderComponent({ source: COMPOSER });
 	await chooseNewSessionFor(view, "@Readiness Checker also check pricing");
-	const tag = [...document.querySelectorAll("*")].find((node) => node.children.length === 0 && node.textContent === "New session");
-	assert.equal(tag === undefined, false, "the New session tag shows");
+	assert.equal(leafWithText("New session") === undefined, false, "the New session tag shows");
 	assert.equal(button(view, REMOVE_NEW_SESSION) === undefined, false, "the tag is removable");
 
 	await view.click(button(view, "Submit"));
@@ -299,14 +304,18 @@ test("after choosing Start a new session, a removable New session tag sits by su
 	await view.unmount();
 });
 
-test("removing the New session tag sends the prompt to the existing session", async () => {
+test("removing the New session tag sends the prompt to the existing session", async (context) => {
+	// Session scripts advance on timers; frozen, the first session stays working.
+	context.mock.timers.enable({ apis: ["setInterval", "setTimeout"] });
 	const view = await renderComponent({ source: COMPOSER });
 	await chooseNewSessionFor(view, "@Readiness Checker also check pricing");
 	await view.click(button(view, REMOVE_NEW_SESSION));
 	assert.equal(button(view, REMOVE_NEW_SESSION) === undefined, true, "the tag is gone");
 
 	await view.click(button(view, "Submit"));
-	assert.equal(composerSessions().length, 1, "the prompt continues the existing session");
+	const sessions = composerSessions();
+	assert.equal(sessions.length, 1, "no new session starts");
+	assert.equal(sessions[0].replies.at(-1), "@Readiness Checker also check pricing", "the prompt is a reply in the existing session, not a comment");
 	await view.unmount();
 });
 
@@ -320,10 +329,6 @@ export default function Probe({ outputs }) {
 }
 `;
 
-function leafWithText(text) {
-	return [...document.querySelectorAll("*")].find((node) => node.children.length === 0 && node.textContent === text);
-}
-
 test("the Output resource row shows only when the work item has outputs", async () => {
 	const view = await renderComponent({ props: { outputs: [] }, source: RESOURCES });
 	assert.equal(leafWithText("Output") === undefined, true, "no outputs, no Output row");
@@ -331,7 +336,9 @@ test("the Output resource row shows only when the work item has outputs", async 
 	await view.rerender({ outputs: ["Bid readiness report"] });
 	const label = leafWithText("Output");
 	assert.equal(label === undefined, false, "outputs add the Output row");
-	assert.equal(before(label, leafWithText("Bid readiness report")), true, "the row lists the outputs after its label");
+	const output = leafWithText("Bid readiness report");
+	assert.equal(output === undefined, false, "the row lists the output");
+	assert.equal(before(label, output), true, "the row lists the outputs after its label");
 	await view.unmount();
 });
 
