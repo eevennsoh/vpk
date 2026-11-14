@@ -578,8 +578,14 @@ class RealtimeSession {
 			// to avoid a race where OpenAI's application layer isn't ready yet.
 		});
 
+		// A throw from an upstream listener would reach uncaughtException and exit the
+		// backend; the message is logged and dropped instead.
 		this._openaiWs.on("message", (data) => {
-			this._handleOpenAIMessage(data);
+			try {
+				this._handleOpenAIMessage(data);
+			} catch (error) {
+				this._log("REALTIME", `Dropped an upstream message that failed: ${error instanceof Error ? error.message : String(error)}`);
+			}
 		});
 
 		this._openaiWs.on("pong", () => {

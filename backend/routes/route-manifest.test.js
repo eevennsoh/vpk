@@ -146,10 +146,27 @@ test("collector flags direct backend fetches inside Next API route handlers", ()
 			{
 				method: "PUT",
 				path: "/api/items/:id",
-				source: "app/api/items/[id]/route.ts:2",
+				source: "app/api/items/[id]/route.ts",
 			},
 		],
 	);
+});
+
+test("collector output does not move when lines are added above a handler", () => {
+	const routeFile = "app/api/items/[id]/route.ts";
+	const handler = [
+		"export async function POST() {",
+		"\treturn fetch(`${getBackendUrl()}/api/items/${id}`, { method: \"PUT\" });",
+		"}",
+		"",
+	].join("\n");
+	const collect = (source) => {
+		const { functionNode, sourceFile } = parseRouteFunction(source, routeFile);
+		return collectProxyHelperBypasses(functionNode, sourceFile, getRouteContext(routeFile), "POST");
+	};
+	// The generated files carry no line numbers, so an unrelated edit above a route leaves
+	// them unchanged and parallel PRs stop colliding on them.
+	assert.deepEqual(collect(`\n\n// a comment\n${handler}`), collect(handler));
 });
 
 test("collector does not flag shared backend proxy helpers as bypasses", () => {

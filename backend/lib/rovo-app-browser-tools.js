@@ -89,11 +89,16 @@ function createDefaultWorkspaceBindings({
 	}
 }
 
-function resolveToolThreadId(toolInput, fallbackThreadId) {
-	return (
-		getTrimmedString(toolInput?.thread_id) ??
-		getTrimmedString(fallbackThreadId)
-	)
+// A browser tool call acts on the request's own thread. Its `thread_id` input comes from
+// the model and is never trusted to name another thread's workspace; without a request
+// thread the call is not mirrored.
+function resolveToolThreadId(toolInput, requestThreadId) {
+	const threadId = getTrimmedString(requestThreadId)
+	const requested = getTrimmedString(toolInput?.thread_id)
+	if (threadId && requested && requested !== threadId) {
+		console.warn("[BROWSER-BRIDGE] Ignoring a browser tool thread_id that is not the request's thread.")
+	}
+	return threadId ?? null
 }
 
 function resolveRequestedUrl(baseName, toolInput) {

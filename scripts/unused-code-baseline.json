@@ -452,6 +452,7 @@
 		"backend/lib/work-item-vpk-html-report-generator.js#runVpkHtmlValidationScripts",
 		"backend/middleware/error-response.js#INTERNAL_ERROR_MESSAGE",
 		"backend/middleware/error-response.js#apiNotFoundHandler",
+		"backend/realtime/ws-connection-limits.js#WS_HEARTBEAT_INTERVAL_MS",
 		"backend/routes/agent-mode.js#VALID_AGENT_MODES",
 		"backend/routes/browser-workspaces.js#logBrowserWorkspaceError",
 		"backend/routes/browser-workspaces.js#resolveBrowserWorkspaceId",
