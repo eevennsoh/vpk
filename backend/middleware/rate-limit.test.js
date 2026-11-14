@@ -178,10 +178,13 @@ test("registerAiCostRateLimitMiddleware mounts one shared limiter on protected p
 	});
 
 	assert.equal(returnedLimiter, limiter);
-	assert.deepEqual(created, [{
+	assert.equal(created.length, 1);
+	const { clientKey, ...limits } = created[0];
+	assert.deepEqual(limits, {
 		max: 60,
 		windowMs: 60_000,
-	}]);
+	});
+	assert.equal(typeof clientKey, "function");
 	assert.deepEqual(appUses, [[AI_COST_RATE_LIMIT_PATHS, limiter]]);
 });
 
@@ -195,4 +198,49 @@ test("rate-limit middleware validates dependencies", () => {
 		() => registerAiCostRateLimitMiddleware({ use: () => {} }, { createRateLimiter: null }),
 		/createRateLimiter/u,
 	);
+});
+
+// Behind the deployment's load balancer every request arrives from the balancer's address;
+// the client is the address the balancer appends to X-Forwarded-For.
+function proxiedRequest(clientChain) {
+	return { headers: { "x-forwarded-for": clientChain }, ip: "10.0.0.1", socket: { remoteAddress: "10.0.0.1" } };
+}
+
+function registerOnFakeApp(env) {
+	let limiter = null;
+	registerAiCostRateLimitMiddleware({ use: (_paths, middleware) => { limiter = middleware; } }, { env });
+	return limiter;
+}
+
+test("behind the production load balancer one client the load balancer cannot use up another client's budget", () => {
+	const limiter = registerOnFakeApp({ NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" });
+	const res = createResponse();
+	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 5; index += 1) {
+		limiter(proxiedRequest("203.0.113.5"), res, () => {});
+	}
+	assert.equal(res.payloads.length, 5, "the noisy client is limited");
+	let allowed = false;
+	limiter(proxiedRequest("198.51.100.7"), createResponse(), () => {
+		allowed = true;
+	});
+	assert.equal(allowed, true, "a second client still has its own budget");
+});
+
+test("a client cannot pick its own bucket by sending X-Forwarded-For: only the balancer's entry counts", () => {
+	const limiter = registerOnFakeApp({ NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" });
+	const res = createResponse();
+	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 1; index += 1) {
+		// The client's own header comes first; the balancer appends the real address.
+		limiter(proxiedRequest(`192.0.2.${index}, 203.0.113.5`), res, () => {});
+	}
+	assert.equal(res.payloads.length, 1);
+});
+
+test("without a configured proxy X-Forwarded-For is ignored, so a local caller cannot spoof a bucket", () => {
+	const limiter = registerOnFakeApp({ NODE_ENV: "production" });
+	const res = createResponse();
+	for (let index = 0; index < AI_COST_RATE_LIMIT_MAX + 1; index += 1) {
+		limiter(proxiedRequest(`192.0.2.${index}`), res, () => {});
+	}
+	assert.equal(res.payloads.length, 1);
 });

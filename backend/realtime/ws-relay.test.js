@@ -740,3 +740,33 @@ test("a socket that sends no frame is closed after its first-frame timeout; one 
 	preview.listeners.get("close")();
 	assert.equal(timers[2].cleared, true, "close clears the timeout");
 });
+
+test("behind the production load balancer one client cannot take every realtime slot", () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies(),
+		env: { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" },
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	// Every socket arrives from the balancer (10.0.0.1); the client is its appended entry.
+	const open = (client, index) => {
+		const socket = createSocket();
+		const request = {
+			...createRequest(`/api/realtime/audio-conversation?realtimeToken=t${client}-${index}`, { "x-forwarded-for": client }),
+			socket: { remoteAddress: "10.0.0.1" },
+		};
+		upgrade(request, socket, Buffer.alloc(0));
+		return socket;
+	};
+	const refused = [];
+	for (let index = 0; index < 64; index += 1) {
+		const socket = open("203.0.113.5", index);
+		if (socket.writes.some((line) => /^HTTP\/1\.1 503 /u.test(line))) refused.push(index);
+	}
+	assert.ok(refused.length > 0, "one client is capped below the whole pool");
+	const other = open("198.51.100.7", 0);
+	assert.equal(other.writes.some((line) => /^HTTP\/1\.1 503 /u.test(line)), false, "a second client still connects");
+	assert.equal(instances[0].handledUpgrades.length, 64 - refused.length + 1);
+});

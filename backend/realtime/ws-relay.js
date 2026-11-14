@@ -11,6 +11,7 @@ const {
 	startHeartbeat,
 	trackHeartbeat,
 } = require("./ws-connection-limits");
+const { resolveClientAddress, resolveTrustedProxyHops } = require("../lib/client-address");
 const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
@@ -137,6 +138,7 @@ function registerBackendWebSocketRelays(server, {
 	browserWorkspaceManager,
 	consoleImpl = console,
 	debugMode = false,
+	env = process.env,
 	getMirrorBrowser,
 	isAllowedRuntimeSocketOrigin,
 	isDraining = /** @returns {boolean} */ () => false,
@@ -191,13 +193,15 @@ function registerBackendWebSocketRelays(server, {
 	// Each server has its own pool, so preview use cannot starve realtime. A slot is taken
 	// only after the origin and token checks, per address and per token, and held until the
 	// raw socket closes (also when the handshake fails). Over a cap the upgrade gets 503.
-	const limits = resolveConnectionLimits(process.env, consoleImpl);
+	const limits = resolveConnectionLimits(env, consoleImpl);
+	const trustedProxyHops = resolveTrustedProxyHops(env, consoleImpl);
+	consoleImpl.log?.(`[STARTUP] Client addresses: ${trustedProxyHops} trusted proxy hop(s); WebSocket caps per pool: ${limits.maxTotal} total, ${limits.maxPerAddress} per address`);
 	const pools = connectionLimiters ?? {
 		preview: connectionLimiter ?? createConnectionLimiter(limits),
 		realtime: connectionLimiter ?? createConnectionLimiter(limits),
 	};
 	const acquireConnectionSlot = (pool, request, socket, socketToken) => {
-		const release = pools[pool].tryAcquire(request.socket?.remoteAddress, socketToken ?? null);
+		const release = pools[pool].tryAcquire(resolveClientAddress(request, trustedProxyHops), socketToken ?? null);
 		if (!release) {
 			rejectUpgrade(socket, 503, "Service Unavailable");
 			return false;

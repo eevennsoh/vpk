@@ -273,14 +273,17 @@ ROVO_BILLING_URL=https://product-fabric.atlassian.net
 
 `scripts/dev-rovo.js` passes this value as `--site-url` to `rovo serve`. Override this value when you need a different billing site.
 
-**WebSocket connection caps (optional):**
+**Client addresses and WebSocket connection caps (optional):**
 
 ```
+VPK_TRUSTED_PROXY_HOPS=1
 VPK_WS_MAX_CONNECTIONS=64
-VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=16
+VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=32
 ```
 
-The backend's preview and realtime WebSockets together allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` adds a per-client-address cap and is off by default. Set it only where the backend sees each client's own address: behind a proxy every client shares the proxy's address, so it would cap all users together. A value that is not a positive integer is ignored, with a `[STARTUP]` warning.
+Per-client limits (the AI-cost rate limiter and the WebSocket caps) key on the client address. `VPK_TRUSTED_PROXY_HOPS` is the number of proxies in front of the backend that append to `X-Forwarded-For`. The Micros `service-descriptor.yml` sets 1 (the load balancer); the default is 0 everywhere else, including a local `NODE_ENV=production` serve. With 0 the socket address is used and the header is ignored; otherwise the entry that many hops from the socket is the client, and entries a client sent itself are never used (a shorter header falls back to the socket address). Express's `trust proxy` is not set, so `X-Forwarded-Host` and `X-Forwarded-Proto` stay ignored. Set it only where every request passes through that many appending proxies.
+
+The preview and realtime WebSockets each allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` caps sockets per client address: half the total by default when proxy hops are trusted, so one client cannot hold every slot while users sharing an office or VPN egress address still get room, and off (the total) otherwise, since without a trusted proxy every socket comes from loopback or the proxy. A value that is not a positive integer is ignored, with a `[STARTUP]` warning. The backend logs the resolved hops and caps at startup.
 
 **Atlassian sites for the Jira demos and image proxy (optional):**
 
