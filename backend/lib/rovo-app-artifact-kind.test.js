@@ -63,6 +63,33 @@ test("inferRovoAppArtifactKindFromContent keeps markdown tables as sheets", () =
 	);
 });
 
+test("inferRovoAppArtifactKindFromContent keeps a captioned table-only sheet as a sheet", () => {
+	assert.equal(
+		inferRovoAppArtifactKindFromContent("## Fruit colors\n\n| Fruit | Color |\n|:---|---:|\n| Apple | Red |\n", "sheet"),
+		"sheet",
+	);
+});
+
+test("inferRovoAppArtifactKindFromContent keeps a document that contains a table as text", () => {
+	const onePageDocument = [
+		"# Q3 Launch Brief",
+		"",
+		"This one-page brief summarizes the launch plan and owners.",
+		"",
+		"## Timeline",
+		"",
+		"| Milestone | Date |",
+		"| --- | --- |",
+		"| Beta | Sep 1 |",
+		"| GA | Oct 15 |",
+		"",
+		"## Risks",
+		"",
+		"- Vendor delays could push GA by two weeks.",
+	].join("\n");
+	assert.equal(inferRovoAppArtifactKindFromContent(onePageDocument, "text"), "text");
+});
+
 test("inferRovoAppArtifactKindFromContent keeps excalidraw JSON as excalidraw", () => {
 	assert.equal(
 		inferRovoAppArtifactKindFromContent("{\"type\":\"excalidraw\",\"version\":2,\"elements\":[]}", "text"),

@@ -57,6 +57,30 @@ function inferRovoAppArtifactKindFromRequest(latestUserMessage, fallbackKind = "
 	return normalizeRovoAppArtifactKind(fallbackKind);
 }
 
+const MARKDOWN_TABLE_ROW_REGEX = /^\|.*\|$/u;
+const MARKDOWN_TABLE_SEPARATOR_REGEX = /^\|(?:\s*:?-+:?\s*\|)+$/u;
+const MARKDOWN_HEADING_REGEX = /^#{1,6}\s/u;
+
+// A sheet is a table and nothing else (headings allowed as captions). A text
+// document that merely contains a table stays a document.
+function isMarkdownTableOnlyContent(content) {
+	const lines = content
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
+	let hasSeparator = false;
+	for (const line of lines) {
+		if (MARKDOWN_TABLE_SEPARATOR_REGEX.test(line)) {
+			hasSeparator = true;
+			continue;
+		}
+		if (!MARKDOWN_TABLE_ROW_REGEX.test(line) && !MARKDOWN_HEADING_REGEX.test(line)) {
+			return false;
+		}
+	}
+	return hasSeparator;
+}
+
 function inferRovoAppArtifactKindFromContent(content, fallbackKind = "text") {
 	const normalizedContent = getNonEmptyString(content);
 	if (!normalizedContent) {
@@ -97,10 +121,7 @@ function inferRovoAppArtifactKindFromContent(content, fallbackKind = "text") {
 		return "code";
 	}
 
-	if (
-		/\|.+\|/u.test(normalizedContent) &&
-		/\n\|(?:\s*[-:]+\s*\|)+/u.test(normalizedContent)
-	) {
+	if (isMarkdownTableOnlyContent(normalizedContent)) {
 		return "sheet";
 	}
 
