@@ -203,3 +203,55 @@ test("handleReplayDeferredToolRequest surfaces replayed exit_plan_mode as a new 
 		},
 	]);
 });
+
+function createPauseEvent(parts) {
+	return { parts };
+}
+
+const replayToolOptions = {
+	isRequestUserInputTool: (toolName) => toolName === "ask_user_questions",
+	isExitPlanModeTool: (toolName) => toolName === "exit_plan_mode",
+};
+
+test("a pause that cannot be registered does not take the port lease", async () => {
+	let reservations = 0;
+	const result = await handleReplayDeferredToolRequest({
+		...replayToolOptions,
+		rawEvent: createPauseEvent([{ tool_name: "ask_user_questions", args: "{}" }]),
+		control: {
+			port: 8123,
+			reservePort: () => {
+				reservations += 1;
+				return { settleLease: () => true };
+			},
+		},
+		registerPausedToolCall: () => {},
+	});
+
+	assert.equal(result.handled, false);
+	assert.equal(reservations, 0);
+});
+
+test("a pause whose registration throws quarantines the lease it took", async () => {
+	const settles = [];
+	const handle = {
+		settleLease: (disposition, options) => {
+			settles.push([disposition, options]);
+			return true;
+		},
+	};
+	await assert.rejects(
+		handleReplayDeferredToolRequest({
+			...replayToolOptions,
+			rawEvent: createPauseEvent([{ tool_name: "exit_plan_mode", tool_call_id: "tool-call-9", args: "{}" }]),
+			control: { port: 8123, reservePort: () => handle },
+			emitExitPlanWidget: () => {
+				throw new Error("widget failed");
+			},
+			registerPausedToolCall: () => {},
+		}),
+		/widget failed/u,
+	);
+
+	assert.deepEqual(settles, [["unhealthy", { reason: "paused tool call could not be registered" }]]);
+});

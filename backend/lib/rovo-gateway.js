@@ -202,22 +202,28 @@ async function streamViaRovo({
 			preferredPort,
 			avoidPorts,
 		});
-	if (typeof onTimingStage === "function") {
-		onTimingStage("stream_acquire_complete", {
-			stageMs: Date.now() - acquireStartedAtMs,
-			port: handle.port,
-			waitForTurn,
-			reusedPort: usingProvidedPort,
-		});
-	}
-
-	if (typeof onPortAcquired === "function") {
-		onPortAcquired(handle.port);
-	}
-
 	// One owner of the port's lease; a paused tool call can take it over (handOff).
-	const lease = createRovoPortLease(handle, { logPrefix: "streamViaRovo" });
+	const lease = createRovoPortLease(handle, { logPrefix: "streamViaRovo", logUnhealthy: Boolean(_pool) });
 	let abortedBySignal = false;
+
+	try {
+		if (typeof onTimingStage === "function") {
+			onTimingStage("stream_acquire_complete", {
+				stageMs: Date.now() - acquireStartedAtMs,
+				port: handle.port,
+				waitForTurn,
+				reusedPort: usingProvidedPort,
+			});
+		}
+
+		if (typeof onPortAcquired === "function") {
+			onPortAcquired(handle.port);
+		}
+	} catch (callbackError) {
+		// Thrown before the stream's own cleanup is in place: the lease still ends.
+		lease.settle("release");
+		throw callbackError;
+	}
 
 	try {
 		const attempt = (port) =>
@@ -493,6 +499,8 @@ async function replayViaRovo({
 	onTimingStage,
 	skipReplayUntilToolCallId = null,
 }) {
+	// The paused tool call's continuation is using its reserved port again.
+	portHandle?.resume?.();
 	return new Promise((resolve, reject) => {
 		if (signal?.aborted) {
 			resolve();
@@ -725,7 +733,7 @@ async function generateTextViaRovo({
 	});
 
 	let portKnownStuck = false;
-	const lease = createRovoPortLease(handle, { logPrefix: "generateTextViaRovo" });
+	const lease = createRovoPortLease(handle, { logPrefix: "generateTextViaRovo", logUnhealthy: Boolean(_pool) });
 	let abortCleanupPromise = null;
 
 	const captureAbortCleanupPromise = (error) => {

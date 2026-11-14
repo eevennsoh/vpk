@@ -8,7 +8,7 @@
  * @param {{ port: number, settleLease?: Function, reserve?: Function }} handle
  * @param {{ logPrefix?: string, logger?: { warn?: (...args: unknown[]) => void } }} [options]
  */
-function createRovoPortLease(handle, { logPrefix = "rovo", logger = console } = {}) {
+function createRovoPortLease(handle, { logPrefix = "rovo", logger = console, logUnhealthy = true } = {}) {
 	/** @type {"held" | "settled" | "handed-off"} */
 	let state = "held";
 	return {
@@ -28,19 +28,25 @@ function createRovoPortLease(handle, { logPrefix = "rovo", logger = console } = 
 			}
 			state = "settled";
 			const trimmedReason = typeof reason === "string" && reason.trim() ? reason.trim() : undefined;
-			if (disposition === "unhealthy" && trimmedReason) {
+			if (logUnhealthy && disposition === "unhealthy" && trimmedReason) {
 				logger.warn?.(`[${logPrefix}] Marking port ${handle.port} unhealthy: ${trimmedReason}`);
 			}
 			handle.settleLease?.(disposition, trimmedReason ? { reason: trimmedReason } : {});
 			return true;
 		},
-		/** Returns the pool handle for the paused tool call to keep, or null if not held. */
+		/**
+		 * Returns the pool handle for the paused tool call to keep. Asked again while handed
+		 * off it returns the same handle (one stream pauses at most once before it ends);
+		 * after the lease is settled it returns null.
+		 */
 		handOff(reason = "paused tool call") {
-			if (state !== "held") {
+			if (state === "settled") {
 				return null;
 			}
-			state = "handed-off";
-			handle.reserve?.(reason);
+			if (state === "held") {
+				state = "handed-off";
+				handle.reserve?.(reason);
+			}
 			return handle;
 		},
 	};
@@ -51,9 +57,17 @@ function createRovoPortLease(handle, { logPrefix = "rovo", logger = console } = 
  * @param {number} port
  */
 function createUnpooledPortHandle(port) {
+	let settled = false;
 	return {
 		port,
-		settleLease: () => true,
+		// Nothing to return to a pool, but like a pooled lease it ends only once.
+		settleLease: () => {
+			if (settled) {
+				return false;
+			}
+			settled = true;
+			return true;
+		},
 	};
 }
 

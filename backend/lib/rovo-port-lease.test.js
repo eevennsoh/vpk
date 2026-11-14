@@ -37,14 +37,27 @@ test("a handed-off lease is reserved for the paused tool call and never settled 
 
 	assert.equal(lease.handOff(), handle);
 	assert.equal(lease.isHeld(), false);
-	assert.equal(lease.handOff(), null);
+	// Asked again while handed off: the same handle, reserved once.
+	assert.equal(lease.handOff(), handle);
 	assert.equal(lease.settle("release"), false);
 	assert.equal(lease.settle("unhealthy", "late"), false);
 	assert.deepEqual(calls, [["reserve", "paused tool call"]]);
 });
 
-test("the unpooled handle accepts any settle", () => {
+test("the unpooled handle ends once, like a pooled lease", () => {
 	const handle = createUnpooledPortHandle(8000);
 	assert.equal(handle.port, 8000);
-	assert.equal(createRovoPortLease(handle, { logger: { warn: () => {} } }).settle("unhealthy", "x"), true);
+	assert.equal(handle.settleLease("unhealthy"), true);
+	assert.equal(handle.settleLease("release"), false);
+});
+
+test("a settled lease hands off nothing, and the unhealthy warning can be turned off", () => {
+	const { calls, handle } = createHandle();
+	const warnings = [];
+	const lease = createRovoPortLease(handle, { logUnhealthy: false, logger: { warn: (message) => warnings.push(message) } });
+
+	lease.settle("unhealthy", "stuck");
+	assert.equal(lease.handOff(), null);
+	assert.deepEqual(warnings, []);
+	assert.deepEqual(calls, [["settleLease", "unhealthy", { reason: "stuck" }]]);
 });

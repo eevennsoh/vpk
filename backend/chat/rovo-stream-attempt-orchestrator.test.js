@@ -308,3 +308,39 @@ test("createRovoStreamAttemptRunner dispatches fresh turns when no paused record
 		"wait-for-turn",
 	]]);
 });
+
+test("a paused record taken before the stream options fail to build is abandoned, not left reserved", async () => {
+	const settles = [];
+	const cancels = [];
+	const record = {
+		handle: {
+			settleLease: (disposition) => {
+				settles.push(disposition);
+				return true;
+			},
+		},
+		kind: "approval",
+		port: 3201,
+		toolCallId: "tool-2",
+	};
+	const { options } = createBaseCommonOptions({
+		createRovoStreamToolCallbacksFn: () => {
+			throw new Error("callbacks failed");
+		},
+		hasPausedApprovalToolCall: true,
+		logger: { info() {} },
+		pausedContinuationToolCallId: "paused-2",
+		rovoCancelChat: async (port) => {
+			cancels.push(port);
+		},
+		runPausedRovoToolContinuationFn: async () => {
+			throw new Error("continuation should not run");
+		},
+		takePausedRovoToolCall: () => record,
+	});
+	const runAttempt = createRovoStreamAttemptRunner(options);
+
+	await assert.rejects(runAttempt({ currentToolFirstAttempt: 1 }), /callbacks failed/u);
+	assert.deepEqual(cancels, [3201]);
+	assert.deepEqual(settles, ["release"]);
+});
