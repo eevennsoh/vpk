@@ -4,7 +4,10 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	PREVIEW_MAX_PAYLOAD_BYTES,
+	REALTIME_MAX_PAYLOAD_BYTES,
 	getRuntimeSocketTokenFromUpgrade,
+	guardListener,
 	registerBackendWebSocketRelays,
 	rejectUpgrade,
 	verifyRuntimeSocketUpgrade,
@@ -453,4 +456,160 @@ test("registerBackendWebSocketRelays requires isDraining to be a function", () =
 		}),
 		/isDraining/u,
 	);
+});
+
+test("guardListener turns a throw or a rejection into a log line and onError, never an escape", async () => {
+	const errors = [];
+	const handled = [];
+	const consoleImpl = { error: (...args) => errors.push(args.join(" ")) };
+	const throwing = guardListener("sync", () => {
+		throw new Error("boom");
+	}, { consoleImpl, onError: (...args) => handled.push(["sync", ...args]) });
+	const rejecting = guardListener("async", async () => {
+		throw new Error("later");
+	}, { consoleImpl, onError: (...args) => handled.push(["async", ...args]) });
+	const failingOnError = guardListener("onError throws", () => {
+		throw new Error("first");
+	}, { consoleImpl, onError: () => {
+		throw new Error("second");
+	} });
+
+	assert.doesNotThrow(() => throwing("a"));
+	assert.doesNotThrow(() => rejecting("b"));
+	assert.doesNotThrow(() => failingOnError());
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.deepEqual(handled, [["sync", "a"], ["async", "b"]]);
+	assert.equal(errors.length, 3);
+});
+
+test("an exception nobody anticipated in the upgrade path rejects that socket and leaves the listener intact", () => {
+	const server = createFakeServer();
+	const { webSocketImpl } = createFakeWebSocketImpl();
+	let calls = 0;
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isAllowedRuntimeSocketOrigin: () => {
+				calls += 1;
+				throw new Error("unexpected");
+			},
+		}),
+		webSocketImpl,
+	});
+	const upgradeHandler = server.handlers.get("upgrade");
+	for (let index = 0; index < 2; index += 1) {
+		const socket = { ...createSocket(), writable: true };
+		assert.doesNotThrow(() => upgradeHandler(createRequest("/api/realtime/audio-conversation"), socket, Buffer.from("")));
+		assert.equal(socket.destroyed, true);
+		assert.match(socket.writes.join(""), /^HTTP\/1\.1 500 Internal Server Error\r\n/u);
+	}
+	assert.equal(calls, 2);
+});
+
+test("realtime socket listeners never let a session error escape, including a rejected connect", async () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	const errors = [];
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			consoleImpl: { error: (...args) => errors.push(args.join(" ")), log: () => {} },
+			realtimeSessionImpl: class RealtimeSession {
+				async connect() {
+					throw new Error("upstream refused");
+				}
+				close() {
+					throw new Error("close failed");
+				}
+				handleClientMessage() {
+					throw new Error("bad frame");
+				}
+			},
+		}),
+		webSocketImpl,
+	});
+	const [realtimeWss] = instances;
+	server.handlers.get("upgrade")(
+		createRequest("/api/realtime/audio-conversation?realtimeToken=realtime%3Aaudio-conversation"),
+		createSocket(),
+		Buffer.from(""),
+	);
+	const { ws } = realtimeWss.handledUpgrades[0];
+	assert.doesNotThrow(() => ws.listeners.get("message")(Buffer.from("1")));
+	assert.doesNotThrow(() => ws.listeners.get("close")());
+	assert.doesNotThrow(() => ws.listeners.get("error")(new Error("socket")));
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.equal(ws.closed, true, "a socket whose session failed is closed");
+	assert.ok(errors.some((line) => line.includes("upstream refused")));
+	assert.ok(errors.some((line) => line.includes("bad frame")));
+});
+
+test("preview control messages that are not objects, or whose action rejects, are answered on the socket", async () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			browserWorkspaceManager: createBrowserWorkspaceManager({
+				handleWorkspacePreviewControlMessage: () => {
+					throw new Error("Browser workspace not found: workspace-1");
+				},
+				detachWorkspacePreviewClient: () => Promise.reject(new Error("gone")),
+			}),
+		}),
+		webSocketImpl,
+	});
+	const browserPreviewWss = instances[1];
+	const ws = createFakeWs();
+	browserPreviewWss.listeners.get("connection")(ws, {}, "workspace-1");
+	for (const frame of ["[]", "null", "7", "not json", "{\"type\":\"preview-pointer\"}"]) {
+		assert.doesNotThrow(() => ws.listeners.get("message")(Buffer.from(frame)));
+	}
+	assert.doesNotThrow(() => ws.listeners.get("close")());
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.equal(ws.sent.length, 5);
+	for (const payload of ws.sent) {
+		assert.equal(JSON.parse(payload).type, "preview-error");
+	}
+});
+
+test("both WebSocket servers cap a frame: realtime at 1 MiB, preview at 256 KiB", () => {
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(createFakeServer(), { ...createRegistrationDependencies(), webSocketImpl });
+	assert.equal(instances.length, 2);
+	assert.deepEqual(instances[0].options, { noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
+	assert.deepEqual(instances[1].options, { noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
+	assert.equal(REALTIME_MAX_PAYLOAD_BYTES, 1024 * 1024);
+	assert.equal(PREVIEW_MAX_PAYLOAD_BYTES, 256 * 1024);
+});
+
+test("a failed preview attach on a socket whose send and close throw never becomes an unhandled rejection", async (t) => {
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason);
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(createFakeServer(), {
+		...createRegistrationDependencies({
+			browserWorkspaceManager: createBrowserWorkspaceManager({
+				attachWorkspacePreviewClient: async () => {
+					throw new Error("attach failed");
+				},
+			}),
+		}),
+		webSocketImpl,
+	});
+	const ws = createFakeWs();
+	let terminated = false;
+	ws.send = () => {
+		throw new Error("WebSocket is not open");
+	};
+	ws.close = () => {
+		throw new Error("WebSocket is not open");
+	};
+	ws.terminate = () => {
+		terminated = true;
+	};
+	instances[1].listeners.get("connection")(ws, {}, "workspace-1");
+	await new Promise(setImmediate);
+	await new Promise(setImmediate);
+	assert.deepEqual(unhandled, []);
+	assert.equal(terminated, true);
 });
