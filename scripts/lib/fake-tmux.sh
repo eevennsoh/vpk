@@ -59,7 +59,7 @@ if [ -n "${FAKE_TMUX_FAIL:-}" ] && [ "$command_name" = "$FAKE_TMUX_FAIL" ]; then
 fi
 
 case "$command_name" in
-	has-session|kill-session|attach|attach-session|list-windows)
+	has-session|kill-session|attach|attach-session|list-windows|set-environment|setenv)
 		session=$(session_target "$target") || exit 1 ;;
 	send-keys|pipe-pane|list-panes|set-option|set|set-window-option|setw|select-pane|split-window|select-layout|display-message|new-window)
 		session=$(window_target "$target") || exit 1 ;;

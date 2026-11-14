@@ -118,7 +118,7 @@ test("doctor warns when the shell exports an OPENAI_MODEL older than the default
 	assert.equal(report.openAiModel.default, DEFAULT_OPENAI_MODEL);
 	assert.equal(report.openAiModel.shellOverride, "override-older-than-default");
 	const text = formatDoctorReport(report);
-	assert.match(text, /^ {7}warning: OPENAI_MODEL from your shell names an older model than the built-in default/mu);
+	assert.match(text, /^ {7}warning: OPENAI_MODEL from the process environment \(shell, launcher, or deploy\) names an older model than the built-in default/mu);
 	assert.equal(text.includes("gpt-1.0-shellvalue"), false);
 	assert.equal(JSON.stringify(report).includes("gpt-1.0-shellvalue"), false);
 });

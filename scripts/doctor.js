@@ -48,8 +48,9 @@ function envSettingsFromHealth(health) {
 }
 
 // The OpenAI model in labels only: the built-in default, and warnings about any override. An
-// OPENAI_MODEL in this process came from the shell (nothing here loads .env.local), which is the
-// one that silently beats .env.local in the backend. The running backend adds what it resolved.
+// OPENAI_MODEL in this process came from its environment (nothing here loads .env.local): the
+// shell, or a launcher that exported it, which is the one that silently beats .env.local in the
+// backend. rovo:tmux no longer exports .env.local's OPENAI_MODEL into its panes. The running backend adds what it resolved.
 function summarizeOpenAiModel(env, health) {
 	const shellValue = typeof env.OPENAI_MODEL === "string" ? env.OPENAI_MODEL.trim() : "";
 	const shell = resolveOpenAiModel({ OPENAI_MODEL: shellValue }, { origin: { shellValue } });

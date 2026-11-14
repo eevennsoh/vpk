@@ -6,15 +6,20 @@
 // release is a one-line change. OPENAI_MODEL is an explicit override only. The gateway exposes no
 // model list to this use case (its /models discovery answers 404/403), so there is no "newest"
 // to resolve at runtime; instead every override is classified against this default and reported
-// at startup, in /api/health, and by `pnpm run doctor`.
+// at startup, in /api/health, and by `pnpm run doctor`. /api/health and doctor print labels only,
+// never the override's value; the startup log prints the effective model id, which is not a secret
+// and is what an operator reading the log needs.
 
 const DEFAULT_OPENAI_MODEL = "gpt-6.1-sol";
 
 const OPENAI_MODEL_SOURCES = Object.freeze({
 	DEFAULT: "default",
 	ENV_FILE: ".env.local",
-	SHELL: "shell",
-	ENVIRONMENT: "environment",
+	// Set before .env.local loaded: a shell export, a launcher or tmux environment, or a deploy.
+	PROCESS_ENV: "process-env",
+	// The origin was never recorded (a caller other than backend/server.js), so file and process
+	// environment cannot be told apart.
+	UNKNOWN: "unknown",
 });
 
 // Labels, never values: they are safe to print from any report.
@@ -67,17 +72,30 @@ function classifyOpenAiModelOverride(model, defaultModel = DEFAULT_OPENAI_MODEL)
 	return order > 0 ? OPENAI_MODEL_STATUSES.NEWER : OPENAI_MODEL_STATUSES.CUSTOM;
 }
 
-// Where OPENAI_MODEL came from. dotenv never overrides a variable that is already set, so a
-// shell export silently wins over .env.local; backend/server.js records both sides before and
-// after loading the file so the report can say which one is in effect.
+// Where OPENAI_MODEL came from. dotenv never overrides a variable that is already set (even to
+// an empty string), so a value in the process environment silently wins over .env.local;
+// loadEnvFileWithModelOrigin records both sides around loading the file so the report can say
+// which one is in effect.
 let recordedEnvOrigin = null;
 
-function recordOpenAiModelEnvOrigin({ shellValue, envFileValue } = {}) {
+function recordOpenAiModelEnvOrigin({ shellPresent, shellValue, envFileValue } = {}) {
+	const trimmedShellValue = trimmedOrEmpty(shellValue);
 	recordedEnvOrigin = {
-		shellValue: trimmedOrEmpty(shellValue),
+		shellPresent: shellPresent ?? Boolean(trimmedShellValue),
+		shellValue: trimmedShellValue,
 		envFileValue: trimmedOrEmpty(envFileValue),
 	};
 	return recordedEnvOrigin;
+}
+
+// Loads .env.local into `env` with dotenv and records OPENAI_MODEL's origin around it. Returns
+// dotenv's result ({ parsed } or { error } when the file is missing).
+function loadEnvFileWithModelOrigin({ envPath, env = process.env, dotenv = require("dotenv") }) {
+	const shellPresent = Object.hasOwn(env, "OPENAI_MODEL");
+	const shellValue = env.OPENAI_MODEL;
+	const result = dotenv.config({ path: envPath, processEnv: env });
+	recordOpenAiModelEnvOrigin({ shellPresent, shellValue, envFileValue: result.parsed?.OPENAI_MODEL });
+	return result;
 }
 
 function resetOpenAiModelEnvOrigin() {
@@ -87,15 +105,16 @@ function resetOpenAiModelEnvOrigin() {
 function resolveOpenAiModel(envVars = {}, { origin = recordedEnvOrigin, defaultModel = DEFAULT_OPENAI_MODEL } = {}) {
 	const override = trimmedOrEmpty(envVars.OPENAI_MODEL);
 	const shellValue = origin?.shellValue ?? "";
+	const shellPresent = origin?.shellPresent ?? Boolean(shellValue);
 	const envFileValue = origin?.envFileValue ?? "";
 	let source = OPENAI_MODEL_SOURCES.DEFAULT;
 	if (override) {
 		if (shellValue && shellValue === override) {
-			source = OPENAI_MODEL_SOURCES.SHELL;
+			source = OPENAI_MODEL_SOURCES.PROCESS_ENV;
 		} else if (envFileValue && envFileValue === override) {
 			source = OPENAI_MODEL_SOURCES.ENV_FILE;
 		} else {
-			source = OPENAI_MODEL_SOURCES.ENVIRONMENT;
+			source = OPENAI_MODEL_SOURCES.UNKNOWN;
 		}
 	}
 	return {
@@ -103,17 +122,25 @@ function resolveOpenAiModel(envVars = {}, { origin = recordedEnvOrigin, defaultM
 		defaultModel,
 		source,
 		status: classifyOpenAiModelOverride(override, defaultModel),
-		shadowsEnvFile: source === OPENAI_MODEL_SOURCES.SHELL && Boolean(envFileValue) && envFileValue !== override,
+		// Any OPENAI_MODEL present before dotenv ran, even an empty one, keeps .env.local's value out.
+		shadowsEnvFile: shellPresent && Boolean(envFileValue) && envFileValue !== shellValue,
 	};
 }
+
+const PROCESS_ENV_LABEL = "the process environment (shell, launcher, or deploy)";
+const SOURCE_LABELS = {
+	[OPENAI_MODEL_SOURCES.ENV_FILE]: ".env.local",
+	[OPENAI_MODEL_SOURCES.PROCESS_ENV]: PROCESS_ENV_LABEL,
+	[OPENAI_MODEL_SOURCES.UNKNOWN]: "an unrecorded origin",
+};
 
 // Plain-language warnings for an override. They name the default (from code) and the source,
 // never the override's own value, so doctor output stays free of environment values.
 function describeOpenAiModelWarnings(resolution) {
 	const warnings = [];
-	const where = resolution.source === OPENAI_MODEL_SOURCES.SHELL ? "your shell" : resolution.source;
+	const where = SOURCE_LABELS[resolution.source] ?? resolution.source;
 	if (resolution.shadowsEnvFile) {
-		warnings.push("OPENAI_MODEL exported by your shell overrides the value in .env.local (dotenv never replaces a variable that is already set).");
+		warnings.push(`OPENAI_MODEL set in ${PROCESS_ENV_LABEL} overrides the value in .env.local (dotenv never replaces a variable that is already set, even to an empty value).`);
 	}
 	if (resolution.status === OPENAI_MODEL_STATUSES.OLDER) {
 		warnings.push(`OPENAI_MODEL from ${where} names an older model than the built-in default ${resolution.defaultModel}; remove it to follow the default.`);
@@ -129,6 +156,7 @@ module.exports = {
 	OPENAI_MODEL_STATUSES,
 	classifyOpenAiModelOverride,
 	describeOpenAiModelWarnings,
+	loadEnvFileWithModelOrigin,
 	parseGptModelVersion,
 	recordOpenAiModelEnvOrigin,
 	resetOpenAiModelEnvOrigin,

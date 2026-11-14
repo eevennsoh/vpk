@@ -150,9 +150,12 @@ so no model config is needed. When a new GPT model ships, update that one consta
 The gateway does not expose a model list to this use case, so the default is not
 discovered at runtime. `OPENAI_MODEL` is an explicit override. The backend start
 log names the model in use and where it came from (`default`, `.env.local`, or
-`shell`). Startup and `pnpm run doctor` warn when an override is older than the
-default, repeats it, or is a shell export that hides the `.env.local` value
-(dotenv never replaces a variable the shell already set).
+`process-env`, meaning it was already set before `.env.local` loaded: a shell
+export or a deploy). Startup and `pnpm run doctor` warn when an override is older
+than the default, repeats it, or is set in the process environment and hides the
+`.env.local` value, even as an empty export (dotenv never replaces a variable
+that is already set). `pnpm run rovo:tmux` does not export `.env.local`'s
+`OPENAI_MODEL` into its panes, so the backend reads that file itself.
 Bedrock and Google model IDs are resolved from their configured endpoint URLs.
 
 ---
@@ -180,7 +183,7 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/openai/v1/ch
 
 Restart the backend after changing these values. VPK uses the v1 chat
 completions integration. For every OpenAI reasoning model (o-series and GPT-5
-or later) VPK omits temperature and reserves at least 2,048 completion tokens,
+or later, except `-chat` variants) VPK omits temperature and reserves at least 2,048 completion tokens,
 because that budget covers reasoning as well as visible output. The rule is
 family-based in `applyGatewaySamplingOptions`, so new models need no special case.
 
@@ -313,9 +316,12 @@ pnpm run dev
     { "role": "user", "content": "Hello" }
   ],
   "max_completion_tokens": 2048,
-  "stream": false
+  "stream": true
 }
 ```
+
+Chat requests stream (`"stream": true`); one-shot generation through the AI SDK
+provider sends the same payload with `"stream": false`.
 
 ### Gemini (Google) Payload Format
 
