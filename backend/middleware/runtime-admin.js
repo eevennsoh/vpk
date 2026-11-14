@@ -71,6 +71,45 @@ function isRuntimeAdminTokenValid(token, runtimeAdminToken) {
 	);
 }
 
+const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+/**
+ * Who may get a runtime socket token (the token the browser puts on the preview and
+ * realtime WebSocket URLs). A browser's same-origin GET carries no Origin header but
+ * does carry `Sec-Fetch-Site: same-origin`, so a missing Origin alone is no longer
+ * enough. Headers can be set by any non-browser client, so this keeps other sites'
+ * pages and header-less clients out; it is not authentication.
+ *   issue  — no token configured (local development: tokens are empty), a valid runtime
+ *            admin token, an allowed Origin, a same-origin browser request, or, outside
+ *            production, a loopback caller (the Next dev proxy, which sends no Origin)
+ *   reject — anything else
+ * @param {{ adminTokenValid: boolean, origin: string | null, originAllowed: boolean,
+ *   production: boolean, remoteAddress: string | null, runtimeAdminRequired: boolean,
+ *   runtimeAdminToken: string | null, secFetchSite: string | null }} request
+ * @returns {{ action: "issue" | "reject", reason: string }}
+ */
+function decideRuntimeSocketTokenRequest({
+	adminTokenValid,
+	origin,
+	originAllowed,
+	production,
+	remoteAddress,
+	runtimeAdminRequired,
+	runtimeAdminToken,
+	secFetchSite,
+}) {
+	if (!runtimeAdminToken && !runtimeAdminRequired) return { action: "issue", reason: "tokens-disabled" };
+	if (adminTokenValid) return { action: "issue", reason: "runtime-admin" };
+	if (origin) return originAllowed ? { action: "issue", reason: "allowed-origin" } : { action: "reject", reason: "origin-not-allowed" };
+	if (secFetchSite === "same-origin") return { action: "issue", reason: "same-origin-browser" };
+	// Outside production (also with VPK_REQUIRE_RUNTIME_ADMIN=true) the Next dev proxy
+	// forwards from loopback without Origin or fetch metadata.
+	if (!production && remoteAddress && LOOPBACK_ADDRESSES.has(remoteAddress)) {
+		return { action: "issue", reason: "local-proxy" };
+	}
+	return { action: "reject", reason: "no-origin" };
+}
+
 function createRuntimeAdminControls({
 	allowedOrigins,
 	consoleImpl = console,
@@ -126,16 +165,31 @@ function createRuntimeAdminControls({
 		});
 	}
 
-	function isAllowedRuntimeSocketOrigin(origin, request) {
+	function isAllowedRuntimeSocketOrigin(origin, request, options) {
 		return isRuntimeSocketOriginAllowed(
 			origin,
 			request.headers.host,
 			resolvedAllowedOrigins,
+			options,
 		);
 	}
 
 	function requireRuntimeSocketTokenRequester(req, res, next) {
-		if (isAllowedRuntimeSocketOrigin(req.get?.("origin"), req)) {
+		const origin = getNonEmptyString(req.get?.("origin"));
+		const production = env.NODE_ENV === "production";
+		const decision = decideRuntimeSocketTokenRequest({
+			adminTokenValid: isRuntimeAdminTokenValid(getRuntimeAdminTokenFromRequest(req), runtimeAdminToken),
+			origin,
+			// In production a page on another local dev server (any loopback or `*.localhost`
+			// origin) is not this app: only the request's own host and configured origins count.
+			originAllowed: Boolean(origin) && isAllowedRuntimeSocketOrigin(origin, req, { allowLocalOrigins: !production }),
+			production,
+			remoteAddress: getNonEmptyString(req.socket?.remoteAddress),
+			runtimeAdminRequired,
+			runtimeAdminToken,
+			secFetchSite: getNonEmptyString(req.get?.("sec-fetch-site")),
+		});
+		if (decision.action === "issue") {
 			return next();
 		}
 
@@ -161,6 +215,7 @@ module.exports = {
 	RUNTIME_SOCKET_TOKEN_TTL_MS,
 	assertRuntimeAdminConfig,
 	createRuntimeAdminControls,
+	decideRuntimeSocketTokenRequest,
 	getRuntimeAdminTokenFromRequest,
 	isRuntimeAdminTokenValid,
 	resolveRuntimeAdminConfig,
