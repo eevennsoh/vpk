@@ -293,7 +293,9 @@ function parseImageProxyTarget(value) {
 	}
 
 	const hostname = parsedUrl.hostname.toLowerCase();
+	// Figma assets are https only, like Atlassian images.
 	const isFigmaAsset =
+		protocol === "https:" &&
 		IMAGE_PROXY_ALLOWED_HOSTS.has(hostname) &&
 		parsedUrl.pathname.startsWith(FIGMA_MCP_ASSET_PATH_PREFIX);
 	const isAtlassianImage = isAllowedAtlassianImageUrl(parsedUrl);
@@ -315,6 +317,9 @@ function parseImageProxyTarget(value) {
 // Atlassian attachments redirect to their media hosts; an IP literal, plain http or any
 // other host is refused. Provisional: the media hosts were not observed live here.
 const IMAGE_PROXY_MAX_REDIRECTS = 5;
+// All upstream requests one image-proxy request may make, over every candidate and every
+// redirect hop (provisional; up to 8 candidates times 6 hops before).
+const IMAGE_PROXY_MAX_UPSTREAM_FETCHES = 12;
 const IMAGE_PROXY_REDIRECT_HOST_SUFFIXES = ["figma.com", "atlassian.net", "atlassian.com"];
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
@@ -334,20 +339,29 @@ function isAllowedImageProxyRedirectTarget(url) {
  * GET an image-proxy URL, following redirects by hand: every hop is checked, and each
  * hop's headers are built for that hop (a token never follows a redirect to another host).
  * @param {URL} startUrl
- * @param {{ fetchFn: typeof fetch, buildHeaders: (url: URL) => Record<string, string>, signal?: AbortSignal }} options
- * @returns {Promise<{ response: Response, url: URL } | { refusedStatus: number }>}
+ * @param {{ fetchFn: typeof fetch, buildHeaders: (url: URL) => Record<string, string>, signal?: AbortSignal, budget?: { remaining: number } }} options
+ * Every request counts against `budget` (shared by all candidates of one proxy request);
+ * `authenticated` says whether the token went to any hop.
+ * @returns {Promise<{ response: Response, url: URL, authenticated: boolean } | { refusedStatus: number } | { budgetExhausted: true }>}
  */
-async function fetchImageProxyUrl(startUrl, { fetchFn, buildHeaders, signal }) {
+async function fetchImageProxyUrl(startUrl, { fetchFn, buildHeaders, signal, budget = { remaining: IMAGE_PROXY_MAX_UPSTREAM_FETCHES } }) {
 	let url = startUrl;
+	let authenticated = false;
 	for (let hop = 0; ; hop += 1) {
+		if (budget.remaining <= 0) {
+			return { budgetExhausted: true };
+		}
+		budget.remaining -= 1;
+		const headers = buildHeaders(url);
+		authenticated = authenticated || Boolean(headers?.Authorization);
 		const response = await fetchFn(url.toString(), {
 			method: "GET",
-			headers: buildHeaders(url),
+			headers,
 			redirect: "manual",
 			signal,
 		});
 		if (!REDIRECT_STATUSES.has(response.status)) {
-			return { response, url };
+			return { response, url, authenticated };
 		}
 		await response.body?.cancel?.().catch?.(() => {});
 		/** @type {URL | null} */
@@ -393,6 +407,7 @@ module.exports = {
 	ImageProxyResponseTooLargeError,
 	IMAGE_PROXY_MAX_HTML_BYTES,
 	IMAGE_PROXY_MAX_REDIRECTS,
+	IMAGE_PROXY_MAX_UPSTREAM_FETCHES,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	fetchImageProxyUrl,

@@ -7,6 +7,7 @@ const { createAbortControllerFromRequest } = require("../lib/http-request-abort"
 const { parseOrReject, speechTranscriptionOptionsSchema } = require("../lib/input-schemas");
 const {
 	IMAGE_PROXY_MAX_HTML_BYTES,
+	IMAGE_PROXY_MAX_UPSTREAM_FETCHES,
 	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
@@ -222,6 +223,8 @@ function createMediaRouter({
 					: []),
 			];
 			const attemptedUrls = new Set();
+			const upstreamBudget = { remaining: IMAGE_PROXY_MAX_UPSTREAM_FETCHES };
+			let budgetExhausted = false;
 			/** @type {number | null} */
 			let lastStatus = null;
 
@@ -238,15 +241,20 @@ function createMediaRouter({
 				attemptedUrls.add(currentUrlString);
 
 				const fetched = await fetchImageProxyUrl(currentUrl, {
+					budget: upstreamBudget,
 					buildHeaders: buildImageProxyHeaders,
 					fetchFn,
 					signal: abortController.signal,
 				});
+				if ("budgetExhausted" in fetched) {
+					budgetExhausted = true;
+					break;
+				}
 				if ("refusedStatus" in fetched) {
 					lastStatus = fetched.refusedStatus;
 					continue;
 				}
-				const { response: upstreamResponse, url: finalUrl } = fetched;
+				const { response: upstreamResponse, url: finalUrl, authenticated } = fetched;
 
 				if (!upstreamResponse.ok) {
 					lastStatus = upstreamResponse.status;
@@ -274,9 +282,13 @@ function createMediaRouter({
 						res.setHeader(name, value);
 					}
 					res.setHeader("Content-Length", String(payload.length));
+					// An image fetched with the server's token is never cacheable by a shared
+					// cache, whatever the upstream said.
 					res.setHeader(
 						"Cache-Control",
-						upstreamCacheControl || "public, max-age=300, stale-while-revalidate=300"
+						authenticated
+							? "private, max-age=300"
+							: upstreamCacheControl || "public, max-age=300, stale-while-revalidate=300"
 					);
 
 					return res.status(200).send(payload);
@@ -306,8 +318,9 @@ function createMediaRouter({
 			}
 
 			return res.status(502).json({
-				error:
-					lastStatus !== null
+				error: budgetExhausted
+					? `Image fetch gave up after ${IMAGE_PROXY_MAX_UPSTREAM_FETCHES} upstream requests`
+					: lastStatus !== null
 						? `Image fetch failed (${lastStatus})`
 						: "Upstream response is not an image",
 			});

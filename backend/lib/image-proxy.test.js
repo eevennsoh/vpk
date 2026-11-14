@@ -196,3 +196,8 @@ test("the token goes only to an image URL on a configured site, on every hop", (
 		assert.equal(auth(url), undefined, url);
 	}
 });
+
+test("a Figma asset URL must be https", () => {
+	assert.equal(parseImageProxyTarget("https://www.figma.com/api/mcp/asset/a").source, "figma");
+	assert.equal(parseImageProxyTarget("http://www.figma.com/api/mcp/asset/a").error, "Image URL is not allowed");
+});
