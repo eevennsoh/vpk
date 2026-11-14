@@ -323,6 +323,7 @@ test("ports --json derives each worktree's stack status from its record, session
 	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, listenerInWorktree: true, pid: null, childPid: null });
 	assert.equal(byName.orphan.status, "orphaned");
 	assert.equal(byName.orphan.nextAction, "stop");
+	assert.equal(byName.ready.nextDir, null, "a worktree without .next reports no sizes");
 });
 
 test("dev sessions include any name on the private socket, and only vpk-dev-* on the default one", (t) => {

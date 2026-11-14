@@ -66,6 +66,7 @@ async function collectDoctorReport({
 	requestHealth = (url) => require("../.agents/skills/vpk-verify/scripts/lib/stack.js").requestWorktreeOrigin(url),
 	stack = () => require("../.agents/skills/vpk-verify/scripts/lib/stack.js").collectDoctor(),
 	tmuxSessions = listTmuxSessions,
+	measureNext = () => require("./lib/next-dev-output").measureNextDir(repoRoot),
 } = {}) {
 	const preflightReport = summarizePreflight(preflight());
 	const portInfo = getPortInfo();
@@ -92,6 +93,7 @@ async function collectDoctorReport({
 			backendListening: stackReport.backendListening,
 			log: fs.existsSync(logFile) ? logFile : null,
 		},
+		nextDir: measureNext(),
 		env: {
 			files: Object.fromEntries(ENV_FILES.map((name) => [name, envFileExists(name) ? "present" : "absent"])),
 			settings: envSettingsFromHealth(healthJson),
@@ -132,6 +134,7 @@ function formatDoctorReport(report) {
 	lines.push(`${mark(report.stack.ok)} stack      ${report.stack.origin ?? "no origin"}; tmux ${sessions}; frontend ${report.stack.frontendListening ? `listening, GET / ${report.stack.frontendStatus || "no answer"}` : "not listening"}`);
 	if (report.stack.log) lines.push(`       log ${report.stack.log}`);
 	const files = Object.entries(report.env.files).map(([name, state]) => `${name} ${state}`).join(", ");
+	lines.push(`     .next      ${require("./lib/next-dev-output").describeNextDir(report.nextDir)}`);
 	lines.push(`     env        ${files}`);
 	if (report.env.settings) {
 		for (const [key, value] of Object.entries(report.env.settings)) lines.push(`       ${key}: ${value}`);

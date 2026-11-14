@@ -23,6 +23,7 @@ const { probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
 const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
+const { measureNextDir } = require("./lib/next-dev-output");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -554,6 +555,7 @@ async function collectStackRows({
 	isPortListening = probeLoopback,
 	isRecordedSessionAlive = isSessionAlive,
 	listenerInWorktree,
+	measureNext = measureNextDir,
 } = {}) {
 	const rows = await Promise.all(
 		worktrees.map(async (wt) => {
@@ -593,6 +595,8 @@ async function collectStackRows({
 				backend: service("backend"),
 				rovoPorts: readRovoPorts(wt.path).map(Number),
 				portlessUrl: frontend.listening ? findPortlessUrl(routes, String(frontend.port)) : null,
+				// Sizes of .next from du (null without one): dev output vs dev cache vs build.
+				nextDir: measureNext(wt.path),
 			};
 		}),
 	);
