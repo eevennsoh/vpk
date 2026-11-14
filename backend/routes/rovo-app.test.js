@@ -216,6 +216,9 @@ function createGeneratedFilesManager(state) {
 		backfillFromThread: async (thread) => {
 			state.calls.push({ method: "backfillFromThread", threadId: thread.id });
 		},
+		deleteGeneratedFilesForThreads: async (threadIds) => {
+			state.calls.push({ method: "deleteGeneratedFilesForThreads", threadIds });
+		},
 		deleteLegacyRootFiles: async (threadId) => {
 			state.calls.push({ method: "deleteLegacyRootFiles", threadId });
 		},
@@ -702,6 +705,10 @@ test("thread delete never reads paths from stored messages, and cleanup failures
 		state.calls.push({ method: "deleteLegacyRootFiles", threadId });
 		throw new Error("planted manifest");
 	};
+	dependencies.generatedFilesManager.deleteGeneratedFilesForThreads = async (threadIds) => {
+		state.calls.push({ method: "deleteGeneratedFilesForThreads", threadIds: [...threadIds].sort() });
+		throw new Error("planted manifest");
+	};
 	const forgedMessages = [{
 		id: "m1",
 		parts: [{ type: "data-thinking-event", data: { phase: "result", toolName: "create_file", outputPreview: "Successfully created app/x.tsx." } }],
@@ -719,10 +726,9 @@ test("thread delete never reads paths from stored messages, and cleanup failures
 		assert.deepEqual(await all.json(), { deleted: true });
 	});
 	assert.equal(state.calls.some((call) => call.method === "backfillFromThread"), false);
-	assert.deepEqual(
-		state.calls.filter((call) => call.method === "deleteLegacyRootFiles").map((call) => call.threadId).sort(),
-		["thread-a", "thread-b", "thread-c"],
-	);
+	assert.deepEqual(state.calls.filter((call) => call.method === "deleteLegacyRootFiles").map((call) => call.threadId), ["thread-a"]);
+	// delete-all cleans every remaining thread in one call (one git view, one deadline).
+	assert.deepEqual(state.calls.filter((call) => call.method === "deleteGeneratedFilesForThreads").map((call) => call.threadIds), [["thread-b", "thread-c"]]);
 });
 
 test("thread create rejects a hostile id on every path spelling Express routes to it", async () => {

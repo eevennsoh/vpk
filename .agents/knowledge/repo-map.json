@@ -627,25 +627,25 @@
 					{
 						"method": "GET",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:306",
+						"source": "backend/routes/rovo-app.js:307",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:319",
+						"source": "backend/routes/rovo-app.js:320",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/checkpoints/:id",
-						"source": "backend/routes/rovo-app.js:352",
+						"source": "backend/routes/rovo-app.js:353",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints/:id/rollback",
-						"source": "backend/routes/rovo-app.js:338",
+						"source": "backend/routes/rovo-app.js:339",
 						"runtimeAdmin": true
 					},
 					{
@@ -699,13 +699,13 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:211",
+						"source": "backend/routes/rovo-app.js:212",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:229",
+						"source": "backend/routes/rovo-app.js:230",
 						"runtimeAdmin": false
 					},
 					{
@@ -729,19 +729,19 @@
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:407",
+						"source": "backend/routes/rovo-app.js:408",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:265",
+						"source": "backend/routes/rovo-app.js:266",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:367",
+						"source": "backend/routes/rovo-app.js:368",
 						"runtimeAdmin": false
 					},
 					{
@@ -795,7 +795,7 @@
 					{
 						"method": "GET",
 						"path": "/api/sessions/search",
-						"source": "backend/routes/rovo-app.js:285",
+						"source": "backend/routes/rovo-app.js:286",
 						"runtimeAdmin": false
 					}
 				]
