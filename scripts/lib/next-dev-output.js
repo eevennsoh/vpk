@@ -7,15 +7,22 @@
 // `experimental.turbopackStaleOutputMaxAge` (7 days by default). It never prunes it while a
 // server runs, so an active stack's chunks grow by about a GiB an hour. The persistent Turbopack
 // cache (`.next/dev/cache`) is separate; it keeps restarts warm and lets Turbopack evict memory.
+// Two bounds keep the output to about one session: `dev:tmux:stop` removes it (and keeps the
+// cache), and next.config.ts lowers the stale-output age to a day for any other start (a
+// foreground `pnpm run dev`, `rovo:tmux`, a stop that was skipped or refused).
 //
 //   node scripts/lib/next-dev-output.js sizes [--worktree PATH]   JSON byte counts (du, sizes only)
 //   node scripts/lib/next-dev-output.js clean [--worktree PATH] [--socket S] [--session N]
 //                                     remove the dev output, keep the cache; refuses unless the
-//                                     stack is stopped or absent (`dev:tmux:stop --clean-dev-output`)
+//                                     stack is stopped or absent (run by `dev:tmux:stop`)
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+
+// `experimental.turbopackStaleOutputMaxAge` in next.config.ts: at dev start Next deletes dev
+// output files older than this (its default is 7 days). The persistent cache is untouched.
+const DEV_STALE_OUTPUT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 // The directories Next itself prunes at dev start (TURBOPACK_OUTPUT_DIRS sit under these two).
 const DEV_OUTPUT_DIRS = ["dev/static", "dev/server"];
@@ -114,6 +121,7 @@ function describeNextDir(sizes) {
 
 module.exports = {
 	DEV_OUTPUT_DIRS,
+	DEV_STALE_OUTPUT_MAX_AGE_MS,
 	cleanDevOutput,
 	describeNextDir,
 	duTree,
