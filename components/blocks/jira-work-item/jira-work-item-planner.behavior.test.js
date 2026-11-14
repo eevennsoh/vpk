@@ -1,6 +1,6 @@
 // The experimental work item's context column and Activity composer as a user drives them: the
 // metadata disclosure and its collapsed preview, the AI Planner's search-review-accept flow below
-// the title, and the composer routing prompts, agents and skills into sessions.
+// the title, the Output resource row, and the composer routing prompts, agents, skills and new sessions.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -251,6 +251,87 @@ test("Use skills starts a Rovo session running the picked skill", async () => {
 	assert.deepEqual(JSON.parse(document.querySelector("[data-sessions]").textContent), [
 		{ agentId: "skill:summarize-comments", agentName: "Rovo", command: "/Summarize comments", title: "Summarize comments" },
 	]);
+	await view.unmount();
+});
+
+function composerSessions() {
+	return JSON.parse(document.querySelector("[data-sessions]").textContent);
+}
+
+test("picking an agent from the context pill starts its session with an @agent command", async () => {
+	const view = await renderComponent({ source: COMPOSER });
+	await view.click(button(view, "Assign agents"));
+	await view.click([...document.querySelectorAll('[role="option"]')].find((node) => node.textContent.includes("Readiness Checker")));
+	const sessions = composerSessions();
+	assert.equal(sessions.length, 1);
+	assert.equal(sessions[0].agentName, "Readiness Checker");
+	assert.equal(sessions[0].command, "@Readiness Checker");
+	await view.unmount();
+});
+
+// Tag appends its text to the remove label.
+const REMOVE_NEW_SESSION = "Continue in existing session instead New session";
+
+// Mention a working agent again and choose "Start a new session" from the target menu.
+async function chooseNewSessionFor(view, followUp) {
+	await view.fill(textbox(view, COMMENT_PLACEHOLDER), "@Readiness Checker check the bid");
+	await view.click(button(view, "Submit"));
+	assert.equal(composerSessions().length, 1, "the first mention starts a session");
+	await view.fill(textbox(view, COMMENT_PLACEHOLDER), followUp);
+	const menu = document.querySelector("[data-jira-work-item-session-target-menu]");
+	assert.equal(menu === null, false, "the agent is working, so the target menu appears");
+	await view.click([...menu.querySelectorAll('[role="option"]')].find((node) => node.textContent.includes("Start a new session")));
+	assert.equal(document.querySelector("[data-jira-work-item-session-target-menu]") === null, true, "choosing closes the menu");
+}
+
+test("after choosing Start a new session, a removable New session tag sits by submit and the prompt opens a new session", async () => {
+	const view = await renderComponent({ source: COMPOSER });
+	await chooseNewSessionFor(view, "@Readiness Checker also check pricing");
+	const tag = [...document.querySelectorAll("*")].find((node) => node.children.length === 0 && node.textContent === "New session");
+	assert.equal(tag === undefined, false, "the New session tag shows");
+	assert.equal(button(view, REMOVE_NEW_SESSION) === undefined, false, "the tag is removable");
+
+	await view.click(button(view, "Submit"));
+	assert.deepEqual(composerSessions().map(({ command }) => command), [
+		"@Readiness Checker check the bid",
+		"@Readiness Checker also check pricing",
+	], "the prompt starts a second session instead of replying to the first");
+	await view.unmount();
+});
+
+test("removing the New session tag sends the prompt to the existing session", async () => {
+	const view = await renderComponent({ source: COMPOSER });
+	await chooseNewSessionFor(view, "@Readiness Checker also check pricing");
+	await view.click(button(view, REMOVE_NEW_SESSION));
+	assert.equal(button(view, REMOVE_NEW_SESSION) === undefined, true, "the tag is gone");
+
+	await view.click(button(view, "Submit"));
+	assert.equal(composerSessions().length, 1, "the prompt continues the existing session");
+	await view.unmount();
+});
+
+const RESOURCES = `
+import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+import { JiraWorkItemProvider } from "@/components/blocks/jira-work-item/experimental/context-jira-work-item";
+import { ContextResources } from "@/components/blocks/jira-work-item/experimental/components/context-resources";
+import { RFP_101_WORK_ITEM } from "@/components/projects/jira/data/rfp-work-items";
+export default function Probe({ outputs }) {
+	return <ThemeWrapper><JiraWorkItemProvider initialPreset="filled" workItem={RFP_101_WORK_ITEM}><ContextResources outputs={outputs} /></JiraWorkItemProvider></ThemeWrapper>;
+}
+`;
+
+function leafWithText(text) {
+	return [...document.querySelectorAll("*")].find((node) => node.children.length === 0 && node.textContent === text);
+}
+
+test("the Output resource row shows only when the work item has outputs", async () => {
+	const view = await renderComponent({ props: { outputs: [] }, source: RESOURCES });
+	assert.equal(leafWithText("Output") === undefined, true, "no outputs, no Output row");
+
+	await view.rerender({ outputs: ["Bid readiness report"] });
+	const label = leafWithText("Output");
+	assert.equal(label === undefined, false, "outputs add the Output row");
+	assert.equal(before(label, leafWithText("Bid readiness report")), true, "the row lists the outputs after its label");
 	await view.unmount();
 });
 
