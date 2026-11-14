@@ -80,6 +80,7 @@
 		"verify:url-credentials": "node scripts/verify-url-credentials.js",
 		"deps:check": "node scripts/deps-check.mjs",
 		"deps:update": "pnpm update && node scripts/deps-check.mjs",
+		"update:vpk-grab": "node scripts/update-vpk-grab.mjs",
 		"sync:rovo:skills": "node scripts/sync-rovo-skills.js",
 		"sync:emoji-data": "node scripts/sync-emoji-data.mjs",
 		"generate:prompt": "node --experimental-strip-types scripts/generate-catalog-prompt.js",
@@ -231,7 +232,7 @@
 		"knip": "^6.44.1",
 		"portless": "^0.15.8",
 		"postcss": "^8.5.30",
-		"react-grab": "^0.2.0",
+		"react-grab": "https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.2/react-grab-0.2.0-vpk.2.tgz",
 		"shadcn": "^4.22.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "npm:@typescript/typescript6@^6.0.2"
