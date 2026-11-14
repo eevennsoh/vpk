@@ -99,13 +99,6 @@
 			"targetStart": "\t\"{targetSlug}\": {"
 		},
 		{
-			"end": "\n\t),",
-			"file": "components/website/registry/projects.ts",
-			"kind": "block",
-			"start": "\t\"{sourceSlug}\": dynamic(",
-			"targetStart": "\t\"{targetSlug}\": dynamic("
-		},
-		{
 			"file": "components/blocks/jira-work-item/index.tsx",
 			"kind": "line",
 			"source": "import { {sourceExperimentalPascal}JiraWorkItem } from \"@/components/blocks/jira-work-item/{sourceExperimentalSlug}/{sourceExperimentalSlug}-jira-work-item\";",
@@ -293,6 +286,23 @@
 		}
 	],
 	"postApplyCommands": [
+		{
+			"command": [
+				"node",
+				"scripts/generate-catalog-registry.js"
+			],
+			"id": "generate-catalog-registry",
+			"writes": [
+				"components/website/registry/arts.ts",
+				"components/website/registry/blocks.ts",
+				"components/website/registry/projects.ts",
+				"components/website/registry/ui-charts.ts",
+				"components/website/registry/ui-custom/primary.ts",
+				"components/website/registry/ui/primary.ts",
+				"components/website/registry/utility.ts",
+				"components/website/registry/visual.ts"
+			]
+		},
 		{
 			"command": [
 				"node",

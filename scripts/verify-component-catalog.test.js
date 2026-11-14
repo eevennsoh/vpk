@@ -70,8 +70,7 @@ test("component add plan for a project names its route page and its inline detai
 	assert.deepEqual(plan.paths.routePages, ["app/new-board/page.tsx"]);
 	assert.equal(plan.status.routePages, false);
 	assert.equal(plan.generated.detailBarrel, false);
-	// The projects registry is not generated yet (owner decision: it holds frozen projects).
-	assert.equal(plan.generated.primaryRegistry, false);
+	assert.equal(plan.generated.primaryRegistry, true);
 
 	const existing = getComponentAddPlan({ ...empty, category: "projects", components: [], routePages: ["app/butter-v0/page.tsx", "app/butter/page.tsx"], slug: "butter" });
 	assert.deepEqual(existing.paths.routePages, ["app/butter-v0/page.tsx", "app/butter/page.tsx"]);
