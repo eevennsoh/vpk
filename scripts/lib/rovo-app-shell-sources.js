@@ -25,6 +25,8 @@ const SHARED_SHELL_CODE_FILES = [
 	"components/projects/rovo-core/hooks/use-sidebar-hover-reveal.ts",
 	// C-5 slice 3: artifact workspace.
 	"components/projects/rovo-core/hooks/use-rovo-app-shell-artifact-workspace.ts",
+	// C-5 slice 4: typed scroll anchor and timeline selection.
+	"components/projects/rovo-core/hooks/use-rovo-app-shell-scroll-anchor.ts",
 ];
 
 const ROVO_APP_SHELL_SOURCE_FILES = Object.freeze({

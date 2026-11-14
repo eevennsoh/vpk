@@ -61,7 +61,6 @@ import { useStudioAgentResultRegistration } from "@/components/projects/studio/h
 import { useAgentUrlSync } from "@/hooks/use-agent-url-sync";
 import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/rovo-core/lib/rovo-app-smart-generation-layout";
-import { deriveRovoAppTimelineItems } from "@/components/projects/rovo-core/lib/rovo-app-timeline";
 import {
 	buildDeterministicTriggerThinkingParts,
 	DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
@@ -112,7 +111,6 @@ import {
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
 import { useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
-import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { LeftNavigation } from "@/components/blocks/top-navigation/components/left-navigation";
 import { RightNavigation } from "@/components/blocks/top-navigation/components/right-navigation";
 import SearchSuggestionsPanel from "@/components/blocks/top-navigation/components/search-suggestions-panel";
@@ -162,12 +160,12 @@ import type {
 	RealtimeVoiceShellResult,
 	RovoAppRealtimeShellAdapter,
 	ScrollActiveTimelineSelection,
-	TypedScrollAnchorSource,
 } from "@/components/projects/rovo-core/lib/rovo-app-shell-types";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import { useScreenAssistantRegion } from "@/components/projects/sidebar-chat/hooks/use-screen-assistant-region";
 import { reduceDictationPresentation } from "@/components/projects/sidebar-chat/lib/sidebar-chat-state";
 import { useRovoAppShellArtifactWorkspace } from "@/components/projects/rovo-core/hooks/use-rovo-app-shell-artifact-workspace";
+import { useRovoAppShellScrollAnchor, useRovoAppShellScrollFollow } from "@/components/projects/rovo-core/hooks/use-rovo-app-shell-scroll-anchor";
 import { useRovoAppShellSidebarChrome } from "@/components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome";
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import type { ChatPanelGreetingProps, ChatPanelLocalConversation } from "@/components/projects/sidebar-chat/page";
@@ -952,14 +950,23 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		{ isActive: false, transcriptPreview: null },
 	);
 	const [scrollActiveTimelineSelection, setScrollActiveTimelineSelection] = useState<ScrollActiveTimelineSelection | null>(null);
-	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
-	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
+	const scrollAnchor = useRovoAppShellScrollAnchor();
+	const {
+		activateTailFollowMode,
+		queueTypedScrollAnchor,
+		realtimeTypedResponseStartedRef,
+		resetTypedScrollAnchorState,
+		scrollAnchorMessageId,
+		scrollFollowMode,
+		setScrollAnchorMessageId,
+		setScrollFollowMode,
+		typedScrollAnchorSourceRef,
+	} = scrollAnchor;
 	const [optimisticUserMessage, setOptimisticUserMessage] = useState<ReturnType<typeof createRovoAppUserMessage> | null>(null);
 	const [isDefaultHomeSubmitTransition, setIsDefaultHomeSubmitTransition] = useState(false);
 	const [dismissedBrowserArtifactKey, setDismissedBrowserArtifactKey] = useState<string | null>(null);
 	const injectedRealtimeThreadContextKeyRef = useRef<string | null>(null);
 	const injectedRealtimeArtifactContextKeyRef = useRef<string | null>(null);
-	const pendingTypedScrollAnchorRef = useRef(false);
 	const isDefaultAgentHomeStateRef = useRef(false);
 	const studioAgentCreationThreadKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const studioAgentCreationThreadTouchedAtRef = useLazyRef<Map<string, number>>(() => new Map());
@@ -1010,6 +1017,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		setActiveAgentConfigView("configure");
 	}, [
 		setActiveAgentConfigState,
+		setScrollAnchorMessageId,
+		setScrollFollowMode,
 		studioAgentCreationThreadKeysRef,
 		studioAgentCreationThreadTouchedAtRef,
 	]);
@@ -1032,9 +1041,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		},
 	], [isResettingStudioDemo, resetStudioDemo]);
 	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
-	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
-	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
-	const realtimeTypedResponseStartedRef = useRef(false);
 
 	const markStudioAgentCreationThread = useCallback((threadId: string | null) => {
 		if (!threadId) {
@@ -1333,26 +1339,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		},
 		[chat],
 	);
-
-	const resetTypedScrollAnchorState = useCallback(() => {
-		pendingTypedScrollAnchorRef.current = false;
-		previousTypedAnchorUserMessageIdRef.current = null;
-		typedScrollAnchorSourceRef.current = "none";
-		realtimeTypedResponseStartedRef.current = false;
-	}, []);
-
-	const activateTailFollowMode = useCallback(() => {
-		resetTypedScrollAnchorState();
-		setScrollAnchorMessageId(null);
-		setScrollFollowMode("bottom");
-	}, [resetTypedScrollAnchorState]);
-
-	const queueTypedScrollAnchor = useCallback((source: Exclude<TypedScrollAnchorSource, "none">, latestUserMessageId: string | null) => {
-		pendingTypedScrollAnchorRef.current = true;
-		previousTypedAnchorUserMessageIdRef.current = latestUserMessageId;
-		typedScrollAnchorSourceRef.current = source;
-		realtimeTypedResponseStartedRef.current = false;
-	}, []);
 
 	const {
 		appendRealtimeMessage,
@@ -1703,7 +1689,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				}
 				await ensureRealtimeAssistantMessage(payload?.messageId ?? null);
 			},
-			[ensureRealtimeAssistantMessage, realtimeConversation],
+			[ensureRealtimeAssistantMessage, realtimeConversation, realtimeTypedResponseStartedRef, typedScrollAnchorSourceRef],
 			),
 		onAssistantTextDelta: handleRealtimeAssistantTextDelta,
 		onAssistantTextCompleted: handleRealtimeAssistantTextCompleted,
@@ -2235,28 +2221,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		studioAgentRegistry,
 		unmarkStudioAgentCreationThread,
 	});
-	const timelineItems = useMemo(() => {
-		return deriveRovoAppTimelineItems(displayMessages);
-	}, [displayMessages]);
-	const latestTimelineMessageId = timelineItems[0]?.id ?? null;
-	const scrollActiveTimelineId = scrollActiveTimelineSelection
-		&& scrollActiveTimelineSelection.runtimeThreadId === chat.runtimeThreadId
-		&& scrollActiveTimelineSelection.latestTimelineMessageId === latestTimelineMessageId
-		? scrollActiveTimelineSelection.messageId
-		: null;
-	const activeTimelineMessageId = scrollActiveTimelineId ?? latestTimelineMessageId;
-	const handleScrollActiveTimelineChange = useCallback((messageId: string | null) => {
-		setScrollActiveTimelineSelection(
-			messageId
-				? {
-					latestTimelineMessageId,
-					messageId,
-					runtimeThreadId: chat.runtimeThreadId,
-				}
-				: null,
-		);
-	}, [chat.runtimeThreadId, latestTimelineMessageId]);
-
 	useEffect(() => {
 		if (!optimisticUserMessage) {
 			return;
@@ -2275,39 +2239,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		}
 	}, [chat.messages, optimisticUserMessage]);
 
-	useEffect(() => {
-		const latestUserMessageId = getLatestUserMessageId(chat.messages);
-		if (pendingTypedScrollAnchorRef.current && latestUserMessageId && latestUserMessageId !== previousTypedAnchorUserMessageIdRef.current) {
-			pendingTypedScrollAnchorRef.current = false;
-			previousTypedAnchorUserMessageIdRef.current = null;
-			setScrollAnchorMessageId(latestUserMessageId);
-			setScrollFollowMode("target");
-		}
-	}, [chat.messages]);
-
-	useEffect(() => {
-		activateTailFollowMode();
-	}, [activateTailFollowMode, chat.runtimeThreadId]);
-
-	useEffect(() => {
-		if (typedScrollAnchorSourceRef.current !== "realtime" || !realtimeTypedResponseStartedRef.current) {
-			return;
-		}
-
-		if (realtime.generationState !== "complete" && realtime.generationState !== "idle") {
-			return;
-		}
-
-		activateTailFollowMode();
-	}, [activateTailFollowMode, realtime.generationState]);
-
-	useEffect(() => {
-		if (typedScrollAnchorSourceRef.current !== "standard" || chat.isStreaming) {
-			return;
-		}
-
-		activateTailFollowMode();
-	}, [activateTailFollowMode, chat.isStreaming]);
+	const { activeTimelineMessageId, handleScrollActiveTimelineChange, timelineItems } = useRovoAppShellScrollFollow({
+		anchor: scrollAnchor,
+		displayMessages,
+		isStreaming: chat.isStreaming,
+		messages: chat.messages,
+		realtimeGenerationState: realtime.generationState,
+		runtimeThreadId: chat.runtimeThreadId,
+		scrollActiveTimelineSelection,
+		setScrollActiveTimelineSelection,
+	});
 
 	const isArtifactOpen = chat.panelState !== "closed";
 	const {
