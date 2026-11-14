@@ -195,7 +195,8 @@ test("dev-tmux plain start restarts an existing session with no listening fronte
 		assert.match(tmuxLog, /new-session/);
 		assert.equal(
 			fs.readFileSync(fake.cleanupLogPath, "utf8").trim(),
-			"./scripts/cleanup-worktree-listeners.js"
+			"./scripts/cleanup-worktree-listeners.js",
+			"a restart inside start sweeps listeners but keeps the dev output (only the stop command cleans it)"
 		);
 	} finally {
 		fake.cleanup();
@@ -687,18 +688,21 @@ test("a start that fails after creating its session stops that session; a start 
 	}
 });
 
-test("stop removes the dev output only when asked with --clean-dev-output", () => {
+test("stop removes the dev output unless asked to keep it with --keep-dev-output", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
 		const cleans = () => (fs.existsSync(fake.cleanupLogPath) ? fs.readFileSync(fake.cleanupLogPath, "utf8").split("\n").filter((line) => line.includes("next-dev-output.js")) : []);
 		const plain = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop"]));
 		assert.equal(plain.status, 0, plain.stderr);
-		assert.deepEqual(cleans(), []);
-
-		const cleaned = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop", "--", "--clean-dev-output"]));
-		assert.equal(cleaned.status, 0, cleaned.stderr);
 		assert.equal(cleans().length, 1);
 		assert.match(cleans()[0], new RegExp(`next-dev-output\\.js clean --worktree ${worktreeRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} --socket vpk-dev --session vpk-dev-clean$`));
+
+		const kept = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop", "--", "--keep-dev-output"]));
+		assert.equal(kept.status, 0, kept.stderr);
+		assert.equal(cleans().length, 1, "--keep-dev-output skips the clean");
+
+		const retired = withPortFiles(null, null, () => startAs(fake, "vpk-dev-clean", {}, ["stop", "--", "--clean-dev-output"]));
+		assert.equal(retired.status, 1, "the old opt-in flag is gone; cleaning is the default");
 	} finally {
 		fake.cleanup();
 	}

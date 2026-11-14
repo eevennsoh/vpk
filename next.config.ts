@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 import packageMetadata from "./package.json";
+import { DEV_STALE_OUTPUT_MAX_AGE_MS } from "./scripts/lib/next-dev-output.js";
 import { assertStaticExportThroughWrapper } from "./scripts/lib/static-export-guard.js";
 
 assertStaticExportThroughWrapper();
@@ -39,6 +40,10 @@ const nextConfig: NextConfig = {
 		// The custom `webpack` hook below would otherwise switch the build to the main process;
 		// the build worker keeps webpack's memory out of it, as before the hook existed.
 		webpackBuildWorker: true,
+		// next dev keeps its output across restarts and prunes only files older than this, only at
+		// start (default 7 days); an active stack writes about a GiB an hour. `dev:tmux:stop` removes
+		// the output itself; this bounds every other start. The Turbopack cache is not affected.
+		turbopackStaleOutputMaxAge: DEV_STALE_OUTPUT_MAX_AGE_MS,
 	},
 
 	turbopack: {
