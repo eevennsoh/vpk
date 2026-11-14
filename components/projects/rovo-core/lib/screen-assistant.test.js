@@ -9,6 +9,7 @@ const {
 	getStudioScreenAssistantRegionTargetHints,
 	getStudioScreenAssistantPointerContext,
 	getStudioScreenAssistantVisibleTargets,
+	getViewportPointFromScreenAssistantTarget,
 	groundStudioScreenAssistantTarget,
 } = require("./screen-assistant.ts");
 
@@ -556,4 +557,14 @@ test("grounds to pointer fallback only when no explicit locator is provided", ()
 		}),
 		pointerTarget,
 	);
+});
+
+test("a grounded target's viewport point is its centre, labelled by label, field id or id", () => {
+	const rect = { height: 20, width: 100, x: 10, y: 40 };
+	assert.deepEqual(getViewportPointFromScreenAssistantTarget({ fieldId: "name", label: "Agent name", rect }), { coordinateSpace: "viewport", label: "Agent name", x: 60, y: 50 });
+	assert.equal(getViewportPointFromScreenAssistantTarget({ fieldId: "name", id: "agent-name", rect }).label, "name");
+	assert.equal(getViewportPointFromScreenAssistantTarget({ id: "agent-name", rect }).label, "agent-name");
+	assert.equal(getViewportPointFromScreenAssistantTarget({ rect }).label, "Target");
+	assert.equal(getViewportPointFromScreenAssistantTarget({ label: "No rect" }), null);
+	assert.equal(getViewportPointFromScreenAssistantTarget(null), null);
 });
