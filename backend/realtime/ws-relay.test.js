@@ -26,8 +26,15 @@ function createRequest(url, headers = {}) {
 
 function createSocket() {
 	const socket = {
+		closeListeners: [],
 		destroyed: false,
 		writes: [],
+		once(eventName, listener) {
+			if (eventName === "close") this.closeListeners.push(listener);
+		},
+		emitClose() {
+			for (const listener of this.closeListeners.splice(0)) listener();
+		},
 		destroy() {
 			this.destroyed = true;
 		},
@@ -217,7 +224,7 @@ test("verifyRuntimeSocketUpgrade accepts a valid scoped runtime token", () => {
 		},
 	);
 
-	assert.deepEqual(result, { ok: true });
+	assert.deepEqual(result, { ok: true, socketToken: "token" });
 });
 
 test("verifyRuntimeSocketUpgrade rejects invalid tokens with token-dependent status", () => {
@@ -612,4 +619,124 @@ test("a failed preview attach on a socket whose send and close throw never becom
 	await new Promise(setImmediate);
 	assert.deepEqual(unhandled, []);
 	assert.equal(terminated, true);
+});
+
+test("over the connection cap an upgrade gets 503 before any handshake, and a closed socket frees its slot", () => {
+	const { createConnectionLimiter } = require("./ws-connection-limits");
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies(),
+		connectionLimiters: { preview: createConnectionLimiter(), realtime: createConnectionLimiter({ maxTotal: 2, maxPerAddress: 2 }) },
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	const open = () => {
+		const socket = createSocket();
+		const request = { ...createRequest("/api/realtime/audio-conversation"), socket: { remoteAddress: "10.0.0.9" } };
+		upgrade(request, socket, Buffer.alloc(0));
+		return socket;
+	};
+	const first = open();
+	open();
+	const third = open();
+	assert.match(third.writes[0], /^HTTP\/1\.1 503 /u);
+	assert.equal(third.destroyed, true);
+	assert.equal(instances[0].handledUpgrades.length, 2, "the refused upgrade never reached the handshake");
+	first.emitClose();
+	open();
+	assert.equal(instances[0].handledUpgrades.length, 3);
+});
+
+function captureTimers() {
+	const timers = [];
+	return {
+		timers,
+		timerOptions: {
+			setTimeoutImpl: (fn, ms) => {
+				const timer = { fn, ms, cleared: false, unref() {} };
+				timers.push(timer);
+				return timer;
+			},
+			clearTimeoutImpl: (timer) => {
+				timer.cleared = true;
+			},
+		},
+	};
+}
+
+test("one socket token holds at most WS_MAX_CONNECTIONS_PER_TOKEN sockets, and preview and realtime have separate pools", () => {
+	const { WS_MAX_CONNECTIONS_PER_TOKEN, createConnectionLimiter } = require("./ws-connection-limits");
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isRuntimeSocketTokenValid: () => true,
+			runtimeAdminRequired: true,
+			runtimeAdminToken: "secret",
+		}),
+		connectionLimiters: { preview: createConnectionLimiter({ maxTotal: 2 }), realtime: createConnectionLimiter({ maxTotal: 64 }) },
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	const open = (url) => {
+		const socket = createSocket();
+		upgrade({ ...createRequest(url), socket: { remoteAddress: "10.0.0.9" } }, socket, Buffer.alloc(0));
+		return socket;
+	};
+	for (let index = 0; index < WS_MAX_CONNECTIONS_PER_TOKEN; index += 1) {
+		open("/api/realtime/audio-conversation?realtimeToken=one");
+	}
+	const overToken = open("/api/realtime/audio-conversation?realtimeToken=one");
+	assert.match(overToken.writes[0], /^HTTP\/1\.1 503 /u, "a fifth socket on one token");
+	open("/api/realtime/audio-conversation?realtimeToken=two");
+	assert.equal(instances[0].handledUpgrades.length, WS_MAX_CONNECTIONS_PER_TOKEN + 1, "another token still gets a slot");
+
+	// The preview pool is full; realtime is not affected.
+	open("/api/browser-workspaces/workspace-1/live?previewToken=p1");
+	open("/api/browser-workspaces/workspace-2/live?previewToken=p2");
+	const previewFull = open("/api/browser-workspaces/workspace-3/live?previewToken=p3");
+	assert.match(previewFull.writes[0], /^HTTP\/1\.1 503 /u);
+	open("/api/realtime/audio-conversation?realtimeToken=three");
+	assert.equal(instances[0].handledUpgrades.length, WS_MAX_CONNECTIONS_PER_TOKEN + 2);
+});
+
+test("a socket that is already destroyed frees its slot at once", () => {
+	const { createConnectionLimiter } = require("./ws-connection-limits");
+	const limiter = createConnectionLimiter({ maxTotal: 1 });
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, { ...createRegistrationDependencies(), connectionLimiters: { preview: createConnectionLimiter(), realtime: limiter }, webSocketImpl });
+	const gone = createSocket();
+	gone.destroyed = true;
+	server.handlers.get("upgrade")({ ...createRequest("/api/realtime/audio-conversation"), socket: { remoteAddress: "10.0.0.9" } }, gone, Buffer.alloc(0));
+	assert.equal(instances[0].handledUpgrades.length, 0);
+	assert.equal(limiter.size, 0);
+});
+
+test("a socket that sends no frame is closed after its first-frame timeout; one that does is kept", () => {
+	const { timers, timerOptions } = captureTimers();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(createFakeServer(), {
+		...createRegistrationDependencies(),
+		firstFrameTimeouts: { preview: 10, realtime: 60 },
+		timerOptions,
+		webSocketImpl,
+	});
+	const silent = createFakeWs();
+	instances[0].listeners.get("connection")(silent);
+	const talking = createFakeWs();
+	instances[0].listeners.get("connection")(talking);
+	talking.listeners.get("message")(Buffer.from("{}"));
+	assert.deepEqual(timers.map((timer) => timer.ms), [60, 60]);
+	assert.equal(timers[1].cleared, true, "a frame clears the timeout");
+	timers[0].fn();
+	assert.equal(silent.closed, true);
+	assert.equal(talking.closed, false);
+
+	const preview = createFakeWs();
+	instances[1].listeners.get("connection")(preview, {}, "workspace-1");
+	assert.equal(timers[2].ms, 10);
+	preview.listeners.get("close")();
+	assert.equal(timers[2].cleared, true, "close clears the timeout");
 });
