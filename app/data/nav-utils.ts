@@ -1,16 +1,9 @@
 import type { NavItem } from "@/components/website/website-sidebar-nav";
-import { compareByNameNatural } from "@/lib/utils";
+import { compareByNameNatural, slugToTitleCase } from "@/lib/utils";
 
 export interface ComponentLike {
 	name: string;
 	slug: string;
-}
-
-function toTitleCase(slug: string): string {
-	return slug
-		.split("-")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ");
 }
 
 function sortNavItemsByName(items: readonly NavItem[]): NavItem[] {
@@ -195,7 +188,7 @@ export function buildNavItems(
 				if (children.includes(c.slug) && !emittedGroups.has(parentSlug)) {
 					emittedGroups.add(parentSlug);
 					items.push({
-						name: toTitleCase(parentSlug),
+						name: slugToTitleCase(parentSlug),
 						href: `${hrefPrefix}${parentSlug}`,
 						expandOnly: true,
 						children: buildChildNavItems(
