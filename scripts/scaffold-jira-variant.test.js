@@ -124,11 +124,6 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		`assert.match(indexSource, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js", [
-		`const TREES = ["experimental-v2", "${experimentalSlug}"];`,
-		`if (tree === "${experimentalSlug}") {}`,
-		"",
-	].join("\n"));
 }
 
 function createFixtureWorkspace({
@@ -225,7 +220,7 @@ function createFixtureWorkspace({
 		`\t\ttargetFile: "components/blocks/jira-work-item/${experimental}/${experimental}-jira-work-item.tsx",`,
 		"\t},",
 	].join("\n");
-	writeFixtureFile(root, "scripts/verify-lazy-load-boundaries.js", [
+	writeFixtureFile(root, "scripts/lib/lazy-load-rules.js", [
 		"const DEFAULT_DEFERRED_MODULE_RULES = [",
 		...(includeDeferredRules ? [deferredObject] : []),
 		"];",
@@ -237,6 +232,14 @@ function createFixtureWorkspace({
 		"]);",
 		"",
 	].join("\n"));
+	writeFixtureFile(root, "scripts/lazy-load-heavy-baseline.json", `${JSON.stringify({
+		note: "fixture baseline",
+		entries: {
+			"app/admin/page.tsx": ["recharts"],
+			[`app/${identity.slug}/page.tsx`]: ["@tiptap/", "shiki"],
+			[`components/projects/${identity.slug}/page.tsx`]: ["shiki"],
+		},
+	}, null, "\t")}\n`);
 	writeStableWorkItemOwnerFixtures(root, identity);
 
 	return root;
@@ -264,7 +267,7 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		'\t}',
 		'}',
 		'if (kind === "lazy") {',
-		'\tfor (const file of ["scripts/verify-lazy-load-boundaries.js", "scripts/verify-lazy-load-boundaries.test.js"]) {',
+		'\tfor (const file of ["scripts/lib/lazy-load-rules.js", "scripts/verify-lazy-load-boundaries.test.js", "scripts/lazy-load-heavy-baseline.json"]) {',
 		'\t\tconst source = fs.readFileSync(file, "utf8");',
 		'\t\tif (!source.includes(target)) process.exit(4);',
 		'\t}',
@@ -367,7 +370,7 @@ test("dry-run planning covers v2 to v3 assets, browser tests, and lazy-load wiri
 			summary.registrations
 				.filter((entry) => (
 					entry.kind === "array-object-all" &&
-					entry.file.startsWith("scripts/verify-lazy-load-boundaries")
+					["scripts/lib/lazy-load-rules.js", "scripts/verify-lazy-load-boundaries.test.js"].includes(entry.file)
 				))
 				.map((entry) => entry.insertedCount),
 			[1, 1],
@@ -387,7 +390,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 		const expectedOwners = [
 			"app/data/details/blocks/jira-work-item.ts",
 			"app/preview/blocks/[slug]/layout.tsx",
-			"components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"components/blocks/jira-work-item/index.tsx",
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 			"components/blocks/jira-work-item/page.tsx",
@@ -443,10 +445,6 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 		assert.match(
 			prepared("app/preview/blocks/[slug]/layout.tsx"),
 			/"jira-work-item-demo-experimental-v4"/u,
-		);
-		assert.match(
-			prepared("components/blocks/jira-work-item/activity-composer-context-bar.source.test.js"),
-			/TREES = \["experimental-v2", "experimental-v3", "experimental-v4"\]/u,
 		);
 		for (const contractOwner of [
 			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
@@ -844,6 +842,155 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 		assert.equal(applied.status, 0, applied.stderr);
 		assert.equal(JSON.parse(applied.stdout).planFingerprint, planFingerprint);
 		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), true);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+// Registers an existing target block per reusable rule; `omit` skips rules whose target contains it.
+function addExistingTargetBlockVariant(root, version, { omit } = {}) {
+	const target = versionIdentity(version);
+	const source = versionIdentity(target.previousVersion);
+	const values = {
+		sourceExperimentalPascal: source.experimentalPascal,
+		sourceExperimentalSlug: source.experimentalSlug,
+		sourcePreviousVersion: source.previousVersion,
+		sourceVersion: source.version,
+		targetExperimentalPascal: target.experimentalPascal,
+		targetExperimentalSlug: target.experimentalSlug,
+	};
+	const expand = (text) => text.replace(/\{(\w+)\}/gu, (match, key) => values[key] ?? match);
+	writeFixtureFile(
+		root,
+		`components/blocks/jira-work-item/${target.experimentalSlug}/${target.experimentalSlug}-jira-work-item.tsx`,
+		`export { ExperimentalV1JiraWorkItem as ${target.experimentalPascal}JiraWorkItem } from "./shared";\n`,
+	);
+	const manifest = JSON.parse(readFileSync(DEFAULT_MANIFEST_PATH, "utf8"));
+	for (const rule of manifest.registrations) {
+		if (!rule.reusableTarget) continue;
+		const text = expand(rule.target ?? rule.targetStart ?? rule.targetMarker);
+		if (omit && text.includes(omit)) continue;
+		const absolutePath = path.join(root, rule.file);
+		if (!existsSync(absolutePath)) continue;
+		writeFileSync(absolutePath, `${readFileSync(absolutePath, "utf8")}// registered: ${text}\n`);
+	}
+	return target;
+}
+
+test("planner reuses an experimental block variant that already exists for the target", async () => {
+	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v4" });
+	try {
+		addExistingTargetBlockVariant(root, "v5");
+		const { createJiraVariantPlan, loadVariantManifest, summarizePlan } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		const summary = summarizePlan(createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }));
+
+		assert.deepEqual(summary.reusedTargets, [{
+			id: "experimental-block",
+			path: "components/blocks/jira-work-item/experimental-v5",
+			registeredMarkers: ["experimental-v5", "ExperimentalV5"],
+		}]);
+		assert.ok(summary.copies.some((entry) => entry.target === "components/projects/jira-golden-journey-v5/page.tsx"));
+		assert.ok(summary.copies.every((entry) => !entry.target.startsWith("components/blocks/jira-work-item/")));
+		assert.ok(summary.registrationFiles.every((entry) => !entry.file.startsWith("components/blocks/")));
+		assert.ok(summary.registrations.filter((entry) => entry.reused).length > 0);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("planner refuses to reuse a target block variant that is not registered", async () => {
+	const root = createFixtureWorkspace({ source: "v4" });
+	try {
+		writeFixtureFile(
+			root,
+			"components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item.tsx",
+			"export const orphan = true;\n",
+		);
+		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		assert.throws(
+			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
+			/existing experimental-block target components\/blocks\/jira-work-item\/experimental-v5 is not registered in components\/blocks\/jira-work-item\/index\.tsx/u,
+		);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("planner refuses to reuse a target block variant missing one demo registration", async () => {
+	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v4" });
+	try {
+		addExistingTargetBlockVariant(root, "v5", { omit: "jira-work-item-demo-experimental-v5-empty" });
+		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		assert.throws(
+			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
+			/is not registered in components\/website\/registry\/blocks-variants\.ts: missing jira-work-item-demo-experimental-v5-empty/u,
+		);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("a stray or longer slug mention does not count as a registration", async () => {
+	const root = createFixtureWorkspace({ source: "v4" });
+	try {
+		writeFixtureFile(
+			root,
+			"components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item.tsx",
+			"export const orphan = true;\n",
+		);
+		const indexPath = path.join(root, "components/blocks/jira-work-item/index.tsx");
+		writeFileSync(indexPath, `${readFileSync(indexPath, "utf8")}// see "experimental-v50" and ExperimentalV50JiraWorkItem\n`);
+		const { createJiraVariantPlan, loadVariantManifest, registrationTokens } = await loadGenerator();
+		assert.deepEqual(
+			registrationTokens("\t\"jira-work-item-demo-experimental-v5-empty\": dynamic(", ["experimental-v5"]),
+			["jira-work-item-demo-experimental-v5-empty"],
+		);
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		assert.throws(
+			() => createJiraVariantPlan({ manifest, root, source: "v4", target: "v5" }),
+			/is not registered in components\/blocks\/jira-work-item\/index\.tsx: missing /u,
+		);
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("a source without per-variant block test suites still plans", async () => {
+	const root = createFixtureWorkspace({ source: "v1" });
+	try {
+		rmSync(path.join(root, "components/blocks/jira-work-item/jira-work-item-experimental-v1-chrome.test.js"));
+		const { createJiraVariantPlan, loadVariantManifest, summarizePlan } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		const summary = summarizePlan(createJiraVariantPlan({ manifest, root, source: "v1", target: "v2" }));
+		assert.ok(summary.skippedCopySources.includes("components/blocks/jira-work-item/jira-work-item-experimental-v1*.test.js"));
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
+test("lazy-load registrations keep indentation and copy the heavy-reach baseline entries", async () => {
+	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v2" });
+	try {
+		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+		const plan = createJiraVariantPlan({ manifest, root, source: "v2", target: "v3" });
+		const prepared = (file) => plan.registrationOperations
+			.find((entry) => entry.file === file)
+			.preparedContent.toString("utf8");
+		assert.match(prepared("scripts/lib/lazy-load-rules.js"), /\t\},\n\t\{\n\t\tentryFile: "components\/projects\/jira-golden-journey-v3\/page\.tsx"/u);
+		assert.doesNotMatch(prepared("scripts/lib/lazy-load-rules.js"), /\n\{/u);
+		const baseline = JSON.parse(prepared("scripts/lazy-load-heavy-baseline.json"));
+		assert.deepEqual(Object.keys(baseline.entries), [
+			"app/admin/page.tsx",
+			"app/jira-golden-journey-v2/page.tsx",
+			"app/jira-golden-journey-v3/page.tsx",
+			"components/projects/jira-golden-journey-v2/page.tsx",
+			"components/projects/jira-golden-journey-v3/page.tsx",
+		]);
+		assert.deepEqual(baseline.entries["app/jira-golden-journey-v3/page.tsx"], ["@tiptap/", "shiki"]);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
