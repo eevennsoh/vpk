@@ -67,3 +67,40 @@ test("a frame over the size cap closes that socket with 1009 and leaves the back
 	const health = await fetch(`http://${host}:${port}/healthcheck`);
 	assert.deepEqual(await health.json(), { status: "ok" });
 });
+
+test("past the per-address socket cap the real backend answers an upgrade with 503 and keeps running", { timeout: 60_000 }, async (t) => {
+	const { WS_MAX_CONNECTIONS_PER_ADDRESS } = require("./ws-connection-limits");
+	const backend = startBackend(t, { env: OFFLINE_REALTIME_ENV });
+	const { host, port } = await backend.listening;
+	const url = `ws://${host}:${port}/api/realtime/audio-conversation`;
+	const sockets = [];
+	t.after(() => {
+		for (const socket of sockets) socket.terminate();
+	});
+	for (let index = 0; index < WS_MAX_CONNECTIONS_PER_ADDRESS; index += 1) {
+		const { socket } = await openSocket(url);
+		sockets.push(socket);
+	}
+	const refused = new WebSocket(url);
+	sockets.push(refused);
+	refused.on("error", () => {});
+	const [, response] = await once(refused, "unexpected-response");
+	assert.equal(response.statusCode, 503);
+	response.resume();
+
+	// Closing one frees its slot.
+	const closed = once(sockets[0], "close");
+	sockets[0].close();
+	await closed;
+	let reopened;
+	for (let attempt = 0; attempt < 50 && !reopened; attempt += 1) {
+		const candidate = new WebSocket(url);
+		sockets.push(candidate);
+		candidate.on("error", () => {});
+		const outcome = await Promise.race([once(candidate, "open").then(() => "open"), once(candidate, "unexpected-response").then(([, res]) => { res.resume(); return "refused"; })]);
+		if (outcome === "open") reopened = candidate;
+	}
+	assert.ok(reopened, "a slot was freed");
+	const health = await fetch(`http://${host}:${port}/healthcheck`);
+	assert.deepEqual(await health.json(), { status: "ok" });
+});

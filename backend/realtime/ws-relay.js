@@ -3,6 +3,7 @@
 const WebSocket = require("ws");
 
 const { RealtimeSession } = require("../lib/openai-realtime");
+const { createConnectionLimiter, startHeartbeat, trackHeartbeat } = require("./ws-connection-limits");
 const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
@@ -133,6 +134,8 @@ function registerBackendWebSocketRelays(server, {
 	isAllowedRuntimeSocketOrigin,
 	isDraining = /** @returns {boolean} */ () => false,
 	isRuntimeSocketTokenValid,
+	connectionLimiter = createConnectionLimiter(),
+	heartbeatOptions = {},
 	realtimeSessionImpl = RealtimeSession,
 	runtimeAdminRequired,
 	runtimeAdminToken,
@@ -174,6 +177,18 @@ function registerBackendWebSocketRelays(server, {
 
 	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: REALTIME_MAX_PAYLOAD_BYTES });
 	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: PREVIEW_MAX_PAYLOAD_BYTES });
+	const stopHeartbeat = startHeartbeat([realtimeWss, browserPreviewWss], heartbeatOptions);
+	// One slot per socket, across both servers, held until the raw socket closes (also when
+	// the handshake fails). Over a cap the upgrade gets 503.
+	const acquireConnectionSlot = (request, socket) => {
+		const release = connectionLimiter.tryAcquire(request.socket?.remoteAddress);
+		if (!release) {
+			rejectUpgrade(socket, 503, "Service Unavailable");
+			return false;
+		}
+		socket.once?.("close", release);
+		return true;
+	};
 	const verifyUpgrade = (requestUrl, request, options) => {
 		return verifyRuntimeSocketUpgrade(requestUrl, request, {
 			isAllowedRuntimeSocketOrigin,
@@ -210,6 +225,9 @@ function registerBackendWebSocketRelays(server, {
 				rejectUpgrade(socket, verification.statusCode, verification.message);
 				return;
 			}
+			if (!acquireConnectionSlot(request, socket)) {
+				return;
+			}
 			browserPreviewWss.handleUpgrade(request, socket, head, (ws) => {
 				browserPreviewWss.emit("connection", ws, request, workspaceId);
 			});
@@ -223,6 +241,9 @@ function registerBackendWebSocketRelays(server, {
 			});
 			if (!verification.ok) {
 				rejectUpgrade(socket, verification.statusCode, verification.message);
+				return;
+			}
+			if (!acquireConnectionSlot(request, socket)) {
 				return;
 			}
 			realtimeWss.handleUpgrade(request, socket, head, (ws) => {
@@ -244,6 +265,7 @@ function registerBackendWebSocketRelays(server, {
 	}));
 
 	realtimeWss.on("connection", guardListener("realtime connection", (ws) => {
+		trackHeartbeat(ws);
 		consoleImpl.log("[REALTIME] Client connected to /api/realtime/audio-conversation");
 		const onError = () => closeSocket(ws);
 
@@ -276,6 +298,7 @@ function registerBackendWebSocketRelays(server, {
 	}, { consoleImpl, onError: (ws) => closeSocket(ws) }));
 
 	browserPreviewWss.on("connection", guardListener("preview connection", (ws, _request, workspaceId) => {
+		trackHeartbeat(ws);
 		const mirrorBrowser = getMirrorBrowser(workspaceId);
 		if (mirrorBrowser) {
 			mirrorBrowser.attachClient(ws);
@@ -324,6 +347,7 @@ function registerBackendWebSocketRelays(server, {
 	return {
 		browserPreviewWss,
 		realtimeWss,
+		stopHeartbeat,
 	};
 }
 

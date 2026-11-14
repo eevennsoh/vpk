@@ -59,3 +59,27 @@ test("attaching a client to a mirror whose first capture fails never becomes an 
 	assert.equal(mirror.isScreencasting(), false);
 	assert.equal(warn.mock.calls.some((call) => String(call.arguments[0]).includes("Screencast start failed")), true);
 });
+
+test("two attaches racing on a mirror start one screencast interval", async (t) => {
+	const intervals = [];
+	t.mock.method(globalThis, "setInterval", (fn) => {
+		const timer = { fn, unref() {} };
+		intervals.push(timer);
+		return timer;
+	});
+	t.mock.method(globalThis, "clearInterval", () => {});
+	let releaseCapture;
+	const captured = new Promise((resolve) => {
+		releaseCapture = resolve;
+	});
+	const mirror = new HeadlessMirrorBrowser({ mirrorId: "mirror-race" });
+	mirror._page = { screenshot: async () => { await captured; return Buffer.from("jpeg"); } };
+	const client = () => ({ readyState: 1, send() {}, on() {} });
+	mirror.attachClient(client());
+	mirror.attachClient(client());
+	releaseCapture();
+	await new Promise(setImmediate);
+	await new Promise(setImmediate);
+	assert.equal(intervals.length, 1);
+	assert.equal(mirror.isScreencasting(), true);
+});
