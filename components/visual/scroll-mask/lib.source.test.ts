@@ -261,7 +261,7 @@ test("ScrollMaskEdgeOverlay is a pointer-events-none band gated by the caller", 
 
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {
 	assert.match(
-		readWorkspaceFile("app/data/components.ts"),
+		readWorkspaceFile("app/data/component-manifest.ts"),
 		/visualComponent\("scroll-mask", "Scroll Mask", "@\/components\/visual\/scroll-mask"\)/,
 	);
 	assert.match(

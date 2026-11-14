@@ -221,7 +221,7 @@ function createFixtureWorkspace({
 		`const fixtureVersion = "${identity.version}";\nexport { fixtureVersion };\n`,
 	);
 
-	for (const filePath of ["app/data/components.ts", "app/data/component-manifest.ts"]) {
+	for (const filePath of ["app/data/component-manifest.ts"]) {
 		writeFixtureFile(root, filePath, [
 			...(filePath.endsWith("component-manifest.ts")
 				? ["export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {", "};", ""]
@@ -291,7 +291,7 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		'\tif (repoMap.state !== "generated") process.exit(2);',
 		'}',
 		'if (kind === "catalog") {',
-		'\tfor (const file of ["app/data/components.ts", "app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts"]) {',
+		'\tfor (const file of ["app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts"]) {',
 		'\t\tconst source = fs.readFileSync(file, "utf8");',
 		'\t\tif (!source.includes(target)) process.exit(3);',
 		'\t}',
@@ -573,8 +573,8 @@ test("planner rejects a symbolic-link registration file", async () => {
 	const root = createFixtureWorkspace({ source: "v1" });
 	const external = mkdtempSync(path.join(os.tmpdir(), "vpk-jira-variant-registration-"));
 	try {
-		const registrationPath = path.join(root, "app/data/components.ts");
-		const externalPath = path.join(external, "components.ts");
+		const registrationPath = path.join(root, "app/data/component-manifest.ts");
+		const externalPath = path.join(external, "component-manifest.ts");
 		writeFileSync(externalPath, readFileSync(registrationPath));
 		rmSync(registrationPath);
 		symlinkSync(externalPath, registrationPath);
@@ -750,13 +750,13 @@ test("mutation rolls back copied paths, registrations, and generated files on va
 		} = await loadGenerator();
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		Object.assign(manifest, addFixtureValidationCommands(root, { failValidation: true }));
-		const componentsBefore = readFileSync(path.join(root, "app/data/components.ts"), "utf8");
+		const componentsBefore = readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8");
 		const repoMapBefore = readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8");
 		const plan = createJiraVariantPlan({ manifest, root, source: "v2", target: "v3" });
 
 		assert.throws(() => applyJiraVariantPlan(plan), /command verify-catalog failed with status 7/u);
 		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
-		assert.equal(readFileSync(path.join(root, "app/data/components.ts"), "utf8"), componentsBefore);
+		assert.equal(readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8"), componentsBefore);
 		assert.equal(readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8"), repoMapBefore);
 	} finally {
 		rmSync(root, { force: true, recursive: true });

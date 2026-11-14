@@ -80,12 +80,6 @@
 	],
 	"registrations": [
 		{
-			"file": "app/data/components.ts",
-			"kind": "line",
-			"source": "\tprojectComponent(\"{sourceSlug}\", \"{sourceTitle}\"),",
-			"target": "\tprojectComponent(\"{targetSlug}\", \"{targetTitle}\"),"
-		},
-		{
 			"file": "app/data/component-manifest.ts",
 			"kind": "line",
 			"source": "\tprojectComponent(\"{sourceSlug}\", \"{sourceTitle}\"),",
