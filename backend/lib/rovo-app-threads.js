@@ -1,3 +1,4 @@
+// @ts-check
 const { randomUUID } = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -14,6 +15,7 @@ function createId() {
 	return `rovo-app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** @param {Date | number | string} [value] */
 function toIsoDate(value = Date.now()) {
 	const date = value instanceof Date ? value : new Date(value);
 	return date.toISOString();
@@ -273,6 +275,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		}
 	};
 
+	/** @param {{ limit?: number }} [options] */
 	const listThreads = async ({ limit } = {}) => {
 		let entries;
 		try {
@@ -339,6 +342,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	const deleteThread = async (threadId) =>
 		enqueueThreadMutation(threadId, () => deleteThreadDir(threadId));
 
+	/** @param {{ skipThreadId?: string }} [options] */
 	const pruneOldThreads = async ({ skipThreadId } = {}) => {
 		const threads = await listThreads({ limit: RETENTION_LIMIT + 20 });
 		if (threads.length <= RETENTION_LIMIT) {
@@ -359,6 +363,11 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		}));
 	};
 
+	/**
+	 * @param {{ id?: string, title?: unknown, messages?: unknown, realtimeMessages?: unknown, visibility?: unknown,
+	 *   modelId?: unknown, provider?: unknown, activeDocumentId?: unknown, sessionId?: unknown, sessionMode?: unknown,
+	 *   activeRun?: unknown, createdAt?: unknown, updatedAt?: unknown }} [thread]
+	 */
 	const createThread = async ({
 		id,
 		title,

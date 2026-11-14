@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // The backend process lifecycle as one state value, owned by backend-shutdown.js.
@@ -14,11 +15,23 @@
 
 const BACKEND_PROCESS_STATUSES = Object.freeze(["starting", "listening", "draining", "stopped"]);
 
+/**
+ * @typedef {"starting" | "listening" | "draining" | "stopped"} BackendProcessStatus
+ * @typedef {{ status: BackendProcessStatus, signals: number, exitCode: number | null }} BackendProcessState
+ * @typedef {{ type: "LISTENING" | "SIGNAL" | "DRAINED" | "TIMED_OUT" | "FORCED" }} BackendProcessEvent
+ */
+
+/** @type {Readonly<BackendProcessState>} */
 const INITIAL_BACKEND_PROCESS = Object.freeze({ status: "starting", signals: 0, exitCode: null });
 
 // A second signal while draining is ignored; the third forces exit.
 const FORCE_EXIT_SIGNAL_COUNT = 3;
 
+/**
+ * @param {Readonly<BackendProcessState>} state
+ * @param {BackendProcessEvent} event
+ * @returns {Readonly<BackendProcessState>}
+ */
 function transitionBackendProcess(state, event) {
 	switch (event?.type) {
 		case "LISTENING":
@@ -41,6 +54,7 @@ function transitionBackendProcess(state, event) {
 //   ignore     — a repeat signal while the steps run
 //   force-exit — enough repeats: stop waiting
 //   none       — the process already stopped
+/** @param {Readonly<BackendProcessState>} state */
 function decideSignalAction(state) {
 	if (state.status !== "draining") return { action: "none" };
 	if (state.signals === 1) return { action: "drain" };

@@ -1,3 +1,4 @@
+// @ts-check
 // Initialize console early for startup debugging
 console.log("[STARTUP] Server process starting...");
 console.error("[STARTUP] Startup initiated");
@@ -47,8 +48,11 @@ const {
 
 console.log("[STARTUP] Dependencies loaded");
 
+/** @type {ReturnType<typeof createBackendRuntimeComposition> | null} */
 let runtime = null;
+/** @type {import("node:http").Server | null} */
 let server = null;
+/** @type {Array<{ clients: Set<{ terminate(): void }> }>} */
 let webSocketServers = [];
 
 const serverShutdownSteps = createHttpServerShutdownSteps({
@@ -73,10 +77,12 @@ async function startServer() {
 		return;
 	}
 
-	runtime = createBackendRuntimeComposition();
+	const currentRuntime = createBackendRuntimeComposition();
+	runtime = currentRuntime;
 
 	const publicPath = path.join(__dirname, "public");
 	registerStaticExportServing(runtime.app, {
+		// @ts-expect-error -- static-export-serving.js has no JSDoc, so its options type is inferred from the defaults and lacks expressImpl.
 		expressImpl: express,
 		publicPath,
 	});
@@ -87,24 +93,27 @@ async function startServer() {
 
 	// One answer to "is the backend draining?" for HTTP requests and WebSocket upgrades.
 	const isDraining = () => backendProcess.getStatus() === "draining";
-	const requestHandler = refuseRequestsWhileDraining(runtime.app, { isDraining });
-	server = http.createServer(requestHandler).listen(runtime.port, resolveBackendListenHost(), async () => {
+	const requestHandler = refuseRequestsWhileDraining(currentRuntime.app, { isDraining });
+	const httpServer = http.createServer(requestHandler);
+	server = httpServer;
+	// The port may be a string from PORT; listen() takes either.
+	httpServer.listen(/** @type {number} */ (/** @type {unknown} */ (currentRuntime.port)), resolveBackendListenHost(), async () => {
 		if (!backendProcess.markListening()) {
-			server.close();
+			httpServer.close();
 			return;
 		}
-		const address = server.address();
+		const address = /** @type {import("node:net").AddressInfo | null} */ (httpServer.address());
 		console.log(`[PROCESS] listening on ${address?.address}:${address?.port}`);
-		await logBackendServerReady(runtime.serverReadyDependencies);
+		await logBackendServerReady(currentRuntime.serverReadyDependencies);
 	});
 
-	server.on("error", (err) => {
+	httpServer.on("error", (err) => {
 		console.error("Server error:", err);
 		process.exit(1);
 	});
 
 	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, {
-		...runtime.webSocketRelayDependencies,
+		...currentRuntime.webSocketRelayDependencies,
 		isDraining,
 	});
 	webSocketServers = [browserPreviewWss, realtimeWss];
