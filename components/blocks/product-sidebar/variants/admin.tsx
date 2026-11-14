@@ -2,13 +2,13 @@
 
 import { token } from "@/lib/tokens";
 import { Divider } from "../components/divider";
-import { ADMIN_ICONS, ADMIN_NAV_SECTIONS } from "@/components/projects/admin/data/admin-data";
-import { useAdmin } from "@/components/projects/admin/components/admin-context";
+import { ADMIN_ICONS, ADMIN_NAV_SECTIONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { useAdmin } from "@/components/blocks/product-sidebar/variants/admin-context";
 import {
 	AdminExpandableSection,
 	AdminSidebarGroup,
 	AdminSidebarRootLeaf,
-} from "@/components/projects/admin/components/admin-sidebar-items";
+} from "@/components/blocks/product-sidebar/variants/admin-sidebar-items";
 
 export function AdminSidebar() {
 	const { selectedItem, setSelectedItem } = useAdmin();

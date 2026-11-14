@@ -5,8 +5,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { AdminIconComponent, AdminNavLeaf, AdminNavSection } from "../data/admin-data";
-import { ADMIN_ICONS } from "../data/admin-data";
+import type { AdminIconComponent, AdminNavLeaf, AdminNavSection } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { ADMIN_ICONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
 
 interface AdminSidebarLeafProps {
 	item: AdminNavLeaf;

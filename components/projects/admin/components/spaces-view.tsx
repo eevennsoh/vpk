@@ -3,7 +3,8 @@
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
-import { ADMIN_ICONS, ADMIN_SPACES } from "../data/admin-data";
+import { ADMIN_ICONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { ADMIN_SPACES } from "../data/admin-data";
 import { AdminCard, AdminPageShell, AdminViewHeader } from "./view-primitives";
 
 export function SpacesView() {

@@ -1273,9 +1273,9 @@
       "count": 2
     }
   },
-  "components/blocks/product-sidebar/variants/admin.tsx": {
-    "no-restricted-imports": {
-      "count": 3
+  "components/blocks/product-sidebar/variants/admin-context.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
     }
   },
   "components/blocks/product-sidebar/variants/jira.source.test.js": {
@@ -1580,11 +1580,6 @@
   },
   "components/charts/radial/chart-radial-text.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/projects/admin/components/admin-context.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },

@@ -2,7 +2,8 @@
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import { ADMIN_ICONS, ADMIN_USER_METRICS } from "../data/admin-data";
+import { ADMIN_ICONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { ADMIN_USER_METRICS } from "../data/admin-data";
 import {
 	AdminMetricCard,
 	AdminPageShell,

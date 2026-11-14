@@ -20,7 +20,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { ADMIN_AUDIT_LOGS, ADMIN_ICONS, type AdminAuditStatus } from "../data/admin-data";
+import { ADMIN_ICONS } from "@/components/blocks/product-sidebar/data/admin-navigation";
+import { ADMIN_AUDIT_LOGS, type AdminAuditStatus } from "../data/admin-data";
 import { AdminCard, AdminPageShell, AdminViewHeader } from "./view-primitives";
 
 const STATUS_OPTIONS = [
