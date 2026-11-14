@@ -847,11 +847,7 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 	}
 });
 
-/**
- * Registers an existing target block variant the way a hand-written variant
- * would: every reusable registration rule's target text is present in its file.
- * `omit` drops the registrations whose target text contains that substring.
- */
+// Registers an existing target block per reusable rule; `omit` skips rules whose target contains it.
 function addExistingTargetBlockVariant(root, version, { omit } = {}) {
 	const target = versionIdentity(version);
 	const source = versionIdentity(target.previousVersion);
