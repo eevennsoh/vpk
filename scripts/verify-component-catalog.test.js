@@ -9,6 +9,7 @@ const {
 	LIFECYCLE_STATUSES,
 	collectDemoFiles,
 	collectRegistryData,
+	findRoutePages,
 	getComponentAddPlan,
 	isTitleCaseName,
 	loadComponentEntries,
@@ -43,12 +44,53 @@ test("component add plan derives split ui registry and detail targets", () => {
 	assert.equal(plan.snippets.detailRecord, '"new-button": NEW_BUTTON_DETAIL,');
 	assert.equal(plan.snippets.manifestEntry, 'uiComponent("new-button", "New Button")');
 	assert.equal(plan.snippets.primaryRegistryEntry, '"new-button": dynamic(() => import("../../demos/ui/new-button-demo"), { ssr: false }),');
+	// app/data/components.ts repeats every manifest entry, so a new entry edits it too.
+	assert.equal(plan.paths.componentEntries, "app/data/components.ts");
+	assert.equal(plan.snippets.componentEntry, 'uiComponent("new-button", "New Button")');
+	assert.deepEqual(plan.paths.routePages, []);
 	assert.deepEqual(plan.status, {
 		detail: false,
 		manifest: false,
 		primaryRegistry: false,
+		routePages: false,
 		variantRegistrySlugs: [],
 	});
+});
+
+test("component add plan for a project names its route page and its inline detail record, not a leaf", () => {
+	const empty = { detailRecords: { projects: {} }, registryData: { primary: { projects: {} }, variants: { projects: {} } } };
+	const plan = getComponentAddPlan({ ...empty, category: "projects", components: [], slug: "new-board" });
+	assert.equal(plan.paths.detailLeaf, null);
+	assert.equal(plan.paths.detailBarrel, "app/data/details/projects.ts");
+	assert.equal(plan.snippets.detailImport, null);
+	assert.equal(plan.snippets.detailRecord, '"new-board": { description: "…" },');
+	assert.equal(plan.paths.componentEntries, "app/data/components.ts");
+	assert.deepEqual(plan.paths.routePages, ["app/new-board/page.tsx"]);
+	assert.equal(plan.status.routePages, false);
+
+	const existing = getComponentAddPlan({ ...empty, category: "projects", components: [], routePages: ["app/butter-v0/page.tsx", "app/butter/page.tsx"], slug: "butter" });
+	assert.deepEqual(existing.paths.routePages, ["app/butter-v0/page.tsx", "app/butter/page.tsx"]);
+	assert.equal(existing.status.routePages, true);
+
+	const art = getComponentAddPlan({ category: "arts", components: [], detailRecords: { arts: {} }, registryData: { primary: { arts: {} }, variants: { arts: {} } }, slug: "new-art" });
+	assert.deepEqual(art.paths.routePages, ["app/arts/new-art/page.tsx"]);
+	assert.equal(art.paths.detailLeaf, null);
+});
+
+test("route pages come from the repo map: catalog-backed pages and pages the entry's folder owns", (t) => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-add-plan-routes-"));
+	t.after(() => rmSync(cwd, { force: true, recursive: true }));
+	mkdirSync(path.join(cwd, ".agents/knowledge"), { recursive: true });
+	writeFileSync(path.join(cwd, ".agents/knowledge/repo-map.json"), JSON.stringify({ appPages: { pages: [
+		{ primaryOwner: { category: "projects", kind: "catalog", slug: "jira" }, source: "app/jira/page.tsx" },
+		{ primaryOwner: { category: "projects", kind: "catalog", slug: "jira-queue" }, source: "app/jira-queue/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/personal-graph/page.tsx" },
+		{ primaryOwner: { kind: "shell", sources: ["components/arts/personal-graph"] }, source: "app/arts/personal-graph/page.tsx" },
+	] } }));
+	assert.deepEqual(findRoutePages("projects", "jira", { cwd }), ["app/jira/page.tsx"]);
+	assert.deepEqual(findRoutePages("arts", "personal-graph", { cwd }), ["app/arts/personal-graph/page.tsx", "app/personal-graph/page.tsx"]);
+	assert.deepEqual(findRoutePages("projects", "missing", { cwd }), []);
+	assert.deepEqual(findRoutePages("projects", "jira", { cwd: path.join(cwd, "nowhere") }), []);
 });
 
 test("component add plan reports existing graph entries and utility demo paths", () => {
@@ -91,6 +133,7 @@ test("component add plan reports existing graph entries and utility demo paths",
 		detail: true,
 		manifest: true,
 		primaryRegistry: true,
+		routePages: false,
 		variantRegistrySlugs: ["agent-browser-empty"],
 	});
 });
