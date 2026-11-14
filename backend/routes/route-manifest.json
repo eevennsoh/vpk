@@ -1829,12 +1829,6 @@
 		},
 		{
 			"method": "POST",
-			"nextPath": "/api/sprint-board/tasks",
-			"source": "app/api/sprint-board/tasks/route.ts",
-			"targets": []
-		},
-		{
-			"method": "POST",
 			"nextPath": "/api/standup",
 			"source": "app/api/standup/route.ts",
 			"targets": [

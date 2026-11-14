@@ -4,11 +4,6 @@
       "count": 1
     }
   },
-  "app/api/sprint-board/tasks/route.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "app/arts/page.test.js": {
     "no-restricted-syntax": {
       "count": 4

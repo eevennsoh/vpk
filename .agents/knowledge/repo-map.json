@@ -10,7 +10,7 @@
 	},
 	"routes": {
 		"summary": {
-			"ownerCount": 102
+			"ownerCount": 101
 		},
 		"owners": [
 			{
@@ -2380,18 +2380,6 @@
 								"source": "app/api/speech-transcription/route.ts"
 							}
 						]
-					}
-				]
-			},
-			{
-				"kind": "next-api",
-				"owner": "app/api/sprint-board/tasks/route.ts",
-				"routes": [
-					{
-						"method": "POST",
-						"path": "/api/sprint-board/tasks",
-						"source": "app/api/sprint-board/tasks/route.ts",
-						"targets": []
 					}
 				]
 			},
