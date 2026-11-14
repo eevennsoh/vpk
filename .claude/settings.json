@@ -12,7 +12,19 @@
 			}
 		]
 	},
+	"env": {
+		"OPENSSL_CONF": "/dev/null"
+	},
+	"permissions": {
+		"deny": [
+			"Bash(tmux kill-server:*)",
+			"Bash(portless prune:*)"
+		]
+	},
 	"sandbox": {
+		"network": {
+			"allowLocalBinding": true
+		},
 		"filesystem": {
 			"allowRead": [
 				"./.env.local.example",
