@@ -53,7 +53,8 @@ const { acquireHeavyRunLock } = require(${JSON.stringify(LOCK_MODULE)});
 		let output = "";
 		child.stdout.on("data", (chunk) => { output += chunk; });
 		child.stderr.on("data", (chunk) => { output += chunk; });
-		const exited = new Promise((resolve) => child.once("exit", (code) => resolve(code)));
+		// `close`, not `exit`: `exit` can come before the pipes are drained, and callers read the output.
+		const exited = new Promise((resolve) => child.once("close", (code) => resolve(code)));
 		return { exited, output: () => output };
 	};
 	return { dir, env, lockPath, log, go: (id) => writeFileSync(path.join(dir, `go-${id}`), ""), spawnTracked, startHolder };
@@ -86,7 +87,10 @@ test("a holder that was killed leaves a stale lock that the next run takes over"
 
 	const b = ws.startHolder("B");
 	await waitFor(() => ws.log().includes("start B"), "B to take over");
-	assert.match(b.stderr(), new RegExp(`pid ${a.child.pid} is gone; taking over its stale lock`, "u"));
+	// B writes this line to its stderr pipe before it logs `start B` to the file, but the pipe's data
+	// can reach this process after the file write is visible: wait for the text itself.
+	const takeover = `pid ${a.child.pid} is gone; taking over its stale lock`;
+	await waitFor(() => b.stderr().includes(takeover), "B to report the takeover on stderr");
 	ws.go("B");
 	assert.equal(await b.exited, 0);
 	assert.deepEqual(ws.log(), ["start A", "start B", "end B"]);

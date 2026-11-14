@@ -172,7 +172,7 @@ const SUBAGENTS_HOOK_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const SUBAGENT_NAVIGATOR_TOP_HOOK_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "hooks", "use-subagent-navigator-top.ts"),
+	path.join(process.cwd(), "components/blocks/subagent/hooks/use-subagent-navigator-top.ts"),
 	"utf8",
 );
 const SUBAGENT_PROMPTS_LIB_SOURCE = fs.readFileSync(

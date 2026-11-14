@@ -240,24 +240,10 @@
 		"lib/rovo-runtime-types.ts"
 	],
 	"dependencies": [
-		"backend/package.json#jsonwebtoken",
-		"package.json#@json-render/ink",
-		"package.json#@json-render/react-three-fiber",
-		"package.json#@json-render/remotion",
-		"package.json#@json-render/yaml",
-		"package.json#@radix-ui/react-slider",
-		"package.json#@radix-ui/react-use-controllable-state",
-		"package.json#@tobilu/qmd",
-		"package.json#cors",
-		"package.json#ink",
-		"package.json#next-themes",
-		"package.json#remotion",
-		"package.json#use-stick-to-bottom"
+		"backend/package.json#jsonwebtoken"
 	],
 	"devDependencies": [
-		"package.json#@react-grab/mcp",
-		"package.json#emojibase-data",
-		"package.json#portless"
+		"package.json#@react-grab/mcp"
 	],
 	"optionalPeerDependencies": [],
 	"unlisted": [

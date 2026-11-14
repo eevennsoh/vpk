@@ -6,11 +6,11 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban";
 import { BOARD_COLUMN_ACTION_REVEAL } from "@/components/blocks/jira-kanban/experimental/lib/board-column-action-reveal";
-import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/components/work-item-agent-selector";
 import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
 import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
-import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import {
 	Avatar,
 	AvatarFallback,

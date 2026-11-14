@@ -1,3 +1,5 @@
+import { lerp } from "@/lib/math";
+
 // The choreography: one repeating cycle that assembles the teamwork graph,
 // collapses it into the Rovo mark, settles the camera square-on, extrudes the
 // mark's facets in turn, and fades out before repeating.
@@ -199,10 +201,6 @@ function easeOvershoot(value: number): number {
 	const p = t - 1;
 	const overshot = 1 + (back + 1) * p * p * p + back * p * p;
 	return smooth + (overshot - smooth) * smooth;
-}
-
-function lerp(from: number, to: number, amount: number): number {
-	return from + (to - from) * amount;
 }
 
 interface StageWindow {

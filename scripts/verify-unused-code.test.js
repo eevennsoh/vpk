@@ -47,7 +47,10 @@ function scratch(t, baseline) {
 	return cwd;
 }
 
+const baseRuns = { count: 0 };
+
 function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = TODAY } = {}) {
+	baseRuns.count = 0;
 	const out = [];
 	const err = [];
 	const git = (args) => {
@@ -55,9 +58,12 @@ function run(cwd, { argv = [], knipReport = TODAY, base = null, baseReport = TOD
 		if (args[0] === "show") return base === null ? null : JSON.stringify(base);
 		return null;
 	};
-	const baseKnip = () => collectFindings(baseReport);
+	const baseKnip = () => {
+		baseRuns.count += 1;
+		return collectFindings(baseReport);
+	};
 	const status = main(argv, { baseKnip, cwd, env: {}, error: (line) => err.push(line), git, knip: () => knipReport, log: (line) => out.push(line) });
-	return { status, stderr: err.join("\n"), stdout: out.join("\n") };
+	return { baseRuns: baseRuns.count, status, stderr: err.join("\n"), stdout: out.join("\n") };
 }
 
 test("findings are keyed by path and name, without line numbers", () => {
@@ -74,7 +80,9 @@ test("an unchanged tree passes", (t) => {
 	const result = run(cwd, { base: baseline });
 	assert.equal(result.status, 0, result.stderr);
 	assert.match(result.stdout, /only shrink \(2 baselined: 1 files, 1 dependencies/u);
-	assert.match(result.stdout, /reported, not enforced\): 1 exports \(0 vs base01234\)/u);
+	// A passing run does not pay for the base tree: counts only, no delta.
+	assert.equal(result.baseRuns, 0);
+	assert.match(result.stdout, /reported, not enforced\): 1 exports\.$/mu);
 });
 
 test("a new unused file fails with its path", (t) => {
@@ -130,6 +138,7 @@ test("problems the base tree already had are a warning, not this change's failur
 	const mainTree = report(mainEntries);
 	const result = run(cwd, { base: baseline, baseReport: mainTree, knipReport: mainTree });
 	assert.equal(result.status, 0, result.stderr);
+	assert.equal(result.baseRuns, 1, "a problem to classify needs the base tree");
 	assert.match(result.stdout, /2 problem\(s\) already present at base01234, not this change's/u);
 	assert.match(result.stdout, /^- unused file: components\/dead\.tsx$/mu);
 	assert.match(result.stdout, /^- unused file: lib\/late\.ts$/mu);
@@ -141,12 +150,18 @@ test("problems the base tree already had are a warning, not this change's failur
 	assert.doesNotMatch(own.stderr, /lib\/late\.ts/u);
 });
 
-test("a new unused export does not fail; it is counted against the base and listed", (t) => {
+test("a new unused export does not fail; --report-delta counts it against the base and lists it", (t) => {
 	const baseline = collectFindings(TODAY);
 	const cwd = scratch(t, baseline);
 	const knipReport = report([...TODAY_ENTRIES, { file: "lib/new.ts", exports: ["fresh"] }]);
-	const result = run(cwd, { base: baseline, knipReport });
+	const plain = run(cwd, { base: baseline, knipReport });
+	assert.equal(plain.status, 0, plain.stderr);
+	assert.equal(plain.baseRuns, 0);
+	assert.match(plain.stdout, /reported, not enforced\): 2 exports\.$/mu);
+
+	const result = run(cwd, { argv: ["--report-delta"], base: baseline, knipReport });
 	assert.equal(result.status, 0, result.stderr);
+	assert.equal(result.baseRuns, 1);
 	assert.match(result.stdout, /reported, not enforced\): 2 exports \(\+1 vs base01234\)/u);
 	assert.match(result.stdout, /^New since base01234:$/mu);
 	assert.match(result.stdout, /^- unused export: lib\/new\.ts#fresh$/mu);

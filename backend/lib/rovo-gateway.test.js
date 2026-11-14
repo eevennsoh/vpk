@@ -335,8 +335,9 @@ test("streamViaRovo can reuse a reserved port handle for deferred continuations"
 			port,
 			portHandle: {
 				port,
-				release: () => {
+				settleLease: () => {
 					releaseCount += 1;
+					return true;
 				},
 			},
 			onTextDelta: () => {},
@@ -398,8 +399,9 @@ test("streamViaRovo can continue a deferred turn without queuing another message
 			port,
 			portHandle: {
 				port,
-				release: () => {
+				settleLease: () => {
 					releaseCount += 1;
+					return true;
 				},
 			},
 			onTextDelta: (delta) => {
@@ -806,11 +808,10 @@ test("streamViaRovo releases the port normally after abort when cancel succeeds"
 	initPool({
 		acquire: async () => ({
 			port,
-			release: () => {
-				releaseCount += 1;
-			},
-			releaseAsUnhealthy: () => {
-				unhealthyReleaseCount += 1;
+			settleLease: (disposition) => {
+				if (disposition === "unhealthy") unhealthyReleaseCount += 1;
+				else releaseCount += 1;
+				return true;
 			},
 		}),
 	});
@@ -886,11 +887,10 @@ test("streamViaRovo quarantines the port after abort when cancel times out", asy
 	initPool({
 		acquire: async () => ({
 			port,
-			release: () => {
-				releaseCount += 1;
-			},
-			releaseAsUnhealthy: () => {
-				unhealthyReleaseCount += 1;
+			settleLease: (disposition) => {
+				if (disposition === "unhealthy") unhealthyReleaseCount += 1;
+				else releaseCount += 1;
+				return true;
 			},
 		}),
 	});
@@ -973,11 +973,10 @@ test("generateTextViaRovo quarantines the port after abort when cancel times out
 	initPool({
 		acquire: async () => ({
 			port,
-			release: () => {
-				releaseCount += 1;
-			},
-			releaseAsUnhealthy: () => {
-				unhealthyReleaseCount += 1;
+			settleLease: (disposition) => {
+				if (disposition === "unhealthy") unhealthyReleaseCount += 1;
+				else releaseCount += 1;
+				return true;
 			},
 		}),
 	});

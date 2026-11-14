@@ -10,7 +10,7 @@ import {
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/context-title-bar";
 import { useWorkItemHeaderVariant } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
-import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import { ModalHeader } from "@/components/blocks/jira-work-item/components/work-item-modal/modal-header";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";

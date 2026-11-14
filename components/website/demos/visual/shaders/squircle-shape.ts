@@ -1,13 +1,11 @@
+import { clamp } from "@/lib/math";
+
 export const SQUIRCLE_DEFAULT_SMOOTHNESS = 100;
 export const SQUIRCLE_CORNER_SHAPE_FALLBACK = 0.566;
 export const SQUIRCLE_LARGE_RADIUS_PX = 1000;
 export const SQUIRCLE_DEFAULT_CORNER_SHAPE = 2;
 export const SQUIRCLE_DEFAULT_EXPONENT = 2 ** SQUIRCLE_DEFAULT_CORNER_SHAPE;
 export const SQUIRCLE_MAX_EXPONENT = 7.5;
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
 
 export function mapSmoothnessToExponent(smoothness: number): number {
 	const normalized = clamp(smoothness, 0, 100) / 100;

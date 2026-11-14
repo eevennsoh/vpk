@@ -35,6 +35,7 @@ import LiquidGlass, {
 	type LiquidGlassProps,
 } from "@/components/website/demos/visual/shaders/liquid-glass";
 import { cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 import { useControllableState } from "@/hooks/use-controllable-state";
 
@@ -166,10 +167,6 @@ function buildMeniscusMaskStyle(
 		maskComposite: "add",
 		WebkitMaskComposite: "source-over",
 	};
-}
-
-function clamp(v: number, lo: number, hi: number) {
-	return Math.max(lo, Math.min(hi, v));
 }
 
 function hoverStretchFromNorm(norm: number) {
