@@ -83,7 +83,7 @@ import { ProjectButterInvocationChin } from "./project-butter-invocation-chin";
 import { BUTTER_INVOCATION_REVEAL } from "./project-butter-invocation-motion";
 
 const AGENT_ACTIVITY_SHELL_STYLE: CSSProperties = {
-	borderRadius: "10px",
+	borderRadius: "8px",
 	transformOrigin: "top center",
 };
 const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = {
@@ -570,7 +570,7 @@ function JiraIssueDefault({
 	const agentActivitySessionChipOutCloseClass =
 		"has-[[data-session-chip-out]]:not-has-[[data-slot=jira-issue-agent-row-wrap]:not([data-session-chip-out])]:pb-1";
 	const agentActivityShellClassName = cn(
-		"relative w-full min-w-0 overflow-visible rounded-[10px] outline-none",
+		"relative w-full min-w-0 overflow-visible rounded-lg outline-none",
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 		// Motion's layout transform makes the shell its own stacking context, so a
@@ -597,7 +597,7 @@ function JiraIssueDefault({
 		"--cover-surface-top-inset": selectionBackdropState.joinsBefore ? "0px" : undefined,
 	};
 	const agentActivityArticleStyle: CSSProperties = {
-		borderRadius: "10px",
+		borderRadius: "8px",
 		cursor: rootBaseStyle.cursor,
 		opacity: rootBaseStyle.opacity,
 		textAlign: "left",

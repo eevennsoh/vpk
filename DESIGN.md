@@ -264,7 +264,8 @@ step obvious without adding explanatory chrome.
   tags, badges, and table headers. Do not place a small overline label above a
   heading. When a heading needs a category, put a Lozenge (status) or Tag
   (classification) beside it, or a byline under it. Art and website surfaces
-  can opt in as part of their own identity.
+  can opt in as part of their own identity, as can motion-led stages (see
+  [Signature surfaces](#signature-surfaces)).
 - **Actions:** Buttons and calls to action use imperative verbs such as "Save",
   "Delete", "Connect", or "Create agent". Avoid "Submit", "OK", "Click here",
   and generic action labels that do not describe the result.
@@ -332,12 +333,12 @@ repo's semantic Tailwind classes whenever a class exists.
   `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
-- **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
 - **Documentation heading anchors:** Center icon-only anchor buttons beside
   documentation headings with `inline-flex items-center`. Why: the icon should
   read as vertically aligned with the heading; baseline spacing can make it
   appear high.
   <!-- 2026-11-13: "why do i keep getting this icon and label is misaligned vertically issue" -->
+- **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
   including on hover, while keeping the columns scrollable. Why: keep the board
   visually clean.
   <!-- 2026-11-13: "on column hover we don't need to show any scrollbar on the column, please hide the scrollbar reveal" -->
@@ -358,8 +359,7 @@ Sizes are the default values of the mapped `--ds-radius-*` tokens.
 | `rounded-tile` | 25% | Tile and IconTile only |
 
 Map a Figma radius to the nearest step instead of adding an arbitrary value such
-as `rounded-[10px]`. The exception is a shared primitive that defines per-size
-radii, such as square avatars.
+as `rounded-[10px]`.
 
 ### Responsive behavior
 
@@ -587,6 +587,15 @@ Product surfaces under `components/projects/*` should default to a quiet,
 work-focused register. Art surfaces under `components/arts/*` can be more
 expressive, but each art surface should own that expression in its nested
 component folder rather than leaking those choices into shared primitives.
+
+Motion-led stages are a mix of product UI and art: a choreographed scene inside
+a project, such as the keynote finale under
+`components/projects/jira-team-eu26-end/finale/`. They follow the art rules
+within their own folder. A stage scaled from a Figma frame can keep the values
+that scaling produces, including fractional border widths and arbitrary radii,
+and can use uppercase labels. The rest of the project around the stage stays in
+the product register.
+<!-- 2026-11-14: "leave them as they are because they're all motion related projects. It's more of a unique mix of product UI + art project." -->
 
 ## 8. Accessibility baseline
 

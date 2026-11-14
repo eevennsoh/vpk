@@ -419,7 +419,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /stopNestedCardAction|onClick=\{stopNestedCardAction\}|onKeyDown=\{stopNestedCardAction\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-xl|rounded-br-xl/u);
 	assert.match(COMPOSER_BODY_SHARED_SOURCE, /focusRequestKey: number \| undefined;/u);
 	assert.match(COMPOSER_SOURCE, /if \(typeof focusRequestKey !== "number" \|\| focusRequestKey <= 0\)/u);
 	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
@@ -879,7 +879,7 @@ test("Studio agent config moves Details into compact nav and removes the config 
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*lastCompactSectionRef\.current = section;[\s\S]*restoreCompactSection\(section\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTestPressedChange = useCallback\([\s\S]*if \(pressed\) \{[\s\S]*lastCompactSectionRef\.current = activeHeaderSection;[\s\S]*handleTest\(\);[\s\S]*return;[\s\S]*\}[\s\S]*restoreCompactSection\(lastCompactSectionRef\.current \?\? "details"\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeHeaderSection\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*aria-label="Toggle agent test view"[\s\S]*className="rounded-\[6px\] text-text-subtle hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*Test[\s\S]*<\/Toggle>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*aria-label="Toggle agent test view"[\s\S]*className="rounded-md text-text-subtle hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*Test[\s\S]*<\/Toggle>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|data-testid="agent-config-configure"|>Configure<\/ToggleGroupItem>/u);
 });
 
@@ -969,7 +969,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /data-testid="agent-config-update"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /hasAgentInstructions/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Tabs[\s\S]*onValueChange=\{handleViewChange\}[\s\S]*value=\{activeView\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*className="rounded-\[6px\] text-text-subtle hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*variant="outline"[\s\S]*Test[\s\S]*<\/Toggle>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*className="rounded-md text-text-subtle hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*variant="outline"[\s\S]*Test[\s\S]*<\/Toggle>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|data-testid="agent-config-configure"|>Configure<\/ToggleGroupItem>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"[\s\S]{0,160}size="sm"/u);

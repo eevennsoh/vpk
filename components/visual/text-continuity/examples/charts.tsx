@@ -117,7 +117,7 @@ export function Chart() {
 						key={item.month}
 						aria-hidden
 						className={cn(
-							"min-w-0 flex-1 rounded-t-[2px] transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+							"min-w-0 flex-1 rounded-t-xs transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
 							i === active ? "bg-bg-neutral-bold" : "bg-bg-neutral",
 						)}
 						style={{ height: `${(item.value / CHART_MAX) * 100}%` }}

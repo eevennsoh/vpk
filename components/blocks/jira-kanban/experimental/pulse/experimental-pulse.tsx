@@ -78,10 +78,10 @@ const SHELL_MEASURE = "w-full min-w-0";
 
 /**
  * Below `lg` the epic line heads the ruler band. From `lg` up the board header
- * carries it instead: two stacked all-caps eyebrows read as one blurry block,
- * and the outer one never changes.
+ * carries it instead: two stacked labels read as one blurry block, and the
+ * outer one never changes.
  */
-const PROJECT_LABEL = "min-w-0 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-text-subtlest";
+const PROJECT_LABEL = "min-w-0 truncate text-xs leading-4 font-semibold text-text-subtlest";
 
 /** Matches the reference's ~5% fade band on this column's ~630px viewport. */
 const PULSE_FADE_SIZE = "3rem";

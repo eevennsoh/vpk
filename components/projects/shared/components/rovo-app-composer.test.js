@@ -203,10 +203,10 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /const glyphSize = size === "icon-xs" \? "small" : undefined;/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<ArrowUpIcon label="" size=\{glyphSize\} \/>/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /shouldShowRegionPaintControl/u);
-	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": "relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": "relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-lg"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /"icon-xs": "relative flex h-6 w-\[52px\] items-center justify-center overflow-hidden rounded-md"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /CURSOR_RAIL_FRAME_CLASS_NAME_BY_SIZE\[size\]/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<span aria-hidden="true" className="absolute inset-0 rounded-lg bg-bg-neutral" \/>/u);
 	assert.match(SEND_CONTROLS_SOURCE, /clickyActive[\s\S]*CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.active[\s\S]*CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.idle/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<div className=\{CURSOR_RAIL_INNER_CLASS_NAME_BY_SIZE\[size\]\}>/u);
 	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": \{ active: "w-16", idle: "w-8" \}/u);

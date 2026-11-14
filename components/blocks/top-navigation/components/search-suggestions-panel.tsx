@@ -102,7 +102,7 @@ export default function SearchSuggestionsPanel({
 					width: "100%",
 					maxHeight: "min(530px, calc(100vh - 72px))",
 					backgroundColor: token("elevation.surface.overlay"),
-					borderRadius: "12px",
+					borderRadius: token("radius.xlarge"),
 					boxShadow: token("elevation.shadow.overlay"),
 					padding: "8px 0 0",
 				}}

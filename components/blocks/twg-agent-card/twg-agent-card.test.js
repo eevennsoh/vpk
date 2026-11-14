@@ -60,7 +60,7 @@ test("TWG Agent Card uses VPK primitive sizing instead of custom primitive overr
 	assert.doesNotMatch(COMPONENT_SOURCE, /text-\[20px\]/u);
 	assert.match(COMPONENT_SOURCE, /<AvatarImage alt="" src=\{userAvatarSrc\} \/>/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /size-7|height=\{28\}|width=\{28\}/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /className="size-14 rounded-\[16px\]/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /className="size-14 rounded-2xl/u);
 	assert.match(COMPONENT_SOURCE, /className="bg-surface"[\s\S]*hasBorder[\s\S]*label="Teamwork Graph"[\s\S]*size="large"[\s\S]*variant="transparent"[\s\S]*<TWGLoader label="Teamwork Graph" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<TWGLoader label="Teamwork Graph" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<h3 className="truncate text-text-subtle" style=\{\{ font: token\("font\.heading\.xxsmall"\) \}\}>[\s\S]*Powered by Teamwork Graph[\s\S]*<\/h3>/u);
