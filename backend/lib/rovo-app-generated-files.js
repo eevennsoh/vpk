@@ -58,7 +58,7 @@ function safeJsonParse(rawValue) {
 function normalizeIdentity(rawIdentity) {
 	if (!isPlainObject(rawIdentity)) return null;
 	const { sha256, size } = rawIdentity;
-	return typeof sha256 === "string" && /^[0-9a-f]{64}$/u.test(sha256) && Number.isInteger(size) && size >= 0
+	return typeof sha256 === "string" && /^[0-9a-f]{64}$/u.test(sha256) && Number.isInteger(size) && size > 0
 		? { sha256, size }
 		: null;
 }
@@ -93,15 +93,23 @@ function normalizeGeneratedFileEntry(rawEntry) {
 	};
 }
 
-// A repo-relative path, also from an absolute path inside the project.
+// The path exactly as the tool wrote it, made repo-relative: one leading "./" (or the
+// project root, for an absolute path) may be dropped, and nothing else may change. No
+// segment may be empty, "." or "..", or start with "." (normalizing would turn
+// ".lib/a.ts" or "../lib/a.ts" into the developer's "lib/a.ts").
 function toProjectRelativePath(rawPath, projectRoot) {
-	if (typeof rawPath !== "string") return null;
-	if (projectRoot && path.isAbsolute(rawPath)) {
-		const relativePath = path.relative(projectRoot, rawPath);
-		if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) return null;
-		return normalizeRepoRelativePath(relativePath.split(path.sep).join("/"));
+	if (typeof rawPath !== "string" || rawPath.includes("\\")) return null;
+	let relativePath = rawPath;
+	if (rawPath.startsWith("/")) {
+		const prefix = projectRoot ? `${projectRoot.replace(/\/+$/u, "")}/` : null;
+		if (!prefix || !rawPath.startsWith(prefix)) return null;
+		relativePath = rawPath.slice(prefix.length);
+	} else if (relativePath.startsWith("./")) {
+		relativePath = relativePath.slice(2);
 	}
-	return normalizeRepoRelativePath(rawPath);
+	const segments = relativePath.split("/");
+	if (segments.some((segment) => !segment || segment.startsWith("."))) return null;
+	return normalizeRepoRelativePath(relativePath) === relativePath ? relativePath : null;
 }
 
 // A tool call's input, as a start event carries it (an object, or its JSON text; the text
@@ -116,13 +124,15 @@ function readToolInput(startObservation) {
 	return null;
 }
 
+// The result's own text: `output` when it is a string, and the preview only when there is
+// no output (a failure in `output` never counts, whatever the preview says).
 function matchResultText(observation, pattern) {
-	for (const text of [observation.output, observation.outputPreview]) {
-		if (typeof text !== "string") continue;
-		const match = text.trim().match(pattern);
-		if (match) return match[1];
-	}
-	return null;
+	const text = typeof observation.output === "string"
+		? observation.output
+		: observation.output === undefined || observation.output === null ? observation.outputPreview : null;
+	if (typeof text !== "string") return null;
+	const match = text.trim().match(pattern);
+	return match ? match[1] : null;
 }
 
 /**
@@ -321,19 +331,23 @@ function createRovoAppGeneratedFilesManager({
 
 	// The content a file had when its run finished: cleanup acts on it only while it still
 	// has that content, so a file changed since (or one that was never this run's) is kept.
+	// No identity for an empty file (any empty file at that path later would match), one
+	// over MAX_IDENTITY_BYTES, or one that cannot be read.
 	const readIdentity = async (absolutePath) => {
 		const stat = await fs.lstat(absolutePath).catch(() => null);
-		if (!stat || !stat.isFile() || stat.size > MAX_IDENTITY_BYTES) return null;
+		if (!stat || !stat.isFile() || stat.size === 0 || stat.size > MAX_IDENTITY_BYTES) return null;
 		const content = await fs.readFile(absolutePath).catch(() => null);
-		if (!content) return null;
+		if (content === null || content.length === 0) return null;
 		return { sha256: crypto.createHash("sha256").update(content).digest("hex"), size: content.length };
 	};
 
 	/**
 	 * Records the files a run's own tool results created, with each file's identity when
-	 * the run finished, and refreshes the identity of a file this thread created that the
-	 * run then updated. `streamedMessages` are the messages the run's response stream
-	 * yielded (collectUiMessagesFromResponseStream), never a stored thread or the request.
+	 * the run finished (so an edit later in the same run is included). A file this thread
+	 * created earlier that this run only updated or replaced is dropped from the manifest:
+	 * what is on disk now may include the developer's edits, which cleanup must not adopt.
+	 * `streamedMessages` are the messages the run's response stream yielded
+	 * (collectUiMessagesFromResponseStream), never a stored thread or the request.
 	 */
 	const recordRunGeneratedFiles = async (threadId, streamedMessages) => {
 		const normalizedThreadId = getNonEmptyString(threadId);
@@ -346,17 +360,28 @@ function createRovoAppGeneratedFilesManager({
 		}
 
 		const entriesByPath = new Map((await readManifest(normalizedThreadId)).map((entry) => [entry.requestedPath, entry]));
+		const createdThisRun = new Map();
+		const refreshedThisRun = new Set();
 		for (const { change, ...entry } of changes) {
-			const existing = entriesByPath.get(entry.requestedPath);
-			if (change === "refreshed" && !existing) {
-				continue;
+			if (change === "created") {
+				createdThisRun.set(entry.requestedPath, entry);
+			} else {
+				refreshedThisRun.add(entry.requestedPath);
 			}
+		}
+		for (const requestedPath of refreshedThisRun) {
+			if (!createdThisRun.has(requestedPath) && entriesByPath.delete(requestedPath)) {
+				logSkipped("record", normalizedThreadId, requestedPath, "edited by a later run; no longer cleaned up with the thread");
+			}
+		}
+		for (const entry of createdThisRun.values()) {
 			const target = await resolveGeneratedFile(entry.requestedPath);
 			const identity = target.ok ? await readIdentity(target.absolutePath) : null;
 			if (!identity) {
 				logSkipped("record", normalizedThreadId, entry.requestedPath, target.ok ? "no identity (empty, too large or unreadable)" : target.reason);
 				continue;
 			}
+			const existing = entriesByPath.get(entry.requestedPath);
 			entriesByPath.set(entry.requestedPath, existing
 				? { ...existing, identity, lastObservedAt: entry.lastObservedAt }
 				: { ...entry, identity });
@@ -466,13 +491,13 @@ function createRovoAppGeneratedFilesManager({
 	const runCleanup = async (threadIds, action, act, { deadlineAt = nowImpl() + cleanupDeadlineMs } = {}) => {
 		let count = 0;
 		const candidates = [];
-		let stoppedAt = null;
+		const leftBehind = [];
 		try {
-			outer: for (const threadId of threadIds) {
+			for (const threadId of threadIds) {
 				for (const entry of await readManifestForCleanup(threadId, action)) {
 					if (nowImpl() > deadlineAt) {
-						stoppedAt = "checking entries";
-						break outer;
+						leftBehind.push(`${threadId}:${entry.requestedPath}`);
+						continue;
 					}
 					try {
 						if (!entry.identity) {
@@ -495,11 +520,14 @@ function createRovoAppGeneratedFilesManager({
 					}
 				}
 			}
-			const isSafe = await loadGitView([...new Set(candidates.map(({ target }) => target.normalizedPath))]);
+			// Past the deadline nothing more is asked of git, and nothing is touched.
+			const isSafe = nowImpl() > deadlineAt
+				? () => false
+				: await loadGitView([...new Set(candidates.map(({ target }) => target.normalizedPath))]);
 			for (const { threadId, target } of candidates) {
 				if (nowImpl() > deadlineAt) {
-					stoppedAt = stoppedAt ?? "acting on entries";
-					break;
+					leftBehind.push(`${threadId}:${target.normalizedPath}`);
+					continue;
 				}
 				if (!isSafe(target.normalizedPath)) {
 					logSkipped(action, threadId, target.normalizedPath, "tracked, ignored, or git gave no answer");
@@ -514,8 +542,10 @@ function createRovoAppGeneratedFilesManager({
 		} catch (error) {
 			logSkipped(action, threadIds.join(","), null, error instanceof Error ? error.message : String(error));
 		}
-		if (stoppedAt) {
-			logger.warn?.(`[FUTURE-CHAT] Generated file ${action} stopped at its deadline while ${stoppedAt}; the remaining files were left in place.`);
+		if (leftBehind.length > 0) {
+			// For a delete the threads are removed next, so these files stay in the project.
+			const shown = leftBehind.slice(0, 50).join(", ");
+			logger.warn?.(`[FUTURE-CHAT] Generated file ${action} stopped at its deadline; ${leftBehind.length} file(s) left in place (thread:path): ${shown}${leftBehind.length > 50 ? ", …" : ""}`);
 		}
 		return count;
 	};

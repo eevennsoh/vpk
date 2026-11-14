@@ -79,23 +79,61 @@ test("a no-op, failed or overwriting write records nothing, so deleting the thre
 	}
 });
 
-test("a created file changed since its run is kept; a later run's own edit keeps it cleanable", async (t) => {
-	const { write, manager } = await createFixture(t);
+test("a created file changed since its run is kept, and a later run's edit drops it from the thread", async (t) => {
+	const { write, manager, warnings } = await createFixture(t);
 	const changedByDeveloper = await write("app/generated/a.tsx", "generated a");
 	const editedByLaterRun = await write("app/generated/b.tsx", "generated b");
+	const editedInSameRun = await write("app/generated/c.tsx", "generated c, then replaced in the same run");
 	const files = manager();
 	await files.recordRunGeneratedFiles("thread-1", run(
 		["create_file", "Successfully created app/generated/a.tsx."],
 		["create_file", "Successfully created app/generated/b.tsx."],
+		["create_file", "Successfully created app/generated/c.tsx."],
+		["find_and_replace_code", "Successfully replaced code in app/generated/c.tsx:\n\n--- diff"],
 	));
 
 	await fs.writeFile(changedByDeveloper, "generated a, then edited by hand");
-	await fs.writeFile(editedByLaterRun, "generated b, edited by the next run");
+	// The developer edits b; a later run edits b again. What is on disk now is partly the
+	// developer's, so the thread gives b up instead of adopting it.
+	await fs.writeFile(editedByLaterRun, "generated b, edited by hand, then by the next run");
 	await files.recordRunGeneratedFiles("thread-1", run(["find_and_replace_code", "Successfully replaced code in app/generated/b.tsx:\n\n--- diff"]));
+	assert.deepEqual((await files.readManifest("thread-1")).map((entry) => entry.requestedPath), ["app/generated/a.tsx", "app/generated/c.tsx"]);
+	assert.equal(warnings.some((message) => message.includes("edited by a later run")), true);
 
 	assert.equal(await files.deleteLegacyRootFiles("thread-1"), 1);
 	assert.equal(await fs.readFile(changedByDeveloper, "utf8"), "generated a, then edited by hand");
-	assert.equal(await exists(editedByLaterRun), false);
+	assert.equal(await fs.readFile(editedByLaterRun, "utf8"), "generated b, edited by hand, then by the next run");
+	assert.equal(await exists(editedInSameRun), false, "created and edited in one run: its final content is recorded");
+});
+
+test("a result path that only normalizes to the developer's file is never recorded", async (t) => {
+	const { write, manager } = await createFixture(t);
+	const developersFile = await write("lib/a.ts", "the developer's untracked file");
+	const files = manager();
+	for (const rawPath of [".lib/a.ts", "..lib/a.ts", "../lib/a.ts", "./../../lib/a.ts", ".//lib/a.ts", "lib//a.ts", "lib/./a.ts", "lib/../lib/a.ts"]) {
+		await files.recordRunGeneratedFiles("thread-1", run(["create_file", `Successfully created ${rawPath}.`, rawPath]));
+	}
+	assert.deepEqual(await files.readManifest("thread-1"), []);
+	assert.equal(await files.deleteLegacyRootFiles("thread-1"), 0);
+	assert.equal(await fs.readFile(developersFile, "utf8"), "the developer's untracked file");
+
+	// One leading "./" is how a tool may write a plain path; it names the same file.
+	await files.recordRunGeneratedFiles("thread-2", run(["create_file", "Successfully created ./lib/a.ts."]));
+	assert.deepEqual((await files.readManifest("thread-2")).map((entry) => entry.requestedPath), ["lib/a.ts"]);
+});
+
+test("a failure in output never records, whatever the preview says; an empty file gets no identity", async (t) => {
+	const { write, manager } = await createFixture(t);
+	await write("app/generated/failed.tsx", "x");
+	await write("app/generated/empty.tsx", "");
+	const files = manager();
+	await files.recordRunGeneratedFiles("thread-1", [{
+		parts: [
+			{ type: "data-thinking-event", data: { phase: "result", toolName: "create_file", toolCallId: "f1", output: "Error calling tool 'create_file': failed", outputPreview: "Successfully created app/generated/failed.tsx." } },
+			{ type: "data-thinking-event", data: { phase: "result", toolName: "create_file", toolCallId: "e1", output: "Successfully created app/generated/empty.tsx." } },
+		],
+	}]);
+	assert.deepEqual(await files.readManifest("thread-1"), []);
 });
 
 test("a tracked file with a non-ASCII name renamed to another case or normalization still counts as tracked", async (t) => {
@@ -138,8 +176,8 @@ test("one cleanup asks git twice in total, however many files or threads it cove
 	}
 });
 
-test("a cleanup stops at its deadline and leaves the rest in place, saying so", async (t) => {
-	const { write, manager, warnings } = await createFixture(t);
+test("a cleanup stops at its deadline, asks git nothing after it, and names what it left", async (t) => {
+	const { projectRoot, write, manager, warnings, gitCalls } = await createFixture(t);
 	let clock = 0;
 	// Each look at the clock moves it one second; the deadline is three seconds away.
 	const files = manager({ nowImpl: () => (clock += 1_000), cleanupDeadlineMs: 3_000 });
@@ -149,10 +187,16 @@ test("a cleanup stops at its deadline and leaves the rest in place, saying so", 
 		events.push(["create_file", `Successfully created app/generated/f${index}.tsx.`, `c${index}`]);
 	}
 	await files.recordRunGeneratedFiles("thread-1", run(...events));
+	clock = 0;
 
-	const deleted = await files.deleteLegacyRootFiles("thread-1");
-	assert.ok(deleted < 6, `deleted ${deleted}`);
-	assert.equal(warnings.some((message) => message.includes("stopped at its deadline")), true);
+	assert.equal(await files.deleteLegacyRootFiles("thread-1"), 0);
+	assert.deepEqual(gitCalls, [], "no git view once the deadline passed");
+	const stop = warnings.find((message) => message.includes("stopped at its deadline"));
+	assert.match(stop, /6 file\(s\) left in place/u);
+	assert.match(stop, /thread-1:app\/generated\/f0\.tsx/u);
+	for (let index = 0; index < 6; index += 1) {
+		assert.equal(await exists(path.join(projectRoot, "app", "generated", `f${index}.tsx`)), true, `f${index}`);
+	}
 });
 
 test("a full manifest forgets its oldest entries and logs it", async (t) => {
