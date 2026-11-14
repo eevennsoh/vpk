@@ -19,6 +19,7 @@ import {
 	parseTypecheckOutput,
 	runGuards,
 	runShell,
+	runUnit,
 } from "./check.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -147,8 +148,9 @@ test("changed files are the diff from the merge base plus untracked files", () =
 });
 
 test("arguments", () => {
-	assert.deepEqual(parseArgs([]), { base: "origin/main", guardsOnly: false, json: false });
-	assert.deepEqual(parseArgs(["--", "--guards", "--json", "--base", "HEAD~1"]), { base: "HEAD~1", guardsOnly: true, json: true });
+	assert.deepEqual(parseArgs([]), { base: "origin/main", deep: false, guardsOnly: false, json: false });
+	assert.deepEqual(parseArgs(["--", "--guards", "--json", "--base", "HEAD~1"]), { base: "HEAD~1", deep: false, guardsOnly: true, json: true });
+	assert.equal(parseArgs(["--", "--deep"]).deep, true);
 	assert.throws(() => parseArgs(["--fast"]), /Unknown argument: --fast/u);
 });
 
@@ -162,4 +164,30 @@ test("package gates follow verify:fast into check.mjs, so every guard counts as 
 	const unhooked = { ...scripts, "verify:fast": "node scripts/other.mjs --guards" };
 	assert.equal(gateRunsScript(unhooked, "ci:pr", "verify:catalog"), false);
 	assert.equal(gateRunsScript({ x: "node scripts/check.mjsx" }, "x", "verify:catalog"), false);
+});
+
+test("the report names the deeper rendered and bundling suites it did not run, and is silent when there are none", () => {
+	const base = {
+		change: { base: "origin/main", deepNotRun: 12, files: ["components/ui/data/logo-data.ts"], importers: 2, mergeBase: "abcdef1234567" },
+		ok: true,
+		seconds: 30,
+		stages: [{ details: [], id: "unit", label: "7 related suites", problems: [], seconds: 20, status: "passed" }],
+	};
+	assert.match(formatReport(base), /^unit {6}12 rendered or bundling suites depend on this change more deeply and were not run: pnpm run check -- --deep$/mu);
+	assert.match(formatReport({ ...base, change: { ...base.change, deepNotRun: 1 } }), /1 rendered or bundling suite depend/u);
+	assert.doesNotMatch(formatReport({ ...base, change: { ...base.change, deepNotRun: 0 } }), /more deeply/u);
+});
+
+test("--deep runs the deeper suites with the related ones, in parallel", async () => {
+	const commands = [];
+	const run = async (command) => {
+		commands.push(command);
+		return { seconds: 1, status: 0, stderr: "", stdout: "" };
+	};
+	const plain = await runUnit({ tests: ["a.test.js"], run });
+	assert.equal(plain.label, "1 related suites");
+	assert.doesNotMatch(commands[0], /--parallel/u);
+	const deep = await runUnit({ tests: ["a.test.js"], deep: ["b.test.js", "a.test.js"], run });
+	assert.equal(deep.label, "1 related + 2 deep suites");
+	assert.match(commands[1], /^node scripts\/run-js-unit-tests\.mjs --keep-going --parallel auto --file 'a\.test\.js' --file 'b\.test\.js'$/u);
 });
