@@ -452,7 +452,9 @@ function sameWorktreePath(left, right) {
 	}
 }
 
-// Every vpk-dev-* session on the private and default sockets, with its start directory.
+// Dev sessions with their start directories: every session on the private vpk-dev socket
+// (only the launchers use it, and VPK_DEV_TMUX_SESSION / _PREFIX can rename a session), and the
+// vpk-dev-* sessions on the default socket (the Rovo stack's; other tmux use lives there too).
 function listDevSessions() {
 	const sessions = [];
 	const tmuxBinary = standaloneTmuxBinary();
@@ -476,7 +478,7 @@ function listDevSessions() {
 			if (separator < 0) continue;
 			const name = line.slice(0, separator);
 			const sessionPath = line.slice(separator + 1);
-			if (name.startsWith("vpk-dev-") && sessionPath) {
+			if (sessionPath && (socket === "vpk-dev" || name.startsWith("vpk-dev-"))) {
 				sessions.push({ name, socket, path: sessionPath });
 			}
 		}
@@ -644,6 +646,7 @@ if (require.main === module) {
 
 module.exports = {
 	collectStackRows,
+	listDevSessions,
 	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,

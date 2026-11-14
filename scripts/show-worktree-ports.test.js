@@ -10,6 +10,7 @@ const SHOW_WORKTREE_PORTS_SCRIPT = path.resolve(__dirname, "show-worktree-ports.
 const {
 	browserUrlForRow,
 	collectStackRows,
+	listDevSessions,
 	dashboardRowsSignature,
 	defaultBrowserCommand,
 	moveSelectionIndex,
@@ -320,4 +321,23 @@ test("ports --json derives each worktree's stack status from its record, session
 	assert.deepEqual(byName.ready.backend, { port: 8101, listening: true, pid: null, childPid: null });
 	assert.equal(byName.orphan.status, "orphaned");
 	assert.equal(byName.orphan.nextAction, "stop");
+});
+
+test("dev sessions include any name on the private socket, and only vpk-dev-* on the default one", (t) => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ports-sessions-"));
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	const tmux = path.join(dir, "tmux");
+	fs.writeFileSync(tmux, [
+		"#!/bin/sh",
+		'if [ "$1" = "-L" ]; then printf "demo|/wt/custom\\nvpk-dev-a|/wt/a\\n"; else printf "vpk-dev-b|/wt/b\\nnotes|/home\\n"; fi',
+		"",
+	].join("\n"));
+	fs.chmodSync(tmux, 0o755);
+	const previous = process.env.VPK_TMUX_BIN;
+	process.env.VPK_TMUX_BIN = tmux;
+	t.after(() => (previous === undefined ? delete process.env.VPK_TMUX_BIN : (process.env.VPK_TMUX_BIN = previous)));
+	assert.deepEqual(
+		listDevSessions().map(({ name, socket }) => `${socket}:${name}`),
+		["vpk-dev:demo", "vpk-dev:vpk-dev-a", "default:vpk-dev-b"],
+	);
 });
