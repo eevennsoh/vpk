@@ -6,7 +6,8 @@ import { useCallback, useState } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
+import { ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory/agents";
+import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";

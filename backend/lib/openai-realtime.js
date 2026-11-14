@@ -16,6 +16,12 @@
 const WebSocket = require("ws");
 const { redactUrlForLog } = require("./log-redaction");
 const { getRealtimeConfig, getAuthToken, getEnvVars, resolveGatewayCloudId } = require("./ai-gateway-helpers");
+const {
+	IDLE_RESPONSE,
+	SESSION_STATE,
+	responseReducer,
+	sessionReducer,
+} = require("./openai-realtime-session-machine");
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -262,12 +268,6 @@ const SESSION_TOOLS = [
 	},
 ];
 
-const SESSION_STATE = {
-	NOT_INITIALIZED: "not_initialized",
-	READY: "ready",
-	CLOSED: "closed",
-};
-
 const OPENAI_HEARTBEAT_INTERVAL_MS = 20_000;
 const REALTIME_SESSION_REFRESH_MS = 55 * 60 * 1_000;
 const REALTIME_AUDIO_FORMAT = {
@@ -488,6 +488,7 @@ class RealtimeSession {
 	constructor(clientWs, options = {}) {
 		this._clientWs = clientWs;
 		this._openaiWs = null;
+		/** @type {import("./openai-realtime-session-machine").SessionState} */
 		this._state = SESSION_STATE.NOT_INITIALIZED;
 		this._instructions = options.instructions || ROVO_SYSTEM_INSTRUCTIONS;
 		this._log = options.onLog || (() => {});
@@ -502,12 +503,26 @@ class RealtimeSession {
 		this._manualTurnTranscriptBuffer = "";
 		this._manualTurnCoalesceTimer = null;
 		this._manualTurnHardCapTimer = null;
-		// Track the in-flight OpenAI response so we never request a new one while
-		// another is active (OpenAI rejects that). Tool outputs that arrive during
-		// an active response defer their response.create until response.done.
-		this._activeResponseId = null;
-		this._pendingResponseCreate = false;
-		this._pendingResponseCreateForce = false;
+		// The in-flight OpenAI response, so we never request a new one while another is
+		// active (OpenAI rejects that). A request during an active response waits in
+		// `pending` until response.done.
+		/** @type {import("./openai-realtime-session-machine").ResponseState} */
+		this._response = IDLE_RESPONSE;
+	}
+
+	/** @param {import("./openai-realtime-session-machine").SessionEvent} event */
+	_transition(event) {
+		this._state = sessionReducer(this._state, event);
+	}
+
+	/** @param {import("./openai-realtime-session-machine").ResponseEvent} event */
+	_respond(event) {
+		this._response = responseReducer(this._response, event);
+	}
+
+	/** The phase of the in-flight model response, for logs and tests. */
+	get response() {
+		return this._response;
 	}
 
 	get state() {
@@ -544,6 +559,7 @@ class RealtimeSession {
 
 		const wsUrl = `${config.wsUrl}?model=${encodeURIComponent(config.model)}`;
 		let headers;
+		this._transition({ type: "connect" });
 
 		if (useGateway) {
 			const token = await getAuthToken();
@@ -603,7 +619,7 @@ class RealtimeSession {
 					? reason
 					: "";
 			this._log("REALTIME", `OpenAI WS closed: ${code} ${reasonText}`);
-			this._state = SESSION_STATE.CLOSED;
+			this._transition({ type: "close" });
 			if (plannedCloseReason === null) {
 				// Surface the upstream close code/reason so the real failure is
 				// actionable client-side. A bare "connection closed" hides the
@@ -639,6 +655,11 @@ class RealtimeSession {
 
 		this._openaiWs.on("error", (err) => {
 			this._log("REALTIME", `OpenAI WS error: ${err.message}`);
+			// Ending a rejected upgrade aborts the handshake, which reports an error the
+			// client has already been told about.
+			if (this._plannedCloseReason === "upstream_rejected") {
+				return;
+			}
 			this._sendToClient({
 				type: "error",
 				error: { message: err.message, code: "connection_error" },
@@ -650,7 +671,8 @@ class RealtimeSession {
 		// limit). The response body carries the actionable reason, which the
 		// generic `error`/`close` events do not expose. We mark the close as
 		// planned so the close handler does not also emit a vaguer error.
-		this._openaiWs.on("unexpected-response", (_req, res) => {
+		const upstream = this._openaiWs;
+		upstream.on("unexpected-response", (_req, res) => {
 			let body = "";
 			res.on("data", (chunk) => {
 				if (body.length < 2_000) {
@@ -665,7 +687,7 @@ class RealtimeSession {
 					"REALTIME",
 					`OpenAI rejected upgrade: HTTP ${statusCode} ${detail}`,
 				);
-				this._state = SESSION_STATE.CLOSED;
+				this._transition({ type: "close" });
 				this._sendToClient({
 					type: "error",
 					error: {
@@ -674,6 +696,10 @@ class RealtimeSession {
 						statusCode,
 					},
 				});
+				// With an unexpected-response listener the upstream socket is left in its
+				// handshake and never closes by itself. Ending it runs the close handler,
+				// which closes the client so the browser can reconnect.
+				upstream.terminate();
 			});
 		});
 	}
@@ -682,7 +708,7 @@ class RealtimeSession {
 	 * Close the OpenAI session and clean up.
 	 */
 	close() {
-		this._state = SESSION_STATE.CLOSED;
+		this._transition({ type: "close" });
 		this._plannedCloseReason = null;
 		this._clearSessionMaintenanceTimers();
 		this._clearManualTurnTranscription();
@@ -743,6 +769,7 @@ class RealtimeSession {
 				return;
 			}
 
+			this._transition({ type: "refresh" });
 			this._plannedCloseReason = "session_refresh";
 			this._log("REALTIME", "Refreshing Realtime session before max lifetime");
 			this._clearManualTurnTranscription();
@@ -940,9 +967,8 @@ class RealtimeSession {
 			return;
 		}
 
-		if (this._activeResponseId) {
-			this._pendingResponseCreate = true;
-			this._pendingResponseCreateForce = this._pendingResponseCreateForce || options.force === true;
+		if (this._response.phase === "active") {
+			this._respond({ type: "request", force: options.force === true });
 			this._log("REALTIME", "Response create deferred — active response in progress");
 			return;
 		}
@@ -1024,13 +1050,12 @@ class RealtimeSession {
 	}
 
 	_handleSpeechStarted() {
-		if (this._manualTurnTaking && this._activeResponseId) {
+		if (this._manualTurnTaking && this._response.phase === "active") {
 			this._sendToOpenAI({
 				type: OPENAI_EVENT.RESPONSE_CANCEL,
 			});
 			this._clearManualTurnTranscription();
-			this._pendingResponseCreate = false;
-			this._pendingResponseCreateForce = false;
+			this._respond({ type: "drop-pending" });
 		}
 
 		this._sendToClient({ type: "speech_started" });
@@ -1124,11 +1149,9 @@ class RealtimeSession {
 
 		switch (normalizedEventType) {
 			case OPENAI_EVENT.SESSION_CREATED:
-				this._state = SESSION_STATE.READY;
+				this._transition({ type: "session-created" });
 				// Fresh session — no response can be in flight from a prior connection.
-				this._activeResponseId = null;
-				this._pendingResponseCreate = false;
-				this._pendingResponseCreateForce = false;
+				this._respond({ type: "reset" });
 				this._manualTurnTaking = false;
 				this._explicitResponseOnly = false;
 				this._clearManualTurnTranscription();
@@ -1149,7 +1172,7 @@ class RealtimeSession {
 				break;
 
 			case OPENAI_EVENT.RESPONSE_CREATED:
-				this._activeResponseId = event.response?.id ?? event.response_id ?? null;
+				this._respond({ type: "created", id: event.response?.id ?? event.response_id ?? null });
 				this._sendToClient({
 					type: "response_created",
 					responseId: event.response?.id ?? event.response_id,
@@ -1205,7 +1228,7 @@ class RealtimeSession {
 				}
 
 				case OPENAI_EVENT.RESPONSE_DONE:
-					this._activeResponseId = null;
+					this._respond({ type: "done" });
 					{
 						const transcriptPayload = getResponseDoneTranscriptPayload(event);
 						if (transcriptPayload) {
@@ -1221,10 +1244,9 @@ class RealtimeSession {
 					});
 				// A tool output (or other request) arrived mid-response and deferred
 				// its response.create — now that the response is done, fire it.
-				if (this._pendingResponseCreate) {
-					const forcePendingResponseCreate = this._pendingResponseCreateForce;
-					this._pendingResponseCreate = false;
-					this._pendingResponseCreateForce = false;
+				if (this._response.pending) {
+					const forcePendingResponseCreate = this._response.pending.force;
+					this._respond({ type: "take-pending" });
 					this._requestResponse({ force: forcePendingResponseCreate });
 				}
 				break;
@@ -1282,9 +1304,7 @@ class RealtimeSession {
 				// These are recoverable, non-fatal warnings — don't surface to the client.
 				if (errorCode === "input_audio_buffer_commit_empty" || isActiveResponseRace || isStaleResponseCancel) {
 					if (isStaleResponseCancel) {
-						this._activeResponseId = null;
-						this._pendingResponseCreate = false;
-						this._pendingResponseCreateForce = false;
+						this._respond({ type: "reset" });
 					}
 					this._log("REALTIME", `OpenAI warning: ${errorMessage}`);
 				} else {

@@ -203,6 +203,14 @@ export function parseSkillMd(text: string): { frontmatter: FrontmatterEntries; b
 }
 
 /** Compose frontmatter entries + body back into a full SKILL.md string. */
+/** A skill's file-safe name ("Draft release notes" -> "draft-release-notes"), as in SKILL.md frontmatter. */
+export function slugifySkillName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, "-")
+		.replace(/^-|-$/gu, "");
+}
+
 export function serializeSkillMd(frontmatter: FrontmatterEntries, body: string): string {
 	const yaml = serializeFrontmatterYaml(frontmatter);
 	const trimmedBody = (body ?? "").replace(/^\n+/u, "").replace(/\s+$/u, "");

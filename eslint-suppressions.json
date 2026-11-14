@@ -2627,9 +2627,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/agent-loading-model.test.js": {
+  "components/ui-custom/agent-loading.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 1
     }
   },
   "components/ui-custom/agent-loading.tsx": {
@@ -2813,19 +2813,14 @@
       "count": 1
     }
   },
-  "components/ui-custom/list.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 19
-    }
-  },
   "components/ui-custom/live-waveform.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
       "count": 1
     }
   },
-  "components/ui-custom/message.source.test.js": {
+  "components/ui-custom/message-markdown.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 2
     }
   },
   "components/ui-custom/persona.tsx": {
