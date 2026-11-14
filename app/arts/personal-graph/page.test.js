@@ -9,7 +9,7 @@ const LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "layout.tsx"), "utf8"
 const ROOT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../layout.tsx"), "utf8");
 const TAILWIND_THEME_SOURCE = fs.readFileSync(path.join(__dirname, "../../tailwind-theme.css"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../data/components.ts"),
+	path.join(__dirname, "../../data/component-manifest.ts"),
 	"utf8",
 );
 const MANIFEST_SOURCE = fs.readFileSync(

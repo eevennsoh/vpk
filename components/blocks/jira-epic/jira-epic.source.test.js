@@ -7,7 +7,7 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(join(process.cwd(), "components/website/demos/blocks/jira-epic-demo.tsx"), "utf8");
 const DETAILS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "details", "blocks", "jira-epic.ts"), "utf8");
 const DETAILS_INDEX_SOURCE = readFileSync(join(process.cwd(), "app", "data", "details", "blocks.ts"), "utf8");
-const COMPONENTS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENTS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const MANIFEST_SOURCE = readFileSync(join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const REGISTRY_SOURCE = readFileSync(join(process.cwd(), "components", "website", "registry", "blocks.ts"), "utf8");
 

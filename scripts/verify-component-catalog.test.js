@@ -44,9 +44,8 @@ test("component add plan derives split ui registry and detail targets", () => {
 	assert.equal(plan.snippets.detailRecord, '"new-button": NEW_BUTTON_DETAIL,');
 	assert.equal(plan.snippets.manifestEntry, 'uiComponent("new-button", "New Button")');
 	assert.equal(plan.snippets.primaryRegistryEntry, '"new-button": dynamic(() => import("../../demos/ui/new-button-demo"), { ssr: false }),');
-	// app/data/components.ts repeats every manifest entry, so a new entry edits it too.
-	assert.equal(plan.paths.componentEntries, "app/data/components.ts");
-	assert.equal(plan.snippets.componentEntry, 'uiComponent("new-button", "New Button")');
+	// app/data/components.ts is derived from the manifest, so the plan never names it.
+	assert.equal(Object.values(plan.paths).flat().includes("app/data/components.ts"), false);
 	assert.deepEqual(plan.paths.routePages, []);
 	assert.deepEqual(plan.status, {
 		detail: false,
@@ -64,7 +63,6 @@ test("component add plan for a project names its route page and its inline detai
 	assert.equal(plan.paths.detailBarrel, "app/data/details/projects.ts");
 	assert.equal(plan.snippets.detailImport, null);
 	assert.equal(plan.snippets.detailRecord, '"new-board": { description: "…" },');
-	assert.equal(plan.paths.componentEntries, "app/data/components.ts");
 	assert.deepEqual(plan.paths.routePages, ["app/new-board/page.tsx"]);
 	assert.equal(plan.status.routePages, false);
 

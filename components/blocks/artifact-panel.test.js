@@ -13,7 +13,7 @@ function readProjectFile(relativePath) {
 
 test("Artifact is registered as a website block in all four registries", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("artifact"\)/u,
 	);
 	assert.match(

@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 test("Agent Template is exposed as a website block", () => {
 	assert.match(
-		readProjectFile("app/data/components.ts"),
+		readProjectFile("app/data/component-manifest.ts"),
 		/blockComponent\("agent-template", "Agent Template"\)/u,
 	);
 	assert.match(

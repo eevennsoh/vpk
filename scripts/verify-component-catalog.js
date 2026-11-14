@@ -61,7 +61,6 @@ const CATEGORY_SOURCE_ROOTS = {
 const DEMO_CATEGORY_DIRS = {
 	utility: "utils",
 };
-const COMPONENT_ENTRIES_FILE = "app/data/components.ts";
 // Categories whose details live one file per slug under app/data/details/<category>/ and are
 // imported by the barrel; the others write their detail records inline in the barrel.
 const DETAIL_LEAF_CATEGORIES = new Set(["blocks", "ui", "ui-custom", "visual"]);
@@ -343,7 +342,6 @@ function getComponentAddPlan({
 		key,
 		name: component?.name ?? toTitleCase(slug),
 		paths: {
-			componentEntries: COMPONENT_ENTRIES_FILE,
 			detailBarrel: detailBarrelPath,
 			detailLeaf: detailLeafPath,
 			demo: demoPath,
@@ -355,8 +353,6 @@ function getComponentAddPlan({
 		},
 		slug,
 		snippets: {
-			// The catalog entries file repeats the manifest call with the same helper names.
-			componentEntry: manifestEntry,
 			detailImport: hasDetailLeaf ? `import { ${detailExportName} } from "./${category}/${slug}";` : null,
 			detailRecord: hasDetailLeaf ? `"${slug}": ${detailExportName},` : `"${slug}": { description: "…" },`,
 			manifestEntry,
@@ -413,7 +409,6 @@ function printComponentAddPlan(plan) {
 	console.log("Edit targets:");
 	console.log(`- component source: ${plan.paths.source ?? plan.importPath}`);
 	console.log(`- manifest: ${plan.paths.manifest}`);
-	console.log(`- catalog entries: ${plan.paths.componentEntries}`);
 	if (plan.paths.detailLeaf) {
 		console.log(`- detail leaf: ${plan.paths.detailLeaf}`);
 		console.log(`- detail barrel: ${plan.paths.detailBarrel}`);
@@ -429,7 +424,6 @@ function printComponentAddPlan(plan) {
 	console.log("");
 	console.log("Useful snippets:");
 	console.log(`- manifest: ${plan.snippets.manifestEntry}`);
-	console.log(`- catalog entries: ${plan.snippets.componentEntry}`);
 	if (plan.snippets.detailImport) console.log(`- detail import: ${plan.snippets.detailImport}`);
 	console.log(`- detail record: ${plan.snippets.detailRecord}`);
 	console.log(`- primary registry: ${plan.snippets.primaryRegistryEntry}`);
