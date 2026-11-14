@@ -452,6 +452,14 @@ const eslintConfig = defineConfig([
 		// gotchas-ui.md: hidden must be unreachable, and anything clickable must be focusable
 		// and operable by keyboard. anchor-is-valid, no-autofocus, and no-noninteractive-tabindex
 		// stay off: prototypes use placeholder links, composers autofocus, scroll regions take tabIndex.
+		// no-interactive-element-to-noninteractive-role, no-noninteractive-element-interactions,
+		// no-noninteractive-element-to-interactive-role and no-static-element-interactions take
+		// eslint-plugin-jsx-a11y's own recommended options (copied: the plugin is a transitive
+		// dependency of eslint-config-next). Only activation handlers (click, mousedown/up, key)
+		// make an element a control; hover, focus and drag handlers track state. Any role written
+		// as an expression (role={x ? "button" : undefined}) skips no-static-element-interactions
+		// unevaluated, so click-events-have-key-events and interactive-supports-focus are what
+		// still guard such elements. canvas role=img, ul/ol role=listbox and iframe onLoad are allowed.
 		files: ["app/**/*.{jsx,tsx}", "components/**/*.{jsx,tsx}"],
 		rules: {
 			"jsx-a11y/alt-text": "error",
@@ -462,10 +470,30 @@ const eslintConfig = defineConfig([
 			"jsx-a11y/click-events-have-key-events": "error",
 			"jsx-a11y/interactive-supports-focus": "error",
 			"jsx-a11y/no-aria-hidden-on-focusable": "error",
-			"jsx-a11y/no-interactive-element-to-noninteractive-role": "error",
-			"jsx-a11y/no-noninteractive-element-interactions": "error",
-			"jsx-a11y/no-noninteractive-element-to-interactive-role": "error",
-			"jsx-a11y/no-static-element-interactions": "error",
+			"jsx-a11y/no-interactive-element-to-noninteractive-role": ["error", {
+				canvas: ["img"],
+				tr: ["none", "presentation"],
+			}],
+			"jsx-a11y/no-noninteractive-element-interactions": ["error", {
+				alert: ["onKeyUp", "onKeyDown", "onKeyPress"],
+				body: ["onError", "onLoad"],
+				dialog: ["onKeyUp", "onKeyDown", "onKeyPress"],
+				handlers: ["onClick", "onError", "onLoad", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+				iframe: ["onError", "onLoad"],
+				img: ["onError", "onLoad"],
+			}],
+			"jsx-a11y/no-noninteractive-element-to-interactive-role": ["error", {
+				fieldset: ["radiogroup", "presentation"],
+				li: ["menuitem", "menuitemradio", "menuitemcheckbox", "option", "row", "tab", "treeitem"],
+				ol: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+				table: ["grid"],
+				td: ["gridcell"],
+				ul: ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+			}],
+			"jsx-a11y/no-static-element-interactions": ["error", {
+				allowExpressionValues: true,
+				handlers: ["onClick", "onMouseDown", "onMouseUp", "onKeyPress", "onKeyDown", "onKeyUp"],
+			}],
 			"jsx-a11y/role-has-required-aria-props": "error",
 			"jsx-a11y/role-supports-aria-props": "error",
 		},

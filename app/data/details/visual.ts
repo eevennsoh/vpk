@@ -1,10 +1,10 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 import {
+	SHADER_LAB_LAYER_DEFINITIONS,
 	SHADER_LAB_RUNTIME_LAYER_TYPES,
 	type ShaderLabRuntimeEffectType,
 	type ShaderLabRuntimeLayerType,
 	createShaderLabEffectPropDocs,
-	getShaderLabEffectDescription,
 	getShaderLabEffectImportStatement,
 	getShaderLabEffectUsage,
 } from "@/components/website/demos/visual/shader-lab-effect-definitions";
@@ -73,11 +73,12 @@ function isShaderLabV2EffectType(layerType: ShaderLabRuntimeLayerType): layerTyp
 }
 
 function createShaderLabLayerDetail(layerType: ShaderLabRuntimeLayerType): ComponentDetail {
+	const definition = SHADER_LAB_LAYER_DEFINITIONS[layerType];
 	return {
-		description: getShaderLabEffectDescription(layerType),
+		description: definition.description,
 		importStatement: getShaderLabEffectImportStatement(),
-		usage: getShaderLabEffectUsage(layerType),
-		props: createShaderLabEffectPropDocs(layerType),
+		usage: getShaderLabEffectUsage(definition),
+		props: createShaderLabEffectPropDocs(definition),
 	};
 }
 
