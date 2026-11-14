@@ -12,7 +12,7 @@ ride along each time (see the Contextual Rules section of `AGENTS.md`). Source o
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 38; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`.
 
 ### Backend Routes
 

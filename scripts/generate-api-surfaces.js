@@ -84,7 +84,6 @@ function buildGeneratedSection(routeManifest) {
 	const nextApiRoutes = Array.isArray(routeManifest.nextApiRoutes)
 		? routeManifest.nextApiRoutes.slice().sort(compareRoutes)
 		: [];
-	const runtimeAdminCount = backendRoutes.filter((route) => route.runtimeAdmin === true).length;
 
 	return [
 		"## Generated Endpoint Tables",
@@ -92,7 +91,8 @@ function buildGeneratedSection(routeManifest) {
 		GENERATED_BEGIN,
 		"<!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->",
 		"",
-		`Generated from \`${ROUTE_MANIFEST_PATH}\`. Backend routes: ${backendRoutes.length}; runtime-admin routes: ${runtimeAdminCount}; Next API routes: ${nextApiRoutes.length}.`,
+		// No counts here: two PRs that each add a route would both change that line.
+		`Generated from \`${ROUTE_MANIFEST_PATH}\`.`,
 		"",
 		"### Backend Routes",
 		"",

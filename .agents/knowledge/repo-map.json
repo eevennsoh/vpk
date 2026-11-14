@@ -10,16 +10,12 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 123,
-			"nextApiRouteCount": 103,
-			"ownerCount": 102,
-			"runtimeAdminRouteCount": 38
+			"ownerCount": 102
 		},
 		"owners": [
 			{
 				"kind": "backend",
 				"owner": "backend/routes/agent-mode.js",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -38,7 +34,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/ai-utilities.js",
-				"routeCount": 5,
 				"routes": [
 					{
 						"method": "POST",
@@ -75,7 +70,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/browser-workspaces.js",
-				"routeCount": 12,
 				"routes": [
 					{
 						"method": "GET",
@@ -154,7 +148,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/chat-control.js",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "POST",
@@ -173,7 +166,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/chat-sdk.js",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -186,7 +178,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/chat-skip-question.js",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -199,7 +190,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/chromium-preview.js",
-				"routeCount": 19,
 				"routes": [
 					{
 						"method": "GET",
@@ -320,7 +310,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/demos.js",
-				"routeCount": 11,
 				"routes": [
 					{
 						"method": "POST",
@@ -393,7 +382,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/genui.js",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "POST",
@@ -412,7 +400,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/html-selector.js",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "POST",
@@ -431,7 +418,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/local-folder.js",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -444,7 +430,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/media.js",
-				"routeCount": 3,
 				"routes": [
 					{
 						"method": "GET",
@@ -469,7 +454,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/orchestrator.js",
-				"routeCount": 3,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -494,7 +478,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/personal-graph.js",
-				"routeCount": 18,
 				"routes": [
 					{
 						"method": "POST",
@@ -609,7 +592,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/realtime.js",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -622,7 +604,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/rovo-app.js",
-				"routeCount": 29,
 				"routes": [
 					{
 						"method": "GET",
@@ -803,7 +784,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/rovo-chat-proxy.js",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -816,7 +796,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/status.js",
-				"routeCount": 4,
 				"routes": [
 					{
 						"method": "GET",
@@ -847,7 +826,6 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/vpk-html.js",
-				"routeCount": 6,
 				"routes": [
 					{
 						"method": "GET",
@@ -890,7 +868,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agent-mode/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -921,7 +898,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agents/rfp-demo/agent/apply/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -940,7 +916,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agents/rfp-demo/events/ticket-entered-column/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -959,7 +934,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agents/rfp-demo/reset/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -978,7 +952,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agents/rfp-demo/state/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1009,7 +982,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/agents/rfp-demo/vpk-html-report/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1028,7 +1000,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/[action]/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1059,7 +1030,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/preview-session/[sessionId]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -1078,7 +1048,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/preview-session/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1097,7 +1066,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -1128,7 +1096,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/activate/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1147,7 +1114,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/tabs/[tabIndex]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -1166,7 +1132,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/[workspaceId]/tabs/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1197,7 +1162,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/browser-workspaces/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1228,7 +1192,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chat-cancel/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1247,7 +1210,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chat-sdk/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1266,7 +1228,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chat-sdk/skip-question/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1285,7 +1246,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chat-title/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1304,7 +1264,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/checkpoints/[id]/rollback/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1323,7 +1282,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/checkpoints/[id]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -1342,7 +1300,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/checkpoints/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1373,7 +1330,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chromium-preview/[action]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1392,7 +1348,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chromium-preview/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1423,7 +1378,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chromium-preview/screenshot/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1442,7 +1396,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chromium-preview/snapshot/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1461,7 +1414,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/chromium-preview/stream/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1480,7 +1432,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/genui-chat/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1499,7 +1450,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/genui-description-summary/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1518,7 +1468,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/genui-export/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1537,7 +1486,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/health/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1556,7 +1504,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/html-selector/dispatch/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1575,7 +1522,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/html-selector/tokens/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1594,7 +1540,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/orchestrator/log/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -1625,7 +1570,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/orchestrator/timeline/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1644,7 +1588,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/capture/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1663,7 +1606,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/explorer/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1682,7 +1624,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/ingest/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1701,7 +1642,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/log/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1720,7 +1660,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/page/[...slug]/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1751,7 +1690,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/raw/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1770,7 +1708,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/search/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1789,7 +1726,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/source/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -1820,7 +1756,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/summarize/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1839,7 +1774,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/twg/chat/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1858,7 +1792,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/twg/expand/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1877,7 +1810,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/twg/refresh/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1896,7 +1828,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/unprocessed-count/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1915,7 +1846,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/vault/reset/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1934,7 +1864,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/vault/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -1953,7 +1882,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/personal-graph/vault/select/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1972,7 +1900,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/plan-title/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -1991,7 +1918,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/realtime/audio-conversation-token/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2010,7 +1936,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/realtime/ws-url/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2023,7 +1948,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/background-streams/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2042,7 +1966,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/cancel-deferred-tool/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2061,7 +1984,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/chat/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2080,7 +2002,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/detach/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2099,7 +2020,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/documents/route.ts",
-				"routeCount": 3,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -2142,7 +2062,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/files/[fileId]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2161,7 +2080,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/files/upload/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2180,7 +2098,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/generated-media/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2199,7 +2116,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/messages/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -2230,7 +2146,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/runs/[threadId]/cancel/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2249,7 +2164,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/runs/[threadId]/detach/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2268,7 +2182,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/runs/[threadId]/stream/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2287,7 +2200,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/suggestions/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2306,7 +2218,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/threads/[threadId]/route.ts",
-				"routeCount": 3,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -2349,7 +2260,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/threads/route.ts",
-				"routeCount": 3,
 				"routes": [
 					{
 						"method": "DELETE",
@@ -2392,7 +2302,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/rovo/votes/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -2423,7 +2332,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/sessions/search/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2442,7 +2350,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/sound-generation/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2461,7 +2368,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/speech-transcription/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2480,7 +2386,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/sprint-board/tasks/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2493,7 +2398,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/standup/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2512,7 +2416,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/status/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2531,7 +2434,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/status/rovo/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2550,7 +2452,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/studio/agent-data-flow/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2569,7 +2470,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/ticket-classify/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2588,7 +2488,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/vpk-html/[...assetPath]/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
@@ -2607,7 +2506,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/vpk-html/apply-tokens/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2626,7 +2524,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/vpk-html/notes/route.ts",
-				"routeCount": 2,
 				"routes": [
 					{
 						"method": "GET",
@@ -2657,7 +2554,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/vpk-html/publish-gist/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "POST",
@@ -2676,7 +2572,6 @@
 			{
 				"kind": "next-api",
 				"owner": "app/api/vpk-html/route.ts",
-				"routeCount": 1,
 				"routes": [
 					{
 						"method": "GET",
