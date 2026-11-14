@@ -231,6 +231,12 @@ const DEFAULT_REACH_TRACKED_RULES = [
 	{ match: "package", reason: "charting runtime", source: "recharts" },
 	{ match: "package", reason: "third-party brand logo map", source: "@atlassian/logo-third-party" },
 	{ match: "package", reason: "Atlassian product logo map", source: "@atlaskit/logo" },
+	// The directory catalogs (C-8g item 3): the four large JSON files, about 360 KB together.
+	// Imported only by their loaders in app/data/directory (and one golden-journey fixture).
+	...["agent-templates", "knowledge", "skills", "tools"].flatMap((name) => [
+		{ match: "exact", reason: "directory catalog data", source: `./${name}.json` },
+		{ match: "exact", reason: "directory catalog data", source: `@/app/data/directory/${name}.json` },
+	]),
 ];
 
 const DEFAULT_HEAVY_REACH_BASELINE_PATH = "scripts/lazy-load-heavy-baseline.json";

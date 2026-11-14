@@ -450,7 +450,7 @@ test("reach-tracked runtimes are baselined on reach but stay allowed in a shell'
 	});
 });
 
-test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mermaid, recharts and the logo maps", () => {
+test("the reach-tracked runtimes are streamdown and its plugins, katex, mermaid, recharts, the logo maps and the directory catalogs", () => {
 	assert.deepEqual(DEFAULT_REACH_TRACKED_RULES.map((rule) => `${rule.match}:${rule.source}`), [
 		"package:streamdown",
 		"prefix:@streamdown/",
@@ -459,6 +459,7 @@ test("the C-8f reach-tracked runtimes are streamdown and its plugins, katex, mer
 		"package:recharts",
 		"package:@atlassian/logo-third-party",
 		"package:@atlaskit/logo",
+		...["agent-templates", "knowledge", "skills", "tools"].flatMap((name) => [`exact:./${name}.json`, `exact:@/app/data/directory/${name}.json`]),
 	]);
 	assert.equal(getRuleForImport("@atlaskit/logo-extra", DEFAULT_REACH_TRACKED_RULES), null);
 });

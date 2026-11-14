@@ -2,10 +2,18 @@
 	"note": "Heavy runtimes each route entry reaches through static imports today (verify:lazy-load). Shrink-only: a new entry/runtime pair fails; rewrite with --update-baseline after removing one.",
 	"entries": {
 		"app/admin/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"app/admin/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -19,6 +27,10 @@
 			"@atlaskit/logo"
 		],
 		"app/butter-v0/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -26,6 +38,10 @@
 			"shiki"
 		],
 		"app/butter-v1/page.tsx -> components/website/demos/projects/butter-v1-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -33,6 +49,10 @@
 			"shiki"
 		],
 		"app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -43,6 +63,10 @@
 			"shiki"
 		],
 		"app/confluence/page.tsx -> components/website/demos/projects/confluence-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -54,6 +78,11 @@
 			"three"
 		],
 		"app/jira-golden-journey-v0/page.tsx -> components/website/demos/projects/jira-golden-journey-v0-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
+			"@/app/data/directory/skills.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -61,6 +90,10 @@
 			"shiki"
 		],
 		"app/jira-golden-journey-v1/page.tsx -> components/website/demos/projects/jira-golden-journey-v1-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -68,6 +101,10 @@
 			"shiki"
 		],
 		"app/jira-golden-journey-v2/page.tsx -> components/website/demos/projects/jira-golden-journey-v2-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -75,6 +112,10 @@
 			"shiki"
 		],
 		"app/jira-golden-journey-v3/page.tsx -> components/website/demos/projects/jira-golden-journey-v3-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -82,6 +123,10 @@
 			"shiki"
 		],
 		"app/jira-golden-journey-v4/page.tsx -> components/website/demos/projects/jira-golden-journey-v4-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -89,6 +134,10 @@
 			"shiki"
 		],
 		"app/jira-queue/page.tsx -> components/website/demos/projects/jira-queue-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -96,6 +145,10 @@
 			"shiki"
 		],
 		"app/jira-team-eu26-end/page.tsx -> components/website/demos/projects/jira-team-eu26-end-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -104,6 +157,10 @@
 			"three"
 		],
 		"app/jira-team-eu26/page.tsx -> components/website/demos/projects/jira-team-eu26-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -111,6 +168,10 @@
 			"shiki"
 		],
 		"app/jira/page.tsx -> components/website/demos/projects/jira-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -121,6 +182,10 @@
 			"@web-kits/audio"
 		],
 		"app/preview/blocks/agent-bento/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -131,12 +196,20 @@
 			"@atlassian/logo-third-party"
 		],
 		"app/preview/blocks/agent-profile-card/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
 		"app/preview/blocks/agent/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -144,6 +217,10 @@
 			"shiki"
 		],
 		"app/preview/blocks/code-review/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -151,6 +228,10 @@
 			"shiki"
 		],
 		"app/preview/blocks/jira-kanban-experimental-v2/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -158,24 +239,40 @@
 			"shiki"
 		],
 		"app/preview/blocks/jira-kanban-experimental/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
 		"app/preview/blocks/jira-kanban/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
 		"app/preview/blocks/jira-list/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
 			"shiki"
 		],
 		"app/preview/blocks/skill-config/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -183,6 +280,10 @@
 			"shiki"
 		],
 		"app/preview/blocks/trigger-config/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -194,6 +295,10 @@
 			"@atlassian/logo-third-party"
 		],
 		"app/preview/projects/jira-for-you/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -201,6 +306,10 @@
 			"shiki"
 		],
 		"app/rovo-button/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
@@ -208,6 +317,10 @@
 			"@atlaskit/logo"
 		],
 		"app/rovo/[[...id]]/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@streamdown/",
@@ -217,14 +330,26 @@
 			"streamdown"
 		],
 		"app/rovo/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"app/sandbox/screen-assistant/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"app/search/page.tsx -> components/website/demos/projects/search-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -232,10 +357,18 @@
 			"shiki"
 		],
 		"app/sidebar-chat/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"app/sidebar-chat/page.tsx -> components/website/demos/projects/sidebar-chat-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -243,10 +376,18 @@
 			"shiki"
 		],
 		"app/skills/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"app/skills/page.tsx -> components/website/demos/projects/skills-demo.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -254,6 +395,10 @@
 			"shiki"
 		],
 		"app/studio/[[...id]]/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@streamdown/",
@@ -263,6 +408,10 @@
 			"streamdown"
 		],
 		"app/studio/layout.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
@@ -270,6 +419,10 @@
 			"shiki"
 		],
 		"components/projects/admin/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -277,6 +430,10 @@
 			"shiki"
 		],
 		"components/projects/butter-v1/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -284,6 +441,10 @@
 			"shiki"
 		],
 		"components/projects/butter/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -291,10 +452,18 @@
 			"shiki"
 		],
 		"components/projects/confluence/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party"
 		],
 		"components/projects/jira-for-you/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -302,6 +471,11 @@
 			"shiki"
 		],
 		"components/projects/jira-golden-journey-v0/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
+			"@/app/data/directory/skills.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -309,6 +483,10 @@
 			"shiki"
 		],
 		"components/projects/jira-golden-journey-v1/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -316,6 +494,10 @@
 			"shiki"
 		],
 		"components/projects/jira-golden-journey-v2/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -323,6 +505,10 @@
 			"shiki"
 		],
 		"components/projects/jira-golden-journey-v3/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -330,6 +516,10 @@
 			"shiki"
 		],
 		"components/projects/jira-golden-journey-v4/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -337,6 +527,10 @@
 			"shiki"
 		],
 		"components/projects/jira-queue/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -344,6 +538,10 @@
 			"shiki"
 		],
 		"components/projects/jira-team-eu26-end/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -352,6 +550,10 @@
 			"three"
 		],
 		"components/projects/jira-team-eu26/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -359,6 +561,10 @@
 			"shiki"
 		],
 		"components/projects/jira/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -366,6 +572,10 @@
 			"shiki"
 		],
 		"components/projects/rovo/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@streamdown/",
@@ -379,6 +589,10 @@
 			"@atlassian/logo-third-party"
 		],
 		"components/projects/sidebar-chat/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -386,6 +600,10 @@
 			"shiki"
 		],
 		"components/projects/skills/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@tiptap/",
@@ -393,6 +611,10 @@
 			"shiki"
 		],
 		"components/projects/studio/page.tsx": [
+			"./agent-templates.json",
+			"./knowledge.json",
+			"./skills.json",
+			"./tools.json",
 			"@atlaskit/logo",
 			"@atlassian/logo-third-party",
 			"@streamdown/",
