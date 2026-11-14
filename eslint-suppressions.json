@@ -2823,6 +2823,11 @@
       "count": 1
     }
   },
+  "components/ui-custom/message-markdown.css-contract.source.test.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
   "components/ui-custom/persona.tsx": {
     "react-hooks/immutability": {
       "count": 4
