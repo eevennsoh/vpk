@@ -230,11 +230,6 @@
       "count": 1
     }
   },
-  "components/arts/personal-graph/personal-graph-page.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/arts/personal-graph/personal-graph-source-picker.tsx": {
     "no-restricted-syntax": {
       "count": 3
@@ -1723,11 +1718,6 @@
   },
   "components/charts/radial/chart-radial-text.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/preview/blocks/frame-demo/Frame2087327905.tsx": {
-    "vpk-tokens/no-raw-white-black": {
       "count": 1
     }
   },
