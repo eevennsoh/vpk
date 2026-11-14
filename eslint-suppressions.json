@@ -2726,9 +2726,6 @@
     }
   },
   "components/ui-custom/chain-of-thought.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -2947,11 +2944,6 @@
   "components/ui-custom/queue.tsx": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/ui-custom/reasoning.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "components/ui-custom/rich-text-editor/extensions.ts": {

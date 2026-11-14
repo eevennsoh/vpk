@@ -1,5 +1,5 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { getReasoningCompletedLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getReasoningCompletedLabel } from "@/components/ui-custom/lib/reasoning-labels";
 import { resolveThinkingLabelForSurface } from "@/components/projects/shared/lib/thinking-label-policy";
 
 interface ResolveThinkingStatusActiveOptions {
