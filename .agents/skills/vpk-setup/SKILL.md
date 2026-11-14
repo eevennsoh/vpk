@@ -209,7 +209,7 @@ OPENAI_REALTIME_VOICE=alloy
 | `AI_GATEWAY_USE_CASE_ID` | Yes | Your AI Gateway use case ID |
 | `AI_GATEWAY_CLOUD_ID` | Yes | Cloud ID. For staging/local, use `internal-dummy-<use-case-id>` (Proximity's dummy CloudID). Tenant UUIDs and `local-testing` are rejected by staging AI Gateway. |
 | `AI_GATEWAY_USER_ID` | Yes | Your Atlassian email |
-| `OPENAI_MODEL` | Optional | GPT model ID (default: `gpt-6.1-sol`) |
+| `OPENAI_MODEL` | Optional | Leave unset. Pins a GPT model on purpose; the default lives in `backend/lib/openai-model.js`. A shell export overrides `.env.local`, and startup plus `pnpm run doctor` warn when the override is older than the default. |
 | `GOOGLE_IMAGE_MODEL` | Yes | Gemini image model (default: `gemini-3-pro-image`) |
 | `GOOGLE_TTS_MODEL` | Yes | TTS model (default: `tts-latest`) |
 | `GOOGLE_STT_MODEL` | Yes | Google speech-to-text model used when `STT_PRESET=google` |
@@ -271,7 +271,7 @@ separately via `STT_PRESET`.
 | Provider | Model | Endpoint |
 | -------- | ----- | -------- |
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
-| **GPT** | `gpt-5.6-terra` | `/v1/openai/v1/chat/completions` |
+| **GPT** | default in `backend/lib/openai-model.js` | `/v1/openai/v1/chat/completions` |
 | **Gemini** | `gemini-3-pro-image` | `/v1/google/publishers/google/v1/chat/completions` |
 
 Update `AI_GATEWAY_URL` in `.env.local` then restart with `pnpm run rovo`.

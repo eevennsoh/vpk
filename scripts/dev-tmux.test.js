@@ -334,3 +334,65 @@ test("rovo:tmux start builds its session with window targets tmux accepts, up to
 	assert.equal(fs.existsSync(path.join(worktree, ".dev-rovo-ports")), false);
 	assert.equal(fs.existsSync(path.join(worktree, ".env.local")), false, "nothing was seeded into the temp worktree");
 });
+
+// The backend loads .env.local with dotenv, which never replaces a variable already set. If the
+// launcher exported the file's OPENAI_MODEL into tmux, the backend would report it as a shell
+// override and keep a stale value after .env.local changed.
+function startWithEnvLocalModel(t, extraEnv = {}) {
+	const { writeFakeTmux } = require("./lib/fake-tmux.js");
+	const { spawnSync } = require("node:child_process");
+	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-tmux-model-")));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const worktree = path.join(root, "wt");
+	const bin = path.join(root, "bin");
+	fs.mkdirSync(worktree);
+	fs.mkdirSync(bin);
+	for (const entry of ["scripts", "node_modules", "package.json"]) {
+		fs.symlinkSync(path.join(repoRoot, entry), path.join(worktree, entry));
+	}
+	fs.writeFileSync(path.join(worktree, ".env.local"), "ROVO_BILLING_URL=https://example.invalid\nOPENAI_MODEL=gpt-1.0-sol\n");
+	writeFakeTmux(path.join(bin, "tmux-fake"));
+	// Records what the tmux server would inherit when the launcher creates the session.
+	const seenLog = path.join(root, "seen.log");
+	fs.writeFileSync(
+		path.join(bin, "tmux"),
+		`#!/usr/bin/env bash\nif [ "$1" = "new-session" ]; then echo "OPENAI_MODEL=\${OPENAI_MODEL-<unset>}" >> "${seenLog}"; fi\nexec "${path.join(bin, "tmux-fake")}" "$@"\n`,
+		{ mode: 0o755 }
+	);
+	const tmuxLog = path.join(root, "tmux.log");
+	const env = { ...process.env };
+	delete env.OPENAI_MODEL;
+	delete env.ROVO_BILLING_URL;
+	const result = spawnSync(path.join(worktree, "scripts/dev-tmux.sh"), ["start"], {
+		cwd: worktree,
+		encoding: "utf8",
+		env: {
+			...env,
+			PATH: `${bin}:${process.env.PATH}`,
+			ROVO_POOL_SIZE: "1",
+			ROVO_TMUX_SESSION: "vpk-dev-model-test",
+			ROVO_HEALTHCHECK_MAX_ATTEMPTS: "1",
+			ROVO_HEALTHCHECK_INTERVAL_MS: "0",
+			FAKE_TMUX_STATE: path.join(root, "state"),
+			FAKE_TMUX_LOG: tmuxLog,
+			...extraEnv,
+		},
+	});
+	return {
+		result,
+		seen: fs.existsSync(seenLog) ? fs.readFileSync(seenLog, "utf8").trim() : "",
+		log: fs.existsSync(tmuxLog) ? fs.readFileSync(tmuxLog, "utf8") : "",
+	};
+}
+
+test("rovo:tmux start keeps .env.local's OPENAI_MODEL out of the tmux environment", (t) => {
+	const { result, seen, log } = startWithEnvLocalModel(t);
+	assert.equal(seen, "OPENAI_MODEL=<unset>", result.stderr);
+	assert.match(log, /^set-environment -t =vpk-dev-model-test -r OPENAI_MODEL$/mu);
+});
+
+test("rovo:tmux start keeps an OPENAI_MODEL the caller exported", (t) => {
+	const { result, seen, log } = startWithEnvLocalModel(t, { OPENAI_MODEL: "gpt-9.0-sol" });
+	assert.equal(seen, "OPENAI_MODEL=gpt-9.0-sol", result.stderr);
+	assert.doesNotMatch(log, /set-environment/u);
+});

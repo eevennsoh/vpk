@@ -3,8 +3,9 @@
 // A fake tmux for launcher tests, resolving targets the way tmux 3.8 does, so a target form that
 // real tmux rejects or misreads fails here too:
 //
-// - Session commands (has-session, kill-session, attach-session, list-windows) take a session
-//   target: "=name" matches exactly; a bare "name" matches exactly, else as a unique prefix.
+// - Session commands (has-session, kill-session, attach-session, list-windows, set-environment)
+//   take a session target: "=name" matches exactly; a bare "name" matches exactly, else as a
+//   unique prefix.
 // - Window and pane commands (send-keys, pipe-pane, list-panes, set-option, set-window-option,
 //   select-pane, split-window, select-layout, display-message, new-window) take a window or pane
 //   target: "=name:" (or "=name:window.pane") matches the session exactly; "=name" without the
