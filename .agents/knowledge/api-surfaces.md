@@ -12,7 +12,7 @@ ride along each time (see the Contextual Rules section of `AGENTS.md`). Source o
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 37; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 38; Next API routes: 103.
 
 ### Backend Routes
 
@@ -103,12 +103,12 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/rovo/cancel-deferred-tool` | no | `backend/routes/chat-control.js:52` |
 | `POST` | `/api/rovo/chat` | no | `backend/routes/rovo-chat-proxy.js:24` |
 | `POST` | `/api/rovo/detach` | no | `backend/routes/rovo-app.js:490` |
-| `DELETE` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:806` |
-| `GET` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:730` |
-| `POST` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:753` |
-| `GET` | `/api/rovo/files/:fileId` | no | `backend/routes/rovo-app.js:851` |
-| `POST` | `/api/rovo/files/upload` | no | `backend/routes/rovo-app.js:822` |
-| `GET` | `/api/rovo/generated-media` | no | `backend/routes/rovo-app.js:870` |
+| `DELETE` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:808` |
+| `GET` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:732` |
+| `POST` | `/api/rovo/documents` | no | `backend/routes/rovo-app.js:755` |
+| `GET` | `/api/rovo/files/:fileId` | no | `backend/routes/rovo-app.js:853` |
+| `POST` | `/api/rovo/files/upload` | no | `backend/routes/rovo-app.js:824` |
+| `GET` | `/api/rovo/generated-media` | no | `backend/routes/rovo-app.js:872` |
 | `GET` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:211` |
 | `POST` | `/api/rovo/messages` | no | `backend/routes/rovo-app.js:229` |
 | `POST` | `/api/rovo/runs/:threadId/cancel` | no | `backend/routes/rovo-app.js:572` |
@@ -118,14 +118,14 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `DELETE` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:407` |
 | `GET` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:265` |
 | `POST` | `/api/rovo/threads` | no | `backend/routes/rovo-app.js:367` |
-| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:659` |
+| `DELETE` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:661` |
 | `GET` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:431` |
 | `PUT` | `/api/rovo/threads/:threadId` | no | `backend/routes/rovo-app.js:449` |
-| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:644` |
-| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | no | `backend/routes/rovo-app.js:598` |
-| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:617` |
-| `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:693` |
-| `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:709` |
+| `DELETE` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:646` |
+| `GET` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:600` |
+| `POST` | `/api/rovo/threads/:threadId/browser-workspace` | yes | `backend/routes/rovo-app.js:619` |
+| `GET` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:695` |
+| `PATCH` | `/api/rovo/votes` | no | `backend/routes/rovo-app.js:711` |
 | `GET` | `/api/sessions/search` | no | `backend/routes/rovo-app.js:285` |
 | `POST` | `/api/sound-generation` | no | `backend/routes/media.js:93` |
 | `POST` | `/api/speech-transcription` | no | `backend/routes/media.js:135` |
