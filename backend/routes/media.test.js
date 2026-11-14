@@ -486,8 +486,13 @@ test("a redirect to a non-image path on the configured site is fetched without t
 test("an upstream body that is not an image is read only as a small Atlassian page", async () => {
 	const { IMAGE_PROXY_MAX_HTML_BYTES } = require("../lib/image-proxy");
 	let pulled = 0;
+	// 16 MiB, sent 64 KiB at a time: finite, so an uncapped reader finishes (and fails here).
 	const hugePage = () => new ReadableStream({
 		pull(controller) {
+			if (pulled >= 16 * 1024 * 1024) {
+				controller.close();
+				return;
+			}
 			pulled += 64 * 1024;
 			controller.enqueue(new Uint8Array(64 * 1024));
 		},
