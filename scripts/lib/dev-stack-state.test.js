@@ -202,7 +202,7 @@ test("collectStackFacts falls back to port files and probes recorded pids", asyn
 		now: NOW,
 	});
 	assert.equal(facts.record, null);
-	assert.deepEqual(facts.services.frontend, { port: 3005, pid: null, childPid: null, listening: true, listenerInWorktree: true, pidAlive: null, childPidAlive: null });
+	assert.deepEqual(facts.services.frontend, { port: 3005, exited: null, pid: null, childPid: null, listening: true, listenerInWorktree: true, pidAlive: null, childPidAlive: null });
 	assert.equal(facts.services.backend.listening, false);
 
 	recordService(dir, "backend", { port: 8085, pid: 41, pidStart: "Sat Nov 14 10:00:00 2026", childPid: 42, childStart: "Sat Nov 14 10:00:01 2026" });
@@ -316,8 +316,8 @@ for (let i = 0; i < 10; i += 1) withStackLock(${JSON.stringify(dir)}, () => {
 test("a waiter never removes a lock that another writer took after the stale one", (t) => {
 	const dir = tempWorktree(t);
 	const lock = path.join(dir, `${STACK_FILE}.lock`);
-	const deadOwner = "999999-00000000-0000-4000-8000-000000000000";
-	const liveOwner = `${process.pid}-11111111-1111-4111-8111-111111111111`;
+	const deadOwner = JSON.stringify({ token: "dead", pid: 2 ** 22 + 7, start: "Mon Jan 1 00:00:00 2024", command: "node" });
+	const liveOwner = JSON.stringify({ token: "live", pid: process.pid, start: null, command: null });
 	fs.writeFileSync(lock, deadOwner);
 	// Right after the waiter reads the stale token, another writer replaces the stale lock with
 	// its own (the interleaving the review reproduced) and is now inside its callback.
@@ -338,12 +338,108 @@ test("a waiter never removes a lock that another writer took after the stale one
 	assert.equal(fs.existsSync(`${lock}.takeover`), false);
 });
 
-test("a live owner keeps its lock however long it holds it, until the lock is abandoned", (t) => {
+test("a verifiably live owner keeps its lock however old, and a recycled owner pid does not", (t) => {
 	const dir = tempWorktree(t);
 	const lock = path.join(dir, `${STACK_FILE}.lock`);
-	fs.writeFileSync(lock, `${process.pid}-22222222-2222-4222-8222-222222222222`);
-	const old = new Date(Date.now() - 30_000);
+	const me = readProcessIdentity(process.pid);
+	assert.equal(me.state, "alive");
+	fs.writeFileSync(lock, JSON.stringify({ token: "held", pid: process.pid, start: me.start, command: me.command }));
+	const old = new Date(Date.now() - 3_600_000);
 	fs.utimesSync(lock, old, old);
-	assert.throws(() => withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), /Timed out/);
-	assert.equal(withStackLock(dir, () => "ran", { retries: 2, retryMs: 1, abandonedMs: 10_000 }), "ran");
+	assert.throws(() => withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), /Timed out/, "an hour-old lock of a live owner is not taken");
+
+	// The same pid, but another process now (it started at another time): the owner is gone.
+	fs.writeFileSync(lock, JSON.stringify({ token: "recycled", pid: process.pid, start: "Mon Jan 1 00:00:00 2024", command: me.command }));
+	assert.equal(withStackLock(dir, () => "ran", { retries: 2, retryMs: 1 }), "ran");
+});
+
+test("a holder whose lock was taken redoes its update instead of overwriting", (t) => {
+	const dir = tempWorktree(t);
+	const lock = path.join(dir, `${STACK_FILE}.lock`);
+	let calls = 0;
+	const result = withStackLock(dir, (assertOwned) => {
+		calls += 1;
+		// The first time, another writer displaces this holder and finishes before it writes.
+		if (calls === 1) fs.rmSync(lock);
+		assertOwned();
+		return "written";
+	}, { retries: 5, retryMs: 1 });
+	assert.equal(result, "written");
+	assert.equal(calls, 2);
+	assert.equal(fs.existsSync(lock), false);
+
+	// The same through updateStackRecord: the first attempt's record never lands.
+	recordService(dir, "frontend", { port: 3001, pid: 101 });
+	const realWrite = fs.writeFileSync;
+	let displaced = false;
+	const fsImpl = {
+		...fs,
+		writeFileSync(file, ...rest) {
+			const written = realWrite(file, ...rest);
+			if (!displaced && String(file).endsWith(".tmp")) {
+				displaced = true;
+				// Between preparing its record and replacing the file, this holder loses the lock to
+				// another writer, which records the backend and finishes.
+				const lockFile = path.join(dir, `${STACK_FILE}.lock`);
+				fs.rmSync(lockFile);
+				const other = JSON.parse(fs.readFileSync(path.join(dir, STACK_FILE), "utf8"));
+				other.services.backend = { port: 8081, pid: 201 };
+				realWrite(path.join(dir, STACK_FILE), JSON.stringify(other));
+			}
+			return written;
+		},
+	};
+	recordService(dir, "frontend", { port: 3002, pid: 102 }, { fsImpl });
+	const saved = readStackRecord(dir);
+	assert.equal(saved.services.frontend.port, 3002);
+	assert.equal(saved.services.backend.port, 8081, "the other writer's entry survived");
+});
+
+test("identity does not depend on the time zone or the locale", async (t) => {
+	const { spawnInGroup } = require("./test-process.js");
+	const child = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
+	const saved = { TZ: process.env.TZ, LC_ALL: process.env.LC_ALL };
+	t.after(() => {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	});
+	process.env.TZ = "Asia/Tokyo";
+	process.env.LC_ALL = "de_DE.UTF-8";
+	const tokyo = readProcessIdentity(child.pid);
+	process.env.TZ = "America/Los_Angeles";
+	process.env.LC_ALL = "fr_FR.UTF-8";
+	const losAngeles = readProcessIdentity(child.pid);
+	assert.equal(tokyo.state, "alive");
+	assert.deepEqual(tokyo, losAngeles);
+});
+
+test("a process whose identity cannot be read is unknown, never gone", () => {
+	const exists = () => {};
+	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "darwin", spawnSyncImpl: () => ({ status: 1, stdout: "" }) }), { state: "unknown" });
+	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "darwin", spawnSyncImpl: () => ({ status: 0, stdout: "S  Sa 14 Nov 10:00:00 2026  node\n" }) }), { state: "unknown" });
+	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "linux", readFile: () => { throw new Error("EACCES"); } }), { state: "unknown" });
+	const proc = { "/proc/42/stat": "42 (node) S 1 42 42 0 -1 4194560 1 0 0 0 0 0 0 0 20 0 1 0 987654 1000 100", "/proc/sys/kernel/random/boot_id": "b00t\n", "/proc/42/cmdline": "node\0server.js\0" };
+	assert.deepEqual(readProcessIdentity(42, { kill: exists, platform: "linux", readFile: (file) => proc[file] }), { state: "alive", start: "b00t+987654", command: "node server.js" });
+	assert.equal(verifyRecordedProcess({ pid: 42, start: "x", command: "y" }, { readIdentity: () => ({ state: "unknown" }) }), null);
+});
+
+test("a launcher's recorded exit makes the stack degraded at once", (t) => {
+	const dir = tempWorktree(t);
+	recordPhase(dir, "starting", { session: { name: "vpk-dev-x", socket: "vpk-dev" } });
+	recordService(dir, "frontend", { port: 3001, pid: 101 });
+	clearService(dir, "frontend", { pid: 101, exit: { code: 1, signal: null } });
+	const record = readStackRecord(dir);
+	assert.equal(record.exits.frontend.code, 1);
+	const status = deriveStackStatus({
+		now: Date.now(),
+		record,
+		sessionAlive: true,
+		services: { frontend: { listening: false, exited: record.exits.frontend }, backend: notYet },
+	});
+	assert.equal(status.status, "degraded");
+	assert.match(status.reason, /frontend \(code 1\) exited/);
+	recordService(dir, "frontend", { port: 3001, pid: 103 });
+	assert.equal(readStackRecord(dir).exits.frontend, undefined, "a new launch clears the exit");
 });

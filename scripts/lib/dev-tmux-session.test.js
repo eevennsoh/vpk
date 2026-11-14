@@ -78,3 +78,10 @@ test("the launchers, `pnpm ports` and the module derive one name for a worktree"
 		assert.doesNotMatch(source, /sanitizeToken/, `${script} derives the name itself`);
 	}
 });
+
+test("an explicit session name that tmux cannot target is refused", () => {
+	for (const name of ["demo:1", "demo.2", "=demo"]) {
+		assert.throws(() => resolveDevTmuxSessionName({ env: { VPK_DEV_TMUX_SESSION: name }, stack: "plain" }), /cannot contain/, name);
+	}
+	assert.equal(sanitizeToken("feat.2:x", "fallback"), "feat-2-x", "derived names never contain them");
+});

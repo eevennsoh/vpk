@@ -44,7 +44,13 @@ function resolveDevTmuxSessionName({
 	}
 	const explicitName = env[variables.name];
 	if (typeof explicitName === "string" && explicitName.trim().length > 0) {
-		return explicitName.trim();
+		const name = explicitName.trim();
+		// tmux reads ":" and "." as window and pane separators and a leading "=" as exact match, so
+		// a name with them cannot be targeted.
+		if (/[:.]/u.test(name) || name.startsWith("=")) {
+			throw new Error(`${variables.name} cannot contain ":" or "." or start with "=", got "${name}".`);
+		}
+		return name;
 	}
 
 	return sessionNameForWorktreeName(getWorktreeNameImpl(), {

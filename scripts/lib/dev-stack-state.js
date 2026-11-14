@@ -131,6 +131,15 @@ function normalizeStackRecord(value, { worktreePath = null } = {}) {
 		const entry = normalizeService(value.services?.[service]);
 		if (entry) services[service] = entry;
 	}
+	// A launcher that has finished records how it exited, so a start whose servers died reads as
+	// degraded at once instead of "starting" until the deadline.
+	const exits = {};
+	for (const service of SERVICES) {
+		const exit = value.exits?.[service];
+		if (exit && typeof exit === "object") {
+			exits[service] = { at: text(exit.at), code: Number.isInteger(exit.code) ? exit.code : null, signal: text(exit.signal) };
+		}
+	}
 	const session =
 		value.session && typeof value.session.name === "string" && value.session.name.length > 0
 			? { name: value.session.name, socket: typeof value.session.socket === "string" ? value.session.socket : null }
@@ -142,6 +151,7 @@ function normalizeStackRecord(value, { worktreePath = null } = {}) {
 		phase: RECORDED_PHASES.includes(value.phase) ? value.phase : null,
 		phaseAt: typeof value.phaseAt === "string" ? value.phaseAt : null,
 		services,
+		exits,
 	};
 }
 
@@ -161,6 +171,7 @@ function emptyRecord(worktreePath) {
 		phase: null,
 		phaseAt: null,
 		services: {},
+		exits: {},
 	};
 }
 
@@ -169,17 +180,31 @@ function sleepSync(ms) {
 }
 
 // The frontend and backend launchers record themselves at about the same moment, so every
-// write is a read-modify-write under an exclusive lock file holding the owner's token
-// ("<pid>-<uuid>"). Only the owner removes it.
+// write is a read-modify-write under an exclusive lock file. The lock holds its owner: a unique
+// token plus the owner's pid and process identity (readProcessIdentity). Only the owner removes it.
 //
-// A lock is stale when its owner pid is gone, when it carries no readable owner and is older
-// than staleMs or dated in the future (a clock change), or when it is older than abandonedMs
-// whatever its owner (a recycled owner pid). A live owner is never displaced sooner, so a slow
-// writer cannot have its lock removed under it.
+// A lock is stale only when its owner is verifiably gone: no such process, or the pid now belongs
+// to another process (a recycled pid). An owner that is verifiably alive keeps its lock however
+// long it holds it (suspended, or across a clock step). When the owner cannot be checked (ps
+// unreadable, or an unreadable lock), a lock older than staleMs or dated in the future is stale.
 //
-// Removing a stale lock happens under a second, short-lived lock (`.lock.takeover`), and only
-// after re-reading that the lock still holds the stale token observed: a waiter can never remove
-// a lock that another writer has since created.
+// Stale files are removed only under a second lock (`.lock.takeover`), after re-reading that the
+// file still holds what was observed, by moving it aside and checking it before deleting. As a
+// backstop, the holder checks right before it replaces the record that it still owns the lock, and
+// redoes the whole update if it does not, so a displaced holder never overwrites another's write.
+class StackLockLost extends Error {}
+
+let ownIdentity;
+function lockContent(token) {
+	ownIdentity ??= readProcessIdentity(process.pid);
+	return JSON.stringify({
+		token,
+		pid: process.pid,
+		start: ownIdentity.state === "alive" ? ownIdentity.start : null,
+		command: ownIdentity.state === "alive" ? ownIdentity.command : null,
+	});
+}
+
 function readLockToken(lockPath, fsImpl) {
 	try {
 		return fsImpl.readFileSync(lockPath, "utf8");
@@ -188,65 +213,83 @@ function readLockToken(lockPath, fsImpl) {
 	}
 }
 
-function lockOwnerPid(token) {
-	const match = /^(\d+)-[0-9a-f-]{36}$/u.exec(String(token ?? ""));
-	return match ? Number.parseInt(match[1], 10) : null;
-}
-
-function pidGone(pid) {
+function lockOwner(content) {
 	try {
-		process.kill(pid, 0);
-		return false;
-	} catch (error) {
-		return error?.code === "ESRCH";
+		const owner = JSON.parse(content);
+		return positiveInteger(owner?.pid) ? owner : null;
+	} catch {
+		return null;
 	}
 }
 
-function lockIsStale(lockPath, token, { fsImpl, staleMs, abandonedMs, now }) {
+function lockIsStale(lockPath, content, { fsImpl, staleMs, now, verifyOwner = verifyRecordedProcess }) {
 	let mtimeMs;
 	try {
 		mtimeMs = fsImpl.statSync(lockPath).mtimeMs;
 	} catch {
 		return false;
 	}
+	const owner = lockOwner(content);
+	if (owner) {
+		const verdict = verifyOwner({ pid: owner.pid, start: owner.start ?? null, command: owner.command ?? null });
+		if (verdict === true) return false;
+		if (verdict === false) return true;
+	}
 	const age = now() - mtimeMs;
-	if (age > abandonedMs) return true;
-	const owner = lockOwnerPid(token);
-	if (owner !== null) return pidGone(owner);
 	return age > staleMs || age < -1_000;
+}
+
+// Remove `file` only if it still holds `observed`: move it aside, check, and put back anything else.
+function removeIfStill(file, observed, ownToken, fsImpl) {
+	const aside = `${file}.${ownToken}.aside`;
+	try {
+		fsImpl.renameSync(file, aside);
+	} catch {
+		return;
+	}
+	if (readLockToken(aside, fsImpl) !== observed) {
+		try {
+			fsImpl.linkSync(aside, file);
+		} catch {
+			// A newer file took the slot; its holder re-checks ownership before writing.
+		}
+	}
+	fsImpl.rmSync(aside, { force: true });
 }
 
 function removeStaleLock(lockPath, observed, ownToken, options) {
 	const { fsImpl } = options;
 	const takeover = `${lockPath}.takeover`;
+	const takeoverContent = lockContent(ownToken);
 	try {
-		fsImpl.writeFileSync(takeover, ownToken, { flag: "wx" });
+		fsImpl.writeFileSync(takeover, takeoverContent, { flag: "wx" });
 	} catch (error) {
 		if (error?.code !== "EEXIST") throw error;
-		// A takeover holder only re-reads and removes one file; one older than a second died.
-		try {
-			if (options.now() - fsImpl.statSync(takeover).mtimeMs > 1_000) fsImpl.rmSync(takeover, { force: true });
-		} catch {
-			// Released meanwhile.
-		}
+		// A takeover holder re-reads and removes one file; one whose owner is gone died holding it.
+		const held = readLockToken(takeover, fsImpl);
+		if (lockIsStale(takeover, held, { ...options, staleMs: 1_000 })) removeIfStill(takeover, held, ownToken, fsImpl);
 		return;
 	}
 	try {
 		if (readLockToken(lockPath, fsImpl) === observed && lockIsStale(lockPath, observed, options)) {
-			fsImpl.rmSync(lockPath, { force: true });
+			removeIfStill(lockPath, observed, ownToken, fsImpl);
 		}
 	} finally {
-		if (readLockToken(takeover, fsImpl) === ownToken) fsImpl.rmSync(takeover, { force: true });
+		if (readLockToken(takeover, fsImpl) === takeoverContent) fsImpl.rmSync(takeover, { force: true });
 	}
 }
 
-function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, retryMs = 20, staleMs = 5_000, abandonedMs = 60_000, now = Date.now } = {}) {
+// Runs `callback(assertOwned)` holding the lock. The callback calls assertOwned() right before
+// it replaces the record; if the lock was taken from it meanwhile, the whole callback runs again
+// under a fresh lock.
+function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, retryMs = 20, staleMs = 5_000, now = Date.now, verifyOwner } = {}) {
 	const lockPath = `${stackFilePath(worktreePath)}.lock`;
-	const token = `${process.pid}-${randomUUID()}`;
-	const staleness = { fsImpl, staleMs, abandonedMs, now };
+	const token = randomUUID();
+	const content = lockContent(token);
+	const staleness = { fsImpl, staleMs, now, ...(verifyOwner ? { verifyOwner } : {}) };
 	for (let attempt = 0; ; attempt += 1) {
 		try {
-			fsImpl.writeFileSync(lockPath, token, { flag: "wx" });
+			fsImpl.writeFileSync(lockPath, content, { flag: "wx" });
 		} catch (error) {
 			if (error?.code !== "EEXIST") throw error;
 			const observed = readLockToken(lockPath, fsImpl);
@@ -256,17 +299,27 @@ function withStackLock(worktreePath, callback, { fsImpl = fs, retries = 250, ret
 			continue;
 		}
 		try {
-			return callback();
+			return callback(() => {
+				if (readLockToken(lockPath, fsImpl) !== content) throw new StackLockLost(`Lost ${lockPath} while holding it`);
+			});
+		} catch (error) {
+			if (!(error instanceof StackLockLost) || attempt >= retries) throw error;
 		} finally {
-			if (readLockToken(lockPath, fsImpl) === token) fsImpl.rmSync(lockPath, { force: true });
+			if (readLockToken(lockPath, fsImpl) === content) fsImpl.rmSync(lockPath, { force: true });
 		}
 	}
 }
 
-function writeRecordAtomically(worktreePath, record, { fsImpl = fs } = {}) {
+function writeRecordAtomically(worktreePath, record, { fsImpl = fs, assertOwned = () => {} } = {}) {
 	const target = stackFilePath(worktreePath);
 	const temporary = `${target}.${process.pid}.tmp`;
 	fsImpl.writeFileSync(temporary, `${JSON.stringify(record, null, "\t")}\n`);
+	try {
+		assertOwned();
+	} catch (error) {
+		fsImpl.rmSync(temporary, { force: true });
+		throw error;
+	}
 	fsImpl.renameSync(temporary, target);
 }
 
@@ -284,11 +337,11 @@ function writePortMirror(worktreePath, service, port, { fsImpl = fs } = {}) {
 function updateStackRecord(worktreePath, update, { fsImpl = fs, now = () => new Date() } = {}) {
 	return withStackLock(
 		worktreePath,
-		() => {
+		(assertOwned) => {
 			const current = readStackRecord(worktreePath, { fsImpl }) ?? emptyRecord(worktreePath);
 			const next = normalizeStackRecord({ ...update(structuredClone(current), now()), version: STACK_FILE_VERSION }, { worktreePath });
 			if (!next) throw new Error("updateStackRecord produced an invalid record");
-			writeRecordAtomically(worktreePath, next, { fsImpl });
+			writeRecordAtomically(worktreePath, next, { fsImpl, assertOwned });
 			for (const service of SERVICES) {
 				if (JSON.stringify(current.services[service] ?? null) !== JSON.stringify(next.services[service] ?? null)) {
 					writePortMirror(worktreePath, service, next.services[service]?.port ?? null, { fsImpl });
@@ -313,6 +366,7 @@ function recordPhase(worktreePath, phase, { session, keepService = () => false, 
 			session: session ?? record.session,
 			phase,
 			phaseAt: at.toISOString(),
+			exits: phase === "seeding-env" || phase === "stopped" ? {} : record.exits,
 			// A fresh start or a finished stop forgets the previous run's processes.
 			services:
 				phase === "seeding-env" || phase === "stopped"
@@ -333,8 +387,11 @@ function recordService(worktreePath, service, { port, pid, childPid = null, pidS
 		(record, at) => {
 			const existing = record.services[service];
 			if (pid === null && existing && existing.port === port && existing.pid !== null) return record;
+			const exits = { ...record.exits };
+			delete exits[service];
 			return {
 				...record,
+				exits,
 				services: {
 					...record.services,
 					[service]: { port, pid, pidStart, pidCommand, childPid, childStart, childCommand, recordedAt: at.toISOString() },
@@ -347,16 +404,18 @@ function recordService(worktreePath, service, { port, pid, childPid = null, pidS
 
 // Only the service whose launcher is `pid` is forgotten, so a launcher that exits late cannot
 // erase the record of the one that replaced it.
-function clearService(worktreePath, service, { pid = null, fsImpl = fs, now } = {}) {
+// `exit` ({ code, signal }): the launcher is exiting for good, and the record keeps how.
+function clearService(worktreePath, service, { pid = null, exit = null, fsImpl = fs, now } = {}) {
 	if (!SERVICES.includes(service)) throw new Error(`Unknown dev service: ${service}`);
 	return updateStackRecord(
 		worktreePath,
-		(record) => {
+		(record, at) => {
 			const entry = record.services[service];
 			if (!entry || (pid !== null && entry.pid !== null && entry.pid !== pid)) return record;
 			const services = { ...record.services };
 			delete services[service];
-			return { ...record, services };
+			const exits = exit ? { ...record.exits, [service]: { at: at.toISOString(), code: exit.code ?? null, signal: exit.signal ?? null } } : record.exits;
+			return { ...record, services, exits };
 		},
 		{ fsImpl, now },
 	);
@@ -461,9 +520,14 @@ function deriveStackStatus({
 		return result("ready", recorded ? "frontend and backend listen and their recorded processes are alive" : "frontend and backend listen (no processes recorded)");
 	}
 
-	// A recorded process that has exited is degraded at once, even inside the start grace period.
-	const dead = notServing.filter((service) => services[service]?.pidAlive === false || services[service]?.childPidAlive === false);
-	if (dead.length > 0) return result("degraded", `${dead.join(" and ")} exited while the session runs`);
+	// A recorded process that has exited, or a launcher that recorded its exit, is degraded at once,
+	// even inside the start grace period.
+	const exitNote = (service) => {
+		const exit = services[service]?.exited;
+		return exit ? ` (${exit.signal ? `signal ${exit.signal}` : `code ${exit.code ?? "?"}`})` : "";
+	};
+	const dead = notServing.filter((service) => services[service]?.pidAlive === false || services[service]?.childPidAlive === false || services[service]?.exited);
+	if (dead.length > 0) return result("degraded", `${dead.map((service) => `${service}${exitNote(service)}`).join(" and ")} exited while the session runs`);
 
 	if (phase === "starting" && sinceChange <= startTimeoutMs) {
 		return result("starting", `waiting for ${notServing.join(" and ")}`);
@@ -480,20 +544,41 @@ function readPortFile(worktreePath, service, { fsImpl = fs } = {}) {
 	}
 }
 
-// { state: "absent" } when no live process has the pid (a zombie counts as absent), { state:
-// "unknown" } when that cannot be read (ps blocked or failing), else { state: "alive", start,
-// command } with `start` the ps lstart, whitespace collapsed.
-function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.kill } = {}) {
+// A process's identity, in a form that does not depend on the time zone, the locale or the
+// clock: { state: "alive", start, command }. On Linux `start` is the boot id plus the start time in
+// clock ticks since boot (/proc/<pid>/stat), which a clock step does not move; elsewhere it is
+// `ps -o lstart` read with TZ=UTC and LC_ALL=C.
+//
+// { state: "absent" } only when the kernel says no such process (ESRCH), or for a zombie.
+// { state: "unknown" } whenever the process exists but its identity cannot be read (ps blocked,
+// failing or printing something else): never "absent", so a record is never dropped and a
+// process never treated as gone because a probe failed.
+function readProcessIdentity(pid, { spawnSyncImpl = spawnSync, kill = process.kill, platform = process.platform, readFile = fs.readFileSync } = {}) {
 	try {
 		kill(pid, 0);
 	} catch (error) {
 		if (error?.code === "ESRCH") return { state: "absent" };
 		if (error?.code !== "EPERM") return { state: "unknown" };
 	}
-	const result = spawnSyncImpl("ps", ["-o", "stat=", "-o", "lstart=", "-o", "command=", "-p", String(pid)], { encoding: "utf8" });
-	if (result.error) return { state: "unknown" };
+	if (platform === "linux") {
+		try {
+			const stat = String(readFile(`/proc/${pid}/stat`, "utf8"));
+			const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+			if (fields[0] === "Z") return { state: "absent" };
+			const bootId = String(readFile("/proc/sys/kernel/random/boot_id", "utf8")).trim();
+			const command = String(readFile(`/proc/${pid}/cmdline`, "utf8")).split("\0").filter(Boolean).join(" ");
+			if (!/^\d+$/u.test(fields[19] ?? "") || !command) return { state: "unknown" };
+			return { state: "alive", start: `${bootId}+${fields[19]}`, command };
+		} catch {
+			return { state: "unknown" };
+		}
+	}
+	const result = spawnSyncImpl("ps", ["-o", "stat=", "-o", "lstart=", "-o", "command=", "-p", String(pid)], {
+		encoding: "utf8",
+		env: { ...process.env, TZ: "UTC", LC_ALL: "C", LANG: "C" },
+	});
+	if (result.error || result.status !== 0) return { state: "unknown" };
 	const line = String(result.stdout ?? "").trim();
-	if (line.length === 0) return result.status === 1 ? { state: "absent" } : { state: "unknown" };
 	const match = line.match(/^(\S+)\s+(\w{3}\s+\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.*)$/u);
 	if (!match) return { state: "unknown" };
 	if (match[1].startsWith("Z")) return { state: "absent" };
@@ -555,6 +640,7 @@ async function collectStackFacts({
 			const listening = port === null ? false : Boolean(await isPortListening(port));
 			services[service] = {
 				port,
+				exited: entry ? null : (record?.exits?.[service] ?? null),
 				pid: entry?.pid ?? null,
 				childPid: entry?.childPid ?? null,
 				listening,
