@@ -326,7 +326,7 @@
   },
   "components/blocks/agent-directory/agent-directory.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 4
     }
   },
   "components/blocks/agent-directory/page.tsx": {
