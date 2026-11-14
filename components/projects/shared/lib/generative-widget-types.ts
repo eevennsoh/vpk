@@ -49,13 +49,6 @@ export interface PreviewVideoComposition {
 	durationInFrames: number;
 }
 
-export interface PreviewVideoFile {
-	videoUrl: string;
-	mimeType?: string;
-	posterUrl?: string;
-	fileName?: string;
-}
-
 export interface PreviewExcalidrawScene {
 	type?: string;
 	version?: number;
@@ -127,30 +120,9 @@ export interface ParsedGenerativeWidget extends ParsedGenerativeWidgetBase {
 	summary?: string;
 }
 
-export interface PreviewAudioBody {
-	kind: "audio";
-	audioUrl: string;
-	mimeType?: string;
-	transcript?: string;
-}
-
-export interface PreviewImageBody {
-	kind: "image";
-	images: PreviewImageSource[];
-	prompt?: string;
-}
-
-export interface PreviewVideoBody {
-	kind: "video";
-	videoUrl?: string;
-	mimeType?: string;
-	posterUrl?: string;
-	fileName?: string;
-	composition?: PreviewVideoComposition;
-	tracks?: PreviewVideoTrack[];
-	clips?: PreviewVideoClip[];
-	audio?: { tracks: unknown[] };
-}
+export type PreviewAudioBody = Extract<PreviewBody, { kind: "audio" }>;
+export type PreviewImageBody = Extract<PreviewBody, { kind: "image" }>;
+export type PreviewVideoBody = Extract<PreviewBody, { kind: "video" }>;
 
 type JsonRenderPreviewBody = Extract<PreviewBody, { kind: "json-render" }>;
 

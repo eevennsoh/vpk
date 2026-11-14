@@ -10,7 +10,6 @@ export type {
 	PreviewVideoTrack,
 	PreviewVideoClip,
 	PreviewVideoComposition,
-	PreviewVideoFile,
 	PreviewExcalidrawScene,
 	PreviewBody,
 	ParsedGenerativeWidget,
@@ -21,9 +20,6 @@ export type {
 	GenerativeWidgetPrimaryActionPayload,
 	GenerativeContentType,
 } from "@/components/projects/shared/lib/generative-widget-types";
-export {
-	parseExcalidrawPreviewScene,
-} from "@/components/projects/shared/lib/generative-widget-preview-body";
 export {
 	parseGenerativeWidget,
 } from "@/components/projects/shared/lib/generative-widget-parse";
