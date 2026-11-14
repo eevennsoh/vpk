@@ -124,3 +124,12 @@ test("a turn store dispatches through the reducer and returns the current state"
 	assert.equal(returned, turn.getState());
 	assert.equal(turn.getState().facts.questionCard, true);
 });
+
+test("a blocked plan-feedback tool is recorded in every phase, including after the turn ended", () => {
+	for (const ending of [[{ type: "aborted" }], [{ type: "failed" }], [{ type: "post-stream-started" }, { type: "completed" }]]) {
+		const late = rovoChatTurnReducer(reduce(ending), { type: "plan-feedback-tool-blocked" });
+		assert.equal(late.facts.planFeedbackToolBlocked, true);
+	}
+	const blocked = reduce([{ type: "plan-feedback-tool-blocked" }]);
+	assert.equal(rovoChatTurnReducer(blocked, { type: "plan-feedback-tool-blocked" }), blocked);
+});

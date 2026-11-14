@@ -63,32 +63,24 @@ function waitForRovoRetryDelay(delayMs, {
 
 async function runRovoStreamRetryLoop({
 	abortSignal,
-	forcePortRecoveryAttemptCount = 0,
 	handleAttemptError,
 	hasRelevantToolSuccess,
-	hasRetriedAsDeferredToolResponse = false,
 	initialActiveAttemptMessage,
-	initialToolFirstAttempt = 1,
 	logger = console,
 	recordToolFirstAttempt,
 	resetAssistantTextForRetryAttempt,
 	resolveRetryPlan,
 	runStreamAttempt,
-	stuckPortRecoveryRetryCount = 0,
-	turn,
+	turn = createRovoChatTurn(),
 	waitForRetryDelay = waitForRovoRetryDelay,
 	writeStatusPart,
 } = {}) {
-	// A turn passed in owns the facts its callbacks record; the loop adds its attempts to it.
-	const loopTurn = turn ?? createRovoChatTurn({
-		forcePortRecoveryAttempts: forcePortRecoveryAttemptCount,
-		retriedAsDeferredToolResponse: hasRetriedAsDeferredToolResponse,
-		stuckPortRetries: stuckPortRecoveryRetryCount,
-	});
+	// The turn owns the attempt, its recovery counts and the facts its callbacks record.
+	const loopTurn = turn;
 	loopTurn.dispatch({
 		type: "attempt-started",
 		activeAttemptMessage: initialActiveAttemptMessage,
-		attempt: initialToolFirstAttempt,
+		attempt: 1,
 	});
 
 	for (;;) {

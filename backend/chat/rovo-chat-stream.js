@@ -246,6 +246,7 @@ function createRovoTurnRunner(dependencies = {}) {
 			const {
 				emitBufferedAssistantTextForTextRoute,
 				emitForcedTextDelta,
+				emitNoticeParagraph,
 				emitTextDelta,
 				emitTextDeltaRaw,
 				finalizeBufferedAssistantText,
@@ -469,7 +470,11 @@ function createRovoTurnRunner(dependencies = {}) {
 				buildInteractiveStuckPortFailureMessage,
 				clarificationSubmission,
 				clarificationToolCallId,
-				emitForcedTextDelta,
+				// Text the marker stream still holds back goes out first, so the notice follows it.
+				emitFailureNotice: (notice) => {
+					rovoMarkerStream.flush();
+					emitNoticeParagraph(notice);
+				},
 				getListeningPidsForPort,
 				getResolvedRovoPort: () => facts().port,
 				handleStreamTextDelta,

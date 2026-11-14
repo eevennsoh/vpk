@@ -4,7 +4,8 @@
  * One Rovo chat turn: its phase, the facts it has shown or seen, and its stream-recovery counts.
  *
  * Phases: streaming (attempt n) → retry-pending → streaming … → post-stream → completed.
- * aborted and failed can follow any phase. Terminal phases ignore every later event.
+ * aborted and failed can follow any phase. Terminal phases ignore every later event except a
+ * blocked plan-feedback tool, which guards a once-only cancel.
  *
  * Facts are sticky for the whole turn, across tool-first retries and stuck-port reruns; only the
  * plan card's loading state goes back to false. A relevant tool call is also an actionable one,
@@ -69,15 +70,25 @@ function applyRecovery(state, recovery = {}) {
 		...state,
 		activeAttemptMessage: recovery.activeAttemptMessage || state.activeAttemptMessage,
 		next,
+		// The same coercion the retry loop applied before: counts when defined, the deferred retry once truthy.
 		recovery: {
-			forcePortRecoveryAttempts: recovery.forcePortRecoveryAttemptCount ?? state.recovery.forcePortRecoveryAttempts,
-			retriedAsDeferredToolResponse: state.recovery.retriedAsDeferredToolResponse || recovery.hasRetriedAsDeferredToolResponse === true,
-			stuckPortRetries: recovery.stuckPortRecoveryRetryCount ?? state.recovery.stuckPortRetries,
+			forcePortRecoveryAttempts: recovery.forcePortRecoveryAttemptCount !== undefined
+				? recovery.forcePortRecoveryAttemptCount
+				: state.recovery.forcePortRecoveryAttempts,
+			retriedAsDeferredToolResponse: state.recovery.retriedAsDeferredToolResponse || Boolean(recovery.hasRetriedAsDeferredToolResponse),
+			stuckPortRetries: recovery.stuckPortRecoveryRetryCount !== undefined
+				? recovery.stuckPortRecoveryRetryCount
+				: state.recovery.stuckPortRetries,
 		},
 	};
 }
 
 function rovoChatTurnReducer(state, event) {
+	// A blocked plan-feedback tool guards a cancel that must be sent once, so it holds in every
+	// phase, including after the turn ended.
+	if (event?.type === "plan-feedback-tool-blocked") {
+		return state.facts.planFeedbackToolBlocked ? state : withFacts(state, { planFeedbackToolBlocked: true });
+	}
 	if (TERMINAL_PHASES.has(state.phase)) {
 		return state;
 	}
@@ -103,8 +114,6 @@ function rovoChatTurnReducer(state, event) {
 			return withFacts(state, { deferredToolRequest: true });
 		case "paused-tool-call-handled":
 			return withFacts(state, { deferredToolRequest: true, pausedToolCallHandled: true });
-		case "plan-feedback-tool-blocked":
-			return withFacts(state, { planFeedbackToolBlocked: true });
 		case "attempt-started":
 			return {
 				...state,

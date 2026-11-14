@@ -414,3 +414,68 @@ test("plan data without an explicit plan payload never reaches the plan finalize
 		assert.deepEqual(widgetParts(turn.parts, "plan").filter((part) => part === "data"), ["data"], source);
 	}
 });
+
+const STREAMED_BEFORE_STUCK_PORT = "Here are the Jira issues I found so far";
+
+for (const [kind, turnOverrides, expected] of [
+	["a plain turn", {}, `${STREAMED_BEFORE_STUCK_PORT}\n\n⚠️ Rovo is busy.`],
+	["a tool-first retry turn", STRICT_SOFT_RETRY_TURN, `${STREAMED_BEFORE_STUCK_PORT}\n\n⚠️ Rovo is busy.\n\nTool output was not available.`],
+]) {
+	test(`on ${kind}, a port failure notice follows all the text already streamed, as its own paragraph`, async () => {
+		// Before: the notice jumped ahead of the text the marker stream still held back:
+		// "Here are the Jira issues\n\n⚠️ Rovo is busy. I found so far…"
+		const turn = await runTurn({
+			buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
+			restartRovoPort: async () => ({ recovered: false }),
+			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+				onPortAcquired(43123);
+				onTextDelta(STREAMED_BEFORE_STUCK_PORT);
+				throw createPortStuckError(43123);
+			},
+		}, turnOverrides);
+
+		assert.equal(visibleText(turn.parts), expected);
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	});
+}
+
+test("a port failure during a tool-first retry follows that attempt's text with a paragraph break on both sides", async () => {
+	// Before: "\n\n⚠️ Rovo is busy.Attempt 2\n\nTool output was not available."
+	let streams = 0;
+	const turn = await runTurn({
+		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
+		restartRovoPort: async () => ({ recovered: false }),
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			streams += 1;
+			onPortAcquired(43123);
+			onTextDelta(`Attempt ${streams}`);
+			if (streams === 2) {
+				throw createPortStuckError(43123);
+			}
+		},
+	}, STRICT_SOFT_RETRY_TURN);
+
+	assert.equal(streams, 2);
+	assert.deepEqual(turn.attempts, ["first", "retry"]);
+	assert.equal(visibleText(turn.parts), "Attempt 2\n\n⚠️ Rovo is busy.\n\nTool output was not available.");
+});
+
+test("tool starts that arrive after the turn ended are blocked once: Rovo is cancelled once", async () => {
+	const cancelledPorts = [];
+	let startTool = null;
+	const turn = await runTurn({
+		getPlanFeedbackToolGuard: () => ({ ignore: false, block: true }),
+		rovoCancelChat: async (port) => cancelledPorts.push(port),
+		streamViaRovo: async ({ onPortAcquired, onToolCallStart }) => {
+			startTool = onToolCallStart;
+			onPortAcquired(43123);
+		},
+	}, { isPlanFeedbackDeferredResumeTurn: true });
+	assert.equal(turn.result.aborted, false);
+
+	// Before: the ended turn dropped the block, so each late start cancelled Rovo again.
+	startTool({ toolCallId: "write-1", toolName: "update_todo" });
+	startTool({ toolCallId: "write-2", toolName: "update_todo" });
+
+	assert.deepEqual(cancelledPorts, [43123]);
+});
