@@ -452,11 +452,14 @@ const eslintConfig = defineConfig([
 		// gotchas-ui.md: hidden must be unreachable, and anything clickable must be focusable
 		// and operable by keyboard. anchor-is-valid, no-autofocus, and no-noninteractive-tabindex
 		// stay off: prototypes use placeholder links, composers autofocus, scroll regions take tabIndex.
-		// The two interaction and two role rules below take eslint-plugin-jsx-a11y's own recommended options
-		// (copied: the plugin is a transitive dependency of eslint-config-next). Only activation
-		// handlers (click, mousedown/up, key) make an element a control; hover, focus and drag
-		// handlers track state. A role written as an expression (role={x ? "button" : undefined})
-		// counts, and canvas role=img, ul/ol role=listbox and iframe onLoad are allowed.
+		// no-interactive-element-to-noninteractive-role, no-noninteractive-element-interactions,
+		// no-noninteractive-element-to-interactive-role and no-static-element-interactions take
+		// eslint-plugin-jsx-a11y's own recommended options (copied: the plugin is a transitive
+		// dependency of eslint-config-next). Only activation handlers (click, mousedown/up, key)
+		// make an element a control; hover, focus and drag handlers track state. Any role written
+		// as an expression (role={x ? "button" : undefined}) skips no-static-element-interactions
+		// unevaluated, so click-events-have-key-events and interactive-supports-focus are what
+		// still guard such elements. canvas role=img, ul/ol role=listbox and iframe onLoad are allowed.
 		files: ["app/**/*.{jsx,tsx}", "components/**/*.{jsx,tsx}"],
 		rules: {
 			"jsx-a11y/alt-text": "error",
