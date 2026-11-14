@@ -978,3 +978,12 @@ test("session refresh closes the upstream connection before max lifetime", (t) =
 	session._clearSessionMaintenanceTimers();
 	t.mock.timers.reset();
 });
+
+test("an upstream message that is valid JSON but not an object is ignored with a log line", () => {
+	const logs = [];
+	const session = new RealtimeSession({ readyState: WebSocket.OPEN, send() {} }, { onLog: (_scope, message) => logs.push(message) });
+	for (const raw of ["null", "1", "[]", "\"text\""]) {
+		assert.doesNotThrow(() => session._handleOpenAIMessage(Buffer.from(raw)), raw);
+	}
+	assert.equal(logs.filter((message) => message.includes("not an object")).length, 4);
+});
