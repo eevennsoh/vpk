@@ -142,3 +142,95 @@ test("labels picker restores its top fade after opening and reopening", async ({
 		if (attempt === 0) await trigger.click();
 	}
 });
+
+test("labels picker rows follow dropdown spacing and remain selectable", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/artifact-pane"));
+	await page.getByRole("button", { name: "See more", exact: true }).click();
+	await page.getByRole("button", { name: "Edit labels", exact: true }).click();
+	const list = page.getByRole("listbox", { name: "Search labels" });
+	const rows = list.getByRole("option");
+	await expect(rows.first()).toHaveCSS("padding", "6px 8px");
+	await expect(rows.first()).toHaveCSS("border-radius", "8px");
+	await expect(rows.nth(1)).toHaveCSS("margin-top", "2px");
+	await expect(list.getByText("More labels", { exact: true })).toHaveCount(0);
+	const insets = await rows.first().evaluate((row) => {
+		const menu = row.closest(".rich-text-command-menu")!.getBoundingClientRect();
+		const search = row.closest(".rich-text-command-menu")!.querySelector('[data-slot="dropdown-menu-search"]')!.getBoundingClientRect();
+		const bounds = row.getBoundingClientRect();
+		return { left: bounds.left - menu.left, right: menu.right - bounds.right, searchLeft: search.left - menu.left, searchRight: menu.right - search.right };
+	});
+	expect(insets).toEqual({ left: 6, right: 6, searchLeft: 6, searchRight: 6 });
+	const background = await rows.first().evaluate((row) => getComputedStyle(row).backgroundColor);
+	await rows.first().hover();
+	await expect.poll(() => rows.first().evaluate((row) => getComputedStyle(row).backgroundColor)).not.toBe(background);
+	const selected = rows.first();
+	const removedName = await selected.getAttribute("aria-label");
+	await selected.click();
+	await expect(list.getByRole("option", { name: removedName!.replace(/^Remove /, "Add ") })).toBeVisible();
+});
+
+test("labels reveal remove controls only while the picker is open", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/artifact-pane"));
+	await page.getByRole("button", { name: "See more", exact: true }).click();
+	const trigger = page.getByRole("button", { name: "Edit labels", exact: true });
+	const remove = page.getByRole("button", { name: "Remove enterprise-rfp", exact: true });
+	await expect(remove).toHaveCount(0);
+	await trigger.click();
+	await expect(remove).toBeVisible();
+	await remove.click();
+	await expect(remove).toHaveCount(0);
+	await expect(trigger).toHaveAttribute("aria-expanded", "true");
+	const list = page.getByRole("listbox", { name: "Search labels" });
+	await expect(list.getByRole("option", { name: "Add enterprise-rfp" })).toBeVisible();
+	await list.getByRole("option", { name: "Add enterprise-rfp" }).click();
+	await expect(page.getByRole("button", { name: "Remove enterprise-rfp", exact: true })).toBeVisible();
+	const keyboardRemove = page.getByRole("button", { name: "Remove esm", exact: true });
+	await keyboardRemove.focus();
+	await keyboardRemove.press("Enter");
+	await expect(list.getByRole("option", { name: "Add esm" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("button", { name: "Remove enterprise-rfp", exact: true })).toHaveCount(0);
+});
+
+test("parent picker rows follow dropdown spacing and select a work item", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/artifact-pane"));
+	await page.getByRole("button", { name: "See more", exact: true }).click();
+	await page.getByRole("button", { name: "Change parent" }).click();
+	const list = page.getByRole("listbox", { name: "Search work items" });
+	const rows = list.getByRole("option");
+	await expect(rows.first()).toBeVisible();
+	await expect(rows.first()).toHaveCSS("padding", "6px 8px");
+	await expect(rows.first()).toHaveCSS("border-radius", "8px");
+	await expect(rows.nth(1)).toHaveCSS("margin-top", "2px");
+	const geometry = await rows.first().evaluate((row) => {
+		const menu = row.closest(".rich-text-command-menu")!;
+		const search = menu.querySelector('[data-slot="dropdown-menu-search"]')!;
+		const tile = row.querySelector('[data-slot="icon-tile"]')!;
+		const searchIcon = search.firstElementChild!;
+		const menuRect = menu.getBoundingClientRect();
+		const rowRect = row.getBoundingClientRect();
+		const searchRect = search.getBoundingClientRect();
+		const tileRect = tile.getBoundingClientRect();
+		const iconRect = searchIcon.getBoundingClientRect();
+		return {
+			leftInset: rowRect.left - menuRect.left,
+			rightInset: menuRect.right - rowRect.right,
+			searchLeft: searchRect.left - menuRect.left,
+			searchRight: menuRect.right - searchRect.right,
+			tileCenter: tileRect.left + tileRect.width / 2,
+			searchIconCenter: iconRect.left + iconRect.width / 2,
+		};
+	});
+	expect(geometry.leftInset).toBe(6);
+	expect(geometry.rightInset).toBe(6);
+	expect(geometry.searchLeft).toBe(geometry.leftInset);
+	expect(geometry.searchRight).toBe(geometry.rightInset);
+	expect(geometry.tileCenter).toBe(geometry.searchIconCenter);
+	const restingBackground = await rows.first().evaluate((row) => getComputedStyle(row).backgroundColor);
+	await rows.first().hover();
+	await expect.poll(() => rows.first().evaluate((row) => getComputedStyle(row).backgroundColor)).not.toBe(restingBackground);
+	const selectedLabel = await rows.nth(1).innerText();
+	await rows.nth(1).click();
+	await expect(list).toBeHidden();
+	await expect(page.getByRole("button", { name: "Change parent" })).toContainText(selectedLabel);
+});

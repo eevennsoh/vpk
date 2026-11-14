@@ -741,7 +741,7 @@ export function RichTextSuggestionMenu({
 
 	return (
 		<div
-			className={cn("rich-text-command-menu", className)}
+			className={cn("rich-text-command-menu menu-row-spacing", className)}
 			data-nested={isNested ? "true" : undefined}
 			data-row-variant={rowVariant}
 			data-has-header={header ? "true" : undefined}
@@ -992,6 +992,7 @@ function RichTextSuggestionMenuOption({
 	return (
 		<div
 			className="group/suggestion-option grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg"
+			data-menu-row=""
 			data-suggestion-actions=""
 			onBlur={handleBlurWithin}
 			onFocus={handleFocusWithin}

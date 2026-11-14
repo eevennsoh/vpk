@@ -102,8 +102,8 @@ test("board insertion marker avoids clipped paint before its anchor resolves", (
 	);
 	const motionSource = readFileSync(join(__dirname, "created-card-arrival-motion.tsx"), "utf8");
 
-	assert.match(lineSource, /pointer-events-none fixed z-30 h-0\.5/u);
-	assert.match(lineSource, /createPortal\([\s\S]*anchor\.ownerDocument\.body/u);
+	assert.match(lineSource, /pointer-events-none fixed z-20 h-0\.5/u);
+	assert.match(lineSource, /createPortal\([\s\S]*overlayHost/u);
 	assert.match(lineSource, /left: "anchor\(left, -100vw\)"/u);
 	assert.match(lineSource, /positionAnchor: anchorName/u);
 	assert.match(lineSource, /positionVisibility: "anchors-visible"/u);

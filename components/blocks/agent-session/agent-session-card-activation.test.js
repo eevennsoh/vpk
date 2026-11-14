@@ -119,7 +119,7 @@ function loadHarness() {
 			["jira-session-details-card", `export function JiraSessionDetailsCard() { return null; }`],
 			["jira-session-untracked-work-card", `export function JiraSessionUntrackedWorkCard() { return null; }`],
 			["cone-safezone", `export function ConeSafezone() { return null; } export function ConeSafezoneContent() { return null; }`],
-			["agent-session-arrival-motion", `export const AGENT_SESSION_TOP_ARRIVAL_TRANSFORM = "none"; export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {}; export function toAgentSessionTopArrivalTransform() { return "none"; }`],
+			["agent-session-arrival-motion", `export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "0%"; export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {}; export function toAgentSessionTopArrivalOffset() { return "0%"; }`],
 			["agent-session-approve", `export function approveActionLabel() { return "Approve"; } export function resolveApproveTarget() { return {}; }`],
 			["agent-list", `export { isCodingAgentListItem } from "./components/blocks/agent-list/agent-list-session.ts";`],
 			["agent-session-glow", `export function resolveAgentSessionGlow() { return { bloom: false, stroke: false, style: {} }; }`],

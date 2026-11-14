@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
-import { toAgentSessionTopArrivalTransform } from "./agent-session-arrival-motion";
+import { toAgentSessionTopArrivalOffset } from "./agent-session-arrival-motion";
 import { resolveAgentSessionGlow } from "./agent-session-glow";
 import { useAgentSessionScrollPreview } from "./use-agent-session-scroll-preview";
 import { useAgentSessionStatusDeparture } from "./use-agent-session-status-departure";
@@ -177,7 +177,7 @@ export function AgentSession({
 		if (!beatItemIds?.has(item.id) || stateChangedItemIds?.has(item.id)) break;
 		leadingBatchIds.add(item.id);
 	}
-	const leadingBatchTransform = toAgentSessionTopArrivalTransform(leadingBatchIds.size, arrivalRowGapPx);
+	const leadingBatchOffset = toAgentSessionTopArrivalOffset(leadingBatchIds.size, arrivalRowGapPx);
 	// In-flow columns skip filter motion but still make room for real entries.
 	const moveRowsForArrival = !isDeparturePhase && (beatItemIds?.size ?? 0) > 0;
 	const arrivalDelays = useMemo(
@@ -276,7 +276,7 @@ export function AgentSession({
 							<AgentSessionCard
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
-								arrivalStartTransform={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchTransform : undefined}
+								arrivalStartOffset={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}

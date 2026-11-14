@@ -14,13 +14,13 @@ export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {
 };
 
 /** Enter a full row from above so its lower edge follows the opening space. */
-export const AGENT_SESSION_TOP_ARRIVAL_TRANSFORM = "translateY(-100%)";
+export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "-100%";
 
 /** Prepend a whole batch above the old first row before its siblings move down. */
-export function toAgentSessionTopArrivalTransform(batchSize: number, rowGapPx: number): string {
+export function toAgentSessionTopArrivalOffset(batchSize: number, rowGapPx: number): string {
 	return batchSize <= 1
-		? AGENT_SESSION_TOP_ARRIVAL_TRANSFORM
-		: `translateY(calc(-${batchSize * 100}% - ${batchSize * rowGapPx}px))`;
+		? AGENT_SESSION_TOP_ARRIVAL_OFFSET
+		: `calc(-${batchSize * 100}% - ${batchSize * rowGapPx}px)`;
 }
 
 /**

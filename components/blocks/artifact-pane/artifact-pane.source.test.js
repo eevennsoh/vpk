@@ -310,9 +310,7 @@ test("Artifact Pane labels use colored tags in the field and grouped picker", ()
 	assert.match(LABELS_FIELD_SOURCE, /<PopoverContent[\s\S]*aria-label="Edit labels"/u);
 	assert.match(LABELS_FIELD_SOURCE, /aria-label="Search labels"[\s\S]*className="rich-text-command-menu-list"[\s\S]*role="listbox"/u);
 	assert.doesNotMatch(LABELS_FIELD_SOURCE, /className="rich-text-command-menu rich-text-command-menu-borderless"[\s\S]{0,80}role="listbox"/u);
-	assert.match(LABELS_FIELD_SOURCE, /<DetailValueTrigger aria-label="Edit labels" className="py-1\.5!" \/>/u);
 	assert.match(LABELS_FIELD_SOURCE, /heading="Selected"/u);
-	assert.match(LABELS_FIELD_SOURCE, /heading="More labels"/u);
 	assert.match(LABELS_FIELD_SOURCE, /const canCreateCustomLabel = customLabel\.length > 0/u);
 	assert.match(LABELS_FIELD_SOURCE, /heading="New label" labels=\{\[customLabel\]\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /else if \(canCreateCustomLabel\) \{[\s\S]*createCustomLabel\(customLabel\);/u);
@@ -337,7 +335,7 @@ test("Artifact Pane labels picker fades its list once scrolled", () => {
 	assert.match(LABELS_FIELD_SOURCE, /const \{ listProps, menuProps \} = useCommandMenuScrollMask\(\);/u);
 	// menuProps supplies data-list-scrolled on the menu root; listProps supplies
 	// the ref + onScroll on the scroller.
-	assert.match(LABELS_FIELD_SOURCE, /className=\{cn\("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS,[\s\S]*\{\.\.\.menuProps\}/u);
+	assert.match(LABELS_FIELD_SOURCE, /className=\{cn\("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS\)[\s\S]*\{\.\.\.menuProps\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu-list"[\s\S]*\{\.\.\.listProps\}/u);
 });
 

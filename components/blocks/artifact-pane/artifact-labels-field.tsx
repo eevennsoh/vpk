@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import DeleteIcon from "@atlaskit/icon/core/delete";
 
@@ -36,7 +36,7 @@ function LabelOptionGroup({
 	onToggle,
 	selected,
 }: Readonly<{
-	heading: string;
+	heading?: string;
 	labels: readonly string[];
 	onToggle: (label: string) => void;
 	selected: boolean;
@@ -47,9 +47,11 @@ function LabelOptionGroup({
 
 	return (
 		<>
-			<div className="rich-text-command-menu-heading" role="presentation">
-				{heading}
-			</div>
+			{heading ? (
+				<div className="rich-text-command-menu-heading" data-slot="dropdown-menu-label" role="presentation">
+					{heading}
+				</div>
+			) : null}
 			{labels.map((label) => (
 				<button
 					aria-label={selected ? `Remove ${label}` : `Add ${label}`}
@@ -86,6 +88,7 @@ export function ArtifactLabelsField({
 }: Readonly<{ hideSelected?: boolean; onChange: (next: string[]) => void; options?: readonly string[]; value: readonly string[] }>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const fieldRef = useRef<HTMLDivElement>(null);
 	// This picker hand-rolls the command-menu markup (its rows are Tag pills with
 	// a hover-delete affordance, which RichTextSuggestionMenuItem can't express),
 	// so it has to opt into the top fade mask that RichTextSuggestionMenu applies
@@ -111,20 +114,33 @@ export function ArtifactLabelsField({
 	};
 
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="py-1.5!" />}>
+		<Popover onOpenChange={(nextOpen, details) => {
+			if (!nextOpen && details.reason === "focus-out" && details.event instanceof FocusEvent
+				&& details.event.relatedTarget instanceof Node && fieldRef.current?.contains(details.event.relatedTarget)) {
+				details.cancel();
+				return;
+			}
+			if (!nextOpen && details.reason === "outside-press" && details.event.target instanceof Element
+				&& details.event.target.closest('[data-slot="tag-after"]') && fieldRef.current?.contains(details.event.target)) {
+				details.cancel();
+				return;
+			}
+			setOpen(nextOpen);
+		}} open={open}>
+			<div className="relative -mx-2 w-full min-w-0 px-2 py-1.5" ref={fieldRef}>
+				<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="absolute inset-0 m-0 h-full w-full" />} />
 				{value.length > 0 ? (
-					<TagGroup className="gap-1">
+					<TagGroup className="pointer-events-none relative gap-1 [&_[data-slot=tag-after]_button]:pointer-events-auto">
 						{value.map((label) => (
-							<Tag color={labelColor(label)} key={label}>
+							<Tag color={labelColor(label)} key={label} onRemove={open ? () => toggle(label) : undefined}>
 								{label}
 							</Tag>
 						))}
 					</TagGroup>
 				) : (
-					<span className="text-sm text-text-subtlest">Add label</span>
+					<span className="pointer-events-none relative text-sm text-text-subtlest">Add label</span>
 				)}
-			</PopoverTrigger>
+			</div>
 			<PopoverContent
 				align="start"
 				aria-label="Edit labels"
@@ -133,8 +149,9 @@ export function ArtifactLabelsField({
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<div
-					className={cn("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS, "[&_.rich-text-command-menu-item]:h-8!")}
+					className={cn("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS)}
 					data-has-header="true"
+					data-row-variant="compact"
 					{...menuProps}
 				>
 					<RichTextCommandMenuSearchField
@@ -163,7 +180,7 @@ export function ArtifactLabelsField({
 						{selectedLabels.length + moreLabels.length > 0 ? (
 							<>
 								<LabelOptionGroup heading="Selected" labels={selectedLabels} onToggle={toggle} selected />
-								<LabelOptionGroup heading="More labels" labels={moreLabels} onToggle={toggle} selected={false} />
+								<LabelOptionGroup labels={moreLabels} onToggle={toggle} selected={false} />
 							</>
 						) : canCreateCustomLabel ? (
 							<LabelOptionGroup heading="New label" labels={[customLabel]} onToggle={createCustomLabel} selected={false} />

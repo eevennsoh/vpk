@@ -651,7 +651,8 @@
 }
 
 .rich-text-command-menu[data-row-variant="compact"] .rich-text-command-menu-item {
-	height: 36px;
+	height: auto;
+	padding: 6px 8px;
 }
 
 /* The row highlight has a single source of truth: the selected row. In
