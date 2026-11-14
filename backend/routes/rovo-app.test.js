@@ -93,10 +93,6 @@ function createThreadManager(state) {
 function createRunManager(state) {
 	return {
 		attachSubscriber: () => "subscriber-1",
-		cancelRun: (threadId) => {
-			state.calls.push({ method: "cancelRun", threadId });
-			state.runs.delete(threadId);
-		},
 		getRun: (threadId) => state.runs.get(threadId) || null,
 		listRuns: () => [...state.runs.values()],
 		setRunStatus: (threadId, status) => {
@@ -257,9 +253,6 @@ function createDependencies(overrides = {}) {
 			state.calls.push({ method: "cancelChat", port });
 		},
 		checkpointManager: createCheckpointManager(state),
-		clearRunState: async (threadId) => {
-			state.calls.push({ method: "clearRunState", threadId });
-		},
 		collectUploadIdsFromMessages: (messages) => {
 			const ids = [];
 			for (const message of messages || []) {
@@ -315,8 +308,13 @@ function createDependencies(overrides = {}) {
 				.map((thread) => ({ id: thread.id, title: thread.title }));
 			return typeof limit === "number" ? results.slice(0, limit) : results;
 		},
-		startNextQueuedRun: () => {
-			state.calls.push({ method: "startNextQueuedRun" });
+		settleRun: async (run, outcome) => {
+			state.calls.push({ method: "settleRun", runId: run?.id ?? null, threadId: run?.threadId ?? null, outcome });
+			const isCurrent = Boolean(run) && state.runs.get(run.threadId) === run;
+			if (isCurrent) {
+				state.runs.delete(run.threadId);
+			}
+			return isCurrent;
 		},
 		syncHermesJobsForRovoThreads: async (threadId = null) => {
 			state.calls.push({ method: "syncHermesJobsForRovoThreads", threadId });
@@ -355,9 +353,9 @@ test("rovo app router validates required dependencies", () => {
 	assert.throws(() => createRovoAppRouter(), /rovoAppThreadManager/u);
 	assert.throws(
 		() => createRovoAppRouter(createDependencies({
-			rovoAppRunManager: { ...createRunManager(createState()), cancelRun: null },
+			settleRun: null,
 		})),
-		/rovoAppRunManager\.cancelRun/u,
+		/settleRun/u,
 	);
 	assert.throws(
 		() => createRovoAppRouter(createDependencies({ requireRuntimeAdmin: null })),
@@ -446,6 +444,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 		assert.equal((await updateResponse.json()).thread.title, "Updated plan");
 
 		state.runs.set("generated-thread", {
+			id: "run-generated",
 			threadId: "generated-thread",
 			status: "streaming",
 			rovoPort: 8123,
@@ -465,7 +464,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 			"backfillFromThread",
 			"deleteLegacyRootFiles",
 			"cancelChat",
-			"cancelRun",
+			"settleRun",
 			"deleteDocumentsByThread",
 			"deleteThread",
 			"deleteThreadBrowserWorkspace",
@@ -474,7 +473,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 			"destroyMirrorBrowser",
 		].includes(call.method)), [
 			{ method: "cancelChat", port: 8123 },
-			{ method: "cancelRun", threadId: "generated-thread" },
+			{ method: "settleRun", runId: "run-generated", threadId: "generated-thread", outcome: "cancelled" },
 			{ method: "deleteLegacyRootFiles", threadId: "generated-thread" },
 			{ method: "deleteThreadBrowserWorkspace", threadId: "generated-thread" },
 			{ method: "destroyMirrorBrowser", mirrorId: "mirror-generated-thread" },
@@ -527,8 +526,7 @@ test("run and browser workspace mutation routes preserve status and admin behavi
 		assert.equal(cancelResponse.status, 200);
 		assert.deepEqual(await cancelResponse.json(), { cancelled: true });
 		assert.equal(state.runs.has("thread-1"), false);
-		assert.ok(state.calls.some((call) => call.method === "startNextQueuedRun"));
-		assert.ok(state.calls.some((call) => call.method === "clearRunState"));
+		assert.ok(state.calls.some((call) => call.method === "settleRun" && call.threadId === "thread-1" && call.outcome === "cancelled"));
 	});
 });
 
@@ -802,5 +800,24 @@ test("reading a thread's browser workspace needs runtime admin in production", a
 		const admin = await fetch(url, { headers: { "x-vpk-runtime-admin-token": "test-admin-token" } });
 		assert.equal(admin.status, 200);
 		assert.deepEqual(await admin.json(), { threadId: "thread-1", workspaceId: "browser-thread-1" });
+	});
+});
+
+test("cancelling a run that was replaced while Rovo's cancel was awaited reports cancelled false", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	const original = { id: "run-original", threadId: "thread-1", status: "streaming", rovoPort: 9124 };
+	const replacement = { id: "run-replacement", threadId: "thread-1", status: "streaming", rovoPort: 9125 };
+	state.runs.set("thread-1", original);
+	dependencies.cancelChat = async () => {
+		state.runs.set("thread-1", replacement);
+	};
+
+	await withServer(dependencies, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/rovo/runs/thread-1/cancel`, { method: "POST" });
+		assert.equal(response.status, 200);
+		assert.deepEqual(await response.json(), { cancelled: false });
+		assert.equal(state.runs.get("thread-1"), replacement);
+		assert.ok(state.calls.some((call) => call.method === "settleRun" && call.runId === "run-original"));
 	});
 });
