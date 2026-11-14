@@ -333,6 +333,11 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
 - **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
+- **Documentation heading anchors:** Center icon-only anchor buttons beside
+  documentation headings with `inline-flex items-center`. Why: the icon should
+  read as vertically aligned with the heading; baseline spacing can make it
+  appear high.
+  <!-- 2026-11-13: "why do i keep getting this icon and label is misaligned vertically issue" -->
   including on hover, while keeping the columns scrollable. Why: keep the board
   visually clean.
   <!-- 2026-11-13: "on column hover we don't need to show any scrollbar on the column, please hide the scrollbar reveal" -->
