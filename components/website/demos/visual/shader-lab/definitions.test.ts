@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { getShaderLabRuntimeLayerType } from "./helpers.ts";
+import { SHADER_LAB_LAYER_DEFINITIONS } from "./index.ts";
 import {
-	SHADER_LAB_LAYER_DEFINITIONS,
 	SHADER_LAB_RUNTIME_EFFECT_TYPES,
 	SHADER_LAB_RUNTIME_SOURCE_TYPES,
-	getShaderLabRuntimeLayerType,
 	type ShaderLabEffectParamDefinition,
-} from "../shader-lab-effect-definitions.ts";
+} from "./types.ts";
 
 const SHADER_LAB_EFFECT_PARAM_COUNTS = {
 	bloom: 6,

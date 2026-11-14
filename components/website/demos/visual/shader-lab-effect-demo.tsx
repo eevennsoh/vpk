@@ -15,21 +15,23 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import {
-	SHADER_LAB_BLEND_MODES,
-	SHADER_LAB_COMPOSITE_MODES,
-	SHADER_LAB_LAYER_DEFINITIONS,
-	SHADER_LAB_MASK_MODES,
-	SHADER_LAB_MASK_SOURCES,
 	getShaderLabDefaultParams,
 	getShaderLabLayerKind,
 	getShaderLabPresetDefaults,
 	getShaderLabRuntimeLayerType,
 	isShaderLabParamVisible,
 	optionLabel,
+} from "./shader-lab/helpers";
+import { SHADER_LAB_LAYER_DEFINITIONS } from "./shader-lab/index";
+import {
+	SHADER_LAB_BLEND_MODES,
+	SHADER_LAB_COMPOSITE_MODES,
+	SHADER_LAB_MASK_MODES,
+	SHADER_LAB_MASK_SOURCES,
 	type ShaderLabEffectParamDefinition,
-	type ShaderLabRuntimeLayerType,
 	type ShaderLabRuntimeEffectType,
-} from "./shader-lab-effect-definitions";
+	type ShaderLabRuntimeLayerType,
+} from "./shader-lab/types";
 
 type ShaderLabMaskSource = (typeof SHADER_LAB_MASK_SOURCES)[number];
 type ShaderLabMaskMode = (typeof SHADER_LAB_MASK_MODES)[number];
