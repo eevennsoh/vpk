@@ -13,16 +13,20 @@ Detailed procedures for registering demos, consolidating components, and wiring 
 
 ## Register Demos
 
-Add entries to `UI_EXAMPLE_DEMOS` (or `AI_EXAMPLE_DEMOS`) in `components/website/registry.ts`. Use the `.then()` wrapper to extract named exports from the shared demo file:
+The primary demo needs no hand registration: add the manifest line in `app/data/component-manifest.ts` and the demo at `components/website/demos/ui/[slug]-demo.tsx`, then run `pnpm run fix:generated`. That writes the entry into the generated region of `components/website/registry/ui/primary.ts` (ui-custom: `registry/ui-custom/primary.ts`; other categories: `registry/<category>.ts`). `pnpm run catalog:add-plan -- ui/[slug]` prints the exact files.
+
+Register example (variant) demos by hand in the matching variants shard, `components/website/registry/ui/variants-*.ts` (ui-custom: `registry/ui-custom/variants-*.ts`). Use the `.then()` wrapper to extract named exports from the shared demo file:
 
 ```ts
-"[slug]-example-default": dynamic(() => import("./demos/ui/[slug]-demo").then(mod => ({ default: mod.[Component]ExampleDefault })), { ssr: false }),
-"[slug]-example-variant": dynamic(() => import("./demos/ui/[slug]-demo").then(mod => ({ default: mod.[Component]ExampleVariant })), { ssr: false }),
+"[slug]-example-default": dynamic(() => import("../../demos/ui/[slug]-demo").then(mod => ({ default: mod.[Component]ExampleDefault })), { ssr: false }),
+"[slug]-example-variant": dynamic(() => import("../../demos/ui/[slug]-demo").then(mod => ({ default: mod.[Component]ExampleVariant })), { ssr: false }),
 ```
+
+A primary entry that is not `<slug>-demo` with a default export (a named export, a shared demo, another file name) is written by hand below the generated region, with a one-line comment giving the reason.
 
 ## Add Detail Metadata
 
-Add an `examples` array and `adsUrl` to the component's entry in `app/data/details/ui.ts` (or `ai.ts`):
+Add an `examples` array and `adsUrl` to the component's detail leaf, `app/data/details/ui/[slug].ts` (ui-custom: `app/data/details/ui-custom/[slug].ts`). The barrel `app/data/details/ui.ts` is generated; never edit it:
 
 ```ts
 adsUrl: "https://atlassian.design/components/[name]",
@@ -89,8 +93,8 @@ When an ADS component is a thin wrapper or re-export that can be covered by an e
 1. Delete the thin wrapper component file (`components/ui/[slug].tsx`)
 2. Delete its demo file (`components/website/demos/ui/[slug]-demo.tsx`)
 3. Update `app/data/ads-equivalents.ts` — remove old entry, add ADS package to the target component
-4. Update `app/data/details/ui.ts` — remove old detail entry, update target component's `adsUrl` and description
-5. Update `components/website/registry.ts` — remove old demo registrations
+4. Remove the old manifest line from `app/data/component-manifest.ts` and delete its detail leaf `app/data/details/ui/[slug].ts`; update the target component's leaf (`adsUrl`, description)
+5. Remove the old variant registrations from `components/website/registry/ui/variants-*.ts`, then run `pnpm run fix:generated` to rewrite the generated detail barrel and primary registry region
 6. Update `lib/json-render/catalog.ts` — remove catalog entry if present
 7. Update `lib/json-render/registry.tsx` — remove renderer and import if present
 8. Update `backend/lib/genui-system-prompt.js` — replace references in AI system prompt

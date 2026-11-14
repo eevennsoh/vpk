@@ -41,9 +41,9 @@
 - [ ] Header verification complete (`/components/ui/switch` shows `@atlaskit/toggle`; `/components/ui/toggle` does not)
 - [ ] ADS label in doc hero stays compact (package/import text only; URL remains link target)
 - [ ] Left nav shows purple ADS badge for mapped component and ADS-only filter includes it
-- [ ] Demo files created in `components/website/demos/[cat]/[slug]/`
-- [ ] Demos registered in `components/website/registry.ts`
-- [ ] Examples added to detail entry in `app/data/details/[cat].ts`
+- [ ] Demo files created in `components/website/demos/[cat]/` (primary demo `[slug]-demo.tsx`)
+- [ ] `pnpm run fix:generated` run after the manifest line, so the generated primary registry region and detail barrel include the entry; example demos registered in `components/website/registry/[cat]/variants-*.ts` (or `registry/[cat].ts`)
+- [ ] Examples added to the detail leaf `app/data/details/[cat]/[slug].ts` (projects, arts, utility, ui-charts: the inline record in `app/data/details/[cat].ts`); a visual leaf is also imported by hand in `app/data/details/visual.ts`
 - [ ] If consolidating: all consumers updated (json-render catalog/registry, genui prompt, related arrays, generated catalog regenerated)
 
 ## Validation
