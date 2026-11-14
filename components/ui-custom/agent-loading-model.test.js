@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
 const { test } = require("node:test");
 
 const {
@@ -10,9 +9,6 @@ const {
 	listAgentLoadingSlots,
 	shouldCycleAgentLoading,
 } = require("./agent-loading-model.ts");
-
-const COMPONENT_SOURCE = readFileSync(`${__dirname}/agent-loading.tsx`, "utf8");
-const MOTION_SOURCE = readFileSync(`${__dirname}/../../app/tailwind-theme-agent-loading.css`, "utf8");
 
 test("Agent loading cycles multiple agents until every agent is finished", () => {
 	const workingAgents = [{ status: "working" }, { status: "finished" }];
@@ -109,21 +105,6 @@ test("Agent loading shows two agents and rotates through every agent", () => {
 	}
 });
 
-test("Agent loading exposes visible status copy, size variants, and uses VPK motion tokens", () => {
+test("Agent loading size variants are the authored 24px canvas and a 16px small scale", () => {
 	assert.deepEqual(AGENT_LOADING_SIZE_PX, { default: 24, small: 16 });
-	assert.match(COMPONENT_SOURCE, /return <span className="sr-only">\{announcement\}\. <\/span>/u);
-	assert.match(COMPONENT_SOURCE, /<span className="min-w-0 self-center whitespace-nowrap text-sm text-text">/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /<span aria-hidden="true" className="min-w-0 self-center/u);
-	assert.match(COMPONENT_SOURCE, /AGENT_LOADING_SWAP_MS = 600; \/\/ duration-slowest/u);
-	assert.match(COMPONENT_SOURCE, /duration: 0\.6, ease: motionEase\.inOut \}; \/\/ duration-slowest \+ ease-in-out/u);
-	assert.match(COMPONENT_SOURCE, /duration: 0\.4, ease: motionEase\.in \}; \/\/ duration-slower \+ ease-in/u);
-	assert.match(COMPONENT_SOURCE, /from "motion\/react"/u);
-	assert.match(COMPONENT_SOURCE, /size = "default"/u);
-	assert.match(COMPONENT_SOURCE, /data-size=\{size\}/u);
-	assert.match(COMPONENT_SOURCE, /data-agent-id=\{agent\.id\}/u);
-	assert.match(COMPONENT_SOURCE, /data-reduced-motion=\{shouldReduceMotion \? "true" : undefined\}/u);
-	assert.match(COMPONENT_SOURCE, /window\.matchMedia\("\(prefers-reduced-motion: reduce\)"\)/u);
-	assert.match(MOTION_SOURCE, /&\[data-size="small"\]/u);
-	assert.match(MOTION_SOURCE, /transform: scale\(calc\(4 \/ 6\)\)/u);
-	assert.doesNotMatch(MOTION_SOURCE, /@keyframes agent-loading-(?:cycle|swap)/u);
 });

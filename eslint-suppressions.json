@@ -2627,11 +2627,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/agent-loading-model.test.js": {
-    "no-restricted-syntax": {
-      "count": 15
-    }
-  },
   "components/ui-custom/agent-loading.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
