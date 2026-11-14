@@ -2627,9 +2627,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/agent-loading-model.test.js": {
+  "components/ui-custom/agent-loading.css-contract.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 1
     }
   },
   "components/ui-custom/agent-loading.tsx": {
