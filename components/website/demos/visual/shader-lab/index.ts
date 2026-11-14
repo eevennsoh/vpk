@@ -1,7 +1,4 @@
-/**
- * Every Shader Lab layer definition, keyed by layer type. Only the visual details page
- * (server-only) and tests read the whole set; a demo imports its own layer module.
- */
+/** Every Shader Lab layer definition, keyed by layer type. Each definition lives in its own `./layers` module. */
 import type {
 	ShaderLabEffectDefinition,
 	ShaderLabRuntimeEffectType,
