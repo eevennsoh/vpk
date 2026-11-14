@@ -241,9 +241,11 @@ test("readProcessIdentity reads a live process, and reports an unknown or missin
 	const child = spawnInGroup("sleep", ["300"], { stdio: "ignore" }, { t });
 	const identity = readProcessIdentity(child.pid);
 	assert.equal(identity.state, "alive");
-	assert.match(identity.start, /^\w{3} \w{3} \d+ \d{2}:\d{2}:\d{2} \d{4}$/);
+	// Linux reads /proc (boot id + start ticks); elsewhere ps lstart in UTC.
+	assert.match(identity.start, process.platform === "linux" ? /^[\w-]+\+\d+$/ : /^\w{3} \w{3} \d+ \d{2}:\d{2}:\d{2} \d{4}$/);
 	assert.equal(identity.command, "sleep 300");
-	assert.deepEqual(readProcessIdentity(child.pid, { spawnSyncImpl: () => ({ error: new Error("EPERM") }) }), { state: "unknown" });
+	assert.deepEqual(readProcessIdentity(child.pid, { platform: "darwin", spawnSyncImpl: () => ({ error: new Error("EPERM") }) }), { state: "unknown" });
+	assert.deepEqual(readProcessIdentity(child.pid, { platform: "linux", readFile: () => { throw new Error("EACCES"); } }), { state: "unknown" });
 	assert.deepEqual(readProcessIdentity(2 ** 22 + 1, { kill: () => { throw Object.assign(new Error("gone"), { code: "ESRCH" }); } }), { state: "absent" });
 });
 
