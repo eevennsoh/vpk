@@ -13,6 +13,14 @@ const { checkRovoHealth } = require("./lib/rovo-utils");
 
 const repoRoot = path.resolve(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts/dev-tmux.sh");
+// Every test runs the launcher in a throwaway worktree (scripts, node_modules and package.json
+// linked from this checkout): it seeds .env.local, writes and deletes port files in its cwd, so it
+// must never run in the checkout itself.
+const worktreeRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-tmux-worktree-")));
+for (const entry of ["scripts", "node_modules", "package.json"]) {
+	fs.symlinkSync(path.join(repoRoot, entry), path.join(worktreeRoot, entry));
+}
+test.after(() => fs.rmSync(worktreeRoot, { recursive: true, force: true }));
 
 test("dev-tmux accepts pnpm passthrough args with a leading double dash", () => {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dev-tmux-test-"));
@@ -36,7 +44,7 @@ test("dev-tmux accepts pnpm passthrough args with a leading double dash", () => 
 	fs.chmodSync(tmuxPath, 0o755);
 
 	const output = execFileSync(scriptPath, ["--", "status"], {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -73,7 +81,7 @@ test("dev-tmux accepts explicit command with numeric pool size", () => {
 	fs.chmodSync(tmuxPath, 0o755);
 
 	const output = execFileSync(scriptPath, ["status", "6"], {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -110,7 +118,7 @@ test("dev-tmux accepts shorthand double-dash pool size syntax", () => {
 	fs.chmodSync(tmuxPath, 0o755);
 
 	const output = execFileSync(scriptPath, ["status", "--1"], {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -165,8 +173,10 @@ test("dev-tmux stop invokes worktree listener cleanup", () => {
 	);
 	fs.chmodSync(nodePath, 0o755);
 
+	fs.writeFileSync(path.join(worktreeRoot, ".dev-rovo-port"), "8040");
+	fs.writeFileSync(path.join(worktreeRoot, ".dev-rovo-ports"), "[8040]");
 	const output = execFileSync(scriptPath, ["stop"], {
-		cwd: repoRoot,
+		cwd: worktreeRoot,
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -181,6 +191,10 @@ test("dev-tmux stop invokes worktree listener cleanup", () => {
 		fs.readFileSync(cleanupLogPath, "utf8").trim(),
 		"./scripts/cleanup-worktree-listeners.js"
 	);
+	// The port files it removed were the throwaway worktree's, and nothing was seeded there.
+	assert.equal(fs.existsSync(path.join(worktreeRoot, ".dev-rovo-port")), false);
+	assert.equal(fs.existsSync(path.join(worktreeRoot, ".dev-rovo-ports")), false);
+	assert.equal(fs.existsSync(path.join(worktreeRoot, ".env.local")), false);
 
 	fs.rmSync(tempDir, { recursive: true, force: true });
 });
@@ -312,5 +326,11 @@ test("rovo:tmux start builds its session with window targets tmux accepts, up to
 	assert.match(log, /^send-keys -t =vpk-dev-rovo-start-test:ports\.2 cd .* node scripts\/dev-rovo-port\.js/mu);
 	assert.deepEqual(fs.readFileSync(serverLog, "utf8").trim().split("\n"), ["vpk-dev-rovo-start-test"]);
 	assert.match(result.stderr, /did not become healthy/);
+	// The failed start stops the session it created, so the next start does not attach to idle panes.
+	assert.notEqual(result.status, 0);
+	assert.match(result.stderr, /Start failed \(exit 1\); stopping the session it created, 'vpk-dev-rovo-start-test'/);
+	assert.match(log, /^kill-session -t =vpk-dev-rovo-start-test$/mu);
+	assert.equal(fs.readFileSync(path.join(root, "state"), "utf8").trim(), "");
+	assert.equal(fs.existsSync(path.join(worktree, ".dev-rovo-ports")), false);
 	assert.equal(fs.existsSync(path.join(worktree, ".env.local")), false, "nothing was seeded into the temp worktree");
 });

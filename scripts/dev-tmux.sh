@@ -218,6 +218,19 @@ apply_window_styling() {
 	fi
 }
 
+# A start that fails after creating its session (Rovo never healthy, a tmux command failing)
+# stops that session through the normal stop path, so the next start does not attach to idle
+# panes. Only the session this run created, by its exact name.
+CREATED_SESSION=""
+stop_session_created_by_failed_start() {
+	local status=$?
+	if [[ "$status" -ne 0 && -n "$CREATED_SESSION" ]]; then
+		set +e
+		echo "Start failed (exit $status); stopping the session it created, '$CREATED_SESSION'." >&2
+		SESSION_NAME="$CREATED_SESSION" stop_session
+	fi
+}
+
 start_session() {
 	if ! command -v tmux >/dev/null 2>&1; then
 		echo "tmux is not installed. Install tmux first."
@@ -263,6 +276,8 @@ start_session() {
 	echo "[tmux] Rovo ports: ${rovo_ports[*]}"
 
 	tmux new-session -d -s "$SESSION_NAME" -n "$WINDOW_NAME"
+	CREATED_SESSION="$SESSION_NAME"
+	trap stop_session_created_by_failed_start EXIT
 
 	local total_panes
 	total_panes=$((POOL_SIZE + 2))

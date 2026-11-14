@@ -668,3 +668,19 @@ test("status never lists another session's panes, and a session started through 
 		fake.cleanup();
 	}
 });
+
+test("a start that fails after creating its session stops that session; a start that is only not ready keeps it", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const failed = withPortFiles(null, null, () => startAs(fake, "vpk-dev-fails", { FAKE_TMUX_FAIL: "pipe-pane" }));
+		assert.equal(failed.status, 1);
+		assert.match(failed.stderr, /Start failed \(exit 1\); stopping the session it created, 'vpk-dev-fails'/);
+		assert.deepEqual(fake.sessions(), []);
+
+		const notReady = withPortFiles(null, null, () => startAs(fake, "vpk-dev-slow", { FAKE_READY_PORTS: "" }));
+		assert.equal(notReady.status, 5);
+		assert.deepEqual(fake.sessions(), [`vpk-dev-slow|${worktreeRoot}`], "exit 5 leaves the session to come up or be inspected");
+	} finally {
+		fake.cleanup();
+	}
+});

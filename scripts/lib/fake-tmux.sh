@@ -52,6 +52,12 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
+# FAKE_TMUX_FAIL=<command>: that command fails, as a real tmux error would.
+if [ -n "${FAKE_TMUX_FAIL:-}" ] && [ "$command_name" = "$FAKE_TMUX_FAIL" ]; then
+	echo "fake tmux: $command_name failed" >&2
+	exit 1
+fi
+
 case "$command_name" in
 	has-session|kill-session|attach|attach-session|list-windows)
 		session=$(session_target "$target") || exit 1 ;;

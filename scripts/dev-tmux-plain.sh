@@ -244,6 +244,21 @@ print_controls() {
 	echo "  Stop:        pnpm run dev:tmux:stop"
 }
 
+# A start that fails after creating its session (a tmux or state command failing) stops that
+# session through the normal stop path. Exit 5 (not ready in the wait) is left running on
+# purpose: the stack may still come up, its log says why it did not, and `control-vpk launch`
+# keeps waiting on it; `pnpm run dev:tmux:stop` ends it.
+CREATED_SESSION=""
+stop_session_created_by_failed_start() {
+	local status=$?
+	if [[ "$status" -ne 0 && "$status" -ne "$EXIT_NOT_READY" && -n "$CREATED_SESSION" ]]; then
+		set +e
+		echo "Start failed (exit $status); stopping the session it created, '$CREATED_SESSION'." >&2
+		SESSION_NAME="$CREATED_SESSION"
+		stop_session
+	fi
+}
+
 launch_session() {
 	check_workspace_deps
 	# Clear stale port files so the readiness wait doesn't latch onto a dead
@@ -254,6 +269,8 @@ launch_session() {
 	local portless_args
 	portless_args="$(resolve_portless_args)"
 	tm new-session -d -s "$SESSION_NAME" -c "$REPO_ROOT"
+	CREATED_SESSION="$SESSION_NAME"
+	trap stop_session_created_by_failed_start EXIT
 	mkdir -p "$DEV_LOG_DIR"
 	[[ -f "$DEV_LOG_FILE" ]] && mv -f "$DEV_LOG_FILE" "$DEV_LOG_DIR/dev.previous.log"
 	# pipe-pane copies what the pane prints without changing the command it runs; the

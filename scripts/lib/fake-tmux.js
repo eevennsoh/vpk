@@ -15,7 +15,8 @@
 // `dev:frontend`, `dev:backend`) appends the session name to FAKE_SERVER_LOG; for `portless run`,
 // FAKE_READY_PORTS="<frontend> <backend>" makes the fake server write both port files in the
 // current directory and listen (FAKE_LISTEN_FILE, read by the fake lsof). FAKE_TMUX_HAS_SESSION=1
-// makes every session target resolve (a session the state file does not list).
+// makes every session target resolve (a session the state file does not list). FAKE_TMUX_FAIL=<command>
+// makes that command fail.
 
 const fs = require("node:fs");
 const path = require("node:path");
