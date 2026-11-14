@@ -54,8 +54,9 @@ The top of `scripts/vpk-system-clean.sh` defines:
   when `scripts/codex-thread-recency.js` returns `idle` for that worktree
   (threads whose cwd is its root or a directory under it).
   Worktree folder names are ignored.
-- `IDLE_HOURS` (24) and `PRESSURE_IDLE_HOURS` (6), both provisional, at the
-  top of `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
+- `IDLE_HOURS` (24 hours) and `PRESSURE_IDLE_HOURS` (6 hours under memory
+  pressure), the owner's thresholds, at the top of
+  `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
   thread whose cwd is that worktree or a directory under it was last active
   at least this long ago. "Last active" is the newer of the thread's
   `updated_at_ms` and its rollout file's mtime (the column can lag the

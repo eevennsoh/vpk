@@ -90,10 +90,13 @@ manual pass for each candidate:
 1. Keep the primary checkout, attached sessions, stacks under the 30-minute
    grace window, and worktrees with a guarded tool process whose cwd is there.
 2. For a Codex Desktop worktree, read the verdict `scripts/status.sh` prints
-   (or run `node scripts/codex-thread-recency.js --cwd <worktree>`). The probe
-   reads Codex's local state database read-only and matches threads by exact
-   cwd. Keep the stack unless the verdict is `idle` (every thread older than
-   the probe's `IDLE_HOURS`); `active`, `recent`, and `unknown` (no matching
+   (or run `node scripts/codex-thread-recency.js --cwd <worktree>`, adding
+   `--pressure` when `status.sh` reports pressure mode). The probe reads
+   Codex's local state database read-only and matches threads whose cwd is the
+   worktree or a directory under it. Keep the stack unless the verdict is
+   `idle` (every thread last active at least 24 hours ago, or 6 hours under
+   memory pressure; `IDLE_HOURS` and `PRESSURE_IDLE_HOURS` in the probe);
+   `active`, `recent`, and `unknown` (no matching
    thread, missing database, or unrecognised schema) all mean keep. When
    `mcp__codex_app__read_thread` is available, also confirm an idle thread's
    last turn completed.
@@ -148,7 +151,8 @@ script-only handoff, report status, the log path
   with no process named exactly `claude`, `caffeinate`, `lazygit`,
   `cursor-agent`, or `codex` whose cwd is that worktree. Worktree names are
   not part of this check. A Codex Desktop worktree is stopped only when the
-  thread-recency probe returns `idle`. The probe opens Codex's database
+  thread-recency probe returns `idle`: its most recently active thread was
+  last active at least 24 hours ago, or 6 hours under memory pressure. The probe opens Codex's database
   read-only and never changes it; SQLite may create its `-shm`/`-wal` sidecars.
 - If sandbox permissions block a cache or log path, report the exact failure;
   do not attempt alternate deletion, permission repair, or schedule changes.
