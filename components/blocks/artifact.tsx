@@ -50,6 +50,7 @@ import {
 	getArtifactVersionTitle,
 	type ArtifactDocument,
 } from "@/components/ui-custom/lib/artifact-versions";
+import type { ArtifactKind } from "@/components/ui-custom/lib/artifact-kind";
 import { cn } from "@/lib/utils";
 
 export type ArtifactProps = HTMLAttributes<HTMLDivElement>;
@@ -191,8 +192,6 @@ export const ArtifactContent = ({
  * ArtifactCard — high-level component built on GenerativeCard
  * Mirrors the design from rovo-app-artifact-card.tsx
  * --------------------------------------------------------------------------- */
-
-export type ArtifactKind = "text" | "code" | "html" | "image" | "sheet" | "react" | "excalidraw" | "browser";
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const ARTIFACT_KIND_LABELS: Record<ArtifactKind, string> = {
