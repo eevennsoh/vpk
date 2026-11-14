@@ -1,3 +1,4 @@
+// @ts-check
 const { createRouteDecisionPart } = require("./route-decision");
 const { redactLogText, redactUrlForLog } = require("./log-redaction");
 

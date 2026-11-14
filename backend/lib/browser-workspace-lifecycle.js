@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // The lifecycle of one browser workspace as one state value, owned by
