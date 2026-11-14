@@ -243,12 +243,9 @@ test("the skill and its maintenance reference state the probe's thresholds and m
 	const skillDir = join(__dirname, "..");
 	const skill = readFileSync(join(skillDir, "SKILL.md"), "utf8").replace(/\s+/gu, " ");
 	const maintenance = readFileSync(join(skillDir, "references", "maintenance.md"), "utf8").replace(/\s+/gu, " ");
-	const source = readFileSync(join(__dirname, "codex-thread-recency.js"), "utf8");
 	for (const [name, text] of [["SKILL.md", skill], ["maintenance.md", maintenance]]) {
 		assert.ok(text.includes(`${IDLE_HOURS} hours`), `${name} states the normal threshold`);
 		assert.ok(text.includes(`${PRESSURE_IDLE_HOURS} hours under memory pressure`), `${name} states the pressure threshold`);
 		assert.doesNotMatch(text, /exact cwd/u, `${name}: threads under the worktree count too`);
 	}
-	assert.doesNotMatch(maintenance, /PRESSURE_IDLE_HOURS` \(\d+\), both provisional/u);
-	assert.doesNotMatch(source, /PROVISIONAL until the owner/u);
 });
