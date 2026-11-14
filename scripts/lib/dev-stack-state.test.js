@@ -521,3 +521,9 @@ test("stop never signals the caller's own process tree or a reused pid outside t
 	assert.deepEqual(result.ours, [33]);
 	assert.deepEqual(fake.signals, [[33, "SIGTERM"]]);
 });
+
+test("a start allowance longer than the default keeps a slow stack starting, not degraded", () => {
+	const facts = { now: NOW, record: record("starting", 120), sessionAlive: true, services: { frontend: notYet, backend: serving } };
+	assert.equal(deriveStackStatus(facts).status, "degraded");
+	assert.equal(deriveStackStatus({ ...facts, startTimeoutMs: 180_000 }).status, "starting");
+});

@@ -590,3 +590,17 @@ test("stop never signals the caller's own process tree, even when the record nam
 		fake.cleanup();
 	}
 });
+
+test("status --json stays valid JSON when the worktree's session is adopted under another name", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-old-branch|${repoRoot}\n`);
+		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new-branch", {}, ["status", "--json"]));
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(result.stderr, /Adopting tmux session 'vpk-dev-old-branch'/);
+		const report = JSON.parse(result.stdout);
+		assert.equal(report.sessionAlive, true);
+	} finally {
+		fake.cleanup();
+	}
+});

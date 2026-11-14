@@ -759,7 +759,7 @@ function lsofPortListening(port, { spawnSyncImpl = require("node:child_process")
 	return spawnSyncImpl("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], { stdio: "ignore" }).status === 0;
 }
 
-async function readStackStatus({ worktreePath, socket, sessionName, env = process.env, isPortListening = lsofPortListening, now = Date.now() } = {}) {
+async function readStackStatus({ worktreePath, socket, sessionName, env = process.env, isPortListening = lsofPortListening, now = Date.now(), startTimeoutMs = DEFAULT_START_TIMEOUT_MS } = {}) {
 	const record = readStackRecord(worktreePath);
 	const facts = await collectStackFacts({
 		worktreePath,
@@ -767,7 +767,7 @@ async function readStackStatus({ worktreePath, socket, sessionName, env = proces
 		isPortListening,
 		now,
 	});
-	const derived = deriveStackStatus(facts);
+	const derived = deriveStackStatus({ ...facts, startTimeoutMs });
 	return {
 		worktree: path.resolve(worktreePath),
 		...derived,
@@ -854,10 +854,13 @@ async function main(argv = process.argv.slice(2)) {
 		return 0;
 	}
 	if (command === "wait-ready") {
-		const timeoutMs = Number.parseInt(options.timeoutMs ?? String(DEFAULT_START_TIMEOUT_MS), 10);
-		const deadline = Date.now() + (Number.isFinite(timeoutMs) ? timeoutMs : DEFAULT_START_TIMEOUT_MS);
+		const parsed = Number.parseInt(options.timeoutMs ?? String(DEFAULT_START_TIMEOUT_MS), 10);
+		const timeoutMs = Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_START_TIMEOUT_MS;
+		const deadline = Date.now() + timeoutMs;
 		for (;;) {
-			const report = await readStackStatus({ worktreePath, socket, sessionName });
+			// The start grace period is the caller's wait, so a longer VPK_DEV_TMUX_WAIT is not cut
+			// short by the default 90 s.
+			const report = await readStackStatus({ worktreePath, socket, sessionName, startTimeoutMs: Math.max(timeoutMs, DEFAULT_START_TIMEOUT_MS) });
 			if (report.status === "ready") return 0;
 			// Nothing will change by waiting in these states.
 			const settled = !["seeding-env", "starting"].includes(report.status);

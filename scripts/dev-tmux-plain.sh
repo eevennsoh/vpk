@@ -341,7 +341,12 @@ attach_session() {
 }
 
 status_session() {
-	adopt_worktree_session
+	if [[ "$JSON_OUTPUT" == "1" ]]; then
+		# stdout carries only the JSON report.
+		adopt_worktree_session >&2
+	else
+		adopt_worktree_session
+	fi
 	if [[ "$JSON_OUTPUT" == "1" ]]; then
 		stack_state status --json
 		return
