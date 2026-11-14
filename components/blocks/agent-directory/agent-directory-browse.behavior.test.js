@@ -153,3 +153,20 @@ test("the docs page's session agents carry descriptive bylines", async () => {
 	}
 	await view.unmount();
 });
+
+test("a directory card selects from its own button, and More actions opens a menu that presses its trigger", async () => {
+	const view = await renderComponent({ props: {}, source: PROBE });
+	const card = [...document.querySelectorAll('section[aria-label="Agents"] h3')].find((node) => node.textContent === "Alpha").closest("li");
+	assert.equal(card.querySelectorAll('[role="button"]').length, 0, "the card itself is not a button, so its controls nest validly");
+	const select = view.getByRole("button", { name: "Select Alpha" });
+	assert.equal(select.tagName, "BUTTON");
+
+	const more = view.getByRole("button", { name: "More actions for Alpha" });
+	assert.equal(more.hasAttribute("aria-pressed"), false);
+	await view.click(more);
+	assert.equal(more.getAttribute("aria-pressed"), "true");
+	assert.deepEqual([...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent.trim()), ["Learn more"]);
+	await view.click([...document.querySelectorAll('[role="menuitem"]')][0]);
+	assert.deepEqual(globalThis.__browseCalls, ["alpha"], "Learn more selects the agent");
+	await view.unmount();
+});
