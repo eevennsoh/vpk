@@ -345,8 +345,9 @@ test("stops an exact legacy default-socket stack without calling the private-soc
 	});
 
 	assert.equal(result.status, 0, result.stderr);
-	assert.match(tmuxLog, /send-keys default/);
-	assert.match(tmuxLog, /kill-session default/);
+	// Exact targets: a bare name would also match a session it prefixes (vpk-dev-legacy-2).
+	assert.match(tmuxLog, /^send-keys default .*-t =vpk-dev-legacy: C-c$/mu);
+	assert.match(tmuxLog, /^kill-session default .*-t =vpk-dev-legacy$/mu);
 	assert.equal(stopLog, "");
 	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-legacy on default socket/);
 });
