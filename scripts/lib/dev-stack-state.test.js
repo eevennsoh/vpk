@@ -18,6 +18,7 @@ const {
 	recordPhase,
 	recordService,
 	recordedPids,
+	stopRecordedProcesses,
 	withStackLock,
 } = require("./dev-stack-state");
 
@@ -458,4 +459,210 @@ test("an entry recorded in an earlier identity format is reported and kept, neve
 	assert.equal(facts.services.frontend.pidAlive, null, "unknown, not gone");
 	recordPhase(dir, "stopped", { keepService: (entry) => verifyRecordedProcess({ pid: entry.pid, start: entry.pidStart, command: entry.pidCommand }) !== false });
 	assert.equal(readStackRecord(dir).services.frontend?.pid, child.pid, "a finished stop keeps it");
+});
+
+// A fake process table: each pid has a cwd and exits on the signals listed in `exitsOn`
+// (or after `exitsAfterMs` on its own). `identity: "other"` is a pid now held by another
+// process; `identity: "unknown"` cannot be read. The clock advances with every sleep.
+function fakeProcesses(table) {
+	let clock = 0;
+	const alive = new Set(Object.keys(table).map(Number));
+	const signals = [];
+	return {
+		signals,
+		options: {
+			verifyProcess: ({ pid }) => {
+				if (!alive.has(pid)) return false;
+				if (table[pid].identity === "other") return false;
+				if (table[pid].identity === "unknown") return null;
+				return true;
+			},
+			getProcessCwdFn: (pid) => table[pid]?.cwd ?? null,
+			killFn: (pid, signal) => {
+				signals.push([pid, signal]);
+				if (table[pid]?.exitsOn?.includes(signal)) alive.delete(pid);
+			},
+			sleepFn: async (ms) => {
+				clock += ms;
+				for (const [pid, entry] of Object.entries(table)) {
+					if (entry.exitsAfterMs !== undefined && clock >= entry.exitsAfterMs) alive.delete(Number(pid));
+				}
+			},
+			now: () => clock,
+		},
+	};
+}
+
+const stackRecord = (pids) => ({
+	version: 1,
+	worktree: "/repo",
+	session: null,
+	phase: "stopping",
+	phaseAt: null,
+	services: {
+		frontend: { port: 3001, pid: pids[0], pidStart: "s0", childPid: pids[1] ?? null, childStart: "s1" },
+		backend: { port: 8081, pid: pids[2] ?? null, pidStart: "s2", childPid: pids[3] ?? null, childStart: "s3" },
+	},
+});
+
+test("stop waits for recorded processes to drain, then SIGTERMs and SIGKILLs what is left", async () => {
+	const fake = fakeProcesses({
+		11: { cwd: "/repo", exitsAfterMs: 300 }, // drains after Ctrl-C
+		12: { cwd: "/repo", exitsOn: ["SIGTERM"] },
+		21: { cwd: "/repo", exitsOn: ["SIGKILL"] }, // ignores SIGTERM
+	});
+	const result = await stopRecordedProcesses({ worktreePath: "/repo", record: stackRecord([11, 12, 21]), waitMs: 1_000, graceMs: 500, listAncestorPidsFn: () => [], ...fake.options });
+	assert.deepEqual(result.ours, [11, 12, 21]);
+	assert.equal(result.exitedOnTheirOwn, 1);
+	assert.deepEqual(result.terminated, [12, 21]);
+	assert.deepEqual(result.killed, [21]);
+	assert.deepEqual(fake.signals, [[12, "SIGTERM"], [21, "SIGTERM"], [21, "SIGKILL"]]);
+});
+
+test("stop signals only verified processes in the worktree, never the caller's own tree", async () => {
+	const fake = fakeProcesses({
+		31: { cwd: "/repo", exitsOn: ["SIGTERM"] }, // an agent session that is an ancestor of the stop
+		32: { cwd: "/elsewhere", exitsOn: ["SIGTERM"] }, // verified, but runs in another directory
+		33: { cwd: "/repo", exitsOn: ["SIGTERM"] },
+		34: { cwd: "/repo", exitsOn: ["SIGTERM"], identity: "other" }, // the pid was reused
+		35: { cwd: "/repo", exitsOn: ["SIGTERM"], identity: "unknown" }, // ps cannot read it
+	});
+	const record = stackRecord([31, 32, 33, 34]);
+	record.services.backend.childPid = 35;
+	const result = await stopRecordedProcesses({ worktreePath: "/repo", record, waitMs: 0, graceMs: 100, listAncestorPidsFn: () => [31], ...fake.options });
+	assert.deepEqual(result.skippedProtected, [31]);
+	assert.deepEqual(result.unverified, [32, 35]);
+	assert.deepEqual(result.ours, [33]);
+	assert.deepEqual(fake.signals, [[33, "SIGTERM"]]);
+});
+
+test("a process that is replaced between SIGTERM and SIGKILL is not killed", async () => {
+	let identity = "ours";
+	const signals = [];
+	const result = await stopRecordedProcesses({
+		worktreePath: "/repo",
+		record: stackRecord([41]),
+		waitMs: 0,
+		graceMs: 100,
+		listAncestorPidsFn: () => [],
+		getProcessCwdFn: () => "/repo",
+		verifyProcess: () => (identity === "ours" ? true : false),
+		killFn: (pid, signal) => {
+			signals.push([pid, signal]);
+			identity = "other"; // the launcher exited and the pid went to a new process
+		},
+		sleepFn: async () => {},
+		now: (() => {
+			let clock = 0;
+			return () => (clock += 50);
+		})(),
+	});
+	assert.deepEqual(signals, [[41, "SIGTERM"]]);
+	assert.deepEqual(result.killed, []);
+});
+
+test("with no readable process table the stop signals nothing by pid", async () => {
+	const fake = fakeProcesses({ 51: { cwd: "/repo", exitsOn: ["SIGTERM"] } });
+	const result = await stopRecordedProcesses({ worktreePath: "/repo", record: stackRecord([51]), waitMs: 0, listAncestorPidsFn: () => null, ...fake.options });
+	assert.match(result.blocked, /process table cannot be read/);
+	assert.deepEqual(fake.signals, []);
+});
+
+test("a start allowance longer than the default keeps a slow stack starting, not degraded", () => {
+	const facts = { now: NOW, record: record("starting", 120), sessionAlive: true, services: { frontend: notYet, backend: serving } };
+	assert.equal(deriveStackStatus(facts).status, "degraded");
+	assert.equal(deriveStackStatus({ ...facts, startTimeoutMs: 180_000 }).status, "starting");
+});
+
+// Real processes from here on: each test starts its own children in a temp worktree.
+function realWorktree(t) {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-stack-real-")));
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	return dir;
+}
+
+function startSleeper(t, cwd) {
+	const { spawnInGroup } = require("./test-process.js");
+	const child = spawnInGroup("sleep", ["300"], { cwd, stdio: "ignore" }, { t });
+	const exited = new Promise((resolve) => child.once("exit", (_code, signal) => resolve(signal ?? "exit")));
+	return { child, exited };
+}
+
+test("a process that took over a recorded pid is neither orphaned nor signalled", async (t) => {
+	const dir = realWorktree(t);
+	const { child, exited } = startSleeper(t, dir);
+	// The record an earlier launcher left (a reboot, a killed tmux server): its pid now belongs to
+	// an unrelated process in the same worktree, which started at another time.
+	fs.writeFileSync(
+		path.join(dir, STACK_FILE),
+		JSON.stringify({
+			version: 1,
+			worktree: dir,
+			session: { name: "vpk-dev-x", socket: "vpk-dev" },
+			phase: "starting",
+			phaseAt: new Date(Date.now() - 600_000).toISOString(),
+			services: { frontend: { port: 49999, pid: child.pid, childPid: null, pidStart: "Mon Jan  1 00:00:00 2024", pidCommand: "node scripts/dev-frontend.js" } },
+		}),
+	);
+	const facts = await collectStackFacts({ worktreePath: dir, sessionAlive: false, isPortListening: () => false });
+	const { status } = deriveStackStatus(facts);
+	assert.notEqual(status, "orphaned");
+	const result = await stopRecordedProcesses({ worktreePath: dir, waitMs: 0, graceMs: 200 });
+	assert.deepEqual(result.terminated, []);
+	assert.deepEqual(result.killed, []);
+	const still = await Promise.race([exited, new Promise((resolve) => setTimeout(() => resolve("alive"), 300))]);
+	assert.equal(still, "alive");
+});
+
+test("with the process table unreadable, stop signals nothing by pid, even its own parent", async (t) => {
+	const { spawn } = require("node:child_process");
+	const dir = realWorktree(t);
+	// A PATH with node and lsof but no ps, as under a sandbox that blocks ps.
+	const bin = fs.mkdtempSync(path.join(os.tmpdir(), "dev-stack-no-ps-"));
+	t.after(() => fs.rmSync(bin, { recursive: true, force: true }));
+	fs.symlinkSync(process.execPath, path.join(bin, "node"));
+	for (const tool of ["/usr/sbin/lsof", "/usr/bin/lsof"]) {
+		if (fs.existsSync(tool)) {
+			fs.symlinkSync(tool, path.join(bin, "lsof"));
+			break;
+		}
+	}
+	// The parent records itself as the frontend launcher, then runs the stop as its child.
+	const parentScript = `
+		const fs = require("node:fs");
+		const { spawnSync } = require("node:child_process");
+		fs.writeFileSync(${JSON.stringify(path.join(dir, STACK_FILE))}, JSON.stringify({ version: 1, worktree: process.cwd(), session: null, phase: "stopping", phaseAt: new Date().toISOString(), services: { frontend: { port: 49998, pid: process.pid, childPid: null } } }));
+		const stop = spawnSync(process.execPath, [${JSON.stringify(require.resolve("./dev-stack-state"))}, "stop-recorded", "--wait-ms", "0"], { encoding: "utf8" });
+		process.stdout.write(stop.stdout);
+		process.exit(stop.status ?? 9);
+	`;
+	const parent = spawn(process.execPath, ["-e", parentScript], { cwd: dir, env: { ...process.env, PATH: bin }, stdio: ["ignore", "pipe", "pipe"] });
+	let stdout = "";
+	parent.stdout.on("data", (chunk) => (stdout += chunk));
+	const [code, signal] = await new Promise((resolve) => parent.once("exit", (...outcome) => resolve(outcome)));
+	assert.equal(signal, null, "the stop killed its own parent");
+	assert.equal(code, 0, stdout);
+	assert.match(stdout, /Not signalling recorded processes/);
+});
+
+test("a process that leaves the worktree before the signal is not signalled", async () => {
+	let cwd = "/repo";
+	const signals = [];
+	const result = await stopRecordedProcesses({
+		worktreePath: "/repo",
+		record: stackRecord([61]),
+		waitMs: 0,
+		graceMs: 0,
+		listAncestorPidsFn: () => [],
+		verifyProcess: () => true,
+		getProcessCwdFn: () => {
+			const now = cwd;
+			cwd = "/elsewhere"; // checked once as a candidate, then it moved
+			return now;
+		},
+		killFn: (pid, signal) => signals.push([pid, signal]),
+		sleepFn: async () => {},
+	});
+	assert.deepEqual(result.ours, [61]);
+	assert.deepEqual(signals, []);
 });
