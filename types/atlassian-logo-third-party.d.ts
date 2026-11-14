@@ -25,3 +25,24 @@ declare module "@atlassian/logo-third-party/dist/esm/entry-points/*" {
 	>;
 	export = icons;
 }
+
+/**
+ * The shared wrappers that `components/ui/data/logo-wrappers.ts` keeps with the page. They are
+ * only referenced there, never rendered, so their shape is not needed.
+ */
+declare module "@atlassian/logo-third-party/dist/esm/wrapper" {
+	export const ThirdPartyLogoWrapper: unknown;
+}
+
+declare module "@atlaskit/logo/dist/esm/utils/icon-wrapper" {
+	export const IconWrapper: unknown;
+}
+
+declare module "@atlaskit/logo/dist/esm/utils/logo-wrapper" {
+	export const LogoWrapper: unknown;
+}
+
+declare module "@atlaskit/logo/dist/esm/wrapper" {
+	const Wrapper: unknown;
+	export default Wrapper;
+}
