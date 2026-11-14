@@ -62,7 +62,7 @@ function trackHeartbeat(ws) {
 /**
  * Pings every socket of `servers` each interval; one that has not answered since the
  * previous ping is terminated. Returns a stop function.
- * @param {Array<{ clients?: Iterable<any> }>} servers
+ * @param {Array<{ clients?: Iterable<{ isAlive?: boolean, ping?: () => void, terminate?: () => void }> }>} servers
  * @param {{ intervalMs?: number, setIntervalImpl?: typeof setInterval, clearIntervalImpl?: typeof clearInterval }} [options]
  */
 function startHeartbeat(servers, {
