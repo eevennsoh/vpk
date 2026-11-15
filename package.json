@@ -56,6 +56,7 @@
 		"verify:fast": "node scripts/check.mjs --guards",
 		"ci:pr": "node scripts/run-parallel.mjs 'pnpm run verify:fast' 'pnpm run lint' 'pnpm run typecheck' 'pnpm run test:unit:js --parallel auto'",
 		"deploy:micros": "./scripts/dev-deploy-fast.sh",
+		"backfill:rovo-thread-owner": "node backend/scripts/backfill-rovo-thread-owner.js",
 		"dev:backend": "node scripts/check-workspace-deps.js --command \"pnpm run dev:backend\" express && node scripts/dev-backend.js",
 		"dev:frontend": "node scripts/check-workspace-deps.js --command \"pnpm run dev:frontend\" next && node scripts/dev-frontend.js",
 		"dev:rovo": "node scripts/dev-rovo.js",

@@ -9,6 +9,7 @@ const {
 const {
 	buildLlmRoutingStatus,
 } = require("../lib/llm-routing-status");
+const { getRequestCaller } = require("../middleware/caller-identity");
 
 function parseOptionalInteger(value) {
 	if (typeof value === "number" && Number.isInteger(value)) {
@@ -168,10 +169,28 @@ function createApiHealthHandler({
 	};
 }
 
+/**
+ * GET /api/whoami: the caller this backend sees, echoed to that caller only. Behind the
+ * SLAuth sidecar `owner` is the X-Slauth-Subject the backend stores as a thread's owner
+ * (the value the thread owner backfill takes); locally it is "local". Never cached:
+ * the answer belongs to one signed-in user.
+ */
+function createWhoamiHandler({ getCaller = getRequestCaller } = {}) {
+	return (req, res) => {
+		res.set("Cache-Control", "no-store");
+		const caller = getCaller(req);
+		if (!caller) {
+			return res.status(401).json({ error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
+		}
+		return res.json({ owner: caller.owner, local: caller.local });
+	};
+}
+
 function registerStatusRoutes(app, dependencies) {
 	app.use("/api/status", createStatusRouter(dependencies));
 	app.get("/healthcheck", createHealthcheckHandler());
 	app.get("/api/health", createApiHealthHandler(dependencies));
+	app.get("/api/whoami", createWhoamiHandler());
 }
 
 module.exports = {
@@ -179,6 +198,7 @@ module.exports = {
 	createHealthcheckHandler,
 	createRovoSurface,
 	createStatusRouter,
+	createWhoamiHandler,
 	parseOptionalInteger,
 	registerStatusRoutes,
 };

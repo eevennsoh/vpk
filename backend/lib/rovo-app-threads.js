@@ -437,6 +437,37 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	const updateThread = async (threadId, fields = {}) =>
 		enqueueThreadMutation(threadId, () => updateThreadRecord(threadId, fields));
 
+	/**
+	 * Gives a thread stored before owners were recorded its owner, once. A thread that
+	 * already has an owner keeps it. The record is stored as normalizeThreadRecord leaves
+	 * it (unknown keys dropped, missing timestamps filled in, like every backend write);
+	 * an existing updatedAt is kept, so the list order does not change. Only the owner backfill
+	 * (backend/scripts/backfill-rovo-thread-owner.js) calls this; ownership is otherwise
+	 * fixed at creation.
+	 * @param {string} threadId
+	 * @param {string} owner
+	 * @returns {Promise<{ status: "assigned" | "owned" | "missing", thread: Record<string, unknown> | null }>}
+	 */
+	const assignOwnerIfMissing = async (threadId, owner) => {
+		const nextOwner = typeof owner === "string" ? owner.trim() : "";
+		if (!nextOwner) {
+			throw new Error("assignOwnerIfMissing requires an owner");
+		}
+		return enqueueThreadMutation(threadId, async () => {
+			const currentThread = await readThread(threadId);
+			if (!currentThread) {
+				return { status: "missing", thread: null };
+			}
+			if (currentThread.owner) {
+				return { status: "owned", thread: currentThread };
+			}
+			const nextThread = normalizeThreadRecord({ ...currentThread, owner: nextOwner });
+			const { threadFilePath } = buildRovoAppThreadPaths(baseDir, threadId);
+			await writeJsonFile(threadFilePath, nextThread);
+			return { status: "assigned", thread: nextThread };
+		});
+	};
+
 	const getRealtimeMessages = async (threadId) => {
 		const thread = await readThread(threadId);
 		if (!thread) {
@@ -520,11 +551,13 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		replaceRealtimeMessages,
 		upsertRealtimeMessage,
 		updateThread,
+		assignOwnerIfMissing,
 		deleteThread,
 		deleteAllThreads,
 	};
 }
 
 module.exports = {
+	RETENTION_LIMIT,
 	createRovoAppThreadManager,
 };
