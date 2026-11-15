@@ -32,7 +32,7 @@ Run the rows with the installed `skill-creator` skill’s trigger eval; `trigger
 pnpm run eval:skill-triggers -- vpk-html --out "$ROUND/triggers.json"
 ```
 
-Ship on recall 0.85 or more on the near-miss rows and false positives 0.10 or less on the guard and sibling rows. For a failing description, use skill-creator’s `run_loop` (train/test split, held-out selection) rather than hand rewording; the fix goes to the description in `SKILL.md`, never to a reworded query, unless the row leans on content it does not carry.
+Ship on recall 0.85 or more on the near-miss rows and false positives 0.10 or less on the guard and sibling rows. For a failing description, use skill-creator’s `run_loop` (train/test split, held-out selection) rather than hand rewording, through the same wrapper (`pnpm run eval:skill-triggers -- vpk-html --loop --model <model> --report none`) so it does not score 0.0 as well; the fix goes to the description in `SKILL.md`, never to a reworded query, unless the row leans on content it does not carry.
 
 ## Brief a fresh critic with only the text block
 

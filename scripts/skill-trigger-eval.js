@@ -16,6 +16,8 @@
 // - One worker by default. run_eval's parallel workers share the project, so each query sees every
 //   in-flight worker's temporary command (same description, different id) and often calls another
 //   worker's copy, which scores as a miss.
+// - `--loop` runs skill-creator's `run_loop` (description tuning) the same way. It imports the same
+//   root lookup and also defaults to 10 workers, so plain `run_loop` scores 0.0 for the same reasons.
 
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
@@ -27,35 +29,55 @@ const SKILLS_DIR = path.join(REPO_ROOT, ".agents", "skills");
 const AUTH_ENV_KEYS = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"];
 // Pass-through flags for run_eval with this wrapper's defaults.
 const RUN_EVAL_DEFAULTS = { "--runs-per-query": "3", "--timeout": "60", "--num-workers": "1" };
+const VALUE_FLAGS = { "--eval-set": "evalSet", "--out": "out", "--skill-creator": "skillCreator" };
 
-const USAGE = `Usage: pnpm run eval:skill-triggers -- <skill> [options] [run_eval flags]
+const USAGE = `Usage: pnpm run eval:skill-triggers -- <skill> [options] [run_eval/run_loop flags]
 
 Runs skill-creator's run_eval on .agents/skills/<skill>/evals/triggers.json from an isolated
 project and Claude config, and saves its JSON under output/skill-evals/.
 
 Options:
-  --keep-user-config   Keep your own ~/.claude (skills, plugins, hooks). Numbers drop to ~0.
+  --loop               Run run_loop (description tuning; needs --model) instead of run_eval.
+  --keep-user-config   Keep your own Claude config (skills, plugins, hooks). Numbers drop to ~0.
   --eval-set <file>    Use another {query, should_trigger} file.
-  --out <file>         Where to save run_eval's JSON.
+  --out <file>         Where to save the JSON (a failed run writes <file>.failed instead).
   --skill-creator <dir> skill-creator folder (default: the installed plugin).
 Any other flag (--runs-per-query, --timeout, --num-workers, --model, --description,
---trigger-threshold) goes to run_eval unchanged.`;
+--trigger-threshold, and for --loop --max-iterations, --holdout, --report, --results-dir)
+goes to skill-creator unchanged. Pass --model so runs are comparable.`;
 
 function parseArgs(argv) {
-	const options = { skill: null, keepUserConfig: false, evalSet: null, out: null, skillCreator: null, runEvalArgs: [] };
+	const options = {
+		skill: null,
+		loop: false,
+		keepUserConfig: false,
+		evalSet: null,
+		out: null,
+		skillCreator: null,
+		runEvalArgs: [],
+	};
 	const passthrough = {};
 	for (let index = 0; index < argv.length; index += 1) {
-		const arg = argv[index];
-		if (arg === "--") continue;
-		if (arg === "--help" || arg === "-h") return { ...options, help: true };
+		const raw = argv[index];
+		if (raw === "--") continue;
+		if (raw === "--help" || raw === "-h") return { ...options, help: true };
+		// `--flag=value` and `--flag value` are the same flag.
+		const [arg, inline] = raw.startsWith("--") && raw.includes("=") ? raw.split(/=(.*)/s) : [raw, undefined];
+		const takeValue = () => {
+			if (inline !== undefined) return inline;
+			const next = argv[index + 1];
+			if (next === undefined || next.startsWith("--")) throw new Error(`${arg} needs a value`);
+			index += 1;
+			return next;
+		};
 		if (arg === "--keep-user-config") options.keepUserConfig = true;
-		else if (arg === "--eval-set") options.evalSet = argv[++index];
-		else if (arg === "--out") options.out = argv[++index];
-		else if (arg === "--skill-creator") options.skillCreator = argv[++index];
+		else if (arg === "--loop") options.loop = true;
+		else if (VALUE_FLAGS[arg]) options[VALUE_FLAGS[arg]] = takeValue();
 		else if (arg === "--verbose") continue;
 		else if (arg.startsWith("--")) {
 			const next = argv[index + 1];
-			passthrough[arg] = next !== undefined && !next.startsWith("--") ? argv[++index] : null;
+			if (inline !== undefined) passthrough[arg] = inline;
+			else passthrough[arg] = next !== undefined && !next.startsWith("--") ? argv[++index] : null;
 		} else if (!options.skill) options.skill = arg;
 		else throw new Error(`Unexpected argument: ${arg}`);
 	}
@@ -65,6 +87,8 @@ function parseArgs(argv) {
 		if (value !== null) options.runEvalArgs.push(value);
 	}
 	options.runEvalArgs.push("--verbose");
+	options.numWorkers = Number(merged["--num-workers"]);
+	options.model = merged["--model"] ?? null;
 	return options;
 }
 
@@ -112,8 +136,9 @@ function hasHeadlessAuth(env) {
 	return AUTH_ENV_KEYS.some((key) => Boolean(env[key]));
 }
 
-function findSkillCreatorDir(home = os.homedir()) {
-	const installed = path.join(home, ".claude", "plugins", "installed_plugins.json");
+function findSkillCreatorDir({ env = process.env, home = os.homedir() } = {}) {
+	const configDir = env.CLAUDE_CONFIG_DIR ?? path.join(home, ".claude");
+	const installed = path.join(configDir, "plugins", "installed_plugins.json");
 	if (fs.existsSync(installed)) {
 		const plugins = JSON.parse(fs.readFileSync(installed, "utf8")).plugins ?? {};
 		for (const [id, installs] of Object.entries(plugins)) {
@@ -127,6 +152,31 @@ function findSkillCreatorDir(home = os.homedir()) {
 	return null;
 }
 
+function describeModel(options, env) {
+	if (options.model) return `${options.model} (--model)`;
+	if (env.ANTHROPIC_MODEL) return `${env.ANTHROPIC_MODEL} (ANTHROPIC_MODEL)`;
+	return "Claude Code default (pass --model for comparable numbers)";
+}
+
+// Paths given on the command line are relative to where the user ran `pnpm run`, not the repo root.
+function resolveUserPath(file, env = process.env) {
+	return path.resolve(env.INIT_CWD ?? process.cwd(), file);
+}
+
+function displayPath(file) {
+	const relative = path.relative(REPO_ROOT, file);
+	return relative.startsWith("..") || path.isAbsolute(relative) ? file : relative;
+}
+
+// Only a clean exit with output replaces `out`; anything else goes next to it, so a failed or
+// interrupted run never overwrites an earlier good result.
+function writeResult({ out, code, stdout }) {
+	const ok = code === 0 && stdout.length > 0;
+	const target = ok ? out : `${out}.failed`;
+	if (ok || stdout.length > 0) fs.writeFileSync(target, stdout);
+	return { ok, target: ok || stdout.length > 0 ? target : null };
+}
+
 function main() {
 	const options = parseArgs(process.argv.slice(2));
 	if (options.help || !options.skill) {
@@ -136,10 +186,11 @@ function main() {
 	}
 	const skillPath = path.join(SKILLS_DIR, options.skill);
 	if (!fs.existsSync(path.join(skillPath, "SKILL.md"))) throw new Error(`No skill at ${path.relative(REPO_ROOT, skillPath)}`);
-	const evalSet = path.resolve(options.evalSet ?? path.join(skillPath, "evals", "triggers.json"));
+	const evalSet = options.evalSet ? resolveUserPath(options.evalSet) : path.join(skillPath, "evals", "triggers.json");
 	if (!fs.existsSync(evalSet)) throw new Error(`No eval set at ${evalSet}`);
-	const skillCreatorDir = options.skillCreator ? path.resolve(options.skillCreator) : findSkillCreatorDir();
+	const skillCreatorDir = options.skillCreator ? resolveUserPath(options.skillCreator) : findSkillCreatorDir();
 	if (!skillCreatorDir) throw new Error("skill-creator is not installed; run `claude plugin install skill-creator@claude-plugins-official`.");
+	if (options.loop && !options.model) throw new Error("--loop needs --model (run_loop uses it to rewrite the description).");
 
 	if (!options.keepUserConfig && !hasHeadlessAuth(process.env)) {
 		throw new Error(
@@ -149,34 +200,67 @@ function main() {
 	}
 
 	const { projectDir, siblings } = createSandboxProject({ skill: options.skill });
-	const projectRoot = resolveRunEvalProjectRoot(projectDir);
-	if (projectRoot !== projectDir) throw new Error(`run_eval would resolve ${projectRoot}, not the sandbox ${projectDir}`);
 	const configDir = options.keepUserConfig ? null : fs.mkdtempSync(path.join(os.tmpdir(), "vpk-skill-eval-config-"));
-	const out = path.resolve(
-		options.out ?? path.join(REPO_ROOT, "output", "skill-evals", `${new Date().toISOString().slice(0, 10)}-${options.skill}`, "triggers.json"),
-	);
+	let cleaned = false;
+	const cleanup = () => {
+		if (cleaned) return;
+		cleaned = true;
+		fs.rmSync(projectDir, { recursive: true, force: true });
+		if (configDir) fs.rmSync(configDir, { recursive: true, force: true });
+	};
+	const projectRoot = resolveRunEvalProjectRoot(projectDir);
+	if (projectRoot !== projectDir) {
+		cleanup();
+		throw new Error(`skill-creator would resolve ${projectRoot}, not the sandbox ${projectDir}`);
+	}
+	const mode = options.loop ? "run_loop" : "run_eval";
+	const out = options.out
+		? resolveUserPath(options.out)
+		: path.join(
+				REPO_ROOT,
+				"output",
+				"skill-evals",
+				`${new Date().toISOString().slice(0, 10)}-${options.skill}`,
+				options.loop ? "loop.json" : "triggers.json",
+			);
 	fs.mkdirSync(path.dirname(out), { recursive: true });
 
-	console.error(`skill-creator: ${skillCreatorDir}`);
+	console.error(`skill-creator: ${skillCreatorDir} (${mode})`);
 	console.error(`sandbox project: ${projectDir} (${siblings.length} sibling skills linked, ${options.skill} left out)`);
 	console.error(`claude config: ${configDir ?? "your own (--keep-user-config)"}`);
-	console.error(`results: ${path.relative(REPO_ROOT, out)}`);
-	const workers = Number(options.runEvalArgs[options.runEvalArgs.indexOf("--num-workers") + 1]);
-	if (workers > 1) console.error(`warning: ${workers} workers share one sandbox and steal each other's triggers; expect false misses.`);
+	console.error(`model: ${describeModel(options, process.env)}`);
+	console.error(`results: ${displayPath(out)}`);
+	if (options.numWorkers > 1) {
+		console.error(`warning: ${options.numWorkers} workers share one sandbox and steal each other's triggers; expect false misses.`);
+	}
 
-	const args = ["-m", "scripts.run_eval", "--eval-set", evalSet, "--skill-path", skillPath, ...options.runEvalArgs];
+	const args = ["-m", `scripts.${mode}`, "--eval-set", evalSet, "--skill-path", skillPath, ...options.runEvalArgs];
 	const child = spawn("python3", args, {
 		cwd: projectDir,
 		env: buildEvalEnv({ baseEnv: process.env, skillCreatorDir, configDir }),
 		stdio: ["ignore", "pipe", "inherit"],
 	});
 	const chunks = [];
+	const onSignal = (signal) => {
+		child.kill(signal);
+		cleanup();
+		process.exitCode = 130;
+	};
+	process.once("SIGINT", onSignal);
+	process.once("SIGTERM", onSignal);
 	child.stdout.on("data", (chunk) => chunks.push(chunk));
+	child.on("error", (error) => {
+		console.error(`could not start python3: ${error.message}`);
+		cleanup();
+		process.exitCode = 1;
+	});
 	child.on("close", (code) => {
-		fs.writeFileSync(out, Buffer.concat(chunks));
-		fs.rmSync(projectDir, { recursive: true, force: true });
-		if (configDir) fs.rmSync(configDir, { recursive: true, force: true });
-		process.exitCode = code ?? 1;
+		process.off("SIGINT", onSignal);
+		process.off("SIGTERM", onSignal);
+		const { ok, target } = writeResult({ out, code, stdout: Buffer.concat(chunks) });
+		if (!ok) console.error(`${mode} exited ${code}; ${target ? `partial output in ${displayPath(target)}` : "no output"}, ${displayPath(out)} left as it was.`);
+		cleanup();
+		process.exitCode = ok ? 0 : code || 1;
 	});
 }
 
@@ -193,8 +277,12 @@ module.exports = {
 	AUTH_ENV_KEYS,
 	buildEvalEnv,
 	createSandboxProject,
+	describeModel,
+	findSkillCreatorDir,
 	hasHeadlessAuth,
 	listSkillNames,
 	parseArgs,
 	resolveRunEvalProjectRoot,
+	resolveUserPath,
+	writeResult,
 };
