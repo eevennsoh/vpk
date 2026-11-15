@@ -11,7 +11,7 @@ pnpm run eval:skill-triggers -- vpk-remote
 pnpm run eval:skill-triggers -- vpk-design --runs-per-query 1 --model claude-sonnet-5-5
 ```
 
-`scripts/skill-trigger-eval.js` only prepares the environment and then runs `python3 -m scripts.run_eval` from the installed plugin, unchanged. It saves `run_eval`'s JSON to `output/skill-evals/<date>-<skill>/triggers.json` and streams the `--verbose` PASS/FAIL lines. Flags other than its own (`--keep-user-config`, `--eval-set`, `--out`, `--skill-creator`) go to `run_eval`; its defaults are 3 runs per query, a 60 s timeout and 1 worker. Keep one worker per skill (a full kit takes about 10 minutes); to save time, run different skills at once instead, since each run gets its own sandbox.
+`scripts/skill-trigger-eval.js` only prepares the environment and then runs `python3 -m scripts.run_eval` from the installed plugin, unchanged. It saves `run_eval`'s JSON to `output/skill-evals/<date>-<skill>/triggers.json` and streams the `--verbose` PASS/FAIL lines. Flags other than its own (`--keep-user-config`, `--eval-set`, `--out`, `--skill-creator`) go to `run_eval`; its defaults are 3 runs per query, a 60 s timeout and 1 worker. Keep one worker per skill (a 20-row kit at 3 runs takes about 30 minutes, mostly negative rows running to the timeout); to save time, run different skills at once instead, since each run gets its own sandbox.
 
 It needs headless auth in the environment, because the Claude config it uses is empty: a `claude-gw` session already exports `ANTHROPIC_API_KEY` and `ANTHROPIC_BASE_URL`; on a subscription login, run `claude setup-token` once and export `CLAUDE_CODE_OAUTH_TOKEN`.
 
@@ -29,5 +29,7 @@ It needs headless auth in the environment, because the Claude config it uses is 
 The gateway is not a cause: `run_eval` calls the `claude` binary on `PATH` (the zsh `claude`/`claude-gw` functions do not reach a subprocess) with your environment, and the same gateway environment triggered correctly once the config was isolated.
 
 ## Read the numbers
+
+First real baseline, 2026-11-16, Opus 5.5 through the gateway, 3 runs per row: vpk-remote 19/20 rows (positives 11/12, negatives 8/8 with no false trigger), vpk-design 16/18 (positives 8/10, negatives 8/8). The misses were "farm this out to sonnet in the background…" (vpk-remote) and the two screenshot-to-code rows without a Figma link (vpk-design).
 
 The result is relative to VPK's own skills and Claude Code's built-ins, not to your personal skill set; a description can still lose to a user-level skill in a real session. Rows marked `"where": "repo"` assume the VPK app; the sandbox carries `AGENTS.md` but no source, so treat a miss there with care. For ship thresholds and how to fix a failing description, follow the skill's own evals README (for example `.agents/skills/vpk-html/evals/README.md`); change the description in `SKILL.md`, not the query.
