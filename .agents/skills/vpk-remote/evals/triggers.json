@@ -1,0 +1,22 @@
+[
+	{"query": "/vpk-remote fix the sidebar flicker on the projects page", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "send this to a worker on terra: rename useFoo to useBar across components/", "should_trigger": true, "note": "Worker delegation with a model as a setting."},
+	{"query": "I'm out of credits, can you move this chat to sol and keep going", "should_trigger": true, "note": "Conversation handoff."},
+	{"query": "get a second opinion from opus via the gateway on my plan for the chat reducer split", "should_trigger": true, "note": "Advisor consult through the gateway."},
+	{"query": "council review PR 2290 before I merge it", "should_trigger": true, "note": "Council mode."},
+	{"query": "route this through proximity: add a loading skeleton to the agents directory", "should_trigger": true, "note": "Gateway routing phrase."},
+	{"query": "can you have a cheaper model do the actual edits for this? you plan, it codes: add retry backoff to backend/lib/rovo-client.js", "should_trigger": true, "note": "Paraphrased plan-big-execute-small."},
+	{"query": "I'm about to hit my subscription limit, carry this conversation on through the API on opus", "should_trigger": true, "note": "Paraphrased session move to API."},
+	{"query": "farm this out to sonnet in the background and check its work when it's done: migrate hooks/use-chat-panel-width.ts to the new store", "should_trigger": true, "note": "Paraphrased worker delegation."},
+	{"query": "before I commit to this reducer design, ask a couple of other models what they think", "should_trigger": true, "note": "Paraphrased multi-model council."},
+	{"query": "vpk council on the diff in my worktree", "should_trigger": true, "note": "Council naming."},
+	{"query": "let a gpt worker take a pass at the flaky test in scripts/symphony.test.js and report back here", "should_trigger": true, "note": "Paraphrased GPT worker."},
+	{"query": "the luna theme toggle is broken on the docs page, can you fix it", "should_trigger": false, "note": "Model name used as task text."},
+	{"query": "what does backend/lib/rovo-gateway.js do when the session token expires", "should_trigger": false, "note": "Gateway code question, not delegation."},
+	{"query": "ship this branch and merge it", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
+	{"query": "look at this stack trace: Error in .agents/skills/vpk-remote/SKILL.md line 40", "should_trigger": false, "note": "Skill name only inside pasted text."},
+	{"query": "compare GPT and Claude pricing for me", "should_trigger": false, "note": "Model talk, no delegation."},
+	{"query": "the proximity sensor demo in components/arts is jittery, smooth it out", "should_trigger": false, "note": "'proximity' as task text."},
+	{"query": "review this PR yourself and leave comments", "should_trigger": false, "note": "Ordinary review in-session."},
+	{"query": "explain how the AI Gateway helpers pick a model in backend/lib/ai-gateway-helpers.js", "should_trigger": false, "note": "Gateway code question."}
+]

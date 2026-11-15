@@ -1,0 +1,10 @@
+[
+	{"query": "tidy up components/projects/studio/studio-shell.tsx, it's doing too much", "should_trigger": true, "note": "Tidy a VPK component."},
+	{"query": "split this overgrown component under app/ into smaller pieces without changing behavior", "should_trigger": true, "note": "Split oversized component."},
+	{"query": "move the data and logic out of website-card.tsx into a hook and a data file", "should_trigger": true, "note": "Move UI logic into hooks/data."},
+	{"query": "refactor the agents directory card so other blocks can reuse it", "should_trigger": true, "note": "Reuse-oriented refactor."},
+	{"query": "simplify this Python script, it has too many nested ifs", "should_trigger": false, "note": "Generic simplification outside VPK UI."},
+	{"query": "add a dark mode toggle to the settings page", "should_trigger": false, "note": "New feature."},
+	{"query": "harvest the shadcn Combobox into VPK", "should_trigger": false, "note": "Sibling: vpk-component."},
+	{"query": "the sidebar flickers on hover, find out why", "should_trigger": false, "note": "Bug investigation."}
+]

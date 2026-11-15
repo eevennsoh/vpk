@@ -1,0 +1,20 @@
+[
+	{"query": "implement this design https://www.figma.com/design/abc123/Rovo-Chat?node-id=12-345", "should_trigger": true, "note": "Figma URL to code."},
+	{"query": "here's a screenshot of the new empty state mockup, make the projects page match it pixel for pixel", "should_trigger": true, "note": "Screenshot to code."},
+	{"query": "which icons in this Figma frame are we missing locally? export the missing ones into public/illustration", "should_trigger": true, "note": "Figma asset inventory and export."},
+	{"query": "/vpk-design https://figma.com/design/xyz/Studio?node-id=4-2", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "the composer padding doesn't match the figma spec, the node is figma.com/design/q1w2/Composer?node-id=8-9", "should_trigger": true, "note": "Figma parity fix."},
+	{"query": "our designer dropped a new card layout in figma, can you build it? figma.com/design/k9/Cards?node-id=3-7", "should_trigger": true, "note": "Paraphrased Figma build."},
+	{"query": "this mockup png is what the agents page should look like, get it as close as you can", "should_trigger": true, "note": "Paraphrased mockup match."},
+	{"query": "grab the illustrations from this figma page and drop them into public/illustration-ai", "should_trigger": true, "note": "Paraphrased asset export."},
+	{"query": "the spacing on the onboarding modal is off compared to the design file, compare and fix it", "should_trigger": true, "note": "Paraphrased design parity."},
+	{"query": "here's a screenshot from the PM's deck, recreate this header in the studio route", "should_trigger": true, "note": "Screenshot to code without 'pixel'."},
+	{"query": "harvest the ADS Lozenge component into components/ui with parity docs", "should_trigger": false, "note": "Sibling: vpk-component."},
+	{"query": "make the sidebar collapse animation feel smoother", "should_trigger": false, "note": "Motion change without a design source."},
+	{"query": "what is the ADS token for subtle text color", "should_trigger": false, "note": "Token lookup, no Figma task."},
+	{"query": "split components/projects/studio/studio-shell.tsx into smaller files", "should_trigger": false, "note": "Sibling: vpk-tidy."},
+	{"query": "export this page as a PDF", "should_trigger": false, "note": "Export with no design source."},
+	{"query": "write a figma plugin that renames layers", "should_trigger": false, "note": "Figma tooling, not design-to-code."},
+	{"query": "which ADS icon should I use for archive", "should_trigger": false, "note": "Icon lookup only."},
+	{"query": "tidy the spacing tokens in app/tailwind-theme.css", "should_trigger": false, "note": "Token maintenance, no design input."}
+]

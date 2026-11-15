@@ -166,7 +166,7 @@ export function RovoSparkleButton({
 			aria-expanded={ariaExpanded}
 			className={cn(
 				"group/rovo-sparkle overflow-hidden bg-transparent p-0 hover:bg-transparent active:bg-transparent",
-				selected ? "shadow-none" : "shadow-overlay",
+				selected ? "shadow-none" : "shadow-2xl",
 				hiddenWhileSelected ? "pointer-events-none opacity-0" : null,
 				visuallyHidden ? "opacity-0 shadow-none" : null,
 				className,

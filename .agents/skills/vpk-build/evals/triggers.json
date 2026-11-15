@@ -1,0 +1,10 @@
+[
+	{"query": "extract the /projects/agents route into a standalone Next.js app", "should_trigger": true, "note": "Route extraction."},
+	{"query": "pull the studio page out into its own little app with only what it imports", "should_trigger": true, "note": "Paraphrased extraction."},
+	{"query": "create a standalone prototype from this route that can deploy on its own", "should_trigger": true, "note": "Standalone prototype."},
+	{"query": "hand the onboarding route off as an independently deployable app", "should_trigger": true, "note": "Handoff."},
+	{"query": "run pnpm run build and tell me why it fails", "should_trigger": false, "note": "Build command failure."},
+	{"query": "deploy the extracted app to Micros", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "build a new settings page", "should_trigger": false, "note": "Build a feature, not extraction."},
+	{"query": "verify the Next.js build locally", "should_trigger": false, "note": "Local build check."}
+]

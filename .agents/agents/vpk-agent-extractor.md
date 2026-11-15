@@ -358,6 +358,7 @@ memory:
   scope: project
   seed_files:
     - .agents/skills/vpk-design/SKILL.md
+    - .agents/skills/vpk-design/references/phase-prompts.md
 ```
 
 ## Triggers
@@ -398,6 +399,6 @@ conversation_starters:
 
 ## Maintenance Notes
 
-- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 1.
+- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 1 and its prompt in `.agents/skills/vpk-design/references/phase-prompts.md`.
 - ADS lookups run on the `atlas ads` CLI first and fall back to the ADS MCP tools only when the CLI is unavailable or erroring. MCP tool availability is runtime-dependent; when a Figma or ADS tool is unavailable at every step of that fallback order, report the degraded extraction path rather than guessing.
 - If token mappings change, update this file and the vpk-design skill reference together.

@@ -35,7 +35,7 @@ const CARD_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const PROMPT_INPUT_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "ui-custom", "prompt-input.tsx"),
+	path.join(__dirname, "..", "..", "ui-custom", "prompt-input", "prompt-input-textarea.tsx"),
 	"utf8",
 );
 
@@ -574,7 +574,7 @@ test("the comment composer expands into the shared rich editor toolbar", () => {
 
 test("disclosing Reply focuses the composer through the editor's own autofocus", () => {
 	// The comment variant is a contentEditable tiptap editor that initialises
-	// asynchronously (prompt-input.tsx maps `autoFocus` onto tiptap's
+	// asynchronously (prompt-input-textarea.tsx maps `autoFocus` onto tiptap's
 	// `autofocus: "end"`). Focusing a ref from a parent effect races that
 	// initialisation and silently no-ops, so the disclosure must not try.
 	assert.match(COMPOSER_SOURCE, /autoFocus\?: boolean;/u);

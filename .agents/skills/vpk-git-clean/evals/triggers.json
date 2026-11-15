@@ -1,0 +1,11 @@
+[
+	{"query": "clean up worktrees", "should_trigger": true, "note": "Literal phrase."},
+	{"query": "worktrees are piling up in .claude/worktrees, remove the merged ones", "should_trigger": true, "note": "Merged worktree cleanup."},
+	{"query": "prune stale refs and delete branches that already landed", "should_trigger": true, "note": "Prune and delete landed branches."},
+	{"query": "I have like 30 old worktrees lying around, get rid of the ones that are done", "should_trigger": true, "note": "Paraphrased cleanup."},
+	{"query": "close the PRs I abandoned last week and clean up their branches", "should_trigger": true, "note": "Abandoned PR cleanup."},
+	{"query": "free up disk space, my .next caches are huge", "should_trigger": false, "note": "Sibling: vpk-system-clean."},
+	{"query": "ship this branch through a PR", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
+	{"query": "create a new worktree for the sidebar fix", "should_trigger": false, "note": "Worktree creation."},
+	{"query": "clean up this component, it's 900 lines", "should_trigger": false, "note": "Sibling: vpk-tidy."}
+]

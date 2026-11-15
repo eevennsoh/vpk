@@ -21,12 +21,14 @@ import { TriangleAlertIcon } from "@/components/ui/vpk-icons";
 import {
 	useCallback,
 	useEffect,
+	useId,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { useReducedMotion } from "motion/react";
 import { API_ENDPOINTS } from "@/lib/api-config";
+import { isPreviewFocusNavigationKey, PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";
 
 export interface ChromiumPreviewState {
@@ -165,6 +167,7 @@ export function ChromiumPreviewBody({
 	...props
 }: Readonly<ChromiumPreviewBodyProps>) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const keyboardHintId = useId();
 	const wheelTimerRef = useRef<number | null>(null);
 	const wheelDeltaRef = useRef({ deltaX: 0, deltaY: 0 });
 	const [previewState, setPreviewState] = useState(DEFAULT_STATE);
@@ -561,6 +564,10 @@ export function ChromiumPreviewBody({
 
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>) => {
+			if (isPreviewFocusNavigationKey(event)) {
+				return;
+			}
+
 			const isPrintableKey =
 				event.key.length === 1 &&
 				!event.altKey &&
@@ -614,6 +621,7 @@ export function ChromiumPreviewBody({
 		<div
 			aria-busy={isBusy}
 			aria-label={previewState.title || "Chromium preview"}
+			aria-describedby={keyboardHintId}
 			ref={containerRef}
 			className={cn(
 				"bg-surface flex size-full min-h-0 min-w-0 flex-col overflow-hidden outline-none",
@@ -626,6 +634,9 @@ export function ChromiumPreviewBody({
 			tabIndex={0}
 			{...props}
 		>
+			<span id={keyboardHintId} className="sr-only">
+				{PREVIEW_KEYBOARD_HINT}
+			</span>
 			<div className="relative flex-1 overflow-hidden">
 				{shouldRenderScreenshot ? (
 					<img

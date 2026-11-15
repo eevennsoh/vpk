@@ -31,7 +31,7 @@ test("text input primitives keep a fixed font size across viewport widths", () =
 });
 
 test("prompt input placeholder mirrors fixed input text sizing", () => {
-	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const promptInputSource = readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea.tsx");
 
 	assert.match(promptInputSource, /px-2\.5 text-sm text-text-subtlest/u);
 	assert.doesNotMatch(promptInputSource, responsiveControlTextPattern);

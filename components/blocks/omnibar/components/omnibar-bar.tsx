@@ -39,7 +39,7 @@ export type OmnibarTone = "inverse" | "default";
  * the repo's established `text-text-inverse` + `opacity-60` pairing.
  */
 const OMNIBAR_BAR_SKIN = cn(
-	"rounded-2xl border-transparent bg-bg-neutral-bold p-3 shadow-overlay",
+	"rounded-2xl border-transparent bg-bg-neutral-bold p-3 shadow-2xl",
 	"[&_[data-slot=prompt-input-placeholder]]:text-text-inverse [&_[data-slot=prompt-input-placeholder]]:opacity-60",
 );
 

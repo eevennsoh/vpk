@@ -1,0 +1,10 @@
+[
+	{"query": "vpk-explain how the chat streaming pipeline works, with a diagram", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "make me an interactive HTML explainer of how worktree ports are assigned", "should_trigger": true, "note": "Explanation artifact."},
+	{"query": "I need an explainer video of the Rovo Serve agent loop for my team", "should_trigger": true, "note": "Requested explainer video."},
+	{"query": "explain the architecture of backend/ with diagrams I can share with a new hire", "should_trigger": true, "note": "Tailored explanation artifact."},
+	{"query": "what does Array.prototype.flatMap do", "should_trigger": false, "note": "Ordinary short answer."},
+	{"query": "vpk html this quarterly report into a one-pager", "should_trigger": false, "note": "Sibling: vpk-html."},
+	{"query": "make a bar chart of these numbers", "should_trigger": false, "note": "Standalone chart."},
+	{"query": "why is this test failing", "should_trigger": false, "note": "Debugging question."}
+]
