@@ -2,8 +2,14 @@
 
 // oxlint-disable react-doctor/iframe-missing-sandbox -- These iframes render first-party internal preview routes; same-origin is required for Next dev assets and theme messaging.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import {
+	compareHomeCatalogEntriesByLastUpdated,
+	compareHomeCatalogEntriesByName,
+	resolveHomeCatalogEntries,
+	type HomeCatalogListEntry,
+} from "@/app/home-catalog-order";
 import { HomeSectionHeading } from "@/app/home-section-heading";
 import type { ComponentManifestEntry } from "@/app/data/component-manifest";
 import { Button } from "@/components/ui/button";
@@ -25,10 +31,6 @@ import { WebsiteCard } from "@/components/website/website-card";
 
 type HomeCatalogSortOption = "last-updated" | "name";
 
-export interface HomeCatalogListEntry extends ComponentManifestEntry {
-	updatedAt: string | null;
-}
-
 const HOME_CATALOG_SORT_LABELS: Record<HomeCatalogSortOption, string> = {
 	"last-updated": "Last updated",
 	name: "Name",
@@ -37,8 +39,12 @@ const HOME_CATALOG_SORT_LABELS: Record<HomeCatalogSortOption, string> = {
 interface HomeCatalogSectionProps {
 	id: string;
 	title: string;
+	/** The whole catalog; the heading count is always its length. */
 	components: ReadonlyArray<ComponentManifestEntry>;
+	/** The cards to render, with dates; defaults to every component. May be a subset of `components`. */
 	componentEntries?: ReadonlyArray<HomeCatalogListEntry>;
+	/** Optional line under the heading, e.g. to explain a `componentEntries` subset. */
+	note?: ReactNode;
 	componentHrefPrefix: string;
 	previewHrefPrefix: string;
 	emptyStateTitle: string;
@@ -50,6 +56,7 @@ export function HomeCatalogSection({
 	title,
 	components,
 	componentEntries,
+	note,
 	componentHrefPrefix,
 	previewHrefPrefix,
 	emptyStateTitle,
@@ -59,36 +66,13 @@ export function HomeCatalogSection({
 		useState<HomeCatalogSortOption>("last-updated");
 
 	const sortedComponentEntries = useMemo(() => {
-		const source =
-			componentEntries ??
-			components.map((component) => ({
-				...component,
-				updatedAt: null,
-			}));
-
-		if (catalogSort === "name") {
-			return [...source].sort((left, right) => {
-				return left.name.localeCompare(right.name);
-			});
-		}
-
-		return [...source].sort((left, right) => {
-			const timeDelta =
-				Date.parse(right.updatedAt ?? "") - Date.parse(left.updatedAt ?? "");
-			if (Number.isFinite(timeDelta) && timeDelta !== 0) {
-				return timeDelta;
-			}
-
-			if (right.updatedAt && !left.updatedAt) {
-				return 1;
-			}
-
-			if (left.updatedAt && !right.updatedAt) {
-				return -1;
-			}
-
-			return left.name.localeCompare(right.name);
-		});
+		return [
+			...resolveHomeCatalogEntries(components, componentEntries),
+		].sort(
+			catalogSort === "name"
+				? compareHomeCatalogEntriesByName
+				: compareHomeCatalogEntriesByLastUpdated,
+		);
 	}, [catalogSort, componentEntries, components]);
 
 	const sectionActions = sortedComponentEntries.length > 1 ? (
@@ -133,6 +117,9 @@ export function HomeCatalogSection({
 				count={components.length}
 				actions={sectionActions}
 			/>
+			{note ? (
+				<p className="m-0 px-6 pt-4 text-sm text-text-subtle">{note}</p>
+			) : null}
 			<ul className="grid grid-cols-1 list-none m-0 p-0">
 				{sortedComponentEntries.length > 0 ? (
 					sortedComponentEntries.map((component, index) => (
@@ -147,7 +134,7 @@ export function HomeCatalogSection({
 								src={`${previewHrefPrefix}/${component.slug}?embedded=1`}
 								title={component.name}
 								className="h-full w-full border-0"
-								loading="lazy"
+								loading={index === 0 ? "eager" : "lazy"}
 								sandbox="allow-same-origin allow-scripts"
 							/>
 						</WebsiteCard>

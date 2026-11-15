@@ -11,7 +11,6 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Gallery } from "@/components/blocks/gallery";
 import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
@@ -55,7 +54,7 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
-import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
+import { agentAddedSuggestion } from "./lib/agent-added-suggestion";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
@@ -142,17 +141,6 @@ type ButterWorkItemHandle = {
 	open: (card: JiraKanbanCardData, columnTitle: string) => void;
 	close: () => void;
 };
-
-function agentAddedSuggestion(session: Pick<AgentSessionItem, "id" | "agent">, onSelect: () => void, onDismiss: () => void): FloatingRovoButtonSuggestion {
-	const { agent } = session;
-	return {
-		id: session.id,
-		label: `${agent.name} added`,
-		icon: <span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>,
-		onDismiss,
-		onSelect,
-	};
-}
 
 function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
 	const [mounted, setMounted] = useState(false);
