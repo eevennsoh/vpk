@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import BacklogIcon from "@atlaskit/icon/core/backlog";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
+import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantLayoutTransition, useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -11,7 +11,6 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Gallery } from "@/components/blocks/gallery";
 import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
@@ -26,13 +25,12 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
-import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { nextProjectButterDevelopmentPhase, PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import { getAgentAvatarAccent } from "@/lib/agent-avatars";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
-import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import { JiraInlineCreate } from "@/components/blocks/jira-inline-create";
@@ -55,7 +53,6 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
-import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
@@ -72,6 +69,7 @@ import AppLayout from "@/components/projects/page";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
+import { ButterWorkItemSurface, agentAddedSuggestion, type ButterWorkItemHandle } from "./components/butter-work-item-surface";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -99,8 +97,6 @@ import { useButterList } from "./hooks/use-butter-list";
 import { useButterAssignmentMove } from "@/components/projects/butter-v1/hooks/use-butter-assignment-move";
 import { useButterJourneyReplay } from "@/components/projects/butter-v1/hooks/use-butter-journey-replay";
 import { useButterContent } from "./hooks/use-butter-content";
-import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter-v1/data/work-item-placeholders";
-import { useButterWorkItem } from "@/components/projects/butter-v1/hooks/use-butter-work-item";
 import {
 	WAC_BOARD_TITLE,
 	WAC_HEADER_ASSIGNEES,
@@ -137,114 +133,6 @@ const BUTTER_SETTINGS_DESIGN_VARIANT_IDS = [
 	"moveVisual",
 ] as const;
 const isButterLooseWorkResumable = () => true;
-
-type ButterWorkItemHandle = {
-	open: (card: JiraKanbanCardData, columnTitle: string) => void;
-	close: () => void;
-};
-
-function agentAddedSuggestion(session: Pick<AgentSessionItem, "id" | "agent">, onSelect: () => void, onDismiss: () => void): FloatingRovoButtonSuggestion {
-	const { agent } = session;
-	return {
-		id: session.id,
-		label: `${agent.name} added`,
-		icon: <span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>,
-		onDismiss,
-		onSelect,
-	};
-}
-
-function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
-	const [mounted, setMounted] = useState(false);
-	useEffect(() => {
-		const frame = window.requestAnimationFrame(() => setMounted(true));
-		return () => window.cancelAnimationFrame(frame);
-	}, []);
-	return <ProjectButterJiraWorkItem {...props} initialRelatedSectionOpen={false} inlineSessionReplies open={mounted && props.open} />;
-}
-
-function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {
-	const isMerchant = issueKey === BUTTER_SUGGESTION_DEMO_KEY;
-	return {
-		initialSuggestion: isMerchant && !journey.journeyPhase,
-		suggestionProfile: isMerchant ? "payments" as const : "default" as const,
-		showAuditInActivity: isMerchant,
-		autoAssignClaudeToCurrentUser: isMerchant,
-		...(isMerchant ? journey : {}),
-	};
-}
-
-function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySession, journeyControls, developmentJourney, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, suggestion, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
-	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
-	openRelatedItem: RelatedItemOpener;
-	/** Board cards as related-work matches, so composers offer this project's items. */
-	relatedCatalog: readonly ProjectButterRelatedSearchItem[];
-	ref: Ref<ButterWorkItemHandle>;
-	defaultReporter: ComponentProps<typeof ProjectButterJiraWorkItem>["defaultReporter"];
-	journeyPhase?: ComponentProps<typeof ProjectButterJiraWorkItem>["journeyPhase"];
-	journeySession?: ProjectButterSessionItem;
-	journeyControls?: React.ReactNode;
-	developmentJourney?: ProjectButterDevelopmentJourneyProps;
-	onBrowseAgents: () => void;
-	onCreateAgent: () => void;
-	onAgentSessionStart: (issueKey: string, session: ProjectButterSessionItem) => void;
-	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string; prompt?: string }, draft?: string) => Promise<boolean>;
-	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
-	onAssigneeChange: (issueKey: string, assignee: NonNullable<ComponentProps<typeof ProjectButterJiraWorkItem>["currentUser"]>) => void;
-	onWorkItemClose: () => void;
-}) {
-	const workItem = useButterWorkItem();
-	const [overlayContainer, setOverlayContainer] = useState<HTMLDivElement | null>(null);
-	const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
-	const [addedSession, setAddedSession] = useState<ProjectButterSessionItem | null>(null);
-	useLayoutEffect(() => {
-		const host = document.createElement("div");
-		host.style.display = "contents";
-		document.body.appendChild(host);
-		const frame = window.requestAnimationFrame(() => setOverlayHost(host));
-		return () => { window.cancelAnimationFrame(frame); host.remove(); };
-	}, []);
-	useLayoutEffect(() => {
-		if (overlayHost) (workItem.open && overlayContainer ? overlayContainer : document.body).appendChild(overlayHost);
-	}, [overlayContainer, overlayHost, workItem.open]);
-	const { openWorkItem, closeWorkItem } = workItem;
-	const selection = workItem.selection;
-	useImperativeHandle(ref, () => ({ open: (card, column) => { setAddedSession(null); openWorkItem(card, column); }, close: () => { setAddedSession(null); closeWorkItem(); onWorkItemClose(); } }), [closeWorkItem, onWorkItemClose, openWorkItem]);
-	return (
-		<>
-			<span className="sr-only" role="status">{addedSession ? `${addedSession.agent.name} added` : ""}</span>
-			{workItem.selection ? (
-				<ButterWorkItemDialog
-					cloudAgentSelector
-					initialPresentation="full-screen"
-					shell="project"
-					initialPreset="filled"
-					{...getMerchantWorkItemProps(workItem.selection.workItem.code, { journeyPhase, journeySession, journeyControls, developmentJourney })}
-					defaultReporter={defaultReporter}
-					currentUser={defaultReporter}
-					initialSessions={workItem.selection.initialSessions}
-					overlayContainerRef={setOverlayContainer}
-					onOpenCloudSession={(session, draft) => workItem.selection ? onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session, draft) : Promise.resolve(false)}
-					onBrowseAgents={onBrowseAgents}
-					onCreateAgent={onCreateAgent}
-					onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
-					onAgentAdded={setAddedSession}
-					onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
-					onAssigneeChange={(assignee) => { if (workItem.selection) onAssigneeChange(workItem.selection.workItem.code, assignee); }}
-					onClose={() => { setAddedSession(null); workItem.closeWorkItem(); onWorkItemClose(); }}
-					open={workItem.open}
-					openRelatedItem={openRelatedItem}
-					relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
-					placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
-					workItem={workItem.selection.workItem}
-				/>
-			) : null}
-			{overlayHost ? <JgpRovoOverlay {...overlayProps} portalContainer={overlayHost} contained={workItem.open && Boolean(overlayContainer)} suggestion={addedSession && selection ? agentAddedSuggestion(addedSession, async () => {
-					if (await onOpenCloudSession(selection.workItem.code, selection.workItem.title, addedSession)) setAddedSession(null);
-				}, () => setAddedSession(null)) : suggestion} /> : null}
-		</>
-	);
-}
 
 export default function ButterPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState("e2e-journey");
