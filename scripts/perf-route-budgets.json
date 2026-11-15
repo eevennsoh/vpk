@@ -1,6 +1,6 @@
 {
 	"routes": {
-		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 710000, "routeJsBytes": 35000, "fetchedJsBytes": 1231000, "fetchedCssBytes": 717000 },
+		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 710000, "routeJsBytes": 35000, "fetchedJsBytes": 1231000, "fetchedCssBytes": 717000, "fetchedJsBytesAllFrames": 5715000 },
 		"rovo": { "assetCount": 110, "cssBytes": 776000, "firstLoadJsBytes": 6613000, "routeJsBytes": 74000, "fetchedJsBytes": 7088000, "fetchedCssBytes": 776000 },
 		"studio": { "assetCount": 116, "cssBytes": 776000, "firstLoadJsBytes": 7103000, "routeJsBytes": 74000, "fetchedJsBytes": 7591000, "fetchedCssBytes": 776000 },
 		"components": { "assetCount": 58, "cssBytes": 729000, "firstLoadJsBytes": 2034000, "routeJsBytes": 98000, "fetchedJsBytes": 2632000, "fetchedCssBytes": 729000 },
@@ -9,7 +9,7 @@
 		"heavy-visual": { "assetCount": 40, "cssBytes": 717000, "firstLoadJsBytes": 934000, "routeJsBytes": 36000, "fetchedJsBytes": 2602000, "fetchedCssBytes": 738000 }
 	},
 	"targets": {
-		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-14 at about 3% over a production build of main after C-8a and C-8d; route JS on home, components, butter, eu26 and heavy-visual raised the same day for PR 2186, see raises below), not a goal. Met and removed: Rovo first-load JS 7,100,000 (6,917,433 after C-8d). The CSS target is met on home, butter, eu26 and heavy-visual (696,019); rovo, studio (754,612) and components (707,178) are still above it.",
+		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-14 at about 3% over a production build of main after C-8a and C-8d; home fetchedJsBytesAllFrames, the JS of every frame including the project previews it embeds in iframes, added 2026-11-15 at 3% over 5,547,788 measured on Linux, Actions run 43671702173, where no other route attached an iframe; route JS on home, components, butter, eu26 and heavy-visual raised the same day for PR 2186, see raises below), not a goal. Met and removed: Rovo first-load JS 7,100,000 (6,917,433 after C-8d). The CSS target is met on home, butter, eu26 and heavy-visual (696,019); rovo, studio (754,612) and components (707,178) are still above it.",
 		"*": { "cssBytes": 700000 }
 	},
 	"margin": {

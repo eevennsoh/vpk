@@ -524,3 +524,57 @@ test("a route over its fetched budget lists the assets its first run fetched", (
 	assert.deepEqual(listing, ["Fetched by home (/), first run:", "200  /_next/static/chunks/a.js", "100  /_next/static/chunks/b.js"]);
 	assert.equal(formatFetchedAssetsForFailures(baseline, []), "");
 });
+
+test("the all-frames JS budget is compared and fails over budget", () => {
+	const budgets = { home: { fetchedJsBytes: 100, fetchedJsBytesAllFrames: 1000 } };
+	assert.deepEqual(evaluatePerfBaselineBudget({ routes: [createRoute("home")] }, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true }).map((failure) => [failure.type, failure.metricName]), [
+		["missing-metric", "fetchedJsBytes"],
+		["missing-metric", "fetchedJsBytesAllFrames"],
+	]);
+	const within = { routes: [createRoute("home", { fetchedJs: { bytes: 100 }, fetchedJsAllFrames: { bytes: 1000, source: "all-frames" } })] };
+	assert.deepEqual(evaluatePerfBaselineBudget(within, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true }), []);
+	const over = { routes: [createRoute("home", {
+		fetchedAllFramesRuns: [{ assets: [{ bytes: 1001, kind: "js", path: "/_next/static/chunks/project.js" }] }],
+		fetchedJs: { bytes: 100 },
+		fetchedJsAllFrames: { bytes: 1001, source: "all-frames" },
+		fetchedPath: "/",
+		fetchedRuns: [{ assets: [{ bytes: 100, kind: "js", path: "/_next/static/chunks/main.js" }] }],
+	})] };
+	const failures = evaluatePerfBaselineBudget(over, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true });
+	assert.deepEqual(failures.map((failure) => [failure.type, failure.metricName, failure.value, failure.limit]), [["over-budget", "fetchedJsBytesAllFrames", 1001, 1000]]);
+	assert.match(formatFailure(failures[0]), /fetched JS bytes \(all frames\) 1001 exceeds budget 1000/u);
+	assert.match(formatFetchedAssetsForFailures(over, failures), /Fetched by home \(\/\) in all frames, first run:\n\s+1001  \/_next\/static\/chunks\/project\.js/u);
+	const table = formatBudgetTable(over, budgets).split("\n").map((line) => line.trim().split(/\s{2,}/u));
+	assert.deepEqual(table.at(-1), ["home", "fetchedJsBytesAllFrames", "1001", "1000", "-1 (-0.1%)"]);
+});
+
+test("a route whose page embeds iframes fails without an all-frames budget", () => {
+	const embedding = { routes: [createRoute("home", { fetchedJs: { bytes: 100 }, fetchedJsAllFrames: { bytes: 5000, source: "all-frames" } })] };
+	const failures = evaluatePerfBaselineBudget(embedding, { home: { fetchedJsBytes: 100 } });
+	assert.deepEqual(failures.map((failure) => failure.type), ["unbudgeted-embedded-frames"]);
+	assert.match(formatFailure(failures[0]), /home: page embeds iframes that fetch 5000 bytes .* no fetchedJsBytesAllFrames budget/u);
+	const noFrames = { routes: [createRoute("home", { fetchedJs: { bytes: 100 }, fetchedJsAllFrames: { bytes: 100, source: "top-document" } })] };
+	assert.deepEqual(evaluatePerfBaselineBudget(noFrames, { home: { fetchedJsBytes: 100 } }), []);
+});
+
+test("home has an all-frames budget", () => {
+	assert.equal(typeof DEFAULT_ROUTE_BUDGETS.home.fetchedJsBytesAllFrames, "number", "the home catalog embeds project previews in iframes");
+});
+
+test("a route with an all-frames budget fails when its all-frames pass saw no iframe", () => {
+	const budgets = { home: { fetchedJsBytes: 1000, fetchedJsBytesAllFrames: 5000 } };
+	const quiet = { routes: [createRoute("home", { fetchedJs: { bytes: 100 }, fetchedJsAllFrames: { bytes: 100, source: "top-document" } })] };
+	const failures = evaluatePerfBaselineBudget(quiet, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true });
+	assert.deepEqual(failures.map((failure) => failure.type), ["stale-embedded-frames-budget"]);
+	assert.match(formatFailure(failures[0]), /home: has a fetchedJsBytesAllFrames budget, but no iframe attached/u);
+});
+
+test("an over-budget all-frames listing marks the assets an iframe fetched", () => {
+	const route = createRoute("home", {
+		fetchedAllFramesRuns: [{ assets: [{ bytes: 10, frame: "main", kind: "js", path: "/a.js" }, { bytes: 20, frame: "sub", kind: "js", path: "/b.js" }] }],
+		fetchedJsAllFrames: { bytes: 30, source: "all-frames" },
+		fetchedPath: "/",
+	});
+	const listing = formatFetchedAssetsForFailures({ routes: [route] }, [{ metricName: "fetchedJsBytesAllFrames", routeId: "home", type: "over-budget" }]).split("\n").map((line) => line.trim());
+	assert.deepEqual(listing, ["Fetched by home (/) in all frames, first run:", "10  /a.js", "20  /b.js  (iframe)"]);
+});

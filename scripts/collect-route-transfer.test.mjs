@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, assertAssetsLoaded, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, assertAssetsLoaded, countsFrame, embedsFrames, needsAllFramesPass, requestAction, routesWithAllFramesBudget, summarizeAllFramesRuns, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -96,4 +96,57 @@ test("Next router prefetches are recognised by their header", () => {
 	assert.equal(isRouterPrefetch({ "next-router-prefetch": "1", rsc: "1" }), true);
 	assert.equal(isRouterPrefetch({ rsc: "1" }), false);
 	assert.equal(isRouterPrefetch({}), false);
+});
+
+test("only a route whose page attaches an iframe gets the all-frames pass", () => {
+	assert.equal(embedsFrames([{ blockedFrames: 0, framesAttached: 0 }, { blockedFrames: 0, framesAttached: 0 }]), false);
+	assert.equal(embedsFrames([{ blockedFrames: 0, framesAttached: 0 }, { blockedFrames: 1, framesAttached: 1 }]), true);
+	assert.equal(embedsFrames([{ blockedFrames: 0, framesAttached: 1 }]), true, "an iframe without a navigation (srcdoc) still counts");
+});
+
+test("the all-frames JS is its own pass's median, or the top-document number when no iframe loaded", () => {
+	const topDocument = summarizeRuns([{ cssBytes: 1, jsBytes: 100 }, { cssBytes: 1, jsBytes: 102 }]);
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, null), { fetchedJsAllFrames: { bytes: 101, range: 2, source: "top-document" } });
+	const allFramesRuns = [{ jsBytes: 900 }, { jsBytes: 950 }, { jsBytes: 910 }];
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, allFramesRuns.map((run) => ({ ...run, framesAttached: 3 }))).fetchedJsAllFrames, { bytes: 910, range: 50, source: "all-frames" });
+});
+
+test("an all-frames pass that saw no iframe attach records the top-document number, not its own", () => {
+	const topDocument = summarizeRuns([{ cssBytes: 1, jsBytes: 100 }]);
+	const quietRuns = [{ blockedFrames: 0, framesAttached: 0, jsBytes: 104 }];
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, quietRuns), { fetchedAllFramesRuns: quietRuns, fetchedJsAllFrames: { bytes: 100, range: 0, source: "top-document" } });
+});
+
+test("a route with an all-frames budget gets the all-frames pass even when no iframe attached in the blocked pass", () => {
+	const allFramesRoutes = routesWithAllFramesBudget({ butter: { fetchedJsBytes: 1 }, home: { fetchedJsBytes: 1, fetchedJsBytesAllFrames: 2 } });
+	assert.deepEqual([...allFramesRoutes], ["home"]);
+	const noFrames = [{ blockedFrames: 0, framesAttached: 0 }];
+	assert.equal(needsAllFramesPass("home", noFrames, allFramesRoutes), true);
+	assert.equal(needsAllFramesPass("butter", noFrames, allFramesRoutes), false);
+	assert.equal(needsAllFramesPass("butter", [{ blockedFrames: 1, framesAttached: 1 }], allFramesRoutes), true);
+});
+
+test("embedded documents are aborted in the blocked pass and tracked in the all-frames pass", () => {
+	const subframe = { isAsset: false, isPrefetch: false, isSubframeNavigation: true };
+	assert.equal(requestAction({ ...subframe, allFrames: false }), "abort");
+	assert.equal(requestAction({ ...subframe, allFrames: true }), "track", "an iframe's document holds the quiet window open");
+	for (const allFrames of [false, true]) {
+		assert.equal(requestAction({ allFrames, isAsset: false, isPrefetch: true, isSubframeNavigation: false }), "abort", "prefetches are blocked in every pass");
+		assert.equal(requestAction({ allFrames, isAsset: true, isPrefetch: false, isSubframeNavigation: false }), "track");
+		assert.equal(requestAction({ allFrames, isAsset: false, isPrefetch: false, isSubframeNavigation: false }), "ignore");
+	}
+});
+
+test("only the main frame's responses count in the blocked pass; every frame's count in the all-frames pass", () => {
+	assert.equal(countsFrame({ allFrames: false, isMainFrame: true }), true);
+	assert.equal(countsFrame({ allFrames: false, isMainFrame: false }), false);
+	assert.equal(countsFrame({ allFrames: true, isMainFrame: false }), true);
+});
+
+test("the all-frames JS merges beside the iframe-blocked numbers, which stay unchanged", () => {
+	const summary = summarizeRuns([{ cssBytes: 1, jsBytes: 2 }]);
+	const merged = mergeIntoBaseline({ routes: [{ id: "home" }] }, { home: { path: "/", ...summary, ...summarizeAllFramesRuns(summary, [{ framesAttached: 1, jsBytes: 50 }]) } });
+	assert.deepEqual(merged.routes[0].fetchedJs, { bytes: 2, range: 0 });
+	assert.deepEqual(merged.routes[0].fetchedJsAllFrames, { bytes: 50, range: 0, source: "all-frames" });
+	assert.deepEqual(merged.routes[0].fetchedAllFramesRuns, [{ framesAttached: 1, jsBytes: 50 }]);
 });

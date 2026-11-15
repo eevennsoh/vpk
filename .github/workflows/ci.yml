@@ -291,7 +291,8 @@ jobs:
 
       - name: Route byte budgets
         # The build log and .next manifests give the manifest sizes; the browser run adds the
-        # JS and CSS actually fetched on each group's route (medians of 3 runs). The
+        # JS and CSS actually fetched on each group's route (medians of 3 runs), plus all-frames JS
+        # (iframes allowed, 3 more runs) on routes that embed an iframe or budget it. The
         # build-duration limit depends on the machine, so it stays with local `pnpm run perf:budget`.
         run: |
           node scripts/collect-perf-baseline.js --input output/perf-build.log
