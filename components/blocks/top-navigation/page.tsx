@@ -5,7 +5,6 @@
 import {
 	useCallback,
 	useEffect,
-	useRef,
 	useState,
 	type CSSProperties,
 	type ReactNode,
@@ -182,38 +181,61 @@ export default function TopNavigation({
 	sidebar,
 	children,
 }: Readonly<TopNavigationProps>) {
-	const nav = useTopNavigation();
+	const {
+		searchValue,
+		setSearchValue,
+		isAppSwitcherOpen,
+		isSearchFocused,
+		windowWidth,
+		isVisible,
+		toggleSidebar: toggleContextSidebar,
+		toggleChat,
+		isSidebarChatOpen,
+		searchContainerRef,
+		searchPanelRef,
+		handleNavigate,
+		handleSearchKeyDown,
+		handleSearchAllApps,
+		handleRecentItemClick,
+		handleRecentSearchClick,
+		handleFocusSearch,
+		handleToggleAppSwitcher,
+		handleCloseAppSwitcher,
+		handleHoverEnter,
+		handleHoverLeave,
+	} = useTopNavigation();
 	const [setNavigationContainer, containerWidth] = useMeasuredWidth();
 	const [setRightClusterNode, rightClusterWidth] = useMeasuredWidth();
 
-	const responsiveWidth = containerWidth || nav.windowWidth;
+	const responsiveWidth = containerWidth || windowWidth;
 
-	// The chrome owns its own sidebar open state (decoupled from the demo's
-	// `context-sidebar`) so the resizable shell works standalone.
-	const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
-	const didAutoReleaseShellSidebarRef = useRef(false);
-	useEffect(() => {
-		const shellWidth = nav.windowWidth || responsiveWidth;
-		if (shellWidth === 0) return;
-
-		const isSmallContainer = shellWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
-		if (isSmallContainer && sidebarOpen) {
-			didAutoReleaseShellSidebarRef.current = true;
-			setSidebarOpen(false);
-		} else if (!isSmallContainer && didAutoReleaseShellSidebarRef.current) {
-			didAutoReleaseShellSidebarRef.current = false;
-			setSidebarOpen(true);
-		}
-	}, [nav.windowWidth, responsiveWidth, sidebarOpen]);
+	// The chrome owns its own sidebar pin intent (decoupled from the demo's
+	// `context-sidebar`) so the resizable shell works standalone. Below the
+	// pin-release breakpoint the sidebar is derived closed; the pin intent is
+	// kept so the sidebar comes back once the shell grows again.
+	const shellWidth = windowWidth || responsiveWidth;
+	const isSmallShell = shellWidth > 0 && shellWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
+	const [isSidebarPinned, setIsSidebarPinned] = useState(defaultSidebarOpen);
+	const sidebarOpen = isSidebarPinned && !isSmallShell;
+	const setSidebarOpen = useCallback(
+		(open: boolean) => {
+			// While the shell is small the sidebar stays released: an open request
+			// is remembered for when it grows back, a close request changes nothing.
+			if (open || !isSmallShell) {
+				setIsSidebarPinned(open);
+			}
+		},
+		[isSmallShell],
+	);
 
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 		minWidth: ROVO_APP_SIDEBAR_MIN_WIDTH_PX,
 		maxWidth: ROVO_APP_SIDEBAR_MAX_WIDTH_PX,
-		onCollapse: useCallback(() => setSidebarOpen(false), []),
+		onCollapse: useCallback(() => setSidebarOpen(false), [setSidebarOpen]),
 	});
 
-	const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
+	const toggleSidebar = useCallback(() => setSidebarOpen(!sidebarOpen), [setSidebarOpen, sidebarOpen]);
 
 	// Gate the chrome's width/border transition so it never plays on first paint.
 	const [hasMountedChrome, setHasMountedChrome] = useState(false);
@@ -227,17 +249,21 @@ export default function TopNavigation({
 	const [isSearchIconExpanded, setIsSearchIconExpanded] = useState(false);
 	const isSearchCollapsible =
 		responsiveWidth > 0 && responsiveWidth < TOP_NAV_SEARCH_ICON_BREAKPOINT_PX;
-	const showSearchField = !isSearchCollapsible || isSearchIconExpanded;
-	useEffect(() => {
+	// Leaving the collapsible range ends the expanded search session, so the
+	// next time the viewport narrows the search starts as an icon again.
+	const [wasSearchCollapsible, setWasSearchCollapsible] = useState(isSearchCollapsible);
+	if (wasSearchCollapsible !== isSearchCollapsible) {
+		setWasSearchCollapsible(isSearchCollapsible);
 		if (!isSearchCollapsible) {
 			setIsSearchIconExpanded(false);
 		}
-	}, [isSearchCollapsible]);
+	}
+	const showSearchField = !isSearchCollapsible || isSearchIconExpanded;
 
 	// A pinned sidebar anchors the search to the content edge. Once the sidebar
 	// collapses, center the search + Create group at wide viewports; below the
 	// existing breakpoint it returns to the responsive left-aligned layout.
-	const isPersistentSidebarVisible = variant === "header" ? nav.isVisible : sidebarOpen;
+	const isPersistentSidebarVisible = variant === "header" ? isVisible : sidebarOpen;
 	const centerSearch = !isPersistentSidebarVisible
 		&& (responsiveWidth === 0 || responsiveWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
 
@@ -248,8 +274,8 @@ export default function TopNavigation({
 
 	const handleExpandSearchIcon = useCallback(() => {
 		setIsSearchIconExpanded(true);
-		nav.handleFocusSearch();
-	}, [nav]);
+		handleFocusSearch();
+	}, [handleFocusSearch]);
 
 	const sidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
@@ -295,7 +321,7 @@ export default function TopNavigation({
 			{showSearch ? (
 				showSearchField ? (
 					<div
-						ref={nav.searchContainerRef}
+						ref={searchContainerRef}
 						className={cn(
 							"relative flex h-9 min-w-0 grow items-center",
 							searchAlignment === "sidebar" ? "ps-2" : undefined,
@@ -313,10 +339,10 @@ export default function TopNavigation({
 							className={cn(
 								"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered motion-reduce:transition-none",
 								"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
-								nav.isSearchFocused && "relative z-[1001] scale-y-[1.15]",
+								isSearchFocused && "relative z-[1001] scale-y-[1.15]",
 							)}
 							style={
-								nav.isSearchFocused
+								isSearchFocused
 									? {
 											backgroundColor: token("elevation.surface.overlay"),
 											boxShadow: token("elevation.shadow.overlay"),
@@ -333,10 +359,10 @@ export default function TopNavigation({
 								type="search"
 								aria-label="Search"
 								autoFocus={isSearchIconExpanded}
-								value={nav.searchValue}
-								onChange={(event) => nav.setSearchValue(event.currentTarget.value)}
-								onFocus={nav.handleFocusSearch}
-								onKeyDown={nav.handleSearchKeyDown}
+								value={searchValue}
+								onChange={(event) => setSearchValue(event.currentTarget.value)}
+								onFocus={handleFocusSearch}
+								onKeyDown={handleSearchKeyDown}
 								placeholder="Search"
 								className="h-full text-sm placeholder:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
 							/>
@@ -347,12 +373,12 @@ export default function TopNavigation({
 							</InputGroupAddon>
 						</InputGroup>
 						<SearchSuggestionsPanel
-							anchorRef={nav.searchContainerRef}
-							isVisible={nav.isSearchFocused}
-							onSearchAllApps={nav.handleSearchAllApps}
-							onRecentItemClick={nav.handleRecentItemClick}
-							onRecentSearchClick={nav.handleRecentSearchClick}
-							panelRef={nav.searchPanelRef}
+							anchorRef={searchContainerRef}
+							isVisible={isSearchFocused}
+							onSearchAllApps={handleSearchAllApps}
+							onRecentItemClick={handleRecentItemClick}
+							onRecentSearchClick={handleRecentSearchClick}
+							panelRef={searchPanelRef}
 						/>
 					</div>
 				) : (
@@ -383,15 +409,15 @@ export default function TopNavigation({
 			settingsMenuItems={settingsMenuItems}
 			onSettingsClick={onSettingsClick}
 			forceShowRovoAction={forceShowRovoAction}
-			isChatOpen={nav.isSidebarChatOpen}
-			onToggleChat={nav.toggleChat}
+			isChatOpen={isSidebarChatOpen}
+			onToggleChat={toggleChat}
 		/>
 	);
 
 	// Header-only variant: a 56px sticky bar in normal flow. The host layout
 	// (e.g. `AppLayout`) supplies the sidebar + content beneath it, so the
 	// left chrome lives inline in the bar and the sidebar toggle drives the
-	// shared `context-sidebar` (via `nav.toggleSidebar`/`nav.isVisible`).
+	// shared `context-sidebar` (via `toggleContextSidebar`/`isVisible`).
 	if (variant === "header") {
 		return (
 			<header
@@ -412,15 +438,15 @@ export default function TopNavigation({
 					<LeftNavigation
 						product={product}
 						windowWidth={responsiveWidth}
-						isVisible={nav.isVisible}
-						isAppSwitcherOpen={nav.isAppSwitcherOpen}
+						isVisible={isVisible}
+						isAppSwitcherOpen={isAppSwitcherOpen}
 						separatorLineOffsetPx={TOP_NAV_LEFT_SECTION_WIDTH_PX - TOP_NAV_PADDING_PX}
-						onToggleSidebar={nav.toggleSidebar}
-						onToggleAppSwitcher={nav.handleToggleAppSwitcher}
-						onCloseAppSwitcher={nav.handleCloseAppSwitcher}
-						onNavigate={nav.handleNavigate}
-						onHoverEnter={nav.handleHoverEnter}
-						onHoverLeave={nav.handleHoverLeave}
+						onToggleSidebar={toggleContextSidebar}
+						onToggleAppSwitcher={handleToggleAppSwitcher}
+						onCloseAppSwitcher={handleCloseAppSwitcher}
+						onNavigate={handleNavigate}
+						onHoverEnter={handleHoverEnter}
+						onHoverLeave={handleHoverLeave}
 					/>
 				</div>
 				{middleZone}
@@ -433,7 +459,7 @@ export default function TopNavigation({
 					aria-hidden
 					style={{
 						position: "absolute",
-						left: nav.isVisible ? `${TOP_NAV_LEFT_SECTION_WIDTH_PX}px` : 0,
+						left: isVisible ? `${TOP_NAV_LEFT_SECTION_WIDTH_PX}px` : 0,
 						right: 0,
 						bottom: 0,
 						height: "1px",
@@ -446,7 +472,7 @@ export default function TopNavigation({
 				    own surface would otherwise hide the sidebar's right border across
 				    the top 56px; this redraws it so the divider runs unbroken from the
 				    very top edge down through the body. */}
-				{nav.isVisible ? (
+				{isVisible ? (
 					<span
 						aria-hidden
 						style={{
@@ -509,17 +535,17 @@ export default function TopNavigation({
 			>
 				<LeftNavigation
 					product={product}
-					windowWidth={nav.windowWidth}
+					windowWidth={windowWidth}
 					isVisible={sidebarOpen}
-					isAppSwitcherOpen={nav.isAppSwitcherOpen}
+					isAppSwitcherOpen={isAppSwitcherOpen}
 					isSidebarResizing={sidebarResize.isResizing}
 					separatorLineOffsetPx={sidebarResize.sidebarWidth - TOP_NAV_PADDING_PX}
 					onToggleSidebar={toggleSidebar}
-					onToggleAppSwitcher={nav.handleToggleAppSwitcher}
-					onCloseAppSwitcher={nav.handleCloseAppSwitcher}
-					onNavigate={nav.handleNavigate}
-					onHoverEnter={nav.handleHoverEnter}
-					onHoverLeave={nav.handleHoverLeave}
+					onToggleAppSwitcher={handleToggleAppSwitcher}
+					onCloseAppSwitcher={handleCloseAppSwitcher}
+					onNavigate={handleNavigate}
+					onHoverEnter={handleHoverEnter}
+					onHoverLeave={handleHoverLeave}
 				/>
 			</div>}
 

@@ -554,9 +554,6 @@
     }
   },
   "components/blocks/app-directory/components/app-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 9
-    },
     "react-hooks/static-components": {
       "count": 1
     },
@@ -630,11 +627,6 @@
   "components/blocks/data-table/data-table.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
-    }
-  },
-  "components/blocks/directory-shared/experimental-directory-view.tsx": {
-    "react-hooks/refs": {
-      "count": 3
     }
   },
   "components/blocks/editor-toolbar/editor-toolbar.test.js": {
@@ -1398,15 +1390,7 @@
       "count": 22
     }
   },
-  "components/blocks/skill-directory/components/skill-directory-sidebar.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    }
-  },
   "components/blocks/skill-directory/components/skill-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1460,9 +1444,6 @@
     }
   },
   "components/blocks/tool-directory/components/tool-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 9
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 3
     }
@@ -1472,17 +1453,9 @@
       "count": 5
     }
   },
-  "components/blocks/top-navigation/page.tsx": {
-    "react-hooks/refs": {
-      "count": 32
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
   "components/blocks/top-navigation/top-navigation-chat-state.source.test.js": {
     "no-restricted-syntax": {
-      "count": 108
+      "count": 100
     }
   },
   "components/blocks/trigger-config/trigger-config.source.test.js": {
