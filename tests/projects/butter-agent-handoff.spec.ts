@@ -21,7 +21,7 @@ async function openAgentPicker(page: Page, card: Locator, key: string) {
 	await expect(async () => {
 		await addAgent.focus();
 		await expect(addAgent).toBeFocused({ timeout: 100 });
-	}).toPass();
+	}).toPass({ timeout: 5_000 });
 	await page.keyboard.press("Enter");
 }
 
@@ -178,7 +178,7 @@ async function selectCodingAgent(page: Page, key: string, { repeat = false } = {
 	return { card, result };
 }
 
-test("new and repeated selections replace the preview and each show the avatar-colored glow", { tag: "@smoke" }, async ({ page }) => {
+test("the first selection hands off and scales in; repeated selections start a new session with the avatar-colored glow", { tag: "@smoke" }, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	const { card, result } = await selectCodingAgent(page, "PAY-105");
