@@ -120,16 +120,16 @@ export function SkillDirectorySidebar({
 }: Readonly<SkillDirectorySidebarProps>) {
 	const taxonomyGroup = groups.find(isTaxonomySidebarGroup);
 	const secondaryGroups = groups.filter((group) => group !== taxonomyGroup);
-	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
+	const { ref: sidebarOverflowRef, showTopScrollMask: showSidebarTopScrollMask } = useHasVerticalOverflow<HTMLElement>();
 
 	return (
 		<nav
 			aria-label="Skill categories"
 			className={cn(
 				"hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex",
-				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				showSidebarTopScrollMask && "scroll-mask-top overscroll-contain",
 			)}
-			ref={sidebarOverflow.ref}
+			ref={sidebarOverflowRef}
 		>
 			<ul className="flex w-64 flex-col">
 				{primaryItems.map((item) => (
