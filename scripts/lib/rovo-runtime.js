@@ -25,7 +25,9 @@ function ensureEnvLocalExists({ cwd = process.cwd(), logger = console } = {}) {
 
 function loadEnvLocal({ envLocalPath } = {}) {
 	try {
-		require("dotenv").config({ path: envLocalPath });
+		// dotenv 18 merges DOTENV_* env options (e.g. DOTENV_OVERRIDE) into config(); an explicit
+		// override: false keeps exported variables winning over .env.local regardless.
+		require("dotenv").config({ path: envLocalPath, override: false });
 	} catch {
 		// Ignore dotenv loading failures.
 	}
