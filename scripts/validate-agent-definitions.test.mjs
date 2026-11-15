@@ -55,7 +55,6 @@ Review supplied metrics, identify gaps, and draft a concise report.
 \`\`\`yaml
 memory:
   scope: project
-  path: .agents/knowledge/report-agent/
   seed_files: []
 \`\`\`
 
@@ -148,5 +147,38 @@ test("fails when conversation starters are empty", async () => {
 		const result = await runValidator(root);
 		assert.equal(result.code, 1);
 		assert.match(result.stderr, /Conversation Starters.*at least one starter/u);
+	});
+});
+
+const withKnowledgePath = validAgent.replace("  scope: project\n", "  scope: project\n  path: .agents/knowledge/report-agent/\n");
+
+test("fails when the declared knowledge path does not exist", async () => {
+	await withFixture({
+		".agents/agents/report-agent.md": withKnowledgePath,
+	}, async (root) => {
+		const result = await runValidator(root);
+		assert.equal(result.code, 1);
+		assert.match(result.stderr, /knowledge path "\.agents\/knowledge\/report-agent\/" does not exist/u);
+	});
+});
+
+test("accepts a declared knowledge path that exists", async () => {
+	await withFixture({
+		".agents/agents/report-agent.md": withKnowledgePath,
+		".agents/knowledge/report-agent/notes.md": "# Notes\n",
+	}, async (root) => {
+		const result = await runValidator(root);
+		assert.equal(result.code, 0);
+	});
+});
+
+test("fails when the knowledge path is not the agent's own folder", async () => {
+	await withFixture({
+		".agents/agents/report-agent.md": withKnowledgePath.replace("knowledge/report-agent/", "knowledge/other-agent/"),
+		".agents/knowledge/other-agent/notes.md": "# Notes\n",
+	}, async (root) => {
+		const result = await runValidator(root);
+		assert.equal(result.code, 1);
+		assert.match(result.stderr, /knowledge path must be "\.agents\/knowledge\/report-agent\/"/u);
 	});
 });

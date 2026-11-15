@@ -32,7 +32,7 @@ Optional environment variables:
 | --------------- | ------------------------------------------ | --------------------------------------------------- |
 | Rovo chat       | `app/contexts/context-rovo-chat.tsx`       | AI chat via AI SDK `useChat` with streaming/widgets |
 | Creation mode   | `app/contexts/context-creation-mode.tsx`   | Creation mode state                                 |
-| Sidebar         | `app/contexts/context-sidebar.tsx`         | Sidebar visibility and route                        |
+| Sidebar         | `app/contexts/context-sidebar.tsx`         | Sidebar visibility, route, and hover reveal (split) |
 | Work item modal | `app/contexts/context-work-item-modal.tsx` | Work item detail modal using State/Actions/Meta     |
 | Theme           | `components/utils/theme-wrapper.tsx`       | Light/dark/system mode                              |
 

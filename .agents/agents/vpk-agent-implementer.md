@@ -381,7 +381,6 @@ Implementation phase of the Figma pipeline. Implementer uses only values from th
 ```yaml
 memory:
   scope: project
-  path: .agents/knowledge/vpk-agent-implementer/
   seed_files:
     - .agents/skills/vpk-design/SKILL.md
 ```

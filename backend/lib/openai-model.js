@@ -93,7 +93,9 @@ function recordOpenAiModelEnvOrigin({ shellPresent, shellValue, envFileValue } =
 function loadEnvFileWithModelOrigin({ envPath, env = process.env, dotenv = require("dotenv") }) {
 	const shellPresent = Object.hasOwn(env, "OPENAI_MODEL");
 	const shellValue = env.OPENAI_MODEL;
-	const result = dotenv.config({ path: envPath, processEnv: env });
+	// Explicit override: false — dotenv 18 otherwise lets DOTENV_OVERRIDE / DOTENV_CONFIG_OVERRIDE
+	// in the shell turn override on, which would break the origin report above.
+	const result = dotenv.config({ path: envPath, processEnv: env, override: false });
 	recordOpenAiModelEnvOrigin({ shellPresent, shellValue, envFileValue: result.parsed?.OPENAI_MODEL });
 	return result;
 }

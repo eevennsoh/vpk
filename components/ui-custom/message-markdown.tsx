@@ -69,23 +69,23 @@ type LoadBoundaryProps = Readonly<{ children: ReactNode; fallback: ReactNode; re
 // with new props (the next streamed chunk, for one) tries the load again. Render errors from the
 // runtime itself go on to the boundaries above, as they do when the runtime is imported directly.
 class MessageMarkdownLoadBoundary extends Component<LoadBoundaryProps, { error: unknown }> {
-	state = { error: null as unknown };
+	override state = { error: null as unknown };
 
 	static getDerivedStateFromError(error: unknown) {
 		return { error };
 	}
 
-	componentDidCatch() {
+	override componentDidCatch() {
 		forgetFailedRuntimeLoad();
 	}
 
-	componentDidUpdate(previous: LoadBoundaryProps) {
+	override componentDidUpdate(previous: LoadBoundaryProps) {
 		if (this.state.error !== null && previous.retryKey !== this.props.retryKey) {
 			this.setState({ error: null });
 		}
 	}
 
-	render() {
+	override render() {
 		if (this.state.error === null) {
 			return this.props.children;
 		}
