@@ -197,6 +197,23 @@ export const tileToken = <span className="rounded-tile text-2xl" />;
 	assert.deepEqual(await ruleFindings('export const c = "bg-black";\n', "components/demo/x.test.ts", tokenRules), []);
 });
 
+test("shadow-overlay is rejected as a class because no such utility exists", async () => {
+	const rule = ["vpk-tokens/no-undefined-overlay-shadow"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const card = <div className="rounded-lg bg-surface-overlay p-3 shadow-overlay" />;
+export const toggle = (selected: boolean) => cn("p-0", selected ? "shadow-none" : "shadow-overlay");
+export const skip = <a className="sr-only focus:shadow-overlay" href="#main" />;
+export const ok = <div className="shadow-2xl" style={{ boxShadow: "var(--ds-shadow-overlay)" }} />;
+export const catalog = { "shadow-overlay": 1 };
+declare function visualComponent(id: string, name: string): void;
+visualComponent("shadow-overlay", "Shadow Overlay");
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", rule);
+	assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), [[3, 2], [4, 2], [5, 2]]);
+	assert.match(findings[0].message, /shadow-2xl/u);
+});
+
 test("date formatting names a locale so SSR and hydration agree", async () => {
 	const findings = await syntaxFindings(`
 export const risky = new Intl.DateTimeFormat().format(0) + new Date(0).toLocaleDateString();

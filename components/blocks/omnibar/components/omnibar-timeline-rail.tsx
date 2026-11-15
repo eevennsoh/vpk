@@ -16,7 +16,7 @@ import {
  * The card the vertical rail floats in.
  *
  * No border: overlay elevation already defines the surface, and stacking a border on
- * top of `shadow-overlay` double-outlines it (`.agents/rules/gotchas-ui.md`).
+ * top of `shadow-2xl` double-outlines it (`.agents/rules/gotchas-ui.md`).
  *
  * The width is load-bearing rather than taste. A vertical mark draws its rule rightward
  * from the rail's left edge and swells to 46px, so the rail column (24px) plus the gap
@@ -29,7 +29,7 @@ import {
  * the card docks to the right edge: reversing it would point the swell at the screen
  * edge, where the card's own padding would clip it.
  */
-const RAIL_CARD = "w-[184px] rounded-lg bg-surface-overlay p-3 shadow-overlay";
+const RAIL_CARD = "w-[184px] rounded-lg bg-surface-overlay p-3 shadow-2xl";
 
 export interface OmnibarTimelineRailProps {
 	activeIndex: number;
