@@ -1,5 +1,7 @@
 "use client";
 
+import type { JiraInlineCreateDraft } from "@/components/blocks/jira-inline-create";
+
 import { useMemo } from "react";
 
 import type {
@@ -13,10 +15,10 @@ import {
 	createBoardCardFromDraft,
 	linkBoardCardToSession,
 } from "../lib/board-menu-work-item";
-import { appendBoardCardFromDraft, toAgentSessionWorkItemOptions, boardHasWorkItem, type BoardWorkItemDraft } from "../lib/board-work-item-options";
+import { appendBoardCardFromDraft, toAgentSessionWorkItemOptions, boardHasWorkItem } from "../lib/board-work-item-options";
 
 export interface BoardMenuWorkItem {
-	readonly onCreateColumnWorkItem: (columnTitle: string, draft: BoardWorkItemDraft) => void;
+	readonly onCreateColumnWorkItem: (columnTitle: string, draft: JiraInlineCreateDraft) => void;
 	readonly workItemOptions: readonly AgentSessionWorkItemOption[];
 	readonly onLinkWorkItem: (item: AgentSessionItem, workItemKey?: string) => void;
 	readonly onCreateWorkItemFromDraft: (

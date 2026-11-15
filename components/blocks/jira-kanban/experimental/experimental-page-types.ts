@@ -53,6 +53,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 export interface ExperimentalJiraKanbanPageProps {
 	/** Show only centered Kanban columns, without the board header. */
 	boardOnly?: boolean;
+	inlineCreateComponent?: ExperimentalJiraKanbanProps["inlineCreateComponent"];
 	collapsedColumns?: CollapsedBoardColumns;
 	onCollapsedColumnsChange?: (columns: CollapsedBoardColumns) => void;
 	/** Enables the optional arrange action, destination counts, and shortcut. */
@@ -291,6 +292,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ref?: Ref<ExperimentalJiraKanbanPageHandle>;
 	timelineLastViewedAt?: string | null;
 	viewTabs?: ReactNode;
+	headerControlsLayout?: "inline" | "trailing-icons";
 	/**
 	 * Where the overflow ("…") control sits in the board header. The route
 	 * owns the choice so it can park it on the far right without this block

@@ -26,6 +26,8 @@ export interface NavSection {
 	href?: string;
 	items: NavItem[];
 	defaultOpen?: boolean;
+	/** Routes whose page is this section's catalog; landing on one opens the section. */
+	openOnPaths?: string[];
 }
 
 export interface WebsiteSidebarNavProps {
@@ -50,6 +52,10 @@ const NAV_GROUP_LINK_CLASSNAME =
 const NAV_GROUP_LABEL_CLASSNAME =
 	"flex flex-1 items-center rounded-md py-2 px-3 text-sm text-text-subtle";
 
+function isSectionLandingPath(section: NavSection, pathname: string) {
+	return section.openOnPaths?.includes(pathname) ?? false;
+}
+
 export function WebsiteSidebarNav({
 	staticPages = [],
 	sections = [],
@@ -64,7 +70,8 @@ export function WebsiteSidebarNav({
 			const containsActive = section.items.some(
 				(item) => item.href === pathname || item.children?.some((child) => child.href === pathname),
 			);
-			initial[section.title] = containsActive || (section.defaultOpen ?? false);
+			initial[section.title] =
+				containsActive || isSectionLandingPath(section, pathname) || (section.defaultOpen ?? false);
 		}
 		return initial;
 	});
@@ -146,6 +153,9 @@ export function WebsiteSidebarNav({
 		}
 		const sectionUpdates: Record<string, boolean> = {};
 		for (const section of sections) {
+			if (isSectionLandingPath(section, pathname)) {
+				sectionUpdates[section.title] = true;
+			}
 			for (const item of section.items) {
 				if (item.href === pathname) {
 					sectionUpdates[section.title] = true;

@@ -25,7 +25,6 @@ import { BoardIssueTransitionOverlay } from "./board-issue-transition-overlay";
 import { useBoardIssueDrop, type BoardIssueDragSource } from "../hooks/use-board-issue-drop";
 import { useBoardColumnDropRing, useCreateDropzoneHeight } from "../hooks/use-create-dropzone-height";
 import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
-import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 
 type BoardIssueDropState = ReturnType<typeof useBoardIssueDrop>;
 
@@ -208,7 +207,6 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel,
 	onCollapse,
 	onCreateAgent,
-	onCreateWorkItem,
 	onStartCreate,
 	creating = false,
 	createDraft,
@@ -237,7 +235,6 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
-	onCreateWorkItem?: (columnTitle: string, draft: AgentSessionWorkItemDraft) => void;
 	onStartCreate?: (trigger: HTMLElement) => void;
 	creating?: boolean;
 	createDraft?: ReactNode;
@@ -259,7 +256,7 @@ export function BoardColumn({
 	const createAction = <BoardColumnCreateAction
 		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
-		onCreateWorkItem={onCreateWorkItem ? (draft) => onCreateWorkItem(title, draft) : undefined}
+		onStartCreate={onStartCreate}
 		placement="bottom"
 		sessionDragTransaction={sessionDragTransaction}
 		title={title}
@@ -330,7 +327,7 @@ export function BoardColumn({
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}
 						isSessionDragging={sessionDragTransaction !== null}
-						onCreateWorkItem={onCreateWorkItem ? (draft) => onCreateWorkItem(title, draft) : undefined}
+						onStartCreate={onStartCreate}
 					>
 						{children}
 					</BoardColumnCardList>

@@ -1788,7 +1788,7 @@
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.source.test.js": {
     "no-restricted-syntax": {
-      "count": 14
+      "count": 13
     }
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.source.test.js": {
@@ -1843,7 +1843,7 @@
   },
   "components/projects/jira-team-eu26/jira-team-eu26.source.test.js": {
     "no-restricted-syntax": {
-      "count": 329
+      "count": 328
     }
   },
   "components/projects/jira-team-eu26/terminal-story.test.js": {

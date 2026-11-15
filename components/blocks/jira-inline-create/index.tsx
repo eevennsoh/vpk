@@ -6,53 +6,24 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
 import { ProjectButterIssueKey } from "@/components/blocks/jira-issue/project-butter-summary";
 import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
-import type { JiraKanbanAssigneeData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import type { BoardWorkItemDraft } from "../lib/board-work-item-options";
-import { BoardCreateCardFields } from "./board-create-card-fields";
+import type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
+import { JiraInlineCreateFields } from "./components/jira-inline-create-fields";
+
+export type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
 
 const ISSUE_TYPES: readonly JiraListIssueType[] = ["story", "epic", "bug", "task"];
 
-export function BoardCreateCard({ assignees, columns, issueKey, onCancel, onSave }: Readonly<{
-	assignees?: readonly JiraKanbanAssigneeData[];
-	columns: readonly JiraKanbanColumnData[];
-	issueKey: string;
-	onCancel: () => void;
-	onSave: (draft: BoardWorkItemDraft) => void;
-}>) {
+export function JiraInlineCreate({ assignees, columns, issueKey, onCancel, onSave, ref }: Readonly<JiraInlineCreateProps>) {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
-	const cardRef = useRef<HTMLFormElement>(null);
 	const [summary, setSummary] = useState("");
 	const [issueType, setIssueType] = useState<JiraListIssueType>("task");
 	const [previewType, setPreviewType] = useState<JiraListIssueType>();
-	const [metadata, setMetadata] = useState<Omit<BoardWorkItemDraft, "summary" | "issueType">>({});
+	const [metadata, setMetadata] = useState<Omit<JiraInlineCreateDraft, "summary" | "issueType">>({});
 
-	useLayoutEffect(() => {
-		const card = cardRef.current;
-		const scrollport = card?.closest<HTMLElement>('[data-jira-kanban-card-list]');
-		const gallery = card?.closest<HTMLElement>('[data-gallery-root]') ?? document.querySelector<HTMLElement>('[data-gallery-root]:has([data-gallery-strip])');
-		const previousPadding = scrollport?.style.paddingBottom;
-		const reveal = () => {
-			if (!scrollport) return;
-			const strip = gallery?.querySelector<HTMLElement>('[data-gallery-strip]');
-			const overlap = strip ? Math.max(0, scrollport.getBoundingClientRect().bottom - strip.getBoundingClientRect().top) : 0;
-			scrollport.style.paddingBottom = overlap ? `${overlap + 8}px` : previousPadding ?? "";
-			scrollport.scrollTop = scrollport.scrollHeight;
-		};
-		const resize = new ResizeObserver(reveal);
-		if (card) resize.observe(card);
-		const mutations = new MutationObserver(reveal);
-		if (gallery) mutations.observe(gallery, { childList: true });
-		reveal();
-		inputRef.current?.focus({ preventScroll: true });
-		return () => {
-			resize.disconnect();
-			mutations.disconnect();
-			if (scrollport) scrollport.style.paddingBottom = previousPadding ?? "";
-		};
-	}, []);
+	useLayoutEffect(() => { inputRef.current?.focus({ preventScroll: true }); }, []);
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key !== "Escape" || event.defaultPrevented) return;
@@ -65,9 +36,9 @@ export function BoardCreateCard({ assignees, columns, issueKey, onCancel, onSave
 
 	return (
 		<form
-			ref={cardRef}
+			ref={ref}
 			aria-label={`Create work item in ${issueKey}`}
-			data-board-create-card=""
+			data-jira-inline-create=""
 			className="group/jira-issue flex min-w-0 flex-col gap-2 rounded-lg bg-surface-raised p-3 shadow-sm"
 			onSubmit={(event) => {
 				event.preventDefault();
@@ -88,7 +59,7 @@ export function BoardCreateCard({ assignees, columns, issueKey, onCancel, onSave
 				event.preventDefault();
 				event.currentTarget.form?.requestSubmit();
 			}} placeholder={`Describe your ${issueType}`} rows={1} value={summary} />
-			<BoardCreateCardFields assignees={assignees} columns={columns} value={metadata} onChange={(patch) => setMetadata((current) => ({ ...current, ...patch }))} saveAction={<Button aria-label="Save work item" disabled={!summary.trim()} size="icon-compact" type="submit" variant="secondary"><Icon render={<CheckMarkIcon label="" size="small" />} /></Button>} />
+			<JiraInlineCreateFields assignees={assignees} columns={columns} value={metadata} onChange={(patch) => setMetadata((current) => ({ ...current, ...patch }))} saveAction={<Button aria-label="Save work item" disabled={!summary.trim()} size="icon-compact" type="submit" variant="secondary"><Icon render={<CheckMarkIcon label="" size="small" />} /></Button>} />
 		</form>
 	);
 }
