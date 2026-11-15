@@ -140,6 +140,7 @@ Generated from `backend/routes/route-manifest.json`.
 | `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js` |
 | `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js` |
 | `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js` |
+| `GET` | `/api/whoami` | no | `backend/routes/status.js` |
 | `GET` | `/healthcheck` | no | `backend/routes/status.js` |
 
 ### Next API Proxy Routes
