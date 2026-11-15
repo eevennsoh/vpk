@@ -70,7 +70,7 @@ export function QueueDetailPanel({ onClose, resize, session }: Readonly<QueueDet
 	return (
 		<motion.div
 			animate="open"
-			className="absolute inset-y-0 right-0 z-20 h-full max-w-full shadow-overlay"
+			className="absolute inset-y-0 right-0 z-20 h-full max-w-full shadow-2xl"
 			exit="closed"
 			initial="closed"
 			style={{
