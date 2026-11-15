@@ -277,6 +277,21 @@ test("createSkillValidationReport catches malformed frontmatter", () => {
 	}
 });
 
+test("createSkillValidationReport catches descriptions over the 1024-character limit", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-description-length-"));
+	try {
+		const skillDir = path.join(cwd, DEFAULT_TARGET, "vpk-example-skill");
+		mkdirSync(skillDir, { recursive: true });
+		writeFileSync(path.join(skillDir, "SKILL.md"), `---\nname: vpk-example-skill\ndescription: ${"a".repeat(1025)}\n---\n\n# Example\n\nUse this skill.\n`);
+		const report = createSkillValidationReport({ checkIndex: false, cwd });
+		assert.deepEqual(report.failures.map((failure) => failure.type), [
+			"skill-description-too-long",
+		]);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("createSkillValidationReport catches names that omit the vpk- prefix", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-prefix-"));
 	try {

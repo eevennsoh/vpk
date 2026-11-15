@@ -62,7 +62,7 @@ test("top navigation derives Ask Rovo pressed state from the sidebar chat surfac
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /toggleChat,.*chatSurface.*\} = useRovoChatControls\(\);/);
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /const isSidebarChatOpen = chatSurface === "sidebar";/);
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /isSidebarChatOpen,/);
-	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}/);
+	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{isSidebarChatOpen\}/);
 });
 
 test("top navigation caps search globally and centers it only when the persistent sidebar is collapsed", () => {
@@ -92,7 +92,7 @@ test("top navigation caps search globally and centers it only when the persisten
 	// Page wires the center/left alignment and the capped search width. The search
 	// grows to the cap but uses its min as a flex-basis (not a hard floor) so it
 	// shrinks under pressure instead of clipping the right cluster.
-	assert.match(TOP_NAVIGATION_SOURCE, /const isPersistentSidebarVisible = variant === "header" \? nav\.isVisible : sidebarOpen;/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const isPersistentSidebarVisible = variant === "header" \? isVisible : sidebarOpen;/);
 	assert.match(TOP_NAVIGATION_SOURCE, /const centerSearch = !isPersistentSidebarVisible/);
 
 	for (const source of [TOP_NAVIGATION_SOURCE, STUDIO_ROVO_APP_SHELL_SOURCE, ROVO_APP_SHELL_SOURCE]) {
@@ -167,28 +167,14 @@ test("top navigation collapses the search to an icon button on very narrow viewp
 
 test("top navigation sizes responsive search chrome from its rendered container", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /new ResizeObserver/);
-	assert.match(TOP_NAVIGATION_SOURCE, /const responsiveWidth = containerWidth \|\| nav\.windowWidth;/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /const responsiveWidth = containerWidth \|\| windowWidth;/u);
 	assert.match(TOP_NAVIGATION_SOURCE, /responsiveWidth < TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/u);
 	assert.match(TOP_NAVIGATION_SOURCE, /windowWidth=\{responsiveWidth\}/u);
 	assert.match(TOP_NAVIGATION_SOURCE, /ref=\{setNavigationContainer\}/u);
 });
 
-test("standalone top navigation releases its pinned shell sidebar in small containers", () => {
-	assert.match(
-		TOP_NAVIGATION_SOURCE,
-		/const shellWidth = nav\.windowWidth \|\| responsiveWidth;/u,
-	);
-	assert.match(TOP_NAVIGATION_SOURCE, /shellWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX/u);
-	assert.match(TOP_NAVIGATION_SOURCE, /didAutoReleaseShellSidebarRef/u);
-	assert.match(TOP_NAVIGATION_SOURCE, /isSmallContainer && sidebarOpen/u);
-	assert.match(TOP_NAVIGATION_SOURCE, /didAutoReleaseShellSidebarRef\.current = true;\s+setSidebarOpen\(false\)/u);
-	assert.match(
-		TOP_NAVIGATION_SOURCE,
-		/else if \(!isSmallContainer && didAutoReleaseShellSidebarRef\.current\)/u,
-	);
-	assert.match(TOP_NAVIGATION_SOURCE, /\[nav\.windowWidth, responsiveWidth, sidebarOpen\]/u);
-	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
-});
+// Small-viewport sidebar release and search-icon reset are proven by rendering
+// the shell in top-navigation-responsive.behavior.test.js.
 
 test("profile theme is a menu item that stays open while cycling themes", async () => {
 	const view = await renderComponent({

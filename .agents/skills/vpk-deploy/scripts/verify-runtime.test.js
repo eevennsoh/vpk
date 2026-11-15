@@ -8,10 +8,10 @@ const zlib = require("node:zlib");
 
 const { spawnInGroup } = require("../../../../scripts/lib/test-process.js");
 
-async function verify(t, handler, args = []) {
+async function verify(t, handler, args = [], env = {}) {
 	const requests = [];
 	const server = http.createServer((req, res) => {
-		requests.push({ path: req.url, origin: req.headers.origin });
+		requests.push({ path: req.url, origin: req.headers.origin, authorization: req.headers.authorization });
 		if (handler?.(req, res)) return;
 		if (req.url === "/api/health") {
 			res.setHeader("Content-Type", "application/json");
@@ -27,7 +27,7 @@ async function verify(t, handler, args = []) {
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	t.after(() => { server.closeAllConnections(); return new Promise((resolve) => server.close(resolve)); });
 	const baseUrl = `http://127.0.0.1:${server.address().port}`;
-	const child = spawnInGroup(process.execPath, [path.join(__dirname, "verify-runtime.mjs"), baseUrl, ...args], {}, { t });
+	const child = spawnInGroup(process.execPath, [path.join(__dirname, "verify-runtime.mjs"), baseUrl, ...args], { env: { ...process.env, VPK_SLAUTH_TOKEN: "", ...env } }, { t });
 	const deadline = setTimeout(() => child.kill(), 5000);
 	t.after(() => clearTimeout(deadline));
 	let output = "";
@@ -264,3 +264,17 @@ for (const [extension, contentType, expected] of [
 		});
 	}
 }
+
+test("with an SLAuth audience every request carries the token, and the token is never printed", async (t) => {
+	const result = await verify(t, null, ["--slauth-aud", "vpk"], { VPK_SLAUTH_TOKEN: "slauth-fixture-token" });
+	assert.equal(result.status, 0, result.output);
+	assert.ok(result.requests.length >= 3);
+	assert.deepEqual([...new Set(result.requests.map((request) => request.authorization))], ["Bearer slauth-fixture-token"]);
+	assert.doesNotMatch(result.output, /slauth-fixture-token/u);
+});
+
+test("a localhost target sends no SLAuth token unless asked", async (t) => {
+	const result = await verify(t, null, [], { VPK_SLAUTH_TOKEN: "slauth-fixture-token" });
+	assert.equal(result.status, 0, result.output);
+	assert.deepEqual([...new Set(result.requests.map((request) => request.authorization))], [undefined]);
+});

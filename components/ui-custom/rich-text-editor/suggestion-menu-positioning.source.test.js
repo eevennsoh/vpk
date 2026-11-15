@@ -29,7 +29,7 @@ test("prompt input exposes an internal root marker for suggestion popover anchor
 });
 
 test("composer suggestions resolve the prompt input root before legacy chat form fallbacks", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-popup.ts");
 	const rootSelectorIndex = source.indexOf("editorDom.closest<HTMLElement>(PROMPT_INPUT_ROOT_SELECTOR)");
 	const legacyClassIndex = source.indexOf('editorDom.closest<HTMLElement>(".chat-composer-form")');
 	const formFallbackIndex = source.indexOf('editorDom.closest<HTMLElement>("form")');
@@ -41,7 +41,7 @@ test("composer suggestions resolve the prompt input root before legacy chat form
 });
 
 test("composer suggestions prefer above-input placement and only fall below when above would clip", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-popup.ts");
 
 	assert.match(source, /const spaceAbove = rect\.top - COMPOSER_POPUP_GAP;/u);
 	assert.match(source, /const placeAbove = popupHeight <= spaceAbove;/u);
@@ -60,7 +60,7 @@ test("command menu search autofocus does not scroll portalled popovers into view
 });
 
 test("composer palette re-hugs the container on its own height change (not just window resize/scroll)", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-popup.ts");
 
 	// The palette is bottom-anchored, so it must reposition whenever its measured
 	// height changes (query filtering, drill-in, async rows) — otherwise a menu
@@ -86,7 +86,7 @@ test("composer editor extensions remain the boundary for input-anchored suggesti
 test("prompt input forwards scoped mention layout and section copy to the shared palette", () => {
 	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
 	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/extensions.ts");
-	const menuSource = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const menuSource = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-catalog.tsx");
 
 	assert.match(promptInputSource, /mentionSectionLabels\?: RichTextMentionSectionLabels;/u);
 	assert.match(promptInputSource, /suggestionVariant\?: RichTextSuggestionVariantConfig;/u);
@@ -97,18 +97,19 @@ test("prompt input forwards scoped mention layout and section copy to the shared
 });
 
 test("third-party subagents use the shared hexagon avatar in suggestion palettes", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-catalog.tsx");
 
 	assert.match(source, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(source, /item\.category === "subagent" && visual\?\.kind === "third-party"[\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{visual\.name\}[\s\S]*sizePx=\{24\}/u);
 });
 
 test("fallback suggestion icons use the 24px neutral IconTile treatment", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx");
 	const visualStart = source.indexOf("function RichTextSuggestionMenuItemVisual");
-	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
-
 	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
+	const visualEnd = source.indexOf("\n}\n", visualStart);
+	assert.ok(visualEnd > visualStart, "expected the end of RichTextSuggestionMenuItemVisual");
+	const visualSource = source.slice(visualStart, visualEnd);
 	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant=\{tileVariant\}/u);
 	assert.match(source, /function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u);
 	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);
@@ -134,7 +135,10 @@ test("document autocomplete only renders ghost text at the end of a text block",
 });
 
 test("separatorBefore draws a decorative full-bleed rule that never joins the listbox", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const source = [
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx"),
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-types.ts"),
+	].join("\n");
 	const css = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
 
 	// The rule is an opt-in field on the item, so a row can split a trailing

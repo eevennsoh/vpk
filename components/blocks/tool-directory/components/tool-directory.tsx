@@ -509,7 +509,7 @@ function ToolDirectoryView({
 	sidebarGroups,
 	tools,
 }: Readonly<ToolDirectoryViewProps>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -522,7 +522,7 @@ function ToolDirectoryView({
 				tools={tools}
 			/>
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					// overflow-y-auto forces overflow-x to compute to auto, so this scroll
 					// viewport clips anything painted outside its content box. pt-1 gives the
@@ -530,7 +530,7 @@ function ToolDirectoryView({
 					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
 					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
 					"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					showContentTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
 				<InputGroup>
@@ -681,16 +681,16 @@ function ToolDirectorySidebar({
 		: TOOL_DIRECTORY_CATEGORIES.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
 	const hasHiddenCategoryItems =
 		!showAllCategories && TOOL_DIRECTORY_CATEGORIES.length > MAX_VISIBLE_CATEGORY_ITEMS;
-	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
+	const { ref: sidebarOverflowRef, showTopScrollMask: showSidebarTopScrollMask } = useHasVerticalOverflow<HTMLElement>();
 
 	return (
 		<nav
 			aria-label="Tool categories"
 			className={cn(
 				"hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex",
-				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				showSidebarTopScrollMask && "scroll-mask-top overscroll-contain",
 			)}
-			ref={sidebarOverflow.ref}
+			ref={sidebarOverflowRef}
 		>
 			<ul className="flex w-64 flex-col">
 				{PRIMARY_CATEGORIES.map((category) => (
@@ -834,7 +834,7 @@ function ToolDetailView({
 	const publisher = derivePublisher(tool);
 	const verified = isVerifiedTool(tool, publisher);
 	const groups = getPermissionGroups(tool);
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -889,10 +889,10 @@ function ToolDetailView({
 				</div>
 			</aside>
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					showContentTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
 				<div className="rounded-xl border border-border p-4 md:hidden">

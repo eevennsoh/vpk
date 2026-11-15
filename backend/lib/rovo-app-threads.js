@@ -181,6 +181,12 @@ function normalizeThreadRecord(rawThread) {
 
 	return {
 		id,
+		// The caller who created the thread (an SLAuth subject, or "local"); null for a
+		// thread stored before owners were recorded. See lib/caller-identity.js.
+		owner:
+			typeof rawThread.owner === "string" && rawThread.owner.trim()
+				? rawThread.owner.trim()
+				: null,
 		title:
 			typeof rawThread.title === "string" && rawThread.title.trim()
 				? rawThread.title.trim()
@@ -275,8 +281,12 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		}
 	};
 
-	/** @param {{ limit?: number }} [options] */
-	const listThreads = async ({ limit } = {}) => {
+	/**
+	 * Newest first. `filter` runs before `limit`, so a filtered list (one caller's
+	 * threads) is not cut short by records the filter drops.
+	 * @param {{ limit?: number, filter?: (thread: Record<string, unknown>) => boolean }} [options]
+	 */
+	const listThreads = async ({ limit, filter } = {}) => {
 		let entries;
 		try {
 			entries = await fs.readdir(threadsRootDir);
@@ -293,7 +303,9 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		const threadResults = await Promise.all(
 			entries.filter(isStorageId).map((entry) => readThread(entry)),
 		);
-		const threads = threadResults.filter(Boolean);
+		const threads = threadResults.filter(
+			(thread) => Boolean(thread) && (typeof filter !== "function" || filter(thread)),
+		);
 
 		threads.sort((left, right) => {
 			const leftTime = getTimestamp(left.updatedAt);
@@ -319,6 +331,8 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			...currentThread,
 			...definedFields,
 			id: currentThread.id,
+			// Ownership is fixed at creation; an update never moves a thread to someone else.
+			owner: currentThread.owner,
 			createdAt: currentThread.createdAt,
 			updatedAt:
 				typeof definedFields.updatedAt === "string" && definedFields.updatedAt.trim()
@@ -342,9 +356,16 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	const deleteThread = async (threadId) =>
 		enqueueThreadMutation(threadId, () => deleteThreadDir(threadId));
 
-	/** @param {{ skipThreadId?: string }} [options] */
-	const pruneOldThreads = async ({ skipThreadId } = {}) => {
-		const threads = await listThreads({ limit: RETENTION_LIMIT + 20 });
+	/**
+	 * Retention is per owner: one caller's new threads never push out another caller's.
+	 * Threads stored before owners (no owner) share one bucket.
+	 * @param {{ skipThreadId?: string, owner?: string | null }} [options]
+	 */
+	const pruneOldThreads = async ({ skipThreadId, owner = null } = {}) => {
+		const threads = await listThreads({
+			limit: RETENTION_LIMIT + 20,
+			filter: (thread) => (thread.owner ?? null) === owner,
+		});
 		if (threads.length <= RETENTION_LIMIT) {
 			return;
 		}
@@ -364,12 +385,13 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	};
 
 	/**
-	 * @param {{ id?: string, title?: unknown, messages?: unknown, realtimeMessages?: unknown, visibility?: unknown,
+	 * @param {{ id?: string, owner?: unknown, title?: unknown, messages?: unknown, realtimeMessages?: unknown, visibility?: unknown,
 	 *   modelId?: unknown, provider?: unknown, activeDocumentId?: unknown, sessionId?: unknown, sessionMode?: unknown,
 	 *   activeRun?: unknown, createdAt?: unknown, updatedAt?: unknown }} [thread]
 	 */
 	const createThread = async ({
 		id,
+		owner,
 		title,
 		messages,
 		realtimeMessages,
@@ -388,6 +410,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		const now = toIsoDate();
 		const nextThread = normalizeThreadRecord({
 			id: threadId,
+			owner,
 			title,
 			messages,
 			realtimeMessages,
@@ -407,7 +430,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			await writeJsonFile(threadFilePath, nextThread);
 			return nextThread;
 		});
-		await pruneOldThreads({ skipThreadId: threadId });
+		await pruneOldThreads({ skipThreadId: threadId, owner: nextThread?.owner ?? null });
 		return createdThread;
 	};
 

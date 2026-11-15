@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
 import WebSocket from "ws";
+import { readSlauthOption, resolveSlauthHeaders } from "./slauth-auth.mjs";
 
-const usage = "Usage: verify-wss.mjs <base-url> [--discovery] [--allow-tokenless-dev] [--timeout-ms 15000]";
+const usage = "Usage: verify-wss.mjs <base-url> [--discovery] [--allow-tokenless-dev] [--timeout-ms 15000] [--slauth-aud vpk | --no-slauth]";
 let baseUrl;
 let discovery = false;
 let allowTokenlessDev = false;
 let timeoutMs = 15000;
+// A Micros host sends an SLAuth token for audience vpk by default (slauth-auth.mjs); the
+// realtime token is bound to that caller, so the upgrade carries the same token.
+const slauthOptions = { audience: null, explicit: false };
+let authHeaders = {};
 try {
 	baseUrl = new URL(process.argv[2]);
 	if (!["http:", "https:"].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) {
@@ -14,7 +19,9 @@ try {
 	}
 	for (let index = 3; index < process.argv.length; index += 1) {
 		const arg = process.argv[index];
-		if (arg === "--discovery") discovery = true;
+		const slauthArgs = readSlauthOption(process.argv, index, slauthOptions);
+		if (slauthArgs) index += slauthArgs - 1;
+		else if (arg === "--discovery") discovery = true;
 		else if (arg === "--allow-tokenless-dev") allowTokenlessDev = true;
 		else if (arg === "--timeout-ms") timeoutMs = Number(process.argv[++index]);
 		else throw new Error("Unknown option");
@@ -27,6 +34,7 @@ try {
 	if (allowTokenlessDev && (!discovery || !localHost)) {
 		throw new Error("Tokenless development mode requires discovery on a localhost origin");
 	}
+	authHeaders = resolveSlauthHeaders(baseUrl, slauthOptions);
 } catch (error) {
 	console.error(`${usage}\n${error.message}`);
 	process.exit(2);
@@ -36,7 +44,7 @@ async function fetchJson(path, label) {
 	let response;
 	try {
 		response = await fetch(new URL(path, baseUrl.origin), {
-			headers: { Origin: baseUrl.origin },
+			headers: { ...authHeaders, Origin: baseUrl.origin },
 			cache: "no-store",
 			signal: AbortSignal.timeout(timeoutMs),
 		});
@@ -72,8 +80,9 @@ async function verify() {
 	if (!token) console.log("Tokenless localhost development mode");
 	const wsUrl = new URL("/api/realtime/audio-conversation", wsBase);
 	if (token) wsUrl.searchParams.set("realtimeToken", token);
+	// Discovery may name another host: the SLAuth token goes only to this service's own host.
 	const socket = new WebSocket(wsUrl, {
-		headers: { Origin: baseUrl.origin },
+		headers: { ...(wsUrl.host === baseUrl.host ? authHeaders : {}), Origin: baseUrl.origin },
 		handshakeTimeout: timeoutMs,
 	});
 	await new Promise((resolve, reject) => {

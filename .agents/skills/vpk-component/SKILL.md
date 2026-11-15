@@ -1,6 +1,6 @@
 ---
 name: vpk-component
-description: Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity. Use only when the user invokes vpk-component, names or links one of those sources, or requests ADS/shadcn parity. Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.
+description: Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (ai-elements, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to "migrate to ui-custom", "standardize AI components", "adopt ai-elements", or "port ElevenLabs UI". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.
 validation_command: pnpm run lint && pnpm run typecheck
 ---
 
@@ -16,11 +16,16 @@ runtime dependency.
 Use the ADS lane for `atlassian.design`, `@atlaskit/*`, and `@atlassian/*`.
 Use the shadcn lane for shadcn/ui, Base UI, `@shadcn/react`, and registry
 components; also read the global shadcn skill for current CLI and composition
-rules. Use `vpk-component-ext` for custom or third-party AI and voice libraries.
-Use `vpk-design` when a Figma file, screenshot, or bespoke mockup is the source
-of truth.
+rules. Use the external lane for custom or third-party AI, chat, voice, and
+audio libraries: follow
+[external translation](references/external-translation.md) instead of the hard
+invariants, locks, and workflow below; that lane has its own invariants. Use
+`vpk-design` when a Figma file, screenshot, or bespoke mockup is the source of
+truth.
 
 ## Hard invariants
+
+These invariants and the locks below apply to the ADS and shadcn lanes.
 
 - Preserve existing VPK prop, variant, size, sub-component, and export names.
 - Add variants only when parity requires them, using the component's existing
@@ -132,3 +137,9 @@ variant maps before handoff.
   implementation patterns and mistakes.
 - [visual-spec-extraction.md](references/visual-spec-extraction.md): browser-based
   computed-style extraction.
+- [external-translation.md](references/external-translation.md): the external
+  lane for AI, voice, and third-party libraries, with its
+  [migration detail](references/ai-migration-detail.md),
+  [catalog](references/ai-migration-catalog.md),
+  [API reference](references/ai-api-reference.md), and
+  [examples](references/ai-migration-examples.md).

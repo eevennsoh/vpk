@@ -71,13 +71,13 @@ test("Tool Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /<BrandLogoMark frame="tile" label=\{item\.label\} size="small" src=\{item\.avatarSrc\} \/>/u);
 	assert.doesNotMatch(source, /withUsageBorder/u);
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
-	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
-	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
+	assert.match(source, /const \{ ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
+	assert.match(source, /ref=\{contentOverflowRef\}/u);
 	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pt-1 pb-8 md:pl-4"/u);
 	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4"/u);
-	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
-	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
-	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
+	assert.match(source, /showContentTopScrollMask && "scroll-mask-top overscroll-contain"/u);
+	assert.match(source, /const \{ ref: sidebarOverflowRef, showTopScrollMask: showSidebarTopScrollMask \} = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(source, /aria-label="Tool categories"[\s\S]*showSidebarTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflowRef\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
 	assert.match(variantsSource, /<EntityCardShell active=\{active\} className=\{cn\("gap-4", className\)\}/u);
 	assert.match(variantsSource, /<EntityCardTool/u);
