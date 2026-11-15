@@ -1,6 +1,6 @@
 # Port Selection and 409 Recovery
 
-How the Rovo pool behaves in multiport mode.
+How the Rovo pool behaves in multiport mode. For how the launchers lay out services and assign per-worktree port slots, see [Runtime Topology and Ports](runtime-topology.md).
 
 ## Runtime Model
 
