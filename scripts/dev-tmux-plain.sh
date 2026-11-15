@@ -99,6 +99,8 @@ check_workspace_deps() {
 SESSION_NAME="$(resolve_session_name)"
 REPO_ROOT_PHYSICAL="$(pwd -P)"
 FORCE_START=0
+# `stop --force` only: VPK_DEV_FORCE (a start over budget) never forces a stop.
+FORCE_STOP=0
 JSON_OUTPUT=0
 
 # Waits are whole numbers, checked before anything starts: seconds for the start, ms for the
@@ -348,6 +350,19 @@ stop_session() {
 	stack_state phase stopped || true
 }
 
+# Before `stop` only (a restart inside `start` is this worktree's own): a stop another worktree or
+# automation requests names itself in VPK_DEV_STOP_BY (and VPK_DEV_STOP_FROM, where it runs), and is
+# refused while this stack is in use (an agent process here, or recent activity) unless forced.
+# Every stop is logged with who asked to $DEV_LOG_DIR/dev-stops.log
+# (scripts/lib/dev-stack-activity.js).
+guard_stop() {
+	local args=(stop-guard --worktree "$REPO_ROOT" --session "$SESSION_NAME" --log-dir "$DEV_LOG_DIR")
+	if [[ "$FORCE_STOP" == "1" ]]; then
+		args+=(--force)
+	fi
+	node "$REPO_ROOT/scripts/lib/dev-stack-activity.js" "${args[@]}"
+}
+
 # After `stop` only (a restart inside `start` keeps it): drop this worktree's next dev output (it
 # grows about a GiB an hour and Next prunes it only at a later start), keeping the Turbopack cache
 # so the next start stays warm. The clean refuses while any dev server could still be serving it.
@@ -403,6 +418,8 @@ usage() {
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "          Exits $EXIT_NOT_READY unless the frontend and backend both become ready (VPK_DEV_TMUX_WAIT seconds)."
 	echo "  stop    Ctrl-C the session, let the recorded service processes drain, then end what is left"
+	echo "          A stop requested from another worktree or by automation (VPK_DEV_STOP_BY) is refused"
+	echo "          while the stack is in use; stop --force overrides. Every stop is logged to dev-stops.log"
 	echo "          Then removes .next/dev/static and .next/dev/server and keeps the cache; stop --keep-dev-output skips that"
 	echo "  status  Show the derived stack state (status --json for the full record)"
 	echo ""
@@ -421,7 +438,10 @@ fi
 [[ $# -gt 0 ]] && shift
 for arg in "$@"; do
 	case "$arg" in
-		--force) FORCE_START=1 ;;
+		--force)
+			FORCE_START=1
+			FORCE_STOP=1
+			;;
 		--json) JSON_OUTPUT=1 ;;
 		--keep-dev-output) CLEAN_DEV_OUTPUT=0 ;;
 		--) ;;
@@ -439,6 +459,7 @@ fi
 case "$command" in
 	start) start_session ;;
 	stop)
+		guard_stop || exit $?
 		stop_session
 		clean_dev_output
 		;;

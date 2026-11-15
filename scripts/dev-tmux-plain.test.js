@@ -330,6 +330,36 @@ test("stop stops every session that belongs to this worktree", () => {
 	}
 });
 
+// Regression: automation (the idle sweep, or `pnpm ports kill` from another worktree) sent Ctrl-C to
+// a stack another worktree's agent was using. Such a stop is refused while the stack shows recent
+// activity, --force overrides it, and every stop is logged with who asked.
+test("a stop another worktree requests is refused while the stack is in use, logged, and --force overrides", () => {
+	const fake = createFakeLauncherEnvironment();
+	const logDir = path.join(fake.tempDir, "logs");
+	fs.mkdirSync(logDir, { recursive: true });
+	fs.writeFileSync(path.join(logDir, "dev.log"), "GET / 200 in 12ms\n");
+	const requester = { VPK_DEV_LOG_DIR: logDir, VPK_DEV_STOP_BY: "pnpm ports kill (pid 1)", VPK_DEV_STOP_FROM: fake.tempDir };
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-guarded|${worktreeRoot}\n`);
+		withPortFiles(null, null, () => {
+			const refused = startAs(fake, "vpk-dev-guarded", requester, ["stop"]);
+			assert.equal(refused.status, 6, refused.stdout + refused.stderr);
+			assert.match(refused.stderr, /Not stopping .*: pnpm ports kill \(pid 1\) from .* asked, and this stack is in use \(recent activity: dev log written/);
+			assert.deepEqual(fake.sessions(), [`vpk-dev-guarded|${worktreeRoot}`], "the session was not touched");
+			assert.equal(fs.existsSync(fake.tmuxLogPath) && fs.readFileSync(fake.tmuxLogPath, "utf8").includes("send-keys"), false, "no Ctrl-C was sent");
+
+			const forced = startAs(fake, "vpk-dev-guarded", requester, ["stop", "--", "--force"]);
+			assert.equal(forced.status, 0, forced.stderr);
+			assert.match(forced.stdout, /Stop requested by pnpm ports kill \(pid 1\) from .* \(forced; in use: recent activity/);
+			assert.deepEqual(fake.sessions(), []);
+		});
+		const outcomes = fs.readFileSync(path.join(logDir, "dev-stops.log"), "utf8").trim().split("\n").map((line) => JSON.parse(line).outcome);
+		assert.deepEqual(outcomes, ["refused", "stopping (forced)"]);
+	} finally {
+		fake.cleanup();
+	}
+});
+
 test("over the stack budget a start refuses, lists the live stacks, and --force overrides", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
@@ -347,7 +377,7 @@ test("over the stack budget a start refuses, lists the live stacks, and --force 
 			assert.match(refused.stderr, /Not starting: 4 dev stacks already run; starting this one would make 5 > budget 4/);
 			assert.match(refused.stderr, /quiet {2}\/tmp\/wt-one {2}\(pid 901 2%\)/);
 			assert.match(refused.stderr, /busy {3}\/tmp\/wt-two/);
-			assert.match(refused.stderr, /no live task seen; stop: \(cd '\/(?:private\/)?tmp\/wt-three' && pnpm run dev:tmux:stop\)/);
+			assert.match(refused.stderr, /no live task seen; stop: pnpm ports kill '\/(?:private\/)?tmp\/wt-three'/);
 			assert.match(refused.stderr, /pnpm run dev:tmux:start -- --force/);
 			assert.deepEqual(fake.sessions(), []);
 

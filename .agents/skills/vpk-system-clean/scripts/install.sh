@@ -17,6 +17,8 @@ SRC_SH="$SKILL_DIR/scripts/vpk-system-clean.sh"
 DST_SH="$HOME/.local/bin/vpk-system-clean.sh"
 SRC_PROBE="$SKILL_DIR/scripts/codex-thread-recency.js"
 DST_PROBE="$HOME/.local/bin/codex-thread-recency.js"
+SRC_ACTIVITY="$SKILL_DIR/../../../scripts/lib/dev-stack-activity.js"
+DST_ACTIVITY="$HOME/.local/bin/dev-stack-activity.js"
 USER_ID="$(id -un)"
 LABEL="com.${USER_ID}.vpk-system-clean"
 DST_PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
@@ -36,6 +38,8 @@ mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
 cp "$SRC_SH" "$DST_SH" && chmod +x "$DST_SH" && echo "✓ script -> $DST_SH"
 # The sweep looks for its Codex thread-recency probe next to itself.
 cp "$SRC_PROBE" "$DST_PROBE" && chmod 644 "$DST_PROBE" && echo "✓ probe  -> $DST_PROBE"
+# ...and for the stack-activity check (scripts/lib/dev-stack-activity.js) that keeps a stack in use.
+cp "$SRC_ACTIVITY" "$DST_ACTIVITY" && chmod 644 "$DST_ACTIVITY" && echo "✓ activity -> $DST_ACTIVITY"
 
 # --- resolve schedule ---------------------------------------------------------
 MODE="daily"; HOUR=4; MINUTE=17; INTERVAL=21600; TIMES=""

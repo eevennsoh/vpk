@@ -6,15 +6,17 @@ const {
 	mkdtempSync,
 	readFileSync,
 	rmSync,
+	utimesSync,
 	writeFileSync,
 } = require("node:fs");
 const { tmpdir } = require("node:os");
-const { dirname, join } = require("node:path");
+const { basename, dirname, join } = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
 const SCRIPT_PATH = join(__dirname, "vpk-system-clean.sh");
 const INSTALL_SCRIPT_PATH = join(__dirname, "install.sh");
+const ACTIVITY_HELPER_PATH = join(__dirname, "../../../../scripts/lib/dev-stack-activity.js");
 const ZSH_PATH = ["/bin/zsh", "/usr/bin/zsh"].find(existsSync);
 const ZSH_TEST_OPTIONS = {
 	skip: ZSH_PATH ? false : "requires zsh for the macOS maintenance script",
@@ -54,6 +56,7 @@ function runSweep({
 	oldNode = false,
 	clockStart = null,
 	pressureState = null,
+	activityHelper = ACTIVITY_HELPER_PATH,
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "vpk-system-clean-test-"));
 	const home = join(root, "home");
@@ -86,9 +89,17 @@ function runSweep({
 			writeExecutable(
 				join(worktreePath, "scripts", "dev-tmux-plain.sh"),
 				`#!/bin/bash
-printf 'stop session=%s cwd=%s args=%s\\n' "\${VPK_DEV_TMUX_SESSION}" "$(pwd)" "$*" >> "${stopLog}"
+printf 'stop session=%s cwd=%s args=%s by=%s\\n' "\${VPK_DEV_TMUX_SESSION}" "$(pwd)" "$*" "\${VPK_DEV_STOP_BY:-}" >> "${stopLog}"
+exit ${session.stopExit ?? 0}
 `,
 			);
+			if (session.devLogAgoSecs !== undefined) {
+				const logDir = join(worktreePath, "output", "logs", basename(worktreePath));
+				mkdirSync(logDir, { recursive: true });
+				writeFileSync(join(logDir, "dev.log"), "GET / 200\n");
+				const at = new Date(Date.now() - session.devLogAgoSecs * 1000);
+				utimesSync(join(logDir, "dev.log"), at, at);
+			}
 		}
 		const created = now - (session.createdAgoSecs ?? 3600);
 		return [session.socket ?? "vpk-dev", session.name, worktreePath, session.attached ?? "0", String(created)].join(
@@ -268,6 +279,7 @@ printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 			CODEX_HOME: codexHome,
 			PATH: `${fakeBin}:${dirname(process.execPath)}:/usr/bin:/bin:/usr/sbin:/sbin`,
 			VPK_REPO_ROOT: repositoryRoot,
+			VPK_DEV_STACK_ACTIVITY: activityHelper,
 			ZDOTDIR: zDotDir,
 		},
 	});
@@ -324,10 +336,48 @@ test("stops an old unattached leftover stack through the worktree stop script", 
 
 	assert.equal(result.status, 0, result.stderr);
 	assert.match(stopLog, /stop session=vpk-dev-leftover/);
-	assert.match(stopLog, /args=stop/);
+	assert.match(stopLog, /args=stop by=vpk-system-clean idle sweep \(pid \d+\)/);
 	assert.equal(tmuxLog, "");
 	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-leftover on vpk-dev socket/);
 	assert.match(cleanupLog, /1 idle stack\(s\) stopped/);
+});
+
+// Regression: a workflow subagent's process keeps its cwd in the main checkout, so a stack it was
+// using mid-task had no operator and was older than the grace window, and the sweep SIGINTed it.
+test("keeps an old unattached stack with recent activity even with no operator in it", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, tmuxLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [{ name: "vpk-dev-busy", path: join(home, "wt-busy"), createdAgoSecs: 7200, devLogAgoSecs: 60 }],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.equal(tmuxLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-busy on vpk-dev socket \(in-use: recent activity: dev log written \d+s ago/);
+});
+
+test("stops an old stack once its activity is past the idle window, and says how old it was", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [{ name: "vpk-dev-stale", path: join(home, "wt-stale"), createdAgoSecs: 7200, devLogAgoSecs: 3 * 3600 }],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(stopLog, /stop session=vpk-dev-stale/);
+	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-stale on vpk-dev socket \(worktree '.*wt-stale', 7200s old, dev log written 180m ago\)/);
+});
+
+test("keeps a stack when the activity check is missing, and when its stop script refuses", ZSH_TEST_OPTIONS, () => {
+	const missing = runSweep({ almd: false, activityHelper: "", sessions: (home) => [{ name: "vpk-dev-unknown", path: join(home, "wt-unknown") }] });
+	assert.equal(missing.result.status, 0, missing.result.stderr);
+	assert.equal(missing.stopLog, "");
+	assert.match(missing.cleanupLog, /kept tmux session vpk-dev-unknown on vpk-dev socket \(unknown: stack-activity check not installed/);
+
+	const refused = runSweep({ almd: false, sessions: (home) => [{ name: "vpk-dev-refuses", path: join(home, "wt-refuses"), stopExit: 6 }] });
+	assert.equal(refused.result.status, 0, refused.result.stderr);
+	assert.match(refused.stopLog, /stop session=vpk-dev-refuses/);
+	assert.match(refused.cleanupLog, /kept tmux session vpk-dev-refuses on vpk-dev socket \(its stop script refused: the stack is in use\)/);
+	assert.doesNotMatch(refused.cleanupLog, /FAILED to stop/);
 });
 
 test("stops an exact legacy default-socket stack without calling the private-socket launcher", ZSH_TEST_OPTIONS, () => {

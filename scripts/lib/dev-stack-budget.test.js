@@ -76,9 +76,9 @@ test("each other stack is labelled by evidence of a live task, not by CPU", () =
 	assert.match(text, /quiet {2}\/main .*\n {8}in use: the primary checkout; leave it running/u);
 	assert.match(text, /quiet {2}\/wt\/attached .*\n {8}in use: a tmux client is attached to vpk-dev-attached; leave it running/u);
 	assert.match(text, /quiet {2}\/wt\/operated .*\n {8}in use: claude pid 77 has its cwd here; leave it running/u);
-	assert.match(text, /busy {3}\/wt\/free .*\n {8}no live task seen; stop: \(cd '\/wt\/free' && pnpm run dev:tmux:stop\)/u);
+	assert.match(text, /busy {3}\/wt\/free .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/free'/u);
 	assert.match(text, /quiet {2}\/home\/me\/\.codex\/worktrees\/ab12\/vpk .*\n {8}Codex worktree: check its thread before stopping/u);
-	assert.equal((text.match(/stop: \(cd/gu) ?? []).length, 1, "a stop command only for the stack with no live task");
+	assert.equal((text.match(/stop: pnpm ports kill/gu) ?? []).length, 1, "a stop command only for the stack with no live task");
 	assert.doesNotMatch(text, /\bidle\b/u);
 });
 
@@ -88,4 +88,18 @@ test("memory pressure with no other stack warns and starts; with one it refuses"
 	assert.match(formatVerdict(alone, { worktree: "/wt/new" }), new RegExp(`Warning: memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\), but no other dev stack runs; starting`, "u"));
 	const crowded = evaluateBudget({ ...calm, swapUsedGb: OVER, servers: [{ pid: 9, cwd: "/wt/other", cpu: 1 }] }, { worktree: "/wt/new" });
 	assert.equal(crowded.exitCode, EXIT_OVER_BUDGET);
+});
+
+// Regression: a workflow subagent's process keeps its cwd in the main checkout, so its worktree's
+// stack showed "no live task seen" with a stop command while the agent was mid-task.
+test("a stack with recent activity is in use even with no agent process in it, and gets no stop command", () => {
+	const now = Date.parse("2026-11-16T10:00:00Z");
+	const activity = { "/wt/busy-agent": { source: "dev log", mtimeMs: now - 4 * 60_000 }, "/wt/stale": { source: "dev log", mtimeMs: now - 3 * 3600_000 } };
+	const verdict = evaluateBudget(
+		{ ...calm, servers: [{ pid: 1, cwd: "/wt/busy-agent", cpu: 1 }, { pid: 2, cwd: "/wt/stale", cpu: 1 }, ...stacks(3)] },
+		{ worktree: "/wt/new", activityOf: (worktree) => activity[worktree] ?? null, now },
+	);
+	const text = formatVerdict(verdict, { worktree: "/wt/new" });
+	assert.match(text, /\/wt\/busy-agent .*\n {8}in use: recent activity: dev log written 4m ago; leave it running/u);
+	assert.match(text, /\/wt\/stale .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/stale'/u);
 });

@@ -71,8 +71,9 @@ check_workspace_deps() {
 prepare_port_files() {
 	node - <<'NODE' "$POOL_SIZE"
 const fs = require("node:fs");
-const { getRovoBasePort } = require("./scripts/lib/worktree-ports");
+const { getRovoBasePort, getPortsClaimedByOtherWorktrees } = require("./scripts/lib/worktree-ports");
 const { findAvailableRovoPorts } = require("./scripts/lib/dev-tmux-ports");
+const { isPortAvailable } = require("./scripts/lib/rovo-utils");
 
 const poolSize = Number.parseInt(process.argv[2], 10);
 const basePort = getRovoBasePort();
@@ -84,7 +85,14 @@ if (!Number.isFinite(poolSize) || poolSize < 1) {
 }
 
 const run = async () => {
-	const ports = await findAvailableRovoPorts({ basePort, poolSize, maxTries });
+	// Skip ports another worktree's stack has recorded as well as ports that listen.
+	const claimed = getPortsClaimedByOtherWorktrees(process.cwd());
+	const ports = await findAvailableRovoPorts({
+		basePort,
+		poolSize,
+		maxTries,
+		isPortAvailableFn: async (port) => !claimed.has(port) && (await isPortAvailable(port)),
+	});
 
 	fs.writeFileSync(".dev-rovo-port", String(ports[0]));
 	fs.writeFileSync(".dev-rovo-ports", JSON.stringify(ports));

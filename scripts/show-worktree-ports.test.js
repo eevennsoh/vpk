@@ -218,6 +218,38 @@ test("ports CLI shows a mix of alive and dead pool ports as only the alive ones"
 	}
 });
 
+// A fake dev server: a child process with its cwd in `cwd` that listens on a loopback port.
+function listenFromDirectory(cwd) {
+	return new Promise((resolve, reject) => {
+		const { spawn } = require("node:child_process");
+		const child = spawn(process.execPath, ["-e", 'const s = require("node:net").createServer().listen(0, "127.0.0.1", () => console.log(s.address().port)); setInterval(() => {}, 1000);'], { cwd, stdio: ["ignore", "pipe", "inherit"] });
+		child.once("error", reject);
+		child.stdout.once("data", (chunk) => resolve({ child, port: Number.parseInt(String(chunk), 10) }));
+	});
+}
+
+// Regression: a port file that names another worktree's listener (the slot shift gave this
+// stack a port that stack already held) was shown as this worktree's running backend.
+test("ports CLI shows only this worktree's listeners as its running ports, and names a port held elsewhere", async (t) => {
+	const fixture = createGitWorktreeFixture();
+	const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), "ports-elsewhere-"));
+	const own = await listenFromDirectory(fixture.worktreePath);
+	const foreign = await listenFromDirectory(elsewhere);
+	t.after(() => {
+		own.child.kill();
+		foreign.child.kill();
+		fs.rmSync(elsewhere, { recursive: true, force: true });
+		fixture.cleanup();
+	});
+	fs.writeFileSync(path.join(fixture.worktreePath, ".dev-frontend-port"), String(own.port));
+	fs.writeFileSync(path.join(fixture.worktreePath, ".dev-backend-port"), String(foreign.port));
+
+	const output = execFileSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT], { cwd: fixture.repoPath, encoding: "utf8" });
+
+	assert.match(output, new RegExp(`frontend=${own.port}\\s+backend=—`));
+	assert.match(output, new RegExp(`backend port file says ${foreign.port}, but another directory's process holds it \\(${fs.realpathSync(elsewhere).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`));
+});
+
 test("ports kill resolves a legacy private session and rejects an unsafe default-socket stop", () => {
 	const fixture = createGitWorktreeFixture();
 	const fakeTmuxPath = path.join(fixture.repoPath, "fake-tmux");

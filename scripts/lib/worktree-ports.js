@@ -17,6 +17,7 @@
  */
 
 const { execSync } = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const FRONTEND_DEFAULT_BASE = 3000;
@@ -409,8 +410,60 @@ function getAllWorktreePortInfo() {
 	});
 }
 
+// The port files a dev stack writes (scripts/lib/dev-stack-state.js mirrors the first two;
+// scripts/dev-tmux.sh writes the Rovo pool).
+const PORT_FILES = [".dev-frontend-port", ".dev-backend-port", ".dev-rovo-port", ".dev-rovo-ports"];
+
+function readPortsFromFile(file, { fsImpl = fs } = {}) {
+	let text;
+	try {
+		text = fsImpl.readFileSync(file, "utf8").trim();
+	} catch {
+		return [];
+	}
+	let values;
+	try {
+		const parsed = JSON.parse(text);
+		values = Array.isArray(parsed) ? parsed : [parsed];
+	} catch {
+		values = [text];
+	}
+	return values.map((value) => Number.parseInt(String(value), 10)).filter((port) => Number.isInteger(port) && port > 0);
+}
+
+function realPathOf(value) {
+	try {
+		return fs.realpathSync(value);
+	} catch {
+		return path.resolve(value);
+	}
+}
+
+/**
+ * Ports another worktree's dev stack has recorded in its port files, as a Map port -> worktree
+ * path. Slots follow the sorted worktree list, so adding a worktree shifts the windows after
+ * it, and a new stack's window can start on a port a running stack in another worktree holds.
+ * A launcher skips these as well as every port that already listens, so the choice is
+ * deterministic for a given machine state and never lands on another stack's port, even one
+ * that is recorded but not bound yet (a stack still starting).
+ */
+function getPortsClaimedByOtherWorktrees(worktreePath, { worktrees = getGitWorktrees({ cwd: worktreePath }), fsImpl = fs } = {}) {
+	const own = realPathOf(worktreePath);
+	const claimed = new Map();
+	for (const worktree of worktrees) {
+		if (realPathOf(worktree.path) === own) continue;
+		for (const name of PORT_FILES) {
+			for (const port of readPortsFromFile(path.join(worktree.path, name), { fsImpl })) {
+				if (!claimed.has(port)) claimed.set(port, worktree.path);
+			}
+		}
+	}
+	return claimed;
+}
+
 module.exports = {
 	hashString,
+	getPortsClaimedByOtherWorktrees,
 	getGitWorktrees,
 	getWorktreeName,
 	buildPortlessRunArgs,

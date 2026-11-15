@@ -18,6 +18,7 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { DEFAULT_IDLE_SECS, OPERATOR_NAMES, newestActivity } = require("./dev-stack-activity.js");
 const { pressureReasons, readMemoryState } = require("./memory-pressure.js");
 const { findCurrentWorktree } = require("./worktree-kill.js");
 
@@ -34,10 +35,6 @@ function run(command, args) {
 	const result = spawnSync(command, args, { encoding: "utf8" });
 	return result.status === 0 ? result.stdout : "";
 }
-
-// Agent and tool processes whose cwd marks a worktree as in use (the same guard the
-// vpk-system-clean sweep uses before stopping a stack).
-const OPERATOR_NAMES = ["claude", "codex", "cursor-agent", "lazygit", "caffeinate"];
 
 function cwdOf(pid) {
 	return run("lsof", ["-a", "-d", "cwd", "-p", String(pid), "-Fn"]).split("\n").find((line) => line.startsWith("n"))?.slice(1) ?? null;
@@ -95,20 +92,31 @@ function isCodexWorktree(worktree, env = process.env) {
 }
 
 // Evidence that a live task uses this stack, or null. CPU is not evidence: a dev server in use
-// reads under 20% between requests.
-function inUseEvidence(stack, inventory, { primaryRoot }) {
+// reads under 20% between requests. Recent activity is (scripts/lib/dev-stack-activity.js): an
+// agent working in a worktree often keeps its own cwd elsewhere.
+function inUseEvidence(stack, inventory, { primaryRoot, activityOf, now, idleSecs }) {
 	if (primaryRoot && stack.worktree === realPath(primaryRoot)) return "the primary checkout";
 	const attached = (inventory.sessions ?? []).find((session) => session.attached && realPath(session.path) === stack.worktree);
 	if (attached) return `a tmux client is attached to ${attached.name}`;
 	const operator = (inventory.operators ?? []).find((candidate) => within(realPath(candidate.cwd), stack.worktree));
 	if (operator) return `${operator.name} pid ${operator.pid} has its cwd here`;
+	const newest = activityOf(stack.worktree);
+	if (newest && now - newest.mtimeMs < idleSecs * 1000) return `recent activity: ${newest.source} written ${Math.max(0, Math.round((now - newest.mtimeMs) / 60_000))}m ago`;
 	return null;
 }
 
 // The live dev stacks (next-servers grouped by the worktree that holds them), each with
 // whether a live task uses it and whether every server is quiet. Shared by the budget
 // below and the machine-state line (scripts/lib/machine-state.js).
-function describeStacks(inventory, { env = process.env, idleCpuMax = IDLE_CPU_MAX, extraRoots = [], worktreeRoots = [] } = {}) {
+function describeStacks(inventory, {
+	env = process.env,
+	idleCpuMax = IDLE_CPU_MAX,
+	extraRoots = [],
+	worktreeRoots = [],
+	activityOf = (worktree) => newestActivity(worktree),
+	now = Date.now(),
+	idleSecs = DEFAULT_IDLE_SECS,
+} = {}) {
 	const roots = [...new Set([...extraRoots, ...worktreeRoots].map(realPath))].map((root) => ({ path: root }));
 	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? realPath(server.cwd);
 	const byRoot = new Map();
@@ -122,7 +130,7 @@ function describeStacks(inventory, { env = process.env, idleCpuMax = IDLE_CPU_MA
 	return [...byRoot.values()].map((stack) => ({
 		...stack,
 		codex: isCodexWorktree(stack.worktree, env),
-		inUse: inUseEvidence(stack, inventory, { primaryRoot }),
+		inUse: inUseEvidence(stack, inventory, { primaryRoot, activityOf, now, idleSecs }),
 		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
 	}));
 }
@@ -134,6 +142,8 @@ function evaluateBudget(inventory, {
 	idleCpuMax = IDLE_CPU_MAX,
 	worktree,
 	worktreeRoots = [],
+	activityOf,
+	now,
 }) {
 	const ownRoot = realPath(worktree);
 	// A next-server's cwd is its project root, so only a server whose cwd is exactly this
@@ -141,7 +151,7 @@ function evaluateBudget(inventory, {
 	const ownServers = inventory.servers.filter((server) => realPath(server.cwd) === ownRoot);
 	if (ownServers.length > 0) return { exitCode: EXIT_DUPLICATE_SERVER, ownServers, otherStacks: [], reasons: [], warnings: [] };
 
-	const otherStacks = describeStacks(inventory, { env, idleCpuMax, extraRoots: [ownRoot], worktreeRoots });
+	const otherStacks = describeStacks(inventory, { env, idleCpuMax, extraRoots: [ownRoot], worktreeRoots, ...(activityOf ? { activityOf } : {}), ...(now ? { now } : {}) });
 	const reasons = [];
 	const warnings = [];
 	if (otherStacks.length + 1 > budget) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
@@ -174,7 +184,9 @@ function formatVerdict(verdict, { worktree }) {
 			lines.push(`  ${stack.quiet ? "quiet" : "busy "}  ${stack.worktree}  (${cpu})`);
 			if (stack.inUse) lines.push(`        in use: ${stack.inUse}; leave it running`);
 			else if (stack.codex) lines.push("        Codex worktree: check its thread before stopping");
-			else lines.push(`        no live task seen; stop: (cd ${shellQuote(stack.worktree)} && pnpm run dev:tmux:stop)`);
+			// `pnpm ports kill` names this worktree as the requester, so the target refuses the stop
+			// if the stack turns out to be in use and logs who stopped it.
+			else lines.push(`        no live task seen; stop: pnpm ports kill ${shellQuote(stack.worktree)}`);
 		}
 	}
 	if (!verdict.forced) lines.push(`[dev:tmux] Stop a stack with no live task above, or start anyway: pnpm run dev:tmux:start -- --force   (in ${worktree})`);
