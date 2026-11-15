@@ -22,7 +22,7 @@ Preconditions:
 - `ORIGIN` is this worktree's URL from `pnpm control-vpk url`.
 - Evidence directory `output/agent-browser/vpk-verify/browse-catalog/` exists.
 
-- **Open home.** Open the origin. Run `pnpm control-vpk browser open "$ORIGIN/"`. Tab `#home-category-tab-projects` is selected (accessible name starts with `Projects`). At least one `a[href^='/components/projects/']` card title is present (first card follows `Sort: Last updated`, so the name is not stable). Link `VPK` is visible in the component browser.
+- **Open home.** Open the origin. Run `pnpm control-vpk browser open "$ORIGIN/"`. Tab `#home-category-tab-projects` is selected (accessible name starts with `Projects`). Exactly one `a[href^='/components/projects/']` card is present: the most recently updated project, so its name is not stable. Projects has no `Sort:` button. The sidebar Projects section is open and links every project. Link `VPK` is visible in the component browser.
 - **Switch to UI.** Choose the UI tab by id, not by the name `UI`. Run `pnpm control-vpk browser click "#home-category-tab-ui"`. `pnpm control-vpk browser get url` is `$ORIGIN/ui`, tab `#home-category-tab-ui` is selected, and `a[href='/components/ui/accordion']` named `Accordion` is present.
 - **Proof.** Capture the UI catalog while that tab is still selected. Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/browse-catalog/ui.aria.txt` and `pnpm control-vpk browser screenshot output/agent-browser/vpk-verify/browse-catalog/ui.png`. The artifacts show sidebar `VPK`, selected tab `UI`, and card `Accordion`.
 - **Return via logo.** Choose the rail logo. Run `pnpm control-vpk browser click "a[aria-label='Go to projects']"`. `pnpm control-vpk browser get url` is `$ORIGIN/projects` and the Projects tab is selected again.
@@ -33,6 +33,6 @@ Preconditions:
 - Category tab names include counts (`UI 80`) and `UI` is a substring of other UI category names. Always click `#home-category-tab-ui`.
 - `find role link click --name "Go to projects"` can report success without navigating. Use `a[aria-label='Go to projects']`.
 - Project cards embed preview iframes. Do not click inside the iframe to open docs; click the card title link.
-- Default project sort is last-updated. Do not require a specific first-card title such as `Jira For You`.
+- Projects shows only the latest project, so do not require a specific card title such as `Jira For You`. Reach the other projects from the sidebar Projects list.
 - Capture the UI proof before the logo click. The logo lands on `/projects`, so a snapshot taken after that step cannot show the UI tab or Accordion.
 - A screenshot of a loading skeleton is not proof. Wait until a selected category tab and at least one named card link exist.

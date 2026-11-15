@@ -9,6 +9,8 @@ export const WEBSITE_NAV_SECTIONS: NavSection[] = [
 		title: "Projects",
 		href: "/projects",
 		defaultOpen: false,
+		// The home Projects view shows only the latest project, so its sidebar list is the way to the rest.
+		openOnPaths: ["/", "/projects"],
 		items: PROJECT_COMPONENTS.map((component) => ({
 			name: component.name,
 			href: `/components/projects/${component.slug}`,
