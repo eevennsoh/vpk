@@ -416,8 +416,8 @@ dirty tree it will silently fold into its diff.
    blocker — the planner does not silently take over implementation.
 8. **Verify with an advisor** (default-on; see *Mode: advisor*). Send the
    diff and the original goal to the other family for an independent read
-   before reporting done. Skip only for a trivial diff or under
-   `--no-advisor`.
+   before reporting done. Skip only for a trivial diff, under
+   `--no-advisor`, or after a complete council round (see *Mode: council*).
 9. **Synthesize.** Outcome, proof, what the advisor confirmed or flagged,
    which branch and worktree hold the diff, and genuine blockers. Cite worker
    evidence rather than re-deriving it.

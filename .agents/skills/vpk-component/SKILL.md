@@ -17,11 +17,15 @@ Use the ADS lane for `atlassian.design`, `@atlaskit/*`, and `@atlassian/*`.
 Use the shadcn lane for shadcn/ui, Base UI, `@shadcn/react`, and registry
 components; also read the global shadcn skill for current CLI and composition
 rules. Use the external lane for custom or third-party AI, chat, voice, and
-audio libraries: follow [external translation](references/external-translation.md)
-instead of the workflow below. Use `vpk-design` when a Figma file, screenshot, or bespoke mockup is the source
-of truth.
+audio libraries: follow
+[external translation](references/external-translation.md) instead of the hard
+invariants, locks, and workflow below; that lane has its own invariants. Use
+`vpk-design` when a Figma file, screenshot, or bespoke mockup is the source of
+truth.
 
 ## Hard invariants
+
+These invariants and the locks below apply to the ADS and shadcn lanes.
 
 - Preserve existing VPK prop, variant, size, sub-component, and export names.
 - Add variants only when parity requires them, using the component's existing
