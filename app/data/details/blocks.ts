@@ -65,6 +65,7 @@ import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_LOCAL_AGENT_DETAIL } from "./blocks/jira-local-agent";
 import { JIRA_SUGGESTION_DETAIL } from "./blocks/jira-suggestion";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
+import { JIRA_VIEW_CONFIGURATION_DETAIL } from "./blocks/jira-view-configuration";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
 import { KNOWLEDGE_DIRECTORY_DETAIL } from "./blocks/knowledge-directory";
 import { LOGIN_01_DETAIL } from "./blocks/login-01";
@@ -189,6 +190,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-local-agent": JIRA_LOCAL_AGENT_DETAIL,
 	"jira-suggestion": JIRA_SUGGESTION_DETAIL,
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
+	"jira-view-configuration": JIRA_VIEW_CONFIGURATION_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
 	"knowledge-directory": KNOWLEDGE_DIRECTORY_DETAIL,
 	"login-01": LOGIN_01_DETAIL,

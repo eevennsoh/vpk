@@ -70,6 +70,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-local-agent": dynamic(() => import("../demos/blocks/jira-local-agent-demo"), { ssr: false }),
 	"jira-suggestion": dynamic(() => import("../demos/blocks/jira-suggestion-demo"), { ssr: false }),
 	"jira-toolbar": dynamic(() => import("../demos/blocks/jira-toolbar-demo"), { ssr: false }),
+	"jira-view-configuration": dynamic(() => import("../demos/blocks/jira-view-configuration-demo"), { ssr: false }),
 	"jira-work-item": dynamic(() => import("../demos/blocks/jira-work-item-demo"), { ssr: false }),
 	"knowledge-directory": dynamic(() => import("../demos/blocks/knowledge-directory-demo"), { ssr: false }),
 	"login-01": dynamic(() => import("../demos/blocks/login-01-demo"), { ssr: false }),
