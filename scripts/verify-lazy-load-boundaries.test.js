@@ -281,6 +281,21 @@ test("default deferred module rules cover the Jira pull request review subtree a
 			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
 		},
 		{
+			entryFile: "components/blocks/agent-list/agent-list-card.tsx",
+			reason: "the composer flyout's Agent State card loads on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/blocks/jira-work-item/experimental/components/detail-field-editors.tsx",
+			reason: "the assignee hover preview loads the agent profile card on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/blocks/product-sidebar/variants/jira-session-details-card.tsx",
+			reason: "the agent hover preview loads the agent profile card on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
 			entryFile: "components/ui-custom/rich-text-editor/menus.ts",
 			reason: "the menu entry stays free of the editor runtime",
 			targetFile: "components/ui-custom/rich-text-editor/rich-text-editor.tsx",
@@ -292,7 +307,6 @@ test("default deferred module rules cover the Jira pull request review subtree a
 		},
 	]);
 });
-
 
 test("package scripts expose and run the lazy-load verifier", () => {
 	const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));

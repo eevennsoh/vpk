@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import { useDeferredModule } from "@/components/projects/shared/hooks/use-deferred-module";
-import { loadRovoFloatingChat } from "@/components/projects/shared/lib/chat-surface-loaders";
+import { loadRovoFloatingChat, preloadRovoFloatingChat } from "@/components/projects/shared/lib/chat-surface-loaders";
 import type { ChatComposerPrefillRequest, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import FloatingRovoButton from "@/components/blocks/rovo-button";
@@ -59,7 +59,7 @@ export function JgpRovoOverlay({
 	onLauncherClick,
 	onQuestionAnswer,
 }: Readonly<JgpRovoOverlayProps>): React.ReactNode {
-	const { chatSurface } = useRovoChatControls();
+	const { chatSurface, closeChat } = useRovoChatControls();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 	const [isRovoCanvasOpen, setIsRovoCanvasOpen] = useState(false);
 	const [isEmbeddedHostOpen, setIsEmbeddedHostOpen] = useState(false);
@@ -100,8 +100,9 @@ export function JgpRovoOverlay({
 	const isFloatingChatRequested = chat === "auto"
 		&& chatSurface === "floating"
 		&& (!isEmbeddedHostOpen || embeddedInDialog);
-	// The floating chat loads on its first open; until it arrives the launcher stays in place.
-	const RovoFloatingChat = useDeferredModule(loadRovoFloatingChat, isFloatingChatRequested)?.default ?? null;
+	// The floating chat loads on its first open (or launcher hover/focus); until it arrives the
+	// launcher stays in place, and a failed chunk resets the surface so the launcher stays usable.
+	const RovoFloatingChat = useDeferredModule(loadRovoFloatingChat, isFloatingChatRequested, { onError: closeChat })?.default ?? null;
 	const showFloatingChat = isFloatingChatRequested && RovoFloatingChat !== null;
 	const showLauncher = launcher === "auto"
 		&& (chatSurface === null || (isFloatingChatRequested && !showFloatingChat))
@@ -123,14 +124,16 @@ export function JgpRovoOverlay({
 		<>
 			{isSwitchingSession ? <span className="fixed right-6 bottom-6 z-[561] rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text-subtle shadow-2xl" role="status">Opening session…</span> : null}
 			{showLauncher ? (
-				<FloatingRovoButton
-					ariaLabel="Open Rovo chat"
-					forceVisible
-					insights={insights}
-					suggestion={suggestion}
-					onButtonClick={onLauncherClick}
-					product="home"
-				/>
+				<div className="contents" onPointerEnter={preloadRovoFloatingChat} onFocus={preloadRovoFloatingChat}>
+					<FloatingRovoButton
+						ariaLabel="Open Rovo chat"
+						forceVisible
+						insights={insights}
+						suggestion={suggestion}
+						onButtonClick={onLauncherClick}
+						product="home"
+					/>
+				</div>
 			) : null}
 			<AnimatePresence>
 				{showFloatingChat && RovoFloatingChat ? (

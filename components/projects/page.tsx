@@ -23,7 +23,7 @@ import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/comp
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { useDeferredModule } from "@/components/projects/shared/hooks/use-deferred-module";
-import { loadChatPanel, loadRovoFloatingChat } from "@/components/projects/shared/lib/chat-surface-loaders";
+import { loadChatPanel, loadRovoFloatingChat, preloadChatPanel, preloadRovoFloatingChat } from "@/components/projects/shared/lib/chat-surface-loaders";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import type { DesignVariantId } from "@/components/utils/design-variants";
 
@@ -66,7 +66,6 @@ interface AppLayoutProps {
 }
 
 const getNotEmbedded = () => false;
-
 
 /**
  * Detect iframe context so generated apps rendered inside the artifact
@@ -136,7 +135,7 @@ export default function AppLayout({
 }: Readonly<AppLayoutProps>) {
 	const isEmbedded = useIsEmbedded(embedded);
 	const isRovoCanvasOpen = useIsRovoCanvasOpen();
-	const { chatSurface, toggleChat } = useRovoChatControls();
+	const { chatSurface, closeChat, toggleChat } = useRovoChatControls();
 	const chatResize = useSidebarResize({
 		defaultWidth: 400,
 		minWidth: 320,
@@ -147,15 +146,18 @@ export default function AppLayout({
 	const shouldHideRovoAction = hideRovoAction || isRovoCanvasOpen;
 	// The chat surfaces load the first time this route can show them (on mount for eager sidebar
 	// chat, on first open otherwise). A surface stays closed until its module has arrived, so the
-	// first open slides in finished content instead of an empty frame.
+	// first open slides in finished content instead of an empty frame. Hovering or focusing a
+	// launcher starts the load early, and a failed chunk resets the surface so the launcher returns.
 	const isSidebarChatRequested = !hideShellChrome && chatSurface === "sidebar";
+	// An eager load can fail while another surface is open; only reset the surface that waited on it.
+	const closeSidebarChat = chatSurface === "sidebar" ? closeChat : undefined;
 	const isFloatingChatActive = chatSurface === "floating";
 	const hasSidebarChatSlot = !isEmbedded && !shouldHideRovoAction;
-	const ChatPanel = useDeferredModule(loadChatPanel, hasSidebarChatSlot && (sidebarChatMount === "eager" || isSidebarChatRequested))?.default ?? null;
+	const ChatPanel = useDeferredModule(loadChatPanel, hasSidebarChatSlot && (sidebarChatMount === "eager" || isSidebarChatRequested), { onError: closeSidebarChat })?.default ?? null;
 	const isSidebarChatActive = isSidebarChatRequested && ChatPanel !== null;
 	const showChatPanel = hasSidebarChatSlot && isSidebarChatActive;
 	const isFloatingChatRequested = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
-	const RovoFloatingChat = useDeferredModule(loadRovoFloatingChat, isFloatingChatRequested)?.default ?? null;
+	const RovoFloatingChat = useDeferredModule(loadRovoFloatingChat, isFloatingChatRequested, { onError: closeChat })?.default ?? null;
 	const showFloatingChat = isFloatingChatRequested && RovoFloatingChat !== null;
 	const showFloatingRovoButton = !isEmbedded && !hideShellChrome && !hideFloatingRovo && !shouldHideRovoAction;
 	const embeddedShellHeight = embeddedHeight === "parent" ? "100%" : "100dvh";
@@ -255,14 +257,15 @@ export default function AppLayout({
 				) : null}
 			</AnimatePresence>
 
-			{/* Floating Rovo Button */}
-			<div data-shell-chrome="">
+			{/* Floating Rovo Button: stays on screen until the floating chat has loaded */}
+			<div data-shell-chrome="" onPointerEnter={preloadRovoFloatingChat} onFocus={preloadRovoFloatingChat}>
 				<AnimatePresence>
 					{showFloatingRovoButton ? (
 						<FloatingRovoButton
 							key="floating-rovo-button"
 							product={product}
 							embedded={isEmbedded}
+							opening={isFloatingChatRequested && !showFloatingChat}
 							suggestion={rovoButtonSuggestion}
 							onboarding={rovoButtonOnboarding}
 						/>
@@ -292,6 +295,7 @@ export default function AppLayout({
 			searchAlignment={topNavigationSearchAlignment}
 			variant="shell"
 			hideRovoAction={shouldHideRovoAction}
+			onRovoActionIntent={hasSidebarChatSlot ? preloadChatPanel : undefined}
 			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			settingsMenuItems={settingsMenuItems}

@@ -25,6 +25,7 @@ export default function FloatingRovoButton({
 	product,
 	embedded = false,
 	forceVisible = false,
+	opening = false,
 	ariaLabel,
 	placement,
 	positioning = "viewport",
@@ -44,7 +45,7 @@ export default function FloatingRovoButton({
 	const [internalInsightsStage, setInternalInsightsStage] = useState<FloatingRovoButtonInsightsStage>(
 		activeInsights?.defaultStage ?? "pill",
 	);
-	const shouldShowButton = forceVisible || !isOpen;
+	const shouldShowButton = forceVisible || opening || !isOpen;
 	const onboardingDefaultOpen = onboarding?.defaultOpen ?? false;
 	const onboardingId = onboarding?.id;
 	const onboardingOpen = Boolean(onboarding && (onboarding.open ?? internalOnboardingOpen));

@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor/menus";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 

@@ -16,7 +16,8 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Switch } from "@/components/ui/switch";
 import type { TagColor } from "@/components/ui/tag";
 import { HoverRevealActions, HoverRevealLabel, hoverRevealRowClassName } from "@/components/ui-custom/hover-reveal-row";
-import { type RichTextReferenceCategory, RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
+import { type RichTextReferenceCategory } from "@/components/ui-custom/rich-text-editor";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 
 export interface AgentCompactConfigNavButtonItem {

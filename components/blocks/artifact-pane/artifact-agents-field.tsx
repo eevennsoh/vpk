@@ -21,7 +21,7 @@ import {
 	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 
 const ARTIFACT_PANE_AGENTS = BOARD_AGENTS.filter((agent) => Boolean(agent.avatarSrc || agent.brandName));
 

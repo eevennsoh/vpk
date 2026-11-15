@@ -10,7 +10,7 @@ import ScreenIcon from "@atlaskit/icon/core/screen";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";

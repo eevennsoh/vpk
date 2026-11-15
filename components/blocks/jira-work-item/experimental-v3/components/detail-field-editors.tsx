@@ -49,7 +49,7 @@ import {
 	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 import {
 	filterMetadataSearchItems,

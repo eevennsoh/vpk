@@ -201,7 +201,7 @@ test("Rovo app empty state keeps directory autocomplete rows below the composer"
 	assert.match(EMPTY_STATE_SOURCE, /hideStarters=\{hideCustomAgentStarters\}/u);
 	assert.match(SHELL_SOURCE, /import \{ Kbd \} from "@\/components\/ui\/kbd";/u);
 	assert.doesNotMatch(SHELL_SOURCE, /import \{ ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
-	assert.match(SHELL_SOURCE, /import \{ RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController \} from "@\/components\/ui-custom\/rich-text-editor";/u);
+	assert.match(SHELL_SOURCE, /import type \{ ComposerDirectoryAutocompleteController \} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(SHELL_SOURCE, /function RovoAppDirectoryAutocompleteRows/u);
 	assert.match(SHELL_SOURCE, /useWideLayout \? "grid-cols-2 gap-x-6" : "grid-cols-1"/u);
 	assert.match(SHELL_SOURCE, /state\.matches\.map/u);

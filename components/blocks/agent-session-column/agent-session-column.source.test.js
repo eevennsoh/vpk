@@ -979,6 +979,6 @@ test("rail session flyout shell uses the single-perimeter overlay shadow", () =>
 	);
 	// `shadow-overlay` is not a Tailwind utility, so it left HoverCardContent's
 	// `shadow-xl` (overlay + an extra 0 0 1px perimeter) in place: a doubled stroke.
-	assert.match(flyoutSource, /bg-surface-overlay p-0 text-text shadow-2xl /u);
+	assert.match(flyoutSource, /"bg-surface-overlay shadow-2xl"/u);
 	assert.doesNotMatch(flyoutSource, /[\s"']shadow-overlay[\s"']/u);
 });

@@ -180,9 +180,7 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"./tools.json"
 		],
 		"app/preview/blocks/jira-list/page.tsx": [
 			"./agent-templates.json",

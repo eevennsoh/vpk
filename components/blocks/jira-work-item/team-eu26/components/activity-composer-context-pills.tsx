@@ -16,7 +16,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { motionEase } from "@/lib/motion";
 
 

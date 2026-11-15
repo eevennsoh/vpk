@@ -61,6 +61,7 @@ import {
 } from "./jira-session-flyout-data";
 import { JiraSessionUntrackedWorkCard } from "./jira-session-untracked-work-card";
 import { ConeSafezone, ConeSafezoneContent } from "@/components/utils/cone-safezone";
+import { useDeferredModule } from "@/components/projects/shared/hooks/use-deferred-module";
 
 // The composer payload brings the Agent State prompt composer and its Tiptap runtime. Only
 // composer surfaces load it, and they start the load on mount so the first hover never waits.
@@ -695,11 +696,9 @@ export function JiraSessionFlyoutSurface({
 		}
 	}, [handle, suspended]);
 
-	useEffect(() => {
-		if (content === "composer") {
-			void loadJiraSessionComposerFlyout();
-		}
-	}, [content]);
+	// Composer surfaces start the payload load on mount; until it arrives the popup frame stays
+	// transparent, so a late load shows nothing rather than an empty overlay.
+	const isComposerPending = useDeferredModule(loadJiraSessionComposerFlyout, content === "composer") === null && content === "composer";
 
 	return (
 		<ConeSafezone<JiraSidebarSessionItem> handle={handle} onOpenChange={onOpenChange}>
@@ -711,7 +710,8 @@ export function JiraSessionFlyoutSurface({
 					align="start"
 					alignOffset={0}
 					className={cn(
-						"h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-2xl data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0",
+						"h-(--popup-height) w-(--popup-width) border-0 p-0 text-text data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0",
+						isComposerPending ? "bg-transparent shadow-none" : "bg-surface-overlay shadow-2xl",
 						instantPosition
 							? "transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100"
 							: "transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in",

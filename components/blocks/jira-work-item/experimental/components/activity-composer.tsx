@@ -20,7 +20,7 @@ import { JiraActivityComposer } from "@/components/blocks/jira-activity";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { Tag } from "@/components/ui/tag";
 
 const JIRA_WORK_ITEM_MENTION_LABELS = { subagent: "Agents" } as const;

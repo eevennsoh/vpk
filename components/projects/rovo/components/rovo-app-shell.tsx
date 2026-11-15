@@ -38,7 +38,8 @@ import { buildRovoAppThreadPath } from "@/components/projects/rovo/lib/rovo-app-
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
 import { useRovoRealtimeShellBridge } from "@/components/projects/rovo-core/hooks/use-rovo-realtime-shell-bridge";
-import { RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/menus";
 import PromptGallery from "@/components/blocks/prompt-gallery/page";
 import { DEFAULT_PROMPT_GALLERY_SUGGESTIONS } from "@/components/blocks/prompt-gallery/data/suggestions";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";

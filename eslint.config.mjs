@@ -95,6 +95,21 @@ const appComponentRestrictedImportPaths = [
 		message:
 			'Use the stable "*Icon" exports from "@/components/ui/vpk-icons" instead of the Lucide-compat aliases.',
 	},
+	{
+		// The package entry brings the Tiptap editor runtime; menu-only importers would load it for nothing.
+		name: "@/components/ui-custom/rich-text-editor",
+		importNames: [
+			"RichTextCommandMenuSearchField",
+			"RichTextMentionVisualMark",
+			"RichTextSuggestionEmptyState",
+			"RichTextSuggestionMenu",
+			"getMentionChildItems",
+			"getSuggestionOverflowFooterItem",
+			"useCommandMenuScrollMask",
+		],
+		message:
+			'Import menu pieces from "@/components/ui-custom/rich-text-editor/menus", the Tiptap-free entry, so the route does not load the editor runtime.',
+	},
 ];
 
 // Flat config replaces a rule's options wholesale when a later block matches the

@@ -1,6 +1,5 @@
 "use client";
 
-import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	getMentionChildItems,
 	RichTextSuggestionMenu,

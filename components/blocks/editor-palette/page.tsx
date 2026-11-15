@@ -10,20 +10,22 @@ import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
-	RichTextCommandMenuSearchField,
 	RichTextEditor,
-	RichTextSuggestionEmptyState,
-	RichTextSuggestionMenu,
-	getMentionChildItems,
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	getSlashCommandFormatItems,
+	type RichTextSuggestionRowVariant,
+} from "@/components/ui-custom/rich-text-editor";
+import {
+	RichTextCommandMenuSearchField,
+	RichTextSuggestionEmptyState,
+	RichTextSuggestionMenu,
+	getMentionChildItems,
 	getSuggestionOverflowFooterItem,
 	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
-	type RichTextSuggestionRowVariant,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
