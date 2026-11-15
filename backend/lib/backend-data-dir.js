@@ -98,9 +98,9 @@ function acquireBackendDataDirLock({
 }) {
 	fs.mkdirSync(dataDir, { recursive: true });
 	const lockPath = path.join(dataDir, LOCK_FILE_NAME);
-	/** @type {BackendLockRecord} */
 	// Port "0" (tests) means "any free port", which names nothing useful in a conflict message.
 	const recordedPort = port && port !== "0" ? port : null;
+	/** @type {BackendLockRecord} */
 	const record = { pid, procStart: startTimeOf(pid), startedAt: new Date(now()).toISOString(), cwd: process.cwd(), port: recordedPort };
 	// A holder is this backend's rival only while its pid runs the same process it recorded: a
 	// dead holder's pid reused by an unrelated process, or by this very process (a container
