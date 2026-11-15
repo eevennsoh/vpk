@@ -18,9 +18,10 @@ const {
 } = require("../lib/runtime-status");
 const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
 
-async function withServer(dependencies, run) {
+async function withServer(dependencies, run, { middleware = [] } = {}) {
 	const app = express();
 	app.use(express.json());
+	for (const handler of middleware) app.use(handler);
 	registerStatusRoutes(app, {
 		buildRuntimeStatusSnapshot,
 		getRovoPort: () => "9001",
@@ -153,12 +154,14 @@ test("parseOptionalInteger preserves the existing status route port parsing", ()
 });
 
 test("GET /api/whoami echoes the local caller outside production, uncached", async () => {
+	// An explicit non-production env, so the runner's own NODE_ENV cannot switch modes.
+	const middleware = [createCallerIdentityMiddleware({ env: {}, logger: { log() {}, warn() {} } })];
 	await withServer(createStatusDependencies(), async (baseUrl) => {
 		const response = await fetch(`${baseUrl}/api/whoami`, { headers: { "x-slauth-subject": "spoofed" } });
 		assert.equal(response.status, 200);
 		assert.equal(response.headers.get("cache-control"), "no-store");
 		assert.deepEqual(await response.json(), { owner: "local", local: true });
-	});
+	}, { middleware });
 });
 
 test("GET /api/whoami behind SLAuth echoes the caller's own X-Slauth-Subject and nothing else", async () => {

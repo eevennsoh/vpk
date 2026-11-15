@@ -439,8 +439,9 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 
 	/**
 	 * Gives a thread stored before owners were recorded its owner, once. A thread that
-	 * already has an owner keeps it, and the thread's other fields (updatedAt too, so the
-	 * list order does not change) stay as they are. Only the owner backfill
+	 * already has an owner keeps it. The record is stored as normalizeThreadRecord leaves
+	 * it (unknown keys dropped, missing timestamps filled in, like every backend write);
+	 * an existing updatedAt is kept, so the list order does not change. Only the owner backfill
 	 * (backend/scripts/backfill-rovo-thread-owner.js) calls this; ownership is otherwise
 	 * fixed at creation.
 	 * @param {string} threadId

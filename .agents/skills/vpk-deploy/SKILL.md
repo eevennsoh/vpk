@@ -229,7 +229,7 @@ A browser signs in through Okta on first visit. Operator routes still need
 `VPK_RUNTIME_ADMIN_TOKEN`; send it as `x-vpk-runtime-admin-token`, because SLAuth
 uses `Authorization`. See the guide's SLAuth section. `GET /api/whoami` echoes the
 caller's own SLAuth subject; threads stored before owners need the owner backfill in
-the guide's "Backfill thread owners" section before any SLAuth caller sees them.
+the guide's "Backfill thread owners" section (back the data up before deploying).
 
 Pass the intended routes explicitly; the default is `/`, with no assumed
 `/studio/`. Select `static`, `backend`, `chat`, or `full` for the app's runtime

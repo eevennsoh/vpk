@@ -126,14 +126,41 @@ test("unreadable records are counted and left alone", async (t) => {
 test("it warns when the owner would pass the per-owner retention limit", async (t) => {
 	const dataDir = makeDataDir(t);
 	for (let index = 0; index <= RETENTION_LIMIT; index += 1) {
-		writeThread(dataDir, `rovo-app-${index}`);
+		// rovo-app-0 is the oldest.
+		writeThread(dataDir, `rovo-app-${index}`, { updatedAt: new Date(Date.UTC(2026, 10, 1, 0, index)).toISOString() });
 	}
 	const lines = [];
 
 	const counts = await runBackfill({ owner: OWNER, dataDir, log: (line) => lines.push(line) });
 
 	assert.equal(counts.ownerless, RETENTION_LIMIT + 1, "every thread is counted, not only the newest page");
-	assert.ok(lines.some((line) => line.startsWith("Warning:") && line.includes("deletes the oldest 1")));
+	assert.ok(lines.some((line) => line.startsWith("Warning:") && line.includes("delete the oldest 1, up to 20 at a time")));
+	const listed = lines.filter((line) => line.startsWith("    rovo-app-"));
+	assert.deepEqual(listed.map((line) => line.trim().split(/\s+/u)[0]), ["rovo-app-0"], "it names the threads retention would delete");
+});
+
+test("a thread.json that is a directory is counted as unreadable instead of aborting the run", async (t) => {
+	const dataDir = makeDataDir(t);
+	writeThread(dataDir, "rovo-app-a");
+	const { threadFilePath } = buildRovoAppThreadPaths(dataDir, "rovo-app-dir");
+	fs.mkdirSync(threadFilePath, { recursive: true });
+
+	const counts = await runBackfill({ owner: OWNER, dataDir, apply: true, log: quiet });
+
+	assert.equal(counts.unreadable, 1);
+	assert.equal(counts.assigned, 1);
+	assert.equal(readThread(dataDir, "rovo-app-a").owner, OWNER);
+});
+
+test("a record whose JSON id differs from its directory gets the owner in its own directory", async (t) => {
+	const dataDir = makeDataDir(t);
+	writeThread(dataDir, "rovo-app-copied", { id: "rovo-app-original" });
+
+	const counts = await runBackfill({ owner: OWNER, dataDir, apply: true, log: quiet });
+
+	assert.equal(counts.assigned, 1);
+	assert.equal(readThread(dataDir, "rovo-app-copied").owner, OWNER);
+	assert.equal(fs.existsSync(buildRovoAppThreadPaths(dataDir, "rovo-app-original").threadFilePath), false, "nothing is written under the JSON id");
 });
 
 test("an empty data directory has nothing to assign; a missing one is an error", async (t) => {

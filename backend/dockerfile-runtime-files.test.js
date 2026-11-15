@@ -4,6 +4,9 @@
 // module that requires a file the image does not copy starts fine in a checkout and
 // crashes the container with MODULE_NOT_FOUND. This walks every relative require and
 // import reachable from backend/ and checks the image ships each file at the same path.
+//
+// Not covered: COPY lines continued with a backslash, ADD, and computed specifiers such as
+// require(path.join(__dirname, ...)). Only string-literal relative specifiers are followed.
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");

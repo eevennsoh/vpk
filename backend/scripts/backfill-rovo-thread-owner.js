@@ -34,7 +34,21 @@ Sets <slauth-subject> as the owner of every Rovo thread in <dir> that has no own
   --dry-run    print the counts and write nothing (default)
   --apply      write; refuses while a backend holds the data directory lock`;
 
+// pruneOldThreads lists RETENTION_LIMIT + 20 of an owner's threads, so one new thread
+// deletes at most 20 of the overflow.
+const PRUNE_BATCH = 20;
+
 class UsageError extends Error {}
+
+/**
+ * The threads the backend's per-owner retention would delete, oldest last, in its order
+ * (newest updatedAt first; lib/rovo-app-threads.js listThreads).
+ * @param {Record<string, unknown>[]} threads
+ */
+function threadsBeyondRetention(threads) {
+	const time = (value) => (typeof value === "string" && value.trim() ? Date.parse(value) : Number.NaN);
+	return [...threads].sort((left, right) => time(right.updatedAt) - time(left.updatedAt)).slice(RETENTION_LIMIT);
+}
 
 /**
  * @param {string[]} argv - arguments after the script path
@@ -128,28 +142,48 @@ async function runBackfill({ owner, dataDir, apply = false, log = (line) => cons
 		? acquireLock({ dataDir, onExit: () => {}, log })
 		: null;
 	try {
-		const threadManager = createRovoAppThreadManager({ baseDir: dataDir, logger: console });
+		// Only prune ever logs through the manager, and the backfill never prunes; route it
+		// to the injected log anyway so nothing bypasses it.
+		const threadManager = createRovoAppThreadManager({
+			baseDir: dataDir,
+			logger: { error: (...parts) => log(parts.map(String).join(" ")) },
+		});
 		const threadsRootDir = getRovoAppThreadsRootDir(dataDir);
+		// Thread directories by name, as the backend finds them (lib/rovo-app-threads.js
+		// listThreads). Each is read and written by its directory name, so a record whose
+		// JSON id differs from its folder is still the record that gets the owner.
 		const storedIds = fs.existsSync(threadsRootDir)
 			? fs.readdirSync(threadsRootDir).filter(isStorageId)
 			: [];
-		// The backend's own reader: a record it cannot read is not a thread to it either.
-		const threads = await threadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
-		const ownerless = threads.filter((thread) => !thread.owner);
+		/** @type {{ dirId: string, thread: Record<string, unknown> }[]} */
+		const records = [];
+		let unreadable = 0;
+		for (const dirId of storedIds) {
+			try {
+				// The backend's own reader: a record it cannot read is not a thread to it either.
+				const thread = await threadManager.getThread(dirId);
+				if (thread) records.push({ dirId, thread });
+				else unreadable += 1;
+			} catch {
+				// e.g. thread.json is a directory (EISDIR): count it and keep going.
+				unreadable += 1;
+			}
+		}
+		const ownerless = records.filter(({ thread }) => !thread.owner);
 		/** @type {BackfillCounts} */
 		const counts = {
-			threads: threads.length,
+			threads: records.length,
 			ownerless: ownerless.length,
-			alreadyOwner: threads.filter((thread) => thread.owner === owner).length,
-			otherOwners: threads.filter((thread) => thread.owner && thread.owner !== owner).length,
-			unreadable: storedIds.length - threads.length,
+			alreadyOwner: records.filter(({ thread }) => thread.owner === owner).length,
+			otherOwners: records.filter(({ thread }) => thread.owner && thread.owner !== owner).length,
+			unreadable,
 			assigned: 0,
 			skipped: 0,
 		};
 
 		if (apply) {
-			for (const thread of ownerless) {
-				const result = await threadManager.assignOwnerIfMissing(String(thread.id), owner);
+			for (const { dirId } of ownerless) {
+				const result = await threadManager.assignOwnerIfMissing(dirId, owner);
 				if (result.status === "assigned") counts.assigned += 1;
 				else counts.skipped += 1;
 			}
@@ -158,21 +192,25 @@ async function runBackfill({ owner, dataDir, apply = false, log = (line) => cons
 		log(`Rovo thread owner backfill (${apply ? "apply" : "dry run"}) in ${dataDir}`);
 		log(`  threads:                ${counts.threads}`);
 		log(`  without an owner:       ${counts.ownerless}${apply ? "" : ` (would be assigned to ${owner})`}`);
-		log(`  already the owner's:   ${counts.alreadyOwner}`);
+		log(`  already the owner's:    ${counts.alreadyOwner}`);
 		log(`  owned by someone else:  ${counts.otherOwners} (left as they are)`);
 		if (counts.unreadable > 0) {
-			log(`  unreadable records:     ${counts.unreadable} (left as they are)`);
+			log(`  unreadable or missing records: ${counts.unreadable} (left as they are)`);
 		}
 		if (apply) {
 			log(`  assigned:               ${counts.assigned}`);
 			if (counts.skipped > 0) log(`  skipped (owned or gone): ${counts.skipped}`);
 		}
-		const ownedAfter = counts.alreadyOwner + counts.ownerless;
-		if (ownedAfter > RETENTION_LIMIT) {
+		const prunable = threadsBeyondRetention(
+			records.filter(({ thread }) => !thread.owner || thread.owner === owner).map(({ thread }) => thread),
+		);
+		if (prunable.length > 0) {
 			log(
-				`Warning: ${owner} will own ${ownedAfter} threads. The backend keeps each owner's ${RETENTION_LIMIT} newest, ` +
-					`so their next new thread deletes the oldest ${ownedAfter - RETENTION_LIMIT} (lib/rovo-app-threads.js).`,
+				`Warning: ${owner} will own ${prunable.length + RETENTION_LIMIT} threads. The backend keeps each owner's ${RETENTION_LIMIT} newest, ` +
+					`so new threads will delete the oldest ${prunable.length}, up to ${PRUNE_BATCH} at a time (lib/rovo-app-threads.js). ` +
+					"Save these first if they matter:",
 			);
+			for (const thread of prunable) log(`    ${thread.id}  ${thread.updatedAt}  ${thread.title}`);
 		}
 		if (!apply) {
 			log(counts.ownerless > 0 ? "Nothing written. Run again with --apply to assign them." : "Nothing to assign.");
