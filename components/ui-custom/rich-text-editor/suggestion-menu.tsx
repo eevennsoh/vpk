@@ -133,6 +133,7 @@ export interface RichTextSuggestionMenuItem {
 	iconTileVariant?: IconTileVariant;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
 	leadingVisual?: ReactNode;
+	leadingVisualSize?: "compact";
 	isSticky?: boolean;
 	stickyPosition?: "top" | "bottom";
 	visual?: RichTextMentionVisual;
@@ -1045,8 +1046,8 @@ function getSuggestionMenuItemStickyClassName(
 function RichTextSuggestionMenuItemVisual({
 	item,
 }: Readonly<{ item: RichTextSuggestionMenuItem }>) {
-	// Single front-slot size everywhere: every shared menu tile is drawn natively
-	// at 24px (`small`) inside the 24px front-slot box defined in CSS via
+	// Shared menu tiles are drawn natively at 24px (`small`) inside the default
+	// front-slot box defined in CSS via
 	// `.rich-text-command-menu-avatar`. Rendering natively (rather than scaling a
 	// 32px mark down to 75%) keeps the glyph on ADS's `small` Tile inset (14px),
 	// matching /components/ui/logo — a scaled 32px tile would freeze the `medium`
@@ -1072,7 +1073,7 @@ function RichTextSuggestionMenuItemVisual({
 	);
 
 	return (
-		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center">
+		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center" data-visual-size={item.leadingVisual ? item.leadingVisualSize : undefined}>
 			{visual}
 		</span>
 	);

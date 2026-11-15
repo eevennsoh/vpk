@@ -31,6 +31,24 @@ test("inline creation saves a work item and Escape cancels", async () => {
 	await view.unmount();
 });
 
+test("priority fields without preview retain the committed trigger value", async () => {
+	const changes = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/team-eu26/components/detail-field-editors.tsx",
+		exportName: "PriorityRowField",
+		props: { value: "Medium", onChange: (value) => changes.push(value) },
+	});
+	const trigger = view.getByRole("button", { name: "Change priority. Current priority: Medium" });
+	await view.click(trigger);
+	const low = view.getByRole("menuitem", { name: "Low" });
+	await view.focus(low);
+	assert.equal(trigger.textContent.includes("Medium"), true);
+	assert.deepEqual(changes, []);
+	await view.click(low);
+	assert.deepEqual(changes, ["Low"]);
+	await view.unmount();
+});
+
 test("inline creation preserves parent, tags, subtasks and footer choices", async () => {
 	const view = await renderComponent({
 		source: `
@@ -38,7 +56,7 @@ test("inline creation preserves parent, tags, subtasks and footer choices", asyn
 			import { JiraInlineCreate } from "@/components/blocks/jira-inline-create";
 			const columns = [{ title: "To do", count: 2, cards: [
 				{ code: "PAY-1", title: "Parent item", issueType: "epic", priority: "medium", tags: [{ text: "checkout", color: "standard" }], assignee: { id: "venn", name: "Venn" } },
-				{ code: "PAY-2", title: "Child item", parentIssueKey: "PAY-1", priority: "medium", tags: [] },
+				{ code: "PAY-2", title: "Child item", parentIssueKey: "PAY-1", priority: "major", tags: [], assignee: { id: "maya", name: "Maya", avatarSrc: "/maya.png" } },
 			] }];
 			export default function Fixture() {
 				const [saved, setSaved] = useState("");
@@ -48,12 +66,39 @@ test("inline creation preserves parent, tags, subtasks and footer choices", asyn
 	});
 	await view.fill(view.getByRole("textbox", { name: "Work item summary" }), "New work");
 	await view.click(view.getByRole("button", { name: "Work item type: task" }));
-	await view.click(view.getByRole("menuitem", { name: "Story" }));
+	assert.equal(view.queryByRole("textbox", { name: "Search work item types" }) === null, true);
+	assert.equal(view.getByRole("menu", { name: "Choose work item type" }).querySelectorAll('[role="menuitem"]').length, 4);
+	const story = view.getByRole("menuitem", { name: "Story" });
+	await view.focus(story);
+	assert.equal(view.isFocused(story), true);
+	await view.press(story, "Enter");
+	assert.equal(view.queryByRole("button", { name: "Work item type: story" }) !== null, true);
+	assert.equal(view.container.querySelector("output").textContent, "");
 	await view.click(view.getByRole("button", { name: "Add subtasks" }));
-	await view.click(view.getByRole("checkbox", { name: "PAY-2 Child item" }));
-	await view.click(view.getByRole("checkbox", { name: "PAY-2 Child item" }));
+	assert.equal(view.getByRole("dialog", { name: "Choose subtasks" }).contains(view.getByRole("menu", { name: "Subtasks" })), true);
+	assert.equal(view.isFocused(view.getByRole("textbox", { name: "Search subtasks" })), true);
+	await view.fill(view.getByRole("textbox", { name: "Search subtasks" }), "missing child");
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "PAY-2 Child item" }) === null, true);
+	assert.equal(view.getByRole("status").textContent, "No subtasks match");
+	assert.equal(view.queryByRole("menu", { name: "Subtasks" }) === null, true);
+	await view.fill(view.getByRole("textbox", { name: "Search subtasks" }), "PAY-2");
+	const child = view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" });
+	assert.equal(child.textContent.includes("PAY-2"), true);
+	assert.equal(child.textContent.includes("Child item"), true);
+	assert.equal(child.querySelector("[role=progressbar]") !== null, true);
+	assert.equal(child.querySelector('[aria-label="major priority"]') !== null, true);
+	assert.equal(child.querySelector('[data-slot="avatar"][aria-label="Maya"]') !== null, true);
+	await view.click(view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" }));
 	assert.equal(view.queryByRole("button", { name: "Add subtasks" }) !== null, true);
-	await view.click(view.getByRole("checkbox", { name: "PAY-2 Child item" }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" }));
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" }).getAttribute("aria-checked"), "true");
+	await view.press(view.getByRole("textbox", { name: "Search subtasks" }), "Escape");
+	assert.equal(view.queryByRole("textbox", { name: "Work item summary" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "0 of 1 subtasks complete" }));
+	assert.equal(view.getByRole("textbox", { name: "Search subtasks" }).value, "");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "PAY-2 Child item" }).getAttribute("aria-checked"), "true");
+	await view.press(view.getByRole("textbox", { name: "Search subtasks" }), "Escape");
 	await view.click(view.getByRole("button", { name: "Add labels" }));
 	await view.click(view.getByRole("option", { name: "Add checkout" }));
 	assert.equal(view.queryByRole("option", { name: "Add checkout" }) === null, true);
