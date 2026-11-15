@@ -203,8 +203,8 @@ export function isKeyboardFocus(target: Element | null): boolean {
 /**
  * Ticker geometry the focus solver needs, in the ticker's own coordinate space.
  *
- * Everything here is a plain number, deliberately: none of it crosses the
- * motion 12/13 boundary documented in `scrolling-offset-bridge.ts`.
+ * Everything here is a plain number, deliberately: none of it is a Ticker-owned
+ * MotionValue (see `scrolling-offset-bridge.ts`).
  */
 export interface FocusRevealGeometry {
 	/**

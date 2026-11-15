@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/app/contexts/context-sidebar";
+import { useSidebarHovered, useSidebarState } from "@/app/contexts/context-sidebar";
 import { useRovoChatControls } from "@/app/contexts";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import ShareDropdownMenu from "./share-dropdown-menu";
@@ -22,7 +22,8 @@ interface ConfluenceHeaderProps {
 export default function ConfluenceHeader({
 	embedded = false,
 }: Readonly<ConfluenceHeaderProps>) {
-	const { isVisible, isHovered } = useSidebar();
+	const { isVisible } = useSidebarState();
+	const isHovered = useSidebarHovered();
 	const { chatSurface } = useRovoChatControls();
 	const isSidebarChatOpen = chatSurface === "sidebar";
 	const isSidebarOpen = isVisible || isHovered;

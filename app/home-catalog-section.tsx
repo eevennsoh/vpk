@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/iframe-missing-sandbox -- These iframes render first-party internal preview routes; same-origin is required for Next dev assets and theme messaging.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import {
 	compareHomeCatalogEntriesByLastUpdated,
@@ -43,8 +43,6 @@ interface HomeCatalogSectionProps {
 	components: ReadonlyArray<ComponentManifestEntry>;
 	/** The cards to render, with dates; defaults to every component. May be a subset of `components`. */
 	componentEntries?: ReadonlyArray<HomeCatalogListEntry>;
-	/** Optional line under the heading, e.g. to explain a `componentEntries` subset. */
-	note?: ReactNode;
 	componentHrefPrefix: string;
 	previewHrefPrefix: string;
 	emptyStateTitle: string;
@@ -56,7 +54,6 @@ export function HomeCatalogSection({
 	title,
 	components,
 	componentEntries,
-	note,
 	componentHrefPrefix,
 	previewHrefPrefix,
 	emptyStateTitle,
@@ -117,9 +114,6 @@ export function HomeCatalogSection({
 				count={components.length}
 				actions={sectionActions}
 			/>
-			{note ? (
-				<p className="m-0 px-6 pt-4 text-sm text-text-subtle">{note}</p>
-			) : null}
 			<ul className="grid grid-cols-1 list-none m-0 p-0">
 				{sortedComponentEntries.length > 0 ? (
 					sortedComponentEntries.map((component, index) => (

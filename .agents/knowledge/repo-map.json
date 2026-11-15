@@ -2579,14 +2579,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 74,
+			"ownerImportCount": 73,
 			"pageCount": 59,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
 				"inline": 2,
-				"redirect": 2,
-				"shell": 27
+				"redirect": 3,
+				"shell": 26
 			}
 		},
 		"pages": [
@@ -3331,33 +3331,15 @@
 				"source": "app/jira-team-eu26-end/page.tsx"
 			},
 			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"ownerCount": 0,
+				"owners": [],
 				"primaryOwner": {
-					"kind": "shell",
-					"sources": [
-						"components/arts/personal-graph"
-					]
+					"kind": "redirect",
+					"to": "/arts/personal-graph"
 				},
 				"routePath": "/personal-graph",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"shellOwnerCount": 0,
+				"shellOwners": [],
 				"source": "app/personal-graph/page.tsx"
 			},
 			{
@@ -7750,7 +7732,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-council"
 			},
 			{
-				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.",
+				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros. Use when asked to \"deploy\", \"redeploy\", \"deploy to Micros\", \"ship this prototype to Micros\", \"update my deployment\", \"check deploy status\", \"is my deployment healthy\", or \"inspect the Micros environment\", and for Micros failures such as a failed hot swap, missing stash variables, or ALLOWED_ORIGINS errors. Run vpk-build first to extract a route into a standalone app.",
 				"name": "vpk-deploy",
 				"path": ".agents/skills/vpk-deploy/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-deploy"

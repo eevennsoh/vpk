@@ -250,13 +250,14 @@ export function stackZIndex(order: ScrollingStackOrder, loopPosition: number): n
  *
  * Do NOT compose it inline from `useTickerItem()` as `offset + (end - start) /
  * 2`, even though `offset` is Ticker's own live top edge and the arithmetic is
- * identical. Ticker's `offset` is a motion 12 `MotionValue` while this package
- * imports motion 13, and reading one inside the zero-argument
- * `useTransform(() => …)` DOES NOT SUBSCRIBE: dependency collection runs
- * through motion-dom's module-level `collectMotionValues` singleton, and a
- * motion 12 `.get()` registers with motion-dom 12's copy, which motion-dom 13
- * never reads. The transform then recomputes only when some motion 13 value it
- * also touched changes, and freezes silently the moment that value settles.
+ * identical. When motion-plus 2.x had its own Motion copy, Ticker's `offset`
+ * was a motion 12 `MotionValue` while this package imported motion 13, and
+ * reading one inside the zero-argument `useTransform(() => …)` DID NOT
+ * SUBSCRIBE: dependency collection runs through motion-dom's module-level
+ * `collectMotionValues` singleton, and a motion 12 `.get()` registered with
+ * motion-dom 12's copy, which motion-dom 13 never read. The transform then
+ * recomputed only when some motion 13 value it also touched changed, and froze
+ * silently the moment that value settled.
  * That is not hypothetical — it is the exact bug that froze the whole depth
  * tail once the entrance landed, and it is why the crossing is done by hand,
  * once, with `.on("change", …)` in `use-card-top.ts`.

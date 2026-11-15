@@ -2,8 +2,8 @@
  * Shared helpers for reading the portless route table (~/.portless/routes.json)
  * and resolving a worktree's stable `.localhost` URL from a frontend port.
  *
- * Single source of truth so the `pnpm ports` CLI, the dev:tmux launcher, and the
- * per-turn port-context hook don't each hand-roll (and drift on) the same lookup.
+ * Single source of truth so the `pnpm ports` CLI and the dev:tmux launcher don't
+ * each hand-roll (and drift on) the same lookup.
  */
 
 const fs = require("node:fs");
