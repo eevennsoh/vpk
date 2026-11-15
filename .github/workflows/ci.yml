@@ -192,7 +192,9 @@ jobs:
           cp -R out backend/public
           mkdir -p output/playwright
           # Production mode refuses to start without an admin token: give it a throwaway one for this run.
-          VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)" NODE_ENV=production PORT=8080 nohup node backend/server.js > output/playwright/server.log 2>&1 &
+          # It also requires the SLAuth sidecar's X-Slauth-Subject on every request; this serve has no
+          # sidecar, so every caller is the fixed local owner (backend/lib/caller-identity.js).
+          VPK_CALLER_IDENTITY=local VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)" NODE_ENV=production PORT=8080 nohup node backend/server.js > output/playwright/server.log 2>&1 &
           server_pid=$!
           for attempt in $(seq 1 60); do
             curl -fsS http://127.0.0.1:8080/api/health > /dev/null && exit 0

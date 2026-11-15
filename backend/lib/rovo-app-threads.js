@@ -181,6 +181,12 @@ function normalizeThreadRecord(rawThread) {
 
 	return {
 		id,
+		// The caller who created the thread (an SLAuth subject, or "local"); null for a
+		// thread stored before owners were recorded. See lib/caller-identity.js.
+		owner:
+			typeof rawThread.owner === "string" && rawThread.owner.trim()
+				? rawThread.owner.trim()
+				: null,
 		title:
 			typeof rawThread.title === "string" && rawThread.title.trim()
 				? rawThread.title.trim()
@@ -319,6 +325,8 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			...currentThread,
 			...definedFields,
 			id: currentThread.id,
+			// Ownership is fixed at creation; an update never moves a thread to someone else.
+			owner: currentThread.owner,
 			createdAt: currentThread.createdAt,
 			updatedAt:
 				typeof definedFields.updatedAt === "string" && definedFields.updatedAt.trim()
@@ -364,12 +372,13 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	};
 
 	/**
-	 * @param {{ id?: string, title?: unknown, messages?: unknown, realtimeMessages?: unknown, visibility?: unknown,
+	 * @param {{ id?: string, owner?: unknown, title?: unknown, messages?: unknown, realtimeMessages?: unknown, visibility?: unknown,
 	 *   modelId?: unknown, provider?: unknown, activeDocumentId?: unknown, sessionId?: unknown, sessionMode?: unknown,
 	 *   activeRun?: unknown, createdAt?: unknown, updatedAt?: unknown }} [thread]
 	 */
 	const createThread = async ({
 		id,
+		owner,
 		title,
 		messages,
 		realtimeMessages,
@@ -388,6 +397,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		const now = toIsoDate();
 		const nextThread = normalizeThreadRecord({
 			id: threadId,
+			owner,
 			title,
 			messages,
 			realtimeMessages,

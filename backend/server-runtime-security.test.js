@@ -74,7 +74,7 @@ test("realtime token minting is reachable through the runtime socket origin gate
 	);
 	assert.match(runtimeAdminSource, /function requireRuntimeSocketTokenRequester/u);
 	assert.match(realtimeRouteSource, /REALTIME_AUDIO_CONVERSATION_SCOPE = "realtime:audio-conversation"/u);
-	assert.match(realtimeRouteSource, /createRuntimeSocketToken\(REALTIME_AUDIO_CONVERSATION_SCOPE\)/u);
+	assert.match(realtimeRouteSource, /createRuntimeSocketToken\(REALTIME_AUDIO_CONVERSATION_SCOPE, caller\.owner\)/u);
 });
 
 test("runtime admin fails closed in production when token is missing", () => {
@@ -91,7 +91,7 @@ test("websocket upgrades validate origin and runtime token before upgrade", () =
 	assert.match(runtimeAdminSource, /function isAllowedRuntimeSocketOrigin/u);
 	assert.match(runtimeAdminSource, /isRuntimeSocketOriginAllowed\(\s*origin,\s*request\.headers\.host,\s*resolvedAllowedOrigins/u);
 	assert.match(wsRelaySource, /!isAllowedRuntimeSocketOrigin\(origin, request\)/u);
-	assert.match(wsRelaySource, /isRuntimeSocketTokenValid\(socketToken, scope\)/u);
+	assert.match(wsRelaySource, /isRuntimeSocketTokenValid\(socketToken, scope, identity\.caller\.owner\)/u);
 	assert.match(wsRelaySource, /previewToken/u);
 	assert.match(wsRelaySource, /realtimeToken/u);
 	assert.match(wsRelaySource, /browserPreviewWss\.handleUpgrade/u);

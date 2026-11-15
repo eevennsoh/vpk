@@ -14,6 +14,7 @@ const {
 	createRovoAppRouter,
 	registerRovoAppRoutes,
 } = require("./rovo-app");
+const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
 
 function createState() {
 	return {
@@ -324,8 +325,11 @@ function createDependencies(overrides = {}) {
 	};
 }
 
-async function withServer(dependencies, run) {
+async function withServer(dependencies, run, { env } = {}) {
 	const app = express();
+	if (env) {
+		app.use(createCallerIdentityMiddleware({ env, logger: { log: () => {}, warn: () => {} } }));
+	}
 	app.use(express.json({ limit: "2mb" }));
 	registerRovoAppRoutes(app, dependencies);
 
@@ -430,6 +434,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 		assert.deepEqual(await listResponse.json(), {
 			threads: [{
 				id: "generated-thread",
+				owner: "local",
 				title: "Architecture plan",
 				modelId: "model-1",
 			}],
@@ -820,4 +825,100 @@ test("cancelling a run that was replaced while Rovo's cancel was awaited reports
 		assert.equal(state.runs.get("thread-1"), replacement);
 		assert.ok(state.calls.some((call) => call.method === "settleRun" && call.runId === "run-original"));
 	});
+});
+
+const PRODUCTION_ENV = Object.freeze({ NODE_ENV: "production" });
+const as = (subject, init = {}) => ({ ...init, headers: { ...(init.headers || {}), "x-slauth-subject": subject } });
+const jsonAs = (subject, method, body) => as(subject, {
+	method,
+	headers: { "content-type": "application/json" },
+	body: JSON.stringify(body),
+});
+
+test("in production a request without X-Slauth-Subject gets 401 and reaches no manager", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice" });
+	await withServer(dependencies, async (baseUrl) => {
+		for (const [route, init] of [
+			["/api/rovo/threads", {}],
+			["/api/rovo/threads/thread-a", {}],
+			["/api/rovo/threads/thread-a", { method: "DELETE" }],
+			["/api/rovo/threads?all=true", { method: "DELETE" }],
+			["/api/sessions/search?q=alice", {}],
+		]) {
+			const response = await fetch(`${baseUrl}${route}`, init);
+			assert.equal(response.status, 401, `${init.method || "GET"} ${route}`);
+			assert.deepEqual(await response.json(), { error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
+		}
+	}, { env: PRODUCTION_ENV });
+	assert.deepEqual(state.calls, []);
+	assert.equal(state.threads.size, 1);
+});
+
+test("in production each caller lists, reads, updates, and deletes only their own threads", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice plan" });
+	state.threads.set("thread-b", { id: "thread-b", owner: "bob", title: "Bob plan" });
+	state.threads.set("thread-legacy", { id: "thread-legacy", title: "Legacy plan" });
+	await withServer(dependencies, async (baseUrl) => {
+		const list = await fetch(`${baseUrl}/api/rovo/threads`, as("alice"));
+		assert.deepEqual((await list.json()).threads.map((thread) => thread.id), ["thread-a"]);
+
+		const search = await fetch(`${baseUrl}/api/sessions/search?q=plan`, as("alice"));
+		assert.deepEqual((await search.json()).results.map((result) => result.id), ["thread-a"]);
+
+		for (const [route, init] of [
+			["/api/rovo/threads/thread-b", as("alice")],
+			["/api/rovo/threads/thread-legacy", as("alice")],
+			["/api/rovo/threads/thread-b", jsonAs("alice", "PUT", { title: "Taken" })],
+			["/api/rovo/threads/thread-b", as("alice", { method: "DELETE" })],
+			["/api/rovo/messages?threadId=thread-b", as("alice")],
+			["/api/rovo/votes?threadId=thread-b", as("alice")],
+			["/api/rovo/runs/thread-b/cancel", as("alice", { method: "POST" })],
+		]) {
+			const response = await fetch(`${baseUrl}${route}`, init);
+			assert.equal(response.status, 404, `${init.method || "GET"} ${route}`);
+			assert.deepEqual(await response.json(), { error: "Thread not found" });
+		}
+		assert.equal(state.threads.get("thread-b").title, "Bob plan");
+
+		const own = await fetch(`${baseUrl}/api/rovo/threads/thread-a`, as("alice"));
+		assert.equal(own.status, 200);
+		assert.equal((await own.json()).thread.title, "Alice plan");
+
+		const overwrite = await fetch(`${baseUrl}/api/rovo/threads`, jsonAs("alice", "POST", { id: "thread-b", title: "Mine now" }));
+		assert.equal(overwrite.status, 409);
+		assert.equal(state.threads.get("thread-b").owner, "bob");
+
+		const created = await fetch(`${baseUrl}/api/rovo/threads`, jsonAs("alice", "POST", { id: "thread-a2", title: "New" }));
+		assert.equal(created.status, 201);
+		assert.equal((await created.json()).thread.owner, "alice");
+
+		const deleteAll = await fetch(`${baseUrl}/api/rovo/threads?all=true`, as("alice", { method: "DELETE" }));
+		assert.equal(deleteAll.status, 200);
+	}, { env: PRODUCTION_ENV });
+	// Alice's delete-all removed only her threads, never the stores wholesale.
+	assert.deepEqual([...state.threads.keys()].sort(), ["thread-b", "thread-legacy"]);
+	assert.equal(state.calls.some((call) => ["deleteAllThreads", "deleteAllVotes", "deleteAllDocuments", "deleteAllUploads"].includes(call.method)), false);
+	assert.deepEqual(state.calls.filter((call) => call.method === "deleteThread").map((call) => call.threadId).sort(), ["thread-a", "thread-a2"]);
+});
+
+test("outside production the caller is the fixed owner local, who also sees threads stored without an owner", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-legacy", { id: "thread-legacy", title: "Legacy" });
+	state.threads.set("thread-alice", { id: "thread-alice", owner: "alice", title: "Alice" });
+	await withServer(dependencies, async (baseUrl) => {
+		// A forged subject header changes nothing locally.
+		const created = await fetch(`${baseUrl}/api/rovo/threads`, jsonAs("alice", "POST", { id: "thread-new", title: "New" }));
+		assert.equal((await created.json()).thread.owner, "local");
+
+		const list = await fetch(`${baseUrl}/api/rovo/threads`, as("alice"));
+		assert.deepEqual((await list.json()).threads.map((thread) => thread.id).sort(), ["thread-legacy", "thread-new"]);
+
+		const foreign = await fetch(`${baseUrl}/api/rovo/threads/thread-alice`);
+		assert.equal(foreign.status, 404);
+	}, { env: {} });
 });

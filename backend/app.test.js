@@ -27,6 +27,7 @@ test("createBackendApp wires middleware before routes and does not listen", () =
 		runtimeSocketTokenTtlMs: 1000,
 	};
 	let routeDependencies;
+	const callerIdentity = () => {};
 
 	const result = createBackendApp(
 		{
@@ -37,6 +38,7 @@ test("createBackendApp wires middleware before routes and does not listen", () =
 			serviceValue: "service",
 		},
 		{
+			createCallerIdentity: () => callerIdentity,
 			createRuntimeAdmin: ({ allowedOrigins }) => {
 				calls.push(["runtime-admin", allowedOrigins]);
 				return runtimeControls;
@@ -69,9 +71,10 @@ test("createBackendApp wires middleware before routes and does not listen", () =
 	assert.equal(result.runtimeAdminToken, "runtime-token");
 	assert.equal(routeDependencies.serviceValue, "service");
 	assert.equal(routeDependencies.requireRuntimeAdmin, runtimeControls.requireRuntimeAdmin);
-	assert.equal(calls[0][0], "use");
-	assert.equal(calls[0][1], "/api/local-folder");
-	assert.deepEqual(calls.slice(1), [
+	assert.deepEqual(calls[0], ["use", callerIdentity]);
+	assert.equal(calls[1][0], "use");
+	assert.equal(calls[1][1], "/api/local-folder");
+	assert.deepEqual(calls.slice(2), [
 		["security"],
 		["runtime-admin", ["https://vpk.localhost"]],
 		["rate-limit"],

@@ -8,6 +8,9 @@ const {
 	registerAiCostRateLimitMiddleware,
 } = require("./middleware/rate-limit");
 const {
+	createCallerIdentityMiddleware,
+} = require("./middleware/caller-identity");
+const {
 	createRuntimeAdminControls,
 } = require("./middleware/runtime-admin");
 const {
@@ -74,6 +77,7 @@ function createBackendApp(dependencies = {}, options = {}) {
 		logger = console,
 	} = dependencies;
 	const {
+		createCallerIdentity = createCallerIdentityMiddleware,
 		createRuntimeAdmin = createRuntimeAdminControls,
 		registerAiCostRateLimit = registerAiCostRateLimitMiddleware,
 		registerBodyLimit = registerBodyLimitMiddleware,
@@ -82,6 +86,10 @@ function createBackendApp(dependencies = {}, options = {}) {
 	} = options;
 
 	const app = expressImpl();
+	// First on the stack: in production every request but /healthcheck needs the caller
+	// the SLAuth sidecar names (X-Slauth-Subject), including static pages and WebSocket
+	// token requests.
+	app.use(createCallerIdentity({ logger }));
 	app.use("/api/local-folder", createLocalFolderRouter());
 	const { allowedOrigins } = registerSecurity(app);
 	const runtimeAdminControls = createRuntimeAdmin({ allowedOrigins });

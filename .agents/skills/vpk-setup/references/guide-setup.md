@@ -276,12 +276,20 @@ ROVO_BILLING_URL=https://product-fabric.atlassian.net
 **Client addresses and WebSocket connection caps (optional):**
 
 ```
-VPK_TRUSTED_PROXY_HOPS=1
+VPK_TRUSTED_PROXY_HOPS=2
 VPK_WS_MAX_CONNECTIONS=64
 VPK_WS_MAX_CONNECTIONS_PER_ADDRESS=32
 ```
 
-Per-client limits (the AI-cost rate limiter and the WebSocket caps) key on the client address. `VPK_TRUSTED_PROXY_HOPS` is the number of proxies in front of the backend that append to `X-Forwarded-For`. The Micros `service-descriptor.yml` sets 1 (the load balancer); the default is 0 everywhere else, including a local `NODE_ENV=production` serve. With 0 the socket address is used and the header is ignored; otherwise the entry that many hops from the socket is the client, and entries a client sent itself are never used (a shorter header falls back to the socket address). Express's `trust proxy` is not set, so `X-Forwarded-Host` and `X-Forwarded-Proto` stay ignored. Set it only where every request passes through that many appending proxies.
+Per-client limits (the AI-cost rate limiter and the WebSocket caps) key on the client address. `VPK_TRUSTED_PROXY_HOPS` is the number of proxies in front of the backend that append to `X-Forwarded-For`. The Micros `service-descriptor.yml` sets 2 (the load balancer, then the Service Proxy sidecar that authenticates with SLAuth); the default is 0 everywhere else, including a local `NODE_ENV=production` serve. With 0 the socket address is used and the header is ignored; otherwise the entry that many hops from the socket is the client, and entries a client sent itself are never used (a shorter header falls back to the socket address). Express's `trust proxy` is not set, so `X-Forwarded-Host` and `X-Forwarded-Proto` stay ignored. Set it only where every request passes through that many appending proxies.
+
+**Caller identity (production only):**
+
+```
+VPK_CALLER_IDENTITY=local
+```
+
+With `NODE_ENV=production` the backend expects the Micros Service Proxy's SLAuth sidecar. It reads the caller from `X-Slauth-Subject` and answers any request without that header (except `/healthcheck`) with 401. Outside production every caller is the fixed owner `local`. A local production serve has no sidecar, so set `VPK_CALLER_IDENTITY=local` there, as CI's smoke job does. Never set it on Micros. See `backend/lib/caller-identity.js` and the deployment guide's SLAuth section.
 
 The preview and realtime WebSockets each allow `VPK_WS_MAX_CONNECTIONS` open sockets (default 64). Past that, a new socket gets 503. `VPK_WS_MAX_CONNECTIONS_PER_ADDRESS` caps sockets per client address: half the total by default when proxy hops are trusted, so one client cannot hold every slot while users sharing an office or VPN egress address still get room, and off (the total) otherwise, since without a trusted proxy every socket comes from loopback or the proxy. A value that is not a positive integer is ignored, with a `[STARTUP]` warning. The backend logs the resolved hops and caps at startup.
 
