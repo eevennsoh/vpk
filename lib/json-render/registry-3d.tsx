@@ -26,7 +26,6 @@ const Label3DImpl = lazy(() =>
 	})),
 );
 
-
 export const threeDComponents = {
 	// ── 3D ─────────────────────────────────────────
 	Scene3D: ({ props, children }) => (

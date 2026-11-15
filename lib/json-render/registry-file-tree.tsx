@@ -1,5 +1,3 @@
-"use client";
-
 // File-tree and tag-taxonomy parsing for json-render Accordion and FileTree content.
 import type { ReactNode } from "react";
 import { FileTreeFile as FileTreeFileRoot, FileTreeFolder as FileTreeFolderRoot } from "@/components/ui-custom/file-tree";
