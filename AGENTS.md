@@ -199,7 +199,7 @@ New behavior gets a clear owner instead of expanding an already-busy file. Befor
 ### Code Quality
 
 - Verify exact file location before UI edits by searching for distinctive text/classes.
-- Use macOS/BSD-safe shell patterns (for example `sed -E`, not GNU-only flags). Edit files with the edit or patch tool at a literal path, not `sed -i`.
+- Use macOS/BSD-safe shell patterns (for example `sed -E`, not GNU-only flags). Edit files with the edit or patch tool at a literal path, not `sed -i` (see `.agents/rules/agent-operations.md`).
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
