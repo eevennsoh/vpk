@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage, AvatarUnassigned } from "@/compone
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -242,18 +243,38 @@ export function StatusPill({
 	);
 }
 
-export function PriorityRowField({ value, onChange, renderValue, priorityTrigger, modal }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void; renderValue?: (value: PriorityValue) => ReactNode; priorityTrigger?: ReactElement; modal?: boolean }>) {
+export function PriorityValueIcon({ value, colored = true }: Readonly<{ value: PriorityValue; colored?: boolean }>) {
+	const PriorityIcon = PRIORITY_ICONS[value];
+	return <span aria-hidden className={cn("inline-flex size-4 shrink-0 items-center justify-center", colored ? PRIORITY_COLOR_CLASSES[value] : "text-icon-subtle")} data-slot="priority-option-icon"><PriorityIcon color="currentColor" label="" size="small" /></span>;
+}
+
+export function PriorityRowField({ value, onChange, renderValue, priorityTrigger, modal, previewTrigger = false }: Readonly<{
+	value: PriorityValue | null;
+	onChange: (next: PriorityValue) => void;
+	renderValue?: (value: PriorityValue, context: { open: boolean }) => ReactNode;
+	priorityTrigger?: ReactElement;
+	modal?: boolean;
+	previewTrigger?: boolean;
+}>) {
+	const [open, setOpen] = useState(false);
+	const [preview, setPreview] = useState<PriorityValue>();
+	const displayedValue = previewTrigger && open ? preview ?? value : value;
 	return (
-		<DropdownMenu modal={modal}>
-			<DropdownMenuTrigger render={priorityTrigger ?? <DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
-				{value ? renderValue?.(value) ?? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
+		<DropdownMenu modal={modal} open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (!nextOpen) setPreview(undefined); }}>
+			<DropdownMenuTrigger aria-haspopup="dialog" render={priorityTrigger ?? <DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
+				{displayedValue ? renderValue?.(displayedValue, { open }) ?? <PriorityLabel value={displayedValue} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
-				{PRIORITY_OPTIONS.map((option) => (
-					<DropdownMenuItem key={option} onSelect={() => onChange(option)} selected={option === value}>
-						<PriorityLabel value={option} />
-					</DropdownMenuItem>
-				))}
+			<DropdownMenuContent align="start" aria-label="Choose priority" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} role="dialog" sideOffset={METADATA_PICKER_SIDE_OFFSET} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }}>
+				<DropdownMenuGroup aria-label="Priorities" role="menu">
+					{PRIORITY_OPTIONS.map((option) => (
+						<DropdownMenuItem className="[&_[data-slot=priority-option-icon]_svg]:size-3 [&_[data-slot=priority-option-icon]_svg]:text-inherit" key={option} onMouseEnter={previewTrigger ? () => setPreview(option) : undefined} onFocus={previewTrigger ? (event) => { if (event.currentTarget.matches(":focus-visible")) setPreview(option); } : undefined} onSelect={() => onChange(option)} selected={option === value}>
+							<span className="flex min-w-0 items-center gap-3">
+								<PriorityValueIcon value={option} />
+								<span className="min-w-0 truncate">{option}</span>
+							</span>
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

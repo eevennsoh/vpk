@@ -12,19 +12,21 @@ import { cardLoopPositionFrom, cardTopFrom } from "./stack-layout";
  *
  * ## Why this bridge has to exist
  *
- * Ticker's values belong to motion 12 while this package imports motion 13 (the
- * split is explained in `scrolling-offset-bridge.ts`). Neither of the two ways
- * motion 13 would normally consume them works across that boundary:
+ * When motion-plus 2.x resolved its own Motion copy, Ticker's values belonged to
+ * motion 12 while this package imported motion 13 (see
+ * `scrolling-offset-bridge.ts`; one copy is installed since motion-plus 3).
+ * Neither of the two ways motion 13 would normally consume them worked across
+ * that boundary:
  *
  * 1. `useTransform(() => tickerValue.get())` — the zero-argument form discovers
  *    dependencies through motion-dom's module-level `collectMotionValues`
- *    singleton. A motion 12 `.get()` registers with motion-dom 12's singleton,
- *    which motion-dom 13 never reads, so NOTHING is collected and the derived
- *    value silently never recomputes.
+ *    singleton. A motion 12 `.get()` registered with motion-dom 12's singleton,
+ *    which motion-dom 13 never read, so NOTHING was collected and the derived
+ *    value silently never recomputed.
  * 2. `useTransform([tickerValue], fn)` — the explicit form subscribes correctly
- *    at runtime, but motion 12's `MotionValue` is a nominally distinct class
- *    from motion 13's, so it does not satisfy the overload's `MotionValue<T>[]`
- *    parameter and the call fails to typecheck without a cast.
+ *    at runtime, but motion 12's `MotionValue` was a nominally distinct class
+ *    from motion 13's, so it did not satisfy the overload's `MotionValue<T>[]`
+ *    parameter and the call failed to typecheck without a cast.
  *
  * So the crossing is done by hand exactly once, here: `.on("change", …)` is a
  * plain duck-typed method that both runtimes implement identically, and the
@@ -80,8 +82,8 @@ export function useCardTop(): MotionValue<number> {
  * result has to be written to the DOM and would otherwise be rewritten for
  * every card on every frame of a drag.
  *
- * Crosses the motion 12/13 boundary exactly the same way, and for exactly the
- * same reasons, as {@link useCardTop}.
+ * Subscribes to Ticker's values exactly the same way, and for exactly the same
+ * reasons, as {@link useCardTop}.
  */
 export function useCardLoopPosition(): MotionValue<number> {
 	const { projection, start } = useTickerItem();
