@@ -4,6 +4,9 @@
 // `DefaultChatTransport`; only the network is fake. `fetch` answers
 // `/api/rovo/chat` from a scripted in-memory SSE server, and the thread API
 // module is an in-memory store, so no paid model call can happen.
+// Paths resolve from process.cwd(), like scripts/lib/render-component.js, so the
+// runner must start at the repo root (the unit gate and `node --test` from the
+// root both do).
 const path = require("node:path");
 
 // happy-dom replaces some web-stream globals when it registers; the AI SDK
@@ -22,6 +25,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const esbuild = require("esbuild");
 require("../../scripts/lib/render-component.js");
+// Fails loudly if the capture above is ever moved below the happy-dom import.
+assert.notEqual(globalThis.Response, NodeResponse, "capture Node's stream globals before render-component loads");
 const React = require("react");
 const { createRoot } = require("react-dom/client");
 const { loadCjsModuleFromText } = require("../../scripts/lib/esbuild-cjs-loader.js");
@@ -79,7 +84,7 @@ function loadHarness() {
 		stdin: {
 			contents: `
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
-				export { toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
+				export { getPayloadTooLargeUserMessage, toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
 				export {
 					getChatInProgressRetryCountdownLabel,
 					getChatInProgressUserMessage,
@@ -90,6 +95,7 @@ function loadHarness() {
 				} from "@/lib/chat-error-utils";
 				function Probe() {
 					window.testChat = useRovoChat();
+					window.onTestChatRender?.();
 					return null;
 				}
 				export function Harness() {
@@ -120,7 +126,11 @@ function createChatServer() {
 	function createTurn(body, signal) {
 		let controller;
 		let closed = false;
-		const stream = new NodeReadableStream({ start(streamController) { controller = streamController; } });
+		const stream = new NodeReadableStream({
+			start(streamController) { controller = streamController; },
+			// The client cancelled its reader (for example after an abort).
+			cancel() { closed = true; },
+		});
 		const turn = {
 			body,
 			aborted: false,
@@ -145,7 +155,9 @@ function createChatServer() {
 		};
 		signal?.addEventListener("abort", () => {
 			turn.aborted = true;
-			if (closed) return;
+			// A turn the test marks `ignoreAbort` models a backend that does not settle
+			// the request when the client aborts it.
+			if (closed || turn.ignoreAbort) return;
 			closed = true;
 			controller.error(new DOMException("The operation was aborted.", "AbortError"));
 		}, { once: true });
@@ -164,6 +176,7 @@ function createChatServer() {
 			if (failure) {
 				turns.push({ body, failed: failure });
 				resolveWaiters();
+				if (failure.gate) await failure.gate;
 				return new NodeResponse(failure.body, { status: failure.status });
 			}
 			const turn = createTurn(body, init.signal);
@@ -183,7 +196,8 @@ function createChatServer() {
 		fetch,
 		turns,
 		otherRequests,
-		failNext(status, body) { failures.push({ status, body }); },
+		// `gate`, when given, holds the error response until the promise resolves.
+		failNext(status, body, gate) { failures.push({ status, body, gate }); },
 	};
 }
 
@@ -244,6 +258,7 @@ async function mountChat(t) {
 	const root = createRoot(container);
 	await React.act(async () => root.render(React.createElement(harness.Harness)));
 	t.after(async () => {
+		delete window.onTestChatRender;
 		await React.act(async () => root.unmount());
 		container.remove();
 		globalThis.fetch = originalFetch;
@@ -319,7 +334,10 @@ test("submit marks the turn pending, streams the reply, and settles only after t
 	});
 });
 
-test("a stream that ends without turn-complete keeps its prompt active and blocks the queue", async (t) => {
+// Characterizes current behaviour, not the desired contract (see SM-FE-15): a
+// stream that never sends turn-complete leaves the queue blocked. A refactor
+// may change this on purpose; update the test with it.
+test("current behaviour: a stream that ends without turn-complete keeps its prompt active and blocks the queue", async (t) => {
 	const { server, chat } = await mountChat(t);
 	await send(chat, "First");
 	await waitFor("the first request", () => server.turns.length === 1);
@@ -397,12 +415,30 @@ test("tool calls stream through input and output states on the assistant message
 	]);
 });
 
-test("a failed request finalizes the prompt and the next queued prompt clears its error when it dispatches", async (t) => {
-	const { server, chat } = await mountChat(t);
-	server.failNext(500, "Upstream exploded");
+// Characterizes current behaviour, not the desired contract (see SM-FE-15): the
+// failed turn's error is shown, then cleared as soon as the queued prompt
+// dispatches. A refactor may keep the error visible on purpose.
+test("current behaviour: a failed request finalizes and shows its error, and the next queued prompt clears it when it dispatches", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const errorText = `assistant:${harness.toUserFacingChatErrorMessage("Upstream exploded")}`;
+	let releaseFailure;
+	server.failNext(500, "Upstream exploded", new Promise((resolve) => { releaseFailure = resolve; }));
 	await send(chat, "Break please");
+	await waitFor("the failing request", () => server.turns.length === 1);
 	await send(chat, "Then this");
+	assert.deepEqual(chatState().queued, ["Then this"]);
+
+	// Record every committed render so the brief error state is observable even
+	// though the queue dispatches the next prompt right after it.
+	const renders = [];
+	window.onTestChatRender = () => renders.push(chatState());
+	await React.act(async () => releaseFailure());
 	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	const errorRender = renders.find((state) => state.messages.at(-1) === errorText);
+	assert.ok(errorRender, `the error never rendered; renders: ${JSON.stringify(renders.map((state) => state.messages))}`);
+	assert.deepEqual(errorRender.messages, ["user:Break please", errorText]);
+	// The error showed while the next prompt was still waiting in the queue.
+	assert.deepEqual(errorRender.queued, ["Then this"]);
 	// The failed user message stays in the transcript and is resent as history.
 	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Break please", "user:Then this"]);
 	// sendChatMessage clears the submission error as the next prompt goes out.
@@ -418,6 +454,34 @@ test("a failed request finalizes the prompt and the next queued prompt clears it
 		"user:Then this",
 		"assistant:Recovered+data-turn-complete",
 	]);
+});
+
+test("a payload-too-large error shows its own copy, finalizes the prompt, and releases the queue", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const errorText = `assistant:${harness.getPayloadTooLargeUserMessage()}`;
+	let releaseFailure;
+	server.failNext(413, "Request Entity Too Large", new Promise((resolve) => { releaseFailure = resolve; }));
+	await send(chat, "Huge prompt");
+	await waitFor("the failing request", () => server.turns.length === 1);
+	await send(chat, "Small follow-up");
+	const renders = [];
+	window.onTestChatRender = () => renders.push(chatState());
+	await React.act(async () => releaseFailure());
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	const errorRender = renders.find((state) => state.messages.at(-1) === errorText);
+	assert.ok(errorRender, `the payload error never rendered; renders: ${JSON.stringify(renders.map((state) => state.messages))}`);
+	assert.deepEqual(errorRender.queued, ["Small follow-up"]);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Huge prompt", "user:Small follow-up"]);
+	assert.equal(chat().activePrompt?.text, "Small follow-up");
+});
+
+test("a payload-too-large error with nothing queued keeps its copy visible and clears in-flight state", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	server.failNext(413, "Request Entity Too Large");
+	await send(chat, "Huge prompt");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Huge prompt", `assistant:${harness.getPayloadTooLargeUserMessage()}`]);
+	assert.equal(chat().hasInFlightTurn, false);
 });
 
 test("a failed request with nothing queued clears pending state and keeps the error visible", async (t) => {
@@ -454,6 +518,35 @@ test("stopStreaming aborts the live request, keeps the partial reply, and releas
 	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), []);
 	assert.deepEqual(server.otherRequests.filter((url) => url.includes("chat-cancel")), []);
 	assert.equal(chat().activePrompt?.text, "Next");
+});
+
+// Characterizes current behaviour (see SM-FE-15): AI SDK `stop()` settles the
+// chat status locally as soon as it aborts, even when the backend never closes
+// the response, so waitForStreamStop always reports "stopped in time" and the
+// explicit cancel fallback (cancelRovoAppRun / chat-cancel) is not reached from
+// stopStreaming. A reducer that keeps the fallback must decide when it fires.
+test("current behaviour: stopStreaming settles locally even when the backend ignores the abort, so no explicit cancel is sent", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Stuck answer");
+	await waitFor("the request", () => server.turns.length === 1);
+	const [turn] = server.turns;
+	turn.ignoreAbort = true;
+	turn.send({ type: "start" });
+	turn.send({ type: "text-start", id: "t" });
+	turn.send({ type: "text-delta", id: "t", delta: "Stuck" });
+	await waitFor("partial text", () => chatState().messages.at(-1) === "assistant:Stuck");
+
+	const startedAt = Date.now();
+	await (await startAction(() => chat().stopStreaming()))();
+	assert.equal(turn.aborted, true);
+	assert.equal(chat().isStreaming, false);
+	assert.ok(Date.now() - startedAt < 1000, "stopStreaming waited for the grace window");
+	// Past the 1.2 s grace window nothing has been cancelled explicitly.
+	await settle(1500);
+	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), []);
+	assert.deepEqual(server.otherRequests.filter((url) => url.includes("chat-cancel")), []);
+	assert.deepEqual(chatState().messages, ["user:Stuck answer", "assistant:Stuck"]);
+	turn.end();
 });
 
 test("stopStreaming with no live stream is a no-op that leaves the transcript intact", async (t) => {
@@ -520,6 +613,23 @@ test("a chat-in-progress error shows a thinking countdown, keeps submit pending,
 	server.turns[1].end();
 	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
 	assert.deepEqual(chatState().messages, ["user:Overlap", "assistant:Recovered+data-turn-complete"]);
+	assert.equal(chat().isSubmitPending, false);
+});
+
+test("chat-in-progress retries stop after the maximum and show the give-up message", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	for (let attempt = 0; attempt <= harness.CHAT_IN_PROGRESS_MAX_RETRIES; attempt += 1) {
+		server.failNext(409, "ROVO_CHAT_IN_PROGRESS");
+	}
+	await send(chat, "Still overlapping");
+	await waitFor("the give-up message", () => chat().activePrompt === null && server.turns.length === harness.CHAT_IN_PROGRESS_MAX_RETRIES + 1);
+	await settle(RETRY_DELAY_MS * 2);
+	assert.equal(server.turns.length, harness.CHAT_IN_PROGRESS_MAX_RETRIES + 1);
+	assert.deepEqual(chatState().messages, [
+		"user:Still overlapping",
+		`assistant:${harness.getChatInProgressUserMessage(harness.CHAT_IN_PROGRESS_MAX_RETRIES)}`,
+	]);
+	assert.equal(chat().hasInFlightTurn, false);
 	assert.equal(chat().isSubmitPending, false);
 });
 

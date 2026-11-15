@@ -6,11 +6,27 @@
 // session is ever opened.
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const fs = require("node:fs");
 const esbuild = require("esbuild");
 require("../../../../scripts/lib/render-component.js");
 const React = require("react");
 const { createRoot } = require("react-dom/client");
 const { loadCjsModuleFromText } = require("../../../../scripts/lib/esbuild-cjs-loader.js");
+
+// Paths resolve from process.cwd(), so the runner must start at the repo root.
+const HOOK_FILE_PATTERN = /components[\\/]projects[\\/]rovo-core[\\/]hooks[\\/]use-realtime-voice\.ts$/;
+// The hook keeps its timing constants module-private. The harness appends one
+// export so the timing assertions below track the real values instead of
+// hard-coded copies that could silently drift.
+const HOOK_TIMINGS_EXPORT = `
+export const __testTimings = {
+	RECONNECT_DELAYS,
+	RESPONSE_CREATE_FALLBACK_MS,
+	BROWSER_TRANSCRIPTION_COMPLETION_FALLBACK_MS,
+};
+`;
+// Margin past a timer's deadline before a "did not fire" check is trusted.
+const TIMER_MARGIN_MS = 300;
 
 const WS_URL = "ws://voice.test/api/realtime/audio-conversation";
 
@@ -29,6 +45,7 @@ function loadHarness() {
 		stdin: {
 			contents: `
 				import { useRealtimeVoice } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
+				export { __testTimings } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
 				export function Harness({ chatMessages, mode }) {
 					const events = window.testVoiceEnv.events;
 					window.testVoice = useRealtimeVoice({
@@ -54,6 +71,7 @@ function loadHarness() {
 		plugins: [{ name: "voice-adapters", setup(build) {
 			build.onResolve({ filter: /.*/ }, ({ path }) => Object.hasOwn(mocks, path) ? { path, namespace: "test-adapter" } : undefined);
 			build.onLoad({ filter: /.*/, namespace: "test-adapter" }, ({ path }) => ({ contents: mocks[path], loader: "tsx", resolveDir: process.cwd() }));
+			build.onLoad({ filter: HOOK_FILE_PATTERN }, ({ path }) => ({ contents: fs.readFileSync(path, "utf8") + HOOK_TIMINGS_EXPORT, loader: "ts" }));
 		} }],
 	}).then((result) => loadCjsModuleFromText(result.outputFiles[0].text));
 	return harnessPromise;
@@ -65,7 +83,7 @@ function createVoiceEnvironment() {
 	const sockets = [];
 	const audioContexts = [];
 	const micStreams = [];
-	const env = { events: [], sockets, audioContexts, micStreams, wsUrlError: null, micError: null, clock: 0 };
+	const env = { events: [], sockets, audioContexts, micStreams, wsUrlError: null, micError: null, clock: 0, hasFocus: true };
 
 	class FakeWebSocket {
 		static CONNECTING = 0;
@@ -75,6 +93,7 @@ function createVoiceEnvironment() {
 
 		constructor(url) {
 			this.url = url;
+			this.createdAt = Date.now();
 			this.readyState = FakeWebSocket.CONNECTING;
 			this.sent = [];
 			this.onopen = null;
@@ -164,7 +183,7 @@ function createVoiceEnvironment() {
 		};
 		globalThis.WebSocket = FakeWebSocket;
 		globalThis.AudioContext = FakeAudioContext;
-		document.hasFocus = () => true;
+		document.hasFocus = () => env.hasFocus;
 		Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: mediaDevices });
 		return () => {
 			globalThis.WebSocket = saved.WebSocket;
@@ -249,7 +268,7 @@ async function mountVoice(t, { mode = "auto", chatMessages = [] } = {}) {
 		delete window.testVoice;
 		delete window.testVoiceEnv;
 	});
-	return { env, voice: () => window.testVoice, unmount };
+	return { env, timings: harness.__testTimings, voice: () => window.testVoice, unmount };
 }
 
 async function connectAndOpen(env, voice, options) {
@@ -391,6 +410,32 @@ test("assistant audio switches to speaking, streams the transcript, and drains b
 	assert.equal(voice().connectionState, "connected");
 });
 
+test("audio_transcript_done replaces a streamed transcript with its correction and skips an identical one", async (t) => {
+	const { env, voice } = await mountVoice(t);
+	const socket = await startSession(env, voice);
+	await act(() => socket.serverSend({ type: "response_created" }));
+	await act(() => socket.serverSend({ type: "audio_delta", delta: AUDIO_DELTA }));
+	await act(() => socket.serverSend({ type: "audio_transcript_delta", delta: "Helo there", itemId: "item-1" }));
+	const deltasBefore = env.events.filter(([name]) => name === "assistantDelta").length;
+
+	await act(() => socket.serverSend({ type: "audio_transcript_done", transcript: "Hello there.", itemId: "item-1" }));
+	assert.equal(voice().modelTranscript, "Hello there.");
+	const doneDeltas = env.events.filter(([name]) => name === "assistantDelta").slice(deltasBefore).map(([, payload]) => payload);
+	assert.deepEqual(doneDeltas, [
+		{ delta: "Hello there.", messageId: "item-1", replace: true, source: "audio_transcript", text: "Hello there." },
+	]);
+
+	// The same final transcript again is a no-op.
+	await act(() => socket.serverSend({ type: "audio_transcript_done", transcript: "Hello there.", itemId: "item-1" }));
+	assert.equal(env.events.filter(([name]) => name === "assistantDelta").length, deltasBefore + 1);
+
+	await act(() => socket.serverSend({ type: "response_done" }));
+	assert.deepEqual(
+		env.events.filter(([name]) => name === "textStart" || name === "assistantCompleted"),
+		[["textStart", { messageId: "item-1" }], ["assistantCompleted", { messageId: "item-1", text: "Hello there." }]],
+	);
+});
+
 test("text deltas stream into modelTranscript and complete on response_done", async (t) => {
 	const { env, voice } = await mountVoice(t);
 	const socket = await startSession(env, voice);
@@ -450,30 +495,62 @@ test("speech_started without fresh mic audio is ignored and does not barge in", 
 	assert.equal(eventNames(env).includes("speechStarted"), false);
 });
 
-test("auto mode asks for a response when a completed utterance gets none, and not when one starts", async (t) => {
+test("losing window focus pauses mic capture and starts a new capture epoch, so stale speech does not barge in", async (t) => {
 	const { env, voice } = await mountVoice(t);
+	const socket = await startSession(env, voice);
+	await act(() => socket.serverSend({ type: "audio_delta", delta: AUDIO_DELTA }));
+	assert.equal(voice().voiceState, "speaking");
+	// Audio appended before the window loses focus belongs to the old epoch.
+	await act(() => env.speakIntoMic());
+	const appendsBefore = socket.sentTypes().filter((type) => type === "audio_buffer_append").length;
+
+	env.hasFocus = false;
+	await act(() => window.dispatchEvent(new window.Event("blur")));
+	assert.equal(env.micStreams[0].track.enabled, false);
+	await act(() => env.speakIntoMic());
+	assert.equal(socket.sentTypes().filter((type) => type === "audio_buffer_append").length, appendsBefore);
+	await act(() => socket.serverSend({ type: "speech_started" }));
+	assert.equal(voice().voiceState, "speaking");
+	assert.equal(eventNames(env).includes("speechStarted"), false);
+
+	env.hasFocus = true;
+	await act(() => window.dispatchEvent(new window.Event("focus")));
+	assert.equal(env.micStreams[0].track.enabled, true);
+	await act(() => env.speakIntoMic());
+	assert.equal(socket.sentTypes().filter((type) => type === "audio_buffer_append").length, appendsBefore + 1);
+	await act(() => socket.serverSend({ type: "speech_started" }));
+	assert.equal(voice().voiceState, "listening");
+	assert.equal(eventNames(env).includes("speechStarted"), true);
+});
+
+test("auto mode asks for a response when a completed utterance gets none, and not when one starts", async (t) => {
+	const { env, timings, voice } = await mountVoice(t);
 	const socket = await startSession(env, voice);
 	await act(() => env.speakIntoMic());
 	await act(() => socket.serverSend({ type: "speech_started" }));
 	await act(() => socket.serverSend({ type: "transcription_completed", transcript: "Hello?" }));
-	await waitFor("the fallback response_create", () => socket.sentTypes().includes("response_create"));
+	await waitFor(
+		"the fallback response_create",
+		() => socket.sentTypes().includes("response_create"),
+		timings.RESPONSE_CREATE_FALLBACK_MS + TIMER_MARGIN_MS,
+	);
 
 	const sentBefore = socket.sent.length;
 	await act(() => env.speakIntoMic());
 	await act(() => socket.serverSend({ type: "speech_started" }));
 	await act(() => socket.serverSend({ type: "transcription_completed", transcript: "Second" }));
 	await act(() => socket.serverSend({ type: "response_created" }));
-	await settle(1400);
+	await settle(timings.RESPONSE_CREATE_FALLBACK_MS + TIMER_MARGIN_MS);
 	assert.deepEqual(socket.sent.slice(sentBefore).map((message) => message.type).filter((type) => type !== "audio_buffer_append"), []);
 });
 
 test("manual-turn-taking never sends the fallback response_create", async (t) => {
-	const { env, voice } = await mountVoice(t, { mode: "manual-turn-taking" });
+	const { env, timings, voice } = await mountVoice(t, { mode: "manual-turn-taking" });
 	const socket = await startSession(env, voice);
 	await act(() => env.speakIntoMic());
 	await act(() => socket.serverSend({ type: "speech_started" }));
 	await act(() => socket.serverSend({ type: "transcription_completed", transcript: "Hello?" }));
-	await settle(1400);
+	await settle(timings.RESPONSE_CREATE_FALLBACK_MS + TIMER_MARGIN_MS);
 	assert.equal(socket.sentTypes().includes("response_create"), false);
 	assert.equal(eventNames(env).includes("transcriptCompleted"), true);
 });
@@ -578,29 +655,34 @@ test("an upstream connection_closed error reconnects and a new session_ready res
 });
 
 test("reconnect backs off three times and then gives up as disconnected", async (t) => {
-	const { env, voice } = await mountVoice(t);
+	const { env, timings, voice } = await mountVoice(t);
 	const socket = await startSession(env, voice);
-	const startedAt = Date.now();
+	assert.deepEqual(timings.RECONNECT_DELAYS, [500, 1_000, 2_000]);
+	const closedAt = [Date.now()];
 	await act(() => socket.serverClose());
-	for (let attempt = 1; attempt <= 3; attempt += 1) {
+	for (let attempt = 1; attempt <= timings.RECONNECT_DELAYS.length; attempt += 1) {
 		assert.equal(voice().connectionState, "reconnecting");
 		await waitFor(`reconnect socket ${attempt}`, () => env.sockets.length === attempt + 1, 4000);
+		closedAt.push(Date.now());
 		await act(() => env.sockets[attempt].serverClose());
 	}
-	// Delays are 500 ms, 1 s and 2 s.
-	assert.equal(Date.now() - startedAt >= 3400, true);
+	// Each reconnect waits its own backoff step after the previous socket closed.
+	timings.RECONNECT_DELAYS.forEach((delay, index) => {
+		const gap = env.sockets[index + 1].createdAt - closedAt[index];
+		assert.ok(gap >= delay - 20 && gap < delay + TIMER_MARGIN_MS, `reconnect ${index + 1} waited ${gap} ms, expected about ${delay} ms`);
+	});
 	assert.deepEqual(voiceState(), {
 		voice: "idle", connection: "disconnected", generation: "idle", connected: false, reconnecting: false,
 		status: "Voice disconnected", transcript: "", model: "", mic: false,
 	});
-	await settle(600);
+	await settle(timings.RECONNECT_DELAYS[0] + TIMER_MARGIN_MS);
 	assert.equal(env.sockets.length, 4);
 });
 
 // -- Close -------------------------------------------------------------------
 
 test("disconnect closes the socket and mic, resets state, and ignores late server messages", async (t) => {
-	const { env, voice } = await mountVoice(t);
+	const { env, timings, voice } = await mountVoice(t);
 	const socket = await startSession(env, voice);
 	await act(() => socket.serverSend({ type: "audio_delta", delta: AUDIO_DELTA }));
 	await act(() => socket.serverSend({ type: "audio_transcript_delta", delta: "Partial", itemId: "i" }));
@@ -614,7 +696,8 @@ test("disconnect closes the socket and mic, resets state, and ignores late serve
 	assert.equal(env.audioContexts.every((context) => context.state === "closed"), true);
 
 	socket.onmessage?.({ data: JSON.stringify({ type: "session_ready" }) });
-	await settle(700);
+	// Long enough for a stray reconnect or transcript-completion timer to fire.
+	await settle(Math.max(timings.RECONNECT_DELAYS[0], timings.BROWSER_TRANSCRIPTION_COMPLETION_FALLBACK_MS) + TIMER_MARGIN_MS);
 	assert.equal(voice().voiceState, "idle");
 	assert.equal(env.sockets.length, 1);
 });
@@ -631,11 +714,11 @@ test("end_voice_session notifies the shell and disconnects after the goodbye win
 });
 
 test("unmounting mid-session closes the socket and releases the microphone", async (t) => {
-	const { env, voice, unmount } = await mountVoice(t);
+	const { env, timings, voice, unmount } = await mountVoice(t);
 	const socket = await startSession(env, voice);
 	await unmount();
 	assert.equal(socket.readyState, 3);
 	assert.equal(env.micStreams[0].track.stopped, true);
-	await settle(700);
+	await settle(timings.RECONNECT_DELAYS[0] + TIMER_MARGIN_MS);
 	assert.equal(env.sockets.length, 1);
 });
