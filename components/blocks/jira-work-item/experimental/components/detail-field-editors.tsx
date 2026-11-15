@@ -18,7 +18,7 @@ import { CREW_ROSTER, type CrewMember } from "@/components/blocks/jira-work-item
 import type { AgentSessionStatus } from "@/components/blocks/jira-work-item/data/session-state";
 import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental/context-jira-work-item";
 import { LABEL_OPTIONS, PARENT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
-import { AgentProfileCard } from "@/components/blocks/agent-profile-card/components/agent-profile-card";
+import { LazyAgentProfileCard, preloadAgentProfileCard } from "@/components/blocks/agent-profile-card/lazy";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
@@ -44,7 +44,7 @@ import {
 	RichTextSuggestionMenu,
 	type RichTextCommandMenuSearchFieldProps,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 import {
 	filterMetadataSearchItems,
@@ -450,6 +450,7 @@ function partnerNameFromByline(byline: string | undefined): string | undefined {
 function AgentAvatar({ member }: Readonly<{ member: CrewMember }>) {
 	const boardAgent = BOARD_AGENTS.find((agent) => agent.id === member.id);
 	const partnerName = partnerNameFromByline(boardAgent?.byline);
+	useEffect(preloadAgentProfileCard, []);
 
 	return (
 		<HoverCard closeDelay={120} openDelay={250}>
@@ -471,7 +472,7 @@ function AgentAvatar({ member }: Readonly<{ member: CrewMember }>) {
 				/>
 			</HoverCardTrigger>
 			<HoverCardContent align="start" className="w-auto border-none bg-transparent p-0 shadow-none" side="left">
-				<AgentProfileCard
+				<LazyAgentProfileCard
 					avatarSrc={member.avatarUrl}
 					// The roster carries no per-agent blurb, so surface the byline as the
 					// description rather than the card's built-in placeholder copy, which

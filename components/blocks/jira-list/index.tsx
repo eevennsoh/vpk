@@ -34,7 +34,7 @@ import CalendarIcon from "@atlaskit/icon/core/calendar";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
+import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/components/editor-palette-assignee-picker";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import {

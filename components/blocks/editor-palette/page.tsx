@@ -19,7 +19,6 @@ import {
 	getSlashCommandCategoryItems,
 	getSlashCommandFormatItems,
 	getSuggestionOverflowFooterItem,
-	type RichTextMentionItem,
 	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
@@ -29,6 +28,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "./data/mention-sources";
+import { FLAT_MENTION_SECTIONS, getFlatSectionRows, getSectionFooterId, type FlatSectionConfig } from "./lib/flat-sections";
 
 /** How the editor palette lays out its suggestion surfaces. */
 export type EditorPaletteVariant = "nested" | "flat" | "search";
@@ -55,16 +55,7 @@ export interface EditorPaletteProps {
 	className?: string;
 }
 
-export interface EditorPaletteAssigneePickerProps {
-	className?: string;
-	mentionSources?: RichTextMentionSources;
-	onSelect: (item: RichTextMentionItem) => void;
-}
-
 function noop(): void {}
-
-/** Max items shown per section before the "Browse all" / "View more" footer. */
-const FLAT_SECTION_LIMIT = 5;
 
 const NESTED_MENTION_SHOWCASES: readonly {
 	category: RichTextMentionMenuCategory;
@@ -78,27 +69,6 @@ const NESTED_MENTION_SHOWCASES: readonly {
 	{ category: "tool", title: "Tools", trigger: "/", caption: "Tools nested" },
 	{ category: "knowledge", title: "Knowledge", trigger: "/", caption: "Knowledge nested" },
 ];
-
-/**
- * Sections rendered by the flat variant. `hasDirectory` sections get a
- * "Browse all" footer (ellipsis icon) that links to a dedicated directory;
- * sections without one get a "View more" footer (chevron) that expands the
- * remaining items inline.
- *
- * `"@"` sections each render as their own panel. `"/"` sections are merged into
- * a single panel/menu, separated by section headings, since they share one
- * trigger.
- */
-interface FlatSectionConfig {
-	category: RichTextMentionMenuCategory | "format";
-	title: string;
-	hasDirectory: boolean;
-}
-
-const FLAT_MENTION_SECTIONS = [
-	{ category: "people-team", title: "People and team", hasDirectory: false },
-	{ category: "subagent", title: "Subagents", hasDirectory: true },
-] as const satisfies readonly FlatSectionConfig[];
 
 const FLAT_COMMAND_SECTIONS: readonly FlatSectionConfig[] = [
 	{ category: "skill", title: "Skills", hasDirectory: true },
@@ -146,46 +116,6 @@ export default function EditorPalette({
 				</div>
 			) : null}
 		</div>
-	);
-}
-
-export function EditorPaletteAssigneePicker({
-	className,
-	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
-	onSelect,
-}: Readonly<EditorPaletteAssigneePickerProps>) {
-	const items = FLAT_MENTION_SECTIONS.flatMap((section) =>
-		getFlatSectionRows(
-			section,
-			getMentionChildItems(mentionSources, section.category),
-			false,
-			section.title,
-		),
-	);
-
-	const handleSelect = (item: RichTextSuggestionMenuItem) => {
-		const mention = [
-			...(mentionSources.human ?? []),
-			...(mentionSources.team ?? []),
-			...(mentionSources.subagent ?? []),
-		].find((candidate) => candidate.id === item.id);
-		if (mention) {
-			onSelect(mention);
-		}
-	};
-
-	return (
-		<RichTextSuggestionMenu
-			className={cn(
-				"rich-text-command-menu-borderless max-h-80 w-72",
-				className,
-			)}
-			emptyLabel="No people or agents found"
-			items={items}
-			onSelect={handleSelect}
-			selectedIndex={-1}
-			title="Assign work item"
-		/>
 	);
 }
 
@@ -485,57 +415,6 @@ function getFlatSectionItems(
 	return category === "format"
 		? getSlashCommandFormatItems()
 		: getMentionChildItems(mentionSources, category);
-}
-
-const FOOTER_ITEM_ID_PREFIX = "__editor-palette-footer__";
-
-function getSectionFooterId(category: string): string {
-	return `${FOOTER_ITEM_ID_PREFIX}${category}`;
-}
-
-/**
- * Builds the rows for one flat section: up to five items capped by the limit,
- * plus a sticky footer ("Browse all" for directory-backed sections, "View
- * more" / "View less" for the rest). When `headingLabel` is provided the
- * section leads with a non-interactive heading so several sections can share
- * one merged list.
- */
-function getFlatSectionRows(
-	section: FlatSectionConfig,
-	items: readonly RichTextSuggestionMenuItem[],
-	expanded: boolean,
-	headingLabel?: string,
-): readonly RichTextSuggestionMenuItem[] {
-	const overflowing = items.length > FLAT_SECTION_LIMIT;
-	// Directory sections always cap at five and link out via "Browse all".
-	// Non-directory sections cap at five but can expand the rest inline.
-	const showAll = !section.hasDirectory && expanded;
-	const visibleItems = showAll ? items : items.slice(0, FLAT_SECTION_LIMIT);
-
-	const rows: RichTextSuggestionMenuItem[] = [];
-
-	if (headingLabel !== undefined) {
-		rows.push({
-			id: `${section.category}-heading`,
-			label: headingLabel,
-			headingLabel,
-			icon: null,
-		});
-	}
-
-	rows.push(...visibleItems);
-
-	if (overflowing) {
-		rows.push(
-			getSuggestionOverflowFooterItem(
-				getSectionFooterId(section.category),
-				section.hasDirectory ? "browse-all" : (showAll ? "view-less" : "view-more"),
-				{ isSticky: true },
-			),
-		);
-	}
-
-	return rows;
 }
 
 /**

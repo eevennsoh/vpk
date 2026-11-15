@@ -523,7 +523,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 
 	assert.match(GENERATIVE_SOURCE, /RovoSparkle,[\s\S]*RovoSparkleButton,[\s\S]*type RovoSparkleActionRequest,/);
 	assert.match(GENERATIVE_SOURCE, /import \{ EDITOR_PALETTE_MENTION_SOURCES \} from "@\/components\/blocks\/editor-palette\/data\/mention-sources";/);
-	assert.match(GENERATIVE_SOURCE, /import \{ getMentionChildItems \} from "@\/components\/ui-custom\/rich-text-editor";/);
+	assert.match(GENERATIVE_SOURCE, /import \{ getMentionChildItems \} from "@\/components\/ui-custom\/rich-text-editor\/menus";/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionConfig \{[\s\S]*agents\?: readonly RovoSparkleItem\[\];[\s\S]*ariaLabel\?: string;[\s\S]*onSubmit: \(request: JiraIssueGenerativeActionRequest\) => void \| Promise<void>;[\s\S]*skills\?: readonly RovoSparkleItem\[\];/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionRequest \{[\s\S]*kind: JiraIssueGenerativeActionKind;[\s\S]*prompt: string;[\s\S]*issue: JiraIssueGenerativeActionIssue;[\s\S]*selectedItem\?: JiraIssueGenerativeActionSelectedItem;/);
 	assert.match(GENERATIVE_SOURCE, /export type JiraIssueGenerativeActionSelectedItem = RovoSparkleSelectedItem;/);

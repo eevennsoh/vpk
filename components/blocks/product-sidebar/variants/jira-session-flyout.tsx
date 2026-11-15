@@ -13,6 +13,7 @@ import {
 	type ReactNode,
 } from "react";
 import { preload } from "react-dom";
+import dynamic from "next/dynamic";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
@@ -25,8 +26,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 
-import { AgentState, type AgentStateState } from "@/components/blocks/agent-state";
-import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
+import { LazyAgentProfileCard, preloadAgentProfileCard } from "@/components/blocks/agent-profile-card/lazy";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -61,6 +61,11 @@ import {
 } from "./jira-session-flyout-data";
 import { JiraSessionUntrackedWorkCard } from "./jira-session-untracked-work-card";
 import { ConeSafezone, ConeSafezoneContent } from "@/components/utils/cone-safezone";
+
+// The composer payload brings the Agent State prompt composer and its Tiptap runtime. Only
+// composer surfaces load it, and they start the load on mount so the first hover never waits.
+const loadJiraSessionComposerFlyout = () => import("./jira-session-composer-flyout");
+const JiraSessionComposerFlyout = dynamic(() => loadJiraSessionComposerFlyout().then((module) => module.JiraSessionComposerFlyout));
 
 export { createJiraSessionFlyoutHandle, prStateLozenge };
 
@@ -204,19 +209,6 @@ export function JiraSessionFlyoutTrigger({
  * It depends on `./jira` for TYPES ONLY (erased at build time) so that `./jira`
  * can import this body back without creating a runtime import cycle.
  */
-
-/** Queue lifecycle mapped onto the compact, property-free agent card states. */
-function toAgentStateState(status: JiraSidebarSessionStatus): AgentStateState {
-	if (status === "awaiting-input") return "awaiting-input";
-	if (status === "running") return "working";
-	return "completed";
-}
-
-/** Copy for terminal states that cannot use the successful completion default. */
-function toAgentStateMessage(status: JiraSidebarSessionStatus): string | undefined {
-	if (status !== "stopped") return undefined;
-	return "This session was stopped before the requested work was completed.";
-}
 
 function actorInitials(name: string): string {
 	return name
@@ -401,6 +393,11 @@ export function JiraSessionFlyoutBody({
 }>) {
 	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
 	preload(agentBannerSrc, { as: "image" });
+	useEffect(() => {
+		if (!hideAgentRow) {
+			preloadAgentProfileCard();
+		}
+	}, [hideAgentRow]);
 
 	const hasDevelopment = Boolean(
 		session.repository ??
@@ -482,7 +479,7 @@ export function JiraSessionFlyoutBody({
 							side={previewPosition?.side ?? "right"}
 							sideOffset={8}
 						>
-							<AgentProfileCard
+							<LazyAgentProfileCard
 								avatarSrc={session.agentAvatarSrc}
 								name={session.agentName}
 								surface="overlay"
@@ -630,30 +627,6 @@ function resolveJiraSessionUntrackedWorkActions({
 	};
 }
 
-function JiraSessionComposerFlyout({
-	onSubmitPrompt,
-	session,
-}: Pick<JiraSessionFlyoutPayloadProps, "onSubmitPrompt" | "session">) {
-	return (
-		<AgentState
-			agent={{
-				avatarSrc: session.agentAvatarSrc,
-				brandName: session.brandName,
-				id: session.id,
-				name: session.agentName,
-			}}
-			className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
-			completedAtMs={session.completedAtMs}
-			completedSecondsAgo={session.completedSecondsAgo}
-			initialElapsedSeconds={session.initialElapsedSeconds}
-			message={toAgentStateMessage(session.status)}
-			onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
-			startedAtMs={session.startedAtMs}
-			state={toAgentStateState(session.status)}
-		/>
-	);
-}
-
 function JiraSessionUntrackedWorkFlyout(props: Omit<JiraSessionFlyoutPayloadProps, "content">) {
 	return (
 		<JiraSessionUntrackedWorkCard
@@ -668,7 +641,7 @@ function JiraSessionUntrackedWorkFlyout(props: Omit<JiraSessionFlyoutPayloadProp
 function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloadProps) {
 	switch (content) {
 		case "composer":
-			return <JiraSessionComposerFlyout {...props} />;
+			return <JiraSessionComposerFlyout onSubmitPrompt={props.onSubmitPrompt} session={props.session} />;
 		case "untracked-work":
 			return <JiraSessionUntrackedWorkFlyout {...props} />;
 		case "details":
@@ -721,6 +694,12 @@ export function JiraSessionFlyoutSurface({
 			handle.close();
 		}
 	}, [handle, suspended]);
+
+	useEffect(() => {
+		if (content === "composer") {
+			void loadJiraSessionComposerFlyout();
+		}
+	}, [content]);
 
 	return (
 		<ConeSafezone<JiraSidebarSessionItem> handle={handle} onOpenChange={onOpenChange}>

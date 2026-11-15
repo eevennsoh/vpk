@@ -1,13 +1,13 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { preload } from "react-dom";
 
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 
-import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
+import { LazyAgentProfileCard, preloadAgentProfileCard } from "@/components/blocks/agent-profile-card/lazy";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	HoverCard,
@@ -113,6 +113,7 @@ function DetailsAgentTag({
 }>) {
 	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
 	preload(agentBannerSrc, { as: "image" });
+	useEffect(preloadAgentProfileCard, []);
 
 	return (
 		<div className="flex min-w-0 items-center">
@@ -152,7 +153,7 @@ function DetailsAgentTag({
 					side="right"
 					sideOffset={8}
 				>
-					<AgentProfileCard
+					<LazyAgentProfileCard
 						avatarSrc={session.agentAvatarSrc}
 						name={session.agentName}
 						surface="overlay"

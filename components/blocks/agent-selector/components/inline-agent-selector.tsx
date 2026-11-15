@@ -7,7 +7,7 @@ import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";

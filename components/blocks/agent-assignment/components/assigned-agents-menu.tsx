@@ -21,7 +21,7 @@ import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 
 interface AssignedAgentsMenuProps {

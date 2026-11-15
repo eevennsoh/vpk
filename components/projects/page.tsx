@@ -16,14 +16,14 @@ import type {
 	FloatingRovoButtonOnboardingConfig,
 	FloatingRovoButtonSuggestion,
 } from "@/components/blocks/rovo-button";
-import ChatPanel from "@/components/projects/sidebar-chat/page";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { useDeferredModule } from "@/components/projects/shared/hooks/use-deferred-module";
+import { loadChatPanel, loadRovoFloatingChat } from "@/components/projects/shared/lib/chat-surface-loaders";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import type { DesignVariantId } from "@/components/utils/design-variants";
 
@@ -66,6 +66,7 @@ interface AppLayoutProps {
 }
 
 const getNotEmbedded = () => false;
+
 
 /**
  * Detect iframe context so generated apps rendered inside the artifact
@@ -144,10 +145,18 @@ export default function AppLayout({
 	});
 	const chatPanelWidth = chatResize.sidebarWidth;
 	const shouldHideRovoAction = hideRovoAction || isRovoCanvasOpen;
-	const isSidebarChatActive = !hideShellChrome && chatSurface === "sidebar";
+	// The chat surfaces load the first time this route can show them (on mount for eager sidebar
+	// chat, on first open otherwise). A surface stays closed until its module has arrived, so the
+	// first open slides in finished content instead of an empty frame.
+	const isSidebarChatRequested = !hideShellChrome && chatSurface === "sidebar";
 	const isFloatingChatActive = chatSurface === "floating";
-	const showChatPanel = !isEmbedded && !shouldHideRovoAction && isSidebarChatActive;
-	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
+	const hasSidebarChatSlot = !isEmbedded && !shouldHideRovoAction;
+	const ChatPanel = useDeferredModule(loadChatPanel, hasSidebarChatSlot && (sidebarChatMount === "eager" || isSidebarChatRequested))?.default ?? null;
+	const isSidebarChatActive = isSidebarChatRequested && ChatPanel !== null;
+	const showChatPanel = hasSidebarChatSlot && isSidebarChatActive;
+	const isFloatingChatRequested = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
+	const RovoFloatingChat = useDeferredModule(loadRovoFloatingChat, isFloatingChatRequested)?.default ?? null;
+	const showFloatingChat = isFloatingChatRequested && RovoFloatingChat !== null;
 	const showFloatingRovoButton = !isEmbedded && !hideShellChrome && !hideFloatingRovo && !shouldHideRovoAction;
 	const embeddedShellHeight = embeddedHeight === "parent" ? "100%" : "100dvh";
 	// Embedded mode styles (fallback when not using the TopNavigation shell)
@@ -177,7 +186,7 @@ export default function AppLayout({
 			</div>
 
 			{/* In-situ Rovo Chat Panel */}
-			{!isEmbedded && !shouldHideRovoAction ? (
+			{hasSidebarChatSlot ? (
 				<div
 					data-shell-chrome=""
 					aria-hidden={!isSidebarChatActive}
@@ -196,27 +205,29 @@ export default function AppLayout({
 						zIndex: 90,
 					}}
 				>
-					<MountOnFirstUse active={sidebarChatMount === "eager" || isSidebarChatActive}>
-						<ChatPanel
-							agentCreator={currentUser}
-							onClose={toggleChat}
-							abortOnUnmount={false}
-							onSurfaceSwitch={onChatSurfaceSwitch}
-							chatContextBar={chatContextBar}
-							greeting={chatGreeting}
-							customAgentTabs={customAgentTabs}
-							onArtifactDialogOpen={onArtifactDialogOpen}
-							preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
-							containerStyle={
-								chatPanelFlush
-									? {
-											borderRadius: 0,
-											borderWidth: 0,
-										}
-									: undefined
-							}
-						/>
-					</MountOnFirstUse>
+					{ChatPanel ? (
+						<MountOnFirstUse active={sidebarChatMount === "eager" || isSidebarChatActive}>
+							<ChatPanel
+								agentCreator={currentUser}
+								onClose={toggleChat}
+								abortOnUnmount={false}
+								onSurfaceSwitch={onChatSurfaceSwitch}
+								chatContextBar={chatContextBar}
+								greeting={chatGreeting}
+								customAgentTabs={customAgentTabs}
+								onArtifactDialogOpen={onArtifactDialogOpen}
+								preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
+								containerStyle={
+									chatPanelFlush
+										? {
+												borderRadius: 0,
+												borderWidth: 0,
+											}
+										: undefined
+								}
+							/>
+						</MountOnFirstUse>
+					) : null}
 					<SidebarResizeHandle
 						side="left"
 						data-active={chatResize.isResizing ? "" : undefined}
@@ -230,7 +241,7 @@ export default function AppLayout({
 
 			{/* Floating Rovo Chat (anchored bottom-right) */}
 			<AnimatePresence>
-				{showFloatingChat ? (
+				{showFloatingChat && RovoFloatingChat ? (
 					<RovoFloatingChat
 						agentCreator={currentUser}
 						key="floating-chat"

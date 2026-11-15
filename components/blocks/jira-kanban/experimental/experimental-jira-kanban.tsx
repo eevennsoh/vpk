@@ -31,7 +31,7 @@ import {
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import { resolveWorkItemPickerOptions } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
 import { useJiraDropzoneReceiving } from "@/components/blocks/jira-dropzone";
-import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor/menus";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
