@@ -286,6 +286,24 @@ test("parseGenuiMetaAndBody and stripSpecBlocks preserve existing parsing rules"
 	assert.equal(stripSpecBlocks("Intro\n\n```spec\n{}\n```\n\n\nOutro"), "Intro\n\nOutro");
 });
 
+test("generateSmartGenuiResult forwards the caller's backend preference", async () => {
+	const { calls, service } = createHarness({
+		aiGatewayText: "Narrative",
+		bestSpec: null,
+	});
+
+	await service.generateSmartGenuiResult({
+		backendPreference: "ai-gateway",
+		roleMessages: [{ role: "user", content: "a small bar chart" }],
+	});
+
+	assert.deepEqual(calls.find((call) => call[0] === "resolvePreferredBackend"), [
+		"resolvePreferredBackend",
+		"ai-gateway",
+	]);
+	assert.ok(calls.some((call) => call[0] === "aiGateway.generateText"));
+});
+
 test("generateSmartGenuiResult builds prompt, parses metadata, strips specs, and summarizes quality", async () => {
 	const rawText = `${GENUI_META_PREFIX} {"mode":"smart"}\nNarrative\n\n\`\`\`spec\n{}\n\`\`\``;
 	const { calls, service } = createHarness({

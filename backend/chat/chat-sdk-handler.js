@@ -518,6 +518,7 @@ function createChatSdkHandler(dependencies = {}) {
 					SMART_WIDGET_TYPE_AUDIO,
 					SMART_WIDGET_TYPE_GENUI,
 					SMART_WIDGET_TYPE_IMAGE,
+					backendPreference,
 					buildExcalidrawWidgetPayload,
 					buildExcalidrawWidgetSystemPrompt,
 					buildFallbackGenuiSpecFromText,

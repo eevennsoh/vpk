@@ -233,6 +233,34 @@ test("createSmartGenerationStream passes GenUI narrative into smart audio genera
 	assert.equal(parts.at(-1).type, "data-turn-complete");
 });
 
+test("createSmartGenerationStream generates GenUI and diagrams on the turn's backend", async () => {
+	const genuiCalls = [];
+	const textCalls = [];
+	const genuiStream = createSmartGenerationStream(createBaseStreamOptions({
+		backendPreference: "ai-gateway",
+		generateSmartGenuiResult: async (options) => {
+			genuiCalls.push(options);
+			return { narrative: "Bar chart", spec: { type: "generated" } };
+		},
+	}));
+	await genuiStream.execute({ writer: createWriter().writer });
+
+	const diagramStream = createSmartGenerationStream(createBaseStreamOptions({
+		backendPreference: "ai-gateway",
+		isExcalidrawDiagramRequest: () => true,
+		generateTextViaGateway: async (options) => {
+			textCalls.push(options);
+			return "{\"type\":\"excalidraw\",\"elements\":[]}";
+		},
+	}));
+	await diagramStream.execute({ writer: createWriter().writer });
+
+	assert.equal(genuiCalls.length, 1);
+	assert.equal(genuiCalls[0].backendPreference, "ai-gateway");
+	assert.equal(textCalls.length, 1);
+	assert.equal(textCalls[0].backendPreference, "ai-gateway");
+});
+
 test("streamSmartGenerationRoute wires request aborts and pipes the stream", () => {
 	const req = new EventEmitter();
 	const res = {};
