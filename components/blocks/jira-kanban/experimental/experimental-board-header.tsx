@@ -106,6 +106,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	facepile?: ReactNode;
 	/** Clickable Filter control, including the two-pane popover. */
 	filterControl?: ReactNode;
+	headerControlsLayout?: "inline" | "trailing-icons";
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
@@ -225,6 +226,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	showBoardControls = true,
 	facepile,
 	filterControl,
+	headerControlsLayout = "inline",
 	modeToggle,
 	endSlot,
 	moreControlsPlacement = "inline",
@@ -257,6 +259,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 					showUnassignedAvatar={showUnassignedAvatar}
 					compact={compact}
 					controlsInsetEnd={controlsInsetEnd}
+					headerControlsLayout={headerControlsLayout}
 					moreControlsPlacement={moreControlsPlacement}
 					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
 					onShowUntrackedChange={onShowUntrackedChange}
@@ -430,6 +433,7 @@ function BoardHeaderControlsRow({
 	endSlot,
 	facepile,
 	filterControl,
+	headerControlsLayout,
 	modeToggle,
 	moreControlsPlacement,
 	onAgentFilterIdChange,
@@ -459,6 +463,7 @@ function BoardHeaderControlsRow({
 	endSlot?: ReactNode;
 	facepile?: ReactNode;
 	filterControl?: ReactNode;
+	headerControlsLayout: "inline" | "trailing-icons";
 	modeToggle?: ReactNode;
 	moreControlsPlacement: "inline" | "end";
 	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
@@ -476,6 +481,14 @@ function BoardHeaderControlsRow({
 	simpleViews?: boolean;
 	surfaceLabel: string;
 }>) {
+	const trailingIcons = headerControlsLayout === "trailing-icons";
+	const needsInputButton = needsInputCount !== undefined ? (
+		<BoardNeedsInputButton
+			agentFilterId={agentFilterId}
+			count={needsInputCount}
+			onAgentFilterIdChange={onAgentFilterIdChange}
+		/>
+	) : null;
 	const moreControls = showMoreControls ? (
 		<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 			<Icon render={<ShowMoreHorizontalIcon label="" />} />
@@ -520,16 +533,12 @@ function BoardHeaderControlsRow({
 				/>
 			)}
 
-			{filterControl}
+			{trailingIcons ? null : filterControl}
 
 			{needsInputCount !== undefined ? (
 				<>
-					<BoardGroupByMenu />
-					<BoardNeedsInputButton
-						agentFilterId={agentFilterId}
-						count={needsInputCount}
-						onAgentFilterIdChange={onAgentFilterIdChange}
-					/>
+					{trailingIcons ? null : <BoardGroupByMenu />}
+					{trailingIcons ? null : needsInputButton}
 				</>
 			) : (
 				<BoardViewMenu
@@ -571,6 +580,9 @@ function BoardHeaderControlsRow({
 					</Tabs>
 				) : null}
 				{endSlot ? endSlot : null}
+				{trailingIcons ? needsInputButton : null}
+				{trailingIcons ? filterControl : null}
+				{trailingIcons && needsInputCount !== undefined ? <BoardGroupByMenu compact /> : null}
 				{customizeControl}
 				{moreControlsPlacement === "end" ? moreControls : null}
 			</div>

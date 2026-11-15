@@ -680,7 +680,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.ok(customizeIndex > 0 && customizeIndex < endMoreIndex);
 	const endSlotIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{endSlot ? endSlot : null}");
 	assert.ok(endSlotIndex > 0 && viewSwitcherIndex < endSlotIndex && endSlotIndex < customizeIndex);
-	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
+	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{trailingIcons ? null : filterControl}");
 	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
 	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");
 	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
@@ -688,7 +688,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.ok(modeToggleIndex > 0 && modeToggleIndex < inlineMoreIndex);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{filterControl\}[\s\S]*?<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?moreControlsPlacement === "inline"/u,
+		/\{trailingIcons \? null : filterControl\}[\s\S]*?<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?moreControlsPlacement === "inline"/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
