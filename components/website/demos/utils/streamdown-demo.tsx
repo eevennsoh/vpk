@@ -224,7 +224,7 @@ export default function StreamdownDemo(): ReactElement {
 	}, [runStreamingDemo, stopStreaming]);
 
 	return (
-		<main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+		<section aria-label="Streamdown Latest API Demo" className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
 			<header className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2">
 					<h1 className="text-2xl font-semibold">Streamdown Latest API Demo</h1>
@@ -369,6 +369,6 @@ export default function StreamdownDemo(): ReactElement {
 					</Streamdown>
 				</section>
 			</div>
-		</main>
+		</section>
 	);
 }

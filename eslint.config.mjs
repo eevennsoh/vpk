@@ -194,6 +194,13 @@ const vpkTokens = {
 		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
 	},
 };
+// gotchas-ui.md: the root layout's MainLandmark is the page's only main landmark. Its own rule id
+// keeps the contract separate from the shared no-restricted-syntax list, which scopes replace wholesale.
+const vpkLandmarks = {
+	rules: {
+		"no-nested-main": builtinRules.get("no-restricted-syntax"),
+	},
+};
 // Whole class names only: opacity overlays such as bg-white/10 stay legal.
 const rawWhiteBlackPattern = "(^|[\\s:])bg-(white|black)($|\\s)";
 // A Tailwind size from text-xl up combined with a bold weight in one class string is a hand-made heading.
@@ -417,6 +424,17 @@ const eslintConfig = defineConfig([
 			"vpk-tokens/no-arbitrary-tile-radius": ["error", {
 				selector: classStringSelector(tileRadiusPattern),
 				message: "Use rounded-tile (--ds-radius-tile) instead of rounded-[25%] (token-priority.md).",
+			}],
+		},
+	},
+	{
+		files: ["app/**/*.{jsx,tsx}", "components/**/*.{jsx,tsx}"],
+		ignores: ["components/utils/main-landmark.tsx", "**/*.test.{jsx,tsx}"],
+		plugins: { "vpk-landmarks": vpkLandmarks },
+		rules: {
+			"vpk-landmarks/no-nested-main": ["error", {
+				selector: "JSXOpeningElement[name.name='main'], JSXAttribute[name.name='role'][value.value='main']",
+				message: "The root layout's MainLandmark is the page's only main landmark: render a <section aria-label> or a <div> instead (gotchas-ui.md).",
 			}],
 		},
 	},

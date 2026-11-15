@@ -65,7 +65,7 @@ export function JiraForYouShell({
 			)}
 			topNavigationSearchAlignment="sidebar"
 		>
-			<main className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
+			<section aria-label="For you" className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
 				{children ?? (
 					<JiraForYouWorkspace
 						chrome="plain"
@@ -73,7 +73,7 @@ export function JiraForYouShell({
 						showConversationHeaderBorder={showConversationHeaderBorder}
 					/>
 				)}
-			</main>
+			</section>
 		</AppLayout>
 	);
 }

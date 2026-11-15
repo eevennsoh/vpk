@@ -51,7 +51,7 @@ export default function CodeReviewDemo() {
 		DEMO_VARIANTS.find((variant) => variant.value === agentVariant) ?? null;
 
 	return (
-		<main className="flex h-screen items-center justify-center bg-surface">
+		<div className="flex h-screen items-center justify-center bg-surface">
 			<div
 				aria-label="Open code review variant"
 				className="flex flex-wrap items-center justify-center gap-2"
@@ -78,6 +78,6 @@ export default function CodeReviewDemo() {
 				}}
 				open={selectedVariant !== null}
 			/>
-		</main>
+		</div>
 	);
 }

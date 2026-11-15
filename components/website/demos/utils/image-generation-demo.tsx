@@ -249,7 +249,7 @@ export default function ImageGenerationDemo(): ReactElement {
 	}, []);
 
 	return (
-		<main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+		<section aria-label="Image Generation" className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
 				<header className="flex flex-col gap-3">
 					<h1 className="text-2xl font-semibold">Image Generation</h1>
 					<p className="text-sm text-muted-foreground">
@@ -399,6 +399,6 @@ export default function ImageGenerationDemo(): ReactElement {
 					</div>
 				</section>
 			) : null}
-		</main>
+		</section>
 	);
 }

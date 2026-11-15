@@ -149,7 +149,7 @@ export default function VisualJsonDemo() {
 	const [originalValue] = useState<JsonValue>(SAMPLE_DATA);
 
 	return (
-		<main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+		<section aria-label="Visual JSON" className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
 			<header className="flex flex-col gap-3">
 				<h1 className="text-2xl font-semibold">Visual JSON</h1>
 				<p className="text-sm text-muted-foreground">
@@ -233,6 +233,6 @@ export default function VisualJsonDemo() {
 					<LiveSpecEditor />
 				</TabsContent>
 			</Tabs>
-		</main>
+		</section>
 	);
 }

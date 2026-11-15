@@ -117,7 +117,7 @@ interface TopNavigationProps {
 	sidebar?: ReactNode | ((state: ShellSidebarSlotState) => ReactNode);
 	/**
 	 * Body content rendered inside the `"shell"` variant's framed content area,
-	 * in place of the empty placeholder `<main>`. Ignored by the `"header"`
+	 * in place of the empty placeholder body. Ignored by the `"header"`
 	 * variant.
 	 */
 	children?: ReactNode;
@@ -546,7 +546,7 @@ export default function TopNavigation({
 				{/* Framed content area. Hosts supply real content via `children`;
 				    the block demo renders an empty placeholder body. */}
 				{children ?? (
-					<main className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground" />
+					<div className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground" />
 				)}
 			</div>
 		</SidebarProvider>

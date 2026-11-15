@@ -32,9 +32,9 @@ function AdminProjectSurface({ embedded }: Readonly<{ embedded: boolean }>) {
 
 	return (
 		<AppLayout product="admin" embedded={embedded} hideRovoAction={!rovoChatEnabled}>
-			<main data-testid="admin-project-surface" className="min-h-full bg-bg-neutral-subtle">
+			<div data-testid="admin-project-surface" className="min-h-full bg-bg-neutral-subtle">
 				<AdminView selectedItem={selectedItem} />
-			</main>
+			</div>
 		</AppLayout>
 	);
 }
