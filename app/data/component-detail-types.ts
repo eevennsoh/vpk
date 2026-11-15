@@ -18,6 +18,11 @@ export interface ExampleDefinition {
 	description?: string;
 	demoSlug: string;
 	badge?: { label: string; variant: string };
+	/**
+	 * Section heading for long example lists. Consecutive examples with the same group render
+	 * under one heading (with its own anchor); ungrouped examples render without one.
+	 */
+	group?: string;
 }
 
 export interface ExternalLinkDefinition {
@@ -40,6 +45,12 @@ export interface DemoLayout {
 	previewContentWidth?: DemoContentWidth;
 	previewHeight?: DemoPreviewHeight;
 	examplesContentWidth?: DemoExamplesContentWidth;
+	/**
+	 * `"near-viewport"` mounts each example only when it scrolls near the viewport, and keeps
+	 * it mounted afterwards. Opt in for pages whose examples are expensive to mount all at
+	 * once (the chart gallery mounts 77 recharts charts); the default mounts every example.
+	 */
+	examplesMount?: "eager" | "near-viewport";
 }
 
 export interface ComponentDetail {

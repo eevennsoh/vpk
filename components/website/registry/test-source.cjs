@@ -8,6 +8,7 @@ const REGISTRY_SOURCE_FILES = [
 	"components/website/registry/ui/primary.ts",
 	"components/website/registry/ui/variants-actions.ts",
 	"components/website/registry/ui/variants-atlassian.ts",
+	"components/website/registry/ui/variants-charts.ts",
 	"components/website/registry/ui/variants-forms.ts",
 	"components/website/registry/ui/variants-foundation.ts",
 	"components/website/registry/ui/variants-menus.ts",
@@ -27,7 +28,6 @@ const REGISTRY_SOURCE_FILES = [
 	"components/website/registry/blocks-variants-catalog.ts",
 	"components/website/registry/projects.ts",
 	"components/website/registry/arts.ts",
-	"components/website/registry/charts.ts",
 	"components/website/registry/utility.ts",
 	"components/website/registry/visual.ts",
 ];

@@ -55,3 +55,18 @@ test("hasRenderableChartSize rejects negative, NaN, and nullish dimensions", () 
 	assert.equal(hasRenderableChartSize(null, 320), false);
 	assert.equal(hasRenderableChartSize(640, undefined), false);
 });
+
+test("getChartAccessibleLabel prefers an explicit label", () => {
+	const { getChartAccessibleLabel } = require("./chart-config.ts");
+	assert.equal(getChartAccessibleLabel({ desktop: { label: "Desktop" } }, "Visitors by month"), "Visitors by month");
+});
+
+test("getChartAccessibleLabel names the chart from its string series labels", () => {
+	const { getChartAccessibleLabel } = require("./chart-config.ts");
+	assert.equal(
+		getChartAccessibleLabel({ visitors: { label: "Visitors" }, desktop: { label: "Desktop", color: "red" }, other: { color: "blue" } }),
+		"Chart: Visitors and Desktop",
+	);
+	assert.equal(getChartAccessibleLabel({ other: { color: "blue" } }), "Chart");
+	assert.equal(getChartAccessibleLabel(null), "Chart");
+});

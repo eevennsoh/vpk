@@ -1553,7 +1553,7 @@
       "count": 1
     }
   },
-  "components/charts/pie/chart-pie-donut-with-text.tsx": {
+  "components/charts/pie/chart-pie-donut-text.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
