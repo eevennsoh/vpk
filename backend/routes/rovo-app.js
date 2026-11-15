@@ -23,6 +23,7 @@ const {
 const {
 	buildRovoAppFileUrl,
 } = require("../lib/rovo-app-upload-helpers");
+const { createRovoAppThreadOwnership } = require("../lib/rovo-app-thread-ownership");
 
 const REQUIRED_THREAD_MANAGER_METHODS = [
 	"createThread",
@@ -205,8 +206,50 @@ function createRovoAppRouter({
 	router.param("threadId", validateStorageIdParam("threadId"));
 	router.param("fileId", validateStorageIdParam("fileId"));
 	router.use("/rovo", rejectInvalidRovoAppIds);
+	// Every thread-scoped route sees only the caller's threads (lib/rovo-app-thread-ownership.js).
+	const ownership = createRovoAppThreadOwnership({
+		rovoAppDocumentManager,
+		rovoAppThreadManager,
+		rovoAppUploadManager,
+	});
+	const { callerOf, rejectForeignThread } = ownership;
+	router.use(["/rovo", "/sessions"], ownership.requireCaller);
+	const foreignQueryThread = rejectForeignThread((req) => req.query.threadId);
+	const foreignBodyThread = rejectForeignThread((req) => req.body?.threadId);
+	const foreignParamThread = rejectForeignThread((req) => req.params.threadId);
 
-	router.get("/rovo/messages", async (req, res) => {
+	// Cancels the thread's run, then removes the thread and everything stored under it.
+	// Cleanup failures never stop the thread's own delete.
+	async function deleteStoredThread(threadId, { cleanGeneratedFiles = true } = {}) {
+		const activeRun = rovoAppRunManager.getRun(threadId);
+		if (activeRun) {
+			if (typeof activeRun.rovoPort === "number" && activeRun.rovoPort > 0) {
+				await cancelChat(activeRun.rovoPort).catch(() => {});
+			}
+			await settleRun(activeRun, "cancelled");
+		}
+		const thread = await rovoAppThreadManager.getThread(threadId);
+		const uploadIds = collectUploadIdsFromMessages(thread?.messages);
+		if (thread) {
+			// Only what this thread's runs recorded; never paths read from its stored
+			// messages. Delete-all has already cleaned these for every thread at once.
+			if (cleanGeneratedFiles) {
+				await generatedFilesManager.deleteLegacyRootFiles(threadId).catch(() => 0);
+			}
+			await deleteThreadBrowserWorkspace(threadId).catch(() => ({}));
+			await destroyMirrorBrowser(`mirror-${threadId}`);
+		}
+		await Promise.all(
+			uploadIds.map((uploadId) =>
+				rovoAppUploadManager.deleteUpload(uploadId).catch(() => {})
+			)
+		);
+		await rovoAppVoteManager.deleteVotesForThread(threadId);
+		await rovoAppDocumentManager.deleteDocumentsByThread(threadId);
+		await rovoAppThreadManager.deleteThread(threadId);
+	}
+
+	router.get("/rovo/messages", foreignQueryThread, async (req, res) => {
 		try {
 			const rawThreadId = Array.isArray(req.query.threadId) ? req.query.threadId[0] : req.query.threadId;
 			const threadId = getString(rawThreadId);
@@ -224,7 +267,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/messages", async (req, res) => {
+	router.post("/rovo/messages", foreignBodyThread, async (req, res) => {
 		try {
 			const {
 				threadId: rawThreadId,
@@ -266,7 +309,7 @@ function createRovoAppRouter({
 			const limit = rawLimit ? Number(rawLimit) : undefined;
 			const threads = (
 				await Promise.all(
-					(await rovoAppThreadManager.listThreads({ limit })).map((thread) =>
+					(await rovoAppThreadManager.listThreads({ limit, filter: ownership.ownedBy(callerOf(res)) })).map((thread) =>
 						reconcileOrphanedThread(thread),
 					),
 				)
@@ -289,7 +332,7 @@ function createRovoAppRouter({
 
 			const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
 			const limit = rawLimit ? Number(rawLimit) : undefined;
-			const threads = await rovoAppThreadManager.listThreads({ limit: 100 });
+			const threads = await rovoAppThreadManager.listThreads({ limit: 100, filter: ownership.ownedBy(callerOf(res)) });
 			const results = searchThreads(threads, query.trim(), { limit });
 			return res.status(200).json({ results });
 		} catch (error) {
@@ -362,7 +405,18 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/threads", async (req, res) => {
+	router.post("/rovo/threads", async (req, res, next) => {
+		// Creating with the id of someone else's thread would overwrite it.
+		try {
+			const requestedId = getString(req.body?.id);
+			if (requestedId && await ownership.isForeignThread(callerOf(res), requestedId)) {
+				return res.status(409).json({ error: "Thread already exists" });
+			}
+			return next();
+		} catch (error) {
+			return next(error);
+		}
+	}, async (req, res) => {
 		try {
 			const {
 				id: rawThreadId,
@@ -382,6 +436,7 @@ function createRovoAppRouter({
 			const persistedMessages = await persistMessageFiles(threadId, messages);
 			const thread = await rovoAppThreadManager.createThread({
 				id: threadId,
+				owner: callerOf(res).owner,
 				title,
 				messages: persistedMessages,
 				realtimeMessages,
@@ -409,15 +464,31 @@ function createRovoAppRouter({
 				return res.status(400).json({ error: "Use ?all=true to delete all threads." });
 			}
 
-			const threads = await rovoAppThreadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
+			const caller = callerOf(res);
+			const threads = await rovoAppThreadManager.listThreads({
+				limit: Number.MAX_SAFE_INTEGER,
+				filter: ownership.ownedBy(caller),
+			});
 			// One cleanup for every thread (one git view, one deadline), and it never fails
 			// delete-all.
 			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
 
-			await rovoAppThreadManager.deleteAllThreads();
-			await rovoAppVoteManager.deleteAllVotes();
-			await rovoAppDocumentManager.deleteAllDocuments();
-			await rovoAppUploadManager.deleteAllUploads();
+			if (caller.local) {
+				// A local caller is the only caller there is: clear the stores whole, as
+				// before owners, which also drops records no thread points at. An SLAuth
+				// caller never takes this path, even when every stored thread is theirs:
+				// the stores also hold other callers' thread-less uploads and documents,
+				// and a thread another caller creates meanwhile.
+				await rovoAppThreadManager.deleteAllThreads();
+				await rovoAppVoteManager.deleteAllVotes();
+				await rovoAppDocumentManager.deleteAllDocuments();
+				await rovoAppUploadManager.deleteAllUploads();
+			} else {
+				// Other callers' threads stay: delete only the caller's, one by one.
+				for (const thread of threads) {
+					await deleteStoredThread(thread.id, { cleanGeneratedFiles: false });
+				}
+			}
 
 			return res.status(200).json({ deleted: true });
 		} catch (error) {
@@ -426,7 +497,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/threads/:threadId", async (req, res) => {
+	router.get("/rovo/threads/:threadId", foreignParamThread, async (req, res) => {
 		try {
 			const thread = await maybeMigratePersistedThreadBrowserScreenshots(
 				await reconcileOrphanedThread(
@@ -444,7 +515,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.put("/rovo/threads/:threadId", async (req, res) => {
+	router.put("/rovo/threads/:threadId", foreignParamThread, async (req, res) => {
 		try {
 			const {
 				title,
@@ -485,7 +556,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/detach", async (req, res) => {
+	router.post("/rovo/detach", foreignBodyThread, async (req, res) => {
 		try {
 			const threadId = getString(req.body?.threadId);
 			if (!threadId) {
@@ -509,7 +580,7 @@ function createRovoAppRouter({
 
 	router.get("/rovo/background-streams", async (_req, res) => {
 		try {
-			const streams = rovoAppRunManager.listRuns();
+			const streams = await ownership.filterOwnedRuns(callerOf(res), rovoAppRunManager.listRuns());
 			return res.status(200).json({ streams });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to list background streams:", error);
@@ -517,7 +588,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/runs/:threadId/stream", async (req, res) => {
+	router.get("/rovo/runs/:threadId/stream", foreignParamThread, async (req, res) => {
 		try {
 			const threadId = getString(req.params.threadId);
 			if (!threadId) {
@@ -545,7 +616,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/runs/:threadId/detach", async (req, res) => {
+	router.post("/rovo/runs/:threadId/detach", foreignParamThread, async (req, res) => {
 		try {
 			const threadId = getString(req.params.threadId);
 			if (!threadId) {
@@ -569,7 +640,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/runs/:threadId/cancel", async (req, res) => {
+	router.post("/rovo/runs/:threadId/cancel", foreignParamThread, async (req, res) => {
 		try {
 			const threadId = getString(req.params.threadId);
 			if (!threadId) {
@@ -658,33 +729,9 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.delete("/rovo/threads/:threadId", async (req, res) => {
+	router.delete("/rovo/threads/:threadId", foreignParamThread, async (req, res) => {
 		try {
-			const threadId = req.params.threadId;
-			const activeRun = rovoAppRunManager.getRun(threadId);
-			if (activeRun) {
-				if (typeof activeRun.rovoPort === "number" && activeRun.rovoPort > 0) {
-					await cancelChat(activeRun.rovoPort).catch(() => {});
-				}
-				await settleRun(activeRun, "cancelled");
-			}
-			const thread = await rovoAppThreadManager.getThread(threadId);
-			const uploadIds = collectUploadIdsFromMessages(thread?.messages);
-			if (thread) {
-				// Only what this thread's runs recorded; never paths read from its stored
-				// messages. Cleanup never stops the thread's own delete.
-				await generatedFilesManager.deleteLegacyRootFiles(threadId).catch(() => 0);
-				await deleteThreadBrowserWorkspace(threadId).catch(() => ({}));
-				await destroyMirrorBrowser(`mirror-${threadId}`);
-			}
-			await Promise.all(
-				uploadIds.map((uploadId) =>
-					rovoAppUploadManager.deleteUpload(uploadId).catch(() => {})
-				)
-			);
-			await rovoAppVoteManager.deleteVotesForThread(threadId);
-			await rovoAppDocumentManager.deleteDocumentsByThread(threadId);
-			await rovoAppThreadManager.deleteThread(threadId);
+			await deleteStoredThread(req.params.threadId);
 			return res.status(200).json({ deleted: true });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to delete thread:", error);
@@ -692,7 +739,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/votes", async (req, res) => {
+	router.get("/rovo/votes", foreignQueryThread, async (req, res) => {
 		try {
 			const rawThreadId = Array.isArray(req.query.threadId) ? req.query.threadId[0] : req.query.threadId;
 			const threadId = getString(rawThreadId);
@@ -708,7 +755,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.patch("/rovo/votes", async (req, res) => {
+	router.patch("/rovo/votes", foreignBodyThread, async (req, res) => {
 		try {
 			const { threadId: rawThreadId, messageId: rawMessageId, value } = req.body || {};
 			const threadId = getString(rawThreadId);
@@ -729,7 +776,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/documents", async (req, res) => {
+	router.get("/rovo/documents", foreignQueryThread, ownership.rejectForeignDocument((req) => req.query.documentId), async (req, res) => {
 		try {
 			const rawThreadId = Array.isArray(req.query.threadId) ? req.query.threadId[0] : req.query.threadId;
 			const rawDocumentId = Array.isArray(req.query.documentId) ? req.query.documentId[0] : req.query.documentId;
@@ -744,7 +791,10 @@ function createRovoAppRouter({
 				return res.status(200).json({ document });
 			}
 
-			const documents = await rovoAppDocumentManager.listDocuments({ threadId: threadId || undefined });
+			const documents = await ownership.filterOwnedDocuments(
+				callerOf(res),
+				await rovoAppDocumentManager.listDocuments({ threadId: threadId || undefined }),
+			);
 			return res.status(200).json({ documents });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to list documents:", error);
@@ -752,7 +802,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/documents", async (req, res) => {
+	router.post("/rovo/documents", foreignBodyThread, ownership.rejectForeignDocument((req) => req.body?.documentId), async (req, res) => {
 		try {
 			const {
 				changeLabel,
@@ -805,7 +855,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.delete("/rovo/documents", async (req, res) => {
+	router.delete("/rovo/documents", ownership.rejectForeignDocument((req) => req.query.documentId), async (req, res) => {
 		try {
 			const rawDocumentId = Array.isArray(req.query.documentId) ? req.query.documentId[0] : req.query.documentId;
 			const documentId = getString(rawDocumentId);
@@ -821,7 +871,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.post("/rovo/files/upload", async (req, res) => {
+	router.post("/rovo/files/upload", foreignBodyThread, async (req, res) => {
 		try {
 			const { name, mediaType, dataUrl, threadId } = req.body || {};
 			if (typeof dataUrl !== "string" || !dataUrl.trim()) {
@@ -830,6 +880,7 @@ function createRovoAppRouter({
 
 			const upload = await rovoAppUploadManager.createUploadFromDataUrl({
 				threadId: getString(threadId) || undefined,
+				owner: callerOf(res).owner,
 				filename: typeof name === "string" && name.trim() ? name : "attachment.bin",
 				mediaType: typeof mediaType === "string" && mediaType.trim() ? mediaType : undefined,
 				dataUrl,
@@ -850,7 +901,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/files/:fileId", async (req, res) => {
+	router.get("/rovo/files/:fileId", ownership.rejectForeignUpload, async (req, res) => {
 		try {
 			const upload = await rovoAppUploadManager.getUpload(req.params.fileId);
 			if (!upload) {

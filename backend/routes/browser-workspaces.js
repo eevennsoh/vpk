@@ -5,6 +5,7 @@ const express = require("express");
 const { isBrowserWorkspaceLimitError } = require("../lib/browser-workspace-lifecycle");
 const { getNonEmptyString } = require("../lib/shared-utils");
 const { INVALID_INPUT_CODE, parseNavigationUrl } = require("../lib/input-schemas");
+const { getRequestCaller } = require("../middleware/caller-identity");
 const { sendError } = require("../middleware/error-response");
 
 const REQUIRED_MANAGER_METHODS = [
@@ -435,6 +436,8 @@ function createBrowserWorkspacesRouter({
 
 			if (action === "stream") {
 				const socketScope = `browser-preview:${workspaceId}`;
+				// The preview token is bound to this caller; the upgrade must come from them.
+				const socketSubject = getRequestCaller(req)?.owner;
 				const mirrorBrowser = getMirrorBrowser(workspaceId);
 				if (mirrorBrowser) {
 					const streamConfig = mirrorBrowser.getStreamConfig(runtimePort);
@@ -444,6 +447,7 @@ function createBrowserWorkspacesRouter({
 							streamConfig.wsUrl,
 							socketScope,
 							"previewToken",
+							socketSubject,
 						),
 					});
 				}
@@ -455,6 +459,7 @@ function createBrowserWorkspacesRouter({
 						`ws://127.0.0.1:${runtimePort}/api/browser-workspaces/${encodeURIComponent(workspaceId)}/live`,
 						socketScope,
 						"previewToken",
+						socketSubject,
 					),
 				});
 			}

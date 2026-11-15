@@ -159,16 +159,18 @@ test("runtime socket helpers mint scoped tokens and gate token requester origins
 		allowedOrigins: ["https://allowed.test"],
 		env: { VPK_RUNTIME_ADMIN_TOKEN: "secret" },
 	});
-	const token = controls.createRuntimeSocketToken("realtime:audio-conversation");
+	const token = controls.createRuntimeSocketToken("realtime:audio-conversation", "alice");
 
 	assert.equal(typeof token, "string");
-	assert.equal(controls.isRuntimeSocketTokenValid(token, "realtime:audio-conversation"), true);
-	assert.equal(controls.isRuntimeSocketTokenValid(token, "browser-preview:other"), false);
+	assert.equal(controls.isRuntimeSocketTokenValid(token, "realtime:audio-conversation", "alice"), true);
+	assert.equal(controls.isRuntimeSocketTokenValid(token, "browser-preview:other", "alice"), false);
+	assert.equal(controls.isRuntimeSocketTokenValid(token, "realtime:audio-conversation", "bob"), false);
 	assert.match(
 		controls.appendRuntimeSocketToken(
 			"/api/realtime/audio-conversation",
 			"realtime:audio-conversation",
 			"realtimeToken",
+			"alice",
 		),
 		/^\/api\/realtime\/audio-conversation\?realtimeToken=/u,
 	);

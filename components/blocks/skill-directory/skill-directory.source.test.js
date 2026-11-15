@@ -319,8 +319,8 @@ test("Skill Directory renders the skill detail view with the config screen and F
 	assert.match(source, /scripts/u);
 	// The left category sidebar (browse view) keeps its own top scroll mask.
 	assert.match(sidebarSource, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
-	assert.match(sidebarSource, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
-	assert.match(sidebarSource, /aria-label="Skill categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
+	assert.match(sidebarSource, /const \{ ref: sidebarOverflowRef, showTopScrollMask: showSidebarTopScrollMask \} = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(sidebarSource, /aria-label="Skill categories"[\s\S]*showSidebarTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflowRef\}/u);
 });
 
 test("Skill Directory demo and docs use skill-specific examples", () => {

@@ -12,6 +12,7 @@ const {
 	trackHeartbeat,
 } = require("./ws-connection-limits");
 const { resolveClientAddress, resolveTrustedProxyHops } = require("../lib/client-address");
+const { resolveCallerIdentity, resolveCallerIdentityMode } = require("../lib/caller-identity");
 const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
@@ -30,6 +31,7 @@ function rejectUpgrade(socket, statusCode, message) {
 }
 
 function verifyRuntimeSocketUpgrade(requestUrl, request, {
+	callerIdentityMode,
 	isAllowedRuntimeSocketOrigin,
 	isRuntimeSocketTokenValid,
 	paramName,
@@ -37,6 +39,13 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 	runtimeAdminToken,
 	scope,
 }) {
+	// The upgrade never passes the HTTP middleware, so the caller is resolved here: in
+	// slauth mode an upgrade without X-Slauth-Subject is refused like any other request.
+	const identity = resolveCallerIdentity(request, callerIdentityMode);
+	if (!identity.ok) {
+		return { ok: false, statusCode: 401, message: "Unauthorized" };
+	}
+
 	const origin = getNonEmptyString(request.headers.origin);
 	if (!isAllowedRuntimeSocketOrigin(origin, request)) {
 		return { ok: false, statusCode: 403, message: "Forbidden" };
@@ -47,7 +56,7 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 	}
 
 	const socketToken = getRuntimeSocketTokenFromUpgrade(requestUrl, paramName);
-	if (isRuntimeSocketTokenValid(socketToken, scope)) {
+	if (isRuntimeSocketTokenValid(socketToken, scope, identity.caller.owner)) {
 		return { ok: true, socketToken };
 	}
 
@@ -195,6 +204,7 @@ function registerBackendWebSocketRelays(server, {
 	// raw socket closes (also when the handshake fails). Over a cap the upgrade gets 503.
 	const limits = resolveConnectionLimits(env, consoleImpl);
 	const trustedProxyHops = resolveTrustedProxyHops(env, consoleImpl);
+	const callerIdentityMode = resolveCallerIdentityMode(env, consoleImpl);
 	consoleImpl.log?.(`[STARTUP] Client addresses: ${trustedProxyHops} trusted proxy hop(s); WebSocket caps per pool: ${limits.maxTotal} total, ${limits.maxPerAddress} per address`);
 	const pools = connectionLimiters ?? {
 		preview: connectionLimiter ?? createConnectionLimiter(limits),
@@ -216,6 +226,7 @@ function registerBackendWebSocketRelays(server, {
 	};
 	const verifyUpgrade = (requestUrl, request, options) => {
 		return verifyRuntimeSocketUpgrade(requestUrl, request, {
+			callerIdentityMode,
 			isAllowedRuntimeSocketOrigin,
 			isRuntimeSocketTokenValid,
 			runtimeAdminRequired,

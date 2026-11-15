@@ -511,7 +511,7 @@ function DefaultAgentBrowser({
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const [query, setQuery] = useState("");
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const visibleTemplateCategories = templateAgents.length > 0 ? templateCategories : [];
 	const activeTemplateCategoryOption = activeTemplateCategory
 		? visibleTemplateCategories.find((category) => category.id === activeTemplateCategory) ?? null
@@ -558,7 +558,7 @@ function DefaultAgentBrowser({
 			/>
 
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					// overflow-y-auto forces overflow-x to compute to auto, so this scroll
 					// viewport clips anything painted outside its content box. pt-1 gives the
@@ -566,7 +566,7 @@ function DefaultAgentBrowser({
 					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
 					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
 					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					showContentTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
 				{activeTemplateCategoryOption ? null : (
@@ -680,7 +680,7 @@ function ExperimentalAgentBrowser({
 	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplateCategoryId | null>(initialTemplateCategory);
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 
 	const teamOptions = useMemo(() => getAttributionOptions(agents, "team"), [agents]);
 	const companyOptions = useMemo(() => getAttributionOptions(agents, "company"), [agents]);
@@ -941,11 +941,11 @@ function ExperimentalAgentBrowser({
 			    pb-6 for the last row's bottom gap + hover shadow; Templates mode owns its
 			    bottom spacing inside the carousel (see ExperimentalTemplateMode). */}
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2",
 					templateModeActive ? null : "pb-6",
-					contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
+					showContentTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 				)}
 			>
 				{templateModeActive && activeTemplateCategoryOption ? (
@@ -1500,16 +1500,16 @@ function DirectorySidebar({
 	agents,
 	onSelectAgent,
 }: Readonly<DirectorySidebarProps>) {
-	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
+	const { ref: sidebarOverflowRef, showTopScrollMask: showSidebarTopScrollMask } = useHasVerticalOverflow<HTMLElement>();
 
 	return (
 		<nav
 			aria-label="Agent categories"
 			className={cn(
 				"hidden min-h-0 w-[280px] shrink-0 flex-col gap-4 overflow-y-auto pl-6 md:flex",
-				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				showSidebarTopScrollMask && "scroll-mask-top overscroll-contain",
 			)}
-			ref={sidebarOverflow.ref}
+			ref={sidebarOverflowRef}
 		>
 			<ul className="flex w-64 flex-col">
 				{categories.map((category) => (

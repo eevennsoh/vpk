@@ -5,6 +5,7 @@
 		"lib/backend-data-dir.js",
 		"lib/backend-process-machine.js",
 		"lib/browser-workspace-lifecycle.js",
+		"lib/caller-identity.js",
 		"lib/chromium-preview.js",
 		"lib/image-proxy.js",
 		"lib/input-schemas.js",
