@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { AnimatePresence, motion, PresenceContext, useReducedMotion } from "motion/react";
+import { use, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,41 @@ export interface GallerySelectedStageProps {
 	position: GalleryStagePosition;
 	resetKey: number;
 	renderSelectedItem: (item: GalleryItem) => ReactNode;
+}
+
+/**
+ * `<AnimatePresence initial={false}>` skips the entrance of the item shown on first render, but
+ * Motion memoizes that `initial: false` in the presence context, so every motion element mounted
+ * inside that item later (a hover preview, a handoff avatar) also loses its `initial` keyframe.
+ * Keep the block for the first render only; descendants that mount afterwards see no block.
+ *
+ * "Afterwards" means after this wrapper's first passive effect, so anything that mounts later on
+ * page load (client-only content, a late Suspense boundary) now plays its own entrance. Measured on
+ * every stage consumer at the time of writing, the only visible case is the top-navigation avatar
+ * on /butter, which fades in like it does outside the gallery. Content that hydrates in a later
+ * pass would render its `initial` keyframe on the client, so keep late-hydrating motion out of the
+ * first item or give it `initial={false}`. Delete this wrapper once Motion re-reads `initial` from
+ * the presence context instead of caching it at mount (checked against motion 13.5).
+ */
+function ReleaseInitialBlockAfterMount({ children }: Readonly<{ children: ReactNode }>) {
+	const presence = use(PresenceContext);
+	const mounted = useRef(false);
+	useEffect(() => {
+		mounted.current = true;
+	}, []);
+	// Motion reads `initial` once, when a motion element mounts, so a getter is enough and nothing re-renders.
+	// AnimatePresence hands out a new context object on most renders, so the memo rarely hits; it only
+	// keeps the object stable when the parent's context is.
+	const released = useMemo(() => {
+		if (!presence) return presence;
+		return {
+			...presence,
+			get initial() {
+				return mounted.current ? undefined : presence.initial;
+			},
+		};
+	}, [presence]);
+	return <PresenceContext value={released}>{children}</PresenceContext>;
 }
 
 export function GallerySelectedStage({
@@ -60,7 +95,7 @@ export function GallerySelectedStage({
 					)}
 					style={{ willChange: "transform, opacity" }}
 				>
-					{renderSelectedItem(item)}
+					<ReleaseInitialBlockAfterMount>{renderSelectedItem(item)}</ReleaseInitialBlockAfterMount>
 				</motion.div>
 			</AnimatePresence>
 		</motion.section>

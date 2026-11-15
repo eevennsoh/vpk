@@ -15,6 +15,16 @@ async function expectSettled(locator: Locator) {
 	}).toBe(true);
 }
 
+// A new session briefly holds focus in the card's chin, so retry until the Add agent trigger takes it.
+async function openAgentPicker(page: Page, card: Locator, key: string) {
+	const addAgent = card.getByRole("button", { name: `Add agent to ${key}` });
+	await expect(async () => {
+		await addAgent.focus();
+		await expect(addAgent).toBeFocused({ timeout: 100 });
+	}).toPass({ timeout: 5_000 });
+	await page.keyboard.press("Enter");
+}
+
 test("Butter v1 cycles the selected agent into Working", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
@@ -70,8 +80,7 @@ test("Butter v1 cycles one avatar for three working agents in the board chin", a
 	await page.getByRole("button", { name: "Select Board" }).click();
 	const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
 	for (const name of ["Claude (Recommended)", "Jira Coding Agent"]) {
-		await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
-		await page.keyboard.press("Enter");
+		await openAgentPicker(page, card, "PAY-105");
 		await page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("button", { name, exact: true }).click();
 	}
 	const chin = card.getByRole("button", { name: "3 agents: Working" });
@@ -121,21 +130,28 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 // Butter v0 starts a card's cloud session as "Needs input" while it waits for the first prompt.
-async function selectCodingAgent(page: Page, key: string) {
+// Once the card has a Jira Coding Agent session, choosing the agent again opens a submenu that asks
+// whether to continue that session or start a new one, so a repeated selection starts a new session.
+async function selectCodingAgent(page: Page, key: string, { repeat = false } = {}) {
 	const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
-	await card.getByRole("button", { name: `Add agent to ${key}` }).focus();
-	await page.keyboard.press("Enter");
+	await openAgentPicker(page, card, key);
 	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
-	const option = picker.getByRole("option", { name: /^Jira Coding Agent/ });
+	// Once a card has a Jira Coding Agent session, "Other agents" also lists that session under the same name, so pick the directory row.
+	const option = picker.locator('[role="option"][data-value="jira-coding"]');
 	await option.hover();
-	const observations = page.evaluate(async (issueKey) => {
+	const observations = page.evaluate(async ({ issueKey, repeatSelection }) => {
 		const results = { glow: false, handoff: false, overlap: false, scaled: false, status: "", shadow: "" };
-		const start = performance.now();
 		await new Promise<void>((resolve) => {
-			const target = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((element) => element.textContent?.includes("Jira Coding Agent"));
-			if (!target) return resolve();
-			target.addEventListener("click", () => resolve(), { once: true, capture: true });
+			const onClick = (event: MouseEvent) => {
+				const target = event.target instanceof Element ? event.target : null;
+				const selected = repeatSelection ? target?.closest('[role="menuitem"]')?.textContent?.includes("Start a new session") : target?.closest('[role="option"][data-value="jira-coding"]');
+				if (!selected) return;
+				document.removeEventListener("click", onClick, true);
+				resolve();
+			};
+			document.addEventListener("click", onClick, true);
 		});
+		const start = performance.now();
 		while (performance.now() - start < 3000) {
 			const card = document.querySelector<HTMLElement>(`[data-issue-key="${issueKey}"][data-board-column-title]`);
 			const handoff = card?.querySelector('[data-slot="jira-issue-agent-invocation-handoff"][data-agent-id="jira-coding"]');
@@ -153,35 +169,40 @@ async function selectCodingAgent(page: Page, key: string) {
 			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 		}
 		return results;
-	}, key);
+	}, { issueKey: key, repeatSelection: repeat });
 	await option.click();
+	if (repeat) await page.getByRole("menuitem", { name: "Start a new session" }).click();
 	const result = await observations;
+	await expect(picker).toHaveCount(0);
 	await expect(card.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toHaveCount(0);
 	return { card, result };
 }
 
-test("new and repeated selections replace the preview and each show the avatar-colored glow", async ({ page }) => {
+test("the first selection hands off and scales in; repeated selections start a new session with the avatar-colored glow", { tag: "@smoke" }, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
-	for (let iteration = 0; iteration < 2; iteration++) {
-		const { card, result } = await selectCodingAgent(page, "PAY-105");
-		expect(result).toMatchObject({ glow: true, handoff: true, overlap: false, scaled: true });
-		expect(result.status).toContain("Needs input");
-		expect(result.shadow).toContain("rgb(148, 199, 72)");
-		await expect(card.getByRole("button", { name: "2 agents: Needs input" }).getByRole("img", { name: "Jira Coding Agent" })).toBeVisible();
-		await expect(card.locator('[data-jira-linking-glow-halo]')).toHaveCount(0);
-	}
-	const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
-	await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
-	await page.keyboard.press("Enter");
+	const { card, result } = await selectCodingAgent(page, "PAY-105");
+	expect(result).toMatchObject({ glow: true, handoff: true, overlap: false, scaled: true });
+	expect(result.status).toContain("Needs input");
+	expect(result.shadow).toContain("rgb(148, 199, 72)");
+	await expect(card.getByRole("button", { name: "2 agents: Needs input" }).getByRole("img", { name: "Jira Coding Agent" })).toBeVisible();
+	await expect(card.locator('[data-jira-linking-glow-halo]')).toHaveCount(0);
+	// A second session for an agent the card already shows joins the avatar puzzle instead of the single-agent handoff.
+	const second = await selectCodingAgent(page, "PAY-105", { repeat: true });
+	expect(second.result).toMatchObject({ glow: true, handoff: false, overlap: false });
+	expect(second.result.status).toContain("Needs input");
+	expect(second.result.shadow).toContain("rgb(148, 199, 72)");
+	await expect(card.getByRole("button", { name: "3 agents: Needs input" })).toBeVisible();
+	await expect(card.locator('[data-jira-linking-glow-halo]')).toHaveCount(0);
+	await openAgentPicker(page, card, "PAY-105");
 	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
 	await picker.getByRole("combobox", { name: "Search agents" }).fill("Figma");
 	await picker.getByRole("option", { name: /^Figma/ }).click();
-	await expect(card.getByRole("button", { name: "3 agents: Needs input" })).toBeVisible();
+	await expect(card.getByRole("button", { name: "4 agents: Needs input" })).toBeVisible();
 	await expect(card.locator('[data-jira-linking-glow-halo]')).toHaveCount(0);
-	const repeated = await selectCodingAgent(page, "PAY-105");
+	const repeated = await selectCodingAgent(page, "PAY-105", { repeat: true });
 	expect(repeated.result.glow).toBe(true);
-	await expect(card.getByRole("button", { name: /agents: Needs input$/ }).getByRole("img", { name: "Jira Coding Agent" })).toBeVisible();
+	await expect(card.getByRole("button", { name: "5 agents: Needs input" })).toBeVisible();
 });
 
 test("the handoff and glow survive a card moving into In progress", async ({ page }) => {
