@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import {
 	DropdownMenu,
@@ -83,6 +83,41 @@ const fieldIcons: Record<string, ReactNode> = {
 	label: <TagIcon label="" />,
 	status: <CheckCircleIcon label="" />,
 };
+const statusTones: Record<string, NonNullable<LozengeProps["variant"]>> = {
+	done: "success",
+	"in-review": "discovery",
+	"in-progress": "information",
+	planning: "warning",
+};
+const optionIcons: Record<string, Record<string, ReactNode>> = {
+	agentStatus: {
+		needsInput: <span className="size-1.5 rounded-full bg-icon-information" />,
+		finished: <StatusSuccessIcon label="" />,
+	},
+	prStatus: {
+		merged: <MergeSuccessIcon label="" />,
+		closed: <MergeFailureIcon label="" />,
+		none: <LinkBrokenIcon label="" />,
+	},
+	type: { story: <StoryIcon label="" />, epic: <EpicIcon label="" /> },
+};
+const defaultOptionIcons: Record<string, ReactNode> = {
+	agentStatus: <AiAgentIcon label="" />,
+	prStatus: <PullRequestIcon label="" />,
+	type: <TaskIcon label="" />,
+};
+
+function lookupOwn<T>(record: Record<string, T>, key: string): T | undefined {
+	return Object.hasOwn(record, key) ? record[key] : undefined;
+}
+
+function getOptionIcon(field: string, value: string) {
+	const icons = lookupOwn(optionIcons, field);
+	return (
+		(icons ? lookupOwn(icons, value) : undefined) ??
+		lookupOwn(defaultOptionIcons, field)
+	);
+}
 
 function samePin(a: Pin, b: Pin) {
 	return a.kind === "saved" && b.kind === "saved"
@@ -128,41 +163,14 @@ function ValueLabel({
 	option: JiraFilterField["options"][number];
 }>) {
 	if (field.id === "status" || field.id === "sprint") {
-		const tone =
-			option.value === "done"
-				? "success"
-				: option.value === "in-review"
-					? "discovery"
-					: option.value === "in-progress"
-						? "information"
-						: option.value === "planning"
-							? "warning"
-							: "neutral";
-		return <Lozenge variant={tone}>{option.label}</Lozenge>;
+		return (
+			<Lozenge variant={lookupOwn(statusTones, option.value) ?? "neutral"}>
+				{option.label}
+			</Lozenge>
+		);
 	}
-	let icon: ReactNode = null;
-	if (field.id === "agentStatus") {
-		icon =
-			option.value === "needsInput" ? (
-				<span className="size-1.5 rounded-full bg-icon-information" />
-			) : option.value === "finished" ? (
-				<StatusSuccessIcon label="" />
-			) : (
-				<AiAgentIcon label="" />
-			);
-	} else if (field.id === "prStatus") {
-		icon =
-			option.value === "merged" ? (
-				<MergeSuccessIcon label="" />
-			) : option.value === "closed" ? (
-				<MergeFailureIcon label="" />
-			) : option.value === "none" ? (
-				<LinkBrokenIcon label="" />
-			) : (
-				<PullRequestIcon label="" />
-			);
-	} else if (field.id === "assignee") {
-		icon = (
+	const icon =
+		field.id === "assignee" ? (
 			<Avatar size="xs" label={option.label}>
 				<AvatarFallback>
 					{option.label
@@ -172,17 +180,9 @@ function ValueLabel({
 						.slice(0, 2)}
 				</AvatarFallback>
 			</Avatar>
+		) : (
+			getOptionIcon(field.id, option.value)
 		);
-	} else if (field.id === "type") {
-		icon =
-			option.value === "story" ? (
-				<StoryIcon label="" />
-			) : option.value === "epic" ? (
-				<EpicIcon label="" />
-			) : (
-				<TaskIcon label="" />
-			);
-	}
 	return (
 		<span className="flex min-w-0 items-center gap-3">
 			{icon ? (
@@ -458,7 +458,9 @@ export function ProjectButterFilter({
 								<DropdownMenuItem
 									key={field.id}
 									closeOnClick={false}
-									elemBefore={fieldIcons[field.id] ?? <FieldIcon label="" />}
+									elemBefore={
+										lookupOwn(fieldIcons, field.id) ?? <FieldIcon label="" />
+									}
 									onClick={() => {
 										setVisibleIds((current) => [field.id, ...current]);
 										setSearch("");
@@ -640,7 +642,9 @@ export function ProjectButterFilter({
 									<DropdownMenuSub key={field.id}>
 										<DropdownMenuSubTrigger
 											elemBefore={
-												fieldIcons[field.id] ?? <FieldIcon label="" />
+												lookupOwn(fieldIcons, field.id) ?? (
+													<FieldIcon label="" />
+												)
 											}
 										>
 											{field.label}
