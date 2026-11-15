@@ -16,7 +16,9 @@ const PROMPT_INPUT_DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "ap
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/live-waveform.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
 const PROMPT_INPUT_DICTATION_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input-dictation.tsx"), "utf8");
-const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
+const PROMPT_INPUT_ROOT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input/prompt-input-root.tsx"), "utf8");
+const PROMPT_INPUT_TEXTAREA_TYPES_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input/prompt-input-textarea-types.ts"), "utf8");
+const PROMPT_INPUT_TEXTAREA_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input/prompt-input-textarea.tsx"), "utf8");
 const VISUAL_TRACE_AUTO_TAGGING_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
 const MENTION_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/extensions.ts"), "utf8");
@@ -303,28 +305,28 @@ test("RovoAppComposer forwards directory autocomplete control to both composer b
 	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible,/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteChange,/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteControllerChange,/u);
-	assert.match(PROMPT_INPUT_SOURCE, /directoryAutocompleteLimit\?: number;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /limit: directoryAutocompleteLimitRef\.current/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_TYPES_SOURCE, /directoryAutocompleteLimit\?: number;/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /limit: directoryAutocompleteLimitRef\.current/u);
 	assert.match(CARD_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*directoryAutocompleteLimit=\{directoryAutocompleteLimit\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
 	assert.match(FLOATING_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*directoryAutocompleteLimit=\{directoryAutocompleteLimit\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
 });
 
 test("RovoAppComposer opts both shared bodies into visual trace auto-tagging", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /enableVisualTraceAutoTagging\?: boolean;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /enableVisualTraceAutoTagging = false/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_TYPES_SOURCE, /enableVisualTraceAutoTagging\?: boolean;/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /enableVisualTraceAutoTagging = false/u);
 	assert.match(CARD_BODY_SOURCE, /<PromptInputTextarea[\s\S]*enableVisualTraceAutoTagging[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}/u);
 	assert.match(FLOATING_BODY_SOURCE, /<PromptInputTextarea[\s\S]*enableVisualTraceAutoTagging[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}/u);
 });
 
 test("PromptInputTextarea fades overflowing Tiptap composer text with the shared scroll mask", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
-	assert.match(PROMPT_INPUT_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
-	assert.match(PROMPT_INPUT_SOURCE, /ref: composerScrollOverflowRef,[\s\S]*hasReachedVerticalLimit: hasComposerReachedScrollLimit,[\s\S]*showBottomScrollMask: showComposerBottomScrollMask,[\s\S]*showTopScrollMask: showComposerTopScrollMask,[\s\S]*= useHasVerticalOverflow<HTMLElement>\(\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /buildScrollMaskStyle\(\{ fadeSize: "var\(--ds-space-200\)" \}\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const showComposerTopMask = hasComposerReachedScrollLimit && showComposerTopScrollMask;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const showComposerBottomMask = hasComposerReachedScrollLimit && showComposerBottomScrollMask;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /composerScrollOverflowRef\(editor\.view\.dom\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /<EditorContent[\s\S]*showComposerTopMask[\s\S]*"scroll-mask-top"[\s\S]*showComposerBottomMask[\s\S]*"scroll-mask-bottom"[\s\S]*style=\{[\s\S]*composerScrollMaskStyle/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /ref: composerScrollOverflowRef,[\s\S]*hasReachedVerticalLimit: hasComposerReachedScrollLimit,[\s\S]*showBottomScrollMask: showComposerBottomScrollMask,[\s\S]*showTopScrollMask: showComposerTopScrollMask,[\s\S]*= useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /buildScrollMaskStyle\(\{ fadeSize: "var\(--ds-space-200\)" \}\)/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const showComposerTopMask = hasComposerReachedScrollLimit && showComposerTopScrollMask;/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const showComposerBottomMask = hasComposerReachedScrollLimit && showComposerBottomScrollMask;/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /composerScrollOverflowRef\(editor\.view\.dom\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /<EditorContent[\s\S]*showComposerTopMask[\s\S]*"scroll-mask-top"[\s\S]*showComposerBottomMask[\s\S]*"scroll-mask-bottom"[\s\S]*style=\{[\s\S]*composerScrollMaskStyle/u);
 	// PromptInputTextarea attaches the scrollport after the editor mounts. The
 	// overflow hook must observe that late ref and recompute after layout settles;
 	// otherwise a temporary auto-tag trace overflow can leave a bottom fade stuck
@@ -338,21 +340,21 @@ test("PromptInputTextarea fades overflowing Tiptap composer text with the shared
 });
 
 test("PromptInputTextarea applies directory prefill as a rich mention without visual tracing", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const lastMentionPrefillKeyRef = useRef\(0\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const pendingMentionPrefillKeyRef = useRef\(0\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const lastMentionPrefillTextRef = useRef<string \| null>\(null\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /pendingMentionPrefillKeyRef\.current === prefillMentionRequest\.requestKey/u);
-	assert.match(PROMPT_INPUT_SOURCE, /queueMicrotask\(\(\) => \{[\s\S]*if \(cancelled \|\| activeEditorRef\.current !== editor\) \{[\s\S]*lastMentionPrefillKeyRef\.current = requestKey;[\s\S]*clearPendingAutoTagging\(\);[\s\S]*resetVisualTraceEditorState\(editor\);[\s\S]*setDirectoryAutocompleteState\(null\);[\s\S]*type: "mention",[\s\S]*attrs: getMentionNodeAttrs\(mention\),[\s\S]*const prefillText = serializeComposerDoc\(editor\);[\s\S]*publishText\(prefillText, editor\.view\.dom, true\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /return \(\) => \{[\s\S]*cancelled = true;[\s\S]*pendingMentionPrefillKeyRef\.current = 0;[\s\S]*\};/u);
-	assert.match(PROMPT_INPUT_SOURCE, /if \(lastMentionPrefillTextRef\.current === currentText && resolvedValue !== currentText\) \{[\s\S]*return;[\s\S]*\}/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_TYPES_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number; textAfter\?: string \};/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const lastMentionPrefillKeyRef = useRef\(0\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const pendingMentionPrefillKeyRef = useRef\(0\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const lastMentionPrefillTextRef = useRef<string \| null>\(null\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /pendingMentionPrefillKeyRef\.current === prefillMentionRequest\.requestKey/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /queueMicrotask\(\(\) => \{[\s\S]*if \(cancelled \|\| activeEditorRef\.current !== editor\) \{[\s\S]*lastMentionPrefillKeyRef\.current = requestKey;[\s\S]*clearPendingAutoTagging\(\);[\s\S]*resetVisualTraceEditorState\(editor\);[\s\S]*setDirectoryAutocompleteState\(null\);[\s\S]*type: "mention",[\s\S]*attrs: getMentionNodeAttrs\(mention\),[\s\S]*const prefillText = serializeComposerDoc\(editor\);[\s\S]*publishText\(prefillText, editor\.view\.dom, true\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /return \(\) => \{[\s\S]*cancelled = true;[\s\S]*pendingMentionPrefillKeyRef\.current = 0;[\s\S]*\};/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /if \(lastMentionPrefillTextRef\.current === currentText && resolvedValue !== currentText\) \{[\s\S]*return;[\s\S]*\}/u);
 });
 
 test("visual trace auto-tagging flushes before submit and cancels stale delayed ranges", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /useComposerVisualTraceAutoTagging\(\{/u);
-	assert.match(PROMPT_INPUT_SOURCE, /flushAutoTagging,/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const handleEnterSubmit = useCallback/u);
-	assert.match(PROMPT_INPUT_SOURCE, /flushAutoTagging\(\);[\s\S]*form\.requestSubmit\(\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /useComposerVisualTraceAutoTagging\(\{/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /flushAutoTagging,/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const handleEnterSubmit = useCallback/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /flushAutoTagging\(\);[\s\S]*form\.requestSubmit\(\);/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getDirectoryAutocompleteExactLabelMatches/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS = 180;/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_AUTO_TAG_CONVERT_MS = 940;/u);
@@ -365,7 +367,7 @@ test("visual trace auto-tagging flushes before submit and cancels stale delayed 
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /suppressTrailingPrefixMatches: scope !== "document"/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, immediate, immediate \? "document" : "block"\);/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, immediate\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const field = form\.querySelector<HTMLInputElement>\([\s\S]*data-slot="prompt-input-message"[\s\S]*const text = field[\s\S]*\? field\.value[\s\S]*: usingProvider/u);
+	assert.match(PROMPT_INPUT_ROOT_SOURCE, /const field = form\.querySelector<HTMLInputElement>\([\s\S]*data-slot="prompt-input-message"[\s\S]*const text = field[\s\S]*\? field\.value[\s\S]*: usingProvider/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /generationRef\.current \+= 1;/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /generation !== generationRef\.current/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getAutoTagMatches\(activeEditor, "document"\)/u);
@@ -387,9 +389,9 @@ test("visual trace auto-tagging limits append-only dictation syncs to the append
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const insertFrom = TextSelection\.atEnd\(editor\.state\.doc\)\.from;[\s\S]*replaceComposerPlainTextFrom\(editor, insertFrom, text\);/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /insertText\(text, editor\.state\.doc\.content\.size\)/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const externalAppendRangeRef = useRef<VisualTraceRangeScope \| null>\(null\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const lastEditorPublishedTextRef = useRef<string \| null>\(null\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const lastEditorPublishedTextRef = useRef<string \| null>\(null\);/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /type VisualTraceAutoTagMode/u);
-	assert.match(PROMPT_INPUT_SOURCE, /if \(!fromEditor\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*lastEditorPublishedTextRef\.current = text;/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /if \(!fromEditor\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*lastEditorPublishedTextRef\.current = text;/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getInstantDocumentFallbackMatches/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /mode === "instant"/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /queueMicrotask/u);
@@ -400,8 +402,8 @@ test("visual trace auto-tagging limits append-only dictation syncs to the append
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, false, externalAppendScope\);/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const setExternalVisualTraceRange = \(changedFromTextOffset: number, rangeTo: number\) => \{[\s\S]*getVisualTraceExternalSyncTextOffset\([\s\S]*resolvedValue,[\s\S]*changedFromTextOffset,[\s\S]*\);[\s\S]*externalAppendRangeRef\.current = \{[\s\S]*from: traceFrom,[\s\S]*to: rangeTo,[\s\S]*type: "range",[\s\S]*\};[\s\S]*\};/u);
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /externalAppendFromRef\.current \?\? from/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const currentText = serializeComposerDoc\(editor\);[\s\S]*if \(currentText === resolvedValue\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*if \(lastEditorPublishedTextRef\.current === resolvedValue\) \{[\s\S]*return;[\s\S]*\}[\s\S]*syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const currentText = serializeComposerDoc\(editor\);[\s\S]*if \(currentText === resolvedValue\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*if \(lastEditorPublishedTextRef\.current === resolvedValue\) \{[\s\S]*return;[\s\S]*\}[\s\S]*syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /setComposerPlainText\(activeEditor, resolvedValue\);/u);
 });
 
@@ -420,10 +422,10 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowUp"[\s\S]*controller\.moveActive/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\^\[1-9\]\$[\s\S]*controller\.hasAcceptableList\(\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\(\(event\.key === "Tab" && !event\.shiftKey\) \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /acceptGhost: \(\) => !isAutoTaggingBusyRef\.current\(\) && acceptDirectoryAutocompleteIndexRef\.current\(0, true\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /hasVisibleList: \(\) =>[\s\S]*directoryAutocompleteListVisibleRef\.current &&[\s\S]*\(directoryAutocompleteStateRef\.current\?\.matches\.length \?\? 0\) > 0/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /acceptGhost: \(\) => !isAutoTaggingBusyRef\.current\(\) && acceptDirectoryAutocompleteIndexRef\.current\(0, true\)/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /hasVisibleList: \(\) =>[\s\S]*directoryAutocompleteListVisibleRef\.current &&[\s\S]*\(directoryAutocompleteStateRef\.current\?\.matches\.length \?\? 0\) > 0/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*PromptInputDictationControl/u);
 	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
 });
@@ -528,8 +530,8 @@ test("Backspace restores auto-tagged tokens but deletes deliberate mentions atom
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const transaction = activeEditor\.state\.tr\.delete\(backspaceDeleteRange\.from, backspaceDeleteRange\.to\);/u);
 	// Backspace is installed for every prompt input, not only visual-trace
 	// surfaces, so directory/menu-inserted chips delete the same way everywhere.
-	assert.match(PROMPT_INPUT_SOURCE, /editor\.view\.dom\.addEventListener\("keydown", handleKeyDown, \{ capture: true \}\);[\s\S]*\}, \[editor, handleVisualTraceKeyDown\]\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /if \(!editor \|\| !enableVisualTraceAutoTagging\) \{[\s\S]*editor\.view\.dom\.addEventListener\("paste", handlePaste, \{ capture: true \}\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /editor\.view\.dom\.addEventListener\("keydown", handleKeyDown, \{ capture: true \}\);[\s\S]*\}, \[editor, handleVisualTraceKeyDown\]\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /if \(!editor \|\| !enableVisualTraceAutoTagging\) \{[\s\S]*editor\.view\.dom\.addEventListener\("paste", handlePaste, \{ capture: true \}\);/u);
 });
 
 test("auto-tagger skips reverted spots by position and clears them on draft reset", () => {
@@ -607,11 +609,11 @@ test("the floating shell owns the horizontal gutter so text aligns with the lead
 	// `p-2`, pushing text ~10px inboard of the "+" button. The shell zeroes both
 	// so empty and typed states start at the same offset as the controls.
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		PROMPT_INPUT_TEXTAREA_SOURCE,
 		/data-slot="input-group-control-container"\s*className="[^"]*\bpx-2\.5\b/u,
 	);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		PROMPT_INPUT_TEXTAREA_SOURCE,
 		/data-slot="prompt-input-placeholder"\s*className="[^"]*\bpx-2\.5\b/u,
 	);
 	assert.match(

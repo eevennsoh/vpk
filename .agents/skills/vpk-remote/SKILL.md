@@ -1,6 +1,6 @@
 ---
 name: vpk-remote
-description: "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p. Workers report back here for verification and an advisor review. Can also move the conversation itself onto API on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
+description: "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via Codex CLI or Claude (Opus/Sonnet) via claude -p. Workers report back here for verification and advisor review. Can also move this conversation onto API, on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, asks for a council review or vpk-council, wants plan-big-execute-small delegation, or asks to build/fix something via the gateway. Never activate from skill names in file paths, stack traces, pasted or quoted text, or prior turns."
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ---
 
@@ -109,6 +109,7 @@ Examples:
 /vpk-remote fix the sidebar flicker                               → worker, defaults, verified here
 /vpk-remote rename useFoo to useBar with terra                   → worker, terra
 /vpk-remote second opinion from opus on this plan               → advisor consult
+/vpk-remote council review this PR                               → council mode (see *Mode: council*)
 /vpk-remote I'm out of credits, move this chat to sol            → move the conversation, sol
 /vpk-remote continue my last session on opus at max             → move the conversation, --continue, opus, max
 /vpk-remote what's the status of my tasks                        → status table (see *Status*)
@@ -415,8 +416,8 @@ dirty tree it will silently fold into its diff.
    blocker — the planner does not silently take over implementation.
 8. **Verify with an advisor** (default-on; see *Mode: advisor*). Send the
    diff and the original goal to the other family for an independent read
-   before reporting done. Skip only for a trivial diff or under
-   `--no-advisor`.
+   before reporting done. Skip only for a trivial diff, under
+   `--no-advisor`, or after a complete council round (see *Mode: council*).
 9. **Synthesize.** Outcome, proof, what the advisor confirmed or flagged,
    which branch and worktree hold the diff, and genuine blockers. Cite worker
    evidence rather than re-deriving it.
@@ -480,6 +481,14 @@ Consult moments, packaging checklist, and advice shape:
 [references/advisor-pattern.md](references/advisor-pattern.md). The advisor
 never edits files; after advice returns, state in a sentence what you adopt
 or reject, then continue.
+
+## Mode: council
+
+`/vpk-remote council <subject>`, or a request for a council review, runs
+independent parallel read-only reviews (default `sol` and `opus` at xhigh) of
+the same subject, reconciles them with scores, and repeats after accepted
+fixes. A complete round replaces the pre-completion advisor verify. Follow
+[references/council.md](references/council.md).
 
 ## Worker shapes
 

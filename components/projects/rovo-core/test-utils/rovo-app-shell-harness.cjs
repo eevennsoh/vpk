@@ -26,21 +26,23 @@ globalThis.TransformStream = require("node:stream/web").TransformStream;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { headers: { "content-type": "application/json" }, status });
 
-// A UI message stream (AI SDK SSE framing) that answers with one text part.
-function uiMessageStream(text) {
+// A UI message stream (AI SDK SSE framing) that answers with one text part, then any
+// `dataParts` (`{ type: "data-…", data }` chunks, e.g. an agent result and a turn-complete signal).
+function uiMessageStream(text, dataParts = []) {
 	const chunks = [
 		{ messageId: "assistant-1", type: "start" },
 		{ id: "text-1", type: "text-start" },
 		{ delta: text, id: "text-1", type: "text-delta" },
 		{ id: "text-1", type: "text-end" },
+		...dataParts,
 		{ type: "finish" },
 	];
 	const body = `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join("")}data: [DONE]\n\n`;
 	return new Response(body, { headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" }, status: 200 });
 }
 
-/** In-memory /api/rovo backend: threads, documents and a chat endpoint that replies with `reply`. */
-function createFakeRovoAppBackend({ documents = [], reply = "Here is the answer.", threads = [] } = {}) {
+/** In-memory /api/rovo backend: threads, documents and a chat endpoint that replies with `reply` and `replyDataParts`. */
+function createFakeRovoAppBackend({ documents = [], reply = "Here is the answer.", replyDataParts = [], threads = [] } = {}) {
 	const state = { chatRequests: [], documents: [...documents], requests: [], threads: new Map(threads.map((thread) => [thread.id, thread])) };
 	const now = new Date(0).toISOString();
 	async function fetch(input, init = {}) {
@@ -75,7 +77,7 @@ function createFakeRovoAppBackend({ documents = [], reply = "Here is the answer.
 		}
 		if (url.pathname === "/api/rovo/chat" || url.pathname === "/api/chat-sdk") {
 			state.chatRequests.push(body);
-			return uiMessageStream(reply);
+			return uiMessageStream(reply, replyDataParts);
 		}
 		if (url.pathname === "/api/rovo/background-streams") {
 			return json({ streams: [] });

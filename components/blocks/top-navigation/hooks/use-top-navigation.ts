@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import { useRouter } from "next/navigation";
 import { useWindowWidth } from "@/components/hooks/use-window-width";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
-import { useSidebar } from "@/app/contexts/context-sidebar";
+import { useSidebarActions, useSidebarState } from "@/app/contexts/context-sidebar";
 import { useRovoChatControls } from "@/app/contexts";
 import { token } from "@/lib/tokens";
 import { TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX } from "../layout-constants";
@@ -17,7 +17,8 @@ export function useTopNavigation() {
 	const [isAppSwitcherOpen, setIsAppSwitcherOpen] = useState(false);
 	const [isSearchFocused, setIsSearchFocused] = useState(false);
 	const windowWidth = useWindowWidth();
-	const { isVisible, toggleSidebar, setSidebarVisible, setHovered } = useSidebar();
+	const { isVisible } = useSidebarState();
+	const { toggleSidebar, setSidebarVisible, setHovered } = useSidebarActions();
 	const { toggleChat, openChat, chatSurface } = useRovoChatControls();
 	const isSidebarChatOpen = chatSurface === "sidebar";
 	const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +33,9 @@ export function useTopNavigation() {
 	// so automatically un-pin it. We remember that we released a pinned sidebar so
 	// the prior pinned state is restored once the viewport grows back. `windowWidth`
 	// is 0 during SSR/first paint, so we wait for a real measurement before acting.
+	// The top-navigation shell (`page.tsx`) derives the same rule during render
+	// from its own pin intent; this one writes shared context state, so it still
+	// runs as an effect. Keep the two in step until this one is derived too.
 	const didAutoReleaseSidebarRef = useRef(false);
 	useEffect(() => {
 		if (windowWidth === 0) {

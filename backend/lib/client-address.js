@@ -2,20 +2,22 @@
 
 // The address that identifies a client for per-client limits (the AI-cost rate limiter and
 // the WebSocket caps). In production the backend runs behind the deployment's load
-// balancer, so every socket comes from the balancer; the client is the entry the balancer
-// appends to X-Forwarded-For. Entries to the left of it are whatever the client sent and
-// are never trusted.
+// balancer and the Service Proxy sidecar, so every socket comes from the sidecar; the
+// client is the entry the balancer appended to X-Forwarded-For, one before the sidecar's.
+// Entries to the left of it are whatever the client sent and are never trusted.
 //
 // This deliberately does not set Express's `trust proxy`: that would also make
 // `req.hostname` and `req.protocol` follow X-Forwarded-Host/-Proto, which a client can set.
 //
 // VPK_TRUSTED_PROXY_HOPS is the number of proxies in front of the backend that append to
-// X-Forwarded-For. The Micros service descriptor sets 1 (the load balancer); the default
+// X-Forwarded-For. The Micros service descriptor sets 2 (the load balancer, then the
+// Service Proxy sidecar that authenticates with SLAuth); the default
 // is 0 everywhere else, including a local NODE_ENV=production serve, because a header that
 // no proxy appended is the caller's own. With 0 the socket address is used. If the real
 // number is higher, the address resolved is a proxy's, the same as not trusting the
-// header; a chain shorter than the hop count also falls back to the socket address, so a
-// client never chooses its own address.
+// header; a chain shorter than the hop count also falls back to the socket address. If
+// the real number is LOWER, the entry resolved is one the client wrote itself, so a
+// client can choose its own address: never set this above the real hop count.
 const MAX_TRUSTED_PROXY_HOPS = 8;
 
 /**

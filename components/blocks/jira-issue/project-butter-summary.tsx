@@ -48,12 +48,12 @@ const WORK_TYPE_HOVER_CLASSES = {
 	subtask: "group-hover/jira-issue:text-icon-brand",
 };
 
-export function ProjectButterIssueKey({ className, issueKey, issueType }: Readonly<{ className?: string; issueKey: string; issueType: keyof typeof WORK_TYPE_ICONS }>) {
+export function ProjectButterIssueKey({ className, issueKey, issueType, typeIcon }: Readonly<{ className?: string; issueKey: string; issueType: keyof typeof WORK_TYPE_ICONS; typeIcon?: ReactNode }>) {
 	const WorkTypeIcon = WORK_TYPE_ICONS[issueType];
 	return (
 		<span className={cn("flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle", className)}>
-			<span className={cn("inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none", WORK_TYPE_HOVER_CLASSES[issueType])}>
-				<WorkTypeIcon label={issueType} size="small" color="currentColor" />
+			<span className={cn("inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none", typeIcon ? undefined : WORK_TYPE_HOVER_CLASSES[issueType])}>
+				{typeIcon ?? <WorkTypeIcon label={issueType} size="small" color="currentColor" />}
 			</span>
 			<span className="truncate">{issueKey}</span>
 		</span>
@@ -195,7 +195,7 @@ function ProjectButterFooter({
 				) : null}
 				{showPriorityIndicator ? (
 					<span className="grid size-6 shrink-0 place-items-center">
-						<ButterPriorityIcon priority={priority} />
+						<ButterPriorityIcon appearance="on-hover" priority={priority} />
 					</span>
 				) : null}
 				{metadata?.flagged ? (

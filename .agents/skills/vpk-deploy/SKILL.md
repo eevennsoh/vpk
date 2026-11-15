@@ -1,6 +1,6 @@
 ---
 name: vpk-deploy
-description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.
+description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros. Use when asked to "deploy", "redeploy", "deploy to Micros", "ship this prototype to Micros", "update my deployment", "check deploy status", "is my deployment healthy", or "inspect the Micros environment", and for Micros failures such as a failed hot swap, missing stash variables, or ALLOWED_ORIGINS errors. Run vpk-build first to extract a route into a standalone app.
 metadata:
   validation_command: node --test .agents/skills/vpk-deploy/scripts/*.test.js
 ---
@@ -229,6 +229,17 @@ node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
 Confirm the service reaches a stable stack, the main route and `/api/health`
 succeed, browser-shaped static/font requests return `200`, and every changed
 backend-backed interaction works. The service URL requires Atlassian VPN.
+
+The service sits behind the Micros Service Proxy with SLAuth (Okta) and Poco
+(`serviceProxy` in `service-descriptor.yml`), so every request except
+`/healthcheck` needs credentials. For a `*.atl-paas.net` URL, `verify-runtime.mjs` and
+`verify-wss.mjs` send `Authorization: Bearer $(atlas slauth token --aud <service-name> -e <env>)`
+(the audience is the host's first label, the Micros service name, and the environment comes from the host; `--slauth-aud <aud>` overrides, and
+`--no-slauth` turns it off). For manual curl checks use
+`atlas slauth curl --aud <service-name> -e platdev -- https://<service-name>.<region>.platdev.atl-paas.net/api/health`.
+A browser signs in through Okta on first visit. Operator routes still need
+`VPK_RUNTIME_ADMIN_TOKEN`; send it as `x-vpk-runtime-admin-token`, because SLAuth
+uses `Authorization`. See the guide's SLAuth section.
 
 Pass the intended routes explicitly; the default is `/`, with no assumed
 `/studio/`. Select `static`, `backend`, `chat`, or `full` for the app's runtime

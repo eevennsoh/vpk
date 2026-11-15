@@ -2579,14 +2579,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 74,
+			"ownerImportCount": 73,
 			"pageCount": 59,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
 				"inline": 2,
-				"redirect": 2,
-				"shell": 27
+				"redirect": 3,
+				"shell": 26
 			}
 		},
 		"pages": [
@@ -3331,33 +3331,15 @@
 				"source": "app/jira-team-eu26-end/page.tsx"
 			},
 			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"ownerCount": 0,
+				"owners": [],
 				"primaryOwner": {
-					"kind": "shell",
-					"sources": [
-						"components/arts/personal-graph"
-					]
+					"kind": "redirect",
+					"to": "/arts/personal-graph"
 				},
 				"routePath": "/personal-graph",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"shellOwnerCount": 0,
+				"shellOwners": [],
 				"source": "app/personal-graph/page.tsx"
 			},
 			{
@@ -7716,7 +7698,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 22
+			"localSkillCount": 20
 		},
 		"localSkills": [
 			{
@@ -7732,25 +7714,13 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-build"
 			},
 			{
-				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity. Use only when the user invokes vpk-component, names or links one of those sources, or requests ADS/shadcn parity. Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.",
+				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (ai-elements, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", or \"port ElevenLabs UI\". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.",
 				"name": "vpk-component",
 				"path": ".agents/skills/vpk-component/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"
 			},
 			{
-				"description": "Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", \"port ElevenLabs UI\",.",
-				"name": "vpk-component-ext",
-				"path": ".agents/skills/vpk-component-ext/SKILL.md",
-				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component-ext"
-			},
-			{
-				"description": "Convene independent GPT Sol and Claude Opus reviews through VPK Remote, reconcile their findings, and repeat after accepted fixes. Use when the user invokes vpk-council or explicitly asks for a VPK council review.",
-				"name": "vpk-council",
-				"path": ".agents/skills/vpk-council/SKILL.md",
-				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-council"
-			},
-			{
-				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.",
+				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros. Use when asked to \"deploy\", \"redeploy\", \"deploy to Micros\", \"ship this prototype to Micros\", \"update my deployment\", \"check deploy status\", \"is my deployment healthy\", or \"inspect the Micros environment\", and for Micros failures such as a failed hot swap, missing stash variables, or ALLOWED_ORIGINS errors. Run vpk-build first to extract a route into a standalone app.",
 				"name": "vpk-deploy",
 				"path": ".agents/skills/vpk-deploy/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-deploy"
@@ -7804,7 +7774,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
 			},
 			{
-				"description": "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via the Codex CLI or Claude (Opus/Sonnet) via headless claude -p. Workers report back here for verification and an advisor review. Can also move the conversation itself onto API on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context.",
+				"description": "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via Codex CLI or Claude (Opus/Sonnet) via claude -p. Workers report back here for verification and advisor review. Can also move this conversation onto API, on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, asks for a council review or vpk-council, wants plan-big-execute-small delegation, or asks to build/fix something via the gateway. Never activate from skill names in file paths, stack traces, pasted or quoted text, or prior turns.",
 				"name": "vpk-remote",
 				"path": ".agents/skills/vpk-remote/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-remote"

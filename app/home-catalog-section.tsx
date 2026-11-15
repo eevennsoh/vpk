@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/iframe-missing-sandbox -- These iframes render first-party internal preview routes; same-origin is required for Next dev assets and theme messaging.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import {
 	compareHomeCatalogEntriesByLastUpdated,
@@ -43,8 +43,6 @@ interface HomeCatalogSectionProps {
 	components: ReadonlyArray<ComponentManifestEntry>;
 	/** The cards to render, with dates; defaults to every component. May be a subset of `components`. */
 	componentEntries?: ReadonlyArray<HomeCatalogListEntry>;
-	/** Optional line under the heading, e.g. to explain a `componentEntries` subset. */
-	note?: ReactNode;
 	componentHrefPrefix: string;
 	previewHrefPrefix: string;
 	emptyStateTitle: string;
@@ -56,7 +54,6 @@ export function HomeCatalogSection({
 	title,
 	components,
 	componentEntries,
-	note,
 	componentHrefPrefix,
 	previewHrefPrefix,
 	emptyStateTitle,
@@ -109,6 +106,9 @@ export function HomeCatalogSection({
 		</DropdownMenu>
 	) : null;
 
+	// A lone card (or the empty state) fills the viewport down to its bottom padding.
+	const fillsViewport = sortedComponentEntries.length <= 1;
+
 	return (
 		<>
 			<HomeSectionHeading
@@ -117,10 +117,13 @@ export function HomeCatalogSection({
 				count={components.length}
 				actions={sectionActions}
 			/>
-			{note ? (
-				<p className="m-0 px-6 pt-4 text-sm text-text-subtle">{note}</p>
-			) : null}
-			<ul className="grid grid-cols-1 list-none m-0 p-0">
+			<ul
+				className={
+					fillsViewport
+						? "m-0 flex flex-1 list-none flex-col p-0"
+						: "grid grid-cols-1 list-none m-0 p-0"
+				}
+			>
 				{sortedComponentEntries.length > 0 ? (
 					sortedComponentEntries.map((component, index) => (
 						<WebsiteCard
@@ -128,6 +131,7 @@ export function HomeCatalogSection({
 							name={component.name}
 							href={`${componentHrefPrefix}/${component.slug}`}
 							fullWidth
+							fillHeight={fillsViewport}
 							deferOffscreen={index > 0}
 						>
 							<iframe
@@ -140,7 +144,7 @@ export function HomeCatalogSection({
 						</WebsiteCard>
 					))
 				) : (
-					<WebsiteCard name={`${title} coming soon`} fullWidth>
+					<WebsiteCard name={`${title} coming soon`} fullWidth fillHeight>
 						<div className="flex h-full items-center justify-center bg-bg-neutral p-8">
 							<div className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-border bg-surface">
 								<Empty width="wide">

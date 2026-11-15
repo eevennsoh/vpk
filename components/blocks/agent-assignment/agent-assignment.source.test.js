@@ -102,7 +102,10 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 test("Agent Assignment preserves the work-item trigger and two-stage menu behavior", () => {
 	const source = readProjectFile("components/blocks/agent-assignment/components/agent-assignment.tsx");
 	const menu = readProjectFile("components/blocks/agent-assignment/components/assigned-agents-menu.tsx");
-	const suggestionMenu = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const suggestionMenu = [
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx"),
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-types.ts"),
+	].join("\n");
 	const suggestionMenuCss = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-actions.css");
 
 	assert.match(source, /openMode\?: "click" \| "hover";/u);
@@ -305,7 +308,10 @@ test("Agent Assignment filled pins follow the space pin set, not assignment or u
 test("assigned-agent action rows truncate 8px from CTAs and idle the byline on hover-out", () => {
 	const menu = readProjectFile("components/blocks/agent-assignment/components/assigned-agents-menu.tsx");
 	const demoAssigned = readProjectFile("components/blocks/agent-assignment/demo-assigned-agents.ts");
-	const suggestionMenu = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const suggestionMenu = [
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx"),
+		readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-types.ts"),
+	].join("\n");
 	const suggestionMenuCss = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-actions.css");
 	const editorCss = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
 

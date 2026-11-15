@@ -658,7 +658,7 @@
 /* The row highlight has a single source of truth: the selected row. In
    selection-driven menus (the live editor's "/" and "@" surfaces) pointer hover
    moves `selectedIndex` onto the hovered row — see `onHover` in
-   suggestion-menu.tsx — so the keyboard cursor and the mouse can never light up
+   suggestion-menu-view.tsx — so the keyboard cursor and the mouse can never light up
    two rows at once. Pure-pointer menus (static showcases, the search picker)
    have no keyboard cursor and opt out via the absence of `data-pointer-selects`,
    so they keep a plain `:hover` highlight. The Back button is never a selectable
@@ -801,13 +801,19 @@
 	padding: 0;
 }
 
-/* Single front-slot size for every menu (live "@"/"/" surfaces, the agent
-   composer, and the editor-palette showcases): a 24px box that lines up with the
-   24px grid track on `.rich-text-command-menu-item` and the 24px-scaled tiles
-   from `RichTextSuggestionMenuItemVisual`. */
+/* Default frame for tiles and avatars in the shared 24px alignment track. */
 .rich-text-command-menu-avatar {
 	width: 24px;
 	height: 24px;
+}
+
+.rich-text-command-menu-avatar[data-visual-size="compact"] {
+	width: var(--ds-space-200, 16px);
+	height: var(--ds-space-200, 16px);
+}
+
+.rich-text-command-menu-item:has(> .rich-text-command-menu-avatar[data-visual-size="compact"]) {
+	grid-template-columns: var(--ds-space-200, 16px) minmax(0, 1fr);
 }
 
 /* Every option row reserves the same copy height (matching the revealed

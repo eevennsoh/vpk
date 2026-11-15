@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const PROMPT_INPUT_SOURCE = fs.readFileSync(
-	path.join(__dirname, "prompt-input.tsx"),
+	path.join(__dirname, "prompt-input", "index.ts"),
 	"utf8",
 );
 const DICTATION_SOURCE = fs.readFileSync(

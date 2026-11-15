@@ -31,11 +31,6 @@ export function HomeProjectsSection({
 			title="Projects"
 			components={PROJECT_COMPONENTS}
 			componentEntries={liveProjects}
-			note={
-				liveProjects.length < PROJECT_COMPONENTS.length
-					? `Showing the latest of ${PROJECT_COMPONENTS.length} projects. Browse them all in the sidebar's Projects list.`
-					: undefined
-			}
 			componentHrefPrefix="/components/projects"
 			previewHrefPrefix="/preview/projects"
 			emptyStateTitle="No projects yet"

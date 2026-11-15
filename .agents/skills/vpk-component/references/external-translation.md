@@ -1,0 +1,97 @@
+# External lane: AI, voice, and third-party translation
+
+Replace custom or third-party UI with VPK-standardized primitives while
+preserving behavior, controlled state, accessibility, and repository docs. The
+source library supplies behavior and composition evidence; VPK owns the final
+API and visual language.
+
+## When to use
+
+Use this lane for local custom AI/chat UI, ai-elements, ElevenLabs UI, voice
+and audio libraries, or another third-party component that should become a VPK
+primitive or migrate to one ("migrate to ui-custom", "standardize AI
+components", "adopt ai-elements", "port ElevenLabs UI"). Use the ADS or shadcn
+lane in [SKILL.md](../SKILL.md) instead when an explicit ADS, Atlaskit, shadcn,
+Base UI, or `@shadcn/react` component is the parity target. Use the normal
+component workflow for local layout, styling, motion, or bug fixes that do not
+translate an external implementation.
+
+When the requested result retains a maintained upstream package as the runtime
+owner, use [Adopt a maintained upstream runtime](../../../docs/playbooks/adopt-upstream-runtime.md).
+This lane's no-import/no-vendor invariant still applies to VPK-owned migrations.
+
+## Hard invariants
+
+- Reuse an existing VPK primitive before creating a wrapper or new component.
+- Choose the target family by behavior: generic UI in `components/ui` and AI,
+  chat, and voice/audio in `components/ui-custom`.
+- Do not import or vendor upstream packages as the migration result. Inspect
+  upstream generators in a scratch area when source evidence is needed.
+- Preserve callbacks, controlled state, data flow, and user-visible behavior;
+  keep adapters thin when APIs do not match exactly.
+- Use VPK semantic tokens, primitives, icons, demo wiring, and accessibility
+  conventions rather than copying upstream styling.
+- Do not delete legacy wrappers until every consumer has migrated and the
+  residual-import search is clean.
+
+## Workflow
+
+### 1. Discover and classify
+
+Read the target code or official source, trace its providers and state flow,
+then choose the owning VPK family. Inspect local candidates before upstream
+docs. For generic reusable UI, run ADS planning and topic-specific accessibility
+guidance before implementation.
+
+Read [migration detail](ai-migration-detail.md) for the family resolver,
+duplicate-name decisions, detection checklist, source hierarchy, and gotchas.
+Use [migration catalog](ai-migration-catalog.md) to locate likely
+`ui-custom` targets and [API reference](ai-api-reference.md) to confirm
+their composition and props.
+
+### 2. Map the migration
+
+Write a compact map from each source component to its VPK component, family,
+match quality (`exact`, `approximate`, or `gap`), props/events, and retained
+local behavior. When no direct primitive exists, compose existing VPK pieces or
+keep the smallest possible adapter.
+
+For common message, conversation, suggestion, action, and code-display
+translations, read [migration examples](ai-migration-examples.md).
+
+### 3. Migrate the owner and consumers
+
+Replace imports with explicit `@/components/ui*` paths and keep source behavior
+intact. Rich assistant content generally uses `ui-custom/MessageResponse`;
+plain transcript and voice labels should remain plain content. Alias duplicate
+component names at import sites.
+
+Label icon-only controls, leave decorative icon labels empty, use each VPK
+primitive's supported render/composition API, and preserve submit/select
+semantics. Update all consumers before removing replaced code.
+
+### 4. Wire canonical demos and docs
+
+Put the source-of-truth demo in the matching `components/website/demos/ui*`
+folder as `<slug>-demo.tsx`, add the manifest line and the detail leaf, then run
+`pnpm run fix:generated` (it writes the primary registry entry and the detail
+barrel; `pnpm run catalog:add-plan -- <category>/<slug>` lists the files).
+Keep named exports, registry keys, and `demoSlug` values aligned. Feature surfaces should reuse this canonical pattern.
+
+### 5. Validate
+
+Run focused tests, then:
+
+```bash
+pnpm run lint
+pnpm run typecheck
+```
+
+If the global baseline is noisy, also lint the changed files and report both
+results. Verify the live docs/feature route in light and dark themes, exercise
+at least one stateful interaction, inspect console/hydration output, and run the
+relevant ADS accessibility analysis. Finish with a residual import search for
+the removed source component or package.
+
+All project directories, including `components/ui-custom/**`, are type-checked;
+the repository TypeScript configuration excludes only `node_modules`.

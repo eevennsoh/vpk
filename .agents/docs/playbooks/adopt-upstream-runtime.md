@@ -7,11 +7,11 @@ Use this when the requested result is an imported, maintained third-party runtim
 | Requested result | Workflow |
 | --- | --- |
 | ADS/Atlaskit/shadcn/Base UI parity implemented in VPK | `vpk-component`; upstream remains evidence, not a runtime dependency |
-| AI, voice, or other external behavior translated into VPK-owned primitives | `vpk-component-ext`; keep its no-import/no-vendor migration invariant |
+| AI, voice, or other external behavior translated into VPK-owned primitives | `vpk-component` external lane ([external-translation.md](../../skills/vpk-component/references/external-translation.md)); keep its no-import/no-vendor migration invariant |
 | Maintained upstream code owns runtime behavior; VPK owns an adapter and demos | This playbook |
 | Local layout, styling, motion, or bug fix | Normal owner-scoped workflow |
 
-Record the selected model and why the existing VPK owner cannot already satisfy the request. Do not relax the translation skills' invariants to make a runtime adoption fit. When upstream cannot express an essential existing capability, document the gap and resolve the behavior decision before deleting the local implementation.
+Record the selected model and why the existing VPK owner cannot already satisfy the request. Do not relax the `vpk-component` lanes' invariants to make a runtime adoption fit. When upstream cannot express an essential existing capability, document the gap and resolve the behavior decision before deleting the local implementation.
 
 ## Inspect the package and existing consumers
 

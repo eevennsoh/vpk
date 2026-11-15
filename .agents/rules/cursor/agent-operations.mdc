@@ -12,10 +12,14 @@ alwaysApply: false
 
 - Skills: `.agents/skills/*/SKILL.md`
 - Agents: `.agents/agents/*`
-- Provider mirrors: `.cursor/`, `.claude/`, `.codex/`, and `.rovo/` contain provider-specific config plus symlinks back to `.agents/`
+- Provider mirrors: `.cursor/`, `.claude/`, `.codex/`, and `.rovo/` contain provider-specific config plus symlinks back to `.agents/`. Add a symlink only for a folder that provider reads; hooks are wired by literal `.agents/hooks/...` paths in each provider's config (`.claude/hooks` is kept for Claude Code).
 - Skill types: workflow skills are multi-step procedures; utility skills are single-purpose helpers
 
 Skill catalog: `.agents/skills/INDEX.md` (generated — regenerate with `node scripts/validate-skills.js --update-index`).
+
+## File Edits
+
+- Edit files at a literal path (absolute in a worktree) with the edit or patch tool. Do not use `sed -i` or globbed or variable paths for in-place edits: they skip review, and a path outside the worktree stalls on approval. `AGENTS.md` (Code Quality) carries the always-loaded copy of this rule; keep the two in step.
 
 ## Parallel Work Model
 

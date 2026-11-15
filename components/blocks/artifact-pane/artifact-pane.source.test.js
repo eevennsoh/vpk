@@ -13,10 +13,12 @@ const DATE_FIELD_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "detail-field-editors.tsx"),
 	"utf8",
 );
-const SUGGESTION_MENU_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", "suggestion-menu.tsx"),
-	"utf8",
-);
+const SUGGESTION_MENU_SOURCE = ["suggestion-menu-view.tsx", "suggestion-menu-types.ts"]
+	.map((fileName) => fs.readFileSync(
+		path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", fileName),
+		"utf8",
+	))
+	.join("\n");
 const METADATA_RAIL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "metadata-rail.tsx"),
 	"utf8",
@@ -264,9 +266,7 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.match(PARENT_FIELD_SOURCE, /export function ArtifactParentField/u);
 	assert.match(PARENT_FIELD_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag"/u);
 	assert.match(PARENT_FIELD_SOURCE, /const ARTIFACT_EPIC_COLORS:[\s\S]*"RFP-100": "purple"[\s\S]*"RFP-102": "blue"[\s\S]*"RFP-103": "green"/u);
-	assert.match(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*<Icon[\s\S]*aria-hidden[\s\S]*render=\{<EpicIcon color="currentColor" label="" size="medium" spacing="none" \/>\}/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*className="size-/u);
-	assert.match(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\(\{ color \}: Readonly<\{ color: ArtifactEpicColor \}>\)[\s\S]*<IconTile[\s\S]*as="span"[\s\S]*icon=\{<ArtifactEpicIcon \/>\}[\s\S]*size="small"[\s\S]*variant=\{color\}/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\([\s\S]*className="text-current"/u);
 	assert.match(PARENT_FIELD_SOURCE, /icon: null,[\s\S]*leadingVisual: <ArtifactEpicMenuIcon color=\{artifactEpicColor\(option\.key\)\} \/>/u);
 	assert.match(PARENT_FIELD_SOURCE, /<Tag[\s\S]*className="max-w-full self-center"[\s\S]*color=\{artifactEpicColor\(selected\.key\)\}[\s\S]*elemBefore=\{<ArtifactEpicIcon \/>\}[\s\S]*\{selected\.summary\}/u);

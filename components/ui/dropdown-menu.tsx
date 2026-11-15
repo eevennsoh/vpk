@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 
 import { Icon } from "@/components/ui/icon";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { SearchIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
 const menuItemBaseClassName =
@@ -101,7 +102,9 @@ interface DropdownMenuSearchFieldProps {
 	 * never sees them.
 	 */
 	hostOwnsKeyNavigation?: boolean;
-	icon: ReactNode;
+	icon?: ReactNode;
+	/** Match the rows: bare 16px icons or a 24px avatar/tile column. */
+	iconContainerSize?: 16 | 24;
 	id?: string;
 	label: string;
 	onClear: () => void;
@@ -127,7 +130,8 @@ function DropdownMenuSearchField({
 	autoFocus,
 	className,
 	hostOwnsKeyNavigation,
-	icon,
+	icon = <SearchIcon className="size-4 text-icon-subtlest" />,
+	iconContainerSize = 24,
 	id,
 	label,
 	onClear,
@@ -162,7 +166,7 @@ function DropdownMenuSearchField({
 		{...(id === undefined ? {} : { id })}
 		{...(activeDescendantId === undefined ? {} : { "aria-activedescendant": activeDescendantId ?? undefined })}
 		variant="subtle"
-		className={cn("focus-visible:ring-0 data-[variant=subtle]:focus-visible:border-transparent data-[variant=subtle]:focus-visible:bg-transparent data-[variant=subtle]:hover:bg-transparent data-[variant=subtle]:active:bg-transparent", className)}
+		className={cn("border-0 focus-visible:ring-0 data-[variant=subtle]:focus-visible:border-transparent data-[variant=subtle]:focus-visible:bg-transparent data-[variant=subtle]:hover:bg-transparent data-[variant=subtle]:active:bg-transparent", className)}
 		value={value}
 		aria-label={label}
 		placeholder={placeholder}
@@ -190,8 +194,8 @@ function DropdownMenuSearchField({
 		}}
 	/>;
 	return (
-		<div data-slot="dropdown-menu-search" className="rich-text-command-menu-search rich-text-command-menu-item-sticky group/search mx-1.5 mt-1.5 grid h-8 min-h-8 w-[calc(100%-12px)] shrink-0 cursor-text grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg bg-surface-overlay py-0 pr-0.5 pl-2 hover:bg-bg-neutral-subtle-hovered [&>[data-slot=input]]:h-full [&>[data-slot=input]]:min-w-0 [&>[data-slot=input]]:border-transparent [&>[data-slot=input]]:px-0 [&>[data-slot=input]]:caret-text [&>[data-slot=input]:hover]:border-transparent [&>[data-slot=input]:hover]:bg-transparent [&>[data-slot=input]:active]:border-transparent [&>[data-slot=input]:active]:bg-transparent [&>[data-slot=input]:focus-visible]:border-transparent [&>[data-slot=input]:focus-visible]:bg-transparent [&>[data-slot=input]:focus-visible]:shadow-none">
-			<span className="inline-flex size-6 items-center justify-center [&>svg]:size-4" aria-hidden={true}>
+		<div data-slot="dropdown-menu-search" data-icon-container-size={iconContainerSize} className={cn("rich-text-command-menu-search rich-text-command-menu-item-sticky group/search mx-1.5 mt-1.5 grid h-8 min-h-8 w-[calc(100%-12px)] shrink-0 cursor-text items-center gap-x-3 rounded-lg bg-surface-overlay py-0 pr-0.5 pl-2 hover:bg-bg-neutral-subtle-hovered [&>[data-slot=input]]:h-full [&>[data-slot=input]]:min-w-0 [&>[data-slot=input]]:border-transparent [&>[data-slot=input]]:px-0 [&>[data-slot=input]]:caret-text [&>[data-slot=input]:hover]:border-transparent [&>[data-slot=input]:hover]:bg-transparent [&>[data-slot=input]:active]:border-transparent [&>[data-slot=input]:active]:bg-transparent [&>[data-slot=input]:focus-visible]:border-transparent [&>[data-slot=input]:focus-visible]:bg-transparent [&>[data-slot=input]:focus-visible]:shadow-none", iconContainerSize === 16 ? "grid-cols-[16px_minmax(0,1fr)_auto]" : "grid-cols-[24px_minmax(0,1fr)_auto]")}>
+			<span data-slot="dropdown-menu-search-icon" className={cn("inline-flex items-center justify-center [&>svg]:size-4", iconContainerSize === 16 ? "size-4" : "size-6")} aria-hidden={true}>
 				{icon}
 			</span>
 			{renderInput ? renderInput(input) : input}

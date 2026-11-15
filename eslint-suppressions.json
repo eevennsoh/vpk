@@ -86,11 +86,6 @@
       "count": 1
     }
   },
-  "app/weather/page.test.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "components/animate-ui/icons/icon.tsx": {
     "react-hooks/refs": {
       "count": 4
@@ -279,9 +274,6 @@
     }
   },
   "components/blocks/agent-browser/components/agent-browser.tsx": {
-    "react-hooks/refs": {
-      "count": 8
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -554,9 +546,6 @@
     }
   },
   "components/blocks/app-directory/components/app-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 9
-    },
     "react-hooks/static-components": {
       "count": 1
     },
@@ -576,7 +565,7 @@
   },
   "components/blocks/artifact-pane/artifact-pane.source.test.js": {
     "no-restricted-syntax": {
-      "count": 198
+      "count": 196
     }
   },
   "components/blocks/artifact-panel.test.js": {
@@ -630,11 +619,6 @@
   "components/blocks/data-table/data-table.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
-    }
-  },
-  "components/blocks/directory-shared/experimental-directory-view.tsx": {
-    "react-hooks/refs": {
-      "count": 3
     }
   },
   "components/blocks/editor-toolbar/editor-toolbar.test.js": {
@@ -1398,15 +1382,7 @@
       "count": 22
     }
   },
-  "components/blocks/skill-directory/components/skill-directory-sidebar.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    }
-  },
   "components/blocks/skill-directory/components/skill-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1460,9 +1436,6 @@
     }
   },
   "components/blocks/tool-directory/components/tool-directory.tsx": {
-    "react-hooks/refs": {
-      "count": 9
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 3
     }
@@ -1472,17 +1445,9 @@
       "count": 5
     }
   },
-  "components/blocks/top-navigation/page.tsx": {
-    "react-hooks/refs": {
-      "count": 32
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
   "components/blocks/top-navigation/top-navigation-chat-state.source.test.js": {
     "no-restricted-syntax": {
-      "count": 108
+      "count": 100
     }
   },
   "components/blocks/trigger-config/trigger-config.source.test.js": {
@@ -1954,39 +1919,9 @@
       "count": 23
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-document-sync.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-reset-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 15
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-background-refresh.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js": {
@@ -1999,29 +1934,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-clarification-plan-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 17
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-completed-run-hydration.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 8
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-core.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-data-part-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 17
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.ts": {
@@ -2029,34 +1944,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-derived-state.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-prep-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-local-run-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-message-edit-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-message-state.ts": {
@@ -2064,104 +1954,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-mode-state-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-widget-metadata-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-prompt-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 12
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-realtime-state-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-route-replacement-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-run-side-effect-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 16
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.ts": {
     "react-hooks/immutability": {
       "count": 2
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-suggested-questions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-lifecycle-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 21
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-list.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-mutation-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-navigation-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-persistence.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 12
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-refresh-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-title-generation.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 15
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
     }
   },
   "components/projects/rovo-core/hooks/use-sidebar-resize.ts": {
@@ -2328,7 +2123,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 847
+      "count": 812
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
@@ -2349,7 +2144,7 @@
       "count": 24
     },
     "react-hooks/set-state-in-effect": {
-      "count": 8
+      "count": 5
     }
   },
   "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
@@ -2664,7 +2459,7 @@
       "count": 30
     }
   },
-  "components/ui-custom/prompt-input.tsx": {
+  "components/ui-custom/prompt-input/prompt-input-textarea.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
@@ -2727,15 +2522,17 @@
       "count": 3
     }
   },
+  "components/ui-custom/rich-text-editor/suggestion-menu-catalog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
   "components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/ui-custom/rich-text-editor/suggestion-menu.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
+  "components/ui-custom/rich-text-editor/suggestion-menu-view.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -3304,11 +3101,6 @@
       "count": 1
     }
   },
-  "components/website/demos/utils/multiport-demo.tsx": {
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
   "components/website/demos/utils/sound-generation-demo.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -3504,7 +3296,7 @@
   },
   "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
-      "count": 13
+      "count": 12
     }
   },
   "hooks/use-mobile.ts": {
@@ -3512,14 +3304,24 @@
       "count": 1
     }
   },
+  "lib/json-render/registry-compound.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 3
+    }
+  },
+  "lib/json-render/registry-data-display.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "lib/json-render/registry-layout.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 3
+    }
+  },
   "lib/json-render/registry.test.js": {
     "no-restricted-syntax": {
       "count": 17
-    }
-  },
-  "lib/json-render/registry.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 7
     }
   }
 }

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { useSidebar } from "@/app/contexts/context-sidebar";
+import { useSidebarActions, useSidebarHovered, useSidebarState } from "@/app/contexts/context-sidebar";
 import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./variants/admin";
@@ -46,7 +46,9 @@ export default function ProductSidebar({
 	topOffset = false,
 }: Readonly<SidebarProps>) {
 	const [selectedItem, setSelectedItem] = useState(product === "confluence" ? "Demo Live page" : "Jira Design");
-	const { isVisible, isHovered, setHovered } = useSidebar();
+	const { isVisible } = useSidebarState();
+	const isHovered = useSidebarHovered();
+	const { setHovered } = useSidebarActions();
 	const shouldShow = isVisible || isHovered;
 	// When visible the sidebar spans the full viewport height (top: 0) so its
 	// right border runs unbroken from the very top edge down through the body,

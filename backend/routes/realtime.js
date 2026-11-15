@@ -2,6 +2,8 @@
 
 const express = require("express");
 
+const { getRequestCaller } = require("../middleware/caller-identity");
+
 const REALTIME_AUDIO_CONVERSATION_SCOPE = "realtime:audio-conversation";
 
 function requireFunction(name, value) {
@@ -23,8 +25,13 @@ function createRealtimeRouter({
 
 	const router = express.Router();
 
-	router.get("/audio-conversation-token", requireRuntimeSocketTokenRequester, (_req, res) => {
-		const token = createRuntimeSocketToken(REALTIME_AUDIO_CONVERSATION_SCOPE);
+	router.get("/audio-conversation-token", requireRuntimeSocketTokenRequester, (req, res) => {
+		const caller = getRequestCaller(req);
+		if (!caller) {
+			return res.status(401).json({ error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
+		}
+		// Bound to the caller: the upgrade must come from the same SLAuth subject.
+		const token = createRuntimeSocketToken(REALTIME_AUDIO_CONVERSATION_SCOPE, caller.owner);
 		return res.json({
 			token: token || null,
 			expiresInMs: token ? runtimeSocketTokenTtlMs : 0,

@@ -56,6 +56,7 @@ test-results/
 /artifacts/vpk-html/eu26-animation-explained/_video/render-endpoint.json
 /media/videos/tmp*/
 /media/videos/**/partial_movie_files/
+/media/texts/
 public/**/hyperframes/.hyperframes/
 public/**/hyperframes/.thumbnails/
 public/**/hyperframes/.waveform-cache/
