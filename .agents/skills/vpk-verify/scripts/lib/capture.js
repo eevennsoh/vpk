@@ -17,10 +17,10 @@ const {
 	runAgentBrowser,
 } = require("./browser.js");
 const { plural, splitOptions, usageError } = require("./cli.js");
-const { targetBrowserArguments } = require("./origin.js");
+const { ENTRY_POINT_FLAG, targetBrowserArguments } = require("./origin.js");
 const { EVIDENCE_DIR, REPO_ROOT, toPosix } = require("./repo.js");
 
-const CAPTURE_USAGE = "Usage: control-vpk capture <route> [--id <label>] [--viewport WxH] [--media light|dark] [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y]";
+const CAPTURE_USAGE = `Usage: control-vpk capture <route> [--id <label>] [--viewport WxH] [--media light|dark] [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y] [${ENTRY_POINT_FLAG}]`;
 const DEFAULT_CAPTURE_VIEWPORT = Object.freeze({ width: 1280, height: 720 });
 // `?variants=id,-id` forces design variants for one page load without storage
 // writes; components/utils/design-variants.ts owns the grammar and the ids.
@@ -154,7 +154,7 @@ function parseCaptureArgs(args, { designVariantIds } = {}) {
 		? []
 		: designVariantTokens(variantValues, designVariantIds ?? readDesignVariantIds());
 	const { flags, positional } = splitOptions(rest, {
-		booleanFlags: ["--headed", "--strict-a11y"],
+		booleanFlags: [ENTRY_POINT_FLAG, "--headed", "--strict-a11y"],
 		usageText: CAPTURE_USAGE,
 		valueFlags: ["--id", "--viewport", "--media", "--wait-text"],
 	});
@@ -176,6 +176,7 @@ function parseCaptureArgs(args, { designVariantIds } = {}) {
 		throw usageError("--id must be 1-80 letters, digits, dots, dashes or underscores.", CAPTURE_USAGE);
 	}
 	return {
+		entryPoint: flags["--entry-point"] === true,
 		headed: flags["--headed"] === true,
 		id,
 		media,
@@ -185,6 +186,12 @@ function parseCaptureArgs(args, { designVariantIds } = {}) {
 		viewport,
 		waitText: flags["--wait-text"] ?? null,
 	};
+}
+
+// The URL `capture` warms before the browser opens; same route and opt-in as runCapture.
+function captureWarmUrl(args, targetOptions = {}) {
+	const { entryPoint, route } = parseCaptureArgs(args);
+	return targetBrowserArguments(route, { ...targetOptions, entryPoint }).at(-1);
 }
 
 function manualVerificationRequested(env = process.env) {
@@ -294,6 +301,7 @@ function buildCaptureManifest({
 	return {
 		id: options.id,
 		route: options.route,
+		entryPoint: options.entryPoint === true,
 		url: finalUrl || url,
 		requestedUrl: url,
 		viewport: { ...options.viewport },
@@ -328,7 +336,7 @@ function runCapture(options, {
 } = {}) {
 	// Same validation and origin resolution as open-target; throws before any browser work.
 	const target = routeWithDesignVariants(options.route, options.variants ?? []);
-	const openArgs = targetBrowserArguments(target, { headed: options.headed, origin, repoMap });
+	const openArgs = targetBrowserArguments(target, { entryPoint: options.entryPoint, headed: options.headed, origin, repoMap });
 	const url = openArgs.at(-1);
 	const dir = path.join(evidenceRoot, options.id);
 	fs.mkdirSync(dir, { recursive: true });
@@ -454,6 +462,7 @@ function captureCli(args, { capture = recordedCapture, env = process.env, stdout
 module.exports = {
 	buildCaptureManifest,
 	captureCli,
+	captureWarmUrl,
 	formatCaptureSummary,
 	manualVerificationRequested,
 	parseCaptureArgs,
