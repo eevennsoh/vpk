@@ -23,20 +23,32 @@ import {
 	type JiraSavedFilter,
 } from "@/components/blocks/jira-filter/model";
 import { SavedPanel } from "@/components/blocks/jira-filter/saved-panel";
+import { ProjectButterFilter } from "@/components/blocks/jira-filter/project-butter-filter";
 
 type Directory = "all" | "team" | "personal" | "pinned";
 type Mode = "saved" | "basic" | "advanced" | "jql";
 
 export type JiraFilterProps = {
+	variant?: "default" | "project-butter";
 	fields: readonly JiraFilterField[];
 	value: readonly JiraFilterCondition[];
 	onChange: (value: JiraFilterCondition[]) => void;
 	initialSavedFilters?: readonly JiraSavedFilter[];
 	initialRecentFilterIds?: readonly string[];
 	onSavedFiltersChange?: (filters: readonly JiraSavedFilter[]) => void;
+	onSaveView?: (conditions: readonly JiraFilterCondition[]) => void;
+	onSaveAsView?: (name: string, conditions: readonly JiraFilterCondition[]) => void;
 };
 
-export function JiraFilter({
+export function JiraFilter(props: Readonly<JiraFilterProps>) {
+	return props.variant === "project-butter" ? (
+		<ProjectButterFilter {...props} />
+	) : (
+		<DefaultJiraFilter {...props} />
+	);
+}
+
+function DefaultJiraFilter({
 	fields,
 	value,
 	onChange,

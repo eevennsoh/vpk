@@ -1,0 +1,11 @@
+[
+	{"query": "share my prototype with the team for a review", "should_trigger": true, "note": "Private share."},
+	{"query": "make this localhost link public so a customer can open it", "should_trigger": true, "note": "Public share."},
+	{"query": "send a customer a prototype link for tomorrow's research session", "should_trigger": true, "note": "External audience."},
+	{"query": "stop the atlas tunnel I started earlier", "should_trigger": true, "note": "Tunnel cleanup."},
+	{"query": "my teammate in another office needs to click through what I have running right now", "should_trigger": true, "note": "Paraphrased live share."},
+	{"query": "give my localhost a fake demo domain for a screen share", "should_trigger": false, "note": "Sibling: vpk-domain."},
+	{"query": "host the static export on Statlas", "should_trigger": false, "note": "Sibling: vpk-host."},
+	{"query": "deploy this prototype to Micros", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "what port is my dev server on", "should_trigger": false, "note": "Port lookup."}
+]

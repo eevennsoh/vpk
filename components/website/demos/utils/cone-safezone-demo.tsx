@@ -40,7 +40,7 @@ export default function ConeSafezoneDemo() {
 			<div className="flex py-10">
 				<ConeSafezone debug={debug} openDelay={120} closeDelay={80}>
 					<ConeSafezoneTrigger render={<Button variant="outline" />}>Hover session</ConeSafezoneTrigger>
-					<ConeSafezoneContent side="bottom" align="start" alignOffset={0} sideOffset={12} className="w-80 bg-surface-overlay p-0 shadow-overlay">
+					<ConeSafezoneContent side="bottom" align="start" alignOffset={0} sideOffset={12} className="w-80 bg-surface-overlay p-0 shadow-2xl">
 						<JiraSessionFlyoutCard
 							title="Retry policy review is ready"
 							titleId={titleId}

@@ -24,8 +24,8 @@ message, stop before worker dispatch, and follow the root skill's repair rules.
 Substitute `<model>` (the full GPT ID — resolve aliases and defaults from
 `~/.config/litellm-proximity/defaults.env`) and
 `<effort>` (`medium` | `high` | `xhigh` | `max`; `low` is accepted by the CLI
-but deliberately not offered by this skill — see *Choosing effort* in
-SKILL.md) from the dispatch grammar. Create one directory per worker; never
+but deliberately not offered by this skill — see
+[invocation-flags-and-effort.md § Choosing effort](invocation-flags-and-effort.md#choosing-effort)) from the dispatch grammar. Create one directory per worker; never
 copy anything from `~/.codex` into it. Besides `home/`, it holds the planner's
 `brief.md` and `task.json`, this `run.sh` with the `run.sh.exit` the surface
 wrapper writes, and `report.md`; `scripts/vpk-remote-status.js` reads them. Luna at `max` was verified end-to-end
@@ -54,7 +54,7 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
 
 Run via Bash with `run_in_background: true`; the harness notifies on exit.
 A Codex planner has no background notification: run it in the foreground
-(see *Codex as the planner* in SKILL.md).
+(see [planner-detection.md § Codex as the planner](planner-detection.md#codex-as-the-planner)).
 Fan-out = several of these in one message, each with its own `worker_root`
 (`vpk-<type>-<slug>-<n>`).
 For read-only briefs, `--sandbox read-only` is a tighter fit.
@@ -122,8 +122,8 @@ This lane serves advisor consults on the `sol` model (resolved from
 under review came from the **Claude** lane, including plans written by the
 Claude planner itself — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an
-`output/remote-gpt/vpk-<type>-<slug>-review/` directory (see *Naming* in
-SKILL.md), and a read-only brief.
+`output/remote-gpt/vpk-<type>-<slug>-review/` directory (see
+[naming-and-worktrees.md](naming-and-worktrees.md)), and a read-only brief.
 
 ## Failure handling
 

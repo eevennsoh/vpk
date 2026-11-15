@@ -181,16 +181,18 @@ export function AdvancedPanel({
 	conditions,
 	onChange,
 	onClear,
+	compact = false,
 }: Readonly<{
 	fields: readonly JiraFilterField[];
 	conditions: readonly JiraFilterCondition[];
 	onChange: (value: JiraFilterCondition[]) => void;
 	onClear: () => void;
+	compact?: boolean;
 }>) {
 	const update = (index: number, next: JiraFilterCondition) =>
 		onChange(conditions.map((item, i) => (i === index ? next : item)));
 	return (
-		<div className="min-h-80 p-4">
+		<div className={compact ? "p-1" : "min-h-80 p-4"}>
 			<div className="space-y-3">
 				{conditions.map((condition, index) => {
 					const field = fields.find((item) => item.id === condition.field);
@@ -305,7 +307,7 @@ export function AdvancedPanel({
 				})}
 			</div>
 			{!conditions.length ? (
-				<p className="py-12 text-center text-text-subtlest">
+				<p className={cn("text-center text-text-subtlest", compact ? "py-4" : "py-12")}>
 					Add a condition to filter work items.
 				</p>
 			) : null}

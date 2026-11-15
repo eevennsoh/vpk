@@ -24,6 +24,8 @@ export type ProjectButterDemoIssueProps = Pick<
 	| "onClick"
 	| "tags"
 	| "subtasks"
+	| "summary"
+	| "onSummaryChange"
 >;
 
 type DemoDialog =
@@ -46,6 +48,7 @@ export function ProjectButterPlayground({
 	const [labelDraft, setLabelDraft] = useState("");
 	const [notice, setNotice] = useState("");
 	const [dialog, setDialog] = useState<DemoDialog | null>(null);
+	const [summary, setSummary] = useState("Implement advanced date-range filter");
 
 	async function handleAction(action: JiraIssueMoreAction) {
 		switch (action) {
@@ -104,6 +107,8 @@ export function ProjectButterPlayground({
 			) : null}
 			{children({
 				appearance: "project-butter",
+				summary,
+				onSummaryChange: setSummary,
 				metadata: {
 					issueType: "story",
 					dueDate: "2026-04-11",

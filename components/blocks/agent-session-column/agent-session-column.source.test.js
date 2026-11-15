@@ -971,3 +971,14 @@ test("selecting header hover copy comes from the selectedCount table", () => {
 	assert.match(PANEL_SOURCE, /tooltip\?: ReactNode/u);
 	assert.match(PANEL_SOURCE, /tooltip === undefined \? action : wrapPanelActionTooltip/u);
 });
+
+test("rail session flyout shell uses the single-perimeter overlay shadow", () => {
+	const flyoutSource = readFileSync(
+		join(__dirname, "../product-sidebar/variants/jira-session-flyout.tsx"),
+		"utf8",
+	);
+	// `shadow-overlay` is not a Tailwind utility, so it left HoverCardContent's
+	// `shadow-xl` (overlay + an extra 0 0 1px perimeter) in place: a doubled stroke.
+	assert.match(flyoutSource, /bg-surface-overlay p-0 text-text shadow-2xl /u);
+	assert.doesNotMatch(flyoutSource, /[\s"']shadow-overlay[\s"']/u);
+});

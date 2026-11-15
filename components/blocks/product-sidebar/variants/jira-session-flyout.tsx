@@ -732,7 +732,7 @@ export function JiraSessionFlyoutSurface({
 					align="start"
 					alignOffset={0}
 					className={cn(
-						"h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0",
+						"h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-2xl data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0",
 						instantPosition
 							? "transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100"
 							: "transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in",

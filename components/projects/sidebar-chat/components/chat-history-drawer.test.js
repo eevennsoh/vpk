@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { readChatPanelSource } = require("../chat-panel-source-harness");
 
 function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
@@ -25,7 +26,7 @@ test("compact chat history drawer wires thread actions to the shared rovo provid
 });
 
 test("active compact chat surfaces own one contained history drawer", () => {
-	const chatPanelSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const chatPanelSource = readChatPanelSource();
 	const appLayoutSource = readProjectFile("components/projects/page.tsx");
 	const floatingSource = readProjectFile("components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx");
 
@@ -70,7 +71,7 @@ test("compact chat header lets long agent names truncate before its actions", ()
 });
 
 test("minimal compact chat header suppresses history and action controls", () => {
-	const chatPanelSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const chatPanelSource = readChatPanelSource();
 	const sidebarHeader = readProjectFile("components/projects/sidebar-chat/components/chat-header.tsx");
 	const rovoCanvasRail = readProjectFile("components/blocks/rovo-canvas/components/rovo-canvas-right-rail.tsx");
 
@@ -83,7 +84,7 @@ test("minimal compact chat header suppresses history and action controls", () =>
 });
 
 test("custom agent compact chat renders view tabs below the header", () => {
-	const chatPanelSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const chatPanelSource = readChatPanelSource();
 
 	assert.match(chatPanelSource, /import \{ Tabs, TabsContent, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(chatPanelSource, /export interface ChatPanelCustomAgentTabs \{[\s\S]*activity\?: ReactNode;[\s\S]*trigger\?: ReactNode;[\s\S]*\}/u);
@@ -106,9 +107,9 @@ test("custom agent compact chat renders view tabs below the header", () => {
 	assert.match(chatPanelSource, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/u);
 	assert.match(chatPanelSource, /<Tabs[\s\S]*aria-label="Custom agent views"[\s\S]*className=\{cn\([\s\S]*"min-h-0 min-w-0 flex-1"[\s\S]*isAgentTestEmptyState && "flex flex-col"/u);
 	assert.match(chatPanelSource, /<DropdownMenuTrigger[\s\S]*aria-label="Switch version"[\s\S]*variant="ghost"[\s\S]*<Badge variant=\{selectedAgentVersion\.variant \?\? "success"\}>[\s\S]*<ChevronDownIcon label="" size="small" spacing="none" \/>/u);
-	assert.match(chatPanelSource, /<DropdownMenuItem[\s\S]*onSelect=\{\(\) => \{[\s\S]*onAgentVersionChange\?\.\(version\.id\);[\s\S]*\}\}[\s\S]*elemAfter=\{version\.id === selectedAgentVersion\.id \? <CheckMarkIcon label="Selected" \/> : undefined\}/u);
+	assert.match(chatPanelSource, /const selectAgentVersion = \(versionId: string\) => \{[\s\S]*onAgentVersionChange\?\.\(versionId\);[\s\S]*<DropdownMenuItem[\s\S]*onSelect=\{\(\) => onSelectVersion\(version\.id\)\}[\s\S]*elemAfter=\{version\.id === selectedAgentVersion\.id \? <CheckMarkIcon label="Selected" \/> : undefined\}/u);
 	assert.match(chatPanelSource, /<TabsList[\s\S]*<TabsTrigger value="chat">Chat<\/TabsTrigger>[\s\S]*<TabsTrigger value="trigger">Trigger<\/TabsTrigger>[\s\S]*<TabsTrigger value="activity">Activity<\/TabsTrigger>/u);
-	assert.match(chatPanelSource, /<Button aria-label="New chat" size="icon" variant="ghost" onClick=\{resetChat\}>[\s\S]*<EditIcon label="" \/>/u);
+	assert.match(chatPanelSource, /onResetChat=\{resetChat\}[\s\S]*<Button aria-label="New chat" size="icon" variant="ghost" onClick=\{onResetChat\}>[\s\S]*<EditIcon label="" \/>/u);
 	assert.match(chatPanelSource, /<TabsContent[\s\S]*value="chat"[\s\S]*className="min-h-0 flex flex-1 flex-col data-\[hidden\]:hidden"[\s\S]*isAgentTestEmptyState \? \([\s\S]*<div className="mx-auto flex min-h-0 w-full flex-1 flex-col gap-3">[\s\S]*\{chatConversationBody\}[\s\S]*\{chatComposerBody\}[\s\S]*\) : \([\s\S]*chatConversationBody/u);
 	assert.match(chatPanelSource, /<TabsContent value="trigger"[\s\S]*customAgentTabs\?\.trigger[\s\S]*<TabsContent value="activity"[\s\S]*customAgentTabs\?\.activity[\s\S]*<\/Tabs>[\s\S]*\{isAgentTestEmptyState \? null : chatComposerBody\}/u);
 	assert.match(chatPanelSource, /const chatPanelBody = \([\s\S]*\{chatConversationBody\}[\s\S]*\{chatComposerBody\}[\s\S]*\);/u);
@@ -270,7 +271,7 @@ test("chat history drawer matches the Figma conversation-list content structure"
 });
 
 test("sidebar, floating, and fullscreen chat message logs use 16px horizontal padding", () => {
-	const compactSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const compactSource = readChatPanelSource();
 	const fullscreenWrapperSource = readProjectFile("components/projects/rovo/components/rovo-app-messages.tsx");
 	const fullscreenSource = readProjectFile("components/projects/rovo-core/components/rovo-app-messages.tsx");
 
@@ -319,7 +320,7 @@ test("compact chat fetches Rovo follow-up suggestions after a completed idle tur
 });
 
 test("sidebar and floating compact chat show follow-up suggestions only on the latest idle assistant turn", () => {
-	const panelSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const panelSource = readChatPanelSource();
 	const bubbleSource = readProjectFile("components/projects/sidebar-chat/components/message-bubble.tsx");
 
 	assert.match(panelSource, /const hasPendingChatWork = isRequestInFlight \|\| queuedPrompts\.length > 0;/u);

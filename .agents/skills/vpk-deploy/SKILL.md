@@ -200,22 +200,10 @@ the guide for diagnostics, rollback, and deliberate full-image cutover recovery.
 
 ## Verify
 
-Both packaging paths prepare gzip/Brotli siblings through
-`scripts/prepare-static-export.mjs` and write `output/export-inventory.json`
-outside the public export. Static serving lives in the copied canonical
-`backend/lib/static-export-serving.js` and `static-asset-delivery.js`; it negotiates
-codecs, revalidates HTML, and caches generated Next assets immutably. The first
-release changing these runtime files requires a full image. Frontend delta
-images thereafter must include refreshed siblings for changed source files.
-Before a compact-image plan, run:
-
-```bash
-node scripts/prepare-static-export.mjs out --compress --report output/export-inventory.json
-```
-
-The delta planner rejects stale or retained prior compressed representations.
-Compare inventories for file-size changes and use the shared UI performance
-workflow for browser latency; inventory bytes alone do not prove faster use.
+Read [static-delivery-verification.md](references/static-delivery-verification.md)
+before a compact-image plan or when a release changes static serving,
+compression, or `--check-static-delivery` evidence; it covers the export
+inventory, delta planner, bounded HTTP pool, and what the delivery report proves.
 
 Run the export/build validation appropriate to the project, then verify the
 deployed URL:
@@ -262,26 +250,12 @@ node .agents/skills/vpk-deploy/scripts/verify-wss.mjs \
 The verifier closes the socket and never prints its scoped token. A 101 upgrade
 does not prove working audio.
 
-Static and browser-font HTTP checks use a bounded pool of six requests, keeping
-all content-type, Origin, redirect, readiness, and token checks. Use one focused
-local regression matrix and deployed capability smokes after exact HTML/new-chunk
-parity; repeat deeper tests for a deployment-specific risk or changed evidence.
-Carry forward documented findings tied to unchanged owners, inspect the new
-release, and investigate new or changed findings.
-
 For tokenized VPK apps, also pass `--check-ads-theme`. The verifier checks raw
 HTML theme activation and CSS/JavaScript/font content types. Both deploy scripts
 reject incomplete inline ADS themes before image packaging. Prove the initial
 render in a fresh browser with app JavaScript blocked, then check normal
 hydration; a styled screenshot after hydration can hide an unstyled first paint.
 See the deployment guide's browser evidence procedure.
-
-`--check-static-delivery` checks compression for large text, HTML revalidation,
-`Vary: Accept-Encoding`, immutable Next asset caching, and gzip HTML parity.
-The JSON report records decoded body bytes and the encoded Content-Length
-reported by the server; absent encoded lengths remain null. It is an HTTP
-delivery report, not a browser timing profile. Use this check for new prepared
-releases; inspect older deployments without the flag when diagnosing migration.
 
 Report unavailable external actions separately, including Create agent/skill
 when their configured source VPK has no active deployment. Do not deploy that
@@ -315,6 +289,8 @@ does not exercise deployment guards or runtime verification.
   configuration, initial deployment, runtime contracts, and full command detail.
 - [guide-manual-deployment.md](references/guide-manual-deployment.md): explicit
   manual command sequence.
+- [static-delivery-verification.md](references/static-delivery-verification.md):
+  compressed export preparation, delta planner, and static-delivery evidence.
 - [troubleshooting.md](references/troubleshooting.md): error messages,
   diagnosis, environment fallback, and recovery.
 - [deployment-status.mjs](scripts/deployment-status.mjs): stable/requested deployment resolution without credential output.

@@ -63,6 +63,7 @@ interface JiraIssueMoreMenuProps {
 	moreMenuActions?: JiraIssueMoreMenuActions;
 	onSelectionToggle?: () => void;
 	onActionSelect?: (action: JiraIssueMoreAction) => void;
+	onEditSummary?: () => void;
 	onOpenChange?: (open: boolean) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 	generativeActionIssue?: JiraIssueGenerativeActionIssue;
@@ -93,7 +94,7 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 
-function JiraIssueMoreDropdown({ appearance = "default", availableActions, butterAssignment, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreDropdown({ appearance = "default", availableActions, butterAssignment, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onEditSummary, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const invocation = useProjectButterInvocationActions();
@@ -155,7 +156,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
 				{appearance === "project-butter" ? <>
 					<DropdownMenuGroup>
-						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={select("edit-summary")}>Edit summary</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
 						<DropdownMenuSub>
 							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />}>Link</DropdownMenuSubTrigger>
 							<DropdownMenuSubContent>
@@ -192,6 +193,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 					</>
 				) : null}
 				<DropdownMenuGroup>
+					{onEditSummary ? <DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary}>Edit summary</DropdownMenuItem> : null}
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 				</DropdownMenuGroup>

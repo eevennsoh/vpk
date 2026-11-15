@@ -21,7 +21,7 @@ Never drive a herdr session from a process that is not inside one.
 Always pass `--no-focus`; the user's focus stays where it was. Label every tab
 and pane after the task (`vpk-fix-sidebar-flicker`, `vpk-audit-tokens-2`) so
 the sidebar is readable from a glance or a phone; `/vpk-remote` names follow
-*Naming* in `.agents/skills/vpk-remote/SKILL.md`.
+*Naming* in `.agents/skills/vpk-remote/references/naming-and-worktrees.md#naming`.
 
 ## Run a Script in a Visible Surface
 

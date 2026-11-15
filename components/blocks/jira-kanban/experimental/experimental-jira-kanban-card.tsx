@@ -275,6 +275,8 @@ interface ExperimentalJiraKanbanCardProps {
 	onSubtasks?: (item: AgentSessionItem) => void;
 	selected: boolean;
 	onSelectionToggle?: () => void;
+	onSummaryChange?: (summary: string) => void;
+	onSummaryEditChange?: (editing: boolean) => void;
 	moreMenuActions?: JiraIssueMoreMenuActions;
 	selectionBackdrop?: JiraIssueSelectionBackdrop;
 	subtaskChrome?: JiraIssueChrome;
@@ -338,6 +340,8 @@ export function ExperimentalJiraKanbanCard({
 	onSubtasks,
 	selected,
 	onSelectionToggle,
+	onSummaryChange,
+	onSummaryEditChange,
 	moreMenuActions,
 	selectionBackdrop,
 	showUnlinkWell = true,
@@ -446,6 +450,8 @@ export function ExperimentalJiraKanbanCard({
 				? (run) => onAgentDoneRunView(run, card, columnTitle)
 				: undefined}
 			onClick={onClick}
+			onSummaryChange={onSummaryChange}
+			onSummaryEditChange={onSummaryEditChange}
 			onDragEnd={onDragEnd}
 			onDragStart={onDragStart}
 			priority={card.priority}

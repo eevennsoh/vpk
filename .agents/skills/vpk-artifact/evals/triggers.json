@@ -1,0 +1,10 @@
+[
+	{"query": "publish the /projects demo as an Atlassian Artifact", "should_trigger": true, "note": "Publish route as artifact."},
+	{"query": "host this prototype for coworkers on hello.atlassian.net/artifacts", "should_trigger": true, "note": "Artifacts hosting."},
+	{"query": "update my artifact with the latest version of the onboarding demo", "should_trigger": true, "note": "Update an artifact."},
+	{"query": "turn this VPK demo into a single-file HTML and upload it to Artifacts", "should_trigger": true, "note": "Single-file packaging."},
+	{"query": "deploy this to Micros", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "upload the export folder to Statlas", "should_trigger": false, "note": "Sibling: vpk-host."},
+	{"query": "share my localhost prototype through a tunnel", "should_trigger": false, "note": "Sibling: vpk-tunnel."},
+	{"query": "what is an artifact registry in CI", "should_trigger": false, "note": "Different meaning of artifact."}
+]

@@ -112,6 +112,13 @@ test("VerticalOverflowState shows the lower mask until the user reaches the bott
 	assert.equal(nearBottom.showBottomScrollMask, false);
 });
 
+test("editable fields can account for fractional scroll rounding at the bottom", async () => {
+	const { getVerticalOverflowState } = await loadOverflowHarness();
+	const metrics = { clientHeight: 160, maxHeight: 160, scrollHeight: 260, scrollTop: 98.5 };
+	assert.equal(getVerticalOverflowState(metrics).showBottomScrollMask, true);
+	assert.equal(getVerticalOverflowState(metrics, 2).showBottomScrollMask, false);
+});
+
 test("VerticalOverflowState requires a finite max height before reporting a reached limit", async () => {
 	const { getVerticalOverflowState } = await loadOverflowHarness();
 
@@ -133,6 +140,38 @@ test("VerticalOverflowState requires a finite max height before reporting a reac
 		}).hasReachedVerticalLimit,
 		true,
 	);
+});
+
+test("editable scrollports remeasure input changes once per frame and clean up", async () => {
+	const { subscribeToVerticalOverflow } = await loadOverflowHarness();
+	const originals = { window: globalThis.window, ResizeObserver: globalThis.ResizeObserver };
+	const frames = new Map();
+	let nextFrame = 0;
+	globalThis.window = {
+		requestAnimationFrame(callback) { frames.set(++nextFrame, callback); return nextFrame; },
+		cancelAnimationFrame(id) { frames.delete(id); },
+		addEventListener() {},
+		removeEventListener() {},
+	};
+	globalThis.ResizeObserver = undefined;
+	const element = new EventTarget();
+	let measurements = 0;
+	let stop;
+	try {
+		stop = subscribeToVerticalOverflow(element, () => { measurements += 1; }, { trackInput: true });
+		element.dispatchEvent(new Event("input"));
+		element.dispatchEvent(new Event("input"));
+		assert.equal(frames.size, 1);
+		for (const [id, callback] of frames) { frames.delete(id); callback(); }
+		assert.equal(measurements, 1);
+		element.dispatchEvent(new Event("input"));
+		stop();
+		element.dispatchEvent(new Event("input"));
+		assert.equal(frames.size, 0);
+	} finally {
+		stop?.();
+		Object.assign(globalThis, originals);
+	}
 });
 
 test("overflow masks refresh after style-only animation changes and cancel queued measurement on cleanup", async () => {

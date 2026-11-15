@@ -1,0 +1,11 @@
+[
+	{"query": "deploy this prototype to Micros", "should_trigger": true, "note": "Direct request."},
+	{"query": "redeploy my vpk service, I just changed the landing page copy", "should_trigger": true, "note": "Redeploy."},
+	{"query": "is my Micros deployment healthy? check deploy status", "should_trigger": true, "note": "Status check."},
+	{"query": "the hot swap failed with UPDATE_FAILED on pdev-west2, what now", "should_trigger": true, "note": "Micros failure recovery."},
+	{"query": "deploy keeps failing with an ALLOWED_ORIGINS error after the stash update", "should_trigger": true, "note": "Micros configuration error."},
+	{"query": "upload this exported HTML folder to Statlas", "should_trigger": false, "note": "Sibling: vpk-host."},
+	{"query": "share my localhost prototype with a customer for an hour", "should_trigger": false, "note": "Sibling: vpk-tunnel."},
+	{"query": "publish this demo as an Atlassian Artifact", "should_trigger": false, "note": "Sibling: vpk-artifact."},
+	{"query": "why is the GitHub Actions deploy-preview job red on my PR", "should_trigger": false, "note": "CI question, not Micros."}
+]

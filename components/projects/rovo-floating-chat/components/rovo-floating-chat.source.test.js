@@ -4,11 +4,12 @@ const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+const { readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 
 const SOURCE_FILE = path.join(__dirname, "rovo-floating-chat.tsx");
 const ROVO_FLOATING_CHAT_SOURCE = fs.readFileSync(SOURCE_FILE, "utf8");
 const FLOATING_CHAT_HEADER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-chat-header.tsx"), "utf8");
-const CHAT_PANEL_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"), "utf8");
+const CHAT_PANEL_SOURCE = readChatPanelSource();
 const STREAMING_THINKING_INDICATOR_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/shared/components/streaming-thinking-indicator.tsx"), "utf8");
 const CHAIN_OF_THOUGHT_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/ui-custom/chain-of-thought.tsx"), "utf8");
 const REASONING_LABELS_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/ui-custom/lib/reasoning-labels.ts"), "utf8");

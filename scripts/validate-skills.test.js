@@ -6,16 +6,19 @@ const test = require("node:test");
 
 const {
 	DEFAULT_TARGET,
+	MAX_BODY_LINES,
 	buildSkillIndexText,
 	collectMarkdownLinks,
 	collectReferenceDocs,
 	collectSkillDirectories,
+	countBodyLines,
 	createSkillValidationReport,
 	formatRelatedDocsCell,
 	normalizeMarkdownLinkTarget,
 	parseArgs,
 	parseFrontmatter,
 	validateSkills,
+	validateTriggerEvals,
 	writeSkillIndex,
 } = require("./validate-skills");
 
@@ -287,6 +290,63 @@ test("createSkillValidationReport catches descriptions over the 1024-character l
 		assert.deepEqual(report.failures.map((failure) => failure.type), [
 			"skill-description-too-long",
 		]);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("countBodyLines ignores trailing blank lines", () => {
+	assert.equal(countBodyLines(""), 0);
+	assert.equal(countBodyLines("\n# Example\n\nText.\n\n\n"), 4);
+});
+
+test("createSkillValidationReport caps SKILL.md bodies at the line limit", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-body-lines-"));
+	try {
+		const filler = (count) => Array.from({ length: count }, (_, index) => `Line ${index}.`).join("\n");
+		// writeSkill prefixes the body with one blank line after the frontmatter.
+		writeSkill(cwd, "vpk-at-limit", `# At limit\n${filler(MAX_BODY_LINES - 2)}\n`);
+		writeSkill(cwd, "vpk-over-limit", `# Over limit\n${filler(MAX_BODY_LINES - 1)}\n`);
+		const report = createSkillValidationReport({ checkIndex: false, cwd });
+		assert.equal(MAX_BODY_LINES, 300);
+		assert.deepEqual(report.failures.map((failure) => [path.basename(path.dirname(failure.path)), failure.type]), [
+			["vpk-over-limit", "skill-body-too-long"],
+		]);
+		assert.match(report.failures[0].message, /body is 301 lines; the limit is 300/u);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("the repo's own skills stay under the SKILL.md body line cap", () => {
+	const report = createSkillValidationReport({ checkIndex: false, cwd: path.resolve(__dirname, "..") });
+	assert.ok(report.skills.length > 0, "the report found the repo's skills");
+	assert.deepEqual(report.failures.filter((failure) => failure.type === "skill-body-too-long"), []);
+});
+
+test("validateTriggerEvals accepts skill-creator {query, should_trigger} rows", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-trigger-evals-"));
+	try {
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
+		assert.deepEqual(validateTriggerEvals(skillDir), [], "a skill without a kit passes");
+		mkdirSync(path.join(skillDir, "evals"));
+		const kitPath = path.join(skillDir, "evals", "triggers.json");
+		writeFileSync(kitPath, JSON.stringify([
+			{ query: "run the example skill", should_trigger: true, note: "extra keys are allowed" },
+			{ query: "do something unrelated", should_trigger: false },
+		]));
+		assert.deepEqual(validateTriggerEvals(skillDir), []);
+
+		const typesFor = (rows) => {
+			writeFileSync(kitPath, typeof rows === "string" ? rows : JSON.stringify(rows));
+			return validateTriggerEvals(skillDir).map((failure) => failure.message);
+		};
+		assert.match(typesFor("{").join(), /not valid JSON/u);
+		assert.match(typesFor([]).join(), /non-empty JSON array/u);
+		assert.match(typesFor([{ prompt: "x", should_trigger: true }, { query: "y", should_trigger: false }]).join(), /row 0 needs a non-empty string query/u);
+		assert.match(typesFor([{ query: "x", should_trigger: "yes" }, { query: "y", should_trigger: false }]).join(), /row 0 needs a boolean should_trigger/u);
+		assert.match(typesFor([{ query: "x", should_trigger: true }, { query: "x", should_trigger: false }]).join(), /row 1 repeats an earlier query/u);
+		assert.match(typesFor([{ query: "x", should_trigger: true }, { query: "y", should_trigger: true }]).join(), /at least one should_trigger true row and one false row/u);
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

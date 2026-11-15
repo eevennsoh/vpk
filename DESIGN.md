@@ -387,7 +387,9 @@ or overlay affordance.
   that scrolls or visually breaks out of its container.
 - **Overlay** (`shadow-xl`, `shadow-2xl`,
   `var(--ds-shadow-overlay)`): Use for dialogs, popovers, command surfaces,
-  and floating controls.
+  and floating controls. `shadow-2xl` is the ADS overlay alone; `shadow-xl`
+  adds a second 1px perimeter, so restyled overlay surfaces override it with
+  `shadow-2xl`. There is no `shadow-overlay` class.
 
 ### Named rules
 
@@ -401,6 +403,12 @@ remain unframed.
 **The plane-pairing rule.** Pair raised surfaces with raised shadow when they
 need movement or lift, and pair overlay surfaces with overlay shadow. Do not
 mix overlay shadow into ordinary inline content.
+
+**The single-perimeter rule.** Raised cards using an elevation shadow must not
+add a visible decorative outer border or ring. The shadow already defines the
+edge, so an added border creates a double outline. Keep distinct focus or
+selection indicators when they communicate state.
+<!-- 2026-11-15: "this extra 1px border on the card" -->
 
 ## 7. Components
 

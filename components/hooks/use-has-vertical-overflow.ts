@@ -24,13 +24,20 @@ export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	hasScrolledFromTop: boolean;
 	hasScrolledToBottom: boolean;
 	ref: RefCallback<T>;
+	scrollbarWidth: number;
 	showTopScrollMask: boolean;
 	showBottomScrollMask: boolean;
 }
 
 export interface VerticalOverflowOptions {
+	/** Distance in pixels that counts as reaching the bottom. */
+	bottomTolerance?: number;
 	/** Track projected scroll bounds for hosts with animated descendants. */
 	trackAnimatedOverflow?: boolean;
+	/** Remeasure when an editable scrollport's value changes. */
+	trackInput?: boolean;
+	/** Measure the scrollbar gutter so a mask can leave it visible. */
+	trackScrollbarWidth?: boolean;
 }
 
 const EMPTY_VERTICAL_OVERFLOW_STATE: VerticalOverflowState = {
@@ -42,7 +49,7 @@ const EMPTY_VERTICAL_OVERFLOW_STATE: VerticalOverflowState = {
 	showTopScrollMask: false,
 };
 
-export function getVerticalOverflowState(metrics: VerticalOverflowMetrics | null): VerticalOverflowState {
+export function getVerticalOverflowState(metrics: VerticalOverflowMetrics | null, bottomTolerance = 1): VerticalOverflowState {
 	if (!metrics) {
 		return EMPTY_VERTICAL_OVERFLOW_STATE;
 	}
@@ -51,7 +58,7 @@ export function getVerticalOverflowState(metrics: VerticalOverflowMetrics | null
 	const hasFiniteMaxHeight = Number.isFinite(metrics.maxHeight) && metrics.maxHeight > 0;
 	const hasReachedVerticalLimit = hasFiniteMaxHeight && metrics.clientHeight >= metrics.maxHeight - 1;
 	const hasScrolledFromTop = metrics.scrollTop > 1;
-	const hasScrolledToBottom = metrics.scrollHeight - metrics.clientHeight - metrics.scrollTop <= 1;
+	const hasScrolledToBottom = metrics.scrollHeight - metrics.clientHeight - metrics.scrollTop <= bottomTolerance;
 
 	return {
 		hasReachedVerticalLimit,
@@ -63,7 +70,7 @@ export function getVerticalOverflowState(metrics: VerticalOverflowMetrics | null
 	};
 }
 
-function getElementVerticalOverflowState(element: HTMLElement | null): VerticalOverflowState {
+function getElementVerticalOverflowState(element: HTMLElement | null, bottomTolerance: number): VerticalOverflowState {
 	if (!element) {
 		return EMPTY_VERTICAL_OVERFLOW_STATE;
 	}
@@ -73,7 +80,7 @@ function getElementVerticalOverflowState(element: HTMLElement | null): VerticalO
 		maxHeight: Number.parseFloat(getComputedStyle(element).maxHeight),
 		scrollHeight: element.scrollHeight,
 		scrollTop: element.scrollTop,
-	});
+	}, bottomTolerance);
 }
 
 function isBoxlessLayoutWrapper(element: Element): boolean {
@@ -105,7 +112,7 @@ export function getVerticalOverflowResizeTargets(element: Element): Element[] {
 	return resizeTargets;
 }
 
-export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void, { trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): () => void {
+export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void, { trackAnimatedOverflow = false, trackInput = false }: VerticalOverflowOptions = {}): () => void {
 	let measurementFrame = 0;
 	let resizeTargetsStale = false;
 	const measure = () => {
@@ -122,12 +129,14 @@ export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollSt
 		if (!measurementFrame) measurementFrame = window.requestAnimationFrame(measure);
 	};
 	element.addEventListener("scroll", scheduleMeasurement, { passive: true });
+	if (trackInput) element.addEventListener("input", scheduleMeasurement, { passive: true });
 
 	if (typeof ResizeObserver === "undefined") {
 		window.addEventListener("resize", scheduleMeasurement);
 		return () => {
 			window.cancelAnimationFrame(measurementFrame);
 			element.removeEventListener("scroll", scheduleMeasurement);
+			if (trackInput) element.removeEventListener("input", scheduleMeasurement);
 			window.removeEventListener("resize", scheduleMeasurement);
 		};
 	}
@@ -171,27 +180,35 @@ export function subscribeToVerticalOverflow(element: HTMLElement, updateScrollSt
 	return () => {
 		window.cancelAnimationFrame(measurementFrame);
 		element.removeEventListener("scroll", scheduleMeasurement);
+		if (trackInput) element.removeEventListener("input", scheduleMeasurement);
 		resizeObserver.disconnect();
 		mutationObserver?.disconnect();
 	};
 }
 
-export function useHasVerticalOverflow<T extends HTMLElement>({ trackAnimatedOverflow = false }: VerticalOverflowOptions = {}): HasVerticalOverflowResult<T> {
+export function useHasVerticalOverflow<T extends HTMLElement>({ bottomTolerance = 1, trackAnimatedOverflow = false, trackInput = false, trackScrollbarWidth = false }: VerticalOverflowOptions = {}): HasVerticalOverflowResult<T> {
 	const elementRef = useRef<T | null>(null);
 	const [element, setElement] = useState<T | null>(null);
 	const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
 	const [hasReachedVerticalLimit, setHasReachedVerticalLimit] = useState(false);
 	const [hasScrolledFromTop, setHasScrolledFromTop] = useState(false);
 	const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+	const [scrollbarWidth, setScrollbarWidth] = useState(0);
 
 	const updateScrollState = useCallback(() => {
-		const nextState = getElementVerticalOverflowState(elementRef.current);
+		const element = elementRef.current;
+		const nextState = getElementVerticalOverflowState(element, bottomTolerance);
 
 		setHasVerticalOverflow(nextState.hasVerticalOverflow);
 		setHasReachedVerticalLimit(nextState.hasReachedVerticalLimit);
 		setHasScrolledFromTop(nextState.hasScrolledFromTop);
 		setHasScrolledToBottom(nextState.hasScrolledToBottom);
-	}, []);
+		if (trackScrollbarWidth && element) {
+			const style = getComputedStyle(element);
+			const borders = (Number.parseFloat(style.borderLeftWidth) || 0) + (Number.parseFloat(style.borderRightWidth) || 0);
+			setScrollbarWidth(Math.max(0, element.offsetWidth - element.clientWidth - borders));
+		}
+	}, [bottomTolerance, trackScrollbarWidth]);
 
 	const ref = useCallback<RefCallback<T>>(
 		(node) => {
@@ -209,8 +226,8 @@ export function useHasVerticalOverflow<T extends HTMLElement>({ trackAnimatedOve
 
 	useEffect(() => {
 		if (!element) return undefined;
-		return subscribeToVerticalOverflow(element, updateScrollState, { trackAnimatedOverflow });
-	}, [element, updateScrollState, trackAnimatedOverflow]);
+		return subscribeToVerticalOverflow(element, updateScrollState, { trackAnimatedOverflow, trackInput });
+	}, [element, updateScrollState, trackAnimatedOverflow, trackInput]);
 
 	return {
 		hasVerticalOverflow,
@@ -218,6 +235,7 @@ export function useHasVerticalOverflow<T extends HTMLElement>({ trackAnimatedOve
 		hasScrolledFromTop,
 		hasScrolledToBottom,
 		ref,
+		scrollbarWidth,
 		showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop,
 		showBottomScrollMask: hasVerticalOverflow && !hasScrolledToBottom,
 	};
