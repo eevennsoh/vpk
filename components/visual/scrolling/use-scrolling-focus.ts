@@ -137,9 +137,9 @@ export function useScrollingFocusScroll({
 			// A drag throw is a running inertia animation writing `offset` every
 			// frame; `set` alone would be overwritten immediately.
 			offset.stop();
-			// `set`, not `animate`: `offset` belongs to the motion copy motion-plus
-			// resolves rather than this repo's (see `scrolling-offset-bridge.ts`),
-			// so an `animate()` from here may not drive it. An instant reveal is
+			// `set`, not `animate`: `offset` is owned by motion-plus's Ticker, which
+			// once resolved its own Motion copy (see `scrolling-offset-bridge.ts`),
+			// so an `animate()` from here could not be relied on to drive it. An instant reveal is
 			// also the reduced-motion-safe default for scroll-into-view.
 			offset.set(offset.get() + delta);
 		};
@@ -159,8 +159,8 @@ export function useScrollingFocusScroll({
 			// not queue a refine per stop against a control that has since blurred.
 			if (refineHandle !== null) cancelAnimationFrame(refineHandle);
 			// TWO frames, not one. The write above lands in a MotionValue owned by
-			// motion 12 (see `scrolling-offset-bridge.ts`), whose render loop is a
-			// different rAF from this one; a single frame can measure the old
+			// Ticker (see `scrolling-offset-bridge.ts`), whose render loop applies
+			// it on its own frame; a single frame can measure the old
 			// transform and re-derive a delta that has already been applied.
 			refineHandle = requestAnimationFrame(() => {
 				refineHandle = requestAnimationFrame(() => {
