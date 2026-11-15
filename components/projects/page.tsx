@@ -2,8 +2,9 @@
 
 // oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
+import { isEmbeddedDocument, subscribeToEmbeddedDocument } from "@/lib/embedded-document";
 import { token } from "@/lib/tokens";
 import TopNavigation, {
 	type TopNavigationCurrentUser,
@@ -64,53 +65,18 @@ interface AppLayoutProps {
 	sidebarChatMount?: "eager" | "on-first-open";
 }
 
+const getNotEmbedded = () => false;
+
 /**
  * Detect iframe context so generated apps rendered inside the artifact
  * panel's iframe automatically hide all shell chrome (TopNavigation,
  * Sidebar, FloatingRovoButton, RovoChatPanel).
  *
- * Defers the browser-only check to an effect so the first client render
- * matches the server render (both return false), avoiding hydration mismatch.
+ * The server snapshot is false so hydration matches the static export; an
+ * embedded document then re-renders with the pre-hydration flag.
  */
 function useIsEmbedded(explicit: boolean): boolean {
-	const [auto, setAuto] = useState(false);
-	useEffect(() => {
-		let timeout: ReturnType<typeof setTimeout> | null = null;
-		let nextAuto = false;
-		if (document.documentElement.dataset.embedded !== undefined) {
-			nextAuto = true;
-		} else {
-			try {
-				nextAuto = window.self !== window.top;
-			} catch {
-				nextAuto = true; // cross-origin iframe
-			}
-		}
-
-		if (!nextAuto) {
-			return;
-		}
-
-		let cancelled = false;
-		const syncEmbeddedState = () => {
-			if (!cancelled) {
-				setAuto(true);
-			}
-		};
-
-		if (typeof queueMicrotask === "function") {
-			queueMicrotask(syncEmbeddedState);
-		} else {
-			timeout = setTimeout(syncEmbeddedState, 0);
-		}
-
-		return () => {
-			cancelled = true;
-			if (timeout !== null) {
-				clearTimeout(timeout);
-			}
-		};
-	}, []);
+	const auto = useSyncExternalStore(subscribeToEmbeddedDocument, isEmbeddedDocument, getNotEmbedded);
 	return explicit || auto;
 }
 

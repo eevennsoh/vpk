@@ -2,23 +2,19 @@
 
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
+import { isEmbeddedDocument, subscribeToEmbeddedDocument } from "@/lib/embedded-document";
 
 const PREVIEW_ROUTE_PREFIX = "/preview/";
 
-const subscribeToEmbeddedState = () => () => {};
+const getNotEmbedded = () => false;
 
-// The root layout's pre-hydration script marks <html data-embedded> before first paint when the
-// document runs inside an iframe (or with ?embedded=1), and that never changes for the document.
-function getEmbeddedSnapshot(): boolean {
-	return document.documentElement.dataset.embedded !== undefined;
-}
-
-// Same-origin embeds (home and catalog cards) only ever load /preview/* routes, so the static
-// export renders those as embedded and every other route as a top-level page.
+// VPK's own catalog embeds (home and catalog card iframes) load /preview/* routes, so the static
+// export renders those as embedded and every other route as a top-level page. A non-preview route
+// loaded in an iframe (e.g. through web-preview) keeps its <main>, as intended.
 function useIsEmbeddedDocument(isPreviewRoute: boolean): boolean {
 	return useSyncExternalStore(
-		subscribeToEmbeddedState,
-		isPreviewRoute ? getEmbeddedSnapshot : () => false,
+		subscribeToEmbeddedDocument,
+		isPreviewRoute ? isEmbeddedDocument : getNotEmbedded,
 		() => isPreviewRoute,
 	);
 }
@@ -29,8 +25,10 @@ function useIsEmbeddedDocument(isPreviewRoute: boolean): boolean {
  * landmark-unique). The native <main> stays because axe and HTML-AAM only scope a page header out
  * of the banner role under a real <main> element, not under role="main".
  *
- * Only a preview opened top-level swaps the wrapper for <main> after hydration (one remount); embedded
- * previews and every non-preview route hydrate with the element they keep.
+ * Embedded previews and every non-preview route hydrate with the element they keep. Only a preview
+ * opened top-level swaps the wrapper for <main> after hydration, so its children remount once
+ * (effects, one-shot animations and canvases initialise twice); the alternative would remount every
+ * embedded card instead.
  */
 export function MainLandmark({ children }: Readonly<{ children: React.ReactNode }>) {
 	const pathname = usePathname();

@@ -86,7 +86,7 @@ import {
 } from "./personal-graph-surface-data";
 import { GraphNodeMarker } from "./personal-graph-surface-helpers";
 
-type PersonalGraphSurfaceProps = React.ComponentProps<"main">;
+type PersonalGraphSurfaceProps = React.ComponentProps<"section">;
 
 const PERSONAL_GRAPH_TITLE_FONT_STYLE = {
 	fontFamily: "var(--font-affigere), Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
@@ -885,7 +885,7 @@ export function PersonalGraphSurface({
 		: { clipPath: { duration: 0.9, ease: [0.16, 1, 0.3, 1] }, filter: { duration: 0.56, ease: easeOut }, opacity: { duration: 0.48, ease: easeOut }, scale: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } };
 
 	return (
-		<main
+		<section
 			aria-label="Personal Graph"
 			className={cn("relative isolate w-full min-h-svh overflow-hidden bg-surface text-text", className)}
 			ref={liquidGlassStageRef}
@@ -1209,7 +1209,7 @@ export function PersonalGraphSurface({
 					</ul>
 				</section>
 			</PersonalGraphLiquidGlassStageProvider>
-		</main>
+		</section>
 	);
 }
 

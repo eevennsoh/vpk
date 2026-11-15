@@ -31,7 +31,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // react-dom reads the DOM globals when it loads, so require it after registering.
 const React = require("react");
-const { createRoot } = require("react-dom/client");
+const { createRoot, hydrateRoot } = require("react-dom/client");
+const { renderToString } = require("react-dom/server");
 
 // Next.js runtime stand-ins. Override any of them via `mocks`.
 const DEFAULT_MOCKS = NEXT_RUNTIME_MOCKS;
@@ -270,8 +271,11 @@ const interactions = {
  * `mocks` maps import specifiers (bare or `@/…`) to TSX module source. `strictMode` wraps the
  * root in `<StrictMode>` so effects mount, clean up and mount again as in development; a
  * `<StrictMode>` returned from inside the rendered component only double-renders here.
+ * `hydrate` server-renders the component with `renderToString` (so `useSyncExternalStore` reads
+ * its server snapshot), hydrates that markup with `hydrateRoot`, and rejects on any hydration
+ * mismatch or recoverable error; the view's `serverHtml` holds the server markup.
  */
-async function renderComponent({ entry, exportName = "default", mocks = {}, props = {}, source, strictMode = false } = {}) {
+async function renderComponent({ entry, exportName = "default", hydrate = false, mocks = {}, props = {}, source, strictMode = false } = {}) {
 	if ((entry === undefined) === (source === undefined)) {
 		throw new Error("renderComponent needs exactly one of `entry` or `source`.");
 	}
@@ -281,7 +285,20 @@ async function renderComponent({ entry, exportName = "default", mocks = {}, prop
 		throw new Error(`${entry ?? "inline source"} has no component export "${exportName}".`);
 	}
 	const container = document.body.appendChild(document.createElement("div"));
-	const root = createRoot(container);
+	const createElement = (elementProps) => {
+		const element = React.createElement(Component, elementProps);
+		return strictMode ? React.createElement(React.StrictMode, null, element) : element;
+	};
+	const serverHtml = hydrate ? renderToString(createElement(props)) : null;
+	let root;
+	if (hydrate) {
+		container.innerHTML = serverHtml;
+		await hydrateInto(container, createElement(props), (hydratedRoot) => {
+			root = hydratedRoot;
+		});
+	} else {
+		root = createRoot(container);
+	}
 	const view = {
 		...queries,
 		...interactions,
@@ -292,9 +309,9 @@ async function renderComponent({ entry, exportName = "default", mocks = {}, prop
 		 * an in-place entity switch; a `key` in `nextProps` remounts instead, as a host keyed by entity id would.
 		 */
 		rerender: (nextProps) => run(() => {
-			const element = React.createElement(Component, nextProps);
-			root.render(strictMode ? React.createElement(React.StrictMode, null, element) : element);
+			root.render(createElement(nextProps));
 		}),
+		serverHtml,
 		/** Accessible names of everything Tab reaches, in order. */
 		tabOrder: () => tabbables().map(accessibleName),
 		unmount: async () => {
@@ -305,8 +322,31 @@ async function renderComponent({ entry, exportName = "default", mocks = {}, prop
 		},
 	};
 	mountedViews.add(view);
-	await view.rerender(props);
+	if (!hydrate) {
+		await view.rerender(props);
+	}
 	return view;
+}
+
+// React reports a hydration mismatch as a recoverable error (it then client-renders) or, for
+// attribute and text differences, only as a console.error; both reject here.
+async function hydrateInto(container, element, onRoot) {
+	const consoleError = console.error;
+	console.error = (...args) => {
+		if (args.some((arg) => /hydrat/iu.test(String(arg)))) {
+			reportedErrors.push(new Error(`Hydration mismatch: ${args.map(String).join(" ")}`));
+		}
+		consoleError(...args);
+	};
+	try {
+		await run(() => {
+			onRoot(hydrateRoot(container, element, {
+				onRecoverableError: (error) => reportedErrors.push(error instanceof Error ? error : new Error(String(error))),
+			}));
+		});
+	} finally {
+		console.error = consoleError;
+	}
 }
 
 /** Unmounts every rendered view and empties the document. Runs automatically after each test. */
