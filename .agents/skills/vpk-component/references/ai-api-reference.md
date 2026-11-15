@@ -33,7 +33,7 @@ Key props: `from`, `className`, `children`
 
 Key props: `className`, `children`
 
-## PromptInput (`components/ui-custom/prompt-input.tsx`)
+## PromptInput (`components/ui-custom/prompt-input/`)
 
 | Sub-component | Purpose |
 |---|---|

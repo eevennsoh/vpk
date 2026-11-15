@@ -19,13 +19,14 @@ test("editor palettes use the shared shorter top fade without a duplicate CSS ma
 });
 
 test("prompt input exposes an internal root marker for suggestion popover anchoring", () => {
-	const source = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const rootSource = readProjectFile("components/ui-custom/prompt-input/prompt-input-root.tsx");
+	const textareaSource = readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea.tsx");
 
 	assert.match(
-		source,
+		rootSource,
 		/<form[\s\S]*\{\.\.\.props\}[\s\S]*data-prompt-input-root=""/u,
 	);
-	assert.match(source, /"aria-label": ariaLabel \?\? "Message",[\s\S]*role: "textbox",/u);
+	assert.match(textareaSource, /"aria-label": ariaLabel \?\? "Message",[\s\S]*role: "textbox",/u);
 });
 
 test("composer suggestions resolve the prompt input root before legacy chat form fallbacks", () => {
@@ -84,7 +85,10 @@ test("composer editor extensions remain the boundary for input-anchored suggesti
 });
 
 test("prompt input forwards scoped mention layout and section copy to the shared palette", () => {
-	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const promptInputSource = [
+		readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea-types.ts"),
+		readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea.tsx"),
+	].join("\n");
 	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/extensions.ts");
 	const menuSource = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-catalog.tsx");
 
@@ -117,7 +121,7 @@ test("fallback suggestion icons use the 24px neutral IconTile treatment", () => 
 
 test("composer directory autocomplete accepts the active visible list item on Tab", () => {
 	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
-	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const promptInputSource = readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea.tsx");
 
 	assert.match(extensionSource, /acceptActiveListItem: \(\) => boolean;/u);
 	assert.match(extensionSource, /event\.key === "Tab" && !event\.shiftKey && controller\.hasAcceptableList\(\)[\s\S]*event\.preventDefault\(\);[\s\S]*return controller\.acceptActiveListItem\(\);/u);
