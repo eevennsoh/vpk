@@ -297,6 +297,7 @@ function createGatewayTextGenerationService({
 		roleMessages,
 		layoutContext,
 		signal,
+		backendPreference,
 	}) {
 		const systemPrompt = getGenuiSystemPrompt({
 			strict: true,
@@ -312,6 +313,7 @@ function createGatewayTextGenerationService({
 			maxOutputTokens: 3500,
 			temperature: 0.3,
 			signal,
+			backendPreference,
 		});
 
 		const { meta, body } = parseGenuiMetaAndBody(rawText);

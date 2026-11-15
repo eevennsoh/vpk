@@ -4412,10 +4412,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 449,
+			"manifestEntryCount": 450,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 443,
+				"live": 444,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4464,7 +4464,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 121,
+				"entryCount": 122,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4821,6 +4821,13 @@
 						"slug": "jira-epic",
 						"name": "Jira Epic",
 						"importPath": "@/components/blocks/jira-epic",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-filter",
+						"name": "Jira Filter",
+						"importPath": "@/components/blocks/jira-filter",
 						"status": "live"
 					},
 					{

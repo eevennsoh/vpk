@@ -88,6 +88,8 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	const unlinked = page.getByRole("region", { name: /Unlink sessions/ });
+	await expect(unlinked.getByText("Keep or delete the adapter", { exact: true })).toBeHidden();
+	await unlinked.getByRole("button", { name: "Expand Unlink sessions column" }).click();
 	await expect(unlinked.getByText("Keep or delete the adapter", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Select Board" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();

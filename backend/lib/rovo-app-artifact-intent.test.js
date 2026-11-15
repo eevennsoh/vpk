@@ -314,3 +314,12 @@ test("resolveFastRovoAppArtifactIntent returns null for conversational messages"
 		assert.equal(parsed, null, `Expected null for "${message}"`);
 	}
 });
+
+test("fallbackRovoAppArtifactIntent keeps a document that mentions a table as text", () => {
+	const parsed = fallbackRovoAppArtifactIntent({
+		latestUserMessage:
+			"Write a one-page document: Q3 launch brief with a short timeline table and a risks section",
+	});
+	assert.equal(parsed.action, "createDocument");
+	assert.equal(parsed.kind, "text");
+});

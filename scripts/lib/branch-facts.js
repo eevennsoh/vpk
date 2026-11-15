@@ -22,8 +22,11 @@ const REFLOG_LIMIT = 1000;
 // Ignored content `git worktree remove` would delete that is regenerable, so it does not
 // block removal. Everything else ignored blocks (artifacts/ is durable by AGENTS.md;
 // backend/data/ holds the dev backend's runtime data; nested worktrees under
-// .claude/worktrees/ hold their own work). `.env*` files do not block: the worktree
-// bootstrap seeds them from another checkout, and they are listed, never opened.
+// .claude/worktrees/ hold their own work). Per-checkout Claude Code state is disposable
+// with its checkout: launch.json is rewritten at SessionStart, settings.local.json holds
+// only that checkout's local permission grants, and .cc-writes/ tracks session writes.
+// `.env*` files do not block: the worktree bootstrap seeds them from another checkout,
+// and they are listed, never opened.
 const REGENERABLE_IGNORED = [
 	/(^|\/)node_modules\/?$/u,
 	/^\.next\/?$/u,
@@ -36,6 +39,9 @@ const REGENERABLE_IGNORED = [
 	/^next-env\.d\.ts$/u,
 	/^\.dev-[a-z]+-ports?$/u,
 	/(^|\/)\.DS_Store$/u,
+	/^\.claude\/launch\.json$/u,
+	/^\.claude\/settings\.local\.json$/u,
+	/^\.claude\/\.cc-writes\/?$/u,
 ];
 // The env files the worktree bootstrap seeds (`.agents/hooks/lib/worktree-bootstrap.sh`):
 // a regular file named `.env` or `.env.*`, not `*.example`, outside the provider worktree
