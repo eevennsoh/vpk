@@ -1,8 +1,6 @@
 import { ART_COMPONENTS } from "@/app/data/component-manifest";
-import {
-	HomeCatalogSection,
-	type HomeCatalogListEntry,
-} from "@/app/home-catalog-section";
+import type { HomeCatalogListEntry } from "@/app/home-catalog-order";
+import { HomeCatalogSection } from "@/app/home-catalog-section";
 
 interface HomeArtsSectionProps {
 	artComponents?: ReadonlyArray<HomeCatalogListEntry>;

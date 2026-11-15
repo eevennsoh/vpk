@@ -4,6 +4,12 @@
 
 import { useMemo, useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import {
+	compareHomeCatalogEntriesByLastUpdated,
+	compareHomeCatalogEntriesByName,
+	resolveHomeCatalogEntries,
+	type HomeCatalogListEntry,
+} from "@/app/home-catalog-order";
 import { HomeSectionHeading } from "@/app/home-section-heading";
 import type { ComponentManifestEntry } from "@/app/data/component-manifest";
 import { Button } from "@/components/ui/button";
@@ -25,10 +31,6 @@ import { WebsiteCard } from "@/components/website/website-card";
 
 type HomeCatalogSortOption = "last-updated" | "name";
 
-export interface HomeCatalogListEntry extends ComponentManifestEntry {
-	updatedAt: string | null;
-}
-
 const HOME_CATALOG_SORT_LABELS: Record<HomeCatalogSortOption, string> = {
 	"last-updated": "Last updated",
 	name: "Name",
@@ -37,7 +39,9 @@ const HOME_CATALOG_SORT_LABELS: Record<HomeCatalogSortOption, string> = {
 interface HomeCatalogSectionProps {
 	id: string;
 	title: string;
+	/** The whole catalog; the heading count is always its length. */
 	components: ReadonlyArray<ComponentManifestEntry>;
+	/** The cards to render, with dates; defaults to every component. May be a subset of `components`. */
 	componentEntries?: ReadonlyArray<HomeCatalogListEntry>;
 	componentHrefPrefix: string;
 	previewHrefPrefix: string;
@@ -59,36 +63,13 @@ export function HomeCatalogSection({
 		useState<HomeCatalogSortOption>("last-updated");
 
 	const sortedComponentEntries = useMemo(() => {
-		const source =
-			componentEntries ??
-			components.map((component) => ({
-				...component,
-				updatedAt: null,
-			}));
-
-		if (catalogSort === "name") {
-			return [...source].sort((left, right) => {
-				return left.name.localeCompare(right.name);
-			});
-		}
-
-		return [...source].sort((left, right) => {
-			const timeDelta =
-				Date.parse(right.updatedAt ?? "") - Date.parse(left.updatedAt ?? "");
-			if (Number.isFinite(timeDelta) && timeDelta !== 0) {
-				return timeDelta;
-			}
-
-			if (right.updatedAt && !left.updatedAt) {
-				return 1;
-			}
-
-			if (left.updatedAt && !right.updatedAt) {
-				return -1;
-			}
-
-			return left.name.localeCompare(right.name);
-		});
+		return [
+			...resolveHomeCatalogEntries(components, componentEntries),
+		].sort(
+			catalogSort === "name"
+				? compareHomeCatalogEntriesByName
+				: compareHomeCatalogEntriesByLastUpdated,
+		);
 	}, [catalogSort, componentEntries, components]);
 
 	const sectionActions = sortedComponentEntries.length > 1 ? (
