@@ -66,18 +66,19 @@ test("the detached card restores the full frame omitted by the shared in-flow ca
 	assert.match(card, /\[&_li:last-child_article\]:border-border-disabled/u);
 });
 
-test("the depth tail subscribes to Ticker's motion 12 values explicitly", () => {
-	// motion-plus pins `motion ^12` and pnpm gives it its own copy, so Ticker's
-	// values are motion 12 while this package imports motion 13. The zero-argument
+test("the depth tail subscribes to Ticker's values explicitly via .on('change')", () => {
+	// When motion-plus 2.x pinned `motion ^12`, pnpm gave it its own copy, so
+	// Ticker's values were motion 12 while this package imported motion 13 (see
+	// `scrolling-offset-bridge.ts`). The zero-argument
 	// `useTransform(() => tickerValue.get())` discovers dependencies through
 	// motion-dom's module-level `collectMotionValues` singleton — and a motion 12
-	// `.get()` registers with motion-dom 12's singleton, which motion-dom 13 never
-	// reads. The tail then captured only `collapse`, which stops changing once the
+	// `.get()` registered with motion-dom 12's singleton, which motion-dom 13 never
+	// read. The tail then captured only `collapse`, which stops changing once the
 	// entrance lands, so the scale-and-tuck froze at whatever each card measured
 	// when the unfurl finished. Verified in-browser: after a 280px drag every
 	// scale was byte-identical while the cards had moved a third of the
 	// scrollport, and a forced re-render snapped them all to correct values.
-	// `.on("change", …)` is duck-typed and crosses the split safely.
+	// `.on("change", …)` is duck-typed and works whether or not the copies match.
 	const bridge = readProjectFile("components/visual/scrolling/use-card-top.ts");
 	assert.match(bridge, /renderedOffset\.on\("change", sync\)/u);
 	assert.match(bridge, /projection\.on\("change", sync\)/u);
@@ -86,8 +87,9 @@ test("the depth tail subscribes to Ticker's motion 12 values explicitly", () => 
 test("the card reads its scroll position through the bridge, not Ticker directly", () => {
 	const card = readProjectFile("components/visual/scrolling/scrolling-card.tsx");
 	assert.match(card, /const cardTop = useCardTop\(\);/u);
-	// Destructuring Ticker's own `offset` / `projection` here would put motion 12
-	// values back inside a motion 13 `useTransform` and refreeze the tail.
+	// Destructuring Ticker's own `offset` / `projection` here would rely on
+	// implicit tracking again, which refroze the tail when motion-plus had its
+	// own Motion copy.
 	const tickerItem = /useTickerItem\(\)/u;
 	assert.match(card, tickerItem);
 	assert.doesNotMatch(card, /offset: itemOffset/u);
