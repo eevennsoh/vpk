@@ -2459,7 +2459,7 @@
       "count": 30
     }
   },
-  "components/ui-custom/prompt-input.tsx": {
+  "components/ui-custom/prompt-input/prompt-input-textarea.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },

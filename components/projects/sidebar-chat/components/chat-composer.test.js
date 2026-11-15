@@ -295,10 +295,13 @@ test("compact chat composer supports opt-in first-render autofocus", () => {
 test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
-	const promptInput = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const promptInput = [
+		readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea-types.ts"),
+		readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea.tsx"),
+	].join("\n");
 
 	assert.match(promptInput, /enableVisualTraceAutoTagging\?: boolean;/u);
-	assert.match(promptInput, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);
+	assert.match(promptInput, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number; textAfter\?: string \};/u);
 	assert.match(promptInput, /onPrefillMentionConsumed\?: \(requestKey: number\) => void;/u);
 	assert.match(promptInput, /onPrefillMentionConsumed\?\.\(requestKey\);/u);
 	assert.match(promptInput, /enableVisualTraceAutoTagging = false/u);
