@@ -16,6 +16,7 @@ const {
 	standupRequestSchema,
 	ticketClassifyRequestSchema,
 } = require("../lib/jira-query-inputs");
+const { getRequestCaller } = require("../middleware/caller-identity");
 const { sendError } = require("../middleware/error-response");
 
 // The Jira host gets the server's Atlassian API token, so only a configured site is
@@ -223,9 +224,13 @@ function createDemosRouter({
 		}
 	});
 
-	router.post("/agents/rfp-demo/agent/apply", async (_req, res) => {
+	// The threads a run creates are the starting caller's (lib/agents-rfp-demo-job-owner.js).
+	const callerOwner = (req) => getRequestCaller(req)?.owner ?? null;
+
+	router.post("/agents/rfp-demo/agent/apply", async (req, res) => {
 		try {
 			const { job, state } = await runAgentsRfpDemoJob({
+				owner: callerOwner(req),
 				source: "agent-apply",
 			});
 			return res.json({ job, state });
@@ -246,7 +251,7 @@ function createDemosRouter({
 			}
 
 			const result = await handleAgentsRfpDemoTicketEvent({
-				ticketCode, targetColumn, runId: getString(req.body?.runId),
+				ticketCode, targetColumn, runId: getString(req.body?.runId), owner: callerOwner(req),
 			});
 			return res.json(result);
 		} catch (error) {

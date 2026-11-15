@@ -78,7 +78,10 @@ function createAgentsRfpDemoJobOwner({
 		return result;
 	}
 
-	async function upsertAgentsRfpDemoThread(threadRecord) {
+	// A demo thread belongs to the caller who started its run (lib/caller-identity.js);
+	// later updates keep that owner, whoever triggers them. A thread recreated without a
+	// starting caller (processing after the thread was deleted) has no owner.
+	async function upsertAgentsRfpDemoThread(threadRecord, owner) {
 		const existingThread = await rovoAppThreadManager.getThread(threadRecord.id);
 		if (existingThread) {
 			return rovoAppThreadManager.updateThread(threadRecord.id, {
@@ -93,11 +96,11 @@ function createAgentsRfpDemoJobOwner({
 			});
 		}
 
-		return rovoAppThreadManager.createThread(threadRecord);
+		return rovoAppThreadManager.createThread({ ...threadRecord, owner: getNonEmptyString(owner) });
 	}
 
-	async function persistResult(result) {
-		await Promise.all(result.threadRecords.map(upsertAgentsRfpDemoThread));
+	async function persistResult(result, { owner = null } = {}) {
+		await Promise.all(result.threadRecords.map((threadRecord) => upsertAgentsRfpDemoThread(threadRecord, owner)));
 		return agentsRfpDemoStateManager.writeState({
 			...result.state,
 			agent: result.state.agent ? {
@@ -108,7 +111,7 @@ function createAgentsRfpDemoJobOwner({
 		});
 	}
 
-	async function runFromState(currentState, { source = "manual", ticketCodes, runId } = {}) {
+	async function runFromState(currentState, { owner = null, source = "manual", ticketCodes, runId } = {}) {
 		const normalizedRunId = getNonEmptyString(runId);
 		if (normalizedRunId && currentState.agent?.jobRunSummaries?.some((run) => run.id === normalizedRunId)) {
 			return { job: buildAgentsRfpDemoJob(currentState), state: currentState };
@@ -119,7 +122,7 @@ function createAgentsRfpDemoJobOwner({
 			source: getNonEmptyString(source) ?? "manual",
 			ticketCodes: Array.isArray(ticketCodes) ? ticketCodes : undefined,
 		});
-		const state = await persistResult(result);
+		const state = await persistResult(result, { owner });
 		return { job: buildAgentsRfpDemoJob(state), state };
 	}
 
@@ -159,14 +162,14 @@ function createAgentsRfpDemoJobOwner({
 		return serialize(() => agentsRfpDemoStateManager.writeState(state));
 	}
 
-	function handleAgentsRfpDemoTicketEvent({ ticketCode, targetColumn, runId }) {
+	function handleAgentsRfpDemoTicketEvent({ ticketCode, targetColumn, runId, owner = null }) {
 		return serialize(async () => {
 			const currentState = await agentsRfpDemoStateManager.readState();
 			const state = await agentsRfpDemoStateManager.writeState(moveTicketToColumn(currentState, ticketCode, targetColumn));
 			if (targetColumn !== RFP_DRAFTING_EVENT_TRIGGER.column || !state.agent?.trigger) {
 				return { job: buildAgentsRfpDemoJob(state), state };
 			}
-			return runFromState(state, { source: "jira-column-entered", ticketCodes: [ticketCode], runId });
+			return runFromState(state, { owner, source: "jira-column-entered", ticketCodes: [ticketCode], runId });
 		});
 	}
 

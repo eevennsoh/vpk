@@ -1,6 +1,7 @@
 "use strict";
 
 const { isOwnedByCaller } = require("./caller-identity");
+const { normalizeRepoRelativePath } = require("./rovo-app-storage-paths");
 const { getRequestCaller } = require("../middleware/caller-identity");
 
 const THREAD_NOT_FOUND = Object.freeze({ error: "Thread not found" });
@@ -126,6 +127,62 @@ function createRovoAppThreadOwnership({
 		return list.filter((document) => visible.has(document?.threadId ?? null));
 	}
 
+	/**
+	 * Whether the caller may reach a record that names no thread of its own, only one
+	 * found by scanning the stored threads (a Rovo session, a generated media path). A
+	 * local caller is the only caller there is, so it reaches them as before, with no
+	 * scan; an SLAuth caller needs a thread of theirs that matches.
+	 * @param {(thread: Record<string, unknown>) => boolean} matches
+	 */
+	async function ownsMatchingThread(caller, matches) {
+		if (!caller) return false;
+		if (caller.local) return true;
+		const threads = await rovoAppThreadManager.listThreads({
+			filter: (thread) => ownsThread(caller, thread) && matches(thread),
+			limit: 1,
+		});
+		return threads.length > 0;
+	}
+
+	/**
+	 * Whether a Rovo Serve session is the caller's: a thread of theirs stores it. A session
+	 * id restores that whole conversation, so an unbound id is nobody's but a local caller's.
+	 */
+	function ownsSession(caller, sessionId) {
+		return ownsMatchingThread(caller, (thread) => (
+			thread.sessionId === sessionId || thread.activeRun?.sessionId === sessionId
+		));
+	}
+
+	/**
+	 * Middleware: 404 "Session not found" when the Rovo session the request names (read by
+	 * `pickSessionId`) is not the caller's. A request that names no session passes.
+	 * @param {(req: import("express").Request) => unknown} pickSessionId
+	 */
+	function rejectForeignSession(pickSessionId) {
+		return async (req, res, next) => {
+			try {
+				const sessionId = firstValue(pickSessionId(req));
+				if (sessionId && !(await ownsSession(callerOf(res), sessionId))) {
+					return res.status(404).json({ error: "Session not found" });
+				}
+				return next();
+			} catch (error) {
+				return next(error);
+			}
+		};
+	}
+
+	/**
+	 * Whether a generated media file (a repo-relative path under media/videos) is the
+	 * caller's: a thread of theirs mentions the path, which is how the file reached a chat.
+	 */
+	function ownsGeneratedMedia(caller, requestedPath) {
+		const mediaPath = normalizeRepoRelativePath(requestedPath);
+		if (!mediaPath) return Promise.resolve(false);
+		return ownsMatchingThread(caller, (thread) => JSON.stringify(thread).includes(mediaPath));
+	}
+
 	/** The runs whose thread the caller owns. */
 	async function filterOwnedRuns(caller, runs) {
 		const list = Array.isArray(runs) ? runs : [];
@@ -141,8 +198,11 @@ function createRovoAppThreadOwnership({
 		filterOwnedRuns,
 		isForeignThread,
 		ownedBy,
+		ownsGeneratedMedia,
+		ownsSession,
 		ownsThread,
 		rejectForeignDocument,
+		rejectForeignSession,
 		rejectForeignThread,
 		rejectForeignUpload,
 		requireCaller,
@@ -157,23 +217,35 @@ const CHAT_THREAD_ROUTES = Object.freeze([
 	["/api/chat-cancel", (req) => req.query?.threadId],
 ]);
 
+// The chat routes that name a Rovo Serve session instead of a thread. Each one restores
+// that session, so a session no thread of the caller's stores answers 404.
+const CHAT_SESSION_ROUTES = Object.freeze([
+	["/api/chat-sdk/skip-question", (req) => req.body?.sessionId],
+]);
+
 /**
- * Guards the chat routes in CHAT_THREAD_ROUTES with the same per-caller thread check the
- * Rovo app routes use. Register before those routes.
+ * Guards the chat routes in CHAT_THREAD_ROUTES and CHAT_SESSION_ROUTES with the same
+ * per-caller thread check the Rovo app routes use. Register before those routes.
  * @param {import("express").Express} app
  * @param {{ rovoAppThreadManager: object }} managers
  */
 function registerChatThreadOwnershipGuards(app, { rovoAppThreadManager }) {
-	if (typeof rovoAppThreadManager?.getThread !== "function") {
-		throw new Error("registerChatThreadOwnershipGuards requires rovoAppThreadManager");
+	for (const method of ["getThread", "listThreads"]) {
+		if (typeof rovoAppThreadManager?.[method] !== "function") {
+			throw new Error(`registerChatThreadOwnershipGuards requires rovoAppThreadManager.${method}`);
+		}
 	}
 	const ownership = createRovoAppThreadOwnership({ rovoAppThreadManager });
 	for (const [routePath, pickThreadId] of CHAT_THREAD_ROUTES) {
 		app.post(routePath, ownership.requireCaller, ownership.rejectForeignThread(pickThreadId));
 	}
+	for (const [routePath, pickSessionId] of CHAT_SESSION_ROUTES) {
+		app.post(routePath, ownership.requireCaller, ownership.rejectForeignSession(pickSessionId));
+	}
 }
 
 module.exports = {
+	CHAT_SESSION_ROUTES,
 	CHAT_THREAD_ROUTES,
 	createRovoAppThreadOwnership,
 	registerChatThreadOwnershipGuards,

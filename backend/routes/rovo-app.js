@@ -938,6 +938,11 @@ function createRovoAppRouter({
 				return res.status(400).json({ error: "Unsupported generated media type" });
 			}
 
+			// Another caller's video answers like a file that does not exist.
+			if (!(await ownership.ownsGeneratedMedia(callerOf(res), requestedPath))) {
+				return res.status(404).json({ error: "Generated media file not found" });
+			}
+
 			await fileAccess(absolutePath);
 			res.setHeader("Content-Type", contentType);
 			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {

@@ -9,9 +9,13 @@ const {
 	createDemosRouter,
 	registerDemosRoutes,
 } = require("./demos");
+const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
 
-async function withServer(overrides, run) {
+async function withServer(overrides, run, { env } = {}) {
 	const app = express();
+	if (env) {
+		app.use(createCallerIdentityMiddleware({ env, logger: { log() {}, warn() {} } }));
+	}
 	app.use(express.json());
 	const calls = {
 		advance: 0, events: [], classify: [], getClaim: [], htmlReport: [], postClaim: [], deleteClaim: [], resetState: 0, runJob: [], standup: [], writeState: [],
@@ -55,8 +59,8 @@ async function withServer(overrides, run) {
 		},
 		resetAgentsRfpDemo: async () => stateManager.resetState(),
 		saveAgentsRfpDemoState: async (state) => stateManager.writeState(state),
-		handleAgentsRfpDemoTicketEvent: async ({ ticketCode, targetColumn, runId }) => {
-			calls.events.push({ ticketCode, targetColumn, runId });
+		handleAgentsRfpDemoTicketEvent: async ({ ticketCode, targetColumn, runId, owner }) => {
+			calls.events.push({ ticketCode, targetColumn, runId, owner });
 			if (targetColumn !== "Drafting") {
 				return { job: { id: "job-1" }, state: { moved: { ticketCode, targetColumn } } };
 			}
@@ -249,8 +253,31 @@ test("RFP demo agent apply route runs the manual demo job", async () => {
 			job: { id: "job-1" },
 			state: { processed: true },
 		});
-		assert.deepEqual(calls.runJob, [{ source: "agent-apply" }]);
+		// Outside production the caller is the fixed owner "local".
+		assert.deepEqual(calls.runJob, [{ owner: "local", source: "agent-apply" }]);
 	});
+});
+
+test("in production the RFP demo runs record the SLAuth caller who started them as the thread owner", async () => {
+	await withServer({}, async (baseUrl, calls) => {
+		const apply = await fetch(`${baseUrl}/api/agents/rfp-demo/agent/apply`, {
+			headers: { "x-slauth-subject": "alice" },
+			method: "POST",
+		});
+		assert.equal(apply.status, 200);
+		const event = await fetch(`${baseUrl}/api/agents/rfp-demo/events/ticket-entered-column`, {
+			body: JSON.stringify({ ticketCode: "RFP-2", targetColumn: "Drafting" }),
+			headers: { "content-type": "application/json", "x-slauth-subject": "bob" },
+			method: "POST",
+		});
+		assert.equal(event.status, 200);
+		assert.deepEqual(calls.runJob, [{ owner: "alice", source: "agent-apply" }]);
+		assert.deepEqual(calls.events, [{ owner: "bob", runId: null, targetColumn: "Drafting", ticketCode: "RFP-2" }]);
+
+		const anonymous = await fetch(`${baseUrl}/api/agents/rfp-demo/agent/apply`, { method: "POST" });
+		assert.equal(anonymous.status, 401);
+		assert.equal(calls.runJob.length, 1);
+	}, { env: { NODE_ENV: "production" } });
 });
 
 test("RFP demo ticket event validates input and delegates non-trigger moves", async () => {
@@ -312,7 +339,7 @@ test("RFP demo ticket event runs the job when a ticket enters the trigger column
 			job: { id: "job-1" },
 			state: { processed: true },
 		});
-		assert.deepEqual(calls.events, [{ targetColumn: "Drafting", ticketCode: "RFP-2", runId: null }]);
+		assert.deepEqual(calls.events, [{ owner: "local", targetColumn: "Drafting", ticketCode: "RFP-2", runId: null }]);
 	});
 });
 
