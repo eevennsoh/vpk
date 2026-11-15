@@ -319,7 +319,7 @@ export function JiraForYouDetailPanel({
 		<motion.div
 			animate="open"
 			className={cn(
-				"z-20 h-full max-w-full shadow-overlay",
+				"z-20 h-full max-w-full shadow-2xl",
 				isNarrow ? "absolute inset-0" : "absolute inset-y-0 right-0",
 			)}
 			exit="closed"

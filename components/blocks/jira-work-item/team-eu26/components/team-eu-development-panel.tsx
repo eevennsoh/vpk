@@ -168,7 +168,7 @@ function PullRequestRow({
 			/>
 			<HoverCardContent
 				align="start"
-				className="w-auto p-2 shadow-overlay"
+				className="w-auto p-2 shadow-2xl"
 				positionerClassName="z-[503]"
 				side="left"
 				sideOffset={4}

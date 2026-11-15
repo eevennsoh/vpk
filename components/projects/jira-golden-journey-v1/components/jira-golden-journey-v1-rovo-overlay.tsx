@@ -117,7 +117,7 @@ export function JgpRovoOverlay({
 
 	return createPortal(
 		<>
-			{isSwitchingSession ? <span className="fixed right-6 bottom-6 z-[561] rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text-subtle shadow-overlay" role="status">Opening session…</span> : null}
+			{isSwitchingSession ? <span className="fixed right-6 bottom-6 z-[561] rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text-subtle shadow-2xl" role="status">Opening session…</span> : null}
 			{showLauncher ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"

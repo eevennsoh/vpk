@@ -119,7 +119,7 @@ export function JiraListColumnBoundary({
 				</Tooltip>
 				<PopoverContent
 					align={anchorSide === "left" ? "start" : "end"}
-					className="w-[320px] gap-0 overflow-hidden bg-surface p-0 shadow-overlay"
+					className="w-[320px] gap-0 overflow-hidden bg-surface p-0 shadow-2xl"
 					side="bottom"
 					sideOffset={8}
 				>

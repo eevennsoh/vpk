@@ -387,7 +387,9 @@ or overlay affordance.
   that scrolls or visually breaks out of its container.
 - **Overlay** (`shadow-xl`, `shadow-2xl`,
   `var(--ds-shadow-overlay)`): Use for dialogs, popovers, command surfaces,
-  and floating controls.
+  and floating controls. `shadow-2xl` is the ADS overlay alone; `shadow-xl`
+  adds a second 1px perimeter, so restyled overlay surfaces override it with
+  `shadow-2xl`. There is no `shadow-overlay` class.
 
 ### Named rules
 

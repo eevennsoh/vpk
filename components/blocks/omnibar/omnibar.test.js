@@ -195,10 +195,10 @@ test("Omnibar surfaces paint their own chrome so neither inherits a resizing fil
 
 	assert.match(pill, /h-7 w-24[^"]*rounded-full bg-bg-neutral-bold/u);
 	assert.match(pill, /token\("elevation.shadow.overlay"\)/u);
-	assert.match(bar, /bg-bg-neutral-bold p-3 shadow-overlay/u);
+	assert.match(bar, /bg-bg-neutral-bold p-3 shadow-2xl/u);
 	assert.doesNotMatch(bar, /bg-transparent p-3 shadow-none/u);
 	// Nothing between the rail and the two surfaces may carry a fill or a clip.
-	assert.doesNotMatch(source, /bg-bg-neutral-bold|shadow-overlay|overflow-hidden/u);
+	assert.doesNotMatch(source, /bg-bg-neutral-bold|shadow-2xl|overflow-hidden/u);
 	assert.doesNotMatch(source, /bg-surface-raised/u);
 });
 
