@@ -89,15 +89,13 @@ test("ChatPanel renders generated result cards after the turn container", () => 
 	assert.match(CHAT_PANEL_SOURCE, /getMessageArtifactResult/u);
 	assert.match(CHAT_PANEL_SOURCE, /hasTurnCompleteSignal/u);
 	assert.match(CHAT_PANEL_SOURCE, /import \{ ArtifactResultCard, type ArtifactResult \} from "\.\/artifact-result-card";/u);
-	assert.match(CHAT_PANEL_MESSAGES_SOURCE, /import \{ isGeneratedAgentResult \} from "\.\.\/components\/agent-result-card";/u);
-	assert.match(CHAT_PANEL_CONVERSATION_SOURCE, /import \{ AgentResultCard \} from "\.\/agent-result-card";/u);
 	assert.match(CHAT_PANEL_SOURCE, /const handleAgentResultSelect = useCallback\(\(agent: RovoDataParts\["agent-result"\]\) => \{[\s\S]*selectableAgents\.some\(\(selectableAgent\) => selectableAgent\.id === agent\.agentId\)[\s\S]*selectAgent\(agent\.agentId\);/u);
 	assert.match(
 		CHAT_PANEL_MESSAGES_SOURCE,
-		/const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)[\s\S]*if \(artifactResult && !generatedAgentResult\)[\s\S]*if \(generatedAgentResult\)/u,
+		/import \{ isGeneratedAgentResult \} from "\.\.\/components\/agent-result-card";[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)[\s\S]*if \(artifactResult && !generatedAgentResult\)[\s\S]*if \(generatedAgentResult\)/u,
 	);
 	assert.match(
 		CHAT_PANEL_CONVERSATION_SOURCE,
-		/renderTurnAfter=\{\(turn\) => \{[\s\S]*const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*getTurnGeneratedResults\(turn, shouldRenderGeneratedAgentResult\)[\s\S]*className="w-full space-y-2" data-testid="rovo-generated-result-group"[\s\S]*<ArtifactResultCard[\s\S]*<AgentResultCard[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u,
+		/import \{ AgentResultCard \} from "\.\/agent-result-card";[\s\S]*renderTurnAfter=\{\(turn\) => \{[\s\S]*const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*getTurnGeneratedResults\(turn, shouldRenderGeneratedAgentResult\)[\s\S]*className="w-full space-y-2" data-testid="rovo-generated-result-group"[\s\S]*<ArtifactResultCard[\s\S]*<AgentResultCard[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u,
 	);
 });
