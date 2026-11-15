@@ -5,16 +5,20 @@ import { createContext, use, useCallback, useMemo, useState, type ReactNode } fr
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
 /**
- * Sidebar State
+ * Sidebar State (low-frequency: pin/visibility and route).
+ *
+ * Hover reveal lives in its own context (`useSidebarHovered`) because it flips
+ * on every pointer pass over the top-navigation toggle; keeping it out of this
+ * object means visibility readers (TopNavigation, the Rovo shells) do not
+ * re-render on hover.
  */
 export interface SidebarState {
 	isVisible: boolean;
-	isHovered: boolean;
 	currentRoute: Product;
 }
 
 /**
- * Sidebar Actions
+ * Sidebar Actions (stable for the provider's lifetime).
  */
 export interface SidebarActions {
 	toggleSidebar: () => void;
@@ -23,12 +27,9 @@ export interface SidebarActions {
 	setCurrentRoute: (route: Product) => void;
 }
 
-interface SidebarContextValue {
-	state: SidebarState;
-	actions: SidebarActions;
-}
-
-const SidebarContext = createContext<SidebarContextValue | null>(null);
+const SidebarStateContext = createContext<SidebarState | null>(null);
+const SidebarHoverContext = createContext<boolean | null>(null);
+const SidebarActionsContext = createContext<SidebarActions | null>(null);
 
 interface SidebarProviderProps {
 	children: ReactNode;
@@ -40,10 +41,7 @@ export function SidebarProvider({ children, defaultVisible = false }: Readonly<S
 	const [isHovered, setIsHovered] = useState(false);
 	const [currentRoute, setCurrentRoute] = useState<Product>("home");
 
-	const state: SidebarState = useMemo(
-		() => ({ isVisible, isHovered, currentRoute }),
-		[isVisible, isHovered, currentRoute],
-	);
+	const state: SidebarState = useMemo(() => ({ isVisible, currentRoute }), [isVisible, currentRoute]);
 
 	const toggleSidebar = useCallback(() => setIsVisible((prev) => !prev), []);
 	const setSidebarVisible = useCallback((visible: boolean) => setIsVisible(visible), []);
@@ -54,46 +52,40 @@ export function SidebarProvider({ children, defaultVisible = false }: Readonly<S
 		[toggleSidebar, setSidebarVisible, setHovered, setCurrentRoute],
 	);
 
-	const value = useMemo(() => ({ state, actions }), [state, actions]);
-
 	return (
-		<SidebarContext value={value}>
-			{children}
-		</SidebarContext>
+		<SidebarActionsContext value={actions}>
+			<SidebarStateContext value={state}>
+				<SidebarHoverContext value={isHovered}>{children}</SidebarHoverContext>
+			</SidebarStateContext>
+		</SidebarActionsContext>
 	);
 }
 
-/**
- * Hook to access full Sidebar context.
- * Must be used within a SidebarProvider.
- */
-function useSidebarContext(): SidebarContextValue {
-	const context = use(SidebarContext);
-	if (context === null) {
-		throw new Error("useSidebar must be used within a SidebarProvider");
+function useRequiredSidebarContext<T>(value: T | null, hookName: string): T {
+	if (value === null) {
+		throw new Error(`${hookName} must be used within a SidebarProvider`);
 	}
-	return context;
+	return value;
 }
 
 /**
- * Hook to access sidebar state.
+ * Sidebar visibility and route. Does not change on hover.
  */
 export function useSidebarState(): SidebarState {
-	return useSidebarContext().state;
+	return useRequiredSidebarContext(use(SidebarStateContext), "useSidebarState");
 }
 
 /**
- * Hook to access sidebar actions.
+ * Whether the collapsed sidebar is hover-revealed. Only components that paint
+ * the hover reveal should read this; it changes on every hover in/out.
+ */
+export function useSidebarHovered(): boolean {
+	return useRequiredSidebarContext(use(SidebarHoverContext), "useSidebarHovered");
+}
+
+/**
+ * Stable sidebar actions. Never re-renders the caller on state changes.
  */
 export function useSidebarActions(): SidebarActions {
-	return useSidebarContext().actions;
-}
-
-/**
- * Legacy convenience hook that returns a flat object matching the old API.
- * Prefer useSidebarState() and useSidebarActions() for new code.
- */
-export function useSidebar(): SidebarState & SidebarActions {
-	const { state, actions } = useSidebarContext();
-	return { ...state, ...actions };
+	return useRequiredSidebarContext(use(SidebarActionsContext), "useSidebarActions");
 }
