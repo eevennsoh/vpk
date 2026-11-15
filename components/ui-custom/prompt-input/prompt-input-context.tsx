@@ -5,6 +5,10 @@ import type { RefObject } from "react";
 import { createContext, use } from "react";
 import type { PromptInputAttachmentStore } from "@/lib/prompt-input-attachments";
 
+// Sibling modules in prompt-input/ share these contexts and optional hooks.
+// Only names re-exported from ./index.ts are public; import from
+// "@/components/ui-custom/prompt-input", never from this file directly.
+
 export interface AttachmentsContext {
   files: (FileUIPart & { id: string })[];
   add: (files: File[] | FileList) => void;

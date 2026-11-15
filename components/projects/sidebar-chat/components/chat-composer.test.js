@@ -301,7 +301,7 @@ test("compact chat opts its Rovo composer textarea into visual trace auto-taggin
 	].join("\n");
 
 	assert.match(promptInput, /enableVisualTraceAutoTagging\?: boolean;/u);
-	assert.match(promptInput, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);
+	assert.match(promptInput, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number; textAfter\?: string \};/u);
 	assert.match(promptInput, /onPrefillMentionConsumed\?: \(requestKey: number\) => void;/u);
 	assert.match(promptInput, /onPrefillMentionConsumed\?\.\(requestKey\);/u);
 	assert.match(promptInput, /enableVisualTraceAutoTagging = false/u);
