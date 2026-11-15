@@ -49,7 +49,8 @@ export function ChartRadarLabelCustom() {
 						<ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
 						<PolarAngleAxis
 							dataKey="month"
-							tick={({ x, y, textAnchor, index, ...props }) => {
+							// verticalAnchor is a recharts tick prop, not an SVG attribute; keep it off the <text> node.
+							tick={({ x, y, textAnchor, index, verticalAnchor: _verticalAnchor, ...props }) => {
 								const data = chartData[index];
 
 								return (

@@ -95,3 +95,27 @@ export function getChartColorConfigEntries(
 
 	return entries;
 }
+
+/**
+ * Recharts' default accessibility layer makes every chart surface a focusable
+ * `role="application"` with no accessible name, so a page of charts reads as a
+ * run of unnamed tab stops. Name the surface from an explicit label, or else
+ * from the series labels in the chart config.
+ */
+export function getChartAccessibleLabel(
+	config: ChartConfig | null | undefined,
+	explicitLabel?: string,
+): string {
+	if (explicitLabel?.trim()) {
+		return explicitLabel;
+	}
+	const labels = isObjectRecord(config)
+		? Object.values(config)
+				.map((item) => (isObjectRecord(item) && typeof item.label === "string" ? item.label.trim() : ""))
+				.filter((label) => label.length > 0)
+		: [];
+	if (labels.length === 0) {
+		return "Chart";
+	}
+	return `Chart: ${new Intl.ListFormat("en-US", { type: "conjunction" }).format(labels)}`;
+}

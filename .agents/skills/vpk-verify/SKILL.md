@@ -82,7 +82,7 @@ export AGENT_BROWSER_RESTORE="$SESSION"
 .agents/skills/vpk-verify/scripts/control-vpk open-target /jira-team-eu26 --headed
 ```
 
-Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `pnpm control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
+Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch; pass `--entry-point` (also accepted by `capture`) only when the task verifies that landing page itself. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `pnpm control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
 
 Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature map. Do not use click coordinates. `find` requires an action (`click`, `fill`, `check`, `hover`, `text`). Presence checks use `find role … text --name`. A bare `find role … --name` fails as `assertion_failure`. Stable handles:
 
@@ -163,7 +163,7 @@ All invocations are from the worktree root. The script is executable.
 .agents/skills/vpk-verify/scripts/control-vpk evidence-dir
 .agents/skills/vpk-verify/scripts/control-vpk open-target /components/ui/accordion
 .agents/skills/vpk-verify/scripts/control-vpk where components/ui/accordion.tsx
-.agents/skills/vpk-verify/scripts/control-vpk capture /components/ui/accordion [--id <label>] [--viewport WxH] [--media light|dark] [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y]
+.agents/skills/vpk-verify/scripts/control-vpk capture /components/ui/accordion [--id <label>] [--viewport WxH] [--media light|dark] [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y] [--entry-point]
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
 pnpm run verify:vpk-feature-map
 ```
