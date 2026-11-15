@@ -57,6 +57,7 @@ import {
 import { JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
 import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
 import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
+import { useJiraIssueSummaryEdit } from "@/components/blocks/jira-issue/summary-editor";
 import type {
 	JiraIssueAppearance, JiraIssueCardMetadata,
 	JiraIssueChrome,
@@ -171,6 +172,10 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	coverImage?: JiraIssueCoverImage;
 	/** Issue summary shown as the primary card text. */
 	summary: string;
+	/** Saves an inline summary edit. */
+	onSummaryChange?: (summary: string) => void;
+	/** Lets a board mute other cards while this card is being edited. */
+	onSummaryEditChange?: (editing: boolean) => void;
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
@@ -299,6 +304,8 @@ function JiraIssueDefault({
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	onMoreActionSelect,
+	onSummaryChange,
+	onSummaryEditChange,
 	moreMenuActions,
 	parentEpicControl,
 	priority = "major",
@@ -345,6 +352,7 @@ function JiraIssueDefault({
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
 	const [agentActivityFocused, setAgentActivityFocused] = useState(false);
 	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
+	const summaryEdit = useJiraIssueSummaryEdit({ anchor: generativeActionAnchor, appearance, issueKey, issueType: metadata?.issueType ?? "task", summary, onSummaryChange, onEditingChange: onSummaryEditChange });
 	const [internalAgentSessionDragState, setInternalAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
@@ -660,6 +668,7 @@ function JiraIssueDefault({
 			showUnavailableAsEnabled={appearance === "project-butter"}
 			moreMenuActions={moreMenuActions}
 			onActionSelect={onMoreActionSelect}
+			onEditSummary={summaryEdit.start}
 			onOpenChange={setMoreActionMenuOpen}
 		/>
 	) : null;
@@ -677,6 +686,7 @@ function JiraIssueDefault({
 			issueKey={issueKey}
 			issueTypeLabel={issueTypeLabel}
 			isMounted={isMounted}
+			editingSummary={summaryEdit.active}
 			moreAction={usesCompactVisual ? moreActionMenu : undefined}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
@@ -777,6 +787,25 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
+	const hasSummaryEditorLayer = Boolean(onSummaryChange || summaryEdit.active);
+	const presentedIssueContent = (
+		<div className={hasSummaryEditorLayer ? "grid w-full min-w-0" : "contents"}>
+			<div
+				aria-hidden={summaryEdit.active || undefined}
+				inert={summaryEdit.active || undefined}
+				className={hasSummaryEditorLayer ? cn("col-start-1 row-start-1 min-w-0", appearance !== "project-butter" && "transition-opacity duration-fast ease-out-practical", appearance !== "project-butter" && summaryEdit.active && "opacity-0") : "contents"}
+			>
+				{richIssueContent}
+			</div>
+			<AnimatePresence initial={false}>
+				{summaryEdit.editor ? (
+					<motion.div key={summaryEdit.session} className="pointer-events-none relative z-20 col-start-1 row-start-1 flex min-w-0" exit={{ opacity: 1 }}>
+						{summaryEdit.editor}
+					</motion.div>
+				) : null}
+			</AnimatePresence>
+		</div>
+	);
 	const generativeActionMenu = generativeAction && (generativeActionPresentation === "sparkle" || !showMoreAction) ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
@@ -847,7 +876,7 @@ function JiraIssueDefault({
 							trace={agentSessionDragControl?.attachTrace}
 						/>
 					</motion.div>
-					{richIssueContent}
+					{presentedIssueContent}
 				</motion.div>
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
@@ -868,12 +897,15 @@ function JiraIssueDefault({
 					renderAgentActivityIndicator={renderAgentActivityIndicator}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
+					suspended={summaryEdit.active}
 					usesStrokeChrome={usesCompactVisual}
 				/></ProjectButterInvocationChin>
 				<AnimatePresence initial={false} mode="popLayout">
 					{hasAgentDoneNotification ? (
 						<motion.div
 							key="agent-review"
+							aria-hidden={summaryEdit.active || undefined}
+							inert={summaryEdit.active || undefined}
 							animate={presenceMotion.animate}
 							exit={presenceMotion.exit}
 							initial={presenceMotion.initial}
@@ -946,7 +978,7 @@ function JiraIssueDefault({
 			return (
 				<article
 					ref={setGenerativeActionAnchor}
-					draggable={draggable}
+					draggable={summaryEdit.active ? false : draggable}
 					className={agentActivityArticleClassName}
 					data-active={active || undefined}
 					data-dragging={dragging || undefined}
@@ -971,7 +1003,7 @@ function JiraIssueDefault({
 		return (
 			<article
 				ref={setGenerativeActionAnchor}
-				draggable={draggable}
+				draggable={summaryEdit.active ? false : draggable}
 				className={rootClassName}
 				data-active={active || undefined}
 				data-dragging={dragging || undefined}
@@ -985,7 +1017,7 @@ function JiraIssueDefault({
 				onPointerOver={handleGenerativeActionPointerOver}
 				style={rootBaseStyle}
 			>
-				{richIssueContent}
+				{presentedIssueContent}
 				{generativeActionMenu}
 			</article>
 		);

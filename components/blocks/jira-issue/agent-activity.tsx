@@ -759,6 +759,7 @@ export function JiraIssueAgentActivityRows({
 	inheritChinSurface = false,
 	showAssignmentFlyout = true,
 	shouldReduceMotion,
+	suspended = false,
 	workingSpinnerVariant,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
@@ -794,6 +795,8 @@ export function JiraIssueAgentActivityRows({
 	/** Hover assignment menu for every session lifecycle state. */
 	showAssignmentFlyout?: boolean;
 	shouldReduceMotion: boolean | null;
+	/** Keeps the row in place but unavailable during an inline card edit. */
+	suspended?: boolean;
 	usesStrokeChrome: boolean;
 	/** Selects only the Working spinner; iconScale still owns row spacing. */
 	workingSpinnerVariant?: "default" | "bloom-avatar";
@@ -817,8 +820,12 @@ export function JiraIssueAgentActivityRows({
 
 	return (
 		<motion.div
+			aria-hidden={suspended || undefined}
+			inert={suspended || undefined}
 			className={cn(
 				"flex w-full min-w-0 flex-col",
+				"transition-opacity duration-fast ease-out-practical",
+				suspended && "opacity-30",
 				// The travelling chip paints outside the row box, so the clip has to
 				// lift for the duration of a transfer drag.
 				sessionDragging ? "overflow-visible" : "overflow-hidden has-[:focus-visible]:overflow-visible",

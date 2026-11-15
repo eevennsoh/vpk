@@ -31,6 +31,8 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "availableMoreActions", type: "readonly JiraIssueMoreAction[]", description: "Optional capability list for the overflow menu. Unlisted actions are disabled; listed actions require onMoreActionSelect. Project butter disables these actions when no handler is supplied." },
 		{ name: "variant", type: '"default" | "uncaptured-work"', default: '"default"', description: "Selects the standard Jira issue card or the uncaptured-work presentation." },
 		{ name: "summary", type: "string", required: true, description: "Issue summary shown as the primary card text." },
+		{ name: "onSummaryChange", type: "(summary: string) => void", description: "Enables inline summary editing. The host receives the trimmed summary when it is nonempty and no longer than 255 characters." },
+		{ name: "onSummaryEditChange", type: "(editing: boolean) => void", description: "Notifies the host when inline summary editing starts or ends, for coordinating surrounding cards." },
 		{ name: "issueKey", type: "string", description: "Jira issue key shown beside the issue-type icon. Required for the default variant." },
 		{ name: "sourceLink", type: "SmartLinkItem", description: "Hoverable source reference with a type icon (PR status, branch, or commit), provider name, and destination label. Required for the uncaptured-work variant." },
 		{ name: "participants", type: "readonly JiraIssueParticipant[]", description: "People and agents involved in uncaptured work. Required for the uncaptured-work variant." },
