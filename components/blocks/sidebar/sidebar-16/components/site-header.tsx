@@ -29,7 +29,7 @@ export function SiteHeader() {
         >
           <SidebarIcon />
         </Button>
-        <Separator orientation="vertical" className="mr-2 h-4" />
+        <Separator orientation="vertical" className="mr-2 h-4 data-vertical:self-center" />
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
             <BreadcrumbItem>
