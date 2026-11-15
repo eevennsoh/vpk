@@ -8,6 +8,10 @@
 - Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
 - Discover actual worktree URLs/ports: `pnpm ports` (prefer the Portless `🌐 https://…` URL), with `.dev-frontend-port` and `.dev-backend-port` as fallback
 
+## Native Desktop Apps
+
+For non-browser GUIs, simulators, and tools without a CLI/API: use the harness's built-in computer use when the session exposes it (Claude Code's `computer-use` MCP, Codex or Desktop-app computer use). Only when none is available, fall back to `agent-desktop`: before the first use, run `agent-desktop status`, `agent-desktop skills get desktop`, and `agent-desktop skills get platform`, and follow them (load from the binary, not an installed copy, so the skill matches the CLI version). Never use it for web pages — those stay on the browser rules in `AGENTS.md`. Quote snapshot refs (`'@s1:e2'`), since zsh mangles `$var:eN`; keep screenshots under ignored `output/agent-desktop/`.
+
 ## Launcher Matrix
 
 - `pnpm run rovo` — 1 Rovo Serve instance + backend + frontend; `pnpm run rovo -- 6` for the full pool. First run prints a `ROVO_SESSION_TOKEN` to copy into `.env.local`.
@@ -27,7 +31,7 @@ Direct scripts:
 
 - `./.cursor/skills/vpk-deploy/scripts/deploy.sh <service> <version> [env]`
 - `./.cursor/skills/vpk-deploy/scripts/deploy-check.sh`
-- `pnpm run deploy:micros`
+- `pnpm run deploy:micros` (fast redeploy to Micros once `.deploy.local` exists)
 
 Before first deployment:
 

@@ -13,6 +13,7 @@ Pin dependencies so routine in-range updates stay semver-safe; the lockfile is t
 
 - Coordinated tiptap, json-render, and remotion families live in the `catalog:` block of `pnpm-workspace.yaml`; update it once, never individual `"catalog:"` references.
 - Use `overrides:` only to force one version across the whole tree, including transitives.
+- Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs, `@atlassian/logo-third-party` uses `atlassian-npm`, and `motion-plus` (alias of `@motionplus/core`) uses `api.motion.dev/npm`. The repo is public: keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`, never in `package.json` or the lockfile.
 
 - Survey what is behind: `pnpm run deps:check` (wraps `pnpm outdated` with an explicit status line — bare `pnpm outdated` prints nothing and exits 0 when current, which reads as silence)
 - Pull all in-range Float/Cautious updates and report status: `pnpm run deps:update` (runs `pnpm update`, then `deps:check`)
