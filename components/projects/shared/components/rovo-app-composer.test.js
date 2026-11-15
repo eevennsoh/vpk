@@ -16,7 +16,9 @@ const PROMPT_INPUT_DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "ap
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/live-waveform.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
 const PROMPT_INPUT_DICTATION_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input-dictation.tsx"), "utf8");
-const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
+const PROMPT_INPUT_SOURCE = ["prompt-input-root.tsx", "prompt-input-textarea-types.ts", "prompt-input-textarea.tsx"]
+	.map((file) => fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input", file), "utf8"))
+	.join("\n");
 const VISUAL_TRACE_AUTO_TAGGING_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
 const MENTION_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/extensions.ts"), "utf8");
