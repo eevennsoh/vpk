@@ -113,9 +113,10 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 import { getStudioAgentChangeSummary, type StudioAgentChangeSection, type StudioAgentChangeSummary } from "@/components/projects/rovo-core/lib/agent-records/agent-versioning";
 import { motionEase } from "@/lib/motion";
+import type { AgentConfigView } from "@/components/projects/studio/lib/studio-main-surface-machine";
 
 type AgentResult = RovoDataParts["agent-result"];
-export type AgentConfigView = "configure" | "insights" | "test";
+export type { AgentConfigView };
 type PublishDropdownView = "summary" | "draftChanges" | "history" | "versionDetail";
 
 function getSkillByConfigLabel(value: string): SkillDirectorySkill | undefined {
