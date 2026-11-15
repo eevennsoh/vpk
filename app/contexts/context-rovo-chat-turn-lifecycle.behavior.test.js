@@ -88,6 +88,7 @@ function loadHarness() {
 				export {
 					getChatInProgressRetryCountdownLabel,
 					getChatInProgressUserMessage,
+					getIncompleteTurnUserMessage,
 					getRateLimitRetryCountdownMessage,
 					getRateLimitUserMessage,
 					RATE_LIMIT_MAX_RETRIES,
@@ -334,11 +335,12 @@ test("submit marks the turn pending, streams the reply, and settles only after t
 	});
 });
 
-// Characterizes current behaviour, not the desired contract (see SM-FE-15): a
-// stream that never sends turn-complete leaves the queue blocked. A refactor
-// may change this on purpose; update the test with it.
-test("current behaviour: a stream that ends without turn-complete keeps its prompt active and blocks the queue", async (t) => {
-	const { server, chat } = await mountChat(t);
+// Regression (SM-FE-15): a stream that closed without turn-complete used to
+// leave its prompt active, so the queue stayed blocked until reset, a thread
+// switch or Stop.
+test("a stream that ends without turn-complete finalizes the turn, keeps the partial reply with an error, and advances the queue", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const incompleteText = `assistant:${harness.getIncompleteTurnUserMessage()}`;
 	await send(chat, "First");
 	await waitFor("the first request", () => server.turns.length === 1);
 	await send(chat, "Second");
@@ -346,13 +348,33 @@ test("current behaviour: a stream that ends without turn-complete keeps its prom
 
 	server.turns[0].text("t1", "Partial");
 	server.turns[0].end();
-	await waitFor("the stream to end", () => !chat().isStreaming);
-	await settle(30);
-	const state = chatState();
-	assert.equal(state.active, "First");
-	assert.deepEqual(state.queued, ["Second"]);
-	assert.equal(state.inFlight, true);
-	assert.equal(server.turns.length, 1);
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Second");
+	assert.deepEqual(chatState().queued, []);
+	// The partial reply is real history; the error notice is display-only.
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:First", "assistant:Partial", "user:Second"]);
+	assert.deepEqual(chatState().messages, ["user:First", "assistant:Partial", incompleteText, "user:Second"]);
+
+	server.turns[1].text("t2", "Done");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the second turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, [
+		"user:First", "assistant:Partial", incompleteText,
+		"user:Second", "assistant:Done+data-turn-complete",
+	]);
+	assert.equal(chat().hasInFlightTurn, false);
+});
+
+test("a lone stream that ends without turn-complete clears in-flight state", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	await send(chat, "Only");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].text("t1", "Half");
+	server.turns[0].end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.equal(chat().hasInFlightTurn, false);
+	assert.deepEqual(chatState().messages, ["user:Only", "assistant:Half", `assistant:${harness.getIncompleteTurnUserMessage()}`]);
 });
 
 test("prompts sent during a turn queue in order and dispatch after each turn-complete", async (t) => {
@@ -415,10 +437,9 @@ test("tool calls stream through input and output states on the assistant message
 	]);
 });
 
-// Characterizes current behaviour, not the desired contract (see SM-FE-15): the
-// failed turn's error is shown, then cleared as soon as the queued prompt
-// dispatches. A refactor may keep the error visible on purpose.
-test("current behaviour: a failed request finalizes and shows its error, and the next queued prompt clears it when it dispatches", async (t) => {
+// Regression (SM-FE-15): the failed turn's error used to disappear as soon as
+// the next queued prompt dispatched. It now stays attached to the failed turn.
+test("a failed request finalizes and shows its error, which stays on the failed turn after the next queued prompt dispatches", async (t) => {
 	const { harness, server, chat } = await mountChat(t);
 	const errorText = `assistant:${harness.toUserFacingChatErrorMessage("Upstream exploded")}`;
 	let releaseFailure;
@@ -441,8 +462,8 @@ test("current behaviour: a failed request finalizes and shows its error, and the
 	assert.deepEqual(errorRender.queued, ["Then this"]);
 	// The failed user message stays in the transcript and is resent as history.
 	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Break please", "user:Then this"]);
-	// sendChatMessage clears the submission error as the next prompt goes out.
-	assert.deepEqual(chatState().messages, ["user:Break please", "user:Then this"]);
+	// The error stays on the failed turn while the next prompt runs.
+	assert.deepEqual(chatState().messages, ["user:Break please", errorText, "user:Then this"]);
 	assert.equal(chat().activePrompt?.text, "Then this");
 
 	server.turns[1].text("t", "Recovered");
@@ -451,9 +472,58 @@ test("current behaviour: a failed request finalizes and shows its error, and the
 	await waitFor("the second turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
 	assert.deepEqual(chatState().messages, [
 		"user:Break please",
+		errorText,
 		"user:Then this",
 		"assistant:Recovered+data-turn-complete",
 	]);
+});
+
+test("a stream that errors mid-reply keeps the partial reply and shows the error after it", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const errorText = `assistant:${harness.toUserFacingChatErrorMessage("Model crashed")}`;
+	await send(chat, "Explain");
+	await waitFor("the request", () => server.turns.length === 1);
+	await send(chat, "Follow up");
+	server.turns[0].send({ type: "start" });
+	server.turns[0].send({ type: "text-start", id: "t" });
+	server.turns[0].send({ type: "text-delta", id: "t", delta: "Half an answer" });
+	await waitFor("partial text", () => chatState().messages.at(-1) === "assistant:Half an answer");
+	server.turns[0].send({ type: "error", errorText: "Model crashed" });
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.deepEqual(chatState().messages, ["user:Explain", "assistant:Half an answer", errorText, "user:Follow up"]);
+});
+
+test("editing the failed message drops its error and resends it", async (t) => {
+	const { server, chat } = await mountChat(t);
+	server.failNext(500, "Nope");
+	await send(chat, "Broken");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.equal(chatState().messages.length, 2);
+	const userMessageId = chat().uiMessages[0].id;
+
+	await startAction(() => chat().editMessage(userMessageId, "Fixed"));
+	await waitFor("the edit request", () => server.turns.length === 2);
+	assert.deepEqual(chatState().messages, ["user:Fixed"]);
+	server.turns[1].text("t", "Works");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the edit stream to end", () => !chat().isStreaming);
+	await settle(20);
+	assert.deepEqual(chatState().messages, ["user:Fixed", "assistant:Works+data-turn-complete"]);
+});
+
+test("resetChat clears errors left on failed turns", async (t) => {
+	const { server, chat } = await mountChat(t);
+	server.failNext(500, "Nope");
+	await send(chat, "Broken");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.equal(chatState().messages.length, 2);
+	await React.act(async () => {
+		chat().resetChat();
+	});
+	await waitFor("the reset to settle", () => chat().activeThreadId === null);
+	await settle(20);
+	assert.deepEqual(chatState().messages, []);
 });
 
 test("a payload-too-large error shows its own copy, finalizes the prompt, and releases the queue", async (t) => {
@@ -514,18 +584,18 @@ test("stopStreaming aborts the live request, keeps the partial reply, and releas
 	assert.equal(server.turns[0].aborted, true);
 	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
 	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Long answer", "assistant:Partial", "user:Next"]);
-	// The abort settles inside the grace window, so no explicit backend cancel is sent.
-	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), []);
-	assert.deepEqual(server.otherRequests.filter((url) => url.includes("chat-cancel")), []);
+	// A user Stop always cancels the backend run for the thread, once.
+	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), [`cancelRun:${chat().activeThreadId}`]);
 	assert.equal(chat().activePrompt?.text, "Next");
+	// A stopped turn is not an incomplete reply.
+	assert.equal(chatState().messages.some((label) => label.includes("ended before it finished")), false);
 });
 
-// Characterizes current behaviour (see SM-FE-15): AI SDK `stop()` settles the
-// chat status locally as soon as it aborts, even when the backend never closes
-// the response, so waitForStreamStop always reports "stopped in time" and the
-// explicit cancel fallback (cancelRovoAppRun / chat-cancel) is not reached from
-// stopStreaming. A reducer that keeps the fallback must decide when it fires.
-test("current behaviour: stopStreaming settles locally even when the backend ignores the abort, so no explicit cancel is sent", async (t) => {
+// Regression (SM-FE-15): AI SDK `stop()` settles the chat status locally as soon
+// as it aborts, even when the backend never closes the response, so the grace
+// window always reported "stopped in time" and stopStreaming never reached the
+// explicit cancel (cancelRovoAppRun / chat-cancel). Stop now cancels directly.
+test("stopStreaming cancels the backend run even when the backend ignores the abort", async (t) => {
 	const { server, chat } = await mountChat(t);
 	await send(chat, "Stuck answer");
 	await waitFor("the request", () => server.turns.length === 1);
@@ -541,10 +611,7 @@ test("current behaviour: stopStreaming settles locally even when the backend ign
 	assert.equal(turn.aborted, true);
 	assert.equal(chat().isStreaming, false);
 	assert.ok(Date.now() - startedAt < 1000, "stopStreaming waited for the grace window");
-	// Past the 1.2 s grace window nothing has been cancelled explicitly.
-	await settle(1500);
-	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), []);
-	assert.deepEqual(server.otherRequests.filter((url) => url.includes("chat-cancel")), []);
+	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), [`cancelRun:${chat().activeThreadId}`]);
 	assert.deepEqual(chatState().messages, ["user:Stuck answer", "assistant:Stuck"]);
 	turn.end();
 });
