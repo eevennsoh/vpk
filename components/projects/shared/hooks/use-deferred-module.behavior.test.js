@@ -11,7 +11,7 @@ const PROBE = `
 import { useEffect, useState } from "react";
 import { preloadDeferredModule, useDeferredModule } from "@/components/projects/shared/hooks/use-deferred-module";
 
-const state = { calls: 0, release: null, fail: false, errors: 0 };
+const state = { calls: 0, release: null, fail: false, errors: 0, closedWhileNeeded: 0 };
 state.preload = () => preloadDeferredModule(load);
 globalThis.__deferredProbe = state;
 const load = () => {
@@ -22,6 +22,7 @@ const load = () => {
 
 function Host({ needed }) {
 	const Surface = useDeferredModule(load, needed, { onError: () => { state.errors += 1; } })?.default ?? null;
+	if (needed && !Surface) state.closedWhileNeeded += 1;
 	return <span data-probe>{Surface ? <Surface /> : "closed"}</span>;
 }
 
@@ -107,5 +108,19 @@ test("preloading an already loaded module reuses the cache instead of importing 
 	const second = state.preload();
 	assert.equal(state.calls, 1);
 	await second;
+	await view.unmount();
+});
+
+test("a module preloaded after the host mounted renders on the first render that needs it", async () => {
+	const view = await renderComponent({ source: PROBE, props: { needed: false } });
+	const state = globalThis.__deferredProbe;
+	const preload = state.preload();
+	state.release();
+	await preload;
+	await view.rerender({ needed: true });
+	assert.deepEqual(probes(view), ["loaded"]);
+	// No render held the surface closed once it was needed, so the opening commit shows it.
+	assert.equal(state.closedWhileNeeded, 0);
+	assert.equal(state.calls, 1);
 	await view.unmount();
 });

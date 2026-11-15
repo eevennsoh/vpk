@@ -40,7 +40,10 @@ export function useDeferredModule<Module>(
 	needed: boolean,
 	{ onError }: UseDeferredModuleOptions = {},
 ): Module | null {
-	const [module, setModule] = useState<Module | null>(() => (loadedModules.get(load) as Module | undefined) ?? null);
+	const [loadedModule, setModule] = useState<Module | null>(null);
+	// A preload (launcher hover/focus) or another host may have filled the cache since this mounted;
+	// reading it during render lets the opening click render the surface in its own commit.
+	const resolvedModule = loadedModule ?? (loadedModules.get(load) as Module | undefined) ?? null;
 	const onErrorRef = useRef(onError);
 
 	useEffect(() => {
@@ -48,7 +51,7 @@ export function useDeferredModule<Module>(
 	}, [onError]);
 
 	useEffect(() => {
-		if (!needed || module !== null) {
+		if (!needed || resolvedModule !== null) {
 			return;
 		}
 		let current = true;
@@ -64,7 +67,7 @@ export function useDeferredModule<Module>(
 		return () => {
 			current = false;
 		};
-	}, [load, module, needed]);
+	}, [load, resolvedModule, needed]);
 
-	return module;
+	return resolvedModule;
 }
