@@ -658,7 +658,7 @@
 /* The row highlight has a single source of truth: the selected row. In
    selection-driven menus (the live editor's "/" and "@" surfaces) pointer hover
    moves `selectedIndex` onto the hovered row — see `onHover` in
-   suggestion-menu.tsx — so the keyboard cursor and the mouse can never light up
+   suggestion-menu-view.tsx — so the keyboard cursor and the mouse can never light up
    two rows at once. Pure-pointer menus (static showcases, the search picker)
    have no keyboard cursor and opt out via the absence of `data-pointer-selects`,
    so they keep a plain `:hover` highlight. The Back button is never a selectable

@@ -13,10 +13,12 @@ const DATE_FIELD_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "detail-field-editors.tsx"),
 	"utf8",
 );
-const SUGGESTION_MENU_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", "suggestion-menu.tsx"),
-	"utf8",
-);
+const SUGGESTION_MENU_SOURCE = ["suggestion-menu-view.tsx", "suggestion-menu-types.ts"]
+	.map((fileName) => fs.readFileSync(
+		path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", fileName),
+		"utf8",
+	))
+	.join("\n");
 const METADATA_RAIL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "metadata-rail.tsx"),
 	"utf8",

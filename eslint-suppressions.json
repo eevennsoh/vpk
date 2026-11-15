@@ -2522,15 +2522,17 @@
       "count": 3
     }
   },
+  "components/ui-custom/rich-text-editor/suggestion-menu-catalog.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
   "components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/ui-custom/rich-text-editor/suggestion-menu.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
+  "components/ui-custom/rich-text-editor/suggestion-menu-view.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

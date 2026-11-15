@@ -10,7 +10,11 @@ function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
 
-const SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+const SLASH_RENDERER_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-slash-renderer.tsx");
+const MENTION_RENDERER_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-mention-renderer.tsx");
+const VIEW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx");
+const ROWS_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-rows.ts");
+const OVERFLOW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-overflow.tsx");
 
 test("suggestion rows default to compact and can show bylines", async () => {
 	const view = await renderComponent({
@@ -50,12 +54,12 @@ function loadRankingModule() {
 	return rankingModulePromise;
 }
 
-function getSourceBetween(startMarker, endMarker) {
-	const start = SOURCE.indexOf(startMarker);
-	const end = SOURCE.indexOf(endMarker, start);
+function getSourceBetween(source, startMarker, endMarker) {
+	const start = source.indexOf(startMarker);
+	const end = source.indexOf(endMarker, start);
 	assert.ok(start > -1, `expected to find start marker: ${startMarker}`);
 	assert.ok(end > start, `expected to find end marker after: ${endMarker}`);
-	return SOURCE.slice(start, end);
+	return source.slice(start, end);
 }
 
 function assertPopupHidesBeforeRenderingEmptyState(source) {
@@ -79,6 +83,7 @@ function assertPopupHidesBeforeRenderingEmptyState(source) {
 
 test("slash suggestion filters hide the popup when no rows and no Ask Rovo header remain", () => {
 	const slashUpdate = getSourceBetween(
+		SLASH_RENDERER_SOURCE,
 		"function update(props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>)",
 		"\t/** Clamp/snap the selection onto a selectable row (skips headings). */",
 	);
@@ -96,6 +101,7 @@ test("slash suggestion filters hide the popup when no rows and no Ask Rovo heade
 
 test("mention suggestion filters hide the popup instead of rendering a no-results box", () => {
 	const mentionUpdate = getSourceBetween(
+		MENTION_RENDERER_SOURCE,
 		"function update(props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>)",
 		"\t/** Resolve a mention by id across both \"@\" parent categories. */",
 	);
@@ -123,27 +129,27 @@ test("mention suggestions prefer a label match over an earlier description-only 
 		["Code Planner", "Engineering"],
 	);
 	assert.match(
-		SOURCE,
+		MENTION_RENDERER_SOURCE,
 		/buildFlatSurfaceRows\(getFlatSections\(\), props\.query, expandedSections, true\)/u,
 	);
 });
 
 test("generic suggestion rows use neutral gray IconTiles", () => {
 	assert.match(
-		SOURCE,
+		VIEW_SOURCE,
 		/function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u,
 	);
 	assert.match(
-		SOURCE,
+		VIEW_SOURCE,
 		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant=\{tileVariant\}/u,
 	);
 	assert.doesNotMatch(
-		SOURCE,
+		VIEW_SOURCE,
 		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant="blue"/u,
 	);
 	assert.match(
-		SOURCE,
+		ROWS_SOURCE,
 		/getSuggestionOverflowFooterItem\(\s*getFlatFooterId\(section\.key\),\s*section\.hasDirectory \? "browse-all" : \(expanded \? "view-less" : "view-more"\)/u,
 	);
-	assert.match(SOURCE, /iconTileVariant: "transparent"/u);
+	assert.match(OVERFLOW_SOURCE, /iconTileVariant: "transparent"/u);
 });
