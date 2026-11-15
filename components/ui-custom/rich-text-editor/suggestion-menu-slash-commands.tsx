@@ -1,3 +1,5 @@
+"use client";
+
 import LinkIcon from "@atlaskit/icon/core/link";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";

@@ -13,13 +13,18 @@ import {
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
 import { Icon } from "@/components/ui/icon";
-import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag } from "@/components/ui/tag";
 import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
 import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
+import { cn } from "@/lib/utils";
 
 type ArtifactEpicColor = "blue" | "green" | "purple";
+const ARTIFACT_EPIC_ICON_COLORS: Readonly<Record<ArtifactEpicColor, string>> = {
+	blue: "text-icon-accent-blue",
+	green: "text-icon-accent-green",
+	purple: "text-icon-accent-purple",
+};
 
 const ARTIFACT_EPIC_COLORS: Readonly<Record<string, ArtifactEpicColor>> = {
 	"RFP-100": "purple",
@@ -35,21 +40,16 @@ function ArtifactEpicIcon() {
 	return (
 		<Icon
 			aria-hidden
-			render={<EpicIcon color="currentColor" label="" size="medium" spacing="none" />}
+			render={<EpicIcon color="currentColor" label="" size="small" spacing="none" />}
 		/>
 	);
 }
 
 function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>) {
 	return (
-		<IconTile
-			aria-hidden
-			as="span"
-			icon={<ArtifactEpicIcon />}
-			label=""
-			size="small"
-			variant={color}
-		/>
+		<span className={cn("inline-flex size-4 shrink-0 items-center justify-center", ARTIFACT_EPIC_ICON_COLORS[color])}>
+			<ArtifactEpicIcon />
+		</span>
 	);
 }
 
@@ -68,8 +68,9 @@ export function ArtifactParentField({
 		id: option.key,
 		label: option.summary,
 		leadingVisual: <ArtifactEpicMenuIcon color={artifactEpicColor(option.key)} />,
+		leadingVisualSize: "compact",
 	}));
-	if (selected && onClear) items.push({ id: "", label: "Remove parent", icon: null });
+	if (selected && onClear) items.push({ id: "", label: "Remove parent", icon: null, leadingVisual: <span aria-hidden />, leadingVisualSize: "compact" });
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
@@ -96,6 +97,7 @@ export function ArtifactParentField({
 				<div className="[&_.rich-text-command-menu-item:hover]:bg-bg-neutral-subtle-hovered!">
 					<MetadataSearchPicker
 						className={ARTIFACT_PICKER_DROPDOWN_CLASS}
+						iconContainerSize={16}
 						emptyLabel="No work items found"
 						items={items}
 						onEscape={() => setOpen(false)}

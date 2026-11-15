@@ -36,7 +36,7 @@ test("the Projects view renders only the most recently updated project, live", a
 
 	assert.deepEqual(iframeSources(view), ["/preview/projects/butter-v1?embedded=1"]);
 	assert.match(view.container.querySelector("#projects").textContent, /^Projects\s*3$/, "the heading still counts every project");
-	assert.ok(view.getByText(/Showing the latest of 3 projects\..*sidebar's Projects list/), "the note explains where the rest are");
+	assert.equal(view.queryByText(/Showing the latest/), null, "no intro line under the heading");
 	assert.equal(view.container.querySelector("iframe").getAttribute("loading"), "eager", "the only card is the page's main content");
 	assert.equal(sortControlCount(view), 0, "a single card has nothing to sort");
 });
@@ -60,5 +60,4 @@ test("the Arts view still lists every piece with the sort control", async () => 
 
 	assert.deepEqual(iframeSources(view), ["/preview/arts/art-a?embedded=1", "/preview/arts/art-b?embedded=1"]);
 	assert.equal(sortControlCount(view), 1);
-	assert.equal(view.queryByText(/Showing the latest/), null, "a full list needs no note");
 });

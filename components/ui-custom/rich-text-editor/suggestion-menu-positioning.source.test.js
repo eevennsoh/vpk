@@ -106,9 +106,10 @@ test("third-party subagents use the shared hexagon avatar in suggestion palettes
 test("fallback suggestion icons use the 24px neutral IconTile treatment", () => {
 	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-view.tsx");
 	const visualStart = source.indexOf("function RichTextSuggestionMenuItemVisual");
-	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
-
 	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
+	const visualEnd = source.indexOf("\n}\n", visualStart);
+	assert.ok(visualEnd > visualStart, "expected the end of RichTextSuggestionMenuItemVisual");
+	const visualSource = source.slice(visualStart, visualEnd);
 	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant=\{tileVariant\}/u);
 	assert.match(source, /function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u);
 	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);

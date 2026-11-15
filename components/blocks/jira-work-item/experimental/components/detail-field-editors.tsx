@@ -35,13 +35,14 @@ import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { Tag, TagGroup } from "@/components/ui/tag";
-import { SearchIcon } from "@/components/ui/vpk-icons";
+
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextCommandMenuSearchField,
 	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
+	type RichTextCommandMenuSearchFieldProps,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,7 @@ export const METADATA_PICKER_SIDE_OFFSET = 8;
 export function MetadataSearchPicker({
 	className,
 	emptyLabel,
+	iconContainerSize,
 	items,
 	onEscape,
 	onSelect,
@@ -97,6 +99,7 @@ export function MetadataSearchPicker({
 }: Readonly<{
 	className?: string;
 	emptyLabel: string;
+	iconContainerSize?: RichTextCommandMenuSearchFieldProps["iconContainerSize"];
 	items: readonly RichTextSuggestionMenuItem[];
 	onEscape: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
@@ -113,7 +116,7 @@ export function MetadataSearchPicker({
 			header={(
 				<RichTextCommandMenuSearchField
 					autoFocus
-					icon={<SearchIcon className="size-4 text-icon-subtle" />}
+					iconContainerSize={iconContainerSize}
 					label={placeholder}
 					onClear={() => setQuery("")}
 					onEscape={onEscape}

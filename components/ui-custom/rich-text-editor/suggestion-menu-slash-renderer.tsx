@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { ReactRenderer } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";

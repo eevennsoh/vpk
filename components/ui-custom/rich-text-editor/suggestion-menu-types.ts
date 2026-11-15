@@ -49,6 +49,7 @@ export interface RichTextSuggestionMenuItem {
 	iconTileVariant?: IconTileVariant;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
 	leadingVisual?: ReactNode;
+	leadingVisualSize?: "compact";
 	isSticky?: boolean;
 	stickyPosition?: "top" | "bottom";
 	visual?: RichTextMentionVisual;

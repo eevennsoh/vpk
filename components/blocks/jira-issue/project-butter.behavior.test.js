@@ -324,7 +324,7 @@ test("JiraIssue defaults to Project butter and keeps the earlier appearance avai
 	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]'), null);
 });
 
-test("Project butter renders explicit card metadata and a subtask progress popover", async () => {
+test("Project butter renders card metadata and a keyboard-selectable subtask menu", async () => {
 	const opened = [];
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
@@ -356,8 +356,12 @@ test("Project butter renders explicit card metadata and a subtask progress popov
 	const arcLength = arcs.reduce((sum, arc) => sum + Number.parseFloat(arc.getAttribute("stroke-dasharray")), 0);
 	assert.equal(arcLength < circumference - 0.1, true, "Status groups have visible gaps");
 	await view.click(trigger);
-	await view.click(view.getByRole("button", { name: "Open PD-42: Support keyboard input" }));
+	assert.equal(view.getByRole("menu", { name: "Subtasks" }).querySelectorAll('[role="menuitem"]').length, 3);
+	const child = view.getByRole("menuitem", { name: "Open PD-42: Support keyboard input" });
+	await view.focus(child);
+	await view.press(child, "Enter");
 	assert.deepEqual(opened, ["PD-42"]);
+	assert.equal(trigger.getAttribute("aria-expanded"), "false");
 });
 
 test("Project butter keeps unavailable subtask rows read-only and omits absent metadata", async () => {
@@ -369,7 +373,7 @@ test("Project butter keeps unavailable subtask rows read-only and omits absent m
 	assert.equal(view.container.querySelector("time"), null);
 	assert.equal(view.container.querySelector('[aria-label="Flagged"]'), null);
 	await view.click(view.getByRole("button", { name: "1 of 3 subtasks complete" }));
-	assert.equal(view.getByRole("button", { name: "Open PD-41: Choose a date range" }).disabled, true);
+	assert.equal(view.getByRole("menuitem", { name: "Open PD-41: Choose a date range" }).getAttribute("aria-disabled"), "true");
 });
 
 test("the unassigned picker commits a person and has no dead trigger without assignment capability", async () => {
