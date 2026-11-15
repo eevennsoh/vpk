@@ -126,13 +126,14 @@ export function ScrollingCard({
 	// through the transform that produced it is the self-damping feedback loop
 	// documented in `use-magnetic-proximity.ts`.
 	//
-	// The dependency array is LOAD-BEARING, not a style preference. Ticker's
-	// values belong to motion 12 while this file imports motion 13 (see
+	// The dependency array is LOAD-BEARING, not a style preference. When
+	// motion-plus 2.x had its own Motion copy, Ticker's values belonged to
+	// motion 12 while this file imported motion 13 (see
 	// `scrolling-offset-bridge.ts`), and the zero-argument
 	// `useTransform(() => … tickerValue.get())` discovers its dependencies
 	// through motion-dom's module-level `collectMotionValues` singleton — so a
-	// motion 12 `.get()` registers with motion-dom 12's singleton, which
-	// motion-dom 13 never reads. That form collected only `collapse` (a motion
+	// motion 12 `.get()` registered with motion-dom 12's singleton, which
+	// motion-dom 13 never read. That form collected only `collapse` (a motion
 	// 13 value), so the depth tail recomputed during the entrance and then
 	// FROZE: cards kept the scale they happened to have when the unfurl ended,
 	// no matter where they later scrolled to. Verified in-browser — after a

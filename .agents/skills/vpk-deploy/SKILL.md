@@ -1,6 +1,6 @@
 ---
 name: vpk-deploy
-description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.
+description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros. Use when asked to "deploy", "redeploy", "deploy to Micros", "ship this prototype to Micros", "update my deployment", "check deploy status", "is my deployment healthy", or "inspect the Micros environment", and for Micros failures such as a failed hot swap, missing stash variables, or ALLOWED_ORIGINS errors. Run vpk-build first to extract a route into a standalone app.
 metadata:
   validation_command: node --test .agents/skills/vpk-deploy/scripts/*.test.js
 ---
