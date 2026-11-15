@@ -120,7 +120,7 @@ class AssistantMessageRenderBoundary extends Component<
 		resetMarker: string;
 	}>
 > {
-	state = {
+	override state = {
 		hasError: false,
 		resetMarker: getAssistantMessageRenderBoundaryResetMarker(this.props),
 	};
@@ -155,7 +155,7 @@ class AssistantMessageRenderBoundary extends Component<
 		return null;
 	}
 
-	componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+	override componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
 		console.error("[RovoApp] Assistant message render failed", {
 			messageId: this.props.messageId,
 			error,
@@ -163,7 +163,7 @@ class AssistantMessageRenderBoundary extends Component<
 		});
 	}
 
-	render() {
+	override render() {
 		if (this.state.hasError) {
 			return this.props.fallback;
 		}

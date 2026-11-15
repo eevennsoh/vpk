@@ -6,9 +6,32 @@ const path = require("node:path")
 
 const osModule = require("node:os")
 const {
+	loadEnvLocal,
 	prepareRovoRuntime,
 	resolveRovoConfigState,
 } = require("./rovo-runtime")
+
+// The dev launchers rely on dotenv never replacing a variable that is already exported, so a
+// shell or launcher value wins over .env.local. Guards that contract across dotenv majors.
+test("loadEnvLocal fills unset variables from .env.local without overriding exported ones", (t) => {
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "rovo-runtime-env-"))
+	const envLocalPath = path.join(tmpDir, ".env.local")
+	const presetKey = "VPK_ROVO_RUNTIME_TEST_PRESET"
+	const unsetKey = "VPK_ROVO_RUNTIME_TEST_UNSET"
+	fs.writeFileSync(envLocalPath, `${presetKey}=from-file\n${unsetKey}=from-file\n`)
+	process.env[presetKey] = "from-shell"
+	delete process.env[unsetKey]
+	t.after(() => {
+		delete process.env[presetKey]
+		delete process.env[unsetKey]
+		fs.rmSync(tmpDir, { recursive: true, force: true })
+	})
+
+	loadEnvLocal({ envLocalPath })
+
+	assert.equal(process.env[presetKey], "from-shell")
+	assert.equal(process.env[unsetKey], "from-file")
+})
 
 test("resolveRovoConfigState writes and returns the workspace-scoped generated config for the current cwd", () => {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "rovo-runtime-test-"))
