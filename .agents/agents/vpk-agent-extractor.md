@@ -356,7 +356,6 @@ Component implementation from Figma requires extraction first. Extractor maps al
 ```yaml
 memory:
   scope: project
-  path: .agents/knowledge/vpk-agent-extractor/
   seed_files:
     - .agents/skills/vpk-design/SKILL.md
 ```

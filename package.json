@@ -224,7 +224,7 @@
 		"@types/topojson-specification": "^1.0.5",
 		"@typescript/native": "npm:typescript@^7.0.2",
 		"concurrently": "^10.0.6",
-		"dotenv": "^17.4.2",
+		"dotenv": "^18.0.8",
 		"emojibase-data": "^17.0.0",
 		"esbuild": "^0.28.2",
 		"eslint": "^10.13.0",

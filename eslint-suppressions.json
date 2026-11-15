@@ -1954,39 +1954,9 @@
       "count": 23
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-document-sync.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-reset-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 15
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-background-refresh.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-chat-transport.test.js": {
@@ -1999,29 +1969,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-clarification-plan-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 17
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-completed-run-hydration.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 8
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-core.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-data-part-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 17
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.ts": {
@@ -2029,34 +1979,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-derived-state.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-prep-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 18
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.ts": {
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-local-run-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-message-edit-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
     }
   },
   "components/projects/rovo-core/hooks/use-rovo-app-message-state.ts": {
@@ -2064,104 +1989,9 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-mode-state-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-widget-metadata-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-prompt-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 12
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-realtime-state-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-route-replacement-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-run-side-effect-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 16
-    }
-  },
   "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.ts": {
     "react-hooks/immutability": {
       "count": 2
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-suggested-questions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-lifecycle-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 21
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-list.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-mutation-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 14
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-navigation-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-persistence.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 12
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-refresh-effects.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-title-generation.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 15
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 10
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 9
     }
   },
   "components/projects/rovo-core/hooks/use-sidebar-resize.ts": {

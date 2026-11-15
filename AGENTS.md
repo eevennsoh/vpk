@@ -199,7 +199,7 @@ New behavior gets a clear owner instead of expanding an already-busy file. Befor
 ### Code Quality
 
 - Verify exact file location before UI edits by searching for distinctive text/classes.
-- Use macOS/BSD-safe shell patterns (for example `sed -i ''`).
+- Use macOS/BSD-safe shell patterns (for example `sed -E`, not GNU-only flags). Edit files with the edit or patch tool at a literal path, not `sed -i`.
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
@@ -208,7 +208,7 @@ New behavior gets a clear owner instead of expanding an already-busy file. Befor
 
 ## Contextual Rules
 
-Rules live in `.agents/rules/` (canonical; provider dirs `.cursor/`, `.claude/`, `.codex/`, `.rovo/` symlink to it). Loading is per-provider, and it is not lazy everywhere:
+Rules live in `.agents/rules/` (canonical; `.claude/rules` and `.cursor/rules` symlink to it). Loading is per-provider, and it is not lazy everywhere:
 
 - Claude Code: reads through the `.claude/rules` symlink. A `.md` rule without `paths:` frontmatter loads every session; a rule with `paths:` loads once a matching file is read. `.mdc` files are not injected. This file plus the unscoped rules are a standing context cost on every session, so keep additions proportionate and scope new rules.
 - Cursor: reads `.mdc` files only. `.agents/rules/cursor/*.mdc` are generated mirrors of each `.md` rule (`globs:` = `paths:`); after editing a rule, run `node scripts/generate-cursor-rules.js` (`verify:cursor-rules` checks drift). `browser-screenshots.mdc` is hand-written.
