@@ -45,7 +45,7 @@ turns to Rovo when available and otherwise falls back to AI Gateway.
 - `backend/lib/` - backend utilities (plan run manager, Rovo gateway/client/pool, generative UI, planning intent, DAG inference, team run lanes, smart routing)
 - `public/` - static assets (illustrations, product logos, third-party logos, avatars)
 - `.agents/` - canonical source for rules, skills, agents, docs, and hooks
-- `.cursor/`, `.claude/`, `.codex/`, `.rovo/` - provider symlinks to `.agents/`
+- `.cursor/`, `.claude/`, `.codex/`, `.rovo/` - provider config plus symlinks to the `.agents/` folders each provider reads
 
 See `## Appendix -> Detailed Directory Structure` for expanded layout.
 

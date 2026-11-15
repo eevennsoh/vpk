@@ -241,6 +241,15 @@ function isKnownTool(toolName) {
 		|| /^[a-z][a-z0-9_-]*\.[a-z0-9_-]+$/u.test(toolName);
 }
 
+async function pathExists(targetPath) {
+	try {
+		await fs.access(targetPath);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 async function findAgentFiles(targetPath) {
 	const stat = await fs.stat(targetPath);
 	if (!stat.isDirectory()) {
@@ -345,11 +354,15 @@ async function validateAgentFile(filePath, allAgentFiles, rootDir) {
 		warnings.push(`${relativeFile}: legacy Claude-style agent; structured agent definition body sections were not enforced.`);
 	}
 
-	if (frontmatter.memory === "project") {
+	// A knowledge path is optional, but a declared one must be this agent's
+	// `.agents/knowledge/<name>/` folder and must exist, so it is never a dead pointer.
+	const knowledgePath = extractKnowledgePath(sections);
+	if (knowledgePath !== null) {
 		const expectedPath = `.agents/knowledge/${name}/`;
-		const knowledgePath = extractKnowledgePath(sections);
 		if (knowledgePath !== expectedPath) {
-			errors.push(`${relativeFile}: project memory path must be "${expectedPath}".`);
+			errors.push(`${relativeFile}: knowledge path must be "${expectedPath}".`);
+		} else if (!(await pathExists(path.join(rootDir, knowledgePath)))) {
+			errors.push(`${relativeFile}: knowledge path "${knowledgePath}" does not exist.`);
 		}
 	}
 
