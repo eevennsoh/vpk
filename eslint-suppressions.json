@@ -2123,7 +2123,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 847
+      "count": 814
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
@@ -3301,7 +3301,7 @@
   },
   "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
-      "count": 13
+      "count": 12
     }
   },
   "hooks/use-mobile.ts": {
