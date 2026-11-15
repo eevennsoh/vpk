@@ -57,7 +57,7 @@ const {
 	parseCaptureArgs,
 	runCapture,
 } = require("./lib/capture.js");
-const { resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
+const { ENTRY_POINT_FLAG, resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
 const { EVIDENCE_DIR, FRONTEND_PORT_FILE, RUN_DIR, readTrimmed } = require("./lib/repo.js");
 const {
 	DEV_TMUX_NOT_READY,
@@ -92,10 +92,13 @@ Commands:
   session             Print the worktree-scoped agent-browser session id.
   evidence-dir        Print the proof artifact directory.
   browser [--] <args> Run agent-browser with the vpk-verify session injected.
-  open-target <route> [--headed]
+  open-target <route> [--headed] [--entry-point]
                       First open an exact mapped object route on this worktree.
+                      --entry-point allows a catalog landing page (/, /components,
+                      /<category>) when the task verifies that entry point itself.
   capture <route> [--id <label>] [--viewport WxH] [--media light|dark]
           [--variant <id>[=on|off]]... [--wait-text <text>] [--headed] [--strict-a11y]
+          [--entry-point]
                       One-command proof: screenshot, ARIA snapshot, console, page
                       errors, a11y audit and manifest.json in the evidence dir.
                       Light media by default. --variant (repeatable) forces a
@@ -137,7 +140,8 @@ async function main() {
 	}
 
 	if (command === "capture" && !manualVerificationRequested(process.env)) {
-		await warmRoute(targetBrowserArguments(parseCaptureArgs(argv.slice(1)).route).at(-1));
+		const { entryPoint, route } = parseCaptureArgs(argv.slice(1));
+		await warmRoute(targetBrowserArguments(route, { entryPoint }).at(-1));
 	}
 	if (command === "capture" || command === "where") {
 		const exitCode = command === "capture" ? captureCli(argv.slice(1)) : whereCli(argv.slice(1));
@@ -209,11 +213,11 @@ async function main() {
 	}
 
 	if (command === "browser" || command === "open-target") {
-		if (command === "open-target" && (argv.length < 2 || argv.slice(2).some((arg) => arg !== "--headed"))) {
-			throw new Error("Usage: control-vpk open-target <route> [--headed]");
+		if (command === "open-target" && (argv.length < 2 || argv.slice(2).some((arg) => arg !== "--headed" && arg !== ENTRY_POINT_FLAG))) {
+			throw new Error(`Usage: control-vpk open-target <route> [--headed] [${ENTRY_POINT_FLAG}]`);
 		}
 		const forwarded = command === "open-target"
-			? targetBrowserArguments(argv[1], { headed: argv.includes("--headed") })
+			? targetBrowserArguments(argv[1], { entryPoint: argv.includes(ENTRY_POINT_FLAG), headed: argv.includes("--headed") })
 			: argv.slice(1).filter((arg) => arg !== "--");
 		if (forwarded.length === 0) {
 			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");

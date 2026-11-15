@@ -19,7 +19,11 @@ function resolveOrigin(frontendPort) {
 	return `http://127.0.0.1:${frontendPort}`;
 }
 
+// Opt-in for verifying the home/catalog landing page itself (AGENTS.md "Browser entry").
+const ENTRY_POINT_FLAG = "--entry-point";
+
 function targetBrowserArguments(route, {
+	entryPoint = false,
 	headed = false,
 	origin = resolveOrigin(readTrimmed(FRONTEND_PORT_FILE)),
 	repoMap = readRepoMap(),
@@ -35,10 +39,11 @@ function targetBrowserArguments(route, {
 		"/", "/components",
 		...(repoMap.components?.categories ?? []).map((entry) => `/${entry.category}`),
 	]);
-	if (landingRoutes.has(parsed.pathname)) {
-		throw usageError("Object target must name a component or project, not a catalog landing page.");
+	const isLanding = landingRoutes.has(parsed.pathname);
+	if (isLanding && !entryPoint) {
+		throw usageError(`Object target must name a component or project, not a catalog landing page. Pass ${ENTRY_POINT_FLAG} only when the task verifies this entry point itself.`);
 	}
-	if (!resolvableRoutes(repoMap).has(parsed.pathname)
+	if (!isLanding && !resolvableRoutes(repoMap).has(parsed.pathname)
 		&& !dynamicRouteMatchers(repoMap).some((pattern) => pattern.test(parsed.pathname))) {
 		throw usageError(`Unknown target route: ${parsed.pathname}. Inspect the generated repo map before opening an object.`);
 	}
@@ -47,6 +52,7 @@ function targetBrowserArguments(route, {
 }
 
 module.exports = {
+	ENTRY_POINT_FLAG,
 	resolveOrigin,
 	targetBrowserArguments,
 };
