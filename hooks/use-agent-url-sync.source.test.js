@@ -46,12 +46,8 @@ test("useAgentUrlSync notifies onAgentRestored from popstate (agent and default)
 });
 
 test("studio shell opens the config pane for the URL-restored agent", () => {
-	// Handler maps a restored agent id to activeAgentConfig (and clears it for null).
-	assert.match(
-		SHELL_SOURCE,
-		/const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u,
-	);
-	// Handler is wired into the URL sync hook, driven by the edited agent.
+	// What the restored agent does to the main surface is pinned by rendering (Back/Forward in
+	// rovo-app-shell-main-surface.behavior.test.js); this only pins the hook wiring.
 	assert.match(
 		SHELL_SOURCE,
 		/useAgentUrlSync\(\{[\s\S]*enabled: !embedded,[\s\S]*editingAgentId: activeAgentConfig\?\.profileId \?\? null,[\s\S]*selectableAgentIds,[\s\S]*onAgentRestored: handleAgentRestoredFromUrl,[\s\S]*\}\)/u,

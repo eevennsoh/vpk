@@ -3504,7 +3504,7 @@
   },
   "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
-      "count": 13
+      "count": 12
     }
   },
   "hooks/use-mobile.ts": {

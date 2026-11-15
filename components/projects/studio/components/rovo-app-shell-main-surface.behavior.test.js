@@ -40,6 +40,8 @@ const dialogName = () => {
 	return element ? document.getElementById(element.getAttribute("aria-labelledby") ?? "")?.textContent ?? "" : "";
 };
 const buttonIn = (root, name) => [...root.querySelectorAll("button")].find((button) => accessibleName(button) === name) ?? null;
+// The main chat header is the shell's <header>; Ask Rovo's sidebar chat has its own "New chat" button.
+const chatHeaderShown = () => [...document.querySelectorAll("header")].some((header) => buttonIn(header, "New chat") !== null);
 const menuItem = (name) => [...document.querySelectorAll("[role=menuitem]")].find((item) => accessibleName(item) === name) ?? null;
 
 /** What the main surface shows, as one comparable record. */
@@ -61,6 +63,14 @@ async function openRfpConfigFromSidebar(view) {
 	await waitFor(() => view.queryByRole("button", { name: "Toggle agent test view" }) !== null, "the RFP Drafter config pane");
 }
 
+// Closing the pane lands on the agents home only while the default agent is still the chat agent,
+// so this proves opening an agent for editing never selected it for chat.
+async function closePaneToAgentsHome(view) {
+	await view.click(view.getByRole("button", { name: "View all agents" }));
+	await waitFor(() => surface(view).home, "the agents home");
+	assert.equal(surface(view).configPane, false);
+}
+
 async function openDirectoryAgentsTab(view) {
 	await view.click(view.getByRole("button", { name: "Browse all agents" }));
 	await waitFor(() => dialog() !== null, "the agent directory");
@@ -72,7 +82,7 @@ test("the agents home starts with no config pane, no directory and no chat heade
 	const { view } = await renderStudio();
 
 	assert.deepEqual(surface(view), { agentName: null, configPane: false, dialog: "", home: true, testView: false, url: "/" });
-	assert.equal(view.queryByRole("button", { name: "New chat" }) === null, true, "no chat header on the agents home");
+	assert.equal(chatHeaderShown(), false, "no chat header on the agents home");
 	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }) === null, true, "Ask Rovo belongs to the config pane");
 });
 
@@ -87,7 +97,7 @@ test("a home submit replaces the agents home with the chat and shows the chat he
 
 	assert.equal(surface(view).home, false, "home is gone");
 	assert.equal(surface(view).configPane, false, "no config pane for a plain chat");
-	assert.ok(view.queryByRole("button", { name: "New chat" }) !== null, "the chat header appears with the conversation");
+	assert.equal(chatHeaderShown(), true, "the chat header appears with the conversation");
 	assert.match(surface(view).url, /^\/studio\/[\w-]+$/u, "the URL names the new thread");
 });
 
@@ -108,6 +118,8 @@ test("the directory's Agents tab opens an editable session agent in the config p
 		url: `/?agent=${RFP_AGENT_ID}`,
 	});
 	assert.equal(askRovoPressed(view), "false", "Ask Rovo stays closed when an agent is opened for editing");
+
+	await closePaneToAgentsHome(view);
 });
 
 test("a built-in directory agent becomes the chat agent: no config pane, and the agents home gives way to its landing", async () => {
@@ -151,6 +163,9 @@ test("the Test toggle switches the pane to the test view; reopening the agent fr
 	await waitFor(() => !surface(view).testView, "the configure view");
 	assert.equal(surface(view).agentName, "RFP Drafter");
 	assert.equal(surface(view).url, `/?agent=${RFP_AGENT_ID}`);
+
+	// Re-selecting edits the agent; it must not swap the chat onto it.
+	await closePaneToAgentsHome(view);
 });
 
 test("browser Back closes the config pane and Forward restores it in the configure view", async () => {
@@ -188,6 +203,25 @@ test("deleting the open agent from the sidebar closes its config pane and return
 	assert.equal(view.queryByRole("button", { name: "Edit RFP Drafter" }) === null, true, "the agent is gone from the agents table");
 });
 
+test("the empty agents table's Browse templates opens the template dialog, and picking a template fills the composer and closes it", async () => {
+	const { view } = await renderStudio();
+	await view.click(view.getAllByRole("button", { name: "More actions for RFP Drafter" })[0]);
+	await waitFor(() => menuItem("Delete agent") !== null, "the agent's actions menu");
+	await view.click(menuItem("Delete agent"));
+	await waitFor(() => view.queryByRole("button", { name: "Browse templates" }) !== null, "the empty agents table");
+
+	await view.click(view.getByRole("button", { name: "Browse templates" }));
+	await waitFor(() => dialog() !== null, "the template dialog");
+	assert.equal(dialogName(), "Turn rough ideas into plans,and choose the next step.", "the template dialog opens on its first category");
+	assert.ok(buttonIn(dialog(), "Close agent templates") !== null, "this is the template dialog, not the agent directory");
+
+	await view.click(buttonIn(dialog(), "Select Decision Director"));
+	await waitFor(() => dialog() === null, "the template dialog to close");
+
+	assert.deepEqual(surface(view), { agentName: null, configPane: false, dialog: "", home: true, testView: false, url: "/" });
+	assert.match(view.getByRole("textbox", { name: "Message" }).textContent, /^Use the Decision Director template to create a Rovo agent\./u);
+});
+
 test("Reset demo closes the config pane, clears threads and restores the seeded agent on the agents home", async () => {
 	const { backend, view } = await renderStudio();
 	await openRfpConfigFromSidebar(view);
@@ -219,6 +253,7 @@ test("a generated agent result opens its config pane in the test view with Ask R
 	await view.fill(composer, "Build a bug triage agent");
 	await view.press(composer, "Enter");
 	await waitFor(() => surface(view).testView, "the generated agent's test view");
+	assert.equal(chatHeaderShown(), false, "the config pane hides the chat header even with messages");
 
 	assert.equal(backend.state.chatRequests[0].creationMode, "agent", "the home submit was an agent-creation turn");
 	assert.equal(surface(view).home, false);
