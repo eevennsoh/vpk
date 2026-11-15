@@ -21,6 +21,8 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { isProcessAlive, processStartTime, publish, readHolder, reclaimStale } = require("./pid-lock-file");
+
 const LOCK_FILE_NAME = "vpk-heavy-run.lock";
 const HOLDER_ENV = "VPK_HEAVY_RUN_LOCK_HOLDER";
 const LOCK_PATH_ENV = "VPK_HEAVY_RUN_LOCK_PATH";
@@ -38,95 +40,6 @@ function defaultLockPath({ cwd = process.cwd(), env = process.env } = {}) {
 	const result = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, encoding: "utf8" });
 	const commonDir = result.status === 0 ? result.stdout.trim() : "";
 	return commonDir ? path.join(commonDir, LOCK_FILE_NAME) : null;
-}
-
-function isProcessAlive(pid) {
-	if (!Number.isInteger(pid) || pid <= 0) return false;
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch (error) {
-		// EPERM: the pid exists but is not ours to signal; never treat it as dead.
-		return error.code !== "ESRCH";
-	}
-}
-
-// `ps -o lstart=` for a pid, or null where the process table cannot be read (agent sandboxes).
-function processStartTime(pid) {
-	const result = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8" });
-	const value = result.status === 0 ? result.stdout.trim() : "";
-	return value || null;
-}
-
-function readHolder(file) {
-	try {
-		return JSON.parse(fs.readFileSync(file, "utf8"));
-	} catch (error) {
-		return error.code === "ENOENT" ? null : { pid: null, unreadable: true };
-	}
-}
-
-function publish(lockPath, record) {
-	const draft = `${lockPath}.draft-${process.pid}`;
-	fs.writeFileSync(draft, `${JSON.stringify(record)}\n`);
-	try {
-		fs.linkSync(draft, lockPath);
-		return true;
-	} catch (error) {
-		if (error.code === "EEXIST") return false;
-		throw error;
-	} finally {
-		fs.rmSync(draft, { force: true });
-	}
-}
-
-// Renames a lock aside and hands it back if its holder is alive. Used only for the reclaim
-// guard below, whose holder keeps it for microseconds; a guard left by a crashed reclaimer is the
-// only thing it ever moves.
-function retireCrashedGuard(guardPath, { alive }) {
-	const claim = `${guardPath}.claim-${process.pid}`;
-	try {
-		fs.renameSync(guardPath, claim);
-	} catch (error) {
-		if (error.code === "ENOENT") return;
-		throw error;
-	}
-	try {
-		const claimed = readHolder(claim);
-		if (claimed?.pid && claimed.pid !== process.pid && alive(claimed.pid)) {
-			try {
-				fs.linkSync(claim, guardPath);
-			} catch (error) {
-				if (error.code !== "EEXIST") throw error;
-			}
-		}
-	} finally {
-		fs.rmSync(claim, { force: true });
-	}
-}
-
-function sameRecord(a, b) {
-	return Boolean(a?.pid && b?.pid) && a.pid === b.pid && a.startedAt === b.startedAt;
-}
-
-// Removes the lock only while it still holds the stale record this run observed. Reclaimers
-// take a guard first (published like the lock itself), so a delayed waiter can never move a
-// live successor's lock: the lock cannot change under the guard, because publishing needs the
-// name to be free and removing someone else's lock needs the guard.
-function reclaimStale(lockPath, stale, { alive }) {
-	const guardPath = `${lockPath}.reclaim`;
-	if (!publish(guardPath, { pid: process.pid, startedAt: new Date().toISOString() })) {
-		const guard = readHolder(guardPath);
-		if (guard?.pid && !alive(guard.pid)) retireCrashedGuard(guardPath, { alive });
-		return false;
-	}
-	try {
-		// An unreadable lock (never written by publish, whose link is atomic) reads the same again.
-		if (sameRecord(readHolder(lockPath), stale) || stale?.unreadable) fs.rmSync(lockPath, { force: true });
-	} finally {
-		fs.rmSync(guardPath, { force: true });
-	}
-	return true;
 }
 
 const NO_LOCK = Object.freeze({ held: false, release() {} });

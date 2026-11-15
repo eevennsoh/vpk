@@ -43,6 +43,7 @@ const {
 	registerBackendWebSocketRelays,
 } = require("./realtime/ws-relay");
 const { loadAiSdk } = require("./lib/ai-sdk-runtime");
+const { acquireBackendDataDirLock, resolveBackendDataDir } = require("./lib/backend-data-dir");
 const { resolveBackendListenHost } = require("./middleware/local-only");
 const { registerFinalErrorHandlers } = require("./middleware/error-response");
 const {
@@ -80,12 +81,17 @@ const backendProcess = createBackendProcess({
 });
 
 async function startServer() {
+	// Before anything touches the data directory: one backend per directory, or fail fast.
+	const dataDir = resolveBackendDataDir({ backendDir: __dirname, env: process.env });
+	acquireBackendDataDirLock({ dataDir, port: process.env.PORT ?? null });
+	console.log(`[STARTUP] Data directory ${dataDir} locked by pid ${process.pid}`);
+
 	await loadAiSdk();
 	if (!backendProcess.isStarting()) {
 		return;
 	}
 
-	const currentRuntime = createBackendRuntimeComposition();
+	const currentRuntime = createBackendRuntimeComposition({ dataDir });
 	runtime = currentRuntime;
 
 	const publicPath = path.join(__dirname, "public");
@@ -133,6 +139,13 @@ async function startServer() {
 }
 
 void startServer().catch((error) => {
+	if (error?.code === "BACKEND_DATA_DIR_LOCKED") {
+		// Nothing has started yet, so let the process end on its own once stderr has flushed
+		// (process.exit can drop a pipe write on macOS).
+		console.error(`[STARTUP] ${error.message}`);
+		process.exitCode = 1;
+		return;
+	}
 	console.error("[STARTUP] Failed to initialize backend runtime:", error);
 	process.exit(1);
 });
