@@ -194,7 +194,9 @@ The backend reads the caller from `X-Slauth-Subject` (`backend/lib/caller-identi
 - Rovo threads store their creator as `owner`; list, read, update, delete, and
   delete-all see only the caller's threads. Threads stored before owners have no
   owner and are visible only to the local owner (outside production), never to an
-  SLAuth caller.
+  SLAuth caller, until the owner backfill below assigns them.
+- `GET /api/whoami` returns the caller's own identity, `{"owner":"<subject>","local":false}`,
+  uncached and only to that caller. `owner` is the value stored on their threads.
 - Runtime socket tokens (realtime voice, browser preview) are bound to the caller,
   and the WebSocket upgrade must carry the same subject.
 - `VPK_RUNTIME_ADMIN_TOKEN` still guards operator routes; SLAuth does not replace it.
@@ -203,6 +205,67 @@ The backend reads the caller from `X-Slauth-Subject` (`backend/lib/caller-identi
 
 The shared CSP must permit the existing Atlassian font CDN in `style-src` and
 `font-src`, plus `connect-src` for the peel renderer's font embedding fetches.
+
+#### Backfill thread owners
+
+Threads written before owners were stored (before #2311) have no `owner`, so after
+the SLAuth deploy no signed-in user sees them. `backend/scripts/backfill-rovo-thread-owner.js`
+(`pnpm run backfill:rovo-thread-owner -- …`) assigns one SLAuth subject to every
+ownerless thread in a backend data directory:
+
+- `--owner <subject> --data-dir <dir>` are required. The default `--dry-run`
+  prints counts (threads, ownerless, already the owner's, other owners', unreadable)
+  and writes nothing; it is safe while the backend runs.
+- `--apply` writes each thread with the backend's own thread manager (temp file and
+  rename). It takes the data directory lock first, so it refuses with
+  `BACKEND_DATA_DIR_LOCKED` while a live backend uses the directory, and a backend
+  cannot start until it finishes. A thread that already has an owner keeps it, and
+  `updatedAt` is unchanged, so running it again changes nothing.
+- Retention is 40 threads per owner (`backend/lib/rovo-app-threads.js`). When the
+  owner would end up with more, the run warns: their next new thread deletes the
+  oldest beyond 40. Back the directory up first if those matter.
+
+Find the subject. Open `https://<service-name>.<region>.platdev.atl-paas.net/api/whoami`
+in the browser you use the app from (signed in through Okta), or
+`"$VPK_ATLAS_BIN" slauth curl --aud <service-name> -e <env> -- https://<host>/api/whoami`.
+Use the browser's `owner`: that is the subject the UI's threads are stored under. If
+the CLI value differs, the browser one wins.
+
+Run it on Micros. The deployed image must include the script (`backend/` ships
+whole, so any image built after it landed does). The data lives in the app container's
+`/app/backend/data` on the compute node, and the running backend holds its lock:
+
+```bash
+"$VPK_ATLAS_BIN" micros compute ssh --service="$SERVICE_NAME" --env=<env>
+# on the node:
+C=$(docker ps --format '{{.ID}} {{.Image}}' | awk '/app-/{print $1; exit}')   # confirm with docker ps
+docker exec "$C" node backend/scripts/backfill-rovo-thread-owner.js \
+	--owner '<subject>' --data-dir backend/data                                # dry run
+```
+
+If the dry run reports no threads, the deploy started a fresh data directory and
+there is nothing to backfill. Otherwise apply with the backend stopped, against a
+copy, and copy the result back (a stopped container keeps its files):
+
+```bash
+IMAGE=$(docker inspect -f '{{.Config.Image}}' "$C")
+docker stop "$C"
+docker cp "$C":/app/backend/data ./vpk-data-backup
+cp -R ./vpk-data-backup ./vpk-data
+docker run --rm -v "$PWD/vpk-data:/data" "$IMAGE" \
+	node backend/scripts/backfill-rovo-thread-owner.js --owner '<subject>' --data-dir /data --apply
+docker cp ./vpk-data/. "$C":/app/backend/data
+docker start "$C"
+```
+
+Keep the stopped window short: `/healthcheck` fails while the container is down,
+and if Micros replaces the instance the container's data goes with it. Check the
+threads in the browser afterwards, then delete `vpk-data` and `vpk-data-backup`
+from the node.
+
+Locally (a copy of a data directory, or `backend/data` with the stack stopped):
+`pnpm run backfill:rovo-thread-owner -- --owner '<subject>' --data-dir backend/data`,
+then again with `--apply`.
 
 ### 3. Create the Micros service
 
