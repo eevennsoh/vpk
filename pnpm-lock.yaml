@@ -538,8 +538,8 @@ importers:
         specifier: ^8.5.30
         version: 8.5.31
       react-grab:
-        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz
-        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz(@types/react@19.3.0)(react@19.3.1)
+        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz
+        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz(@types/react@19.3.0)(react@19.3.1)
       shadcn:
         specifier: ^4.22.0
         version: 4.22.0(supports-color@10.2.2)
@@ -7431,9 +7431,9 @@ packages:
       react:
         optional: true
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz:
-    resolution: {integrity: sha512-m299b9Ptp0d6HMLaNChJyvw4g+u6N5XAFMhA9zZLFA3N6Xq6p9fT0iQHtVPYBVV91GekrAsZolqx6i71fJRFfQ==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz}
-    version: 0.2.0-vpk.3
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz:
+    resolution: {integrity: sha512-7hdAAJOcL4PUIuL6SCAGCRh+BN/4gbt3iZtANVzMRzb5+mW0xMsv27r9vZZzuDhSDiEN4ITX2ZlRj1DqGVTSuw==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz}
+    version: 0.2.0-vpk.5
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -16241,7 +16241,7 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz(@types/react@19.3.0)(react@19.3.1):
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       '@react-grab/cli': 0.2.0
       bippy: 0.7.3(@types/react@19.3.0)(react@19.3.1)

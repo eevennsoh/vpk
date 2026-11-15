@@ -129,7 +129,7 @@ allowBuilds:
   # Upstream react-grab, still pulled in by @react-grab/mcp.
   react-grab: true
   # vpk-grab ships no install script; update:vpk-grab moves this key with the release.
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz: false
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz: false
   sharp: false
   tree-sitter-go: true
   tree-sitter-javascript: true
