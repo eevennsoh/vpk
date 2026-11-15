@@ -27,6 +27,7 @@ import {
 } from "react";
 import { useReducedMotion } from "motion/react";
 import { API_ENDPOINTS } from "@/lib/api-config";
+import { isPreviewFocusNavigationKey } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";
 
 export interface ChromiumPreviewState {
@@ -561,6 +562,10 @@ export function ChromiumPreviewBody({
 
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>) => {
+			if (isPreviewFocusNavigationKey(event)) {
+				return;
+			}
+
 			const isPrintableKey =
 				event.key.length === 1 &&
 				!event.altKey &&

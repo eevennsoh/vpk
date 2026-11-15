@@ -116,3 +116,41 @@ test("switching to Snapshot cancels pending wheel delivery before hidden preview
 		await preview.dispose();
 	}
 });
+
+test("Tab and Shift+Tab leave the live viewport instead of being forwarded to the remote page", async () => {
+	const preview = await renderPreview();
+	try {
+		const order = preview.view.tabOrder();
+		const viewportIndex = order.indexOf("Browser preview");
+		assert.notEqual(viewportIndex, -1);
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Tab");
+		// The viewport is the panel's last tab stop, so Tab hands focus back to the page.
+		assert.equal(viewportIndex, order.length - 1);
+		assert.equal(preview.view.isFocused(preview.viewport), false);
+
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Tab", { shiftKey: true });
+		assert.equal(preview.view.isFocused(preview.viewport), false);
+		assert.equal(document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent, order[viewportIndex - 1]);
+		assert.deepEqual(preview.preview, []);
+		assert.deepEqual(preview.workspace, []);
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("Escape and modified Tab chords are still forwarded from the live viewport", async () => {
+	const preview = await renderPreview();
+	try {
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Escape", { code: "Escape" });
+		await preview.view.press(null, "Tab", { code: "Tab", ctrlKey: true });
+		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.key}`), [
+			"keyDown:Escape", "keyUp:Escape", "keyDown:Tab", "keyUp:Tab",
+		]);
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+	} finally {
+		await preview.dispose();
+	}
+});

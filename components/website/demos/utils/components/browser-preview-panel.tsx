@@ -20,6 +20,7 @@ import {
 } from "react";
 import { Input } from "@/components/ui/input";
 import { API_ENDPOINTS } from "@/lib/api-config";
+import { isPreviewFocusNavigationKey } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";
 import { BrowserPreviewOverlay } from "@/components/projects/shared/components/browser-preview-overlay";
 import {
@@ -490,6 +491,10 @@ function EmbeddedBrowserWorkspacePreview({
 
 	const handleLiveKeyDown = useCallback(
 		(event: ReactKeyboardEvent<HTMLDivElement>) => {
+			if (isPreviewFocusNavigationKey(event)) {
+				return;
+			}
+
 			event.preventDefault();
 			void dispatchControl({
 				type: "key", key: event.key, code: event.code,

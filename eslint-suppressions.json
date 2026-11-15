@@ -3101,11 +3101,6 @@
       "count": 1
     }
   },
-  "components/website/demos/utils/multiport-demo.tsx": {
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
   "components/website/demos/utils/sound-generation-demo.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
