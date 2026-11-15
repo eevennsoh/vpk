@@ -22,7 +22,7 @@ import type {
 /**
  * Single source of truth for the front-slot visual tile size in suggestion-menu
  * rows (both the `RichTextMentionVisualMark` paths here and the fallback
- * `IconTile` in `suggestion-menu.tsx`). Change this one value to resize every
+ * `IconTile` in `suggestion-menu-view.tsx`). Change this one value to resize every
  * menu-row avatar, image, logo tile, and icon tile together.
  */
 export const MENU_VISUAL_TILE_SIZE = "medium" as const;
