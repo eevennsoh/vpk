@@ -22,6 +22,7 @@
 		"typecheck": "node scripts/check-workspace-deps.js --command \"pnpm run typecheck\" --bin tsc typescript @typescript/native && node --max-old-space-size=4096 ./node_modules/@typescript/native/bin/tsc --noEmit && node ./node_modules/@typescript/native/bin/tsc --noEmit -p tsconfig.backend.json",
 		"validate:agents": "node scripts/validate-agents.js",
 		"validate:skills": "node scripts/validate-skills.js",
+		"eval:skill-triggers": "node scripts/skill-trigger-eval.js",
 		"validate:preflight": "node scripts/validate-local-preflight.js",
 		"validate:local": "node scripts/validate-local-preflight.js && corepack pnpm run verify:lockfile && corepack pnpm run ci:pr",
 		"test:unit:js": "node scripts/run-js-unit-tests.mjs",
