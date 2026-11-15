@@ -63,7 +63,6 @@
 		"components/website/demos/visual/ascii-demo.tsx": 1279,
 		"components/website/demos/visual/shaders/ascii.tsx": 1697,
 		"lib/json-render/catalog.ts": 1172,
-		"lib/json-render/registry.tsx": 2408,
 		"lib/rovo-ui-messages.ts": 1112
 	},
 	"maxLines": {

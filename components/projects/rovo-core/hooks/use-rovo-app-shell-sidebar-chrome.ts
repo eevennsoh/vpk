@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
+import { useSidebarActions, useSidebarState } from "@/app/contexts/context-sidebar";
 import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import { useSidebarHoverReveal } from "@/components/projects/rovo-core/hooks/use-sidebar-hover-reveal";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
@@ -30,21 +30,22 @@ export function useRovoAppShellSidebarChrome({
 }: Readonly<RovoAppShellSidebarChromeOptions>) {
 	// Bridge the global sidebar context (TopNavigation toggle) with the local
 	// shadcn SidebarProvider so the nav bar button controls the thread sidebar.
-	const globalSidebar = useGlobalSidebar();
-	const globalSidebarVisibleRef = useRef(globalSidebar.isVisible);
+	const { isVisible: isGlobalSidebarVisible } = useSidebarState();
+	const { setSidebarVisible: setGlobalSidebarVisible } = useSidebarActions();
+	const globalSidebarVisibleRef = useRef(isGlobalSidebarVisible);
 
 	useEffect(() => {
-		if (globalSidebar.isVisible !== globalSidebarVisibleRef.current) {
-			globalSidebarVisibleRef.current = globalSidebar.isVisible;
-			chat.setSidebarOpen(globalSidebar.isVisible);
+		if (isGlobalSidebarVisible !== globalSidebarVisibleRef.current) {
+			globalSidebarVisibleRef.current = isGlobalSidebarVisible;
+			chat.setSidebarOpen(isGlobalSidebarVisible);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to global sidebar changes
-	}, [globalSidebar.isVisible]);
+	}, [isGlobalSidebarVisible]);
 
 	useEffect(() => {
 		if (chat.sidebarOpen !== globalSidebarVisibleRef.current) {
 			globalSidebarVisibleRef.current = chat.sidebarOpen;
-			globalSidebar.setSidebarVisible(chat.sidebarOpen);
+			setGlobalSidebarVisible(chat.sidebarOpen);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- only react to local sidebar changes
 	}, [chat.sidebarOpen]);
