@@ -146,14 +146,59 @@ test("the capture toggle starts capture in the viewport and a second press relea
 	}
 });
 
-test("moving focus out of a captured viewport releases capture", async () => {
+test("moving focus out of a captured viewport releases capture without stale Tab advice", async () => {
 	const preview = await renderChromiumPreview();
 	try {
 		await preview.view.focus(preview.viewport);
 		await preview.view.press(null, "Enter");
 		await preview.view.focus(preview.view.getByRole("button", { name: "After preview" }));
 		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "false");
+		assert.equal(preview.view.getByRole("status").textContent, "Keyboard released");
 	} finally {
+		await preview.dispose();
+	}
+});
+
+test("after a click in the page, typed text and Enter are forwarded instead of starting capture", async () => {
+	const preview = await renderChromiumPreview();
+	try {
+		const bounds = { left: 0, top: 0, width: 640, height: 450, right: 640, bottom: 450, x: 0, y: 0 };
+		preview.viewport.getBoundingClientRect = () => ({ ...bounds, toJSON: () => bounds });
+		await React.act(async () => {
+			preview.viewport.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, clientX: 320, clientY: 225 }));
+		});
+		await preview.settle();
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		await preview.view.press(null, "f");
+		await preview.view.press(null, "Enter");
+		await preview.settle();
+		assert.deepEqual(preview.actions.map(({ action, body }) => `${action}:${body.text ?? body.key ?? ""}`), [
+			"click:", "type:f", "press:Enter",
+		]);
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "false");
+		// Leaving and coming back by keyboard re-arms Enter as the capture shortcut.
+		await preview.view.press(null, "Tab");
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Enter");
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "true");
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("Escape that releases capture does not reach an Escape-to-close ancestor", async () => {
+	const preview = await renderChromiumPreview();
+	const ancestorEscapes = [];
+	const onKeyDown = (event) => { if (event.key === "Escape") ancestorEscapes.push(event.key); };
+	document.addEventListener("keydown", onKeyDown);
+	try {
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Enter");
+		await preview.view.press(null, "Escape");
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "false");
+		assert.deepEqual(ancestorEscapes, []);
+	} finally {
+		document.removeEventListener("keydown", onKeyDown);
 		await preview.dispose();
 	}
 });

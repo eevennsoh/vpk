@@ -3,42 +3,45 @@ type ModifierKeyEvent = Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "meta
 const hasModifier = (event: ModifierKeyEvent) => event.altKey || event.ctrlKey || event.metaKey;
 
 /**
- * Remote-preview viewports forward keys to an embedded browser, but plain Tab and
- * Shift+Tab stay with the host page so keyboard users can always move focus out of
- * the viewport (WCAG 2.1.2 No Keyboard Trap). To Tab between links and fields inside
- * the remote page, users turn on the explicit "capture keys" mode (see
- * `resolvePreviewKeyCaptureKey`), which forwards Tab too until Escape releases it.
- */
-export function isPreviewFocusNavigationKey(event: ModifierKeyEvent): boolean {
-	return event.key === "Tab" && !hasModifier(event);
-}
-
-/**
  * What a remote-preview viewport does with a keydown:
  * - `forward`: send the key to the remote page.
- * - `leave`: plain Tab/Shift+Tab while not captured; the browser moves focus out.
- * - `start`: plain Enter while not captured starts capture and is not forwarded.
- * - `release`: plain Escape while captured releases capture and is not forwarded.
+ * - `leave`: plain Tab/Shift+Tab while not captured; the browser moves focus out (WCAG 2.1.2).
+ * - `start`: plain Enter while not captured and not yet engaged starts capture and is not forwarded.
+ * - `release`: plain Escape while captured releases capture and is not forwarded, so while
+ *   captured the remote page never receives a plain Escape (release first, then press Escape).
  */
 export type PreviewKeyCaptureResolution = "forward" | "leave" | "start" | "release";
 
+export interface PreviewKeyCaptureState {
+	/** True while every key, including Tab, is forwarded to the remote page. */
+	captured: boolean;
+	/**
+	 * True once the user has worked inside the viewport since it last gained focus (a pointer
+	 * press or any forwarded key). An engaged viewport forwards Enter, so a mouse user who clicks
+	 * a field and types can submit it; Enter only starts capture on a viewport reached by keyboard.
+	 */
+	engaged: boolean;
+}
+
 export function resolvePreviewKeyCaptureKey(
 	event: ModifierKeyEvent,
-	captured: boolean,
+	{ captured, engaged }: PreviewKeyCaptureState,
 ): PreviewKeyCaptureResolution {
 	const plain = !hasModifier(event) && !event.shiftKey;
 	if (captured) {
 		return event.key === "Escape" && plain ? "release" : "forward";
 	}
-	if (isPreviewFocusNavigationKey(event)) {
+	if (event.key === "Tab" && !hasModifier(event)) {
 		return "leave";
 	}
-	return event.key === "Enter" && plain ? "start" : "forward";
+	return event.key === "Enter" && plain && !engaged ? "start" : "forward";
 }
 
 /** Screen-reader hint for preview viewports, referenced through aria-describedby. */
 export const PREVIEW_KEYBOARD_HINT =
-	"Keys are sent to the page. Press Tab to leave the preview. Press Enter to capture all keys, including Tab, and Escape to release them.";
+	"Keys are sent to the page. Press Tab to leave the preview. To send every key, including Tab, press Enter when you first reach the preview or use Capture keys; press Escape to release them. Escape is not sent to the page while keys are captured.";
 
 export const PREVIEW_KEY_CAPTURE_STARTED_MESSAGE = "Keyboard captured — press Escape to release";
 export const PREVIEW_KEY_CAPTURE_RELEASED_MESSAGE = "Keyboard released — press Tab to leave the preview";
+/** Announced when capture ends because focus left the viewport; Tab advice would be stale. */
+export const PREVIEW_KEY_CAPTURE_BLUR_RELEASED_MESSAGE = "Keyboard released";

@@ -11,8 +11,9 @@ const MULTIPORT_GENERATIVE_CARD_ANIMATION: GenerativeCardAnimationProps = {
 	distortion: false,
 };
 
-// The live composer is a contenteditable Tiptap editor, so match it by its accessible name, not its tag.
-const COMPOSER_SELECTOR = '[aria-label="Chat message input"]';
+// The live composer is a contenteditable Tiptap editor inside the container ChatComposer marks
+// with data-chat-composer-input, so match the textbox there rather than its tag or visible label.
+const MULTIPORT_COMPOSER_SELECTOR = '[data-chat-composer-input] [role="textbox"]';
 
 /**
  * F6 / Shift+F6 cycle focus between the ports' composers, the conventional "next pane" key, so
@@ -23,16 +24,17 @@ function handlePortSwitchKeyDown(container: HTMLElement, event: KeyboardEvent) {
 		return;
 	}
 	const ports = Array.from(container.querySelectorAll<HTMLElement>("[data-multiport-port]"));
-	const composers = ports.map((port) => port.querySelector<HTMLElement>(COMPOSER_SELECTOR));
+	const composers = ports.map((port) => port.querySelector<HTMLElement>(MULTIPORT_COMPOSER_SELECTOR));
 	if (composers.every((composer) => composer === null)) {
 		return;
 	}
 	const target = event.target instanceof Node ? event.target : null;
 	const currentIndex = ports.findIndex((port) => target !== null && port.contains(target));
 	const step = event.shiftKey ? -1 : 1;
-	for (let offset = 1; offset <= ports.length; offset += 1) {
-		const start = currentIndex === -1 ? (event.shiftKey ? 0 : -1) : currentIndex;
-		const index = (start + step * offset + ports.length * offset) % ports.length;
+	const count = ports.length;
+	const start = currentIndex === -1 ? (event.shiftKey ? 0 : -1) : currentIndex;
+	for (let offset = 1; offset <= count; offset += 1) {
+		const index = (((start + step * offset) % count) + count) % count;
 		const composer = composers[index];
 		if (composer) {
 			event.preventDefault();
@@ -64,7 +66,7 @@ export default function MultiportDemo(): ReactElement {
 			role="group"
 		>
 			<span id={shortcutHintId} className="sr-only">
-				Press F6 to move to the next chat composer, Shift+F6 for the previous one.
+				Press F6 to move to the next chat composer, Shift+F6 for the previous one. On Mac laptops, hold Fn with F6.
 			</span>
 			{Array.from({ length: PORT_COUNT }, (_, i) => (
 				<div key={i} data-multiport-port={i} className="flex h-full min-w-0 flex-1 justify-center" style={{ maxWidth: 400 }}>

@@ -21,7 +21,9 @@ const mocks = {
 			return (
 				<section>
 					<button type="button">Port {port} header</button>
-					<div ref={inputRef} contentEditable role="textbox" tabIndex={0} aria-label="Chat message input" data-port={port} />
+					<div data-chat-composer-input="">
+						<div ref={inputRef} contentEditable role="textbox" tabIndex={0} aria-label="Chat message input" data-port={port} />
+					</div>
 					<button type="button">Port {port} send</button>
 				</section>
 			);
@@ -108,6 +110,36 @@ test("F6 from a port's other controls moves to the next port's composer", async 
 		await view.focus(view.getByRole("button", { name: "Port 1 header" }));
 		await view.press(null, "F6", { shiftKey: true });
 		assert.equal(focusedName(), "Port 0 input");
+	} finally {
+		await view.unmount();
+	}
+});
+
+test("the F6 selector finds the real composer's contenteditable through ChatComposer's data hook", async () => {
+	const fs = require("node:fs");
+	const chatComposer = fs.readFileSync(
+		path.join(process.cwd(), "components/projects/sidebar-chat/components/chat-composer.tsx"),
+		"utf8",
+	);
+	// ChatComposer must keep marking its PromptInputTextarea with the hook the demo queries.
+	assert.match(chatComposer, /<PromptInputTextarea[\s\S]*?data-chat-composer-input=""[\s\S]*?\/>/u);
+	const selector = '[data-chat-composer-input] [role="textbox"]';
+	const demo = fs.readFileSync(path.join(process.cwd(), "components/website/demos/utils/multiport-demo.tsx"), "utf8");
+	assert.ok(demo.includes(`MULTIPORT_COMPOSER_SELECTOR = '${selector}'`), "the demo must query the hook the composer exposes");
+	const view = await renderComponent({
+		source: `import { PromptInput, PromptInputBody, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+			export default function Probe() {
+				return <PromptInput onSubmit={() => {}}><PromptInputBody>
+					<PromptInputTextarea aria-label="Renamed composer" data-chat-composer-input="" rows={1} />
+				</PromptInputBody></PromptInput>;
+			}`,
+	});
+	try {
+		await settleEffects();
+		const composer = document.querySelector(selector);
+		assert.ok(composer, "the selector must match the editor inside the marked container");
+		assert.equal(composer.getAttribute("contenteditable"), "true");
+		assert.equal(composer.getAttribute("aria-label"), "Renamed composer", "matching must not depend on the label copy");
 	} finally {
 		await view.unmount();
 	}

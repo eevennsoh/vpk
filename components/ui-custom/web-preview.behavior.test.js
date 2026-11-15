@@ -73,3 +73,27 @@ test("icon-only navigation buttons are named by their tooltip unless given an ex
 		await preview.dispose();
 	}
 });
+
+test("the web-preview catalog page puts only the External URL demo on the shared Chromium session", async () => {
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async () => new Response(JSON.stringify(READY_STATE), {
+		status: 200, headers: { "Content-Type": "application/json" },
+	});
+	const view = await renderComponent({
+		source: `import WebPreviewDemo, { WebPreviewDemoBasic, WebPreviewDemoExternal, WebPreviewDemoFullscreen, WebPreviewDemoUrlChange, WebPreviewDemoWithConsole } from "@/components/website/demos/ui-custom/web-preview-demo";
+			const demos = { WebPreviewDemo, WebPreviewDemoBasic, WebPreviewDemoExternal, WebPreviewDemoFullscreen, WebPreviewDemoUrlChange, WebPreviewDemoWithConsole };
+			export default function Host() {
+				return <div>{Object.entries(demos).map(([name, Demo]) => <section key={name} data-demo={name}><Demo /></section>)}</div>;
+			}`,
+	});
+	try {
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+		const chromiumDemos = Array.from(view.container.querySelectorAll("[data-demo]"))
+			.filter((section) => section.querySelector("[aria-busy]"))
+			.map((section) => section.getAttribute("data-demo"));
+		assert.deepEqual(chromiumDemos, ["WebPreviewDemoExternal"]);
+	} finally {
+		await view.unmount();
+		globalThis.fetch = originalFetch;
+	}
+});

@@ -189,7 +189,7 @@ test("Capture keys forwards Tab and Shift+Tab to the remote page until Escape re
 	}
 });
 
-test("Enter on the live viewport starts capture instead of being forwarded", async () => {
+test("Enter on a live viewport reached by keyboard starts capture instead of being forwarded", async () => {
 	const preview = await renderPreview();
 	try {
 		await preview.view.focus(preview.viewport);
@@ -198,6 +198,24 @@ test("Enter on the live viewport starts capture instead of being forwarded", asy
 		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "true");
 		await preview.view.press(null, "Enter", { code: "Enter" });
 		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.key}`), ["keyDown:Enter", "keyUp:Enter"]);
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("after a click on the live viewport, Enter is forwarded so remote forms still submit", async () => {
+	const preview = await renderPreview();
+	try {
+		await React.act(async () => {
+			preview.viewport.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 100, clientY: 60, button: 0 }));
+		});
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		await preview.view.press(null, "Enter", { code: "Enter" });
+		assert.deepEqual(
+			preview.preview.filter((message) => message.type !== "preview-click").map((message) => `${message.eventType}:${message.key}`),
+			["keyDown:Enter", "keyUp:Enter"],
+		);
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "false");
 	} finally {
 		await preview.dispose();
 	}

@@ -181,7 +181,7 @@ export function ChromiumPreviewBody({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const keyboardHintId = useId();
 	const keyCapture = usePreviewKeyCapture(containerRef);
-	const { interceptKey: interceptCaptureKey } = keyCapture;
+	const { handleViewportPointerDown, interceptKey: interceptCaptureKey } = keyCapture;
 	const wheelTimerRef = useRef<number | null>(null);
 	const wheelDeltaRef = useRef({ deltaX: 0, deltaY: 0 });
 	const [previewState, setPreviewState] = useState(DEFAULT_STATE);
@@ -521,6 +521,7 @@ export function ChromiumPreviewBody({
 				return;
 			}
 
+			handleViewportPointerDown();
 			const containerElement = containerRef.current;
 			if (!containerElement) {
 				return;
@@ -544,7 +545,7 @@ export function ChromiumPreviewBody({
 				{ busy: true, refreshImage: true },
 			);
 		},
-		[postAction, viewportSize.viewportHeight, viewportSize.viewportWidth],
+		[handleViewportPointerDown, postAction, viewportSize.viewportHeight, viewportSize.viewportWidth],
 	);
 
 	const handleWheel = useCallback(
@@ -636,11 +637,10 @@ export function ChromiumPreviewBody({
 			className={cn("relative flex size-full min-h-0 min-w-0 flex-col", className)}
 			{...props}
 		>
-			<PreviewKeyCaptureToggle
-				capture={keyCapture}
-				className="bg-surface absolute top-2 right-2 z-10 shadow-md"
-			/>
-			<PreviewKeyCaptureStatus capture={keyCapture} />
+			{/* A reserved strip keeps the toggle off the remote page, so it never blocks clicks there. */}
+			<div className="border-border flex shrink-0 justify-end border-b px-2 py-1">
+				<PreviewKeyCaptureToggle capture={keyCapture} />
+			</div>
 			<div
 				aria-busy={isBusy}
 				aria-label={previewState.title || "Chromium preview"}
@@ -661,6 +661,7 @@ export function ChromiumPreviewBody({
 					{PREVIEW_KEYBOARD_HINT}
 				</span>
 				<div className="relative flex-1 overflow-hidden">
+					<PreviewKeyCaptureStatus capture={keyCapture} />
 					{shouldRenderScreenshot ? (
 						<img
 							alt={previewState.title || "Chromium preview"}

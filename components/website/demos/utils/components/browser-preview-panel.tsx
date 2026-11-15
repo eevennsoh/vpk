@@ -159,7 +159,7 @@ function EmbeddedBrowserWorkspacePreview({
 	const liveViewportRef = useRef<HTMLDivElement | null>(null);
 	const keyboardHintId = useId();
 	const keyCapture = usePreviewKeyCapture(liveViewportRef);
-	const { interceptKey: interceptCaptureKey } = keyCapture;
+	const { handleViewportPointerDown, interceptKey: interceptCaptureKey } = keyCapture;
 	const pendingWheelRef = useRef({
 		x: 0,
 		y: 0,
@@ -453,6 +453,7 @@ function EmbeddedBrowserWorkspacePreview({
 				return;
 			}
 
+			handleViewportPointerDown();
 			const point = resolvePreviewPoint(event.clientX, event.clientY);
 			if (!point) {
 				return;
@@ -462,7 +463,7 @@ function EmbeddedBrowserWorkspacePreview({
 			liveViewportRef.current?.focus();
 			void dispatchControl({ type: "click", x: point.x, y: point.y });
 		},
-		[dispatchControl, resolvePreviewPoint],
+		[dispatchControl, handleViewportPointerDown, resolvePreviewPoint],
 	);
 
 	const handleLiveWheel = useCallback(
