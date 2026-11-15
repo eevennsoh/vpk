@@ -190,6 +190,33 @@ function decideStop({ worktreePath, env = process.env, force = false, idleSecs =
 	return { allowed: force, forced: force, crossWorktree: true, by, from, evidence: activity.evidence };
 }
 
+// Append a stop decision to the stopped worktree's dev-stops.log; returns the log file, or null.
+function recordStop({ decision, worktreePath, session = null, logDir = defaultLogDir(worktreePath), now = Date.now(), ancestry = callerAncestry() }) {
+	const outcome = decision.allowed ? (decision.forced ? "stopping (forced)" : "stopping") : "refused";
+	return appendStopLog(
+		{
+			at: new Date(now).toISOString(),
+			outcome,
+			worktree: worktreePath,
+			session,
+			by: decision.by,
+			from: decision.from,
+			crossWorktree: decision.crossWorktree,
+			inUse: decision.evidence,
+			ancestry,
+		},
+		{ logDir },
+	);
+}
+
+function refusalMessage(worktreePath, decision) {
+	const where = decision.from ? ` from ${decision.from}` : "";
+	return (
+		`[dev:tmux] Not stopping ${worktreePath}: ${decision.by}${where} asked, and this stack is in use (${decision.evidence}).\n` +
+		"[dev:tmux] Leave it running. If it really must stop, ask its owner, or rerun the stop with --force.\n"
+	);
+}
+
 function parseArgs(argv) {
 	const [command, ...rest] = argv;
 	const options = { force: false };
@@ -220,27 +247,10 @@ function main(argv = process.argv.slice(2), { env = process.env, stdout = proces
 		return 0;
 	}
 	const decision = decideStop({ worktreePath, env, force: options.force, idleSecs, now, logDir });
-	const outcome = decision.allowed ? (decision.forced ? "stopping (forced)" : "stopping") : "refused";
-	const logFile = appendStopLog(
-		{
-			at: new Date(now).toISOString(),
-			outcome,
-			worktree: worktreePath,
-			session: options.session ?? null,
-			by: decision.by,
-			from: decision.from,
-			crossWorktree: decision.crossWorktree,
-			inUse: decision.evidence,
-			ancestry: callerAncestry(),
-		},
-		{ logDir },
-	);
+	const logFile = recordStop({ decision, worktreePath, session: options.session ?? null, logDir, now });
 	const where = decision.from ? ` from ${decision.from}` : "";
 	if (!decision.allowed) {
-		stderr.write(
-			`[dev:tmux] Not stopping ${worktreePath}: ${decision.by}${where} asked, and this stack is in use (${decision.evidence}).\n` +
-				"[dev:tmux] Leave it running. If it really must stop, ask its owner, or rerun the stop with --force.\n",
-		);
+		stderr.write(refusalMessage(worktreePath, decision));
 		return EXIT_STOP_REFUSED;
 	}
 	stdout.write(`[dev:tmux] Stop requested by ${decision.by}${where}${decision.forced ? ` (forced; in use: ${decision.evidence})` : ""}${logFile ? `; logged to ${logFile}` : ""}.\n`);
@@ -262,5 +272,7 @@ module.exports = {
 	listOperators,
 	main,
 	newestActivity,
+	recordStop,
+	refusalMessage,
 	worktreeOf,
 };

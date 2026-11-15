@@ -101,6 +101,8 @@ function createFakeLauncherEnvironment() {
 		"#!/usr/bin/env bash",
 		// The dev-output clean is recorded, never run: the tests run in this worktree.
 		"case \"$1\" in *scripts/lib/next-dev-output.js) echo \"$*\" >> \"$NODE_CLEANUP_LOG\"; exit 0 ;; esac",
+		// FAKE_GUARD_EXIT: the stop guard fails with this status (a crash, not a refusal).
+		"case \"$1\" in *scripts/lib/dev-stack-activity.js) [ -n \"${FAKE_GUARD_EXIT:-}\" ] && exit \"$FAKE_GUARD_EXIT\" ;; esac",
 		"if [ \"$1\" = \"./scripts/cleanup-worktree-listeners.js\" ]; then",
 		"\techo \"$1\" >> \"$NODE_CLEANUP_LOG\"",
 		"\texit 0",
@@ -355,6 +357,50 @@ test("a stop another worktree requests is refused while the stack is in use, log
 		});
 		const outcomes = fs.readFileSync(path.join(logDir, "dev-stops.log"), "utf8").trim().split("\n").map((line) => JSON.parse(line).outcome);
 		assert.deepEqual(outcomes, ["refused", "stopping (forced)"]);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+// Regression: a stop trusted a session-name match alone, so a checkout whose name collides with
+// another's on the shared socket (branches `vpk/foo` and `vpk-foo`, or two clones' main checkouts)
+// sent Ctrl-C to the other checkout's stack.
+test("stop and start never touch a same-named session started in another checkout", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, "vpk-dev-same|/tmp/other-clone\n");
+		const stop = withPortFiles(null, null, () => startAs(fake, "vpk-dev-same", {}, ["stop"]));
+		assert.equal(stop.status, 0, stop.stderr);
+		assert.match(stop.stderr, /tmux session 'vpk-dev-same' \(socket: vpk-dev\) belongs to \/tmp\/other-clone, not this worktree; leaving it alone/);
+		assert.match(stop.stdout, /No tmux session 'vpk-dev-same'/);
+
+		const start = withPortFiles(null, null, () => startAs(fake, "vpk-dev-same"));
+		assert.equal(start.status, 1, start.stdout + start.stderr);
+		assert.match(start.stderr, /Cannot start: the session name 'vpk-dev-same' is taken by the stack in \/tmp\/other-clone/);
+
+		const tmuxLog = fs.existsSync(fake.tmuxLogPath) ? fs.readFileSync(fake.tmuxLogPath, "utf8") : "";
+		assert.doesNotMatch(tmuxLog, /send-keys|kill-session|new-session/);
+		assert.deepEqual(fake.sessions(), ["vpk-dev-same|/tmp/other-clone"]);
+		assert.deepEqual(fake.serversLaunched(), []);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("a stop guard that fails lets this worktree's own stop through but not a requested one", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-crash|${worktreeRoot}\n`);
+		withPortFiles(null, null, () => {
+			const requested = startAs(fake, "vpk-dev-crash", { FAKE_GUARD_EXIT: "1", VPK_DEV_STOP_BY: "test automation" }, ["stop"]);
+			assert.equal(requested.status, 1, requested.stdout + requested.stderr);
+			assert.deepEqual(fake.sessions(), [`vpk-dev-crash|${worktreeRoot}`]);
+
+			const direct = startAs(fake, "vpk-dev-crash", { FAKE_GUARD_EXIT: "1" }, ["stop"]);
+			assert.equal(direct.status, 0, direct.stderr);
+			assert.match(direct.stderr, /The stop guard failed \(exit 1\); stopping anyway/);
+			assert.deepEqual(fake.sessions(), []);
+		});
 	} finally {
 		fake.cleanup();
 	}

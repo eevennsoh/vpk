@@ -25,11 +25,11 @@
 #     is that worktree — worktree directory names are ignored. Recent activity
 #     (its dev log, stack record or git index written in the last 30m) also
 #     keeps it: an agent working there often keeps its own cwd elsewhere
-#     (dev-stack-activity.js). Uses the worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
-#     route). A Codex Desktop worktree is stopped only when the read-only
-#     thread-recency probe finds every Codex thread in that worktree idle
-#     past its threshold; no thread, no database, or an unknown schema keeps
-#     it. Never
+#     (dev-stack-activity.js). Uses the worktree's own `dev-tmux-plain.sh
+#     stop` (SIGINT so Portless drops THIS route). A Codex Desktop worktree
+#     is stopped only when the read-only thread-recency probe finds every
+#     Codex thread in that worktree idle past its threshold; no thread, no
+#     database, or an unknown schema keeps it. Never
 #     `portless prune`. Legacy sessions on tmux's default socket get SIGINT
 #     and an exact kill-session; their worktree launcher owns a different socket.
 #  4. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
@@ -93,7 +93,9 @@ KILL_IDLE_STACKS=1       # 1 = stop idle unattached leftover stacks; 0 = report 
 CODEX_RECENCY_PROBE="${0:A:h}/codex-thread-recency.js"
 # Stack-activity check (scripts/lib/dev-stack-activity.js; install.sh copies it next to this
 # script). A leftover stack whose dev log, stack record or git index was written within this
-# window is in use: an agent working there often keeps its own cwd elsewhere.
+# window is in use: an agent working there often keeps its own cwd elsewhere. Resolved here at
+# top level: inside a function zsh's $0 is the function name, not this script.
+STACK_ACTIVITY_HELPER="${0:A:h}/dev-stack-activity.js"
 IDLE_STACK_ACTIVITY_SECS=1800
 
 # --pressure-check: exit quietly unless the machine is under memory pressure
@@ -288,7 +290,7 @@ codex_thread_recency() {
 # Prints `in-use|<evidence>`, `idle|<newest activity>`, or `unknown|<why>` (keep the stack).
 stack_activity() {
 	local root="$1" helper line node_bin
-	for helper in "${VPK_DEV_STACK_ACTIVITY:-}" "${0:A:h}/dev-stack-activity.js" "$MAIN_WORKTREE/scripts/lib/dev-stack-activity.js"; do
+	for helper in "${VPK_DEV_STACK_ACTIVITY:-}" "$STACK_ACTIVITY_HELPER" "$MAIN_WORKTREE/scripts/lib/dev-stack-activity.js"; do
 		[[ -n "$helper" && -f "$helper" ]] && break
 		helper=""
 	done
@@ -401,6 +403,14 @@ live_task_in_worktree() {
 	fi
 	if worktree_has_operator "$root"; then
 		print -r -- "a tool process has its cwd in $root"
+		return
+	fi
+	# Recent activity (dev log, stack record, git index) also marks it in use: a subagent often
+	# keeps its own cwd in another checkout. Anything but a clear `idle` keeps the server.
+	local activity
+	activity=$(stack_activity "$root")
+	if [[ "$activity" != idle\|* ]]; then
+		print -r -- "${activity#*|}"
 		return
 	fi
 	if is_codex_desktop_worktree "$root"; then

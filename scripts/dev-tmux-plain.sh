@@ -131,29 +131,68 @@ stack_state() {
 # by name. A name follows the branch (or the directory when HEAD is detached), so a renamed or
 # newly checked-out branch would otherwise start a second session and next-server beside the
 # first.
+# A session started through a symlink matches by its physical path.
+path_is_this_worktree() {
+	local spath="$1" physical
+	physical="$(cd "$spath" 2>/dev/null && pwd -P || true)"
+	[[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" || "$physical" == "$REPO_ROOT_PHYSICAL" ]]
+}
+
 sessions_for_worktree() {
-	local name spath physical
+	local name spath
 	tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null | while IFS='|' read -r name spath; do
 		[[ -n "$name" ]] || continue
-		# A session started through a symlink matches by its physical path.
-		physical="$(cd "$spath" 2>/dev/null && pwd -P || true)"
-		if [[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" || "$physical" == "$REPO_ROOT_PHYSICAL" ]]; then
+		if path_is_this_worktree "$spath"; then
 			printf '%s\n' "$name"
 		fi
 	done
 }
 
+# The start directory tmux reports for session $1, or nothing.
+session_path_of() {
+	local name spath
+	while IFS='|' read -r name spath; do
+		if [[ "$name" == "$1" ]]; then
+			printf '%s\n' "$spath"
+			return 0
+		fi
+	done < <(tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null || true)
+	return 0
+}
+
+# Two checkouts can derive the same session name on the shared socket (branches `vpk/foo` and
+# `vpk-foo`, or the main checkouts of two clones). A session of this name started in another
+# directory belongs to that checkout's stack: nothing here may Ctrl-C, kill or adopt it.
+FOREIGN_SESSION=""
+FOREIGN_SESSION_PATH=""
+
 # Use an existing session for this worktree even when it carries another name.
 adopt_worktree_session() {
-	local name
-	tm has-session -t "=$SESSION_NAME" 2>/dev/null && return 0
+	local name spath
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		spath="$(session_path_of "$SESSION_NAME")"
+		if [[ -z "$spath" ]] || path_is_this_worktree "$spath"; then
+			return 0
+		fi
+		FOREIGN_SESSION="$SESSION_NAME"
+		FOREIGN_SESSION_PATH="$spath"
+	fi
 	while IFS= read -r name; do
 		[[ -n "$name" ]] || continue
 		echo "Adopting tmux session '$name' for this worktree (this checkout would name it '$SESSION_NAME')."
 		SESSION_NAME="$name"
+		FOREIGN_SESSION=""
 		return 0
 	done < <(sessions_for_worktree)
+	if [[ -n "$FOREIGN_SESSION" ]]; then
+		echo "tmux session '$FOREIGN_SESSION' (socket: $SOCKET) belongs to $FOREIGN_SESSION_PATH, not this worktree; leaving it alone." >&2
+	fi
 	return 0
+}
+
+# This worktree's session exists (never a same-named session of another checkout).
+own_session_exists() {
+	[[ -z "$FOREIGN_SESSION" ]] && tm has-session -t "=$SESSION_NAME" 2>/dev/null
 }
 
 stop_named_session() {
@@ -294,8 +333,13 @@ launch_session() {
 
 start_session() {
 	adopt_worktree_session
+	if [[ -n "$FOREIGN_SESSION" ]]; then
+		echo "Cannot start: the session name '$FOREIGN_SESSION' is taken by the stack in $FOREIGN_SESSION_PATH." >&2
+		echo "Start this worktree under another name: VPK_DEV_TMUX_SESSION=<name> pnpm run dev:tmux:start" >&2
+		exit 1
+	fi
 	stop_duplicate_sessions
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		if session_frontend_is_listening; then
 			echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
 		else
@@ -335,7 +379,7 @@ start_session() {
 stop_session() {
 	adopt_worktree_session
 	stack_state phase stopping || true
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		stop_named_session "$SESSION_NAME" recorded
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
@@ -355,12 +399,21 @@ stop_session() {
 # refused while this stack is in use (an agent process here, or recent activity) unless forced.
 # Every stop is logged with who asked to $DEV_LOG_DIR/dev-stops.log
 # (scripts/lib/dev-stack-activity.js).
+# Only a refusal (exit 6) blocks a direct stop; if the guard itself fails, a stop this worktree's
+# own user runs goes ahead, and one another worktree or automation requested does not.
+EXIT_STOP_REFUSED=6
 guard_stop() {
 	local args=(stop-guard --worktree "$REPO_ROOT" --session "$SESSION_NAME" --log-dir "$DEV_LOG_DIR")
 	if [[ "$FORCE_STOP" == "1" ]]; then
 		args+=(--force)
 	fi
-	node "$REPO_ROOT/scripts/lib/dev-stack-activity.js" "${args[@]}"
+	local status=0
+	node "$REPO_ROOT/scripts/lib/dev-stack-activity.js" "${args[@]}" || status=$?
+	if [[ "$status" -eq 0 || "$status" -eq "$EXIT_STOP_REFUSED" || -n "${VPK_DEV_STOP_BY:-}" ]]; then
+		return "$status"
+	fi
+	echo "[dev:tmux] The stop guard failed (exit $status); stopping anyway, since this is this worktree's own stop." >&2
+	return 0
 }
 
 # After `stop` only (a restart inside `start` keeps it): drop this worktree's next dev output (it
@@ -374,7 +427,7 @@ clean_dev_output() {
 
 attach_session() {
 	adopt_worktree_session
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		exec "$TMUX_BIN" -L "$SOCKET" attach -t "=$SESSION_NAME"
 	fi
 	echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'. Start it with: pnpm run dev:tmux:start"
@@ -398,7 +451,7 @@ status_session() {
 	# State is derived from the stack record, the session and the listening ports, not from the
 	# session's existence alone.
 	stack_state status
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		tm list-panes -t "=$SESSION_NAME:" -F "  pane #{pane_index}: #{pane_current_command}"
 	fi
 }

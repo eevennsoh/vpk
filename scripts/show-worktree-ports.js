@@ -26,6 +26,7 @@ const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes")
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
 const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
 const { measureNextDir } = require("./lib/next-dev-output");
+const { EXIT_STOP_REFUSED, decideStop, recordStop, refusalMessage } = require("./lib/dev-stack-activity");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -283,6 +284,9 @@ async function runWatch({ interactive = false } = {}) {
 	let selectedPath = null;
 	let confirmingKill = false;
 	let statusMessage = null;
+	// A kill refused because the stack is in use arms a forced kill of that worktree: the next
+	// confirmed kill of the same worktree overrides the guard. Declining a confirm disarms it.
+	let forceArmedPath = null;
 	let stopped = false;
 
 	try {
@@ -352,7 +356,7 @@ async function runWatch({ interactive = false } = {}) {
 				selectedIndex: interactive ? selectedIndex - startIndex : null,
 				footer: interactive
 					? confirmingKill
-						? `Kill ${describeWorktree(lastRows[selectedIndex].wt)}?  y/N`
+						? `${forceArmedPath === lastRows[selectedIndex].wt.path ? "In use — kill anyway" : "Kill"} ${describeWorktree(lastRows[selectedIndex].wt)}?  y/N`
 						: `${statusMessage ? `${statusMessage}\n` : ""}↑/↓ select · Enter Open · k Kill · q Quit`
 					: "Ctrl+C to exit",
 			});
@@ -386,16 +390,24 @@ async function runWatch({ interactive = false } = {}) {
 				if (!selected) return;
 				if (process.stdin.isTTY) process.stdin.setRawMode(false);
 				process.stdout.write("\x1b[2J\x1b[H\x1b[?25h");
-				// A person confirmed this kill, so it overrides the in-use guard.
-				const status = stopWorktree(selected.wt, { force: true });
+				// The first confirmed kill respects the in-use guard; a second one, after it refused, forces.
+				const force = forceArmedPath === selected.wt.path;
+				const status = stopWorktree(selected.wt, { force });
+				forceArmedPath = status === EXIT_STOP_REFUSED && !force ? selected.wt.path : null;
 				if (process.stdin.isTTY) process.stdin.setRawMode(true);
 				process.stdout.write("\x1b[?25l");
-				statusMessage = status === 0 ? `✓ Killed ${selected.name}` : `Could not kill ${selected.name} (exit ${status})`;
+				statusMessage =
+					status === 0
+						? `✓ Killed ${selected.name}`
+						: forceArmedPath
+							? `${selected.name} is in use; press k then y again to kill it anyway`
+							: `Could not kill ${selected.name} (exit ${status})`;
 				requestRefresh();
 				render();
 				return;
 			}
 			confirmingKill = false;
+			forceArmedPath = null;
 			render();
 			return;
 		}
@@ -544,8 +556,18 @@ function runningSessionForWorktree(worktree, sessions = listDevSessions()) {
 //
 // The stop names its requester (VPK_DEV_STOP_BY / VPK_DEV_STOP_FROM), so the target's launcher
 // refuses it while that stack is in use when it comes from another worktree, and logs who
-// stopped it (scripts/lib/dev-stack-activity.js). `force` passes `stop --force`: the explicit
-// `pnpm ports kill <id> --force`, or a kill a person confirmed in the interactive dashboard.
+// stopped it (scripts/lib/dev-stack-activity.js). This caller's own copy of that check runs
+// first too: a target branched before the guard existed ignores the requester and would stop at
+// once. `force` passes `stop --force`: the explicit `pnpm ports kill <id> --force`, or a second
+// confirmed kill in the interactive dashboard after the first was refused.
+function canonicalWorktreePath(value) {
+	try {
+		return fs.realpathSync(value);
+	} catch {
+		return path.resolve(value);
+	}
+}
+
 function stopWorktree(worktree, { force = false } = {}) {
 	const scriptPath = path.join(worktree.path, "scripts", "dev-tmux-plain.sh");
 	console.log(`🔪 Stopping ${describeWorktree(worktree)}\n`);
@@ -564,6 +586,15 @@ function stopWorktree(worktree, { force = false } = {}) {
 		VPK_DEV_STOP_BY: `pnpm ports kill (pid ${process.pid})`,
 		VPK_DEV_STOP_FROM: process.cwd(),
 	};
+	if (!force) {
+		const decision = decideStop({ worktreePath: worktree.path, env: { ...process.env, ...requester } });
+		if (!decision.allowed) {
+			const target = canonicalWorktreePath(worktree.path);
+			recordStop({ decision, worktreePath: target, session: runningSession?.name ?? null });
+			process.stderr.write(refusalMessage(target, decision));
+			return EXIT_STOP_REFUSED;
+		}
+	}
 	const { status, error } = spawnSync("bash", [scriptPath, "stop", ...(force ? ["--force"] : [])], {
 		cwd: worktree.path,
 		env: runningSession

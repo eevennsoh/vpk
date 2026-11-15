@@ -86,7 +86,11 @@ if (!Number.isFinite(poolSize) || poolSize < 1) {
 
 const run = async () => {
 	// Skip ports another worktree's stack has recorded as well as ports that listen.
-	const claimed = getPortsClaimedByOtherWorktrees(process.cwd());
+	// Best effort: a failing `git worktree list` leaves only the listening check, as the launcher does.
+	let claimed = new Map();
+	try {
+		claimed = getPortsClaimedByOtherWorktrees(process.cwd());
+	} catch {}
 	const ports = await findAvailableRovoPorts({
 		basePort,
 		poolSize,

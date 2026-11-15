@@ -53,6 +53,13 @@ function createGitWorktreeFixture() {
 	}
 }
 
+// Age a worktree's activity sources (git index) so the stop guard sees it idle.
+function ageWorktreeIndex(worktreePath) {
+	const gitdir = fs.readFileSync(path.join(worktreePath, ".git"), "utf8").match(/^gitdir:\s*(.+)$/mu)[1].trim();
+	const old = new Date(Date.now() - 3 * 3600 * 1000);
+	fs.utimesSync(path.join(path.resolve(worktreePath, gitdir), "index"), old, old);
+}
+
 function listenOnEphemeralPort() {
 	return new Promise((resolve, reject) => {
 		const server = net.createServer();
@@ -269,6 +276,7 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 			'#!/bin/bash\nprintf "%s|%s\\n" "$VPK_DEV_TMUX_SESSION" "$VPK_TMUX_SOCKET" > stop-result\n',
 			"utf8",
 		);
+		ageWorktreeIndex(fixture.worktreePath);
 
 		execFileSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
 			cwd: fixture.repoPath,
@@ -306,6 +314,52 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 		assert.equal(deniedResult.status, 2);
 		assert.match(deniedResult.stderr, /Could not inspect tmux/);
 		assert.equal(fs.existsSync(stopResultPath), false);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+// Regression: `pnpm ports kill` relied on the target's own launcher to refuse a stop of a stack in
+// use, so a worktree branched before that guard (most of the parallel stacks) stopped at once.
+test("ports kill refuses a stack in use even when the target's launcher has no guard, and --force overrides", () => {
+	const fixture = createGitWorktreeFixture();
+	const fakeTmuxPath = path.join(fixture.repoPath, "fake-tmux");
+	const stopScriptPath = path.join(fixture.worktreePath, "scripts", "dev-tmux-plain.sh");
+	const stopResultPath = path.join(fixture.worktreePath, "stop-result");
+	const logDir = path.join(fixture.worktreePath, "output", "logs", path.basename(fixture.worktreePath));
+
+	try {
+		fs.mkdirSync(path.dirname(stopScriptPath), { recursive: true });
+		fs.writeFileSync(
+			fakeTmuxPath,
+			`#!/usr/bin/env node\nif (process.argv[2] === "-L" && process.argv[3] === "vpk-dev") {\n\tprocess.stdout.write(${JSON.stringify(`vpk-dev-old-branch|${fixture.worktreePath}\n`)});\n\tprocess.exit(0);\n}\nprocess.exit(1);\n`,
+			"utf8",
+		);
+		fs.chmodSync(fakeTmuxPath, 0o755);
+		// A launcher from before the guard: it stops whatever asks.
+		fs.writeFileSync(stopScriptPath, '#!/bin/bash\nprintf "%s\\n" "$*" > stop-result\n', "utf8");
+		fs.mkdirSync(logDir, { recursive: true });
+		fs.writeFileSync(path.join(logDir, "dev.log"), "GET / 200 in 12ms\n");
+
+		const refused = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(refused.status, 6, refused.stdout + refused.stderr);
+		assert.match(refused.stderr, /Not stopping .*wt-pool: pnpm ports kill \(pid \d+\) from .* asked, and this stack is in use \(recent activity: dev log written/);
+		assert.equal(fs.existsSync(stopResultPath), false, "the target's launcher never ran");
+		const entry = JSON.parse(fs.readFileSync(path.join(logDir, "dev-stops.log"), "utf8").trim());
+		assert.equal(entry.outcome, "refused");
+		assert.equal(entry.session, "vpk-dev-old-branch");
+
+		const forced = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool", "--force"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(forced.status, 0, forced.stdout + forced.stderr);
+		assert.equal(fs.readFileSync(stopResultPath, "utf8"), "stop --force\n");
 	} finally {
 		fixture.cleanup();
 	}

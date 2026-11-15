@@ -14,6 +14,11 @@
  *
  * Each worktree reserves a full 20-port window so port auto-increment
  * and multi-port Rovo pools do not overlap across worktrees.
+ *
+ * The Rovo and backend ranges do overlap across slots: Rovo's window for slot 4 (8080-8099) is
+ * slot 0's backend window, and so on. Launchers skip any port that listens or that another
+ * worktree's port files record (getPortsClaimedByOtherWorktrees), which keeps live stacks apart,
+ * but a collision there moves a port up its window rather than failing.
  */
 
 const { execSync } = require("node:child_process");
@@ -444,8 +449,11 @@ function realPathOf(value) {
  * path. Slots follow the sorted worktree list, so adding a worktree shifts the windows after
  * it, and a new stack's window can start on a port a running stack in another worktree holds.
  * A launcher skips these as well as every port that already listens, so the choice is
- * deterministic for a given machine state and never lands on another stack's port, even one
- * that is recorded but not bound yet (a stack still starting).
+ * deterministic for a given machine state and avoids another stack's port, even one that is
+ * recorded but not bound yet. Not covered: two stacks starting at the same moment, before either
+ * has written its port files, can still pick the same free port (one then fails to bind and
+ * retries). Port files left by a stack that crashed keep their ports claimed until that worktree
+ * starts or stops again; with a 20-port window that only moves a port up.
  */
 function getPortsClaimedByOtherWorktrees(worktreePath, { worktrees = getGitWorktrees({ cwd: worktreePath }), fsImpl = fs } = {}) {
 	const own = realPathOf(worktreePath);
