@@ -8,28 +8,16 @@ import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-ite
 import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
-import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { BUTTER_SUGGESTION_DEMO_KEY } from "@/components/projects/butter-v1/data/presentation-board";
 import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter-v1/data/work-item-placeholders";
 import { useButterWorkItem } from "@/components/projects/butter-v1/hooks/use-butter-work-item";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { agentAddedSuggestion } from "@/components/projects/butter-v1/lib/agent-added-suggestion";
 
 export type ButterWorkItemHandle = {
 	open: (card: JiraKanbanCardData, columnTitle: string) => void;
 	close: () => void;
 };
-
-export function agentAddedSuggestion(session: Pick<AgentSessionItem, "id" | "agent">, onSelect: () => void, onDismiss: () => void): FloatingRovoButtonSuggestion {
-	const { agent } = session;
-	return {
-		id: session.id,
-		label: `${agent.name} added`,
-		icon: <span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>,
-		onDismiss,
-		onSelect,
-	};
-}
 
 function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
 	const [mounted, setMounted] = useState(false);
