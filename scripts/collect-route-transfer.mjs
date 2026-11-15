@@ -10,6 +10,15 @@
 // and sums the decoded bodies of the top document's same-origin .js and .css responses.
 // Embedded documents (iframes) and Next link prefetches are blocked and not counted, so the
 // number is what the route itself loads, not what it speculatively fetches for other routes.
+// A route whose page attaches an iframe, or that has a fetchedJsBytesAllFrames budget in
+// scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
+// quiet-window rules, prefetches still blocked) that sums the same-origin .js of every frame,
+// recorded as fetchedJsAllFrames: a page that embeds whole projects would otherwise look light.
+// What that pass counts: same-origin .js only (no CSS); each URL once across frames, so N
+// iframes running the same chunks count them once; only frames that load at the 1440x900
+// viewport without scrolling, so lazy iframes below the fold do not count. A route whose pass
+// saw no iframe attach records its top-document number with source "top-document", which the
+// verifier rejects for a route that budgets all frames.
 // Usage:
 //   node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 [--runs 3]
 //     [--input output/perf-baseline.json] [--output output/perf-baseline.json]
@@ -33,6 +42,32 @@ const VIEWPORT = { width: 1440, height: 900 };
 const QUIET_MS = 2000;
 const NAVIGATION_TIMEOUT_MS = 90_000;
 const SETTLE_CAP_MS = 60_000;
+const ROUTE_BUDGETS_PATH = new URL("./perf-route-budgets.json", import.meta.url);
+
+// Route ids whose budget includes fetchedJsBytesAllFrames: they always get the all-frames pass,
+// so an iframe that stops attaching in the iframe-blocked pass cannot skip the check.
+export function routesWithAllFramesBudget(budgets) {
+	return new Set(Object.entries(budgets).filter(([, budget]) => Object.hasOwn(budget, "fetchedJsBytesAllFrames")).map(([routeId]) => routeId));
+}
+
+export function needsAllFramesPass(routeId, routeRuns, allFramesRoutes) {
+	return allFramesRoutes.has(routeId) || embedsFrames(routeRuns);
+}
+
+// What one request does in a pass: Next link prefetches are always aborted; an embedded
+// document's navigation is aborted in the iframe-blocked pass and tracked (it holds the quiet
+// window open) in the all-frames pass; a same-origin script or stylesheet is tracked; anything
+// else is ignored by the quiet window.
+export function requestAction({ allFrames, isAsset, isPrefetch, isSubframeNavigation }) {
+	if (isPrefetch) return "abort";
+	if (isSubframeNavigation) return allFrames ? "track" : "abort";
+	return isAsset ? "track" : "ignore";
+}
+
+// Whether a response in this frame counts toward the pass's bytes.
+export function countsFrame({ allFrames, isMainFrame }) {
+	return allFrames || isMainFrame;
+}
 
 export function parseArgs(argv) {
 	const options = { baseUrl: null, input: "output/perf-baseline.json", output: null, runs: 3 };
@@ -61,6 +96,25 @@ export function median(values) {
 	const sorted = [...values].sort((a, b) => a - b);
 	const middle = Math.floor(sorted.length / 2);
 	return sorted.length % 2 === 1 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
+}
+
+// The all-frames JS for a route: the median of its all-frames pass, or, when no iframe attached
+// (the pass was skipped, or ran for a budgeted route and saw none), the top-document number,
+// marked so the verifier can tell an all-frames budget is no longer measuring any frame.
+export function summarizeAllFramesRuns(topDocumentSummary, allFramesRuns) {
+	if (!allFramesRuns || !embedsFrames(allFramesRuns)) {
+		return { ...(allFramesRuns ? { fetchedAllFramesRuns: allFramesRuns } : {}), fetchedJsAllFrames: { ...topDocumentSummary.fetchedJs, source: "top-document" } };
+	}
+	const js = allFramesRuns.map((run) => run.jsBytes);
+	return {
+		fetchedAllFramesRuns: allFramesRuns,
+		fetchedJsAllFrames: { bytes: median(js), range: Math.max(...js) - Math.min(...js), source: "all-frames" },
+	};
+}
+
+// Whether any run of the iframe-blocked pass saw the page attach an embedded document.
+export function embedsFrames(runs) {
+	return runs.some((run) => run.framesAttached > 0 || run.blockedFrames > 0);
 }
 
 export function summarizeRuns(runs) {
@@ -140,7 +194,7 @@ export async function waitForAssetQuiet({ capMs, now = () => Date.now(), pollMs 
 	}
 }
 
-async function measureOnce(browser, origin, routePath) {
+async function measureOnce(browser, origin, routePath, { allFrames = false } = {}) {
 	const context = await browser.newContext({ viewport: VIEWPORT });
 	const page = await context.newPage();
 	// Only the top document's own fetches count. Embedded documents are blocked: how many lazy
@@ -151,15 +205,18 @@ async function measureOnce(browser, origin, routePath) {
 	// runtime, so which links sit in the viewport (layout, hence fonts) would decide part of the
 	// number. Blocking the payload request stops the speculative chunks; their count is kept as
 	// an observation (prefetchesBlocked), not part of the budget.
+	// With allFrames, embedded documents load and every frame's scripts and stylesheets count;
+	// their document requests hold the quiet window open too, so a frame's chunks are not cut off
+	// between its HTML and its first script.
+	const isSubframeNavigation = (request) => request.isNavigationRequest() && request.frame() !== page.mainFrame();
+	const counts = (frame) => countsFrame({ allFrames, isMainFrame: frame === page.mainFrame() });
 	let prefetchesBlocked = 0;
 	await page.route("**/*", (route) => {
 		const request = route.request();
-		if (request.isNavigationRequest() && request.frame() !== page.mainFrame()) return route.abort("blockedbyclient");
-		if (isRouterPrefetch(request.headers())) {
-			prefetchesBlocked += 1;
-			return route.abort("blockedbyclient");
-		}
-		return route.continue();
+		const isPrefetch = isRouterPrefetch(request.headers());
+		if (requestAction({ allFrames, isAsset: false, isPrefetch, isSubframeNavigation: isSubframeNavigation(request) }) !== "abort") return route.continue();
+		if (isPrefetch) prefetchesBlocked += 1;
+		return route.abort("blockedbyclient");
 	});
 	const tracker = createAssetActivityTracker();
 	const ids = new WeakMap();
@@ -167,13 +224,19 @@ async function measureOnce(browser, origin, routePath) {
 	const pending = [];
 	const seen = new Set();
 	let blockedFrames = 0;
+	let framesAttached = 0;
 	let jsBytes = 0;
 	let cssBytes = 0;
 	let scripts = 0;
 	let stylesheets = 0;
+	page.on("frameattached", () => {
+		framesAttached += 1;
+	});
 	page.on("request", (request) => {
-		if (request.isNavigationRequest() && request.frame() !== page.mainFrame()) blockedFrames += 1;
-		if (!classifyAsset(request.url(), origin)) return;
+		const subframe = isSubframeNavigation(request);
+		const action = requestAction({ allFrames, isAsset: Boolean(classifyAsset(request.url(), origin)), isPrefetch: false, isSubframeNavigation: subframe });
+		if (subframe && action === "abort") blockedFrames += 1;
+		if (action !== "track") return;
 		ids.set(request, (nextId += 1));
 		tracker.started(ids.get(request), request.url().replace(origin, ""));
 	});
@@ -181,21 +244,22 @@ async function measureOnce(browser, origin, routePath) {
 	const assets = [];
 	page.on("requestfailed", (request) => {
 		tracker.finished(ids.get(request));
-		if (classifyAsset(request.url(), origin) && request.frame() === page.mainFrame()) {
+		if (classifyAsset(request.url(), origin) && counts(request.frame())) {
 			assetFailures.push(`${request.url().replace(origin, "")} (${request.failure()?.errorText ?? "failed"})`);
 		}
 	});
 	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
 		const kind = classifyAsset(response.url(), origin);
-		if (!kind || seen.has(response.url()) || response.frame() !== page.mainFrame()) return;
+		if (!kind || seen.has(response.url()) || !counts(response.frame())) return;
 		seen.add(response.url());
 		if (response.status() >= 400) {
 			assetFailures.push(`${response.url().replace(origin, "")} (HTTP ${response.status()})`);
 			return;
 		}
+		const frame = response.frame() === page.mainFrame() ? "main" : "sub";
 		pending.push(response.body().then((body) => {
-			assets.push({ bytes: body.length, kind, path: response.url().replace(origin, "") });
+			assets.push({ bytes: body.length, frame, kind, path: response.url().replace(origin, "") });
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, (error) => {
 			assetFailures.push(`${response.url().replace(origin, "")} (body unreadable: ${error.message.split("\n")[0]})`);
@@ -208,10 +272,10 @@ async function measureOnce(browser, origin, routePath) {
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
 	assets.sort((left, right) => left.path.localeCompare(right.path));
-	return { assets, blockedFrames, cssBytes, jsBytes, prefetchesBlocked, scripts, stylesheets };
+	return { assets, blockedFrames, cssBytes, framesAttached, jsBytes, prefetchesBlocked, scripts, stylesheets };
 }
 
-export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
+export async function collectRouteTransfer({ allFramesRoutes = new Set(), baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
 	const { chromium } = require("@playwright/test");
 	// Always Playwright's own Chromium (the headless shell the installed @playwright/test pins),
 	// never a system Chrome or CHROME_PATH, so the number does not depend on what is installed.
@@ -226,7 +290,15 @@ export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, 
 			for (let run = 0; run < runs; run += 1) {
 				routeRuns.push(await measureOnce(browser, origin, routePath));
 			}
-			results[routeId] = { path: routePath, ...summarizeRuns(routeRuns) };
+			const summary = summarizeRuns(routeRuns);
+			let allFramesRuns = null;
+			if (needsAllFramesPass(routeId, routeRuns, allFramesRoutes)) {
+				allFramesRuns = [];
+				for (let run = 0; run < runs; run += 1) {
+					allFramesRuns.push(await measureOnce(browser, origin, routePath, { allFrames: true }));
+				}
+			}
+			results[routeId] = { path: routePath, ...summary, ...summarizeAllFramesRuns(summary, allFramesRuns) };
 		}
 	} finally {
 		await browser.close();
@@ -239,7 +311,15 @@ export function mergeIntoBaseline(baseline, transfer, browser = null) {
 		...baseline,
 		...(browser ? { source: { ...baseline.source, fetchedBrowser: browser } } : {}),
 		routes: baseline.routes.map((route) => (transfer[route.id]
-			? { ...route, fetchedCss: transfer[route.id].fetchedCss, fetchedJs: transfer[route.id].fetchedJs, fetchedPath: transfer[route.id].path, fetchedRuns: transfer[route.id].fetchedRuns }
+			? {
+				...route,
+				fetchedCss: transfer[route.id].fetchedCss,
+				fetchedJs: transfer[route.id].fetchedJs,
+				...(transfer[route.id].fetchedJsAllFrames ? { fetchedJsAllFrames: transfer[route.id].fetchedJsAllFrames } : {}),
+				...(transfer[route.id].fetchedAllFramesRuns ? { fetchedAllFramesRuns: transfer[route.id].fetchedAllFramesRuns } : {}),
+				fetchedPath: transfer[route.id].path,
+				fetchedRuns: transfer[route.id].fetchedRuns,
+			}
 			: route)),
 	};
 }
@@ -247,11 +327,16 @@ export function mergeIntoBaseline(baseline, transfer, browser = null) {
 async function main() {
 	const options = parseArgs(process.argv.slice(2));
 	const baseline = JSON.parse(readFileSync(options.input, "utf8"));
-	const { browser, results: transfer } = await collectRouteTransfer({ baseUrl: options.baseUrl, runs: options.runs });
-	console.log(`browser ${browser.version} at ${browser.executablePath}`);
+	const startedAt = Date.now();
+	const allFramesRoutes = routesWithAllFramesBudget(JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8")).routes);
+	const { browser, results: transfer } = await collectRouteTransfer({ allFramesRoutes, baseUrl: options.baseUrl, runs: options.runs });
+	console.log(`browser ${browser.version} at ${browser.executablePath}; collected in ${((Date.now() - startedAt) / 1000).toFixed(1)} s`);
 	writeFileSync(options.output, `${JSON.stringify(mergeIntoBaseline(baseline, transfer, browser), null, 2)}\n`);
 	for (const [routeId, result] of Object.entries(transfer)) {
-		console.log(`${routeId} ${result.path}: js ${result.fetchedJs.bytes} (range ${result.fetchedJs.range}), css ${result.fetchedCss.bytes} (range ${result.fetchedCss.range}) over ${result.fetchedRuns.length} runs`);
+		const allFrames = result.fetchedJsAllFrames.source === "all-frames"
+			? `, js all frames ${result.fetchedJsAllFrames.bytes} (range ${result.fetchedJsAllFrames.range})`
+			: result.fetchedAllFramesRuns ? ", all-frames pass saw no iframe" : "";
+		console.log(`${routeId} ${result.path}: js ${result.fetchedJs.bytes} (range ${result.fetchedJs.range}), css ${result.fetchedCss.bytes} (range ${result.fetchedCss.range})${allFrames} over ${result.fetchedRuns.length} runs`);
 	}
 }
 

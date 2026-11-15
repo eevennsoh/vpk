@@ -29,7 +29,7 @@ const {
 	margin: BUDGET_MARGIN,
 	raises: BUDGET_RAISES = [],
 } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
-const BUDGET_METRICS = new Set(["assetCount", "cssBytes", "firstLoadJsBytes", "routeJsBytes", "fetchedJsBytes", "fetchedCssBytes"]);
+const BUDGET_METRICS = new Set(["assetCount", "cssBytes", "firstLoadJsBytes", "routeJsBytes", "fetchedJsBytes", "fetchedCssBytes", "fetchedJsBytesAllFrames"]);
 
 // The highest budget a measured value supports: the measurement plus the file's margin (a share of
 // the value, or the metric's absolute floor when that is larger), rounded up to a whole thousand
@@ -140,7 +140,9 @@ function readJsonFile(inputPath, cwd = process.cwd()) {
 // Bytes the browser fetched on first load (scripts/collect-route-transfer.mjs). Only the Actions
 // job collects them, so a local baseline without them skips these budgets unless
 // --require-fetched is passed; the job passes it, so CI cannot skip them silently.
-const FETCHED_METRICS = new Set(["fetchedCssBytes", "fetchedJsBytes"]);
+// fetchedJsBytesAllFrames counts the scripts of every frame, iframes included; fetchedJsBytes
+// counts the top document's only.
+const FETCHED_METRICS = new Set(["fetchedCssBytes", "fetchedJsBytes", "fetchedJsBytesAllFrames"]);
 
 function getMetricValue(route, metricName) {
 	if (metricName === "fetchedJsBytes") {
@@ -148,6 +150,9 @@ function getMetricValue(route, metricName) {
 	}
 	if (metricName === "fetchedCssBytes") {
 		return route.fetchedCss?.bytes;
+	}
+	if (metricName === "fetchedJsBytesAllFrames") {
+		return route.fetchedJsAllFrames?.bytes;
 	}
 	if (metricName === "assetCount") {
 		return route.assetCount;
@@ -172,6 +177,7 @@ function formatMetricName(metricName) {
 	if (metricName === "routeJsBytes") return "route JS bytes";
 	if (metricName === "fetchedJsBytes") return "fetched JS bytes";
 	if (metricName === "fetchedCssBytes") return "fetched CSS bytes";
+	if (metricName === "fetchedJsBytesAllFrames") return "fetched JS bytes (all frames)";
 	return metricName;
 }
 
@@ -284,6 +290,25 @@ function evaluatePerfBaselineBudget(
 				type: "unbudgeted-route",
 			});
 		}
+		// A route whose page embeds iframes must budget what those frames load, or a page that
+		// embeds whole projects passes on its top document alone.
+		if (route.fetchedJsAllFrames?.source === "all-frames" && Object.hasOwn(routeBudgets, route.id) && !Object.hasOwn(routeBudgets[route.id], "fetchedJsBytesAllFrames")) {
+			failures.push({
+				routeId: route.id,
+				type: "unbudgeted-embedded-frames",
+				value: route.fetchedJsAllFrames.bytes,
+			});
+		}
+		// The reverse: a route that budgets all frames but whose all-frames pass saw no iframe
+		// attach would compare its top-document number with a ceiling sized for the iframes and
+		// pass, so a page whose iframes moved out of the measured window must not go quiet.
+		if (route.fetchedJsAllFrames && route.fetchedJsAllFrames.source !== "all-frames" && Object.hasOwn(routeBudgets[route.id] ?? {}, "fetchedJsBytesAllFrames")) {
+			failures.push({
+				routeId: route.id,
+				type: "stale-embedded-frames-budget",
+				value: route.fetchedJsAllFrames.bytes,
+			});
+		}
 	}
 
 	return [
@@ -319,9 +344,10 @@ function formatFetchedAssetsForFailures(baseline, failures) {
 	const sections = [];
 	for (const routeId of routeIds) {
 		const route = (baseline.routes ?? []).find((candidate) => candidate.id === routeId);
-		const assets = route?.fetchedRuns?.[0]?.assets;
+		const allFrames = failures.some((failure) => failure.routeId === routeId && failure.type === "over-budget" && failure.metricName === "fetchedJsBytesAllFrames");
+		const assets = (allFrames ? route?.fetchedAllFramesRuns : route?.fetchedRuns)?.[0]?.assets;
 		if (!assets) continue;
-		sections.push(`Fetched by ${routeId} (${route.fetchedPath}), first run:\n${assets.map((asset) => `  ${String(asset.bytes).padStart(9)}  ${asset.path}`).join("\n")}`);
+		sections.push(`Fetched by ${routeId} (${route.fetchedPath})${allFrames ? " in all frames" : ""}, first run:\n${assets.map((asset) => `  ${String(asset.bytes).padStart(9)}  ${asset.path}${asset.frame === "sub" ? "  (iframe)" : ""}`).join("\n")}`);
 	}
 	return sections.join("\n");
 }
@@ -382,6 +408,12 @@ function formatFailure(failure) {
 	}
 	if (failure.type === "unbudgeted-route") {
 		return `${failure.routeId}: route is measured by default but has no budget in scripts/perf-route-budgets.json.`;
+	}
+	if (failure.type === "unbudgeted-embedded-frames") {
+		return `${failure.routeId}: page embeds iframes that fetch ${failure.value} bytes of JS in all frames, but scripts/perf-route-budgets.json has no fetchedJsBytesAllFrames budget for it.`;
+	}
+	if (failure.type === "stale-embedded-frames-budget") {
+		return `${failure.routeId}: has a fetchedJsBytesAllFrames budget, but no iframe attached in the all-frames pass (top document only, ${failure.value} bytes of JS). Fix the collection, or remove the budget if the page no longer embeds iframes.`;
 	}
 	if (failure.type === "unmeasured-route") {
 		return `${failure.routeId}: route status is ${failure.status}; expected measured.`;
