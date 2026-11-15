@@ -13,7 +13,7 @@ import {
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
-import { SearchIcon } from "@/components/ui/vpk-icons";
+
 import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor";
 import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
 import { cn } from "@/lib/utils";
@@ -158,7 +158,7 @@ export function ArtifactLabelsField({
 				>
 					<RichTextCommandMenuSearchField
 						autoFocus
-						icon={<SearchIcon className="size-4 text-icon-subtle" />}
+						iconContainerSize={16}
 						label="Search labels"
 						onClear={() => setQuery("")}
 						onEscape={() => setOpen(false)}

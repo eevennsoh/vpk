@@ -565,7 +565,7 @@
   },
   "components/blocks/artifact-pane/artifact-pane.source.test.js": {
     "no-restricted-syntax": {
-      "count": 198
+      "count": 196
     }
   },
   "components/blocks/artifact-panel.test.js": {
