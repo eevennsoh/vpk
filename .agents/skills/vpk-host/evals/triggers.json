@@ -1,0 +1,10 @@
+[
+	{"query": "host this static export on Statlas", "should_trigger": true, "note": "Statlas hosting."},
+	{"query": "vpk-host the extracted route in build/standalone-projects", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "upload my prototype's HTML file to Atlassian's static CDN", "should_trigger": true, "note": "Static CDN upload."},
+	{"query": "update the Statlas copy of my demo with today's build", "should_trigger": true, "note": "Update hosted site."},
+	{"query": "my project needs the Express backend, put it somewhere coworkers can use it", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "publish this as an Atlassian Artifact", "should_trigger": false, "note": "Sibling: vpk-artifact."},
+	{"query": "share my running localhost with a customer", "should_trigger": false, "note": "Sibling: vpk-tunnel."},
+	{"query": "which host does the dev server bind to", "should_trigger": false, "note": "Different meaning of host."}
+]

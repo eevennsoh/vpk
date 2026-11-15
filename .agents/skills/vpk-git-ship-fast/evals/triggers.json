@@ -1,0 +1,10 @@
+[
+	{"query": "commit and push to main", "should_trigger": true, "note": "Literal phrase."},
+	{"query": "push straight to main, no PR", "should_trigger": true, "note": "No-PR push."},
+	{"query": "vpk-git-ship-fast", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "land this directly, skip the pull request", "should_trigger": true, "note": "Direct landing."},
+	{"query": "open a pull request and merge it once checks pass", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
+	{"query": "write a commit message for the staged diff but don't push", "should_trigger": false, "note": "Commit only."},
+	{"query": "remove worktrees whose branches already merged", "should_trigger": false, "note": "Sibling: vpk-git-clean."},
+	{"query": "how do I undo my last commit", "should_trigger": false, "note": "Git question."}
+]

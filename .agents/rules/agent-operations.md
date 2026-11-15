@@ -21,6 +21,8 @@ paths:
 
 Skill catalog: `.agents/skills/INDEX.md` (generated — regenerate with `node scripts/validate-skills.js --update-index`).
 
+`validate-skills.js` caps a `SKILL.md` body at 300 lines; move detail into `references/` and link it with "read X when Y". Trigger eval kits live in `evals/triggers.json` as the `{query, should_trigger}` rows skill-creator's `run_eval` reads (run recipe: `.agents/skills/vpk-html/evals/README.md`); the validator checks their format.
+
 ## File Edits
 
 - Edit files at a literal path (absolute in a worktree) with the edit or patch tool. Do not use `sed -i` or globbed or variable paths for in-place edits: they skip review, and a path outside the worktree stalls on approval. `AGENTS.md` (Code Quality) carries the always-loaded copy of this rule; keep the two in step.

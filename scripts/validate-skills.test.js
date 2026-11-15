@@ -18,6 +18,7 @@ const {
 	parseArgs,
 	parseFrontmatter,
 	validateSkills,
+	validateTriggerEvals,
 	writeSkillIndex,
 } = require("./validate-skills");
 
@@ -320,6 +321,34 @@ test("createSkillValidationReport caps SKILL.md bodies at the line limit", () =>
 test("the repo's own skills stay under the SKILL.md body line cap", () => {
 	const report = createSkillValidationReport({ checkIndex: false });
 	assert.deepEqual(report.failures.filter((failure) => failure.type === "skill-body-too-long"), []);
+});
+
+test("validateTriggerEvals accepts skill-creator {query, should_trigger} rows", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-trigger-evals-"));
+	try {
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
+		assert.deepEqual(validateTriggerEvals(skillDir), [], "a skill without a kit passes");
+		mkdirSync(path.join(skillDir, "evals"));
+		const kitPath = path.join(skillDir, "evals", "triggers.json");
+		writeFileSync(kitPath, JSON.stringify([
+			{ query: "run the example skill", should_trigger: true, note: "extra keys are allowed" },
+			{ query: "do something unrelated", should_trigger: false },
+		]));
+		assert.deepEqual(validateTriggerEvals(skillDir), []);
+
+		const typesFor = (rows) => {
+			writeFileSync(kitPath, typeof rows === "string" ? rows : JSON.stringify(rows));
+			return validateTriggerEvals(skillDir).map((failure) => failure.message);
+		};
+		assert.match(typesFor("{").join(), /not valid JSON/u);
+		assert.match(typesFor([]).join(), /non-empty JSON array/u);
+		assert.match(typesFor([{ prompt: "x", should_trigger: true }, { query: "y", should_trigger: false }]).join(), /row 0 needs a non-empty string query/u);
+		assert.match(typesFor([{ query: "x", should_trigger: "yes" }, { query: "y", should_trigger: false }]).join(), /row 0 needs a boolean should_trigger/u);
+		assert.match(typesFor([{ query: "x", should_trigger: true }, { query: "x", should_trigger: false }]).join(), /row 1 repeats an earlier query/u);
+		assert.match(typesFor([{ query: "x", should_trigger: true }, { query: "y", should_trigger: true }]).join(), /at least one should_trigger true row and one false row/u);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
 });
 
 test("createSkillValidationReport catches names that omit the vpk- prefix", () => {

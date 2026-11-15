@@ -1,0 +1,12 @@
+[
+	{"query": "/vpk-remote fix the sidebar flicker on the projects page", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "send this to a worker on terra: rename useFoo to useBar across components/", "should_trigger": true, "note": "Worker delegation with a model as a setting."},
+	{"query": "I'm out of credits, can you move this chat to sol and keep going", "should_trigger": true, "note": "Conversation handoff."},
+	{"query": "get a second opinion from opus via the gateway on my plan for the chat reducer split", "should_trigger": true, "note": "Advisor consult through the gateway."},
+	{"query": "council review PR 2290 before I merge it", "should_trigger": true, "note": "Council mode."},
+	{"query": "route this through proximity: add a loading skeleton to the agents directory", "should_trigger": true, "note": "Gateway routing phrase."},
+	{"query": "the luna theme toggle is broken on the docs page, can you fix it", "should_trigger": false, "note": "Model name used as task text."},
+	{"query": "what does backend/lib/rovo-gateway.js do when the session token expires", "should_trigger": false, "note": "Gateway code question, not delegation."},
+	{"query": "ship this branch and merge it", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
+	{"query": "look at this stack trace: Error in .agents/skills/vpk-remote/SKILL.md line 40", "should_trigger": false, "note": "Skill name only inside pasted text."}
+]

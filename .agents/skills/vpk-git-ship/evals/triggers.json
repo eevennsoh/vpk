@@ -1,0 +1,11 @@
+[
+	{"query": "ship this", "should_trigger": true, "note": "Literal phrase."},
+	{"query": "open a PR for these changes, wait for checks, and merge it", "should_trigger": true, "note": "Full PR flow."},
+	{"query": "land this work end-to-end and sync main", "should_trigger": true, "note": "End-to-end landing."},
+	{"query": "merge these PRs back to main: 2301, 2302", "should_trigger": true, "note": "Merge PRs."},
+	{"query": "/vpk-git-ship", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "commit and push straight to main, no PR", "should_trigger": false, "note": "Sibling: vpk-git-ship-fast."},
+	{"query": "clean up my merged worktrees", "should_trigger": false, "note": "Sibling: vpk-git-clean."},
+	{"query": "deploy this to Micros", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "what does git rebase --onto do", "should_trigger": false, "note": "Git question, no shipping."}
+]

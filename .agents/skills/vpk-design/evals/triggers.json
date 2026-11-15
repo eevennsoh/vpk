@@ -1,0 +1,11 @@
+[
+	{"query": "implement this design https://www.figma.com/design/abc123/Rovo-Chat?node-id=12-345", "should_trigger": true, "note": "Figma URL to code."},
+	{"query": "here's a screenshot of the new empty state mockup, make the projects page match it pixel for pixel", "should_trigger": true, "note": "Screenshot to code."},
+	{"query": "which icons in this Figma frame are we missing locally? export the missing ones into public/illustration", "should_trigger": true, "note": "Figma asset inventory and export."},
+	{"query": "/vpk-design https://figma.com/design/xyz/Studio?node-id=4-2", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "the composer padding doesn't match the figma spec, the node is figma.com/design/q1w2/Composer?node-id=8-9", "should_trigger": true, "note": "Figma parity fix."},
+	{"query": "harvest the ADS Lozenge component into components/ui with parity docs", "should_trigger": false, "note": "Sibling: vpk-component."},
+	{"query": "make the sidebar collapse animation feel smoother", "should_trigger": false, "note": "Motion change without a design source."},
+	{"query": "what is the ADS token for subtle text color", "should_trigger": false, "note": "Token lookup, no Figma task."},
+	{"query": "split components/projects/studio/studio-shell.tsx into smaller files", "should_trigger": false, "note": "Sibling: vpk-tidy."}
+]

@@ -1,0 +1,11 @@
+[
+	{"query": "harvest the ADS Lozenge component into VPK with demos and docs metadata", "should_trigger": true, "note": "ADS harvest."},
+	{"query": "bring our Button to parity with shadcn's button", "should_trigger": true, "note": "shadcn parity."},
+	{"query": "adopt ai-elements for the chat message list", "should_trigger": true, "note": "ai-elements adoption."},
+	{"query": "port ElevenLabs UI's voice orb into ui-custom", "should_trigger": true, "note": "ElevenLabs port."},
+	{"query": "/vpk-component https://atlassian.design/components/tag", "should_trigger": true, "note": "Literal invocation with a source link."},
+	{"query": "the tooltip on the share button is cut off, fix it", "should_trigger": false, "note": "Ordinary component bug fix."},
+	{"query": "implement this Figma frame figma.com/design/abc/File?node-id=1-2", "should_trigger": false, "note": "Sibling: vpk-design."},
+	{"query": "make the card hover lift animation snappier", "should_trigger": false, "note": "Motion change on an existing component."},
+	{"query": "split this 800-line component into hooks and subcomponents", "should_trigger": false, "note": "Sibling: vpk-tidy."}
+]

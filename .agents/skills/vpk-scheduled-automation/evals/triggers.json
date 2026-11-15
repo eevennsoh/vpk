@@ -1,0 +1,10 @@
+[
+	{"query": "Codex automation: run vpk-scheduled-automation for the weekly dependency update job", "should_trigger": true, "note": "Automation invocation."},
+	{"query": "vpk-scheduled-automation: investigate one flaky test candidate and open a PR", "should_trigger": true, "note": "Scheduled test job."},
+	{"query": "this scheduled job should pick one deprecation candidate, fix it, and open or update a PR per vpk-scheduled-automation", "should_trigger": true, "note": "Deprecation job."},
+	{"query": "nightly automation using vpk-scheduled-automation for the performance candidate list", "should_trigger": true, "note": "Performance job."},
+	{"query": "summarise what merged into main this week", "should_trigger": false, "note": "Read-only summary."},
+	{"query": "clean .next caches on a schedule", "should_trigger": false, "note": "Local cleanup job; sibling vpk-system-clean."},
+	{"query": "schedule a meeting with the design team", "should_trigger": false, "note": "Calendar scheduling."},
+	{"query": "set up a cron to run pnpm run check every hour", "should_trigger": false, "note": "Generic cron."}
+]

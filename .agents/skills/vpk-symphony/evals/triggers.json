@@ -1,0 +1,10 @@
+[
+	{"query": "vpk-symphony: the projects grid overflows on narrow screens", "should_trigger": true, "note": "Literal invocation for a task-like request."},
+	{"query": "diagnose why the Symphony run for VPK-123 is stuck", "should_trigger": true, "note": "Stuck run debugging."},
+	{"query": "update WORKFLOW.md so Symphony captures Playwright evidence before landing", "should_trigger": true, "note": "Symphony workflow edit."},
+	{"query": "land the Symphony PR for the Linear issue VPK-88", "should_trigger": true, "note": "Symphony landing."},
+	{"query": "create a Jira ticket for this bug", "should_trigger": false, "note": "Jira, not Symphony/Linear flow."},
+	{"query": "ship this branch through a PR", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
+	{"query": "take a screenshot of /docs to prove my change", "should_trigger": false, "note": "Sibling: vpk-verify."},
+	{"query": "play some symphony music while I work", "should_trigger": false, "note": "Unrelated meaning."}
+]

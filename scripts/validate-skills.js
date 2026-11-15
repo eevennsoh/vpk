@@ -15,6 +15,9 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 // sets 500 lines as the outer limit; VPK holds bodies to 300 and moves detail
 // into references/ files the body links with "read X when Y".
 const MAX_BODY_LINES = 300;
+// Trigger eval kits use the {query, should_trigger} rows that skill-creator's
+// run_eval reads; extra keys such as note are allowed.
+const TRIGGER_EVALS_PATH = "evals/triggers.json";
 const ALLOWED_SKILLS_ROOT_FILES = new Set(["INDEX.md"]);
 
 function toPosixPath(filePath) {
@@ -355,6 +358,48 @@ function getFrontmatterTextValue(parsed, key) {
 	return lines.join(" ").trim();
 }
 
+function validateTriggerEvals(skillDir) {
+	const evalsPath = path.join(skillDir, TRIGGER_EVALS_PATH);
+	if (!fs.existsSync(evalsPath)) {
+		return [];
+	}
+	const fail = (message) => [{ message: `${TRIGGER_EVALS_PATH}: ${message}`, path: evalsPath, type: "skill-trigger-evals-invalid" }];
+	let rows;
+	try {
+		rows = JSON.parse(fs.readFileSync(evalsPath, "utf8"));
+	} catch (error) {
+		return fail(`not valid JSON (${error instanceof Error ? error.message : String(error)}).`);
+	}
+	if (!Array.isArray(rows) || rows.length === 0) {
+		return fail("must be a non-empty JSON array of {query, should_trigger} rows.");
+	}
+	const failures = [];
+	const seen = new Set();
+	rows.forEach((row, index) => {
+		if (!row || typeof row !== "object" || Array.isArray(row)) {
+			failures.push(...fail(`row ${index} must be an object.`));
+			return;
+		}
+		if (typeof row.query !== "string" || !row.query.trim()) {
+			failures.push(...fail(`row ${index} needs a non-empty string query.`));
+		} else if (seen.has(row.query)) {
+			failures.push(...fail(`row ${index} repeats an earlier query.`));
+		} else {
+			seen.add(row.query);
+		}
+		if (typeof row.should_trigger !== "boolean") {
+			failures.push(...fail(`row ${index} needs a boolean should_trigger.`));
+		}
+	});
+	if (failures.length === 0) {
+		const positives = rows.filter((row) => row.should_trigger).length;
+		if (positives === 0 || positives === rows.length) {
+			failures.push(...fail("needs at least one should_trigger true row and one false row."));
+		}
+	}
+	return failures;
+}
+
 function countBodyLines(body) {
 	const trimmed = String(body ?? "").replace(/\s+$/u, "");
 	return trimmed ? trimmed.split("\n").length : 0;
@@ -390,6 +435,7 @@ function validateSkillDirectory(skillDir) {
 		});
 	}
 	failures.push(...validateMarkdownLinks({ content, skillDir, skillPath }));
+	failures.push(...validateTriggerEvals(skillDir));
 
 	const frontmatterName = getFrontmatterScalar(parsed, "name");
 	const description = getFrontmatterTextValue(parsed, "description");
@@ -661,6 +707,7 @@ if (require.main === module) {
 module.exports = {
 	DEFAULT_TARGET,
 	MAX_BODY_LINES,
+	TRIGGER_EVALS_PATH,
 	SKILL_ENTRYPOINT,
 	SKILL_INDEX_PATH,
 	buildSkillIndexText,
@@ -677,5 +724,6 @@ module.exports = {
 	parseFrontmatter,
 	validateSkillDirectory,
 	validateSkills,
+	validateTriggerEvals,
 	writeSkillIndex,
 };

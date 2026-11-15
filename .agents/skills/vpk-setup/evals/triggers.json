@@ -1,0 +1,11 @@
+[
+	{"query": "first time setup for this repo, what do I need to run", "should_trigger": true, "note": "First-time setup."},
+	{"query": "I just cloned VPK, help me bootstrap it", "should_trigger": true, "note": "Bootstrap."},
+	{"query": "my ASAP key is not working, chat says credentials not found", "should_trigger": true, "note": "Credential error."},
+	{"query": "the env is not configured, pnpm run rovo exits immediately complaining about ROVO_SESSION_TOKEN", "should_trigger": true, "note": "Env repair."},
+	{"query": "set up VPK on my new laptop", "should_trigger": true, "note": "Setup on a new machine."},
+	{"query": "set up a cron job that cleans .next caches every night", "should_trigger": false, "note": "Sibling: vpk-system-clean."},
+	{"query": "next-server is eating 400% CPU", "should_trigger": false, "note": "Sibling: vpk-system-clean."},
+	{"query": "give my local prototype a nicer https demo hostname", "should_trigger": false, "note": "Sibling: vpk-domain."},
+	{"query": "how do I set up a new React context in this codebase", "should_trigger": false, "note": "Setup used in a code sense."}
+]
