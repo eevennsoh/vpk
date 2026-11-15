@@ -7,9 +7,8 @@ import PersonIcon from "@atlaskit/icon/core/person";
 import type { JiraKanbanAssigneeData, JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-parent-field";
 import { ArtifactLabelsField } from "@/components/blocks/artifact-pane/artifact-labels-field";
-import { ButterPriorityIcon } from "@/components/blocks/jira-issue/priority";
 import { getButterSubtaskProgress } from "@/components/blocks/jira-issue/project-butter-model";
-import { PriorityRowField, type PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
+import { PriorityRowField, PriorityValueIcon, type PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
 import { MetadataSearchPicker } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
 import { METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "@/components/blocks/jira-work-item/team-eu26/components/metadata-picker-styles";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { JiraInlineCreateDraft } from "../types";
+import { JiraInlineCreateSubtasks } from "./jira-inline-create-subtasks";
 
 type Metadata = Omit<JiraInlineCreateDraft, "summary" | "issueType">;
 
@@ -28,26 +28,6 @@ const WORK_ITEM_PRIORITY: Readonly<Record<JiraKanbanCardData["priority"], Priori
 
 function Chip({ label, children, ...props }: Readonly<React.ComponentProps<typeof Button> & { label: string }>) {
 	return <Button {...props} aria-label={label} className={chipClass} size="compact" type="button" variant="outline">{children}</Button>;
-}
-
-function SearchChoices({ label, options, selected, multiple, onSelect }: Readonly<{
-	label: string;
-	options: readonly { id: string; label: string }[];
-	selected: readonly string[];
-	multiple?: boolean;
-	onSelect: (id: string) => void;
-}>) {
-	const [query, setQuery] = useState("");
-	const visible = options.filter((option) => option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
-	return <>
-		<input aria-label={`Search ${label.toLowerCase()}`} className="h-8 w-full rounded-md border border-border bg-surface px-2 text-sm" onChange={(event) => setQuery(event.target.value)} value={query} />
-		<div aria-label={label} className="max-h-48 overflow-auto" role="group">
-			{visible.length ? visible.map((option) => <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-bg-neutral-subtle-hovered" key={option.id}>
-				<input checked={selected.includes(option.id)} onChange={() => onSelect(option.id)} type={multiple ? "checkbox" : "radio"} name={multiple ? undefined : label} />
-				<span className="min-w-0 truncate">{option.label}</span>
-			</label>) : <p className="px-2 py-1 text-text-subtlest">No {label.toLowerCase()} match</p>}
-		</div>
-	</>;
 }
 
 export function JiraInlineCreateFields({ assignees: availableAssignees = [], columns, value, onChange, saveAction }: Readonly<{
@@ -78,7 +58,15 @@ export function JiraInlineCreateFields({ assignees: availableAssignees = [], col
 		ancestors.add(ancestor);
 		ancestor = cards.find((card) => card.code === ancestor)?.parentIssueKey;
 	}
-	const subtaskOptions = cards.filter((card) => (card.issueType === "subtask" || card.parentIssueKey) && !ancestors.has(card.code)).map((card) => ({ id: card.code, label: `${card.code} ${card.title}` }));
+	const subtaskOptions = columns.flatMap((column) => column.cards.filter((card) => (card.issueType === "subtask" || card.parentIssueKey) && !ancestors.has(card.code)).map((card) => ({
+		issueKey: card.code,
+		summary: card.title,
+		status: card.status ?? column.title,
+		priority: card.priority,
+		assigneeAvatarSrc: card.avatarSrc ?? card.assignee?.avatarSrc,
+		assigneeAvatarLabel: card.assignee?.name,
+		assigneeUnassignedKind: card.avatarUnassignedKind,
+	})));
 	const assignees = [...new Map([...availableAssignees, ...cards.flatMap((card) => card.assignee ? [card.assignee] : [])].map((assignee) => [assignee.id, assignee])).values()];
 	const selectedTags = value.tags ?? [];
 	const tags = [...new Set([...cards.flatMap((card) => card.tags.map((tag) => tag.text)), ...selectedTags])];
@@ -109,15 +97,17 @@ export function JiraInlineCreateFields({ assignees: availableAssignees = [], col
 					trigger={<Chip label="Add labels"><Icon render={<AddIcon label="" size="small" />} /> Labels</Chip>}
 					value={selectedTags}
 				/>
-				<Popover>
-					<PopoverTrigger render={<Chip label={subtaskProgress.total ? `${subtaskProgress.completed} of ${subtaskProgress.total} subtasks complete` : "Add subtasks"}>{subtaskProgress.total ? <><ProgressCircle aria-hidden animated={false} segmented segments={subtaskProgress.segments} size="xs" /> {subtaskProgress.completed}/{subtaskProgress.total}</> : <><Icon render={<AddIcon label="" size="small" />} /> Subtasks</>}</Chip>} />
-					<PopoverContent align="start" aria-label="Choose subtasks"><SearchChoices label="Subtasks" multiple options={subtaskOptions} selected={selectedSubtasks} onSelect={(id) => onChange({ subtaskKeys: toggle(selectedSubtasks, id) })} /></PopoverContent>
-				</Popover>
+				<JiraInlineCreateSubtasks
+					options={subtaskOptions}
+					selected={selectedSubtasks}
+					onSelect={(id) => onChange({ subtaskKeys: toggle(selectedSubtasks, id) })}
+					trigger={<Chip label={subtaskProgress.total ? `${subtaskProgress.completed} of ${subtaskProgress.total} subtasks complete` : "Add subtasks"}>{subtaskProgress.total ? <><ProgressCircle aria-hidden animated={false} segmented segments={subtaskProgress.segments} size="xs" /> {subtaskProgress.completed}/{subtaskProgress.total}</> : <><Icon render={<AddIcon label="" size="small" />} /> Subtasks</>}</Chip>}
+				/>
 			</div>
 		</div>
 		<div className="flex items-center gap-1 pt-1">
 			<Popover open={dueOpen} onOpenChange={setDueOpen}><PopoverTrigger render={<Button aria-label={value.dueDate ? `Due date: ${value.dueDate}` : "Set due date"} size={dueLabel ? "compact" : "icon-compact"} type="button" variant="ghost"><Icon render={<CalendarIcon label="" size="small" />} />{dueLabel}</Button>} /><PopoverContent align="start" aria-label="Due date" className="w-auto p-2"><Calendar mode="single" defaultMonth={selectedDate} selected={selectedDate} onSelect={(date) => { onChange({ dueDate: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : undefined }); setDueOpen(false); }} />{value.dueDate ? <Button size="compact" type="button" variant="ghost" onClick={() => { onChange({ dueDate: undefined }); setDueOpen(false); }}>Clear date</Button> : null}</PopoverContent></Popover>
-			<PriorityRowField modal={false} value={WORK_ITEM_PRIORITY[priority]} onChange={(next) => onChange({ priority: BOARD_PRIORITY[next] })} renderValue={() => <ButterPriorityIcon priority={priority} />} priorityTrigger={<Button aria-label={`Priority: ${WORK_ITEM_PRIORITY[priority]}`} size="icon-compact" type="button" variant="ghost" />} />
+			<PriorityRowField modal={false} previewTrigger value={WORK_ITEM_PRIORITY[priority]} onChange={(next) => onChange({ priority: BOARD_PRIORITY[next] })} renderValue={(previewPriority, { open }) => <PriorityValueIcon colored={open} value={previewPriority} />} priorityTrigger={<Button aria-label={`Priority: ${WORK_ITEM_PRIORITY[priority]}`} size="icon-compact" type="button" variant="ghost" />} />
 			<Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
 				<PopoverTrigger render={<Button aria-label={value.assignee ? `Assignee: ${value.assignee.name}` : "Set assignee"} size="icon-compact" type="button" variant="ghost">{value.assignee ? <Avatar label={value.assignee.name} size="xs">{value.assignee.avatarSrc ? <AvatarImage alt="" src={value.assignee.avatarSrc} /> : null}<AvatarFallback>{value.assignee.name.slice(0, 1)}</AvatarFallback></Avatar> : <Icon render={<PersonIcon label="" size="small" />} />}</Button>} />
 				<PopoverContent align="start" aria-label="Choose assignee" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }}>

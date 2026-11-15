@@ -413,15 +413,44 @@ supplied reference copy and layout when reproducing a specific product state.
 
 - **Menu search fields:** Use `DropdownMenuSearchField` from
   `components/ui/dropdown-menu.tsx` for search inside menus, including agent
-  selectors and editor palettes. Keep this popup-search pattern distinct from a
-  combobox whose input is the trigger. Why: menu searches share one consistent
-  appearance across components.
+  selectors and editor palettes. Preserve the shared 32px search row, 14px
+  input text, the 16px `SearchIcon` from `components/ui/vpk-icons.tsx`, and 6px
+  top and side insets from the popup edge. Never use a compact 12px search glyph
+  or count the popup's padding twice; using the shared field alone does not
+  guarantee the same rendered geometry. Match the search icon column to the rows with
+  `iconContainerSize`: use `16` for a standalone 16px search icon beside 16px
+  row icons or icon tiles (Parent, Labels and Subtasks pickers); use `24` (the
+  default) for a 16px search icon centered in a 24px container beside 24px avatars
+  or tiles (agent selectors and editor palettes). The search glyph stays 16px in
+  both layouts; only its container and alignment column change. Keep this popup
+  search pattern distinct from a combobox whose input is the trigger. Why: matching the rows' leading
+  visual size keeps search icons and text aligned with the row icons and labels.
+  `tests/projects/butter-v1-create-card.spec.ts` guards the row-icon and label
+  alignment. The inline-create work item type and priority menus keep
+  `DropdownMenuContent`'s original default width (`min-w-56`, 224px) and have no
+  search field.
   <!-- 2026-11-14: "the way i want my search box to appear consistently throughout EVERY component is the way we do it in agent selector" -->
+  <!-- 2026-11-15: "why would you use a smaller search input design?? it should be the same as Labels or Parent" -->
+  <!-- 2026-11-15: "We use 16x16 search icon when the individual rows are 16x16 icon or icon tile"; "We use 24x24 search icon container when the individual rows are 24x24 avatars or icon tile" -->
+  <!-- 2026-11-15: "keep the same width like what we had before"; "we also dont need search input" (inline-create work item type menu); "the same should apply" (PriorityRowField menu). -->
 - **Searchable dropdowns:** Use `DropdownMenuContent` and `DropdownMenuItem`
   with their shared container padding and row styling; do not substitute command
-  list rows or override the dropdown's default inset. Why: searchable and
-  ordinary dropdowns should look like the same component.
+  list rows or override the dropdown's default inset. Center leading row icons,
+  including work item status glyphs, in the matching 16px or 24px alignment
+  column on the same vertical centerline as the search icon. Work item type,
+  Priority, Parent and Subtasks pickers use bare 12px (`size-3`) glyphs centered
+  in 16px (`size-4`) containers, without icon
+  tiles. Keep alignment gutters outside the icon container; the column is layout
+  space, not the visual's size. Use a 12px gap (`gap-3`) between that
+  slot and the row text so keys and titles start at the search text's left edge,
+  matching `ArtifactParentField`. Why: the search header and rows must share
+  the same icon and text columns, as in the Parent menu. Searchable and ordinary
+  dropdowns should look like the same component.
   <!-- 2026-11-14: "it isn't even following the dropdown menu existing rows pattern"; "even the padding and all is not the same" -->
+  <!-- 2026-11-15: "help me also align the work item status to the search icon, you can see the parent menu can align nicely" -->
+  <!-- 2026-11-15: "remove the 24x24 sizing of the icon tile but instead use 16x16"; "for the epic/parent icon tile, we can just have the icon" -->
+  <!-- 2026-11-15: "actually icon size should be 12x12 not 16x16" supersedes the earlier 16px work item glyph size; search stays 16px. -->
+  <!-- 2026-11-15: "actually we need to have it with the 16x16 container, otherwise it doesn't align nicely with the search icon" supersedes the earlier 12px container request. -->
 - **Scrollable searchable dropdowns:** Keep the search field fixed above the
   scrollable rows and use the shared scroll mask with a 3rem top fade when the
   list has scrolled. Extend the scroll area to the menu’s bottom edge or fixed
@@ -439,6 +468,15 @@ supplied reference copy and layout when reproducing a specific product state.
 
 ### Interaction states
 
+- **Inline-create selector previews:** Priority and work item type triggers stay
+  neutral while closed. While open, pointer hover and keyboard navigation preview
+  both the candidate's icon and its semantic color, matching its menu row. Only
+  selection commits the value; dismissing restores the committed icon and neutral
+  color. Why: work item type previews must reveal color just like priority previews;
+  changing only the glyph leaves the preview incomplete. Reuse the same visual
+  renderer for the trigger and its rows. The inline-create browser regressions in
+  `tests/projects/butter-v1-create-card.spec.ts` guard both selectors.
+  <!-- 2026-11-15: "the changes we made for the priority change where the value visibly change as you scroll through the list"; "we should do the same ... but we need to color the work item type. right now it doesn't reveal the color." -->
 - Cover applicable hover, focus, pressed, selected, disabled, loading, error,
   and empty states. Persistent selection differs from a transient press.
 - Loading feedback should preserve control geometry, hit targets, and accessible

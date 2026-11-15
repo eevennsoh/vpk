@@ -116,11 +116,11 @@ export function JiraListAvatar({ person }: Readonly<{ person: JiraListPerson }>)
 	);
 }
 
-export function IssueTypeGlyph({ issueType, large = false }: Readonly<{ issueType: JiraListIssueType; large?: boolean }>) {
+export function IssueTypeGlyph({ issueType, large = false, appearance = "colored" }: Readonly<{ issueType: JiraListIssueType; large?: boolean; appearance?: "colored" | "subtle" }>) {
 	const IssueTypeIcon = ISSUE_TYPE_ICONS[issueType];
 	return (
 		<Icon
-			className={cn(ISSUE_TYPE_ICON_CLASS_NAMES[issueType], large && "[&_svg]:size-4!")}
+			className={cn(appearance === "subtle" ? "text-icon-subtle [&_svg]:text-icon-subtle!" : ISSUE_TYPE_ICON_CLASS_NAMES[issueType], large && "[&_svg]:size-4!")}
 			label={issueType}
 			render={<IssueTypeIcon color="currentColor" label="" size={large ? "medium" : "small"} />}
 		/>
