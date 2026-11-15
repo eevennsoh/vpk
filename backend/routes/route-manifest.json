@@ -735,6 +735,12 @@
 		},
 		{
 			"method": "GET",
+			"path": "/api/whoami",
+			"runtimeAdmin": false,
+			"source": "backend/routes/status.js"
+		},
+		{
+			"method": "GET",
 			"path": "/healthcheck",
 			"runtimeAdmin": false,
 			"source": "backend/routes/status.js"
