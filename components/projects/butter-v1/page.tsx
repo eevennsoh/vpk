@@ -994,6 +994,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						showAgentSessionOverflow={false}
 						showBoardContent={showBoardContent}
 						moreControlsPlacement="end"
+						headerControlsLayout="trailing-icons"
 						showMoreControls
 						showCustomizeControl
 						simpleViews={false}

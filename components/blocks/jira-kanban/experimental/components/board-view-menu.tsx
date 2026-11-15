@@ -152,16 +152,16 @@ export function BoardNeedsInputButton({
 	);
 }
 
-export function BoardGroupByMenu() {
+export function BoardGroupByMenu({ compact = false }: Readonly<{ compact?: boolean }>) {
 	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				render={<Button aria-label="Group" variant="outline" />}
+				render={<Button aria-label="Group" size={compact ? "icon" : undefined} variant="outline" />}
 			>
-				<Icon data-icon="inline-start" render={<GroupIcon label="" />} />
-				Group
+				<Icon aria-hidden data-icon={compact ? undefined : "inline-start"} render={<GroupIcon label="" />} />
+				{compact ? null : "Group"}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="min-w-56">
 				<DropdownMenuRadioGroup

@@ -589,7 +589,7 @@ test("Insights owns the unread activity pill instead of a separate Timeline butt
 test("Experimental board header keeps Filter clickable and badges new timeline activity", () => {
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /filterControl\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /endSlot\?: ReactNode;/u);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{filterControl\}/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{trailingIcons \? null : filterControl\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{endSlot \? endSlot : null\}/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,

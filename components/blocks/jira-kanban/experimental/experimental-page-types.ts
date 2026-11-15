@@ -292,6 +292,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ref?: Ref<ExperimentalJiraKanbanPageHandle>;
 	timelineLastViewedAt?: string | null;
 	viewTabs?: ReactNode;
+	headerControlsLayout?: "inline" | "trailing-icons";
 	/**
 	 * Where the overflow ("…") control sits in the board header. The route
 	 * owns the choice so it can park it on the far right without this block

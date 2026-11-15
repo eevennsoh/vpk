@@ -257,6 +257,7 @@ function ExperimentalJiraKanbanPageContent({
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
+	headerControlsLayout,
 	moreControlsPlacement,
 	showMoreControls,
 	showCustomizeControl,
@@ -866,6 +867,7 @@ function ExperimentalJiraKanbanPageContent({
 				agentFilterId={agentFilterId}
 				onAgentFilterIdChange={handleAgentFilterChange}
 				needsInputCount={needsInputCount}
+				headerControlsLayout={headerControlsLayout}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
@@ -883,7 +885,7 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
-						compact={compactHeader}
+						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}
 						surfaceLabel={activeView}
 					/>
