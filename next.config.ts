@@ -61,9 +61,8 @@ const nextConfig: NextConfig = {
 	...(process.env.NEXT_OUTPUT === "export" && {
 		output: "export",
 	}),
-	// Button and Spinner are imported by nearly every client entry. Left to the default split,
-	// they land in whichever shared chunk happens to group them, and moving the markdown runtime
-	// out of first load (C-8g) scattered copies of them into app/layout and route chunks. One
+	// Button, Spinner, Select and Tag are imported by the global UI. The default split can copy
+	// them into app/layout and shared chunks when other demos use the same dependencies. One
 	// named chunk keeps a single copy that every route shares. The two logo maps (C-8g) hold one
 	// loader per logo; they are small enough that the default split copied them into every chunk
 	// that renders a logo, so they get one named chunk as well.
@@ -72,7 +71,7 @@ const nextConfig: NextConfig = {
 			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
 			splitChunks.cacheGroups = {
 				...splitChunks.cacheGroups,
-				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner)\.tsx$/ },
+				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner|select|select-tags|tag)\.tsx$/ },
 				logoMaps: { chunks: "all", enforce: true, name: "logo-maps", priority: 30, test: /[\\/]components[\\/]ui[\\/](data[\\/]logo-data\.ts|data[\\/]logo-third-party-icons\.ts|lazy-glyph\.tsx)$/ },
 			};
 		}

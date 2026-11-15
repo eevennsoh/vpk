@@ -4394,10 +4394,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 451,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 444,
+				"live": 445,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4446,7 +4446,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 122,
+				"entryCount": 123,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4873,6 +4873,13 @@
 						"slug": "jira-toolbar",
 						"name": "Jira Toolbar",
 						"importPath": "@/components/blocks/jira-toolbar",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-view-configuration",
+						"name": "Jira View Configuration",
+						"importPath": "@/components/blocks/jira-view-configuration",
 						"status": "live"
 					},
 					{
