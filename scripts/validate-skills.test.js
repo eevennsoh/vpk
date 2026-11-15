@@ -319,7 +319,8 @@ test("createSkillValidationReport caps SKILL.md bodies at the line limit", () =>
 });
 
 test("the repo's own skills stay under the SKILL.md body line cap", () => {
-	const report = createSkillValidationReport({ checkIndex: false });
+	const report = createSkillValidationReport({ checkIndex: false, cwd: path.resolve(__dirname, "..") });
+	assert.ok(report.skills.length > 0, "the report found the repo's skills");
 	assert.deepEqual(report.failures.filter((failure) => failure.type === "skill-body-too-long"), []);
 });
 

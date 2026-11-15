@@ -1,6 +1,6 @@
 [
 	{"query": "host this static export on Statlas", "should_trigger": true, "note": "Statlas hosting."},
-	{"query": "vpk-host the extracted route in build/standalone-projects", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "put this folder of html and js somewhere static that coworkers can open", "should_trigger": true, "note": "Paraphrased static hosting."},
 	{"query": "upload my prototype's HTML file to Atlassian's static CDN", "should_trigger": true, "note": "Static CDN upload."},
 	{"query": "update the Statlas copy of my demo with today's build", "should_trigger": true, "note": "Update hosted site."},
 	{"query": "my project needs the Express backend, put it somewhere coworkers can use it", "should_trigger": false, "note": "Sibling: vpk-deploy."},

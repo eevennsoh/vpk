@@ -383,6 +383,7 @@ memory:
   scope: project
   seed_files:
     - .agents/skills/vpk-design/SKILL.md
+    - .agents/skills/vpk-design/references/phase-prompts.md
 ```
 
 ## Triggers

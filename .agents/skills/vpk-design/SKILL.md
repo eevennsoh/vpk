@@ -175,6 +175,8 @@ If validator returns MINOR_FIXES or MAJOR_FIXES:
 
 Read [validation-reliability.md](references/validation-reliability.md) before you report lint, typecheck, visual, geometry, or accessibility results, and when a Figma translation looks close but not exact. It holds the lint-debt reporting rule, the `vpk-verify` visual flow and its degraded fallback, the geometry parity checks, a11y noise filtering, and the learned Figma-to-code pitfalls.
 
+Critical: for pixel-faithful work the validator checks geometry explicitly on a component crop in the reference theme and viewport: container and row sizes, per-side padding and offsets, icon-button hit area versus glyph size, and center invariants.
+
 ---
 
 ## Quick Start Example

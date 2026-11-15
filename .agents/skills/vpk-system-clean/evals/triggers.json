@@ -1,7 +1,7 @@
 [
 	{"query": "next-server is eating 400% CPU", "should_trigger": true, "note": "CPU pressure."},
 	{"query": "my Mac is slow and loud while VPK is running", "should_trigger": true, "note": "System pressure."},
-	{"query": "clean .next caches and free some space", "should_trigger": true, "note": "Disk cleanup."},
+	{"query": "my disk is nearly full and I think it's all the build caches from worktrees", "should_trigger": true, "note": "Paraphrased disk pressure."},
 	{"query": "kill unused ports from old worktree stacks", "should_trigger": true, "note": "Leftover ports."},
 	{"query": "fseventsd is pegged again", "should_trigger": true, "note": "fseventsd pressure."},
 	{"query": "clean up merged git worktrees and branches", "should_trigger": false, "note": "Sibling: vpk-git-clean."},

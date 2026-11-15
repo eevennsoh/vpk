@@ -1,11 +1,19 @@
 [
-	{"query": "first time setup for this repo, what do I need to run", "should_trigger": true, "note": "First-time setup."},
+	{"query": "I'm new here, how do I get this running locally", "should_trigger": true, "note": "Paraphrased first run."},
 	{"query": "I just cloned VPK, help me bootstrap it", "should_trigger": true, "note": "Bootstrap."},
 	{"query": "my ASAP key is not working, chat says credentials not found", "should_trigger": true, "note": "Credential error."},
 	{"query": "the env is not configured, pnpm run rovo exits immediately complaining about ROVO_SESSION_TOKEN", "should_trigger": true, "note": "Env repair."},
 	{"query": "set up VPK on my new laptop", "should_trigger": true, "note": "Setup on a new machine."},
+	{"query": "chat in the app just errors with an auth failure, I think my keys are wrong", "should_trigger": true, "note": "Paraphrased credential failure."},
+	{"query": "pnpm install worked but nothing starts, I think I'm missing env vars", "should_trigger": true, "note": "Paraphrased env repair."},
+	{"query": "where do I put the rovo session token so the backend picks it up", "should_trigger": true, "note": "Paraphrased credential placement."},
+	{"query": "my checkout is in a weird state after a bad merge, help me get the dev stack working again", "should_trigger": true, "note": "Repaired checkout."},
+	{"query": "initialize VPK for me", "should_trigger": true, "note": "Description phrase."},
 	{"query": "set up a cron job that cleans .next caches every night", "should_trigger": false, "note": "Sibling: vpk-system-clean."},
 	{"query": "next-server is eating 400% CPU", "should_trigger": false, "note": "Sibling: vpk-system-clean."},
 	{"query": "give my local prototype a nicer https demo hostname", "should_trigger": false, "note": "Sibling: vpk-domain."},
-	{"query": "how do I set up a new React context in this codebase", "should_trigger": false, "note": "Setup used in a code sense."}
+	{"query": "how do I set up a new React context in this codebase", "should_trigger": false, "note": "Setup used in a code sense."},
+	{"query": "set up Statlas hosting for the export", "should_trigger": false, "note": "Sibling: vpk-host."},
+	{"query": "set up a new worktree for the sidebar task", "should_trigger": false, "note": "Worktree creation."},
+	{"query": "configure ESLint to allow this rule", "should_trigger": false, "note": "Lint config."}
 ]

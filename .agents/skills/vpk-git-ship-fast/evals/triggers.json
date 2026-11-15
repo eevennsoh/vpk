@@ -1,10 +1,12 @@
 [
-	{"query": "commit and push to main", "should_trigger": true, "note": "Literal phrase."},
+	{"query": "commit everything and push it to main, it's a one-line copy fix", "should_trigger": true, "note": "Paraphrased direct push."},
 	{"query": "push straight to main, no PR", "should_trigger": true, "note": "No-PR push."},
-	{"query": "vpk-git-ship-fast", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "just get this onto main, I don't need review", "should_trigger": true, "note": "Paraphrased no-review push."},
 	{"query": "land this directly, skip the pull request", "should_trigger": true, "note": "Direct landing."},
+	{"query": "no PR needed for this, throw it straight onto main", "should_trigger": true, "note": "Paraphrased no-PR."},
 	{"query": "open a pull request and merge it once checks pass", "should_trigger": false, "note": "Sibling: vpk-git-ship."},
 	{"query": "write a commit message for the staged diff but don't push", "should_trigger": false, "note": "Commit only."},
 	{"query": "remove worktrees whose branches already merged", "should_trigger": false, "note": "Sibling: vpk-git-clean."},
-	{"query": "how do I undo my last commit", "should_trigger": false, "note": "Git question."}
+	{"query": "how do I undo my last commit", "should_trigger": false, "note": "Git question."},
+	{"query": "push my branch so I can open a PR later", "should_trigger": false, "note": "Branch push, not main."}
 ]

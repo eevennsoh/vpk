@@ -17,7 +17,7 @@ alwaysApply: false
 
 Skill catalog: `.agents/skills/INDEX.md` (generated — regenerate with `node scripts/validate-skills.js --update-index`).
 
-`validate-skills.js` caps a `SKILL.md` body at 300 lines; move detail into `references/` and link it with "read X when Y". Trigger eval kits live in `evals/triggers.json` as the `{query, should_trigger}` rows skill-creator's `run_eval` reads (run recipe: `.agents/skills/vpk-html/evals/README.md`); the validator checks their format.
+`validate-skills.js` caps a `SKILL.md` body at 300 lines; move detail into `references/` and link it with "read X when Y". When a `SKILL.md` is near the cap, move detail out before adding new guidance. Trigger eval kits live in `evals/triggers.json` as the `{query, should_trigger}` rows skill-creator's `run_eval` reads (run recipe: `.agents/skills/vpk-html/evals/README.md`); the validator checks their format.
 
 ## File Edits
 
