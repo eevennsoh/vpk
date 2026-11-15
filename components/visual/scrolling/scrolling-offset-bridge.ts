@@ -19,6 +19,13 @@ import { useTicker, type TickerProps } from "motion-plus/react";
  *
  * Motion's React contexts are split for the same reason: do not expect
  * `AnimatePresence`, `LayoutGroup` or `MotionConfig` to reach the cards.
+ *
+ * Since motion-plus 3 (which takes `motion` as a peer dependency) only one
+ * Motion copy is installed, so the split described above, and the "motion 12"
+ * and "motion 13" wording throughout this package, no longer applies at
+ * runtime. The explicit subscriptions and duck-typed shapes it motivated are
+ * still correct with a single copy and are kept as they are; simplifying them
+ * is a separate change that needs its own in-browser verification.
  */
 export type TickerOffset = NonNullable<TickerProps["offset"]>;
 

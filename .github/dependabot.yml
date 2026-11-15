@@ -15,7 +15,8 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     # Motion+ installs from Motion's private registry (api.motion.dev/npm) with a
-    # user-level token that Dependabot does not have. It is pinned exactly; bump it by hand.
+    # user-level token that Dependabot does not have; bump it by hand. Each major peers on
+    # one `motion` major, so move both together to keep a single Motion copy installed.
     ignore:
       - dependency-name: motion-plus
       - dependency-name: "@motionplus/core"
