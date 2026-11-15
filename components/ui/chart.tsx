@@ -9,6 +9,7 @@ import * as RechartsPrimitive from "recharts"
 import { cn } from "@/lib/utils"
 import {
 	CHART_THEMES,
+	getChartAccessibleLabel,
 	getChartColorConfigEntries,
 	hasRenderableChartSize,
 	type ChartConfig,
@@ -44,6 +45,7 @@ function ChartContainer({
   className,
   children,
   config,
+  "aria-label": ariaLabel,
   ...props
 }: Readonly<ChartContainerProps>) {
   const uniqueId = React.useId()
@@ -99,12 +101,30 @@ function ChartContainer({
         <ChartStyle id={chartId} config={config} />
         {canRender ? (
           <RechartsPrimitive.ResponsiveContainer>
-            {children}
+            {withChartAccessibleLabel(children, getChartAccessibleLabel(config, ariaLabel))}
           </RechartsPrimitive.ResponsiveContainer>
         ) : null}
       </div>
     </ChartContext>
   )
+}
+
+/**
+ * VPK difference from upstream shadcn: name recharts' focusable `role="application"`
+ * surface (its default accessibility layer) unless the chart already sets a name.
+ * `aria-label` on ChartContainer is forwarded here rather than onto the wrapper div.
+ */
+function withChartAccessibleLabel(
+  children: ChartContainerProps["children"],
+  label: string
+): ChartContainerProps["children"] {
+  if (!React.isValidElement<Record<string, unknown>>(children)) {
+    return children
+  }
+  if (children.props["aria-label"] || children.props["aria-labelledby"]) {
+    return children
+  }
+  return React.cloneElement(children, { "aria-label": label })
 }
 
 function ChartStyle({ id, config }: Readonly<{ id: string; config: ChartConfig }>) {
@@ -332,7 +352,8 @@ function ChartLegendContent({
 
           return (
             <div
-              // Pie legends repeat the series name ("visitors") as every slice's value.
+              // VPK difference from upstream (key={item.value}): pie legends repeat the series name
+              // ("visitors") as every slice's value. Guarded by chart.behavior.test.js.
               key={`${String(item.value)}-${index}`}
               className={cn(
                 "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"

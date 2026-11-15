@@ -56,16 +56,18 @@ export function ChartPieInteractive() {
 
 	const activeIndex = useMemo(() => desktopData.findIndex((item) => item.month === activeMonth), [activeMonth]);
 	const months = useMemo(() => desktopData.map((item) => item.month), []);
+	// Base UI's SelectValue renders the label from `items`; without it the trigger shows "january".
+	const monthItems = months.map((month) => ({ value: month, label: chartConfig[month as keyof typeof chartConfig].label }));
 
 	return (
-		<Card data-chart={id} className="flex flex-col h-full">
+		<Card data-chart={id} className="flex flex-col">
 			<ChartStyle id={id} config={chartConfig} />
 			<CardHeader className="flex-row items-start space-y-0 pb-0">
 				<div className="grid gap-1">
 					<CardTitle>Pie Chart - Interactive</CardTitle>
 					<CardDescription>January - June 2024</CardDescription>
 				</div>
-				<Select value={activeMonth} onValueChange={(value) => { if (value) setActiveMonth(value); }}>
+				<Select value={activeMonth} items={monthItems} onValueChange={(value) => { if (value) setActiveMonth(value); }}>
 					<SelectTrigger className="ml-auto h-7 w-[130px] rounded-lg pl-2.5" aria-label="Select a value">
 						<SelectValue placeholder="Select month" />
 					</SelectTrigger>
