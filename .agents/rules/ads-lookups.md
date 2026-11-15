@@ -22,3 +22,5 @@ Retrieve ADS content with the `atlas ads` CLI first — same structured content 
 | Migration guides                        | `atlas ads docs migration <avatar-xsmall-to-xxsmall\|jira-spotlight\|single-step\|multi-step\|motion>`                                                                                 |
 
 Reach for the ADS MCP only when the CLI is unavailable or erroring, or for capabilities with no CLI equivalent: `ads_analyze_a11y`, `ads_analyze_localhost_a11y`, `ads_suggest_a11y_fixes`, `ads_i18n_conversion_guide`, and the broader non-ADS `atlaskit_search_components` / `atlaskit_get_components` catalog.
+
+UI work needs browser evidence and accessibility checks: fetch the rules with `atlas ads docs a11y <topic>`, then scan the code with the MCP-only `ads_analyze_a11y` / `ads_analyze_localhost_a11y` (and `ads_suggest_a11y_fixes` for remediation). Full checklist: `.agents/docs/workflows-extended.md` (Validation).

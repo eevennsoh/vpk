@@ -92,7 +92,7 @@ Not every Figma design requires the full 3-agent pipeline. Choose the approach b
 
 1. **Get the Figma screenshot first** — use `mcp__figma__get_screenshot` to see the actual design before doing anything else. This is the source of truth.
 2. **Understand Figma node scope** — the provided Figma node defines the boundary of what to implement. Do NOT add structural components (headers, navigation, toolbars) that aren't shown in the Figma node. If unsure about the full page layout, check the parent node.
-3. Confirm the exact target files/routes by searching for distinctive text/classes.
+3. Confirm the exact target files/routes by searching for distinctive text/classes. Front-load key specs: spacing, radius, width constraints, shadow token.
 4. **Read the current component code** to understand what already exists. Diff the Figma screenshot against the current code to identify ALL differences.
 5. Re-read current component interfaces before implementation (`Props`, callback names, exported APIs). Do not rely on stale assumptions.
 6. Check local workspace state (`git status --short`) and avoid touching unrelated modified files.

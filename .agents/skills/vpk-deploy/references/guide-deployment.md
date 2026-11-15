@@ -194,7 +194,9 @@ The backend reads the caller from `X-Slauth-Subject` (`backend/lib/caller-identi
 - Rovo threads store their creator as `owner`; list, read, update, delete, and
   delete-all see only the caller's threads. Threads stored before owners have no
   owner and are visible only to the local owner (outside production), never to an
-  SLAuth caller.
+  SLAuth caller, until the owner backfill below assigns them.
+- `GET /api/whoami` returns the caller's own identity, `{"owner":"<subject>","local":false}`,
+  uncached and only to that caller. `owner` is the value stored on their threads.
 - Runtime socket tokens (realtime voice, browser preview) are bound to the caller,
   and the WebSocket upgrade must carry the same subject.
 - `VPK_RUNTIME_ADMIN_TOKEN` still guards operator routes; SLAuth does not replace it.
@@ -203,6 +205,98 @@ The backend reads the caller from `X-Slauth-Subject` (`backend/lib/caller-identi
 
 The shared CSP must permit the existing Atlassian font CDN in `style-src` and
 `font-src`, plus `connect-src` for the peel renderer's font embedding fetches.
+
+#### Backfill thread owners
+
+Threads written before owners were stored (before #2311) have no `owner`, so after
+the SLAuth deploy no signed-in user sees them. `backend/scripts/backfill-rovo-thread-owner.js`
+(`pnpm run backfill:rovo-thread-owner -- …`) assigns one SLAuth subject to every
+ownerless thread in a backend data directory:
+
+- `--owner <subject> --data-dir <dir>` are required. The default `--dry-run`
+  prints counts (threads, ownerless, already the owner's, other owners', unreadable)
+  and writes nothing; it is safe while the backend runs.
+- `--apply` writes each thread with the backend's own thread manager (temp file and
+  rename). It takes the data directory lock first, so it refuses with
+  `BACKEND_DATA_DIR_LOCKED` while a live backend uses the directory, and a backend
+  cannot start until it finishes. A thread that already has an owner keeps it, and
+  `updatedAt` is unchanged, so running it again changes nothing.
+- Retention is 40 threads per owner (`backend/lib/rovo-app-threads.js`). When the
+  owner would end up with more, the run warns and lists the thread IDs beyond 40: new
+  threads will delete those, oldest first and up to 20 at a time. Save them first if
+  they matter.
+- Each record is stored as the backend normalizes it (unknown keys dropped, missing
+  timestamps filled in, as any backend write does); an existing `updatedAt` is kept.
+- Out of scope: documents and uploads with no thread and no `owner` stay visible
+  only to the local owner. Documents and uploads that belong to a thread follow the
+  thread's new owner.
+
+Find the subject. Open `https://<service-name>.<region>.platdev.atl-paas.net/api/whoami`
+in the browser you use the app from (signed in through Okta), or
+`"$VPK_ATLAS_BIN" slauth curl --aud <service-name> -e <env> -- https://<host>/api/whoami`.
+Use the browser's `owner`: that is the subject the UI's threads are stored under. If
+the CLI value differs, the browser one wins.
+
+Thread data on Micros is not durable. `service-descriptor.yml` mounts no volume, so
+`/app/backend/data` lives in the app container's writable layer, and every deploy
+starts with an empty data directory: a cutover builds a new stack, and a hot swap
+starts a new container. The ownerless threads are in the container running before
+the SLAuth deploy, so copy them off the node before that deploy, then backfill the
+copy and put it into the new container.
+
+These steps have not yet been run on a real Micros node; treat them as unverified
+until someone has. The SSH user may need `sudo` for every `docker` command. The
+Service Proxy sidecar runs on the same node, so pick the app container by its image
+tag (`:app-<version>`, from `tag: app-${VERSION}`) and confirm with `docker ps`.
+
+1. Before deploying, back up the running container's data and move it off the node.
+   A copy taken while the backend runs is consistent enough here, and nothing is
+   stopped yet. The tarball on your machine is the recovery path; the node can be
+   replaced at any time.
+
+   ```bash
+   "$VPK_ATLAS_BIN" micros compute ssh --service="$SERVICE_NAME" --env=<env>
+   # on the node (prefix docker with sudo if needed):
+   C=$(docker ps --format '{{.ID}} {{.Image}}' | awk '$2 ~ /:app-/ {print $1; exit}')
+   docker cp "$C":/app/backend/data ./vpk-data
+   tar czf vpk-data.tgz vpk-data && rm -rf vpk-data
+   # then copy vpk-data.tgz to your machine with the same SSH access (for example scp)
+   ```
+
+2. Deploy. If you already deployed without a backup, a hot swap may have left the
+   previous container on the node (`docker ps -a`); copy from it the same way. What
+   Micros keeps after a cutover or hot swap is unconfirmed.
+
+3. Backfill the copy on your machine, from a VPK checkout. The copy carries the old
+   backend's lock file; delete it from the copy (never from a live directory):
+
+   ```bash
+   tar xzf vpk-data.tgz && rm -f vpk-data/backend.lock
+   pnpm run backfill:rovo-thread-owner -- --owner '<subject>' --data-dir ./vpk-data           # dry run
+   pnpm run backfill:rovo-thread-owner -- --owner '<subject>' --data-dir ./vpk-data --apply
+   tar czf vpk-data-owned.tgz vpk-data
+   ```
+
+4. Copy the result into the new container while it is stopped. `docker cp` merges
+   into the directory, so threads created since the deploy stay.
+
+   ```bash
+   # copy vpk-data-owned.tgz to the node, then on the node:
+   tar xzf vpk-data-owned.tgz
+   C=$(docker ps --format '{{.ID}} {{.Image}}' | awk '$2 ~ /:app-/ {print $1; exit}')
+   docker stop "$C"
+   docker cp ./vpk-data/. "$C":/app/backend/data
+   docker start "$C"
+   rm -rf vpk-data vpk-data-owned.tgz
+   ```
+
+   Keep the stopped window short: `/healthcheck` fails while the container is down.
+   Check the threads in the browser afterwards, and keep the tarballs on your
+   machine until you have.
+
+Locally (a copy of a data directory, or `backend/data` with the stack stopped):
+`pnpm run backfill:rovo-thread-owner -- --owner '<subject>' --data-dir backend/data`,
+then again with `--apply`.
 
 ### 3. Create the Micros service
 
