@@ -16,6 +16,10 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc,required=false \
 COPY backend ./backend
 COPY lib ./lib
 COPY rovo ./rovo
+# The scripts/lib modules the backend requires; backend/dockerfile-runtime-files.test.js
+# fails when a backend require reaches a file this image does not copy.
+COPY scripts/lib/dev-tmux-session.js ./scripts/lib/dev-tmux-session.js
+COPY scripts/lib/pid-lock-file.js ./scripts/lib/pid-lock-file.js
 COPY scripts/lib/worktree-ports.js ./scripts/lib/worktree-ports.js
 
 # Copy the prebuilt Next.js export output (static HTML files).
