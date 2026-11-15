@@ -107,6 +107,29 @@ test("1: ignored content under artifacts/ (or anything not regenerable) retains 
 	assert.deepEqual(found.evidence.ignoredEnvFiles, [".env.local"]);
 });
 
+test("1b: per-checkout Claude Code state (launch.json, settings.local.json, .cc-writes/) does not retain the worktree; other .claude content does", async (t) => {
+	const { landed, report, entry, write, sh, commit, repo } = setup(t);
+	// .claude/ holds tracked files, so git lists its ignored entries one by one. A user-level
+	// ignore (as `~/.config/git/ignore` does for .cc-writes/) is read through
+	// --exclude-standard just like the repo's own ignore rules.
+	commit(repo, ".claude/settings.json", "{}\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	write(repo, ".git/info/exclude", ".claude/launch.json\n.claude/settings.local.json\n.claude/.cc-writes/\n.claude/notes.md\n");
+	const dir = landed("feat");
+	write(dir, ".claude/launch.json", "{}\n");
+	write(dir, ".claude/settings.local.json", "{}\n");
+	write(dir, ".claude/.cc-writes/session.json", "{}\n");
+	write(dir, ".claude/notes.md", "keep me\n");
+	assert.equal(sh(dir, "status", "--porcelain"), "", "all of it is ignored");
+	let found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.deepEqual(found.blockers, ["ignored content that is not regenerable: .claude/notes.md"]);
+
+	fs.rmSync(path.join(dir, ".claude/notes.md"));
+	found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, true, found.blockers.join("; "));
+});
+
 test("2: an edit hidden by skip-worktree or assume-unchanged retains the worktree", async (t) => {
 	const { landed, report, entry, sh, write } = setup(t);
 	const dir = landed("feat");
