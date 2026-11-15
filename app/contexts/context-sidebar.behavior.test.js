@@ -55,8 +55,10 @@ test("toggling visibility re-renders visibility readers but leaves hover state a
 	assert.deepEqual([read("visibility"), read("hover"), read("controls")], ["visible:2", "idle:1", "1"]);
 });
 
-test("the hooks throw outside a SidebarProvider", async () => {
-	const source = `import { useSidebarState } from "@/app/contexts/context-sidebar";
-		export default function Orphan() { useSidebarState(); return null; }`;
-	await assert.rejects(renderComponent({ source }), /useSidebarState must be used within a SidebarProvider/);
-});
+for (const hookName of ["useSidebarState", "useSidebarHovered", "useSidebarActions"]) {
+	test(`${hookName} throws outside a SidebarProvider`, async () => {
+		const source = `import { ${hookName} } from "@/app/contexts/context-sidebar";
+			export default function Orphan() { ${hookName}(); return null; }`;
+		await assert.rejects(renderComponent({ source }), new RegExp(`${hookName} must be used within a SidebarProvider`));
+	});
+}
