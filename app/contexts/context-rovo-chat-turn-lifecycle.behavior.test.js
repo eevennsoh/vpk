@@ -33,12 +33,21 @@ const { loadCjsModuleFromText } = require("../../scripts/lib/esbuild-cjs-loader.
 
 const RETRY_DELAY_MS = 150;
 const CHAT_ERROR_UTILS_PATH = path.join(process.cwd(), "lib/chat-error-utils.ts");
+const CANCEL_STRATEGY_PATH = path.join(process.cwd(), "lib/rovo-cancel-strategy.ts");
+const CANCEL_REQUEST_TIMEOUT_MS = 150;
 
 const mocks = {
 	"@/components/projects/rovo-core/lib/api": `
 		// Late refreshes can land after a test tears down; they read an empty store.
 		const api = () => window.testApi ?? { threads: new Map(), calls: [] };
-		export async function cancelRovoAppRun(threadId) { api().calls.push("cancelRun:" + threadId); return true; }
+		export async function cancelRovoAppRun(threadId, { signal } = {}) {
+			api().calls.push("cancelRun:" + threadId);
+			// \`hangCancel\` models a backend whose cancel never answers; only the signal ends it.
+			if (api().hangCancel) {
+				await new Promise((_, reject) => signal?.addEventListener("abort", () => reject(signal.reason), { once: true }));
+			}
+			return true;
+		}
 		export async function createRovoAppThread({ signal, ...thread }) {
 			api().calls.push("createThread:" + thread.title);
 			const created = { ...thread, createdAt: 1, updatedAt: 1 };
@@ -57,6 +66,11 @@ const mocks = {
 			api().threads.set(id, updated);
 			return updated;
 		}
+	`,
+	// Real cancel strategy; only the backend-cancel wait is shortened.
+	"@/lib/rovo-cancel-strategy": `
+		export * from ${JSON.stringify(CANCEL_STRATEGY_PATH)};
+		export const EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS = ${CANCEL_REQUEST_TIMEOUT_MS};
 	`,
 	// Real error classification and copy; only the retry delays are shortened.
 	"@/lib/chat-error-utils": `
@@ -526,6 +540,43 @@ test("resetChat clears errors left on failed turns", async (t) => {
 	assert.deepEqual(chatState().messages, []);
 });
 
+test("selecting another thread clears errors left on failed turns", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", {
+		id: "stored-thread", title: "Stored",
+		messages: [{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] }],
+		realtimeMessages: [], visibility: "private", activeDocumentId: null, createdAt: 0, updatedAt: 0,
+	});
+	server.failNext(500, "Nope");
+	await send(chat, "Broken");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.equal(chatState().messages.length, 2);
+	await (await startAction(() => chat().selectThread("stored-thread")))();
+	assert.deepEqual(chatState().messages, ["user:Old question"]);
+});
+
+test("deleting the active thread clears errors left on failed turns", async (t) => {
+	const { server, chat } = await mountChat(t);
+	server.failNext(500, "Nope");
+	await send(chat, "Broken");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.equal(chatState().messages.length, 2);
+	await (await startAction(() => chat().deleteThread(chat().activeThreadId)))();
+	await settle(20);
+	assert.deepEqual(chatState().messages, []);
+});
+
+test("errors on failed turns are never saved with the thread", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	server.failNext(500, "Nope");
+	await send(chat, "Broken");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	const threadId = chat().activeThreadId;
+	assert.deepEqual(chatState().messages, ["user:Broken", `assistant:${harness.toUserFacingChatErrorMessage("Nope")}`]);
+	await waitFor("the thread to be saved", () => (window.testApi.threads.get(threadId)?.messages ?? []).length > 0, 3000);
+	assert.deepEqual(describeMessages(window.testApi.threads.get(threadId).messages), ["user:Broken"]);
+});
+
 test("a payload-too-large error shows its own copy, finalizes the prompt, and releases the queue", async (t) => {
 	const { harness, server, chat } = await mountChat(t);
 	const errorText = `assistant:${harness.getPayloadTooLargeUserMessage()}`;
@@ -616,6 +667,99 @@ test("stopStreaming cancels the backend run even when the backend ignores the ab
 	turn.end();
 });
 
+async function streamPartial(server, chat, turnIndex, text) {
+	const turn = server.turns[turnIndex];
+	turn.send({ type: "start" });
+	turn.send({ type: "text-start", id: `t${turnIndex}` });
+	turn.send({ type: "text-delta", id: `t${turnIndex}`, delta: text });
+	await waitFor(`partial text ${text}`, () => chatState().messages.at(-1) === `assistant:${text}`);
+	return turn;
+}
+
+const cancelRunCalls = () => window.testApi.calls.filter((call) => call.startsWith("cancelRun:"));
+
+test("pressing Stop twice on one turn cancels the backend once", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Answer");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Part");
+	let firstFinished;
+	let secondFinished;
+	await React.act(async () => {
+		firstFinished = await startAction(() => chat().stopStreaming());
+		secondFinished = await startAction(() => chat().stopStreaming());
+	});
+	await firstFinished();
+	await secondFinished();
+	await settle(20);
+	assert.deepEqual(cancelRunCalls(), [`cancelRun:${chat().activeThreadId}`]);
+});
+
+// Review regression: the per-thread debounce used to swallow a Stop on the next
+// turn in the same thread within 2 s, leaving that backend run alive.
+test("Stop, send, then Stop again in the same thread cancels both turns", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "First");
+	await waitFor("the first request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "One");
+	await (await startAction(() => chat().stopStreaming()))();
+
+	await send(chat, "Second");
+	await waitFor("the second request", () => server.turns.length === 2);
+	await streamPartial(server, chat, 1, "Two");
+	await (await startAction(() => chat().stopStreaming()))();
+	const threadId = chat().activeThreadId;
+	assert.deepEqual(cancelRunCalls(), [`cancelRun:${threadId}`, `cancelRun:${threadId}`]);
+});
+
+// The transcript owner (session activation, local turns) stops the stream but
+// cancels the backend only when the stop does not settle in time.
+test("activating a session mid-stream stops the request without a backend cancel", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Live");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Streaming");
+	await (await startAction(() => chat().activateSession({ messages: [], threadId: null })))();
+	assert.equal(server.turns[0].aborted, true);
+	assert.deepEqual(cancelRunCalls(), []);
+	assert.equal(server.otherRequests.some((url) => url.includes("/api/chat-cancel")), false);
+});
+
+// Review regression: a Stop that arrived while an ordinary cancel was in flight
+// waited on it and returned, so the backend was never cancelled.
+test("Stop during an ordinary cancel still cancels the backend run", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Live");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Streaming");
+	const threadId = chat().activeThreadId;
+	let activateFinished;
+	let stopFinished;
+	await React.act(async () => {
+		activateFinished = await startAction(() => chat().activateSession({ messages: [], threadId: null }));
+		stopFinished = await startAction(() => chat().stopStreaming());
+	});
+	await activateFinished();
+	await stopFinished();
+	assert.deepEqual(cancelRunCalls(), [`cancelRun:${threadId}`]);
+});
+
+test("Stop waits for a slow backend cancel only up to its limit, then releases the queue", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Slow cancel");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Partial");
+	await send(chat, "Next");
+	window.testApi.hangCancel = true;
+	const startedAt = Date.now();
+	await (await startAction(() => chat().stopStreaming()))();
+	const elapsed = Date.now() - startedAt;
+	assert.ok(elapsed >= CANCEL_REQUEST_TIMEOUT_MS - 20, `Stop returned before the cancel limit (${elapsed} ms)`);
+	assert.ok(elapsed < 1000, `Stop waited ${elapsed} ms for a hung cancel`);
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Next");
+});
+
 test("stopStreaming with no live stream is a no-op that leaves the transcript intact", async (t) => {
 	const { server, chat } = await mountChat(t);
 	await send(chat, "Done turn");
@@ -663,6 +807,25 @@ test("rate-limit retries stop after the maximum and show the give-up message", a
 		`assistant:${harness.getRateLimitUserMessage(harness.RATE_LIMIT_MAX_RETRIES)}`,
 	]);
 	assert.equal(chat().hasInFlightTurn, false);
+});
+
+// onError and onFinish both run on the give-up attempt; the error must stay on
+// its own turn once the next queued prompt dispatches.
+test("a rate-limit give-up error stays on its turn after the next queued prompt dispatches", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	for (let attempt = 0; attempt <= harness.RATE_LIMIT_MAX_RETRIES; attempt += 1) {
+		server.failNext(429, "rate limit");
+	}
+	await send(chat, "Keep trying");
+	await waitFor("the first request", () => server.turns.length === 1);
+	await send(chat, "After that");
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === harness.RATE_LIMIT_MAX_RETRIES + 2);
+	assert.equal(chat().activePrompt?.text, "After that");
+	assert.deepEqual(chatState().messages, [
+		"user:Keep trying",
+		`assistant:${harness.getRateLimitUserMessage(harness.RATE_LIMIT_MAX_RETRIES)}`,
+		"user:After that",
+	]);
 });
 
 test("a chat-in-progress error shows a thinking countdown, keeps submit pending, then retries", async (t) => {

@@ -56,6 +56,13 @@ test("pruneTurnErrorsFrom drops errors on the edited message and later ones only
 	assert.equal(pruneTurnErrorsFrom(errors, messages, "missing"), errors);
 });
 
+test("pruneTurnErrorsFrom keeps an unanchored error unless the first message is edited", () => {
+	const messages = [message("u1"), message("u2")];
+	const errors = [{ anchorMessageId: null, message: errorMessage("e0") }];
+	assert.deepEqual(pruneTurnErrorsFrom(errors, messages, "u2").map((item) => item.message.id), ["e0"]);
+	assert.deepEqual(pruneTurnErrorsFrom(errors, messages, "u1"), []);
+});
+
 test("hasTurnCompleteForActivePrompt reads only the latest assistant message for the active prompt", () => {
 	const prompt = { id: "q", text: "Hello", files: [], createdAt: 1_000 };
 	const complete = { type: "data-turn-complete", data: { timestamp: new Date(2_000).toISOString() } };

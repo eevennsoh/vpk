@@ -24,8 +24,10 @@ export function createTurnError(
 
 /**
  * Places each turn error right after the message it is anchored to. An error
- * with no anchor (the transcript was empty) leads the transcript; an error
- * whose anchor is gone (the message was deleted or replaced) is dropped.
+ * with no anchor (the transcript was empty) leads the transcript. An error
+ * whose anchor is gone (the message was deleted, or replaced by a sanitize
+ * rewrite or a server re-hydrate) is dropped and does not come back: turn
+ * errors are display-only, so losing one with its turn is acceptable.
  */
 export function insertTurnErrors(
 	messages: RovoUIMessage[],
@@ -68,9 +70,11 @@ export function pruneTurnErrorsFrom(
 	}
 
 	const removedIds = new Set(messages.slice(editedIndex).map((message) => message.id));
-	return turnErrors.filter(
-		(turnError) =>
-			turnError.anchorMessageId === null || !removedIds.has(turnError.anchorMessageId)
+	return turnErrors.filter((turnError) =>
+		turnError.anchorMessageId === null
+			// An unanchored error leads the transcript, so editing the first message replaces it.
+			? editedIndex > 0
+			: !removedIds.has(turnError.anchorMessageId)
 	);
 }
 
@@ -100,8 +104,10 @@ export function hasTurnCompleteForActivePrompt(
 
 /**
  * Whether a finished request left the active prompt without its
- * data-turn-complete signal. Every backend turn ends with that signal, so a
- * stream that closes cleanly without it was cut short. Aborts belong to the
+ * data-turn-complete signal. Every backend chat route must end a successful
+ * turn with that signal (each route's stream test asserts it; see
+ * backend/chat/chat-sdk-handler.contract.test.js), so a stream that closes
+ * cleanly without it was cut short. Aborts belong to the
  * stop, thread-switch, reset and edit paths, and errors to onError.
  */
 export function isIncompleteTurnFinish(input: {

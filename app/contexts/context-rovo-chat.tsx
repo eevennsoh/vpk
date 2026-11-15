@@ -24,7 +24,13 @@ import {
 	type RovoDataParts,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
-import { shouldSendExplicitRovoCancel } from "@/lib/rovo-cancel-strategy";
+import {
+	EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS,
+	getRovoCancelDebounceKey,
+	requestRovoBackendCancel,
+	shouldSendExplicitRovoCancel,
+	type RovoCancelTarget,
+} from "@/lib/rovo-cancel-strategy";
 import {
 	createRovoAppId,
 	type RovoAppThread,
@@ -350,7 +356,7 @@ export function RovoChatProvider({
 	const wasStreamingRef = useRef(false);
 	const isDispatchingPromptRef = useRef(false);
 	const isCancellingRef = useRef(false);
-	const cancelStreamPromiseRef = useRef<Promise<void> | null>(null);
+	const cancelStreamPromiseRef = useRef<Promise<boolean> | null>(null);
 	const autoSelectedAgentIdRef = useRef<string | null>(null);
 	const lastExplicitCancelAtRef = useRef(0);
 	const lastExplicitCancelKeyRef = useRef("");
@@ -1675,6 +1681,8 @@ export function RovoChatProvider({
 			setTurnErrors((previous) => pruneTurnErrorsFrom(previous, rawUiMessages, messageId));
 			setQueuedPrompts([]);
 			queuedPromptsRef.current = [];
+			// An edit resend has no active prompt, so onFinish cannot flag it as cut
+			// short when its stream ends without turn-complete (unchanged behaviour).
 			activePromptRef.current = null;
 			setActivePrompt(null);
 			shouldFinalizeActivePromptRef.current = false;
@@ -1745,11 +1753,54 @@ export function RovoChatProvider({
 		]
 	);
 
+	// Sends the backend cancel once per target (per turn for a user Stop) within
+	// the debounce window. Resolves true when a cancel request went out.
+	const sendBackendCancel = useCallback(async (
+		target: RovoCancelTarget,
+		turnId: string | null,
+	): Promise<boolean> => {
+		const cancelKey = getRovoCancelDebounceKey(target, turnId);
+		const now = Date.now();
+		if (
+			lastExplicitCancelKeyRef.current === cancelKey &&
+			now - lastExplicitCancelAtRef.current < EXPLICIT_CANCEL_DEBOUNCE_MS
+		) {
+			return false;
+		}
+
+		lastExplicitCancelKeyRef.current = cancelKey;
+		lastExplicitCancelAtRef.current = now;
+		try {
+			// Bounded so a slow Rovo cancel cannot hold the queue for its full timeout.
+			await requestRovoBackendCancel({
+				target,
+				cancelEndpoint: API_ENDPOINTS.CHAT_CANCEL,
+				cancelRun: cancelRovoAppRun,
+				fetchImpl: fetch,
+				signal: AbortSignal.timeout(EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS),
+			});
+		} catch {
+			// Ignore cancel endpoint errors and timeouts — the stream may have already ended.
+		}
+		return true;
+	}, []);
+
 	// `explicitUserCancel` is the user's Stop, which always cancels the backend run
 	// (see shouldSendExplicitRovoCancel); other callers escalate only when stop() is slow.
 	const cancelCurrentStream = useCallback(async ({ explicitUserCancel = false }: { explicitUserCancel?: boolean } = {}) => {
-		if (cancelStreamPromiseRef.current) {
-			await cancelStreamPromiseRef.current;
+		// Read before stopping: the run to cancel is the one streaming now, even if
+		// a thread switch replaces the active thread while the stop settles.
+		const target: RovoCancelTarget = { threadId: activeThreadIdRef.current, portIndex };
+		const turnId = explicitUserCancel ? activePromptRef.current?.id ?? null : null;
+
+		const inFlightCancel = cancelStreamPromiseRef.current;
+		if (inFlightCancel) {
+			const sentBackendCancel = await inFlightCancel;
+			// A Stop that lands during an ordinary cancel (which skipped the backend
+			// because stop() settled in time) still has to reach the backend.
+			if (explicitUserCancel && !sentBackendCancel) {
+				await sendBackendCancel(target, turnId);
+			}
 			return;
 		}
 
@@ -1781,35 +1832,10 @@ export function RovoChatProvider({
 					stopSettledInTime: stoppedInTime,
 				})
 			) {
-				return;
+				return false;
 			}
 
-			try {
-				const compactThreadId = activeThreadIdRef.current;
-				const cancelKey =
-					compactThreadId ??
-					(typeof portIndex === "number" ? `port:${portIndex}` : "default");
-				const now = Date.now();
-				const recentlyCancelledSameTarget =
-					lastExplicitCancelKeyRef.current === cancelKey &&
-					now - lastExplicitCancelAtRef.current < EXPLICIT_CANCEL_DEBOUNCE_MS;
-
-				if (!recentlyCancelledSameTarget) {
-					lastExplicitCancelKeyRef.current = cancelKey;
-					lastExplicitCancelAtRef.current = now;
-					if (compactThreadId) {
-						await cancelRovoAppRun(compactThreadId);
-					} else {
-						const cancelEndpoint =
-							typeof portIndex === "number"
-								? `${API_ENDPOINTS.CHAT_CANCEL}?portIndex=${encodeURIComponent(String(portIndex))}`
-								: API_ENDPOINTS.CHAT_CANCEL;
-						await fetch(cancelEndpoint, { method: "POST" });
-					}
-				}
-			} catch {
-				// Ignore cancel endpoint errors — the stream may have already ended.
-			}
+			return sendBackendCancel(target, turnId);
 		})();
 
 		cancelStreamPromiseRef.current = cancelPromise;
@@ -1818,7 +1844,7 @@ export function RovoChatProvider({
 		} finally {
 			cancelStreamPromiseRef.current = null;
 		}
-	}, [portIndex, stop, waitForStreamStop]);
+	}, [portIndex, sendBackendCancel, stop, waitForStreamStop]);
 
 	const stopStreaming = useCallback(async () => {
 		const transitionToken = beginTransition("stop-streaming");
@@ -2223,6 +2249,8 @@ export function RovoChatProvider({
 			setMessages(sanitized);
 		},
 		writeSnapshot: ({ messages, threadId, markPersisted = true }) => {
+			// A snapshot replaces the transcript, so errors from the old one go too.
+			clearChatErrors();
 			const sanitized = sanitizeRovoUiMessages([...messages]);
 			rawUiMessagesRef.current = sanitized;
 			activeThreadIdRef.current = threadId;
@@ -2231,7 +2259,7 @@ export function RovoChatProvider({
 			setMessages(sanitized);
 		},
 		selectAgent: (agentId) => selectAgent(agentId, { preserveCurrentThread: true }),
-	}), [beginTransition, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent]);
+	}), [beginTransition, clearChatErrors, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent]);
 	const transcript = useRovoChatTranscript(transcriptOwner);
 	const { activateSession, applyLocalTurn } = transcript;
 
