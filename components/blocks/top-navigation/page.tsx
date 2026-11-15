@@ -235,7 +235,11 @@ export default function TopNavigation({
 		onCollapse: useCallback(() => setSidebarOpen(false), [setSidebarOpen]),
 	});
 
-	const toggleSidebar = useCallback(() => setSidebarOpen(!sidebarOpen), [setSidebarOpen, sidebarOpen]);
+	// Updater form so toggles batched in one event each see the latest pin intent.
+	// While small the sidebar reads as closed, so a toggle is an open request.
+	const toggleSidebar = useCallback(() => {
+		setIsSidebarPinned((pinned) => (isSmallShell ? true : !pinned));
+	}, [isSmallShell]);
 
 	// Gate the chrome's width/border transition so it never plays on first paint.
 	const [hasMountedChrome, setHasMountedChrome] = useState(false);

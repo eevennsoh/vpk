@@ -274,9 +274,6 @@
     }
   },
   "components/blocks/agent-browser/components/agent-browser.tsx": {
-    "react-hooks/refs": {
-      "count": 8
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }

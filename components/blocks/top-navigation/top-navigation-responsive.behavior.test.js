@@ -60,9 +60,13 @@ const MOCKS = {
 			return null;
 		}
 	`,
+	// Stands in for the sidebar's own close paths (resize-drag collapse, the
+	// provider's \`setOpen(false)\`): both reach the shell through \`onOpenChange\`.
 	"@/components/blocks/top-navigation/components/studio-sidebar": `
+		import { useSidebar } from "@/components/ui/sidebar";
 		export function StudioSidebar() {
-			return null;
+			const { setOpen } = useSidebar();
+			return <button type="button" onClick={() => setOpen(false)}>Request sidebar close</button>;
 		}
 	`,
 	"@/components/blocks/top-navigation/components/search-suggestions-panel": `
@@ -133,17 +137,29 @@ test("opening the sidebar in a small viewport is deferred until the viewport gro
 	assert.equal(isSidebarOpen(view), true);
 });
 
-test("the expanded search icon collapses again after the viewport leaves the icon range", async () => {
-	const view = await renderShell(300);
-	assert.equal(view.queryByRole("textbox", { name: "Search" }) === null, true);
+test("a close request while the viewport is small keeps the pin for when it grows", async () => {
+	const view = await renderShell(1400);
+	await resizeWindow(600);
+	assert.equal(isSidebarOpen(view), false);
 
-	await view.click(view.getByRole("button", { name: "Search" }));
-	assert.equal(view.queryByRole("textbox", { name: "Search" }) === null, false);
+	await view.click(view.getByRole("button", { name: "Request sidebar close" }));
+	assert.equal(isSidebarOpen(view), false);
 
 	await resizeWindow(1400);
-	assert.equal(view.queryByRole("textbox", { name: "Search" }) === null, false);
+	assert.equal(isSidebarOpen(view), true);
+});
+
+test("the expanded search icon collapses again after the viewport leaves the icon range", async () => {
+	const view = await renderShell(300);
+	assert.equal(view.queryByRole("textbox", { name: "Search" }), null);
+
+	await view.click(view.getByRole("button", { name: "Search" }));
+	assert.ok(view.queryByRole("textbox", { name: "Search" }));
+
+	await resizeWindow(1400);
+	assert.ok(view.queryByRole("textbox", { name: "Search" }));
 
 	await resizeWindow(300);
-	assert.equal(view.queryByRole("textbox", { name: "Search" }) === null, true);
+	assert.equal(view.queryByRole("textbox", { name: "Search" }), null);
 	assert.equal(view.getByRole("button", { name: "Search" }).getAttribute("aria-label"), "Search");
 });
