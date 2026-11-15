@@ -97,4 +97,4 @@ Key props: `code`, `language`, `className`
 | `components/ui-custom/shimmer.tsx` | Loading shimmer/skeleton animation |
 | `components/ui-custom/model-selector.tsx` | AI model picker dropdown |
 
-For the full categorized list of all 47 ui-custom modules, see `references/migration-catalog.md`.
+For the full categorized list of all 47 ui-custom modules, see [ai-migration-catalog.md](ai-migration-catalog.md).

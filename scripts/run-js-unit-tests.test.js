@@ -489,7 +489,7 @@ test("every shard CLI rejects a silent suite or a stale not-run list before runn
 	try {
 		mkdirSync(path.join(root, "components"));
 		mkdirSync(path.join(root, "lib"));
-		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/memory-pressure.js", "lib/test-process.js"]) {
+		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/pid-lock-file.js", "lib/memory-pressure.js", "lib/test-process.js"]) {
 			copyFileSync(path.join(__dirname, file), path.join(root, file === "run-js-unit-tests.mjs" ? "runner.mjs" : file));
 		}
 		writeFileSync(path.join(root, "js-unit-test-skipped.mjs"), "export const SKIPPED_TEST_FILES = {};\nexport const SKIPPED_TEST_PREFIXES = {};\n");

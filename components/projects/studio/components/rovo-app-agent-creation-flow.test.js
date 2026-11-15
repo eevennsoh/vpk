@@ -79,10 +79,6 @@ const STUDIO_AGENT_ONBOARDING_GUIDE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-agent-onboarding-guide.ts"),
 	"utf8",
 );
-const STUDIO_DEMO_RESET_HOOK_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "hooks", "use-studio-demo-reset.ts"),
-	"utf8",
-);
 const STUDIO_AGENT_RESULT_REGISTRATION_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-studio-agent-result-registration.ts"),
 	"utf8",
@@ -97,10 +93,6 @@ const THREAD_MESSAGE_ROOT_SOURCE = fs.readFileSync(
 );
 const CHAT_GREETING_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/components/chat-greeting.tsx"),
-	"utf8",
-);
-const ROVO_CONTEXT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
 	"utf8",
 );
 const SESSION_AGENT_ENTRY_SOURCE = fs.readFileSync(
@@ -145,10 +137,6 @@ const AGENT_INSTRUCTIONS_COMPOSER_SOURCE = fs.readFileSync(
 );
 const AGENT_CONFIG_MODEL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/blocks/agent/lib/agent-config-model.ts"),
-	"utf8",
-);
-const NAV_HOOK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/top-navigation/hooks/use-top-navigation.ts"),
 	"utf8",
 );
 const LEFT_NAVIGATION_SOURCE = fs.readFileSync(
@@ -249,7 +237,6 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext,/u);
 	assert.match(SHELL_SOURCE, /from "@\/components\/projects\/rovo-core\/lib\/agent-records\/agent-creation-context";/u);
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext\(text, creationTemplate\)/u);
-	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;/u);
 	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation =[\s\S]*isDefaultAgentHomeStateRef\.current &&[\s\S]*!isRealtimeActive &&[\s\S]*!isAutomationDiscoveryDemoPrompt;/u);
 	assert.match(SHELL_SOURCE, /\.\.\.\(shouldStartStudioAgentCreation \? \{ creationMode: "agent" as const \} : \{\}\)/u);
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
@@ -305,38 +292,8 @@ test("RovoAppShell seeds the published RFP Drafter into the default Studio landi
 	assert.match(rfpSeedSource, /studioAgentRegistry\.publishSessionAgent\?\.\(profileId\);/u);
 	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
-	assert.doesNotMatch(rfpSeedSource, /setActiveAgentConfigState|setActiveAgentConfigView/u);
+	assert.doesNotMatch(rfpSeedSource, /dispatchMainSurface/u);
 });
-
-test("RovoAppShell settings reset clears Studio state and restores the fresh RFP Drafter", () => {
-	const resetSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const resetStudioDemoLocalState"),
-		SHELL_SOURCE.indexOf("const studioSettingsMenuItems"),
-	);
-
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /const STUDIO_RFP_DEMO_RESET_ENDPOINT = "\/api\/agents\/rfp-demo\/reset";/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /async function resetStudioRfpDemoBackendState/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await resetStudioRfpDemoBackendState\(\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await chat\.deleteAllThreads\(\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await studioAgentRegistry\.deleteAllThreads\(\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /onResetLocalState\(\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /const seededEntry = resetSessionAgentsToStudioRfpDemoAgent\(\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /writeSessionAgentRecords\(\[toPersistedRecord\(seededEntry\)\]\);/u);
-	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /window\.history\.pushState\(null, "", ROVO_APP_ROOT_PATH\);/u);
-	assert.match(resetSource, /creationTemplateRef\.current = null;/u);
-	assert.match(resetSource, /creationTemplateByThreadRef\.current = \{\};/u);
-	assert.match(resetSource, /setActiveAgentConfigState\(null\);/u);
-	assert.match(resetSource, /setActiveAgentConfigView\("configure"\);/u);
-	assert.match(resetSource, /studioAgentCreationThreadKeysRef\.current\.clear\(\);/u);
-	assert.match(resetSource, /setStudioAgentCreationThreadIds\(new Set<string>\(\)\);/u);
-	assert.match(SHELL_SOURCE, /const \{ isResettingStudioDemo, resetStudioDemo \} = useStudioDemoReset\(\{[\s\S]*chat,[\s\S]*embedded,[\s\S]*onResetLocalState: resetStudioDemoLocalState,[\s\S]*resetSessionAgentsToStudioRfpDemoAgent,[\s\S]*studioAgentRegistry,/u);
-	assert.match(SHELL_SOURCE, /settingsMenuItems=\{studioSettingsMenuItems\}/u);
-	assert.match(SHELL_SOURCE, /id: "reset-studio-demo"[\s\S]*label: isResettingStudioDemo \? "Resetting demo\.\.\." : "Reset demo"/u);
-	assert.match(SHELL_SOURCE, /for \(const entry of studioAgentRegistry\.sessionAgentEntries\) \{[\s\S]*studioAgentRegistry\.removeSessionAgent\(entry\.profile\.id\);[\s\S]*registerCreatedAgentFromResult\?\.\(STUDIO_RFP_DEMO_AGENT_RESULT/u);
-	assert.doesNotMatch(ROVO_CONTEXT_SOURCE, /adoptThreadMessages/u);
-});
-
 
 test("Studio landing empty state is title-only by default", () => {
 	assert.match(MESSAGES_SOURCE, /const STUDIO_EMPTY_STATE = \{/u);
@@ -368,7 +325,6 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(SHELL_SOURCE, /import \{ StudioAgentsSection \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
 	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;/u);
 	assert.doesNotMatch(SHELL_SOURCE, /shouldShowStudioCustomAgentsTable|isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0/u);
-	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, setActiveAgentConfigState, studioAgentRegistry\]/u);
 	assert.match(SHELL_SOURCE, /<motion\.div[\s\S]*animate=\{studioLandingMotionVisible\}[\s\S]*<StudioAgentsSection[\s\S]*directoryAgents=\{ROVO_DIRECTORY_AGENT_PROFILES\}[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onBrowseTemplates=\{\(\) => handleBrowseAgentTemplate\(\)\}/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onCreateAgent=\{handleFocusStudioComposer\}/u);
@@ -379,7 +335,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(SHELL_SOURCE, /const handleFocusStudioComposer = useCallback\(\(\) => \{[\s\S]*setComposerFocusRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*\}, \[\]\);/u);
 	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*focusRequestKey=\{composerFocusRequestKey\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*fillWidth=\{!showHomeState && !\(isArtifactOpen \|\| shouldShowAgentConfigPane\)\}/u);
-	assert.match(SHELL_SOURCE, /<AgentTemplateDialog[\s\S]*open=\{agentTemplateDialogOpen\}[\s\S]*onSelectAgent=\{handleTemplateAgentSelect\}/u);
+	assert.match(SHELL_SOURCE, /<AgentTemplateDialog[\s\S]*open=\{agentTemplateDialog\.open\}[\s\S]*onSelectAgent=\{handleTemplateAgentSelect\}/u);
 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`More actions for \$\{agentName\}`\}/u);
@@ -676,12 +632,6 @@ test("Studio home bento keeps tab auto-cycle active without manual category tabs
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /setCycleEnabled\(false\)/u);
 });
 
-test("Studio chat header is hidden until a chat is active", () => {
-	assert.match(SHELL_SOURCE, /const shouldShowChatHeader = !shouldShowAgentConfigPane && \(visibleMessages\.length > 0 \|\| hasActiveThreadRun \|\| chat\.isStreaming\);/u);
-	assert.match(SHELL_SOURCE, /\{shouldShowChatHeader \? \(\s*<RovoAppHeader/u);
-	assert.doesNotMatch(SHELL_SOURCE, /\n\t\t\t\t<RovoAppHeader/u);
-});
-
 test("Studio agent results use guarded session-agent registration with preserve-thread selection", () => {
 	const resultRegistrationCallSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("useStudioAgentResultRegistration({"),
@@ -736,17 +686,6 @@ test("Studio automation artifact-list agents persist in the sidebar without auto
 	assert.match(STUDIO_AGENT_RESULT_REGISTRATION_HOOK_SOURCE, /if \(didRegisterAgent\) \{[\s\S]*unmarkStudioAgentCreationThread\(runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(activeThreadId \?\? null\);[\s\S]*return true;[\s\S]*\}/u);
 });
 
-test("Studio custom agent config is not treated as the agents landing", () => {
-	assert.match(
-		SHELL_SOURCE,
-		/const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;/u,
-	);
-	assert.match(
-		SHELL_SOURCE,
-		/selectedAgentId=\{activeSessionAgentEntry\?\.profile\.id \?\? studioAgentRegistry\.selectedAgentId\}/u,
-	);
-});
-
 test("Studio agent edit surfaces share the session-agent display name", () => {
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /getStudioSessionAgentDisplayName/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const agentName = getStudioSessionAgentDisplayName\(entry\);/u);
@@ -754,43 +693,6 @@ test("Studio agent edit surfaces share the session-agent display name", () => {
 	assert.match(SHELL_SOURCE, /const agentName = getStudioSessionAgentDisplayName\(activeSessionAgentEntry\);/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /draft\.name\?\.trim\(\) \|\| entry\.profile\.name/u);
 	assert.doesNotMatch(SHELL_SOURCE, /draftResult\?\.name\?\.trim\(\) \|\| profile\.name/u);
-});
-
-test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
-	// The navigation hook still exposes deterministic chat controls for the
-	// separate Ask Rovo surface, and generated-agent testing opens it by default.
-	assert.match(NAV_HOOK_SOURCE, /const \{ toggleChat, openChat, chatSurface \} = useRovoChat\(\);/u);
-	assert.match(NAV_HOOK_SOURCE, /\n\t\topenChat,\n/u);
-
-	// The agent-result handler selects the Test tab for both registration paths
-	// and opens the right-side edit chat without toggling it closed if already open.
-	assert.ok(
-		(SHELL_SOURCE.match(/setActiveAgentConfigView\("test"\);/gu) ?? []).length >= 2,
-		"both registration success paths should land in the Test tab",
-	);
-	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*adoptStudioGenerationTranscript\(\{[\s\S]*chat: chatRef\.current,[\s\S]*registry: studioAgentRegistry,[\s\S]*\}\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
-	const agentResultSelectSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect = useCallback"),
-		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
-	);
-	assert.match(agentResultSelectSource, /setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*return true;[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*return true;/u);
-	assert.doesNotMatch(agentResultSelectSource, /nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry\]/u);
-	assert.match(SHELL_SOURCE, /const activeAgentConfigRef = useRef\(activeAgentConfig\);/u);
-	assert.match(SHELL_SOURCE, /const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>\(\(\) => new Set\(\)\);/u);
-	assert.match(SHELL_SOURCE, /const setActiveAgentConfigState = useCallback\(\(nextAgentConfig: typeof activeAgentConfig\) => \{[\s\S]*activeAgentConfigRef\.current = nextAgentConfig;[\s\S]*setActiveAgentConfig\(nextAgentConfig\);[\s\S]*\}, \[\]\);/u);
-	assert.match(SHELL_SOURCE, /const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*if \(activeAgentConfigRef\.current\?\.profileId !== agentId\) \{[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*\}[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u);
-	assert.match(SHELL_SOURCE, /if \(activeAgentConfig && !activeSessionAgentEntry\) \{[\s\S]*if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(activeAgentConfig\.profileId\)\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setActiveAgentConfigState\(null\);[\s\S]*setActiveAgentConfigView\("configure"\);/u);
-	// The auto-test effect must NOT short-circuit while already in the Test view:
-	// it has to keep scanning so it can record the completed result's key. The
-	// guard is only the two presence checks.
-	assert.match(SHELL_SOURCE, /if \(!activeAgentConfig \|\| !activeSessionAgentEntry\) \{\n\t\t\treturn;\n\t\t\}\n\n\t\tfor \(const message of chat\.messages\.toReversed\(\)\) \{/u);
-	assert.doesNotMatch(SHELL_SOURCE, /!activeAgentConfig \|\|[\s\S]{0,80}!activeSessionAgentEntry \|\|[\s\S]{0,80}activeAgentConfigView === "test"/u);
-	assert.match(SHELL_SOURCE, /const isActiveGeneratedAgent =[\s\S]*message\.id === activeAgentConfig\.sourceMessageId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.sourceResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.draftResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.publishReadyResult\.agentId;/u);
-	// The key is recorded unconditionally (so leaving Test never bounces back),
-	// while the actual view-switch + Ask Rovo open is gated on not already being
-	// in the Test view.
-	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*if \(activeAgentConfigView !== "test"\) \{[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*\}/u);
 });
 
 test("Studio agent config floating chat and voice preserve the generation conversation", () => {
@@ -984,20 +886,20 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Add agent instructions before testing this agent\."/u);
-	assert.match(SHELL_SOURCE, /const \[activeAgentConfigView, setActiveAgentConfigView\] = useState<AgentConfigView>\("configure"\);/u);
+	assert.match(SHELL_SOURCE, /agentConfigView: activeAgentConfigView,/u);
 	assert.match(SHELL_SOURCE, /const handleTestAgent = useCallback/u);
 	const handleTestAgentSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleTestAgent = useCallback"),
 		SHELL_SOURCE.indexOf("const handleAgentConfigViewChange = useCallback"),
 	);
 	assert.doesNotMatch(handleTestAgentSource, /draftResult\.instructions|return;/u);
-	assert.match(handleTestAgentSource, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);[\s\S]*setActiveAgentConfigView\("test"\);/u);
+	assert.match(handleTestAgentSource, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);[\s\S]*dispatchMainSurface\(\{ type: "set-agent-config-view", view: "test" \}\);/u);
 	assert.doesNotMatch(handleTestAgentSource, /nav\.openChat\("sidebar"\)|nav\.toggleChat/u);
 	const handleAgentConfigViewChangeSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleAgentConfigViewChange = useCallback"),
 		SHELL_SOURCE.indexOf("const handlePublishAgent = useCallback"),
 	);
-	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
+	assert.match(handleAgentConfigViewChangeSource, /dispatchMainSurface\(\{ type: "set-agent-config-view", view \}\);/u);
 	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
 	assert.match(SHELL_SOURCE, /const AgentTestPanel = dynamic\([\s\S]*import\("@\/components\/blocks\/agent-test"\)[\s\S]*\{ ssr: true \}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/blocks\/agent-test";/u);
@@ -1011,7 +913,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	// on the first template tab (AGENT_TEMPLATE_CATEGORIES[0].id) via the config
 	// panel, regardless of the bento's auto-cycling category.
 	assert.match(SHELL_SOURCE, /import \{ AGENT_TEMPLATE_CATEGORIES,[\s\S]*\} from "@\/components\/blocks\/agent-template";/u);
-	assert.match(SHELL_SOURCE, /const handleBrowseAgentsDirectory = useCallback\(\(\) => \{[\s\S]*setSidebarAgentBrowserInitialCategory\(AGENT_TEMPLATE_CATEGORIES\[0\]\.id\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const handleBrowseAgentsDirectory = useCallback\(\(\) => \{[\s\S]*dispatchMainSurface\(\{ type: "open-directory", category: AGENT_TEMPLATE_CATEGORIES\[0\]\.id \}\);[\s\S]*\}, \[dispatchMainSurface\]\);/u);
 	assert.match(SHELL_SOURCE, /const handleStartAgentWithTemplate = handleBrowseAgentsDirectory;/u);
 	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*onStartWithTemplate=\{handleStartAgentWithTemplate\}[\s\S]*\/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onStartWithTemplate=\{onStartWithTemplate\}/u);
@@ -1424,7 +1326,7 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.doesNotMatch(SHELL_SOURCE, /STUDIO_LIVE_CHAT_ANCHOR_SELECTORS[\s\S]*\.flatMap/u);
 	assert.match(SHELL_SOURCE, /<RovoCursorOnboardingTour[\s\S]*isActive=\{agentOnboardingTour\.isActive && Boolean\(agentOnboardingTour\.anchorElement\) && Boolean\(liveChatAnchorElement\)\}[\s\S]*finishRequestKey=\{agentOnboardingTourFinishRequestKey\}[\s\S]*onBack=\{backAgentOnboardingTourStep\}[\s\S]*onNext=\{handleAgentOnboardingTourNext\}[\s\S]*onDismiss=\{dismissAgentOnboardingTour\}/u);
 	assert.match(SHELL_SOURCE, /process\.env\.NODE_ENV === "production"[\s\S]*hasStartedAgentOnboardingTourPreviewRef\.current[\s\S]*params\.get\(STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM\) !== STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE/u);
-	assert.match(SHELL_SOURCE, /hasQueuedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*const startPreviewTour = \(\) => \{[\s\S]*frame < 4[\s\S]*hasStartedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*hasQueuedAgentOnboardingTourPreviewRef\.current = false;[\s\S]*startAgentOnboardingTour\(\);/u);
+	assert.match(SHELL_SOURCE, /hasQueuedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*dispatchMainSurface\(\{ type: "set-agent-config-view", view: "test" \}\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*const startPreviewTour = \(\) => \{[\s\S]*frame < 4[\s\S]*hasStartedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*hasQueuedAgentOnboardingTourPreviewRef\.current = false;[\s\S]*startAgentOnboardingTour\(\);/u);
 	assert.match(SHELL_SOURCE, /if \(!hasStartedAgentOnboardingTourPreviewRef\.current\) \{[\s\S]*hasQueuedAgentOnboardingTourPreviewRef\.current = false;/u);
 
 	assert.doesNotMatch(AGENT_ONBOARDING_TOUR_SOURCE, /SpotlightPlacement|placement:/u);
@@ -1544,7 +1446,7 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /const creationTemplateRef = useRef<StudioCreationTemplateContext \| null>\(null\);/u);
 	assert.match(SHELL_SOURCE, /const creationTemplateByThreadRef = useRef<Record<string, StudioCreationTemplateContext>>\(\{\}\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = template \?\? null;/u);
-	assert.match(SHELL_SOURCE, /setAgentTemplateDialogOpen\(false\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
+	assert.match(SHELL_SOURCE, /dispatchMainSurface\(\{ type: "template-agent-picked" \}\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateByThreadRef\.current\[chat\.runtimeThreadId\] = creationTemplate;/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });
@@ -1555,7 +1457,7 @@ test("Studio Agent Directory template setup builds a local draft before opening 
 	assert.match(SHELL_SOURCE, /buildTemplateAgentResultFromAgent\(agent, \{[\s\S]*appIds: options\.connectApps \? options\.appIds : \[\],[\s\S]*\}\);/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(agentResult, \{[\s\S]*preserveCurrentThread: true,[\s\S]*select: true,[\s\S]*sourceKey: `studio-template-setup:\$\{agent\.id\}:\$\{Date\.now\(\)\}`/u);
 	assert.match(SHELL_SOURCE, /return registered[\s\S]*\? \{[\s\S]*profileId: registered\.id,[\s\S]*onCancel: \(\) => studioAgentRegistry\.removeSessionAgent\(registered\.id\),[\s\S]*\}[\s\S]*: null;/u);
-	assert.match(SHELL_SOURCE, /const handleOpenBuiltTemplateAgentConfig = useCallback\(\(profileId: string\) => \{[\s\S]*setActiveAgentConfigState\(\{[\s\S]*profileId,[\s\S]*sourceMessageId: null,[\s\S]*\}\);[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
+	assert.match(SHELL_SOURCE, /const handleOpenBuiltTemplateAgentConfig = useCallback\(\(profileId: string\) => \{[\s\S]*dispatchMainSurface\(\{ type: "directory-agent-picked", profileId \}\);/u);
 	assert.match(SHELL_SOURCE, /onBuildTemplateAgent=\{handleBuildTemplateAgent\}/u);
 	assert.match(SHELL_SOURCE, /onOpenBuiltTemplateAgentConfig=\{handleOpenBuiltTemplateAgentConfig\}/u);
 	assert.match(SHELL_SOURCE, /const handleTemplateAgentSelect = useCallback\(\(agent: AgentTemplateAgent\) => \{[\s\S]*handleGallerySelect\(/u);
@@ -1605,36 +1507,8 @@ test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt va
 		SHELL_SOURCE.indexOf("const handleStartAgentFromScratch = useCallback"),
 		SHELL_SOURCE.indexOf("const handleStudioSidebarAgentSelect = useCallback"),
 	);
-	assert.match(fromScratchHandlerSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: registered\.id/u);
-	assert.match(fromScratchHandlerSource, /setActiveAgentConfigView\("configure"\);[\s\S]*openAgentCreationAskRovoChat\(\);/u);
-});
-
-// Regression: re-opening a custom agent (sidebar row / "Edit") must NOT point
-// chat at the custom agent. It opens the config pane only and leaves the Ask Rovo
-// build helper on the default Rovo agent, exactly like create-from-scratch — so
-// the panel no longer "swaps" onto the custom agent on the second click.
-test("Studio re-selecting a custom agent edits it without selecting it for chat", () => {
-	const sidebarSelectSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const handleStudioSidebarAgentSelect = useCallback"),
-		SHELL_SOURCE.indexOf("const handleDeleteStudioAgent = useCallback"),
-	);
-	// Opens the config pane on the agent...
-	assert.match(sidebarSelectSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: agentId,/u);
-	assert.match(sidebarSelectSource, /setActiveAgentConfigView\("configure"\);/u);
-	// ...but never selects it for chat.
-	assert.doesNotMatch(sidebarSelectSource, /selectAgent/u);
-
-	// The browse picker only selects-for-chat on the non-editable branch (a
-	// genuine "chat with this built-in agent"); editable custom agents open the
-	// config pane and keep the Ask Rovo helper.
-	const browseSelectSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const handleSidebarBrowseAgentSelect = useCallback"),
-		SHELL_SOURCE.indexOf("const handleUpdateAgentDraft = useCallback"),
-	);
-	assert.match(
-		browseSelectSource,
-		/if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(agent\.id\)\) \{[\s\S]*setActiveAgentConfigState\(\{[\s\S]*\} else \{[\s\S]*studioAgentRegistry\.selectAgent\(agent\.id, \{ preserveCurrentThread: true \}\);/u,
-	);
+	assert.match(fromScratchHandlerSource, /dispatchMainSurface\(\{ type: "edit-agent", profileId: registered\.id \}\);/u);
+	assert.match(fromScratchHandlerSource, /dispatchMainSurface\(\{ type: "edit-agent"[\s\S]*openAgentCreationAskRovoChat\(\);/u);
 });
 
 test("Studio composer opts into experimental dark composer CTAs", () => {

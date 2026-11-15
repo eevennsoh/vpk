@@ -17,6 +17,8 @@ export interface WebsiteCardProps {
 	fullWidth?: boolean;
 	/** Defers full-width cards that are known to start below the initial viewport. */
 	deferOffscreen?: boolean;
+	/** Full-width only: the frame grows to fill the card's flex parent instead of a fixed height. */
+	fillHeight?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export function WebsiteCard({
 	className,
 	fullWidth,
 	deferOffscreen,
+	fillHeight,
 }: Readonly<WebsiteCardProps>) {
 	const Title = href ? (
 		<Link
@@ -48,7 +51,8 @@ export function WebsiteCard({
 		return (
 			<li
 				className={cn(
-					"relative border-r border-b border-border bg-surface p-8",
+					"relative border-r border-b border-border bg-surface p-8 last:border-b-0",
+					fillHeight ? "flex flex-1 flex-col" : null,
 					deferOffscreen ? "cv-auto" : null,
 					className,
 				)}
@@ -61,7 +65,12 @@ export function WebsiteCard({
 				<span className="mb-4 block">
 					{Title}
 				</span>
-				<div className="relative h-[900px] min-w-0 overflow-hidden rounded-lg border border-border">
+				<div
+					className={cn(
+						"relative min-w-0 overflow-hidden rounded-lg border border-border",
+						fillHeight ? "min-h-[480px] flex-1" : "h-[900px]",
+					)}
+				>
 					{children}
 				</div>
 			</li>

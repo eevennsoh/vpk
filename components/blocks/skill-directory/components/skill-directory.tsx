@@ -692,7 +692,7 @@ function SkillDirectoryView({
 	sidebarGroups,
 	skills,
 }: Readonly<SkillDirectoryViewProps>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -705,7 +705,7 @@ function SkillDirectoryView({
 			/>
 
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					// overflow-y-auto forces overflow-x to compute to auto, so this scroll
 					// viewport clips anything painted outside its content box. pt-1 gives the
@@ -713,7 +713,7 @@ function SkillDirectoryView({
 					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
 					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
 					"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					showContentTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
 				<InputGroup>

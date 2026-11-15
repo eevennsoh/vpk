@@ -9,6 +9,8 @@ const DEFAULT_TARGET = ".agents/skills";
 const SKILL_ENTRYPOINT = "SKILL.md";
 const SKILL_INDEX_PATH = ".agents/skills/INDEX.md";
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+// Codex rejects skill descriptions longer than this many characters.
+const MAX_DESCRIPTION_LENGTH = 1024;
 const ALLOWED_SKILLS_ROOT_FILES = new Set(["INDEX.md"]);
 
 function toPosixPath(filePath) {
@@ -413,6 +415,12 @@ function validateSkillDirectory(skillDir) {
 			message: "SKILL.md frontmatter must include a non-empty description.",
 			path: skillPath,
 			type: "skill-description-missing",
+		});
+	} else if (description.length > MAX_DESCRIPTION_LENGTH) {
+		failures.push({
+			message: `Skill description is ${description.length} characters; the limit is ${MAX_DESCRIPTION_LENGTH}.`,
+			path: skillPath,
+			type: "skill-description-too-long",
 		});
 	}
 

@@ -80,6 +80,7 @@ const {
 const {
 	getRovoBasePort: defaultGetRovoBasePort,
 } = require("../scripts/lib/worktree-ports");
+const { resolveBackendDataDir } = require("./lib/backend-data-dir");
 const {
 	getEnvVars: defaultGetEnvVars,
 	getAIGatewayConfigReport: defaultGetAIGatewayConfigReport,
@@ -129,6 +130,7 @@ function createBackendRuntimeComposition({
 	env = process.env,
 	logger = console,
 	projectRoot = path.join(backendDir, ".."),
+	dataDir = resolveBackendDataDir({ backendDir, env }),
 } = {}, implementations = {}) {
 	const {
 		browserWorkspaceManager = defaultBrowserWorkspaceManager,
@@ -247,7 +249,7 @@ function createBackendRuntimeComposition({
 		gatewayTextGeneration,
 		services: backendServices,
 	} = createBackendServiceComposition({
-		baseDir: path.join(backendDir, "data"),
+		baseDir: dataDir,
 		createRovoUnavailableError,
 		debugLog,
 		deleteRovoAppThreadBrowserWorkspace,

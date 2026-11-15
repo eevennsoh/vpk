@@ -4,8 +4,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { verifyInitialTheme } from "./verify-initial-theme.mjs";
 import { verifyStaticDelivery } from "./verify-static-delivery.mjs";
+import { readSlauthOption, resolveSlauthHeaders } from "./slauth-auth.mjs";
 
-const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--check-static-delivery] [--report path] [--expect-html-file path] [--timeout-ms 15000]";
+const usage = "Usage: verify-runtime.mjs <base-url> [route ...] [--profile static|backend|chat|full] [--check-ads-theme] [--check-static-delivery] [--report path] [--expect-html-file path] [--timeout-ms 15000] [--slauth-aud vpk | --no-slauth]";
 let baseUrl;
 let profile = "full";
 let timeoutMs = 15000;
@@ -15,6 +16,9 @@ let checkStaticDelivery = false;
 let reportFile;
 const responses = [];
 const routes = [];
+// A Micros host sends an SLAuth token for audience vpk by default (slauth-auth.mjs).
+const slauthOptions = { audience: null, explicit: false };
+let authHeaders = {};
 try {
 	baseUrl = new URL(process.argv[2] || process.env.VPK_DEPLOY_URL);
 	if (!["http:", "https:"].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) {
@@ -22,7 +26,9 @@ try {
 	}
 	for (let index = 3; index < process.argv.length; index += 1) {
 		const arg = process.argv[index];
-		if (arg === "--profile") profile = process.argv[++index];
+		const slauthArgs = readSlauthOption(process.argv, index, slauthOptions);
+		if (slauthArgs) index += slauthArgs - 1;
+		else if (arg === "--profile") profile = process.argv[++index];
 		else if (arg === "--timeout-ms") timeoutMs = Number(process.argv[++index]);
 		else if (arg === "--check-ads-theme") checkAdsTheme = true;
 		else if (arg === "--check-static-delivery") checkStaticDelivery = true;
@@ -40,6 +46,7 @@ try {
 	if (!["static", "backend", "chat", "full"].includes(profile)) throw new Error("Unknown runtime profile");
 	if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000) throw new Error("Timeout must be 1–120000 ms");
 	if (expectHtmlFile && routes.length > 1) throw new Error("Expected HTML file can verify only one route");
+	authHeaders = resolveSlauthHeaders(baseUrl, slauthOptions);
 } catch (error) {
 	console.error(`${usage}\n${error.message}`);
 	process.exit(2);
@@ -85,7 +92,8 @@ async function request(pathname, label, headers = {}, json = false, media) {
 		if (url.origin !== baseUrl.origin) throw new Error("cross-origin request rejected");
 		for (let redirects = 0; redirects <= 5; redirects += 1) {
 			const response = await fetch(url, {
-				headers: checkStaticDelivery && media ? { "Accept-Encoding": "br, gzip", ...headers } : headers,
+				// Same-origin only (cross-origin redirects are rejected above), so the token stays on this host.
+				headers: { ...authHeaders, ...(checkStaticDelivery && media ? { "Accept-Encoding": "br, gzip", ...headers } : headers) },
 				signal, redirect: "manual",
 			});
 			if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -138,7 +146,7 @@ async function request(pathname, label, headers = {}, json = false, media) {
 	}
 }
 
-console.log(`Verifying ${baseUrl.origin}, profile=${profile}`);
+console.log(`Verifying ${baseUrl.origin}, profile=${profile}${authHeaders.Authorization ? ", SLAuth token" : ""}`);
 for (const route of routes) {
 	const routeLabel = route.split(/[?#]/u)[0];
 	const html = await request(route, `route ${routeLabel}`, {}, false, { pattern: /^text\/html\b/iu, name: "HTML" });

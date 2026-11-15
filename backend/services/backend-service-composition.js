@@ -1,6 +1,8 @@
 "use strict";
 
 const path = require("node:path");
+
+const { resolveBackendDataDir } = require("../lib/backend-data-dir");
 const { createAgentsRfpDemoJobOwner: defaultCreateAgentsRfpDemoJobOwner } = require("../lib/agents-rfp-demo-job-owner");
 const { createGatewayTextGenerationService: defaultCreateGatewayTextGenerationService } = require("../lib/gateway-text-generation");
 const { createBackendServices: defaultCreateBackendServices } = require("./create-backend-services");
@@ -12,7 +14,7 @@ function requireFunction(name, value) {
 }
 
 function createBackendServiceComposition({
-	baseDir = path.join(__dirname, "..", "data"),
+	baseDir = resolveBackendDataDir({ backendDir: path.join(__dirname, "..") }),
 	createRovoUnavailableError,
 	debugLog,
 	deleteRovoAppThreadBrowserWorkspace,

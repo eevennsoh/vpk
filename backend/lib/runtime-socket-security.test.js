@@ -11,6 +11,7 @@ const {
 const runtimeAdminToken = "test-runtime-admin-token";
 const tokenOptions = {
 	runtimeAdminToken,
+	subject: "alice",
 	ttlMs: 60_000,
 };
 
@@ -53,7 +54,7 @@ test("runtime socket tokens are scoped and signed", () => {
 		isRuntimeSocketTokenValid(
 			token,
 			"realtime:audio-conversation",
-			{ runtimeAdminToken },
+			{ runtimeAdminToken, subject: "alice" },
 		),
 		true,
 	);
@@ -61,7 +62,7 @@ test("runtime socket tokens are scoped and signed", () => {
 		isRuntimeSocketTokenValid(
 			token,
 			"browser-preview:workspace-1",
-			{ runtimeAdminToken },
+			{ runtimeAdminToken, subject: "alice" },
 		),
 		false,
 	);
@@ -69,7 +70,7 @@ test("runtime socket tokens are scoped and signed", () => {
 		isRuntimeSocketTokenValid(
 			`${token}.extra`,
 			"realtime:audio-conversation",
-			{ runtimeAdminToken },
+			{ runtimeAdminToken, subject: "alice" },
 		),
 		false,
 	);
@@ -91,4 +92,15 @@ test("appendRuntimeSocketToken preserves absolute and relative websocket URLs", 
 		tokenOptions,
 	);
 	assert.match(relativeUrl, /^\/api\/browser-workspaces\/workspace-1\/live\?previewToken=/u);
+});
+
+test("a runtime socket token opens a socket only for the caller it was issued to", () => {
+	const token = createRuntimeSocketToken("realtime:audio-conversation", tokenOptions);
+	assert.equal(isRuntimeSocketTokenValid(token, "realtime:audio-conversation", { runtimeAdminToken, subject: "alice" }), true);
+	// Another SLAuth subject presenting alice's token, or no subject at all, is refused.
+	assert.equal(isRuntimeSocketTokenValid(token, "realtime:audio-conversation", { runtimeAdminToken, subject: "bob" }), false);
+	assert.equal(isRuntimeSocketTokenValid(token, "realtime:audio-conversation", { runtimeAdminToken, subject: "" }), false);
+	assert.equal(isRuntimeSocketTokenValid(token, "realtime:audio-conversation", { runtimeAdminToken }), false);
+	// No caller, no token.
+	assert.equal(createRuntimeSocketToken("realtime:audio-conversation", { runtimeAdminToken, ttlMs: 60_000 }), "");
 });

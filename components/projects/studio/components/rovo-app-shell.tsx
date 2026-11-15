@@ -32,6 +32,8 @@ import { RovoAppComposer } from "@/components/projects/studio/components/rovo-ap
 import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import { RovoAppHomeStarterBento } from "@/components/projects/studio/components/rovo-app-home-starter-bento";
 import { HOME_STARTER_DEFAULT_CATEGORY, type HomeStarterCategory } from "@/components/projects/studio/data/home-starter-templates";
+import { useStudioMainSurface } from "@/components/projects/studio/hooks/use-studio-main-surface";
+import { deriveStudioMainSurface } from "@/components/projects/studio/lib/studio-main-surface-machine";
 import { StudioAgentsSection } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
 import {
 	parseStudioAutomationArtifactListPayload,
@@ -44,7 +46,7 @@ import { isStudioAutomationDiscoveryDemoPrompt } from "@/components/projects/stu
 import {
 	RovoAppMessages,
 } from "@/components/projects/studio/components/rovo-app-messages";
-import type { AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
+import type { AgentConfigView } from "@/components/projects/studio/lib/studio-main-surface-machine";
 import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
 import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
 import {
@@ -345,18 +347,14 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		[selectedAgentContextDescription],
 	);
 
-	const [activeAgentConfig, setActiveAgentConfig] = useState<{
-		profileId: string;
-		sourceMessageId: string | null;
-	} | null>(null);
-	const activeAgentConfigRef = useRef(activeAgentConfig);
-	const setActiveAgentConfigState = useCallback((nextAgentConfig: typeof activeAgentConfig) => {
-		activeAgentConfigRef.current = nextAgentConfig;
-		setActiveAgentConfig(nextAgentConfig);
-	}, []);
-	const [activeAgentConfigView, setActiveAgentConfigView] = useState<AgentConfigView>("configure");
-	const [isSidebarAgentBrowserOpen, setIsSidebarAgentBrowserOpen] = useState(false);
-	const [sidebarAgentBrowserInitialCategory, setSidebarAgentBrowserInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
+	// The config pane (agent + view) and the agent directory and template dialogs: one machine.
+	const { dispatch: dispatchMainSurface, state: mainSurface } = useStudioMainSurface();
+	const {
+		agentConfig: activeAgentConfig,
+		agentConfigView: activeAgentConfigView,
+		directory: agentDirectoryDialog,
+		templateDialog: agentTemplateDialog,
+	} = mainSurface;
 	const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const hasSeededStudioRfpDemoAgentRef = useRef(false);
 	const hasStartedAgentOnboardingTourPreviewRef = useRef(false);
@@ -521,11 +519,11 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				if (!registered) {
 					return false;
 				}
-				setActiveAgentConfigState({
+				dispatchMainSurface({
+					type: "agent-result-registered",
 					profileId: registered.id,
 					sourceMessageId: options?.sourceMessageId ?? null,
 				});
-				setActiveAgentConfigView("test");
 				openAgentCreationAskRovoChat();
 				setAgentCreationTourSignal((signal) => signal + 1);
 				return true;
@@ -552,16 +550,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 			const agentId = resolveRegisteredStudioAgentId(registrationResult, normalizedAgent.id);
 			studioAgentRegistry.selectAgent(agentId, { preserveCurrentThread: true });
-			setActiveAgentConfigState({
+			dispatchMainSurface({
+				type: "agent-result-registered",
 				profileId: agentId,
 				sourceMessageId: options?.sourceMessageId ?? null,
 			});
-			setActiveAgentConfigView("test");
 			openAgentCreationAskRovoChat();
 			setAgentCreationTourSignal((signal) => signal + 1);
 			return true;
 		},
-		[chat.activeThreadId, chat.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry],
+		[chat.activeThreadId, chat.runtimeThreadId, dispatchMainSurface, openAgentCreationAskRovoChat, studioAgentRegistry],
 	);
 	const renderStudioAskRovoWidget = useCallback(
 		(widget: { type: string; data: unknown }, message: RovoRenderableUIMessage): ReactNode => {
@@ -624,13 +622,9 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			return;
 		}
 
-		setActiveAgentConfigState({
-			profileId: registered.id,
-			sourceMessageId: null,
-		});
-		setActiveAgentConfigView("configure");
+		dispatchMainSurface({ type: "edit-agent", profileId: registered.id });
 		openAgentCreationAskRovoChat();
-	}, [openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry]);
+	}, [dispatchMainSurface, openAgentCreationAskRovoChat, studioAgentRegistry]);
 
 	const handleStudioSidebarAgentSelect = useCallback(
 		(agentId: string) => {
@@ -640,27 +634,21 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			// create-from-scratch path. Selecting the custom agent here is what
 			// caused the panel to "swap" onto the custom agent on the second
 			// click. `activeAgentConfig` drives both the config pane and `?agent=`.
-			setActiveAgentConfigState({
-				profileId: agentId,
-				sourceMessageId: null,
-			});
-			setActiveAgentConfigView("configure");
+			dispatchMainSurface({ type: "edit-agent", profileId: agentId });
 		},
-		[setActiveAgentConfigState],
+		[dispatchMainSurface],
 	);
 
 	const handleDeleteStudioAgent = useCallback(
 		(agentId: string) => {
 			// Close the config pane first so its draft editor cannot re-save a
 			// session agent after the registry entry is removed.
-			if (activeAgentConfig?.profileId === agentId) {
-				setActiveAgentConfigState(null);
-			}
+			dispatchMainSurface({ type: "agent-deleted", profileId: agentId });
 			startTransition(() => {
 				studioAgentRegistry.removeSessionAgent(agentId);
 			});
 		},
-		[activeAgentConfig?.profileId, setActiveAgentConfigState, studioAgentRegistry],
+		[dispatchMainSurface, studioAgentRegistry],
 	);
 
 	// Returns to the "Agents" landing (bento). Shared by the sidebar's "Agents"
@@ -671,13 +659,12 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	// two, openNewChat alone leaves the custom-agent screen open.
 	const handleReturnToAgentsHome = useCallback(() => {
 		setOptimisticUserMessage(null);
-		setActiveAgentConfigState(null);
-		setActiveAgentConfigView("configure");
+		dispatchMainSurface({ type: "close-agent-config" });
 		studioAgentRegistry.resetAgentToRovo();
 		startTransition(() => {
 			void chat.openNewChat();
 		});
-	}, [chat, setActiveAgentConfigState, studioAgentRegistry]);
+	}, [chat, dispatchMainSurface, studioAgentRegistry]);
 
 	const handleSidebarBrowseAgentSelect = useCallback(
 		(agent: { id: string }) => {
@@ -685,21 +672,15 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				// Editable custom agent: open the config pane and keep the
 				// Ask Rovo build helper (do NOT select it for chat), matching the
 				// create + sidebar-select paths so nothing "swaps" on re-entry.
-				setActiveAgentConfigState({
-					profileId: agent.id,
-					sourceMessageId: null,
-				});
-				setActiveAgentConfigView("configure");
+				dispatchMainSurface({ type: "directory-agent-picked", profileId: agent.id });
 			} else {
 				// Non-editable (built-in/published) agent: there is no config pane
 				// to edit, so this is a genuine "chat with this agent" action.
 				studioAgentRegistry.selectAgent(agent.id, { preserveCurrentThread: true });
-				setActiveAgentConfigState(null);
-				setActiveAgentConfigView("configure");
+				dispatchMainSurface({ type: "directory-agent-picked", profileId: null });
 			}
-			setIsSidebarAgentBrowserOpen(false);
 		},
-		[setActiveAgentConfigState, studioAgentRegistry],
+		[dispatchMainSurface, studioAgentRegistry],
 	);
 
 	const handleUpdateAgentDraft = useCallback(
@@ -719,16 +700,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const handleTestAgent = useCallback(
 		(profileId: string) => {
 			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
-			setActiveAgentConfigView("test");
+			dispatchMainSurface({ type: "set-agent-config-view", view: "test" });
 		},
-		[studioAgentRegistry],
+		[dispatchMainSurface, studioAgentRegistry],
 	);
 
 	const handleAgentConfigViewChange = useCallback(
 		(view: AgentConfigView) => {
-			setActiveAgentConfigView(view);
+			dispatchMainSurface({ type: "set-agent-config-view", view });
 		},
-		[],
+		[dispatchMainSurface],
 	);
 
 	// Restore (or clear) the agent config pane when the active agent is
@@ -737,11 +718,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	// the URL-seed path, which otherwise only re-selects the agent for chat and
 	// would leave the studio on the agent's chat surface with no config pane.
 	const handleAgentRestoredFromUrl = useCallback((agentId: string | null) => {
-		if (activeAgentConfigRef.current?.profileId !== agentId) {
-			setActiveAgentConfigView("configure");
-		}
-		setActiveAgentConfigState(agentId ? { profileId: agentId, sourceMessageId: null } : null);
-	}, [setActiveAgentConfigState]);
+		dispatchMainSurface({ type: "agent-restored-from-url", profileId: agentId });
+	}, [dispatchMainSurface]);
 
 	// Mirror the agent being EDITED (the open config pane / `activeAgentConfig`)
 	// into the URL (`?agent=`) so it is deep-linkable, survives reload, and works
@@ -857,10 +835,10 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				return;
 			}
 
-			setActiveAgentConfigState(null);
-			setActiveAgentConfigView("configure");
+			// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
+			dispatchMainSurface({ type: "close-agent-config" });
 		}
-	}, [activeAgentConfig, activeSessionAgentEntry, setActiveAgentConfigState, studioAgentRegistry]);
+	}, [activeAgentConfig, activeSessionAgentEntry, dispatchMainSurface, studioAgentRegistry]);
 
 	useEffect(() => {
 		if (!activeAgentConfig || !activeSessionAgentEntry) {
@@ -895,13 +873,14 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				// greeting (the "two clicks to leave Test" bug).
 				generatedAgentTestViewKeysRef.current.add(agentResultKey);
 				if (activeAgentConfigView !== "test") {
-					setActiveAgentConfigView("test");
+					// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
+					dispatchMainSurface({ type: "set-agent-config-view", view: "test" });
 					openAgentCreationAskRovoChat();
 				}
 				break;
 			}
 		}
-		}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId, generatedAgentTestViewKeysRef, openAgentCreationAskRovoChat]);
+		}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId, dispatchMainSurface, generatedAgentTestViewKeysRef, openAgentCreationAskRovoChat]);
 
 	// Global-sidebar sync, hover reveal, resizable width and header styles.
 	const {
@@ -939,8 +918,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const composerTextRef = useRef("");
 	const [cursorMode, setCursorMode] = useState(false);
 	const [galleryExpanded, setGalleryExpanded] = useState(false);
-	const [agentTemplateDialogOpen, setAgentTemplateDialogOpen] = useState(false);
-	const [agentTemplateInitialCategory, setAgentTemplateInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
 	const [prefillText, setPrefillText] = useState<string | null>(null);
@@ -994,10 +971,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		setOptimisticUserMessage(null);
 		setCursorMode(false);
 		setGalleryExpanded(false);
-		setAgentTemplateDialogOpen(false);
-		setAgentTemplateInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
-		setIsSidebarAgentBrowserOpen(false);
-		setSidebarAgentBrowserInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+		dispatchMainSurface({ type: "reset" });
 		setComposerFocusRequestKey(0);
 		setPreviewPrompt(null);
 		setPrefillText(null);
@@ -1013,10 +987,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		studioAgentCreationThreadKeysRef.current.clear();
 		studioAgentCreationThreadTouchedAtRef.current.clear();
 		setStudioAgentCreationThreadIds(new Set<string>());
-		setActiveAgentConfigState(null);
-		setActiveAgentConfigView("configure");
 	}, [
-		setActiveAgentConfigState,
+		dispatchMainSurface,
 		setScrollAnchorMessageId,
 		setScrollFollowMode,
 		studioAgentCreationThreadKeysRef,
@@ -1098,18 +1070,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, []);
 
 	const handleBrowseAgentTemplate = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
-		setAgentTemplateInitialCategory(category);
-		setAgentTemplateDialogOpen(true);
-	}, []);
+		dispatchMainSurface({ type: "open-template-dialog", category });
+	}, [dispatchMainSurface]);
 
 	// The home bento's "Browse all" pill opens the full Agent Directory instead
 	// of the lighter templates dialog. The bento auto-cycles its category, but we
 	// always land the directory on the first template tab ("Planning") for a
 	// predictable entry point, so the cycling tab is intentionally ignored.
 	const handleBrowseAgentsDirectory = useCallback(() => {
-		setSidebarAgentBrowserInitialCategory(AGENT_TEMPLATE_CATEGORIES[0].id);
-		setIsSidebarAgentBrowserOpen(true);
-	}, []);
+		dispatchMainSurface({ type: "open-directory", category: AGENT_TEMPLATE_CATEGORIES[0].id });
+	}, [dispatchMainSurface]);
 
 	// The empty-instructions "start with a template" link opens the same agents
 	// directory as "Browse all", landing on the first template tab.
@@ -1120,9 +1090,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
 			buildCreationTemplateContextFromAgent(agent),
 		);
-		setAgentTemplateDialogOpen(false);
-		setIsSidebarAgentBrowserOpen(false);
-	}, [handleGallerySelect]);
+		dispatchMainSurface({ type: "template-agent-picked" });
+	}, [dispatchMainSurface, handleGallerySelect]);
 
 	const handleBuildTemplateAgent = useCallback((agent: AgentTemplateAgent, options: AgentsDirectoryTemplateBuildOptions) => {
 		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
@@ -1147,13 +1116,14 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, [studioAgentRegistry]);
 
 	const handleOpenBuiltTemplateAgentConfig = useCallback((profileId: string) => {
-		setActiveAgentConfigState({
-			profileId,
-			sourceMessageId: null,
-		});
-		setActiveAgentConfigView("configure");
-		setIsSidebarAgentBrowserOpen(false);
-	}, [setActiveAgentConfigState]);
+		dispatchMainSurface({ type: "directory-agent-picked", profileId });
+	}, [dispatchMainSurface]);
+	const handleAgentTemplateDialogOpenChange = useCallback((open: boolean) => {
+		dispatchMainSurface({ type: "set-template-dialog-open", open });
+	}, [dispatchMainSurface]);
+	const handleAgentDirectoryOpenChange = useCallback((open: boolean) => {
+		dispatchMainSurface({ type: "set-directory-open", open });
+	}, [dispatchMainSurface]);
 
 	const handleFocusStudioComposer = useCallback(() => {
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
@@ -2305,9 +2275,15 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, [chat.documents, chat.messages]);
 
 	const hasActiveThreadRun = typeof chat.activeThreadId === "string" && chat.backgroundStreamThreadIds.has(chat.activeThreadId);
-	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
-	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
-	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;
+	const { isDefaultAgentHomeState, shouldShowChatHeader, showHomeState } = deriveStudioMainSurface({
+		hasActiveThreadRun,
+		hasAgentConfigPane: shouldShowAgentConfigPane,
+		isArtifactOpen,
+		isCustomAgentSelected,
+		isLoadingThread: chat.isLoadingThread,
+		isStreaming: chat.isStreaming,
+		visibleMessageCount: visibleMessages.length,
+	});
 	useEffect(() => {
 		isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
 	}, [isDefaultAgentHomeState]);
@@ -2401,7 +2377,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		}
 
 		hasQueuedAgentOnboardingTourPreviewRef.current = true;
-		setActiveAgentConfigView("test");
+		// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
+		dispatchMainSurface({ type: "set-agent-config-view", view: "test" });
 		openAgentCreationAskRovoChat();
 		let frame = 0;
 		let rafId = 0;
@@ -2423,7 +2400,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				hasQueuedAgentOnboardingTourPreviewRef.current = false;
 			}
 		};
-	}, [activeSessionAgentEntry, openAgentCreationAskRovoChat, shouldShowAgentConfigPane, startAgentOnboardingTour]);
+	}, [activeSessionAgentEntry, dispatchMainSurface, openAgentCreationAskRovoChat, shouldShowAgentConfigPane, startAgentOnboardingTour]);
 	useEffect(() => {
 		if (agentCreationTourSignal === 0) {
 			return;
@@ -2833,7 +2810,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				onPreviewStart={handleGalleryPreviewStart}
 				onSelect={handleGallerySelect}
 				reduceMotion={shouldReduceStudioLandingMotion}
-				templatesDialogOpen={agentTemplateDialogOpen || isSidebarAgentBrowserOpen}
+				templatesDialogOpen={agentTemplateDialog.open || agentDirectoryDialog.open}
 			/>
 
 			{shouldShowComposerDock ? (
@@ -3080,11 +3057,11 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				topOffset={!embedded}
 			/>
 			<AgentTemplateDialog
-				key={agentTemplateInitialCategory}
-				open={agentTemplateDialogOpen}
-				onOpenChange={setAgentTemplateDialogOpen}
+				key={agentTemplateDialog.initialCategory}
+				open={agentTemplateDialog.open}
+				onOpenChange={handleAgentTemplateDialogOpenChange}
 				agents={DEMO_AGENT_TEMPLATES}
-				initialCategoryId={agentTemplateInitialCategory}
+				initialCategoryId={agentTemplateDialog.initialCategory}
 				onSelectAgent={handleTemplateAgentSelect}
 				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>
@@ -3092,16 +3069,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			    category the user was exploring (e.g. "Planning"). The `key` remounts
 			    AgentBrowser so its `initialTemplateCategory` re-seeds per category. */}
 			<AgentsDirectoryDialog
-				key={`agent-directory-${sidebarAgentBrowserInitialCategory}`}
-				open={isSidebarAgentBrowserOpen}
-				onOpenChange={setIsSidebarAgentBrowserOpen}
+				key={`agent-directory-${agentDirectoryDialog.initialCategory}`}
+				open={agentDirectoryDialog.open}
+				onOpenChange={handleAgentDirectoryOpenChange}
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}
 				onSelectAgent={handleSidebarBrowseAgentSelect}
 				onSelectTemplateAgent={handleTemplateAgentSelect}
 				onBuildTemplateAgent={handleBuildTemplateAgent}
 				onOpenBuiltTemplateAgentConfig={handleOpenBuiltTemplateAgentConfig}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
-				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
+				initialTemplateCategory={agentDirectoryDialog.initialCategory}
 				variant="experimental"
 			/>
 

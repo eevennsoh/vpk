@@ -81,7 +81,7 @@ export function ExperimentalDirectoryView<TOption extends ExperimentalDirectoryF
 	searchLabel,
 	searchPlaceholder,
 }: Readonly<ExperimentalDirectoryViewProps<TOption>>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: contentOverflowRef, showTopScrollMask: showContentTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const activeFacet = facets.find(facetIsActive)?.id ?? null;
 	const hasActiveFilters = Boolean(query.trim()) || activeFacet !== null;
 	const showFacet = (facet: ExperimentalDirectoryFacet<TOption>) => activeFacet === null || activeFacet === facet.id;
@@ -140,11 +140,11 @@ export function ExperimentalDirectoryView<TOption extends ExperimentalDirectoryF
 				</div>
 			</div>
 			<div
-				ref={contentOverflow.ref}
+				ref={contentOverflowRef}
 				className={cn(
 					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2",
 					contentClassName,
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					showContentTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
 				{isEmpty ? (

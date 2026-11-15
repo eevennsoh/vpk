@@ -33,6 +33,9 @@ export function useTopNavigation() {
 	// so automatically un-pin it. We remember that we released a pinned sidebar so
 	// the prior pinned state is restored once the viewport grows back. `windowWidth`
 	// is 0 during SSR/first paint, so we wait for a real measurement before acting.
+	// The top-navigation shell (`page.tsx`) derives the same rule during render
+	// from its own pin intent; this one writes shared context state, so it still
+	// runs as an effect. Keep the two in step until this one is derived too.
 	const didAutoReleaseSidebarRef = useRef(false);
 	useEffect(() => {
 		if (windowWidth === 0) {
