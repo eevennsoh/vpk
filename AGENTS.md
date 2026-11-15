@@ -193,7 +193,7 @@ New behavior gets a clear owner instead of expanding an already-busy file. Befor
 
 ### Execution Discipline
 
-- Skill routing: do not select `vpk-component` merely because a task touches a component. Use it only when the user explicitly invokes it, names or links an upstream ADS/Atlaskit/shadcn/Base UI component source, or requests parity with one. Ordinary edits, bug fixes, copy changes, layout changes, motion changes, and maintenance of existing VPK components follow the normal workflow without `vpk-component`.
+- Skill routing: do not select `vpk-component` merely because a task touches a component. Use it only when the user explicitly invokes it, names or links an upstream ADS/Atlaskit/shadcn/Base UI component source, requests parity with one, or asks to translate a custom or third-party AI/voice library (ai-elements, ElevenLabs UI) into VPK primitives. Ordinary edits, bug fixes, copy changes, layout changes, motion changes, and maintenance of existing VPK components follow the normal workflow without `vpk-component`.
 - Reuse before building: before writing any UI, search `components/ui-custom/`, `components/ui/`, and the screen the user references for an existing component or asset (SVG, animation) and reuse it verbatim. Do not write custom/creative markup, add style overrides, copy a component piece-by-piece, or re-implement what already exists. When the user names an existing component/asset, make only the minimal additive change requested (e.g. "add the publish button on the far right") and never substitute a different-but-related component on your own judgment.
 
 ### Code Quality

@@ -1,10 +1,4 @@
----
-name: vpk-component-ext
-description: Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to "migrate to ui-custom", "standardize AI components", "adopt ai-elements", "port ElevenLabs UI",.
-validation_command: pnpm run lint && pnpm run typecheck
----
-
-# VPK external component translation
+# External lane: AI, voice, and third-party translation
 
 Replace custom or third-party UI with VPK-standardized primitives while
 preserving behavior, controlled state, accessibility, and repository docs. The
@@ -13,16 +7,18 @@ API and visual language.
 
 ## When to use
 
-Use this skill for local custom AI/chat UI, ai-elements, ElevenLabs UI, voice
+Use this lane for local custom AI/chat UI, ai-elements, ElevenLabs UI, voice
 and audio libraries, or another third-party component that should become a VPK
-primitive or migrate to one. Use `vpk-component` instead when an explicit ADS,
-Atlaskit, shadcn, Base UI, or `@shadcn/react` component is the parity target.
-Use the normal component workflow for local layout, styling, motion, or bug
-fixes that do not translate an external implementation.
+primitive or migrate to one ("migrate to ui-custom", "standardize AI
+components", "adopt ai-elements", "port ElevenLabs UI"). Use the ADS or shadcn
+lane in [SKILL.md](../SKILL.md) instead when an explicit ADS, Atlaskit, shadcn,
+Base UI, or `@shadcn/react` component is the parity target. Use the normal
+component workflow for local layout, styling, motion, or bug fixes that do not
+translate an external implementation.
 
 When the requested result retains a maintained upstream package as the runtime
-owner, use [Adopt a maintained upstream runtime](../../docs/playbooks/adopt-upstream-runtime.md).
-This translation skill's no-import/no-vendor invariant still applies to VPK-owned migrations.
+owner, use [Adopt a maintained upstream runtime](../../../docs/playbooks/adopt-upstream-runtime.md).
+This lane's no-import/no-vendor invariant still applies to VPK-owned migrations.
 
 ## Hard invariants
 
@@ -47,10 +43,10 @@ then choose the owning VPK family. Inspect local candidates before upstream
 docs. For generic reusable UI, run ADS planning and topic-specific accessibility
 guidance before implementation.
 
-Read [migration detail](references/migration-detail.md) for the family resolver,
+Read [migration detail](ai-migration-detail.md) for the family resolver,
 duplicate-name decisions, detection checklist, source hierarchy, and gotchas.
-Use [migration catalog](references/migration-catalog.md) to locate likely
-`ui-custom` targets and [API reference](references/api-reference.md) to confirm
+Use [migration catalog](ai-migration-catalog.md) to locate likely
+`ui-custom` targets and [API reference](ai-api-reference.md) to confirm
 their composition and props.
 
 ### 2. Map the migration
@@ -61,7 +57,7 @@ local behavior. When no direct primitive exists, compose existing VPK pieces or
 keep the smallest possible adapter.
 
 For common message, conversation, suggestion, action, and code-display
-translations, read [migration examples](references/migration-examples.md).
+translations, read [migration examples](ai-migration-examples.md).
 
 ### 3. Migrate the owner and consumers
 
@@ -99,14 +95,3 @@ the removed source component or package.
 
 All project directories, including `components/ui-custom/**`, are type-checked;
 the repository TypeScript configuration excludes only `node_modules`.
-
-## References
-
-- [migration-detail.md](references/migration-detail.md): family resolution,
-  detection, source selection, migration constraints, and gotchas.
-- [migration-catalog.md](references/migration-catalog.md): available AI/chat
-  migration targets.
-- [api-reference.md](references/api-reference.md): quick API guide for core
-  `ui-custom` primitives.
-- [migration-examples.md](references/migration-examples.md): worked replacement
-  patterns.
