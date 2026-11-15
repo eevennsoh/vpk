@@ -93,7 +93,7 @@ node ./.agents/skills/vpk-setup/scripts/create-env-local.js YOUR-USE-CASE-ID
 
 ### `.env.local` Contents
 
-`create-env-local.js` writes AI Gateway, Google, STT preset, ASAP, Rovo, and Realtime settings. Required by hand: `ROVO_BILLING_URL` (default `https://product-fabric.atlassian.net`) and `ROVO_SESSION_TOKEN` (copied once from Rovo Serve's first-launch output). Keep `ASAP_PRIVATE_KEY` double-quoted with literal `\n` escapes. Switch live-voice STT by changing only `STT_PRESET`, then restart the backend.
+`create-env-local.js` writes AI Gateway, Google, STT preset, ASAP, Rovo, and Realtime settings. The script sets `ROVO_BILLING_URL` (default `https://product-fabric.atlassian.net`; edit to override). Required by hand: `ROVO_SESSION_TOKEN` (copied once from Rovo Serve's first-launch output). Keep `ASAP_PRIVATE_KEY` double-quoted with literal `\n` escapes. Switch live-voice STT by changing only `STT_PRESET`, then restart the backend.
 
 The full default file, the complete variable table, and STT preset details are in [references/env-reference.md](references/env-reference.md).
 
