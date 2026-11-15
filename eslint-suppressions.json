@@ -86,11 +86,6 @@
       "count": 1
     }
   },
-  "app/weather/page.test.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "components/animate-ui/icons/icon.tsx": {
     "react-hooks/refs": {
       "count": 4

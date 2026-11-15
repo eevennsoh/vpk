@@ -177,7 +177,7 @@
 		"media-chrome": "^4.19.3",
 		"metal-fx": "1.0.2",
 		"motion": "^13.5.1",
-		"motion-plus": "npm:@motionplus/core@2.12.0",
+		"motion-plus": "npm:@motionplus/core@^3.0.0",
 		"nanoid": "^6.0.2",
 		"next": "16.4.2",
 		"p5": "^2.3.4",
