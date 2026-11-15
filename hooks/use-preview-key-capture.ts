@@ -15,6 +15,7 @@ import {
 	PREVIEW_KEY_CAPTURE_STARTED_MESSAGE,
 	resolvePreviewKeyCaptureKey,
 } from "@/lib/preview-keyboard";
+import { cn } from "@/lib/utils";
 
 export interface PreviewKeyCapture {
 	/** True while every key, including Tab, is forwarded to the remote page. */
@@ -120,4 +121,12 @@ export function usePreviewKeyCapture(
 		toggle,
 		toggleId,
 	};
+}
+
+/** Viewport ring classes for a remote-preview viewport: focus-visible, plus a persistent ring while captured. */
+export function previewKeyCaptureViewportClassName(captured: boolean): string {
+	return cn(
+		"outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused",
+		captured && "ring-2 ring-inset ring-border-focused",
+	);
 }

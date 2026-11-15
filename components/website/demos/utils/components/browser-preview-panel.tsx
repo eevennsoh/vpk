@@ -22,11 +22,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
-import { usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
+import { previewKeyCaptureViewportClassName, usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
 import {
 	PreviewKeyCaptureStatus,
 	PreviewKeyCaptureToggle,
-	previewKeyCaptureViewportClassName,
 } from "@/components/ui-custom/preview-key-capture";
 import { cn } from "@/lib/utils";
 import { BrowserPreviewOverlay } from "@/components/projects/shared/components/browser-preview-overlay";

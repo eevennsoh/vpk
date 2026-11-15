@@ -20,7 +20,6 @@ import { Spinner } from "@/components/ui/spinner";
 import {
 	PreviewKeyCaptureStatus,
 	PreviewKeyCaptureToggle,
-	previewKeyCaptureViewportClassName,
 } from "@/components/ui-custom/preview-key-capture";
 import { TriangleAlertIcon } from "@/components/ui/vpk-icons";
 import {
@@ -32,7 +31,7 @@ import {
 	useState,
 } from "react";
 import { useReducedMotion } from "motion/react";
-import { usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
+import { previewKeyCaptureViewportClassName, usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";

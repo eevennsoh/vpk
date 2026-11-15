@@ -5,15 +5,6 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { KeyboardIcon } from "@/components/ui/vpk-icons";
 import type { PreviewKeyCapture } from "@/hooks/use-preview-key-capture";
-import { cn } from "@/lib/utils";
-
-/** Viewport ring classes for a remote-preview viewport: focus-visible, plus a persistent ring while captured. */
-export function previewKeyCaptureViewportClassName(captured: boolean): string {
-	return cn(
-		"outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused",
-		captured && "ring-2 ring-inset ring-border-focused",
-	);
-}
 
 type PreviewKeyCaptureToggleProps = Omit<ComponentProps<typeof Button>, "aria-pressed" | "id" | "onClick"> & {
 	capture: PreviewKeyCapture;
