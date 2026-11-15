@@ -11,6 +11,10 @@ const SKILL_INDEX_PATH = ".agents/skills/INDEX.md";
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 // Codex rejects skill descriptions longer than this many characters.
 const MAX_DESCRIPTION_LENGTH = 1024;
+// SKILL.md bodies load into context whenever a skill triggers. skill-creator
+// sets 500 lines as the outer limit; VPK holds bodies to 300 and moves detail
+// into references/ files the body links with "read X when Y".
+const MAX_BODY_LINES = 300;
 const ALLOWED_SKILLS_ROOT_FILES = new Set(["INDEX.md"]);
 
 function toPosixPath(filePath) {
@@ -351,6 +355,11 @@ function getFrontmatterTextValue(parsed, key) {
 	return lines.join(" ").trim();
 }
 
+function countBodyLines(body) {
+	const trimmed = String(body ?? "").replace(/\s+$/u, "");
+	return trimmed ? trimmed.split("\n").length : 0;
+}
+
 function validateSkillDirectory(skillDir) {
 	const skillName = path.basename(skillDir);
 	const skillPath = path.join(skillDir, SKILL_ENTRYPOINT);
@@ -430,7 +439,17 @@ function validateSkillDirectory(skillDir) {
 			path: skillPath,
 			type: "skill-body-missing",
 		});
-	} else if (!/^#\s+\S/mu.test(parsed.body)) {
+	} else {
+		const bodyLineCount = countBodyLines(parsed.body);
+		if (bodyLineCount > MAX_BODY_LINES) {
+			failures.push({
+				message: `SKILL.md body is ${bodyLineCount} lines; the limit is ${MAX_BODY_LINES}. Move detail into references/ and link it with "read X when Y".`,
+				path: skillPath,
+				type: "skill-body-too-long",
+			});
+		}
+	}
+	if (parsed.body.trim() && !/^#\s+\S/mu.test(parsed.body)) {
 		warnings.push({
 			message: "SKILL.md body does not include an H1 heading.",
 			path: skillPath,
@@ -641,6 +660,7 @@ if (require.main === module) {
 
 module.exports = {
 	DEFAULT_TARGET,
+	MAX_BODY_LINES,
 	SKILL_ENTRYPOINT,
 	SKILL_INDEX_PATH,
 	buildSkillIndexText,
@@ -648,6 +668,7 @@ module.exports = {
 	collectMarkdownLinks,
 	collectReferenceDocs,
 	collectSkillDirectories,
+	countBodyLines,
 	createSkillValidationReport,
 	formatRelatedDocsCell,
 	getFrontmatterTextValue,

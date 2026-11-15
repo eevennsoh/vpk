@@ -25,7 +25,7 @@ Also require `test -f "$HOME/.claude/settings-gw.json"`. Never print or copy its
 Substitute `<model>` (the full Claude ID — resolve aliases and defaults from
 `~/.config/litellm-proximity/defaults.env`) and `<effort>`
 (`medium` | `high` | `xhigh` | `max`, all verified accepted; `low` works but
-is deliberately not offered — see *Choosing effort* in SKILL.md). The model
+is deliberately not offered — see [invocation-flags-and-effort.md § Choosing effort](invocation-flags-and-effort.md#choosing-effort)). The model
 ID **must be quoted** — `[1m]` is a shell glob pattern.
 
 Write this as the worker's `run.sh` (`agent-surface.js` runs it with
@@ -57,7 +57,7 @@ mkdir -p "$worker_root"
 ```
 
 Run via Bash with `run_in_background: true` (a Codex planner runs it in the
-foreground; see *Codex as the planner* in SKILL.md). `claude -p` streams one
+foreground; see [planner-detection.md § Codex as the planner](planner-detection.md#codex-as-the-planner)). `claude -p` streams one
 JSON event per line on **stdout**; `scripts/agent-stream-format.js` saves
 every event to `events.jsonl`, shows only a status in the pane, and writes
 the final `result` text to `report.md` — the analogue of codex's

@@ -323,7 +323,7 @@ conversation_starters:
 
 ## Maintenance Notes
 
-- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 3.
+- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 3 and its prompt in `.agents/skills/vpk-design/references/phase-prompts.md`.
 - `vpk-verify` owns worktree/session selection, timeout recovery, and cleanup; if it hands off to Playwright, use the degraded validation path and make that limitation explicit.
 - Accessibility guideline lookups run on the `atlas ads docs a11y <topic>` CLI first; the ADS MCP `ads_get_a11y_guidelines` tool is only the fallback when the CLI is unavailable or erroring.
 - `ads_analyze_localhost_a11y`, `ads_analyze_a11y`, and `ads_suggest_a11y_fixes` have no CLI equivalent and must stay on MCP. They are runtime-dependent; unavailable tools should downgrade evidence, not block a useful validation report.

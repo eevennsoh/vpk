@@ -22,63 +22,15 @@ API (`claude-gw`, `codex-gw`, `ai-api`) or on a subscription login (`claude`,
 `codex`). Workers bill Proximity in every case; the planner's own turns bill
 whichever login started it, and that cost is accepted.
 
-Detect the planner once, at the start of the run:
+Detect the planner (app, billing, git write access) once at the start of the
+run and echo app, billing, model, and effort in the one-line plan (for example
+`codex · api · terra · high`), so a misdetection is visible. Read
+[references/planner-detection.md](references/planner-detection.md) at the
+start of every run for the detection snippet and the `api` / `oauth` table,
+and when the planner is Codex, for how waiting, sandbox approvals, and the
+advisor family differ there.
 
-```bash
-if [ -n "${CODEX_THREAD_ID:-}" ]; then
-  app=codex
-  # Codex picks its provider in config.toml, not the environment.
-  grep -qE '^model_provider *= *"openai-gw"' "${CODEX_HOME:-$HOME/.codex}/config.toml" 2>/dev/null \
-    && billing=api || billing=oauth
-else
-  app=claude
-  if [ "${CLAUDE_CODE_DISABLE_OAUTH:-}" = 1 ] || [[ "${ANTHROPIC_BASE_URL:-}" == *localhost:29576* ]]; then
-    billing=api     # claude-gw or ai-api
-  else
-    billing=oauth   # plain claude
-  fi
-fi
-gitdir="$(git rev-parse --git-common-dir)"
-touch "$gitdir/.vpk-remote-probe" 2>/dev/null && rm "$gitdir/.vpk-remote-probe" \
-  && git_write=yes || git_write=no   # no = sandboxed; worktree creation needs approval
-```
-
-A Codex session started with `codex -c model_provider=…` can differ from its
-config file; the echoed plan is where the user catches that.
-
-| | `api` parent | `oauth` parent |
-| --- | --- | --- |
-| Implementation | gateway worker | gateway worker |
-| Planner reading, review, trivial edits | fine | fine (cost absorbed) |
-| In-app subagents (Claude Code Agent tool) | allowed — they inherit the gateway login | avoid for heavy work — they bill the subscription; use a gateway worker |
-| Credits run out mid-session | not applicable | move the conversation (below) |
-
-Echo the detected app, billing, model, and effort in the one-line plan (for
-example `codex · api · terra · high`), so a misdetection is visible.
-
-### Codex as the planner
-
-The loop is the same; three mechanics differ.
-
-- **Waiting on workers.** Codex has no background command that wakes the
-  session on exit. Run the surface wrapper in the foreground and let it block
-  until the worker exits; it still exits with the worker's status. Fan-out
-  means launching every worker first (each `run.sh` with `&`, then `wait`)
-  in one command, so they still run in parallel.
-- **Sandbox and approvals.** Enterprise-managed requirements on this Mac cap
-  Codex at `workspace-write` or `read-only` with `on-request` approvals.
-  `--dangerously-bypass-approvals-and-sandbox` (which `codex-gw` passes) is
-  overridden to **read-only**, so it does not help. Under `workspace-write`,
-  writes under `.git` are blocked (`git_write=no` above), and launching a
-  worker also needs approval because `claude -p` / `codex exec` write state
-  outside the workspace. Request approval for the worktree step and each
-  worker launch; the user approves them in the Codex UI. Never try to disable
-  the sandbox. Headless `codex exec` cannot answer approvals, so it cannot act
-  as a `/vpk-remote` planner.
-- **Advisor family.** Codex plans on a GPT model, so its own plans go to the
-  `opus` advisor; see *Mode: advisor*.
-
-### Moving the conversation itself
+## Moving the conversation itself
 
 Only when the user explicitly asks to move or switch **the chat** — "I'm out
 of credits", "move this chat to sol", "continue my last session on opus" —
@@ -118,108 +70,36 @@ Examples:
 Always echo the parsed plan in one line before acting (app, billing, model, effort),
 so a misread costs one glance instead of a wrong run.
 
-### Explicit flags (optional)
-
-Flags still work and override prose. They are never required.
-
-| Flag | Values | Default |
-| --- | --- | --- |
-| `--model` | any alias or full ID | `defaults.env` |
-| `--effort` | `medium` `high` `xhigh` `max` | `defaults.env` |
-| `--advisor` / `--no-advisor` | *(no value)* | **on** |
-| `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
-| `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
-| `--status` / `status` | `--all`, or a task name | off; see *Status* |
-
-`/vpk-remote` with nothing after it asks what to run; it does not move the
-conversation unless the user says so.
-
-All three behavioral defaults are **on**: the planner isolates writing work in
-a worktree, consults an advisor, and fans out read-only work without being
-asked. `--no-worktree`, `--no-advisor`, and `--single` are the escape hatches,
-and `--worktree` / `--advisor` / `--fanout` force the behavior in cases the
-planner would otherwise judge too small for it.
-
-**Lane follows the model family**: a `claude-*` model runs on the Claude
-lane (`claude -p`), a `gpt-*` model on the GPT lane (`codex exec`). An
-unknown model name or effort value is an error to report, never a near-match
-guess.
-
-`medium` `high` `xhigh` `max` are valid on both lanes. `low` exists in the
-CLIs but workers do not use it: a worker that under-thinks buys a correction
-round that costs more than the thinking it skipped. A moved conversation may
-use `low`, since the user is steering it directly.
-
-### Choosing effort
-
-Do not coast on the default — pick from the task's shape. Effort and
-verification are substitutes only where a proof command exists; where it
-doesn't, effort is the sole quality lever.
-
-| Task shape | Effort | Why |
-| --- | --- | --- |
-| Advisor consults, and genuine design ambiguity — unruled-out failure modes, a call the brief cannot settle | `xhigh` | Nothing verifies judgment. No proof command backstops a wrong call, so thinking is the only lever. |
-| Explicit request for the deepest reasoning, or an exceptional judgment call where `xhigh` proved insufficient | `max` | This is opt-in because it trades the most worker time and tokens for one more reasoning tier. |
-| Implementation against a clear spec — the common case | the default (`medium` unless `defaults.env` says otherwise) | The proof command backstops mistakes, so effort and verification share the load. Raise to `high` for multi-file or subtle changes. |
-| Mechanical sweeps — renames, mass migrations, formatting, "apply this same edit to these 9 files" | `medium` (never above) | The brief fully determines the answer. Higher effort here buys scope creep, not correctness: a maximally-thinking worker starts finding adjacent improvements nobody asked for. |
-
-Before reaching for the effort knob on a task that failed once, re-read the
-brief first. Round-trips come far more often from an underspecified brief
-than an under-thinking worker, and raising effort on a vague brief just
-produces a confident wrong answer sooner.
-
-Examples:
-
-```text
-/vpk-remote rename useFoo to useBar across components/, medium effort is fine
-/vpk-remote --model terra --effort xhigh <task>
-```
+Flags (`--model`, `--effort`, `--advisor` / `--no-advisor`, `--fanout` /
+`--single`, `--worktree` / `--no-worktree`, `--status`) override prose and are
+never required; worktree, advisor, and fan-out are on by default. Pick effort
+from the task's shape rather than coasting on the default: `xhigh` for advisor
+consults and genuine design ambiguity, the default for clear-spec
+implementation, never above `medium` for mechanical sweeps, and workers never
+use `low`. Read
+[references/invocation-flags-and-effort.md](references/invocation-flags-and-effort.md)
+when a flag appears, when choosing effort, or before raising effort on a task
+that failed once.
 
 ## Preflight the selected route
 
-For ordinary tasks, check the selected worker CLI (`codex --version` or
-`"$HOME/.local/bin/claude" --version`) and run the maintained probe before
-creating a worktree or dispatching a worker:
+Before creating a worktree or dispatching, check the selected worker CLI and run
+only the selected lane's probe:
 
 ```bash
 node scripts/vpk-remote-preflight.js --app codex --model <resolved-gpt-id>
 node scripts/vpk-remote-preflight.js --app claude --model <resolved-claude-id>
 ```
 
-Run only the command for the selected lane. The probe sends a small streamed
-tool-call request to the exact model and inference route. It checks the returned
-tool name, namespace, and arguments. It retries transient transport/408/429/5xx
-failures once; authentication, model, schema, and CloudID errors stop immediately.
-It never changes the model or falls back to a subscription login.
-
-Do not use `/openai/v1/models` as a health gate. Discovery can return 502 while
-Claude inference works, and its catalog can omit working models. Report the
-selected inference route's actual failure and next action. A passed probe does
-not certify all installed plugins or a later worker run.
-
-For a conversation handoff, `ai-api` runs this probe itself for the selected app
-and model. Its dry run is offline and does not read the translator key. Install
-or update the maintained launcher and historical-tool guard with:
-
-```bash
-bash scripts/install-vpk-remote.sh
-```
-
-The installer backs up existing files, preserves model routes, and registers a
-LiteLLM callback. Restart only the local translator to load a newly installed
-callback; do not restart Proximity or unrelated services. Installation outside
-the checkout requires the harness's normal filesystem approval.
-
-Repairing this skill, launcher, or adapter is local tooling work. Diagnose and
-fix a broken gateway path directly; do not require that broken path to run its
-own repair worker. For other task failures, stop before dispatch, preserve any
-landed diff, and report the concrete blocker instead of implementing in the
-planner or silently switching models.
+Read [references/preflight-and-maintenance.md](references/preflight-and-maintenance.md)
+when a probe fails, when installing or repairing the launcher, when a GPT-lane
+worker dies with `CloudID is invalid`, or when changing this skill's maintained
+scripts (it holds the regression checks).
 
 ## Billing boundary
 
 - **Planner:** this Claude session, on whichever login started it (see *One
-  flow, either billing*). Owns decisions, briefs, review, final proof,
+  flow, any planner*). Owns decisions, briefs, review, final proof,
   synthesis.
 - **Workers:** external CLI processes whose requests go only to Proximity.
   Own repo mutation and token-heavy reading.
@@ -239,120 +119,17 @@ planner or silently switching models.
   session exports its own `ANTHROPIC_BASE_URL` and `CLAUDE_EFFORT`, so the
   Claude-lane recipe sets both explicitly rather than trusting inheritance.
 
-## Naming
+## Naming and worktree isolation
 
 Every surface, branch, worktree, and artifact directory for a task uses one
-name: `vpk-<type>-<slug>[-<pane>]`, lowercase kebab-case.
-
-- `vpk` — always first; marks what this skill created, in this repo or any
-  other.
-- `<type>` — writing: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`;
-  read-only: `audit`, `research`.
-- `<slug>` — the work in 1–3 words (`ui-generation`, `live-progress`).
-- `<pane>` — only when a task has more than one surface: `-1`…`-n` for
-  fan-out panes, `-review` for the advisor. A single writing worker has no
-  suffix.
-
-| Thing | Format | Example |
-| --- | --- | --- |
-| herdr workspace / tab / pane label | `vpk-<type>-<slug>[-<pane>]` | `vpk-fix-sidebar-flicker` |
-| Branch | `vpk/<type>-<slug>` | `vpk/fix-sidebar-flicker` |
-| Worktree | `.claude/worktrees/vpk-<type>-<slug>` | `.claude/worktrees/vpk-fix-sidebar-flicker` |
-| Artifacts | `output/remote-<lane>/vpk-<type>-<slug>[-<pane>]/` | `output/remote-claude/vpk-fix-sidebar-flicker/` |
-
-`scripts/agent-surface.js` rejects a `--label` or `--group` outside this
-scheme, so a misnamed surface fails before anything opens.
-
-The herdr agent name (what `herdr agent wait <name>` takes; the pane closes
-on exit, so the wait only says the run ended) is the label
-itself when it fits herdr's 32-character limit. A longer label becomes its
-first 25 characters, `-`, and a 6-character hash of the whole label:
-`vpk-research-authentication-middleware-1` →
-`vpk-research-authenticati-<hash>`. The hash is stable, so `-1` and `-2`
-stay distinct and a label always maps to the same name.
-
-## Worktree isolation
-
-**Every brief that writes files gets its own git worktree, by default.** This
-skill is steered from a phone, so several tasks on unrelated problems are
-routinely in flight at once. Workers sharing one checkout do not error when
-they collide — the later write simply wins, and you get two confident reports
-describing a diff that matches neither. That is the same mechanical hazard the
-*Worker shapes* fan-out rule guards against, at the scale of concurrent tasks
-rather than concurrent workers, and it is invisible from a phone.
-
-Two further reasons the default is on, not merely available:
-
-- **`main` is protected.** Direct pushes are blocked and a PR plus passing
-  checks is required, so the work becomes a branch regardless. Writing in the
-  checkout only defers branching; it never avoids it.
-- **Every other agent surface already does this.** Codex, Cursor, and Claude
-  Code each create a per-task worktree. Writing in place makes this skill the
-  lone outlier.
-
-| Brief | Worktree |
-| --- | --- |
-| Writes files (implementation, refactor, migration) | **yes** — default on |
-| Read-only (advisor consults, audits, research, fan-out) | **no** |
-
-Read-only briefs are dispatched `--sandbox read-only` (GPT) or
-`--permission-mode plan` (Claude), so they *cannot* write. Isolation buys
-nothing there and costs setup, which is why the default is keyed to the same
-"does this brief write?" predicate that already picks the worker shape.
-
-### Creating the worktree
-
-Fetch first, then branch from `origin/main` — not the local `main` ref, which
-goes stale in a long-lived checkout and would start the worker on old code.
-Place it under the repo's ignored `.claude/worktrees/`, one per task, named
-per *Naming*:
-
-```bash
-name="vpk-<type>-<slug>"
-branch="vpk/<type>-<slug>"
-tree="$PWD/.claude/worktrees/$name"
-git fetch origin main
-git worktree add --no-track -b "$branch" "$tree" origin/main
-```
-
-`--no-track` keeps the task branch from adopting `origin/main` as its
-upstream, so a later push sets its own upstream instead of targeting `main`.
-
-Then **warm it up before dispatching** — a fresh worktree has no
-`node_modules` and no `.env*`, and the brief's proof command is usually
-`pnpm run lint` / `pnpm run typecheck`, which cannot run without them:
-
-```bash
-cp "$PWD"/.env.local "$tree"/.env.local 2>/dev/null || true
-(cd "$tree" && CI=true pnpm install --prefer-offline)
-```
-
-Per repo guidance, do **not** run parallel pnpm validations until warmup
-completes. Dispatch the worker with `-C "$tree"` (GPT lane) or from `$tree`
-(Claude lane), and write the brief's *Exact repo paths* relative to that
-worktree. `output/` artifacts stay under the **main** checkout so reports from
-concurrent tasks remain readable in one place.
-
-### Landing
-
-The worker commits its work to the task branch inside the worktree; the
-planner verifies the diff there and reports. **Stop at a verified diff** —
-pushing the branch and opening a PR is `/vpk-git-ship`, run only when the user
-asks. Nothing outward-facing happens on the strength of a passing proof
-command alone.
-
-Leave the worktree in place after reporting so the user can inspect it.
-Cleanup of landed branches is `/vpk-git-clean`, never an automatic step of
-this skill — and never `tmux kill-server` or `portless prune`, which cascade
-across every worktree.
-
-### When `--no-worktree` is right
-
-Writing in the current checkout is correct when the task *is* the checkout's
-uncommitted state — amending work already in progress there, or a change the
-user is actively watching in a running dev server. Say which one applies when
-the flag is used, and check `git status` first so the worker is not handed a
-dirty tree it will silently fold into its diff.
+name, `vpk-<type>-<slug>[-<pane>]` (branch `vpk/<type>-<slug>`, worktree
+`.claude/worktrees/vpk-<type>-<slug>`). **Every brief that writes files gets
+its own git worktree, by default**, branched from a freshly fetched
+`origin/main` with `--no-track` and warmed (`.env.local` copied,
+`pnpm install`) before dispatch; read-only briefs get none. Read
+[references/naming-and-worktrees.md](references/naming-and-worktrees.md)
+before naming a task or creating its worktree, and when deciding whether
+`--no-worktree` is right.
 
 ## Procedure
 
@@ -362,29 +139,17 @@ dirty tree it will silently fold into its diff.
    questions it can answer directly; any non-trivial mutation goes to a
    worker.
 2. **Isolate.** If the brief writes files, create and warm the task worktree
-   per *Worktree isolation* above, and confirm warmup finished before
-   dispatch. Skip for read-only briefs and under `--no-worktree`.
+   per [naming-and-worktrees.md](references/naming-and-worktrees.md#worktree-isolation),
+   and confirm warmup finished before dispatch. Skip for read-only briefs and under `--no-worktree`.
 3. **Freeze the brief** to a file — Goal / Exact repo paths / Constraints /
    Non-goals / Proof expected / Output shape, per
    [references/dispatch-patterns.md](references/dispatch-patterns.md). Never
-   inline a brief into a shell command. Beside it, write `task.json`, the
-   record *Status* reads:
-
-   ```json
-   { "name": "vpk-feat-ui-generation", "goal": "One-line summary", "type": "feat",
-     "branch": "vpk/feat-ui-generation", "worktree": ".claude/worktrees/vpk-feat-ui-generation",
-     "lane": "claude", "model": "claude-opus-5-5[1m]", "effort": "high",
-     "kind": "worker", "createdAt": "<ISO time>" }
-   ```
-
-   `kind` is `worker`, `review` (an advisor on a worker; its name ends in
-   `-review`), or `research` (read-only; `branch` and `worktree` are `null`).
-   Add `"advisor": false` under `--no-advisor`, so status does not ask for a
-   review that was skipped on purpose. An advisor's report ends with one line,
-   `Verdict: ship`, `Verdict: ship with nits`, or `Verdict: request changes`;
-   status reads any other line, or none, as `review unclear`.
-4. **Dispatch** via background Bash (Codex planner: foreground; see *Codex as
-   the planner*) using the lane's canonical command:
+   inline a brief into a shell command. Beside it, write
+   `task.json`, the record *Status* reads; read
+   [references/status-and-artifacts.md § The task record](references/status-and-artifacts.md#the-task-record)
+   for its fields and the advisor `Verdict:` line.
+4. **Dispatch** via background Bash (Codex planner: foreground; see
+   [planner-detection.md](references/planner-detection.md#codex-as-the-planner)) using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
    [references/claude-executor.md](references/claude-executor.md).
    Write that command to `run.sh` in the worker directory and launch it
@@ -393,14 +158,14 @@ dirty tree it will silently fold into its diff.
    worker launches with `--worktree "$tree"`, which opens it as its own
    workspace in the herdr sidebar automatically, unless `--no-worktree`
    applies. Then there is no `$tree`: the worker runs in the current checkout
-   as a tab in the planner's workspace, labelled per *Naming*. Leave
+   as a tab in the planner's workspace, labelled per *Naming and worktree isolation*. Leave
    `--worktree` off only under `--no-worktree`.
 5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts, which keeps the planner's context
    window for review. The pane status and `events.jsonl` are for the human;
    tail them only when the user asks for progress or a run needs diagnosing
-   (see *Checking progress*). An absent or empty report does **not**
-   imply an absent diff: a worker killed mid-run may have already written
+   (see [terminal-surfaces.md § Checking progress](references/terminal-surfaces.md#checking-progress)).
+   An absent or empty report does **not** imply an absent diff: a worker killed mid-run may have already written
    every file. Always check `git status` in the task worktree before
    re-dispatching. After reading the report, close any leftover finished
    worker tab (`herdr tab close <tab_id>`, from the wrapper's first JSON
@@ -426,39 +191,15 @@ dirty tree it will silently fold into its diff.
 
 A second opinion at high judgment moments, billed to Proximity: a
 **read-only** consult brief, dispatched with the same lane commands as any
-other worker.
+other worker. **Consults are on by default**: every task that produces a diff
+gets a pre-completion verify, where the diff and original goal go to the other
+family before reporting done, and the planner says it is consulting and why.
+Also consult when stuck after about two failed correction cycles, or before an
+approach the brief cannot settle. Skip the verify for a trivial diff a proof
+command already settles, and under `--no-advisor`; `--advisor` alone makes a
+consult the entire task.
 
-**Consults are on by default.** The planner runs them without being asked,
-stating that it is consulting and why. `--advisor` on its own makes a consult
-the entire task; `--no-advisor` suppresses them for a run.
-
-**Standing consult — every task that produces a diff:**
-
-- **Pre-completion verify.** Before reporting work as done, send the diff and
-  the original goal to the other family for an independent read. This is the
-  verifier shape, and it is the one that pays off when you are steering from
-  a phone: it is a second pair of eyes you did not have to ask for, and it
-  costs you one line in the summary.
-
-**Additional consults, on judgment:**
-
-1. **Stuck** — after roughly two failed correction cycles on the same
-   problem, before dispatching a third variation of the same idea.
-2. **Before committing to an approach** whose design decision the brief
-   cannot settle and where a wrong call means discarding the worker's output
-   rather than amending it.
-
-**Where consults are skipped** — the default is on, not unconditional. Skip
-the verify for a trivial diff (a copy change, a one-line fix, a mechanical
-rename a proof command already covers), where a proof command already
-settles the question. Never consult on single-step questions or an obvious
-plan.
-
-**Default to the family that did not do the work.** Cost no longer picks the
-advisor — every lane bills Proximity — so what a consult buys is
-*independence*, not a capability tier. A GPT worker's blind spots are found
-most cheaply by a Claude reviewer and vice versa; asking the same family to
-audit its own reasoning re-runs the same priors.
+**Default to the family that did not do the work**, at `xhigh`:
 
 | Work under review | Advisor default |
 | --- | --- |
@@ -467,20 +208,11 @@ audit its own reasoning re-runs the same priors.
 | A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` alias at xhigh |
 | A plan a GPT planner wrote, or nothing dispatched yet (`app=codex`, or a Claude Code session running a GPT model) | `opus` alias at xhigh |
 
-The planner rows follow the same rule: whatever the planner authored is its
-own family's work, so the reviewer comes from the other family. Judge by the
-planner's **model**, not its app — Claude Code can run on `sol` via `ai-api`.
-
-All rows are `xhigh` for the reason in *Choosing effort* above: advice is
-unverifiable, so effort is the only quality lever a consult has.
-
-Explicit flags always win: `/vpk-remote --advisor --model sol <question>`
-forces a GPT consult regardless of what ran before it.
-
-Consult moments, packaging checklist, and advice shape:
-[references/advisor-pattern.md](references/advisor-pattern.md). The advisor
-never edits files; after advice returns, state in a sentence what you adopt
-or reject, then continue.
+Explicit flags always win. Read
+[references/advisor-pattern.md](references/advisor-pattern.md) before every
+consult, for why independence picks the family, the consult moments, context
+packaging, and advice shape. The advisor never edits files; after advice
+returns, state in a sentence what you adopt or reject, then continue.
 
 ## Mode: council
 
@@ -500,189 +232,39 @@ Shape is chosen automatically from the brief, not requested:
 | Read-only and splits into 2+ independent reading scopes | **Fan-out**, 2–5 workers |
 | Read-only, one scope | Single worker |
 
-**Fan-out is the default for read-only work** — research, audits, sweeps,
-"check X across these areas" — dispatched in one message with disjoint
-reading scopes, every brief carrying an explicit "make no edits" constraint.
-Lanes may mix (e.g. sonnet + sol in parallel). Wait for every report before
-synthesizing; never conclude from a partial fan-out.
-
-**Fan-out can never be the default for briefs that write.** This is a
-mechanical constraint, not a preference: parallel workers share one worktree
-and will overwrite each other's edits, leaving a diff no report describes.
-`--fanout` on a writing brief is therefore an **error** — report it and ask
-whether to split the task into provably disjoint write scopes (which then
-runs as a fan-out of narrower briefs) or to run it single. Implementation
-otherwise stays one worker iterated via follow-ups.
-
-Worktree isolation is **per task, not per worker**, so it does not soften this
-rule — every worker on one task shares that task's worktree and collides there
-exactly as described. What it prevents is the same collision *between*
-concurrently dispatched tasks; see *Worktree isolation*.
-
-Full shape, sizing, and completion rules:
-[references/dispatch-patterns.md](references/dispatch-patterns.md).
+Fan-out is the default for read-only work, dispatched in one message with
+disjoint reading scopes and a "make no edits" constraint in every brief; wait
+for every report before synthesizing. **`--fanout` on a writing brief is an
+error**: workers on one task share its worktree and overwrite each other.
+Read [references/dispatch-patterns.md § Shape selection](references/dispatch-patterns.md#shape-selection)
+before any fan-out or when a writing task seems to want parallel workers.
 
 ## Terminal surfaces
 
-When the planner runs inside herdr (`HERDR_ENV=1`), every worker, advisor, and
-moved conversation gets a visible, labelled surface instead of an invisible background
-process. The planner launches the wrapper with background Bash exactly as
-before (a Codex planner runs it in the foreground); the wrapper places the
-run, waits, and exits with the worker's status, so the harness still notifies
-on completion. Outside herdr the same command
-runs the worker inline, so there is one recipe for both.
+Launch every worker, advisor, and fan-out pane through the surface wrapper
+(background Bash; a Codex planner runs it in the foreground). Inside herdr it
+opens a labelled surface; outside herdr it runs the worker inline:
 
 ```bash
 node scripts/agent-surface.js run \
   --script "$worker_root/run.sh" --label "$name" --worktree "$tree"
 ```
 
-| Run | Flags | herdr surface |
-| --- | --- | --- |
-| Writing worker (always) | `--label "vpk-<type>-<slug>" --worktree "$tree"` | the worktree's own **workspace** in the sidebar |
-| Fan-out (2–5 read-only workers) | `--label "vpk-<type>-<slug>-<n>" --group "vpk-<type>-<slug>"` | one **tab**, one **pane** per worker |
-| Single read-only worker | `--label "vpk-<type>-<slug>"` | a new **tab** in the planner's workspace |
-| Advisor | `--label "vpk-<type>-<slug>-review"` | a new **tab** in the planner's workspace |
-| Moved conversation (`--new-window`) | handled by `ai-api` | a new **tab** running the forked session |
-
-A writing worker always gets its own sidebar workspace, with no manual step,
-even when the planner itself runs in a linked worktree: the wrapper opens the
-workspace from the main checkout (herdr refuses `worktree open` from a linked
-worktree), and if herdr still refuses, the wrapper exits with herdr's error
-rather than falling back to a tab. Report that error; do not relaunch the
-writing worker without `--worktree`. When the workspace is already open,
-the run never takes its root pane: it splits into the workspace's tab with the
-same label (`--group`, else `--label`) when there is one, otherwise it gets a
-new tab with that label.
-
-The `run.sh` keeps the lane's redirects: the report still lands in
-`report.md`, and the pane shows the user the worker's status, not a per-step
-feed. On the GPT lane that is the codex stderr stream; on the Claude lane
-`scripts/agent-stream-format.js` prints `working · <model> · started HH:MM`,
-a `working · 4m12s · 23 steps` line rewritten in place, then
-`done · 8m54s · $5.47 · 16 turns` or `failed · <reason>`. Pass it `--feed`
-only to debug a run (see
-[references/claude-executor.md](references/claude-executor.md)). The planner
-reads only the report, as before. Each pane reports `working` to herdr while
-it runs. Worker and advisor panes close themselves the moment they exit,
-success or failure, and an emptied tab goes with them; the planner reports
-the outcome. `report.md`, `events.jsonl`, and `stderr.log` keep the full
-record for diagnosing a failure. The only pane that stays is the root pane of
-a worktree workspace the run opened, because closing it would close the
-task's sidebar workspace. That root pane carries the task's status: the
-workspace shows `working` while any of its runs goes, then `idle` (last run
-exited 0) or `blocked` (`failed · exit N`) instead of `unknown`. Runs record
-themselves in `live-runs/` in the worker directory, under a lock, so
-overlapping runs never leave a wrong final state. To keep that status, it
-holds at `Press Enter for a shell.` after its run.
-Conventions and status reporting: `.agents/docs/herdr.md`.
-
-### Checking progress
-
-| Question | Where to look |
-| --- | --- |
-| Is it still running? | the herdr sidebar or the worker's pane while it shows `working`; gone means it ended, and the wrapper's exit status says how. A writing task's workspace shows `working`, then `idle` or `blocked` |
-| What has it done, step by step? | `events.jsonl` (Claude lane, one JSON event per line); rerun with `--feed` only to debug |
-| What has actually landed? | `git status` / `git diff` in the task worktree |
-| What did it conclude? | `report.md` |
-
-There is no "needs input" state. Workers run headless with permissions
-skipped, so they cannot stop to ask; a blocked worker exits non-zero, or
-exits 0 with the blocker written in its report.
+Read [references/terminal-surfaces.md](references/terminal-surfaces.md) when
+choosing flags for a run shape, when the wrapper reports a herdr error, when
+the user asks for progress, or when reading pane status.
 
 ## Status
 
 `/vpk-remote --status`, `/vpk-remote status`, and plain English asking about
-task status ("what's the status of my tasks", "what's running") run, from the
-main checkout:
-
-```bash
-node scripts/vpk-remote-status.js                   # --status: JSON facts for active tasks
-node scripts/vpk-remote-status.js --all             # --status --all: include done tasks and e2e runs
-node scripts/vpk-remote-status.js --task <name>     # --status <name>: one task, every run and report
-node scripts/vpk-remote-status.js --markdown        # ready-made rows, if the planner wants them
-```
-
-The script prints facts, not a layout: per task `name`, `goal`, `status`,
-`nextAction`, `pr`, `branch`, `worktree`, ages, `runs`, and `reports` (`--json`
-is an accepted alias). Present them **as a markdown table in your own
-response**: Task (with the goal in the same cell), Status, PR, Next action.
-Never put the table in a code block or as preformatted text. Follow it with at
-most two sentences on what needs attention. This works the same in any planner,
-whether Claude Code, Codex, Cursor or another tool: each renders a markdown
-table and wraps it to its own pane, which is why the script does not lay text
-out itself. `--markdown` prints the same four columns as a plain GitHub table,
-with `|` and newlines escaped. Status is read-only: it never dispatches, moves
-the conversation, or runs preflight. Tasks named `vpk-chore-e2e-*` are
-throwaway test runs of this skill and show only with `--all`.
-
-The script reads every `output/remote-<lane>/<name>/` directory. Both lanes
-share one task per name, and a worker joins its `-review` advisors
-(`task.json` `kind` decides when present). Runs are ordered by the start times
-`agent-surface.js` records in `runs.jsonl` and `<script>.start`, so a reused
-run script counts once per launch. A cut-off line in `runs.jsonl` loses only
-itself, and a `.start` newer than every record counts as a newer run; file
-times stand in only for legacy runs with no record. `report.md` belongs to the latest run that started before it
-was last written; earlier runs read their `report-<k>.md` snapshot (the k-th
-run by start) when the planner kept one. It derives one status from the runs' exits, the worker
-report's `## Blockers` (empty only when blank or just `None`), the review's
-`Verdict:` line, git, the branch's most recently created PR, and the live
-worker process (`bash <run script>`, its `agent-surface.js` wrapper, or
-`claude -p` / `codex exec` in the task directory; a pager or editor on its
-files does not count):
-
-- `running`, `stopped` (no exit file and no process), `not started`, `failed`
-  (the worker's latest run, whatever reviews followed), `blocked`;
-- `needs fixes`, `review unclear` (the verdict line is missing or is not
-  `ship`, `ship with nits`, or `request changes`), `reviewing`, `needs review`.
-  A review counts only for worker runs that ended before it started, the
-  latest started review decides even if an older one finishes later, and a
-  stopped review is ignored;
-- `no commits`, `ready to ship`, `PR open`, `PR closed`, `merged`, `done`.
-  A merged PR settles the task only if no worker run started after it merged
-  and the local branch has no commits past its head; otherwise status comes
-  from the newer runs. A merged task is `done` only once its worktree and
-  local branch are both observed gone; if the branch list failed it stays
-  `merged` with next action "re-run status". A task whose recorded branch
-  and worktree are both gone, with no rename in git's history leading to a
-  live branch, is `unknown` (next action: find the renamed branch) unless its
-  PR merged and no local branch's tip is, or descends from, the last HEAD a
-  run recorded (else the PR's head);
-- `done (read-only)` for research, reviews, and tasks whose `task.json` has
-  null `branch` and `worktree`, once none of their runs is live;
-- `unknown` when `ps`, `git` or `gh` failed, so the answer can't be
-  observed; any run whose liveness is unknown makes the task unknown, even if
-  a later run finished. Next action: re-run status.
-
-Each status comes with its next action. The branch is the one checked out in
-the task's worktree, else `task.json`'s. Directories without `task.json` still
-show, with a blank goal, and `task.json` fields of the wrong type are ignored.
-
-## Artifacts
-
-Everything lives under gitignored `output/`:
-
-```text
-output/remote-gpt/vpk-<type>-<slug>/          # home/ (CODEX_HOME), task.json, brief.md, run.sh(.start/.exit), runs.jsonl, report.md, followup-<k>.md
-output/remote-claude/vpk-<type>-<slug>/       # task.json, brief.md, run.sh(.start/.exit), runs.jsonl, report.md, events.jsonl, stderr.log, followup-<k>.md
-output/remote-<lane>/vpk-<type>-<slug>-<n>/   # one per fan-out worker
-output/remote-<lane>/vpk-<type>-<slug>-review/  # advisor consults, same layout as that lane's workers
-```
-
-The directory carries the surface's name (see *Naming*), so one directory per
-surface; never reuse a directory across concurrent workers. Follow-ups reuse
-the worker's directory as `followup-<k>.md`, run by `run-<k>.sh`, so each run
-keeps its own exit file. `agent-surface.js` writes `<script>.start` before each
-launch and appends a start line and an end line per run to the directory's
-`runs.jsonl` (`script`, `startedAt`, `endedAt`, `exit`, both times ISO with
-milliseconds, plus `head`, the task worktree's HEAD, on a writing run's end
-line), so a relaunched script keeps every run in order. A writing run also
-keeps `live-runs/<pid>.json` there while it is live (see *Terminal
-surfaces*).
-
-Artifacts stay under the **main checkout's** `output/`, never inside a task
-worktree, so reports from concurrently dispatched tasks stay readable in one
-place and survive worktree cleanup.
+task status run `node scripts/vpk-remote-status.js` (`--all`, `--task <name>`,
+`--markdown`) from the main checkout. Present its facts **as a markdown table
+in your own response** (Task with goal, Status, PR, Next action), never in a
+code block, then at most two sentences on what needs attention. Status is
+read-only. Read
+[references/status-and-artifacts.md](references/status-and-artifacts.md)
+before answering a status request, and for the `output/remote-<lane>/` artifact
+layout.
 
 ## Boundaries
 
@@ -714,39 +296,3 @@ place and survive worktree cleanup.
   worktree on its own: shipping is `/vpk-git-ship` and cleanup is
   `/vpk-git-clean`, both only when the user asks. Always report which branch
   and worktree hold the diff.
-
-## Known infrastructure hazard
-
-Proximity's **`/openai/*` route intermittently returns HTTP 400** —
-`CloudID is invalid or not provisioned in the staging environment` — on
-roughly 10% of requests (measured 2026-08-01: 18/20 small identical calls
-passed, and an 8KB request failed while a 400KB one succeeded, so it is
-neither size nor config). `codex exec` treats 400 as non-retryable and aborts
-the whole session, so a long GPT-lane run is likely to die partway.
-
-The single-request preflight cannot detect this — most requests succeed. When
-a GPT-lane worker dies with that message, it is **not** a brief or model
-problem: check `git status` for a landed diff, then prefer the Claude lane
-(`--model opus` / `--model sonnet`, routed via `/vertex/claude`, 12/12 clean
-in the same window) rather than re-dispatching to GPT. The upstream fix
-belongs to whoever provisions the staging CloudID.
-
-## Regression checks
-
-```bash
-node --test scripts/vpk-ai-api.test.js scripts/vpk-remote-preflight.test.js scripts/vpk-remote-tools.test.js
-python3 scripts/test_vpk_remote_tools.py
-node scripts/validate-skills.js --target .agents/skills/vpk-remote
-```
-
-The maintained sources are `scripts/vpk-ai-api.sh`,
-`scripts/vpk-remote-preflight.js`, `scripts/vpk_remote_tools.py`, and
-`scripts/vpk_remote_callback.py`; change these before reinstalling, rather than
-patching site-packages or leaving the fix only in a machine-local script.
-
-A 400 `tools: Tool names must be unique` on a Codex-to-Claude fork can come from
-historical `additional_tools` bundles repeating the current tools. The callback
-keeps current runtime schemas, merges missing historical members, and gives the
-latest historical definition precedence when there is no current definition.
-Conflicting definitions inside the current list fail locally rather than being
-silently replaced. It does not rename tools or rewrite tool calls/results.

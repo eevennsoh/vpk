@@ -423,7 +423,7 @@ conversation_starters:
 
 ## Maintenance Notes
 
-- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 2.
+- Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 2 and its prompt in `.agents/skills/vpk-design/references/phase-prompts.md`.
 - Retrieve ADS content with the `atlas ads` CLI first (`atlas ads search <q> --type component|token|icon`, `atlas ads docs <topic>`, `atlas ads docs a11y <topic>`; add `--json` when parsing, `atlas ads batch --command ... --command ...` for several lookups). ADS MCP tools are the fallback when the CLI is unavailable or erroring.
 - MCP tool availability is runtime-dependent; if ADS analysis tools are unavailable, report the limitation and run the strongest local checks available.
 - This agent may edit source during real pipeline runs, but this canonical Markdown definition must stay provider-neutral.

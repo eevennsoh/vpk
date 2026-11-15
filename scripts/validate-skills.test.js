@@ -6,10 +6,12 @@ const test = require("node:test");
 
 const {
 	DEFAULT_TARGET,
+	MAX_BODY_LINES,
 	buildSkillIndexText,
 	collectMarkdownLinks,
 	collectReferenceDocs,
 	collectSkillDirectories,
+	countBodyLines,
 	createSkillValidationReport,
 	formatRelatedDocsCell,
 	normalizeMarkdownLinkTarget,
@@ -290,6 +292,34 @@ test("createSkillValidationReport catches descriptions over the 1024-character l
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
+});
+
+test("countBodyLines ignores trailing blank lines", () => {
+	assert.equal(countBodyLines(""), 0);
+	assert.equal(countBodyLines("\n# Example\n\nText.\n\n\n"), 4);
+});
+
+test("createSkillValidationReport caps SKILL.md bodies at the line limit", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-body-lines-"));
+	try {
+		const filler = (count) => Array.from({ length: count }, (_, index) => `Line ${index}.`).join("\n");
+		// writeSkill prefixes the body with one blank line after the frontmatter.
+		writeSkill(cwd, "vpk-at-limit", `# At limit\n${filler(MAX_BODY_LINES - 2)}\n`);
+		writeSkill(cwd, "vpk-over-limit", `# Over limit\n${filler(MAX_BODY_LINES - 1)}\n`);
+		const report = createSkillValidationReport({ checkIndex: false, cwd });
+		assert.equal(MAX_BODY_LINES, 300);
+		assert.deepEqual(report.failures.map((failure) => [path.basename(path.dirname(failure.path)), failure.type]), [
+			["vpk-over-limit", "skill-body-too-long"],
+		]);
+		assert.match(report.failures[0].message, /body is 301 lines; the limit is 300/u);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("the repo's own skills stay under the SKILL.md body line cap", () => {
+	const report = createSkillValidationReport({ checkIndex: false });
+	assert.deepEqual(report.failures.filter((failure) => failure.type === "skill-body-too-long"), []);
 });
 
 test("createSkillValidationReport catches names that omit the vpk- prefix", () => {
