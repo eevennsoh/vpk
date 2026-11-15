@@ -35,7 +35,7 @@ export function AgentsWorkItemInlinePage({
 				</div>
 				<WorkItemModal.Header />
 				<div className="flex min-h-0 flex-1 overflow-hidden">
-					<main className="min-w-0 flex-1 overflow-y-auto px-10 py-6">
+					<div className="min-w-0 flex-1 overflow-y-auto px-10 py-6">
 						<div className="mx-auto max-w-[900px]">
 							<WorkItemModal.Title />
 							<div className="mt-4">
@@ -46,7 +46,7 @@ export function AgentsWorkItemInlinePage({
 								<WorkItemModal.Activity />
 							</div>
 						</div>
-					</main>
+					</div>
 					<aside className="w-[408px] shrink-0 overflow-y-auto border-l border-border px-4 pb-6">
 						<WorkItemModal.StatusHeader />
 						<WorkItemModal.SidebarStack>

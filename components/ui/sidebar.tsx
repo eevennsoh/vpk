@@ -314,9 +314,13 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   )
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+// VPK difference from upstream shadcn (<main>): the root layout owns the page's only main
+// landmark, and a nested main trips axe's landmark rules. An unnamed <section> has no landmark
+// role, yet still keeps a <header> inside the inset out of the banner role as <main> did, which
+// matters in embedded previews where the root wrapper is not a <main>.
+function SidebarInset({ className, ...props }: React.ComponentProps<"section">) {
   return (
-    <main
+    <section
       data-slot="sidebar-inset"
       className={cn(
         "bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 relative flex w-full flex-1 flex-col",

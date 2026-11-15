@@ -429,7 +429,7 @@ test("the reusable Jira shell owns sidebar state, sidebar chat fallback, and the
 	assert.match(PAGE_SOURCE, /shellHeight=\{shellHeight\}/u);
 	assert.match(PAGE_SOURCE, /sidebarContent=\{\(\s*<JiraSidebar[\s\S]*onSelectItem=\{setSelectedSidebarItem\}[\s\S]*selectedItem=\{selectedSidebarItem\}/u);
 	assert.match(PAGE_SOURCE, /topNavigationSearchAlignment="sidebar"/u);
-	assert.match(PAGE_SOURCE, /<main className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">/u);
+	assert.match(PAGE_SOURCE, /<section aria-label="For you" className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">/u);
 	assert.match(PAGE_SOURCE, /children\?: ReactNode;/u);
 	assert.match(PAGE_SOURCE, /\{children \?\? \(/u);
 	assert.match(PAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*chrome="plain"[\s\S]*className="h-full min-h-0 flex-1"[\s\S]*\/>/u);

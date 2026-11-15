@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useCallback, useRef, useState } from "react";
+import { type ReactElement, useCallback, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface LogEntry {
@@ -26,6 +26,7 @@ function formatTimestamp(): string {
 }
 
 export default function ImageGenerationDemo(): ReactElement {
+	const headingId = useId();
 	const [prompt, setPrompt] = useState("generate me an image with a red box");
 	const [response, setResponse] = useState("");
 	const [images, setImages] = useState<ImageEntry[]>([]);
@@ -249,9 +250,9 @@ export default function ImageGenerationDemo(): ReactElement {
 	}, []);
 
 	return (
-		<main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+		<section aria-labelledby={headingId} className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
 				<header className="flex flex-col gap-3">
-					<h1 className="text-2xl font-semibold">Image Generation</h1>
+					<h1 id={headingId} className="text-2xl font-semibold">Image Generation</h1>
 					<p className="text-sm text-muted-foreground">
 						Sends a message to <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/api/chat-sdk</code> in
 						pure chat mode with <code className="rounded bg-muted px-1.5 py-0.5 text-xs">provider: &quot;google&quot;</code>.
@@ -399,6 +400,6 @@ export default function ImageGenerationDemo(): ReactElement {
 					</div>
 				</section>
 			) : null}
-		</main>
+		</section>
 	);
 }

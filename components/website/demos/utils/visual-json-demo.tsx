@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { JsonEditor, DiffView, type JsonValue } from "@visual-json/react";
 import type { JsonSchema } from "@visual-json/core";
 import type { Spec } from "@json-render/react";
@@ -145,13 +145,14 @@ function LiveSpecEditor() {
 }
 
 export default function VisualJsonDemo() {
+	const headingId = useId();
 	const [value, setValue] = useState<JsonValue>(SAMPLE_DATA);
 	const [originalValue] = useState<JsonValue>(SAMPLE_DATA);
 
 	return (
-		<main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+		<section aria-labelledby={headingId} className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
 			<header className="flex flex-col gap-3">
-				<h1 className="text-2xl font-semibold">Visual JSON</h1>
+				<h1 id={headingId} className="text-2xl font-semibold">Visual JSON</h1>
 				<p className="text-sm text-muted-foreground">
 					Schema-aware, embeddable JSON editor with tree navigation, form editing, and diff comparison.
 				</p>
@@ -233,6 +234,6 @@ export default function VisualJsonDemo() {
 					<LiveSpecEditor />
 				</TabsContent>
 			</Tabs>
-		</main>
+		</section>
 	);
 }

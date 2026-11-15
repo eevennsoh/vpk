@@ -16,7 +16,7 @@ export function JiraForYouWorkItemView({
 	item,
 }: Readonly<JiraForYouWorkItemViewProps>) {
 	return (
-		<main
+		<section
 			aria-label={`Work item: ${item.issueKey}`}
 			className="flex min-h-0 w-full flex-1 overflow-hidden"
 			data-testid="jira-for-you-work-item-view"
@@ -30,6 +30,6 @@ export function JiraForYouWorkItemView({
 				presentation="inline"
 				workItem={mapJiraForYouItemToWorkItem(item)}
 			/>
-		</main>
+		</section>
 	);
 }
