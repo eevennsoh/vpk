@@ -296,10 +296,10 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/projects/sidebar-chat/page.tsx",
+			"filePath": "components/projects/sidebar-chat/hooks/use-chat-panel-realtime.ts",
 			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
+			"reason": "moved from sidebar-chat/page.tsx with the realtime voice callbacks (C-11 split); they read stable refs bridging the voice session and composer",
+			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge the realtime voice session and composer state. */",
 			"type": "eslint-disable"
 		},
 		{

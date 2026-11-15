@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 
 const CORE_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "use-realtime-voice.ts"),
@@ -23,10 +24,7 @@ const STUDIO_WRAPPER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/studio/hooks/use-realtime-voice.ts"),
 	"utf8",
 );
-const SIDEBAR_CHAT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
-	"utf8",
-);
+const SIDEBAR_CHAT_SOURCE = readChatPanelSource();
 
 test("Rovo and Studio realtime voice hooks are thin policy wrappers over core", () => {
 	assert.match(

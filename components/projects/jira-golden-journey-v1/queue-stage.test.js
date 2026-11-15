@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelSource } = require("../sidebar-chat/chat-panel-source-harness");
 
 const CARD_KANBAN_STAGE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/card-kanban-stage.tsx"),
@@ -73,7 +74,7 @@ const CHAT_COMPOSER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../sidebar-chat/components/chat-composer.tsx"),
 	"utf8",
 );
-const CHAT_PANEL_SOURCE = fs.readFileSync(path.join(__dirname, "../sidebar-chat/page.tsx"), "utf8");
+const CHAT_PANEL_SOURCE = readChatPanelSource();
 const CHAT_HEADER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../sidebar-chat/components/chat-header.tsx"),
 	"utf8",

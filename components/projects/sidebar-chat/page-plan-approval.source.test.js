@@ -1,10 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
+const { readChatPanelSource } = require("./chat-panel-source-harness");
 
-const CHAT_PANEL_FILE = path.join(__dirname, "page.tsx");
-const CHAT_PANEL_SOURCE = fs.readFileSync(CHAT_PANEL_FILE, "utf8");
+const CHAT_PANEL_SOURCE = readChatPanelSource();
 
 function extractSlice(startMarker, endMarker) {
 	const startIndex = CHAT_PANEL_SOURCE.indexOf(startMarker);

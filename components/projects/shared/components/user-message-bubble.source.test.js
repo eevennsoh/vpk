@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 
 const USER_MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "user-message-bubble.tsx"),
@@ -15,10 +16,7 @@ const SIDEBAR_MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../sidebar-chat/components/message-bubble.tsx"),
 	"utf8",
 );
-const CHAT_PANEL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../sidebar-chat/page.tsx"),
-	"utf8",
-);
+const CHAT_PANEL_SOURCE = readChatPanelSource();
 const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
 	"utf8",

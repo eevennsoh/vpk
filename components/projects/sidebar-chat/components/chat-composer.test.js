@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { readChatPanelSource } = require("../chat-panel-source-harness");
 
 function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
@@ -64,7 +65,7 @@ test("compact chat animates sources and model selectors when edit-agent context 
 });
 
 test("compact chat can hide the AI cursor control without changing the default", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /hideAiCursor\?: boolean;/u);
@@ -104,7 +105,7 @@ test("shared chat composer disables live voice by default while keeping dictatio
 });
 
 test("compact chat can hide the AI disclaimer without changing the default", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /hideAiDisclaimer\?: boolean;/u);
@@ -116,7 +117,7 @@ test("compact chat can hide the AI disclaimer without changing the default", () 
 });
 
 test("chat surfaces explicitly place empty greetings near the composer by default", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 
 	assert.match(sidebarPanel, /emptyGreetingPlacement\?: "centered" \| "near-composer";/u);
 	assert.match(sidebarPanel, /emptyGreetingPlacement = "near-composer"/u);
@@ -125,7 +126,7 @@ test("chat surfaces explicitly place empty greetings near the composer by defaul
 });
 
 test("compact chat can lock a selected agent identity", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const chatHeader = readProjectFile("components/projects/sidebar-chat/components/chat-header.tsx");
 
 	assert.match(sidebarPanel, /showAgentBackButton\?: boolean;/u);
@@ -137,7 +138,7 @@ test("compact chat can lock a selected agent identity", () => {
 });
 
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
 	const realtimeRequestSource = sourceBetween(sidebarPanel, "const lastStartRealtimeVoiceRequestKeyRef", "const handleToggleRealtimeVoice");
 	const clickyToggleSource = sourceBetween(sidebarPanel, "const handleToggleClicky", "// Cmd+Shift+K");
@@ -187,15 +188,15 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 });
 
 test("compact chat can keep a generated agent result card visible when the transcript is scripted", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 
 	assert.match(sidebarPanel, /interface ChatPanelCardsProps \{[\s\S]*generatedAgentResult\?: RovoDataParts\["agent-result"\] \| null;/u);
-	assert.match(sidebarPanel, /const shouldRenderGeneratedAgentFallbackCard = useMemo\(\(\) => \{[\s\S]*const cardAgentId = cards\.generatedAgentResult\.agentId;[\s\S]*const cardAction = cards\.generatedAgentResult\.action;[\s\S]*const messageAgentResult = getMessageAgentResult\(message\);[\s\S]*messageAgentResult\.agentId === cardAgentId[\s\S]*messageAgentResult\.action === cardAction/u);
+	assert.match(sidebarPanel, /const shouldRenderGeneratedAgentFallbackCard = useMemo\([\s\S]*resolveShouldRenderGeneratedAgentFallbackCard\(cards\?\.generatedAgentResult, messages\)[\s\S]*const cardAgentId = generatedAgentResult\.agentId;[\s\S]*const cardAction = generatedAgentResult\.action;[\s\S]*const messageAgentResult = getMessageAgentResult\(message\);[\s\S]*messageAgentResult\.agentId === cardAgentId[\s\S]*messageAgentResult\.action === cardAction/u);
 	assert.match(sidebarPanel, /\{shouldRenderGeneratedAgentFallbackCard && cards\?\.generatedAgentResult \? \([\s\S]*data-testid="rovo-generated-result-group"[\s\S]*<AgentResultCard[\s\S]*agent=\{cards\.generatedAgentResult\}[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u);
 });
 
 test("compact chat streams realtime assistant text into the Clicky response panel", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const assistantDeltaSource = sourceBetween(sidebarPanel, "const handleRealtimeAssistantTextDelta", "const handleRealtimeAssistantTextCompleted");
 	const assistantCompletedSource = sourceBetween(sidebarPanel, "const handleRealtimeAssistantTextCompleted", "const handleRealtimeDelegateToRovo");
 
@@ -213,7 +214,7 @@ test("compact chat streams realtime assistant text into the Clicky response pane
 });
 
 test("compact chat cursor voice uses structured screen tools instead of screenshot POINT parsing", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(CLICKY_VOICE_HOOK_SOURCE, /get_screen_state/u);
@@ -236,7 +237,7 @@ test("compact chat cursor voice uses structured screen tools instead of screensh
 });
 
 test("compact chat composer padding can be overridden by opt-in surfaces", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /composerContainerClassName\?: string;/u);
@@ -247,7 +248,7 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 });
 
 test("compact chat composer supports an opt-in attached surface header", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /composerSurfaceHeader\?: ReactNode;/u);
@@ -258,7 +259,7 @@ test("compact chat composer supports an opt-in attached surface header", () => {
 });
 
 test("compact chat composer supports an opt-in left-side surface header tooltip", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const codeReviewRail = readProjectFile(
 		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
@@ -281,7 +282,7 @@ test("compact chat composer supports an opt-in left-side surface header tooltip"
 });
 
 test("compact chat composer supports opt-in first-render autofocus", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /autoFocusComposer\?: boolean;/u);
@@ -293,7 +294,7 @@ test("compact chat composer supports opt-in first-render autofocus", () => {
 });
 
 test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const promptInput = [
 		readProjectFile("components/ui-custom/prompt-input/prompt-input-textarea-types.ts"),
@@ -481,7 +482,7 @@ test("Rovo composers default reasoning to Auto", () => {
 });
 
 test("sidebar chat shares Max reasoning with the empty-state greeting", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
@@ -496,7 +497,7 @@ test("sidebar chat shares Max reasoning with the empty-state greeting", () => {
 
 test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls", () => {
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const rovoComposer = readProjectFile("components/projects/shared/components/composer-card-body.tsx");
 	const rovoShell = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
 
@@ -583,7 +584,7 @@ test("compact chat submits add-menu files through the shared Rovo thread queue",
 });
 
 test("compact chat accepts host-owned input context inside the prompt surface", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
 	assert.match(sidebarPanel, /export interface ComposerInputContext \{[\s\S]*content: ReactNode;[\s\S]*submitText: string;[\s\S]*onSubmitStart\?: \(\) => void;[\s\S]*onSubmitted\?: \(\) => void;/u);
@@ -599,7 +600,7 @@ test("compact chat accepts host-owned input context inside the prompt surface", 
 });
 
 test("compact chat edit context blocks unmatched prompts from normal Rovo chat", () => {
-	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarPanel = readChatPanelSource();
 	const submitHook = readProjectFile("components/projects/sidebar-chat/hooks/use-chat-submit.ts");
 	const requireInterceptIndex = submitHook.indexOf("if (requireIntercept) {");
 	const sendPromptIndex = submitHook.indexOf("await sendPrompt(promptText, defaultPromptOptions, files)");

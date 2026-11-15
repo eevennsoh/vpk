@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelSource } = require("../../projects/sidebar-chat/chat-panel-source-harness");
 
 function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
@@ -665,9 +666,7 @@ test("Code Review agent types explicitly control empty greeting placement", () =
 	const rail = readProjectFile(
 		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
 	);
-	const sidebarChat = readProjectFile(
-		"components/projects/sidebar-chat/page.tsx",
-	);
+	const sidebarChat = readChatPanelSource();
 	const kanbanStage = readProjectFile(
 		"components/projects/jira-golden-journey-v1/components/kanban-stage.tsx",
 	);

@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 
 const SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-shell.tsx"),
@@ -67,10 +68,7 @@ const CUSTOM_AGENTS_TABLE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-custom-agents-table.tsx"),
 	"utf8",
 );
-const CHAT_PANEL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
-	"utf8",
-);
+const CHAT_PANEL_SOURCE = readChatPanelSource();
 const STUDIO_CHAT_HELPERS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-chat-helpers.ts"),
 	"utf8",
