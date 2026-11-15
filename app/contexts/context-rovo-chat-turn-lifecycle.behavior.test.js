@@ -1,0 +1,623 @@
+// Characterization suite for the chat turn lifecycle owned by RovoChatProvider
+// (SM-FE-15): submit, streaming, tool calls, error, cancel, retry and thread switch.
+// It renders the real provider with the real AI SDK `useChat` and
+// `DefaultChatTransport`; only the network is fake. `fetch` answers
+// `/api/rovo/chat` from a scripted in-memory SSE server, and the thread API
+// module is an in-memory store, so no paid model call can happen.
+const path = require("node:path");
+
+// happy-dom replaces some web-stream globals when it registers; the AI SDK
+// transport pipes the SSE body through TransformStreams, which only works with
+// Node's own stream classes, so the suite captures them and swaps them back in
+// while a chat is mounted.
+const NODE_STREAM_GLOBALS = {
+	Response: globalThis.Response,
+	TransformStream: globalThis.TransformStream,
+	WritableStream: globalThis.WritableStream,
+};
+const NodeResponse = NODE_STREAM_GLOBALS.Response;
+const NodeReadableStream = globalThis.ReadableStream;
+
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const esbuild = require("esbuild");
+require("../../scripts/lib/render-component.js");
+const React = require("react");
+const { createRoot } = require("react-dom/client");
+const { loadCjsModuleFromText } = require("../../scripts/lib/esbuild-cjs-loader.js");
+
+const RETRY_DELAY_MS = 150;
+const CHAT_ERROR_UTILS_PATH = path.join(process.cwd(), "lib/chat-error-utils.ts");
+
+const mocks = {
+	"@/components/projects/rovo-core/lib/api": `
+		// Late refreshes can land after a test tears down; they read an empty store.
+		const api = () => window.testApi ?? { threads: new Map(), calls: [] };
+		export async function cancelRovoAppRun(threadId) { api().calls.push("cancelRun:" + threadId); return true; }
+		export async function createRovoAppThread({ signal, ...thread }) {
+			api().calls.push("createThread:" + thread.title);
+			const created = { ...thread, createdAt: 1, updatedAt: 1 };
+			api().threads.set(created.id, created);
+			return created;
+		}
+		export async function deleteAllRovoAppThreads() { api().threads.clear(); }
+		export async function deleteRovoAppThread(id) { api().threads.delete(id); }
+		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); return true; }
+		export async function fetchRovoAppAITitle() { return null; }
+		export async function fetchRovoAppSuggestedQuestions() { return []; }
+		export async function getRovoAppThread(id) { return api().threads.get(id) ?? null; }
+		export async function listRovoAppThreads() { return Array.from(api().threads.values()); }
+		export async function updateRovoAppThread(id, patch) {
+			const updated = { ...(api().threads.get(id) ?? { id }), ...patch };
+			api().threads.set(id, updated);
+			return updated;
+		}
+	`,
+	// Real error classification and copy; only the retry delays are shortened.
+	"@/lib/chat-error-utils": `
+		export * from ${JSON.stringify(CHAT_ERROR_UTILS_PATH)};
+		export const RATE_LIMIT_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
+		export const CHAT_IN_PROGRESS_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
+	`,
+};
+
+// Bundled stream classes (for example the SSE parser) extend TransformStream when
+// the module evaluates, so the harness loads with Node's classes in place too.
+function withNodeStreamGlobals(callback) {
+	const previous = Object.fromEntries(Object.keys(NODE_STREAM_GLOBALS).map((name) => [name, globalThis[name]]));
+	Object.assign(globalThis, NODE_STREAM_GLOBALS);
+	try {
+		return callback();
+	} finally {
+		Object.assign(globalThis, previous);
+	}
+}
+
+let harnessPromise = null;
+function loadHarness() {
+	harnessPromise ??= esbuild.build({
+		stdin: {
+			contents: `
+				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
+				export { toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
+				export {
+					getChatInProgressRetryCountdownLabel,
+					getChatInProgressUserMessage,
+					getRateLimitRetryCountdownMessage,
+					getRateLimitUserMessage,
+					RATE_LIMIT_MAX_RETRIES,
+					CHAT_IN_PROGRESS_MAX_RETRIES,
+				} from "@/lib/chat-error-utils";
+				function Probe() {
+					window.testChat = useRovoChat();
+					return null;
+				}
+				export function Harness() {
+					return <RovoChatProvider><Probe /></RovoChatProvider>;
+				}
+			`,
+			loader: "tsx", resolveDir: process.cwd(), sourcefile: "rovo-chat-turn-lifecycle-harness.tsx",
+		},
+		bundle: true, platform: "node", format: "cjs", jsx: "automatic", write: false,
+		external: ["react", "react-dom"], loader: { ".css": "empty" },
+		plugins: [{ name: "chat-turn-adapters", setup(build) {
+			build.onResolve({ filter: /.*/ }, ({ path: request }) => Object.hasOwn(mocks, request) ? { path: request, namespace: "test-adapter" } : undefined);
+			build.onLoad({ filter: /.*/, namespace: "test-adapter" }, ({ path: request }) => ({ contents: mocks[request], loader: "tsx", resolveDir: process.cwd() }));
+		} }],
+	}).then((result) => withNodeStreamGlobals(() => loadCjsModuleFromText(result.outputFiles[0].text)));
+	return harnessPromise;
+}
+
+// A scripted SSE chat server. Each POST to the chat endpoint becomes a turn the
+// test drives chunk by chunk; `failNext` answers the next POST with an HTTP error.
+function createChatServer() {
+	const encoder = new TextEncoder();
+	const turns = [];
+	const failures = [];
+	const otherRequests = [];
+	const waiters = [];
+
+	function createTurn(body, signal) {
+		let controller;
+		let closed = false;
+		const stream = new NodeReadableStream({ start(streamController) { controller = streamController; } });
+		const turn = {
+			body,
+			aborted: false,
+			send(chunk) {
+				if (!closed) controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+			},
+			text(id, text) {
+				turn.send({ type: "text-start", id });
+				turn.send({ type: "text-delta", id, delta: text });
+				turn.send({ type: "text-end", id });
+			},
+			turnComplete() {
+				turn.send({ type: "data-turn-complete", data: { timestamp: new Date().toISOString() } });
+			},
+			end() {
+				if (closed) return;
+				turn.send({ type: "finish" });
+				controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+				closed = true;
+				controller.close();
+			},
+		};
+		signal?.addEventListener("abort", () => {
+			turn.aborted = true;
+			if (closed) return;
+			closed = true;
+			controller.error(new DOMException("The operation was aborted.", "AbortError"));
+		}, { once: true });
+		turn.response = new NodeResponse(stream, {
+			status: 200,
+			headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" },
+		});
+		return turn;
+	}
+
+	async function fetch(input, init = {}) {
+		const url = String(typeof input === "string" ? input : input?.url ?? input);
+		if (url.endsWith("/api/rovo/chat")) {
+			const body = JSON.parse(init.body);
+			const failure = failures.shift();
+			if (failure) {
+				turns.push({ body, failed: failure });
+				resolveWaiters();
+				return new NodeResponse(failure.body, { status: failure.status });
+			}
+			const turn = createTurn(body, init.signal);
+			turns.push(turn);
+			resolveWaiters();
+			return turn.response;
+		}
+		otherRequests.push(url);
+		return new NodeResponse("{}", { status: 200, headers: { "content-type": "application/json" } });
+	}
+
+	function resolveWaiters() {
+		for (const waiter of waiters.splice(0)) waiter();
+	}
+
+	return {
+		fetch,
+		turns,
+		otherRequests,
+		failNext(status, body) { failures.push({ status, body }); },
+	};
+}
+
+function partLabel(part) {
+	if (part.type === "text") return part.text;
+	if (part.type.startsWith("tool-")) return `${part.type}(${part.state})`;
+	return part.type;
+}
+
+function describeMessages(messages) {
+	return messages.map((message) => `${message.role}:${message.parts
+		.filter((part) => part.type !== "step-start")
+		.map(partLabel)
+		.join("+")}`);
+}
+
+function chatState() {
+	const chat = window.testChat;
+	return {
+		streaming: chat.isStreaming,
+		submitPending: chat.isSubmitPending,
+		inFlight: chat.hasInFlightTurn,
+		active: chat.activePrompt?.text ?? null,
+		queued: chat.queuedPrompts.map((prompt) => prompt.text),
+		thread: chat.activeThreadId,
+		messages: describeMessages(chat.uiMessages),
+	};
+}
+
+async function settle(ms = 5) {
+	await React.act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, ms));
+	});
+}
+
+async function waitFor(description, predicate, timeoutMs = 3000) {
+	const startedAt = Date.now();
+	while (!predicate()) {
+		if (Date.now() - startedAt > timeoutMs) {
+			throw new Error(`Timed out waiting for ${description}; state: ${JSON.stringify(chatState())}`);
+		}
+		await settle();
+	}
+}
+
+async function mountChat(t) {
+	const harness = await loadHarness();
+	const server = createChatServer();
+	const originalFetch = globalThis.fetch;
+	const originalWindowFetch = window.fetch;
+	const originalStreamGlobals = Object.fromEntries(Object.keys(NODE_STREAM_GLOBALS).map((name) => [name, globalThis[name]]));
+	Object.assign(globalThis, NODE_STREAM_GLOBALS);
+	globalThis.fetch = server.fetch;
+	window.fetch = server.fetch;
+	window.testApi = { threads: new Map(), calls: [] };
+	const container = document.createElement("div");
+	document.body.append(container);
+	const root = createRoot(container);
+	await React.act(async () => root.render(React.createElement(harness.Harness)));
+	t.after(async () => {
+		await React.act(async () => root.unmount());
+		container.remove();
+		globalThis.fetch = originalFetch;
+		window.fetch = originalWindowFetch;
+		Object.assign(globalThis, originalStreamGlobals);
+		delete window.testChat;
+		delete window.testApi;
+	});
+	return { harness, server, chat: () => window.testChat };
+}
+
+// Starts a provider action without holding one React act() scope open for its
+// whole lifetime. Actions such as stopStreaming poll a ref that only updates
+// after a render commits, and act() defers commits until its callback returns.
+async function startAction(action) {
+	let settled = false;
+	let failure = null;
+	await React.act(async () => {
+		Promise.resolve(action()).then(
+			() => { settled = true; },
+			(error) => { settled = true; failure = error; },
+		);
+	});
+	return async function finished() {
+		await waitFor("the action to settle", () => settled);
+		if (failure) throw failure;
+	};
+}
+
+async function send(chat, prompt) {
+	await React.act(async () => {
+		await chat().sendPrompt(prompt);
+	});
+}
+
+test("submit marks the turn pending, streams the reply, and settles only after turn-complete", async (t) => {
+	const { server, chat } = await mountChat(t);
+	const initial = chatState();
+	assert.deepEqual(initial, {
+		streaming: false, submitPending: false, inFlight: false, active: null, queued: [], thread: null, messages: [],
+	});
+
+	await send(chat, "  Hello there  ");
+	await waitFor("the first request", () => server.turns.length === 1);
+	const [turn] = server.turns;
+	const threadId = chat().activeThreadId;
+	assert.equal(typeof threadId, "string");
+	assert.deepEqual(window.testApi.calls, ["createThread:Hello there"]);
+	assert.equal(turn.body.id, threadId);
+	assert.equal(turn.body.hasQueuedPrompts, false);
+	assert.deepEqual(describeMessages(turn.body.messages), ["user:Hello there"]);
+	await waitFor("streaming", () => chat().isStreaming);
+	assert.equal(chat().activePrompt?.text, "Hello there");
+	assert.equal(chat().hasInFlightTurn, true);
+
+	turn.send({ type: "start" });
+	turn.text("t1", "Hi!");
+	await waitFor("streamed text", () => chatState().messages.at(-1) === "assistant:Hi!");
+	assert.equal(chat().isStreaming, true);
+	assert.equal(chat().isSubmitPending, false);
+
+	turn.turnComplete();
+	turn.end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState(), {
+		streaming: false,
+		submitPending: false,
+		inFlight: false,
+		active: null,
+		queued: [],
+		thread: threadId,
+		messages: ["user:Hello there", "assistant:Hi!+data-turn-complete"],
+	});
+});
+
+test("a stream that ends without turn-complete keeps its prompt active and blocks the queue", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "First");
+	await waitFor("the first request", () => server.turns.length === 1);
+	await send(chat, "Second");
+	assert.deepEqual(chatState().queued, ["Second"]);
+
+	server.turns[0].text("t1", "Partial");
+	server.turns[0].end();
+	await waitFor("the stream to end", () => !chat().isStreaming);
+	await settle(30);
+	const state = chatState();
+	assert.equal(state.active, "First");
+	assert.deepEqual(state.queued, ["Second"]);
+	assert.equal(state.inFlight, true);
+	assert.equal(server.turns.length, 1);
+});
+
+test("prompts sent during a turn queue in order and dispatch after each turn-complete", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "One");
+	await waitFor("the first request", () => server.turns.length === 1);
+	await send(chat, "Two");
+	await send(chat, "Three");
+	assert.deepEqual(chatState().queued, ["Two", "Three"]);
+	assert.equal(chat().queueCount, 2);
+
+	server.turns[0].text("a", "Reply one");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the second request", () => server.turns.length === 2);
+	assert.equal(server.turns[1].body.hasQueuedPrompts, true);
+	assert.deepEqual(chatState().queued, ["Three"]);
+	assert.equal(chat().activePrompt?.text, "Two");
+
+	server.turns[1].text("b", "Reply two");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the third request", () => server.turns.length === 3);
+	assert.equal(server.turns[2].body.hasQueuedPrompts, false);
+	server.turns[2].text("c", "Reply three");
+	server.turns[2].turnComplete();
+	server.turns[2].end();
+	await waitFor("the queue to drain", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, [
+		"user:One", "assistant:Reply one+data-turn-complete",
+		"user:Two", "assistant:Reply two+data-turn-complete",
+		"user:Three", "assistant:Reply three+data-turn-complete",
+	]);
+	assert.deepEqual(window.testApi.calls, ["createThread:One"]);
+});
+
+test("tool calls stream through input and output states on the assistant message", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Search for bugs");
+	await waitFor("the request", () => server.turns.length === 1);
+	const [turn] = server.turns;
+	turn.send({ type: "start" });
+	turn.send({ type: "tool-input-start", toolCallId: "call-1", toolName: "search" });
+	await waitFor("tool input streaming", () => chatState().messages.at(-1) === "assistant:tool-search(input-streaming)");
+	turn.send({ type: "tool-input-available", toolCallId: "call-1", toolName: "search", input: { query: "bugs" } });
+	await waitFor("tool input", () => chatState().messages.at(-1) === "assistant:tool-search(input-available)");
+	turn.send({ type: "tool-output-available", toolCallId: "call-1", output: { count: 3 } });
+	await waitFor("tool output", () => chatState().messages.at(-1) === "assistant:tool-search(output-available)");
+	const toolPart = chat().uiMessages.at(-1).parts.find((part) => part.type === "tool-search");
+	assert.deepEqual({ input: toolPart.input, output: toolPart.output }, { input: { query: "bugs" }, output: { count: 3 } });
+	assert.equal(chat().isStreaming, true);
+
+	turn.text("t1", "Found 3 bugs.");
+	turn.turnComplete();
+	turn.end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, [
+		"user:Search for bugs",
+		"assistant:tool-search(output-available)+Found 3 bugs.+data-turn-complete",
+	]);
+});
+
+test("a failed request finalizes the prompt and the next queued prompt clears its error when it dispatches", async (t) => {
+	const { server, chat } = await mountChat(t);
+	server.failNext(500, "Upstream exploded");
+	await send(chat, "Break please");
+	await send(chat, "Then this");
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	// The failed user message stays in the transcript and is resent as history.
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Break please", "user:Then this"]);
+	// sendChatMessage clears the submission error as the next prompt goes out.
+	assert.deepEqual(chatState().messages, ["user:Break please", "user:Then this"]);
+	assert.equal(chat().activePrompt?.text, "Then this");
+
+	server.turns[1].text("t", "Recovered");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the second turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, [
+		"user:Break please",
+		"user:Then this",
+		"assistant:Recovered+data-turn-complete",
+	]);
+});
+
+test("a failed request with nothing queued clears pending state and keeps the error visible", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	server.failNext(500, "Nope");
+	await send(chat, "Only prompt");
+	await waitFor("the error to settle", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState(), {
+		streaming: false,
+		submitPending: false,
+		inFlight: false,
+		active: null,
+		queued: [],
+		thread: chat().activeThreadId,
+		messages: ["user:Only prompt", `assistant:${harness.toUserFacingChatErrorMessage("Nope")}`],
+	});
+});
+
+test("stopStreaming aborts the live request, keeps the partial reply, and releases the queue", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Long answer");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].send({ type: "start" });
+	server.turns[0].send({ type: "text-start", id: "t" });
+	server.turns[0].send({ type: "text-delta", id: "t", delta: "Partial" });
+	await waitFor("partial text", () => chatState().messages.at(-1) === "assistant:Partial");
+	await send(chat, "Next");
+
+	await (await startAction(() => chat().stopStreaming()))();
+	assert.equal(server.turns[0].aborted, true);
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Long answer", "assistant:Partial", "user:Next"]);
+	// The abort settles inside the grace window, so no explicit backend cancel is sent.
+	assert.deepEqual(window.testApi.calls.filter((call) => call.startsWith("cancelRun:")), []);
+	assert.deepEqual(server.otherRequests.filter((url) => url.includes("chat-cancel")), []);
+	assert.equal(chat().activePrompt?.text, "Next");
+});
+
+test("stopStreaming with no live stream is a no-op that leaves the transcript intact", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Done turn");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].text("t", "Answer");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	const before = chatState();
+	await (await startAction(() => chat().stopStreaming()))();
+	await settle(20);
+	assert.deepEqual(chatState(), before);
+	assert.equal(server.turns.length, 1);
+});
+
+test("a rate-limited request shows a countdown, retries the same prompt once, and replaces the user message", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	server.failNext(429, "Too many requests");
+	await send(chat, "Busy prompt");
+	await waitFor("the countdown", () => chatState().messages.at(-1)?.startsWith("assistant:I'm experiencing high demand"));
+	assert.equal(chatState().messages.at(-1), `assistant:${harness.getRateLimitRetryCountdownMessage(1)}`);
+	assert.equal(chat().activePrompt?.text, "Busy prompt");
+	assert.equal(chat().hasInFlightTurn, true);
+
+	await waitFor("the retry request", () => server.turns.length === 2);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Busy prompt"]);
+	server.turns[1].text("t", "Here you go");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Busy prompt", "assistant:Here you go+data-turn-complete"]);
+});
+
+test("rate-limit retries stop after the maximum and show the give-up message", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	for (let attempt = 0; attempt <= harness.RATE_LIMIT_MAX_RETRIES; attempt += 1) {
+		server.failNext(429, "rate limit");
+	}
+	await send(chat, "Keep trying");
+	await waitFor("the give-up message", () => chat().activePrompt === null && server.turns.length === harness.RATE_LIMIT_MAX_RETRIES + 1);
+	await settle(RETRY_DELAY_MS * 2);
+	assert.equal(server.turns.length, harness.RATE_LIMIT_MAX_RETRIES + 1);
+	assert.deepEqual(chatState().messages, [
+		"user:Keep trying",
+		`assistant:${harness.getRateLimitUserMessage(harness.RATE_LIMIT_MAX_RETRIES)}`,
+	]);
+	assert.equal(chat().hasInFlightTurn, false);
+});
+
+test("a chat-in-progress error shows a thinking countdown, keeps submit pending, then retries", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	server.failNext(409, "ROVO_CHAT_IN_PROGRESS");
+	await send(chat, "Overlap");
+	await waitFor("the recovery status", () => chatState().messages.at(-1) === "assistant:data-thinking-status");
+	const statusPart = chat().uiMessages.at(-1).parts.find((part) => part.type === "data-thinking-status");
+	assert.equal(statusPart.data.label, harness.getChatInProgressRetryCountdownLabel(1));
+	assert.equal(chat().isSubmitPending, true);
+
+	await waitFor("the retry request", () => server.turns.length === 2);
+	server.turns[1].text("t", "Recovered");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Overlap", "assistant:Recovered+data-turn-complete"]);
+	assert.equal(chat().isSubmitPending, false);
+});
+
+test("selecting another thread mid-stream detaches the run and replaces the transcript", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", {
+		id: "stored-thread",
+		title: "Stored",
+		messages: [
+			{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] },
+			{ id: "s-a", role: "assistant", parts: [{ type: "text", text: "Old answer" }] },
+		],
+		realtimeMessages: [],
+		visibility: "private",
+		activeDocumentId: null,
+		createdAt: 0,
+		updatedAt: 0,
+	});
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	const liveThreadId = chat().activeThreadId;
+	server.turns[0].send({ type: "start" });
+	server.turns[0].send({ type: "text-start", id: "t" });
+	server.turns[0].send({ type: "text-delta", id: "t", delta: "Streaming" });
+	await waitFor("partial text", () => chatState().messages.at(-1) === "assistant:Streaming");
+
+	await (await startAction(() => chat().selectThread("stored-thread")))();
+	assert.equal(server.turns[0].aborted, true);
+	assert.equal(window.testApi.calls.includes(`detachRun:${liveThreadId}`), true);
+	assert.equal(chat().activeThreadId, "stored-thread");
+	assert.equal(chat().currentThread?.id, "stored-thread");
+	assert.equal(chat().isStreaming, false);
+	assert.deepEqual(chatState().messages, ["user:Old question", "assistant:Old answer"]);
+});
+
+test("selecting a thread that no longer exists clears the transcript and active thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Something");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].text("t", "Reply");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+
+	await (await startAction(() => chat().selectThread("missing-thread")))();
+	assert.equal(chat().activeThreadId, null);
+	assert.deepEqual(chatState().messages, []);
+});
+
+test("resetChat mid-stream drops queued prompts, aborts the run and starts a fresh session", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Before reset");
+	await waitFor("the request", () => server.turns.length === 1);
+	const liveThreadId = chat().activeThreadId;
+	server.turns[0].send({ type: "start" });
+	server.turns[0].send({ type: "text-start", id: "t" });
+	server.turns[0].send({ type: "text-delta", id: "t", delta: "Mid" });
+	await waitFor("partial text", () => chatState().messages.at(-1) === "assistant:Mid");
+	await send(chat, "Dropped");
+
+	await React.act(async () => {
+		chat().resetChat();
+	});
+	await waitFor("the reset to settle", () => chat().activeThreadId === null && !chat().isStreaming);
+	await settle(20);
+	assert.equal(server.turns[0].aborted, true);
+	assert.equal(window.testApi.calls.includes(`detachRun:${liveThreadId}`), true);
+	assert.equal(server.turns.length, 1);
+	assert.deepEqual(chatState(), {
+		streaming: false, submitPending: false, inFlight: false, active: null, queued: [], thread: null, messages: [],
+	});
+
+	await send(chat, "After reset");
+	await waitFor("a fresh request", () => server.turns.length === 2);
+	assert.notEqual(chat().activeThreadId, liveThreadId);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:After reset"]);
+});
+
+test("editing a user message resends it in place with the same message id", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Original");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].text("t", "First answer");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	const userMessageId = chat().uiMessages[0].id;
+
+	const editFinished = await startAction(() => chat().editMessage(userMessageId, "Edited"));
+	await waitFor("the edit request", () => server.turns.length === 2);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Edited"]);
+	assert.equal(server.turns[1].body.messages[0].id, userMessageId);
+	server.turns[1].text("t2", "Second answer");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await editFinished();
+	await waitFor("the edit stream to end", () => !chat().isStreaming);
+	await settle(20);
+	assert.deepEqual(chatState().messages, ["user:Edited", "assistant:Second answer+data-turn-complete"]);
+	assert.equal(chat().isSubmitPending, false);
+});
