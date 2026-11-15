@@ -194,6 +194,11 @@ export function createAssetActivityTracker(now = () => Date.now()) {
 		get lastActivityAt() {
 			return lastActivityAt;
 		},
+		// Restarts the quiet window without a request, e.g. after scrolling, so loads the scroll
+		// is about to start get the full quiet period to show up.
+		touch() {
+			lastActivityAt = now();
+		},
 		started(requestId, url) {
 			inFlight.set(requestId, url);
 			lastActivityAt = now();
@@ -329,6 +334,7 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 		scrolled = true;
 		const scrollStartedAt = Date.now();
 		const scroll = await page.evaluate(scrollThroughPage);
+		tracker.touch();
 		await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
 		await Promise.all(pending);
 		fullPage = {

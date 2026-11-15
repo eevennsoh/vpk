@@ -207,3 +207,13 @@ test("the scroll walks the largest scroll container a viewport at a time to the 
 		assert.deepEqual(await scrollThroughPage({ pauseMs: 0 }), { scrollHeight: 900, steps: 0 }, "a page with nothing to scroll is left alone");
 	});
 });
+
+test("touching the tracker restarts the quiet window, so loads started by a scroll are waited for", async () => {
+	let clock = 0;
+	const tracker = createAssetActivityTracker(() => clock);
+	clock = 5_000;
+	tracker.touch();
+	const slept = [];
+	await waitForAssetQuiet({ capMs: 10_000, now: () => clock, pollMs: 500, quietMs: 2_000, sleep: async (ms) => { slept.push(ms); clock += ms; }, tracker });
+	assert.equal(clock, 7_000, "the full quiet period passes after the touch, not since the last request");
+});
