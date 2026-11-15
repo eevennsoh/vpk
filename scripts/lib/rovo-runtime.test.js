@@ -11,26 +11,50 @@ const {
 	resolveRovoConfigState,
 } = require("./rovo-runtime")
 
+// Sets env vars for one test and restores the previous values afterwards.
+function withEnv(t, values) {
+	for (const [key, value] of Object.entries(values)) {
+		const previous = process.env[key]
+		if (value === undefined) {
+			delete process.env[key]
+		} else {
+			process.env[key] = value
+		}
+		t.after(() => {
+			if (previous === undefined) {
+				delete process.env[key]
+			} else {
+				process.env[key] = previous
+			}
+		})
+	}
+}
+
 // The dev launchers rely on dotenv never replacing a variable that is already exported, so a
 // shell or launcher value wins over .env.local. Guards that contract across dotenv majors.
-test("loadEnvLocal fills unset variables from .env.local without overriding exported ones", (t) => {
+function assertLoadEnvLocalKeepsExportedValues(t, extraEnv = {}) {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "rovo-runtime-env-"))
 	const envLocalPath = path.join(tmpDir, ".env.local")
 	const presetKey = "VPK_ROVO_RUNTIME_TEST_PRESET"
 	const unsetKey = "VPK_ROVO_RUNTIME_TEST_UNSET"
 	fs.writeFileSync(envLocalPath, `${presetKey}=from-file\n${unsetKey}=from-file\n`)
-	process.env[presetKey] = "from-shell"
-	delete process.env[unsetKey]
-	t.after(() => {
-		delete process.env[presetKey]
-		delete process.env[unsetKey]
-		fs.rmSync(tmpDir, { recursive: true, force: true })
-	})
+	withEnv(t, { DOTENV_QUIET: "true", ...extraEnv, [presetKey]: "from-shell", [unsetKey]: undefined })
+	t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }))
 
 	loadEnvLocal({ envLocalPath })
 
 	assert.equal(process.env[presetKey], "from-shell")
 	assert.equal(process.env[unsetKey], "from-file")
+}
+
+test("loadEnvLocal fills unset variables from .env.local without overriding exported ones", (t) => {
+	assertLoadEnvLocalKeepsExportedValues(t)
+})
+
+// dotenv 18 merges DOTENV_* env options into programmatic config() calls, so a stray
+// DOTENV_OVERRIDE in the shell must not flip loadEnvLocal into overriding.
+test("loadEnvLocal keeps exported values even when DOTENV_OVERRIDE is set in the shell", (t) => {
+	assertLoadEnvLocalKeepsExportedValues(t, { DOTENV_OVERRIDE: "true", DOTENV_CONFIG_OVERRIDE: "true" })
 })
 
 test("resolveRovoConfigState writes and returns the workspace-scoped generated config for the current cwd", () => {
