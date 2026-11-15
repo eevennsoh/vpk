@@ -13,11 +13,13 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import {
-	type RichTextMentionItem,
 	type RichTextReferenceCategory,
-	RichTextMentionVisualMark,
 	getRichTextMentionTagType,
 } from "@/components/ui-custom/rich-text-editor";
+import {
+	type RichTextMentionItem,
+	RichTextMentionVisualMark,
+} from "@/components/ui-custom/rich-text-editor/menus";
 import {
 	getRichTextReferencePreview,
 	RichTextReferencePreviewContent,

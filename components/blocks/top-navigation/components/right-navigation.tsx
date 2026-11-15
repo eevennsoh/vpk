@@ -26,6 +26,7 @@ interface RightNavigationProps {
 	forceShowRovoAction?: boolean;
 	isChatOpen?: boolean;
 	onToggleChat: () => void;
+	onRovoActionIntent?: () => void;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 	onSettingsClick?: () => void;
 	/**
@@ -46,6 +47,7 @@ export function RightNavigation({
 	forceShowRovoAction = false,
 	isChatOpen = false,
 	onToggleChat,
+	onRovoActionIntent,
 	settingsMenuItems,
 	onSettingsClick,
 	ref,
@@ -85,6 +87,7 @@ export function RightNavigation({
 			showRovoAction={showRovoAction}
 			isChatOpen={isChatOpen}
 			onToggleChat={onToggleChat}
+			onRovoActionIntent={onRovoActionIntent}
 			settingsMenuItems={settingsMenuItems}
 			onSettingsClick={onSettingsClick}
 		/>

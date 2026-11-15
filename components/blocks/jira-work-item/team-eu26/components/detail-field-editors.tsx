@@ -50,7 +50,7 @@ import {
 	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 import { METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "./metadata-picker-styles";
 import {

@@ -30,7 +30,7 @@ import {
 	type RovoSparkleItem,
 	type RovoSparkleSelectedItem,
 } from "@/components/ui-custom/rovo-sparkle";
-import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor/menus";
 import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 
 export type JiraIssueGenerativeActionKind = RovoSparkleActionKind;

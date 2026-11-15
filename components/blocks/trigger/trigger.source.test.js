@@ -141,7 +141,7 @@ test("trigger automation modal uses one shared prompt, name, and active state", 
 	// The modal owns one shared Agent Instructions rich editor, not per-trigger textareas.
 	assert.match(
 		TRIGGER_SOURCE,
-		/import \{ RichTextCommandMenuSearchField, RichTextEditor \} from "@\/components\/ui-custom\/rich-text-editor";/u,
+		/import \{ RichTextEditor \} from "@\/components\/ui-custom\/rich-text-editor";/u,
 	);
 	assert.match(TRIGGER_SOURCE, /aria-label="Agent Instructions"/u);
 	assert.match(TRIGGER_SOURCE, /value=\{sharedPrompt\}/u);

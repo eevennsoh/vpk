@@ -198,7 +198,7 @@ test("default route shell list covers the measured app shells", () => {
 	]);
 });
 
-test("default deferred module rules cover the Jira pull request review subtree", () => {
+test("default deferred module rules cover the Jira pull request review subtree and the C-8 editor and chat surfaces", () => {
 	assert.deepEqual(DEFAULT_DEFERRED_MODULE_RULES, [
 		{
 			entryFile: "components/projects/studio/components/rovo-app-shell.tsx",
@@ -234,6 +234,76 @@ test("default deferred module rules cover the Jira pull request review subtree",
 			entryFile: "components/projects/jira-golden-journey-v4/page.tsx",
 			reason: "the contextual pull request rail must stay out of the initial project bundle",
 			targetFile: "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-context-rail.tsx",
+		},
+		{
+			entryFile: "components/projects/page.tsx",
+			reason: "the sidebar chat panel loads when a route can show it, not with every project shell",
+			targetFile: "components/projects/sidebar-chat/page.tsx",
+		},
+		{
+			entryFile: "components/projects/page.tsx",
+			reason: "the floating chat loads on its first open, not with every project shell",
+			targetFile: "components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx",
+		},
+		{
+			entryFile: "components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx",
+			reason: "the floating chat loads on its first open, not with the journey overlay",
+			targetFile: "components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx",
+		},
+		{
+			entryFile: "components/projects/butter/page.tsx",
+			reason: "Butter loads the chat panel on its first open",
+			targetFile: "components/projects/sidebar-chat/page.tsx",
+		},
+		{
+			entryFile: "components/projects/jira-team-eu26/page.tsx",
+			reason: "Team EU26 loads the chat panel on its first open",
+			targetFile: "components/projects/sidebar-chat/page.tsx",
+		},
+		{
+			entryFile: "components/projects/jira-team-eu26/page.tsx",
+			reason: "no Team EU26 surface shown on load renders a prompt composer (C-8: kanban, list, session flyouts, agent previews)",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/projects/jira-team-eu26/page.tsx",
+			reason: "no Team EU26 surface shown on load renders a rich-text editor (C-8: kanban, list, session flyouts, agent previews)",
+			targetFile: "components/ui-custom/rich-text-editor/rich-text-editor.tsx",
+		},
+		{
+			entryFile: "components/blocks/jira-list/index.tsx",
+			reason: "the list footer's assignee picker is a menu, not an editor",
+			targetFile: "components/ui-custom/rich-text-editor/rich-text-editor.tsx",
+		},
+		{
+			entryFile: "components/blocks/product-sidebar/variants/jira-session-flyout.tsx",
+			reason: "the composer payload and agent profile previews load on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/blocks/agent-list/agent-list-card.tsx",
+			reason: "the composer flyout's Agent State card loads on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/blocks/jira-work-item/experimental/components/detail-field-editors.tsx",
+			reason: "the assignee hover preview loads the agent profile card on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/blocks/product-sidebar/variants/jira-session-details-card.tsx",
+			reason: "the agent hover preview loads the agent profile card on demand",
+			targetFile: "components/ui-custom/prompt-input/prompt-input-textarea.tsx",
+		},
+		{
+			entryFile: "components/ui-custom/rich-text-editor/menus.ts",
+			reason: "the menu entry stays free of the editor runtime",
+			targetFile: "components/ui-custom/rich-text-editor/rich-text-editor.tsx",
+		},
+		{
+			entryFile: "components/ui-custom/rich-text-editor/menus.ts",
+			reason: "the menu entry stays free of the editor runtime",
+			targetFile: "components/ui-custom/rich-text-editor/extensions.ts",
 		},
 	]);
 });

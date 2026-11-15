@@ -2,7 +2,7 @@
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { RovoSparkle } from "@/components/ui-custom/rovo-sparkle";
-import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor/menus";
 
 const DEMO_AGENTS = getMentionChildItems(EDITOR_PALETTE_MENTION_SOURCES, "subagent");
 const DEMO_SKILLS = getMentionChildItems(EDITOR_PALETTE_MENTION_SOURCES, "skill");

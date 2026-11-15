@@ -8,7 +8,7 @@ import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 
 const SESSION_TARGET_MENU_ITEMS = [
 	{

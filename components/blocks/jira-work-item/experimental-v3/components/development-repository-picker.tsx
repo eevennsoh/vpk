@@ -24,7 +24,7 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 import {
 	RichTextCommandMenuSearchField,
 	useCommandMenuScrollMask,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";
 

@@ -224,7 +224,7 @@ async function loadAgentSelectorHarness() {
 		["@/components/ui/spinner", "export function Spinner() { return null; }"],
 		["@/components/ui/vpk-icons", "export function CheckIcon() { return null; } export function SearchIcon() { return null; }"],
 		["@/components/ui-custom/agent-avatar-visual", "export function AgentAvatarVisual() { return null; }"],
-		["@/components/ui-custom/rich-text-editor", "export function RichTextCommandMenuSearchField() { return null; }"],
+		["@/components/ui-custom/rich-text-editor/menus", "export function RichTextCommandMenuSearchField() { return null; }"],
 		["@/components/hooks/use-has-vertical-overflow", "export function useHasVerticalOverflow() { return { ref() {}, showTopScrollMask: false }; }"],
 		["@/lib/utils", "export function cn(...values) { return values.filter(Boolean).join(' '); }"],
 	]);

@@ -25,7 +25,7 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
-import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";

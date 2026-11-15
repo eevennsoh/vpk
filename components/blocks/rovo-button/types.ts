@@ -146,6 +146,11 @@ export interface FloatingRovoButtonProps {
 	product: Product;
 	embedded?: boolean;
 	forceVisible?: boolean;
+	/**
+	 * The chat this launcher opened is still loading. Keeps the launcher on screen (and focused)
+	 * until the chat mounts, without overriding the product and embedded suppression.
+	 */
+	opening?: boolean;
 	ariaLabel?: string;
 	placement?: FloatingRovoButtonPlacement;
 	positioning?: FloatingRovoButtonPositioning;

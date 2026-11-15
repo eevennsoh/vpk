@@ -8,7 +8,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { AgentSessionCard, type AgentSessionItem } from "@/components/blocks/agent-session";
 import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
-import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor";
+import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor/menus";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";

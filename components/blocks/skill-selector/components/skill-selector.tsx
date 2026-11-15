@@ -16,7 +16,7 @@ import {
 	type AgentSelectorProps,
 } from "@/components/blocks/agent-selector";
 import { Icon } from "@/components/ui/icon";
-import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/menus";
 
 export type SkillSelectorAction = AgentSelectorAction;
 

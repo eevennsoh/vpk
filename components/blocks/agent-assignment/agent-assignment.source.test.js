@@ -483,7 +483,7 @@ async function loadAgentAssignmentClickHarness() {
 			`,
 		],
 		[
-			"@/components/ui-custom/rich-text-editor",
+			"@/components/ui-custom/rich-text-editor/menus",
 			`
 				import React from "react";
 				export function RichTextSuggestionMenu(props) {

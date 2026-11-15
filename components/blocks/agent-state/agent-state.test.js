@@ -184,10 +184,8 @@ test("Jira Issue agent rows do not open Agent State; Agent List still owns that 
 	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentState/u);
 	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<HoverCard/u);
-	assert.match(
-		AGENT_LIST_SOURCE,
-		/import \{[\s\S]*AgentState,[\s\S]*\} from "@\/components\/blocks\/agent-state";/u,
-	);
+	// The composer flyout loads Agent State on demand, so the list does not bring the composer runtime.
+	assert.match(AGENT_LIST_SOURCE, /import\("@\/components\/blocks\/agent-state"\)/u);
 	assert.match(AGENT_LIST_SOURCE, /<AgentState/u);
 	assert.doesNotMatch(AGENT_LIST_SOURCE, /AgentProfileCard/u);
 });

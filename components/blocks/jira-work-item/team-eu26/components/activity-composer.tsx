@@ -52,7 +52,7 @@ import { FailingChecksComposerChip } from "@/components/ui-custom/failing-checks
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { Tag } from "@/components/ui/tag";
 import { motionEase } from "@/lib/motion";
 

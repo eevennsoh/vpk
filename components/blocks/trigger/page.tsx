@@ -36,7 +36,8 @@ import {
 import { IconTile } from "@/components/ui/icon-tile";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
-import { RichTextCommandMenuSearchField, RichTextEditor } from "@/components/ui-custom/rich-text-editor";
+import { RichTextEditor } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";

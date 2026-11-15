@@ -39,6 +39,8 @@ interface RightNavigationActionsProps {
 	showRovoAction: boolean;
 	isChatOpen: boolean;
 	onToggleChat: () => void;
+	/** Called when the pointer or focus reaches Ask Rovo, so a host can start loading its chat. */
+	onRovoActionIntent?: () => void;
 	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
@@ -83,6 +85,7 @@ export function RightNavigationActions({
 	showRovoAction,
 	isChatOpen,
 	onToggleChat,
+	onRovoActionIntent,
 	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	settingsMenuItems,
@@ -103,6 +106,8 @@ export function RightNavigationActions({
 					className="text-text-subtle"
 					aria-pressed={isChatOpen}
 					onClick={onToggleChat}
+					onPointerEnter={onRovoActionIntent}
+					onFocus={onRovoActionIntent}
 				>
 					<RovoColorIcon size="xxsmall" data-icon="inline-start" />
 					Ask Rovo

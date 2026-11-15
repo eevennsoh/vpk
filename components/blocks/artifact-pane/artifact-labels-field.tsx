@@ -14,7 +14,7 @@ import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
 
-import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor/menus";
 import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
 import { cn } from "@/lib/utils";
 

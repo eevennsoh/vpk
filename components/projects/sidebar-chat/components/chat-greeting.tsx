@@ -13,7 +13,7 @@ import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustra
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
-import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/menus";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Kbd } from "@/components/ui/kbd";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";

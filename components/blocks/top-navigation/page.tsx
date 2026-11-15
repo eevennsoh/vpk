@@ -87,6 +87,8 @@ interface TopNavigationProps {
 	 * Ask Rovo in the right cluster, so the standalone block demo opts in.
 	 */
 	forceShowRovoAction?: boolean;
+	/** Called when the pointer or focus reaches Ask Rovo, so a host can preload its chat surface. */
+	onRovoActionIntent?: () => void;
 	/**
 	 * Rendering mode.
 	 *
@@ -177,6 +179,7 @@ export default function TopNavigation({
 	settingsMenuItems,
 	onSettingsClick,
 	forceShowRovoAction = false,
+	onRovoActionIntent,
 	variant = "shell",
 	sidebar,
 	children,
@@ -415,6 +418,7 @@ export default function TopNavigation({
 			forceShowRovoAction={forceShowRovoAction}
 			isChatOpen={isSidebarChatOpen}
 			onToggleChat={toggleChat}
+			onRovoActionIntent={onRovoActionIntent}
 		/>
 	);
 

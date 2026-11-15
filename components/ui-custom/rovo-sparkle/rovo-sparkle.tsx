@@ -8,8 +8,7 @@ import {
 	RichTextSuggestionMenu,
 	getSuggestionOverflowFooterItem,
 	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
-import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+} from "@/components/ui-custom/rich-text-editor/menus";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 

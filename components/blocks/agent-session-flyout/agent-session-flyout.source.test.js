@@ -21,6 +21,7 @@ const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-sess
 const FLYOUT_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-card.tsx";
 const DETAILS_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-details-card.tsx";
 const UNTRACKED_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-untracked-work-card.tsx";
+const COMPOSER_FLYOUT_PATH = "components/blocks/product-sidebar/variants/jira-session-composer-flyout.tsx";
 const PULL_REQUEST_SECTION_PATH = "components/blocks/product-sidebar/variants/jira-session-pull-request-section.tsx";
 const STATUS_INDICATOR_PATH = "components/blocks/product-sidebar/variants/jira-session-status-indicator.tsx";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
@@ -48,7 +49,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /import \{ JiraSessionUntrackedWorkCard \} from "\.\/jira-session-untracked-work-card";/u);
 	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{props\.session\}/u);
 	assert.doesNotMatch(source, /variant="untracked-work"/u);
-	assert.match(source, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
+	assert.match(readRepoFile(COMPOSER_FLYOUT_PATH), /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
 	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length ?? 0, 0);
 	assert.doesNotMatch(source, /w-\[400px\]/u);
 	assert.match(source, /showSeparator/u);
@@ -177,14 +178,18 @@ test("shared hover flyout defaults to session details and exposes composer and u
 		source,
 		/onArchiveSession: onArchiveSession === undefined\s*\n\s*\? undefined\s*\n\s*: \(\) => onArchiveSession\(session\),/u,
 	);
+	// The composer payload loads on demand: its Agent State composer brings the Tiptap runtime.
+	const composerSource = readRepoFile(COMPOSER_FLYOUT_PATH);
+	assert.doesNotMatch(source, /from "@\/components\/blocks\/agent-state"/u);
+	assert.match(source, /import\("\.\/jira-session-composer-flyout"\)/u);
 	assert.match(
-		source,
+		composerSource,
 		/<AgentState[\s\S]*agent=\{\{[\s\S]*brandName: session\.brandName,[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStateState\(session\.status\)\}/u,
 	);
-	assert.match(source, /function toAgentStateState\(/u);
-	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
-	assert.match(source, /status === "running"\) return "working"/u);
-	assert.match(source, /return "completed"/u);
+	assert.match(composerSource, /function toAgentStateState\(/u);
+	assert.match(composerSource, /status === "awaiting-input"\) return "awaiting-input"/u);
+	assert.match(composerSource, /status === "running"\) return "working"/u);
+	assert.match(composerSource, /return "completed"/u);
 });
 
 test("untracked-work suggestion footer is visible by default and can be hidden through public owners", () => {
@@ -358,19 +363,20 @@ test("details render a PR Smart Link while untracked work embeds its PR summary"
 
 test("shared Agent State flyout forwards submission, timing, and stopped lifecycle data", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const composerSource = readRepoFile(COMPOSER_FLYOUT_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	const queueSource = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
 
 	assert.match(source, /onSubmitPrompt\?: \(session: JiraSidebarSessionItem, prompt: string\) => void;/u);
-	assert.match(source, /onSubmit=\{onSubmitPrompt \? \(prompt\) => onSubmitPrompt\(session, prompt\) : undefined\}/u);
+	assert.match(composerSource, /onSubmit=\{onSubmitPrompt \? \(prompt\) => onSubmitPrompt\(session, prompt\) : undefined\}/u);
 	for (const prop of ["completedAtMs", "completedSecondsAgo", "initialElapsedSeconds", "startedAtMs"]) {
-		assert.match(source, new RegExp(`${prop}=\\{session\\.${prop}\\}`, "u"));
+		assert.match(composerSource, new RegExp(`${prop}=\\{session\\.${prop}\\}`, "u"));
 		assert.match(jiraSource, new RegExp(`${prop}\\?: number;`, "u"));
 	}
-	assert.match(source, /function toAgentStateMessage\(/u);
-	assert.match(source, /status !== "stopped"\) return undefined;/u);
-	assert.match(source, /This session was stopped before the requested work was completed\./u);
-	assert.match(source, /message=\{toAgentStateMessage\(session\.status\)\}/u);
+	assert.match(composerSource, /function toAgentStateMessage\(/u);
+	assert.match(composerSource, /status !== "stopped"\) return undefined;/u);
+	assert.match(composerSource, /This session was stopped before the requested work was completed\./u);
+	assert.match(composerSource, /message=\{toAgentStateMessage\(session\.status\)\}/u);
 	assert.match(queueSource, /const QUEUE_SESSION_TIMING:/u);
 	assert.match(queueSource, /stopped: \{ completedSecondsAgo:/u);
 });
@@ -452,7 +458,7 @@ test("nested Jira previews open right by default while Queue Details overrides t
 	assert.match(flyoutSource, /previewPosition\?: JiraSessionPreviewPosition/u);
 	assert.match(flyoutSource, /const agentBannerSrc = getAgentProfileBannerSrc\(session\.agentAvatarSrc\);\s*preload\(agentBannerSrc, \{ as: "image" \}\);/u);
 	assert.match(flyoutSource, /<HoverCardContent[\s\S]*align=\{previewPosition\?\.align \?\? "center"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset \?\? 0\}[\s\S]*side=\{previewPosition\?\.side \?\? "right"\}/u);
-	assert.match(flyoutSource, /<AgentProfileCard[\s\S]*surface="overlay"/u);
+	assert.match(flyoutSource, /<LazyAgentProfileCard[\s\S]*surface="overlay"/u);
 	assert.match(flyoutSource, /<SmartLink[\s\S]*align=\{previewPosition\?\.align \?\? "center"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset \?\? 0\}[\s\S]*side=\{previewPosition\?\.side \?\? "right"\}/u);
 	assert.match(panelSource, /const DETAIL_PREVIEW_POSITION = \{\s*align: "center",\s*alignOffset: 0,\s*side: "left",\s*\} as const;/u);
 	assert.match(panelSource, /<JiraSessionFlyoutBody[\s\S]*previewPosition=\{DETAIL_PREVIEW_POSITION\}/u);

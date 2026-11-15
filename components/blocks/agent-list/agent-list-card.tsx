@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -12,10 +13,7 @@ import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
-import {
-	AgentState,
-	type AgentStateState,
-} from "@/components/blocks/agent-state";
+import type { AgentStateState } from "@/components/blocks/agent-state";
 import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
@@ -47,6 +45,11 @@ import type {
 	AgentListState,
 	AgentListVariant,
 } from "./agent-list-types";
+
+// The composer flyout's Agent State card brings the prompt composer and its Tiptap runtime. Only
+// lists with flyout="composer" load it, and they start the load on mount so the first hover never waits.
+const loadAgentState = () => import("@/components/blocks/agent-state");
+const AgentState = dynamic(() => loadAgentState().then((module) => module.AgentState));
 
 export { AgentListIdentity } from "./agent-list-identity";
 
@@ -843,6 +846,11 @@ export function AgentListCard({
 	variant: AgentListVariant;
 }>) {
 	const [customFlyoutHandle] = useState(createHoverCardHandle);
+	useEffect(() => {
+		if (flyout === "composer") {
+			void loadAgentState();
+		}
+	}, [flyout]);
 	const isCompact = variant === "compact";
 	// Agent List's own adapter onto the row's generic action slot. A list without
 	// `onView` has nowhere to go, so it reveals nothing rather than putting a
