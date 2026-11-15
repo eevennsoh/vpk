@@ -1,15 +1,22 @@
 // SLAuth credentials for the deploy verifiers. A Micros deploy sits behind the Service
 // Proxy with SLAuth (service-descriptor.yml `serviceProxy`), so automation sends the same
-// token `atlas slauth curl --aud vpk` would: `Authorization: Bearer <slauth token>`.
+// token `atlas slauth curl --aud <service>` would: `Authorization: Bearer <slauth token>`.
 // The token is never logged.
 
 import { execFileSync } from "node:child_process";
 
 export const DEFAULT_SLAUTH_AUDIENCE = "vpk";
 
-/** The audience to use by default: `vpk` for a Micros host, none for anything else (localhost). */
+/**
+ * The audience to use by default: the Micros service name (the host's first label, as in
+ * `<service>.<region>.<env>.atl-paas.net`) for a Micros host, none for anything else
+ * (localhost). A prototype extracted with vpk-build deploys under its own service name.
+ */
 export function defaultSlauthAudience(url) {
-	return /\.atl-paas\.net$/iu.test(url.hostname) ? DEFAULT_SLAUTH_AUDIENCE : null;
+	const hostname = url.hostname.toLowerCase();
+	if (!/\.atl-paas\.net$/u.test(hostname)) return null;
+	const service = hostname.split(".")[0];
+	return service && /^[a-z0-9][a-z0-9-]*$/u.test(service) ? service : DEFAULT_SLAUTH_AUDIENCE;
 }
 
 /** The SLAuth environment (`atlas slauth token -e`) that issues tokens for a Micros host. */

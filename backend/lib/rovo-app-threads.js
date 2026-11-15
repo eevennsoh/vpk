@@ -281,8 +281,12 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		}
 	};
 
-	/** @param {{ limit?: number }} [options] */
-	const listThreads = async ({ limit } = {}) => {
+	/**
+	 * Newest first. `filter` runs before `limit`, so a filtered list (one caller's
+	 * threads) is not cut short by records the filter drops.
+	 * @param {{ limit?: number, filter?: (thread: Record<string, unknown>) => boolean }} [options]
+	 */
+	const listThreads = async ({ limit, filter } = {}) => {
 		let entries;
 		try {
 			entries = await fs.readdir(threadsRootDir);
@@ -299,7 +303,9 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		const threadResults = await Promise.all(
 			entries.filter(isStorageId).map((entry) => readThread(entry)),
 		);
-		const threads = threadResults.filter(Boolean);
+		const threads = threadResults.filter(
+			(thread) => Boolean(thread) && (typeof filter !== "function" || filter(thread)),
+		);
 
 		threads.sort((left, right) => {
 			const leftTime = getTimestamp(left.updatedAt);
@@ -350,9 +356,16 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 	const deleteThread = async (threadId) =>
 		enqueueThreadMutation(threadId, () => deleteThreadDir(threadId));
 
-	/** @param {{ skipThreadId?: string }} [options] */
-	const pruneOldThreads = async ({ skipThreadId } = {}) => {
-		const threads = await listThreads({ limit: RETENTION_LIMIT + 20 });
+	/**
+	 * Retention is per owner: one caller's new threads never push out another caller's.
+	 * Threads stored before owners (no owner) share one bucket.
+	 * @param {{ skipThreadId?: string, owner?: string | null }} [options]
+	 */
+	const pruneOldThreads = async ({ skipThreadId, owner = null } = {}) => {
+		const threads = await listThreads({
+			limit: RETENTION_LIMIT + 20,
+			filter: (thread) => (thread.owner ?? null) === owner,
+		});
 		if (threads.length <= RETENTION_LIMIT) {
 			return;
 		}
@@ -417,7 +430,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			await writeJsonFile(threadFilePath, nextThread);
 			return nextThread;
 		});
-		await pruneOldThreads({ skipThreadId: threadId });
+		await pruneOldThreads({ skipThreadId: threadId, owner: nextThread.owner ?? null });
 		return createdThread;
 	};
 

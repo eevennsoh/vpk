@@ -233,10 +233,10 @@ backend-backed interaction works. The service URL requires Atlassian VPN.
 The service sits behind the Micros Service Proxy with SLAuth (Okta) and Poco
 (`serviceProxy` in `service-descriptor.yml`), so every request except
 `/healthcheck` needs credentials. For a `*.atl-paas.net` URL, `verify-runtime.mjs` and
-`verify-wss.mjs` send `Authorization: Bearer $(atlas slauth token --aud vpk -e <env>)`
-(the environment comes from the host; `--slauth-aud <aud>` overrides, and
+`verify-wss.mjs` send `Authorization: Bearer $(atlas slauth token --aud <service-name> -e <env>)`
+(the audience is the host's first label, the Micros service name, and the environment comes from the host; `--slauth-aud <aud>` overrides, and
 `--no-slauth` turns it off). For manual curl checks use
-`atlas slauth curl --aud vpk -e platdev -- https://<service-name>.<region>.platdev.atl-paas.net/api/health`.
+`atlas slauth curl --aud <service-name> -e platdev -- https://<service-name>.<region>.platdev.atl-paas.net/api/health`.
 A browser signs in through Okta on first visit. Operator routes still need
 `VPK_RUNTIME_ADMIN_TOKEN`; send it as `x-vpk-runtime-admin-token`, because SLAuth
 uses `Authorization`. See the guide's SLAuth section.

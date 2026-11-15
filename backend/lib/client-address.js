@@ -15,8 +15,9 @@
 // is 0 everywhere else, including a local NODE_ENV=production serve, because a header that
 // no proxy appended is the caller's own. With 0 the socket address is used. If the real
 // number is higher, the address resolved is a proxy's, the same as not trusting the
-// header; a chain shorter than the hop count also falls back to the socket address, so a
-// client never chooses its own address.
+// header; a chain shorter than the hop count also falls back to the socket address. If
+// the real number is LOWER, the entry resolved is one the client wrote itself, so a
+// client can choose its own address: never set this above the real hop count.
 const MAX_TRUSTED_PROXY_HOPS = 8;
 
 /**

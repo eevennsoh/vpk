@@ -309,7 +309,7 @@ function createRovoAppRouter({
 			const limit = rawLimit ? Number(rawLimit) : undefined;
 			const threads = (
 				await Promise.all(
-					ownership.filterOwnedThreads(callerOf(res), await rovoAppThreadManager.listThreads({ limit })).map((thread) =>
+					(await rovoAppThreadManager.listThreads({ limit, filter: ownership.ownedBy(callerOf(res)) })).map((thread) =>
 						reconcileOrphanedThread(thread),
 					),
 				)
@@ -332,7 +332,7 @@ function createRovoAppRouter({
 
 			const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
 			const limit = rawLimit ? Number(rawLimit) : undefined;
-			const threads = ownership.filterOwnedThreads(callerOf(res), await rovoAppThreadManager.listThreads({ limit: 100 }));
+			const threads = await rovoAppThreadManager.listThreads({ limit: 100, filter: ownership.ownedBy(callerOf(res)) });
 			const results = searchThreads(threads, query.trim(), { limit });
 			return res.status(200).json({ results });
 		} catch (error) {
@@ -464,15 +464,21 @@ function createRovoAppRouter({
 				return res.status(400).json({ error: "Use ?all=true to delete all threads." });
 			}
 
-			const allThreads = await rovoAppThreadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
-			const threads = ownership.filterOwnedThreads(callerOf(res), allThreads);
+			const caller = callerOf(res);
+			const threads = await rovoAppThreadManager.listThreads({
+				limit: Number.MAX_SAFE_INTEGER,
+				filter: ownership.ownedBy(caller),
+			});
 			// One cleanup for every thread (one git view, one deadline), and it never fails
 			// delete-all.
 			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
 
-			if (threads.length === allThreads.length) {
-				// Every stored thread is the caller's (always so locally): clear the stores
-				// whole, as before owners, which also drops records no thread points at.
+			if (caller.local) {
+				// A local caller is the only caller there is: clear the stores whole, as
+				// before owners, which also drops records no thread points at. An SLAuth
+				// caller never takes this path, even when every stored thread is theirs:
+				// the stores also hold other callers' thread-less uploads and documents,
+				// and a thread another caller creates meanwhile.
 				await rovoAppThreadManager.deleteAllThreads();
 				await rovoAppVoteManager.deleteAllVotes();
 				await rovoAppDocumentManager.deleteAllDocuments();
@@ -874,6 +880,7 @@ function createRovoAppRouter({
 
 			const upload = await rovoAppUploadManager.createUploadFromDataUrl({
 				threadId: getString(threadId) || undefined,
+				owner: callerOf(res).owner,
 				filename: typeof name === "string" && name.trim() ? name : "attachment.bin",
 				mediaType: typeof mediaType === "string" && mediaType.trim() ? mediaType : undefined,
 				dataUrl,

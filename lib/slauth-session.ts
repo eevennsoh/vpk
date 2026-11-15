@@ -2,9 +2,14 @@
 // Service Proxy with SLAuth; a page loaded with a valid session keeps making background
 // fetches, and once the session expires the sidecar answers them with 401, or with a 302
 // to Okta marked `x-slauth-result: failure`. A same-origin fetch follows that redirect
-// to Okta and fails as a CORS error, so a failed same-origin fetch is probed once with
-// `redirect: "manual"`: an opaque redirect means the session is gone. Either way the page
-// goes through the sidecar's `/saml/login?redirect=<current URL>` and comes back signed in.
+// to Okta and fails as a CORS error.
+//
+// Only a response the sidecar marks `x-slauth-result: failure` is taken at its word. A
+// plain 401 may be the app's own (a route whose upstream wants a different sign-in), and
+// a fetch can fail for many reasons, so both are checked with one probe of the current
+// page (`HEAD`, `redirect: "manual"`): a 401, an opaque redirect, or a failure marker
+// there means the session is gone. Either way the page goes through the sidecar's
+// `/saml/login?redirect=<current URL>` and comes back signed in.
 
 export const SLAUTH_LOGIN_PATH = "/saml/login";
 // One sign-in attempt per window: a login that keeps failing (or a serve with no sidecar)
@@ -18,11 +23,30 @@ export interface SlauthResponseShape {
 	slauthResult?: string | null;
 }
 
-/** Whether a response says the SLAuth session is missing or expired. */
+/** Whether the sidecar marked a response as an SLAuth failure. */
+function hasSlauthFailureMarker(slauthResult: string | null | undefined): boolean {
+	return slauthResult?.toLowerCase() === "failure";
+}
+
+/**
+ * Whether the session probe's response says the SLAuth session is missing or expired.
+ * The probe asks for the current page with `redirect: "manual"`, so an opaque redirect
+ * there is the sidecar sending it to Okta.
+ */
 export function isSlauthSessionFailure({ status, type, slauthResult }: SlauthResponseShape): boolean {
 	if (status === 401) return true;
 	if (type === "opaqueredirect") return true;
-	return status >= 300 && status < 400 && slauthResult?.toLowerCase() === "failure";
+	return status >= 300 && status < 400 && hasSlauthFailureMarker(slauthResult);
+}
+
+/**
+ * What a watched same-origin response says about the session: `failure` when the sidecar
+ * marked it, `probe` for an unmarked 401 (maybe the app's own), otherwise `ok`. An opaque
+ * redirect is the caller's own `redirect: "manual"` and says nothing.
+ */
+export function classifyWatchedResponse({ status, slauthResult }: SlauthResponseShape): "failure" | "probe" | "ok" {
+	if (hasSlauthFailureMarker(slauthResult) && (status === 401 || (status >= 300 && status < 400))) return "failure";
+	return status === 401 ? "probe" : "ok";
 }
 
 export function buildSlauthLoginUrl(currentHref: string): string {
@@ -64,32 +88,40 @@ export function createSlauthWatchedFetch(originalFetch: typeof fetch, host: Slau
 		host.location.assign(buildSlauthLoginUrl(host.location.href));
 	};
 
-	const probeSession = async () => {
-		try {
-			const probe = await originalFetch(host.location.pathname, {
-				cache: "no-store",
-				credentials: "same-origin",
-				method: "HEAD",
-				redirect: "manual",
-			});
-			if (isSlauthSessionFailure({ status: probe.status, type: probe.type, slauthResult: probe.headers.get("x-slauth-result") })) {
-				redirectToLogin();
+	// One probe at a time: a burst of failures (a backend outage) sends one HEAD.
+	let probeInFlight: Promise<void> | null = null;
+	const probeSession = () => {
+		probeInFlight ??= (async () => {
+			try {
+				const probe = await originalFetch(host.location.pathname, {
+					cache: "no-store",
+					credentials: "same-origin",
+					method: "HEAD",
+					redirect: "manual",
+				});
+				if (isSlauthSessionFailure({ status: probe.status, type: probe.type, slauthResult: probe.headers.get("x-slauth-result") })) {
+					redirectToLogin();
+				}
+			} catch {
+				// Offline or the server is down: not a session problem.
+			} finally {
+				probeInFlight = null;
 			}
-		} catch {
-			// Offline or the server is down: not a session problem.
-		}
+		})();
+		return probeInFlight;
 	};
 
 	return async (input, init) => {
 		const sameOrigin = isSameOriginRequest(input, host.location.origin);
 		try {
 			const response = await originalFetch(input, init);
-			if (sameOrigin && isSlauthSessionFailure({
-				status: response.status,
-				type: response.type,
-				slauthResult: response.headers.get("x-slauth-result"),
-			})) {
-				redirectToLogin();
+			if (sameOrigin) {
+				const verdict = classifyWatchedResponse({
+					status: response.status,
+					slauthResult: response.headers.get("x-slauth-result"),
+				});
+				if (verdict === "failure") redirectToLogin();
+				else if (verdict === "probe") void probeSession();
 			}
 			return response;
 		} catch (error) {

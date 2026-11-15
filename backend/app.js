@@ -11,6 +11,9 @@ const {
 	createCallerIdentityMiddleware,
 } = require("./middleware/caller-identity");
 const {
+	registerChatThreadOwnershipGuards,
+} = require("./lib/rovo-app-thread-ownership");
+const {
 	createRuntimeAdminControls,
 } = require("./middleware/runtime-admin");
 const {
@@ -208,6 +211,9 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		saveAgentsRfpDemoState,
 		handleAgentsRfpDemoTicketEvent,
 	});
+
+	// Before every chat route that names a thread: another caller's thread is 404.
+	registerChatThreadOwnershipGuards(app, { rovoAppThreadManager });
 
 	registerChatSdkRoutes(app, {
 		handleChatSdkRequest,

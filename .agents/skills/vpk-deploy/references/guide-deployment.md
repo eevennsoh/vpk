@@ -164,7 +164,9 @@ Per-client limits key on the address the Micros load balancer appends to
 the descriptor sets `VPK_TRUSTED_PROXY_HOPS: "2"`. Keep it when replacing
 placeholders, and change it only if the proxy chain in front of the service
 changes (for example `"1"` if `serviceProxy` is removed); the startup log prints
-the value in use. See the setup guide's client-address section.
+the value in use. Never set it above the real hop count: the extra entry is one the
+client wrote, so a client could choose its own address and slip the rate limit and
+WebSocket caps. See the setup guide's client-address section.
 
 #### SLAuth (Okta) and Poco in front of the service
 
@@ -172,12 +174,17 @@ The descriptor's `serviceProxy` block puts the Micros Service Proxy with SLAuth 
 front of the app. Every request except `/healthcheck` must authenticate:
 
 - Browsers: the `saml` plugin (last in the list) sends a visitor without a session
-  through Okta and back. A background fetch that comes back 401, or as a redirect
-  marked `x-slauth-result: failure`, reloads the page through
-  `/saml/login?redirect=<current URL>` (`lib/slauth-session.ts`).
+  through Okta and back. A background fetch that comes back marked
+  `x-slauth-result: failure` (a 401 or a redirect) reloads the page through
+  `/saml/login?redirect=<current URL>` (`lib/slauth-session.ts`). An unmarked 401, or
+  a fetch that fails outright, is checked first with one `HEAD` probe of the current
+  page, so an app-level 401 (a route whose upstream wants its own sign-in) does not
+  send a signed-in user through Okta.
 - CLI and automation: the `slauthtoken` plugin accepts
-  `atlas slauth curl --aud vpk -e <env> -- <url>`, or
-  `Authorization: Bearer $(atlas slauth token --aud vpk -e <env>)`.
+  `atlas slauth curl --aud <service-name> -e <env> -- <url>`, or
+  `Authorization: Bearer $(atlas slauth token --aud <service-name> -e <env>)`. The
+  audience is normally the Micros service name (`vpk`, or a vpk-build prototype's own
+  name); confirm it matches what the service registered.
 - Poco's platform `authenticated` policy rejects anything neither plugin authenticated.
 
 The backend reads the caller from `X-Slauth-Subject` (`backend/lib/caller-identity.js`):
@@ -367,11 +374,12 @@ For an extracted root served directly from the local static export, add
 the selected export without printing either body. This distinguishes a newly
 selected release from an older healthy image after an EC2 update failure.
 Response bodies and tokens are not printed.
-For a `*.atl-paas.net` URL every request carries an SLAuth token for audience `vpk`
-(`atlas slauth token --aud vpk -e <env>`, with the environment taken from the host,
+For a `*.atl-paas.net` URL every request carries an SLAuth token for the service's
+audience, the host's first label (`atlas slauth token --aud <service-name> -e <env>`,
+with the environment taken from the host,
 or `VPK_SLAUTH_TOKEN` when set); `--slauth-aud <aud>` overrides it and `--no-slauth`
 turns it off. For one-off checks use
-`atlas slauth curl --aud vpk -e platdev -- <url>`.
+`atlas slauth curl --aud <service-name> -e platdev -- <url>`.
 Routes must serve HTML; CSS, JavaScript, and font assets must have compatible
 content types. This catches static requests that incorrectly return an HTML
 fallback with HTTP 200.

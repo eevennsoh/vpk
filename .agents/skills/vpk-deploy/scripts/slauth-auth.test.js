@@ -5,9 +5,10 @@ const { pathToFileURL } = require("node:url");
 
 const load = () => import(pathToFileURL(path.join(__dirname, "slauth-auth.mjs")).href);
 
-test("a Micros host defaults to audience vpk and the SLAuth environment its host names", async () => {
+test("a Micros host defaults to its service name as audience and the SLAuth environment its host names", async () => {
 	const { defaultSlauthAudience, slauthEnvForHost } = await load();
 	assert.equal(defaultSlauthAudience(new URL("https://vpk.us-west-2.platdev.atl-paas.net")), "vpk");
+	assert.equal(defaultSlauthAudience(new URL("https://my-prototype.us-west-2.platdev.atl-paas.net")), "my-prototype");
 	assert.equal(defaultSlauthAudience(new URL("http://localhost:8080")), null);
 	assert.equal(slauthEnvForHost("vpk.us-west-2.platdev.atl-paas.net"), "platdev");
 	assert.equal(slauthEnvForHost("vpk.us-east-1.staging.atl-paas.net"), "staging");

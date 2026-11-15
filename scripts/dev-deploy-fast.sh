@@ -236,7 +236,7 @@ echo "  $VPK_ATLAS_BIN micros events -s $SERVICE_NAME -e $ENV -d <deployment-id>
 echo "  For hot swap, confirm the expected version and UPDATE_COMPLETE; events may show the original creation."
 echo ""
 echo -e "${GREEN}🏥 Health check:${NC}"
-echo "  atlas slauth curl --aud vpk -e platdev -- https://$SERVICE_NAME.$REGION.platdev.atl-paas.net/api/health"
+echo "  atlas slauth curl --aud $SERVICE_NAME -e platdev -- https://$SERVICE_NAME.$REGION.platdev.atl-paas.net/api/health"
 echo ""
 echo -e "${GREEN}📊 View logs:${NC}"
 echo "  https://go.atlassian.com/logs/$ENV/$SERVICE_NAME"

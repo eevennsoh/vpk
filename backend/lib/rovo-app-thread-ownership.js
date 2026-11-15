@@ -46,9 +46,8 @@ function createRovoAppThreadOwnership({
 		return Boolean(thread) && !ownsThread(caller, thread);
 	}
 
-	function filterOwnedThreads(caller, threads) {
-		return (Array.isArray(threads) ? threads : []).filter((thread) => ownsThread(caller, thread));
-	}
+	/** A `listThreads` filter that keeps the caller's threads (applied before its limit). */
+	const ownedBy = (caller) => (thread) => ownsThread(caller, thread);
 
 	/**
 	 * Middleware: 404 "Thread not found" when the thread the request names (read by
@@ -68,14 +67,24 @@ function createRovoAppThreadOwnership({
 		};
 	}
 
-	/** Middleware: a document under someone else's thread is "Document not found". */
+	/**
+	 * Whether the caller may see a record that belongs under `threadId`. A record whose
+	 * thread is not stored (yet, or any more) is only a local caller's, matching
+	 * `filterOwnedDocuments`.
+	 */
+	async function ownsThreadRecord(caller, threadId) {
+		const thread = threadId ? await rovoAppThreadManager.getThread(threadId) : null;
+		return thread ? ownsThread(caller, thread) : Boolean(caller?.local);
+	}
+
+	/** Middleware: a document the caller cannot see is "Document not found". */
 	function rejectForeignDocument(pickDocumentId) {
 		return async (req, res, next) => {
 			try {
 				const documentId = firstValue(pickDocumentId(req));
 				if (documentId) {
 					const document = await rovoAppDocumentManager.getDocument(documentId);
-					if (document && await isForeignThread(callerOf(res), document.threadId)) {
+					if (document && !(await ownsThreadRecord(callerOf(res), document.threadId))) {
 						return res.status(404).json({ error: "Document not found" });
 					}
 				}
@@ -86,11 +95,18 @@ function createRovoAppThreadOwnership({
 		};
 	}
 
-	/** Middleware: an upload under someone else's thread is "File not found". */
+	/**
+	 * Middleware: an upload the caller cannot see is "File not found". The uploader, when
+	 * recorded, decides; otherwise the upload's thread does.
+	 */
 	async function rejectForeignUpload(req, res, next) {
 		try {
 			const upload = await rovoAppUploadManager.getUpload(req.params.fileId);
-			if (upload && await isForeignThread(callerOf(res), upload.threadId)) {
+			const caller = callerOf(res);
+			const visible = !upload || (upload.owner
+				? isOwnedByCaller(upload.owner, caller)
+				: await ownsThreadRecord(caller, upload.threadId));
+			if (!visible) {
 				return res.status(404).json({ error: "File not found" });
 			}
 			return next();
@@ -99,15 +115,15 @@ function createRovoAppThreadOwnership({
 		}
 	}
 
-	/** The documents whose thread the caller can see (a missing thread counts as not theirs). */
+	/** The documents the caller can see (see `ownsThreadRecord`). */
 	async function filterOwnedDocuments(caller, documents) {
 		const list = Array.isArray(documents) ? documents : [];
-		const threadIds = [...new Set(list.map((document) => document?.threadId).filter(Boolean))];
+		const threadIds = [...new Set(list.map((document) => document?.threadId ?? null))];
 		const visible = new Set();
 		await Promise.all(threadIds.map(async (threadId) => {
-			if (ownsThread(caller, await rovoAppThreadManager.getThread(threadId))) visible.add(threadId);
+			if (await ownsThreadRecord(caller, threadId)) visible.add(threadId);
 		}));
-		return list.filter((document) => visible.has(document?.threadId));
+		return list.filter((document) => visible.has(document?.threadId ?? null));
 	}
 
 	/** The runs whose thread the caller owns. */
@@ -123,8 +139,8 @@ function createRovoAppThreadOwnership({
 		callerOf,
 		filterOwnedDocuments,
 		filterOwnedRuns,
-		filterOwnedThreads,
 		isForeignThread,
+		ownedBy,
 		ownsThread,
 		rejectForeignDocument,
 		rejectForeignThread,
@@ -133,6 +149,32 @@ function createRovoAppThreadOwnership({
 	};
 }
 
+// The chat routes outside the Rovo app router that name a stored thread. Each one
+// resumes, writes to, or cancels that thread, so another caller's id answers 404.
+const CHAT_THREAD_ROUTES = Object.freeze([
+	["/api/chat-sdk", (req) => req.body?.id],
+	["/api/rovo/chat", (req) => req.body?.id],
+	["/api/chat-cancel", (req) => req.query?.threadId],
+]);
+
+/**
+ * Guards the chat routes in CHAT_THREAD_ROUTES with the same per-caller thread check the
+ * Rovo app routes use. Register before those routes.
+ * @param {import("express").Express} app
+ * @param {{ rovoAppThreadManager: object }} managers
+ */
+function registerChatThreadOwnershipGuards(app, { rovoAppThreadManager }) {
+	if (typeof rovoAppThreadManager?.getThread !== "function") {
+		throw new Error("registerChatThreadOwnershipGuards requires rovoAppThreadManager");
+	}
+	const ownership = createRovoAppThreadOwnership({ rovoAppThreadManager });
+	for (const [routePath, pickThreadId] of CHAT_THREAD_ROUTES) {
+		app.post(routePath, ownership.requireCaller, ownership.rejectForeignThread(pickThreadId));
+	}
+}
+
 module.exports = {
+	CHAT_THREAD_ROUTES,
 	createRovoAppThreadOwnership,
+	registerChatThreadOwnershipGuards,
 };

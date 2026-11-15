@@ -69,6 +69,12 @@ function normalizeUpload(rawUpload) {
 			typeof rawUpload.createdAt === "string" && rawUpload.createdAt.trim()
 				? rawUpload.createdAt
 				: toIsoDate(),
+		// The caller who uploaded it (lib/caller-identity.js), when the route knows; a
+		// thread's upload is otherwise governed by the thread's owner.
+		owner:
+			typeof rawUpload.owner === "string" && rawUpload.owner.trim()
+				? rawUpload.owner.trim()
+				: null,
 	};
 }
 
@@ -285,7 +291,7 @@ function createRovoAppUploadManager({ baseDir }) {
 		};
 	};
 
-	const createUploadFromBuffer = async ({ threadId, filename, mediaType, buffer }) => {
+	const createUploadFromBuffer = async ({ threadId, owner, filename, mediaType, buffer }) => {
 		await ensureInitialized();
 		const uploadId = createId();
 		const safeName = sanitizeFileName(filename);
@@ -298,12 +304,13 @@ function createRovoAppUploadManager({ baseDir }) {
 			sizeBytes: buffer.length,
 			filePath: "blob",
 			createdAt: toIsoDate(),
+			owner,
 		});
 		await writeUpload(upload, buffer);
 		return upload;
 	};
 
-	const createUploadFromDataUrl = async ({ threadId, filename, mediaType, dataUrl }) => {
+	const createUploadFromDataUrl = async ({ threadId, owner, filename, mediaType, dataUrl }) => {
 		const parsed = parseDataUrl(dataUrl);
 		if (!parsed) {
 			throw new Error("Invalid data URL payload.");
@@ -311,6 +318,7 @@ function createRovoAppUploadManager({ baseDir }) {
 
 		return createUploadFromBuffer({
 			threadId,
+			owner,
 			filename,
 			mediaType:
 				typeof mediaType === "string" && mediaType.trim()

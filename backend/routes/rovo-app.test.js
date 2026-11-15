@@ -50,8 +50,8 @@ function createThreadManager(state) {
 		},
 		getRealtimeMessages: async (threadId) => state.realtimeMessages.get(threadId) || [],
 		getThread: async (threadId) => state.threads.get(threadId) || null,
-		listThreads: async ({ limit } = {}) => {
-			const threads = [...state.threads.values()];
+		listThreads: async ({ limit, filter } = {}) => {
+			const threads = [...state.threads.values()].filter((thread) => typeof filter !== "function" || filter(thread));
 			return typeof limit === "number" ? threads.slice(0, limit) : threads;
 		},
 		replaceRealtimeMessages: async (threadId, messages) => {
@@ -903,6 +903,88 @@ test("in production each caller lists, reads, updates, and deletes only their ow
 	assert.deepEqual([...state.threads.keys()].sort(), ["thread-b", "thread-legacy"]);
 	assert.equal(state.calls.some((call) => ["deleteAllThreads", "deleteAllVotes", "deleteAllDocuments", "deleteAllUploads"].includes(call.method)), false);
 	assert.deepEqual(state.calls.filter((call) => call.method === "deleteThread").map((call) => call.threadId).sort(), ["thread-a", "thread-a2"]);
+});
+
+test("in production delete-all never clears the stores whole, even when every stored thread is the caller's", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice" });
+	// Bob's upload has no thread yet; clearing the upload store would take it too.
+	state.uploads.set("upload-bob", { id: "upload-bob", owner: "bob", threadId: "_orphaned", buffer: Buffer.from("x") });
+	await withServer(dependencies, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/rovo/threads?all=true`, as("alice", { method: "DELETE" }));
+		assert.equal(response.status, 200);
+	}, { env: PRODUCTION_ENV });
+	assert.equal(state.calls.some((call) => ["deleteAllThreads", "deleteAllVotes", "deleteAllDocuments", "deleteAllUploads"].includes(call.method)), false);
+	assert.deepEqual([...state.threads.keys()], []);
+	assert.ok(state.uploads.has("upload-bob"));
+});
+
+test("in production list and search filter by owner before the limit", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	// Newest first: Bob's threads would fill a limit taken before the owner filter.
+	for (let index = 0; index < 3; index += 1) {
+		state.threads.set(`thread-b${index}`, { id: `thread-b${index}`, owner: "bob", title: "Bob plan" });
+	}
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice plan" });
+	await withServer(dependencies, async (baseUrl) => {
+		const list = await fetch(`${baseUrl}/api/rovo/threads?limit=2`, as("alice"));
+		assert.deepEqual((await list.json()).threads.map((thread) => thread.id), ["thread-a"]);
+	}, { env: PRODUCTION_ENV });
+});
+
+test("in production documents, files, and background streams of another caller are hidden", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice" });
+	state.threads.set("thread-b", { id: "thread-b", owner: "bob", title: "Bob" });
+	state.documents.set("doc-a", { id: "doc-a", threadId: "thread-a", title: "A" });
+	state.documents.set("doc-b", { id: "doc-b", threadId: "thread-b", title: "B" });
+	state.documents.set("doc-orphan", { id: "doc-orphan", threadId: "thread-gone", title: "Orphan" });
+	state.uploads.set("upload-b", { id: "upload-b", threadId: "thread-b", filename: "b.txt", mediaType: "text/plain", buffer: Buffer.from("b") });
+	state.uploads.set("upload-bob-loose", { id: "upload-bob-loose", owner: "bob", threadId: "_orphaned", filename: "c.txt", mediaType: "text/plain", buffer: Buffer.from("c") });
+	state.uploads.set("upload-legacy-loose", { id: "upload-legacy-loose", threadId: "_orphaned", filename: "d.txt", mediaType: "text/plain", buffer: Buffer.from("d") });
+	state.runs.set("thread-a", { id: "run-a", threadId: "thread-a", status: "streaming" });
+	state.runs.set("thread-b", { id: "run-b", threadId: "thread-b", status: "streaming" });
+	await withServer(dependencies, async (baseUrl) => {
+		for (const documentId of ["doc-b", "doc-orphan"]) {
+			const response = await fetch(`${baseUrl}/api/rovo/documents?documentId=${documentId}`, as("alice"));
+			assert.equal(response.status, 404, documentId);
+			assert.deepEqual(await response.json(), { error: "Document not found" });
+		}
+		const own = await fetch(`${baseUrl}/api/rovo/documents?documentId=doc-a`, as("alice"));
+		assert.equal(own.status, 200);
+
+		const documents = await fetch(`${baseUrl}/api/rovo/documents`, as("alice"));
+		assert.deepEqual((await documents.json()).documents.map((document) => document.id), ["doc-a"]);
+
+		for (const fileId of ["upload-b", "upload-bob-loose", "upload-legacy-loose"]) {
+			const response = await fetch(`${baseUrl}/api/rovo/files/${fileId}`, as("alice"));
+			assert.equal(response.status, 404, fileId);
+			assert.deepEqual(await response.json(), { error: "File not found" });
+		}
+		const bobsLoose = await fetch(`${baseUrl}/api/rovo/files/upload-bob-loose`, as("bob"));
+		assert.equal(bobsLoose.status, 200);
+
+		const streams = await fetch(`${baseUrl}/api/rovo/background-streams`, as("alice"));
+		assert.deepEqual((await streams.json()).streams.map((run) => run.id), ["run-a"]);
+	}, { env: PRODUCTION_ENV });
+});
+
+test("in production an upload records its uploader as owner", async () => {
+	const dependencies = createDependencies();
+	const owners = [];
+	const createUploadFromDataUrl = dependencies.rovoAppUploadManager.createUploadFromDataUrl;
+	dependencies.rovoAppUploadManager.createUploadFromDataUrl = async (input) => {
+		owners.push(input.owner);
+		return createUploadFromDataUrl(input);
+	};
+	await withServer(dependencies, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/rovo/files/upload`, jsonAs("alice", "POST", { dataUrl: "data:text/plain;base64,aGk=", name: "hi.txt" }));
+		assert.equal(response.status, 201);
+	}, { env: PRODUCTION_ENV });
+	assert.deepEqual(owners, ["alice"]);
 });
 
 test("outside production the caller is the fixed owner local, who also sees threads stored without an owner", async () => {
