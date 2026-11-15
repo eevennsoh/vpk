@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, assertAssetsLoaded, countsFrame, embedsFrames, needsAllFramesPass, requestAction, routesWithAllFramesBudget, summarizeAllFramesRuns, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, scrollThroughPage, assertAssetsLoaded, assertScrollReachedBottom, ignoresFailure, isFrameDocumentStatus, countsFrame, embedsFrames, needsAllFramesPass, requestAction, routesWithAllFramesBudget, summarizeAllFramesRuns, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -106,20 +106,23 @@ test("only a route whose page attaches an iframe gets the all-frames pass", () =
 
 test("the all-frames JS is its own pass's median, or the top-document number when no iframe loaded", () => {
 	const topDocument = summarizeRuns([{ cssBytes: 1, jsBytes: 100 }, { cssBytes: 1, jsBytes: 102 }]);
-	assert.deepEqual(summarizeAllFramesRuns(topDocument, null), { fetchedJsAllFrames: { bytes: 101, range: 2, source: "top-document" } });
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, null).fetchedJsAllFrames, { bytes: 101, range: 2, source: "top-document" });
 	const allFramesRuns = [{ jsBytes: 900 }, { jsBytes: 950 }, { jsBytes: 910 }];
-	assert.deepEqual(summarizeAllFramesRuns(topDocument, allFramesRuns.map((run) => ({ ...run, framesAttached: 3 }))).fetchedJsAllFrames, { bytes: 910, range: 50, source: "all-frames" });
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, allFramesRuns.map((run) => ({ ...run, cssBytes: 5, framesAttached: 3, fullPageCssBytes: 6, fullPageJsBytes: 2000 }))).fetchedJsAllFrames, { bytes: 910, range: 50, source: "all-frames" });
 });
 
 test("an all-frames pass that saw no iframe attach records the top-document number, not its own", () => {
 	const topDocument = summarizeRuns([{ cssBytes: 1, jsBytes: 100 }]);
 	const quietRuns = [{ blockedFrames: 0, framesAttached: 0, jsBytes: 104 }];
-	assert.deepEqual(summarizeAllFramesRuns(topDocument, quietRuns), { fetchedAllFramesRuns: quietRuns, fetchedJsAllFrames: { bytes: 100, range: 0, source: "top-document" } });
+	const js = { bytes: 100, range: 0, source: "top-document" };
+	const css = { bytes: 1, range: 0, source: "top-document" };
+	assert.deepEqual(summarizeAllFramesRuns(topDocument, quietRuns), { fetchedAllFramesRuns: quietRuns, fetchedCssAllFrames: css, fetchedCssFullPage: css, fetchedJsAllFrames: js, fetchedJsFullPage: js });
 });
 
 test("a route with an all-frames budget gets the all-frames pass even when no iframe attached in the blocked pass", () => {
 	const allFramesRoutes = routesWithAllFramesBudget({ butter: { fetchedJsBytes: 1 }, home: { fetchedJsBytes: 1, fetchedJsBytesAllFrames: 2 } });
 	assert.deepEqual([...allFramesRoutes], ["home"]);
+	assert.deepEqual([...routesWithAllFramesBudget({ a: { fetchedCssBytesAllFrames: 1 }, b: { fetchedJsBytesFullPage: 1 }, c: { fetchedCssBytes: 1 } })], ["a", "b"], "any all-frames metric keeps the pass");
 	const noFrames = [{ blockedFrames: 0, framesAttached: 0 }];
 	assert.equal(needsAllFramesPass("home", noFrames, allFramesRoutes), true);
 	assert.equal(needsAllFramesPass("butter", noFrames, allFramesRoutes), false);
@@ -145,8 +148,120 @@ test("only the main frame's responses count in the blocked pass; every frame's c
 
 test("the all-frames JS merges beside the iframe-blocked numbers, which stay unchanged", () => {
 	const summary = summarizeRuns([{ cssBytes: 1, jsBytes: 2 }]);
-	const merged = mergeIntoBaseline({ routes: [{ id: "home" }] }, { home: { path: "/", ...summary, ...summarizeAllFramesRuns(summary, [{ framesAttached: 1, jsBytes: 50 }]) } });
+	const run = { cssBytes: 3, framesAttached: 1, fullPageCssBytes: 4, fullPageJsBytes: 80, jsBytes: 50 };
+	const merged = mergeIntoBaseline({ routes: [{ id: "home" }] }, { home: { path: "/", ...summary, ...summarizeAllFramesRuns(summary, [run]) } });
 	assert.deepEqual(merged.routes[0].fetchedJs, { bytes: 2, range: 0 });
+	assert.deepEqual(merged.routes[0].fetchedCss, { bytes: 1, range: 0 });
 	assert.deepEqual(merged.routes[0].fetchedJsAllFrames, { bytes: 50, range: 0, source: "all-frames" });
-	assert.deepEqual(merged.routes[0].fetchedAllFramesRuns, [{ framesAttached: 1, jsBytes: 50 }]);
+	assert.deepEqual(merged.routes[0].fetchedCssAllFrames, { bytes: 3, range: 0, source: "all-frames" });
+	assert.deepEqual(merged.routes[0].fetchedJsFullPage, { bytes: 80, range: 0, source: "all-frames" });
+	assert.deepEqual(merged.routes[0].fetchedCssFullPage, { bytes: 4, range: 0, source: "all-frames" });
+	assert.deepEqual(merged.routes[0].fetchedAllFramesRuns, [run]);
+});
+
+test("the all-frames CSS and full-page numbers are their own medians; the viewport JS stays the pre-scroll number", () => {
+	const topDocument = summarizeRuns([{ cssBytes: 10, jsBytes: 100 }]);
+	const runs = [
+		{ cssBytes: 20, framesAttached: 20, fullPageCssBytes: 40, fullPageJsBytes: 21_000, jsBytes: 5_000 },
+		{ cssBytes: 22, framesAttached: 20, fullPageCssBytes: 44, fullPageJsBytes: 21_400, jsBytes: 5_100 },
+		{ cssBytes: 21, framesAttached: 20, fullPageCssBytes: 41, fullPageJsBytes: 21_200, jsBytes: 5_050 },
+	];
+	const summary = summarizeAllFramesRuns(topDocument, runs);
+	assert.deepEqual(summary.fetchedJsAllFrames, { bytes: 5_050, range: 100, source: "all-frames" });
+	assert.deepEqual(summary.fetchedCssAllFrames, { bytes: 21, range: 2, source: "all-frames" });
+	assert.deepEqual(summary.fetchedJsFullPage, { bytes: 21_200, range: 400, source: "all-frames" });
+	assert.deepEqual(summary.fetchedCssFullPage, { bytes: 41, range: 4, source: "all-frames" });
+});
+
+// A minimal DOM for scrollThroughPage: one scroll container that grows once while it is walked,
+// the way a page grows when content near the bottom loads.
+function withFakeDocument({ clientHeight, scrollHeight, grow, growEveryStep = 0, frozen = false, bodyOverflow = "visible", others = true }, callback) {
+	const scroller = { clientHeight, scrollHeight, scrollTop: 0, positions: [] };
+	const short = { clientHeight: 100, scrollHeight: 150, scrollTop: 0 };
+	const root = { clientHeight: 900, scrollHeight: 900, scrollTop: 0 };
+	const body = {};
+	const saved = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle, requestAnimationFrame: globalThis.requestAnimationFrame };
+	let grown = false;
+	Object.defineProperty(scroller, "scrollTop", {
+		get() { return this._top ?? 0; },
+		set(value) {
+			if (frozen) return;
+			this._top = Math.min(value, this.scrollHeight - this.clientHeight);
+			this.positions.push(this._top);
+			this.scrollHeight += growEveryStep;
+			if (!grown && grow && this._top + this.clientHeight >= this.scrollHeight) { grown = true; this.scrollHeight += grow; }
+		},
+	});
+	globalThis.document = { body, documentElement: root, querySelectorAll: () => (others ? [short, scroller] : [scroller]), scrollingElement: root };
+	globalThis.getComputedStyle = (element) => ({ overflowY: element === body ? bodyOverflow : element === root ? "visible" : "auto" });
+	globalThis.requestAnimationFrame = (resolve) => setImmediate(resolve);
+	return callback({ root, scroller }).finally(() => Object.assign(globalThis, saved));
+}
+
+test("the scroll walks the largest scroll container a viewport at a time to the bottom, including content that grows", async () => {
+	await withFakeDocument({ clientHeight: 900, grow: 1000, scrollHeight: 3000 }, async ({ scroller }) => {
+		const result = await scrollThroughPage({ pauseMs: 0 });
+		assert.equal(scroller.scrollTop, 3100, "it reaches the bottom of the grown container");
+		assert.deepEqual(scroller.positions.slice(0, 3), [900, 1800, 2100], "it moves a viewport at a time, never skipping a band");
+		assert.equal(result.scrollHeight, 4000);
+		assert.equal(result.reachedBottom, true);
+		assert.ok(result.steps >= 5);
+	});
+	await withFakeDocument({ clientHeight: 900, others: false, scrollHeight: 900 }, async () => {
+		assert.deepEqual(await scrollThroughPage({ pauseMs: 0 }), { reachedBottom: true, scrollHeight: 900, steps: 0 }, "a page with nothing to scroll is left alone");
+	});
+});
+
+test("a scroller that does not move ends the walk at once instead of spinning to maxSteps", async () => {
+	await withFakeDocument({ clientHeight: 900, frozen: true, scrollHeight: 30_000 }, async () => {
+		const result = await scrollThroughPage({ pauseMs: 0 });
+		assert.ok(result.steps <= 2, `stopped after ${result.steps} steps`);
+		assert.equal(result.reachedBottom, true);
+	});
+});
+
+test("the document is not picked as the scroller when the body hides its overflow", async () => {
+	await withFakeDocument({ bodyOverflow: "hidden", clientHeight: 900, others: false, scrollHeight: 3000 }, async ({ root, scroller }) => {
+		root.scrollHeight = 50_000;
+		await scrollThroughPage({ pauseMs: 0 });
+		assert.equal(root.scrollTop, 0, "the overflow-hidden document is left alone");
+		assert.equal(scroller.scrollTop, 2100, "the app shell's own scroll container is walked");
+	});
+});
+
+test("a page that keeps growing reports that the walk never reached the bottom, and the sample is refused", async () => {
+	await withFakeDocument({ clientHeight: 900, growEveryStep: 2000, scrollHeight: 3000 }, async () => {
+		const result = await scrollThroughPage({ maxSteps: 10, pauseMs: 0 });
+		assert.equal(result.steps, 10);
+		assert.equal(result.reachedBottom, false);
+		assert.throws(() => assertScrollReachedBottom({ reachedBottom: result.reachedBottom, scrollHeight: result.scrollHeight, scrollSteps: result.steps }, "http://x/"), /did not reach the bottom in 10 steps/);
+	});
+	assert.doesNotThrow(() => assertScrollReachedBottom({ reachedBottom: true, scrollHeight: 900, scrollSteps: 0 }, "http://x/"));
+});
+
+test("frame documents count served documents only, not redirect hops", () => {
+	assert.equal(isFrameDocumentStatus(200), true);
+	assert.equal(isFrameDocumentStatus(204), true);
+	assert.equal(isFrameDocumentStatus(302), false);
+	assert.equal(isFrameDocumentStatus(304), false);
+	assert.equal(isFrameDocumentStatus(404), false);
+});
+
+test("after the scroll, aborted requests in a detached subframe do not fail the run", () => {
+	const base = { errorText: "net::ERR_ABORTED", frameDetached: true, isMainFrame: false, scrolled: true };
+	assert.equal(ignoresFailure(base), true);
+	assert.equal(ignoresFailure({ ...base, scrolled: false }), false, "before the scroll every failure counts");
+	assert.equal(ignoresFailure({ ...base, frameDetached: false }), false, "a live frame's abort still counts");
+	assert.equal(ignoresFailure({ ...base, isMainFrame: true }), false);
+	assert.equal(ignoresFailure({ ...base, errorText: "net::ERR_FAILED" }), false);
+});
+
+test("touching the tracker restarts the quiet window, so loads started by a scroll are waited for", async () => {
+	let clock = 0;
+	const tracker = createAssetActivityTracker(() => clock);
+	clock = 5_000;
+	tracker.touch();
+	const slept = [];
+	await waitForAssetQuiet({ capMs: 10_000, now: () => clock, pollMs: 500, quietMs: 2_000, sleep: async (ms) => { slept.push(ms); clock += ms; }, tracker });
+	assert.equal(clock, 7_000, "the full quiet period passes after the touch, not since the last request");
 });

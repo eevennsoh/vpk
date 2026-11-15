@@ -10,15 +10,23 @@
 // and sums the decoded bodies of the top document's same-origin .js and .css responses.
 // Embedded documents (iframes) and Next link prefetches are blocked and not counted, so the
 // number is what the route itself loads, not what it speculatively fetches for other routes.
-// A route whose page attaches an iframe, or that has a fetchedJsBytesAllFrames budget in
-// scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
+// A route whose page attaches an iframe, or that budgets any all-frames metric (ALL_FRAMES_METRICS)
+// in scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
 // quiet-window rules, prefetches still blocked) that sums the same-origin .js of every frame,
-// recorded as fetchedJsAllFrames: a page that embeds whole projects would otherwise look light.
-// What that pass counts: same-origin .js only (no CSS); each URL once across frames, so N
-// iframes running the same chunks count them once; only frames that load at the 1440x900
-// viewport without scrolling, so lazy iframes below the fold do not count. A route whose pass
-// saw no iframe attach records its top-document number with source "top-document", which the
-// verifier rejects for a route that budgets all frames.
+// recorded as fetchedJsAllFrames (and its .css as fetchedCssAllFrames): a page that embeds whole
+// projects would otherwise look light. Those count each URL once across frames, so N iframes
+// running the same chunks count them once, and only frames that load at the 1440x900 viewport
+// without scrolling. The same pass then scrolls the page through to the bottom (the largest
+// scrollable element, a viewport at a time) and waits for the same quiet window again, so lazy
+// iframes below the fold load too; everything fetched by then is fetchedJsFullPage and
+// fetchedCssFullPage (fetchedCssFullPage is recorded as an observation, not budgeted), and
+// frameDocuments/fullPageFrameDocuments count the embedded documents (2xx, so redirect hops are
+// not counted twice) each phase loaded. A walk that never reaches the bottom fails the run, and so
+// does a scroller that does not move. Each position is held for two animation frames plus a short
+// pause, so a preview that only mounts after staying visible longer than that is not counted
+// unless it sits at the bottom, where the final quiet window covers it. The viewport numbers are taken before the scroll starts, so they are what
+// they were without it. A route whose pass saw no iframe attach records its top-document numbers
+// with source "top-document", which the verifier rejects for a route that budgets all frames.
 // Usage:
 //   node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 [--runs 3]
 //     [--input output/perf-baseline.json] [--output output/perf-baseline.json]
@@ -44,10 +52,13 @@ const NAVIGATION_TIMEOUT_MS = 90_000;
 const SETTLE_CAP_MS = 60_000;
 const ROUTE_BUDGETS_PATH = new URL("./perf-route-budgets.json", import.meta.url);
 
-// Route ids whose budget includes fetchedJsBytesAllFrames: they always get the all-frames pass,
+// Budget metrics measured by the all-frames pass (owned by the verifier).
+const { ALL_FRAMES_METRICS } = require("./verify-perf-baseline-budget.js");
+
+// Route ids whose budget includes an all-frames metric: they always get the all-frames pass,
 // so an iframe that stops attaching in the iframe-blocked pass cannot skip the check.
 export function routesWithAllFramesBudget(budgets) {
-	return new Set(Object.entries(budgets).filter(([, budget]) => Object.hasOwn(budget, "fetchedJsBytesAllFrames")).map(([routeId]) => routeId));
+	return new Set(Object.entries(budgets).filter(([, budget]) => ALL_FRAMES_METRICS.some((metric) => Object.hasOwn(budget, metric))).map(([routeId]) => routeId));
 }
 
 export function needsAllFramesPass(routeId, routeRuns, allFramesRoutes) {
@@ -62,6 +73,17 @@ export function requestAction({ allFrames, isAsset, isPrefetch, isSubframeNaviga
 	if (isPrefetch) return "abort";
 	if (isSubframeNavigation) return allFrames ? "track" : "abort";
 	return isAsset ? "track" : "ignore";
+}
+
+// An embedded document counts once it is served (2xx): a redirect hop and its target are one document.
+export function isFrameDocumentStatus(status) {
+	return status >= 200 && status < 300;
+}
+
+// After the scroll, an aborted request in a subframe that has since detached is the page
+// discarding a preview it scrolled past, not a failed load, so it does not fail the run.
+export function ignoresFailure({ errorText, frameDetached, isMainFrame, scrolled }) {
+	return scrolled && !isMainFrame && frameDetached && errorText === "net::ERR_ABORTED";
 }
 
 // Whether a response in this frame counts toward the pass's bytes.
@@ -98,17 +120,32 @@ export function median(values) {
 	return sorted.length % 2 === 1 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 }
 
-// The all-frames JS for a route: the median of its all-frames pass, or, when no iframe attached
-// (the pass was skipped, or ran for a budgeted route and saw none), the top-document number,
-// marked so the verifier can tell an all-frames budget is no longer measuring any frame.
+function summarizeField(runs, field) {
+	const values = runs.map((run) => run[field]);
+	return { bytes: median(values), range: Math.max(...values) - Math.min(...values), source: "all-frames" };
+}
+
+// The all-frames numbers for a route: the medians of its all-frames pass, or, when no iframe
+// attached (the pass was skipped, or ran for a budgeted route and saw none), the top-document
+// numbers, marked so the verifier can tell an all-frames budget is no longer measuring any frame.
 export function summarizeAllFramesRuns(topDocumentSummary, allFramesRuns) {
 	if (!allFramesRuns || !embedsFrames(allFramesRuns)) {
-		return { ...(allFramesRuns ? { fetchedAllFramesRuns: allFramesRuns } : {}), fetchedJsAllFrames: { ...topDocumentSummary.fetchedJs, source: "top-document" } };
+		const js = { ...topDocumentSummary.fetchedJs, source: "top-document" };
+		const css = { ...topDocumentSummary.fetchedCss, source: "top-document" };
+		return {
+			...(allFramesRuns ? { fetchedAllFramesRuns: allFramesRuns } : {}),
+			fetchedCssAllFrames: css,
+			fetchedCssFullPage: css,
+			fetchedJsAllFrames: js,
+			fetchedJsFullPage: js,
+		};
 	}
-	const js = allFramesRuns.map((run) => run.jsBytes);
 	return {
 		fetchedAllFramesRuns: allFramesRuns,
-		fetchedJsAllFrames: { bytes: median(js), range: Math.max(...js) - Math.min(...js), source: "all-frames" },
+		fetchedCssAllFrames: summarizeField(allFramesRuns, "cssBytes"),
+		fetchedCssFullPage: summarizeField(allFramesRuns, "fullPageCssBytes"),
+		fetchedJsAllFrames: summarizeField(allFramesRuns, "jsBytes"),
+		fetchedJsFullPage: summarizeField(allFramesRuns, "fullPageJsBytes"),
 	};
 }
 
@@ -144,6 +181,14 @@ export function assertAssetsLoaded(failures, url) {
 	}
 }
 
+// A full-page sample whose scroll ran out of steps before the bottom would leave out the rest of
+// the page and could pass under budget, so it is refused like a failed asset.
+export function assertScrollReachedBottom({ reachedBottom, scrollHeight, scrollSteps }, url) {
+	if (!reachedBottom) {
+		throw new Error(`${url}: the scroll did not reach the bottom in ${scrollSteps} steps (scrollHeight ${scrollHeight}); refusing to record a full-page sample that leaves out the rest of the page`);
+	}
+}
+
 // Next's App Router marks a link prefetch with `Next-Router-Prefetch: 1` (headers arrive lowercased).
 export function isRouterPrefetch(headers) {
 	return headers["next-router-prefetch"] === "1";
@@ -172,6 +217,11 @@ export function createAssetActivityTracker(now = () => Date.now()) {
 		get lastActivityAt() {
 			return lastActivityAt;
 		},
+		// Restarts the quiet window without a request, e.g. after scrolling, so loads the scroll
+		// is about to start get the full quiet period to show up.
+		touch() {
+			lastActivityAt = now();
+		},
 		started(requestId, url) {
 			inFlight.set(requestId, url);
 			lastActivityAt = now();
@@ -192,6 +242,41 @@ export async function waitForAssetQuiet({ capMs, now = () => Date.now(), pollMs 
 		}
 		await sleep(pollMs);
 	}
+}
+
+// Runs in the page: scrolls the largest scrollable element (the document, or an app shell's own
+// scroll container) a viewport at a time to the bottom, two animation frames and a short pause
+// per step so lazy iframes and content-visibility sections near each position start loading,
+// until the bottom holds for two steps (content that grows while loading extends the walk). A step
+// that does not move the scroller counts as the bottom, so an element that ignores scrollTop ends
+// the walk instead of spinning to maxSteps; reachedBottom is false when maxSteps ran out first.
+export async function scrollThroughPage({ maxSteps = 400, pauseMs = 100 } = {}) {
+	const scrollable = (element) => {
+		if (element === document.scrollingElement) {
+			// The document only scrolls when neither the root nor the body hides its overflow.
+			const hidden = [document.documentElement, document.body].some((node) => node && getComputedStyle(node).overflowY === "hidden");
+			return !hidden && element.scrollHeight > element.clientHeight;
+		}
+		const { overflowY } = getComputedStyle(element);
+		return (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight + 1;
+	};
+	const candidates = [document.scrollingElement, ...document.querySelectorAll("*")].filter((element) => element && scrollable(element));
+	if (candidates.length === 0) return { reachedBottom: true, scrollHeight: document.documentElement.scrollHeight, steps: 0 };
+	const scroller = candidates.reduce((best, element) => (element.scrollHeight - element.clientHeight > best.scrollHeight - best.clientHeight ? element : best));
+	const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+	let steps = 0;
+	let atBottom = 0;
+	while (steps < maxSteps && atBottom < 2) {
+		const before = scroller.scrollTop;
+		scroller.scrollTop += Math.max(scroller.clientHeight, 1);
+		steps += 1;
+		await frame();
+		await frame();
+		await new Promise((resolve) => setTimeout(resolve, pauseMs));
+		const stuck = scroller.scrollTop === before;
+		atBottom = stuck || scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 ? atBottom + 1 : 0;
+	}
+	return { reachedBottom: atBottom >= 2, scrollHeight: scroller.scrollHeight, steps };
 }
 
 async function measureOnce(browser, origin, routePath, { allFrames = false } = {}) {
@@ -224,7 +309,9 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	const pending = [];
 	const seen = new Set();
 	let blockedFrames = 0;
+	let frameDocuments = 0;
 	let framesAttached = 0;
+	let scrolled = false;
 	let jsBytes = 0;
 	let cssBytes = 0;
 	let scripts = 0;
@@ -244,12 +331,16 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	const assets = [];
 	page.on("requestfailed", (request) => {
 		tracker.finished(ids.get(request));
+		// A preview that unmounts once scrolled past aborts its in-flight chunks; that is the page
+		// discarding a frame, not a failed load.
+		if (ignoresFailure({ errorText: request.failure()?.errorText, frameDetached: request.frame().isDetached(), isMainFrame: request.frame() === page.mainFrame(), scrolled })) return;
 		if (classifyAsset(request.url(), origin) && counts(request.frame())) {
 			assetFailures.push(`${request.url().replace(origin, "")} (${request.failure()?.errorText ?? "failed"})`);
 		}
 	});
 	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
+		if (allFrames && response.request().isNavigationRequest() && response.frame() !== page.mainFrame() && isFrameDocumentStatus(response.status())) frameDocuments += 1;
 		const kind = classifyAsset(response.url(), origin);
 		if (!kind || seen.has(response.url()) || !counts(response.frame())) return;
 		seen.add(response.url());
@@ -259,7 +350,7 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 		}
 		const frame = response.frame() === page.mainFrame() ? "main" : "sub";
 		pending.push(response.body().then((body) => {
-			assets.push({ bytes: body.length, frame, kind, path: response.url().replace(origin, "") });
+			assets.push({ bytes: body.length, frame, kind, path: response.url().replace(origin, ""), ...(scrolled ? { scrolled: true } : {}) });
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, (error) => {
 			assetFailures.push(`${response.url().replace(origin, "")} (body unreadable: ${error.message.split("\n")[0]})`);
@@ -269,10 +360,32 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	assertNavigationOk(response?.status(), `${origin}${routePath}`);
 	await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
 	await Promise.all(pending);
+	const viewport = { cssBytes, frameDocuments, jsBytes, scripts, stylesheets };
+	let fullPage = null;
+	if (allFrames) {
+		// The viewport numbers above are final; now scroll so lazy iframes below the fold load,
+		// under the same quiet-window rules, and count everything fetched by the end.
+		scrolled = true;
+		const scrollStartedAt = Date.now();
+		const scroll = await page.evaluate(scrollThroughPage);
+		tracker.touch();
+		await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
+		await Promise.all(pending);
+		fullPage = {
+			fullPageCssBytes: cssBytes,
+			fullPageFrameDocuments: frameDocuments,
+			fullPageJsBytes: jsBytes,
+			reachedBottom: scroll.reachedBottom,
+			scrollHeight: scroll.scrollHeight,
+			scrollMs: Date.now() - scrollStartedAt,
+			scrollSteps: scroll.steps,
+		};
+	}
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
+	if (fullPage) assertScrollReachedBottom(fullPage, `${origin}${routePath}`);
 	assets.sort((left, right) => left.path.localeCompare(right.path));
-	return { assets, blockedFrames, cssBytes, framesAttached, jsBytes, prefetchesBlocked, scripts, stylesheets };
+	return { assets, blockedFrames, framesAttached, prefetchesBlocked, ...viewport, ...fullPage };
 }
 
 export async function collectRouteTransfer({ allFramesRoutes = new Set(), baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
@@ -316,6 +429,9 @@ export function mergeIntoBaseline(baseline, transfer, browser = null) {
 				fetchedCss: transfer[route.id].fetchedCss,
 				fetchedJs: transfer[route.id].fetchedJs,
 				...(transfer[route.id].fetchedJsAllFrames ? { fetchedJsAllFrames: transfer[route.id].fetchedJsAllFrames } : {}),
+				...(transfer[route.id].fetchedCssAllFrames ? { fetchedCssAllFrames: transfer[route.id].fetchedCssAllFrames } : {}),
+				...(transfer[route.id].fetchedJsFullPage ? { fetchedJsFullPage: transfer[route.id].fetchedJsFullPage } : {}),
+				...(transfer[route.id].fetchedCssFullPage ? { fetchedCssFullPage: transfer[route.id].fetchedCssFullPage } : {}),
 				...(transfer[route.id].fetchedAllFramesRuns ? { fetchedAllFramesRuns: transfer[route.id].fetchedAllFramesRuns } : {}),
 				fetchedPath: transfer[route.id].path,
 				fetchedRuns: transfer[route.id].fetchedRuns,
@@ -334,7 +450,7 @@ async function main() {
 	writeFileSync(options.output, `${JSON.stringify(mergeIntoBaseline(baseline, transfer, browser), null, 2)}\n`);
 	for (const [routeId, result] of Object.entries(transfer)) {
 		const allFrames = result.fetchedJsAllFrames.source === "all-frames"
-			? `, js all frames ${result.fetchedJsAllFrames.bytes} (range ${result.fetchedJsAllFrames.range})`
+			? `, all frames js ${result.fetchedJsAllFrames.bytes} (range ${result.fetchedJsAllFrames.range}) css ${result.fetchedCssAllFrames.bytes}, full page js ${result.fetchedJsFullPage.bytes} (range ${result.fetchedJsFullPage.range}) css ${result.fetchedCssFullPage.bytes}, frames ${result.fetchedAllFramesRuns.map((run) => `${run.frameDocuments}/${run.fullPageFrameDocuments}`).join(" ")} (viewport/full page), scroll ${result.fetchedAllFramesRuns.map((run) => `${run.scrollMs} ms`).join(" ")}`
 			: result.fetchedAllFramesRuns ? ", all-frames pass saw no iframe" : "";
 		console.log(`${routeId} ${result.path}: js ${result.fetchedJs.bytes} (range ${result.fetchedJs.range}), css ${result.fetchedCss.bytes} (range ${result.fetchedCss.range})${allFrames} over ${result.fetchedRuns.length} runs`);
 	}
