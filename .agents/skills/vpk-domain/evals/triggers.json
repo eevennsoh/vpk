@@ -1,0 +1,10 @@
+[
+	{"query": "give my local prototype a presentation-friendly https hostname", "should_trigger": true, "note": "Presentation hostname."},
+	{"query": "mask localhost with a fake demo domain for my screen share tomorrow", "should_trigger": true, "note": "Masking localhost."},
+	{"query": "remove the local presentation URL I set up last week", "should_trigger": true, "note": "Remove presentation URL."},
+	{"query": "I want the URL bar to say something nicer than localhost during my demo", "should_trigger": true, "note": "Paraphrased presentation URL."},
+	{"query": "let people outside Atlassian open my prototype", "should_trigger": false, "note": "Sibling: vpk-tunnel."},
+	{"query": "buy a real domain for my side project", "should_trigger": false, "note": "Real domain purchase."},
+	{"query": "host the export on Statlas", "should_trigger": false, "note": "Sibling: vpk-host."},
+	{"query": "explain our domain model for chat messages", "should_trigger": false, "note": "Different meaning of domain."}
+]

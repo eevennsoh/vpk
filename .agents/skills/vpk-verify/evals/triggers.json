@@ -1,0 +1,10 @@
+[
+	{"query": "prove the theme switch works on the docs page in a real browser", "should_trigger": true, "note": "Browser proof."},
+	{"query": "check the live /projects route renders after my change and capture a screenshot", "should_trigger": true, "note": "Route verification."},
+	{"query": "/vpk-verify the studio shell sidebar collapse", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "verify the catalog search still navigates to the right component page", "should_trigger": true, "note": "User-facing behavior check."},
+	{"query": "open https://news.ycombinator.com and summarise the top posts", "should_trigger": false, "note": "Non-VPK web browsing."},
+	{"query": "run the unit tests for scripts/validate-skills.js", "should_trigger": false, "note": "Unit tests, not a browser."},
+	{"query": "implement this Figma design", "should_trigger": false, "note": "Sibling: vpk-design."},
+	{"query": "share my prototype link with a customer", "should_trigger": false, "note": "Sibling: vpk-tunnel."}
+]

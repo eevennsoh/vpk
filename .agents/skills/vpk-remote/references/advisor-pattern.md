@@ -3,7 +3,7 @@
 An advisor consult is a one-shot, **read-only** worker on either lane —
 [gpt-executor.md](gpt-executor.md) or
 [claude-executor.md](claude-executor.md) — writing to
-`output/remote-<lane>/vpk-<type>-<slug>-review/` (see *Naming* in SKILL.md).
+`output/remote-<lane>/vpk-<type>-<slug>-review/` (see [naming-and-worktrees.md](naming-and-worktrees.md)).
 It runs as an external CLI process, not a Claude Code subagent, so the model
 and family can be chosen per consult.
 
@@ -64,6 +64,52 @@ Consults are on by default, not unconditional. Skip them for single-step
 questions, mechanical edits, an obvious plan, or anything a proof command
 already settles. Consult when a wrong call would be costly to undo.
 Good advice is a 400–700 token course-correction, not an essay.
+
+## Defaults in a /vpk-remote run
+
+The full statement of the defaults that SKILL.md summarizes.
+
+**Consults are on by default.** The planner runs them without being asked,
+stating that it is consulting and why. `--advisor` on its own makes a consult
+the entire task; `--no-advisor` suppresses them for a run.
+
+**Standing consult — every task that produces a diff:**
+
+- **Pre-completion verify.** Before reporting work as done, send the diff and
+  the original goal to the other family for an independent read. This is the
+  verifier shape, and it is the one that pays off when you are steering from
+  a phone: it is a second pair of eyes you did not have to ask for, and it
+  costs you one line in the summary.
+
+**Additional consults, on judgment:**
+
+1. **Stuck** — after roughly two failed correction cycles on the same
+   problem, before dispatching a third variation of the same idea.
+2. **Before committing to an approach** whose design decision the brief
+   cannot settle and where a wrong call means discarding the worker's output
+   rather than amending it.
+
+**Where consults are skipped** — the default is on, not unconditional. Skip
+the verify for a trivial diff (a copy change, a one-line fix, a mechanical
+rename a proof command already covers), where a proof command already
+settles the question. Never consult on single-step questions or an obvious
+plan.
+
+**Default to the family that did not do the work.** Cost no longer picks the
+advisor — every lane bills Proximity — so what a consult buys is
+*independence*, not a capability tier. A GPT worker's blind spots are found
+most cheaply by a Claude reviewer and vice versa; asking the same family to
+audit its own reasoning re-runs the same priors. The planner rows of the
+SKILL.md table follow the same rule: whatever the planner authored is its
+own family's work, so the reviewer comes from the other family. Judge by the
+planner's **model**, not its app — Claude Code can run on `sol` via `ai-api`.
+
+All rows are `xhigh` for the reason in
+[invocation-flags-and-effort.md § Choosing effort](invocation-flags-and-effort.md#choosing-effort):
+advice is unverifiable, so effort is the only quality lever a consult has.
+
+Explicit flags always win: `/vpk-remote --advisor --model sol <question>`
+forces a GPT consult regardless of what ran before it.
 
 ## Context packaging (the consult starts cold)
 

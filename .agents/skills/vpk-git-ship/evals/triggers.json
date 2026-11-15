@@ -1,0 +1,20 @@
+[
+	{"query": "ok this is done, get it reviewed and merged", "should_trigger": true, "note": "Paraphrased ship."},
+	{"query": "open a PR for these changes, wait for checks, and merge it", "should_trigger": true, "note": "Full PR flow."},
+	{"query": "land this work end-to-end and sync main", "should_trigger": true, "note": "End-to-end landing."},
+	{"query": "merge these PRs back to main: 2301, 2302", "should_trigger": true, "note": "Merge PRs."},
+	{"query": "/vpk-git-ship", "should_trigger": true, "note": "Literal invocation."},
+	{"query": "open a pull request for my worktree and babysit CI until it merges", "should_trigger": true, "note": "Paraphrased PR plus CI."},
+	{"query": "checks are green on 2310, go ahead and land it and update local main", "should_trigger": true, "note": "Paraphrased merge and sync."},
+	{"query": "address the review comments on my PR and then merge it", "should_trigger": true, "note": "Review remediation then merge."},
+	{"query": "get my branch vpk/sidebar-fix into main the proper way, with a PR", "should_trigger": true, "note": "Paraphrased PR landing."},
+	{"query": "wrap this up: push, PR, wait for CI, merge", "should_trigger": true, "note": "Paraphrased end-to-end."},
+	{"query": "commit and push straight to main, no PR", "should_trigger": false, "note": "Sibling: vpk-git-ship-fast."},
+	{"query": "clean up my merged worktrees", "should_trigger": false, "note": "Sibling: vpk-git-clean."},
+	{"query": "deploy this to Micros", "should_trigger": false, "note": "Sibling: vpk-deploy."},
+	{"query": "what does git rebase --onto do", "should_trigger": false, "note": "Git question, no shipping."},
+	{"query": "just get this onto main, I don't need review", "should_trigger": false, "note": "Sibling: vpk-git-ship-fast."},
+	{"query": "why did my last PR's CI fail", "should_trigger": false, "note": "CI diagnosis only."},
+	{"query": "squash my last three commits", "should_trigger": false, "note": "Git history edit."},
+	{"query": "draft release notes from the merged PRs this week", "should_trigger": false, "note": "Read-only summary."}
+]

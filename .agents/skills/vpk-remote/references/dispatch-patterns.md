@@ -11,7 +11,7 @@ never inline it into a shell command. Every brief carries, in order:
 2. **Exact repo paths** — files and directories in scope, written relative to
    the worktree the worker runs in. Under the default, a writing brief runs in
    its own task worktree branched from a freshly fetched `origin/main` (see
-   *Worktree isolation* in SKILL.md), so paths resolve there, not in the
+   [naming-and-worktrees.md § Worktree isolation](naming-and-worktrees.md#worktree-isolation)), so paths resolve there, not in the
    user's checkout.
 3. **Constraints** — the specific repo rules that apply (tabs, `@/` imports,
    token classes, pnpm; name only the relevant ones).
@@ -64,7 +64,7 @@ every brief is substantial and independent:
 
 - Dispatch all workers in **one message** (parallel background Bash calls),
   each with its own worker directory and label, `vpk-<type>-<slug>-<n>`
-  (see *Naming* in SKILL.md).
+  (see [naming-and-worktrees.md](naming-and-worktrees.md)).
 - Every fan-out brief carries an explicit "make no edits" constraint.
 - Keep **reading scopes** disjoint, not just write scopes — workers cannot
   see each other, so overlapping briefs pay for the same research twice.
@@ -77,6 +77,20 @@ every brief is substantial and independent:
 report or an explicit infrastructure failure before synthesizing anything.
 Re-dispatch only infrastructure failures (missing/empty report after exit),
 once, to a fresh worker. A well-supported "not found" is a valid finding.
+
+**Fan-out can never be the default for briefs that write.** This is a
+mechanical constraint, not a preference: parallel workers share one worktree
+and will overwrite each other's edits, leaving a diff no report describes.
+`--fanout` on a writing brief is therefore an **error** — report it and ask
+whether to split the task into provably disjoint write scopes (which then
+runs as a fan-out of narrower briefs) or to run it single. Implementation
+otherwise stays one worker iterated via follow-ups.
+
+Worktree isolation is **per task, not per worker**, so it does not soften this
+rule — every worker on one task shares that task's worktree and collides there
+exactly as described. What it prevents is the same collision *between*
+concurrently dispatched tasks; see
+[naming-and-worktrees.md § Worktree isolation](naming-and-worktrees.md#worktree-isolation).
 
 ## Planner review (after every implementation report)
 
