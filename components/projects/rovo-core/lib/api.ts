@@ -418,9 +418,10 @@ export async function detachRovoAppRun(threadId: string): Promise<boolean> {
 	return payload.detached === true;
 }
 
-export async function cancelRovoAppRun(threadId: string): Promise<boolean> {
+export async function cancelRovoAppRun(threadId: string, { signal }: { signal?: AbortSignal } = {}): Promise<boolean> {
 	const response = await fetch(API_ENDPOINTS.rovoAppRunCancel(threadId), {
 		method: "POST",
+		signal,
 	});
 	if (response.status === 404) {
 		return false;

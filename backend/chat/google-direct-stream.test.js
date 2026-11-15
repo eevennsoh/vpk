@@ -153,6 +153,11 @@ test("createGoogleDirectImageStream emits text framing and file parts", async ()
 		type: "text-end",
 		id: parts[0].id,
 	});
+	// Regression: the image reply used to close without the turn boundary, so the
+	// client flagged every successful Google image turn as cut short.
+	assert.equal(parts.length, 5);
+	assert.equal(parts[4].type, "data-turn-complete");
+	assert.equal(typeof parts[4].data.timestamp, "string");
 });
 
 test("createGoogleDirectImageStream retries without modalities when unsupported", async () => {

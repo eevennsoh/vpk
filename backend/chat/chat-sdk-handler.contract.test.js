@@ -135,6 +135,46 @@ test("chat SDK handler routes local model turns before AI Gateway", async () => 
 	assert.equal(calls.executeAIGatewayBufferedStream.length, 0);
 });
 
+// The frontend finalizes a turn whose stream closes without data-turn-complete
+// as cut short, so every successful route must end with it.
+test("chat SDK handler ends a direct Google image turn with data-turn-complete", async () => {
+	const { calls, dependencies } = createContractDependencies({
+		inferPromptIntent: () => "image",
+		resolveChatSdkRequestState: () =>
+			createRequestState({
+				backendPreference: "ai-gateway",
+				latestUserMessage: "Draw a city",
+				provider: "google",
+				rawModel: "google/image",
+			}),
+		resolveGoogleImageGatewayConfig: () => ({
+			ok: true,
+			envVars: {},
+			gatewayUrl: "http://gateway.test",
+			model: "google/image",
+		}),
+		streamGoogleGatewayManualSse: async ({ onTextDelta, onFile }) => {
+			onTextDelta("Here is your city");
+			onFile({ mediaType: "image/png", base64: "aW1hZ2U=" });
+		},
+	});
+	const { handlerPromise, response } = await dispatchWithDependencies({
+		body: { backendPreference: "ai-gateway", messages: [] },
+		headers: { [STAGE_TRACE_ID_HEADER]: "trace-contract-google-image" },
+	}, dependencies);
+	await handlerPromise;
+
+	assert.equal(response.status, 200);
+	assertOrdered(await response.text(), [
+		"text-start",
+		"Here is your city",
+		"data:image/png;base64,aW1hZ2U=",
+		"text-end",
+		"data-turn-complete",
+	]);
+	assert.equal(calls.executeAIGatewayBufferedStream.length, 0);
+});
+
 test("chat SDK handler returns the Rovo unavailable JSON contract", async () => {
 	const { dependencies } = createContractDependencies({
 		resolveChatSdkRequestState: () =>
