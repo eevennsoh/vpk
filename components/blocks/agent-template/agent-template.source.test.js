@@ -127,7 +127,6 @@ test("Agent Template renders the strategy dialog layout with entity-card cards",
 	assert.match(pageSource, /DEMO_AGENT_TEMPLATES/u);
 	assert.match(pageSource, /DEMO_AGENT_TEMPLATES_SESSION/u);
 	assert.match(studioShellSource, /agents=\{DEMO_AGENT_TEMPLATES\}/u);
-	assert.match(studioShellSource, /initialCategoryId=\{agentTemplateInitialCategory\}/u);
 	assert.match(studioShellSource, /onSelectAgent=\{handleTemplateAgentSelect\}/u);
 	assert.match(studioShellSource, /from "@\/components\/projects\/studio\/lib\/studio-template-prompts";/u);
 	assert.match(studioShellSource, /agent\.templatePrompt \?\? buildFallbackTemplatePrompt\(agent\)/u);

@@ -119,6 +119,28 @@ test("loadEnvFileWithModelOrigin records a stale export that shadows .env.local"
 	assert.equal(describeOpenAiModelWarnings(resolution).length, 2);
 });
 
+// dotenv 18 merges DOTENV_* env options into config(); a DOTENV_OVERRIDE left in the shell must
+// not let .env.local replace the exported value the origin report says wins.
+test("loadEnvFileWithModelOrigin keeps the exported value when DOTENV_OVERRIDE is set", (t) => {
+	t.after(resetOpenAiModelEnvOrigin);
+	const saved = {};
+	for (const key of ["DOTENV_OVERRIDE", "DOTENV_CONFIG_OVERRIDE", "DOTENV_QUIET"]) {
+		saved[key] = process.env[key];
+		process.env[key] = "true";
+	}
+	t.after(() => {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	});
+	const envPath = withTempEnvFile(t, "OPENAI_MODEL=gpt-6.1-sol\n");
+	const env = { OPENAI_MODEL: "gpt-1.0-sol" };
+	loadEnvFileWithModelOrigin({ envPath, env });
+	assert.equal(env.OPENAI_MODEL, "gpt-1.0-sol");
+	assert.equal(resolveOpenAiModel(env).source, "process-env");
+});
+
 test("loadEnvFileWithModelOrigin attributes a file-only value to .env.local", (t) => {
 	t.after(resetOpenAiModelEnvOrigin);
 	const envPath = withTempEnvFile(t, "OPENAI_MODEL=gpt-6.2-sol\n");

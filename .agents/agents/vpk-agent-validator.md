@@ -281,7 +281,6 @@ Fix loop iteration. Re-run validator to check whether discrepancies are resolved
 ```yaml
 memory:
   scope: project
-  path: .agents/knowledge/vpk-agent-validator/
   seed_files:
     - .agents/skills/vpk-design/SKILL.md
 ```

@@ -145,9 +145,6 @@
 			"recharts",
 			"shiki"
 		],
-		"app/personal-graph/page.tsx": [
-			"@web-kits/audio"
-		],
 		"app/preview/blocks/agent-bento/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",

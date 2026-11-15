@@ -17,7 +17,7 @@ import { projectButterStatusProgress, projectButterStatusVariant } from "@/compo
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { IconTile } from "@/components/ui/icon-tile";
 
-export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{ status: string; animated?: boolean }>) {
+export function ProjectButterStatusGlyph({ status, animated = true, size = "sm" }: Readonly<{ status: string; animated?: boolean; size?: "xs" | "sm" }>) {
 	return <ProgressCircle
 		animated={animated}
 		animateDashes={animated}
@@ -27,7 +27,7 @@ export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{
 		deferFillAnimation={animated}
 		inline
 		label={status}
-		size="sm"
+		size={size}
 		value={projectButterStatusProgress(status)}
 		variant="filled"
 	/>;
