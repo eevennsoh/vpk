@@ -27,8 +27,10 @@ async function renderPreview(workspaceId = "accepted") {
 	const observePreview = (event) => preview.push(event.detail);
 	window.addEventListener("test-preview-control", observePreview);
 	const view = await renderComponent({
-		entry: "components/website/demos/utils/components/browser-preview-panel.tsx",
-		exportName: "BrowserPreviewPanel",
+		source: `import { BrowserPreviewPanel } from "@/components/website/demos/utils/components/browser-preview-panel";
+			export default function Host(props) {
+				return <div><BrowserPreviewPanel {...props} /><button type="button">After preview</button></div>;
+			}`,
 		mocks,
 		props: {
 			onClose: () => { workspace.push({ action: "close-preview" }); },
@@ -123,16 +125,17 @@ test("Tab and Shift+Tab leave the live viewport instead of being forwarded to th
 		const order = preview.view.tabOrder();
 		const viewportIndex = order.indexOf("Browser preview");
 		assert.notEqual(viewportIndex, -1);
+		// The viewport is the panel's last tab stop, so Tab hands focus to the host page's next control.
+		assert.equal(order[viewportIndex + 1], "After preview");
+		assert.match(document.getElementById(preview.viewport.getAttribute("aria-describedby") ?? "")?.textContent ?? "", /Press Tab to leave/u);
 		await preview.view.focus(preview.viewport);
 		await preview.view.press(null, "Tab");
-		// The viewport is the panel's last tab stop, so Tab hands focus back to the page.
-		assert.equal(viewportIndex, order.length - 1);
-		assert.equal(preview.view.isFocused(preview.viewport), false);
+		assert.equal(preview.view.isFocused(preview.view.getByRole("button", { name: "After preview" })), true);
 
 		await preview.view.focus(preview.viewport);
 		await preview.view.press(null, "Tab", { shiftKey: true });
 		assert.equal(preview.view.isFocused(preview.viewport), false);
-		assert.equal(document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent, order[viewportIndex - 1]);
+		assert.equal(document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent, order[viewportIndex - 1]);
 		assert.deepEqual(preview.preview, []);
 		assert.deepEqual(preview.workspace, []);
 	} finally {

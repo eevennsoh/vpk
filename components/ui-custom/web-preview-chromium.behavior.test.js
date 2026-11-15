@@ -39,7 +39,7 @@ async function renderChromiumPreview() {
 			await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 		},
 		focusedName() {
-			return document.activeElement?.textContent ?? document.activeElement?.getAttribute("aria-label") ?? "";
+			return document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent || "";
 		},
 		async dispose() {
 			await view.unmount();
@@ -51,6 +51,7 @@ async function renderChromiumPreview() {
 test("Tab and Shift+Tab move focus out of the Chromium viewport instead of being forwarded", async () => {
 	const preview = await renderChromiumPreview();
 	try {
+		assert.match(document.getElementById(preview.viewport.getAttribute("aria-describedby") ?? "")?.textContent ?? "", /Press Tab to leave/u);
 		await preview.view.focus(preview.viewport);
 		assert.equal(preview.view.isFocused(preview.viewport), true);
 		await preview.view.press(null, "Tab");

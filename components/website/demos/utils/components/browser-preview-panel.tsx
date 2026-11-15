@@ -9,6 +9,7 @@
 import {
 	useCallback,
 	useEffect,
+	useId,
 	useLayoutEffect,
 	useMemo,
 	useRef,
@@ -20,7 +21,7 @@ import {
 } from "react";
 import { Input } from "@/components/ui/input";
 import { API_ENDPOINTS } from "@/lib/api-config";
-import { isPreviewFocusNavigationKey } from "@/lib/preview-keyboard";
+import { isPreviewFocusNavigationKey, PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";
 import { BrowserPreviewOverlay } from "@/components/projects/shared/components/browser-preview-overlay";
 import {
@@ -150,6 +151,7 @@ function EmbeddedBrowserWorkspacePreview({
 	>(null);
 
 	const liveViewportRef = useRef<HTMLDivElement | null>(null);
+	const keyboardHintId = useId();
 	const pendingWheelRef = useRef({
 		x: 0,
 		y: 0,
@@ -628,12 +630,16 @@ function EmbeddedBrowserWorkspacePreview({
 				className="relative min-h-0 flex-1 overflow-hidden bg-surface-raised/40 outline-none"
 				role="application"
 				aria-label={workspaceState?.title || "Browser preview"}
+				aria-describedby={keyboardHintId}
 				tabIndex={0}
 				onPointerDown={handleLivePointerDown}
 				onWheel={handleLiveWheel}
 				onKeyDown={handleLiveKeyDown}
 				onPaste={handlePaste}
 			>
+					<span id={keyboardHintId} className="sr-only">
+						{PREVIEW_KEYBOARD_HINT}
+					</span>
 					<canvas
 						ref={liveCanvasRef}
 						className={cn(
