@@ -42,7 +42,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 			<WebsiteSidebarNav staticPages={WEBSITE_STATIC_PAGES} sections={WEBSITE_NAV_SECTIONS} logoText="VPK" />
 
 			<div
-				className="website-main-content"
+				className="website-main-content flex flex-col"
 				style={{
 					minHeight: "100vh",
 					backgroundColor: token("elevation.surface"),
@@ -54,7 +54,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 					leftContent={<CategoryTabs activeCategory={category} options={CATEGORY_TAB_OPTIONS} />}
 				/>
 
-				<div>
+				<div className="flex flex-1 flex-col">
 					{category === "ui" ? <>
 							<HomeSectionHeading
 								id="ui"
