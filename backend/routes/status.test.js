@@ -9,16 +9,19 @@ const {
 	createApiHealthHandler,
 	createHealthcheckHandler,
 	createStatusRouter,
+	createWhoamiHandler,
 	parseOptionalInteger,
 	registerStatusRoutes,
 } = require("./status");
 const {
 	buildRuntimeStatusSnapshot,
 } = require("../lib/runtime-status");
+const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
 
-async function withServer(dependencies, run) {
+async function withServer(dependencies, run, { middleware = [] } = {}) {
 	const app = express();
 	app.use(express.json());
+	for (const handler of middleware) app.use(handler);
 	registerStatusRoutes(app, {
 		buildRuntimeStatusSnapshot,
 		getRovoPort: () => "9001",
@@ -148,4 +151,49 @@ test("parseOptionalInteger preserves the existing status route port parsing", ()
 	assert.equal(parseOptionalInteger(""), null);
 	assert.equal(parseOptionalInteger("not-a-port"), null);
 	assert.equal(parseOptionalInteger(12.5), null);
+});
+
+test("GET /api/whoami echoes the local caller outside production, uncached", async () => {
+	// An explicit non-production env, so the runner's own NODE_ENV cannot switch modes.
+	const middleware = [createCallerIdentityMiddleware({ env: {}, logger: { log() {}, warn() {} } })];
+	await withServer(createStatusDependencies(), async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/whoami`, { headers: { "x-slauth-subject": "spoofed" } });
+		assert.equal(response.status, 200);
+		assert.equal(response.headers.get("cache-control"), "no-store");
+		assert.deepEqual(await response.json(), { owner: "local", local: true });
+	}, { middleware });
+});
+
+test("GET /api/whoami behind SLAuth echoes the caller's own X-Slauth-Subject and nothing else", async () => {
+	const app = express();
+	app.use(createCallerIdentityMiddleware({ env: { NODE_ENV: "production" }, logger: { log() {}, warn() {} } }));
+	app.get("/api/whoami", createWhoamiHandler());
+	const server = http.createServer(app);
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	try {
+		const baseUrl = `http://127.0.0.1:${server.address().port}`;
+		const signedIn = await fetch(`${baseUrl}/api/whoami`, { headers: { "x-slauth-subject": " 557058:abc " } });
+		assert.equal(signedIn.status, 200);
+		assert.equal(signedIn.headers.get("cache-control"), "no-store");
+		assert.deepEqual(await signedIn.json(), { owner: "557058:abc", local: false });
+
+		const anonymous = await fetch(`${baseUrl}/api/whoami`);
+		assert.equal(anonymous.status, 401);
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
+});
+
+test("createWhoamiHandler answers 401 when there is no caller", async () => {
+	const app = express();
+	app.get("/api/whoami", createWhoamiHandler({ getCaller: () => null }));
+	const server = http.createServer(app);
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	try {
+		const response = await fetch(`http://127.0.0.1:${server.address().port}/api/whoami`);
+		assert.equal(response.status, 401);
+		assert.deepEqual(await response.json(), { error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
 });

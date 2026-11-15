@@ -10,6 +10,8 @@ alwaysApply: false
 
 The **decision layer**: which `--duration-*` / `--ease-*` token to pick for a given UI role, and why. This is *judgment*, not catalog or API.
 
+- Naming a vaguely described effect ("what is this called?"): `~/.agents/skills/animation-vocabulary/SKILL.md` first — glossary help, not implementation guidance.
+- Implementing: reuse existing patterns first, use VPK duration/easing tokens, avoid layout-thrashing motion, and add explicit reduced-motion handling for any motion you introduce or modify. Motion for React APIs: the global `motion` skill.
 - Token table + Tailwind aliases: `token-priority.md`
 - Animating Base UI surfaces (popups, menus, dialogs) on exit: `motion-base-ui.md`
 - Reference-video UI recreation and sequence proof: [Recreate reference motion](../docs/playbooks/recreate-reference-motion.md)
