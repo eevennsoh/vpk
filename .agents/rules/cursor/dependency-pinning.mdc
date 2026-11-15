@@ -1,6 +1,6 @@
 ---
 description: Dependency pinning tiers, catalog families, and how to update dependencies
-globs: package.json, backend/package.json, pnpm-workspace.yaml, pnpm-lock.yaml
+globs: package.json, backend/package.json, pnpm-workspace.yaml, pnpm-lock.yaml, .npmrc
 alwaysApply: false
 ---
 

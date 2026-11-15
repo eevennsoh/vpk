@@ -5,6 +5,7 @@ paths:
   - "backend/package.json"
   - "pnpm-workspace.yaml"
   - "pnpm-lock.yaml"
+  - ".npmrc"
 ---
 
 # Dependency Pinning

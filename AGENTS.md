@@ -17,7 +17,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - For browser verification after editing code served by the local Next.js app, load and follow `next-dev-loop`; it owns the `/_next/mcp` plus `agent-browser` runtime cross-check. Use the `pnpm control-vpk session` ID for that loop and leave the browser running between checks (`pnpm control-vpk park` stops an animated page using CPU); close it explicitly with `pnpm control-vpk cleanup --browser` only when no longer needed. For browser work that is not verifying a Next.js edit, default to `agent-browser` (`npx agent-browser`) and load its skill first. Keep artifacts under ignored `output/agent-browser/`. If `agent-browser` is unavailable or blocked, use Playwright CLI after loading its skill.
 - Browser entry: resolve the requested component, block, or project's exact route before opening a browser. Use the supplied route or the current route/catalog map, then navigate directly on this worktree's origin (`pnpm control-vpk open-target <route>`). Do not start at the bare origin, `localhost:3000`, or a category landing page and browse for the object. Start at home only when the task explicitly verifies catalog navigation or that entry point (then pass `--entry-point` to `open-target`/`capture`); confirm the target URL and route marker before debugging.
 - Symphony browser evidence is the exception: use `vpk-symphony` so issue evidence lands under ignored `output/playwright/` per `WORKFLOW.md` and `.agents/docs/symphony.md`.
-- Native desktop apps (non-browser GUIs, simulators): built-in computer use first, then `agent-desktop`; never for web pages. Procedure: `.agents/docs/workflows-extended.md` (Native Desktop Apps).
+- Native desktop apps (non-browser GUIs, simulators): built-in computer use first, then `agent-desktop`; never for web pages; quote snapshot refs (`'@s1:e2'`). Procedure: `.agents/docs/workflows-extended.md` (Native Desktop Apps).
 
 ## Documentation Index
 
@@ -107,7 +107,7 @@ Framework core is pinned exactly, coordinated families live in the `catalog:` bl
 
 Selection priority: semantic shadcn/ADS utilities, accent Tailwind classes from `app/tailwind-theme.css`, then raw `token()` or `var(--ds-...)`. Use shadcn naming in `components/ui/*` and ADS semantic naming in VPK feature code.
 
-- Motion: name a vaguely described effect with `animation-vocabulary` first; implement with VPK duration/easing tokens and reduced-motion handling per `.agents/rules/motion-decisions.md`.
+- Motion: name a vaguely described effect with `animation-vocabulary` first (glossary only); implement with VPK duration/easing tokens and reduced-motion handling, no layout-thrashing motion, per `.agents/rules/motion-decisions.md`.
 
 ### ADS Lookups
 
@@ -194,7 +194,7 @@ Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-sco
 | Rule file | Read before editing |
 | --- | --- |
 | `token-priority.md` | `**/*.tsx`, `**/*.css` |
-| `ui-code-style.md` | `**/*.tsx`, `**/*.css` |
+| `ui-code-style.md` | `**/*.ts`, `**/*.tsx`, `**/*.css` |
 | `component-architecture.md` | `components/**`, `app/**/*.tsx`, `hooks/**`, `eslint.config.mjs`, `scripts/eslint-boundary-rules.test.js` |
 | `chat-architecture.md` | `app/contexts/**`, `app/api/chat-sdk/**`, `backend/chat/**`, `backend/routes/**`, `backend/lib/**`, `rovo/**`, `lib/rovo-*.ts`, `components/projects/rovo*/**`, `components/projects/studio/**` |
 | `api-surfaces.md` | `app/api/**`, `backend/**` |
@@ -204,7 +204,7 @@ Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-sco
 | `motion-base-ui.md` | `**/*.tsx`, `**/*.jsx` |
 | `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `**/*.css`, `lib/motion.ts` |
 | `ads-lookups.md` | `components/**/*.tsx`, `app/**/*.tsx`, `**/*.css` |
-| `dependency-pinning.md` | `package.json`, `backend/package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml` |
+| `dependency-pinning.md` | `package.json`, `backend/package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `.npmrc` |
 | `testing.md` | `**/*.test.*`, `tests/**`, `playwright.config.ts`, `scripts/run-js-unit-tests.mjs`, `scripts/js-unit-test-*.mjs` |
 | `agent-operations.md` | `.agents/**`, `.claude/**`, `.codex/**`, `.cursor/**`, `.rovo/**`, `scripts/validate-agents*.js`, `scripts/validate-skills*.js` |
 | `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/**` |

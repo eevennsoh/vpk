@@ -1,6 +1,7 @@
 ---
 description: VPK UI code style — primitives, icons, images, shadows, dates, key imports, CSS baseline
 paths:
+  - "**/*.ts"
   - "**/*.tsx"
   - "**/*.css"
 ---
@@ -9,9 +10,8 @@ paths:
 
 - UI primitives: `components/ui/*`; icons: `@atlaskit/icon/core/*`, then `@atlaskit/icon-lab/core/*`; product logos: `@/components/ui/logo`. When editing icons, check consistency across all icons in the component.
 - Use `next/image` with explicit dimensions. Put static assets in `public/`, reference absolute paths, and group them under `1p/`, `3p/`, `illustration/`, or `illustration-ai/`.
-- Shadows: `shadow-sm` / `shadow-md` (raised), `shadow-lg` (overflow), `shadow-xl` (overlay), which `app/tailwind-theme.css` maps to ADS elevation; `token("elevation.shadow.*")` only in inline styles.
+- Shadows: `shadow-sm` / `shadow-md` (raised), `shadow-lg` (overflow), `shadow-xl`/`shadow-2xl` (overlay; overlay surfaces follow `.agents/rules/gotchas-ui.md`), which `app/tailwind-theme.css` maps to ADS elevation; `token("elevation.shadow.*")` only in inline styles.
 - Dates: `Intl.DateTimeFormat("en-US", { dateStyle: "medium" })` (always specify locale to avoid SSR/client hydration mismatch).
-- For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 
 Key imports:
 
