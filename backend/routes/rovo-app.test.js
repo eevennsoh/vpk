@@ -179,7 +179,7 @@ function createDocumentManager(state) {
 
 function createUploadManager(state) {
 	return {
-		createUploadFromDataUrl: async ({ dataUrl, filename, mediaType, threadId }) => {
+		createUploadFromDataUrl: async ({ dataUrl, filename, mediaType, owner, threadId }) => {
 			if (!dataUrl.startsWith("data:")) {
 				throw new Error("Invalid data URL");
 			}
@@ -192,6 +192,7 @@ function createUploadManager(state) {
 				mediaType: mediaType || "application/octet-stream",
 				sizeBytes: buffer.length,
 				threadId,
+				owner,
 			};
 			state.uploads.set(id, upload);
 			return upload;
@@ -943,11 +944,13 @@ test("in production documents, files, and background streams of another caller a
 	state.documents.set("doc-b", { id: "doc-b", threadId: "thread-b", title: "B" });
 	state.documents.set("doc-orphan", { id: "doc-orphan", threadId: "thread-gone", title: "Orphan" });
 	state.uploads.set("upload-b", { id: "upload-b", threadId: "thread-b", filename: "b.txt", mediaType: "text/plain", buffer: Buffer.from("b") });
-	state.uploads.set("upload-bob-loose", { id: "upload-bob-loose", owner: "bob", threadId: "_orphaned", filename: "c.txt", mediaType: "text/plain", buffer: Buffer.from("c") });
 	state.uploads.set("upload-legacy-loose", { id: "upload-legacy-loose", threadId: "_orphaned", filename: "d.txt", mediaType: "text/plain", buffer: Buffer.from("d") });
 	state.runs.set("thread-a", { id: "run-a", threadId: "thread-a", status: "streaming" });
 	state.runs.set("thread-b", { id: "run-b", threadId: "thread-b", status: "streaming" });
 	await withServer(dependencies, async (baseUrl) => {
+		// An upload with no thread is its uploader's (the route records the owner).
+		const loose = await fetch(`${baseUrl}/api/rovo/files/upload`, jsonAs("bob", "POST", { dataUrl: "data:text/plain;base64,Yw==", name: "c.txt" }));
+		const looseId = (await loose.json()).file.id;
 		for (const documentId of ["doc-b", "doc-orphan"]) {
 			const response = await fetch(`${baseUrl}/api/rovo/documents?documentId=${documentId}`, as("alice"));
 			assert.equal(response.status, 404, documentId);
@@ -959,32 +962,17 @@ test("in production documents, files, and background streams of another caller a
 		const documents = await fetch(`${baseUrl}/api/rovo/documents`, as("alice"));
 		assert.deepEqual((await documents.json()).documents.map((document) => document.id), ["doc-a"]);
 
-		for (const fileId of ["upload-b", "upload-bob-loose", "upload-legacy-loose"]) {
+		for (const fileId of ["upload-b", looseId, "upload-legacy-loose"]) {
 			const response = await fetch(`${baseUrl}/api/rovo/files/${fileId}`, as("alice"));
 			assert.equal(response.status, 404, fileId);
 			assert.deepEqual(await response.json(), { error: "File not found" });
 		}
-		const bobsLoose = await fetch(`${baseUrl}/api/rovo/files/upload-bob-loose`, as("bob"));
+		const bobsLoose = await fetch(`${baseUrl}/api/rovo/files/${looseId}`, as("bob"));
 		assert.equal(bobsLoose.status, 200);
 
 		const streams = await fetch(`${baseUrl}/api/rovo/background-streams`, as("alice"));
 		assert.deepEqual((await streams.json()).streams.map((run) => run.id), ["run-a"]);
 	}, { env: PRODUCTION_ENV });
-});
-
-test("in production an upload records its uploader as owner", async () => {
-	const dependencies = createDependencies();
-	const owners = [];
-	const createUploadFromDataUrl = dependencies.rovoAppUploadManager.createUploadFromDataUrl;
-	dependencies.rovoAppUploadManager.createUploadFromDataUrl = async (input) => {
-		owners.push(input.owner);
-		return createUploadFromDataUrl(input);
-	};
-	await withServer(dependencies, async (baseUrl) => {
-		const response = await fetch(`${baseUrl}/api/rovo/files/upload`, jsonAs("alice", "POST", { dataUrl: "data:text/plain;base64,aGk=", name: "hi.txt" }));
-		assert.equal(response.status, 201);
-	}, { env: PRODUCTION_ENV });
-	assert.deepEqual(owners, ["alice"]);
 });
 
 test("outside production the caller is the fixed owner local, who also sees threads stored without an owner", async () => {

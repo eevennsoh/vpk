@@ -430,7 +430,7 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			await writeJsonFile(threadFilePath, nextThread);
 			return nextThread;
 		});
-		await pruneOldThreads({ skipThreadId: threadId, owner: nextThread.owner ?? null });
+		await pruneOldThreads({ skipThreadId: threadId, owner: nextThread?.owner ?? null });
 		return createdThread;
 	};
 
