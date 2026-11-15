@@ -14,7 +14,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 ## Driving conventions
 
 - For component, block or project debugging, resolve the exact route before opening the browser and first navigate directly there with `pnpm control-vpk open-target <route>`. Preserve requested query/hash; confirm URL and route marker.
-- Start at home or a category only when explicitly verifying that catalog/entry path. A direct URL does not prove a title link works. If the object has no recipe, resolve its route from current metadata instead of browsing the landing page.
+- Start at home or a category only when explicitly verifying that catalog/entry path (pass `--entry-point`). A direct URL does not prove a title link works. If the object has no recipe, resolve its route from current metadata instead of browsing the landing page.
 - Prefer `#home-category-tab-*`, `href`, and ARIA names listed in the skill. Do not click a tab by the substring `UI`.
 - Treat every command as literal. Keep quoted names and flags unchanged.
 - Restore theme through the same user-facing control until its original accessible name returns; never write storage or theme attributes directly.

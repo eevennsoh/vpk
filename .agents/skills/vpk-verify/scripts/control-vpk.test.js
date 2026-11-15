@@ -30,13 +30,12 @@ const {
 	resolveAgentBrowserBin,
 	runAgentBrowser,
 	runCapture,
-	targetBrowserArguments,
 	waitForDoctorReady,
 } = require(CONTROL_VPK);
 const { browserSessionId } = require("./lib/browser.js");
 const { readDesignVariantIds, routeWithDesignVariants } = require("./lib/capture.js");
-const { TARGET_REPO_MAP, withTempDir } = require("./lib/test-fixtures.js");
-const { collectDoctor, parseCompileTimeoutMs, requestCompiling, warmRoute } = require("./lib/stack.js");
+const { TARGET_REPO_MAP, fakeCaptureBrowser, withTempDir } = require("./lib/test-fixtures.js");
+const { collectDoctor, parseCompileTimeoutMs, warmRoute } = require("./lib/stack.js");
 
 // A fake request that answers each call from a queue and records the timeout it was given.
 function queuedRequest(responses) {
@@ -461,36 +460,6 @@ test("missing binary, stale session, and ordinary assertion failures stay distin
 		"assertion_failure",
 	);
 });
-
-const ACTIVE_SESSION = JSON.stringify({
-	data: { active: true, runtime: { browserLaunched: true, pageCount: 1 } },
-	success: true,
-});
-
-function fakeCaptureBrowser({ overrides = {} } = {}) {
-	const calls = [];
-	const runCommand = (args) => {
-		const forwarded = args.slice(2);
-		if (forwarded.join(" ") === "session info --json") return { status: 0, stderr: "", stdout: ACTIVE_SESSION };
-		calls.push(forwarded);
-		const override = overrides[forwarded[0]];
-		if (override) return override(forwarded);
-		if (forwarded[0] === "screenshot") writeFileSync(forwarded[1], "png");
-		const stdout = {
-			a11y: JSON.stringify({ data: { counts: { violations: 2, incomplete: 1 }, violations: [] }, success: true }),
-			console: JSON.stringify({
-				data: { messages: [{ type: "log", text: "ready" }, { type: "error", text: "Hydration failed" }] },
-				success: true,
-			}),
-			errors: JSON.stringify({ data: { errors: [] }, success: true }),
-			eval: "\"light\"",
-			get: "https://fixture.localhost/jira-team-eu26\n",
-			snapshot: "- heading \"Jira Design\" [level=1]\n",
-		}[forwarded[0]] ?? "";
-		return { status: 0, stderr: "", stdout };
-	};
-	return { calls, runCommand };
-}
 
 test("capture parses defaults to the light theme, a desktop viewport and a route-derived id", () => {
 	assert.deepEqual(parseCaptureArgs(["/components/ui/accordion?example=1#top"]), {

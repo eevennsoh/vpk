@@ -51,8 +51,24 @@ function targetBrowserArguments(route, {
 	return ["open", "--enable", "react-devtools", ...(headed ? ["--headed"] : []), new URL(route, origin).href];
 }
 
+const OPEN_TARGET_USAGE = `Usage: control-vpk open-target <route> [--headed] [${ENTRY_POINT_FLAG}]`;
+
+// argv after `open-target`: one route, then only --headed and the entry-point opt-in.
+function openTargetArguments(args, options = {}) {
+	const [route, ...flags] = args;
+	if (route === undefined || flags.some((arg) => arg !== "--headed" && arg !== ENTRY_POINT_FLAG)) {
+		throw new Error(OPEN_TARGET_USAGE);
+	}
+	return targetBrowserArguments(route, {
+		...options,
+		entryPoint: flags.includes(ENTRY_POINT_FLAG),
+		headed: flags.includes("--headed"),
+	});
+}
+
 module.exports = {
 	ENTRY_POINT_FLAG,
+	openTargetArguments,
 	resolveOrigin,
 	targetBrowserArguments,
 };

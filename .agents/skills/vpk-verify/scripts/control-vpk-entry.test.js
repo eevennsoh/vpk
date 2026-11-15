@@ -7,12 +7,16 @@ const test = require("node:test");
 
 const CONTROL_VPK = path.join(__dirname, "control-vpk");
 const {
+	captureWarmUrl,
 	executeBrowserCommand,
+	openTargetArguments,
 	parseCaptureArgs,
 	runCapture,
 	targetBrowserArguments,
 } = require(CONTROL_VPK);
-const { TARGET_REPO_MAP } = require("./lib/test-fixtures.js");
+const { TARGET_REPO_MAP, fakeCaptureBrowser, withTempDir } = require("./lib/test-fixtures.js");
+
+const FIXTURE = { origin: "https://fixture.localhost", repoMap: TARGET_REPO_MAP };
 
 test("object proof first opens the exact mapped project or component on this worktree", () => {
 	for (const route of ["/jira-team-eu26", "/components/visual/peel?example=card#drag"]) {
@@ -61,6 +65,7 @@ test("open-target CLI rejects a root detour before resolving or starting a brows
 	const result = spawnSync(process.execPath, [CONTROL_VPK, "open-target", "/"], { encoding: "utf8" });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Object target must name a component or project/iu);
+	assert.match(result.stderr, /Pass --entry-point/u);
 	assert.doesNotMatch(result.stderr, /agent-browser|session id failed/iu);
 });
 
@@ -88,22 +93,63 @@ test("landing-page refusal names the --entry-point opt-in", () => {
 	}), /catalog landing page\. Pass --entry-point/u);
 });
 
-test("capture parses --entry-point and runs a landing-page capture with it", () => {
+test("--entry-point leaves object routes exactly as they resolve without it", () => {
+	for (const route of ["/jira-team-eu26", "/components/visual/peel"]) {
+		assert.deepEqual(
+			targetBrowserArguments(route, { ...FIXTURE, entryPoint: true }),
+			targetBrowserArguments(route, FIXTURE),
+			route,
+		);
+	}
+});
+
+test("capture parses --entry-point only when it is passed", () => {
 	assert.equal(parseCaptureArgs(["/"]).entryPoint, false);
 	const options = parseCaptureArgs(["/", "--entry-point"]);
 	assert.equal(options.entryPoint, true);
 	assert.equal(options.id, "root");
-	assert.throws(() => runCapture(parseCaptureArgs(["/"]), {
-		origin: "https://fixture.localhost",
-		repoMap: TARGET_REPO_MAP,
-		runCommand: () => { throw new Error("browser must not start"); },
-	}), /--entry-point/u);
 });
 
-test("open-target CLI accepts --entry-point past the landing guard", () => {
-	const result = spawnSync(process.execPath, [CONTROL_VPK, "open-target", "/", "--entry-point", "--bogus"], { encoding: "utf8" });
-	assert.equal(result.status, 1);
-	assert.match(result.stderr, /open-target <route> \[--headed\] \[--entry-point\]/u);
+test("capture refuses a landing page without --entry-point before any browser work", () => {
+	assert.throws(() => runCapture(parseCaptureArgs(["/"]), {
+		...FIXTURE,
+		runCommand: () => { throw new Error("browser must not start"); },
+	}), /--entry-point/u);
+	assert.throws(() => captureWarmUrl(["/"], FIXTURE), /--entry-point/u);
+});
+
+test("capture / --entry-point warms and opens the home page and records the opt-in", () => {
+	assert.equal(captureWarmUrl(["/", "--entry-point"], FIXTURE), "https://fixture.localhost/");
+	withTempDir("control-vpk-capture-entry-", (root) => {
+		const { calls, runCommand } = fakeCaptureBrowser();
+		const { manifest, manifestPath } = runCapture(parseCaptureArgs(["/", "--entry-point"]), {
+			...FIXTURE,
+			evidenceRoot: path.join(root, "evidence"),
+			repoRoot: root,
+			resolveSession: () => "vpk-verify-entry",
+			runCommand,
+		});
+		assert.deepEqual(calls[0], ["open", "--enable", "react-devtools", "https://fixture.localhost/"]);
+		assert.equal(manifest.route, "/");
+		assert.equal(manifest.entryPoint, true);
+		assert.equal(manifestPath, path.join(root, "evidence/root/manifest.json"));
+		for (const key of ["console", "errors", "a11y"]) assert.ok(manifest.files[key], key);
+	});
+});
+
+test("open-target argv opens a landing page only with --entry-point", () => {
+	assert.deepEqual(
+		openTargetArguments(["/", "--entry-point"], FIXTURE),
+		["open", "--enable", "react-devtools", "https://fixture.localhost/"],
+	);
+	assert.deepEqual(
+		openTargetArguments(["/visual", "--headed", "--entry-point"], FIXTURE),
+		["open", "--enable", "react-devtools", "--headed", "https://fixture.localhost/visual"],
+	);
+	assert.throws(() => openTargetArguments(["/"], FIXTURE), /catalog landing page\. Pass --entry-point/u);
+	for (const argv of [[], ["/", "--bogus"]]) {
+		assert.throws(() => openTargetArguments(argv, FIXTURE), /open-target <route> \[--headed\] \[--entry-point\]/u);
+	}
 });
 
 test("object entry requires a discovered origin and keeps explicit catalog opens available", () => {

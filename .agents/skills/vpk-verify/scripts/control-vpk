@@ -52,12 +52,13 @@ const {
 const {
 	buildCaptureManifest,
 	captureCli,
+	captureWarmUrl,
 	formatCaptureSummary,
 	manualVerificationRequested,
 	parseCaptureArgs,
 	runCapture,
 } = require("./lib/capture.js");
-const { ENTRY_POINT_FLAG, resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
+const { openTargetArguments, resolveOrigin, targetBrowserArguments } = require("./lib/origin.js");
 const { EVIDENCE_DIR, FRONTEND_PORT_FILE, RUN_DIR, readTrimmed } = require("./lib/repo.js");
 const {
 	DEV_TMUX_NOT_READY,
@@ -140,8 +141,7 @@ async function main() {
 	}
 
 	if (command === "capture" && !manualVerificationRequested(process.env)) {
-		const { entryPoint, route } = parseCaptureArgs(argv.slice(1));
-		await warmRoute(targetBrowserArguments(route, { entryPoint }).at(-1));
+		await warmRoute(captureWarmUrl(argv.slice(1)));
 	}
 	if (command === "capture" || command === "where") {
 		const exitCode = command === "capture" ? captureCli(argv.slice(1)) : whereCli(argv.slice(1));
@@ -213,11 +213,8 @@ async function main() {
 	}
 
 	if (command === "browser" || command === "open-target") {
-		if (command === "open-target" && (argv.length < 2 || argv.slice(2).some((arg) => arg !== "--headed" && arg !== ENTRY_POINT_FLAG))) {
-			throw new Error(`Usage: control-vpk open-target <route> [--headed] [${ENTRY_POINT_FLAG}]`);
-		}
 		const forwarded = command === "open-target"
-			? targetBrowserArguments(argv[1], { entryPoint: argv.includes(ENTRY_POINT_FLAG), headed: argv.includes("--headed") })
+			? openTargetArguments(argv.slice(1))
 			: argv.slice(1).filter((arg) => arg !== "--");
 		if (forwarded.length === 0) {
 			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");
@@ -264,6 +261,7 @@ module.exports = {
 	applyLocalhostProxyBypass,
 	buildCaptureManifest,
 	captureCli,
+	captureWarmUrl,
 	classifyAgentBrowserFailure,
 	executeBrowserCommand,
 	formatBrowserFailure,
@@ -271,6 +269,7 @@ module.exports = {
 	formatWhere,
 	isBrowserSessionStarter,
 	manualVerificationRequested,
+	openTargetArguments,
 	parseBrowserTimeoutMs,
 	parseCaptureArgs,
 	parseLaunchReadyTimeoutMs,
