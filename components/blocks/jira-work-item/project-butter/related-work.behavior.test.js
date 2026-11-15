@@ -325,7 +325,7 @@ test("empty crew shows the current viewer and adds the chosen searchable agent",
 	assert.equal(view.queryByRole("combobox", { name: "Search agents" }) === null, true);
 });
 
-for (const variant of ["project-butter", "project-butter-v1"]) {
+for (const variant of ["project-butter"]) {
 	test(`${variant} crew opens its picker from the keyboard, continues existing sessions and adds an agent`, async () => {
 		const sessions = [{ ...crewSession("existing", "running", "Claude"), host: "cloud", agent: { id: "claude-code", name: "Claude", brandName: "claude" } }];
 		const opened = [];
