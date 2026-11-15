@@ -3342,14 +3342,24 @@
       "count": 1
     }
   },
+  "lib/json-render/registry-compound.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 3
+    }
+  },
+  "lib/json-render/registry-data-display.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "lib/json-render/registry-layout.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 3
+    }
+  },
   "lib/json-render/registry.test.js": {
     "no-restricted-syntax": {
       "count": 17
-    }
-  },
-  "lib/json-render/registry.tsx": {
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 7
     }
   }
 }

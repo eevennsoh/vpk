@@ -96,7 +96,7 @@ When an ADS component is a thin wrapper or re-export that can be covered by an e
 4. Remove the old manifest line from `app/data/component-manifest.ts` and delete its detail leaf `app/data/details/ui/[slug].ts`; update the target component's leaf (`adsUrl`, description)
 5. Remove the old variant registrations from `components/website/registry/ui/variants-*.ts` (and any hand-written primary entry below the generated region in `registry/ui/primary.ts`), then run `pnpm run fix:generated` to rewrite the generated detail barrel and primary registry region
 6. Update `lib/json-render/catalog.ts` — remove catalog entry if present
-7. Update `lib/json-render/registry.tsx` — remove renderer and import if present
+7. Update the json-render registry (`lib/json-render/registry.tsx` and its `registry-*.tsx` component groups) — remove renderer and import if present
 8. Update `backend/lib/genui-system-prompt.js` — replace references in AI system prompt
 9. Regenerate `backend/lib/generated-catalog-prompt.json` via `node scripts/generate-catalog-prompt.js`
 10. Update `related` arrays in other component detail entries that referenced the removed component
