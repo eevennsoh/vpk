@@ -25,9 +25,8 @@ import {
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 import {
+	createRovoBackendCanceller,
 	EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS,
-	getRovoCancelDebounceKey,
-	requestRovoBackendCancel,
 	shouldSendExplicitRovoCancel,
 	type RovoCancelTarget,
 } from "@/lib/rovo-cancel-strategy";
@@ -159,7 +158,6 @@ export type {
 export type { StudioSessionAgentSaveStatus } from "@/components/projects/rovo-core/lib/agent-records/session-agent-registry";
 export type { QueuedPromptItem, SendPromptOptions } from "@/app/contexts/rovo-chat-helpers";
 
-const EXPLICIT_CANCEL_DEBOUNCE_MS = 2_000;
 const EXPLICIT_CANCEL_GRACE_MS = 1_200;
 const MEDIA_GENERATION_TIMEOUT_MS = 120_000;
 const COMPACT_HISTORY_LIMIT = 40;
@@ -358,8 +356,13 @@ export function RovoChatProvider({
 	const isCancellingRef = useRef(false);
 	const cancelStreamPromiseRef = useRef<Promise<boolean> | null>(null);
 	const autoSelectedAgentIdRef = useRef<string | null>(null);
-	const lastExplicitCancelAtRef = useRef(0);
-	const lastExplicitCancelKeyRef = useRef("");
+	// One canceller per provider: it owns the backend-cancel debounce.
+	const [sendBackendCancel] = useState(() => createRovoBackendCanceller({
+		cancelEndpoint: API_ENDPOINTS.CHAT_CANCEL,
+		cancelRun: cancelRovoAppRun,
+		fetchImpl: (input, init) => fetch(input, init),
+		timeoutMs: EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS,
+	}));
 	const isSubmitPendingRef = useRef(false);
 	const shouldFinalizeActivePromptRef = useRef(false);
 	const hasTurnCompleteSignalRef = useRef(false);
@@ -1752,38 +1755,6 @@ export function RovoChatProvider({
 			waitForStreamStop,
 		]
 	);
-
-	// Sends the backend cancel once per target (per turn for a user Stop) within
-	// the debounce window. Resolves true when a cancel request went out.
-	const sendBackendCancel = useCallback(async (
-		target: RovoCancelTarget,
-		turnId: string | null,
-	): Promise<boolean> => {
-		const cancelKey = getRovoCancelDebounceKey(target, turnId);
-		const now = Date.now();
-		if (
-			lastExplicitCancelKeyRef.current === cancelKey &&
-			now - lastExplicitCancelAtRef.current < EXPLICIT_CANCEL_DEBOUNCE_MS
-		) {
-			return false;
-		}
-
-		lastExplicitCancelKeyRef.current = cancelKey;
-		lastExplicitCancelAtRef.current = now;
-		try {
-			// Bounded so a slow Rovo cancel cannot hold the queue for its full timeout.
-			await requestRovoBackendCancel({
-				target,
-				cancelEndpoint: API_ENDPOINTS.CHAT_CANCEL,
-				cancelRun: cancelRovoAppRun,
-				fetchImpl: fetch,
-				signal: AbortSignal.timeout(EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS),
-			});
-		} catch {
-			// Ignore cancel endpoint errors and timeouts — the stream may have already ended.
-		}
-		return true;
-	}, []);
 
 	// `explicitUserCancel` is the user's Stop, which always cancels the backend run
 	// (see shouldSendExplicitRovoCancel); other callers escalate only when stop() is slow.

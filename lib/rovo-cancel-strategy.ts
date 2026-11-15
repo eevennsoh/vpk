@@ -76,3 +76,51 @@ export async function requestRovoBackendCancel({
 			: cancelEndpoint;
 	await fetchImpl(endpoint, { method: "POST", signal });
 }
+
+/** Repeat cancels of the same key inside this window are skipped. */
+export const BACKEND_CANCEL_DEBOUNCE_MS = 2_000;
+
+/**
+ * Sends a backend cancel at most once per debounce key (see
+ * getRovoCancelDebounceKey) within `debounceMs`, waiting at most `timeoutMs`.
+ * The returned function resolves true when a cancel request went out; request
+ * errors and timeouts are swallowed because the stream may already have ended.
+ */
+export function createRovoBackendCanceller({
+	cancelEndpoint,
+	cancelRun,
+	fetchImpl,
+	timeoutMs,
+	debounceMs = BACKEND_CANCEL_DEBOUNCE_MS,
+	now = Date.now,
+}: {
+	cancelEndpoint: string;
+	cancelRun: (threadId: string, options: { signal: AbortSignal }) => Promise<unknown>;
+	fetchImpl: (input: string, init: RequestInit) => Promise<unknown>;
+	timeoutMs: number;
+	debounceMs?: number;
+	now?: () => number;
+}) {
+	let lastKey = "";
+	let lastAt = 0;
+	return async (target: RovoCancelTarget, turnId: string | null): Promise<boolean> => {
+		const key = getRovoCancelDebounceKey(target, turnId);
+		const at = now();
+		if (key === lastKey && at - lastAt < debounceMs) {
+			return false;
+		}
+
+		lastKey = key;
+		lastAt = at;
+		try {
+			await requestRovoBackendCancel({
+				target,
+				cancelEndpoint,
+				cancelRun,
+				fetchImpl,
+				signal: AbortSignal.timeout(timeoutMs),
+			});
+		} catch {}
+		return true;
+	};
+}
