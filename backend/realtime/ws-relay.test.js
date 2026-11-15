@@ -741,21 +741,25 @@ test("a socket that sends no frame is closed after its first-frame timeout; one 
 	assert.equal(timers[2].cleared, true, "close clears the timeout");
 });
 
-test("behind the production load balancer one client cannot take every realtime slot", () => {
+test("behind the production load balancer and SLAuth sidecar one client cannot take every realtime slot", () => {
 	const server = createFakeServer();
 	const { instances, webSocketImpl } = createFakeWebSocketImpl();
 	registerBackendWebSocketRelays(server, {
 		...createRegistrationDependencies(),
-		env: { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "1" },
+		env: { NODE_ENV: "production", VPK_TRUSTED_PROXY_HOPS: "2" },
 		webSocketImpl,
 	});
 	const upgrade = server.handlers.get("upgrade");
-	// Every socket arrives from the balancer (10.0.0.1); the client is its appended entry.
+	// Every socket arrives from the Service Proxy sidecar (127.0.0.1). The balancer appended
+	// the client; the sidecar appended the balancer (10.0.0.1).
 	const open = (client, index) => {
 		const socket = createSocket();
 		const request = {
-			...createRequest(`/api/realtime/audio-conversation?realtimeToken=t${client}-${index}`, { "x-forwarded-for": client }),
-			socket: { remoteAddress: "10.0.0.1" },
+			...createRequest(`/api/realtime/audio-conversation?realtimeToken=t${client}-${index}`, {
+				"x-forwarded-for": `${client}, 10.0.0.1`,
+				"x-slauth-subject": "alice",
+			}),
+			socket: { remoteAddress: "127.0.0.1" },
 		};
 		upgrade(request, socket, Buffer.alloc(0));
 		return socket;
@@ -769,4 +773,79 @@ test("behind the production load balancer one client cannot take every realtime 
 	const other = open("198.51.100.7", 0);
 	assert.equal(other.writes.some((line) => /^HTTP\/1\.1 503 /u.test(line)), false, "a second client still connects");
 	assert.equal(instances[0].handledUpgrades.length, 64 - refused.length + 1);
+});
+
+test("in production an upgrade without X-Slauth-Subject is refused with 401 before any token check", () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	const tokenChecks = [];
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isRuntimeSocketTokenValid: (token, scope, subject) => {
+				tokenChecks.push({ token, scope, subject });
+				return true;
+			},
+			runtimeAdminRequired: true,
+			runtimeAdminToken: "admin",
+		}),
+		env: { NODE_ENV: "production" },
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	const socket = createSocket();
+	upgrade(createRequest("/api/realtime/audio-conversation?realtimeToken=t1"), socket, Buffer.alloc(0));
+	assert.equal(socket.writes.some((line) => /^HTTP\/1\.1 401 /u.test(line)), true);
+	assert.deepEqual(tokenChecks, []);
+	assert.equal(instances[0].handledUpgrades.length, 0);
+});
+
+test("an upgrade's socket token is checked against the caller presenting it", () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	const tokenChecks = [];
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isRuntimeSocketTokenValid: (token, scope, subject) => {
+				tokenChecks.push({ token, scope, subject });
+				return subject === "alice";
+			},
+			runtimeAdminRequired: true,
+			runtimeAdminToken: "admin",
+		}),
+		env: { NODE_ENV: "production" },
+		webSocketImpl,
+	});
+	const upgrade = server.handlers.get("upgrade");
+	const bob = createSocket();
+	upgrade(createRequest("/api/realtime/audio-conversation?realtimeToken=t1", { "x-slauth-subject": "bob" }), bob, Buffer.alloc(0));
+	assert.equal(bob.writes.some((line) => /^HTTP\/1\.1 403 /u.test(line)), true);
+	const alice = createSocket();
+	upgrade(createRequest("/api/realtime/audio-conversation?realtimeToken=t1", { "x-slauth-subject": "alice" }), alice, Buffer.alloc(0));
+	assert.equal(alice.writes.length, 0);
+	assert.deepEqual(tokenChecks.map((check) => check.subject), ["bob", "alice"]);
+	assert.equal(instances[0].handledUpgrades.length, 1);
+});
+
+test("outside production every upgrade's token is checked against the fixed local owner", () => {
+	const server = createFakeServer();
+	const { webSocketImpl } = createFakeWebSocketImpl();
+	const subjects = [];
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isRuntimeSocketTokenValid: (_token, _scope, subject) => {
+				subjects.push(subject);
+				return true;
+			},
+			runtimeAdminRequired: true,
+			runtimeAdminToken: "admin",
+		}),
+		env: {},
+		webSocketImpl,
+	});
+	server.handlers.get("upgrade")(
+		createRequest("/api/realtime/audio-conversation?realtimeToken=t1", { "x-slauth-subject": "mallory" }),
+		createSocket(),
+		Buffer.alloc(0),
+	);
+	assert.deepEqual(subjects, ["local"]);
 });

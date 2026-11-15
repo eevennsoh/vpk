@@ -145,22 +145,27 @@ function createRuntimeAdminControls({
 		});
 	}
 
-	function createRuntimeSocketToken(scope) {
+	// `subject` is the caller (getRequestCaller(req).owner) the token is issued to or
+	// presented by; see runtime-socket-security.js.
+	function createRuntimeSocketToken(scope, subject) {
 		return createRuntimeSocketTokenWithOptions(scope, {
 			runtimeAdminToken,
+			subject,
 			ttlMs: runtimeSocketTokenTtlMs,
 		});
 	}
 
-	function isRuntimeSocketTokenValid(token, expectedScope) {
+	function isRuntimeSocketTokenValid(token, expectedScope, subject) {
 		return isRuntimeSocketTokenValidWithOptions(token, expectedScope, {
 			runtimeAdminToken,
+			subject,
 		});
 	}
 
-	function appendRuntimeSocketToken(wsUrl, scope, paramName) {
+	function appendRuntimeSocketToken(wsUrl, scope, paramName, subject) {
 		return appendRuntimeSocketTokenWithOptions(wsUrl, scope, paramName, {
 			runtimeAdminToken,
+			subject,
 			ttlMs: runtimeSocketTokenTtlMs,
 		});
 	}

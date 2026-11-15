@@ -23,4 +23,28 @@ compose:
       VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/vpk/VPK_RUNTIME_ADMIN_TOKEN))
       ALLOWED_ORIGINS: ((ssm:/vpk/ALLOWED_ORIGINS))
       PORT: "8080"
-      VPK_TRUSTED_PROXY_HOPS: "1"
+      # The load balancer and the Service Proxy sidecar each append to X-Forwarded-For.
+      # Never set this above the real hop count: the extra entry is client-written, so a
+      # client could pick its own address (rate limits, WebSocket caps).
+      VPK_TRUSTED_PROXY_HOPS: "2"
+# Micros Service Proxy with SLAuth in front of the app: every request but /healthcheck
+# must be authenticated, and the backend reads the caller from X-Slauth-Subject
+# (backend/lib/caller-identity.js). slauthtoken covers CLI and automation
+# (`atlas slauth curl --aud <service-name>`); saml is last so a browser without a session is sent
+# through Okta instead of getting a bare 401. Poco's platform `authenticated` policy
+# rejects anything neither plugin authenticated.
+serviceProxy:
+  enabled: true
+  ingress:
+    authentication:
+      enabled: true
+  plugins:
+    auth:
+      authentication:
+        plugins:
+          - type: slauthtoken
+          - type: saml
+      authorization:
+        plugins:
+          - type: poco
+            policy: authenticated

@@ -49,14 +49,18 @@ function signRuntimeSocketTokenPayload(payload, runtimeAdminToken) {
 		.digest("base64url");
 }
 
-function createRuntimeSocketToken(scope, { runtimeAdminToken, ttlMs }) {
-	if (!runtimeAdminToken) {
+// A token is bound to the caller it was issued to (`sub`: the SLAuth subject, or "local"
+// outside production): an upgrade is accepted only from that same caller, so a token
+// copied from one person's page does not open a socket for another.
+function createRuntimeSocketToken(scope, { runtimeAdminToken, subject, ttlMs }) {
+	if (!runtimeAdminToken || typeof subject !== "string" || !subject) {
 		return "";
 	}
 
 	const payload = Buffer.from(
 		JSON.stringify({
 			scope,
+			sub: subject,
 			exp: Date.now() + ttlMs,
 			nonce: crypto.randomUUID(),
 		}),
@@ -64,8 +68,8 @@ function createRuntimeSocketToken(scope, { runtimeAdminToken, ttlMs }) {
 	return `${payload}.${signRuntimeSocketTokenPayload(payload, runtimeAdminToken)}`;
 }
 
-function isRuntimeSocketTokenValid(token, expectedScope, { runtimeAdminToken }) {
-	if (!runtimeAdminToken || !token) {
+function isRuntimeSocketTokenValid(token, expectedScope, { runtimeAdminToken, subject }) {
+	if (!runtimeAdminToken || !token || typeof subject !== "string" || !subject) {
 		return false;
 	}
 
@@ -86,7 +90,7 @@ function isRuntimeSocketTokenValid(token, expectedScope, { runtimeAdminToken }) 
 
 	try {
 		const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-		return parsed?.scope === expectedScope && Number(parsed.exp) >= Date.now();
+		return parsed?.scope === expectedScope && parsed.sub === subject && Number(parsed.exp) >= Date.now();
 	} catch {
 		return false;
 	}

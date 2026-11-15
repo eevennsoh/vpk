@@ -129,6 +129,37 @@ test("rovo app thread manager preserves ordinary realtime assistant visibility",
 	assert.equal(thread?.realtimeMessages[0]?.metadata?.visibility, undefined);
 });
 
+test("rovo app thread retention is per owner: one caller's new threads never prune another's", async (t) => {
+	const baseDir = await createTempBaseDir();
+	t.after(() => fs.rm(baseDir, { recursive: true, force: true }));
+	const manager = createRovoAppThreadManager({ baseDir, logger: console });
+	const at = (minute) => new Date(Date.UTC(2026, 0, 1, 0, minute)).toISOString();
+
+	for (let index = 0; index < 5; index += 1) {
+		await manager.createThread({ id: `bob-${index}`, owner: "bob", updatedAt: at(index) });
+	}
+	// Alice fills her retention (40) and then some, all newer than Bob's threads.
+	for (let index = 0; index < 42; index += 1) {
+		await manager.createThread({ id: `alice-${index}`, owner: "alice", updatedAt: at(100 + index) });
+	}
+
+	const bobs = await manager.listThreads({ limit: 100, filter: (thread) => thread.owner === "bob" });
+	assert.equal(bobs.length, 5);
+	const alices = await manager.listThreads({ limit: 100, filter: (thread) => thread.owner === "alice" });
+	assert.equal(alices.length, 40);
+	assert.deepEqual(alices.map((thread) => thread.id).slice(-1), ["alice-2"]);
+});
+
+test("rovo app thread listing filters before it applies the limit", async (t) => {
+	const baseDir = await createTempBaseDir();
+	t.after(() => fs.rm(baseDir, { recursive: true, force: true }));
+	const manager = createRovoAppThreadManager({ baseDir, logger: console });
+	await manager.createThread({ id: "alice-old", owner: "alice", updatedAt: "2026-01-01T00:00:00.000Z" });
+	await manager.createThread({ id: "bob-new", owner: "bob", updatedAt: "2026-02-01T00:00:00.000Z" });
+	const listed = await manager.listThreads({ limit: 1, filter: (thread) => thread.owner === "alice" });
+	assert.deepEqual(listed.map((thread) => thread.id), ["alice-old"]);
+});
+
 test("rovo app vote manager stores one vote per message", async () => {
 	const baseDir = await createTempBaseDir();
 	const manager = createRovoAppVoteManager({ baseDir });
