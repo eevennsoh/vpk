@@ -10,8 +10,8 @@
 // and sums the decoded bodies of the top document's same-origin .js and .css responses.
 // Embedded documents (iframes) and Next link prefetches are blocked and not counted, so the
 // number is what the route itself loads, not what it speculatively fetches for other routes.
-// A route whose page attaches an iframe, or that has a fetchedJsBytesAllFrames budget in
-// scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
+// A route whose page attaches an iframe, or that budgets any all-frames metric (ALL_FRAMES_METRICS)
+// in scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
 // quiet-window rules, prefetches still blocked) that sums the same-origin .js of every frame,
 // recorded as fetchedJsAllFrames (and its .css as fetchedCssAllFrames): a page that embeds whole
 // projects would otherwise look light. Those count each URL once across frames, so N iframes
@@ -19,8 +19,12 @@
 // without scrolling. The same pass then scrolls the page through to the bottom (the largest
 // scrollable element, a viewport at a time) and waits for the same quiet window again, so lazy
 // iframes below the fold load too; everything fetched by then is fetchedJsFullPage and
-// fetchedCssFullPage, and frameDocuments/fullPageFrameDocuments count the embedded documents
-// each phase loaded. The viewport numbers are taken before the scroll starts, so they are what
+// fetchedCssFullPage (fetchedCssFullPage is recorded as an observation, not budgeted), and
+// frameDocuments/fullPageFrameDocuments count the embedded documents (2xx, so redirect hops are
+// not counted twice) each phase loaded. A walk that never reaches the bottom fails the run, and so
+// does a scroller that does not move. Each position is held for two animation frames plus a short
+// pause, so a preview that only mounts after staying visible longer than that is not counted
+// unless it sits at the bottom, where the final quiet window covers it. The viewport numbers are taken before the scroll starts, so they are what
 // they were without it. A route whose pass saw no iframe attach records its top-document numbers
 // with source "top-document", which the verifier rejects for a route that budgets all frames.
 // Usage:
@@ -69,6 +73,17 @@ export function requestAction({ allFrames, isAsset, isPrefetch, isSubframeNaviga
 	if (isPrefetch) return "abort";
 	if (isSubframeNavigation) return allFrames ? "track" : "abort";
 	return isAsset ? "track" : "ignore";
+}
+
+// An embedded document counts once it is served (2xx): a redirect hop and its target are one document.
+export function isFrameDocumentStatus(status) {
+	return status >= 200 && status < 300;
+}
+
+// After the scroll, an aborted request in a subframe that has since detached is the page
+// discarding a preview it scrolled past, not a failed load, so it does not fail the run.
+export function ignoresFailure({ errorText, frameDetached, isMainFrame, scrolled }) {
+	return scrolled && !isMainFrame && frameDetached && errorText === "net::ERR_ABORTED";
 }
 
 // Whether a response in this frame counts toward the pass's bytes.
@@ -166,6 +181,14 @@ export function assertAssetsLoaded(failures, url) {
 	}
 }
 
+// A full-page sample whose scroll ran out of steps before the bottom would leave out the rest of
+// the page and could pass under budget, so it is refused like a failed asset.
+export function assertScrollReachedBottom({ reachedBottom, scrollHeight, scrollSteps }, url) {
+	if (!reachedBottom) {
+		throw new Error(`${url}: the scroll did not reach the bottom in ${scrollSteps} steps (scrollHeight ${scrollHeight}); refusing to record a full-page sample that leaves out the rest of the page`);
+	}
+}
+
 // Next's App Router marks a link prefetch with `Next-Router-Prefetch: 1` (headers arrive lowercased).
 export function isRouterPrefetch(headers) {
 	return headers["next-router-prefetch"] === "1";
@@ -224,28 +247,36 @@ export async function waitForAssetQuiet({ capMs, now = () => Date.now(), pollMs 
 // Runs in the page: scrolls the largest scrollable element (the document, or an app shell's own
 // scroll container) a viewport at a time to the bottom, two animation frames and a short pause
 // per step so lazy iframes and content-visibility sections near each position start loading,
-// until the bottom holds for two steps (content that grows while loading extends the walk).
+// until the bottom holds for two steps (content that grows while loading extends the walk). A step
+// that does not move the scroller counts as the bottom, so an element that ignores scrollTop ends
+// the walk instead of spinning to maxSteps; reachedBottom is false when maxSteps ran out first.
 export async function scrollThroughPage({ maxSteps = 400, pauseMs = 100 } = {}) {
 	const scrollable = (element) => {
-		if (element === document.scrollingElement) return element.scrollHeight > element.clientHeight;
+		if (element === document.scrollingElement) {
+			// The document only scrolls when neither the root nor the body hides its overflow.
+			const hidden = [document.documentElement, document.body].some((node) => node && getComputedStyle(node).overflowY === "hidden");
+			return !hidden && element.scrollHeight > element.clientHeight;
+		}
 		const { overflowY } = getComputedStyle(element);
 		return (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight + 1;
 	};
 	const candidates = [document.scrollingElement, ...document.querySelectorAll("*")].filter((element) => element && scrollable(element));
-	if (candidates.length === 0) return { scrollHeight: document.documentElement.scrollHeight, steps: 0 };
+	if (candidates.length === 0) return { reachedBottom: true, scrollHeight: document.documentElement.scrollHeight, steps: 0 };
 	const scroller = candidates.reduce((best, element) => (element.scrollHeight - element.clientHeight > best.scrollHeight - best.clientHeight ? element : best));
 	const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 	let steps = 0;
 	let atBottom = 0;
 	while (steps < maxSteps && atBottom < 2) {
+		const before = scroller.scrollTop;
 		scroller.scrollTop += Math.max(scroller.clientHeight, 1);
 		steps += 1;
 		await frame();
 		await frame();
 		await new Promise((resolve) => setTimeout(resolve, pauseMs));
-		atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 ? atBottom + 1 : 0;
+		const stuck = scroller.scrollTop === before;
+		atBottom = stuck || scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 ? atBottom + 1 : 0;
 	}
-	return { scrollHeight: scroller.scrollHeight, steps };
+	return { reachedBottom: atBottom >= 2, scrollHeight: scroller.scrollHeight, steps };
 }
 
 async function measureOnce(browser, origin, routePath, { allFrames = false } = {}) {
@@ -300,13 +331,16 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	const assets = [];
 	page.on("requestfailed", (request) => {
 		tracker.finished(ids.get(request));
+		// A preview that unmounts once scrolled past aborts its in-flight chunks; that is the page
+		// discarding a frame, not a failed load.
+		if (ignoresFailure({ errorText: request.failure()?.errorText, frameDetached: request.frame().isDetached(), isMainFrame: request.frame() === page.mainFrame(), scrolled })) return;
 		if (classifyAsset(request.url(), origin) && counts(request.frame())) {
 			assetFailures.push(`${request.url().replace(origin, "")} (${request.failure()?.errorText ?? "failed"})`);
 		}
 	});
 	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
-		if (allFrames && response.request().isNavigationRequest() && response.frame() !== page.mainFrame() && response.status() < 400) frameDocuments += 1;
+		if (allFrames && response.request().isNavigationRequest() && response.frame() !== page.mainFrame() && isFrameDocumentStatus(response.status())) frameDocuments += 1;
 		const kind = classifyAsset(response.url(), origin);
 		if (!kind || seen.has(response.url()) || !counts(response.frame())) return;
 		seen.add(response.url());
@@ -341,12 +375,15 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 			fullPageCssBytes: cssBytes,
 			fullPageFrameDocuments: frameDocuments,
 			fullPageJsBytes: jsBytes,
+			reachedBottom: scroll.reachedBottom,
+			scrollHeight: scroll.scrollHeight,
 			scrollMs: Date.now() - scrollStartedAt,
 			scrollSteps: scroll.steps,
 		};
 	}
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
+	if (fullPage) assertScrollReachedBottom(fullPage, `${origin}${routePath}`);
 	assets.sort((left, right) => left.path.localeCompare(right.path));
 	return { assets, blockedFrames, framesAttached, prefetchesBlocked, ...viewport, ...fullPage };
 }

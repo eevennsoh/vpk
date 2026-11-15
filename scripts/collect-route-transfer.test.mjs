@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, scrollThroughPage, assertAssetsLoaded, countsFrame, embedsFrames, needsAllFramesPass, requestAction, routesWithAllFramesBudget, summarizeAllFramesRuns, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, scrollThroughPage, assertAssetsLoaded, assertScrollReachedBottom, ignoresFailure, isFrameDocumentStatus, countsFrame, embedsFrames, needsAllFramesPass, requestAction, routesWithAllFramesBudget, summarizeAllFramesRuns, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -175,37 +175,85 @@ test("the all-frames CSS and full-page numbers are their own medians; the viewpo
 
 // A minimal DOM for scrollThroughPage: one scroll container that grows once while it is walked,
 // the way a page grows when content near the bottom loads.
-function withFakeDocument({ clientHeight, scrollHeight, grow, others = true }, callback) {
+function withFakeDocument({ clientHeight, scrollHeight, grow, growEveryStep = 0, frozen = false, bodyOverflow = "visible", others = true }, callback) {
 	const scroller = { clientHeight, scrollHeight, scrollTop: 0, positions: [] };
 	const short = { clientHeight: 100, scrollHeight: 150, scrollTop: 0 };
 	const root = { clientHeight: 900, scrollHeight: 900, scrollTop: 0 };
+	const body = {};
 	const saved = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle, requestAnimationFrame: globalThis.requestAnimationFrame };
 	let grown = false;
 	Object.defineProperty(scroller, "scrollTop", {
 		get() { return this._top ?? 0; },
 		set(value) {
+			if (frozen) return;
 			this._top = Math.min(value, this.scrollHeight - this.clientHeight);
 			this.positions.push(this._top);
+			this.scrollHeight += growEveryStep;
 			if (!grown && grow && this._top + this.clientHeight >= this.scrollHeight) { grown = true; this.scrollHeight += grow; }
 		},
 	});
-	globalThis.document = { documentElement: root, querySelectorAll: () => (others ? [short, scroller] : [scroller]), scrollingElement: root };
-	globalThis.getComputedStyle = () => ({ overflowY: "auto" });
+	globalThis.document = { body, documentElement: root, querySelectorAll: () => (others ? [short, scroller] : [scroller]), scrollingElement: root };
+	globalThis.getComputedStyle = (element) => ({ overflowY: element === body ? bodyOverflow : element === root ? "visible" : "auto" });
 	globalThis.requestAnimationFrame = (resolve) => setImmediate(resolve);
-	return callback(scroller).finally(() => Object.assign(globalThis, saved));
+	return callback({ root, scroller }).finally(() => Object.assign(globalThis, saved));
 }
 
 test("the scroll walks the largest scroll container a viewport at a time to the bottom, including content that grows", async () => {
-	await withFakeDocument({ clientHeight: 900, grow: 1000, scrollHeight: 3000 }, async (scroller) => {
+	await withFakeDocument({ clientHeight: 900, grow: 1000, scrollHeight: 3000 }, async ({ scroller }) => {
 		const result = await scrollThroughPage({ pauseMs: 0 });
 		assert.equal(scroller.scrollTop, 3100, "it reaches the bottom of the grown container");
 		assert.deepEqual(scroller.positions.slice(0, 3), [900, 1800, 2100], "it moves a viewport at a time, never skipping a band");
 		assert.equal(result.scrollHeight, 4000);
+		assert.equal(result.reachedBottom, true);
 		assert.ok(result.steps >= 5);
 	});
 	await withFakeDocument({ clientHeight: 900, others: false, scrollHeight: 900 }, async () => {
-		assert.deepEqual(await scrollThroughPage({ pauseMs: 0 }), { scrollHeight: 900, steps: 0 }, "a page with nothing to scroll is left alone");
+		assert.deepEqual(await scrollThroughPage({ pauseMs: 0 }), { reachedBottom: true, scrollHeight: 900, steps: 0 }, "a page with nothing to scroll is left alone");
 	});
+});
+
+test("a scroller that does not move ends the walk at once instead of spinning to maxSteps", async () => {
+	await withFakeDocument({ clientHeight: 900, frozen: true, scrollHeight: 30_000 }, async () => {
+		const result = await scrollThroughPage({ pauseMs: 0 });
+		assert.ok(result.steps <= 2, `stopped after ${result.steps} steps`);
+		assert.equal(result.reachedBottom, true);
+	});
+});
+
+test("the document is not picked as the scroller when the body hides its overflow", async () => {
+	await withFakeDocument({ bodyOverflow: "hidden", clientHeight: 900, others: false, scrollHeight: 3000 }, async ({ root, scroller }) => {
+		root.scrollHeight = 50_000;
+		await scrollThroughPage({ pauseMs: 0 });
+		assert.equal(root.scrollTop, 0, "the overflow-hidden document is left alone");
+		assert.equal(scroller.scrollTop, 2100, "the app shell's own scroll container is walked");
+	});
+});
+
+test("a page that keeps growing reports that the walk never reached the bottom, and the sample is refused", async () => {
+	await withFakeDocument({ clientHeight: 900, growEveryStep: 2000, scrollHeight: 3000 }, async () => {
+		const result = await scrollThroughPage({ maxSteps: 10, pauseMs: 0 });
+		assert.equal(result.steps, 10);
+		assert.equal(result.reachedBottom, false);
+		assert.throws(() => assertScrollReachedBottom({ reachedBottom: result.reachedBottom, scrollHeight: result.scrollHeight, scrollSteps: result.steps }, "http://x/"), /did not reach the bottom in 10 steps/);
+	});
+	assert.doesNotThrow(() => assertScrollReachedBottom({ reachedBottom: true, scrollHeight: 900, scrollSteps: 0 }, "http://x/"));
+});
+
+test("frame documents count served documents only, not redirect hops", () => {
+	assert.equal(isFrameDocumentStatus(200), true);
+	assert.equal(isFrameDocumentStatus(204), true);
+	assert.equal(isFrameDocumentStatus(302), false);
+	assert.equal(isFrameDocumentStatus(304), false);
+	assert.equal(isFrameDocumentStatus(404), false);
+});
+
+test("after the scroll, aborted requests in a detached subframe do not fail the run", () => {
+	const base = { errorText: "net::ERR_ABORTED", frameDetached: true, isMainFrame: false, scrolled: true };
+	assert.equal(ignoresFailure(base), true);
+	assert.equal(ignoresFailure({ ...base, scrolled: false }), false, "before the scroll every failure counts");
+	assert.equal(ignoresFailure({ ...base, frameDetached: false }), false, "a live frame's abort still counts");
+	assert.equal(ignoresFailure({ ...base, isMainFrame: true }), false);
+	assert.equal(ignoresFailure({ ...base, errorText: "net::ERR_FAILED" }), false);
 });
 
 test("touching the tracker restarts the quiet window, so loads started by a scroll are waited for", async () => {
