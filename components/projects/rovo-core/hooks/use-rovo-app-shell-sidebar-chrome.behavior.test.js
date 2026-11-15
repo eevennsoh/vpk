@@ -7,7 +7,7 @@ const { renderComponent } = require("../../../../scripts/lib/render-component.js
 // The hook inside the global sidebar context, with the shell's chat sidebar state held locally.
 // The probe counts renders so the Rovo case can show the Studio-only gate costs it nothing.
 const PROBE = `import { useRef, useState } from "react";
-	import { SidebarProvider, useSidebar } from "@/app/contexts/context-sidebar";
+	import { SidebarProvider, useSidebarActions, useSidebarState } from "@/app/contexts/context-sidebar";
 	import { useRovoAppShellSidebarChrome } from "@/components/projects/rovo-core/hooks/use-rovo-app-shell-sidebar-chrome";
 	function Shell({ gate }) {
 		const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -17,7 +17,7 @@ const PROBE = `import { useRef, useState } from "react";
 		const renders = useRef(0);
 		renders.current += 1;
 		const chrome = useRovoAppShellSidebarChrome({ chat, gateWidthTransitionUntilMounted: gate, widths: { defaultWidth: 320, maxWidth: 480, minWidth: 240 } });
-		const global = useSidebar();
+		const global = { ...useSidebarState(), ...useSidebarActions() };
 		const firstTransition = useRef(null);
 		firstTransition.current ??= chrome.isChromeWidthTransitionEnabled ? "on" : "off";
 		return <div>

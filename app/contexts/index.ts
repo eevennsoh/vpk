@@ -40,7 +40,7 @@ export type {
 } from "./context-work-item-modal";
 
 // Other contexts
-export { SidebarProvider, useSidebar } from "./context-sidebar";
+export { SidebarProvider, useSidebarActions, useSidebarHovered, useSidebarState } from "./context-sidebar";
 
 // Creation mode context
 export {
