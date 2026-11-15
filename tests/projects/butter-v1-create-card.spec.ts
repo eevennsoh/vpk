@@ -11,7 +11,7 @@ test("switching pickers keeps the inline draft open", async ({ page }) => {
 	await expect(header).toBeAttached({ timeout: 20_000 });
 	await header.hover();
 	await header.getByRole("button", { name: "Create work item in To do" }).click();
-	const draft = page.locator('[data-board-create-card]');
+	const draft = page.locator('[data-jira-inline-create]');
 	await draft.getByRole("textbox", { name: "Work item summary" }).fill("Keep this draft");
 	await draft.getByRole("button", { name: "Priority: Medium" }).click();
 	const calendar = draft.getByRole("button", { name: "Set due date" });
@@ -39,7 +39,7 @@ test("column header creates an inline work item with editable fields", async ({ 
 	await expect(header).toBeAttached({ timeout: 20_000 });
 	await header.hover();
 	await header.getByRole("button", { name: "Create work item in To do" }).click();
-	const draft = page.locator('[data-board-create-card]');
+	const draft = page.locator('[data-jira-inline-create]');
 	await expect(draft.getByRole("textbox", { name: "Work item summary" })).toBeFocused();
 	await expect(page.locator('[aria-label="To do work items"] [inert]')).toBeAttached();
 	await expect(page.locator('[aria-label="In progress work items"]')).toHaveAttribute("aria-hidden", "true");
@@ -107,7 +107,7 @@ test("inline draft remains visible and restores the previous gallery state", asy
 	};
 	await create();
 	await expect(page.locator('[data-gallery-strip]')).toHaveCount(0);
-	const draft = page.locator('[data-board-create-card]');
+	const draft = page.locator('[data-jira-inline-create]');
 	await expect(draft).toBeInViewport({ ratio: 1 });
 	const cardBox = await draft.boundingBox();
 	const listBox = await page.getByRole("region", { name: "To do work items" }).boundingBox();

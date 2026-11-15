@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 
 import EpicIcon from "@atlaskit/icon/core/epic";
 
@@ -56,8 +56,10 @@ function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>)
 export function ArtifactParentField({
 	value,
 	onChange,
+	onClear,
 	options = PARENT_OPTIONS,
-}: Readonly<{ value: string | null; onChange: (key: string) => void; options?: readonly Pick<ParentOption, "key" | "summary">[] }>) {
+	trigger,
+}: Readonly<{ value: string | null; onChange: (key: string) => void; onClear?: () => void; options?: readonly Pick<ParentOption, "key" | "summary">[]; trigger?: ReactElement }>) {
 	const [open, setOpen] = useState(false);
 	const selected = options.find((option) => option.key === value);
 	const items = options.map((option): RichTextSuggestionMenuItem => ({
@@ -67,10 +69,11 @@ export function ArtifactParentField({
 		label: option.summary,
 		leadingVisual: <ArtifactEpicMenuIcon color={artifactEpicColor(option.key)} />,
 	}));
+	if (selected && onClear) items.push({ id: "", label: "Remove parent", icon: null });
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Change parent" />}>
+			{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<DetailValueTrigger aria-label="Change parent" />}>
 				{selected ? (
 					<Tag
 						className="max-w-full self-center"
@@ -82,7 +85,7 @@ export function ArtifactParentField({
 				) : (
 					<span className="text-sm text-text-subtlest">Add parent</span>
 				)}
-			</PopoverTrigger>
+			</PopoverTrigger>}
 			<PopoverContent
 				align="start"
 				aria-label="Change parent"
@@ -97,7 +100,8 @@ export function ArtifactParentField({
 						items={items}
 						onEscape={() => setOpen(false)}
 						onSelect={(item) => {
-							onChange(item.id);
+							if (item.id === "" && onClear) onClear();
+							else onChange(item.id);
 							setOpen(false);
 						}}
 						placeholder="Search work items"

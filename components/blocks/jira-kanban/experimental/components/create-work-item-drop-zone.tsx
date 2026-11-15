@@ -3,8 +3,6 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import { useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
-import { CreateWorkItemField } from "@/components/blocks/agent-session/agent-session-link-work-item-submenu";
 
 import {
 	JiraDropzone,
@@ -13,7 +11,6 @@ import {
 } from "@/components/blocks/jira-dropzone";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { JIRA_DROPZONE_OPEN_HEIGHT_PX, JIRA_DROPZONE_WELL_ENTER, JIRA_DROPZONE_WELL_ENTER_REDUCED } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 
@@ -27,7 +24,7 @@ export function BoardColumnCreateAction({
 	ants = true,
 	columnSizing = "fill",
 	dropZoneLabel,
-	onCreateWorkItem,
+	onStartCreate,
 	placement = "bottom",
 	sessionDragTransaction,
 	title,
@@ -35,7 +32,7 @@ export function BoardColumnCreateAction({
 	ants?: boolean;
 	columnSizing?: "fill" | "content";
 	dropZoneLabel?: string;
-	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
+	onStartCreate?: (trigger: HTMLElement) => void;
 	placement?: "top" | "bottom";
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
@@ -94,7 +91,7 @@ export function BoardColumnCreateAction({
 							proximityRef={proximityRef}
 							renderControl={columnSizing === "content" ? (control) => <BoardColumnAddButton
 								control={control}
-								onCreateWorkItem={onCreateWorkItem}
+								onStartCreate={onStartCreate}
 								reveal="always"
 								size={control.active ? "default" : "compact"}
 								title={title}
@@ -106,7 +103,7 @@ export function BoardColumnCreateAction({
 				) : (
 					columnSizing === "content"
 						? <div ref={targetRef} className="relative w-full">
-							<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} reveal="always" size="compact" title={title} />
+							<BoardColumnAddButton onStartCreate={onStartCreate} reveal="always" size="compact" title={title} />
 						</div>
 						: <span aria-hidden className="block h-8 w-full" />
 				)}
@@ -117,87 +114,50 @@ export function BoardColumnCreateAction({
 
 export function BoardColumnAddButton({
 	control,
-	onCreateWorkItem,
+	onStartCreate,
 	reveal = "column-hover",
 	size = "compact",
 	title,
 }: Readonly<{
 	control?: JiraDropzoneControlProps;
-	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
+	onStartCreate?: (trigger: HTMLElement) => void;
 	reveal?: "always" | "column-hover";
 	size?: ButtonProps["size"];
 	title: string;
 }>) {
-	const [open, setOpen] = useState(false);
-	const [summary, setSummary] = useState("");
-	const [issueType, setIssueType] = useState<AgentSessionWorkItemDraft["issueType"]>("task");
-
-	function handleOpenChange(next: boolean) {
-		if (control?.active && next) return;
-		setOpen(next);
-		if (!next) {
-			setSummary("");
-			setIssueType("task");
-		}
-	}
-
-	function handleSubmit() {
-		const trimmedSummary = summary.trim();
-		if (!onCreateWorkItem || trimmedSummary.length === 0) return;
-		onCreateWorkItem({ issueType, summary: trimmedSummary });
-		handleOpenChange(false);
-	}
-
 	return (
-		<DropdownMenu onOpenChange={handleOpenChange} open={open}>
-			<DropdownMenuTrigger
-				aria-haspopup="dialog"
-				disabled={control?.active || onCreateWorkItem === undefined}
-				render={
-					<Button
-						aria-disabled={control?.active || undefined}
-						aria-label={control?.active ? `${control.label} in ${title}${control.selected ? ", selected drop target" : ""}` : `Create in ${title}`}
-						data-jira-dropzone-control={control ? title : undefined}
-						disabled={control?.active || onCreateWorkItem === undefined}
-						className={cn(
-							"w-full border-dashed group-hover/board-column:border-solid",
-							control?.selected ? null : "text-text-subtle [&_[data-slot=icon]]:text-icon-disabled group-hover/board-column:[&_[data-slot=icon]]:text-icon-subtle",
-							control?.className,
-							control?.active ? "group-hover/board-column:border-dashed" : null,
-							reveal === "column-hover" && !open
-								? cn(
-									"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-									"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
-									"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
-									"motion-reduce:transition-none",
-								)
-								: null,
-						)}
-						onClick={(event) => { if (control?.active) event.preventDefault(); }}
-						render={control ? <motion.button
-							// Resize the geometry so neither CSS dashes nor SVG strokes are scaled.
-							animate={{ height: Math.max(size === "compact" ? 24 : 32, control.minHeight) }}
-							initial={false}
-							// The footer already anchors each height frame; projecting its position adds a second movement.
-							layout={false}
-							transition={control.reducedMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER}
-						/> : undefined}
-						size={size}
-						variant="outline"
-					>
-						{control ? control.children : <Icon render={<AddIcon label="" size="small" />} />}
-					</Button>
-				}
-			/>
-			<DropdownMenuContent aria-label={`Create work item in ${title}`} className="w-[22rem] p-2.5" role="dialog">
-				<CreateWorkItemField
-					issueType={issueType}
-					onIssueTypeChange={setIssueType}
-					onSummaryChange={setSummary}
-					onSubmit={handleSubmit}
-					summary={summary}
-				/>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<Button
+			aria-disabled={control?.active || undefined}
+			aria-label={control?.active ? `${control.label} in ${title}${control.selected ? ", selected drop target" : ""}` : `Create in ${title}`}
+			data-jira-dropzone-control={control ? title : undefined}
+			disabled={control?.active}
+			className={cn(
+				"w-full border-dashed group-hover/board-column:border-solid",
+				control?.selected ? null : "text-text-subtle [&_[data-slot=icon]]:text-icon-disabled group-hover/board-column:[&_[data-slot=icon]]:text-icon-subtle",
+				control?.className,
+				control?.active ? "group-hover/board-column:border-dashed" : null,
+				reveal === "column-hover"
+					? cn(
+						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
+						"motion-reduce:transition-none",
+					)
+					: null,
+			)}
+			onClick={(event) => { if (!control?.active) onStartCreate?.(event.currentTarget); }}
+			render={control ? <motion.button
+				// Resize the geometry so neither CSS dashes nor SVG strokes are scaled.
+				animate={{ height: Math.max(size === "compact" ? 24 : 32, control.minHeight) }}
+				initial={false}
+				// The footer already anchors each height frame; projecting its position adds a second movement.
+				layout={false}
+				transition={control.reducedMotion ? JIRA_DROPZONE_WELL_ENTER_REDUCED : JIRA_DROPZONE_WELL_ENTER}
+			/> : undefined}
+			size={size}
+			variant="outline"
+		>
+			{control ? control.children : <Icon render={<AddIcon label="" size="small" />} />}
+		</Button>
 	);
 }

@@ -53,6 +53,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 export interface ExperimentalJiraKanbanPageProps {
 	/** Show only centered Kanban columns, without the board header. */
 	boardOnly?: boolean;
+	inlineCreateComponent?: ExperimentalJiraKanbanProps["inlineCreateComponent"];
 	collapsedColumns?: CollapsedBoardColumns;
 	onCollapsedColumnsChange?: (columns: CollapsedBoardColumns) => void;
 	/** Enables the optional arrange action, destination counts, and shortcut. */
