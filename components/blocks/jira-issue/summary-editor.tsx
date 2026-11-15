@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { motion, useIsPresent, useReducedMotion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
@@ -17,6 +17,44 @@ import { ProjectButterIssueKey } from "./project-butter-summary";
 const SUMMARY_LIMIT = 255;
 const EDITOR_TEXT_CLASS = "box-border w-full whitespace-pre-wrap break-words px-0 py-0 text-sm leading-5 [overflow-wrap:anywhere]";
 
+function summaryHighlightBoundary(draft: string) {
+	const previous = draft.charCodeAt(SUMMARY_LIMIT - 1);
+	const next = draft.charCodeAt(SUMMARY_LIMIT);
+	return previous >= 0xd800 && previous <= 0xdbff && next >= 0xdc00 && next <= 0xdfff
+		? SUMMARY_LIMIT - 1 : SUMMARY_LIMIT;
+}
+
+function suppressNextClick() {
+	let timer = 0;
+	const cleanup = () => {
+		document.removeEventListener("click", suppress, true);
+		window.clearTimeout(timer);
+	};
+	const suppress = (event: MouseEvent) => {
+		event.preventDefault();
+		event.stopPropagation();
+		cleanup();
+	};
+	document.addEventListener("click", suppress, true);
+	timer = window.setTimeout(cleanup, 1000);
+}
+
+function useSummaryOutsidePress(formRef: RefObject<HTMLFormElement | null>, active: boolean, onCancel: () => void) {
+	useEffect(() => {
+		if (!active) return;
+		function onOutsidePointerDown(event: PointerEvent) {
+			if (event.target instanceof Node && !formRef.current?.contains(event.target)) {
+				event.preventDefault();
+				event.stopPropagation();
+				suppressNextClick();
+				onCancel();
+			}
+		}
+		document.addEventListener("pointerdown", onOutsidePointerDown, true);
+		return () => document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+	}, [active, formRef, onCancel]);
+}
+
 export function useJiraIssueSummaryEdit({ anchor, appearance, issueKey, issueType, summary, onSummaryChange, onEditingChange }: Readonly<{
 	anchor: HTMLElement | null;
 	appearance: JiraIssueAppearance;
@@ -27,12 +65,30 @@ export function useJiraIssueSummaryEdit({ anchor, appearance, issueKey, issueTyp
 	onEditingChange?: (editing: boolean) => void;
 }>) {
 	const [session, setSession] = useState<number | null>(null);
+	const [canEdit, setCanEdit] = useState(Boolean(onSummaryChange));
 	const nextSessionRef = useRef(0);
 	const focusParentRef = useRef<HTMLElement | null>(null);
 	const editingRef = useRef(false);
 	const onEditingChangeRef = useRef(onEditingChange);
+	const enabled = Boolean(onSummaryChange);
+	if (canEdit !== enabled) {
+		setCanEdit(enabled);
+		if (!enabled) setSession(null);
+	}
 	useEffect(() => { onEditingChangeRef.current = onEditingChange; }, [onEditingChange]);
 	useEffect(() => () => { if (editingRef.current) onEditingChangeRef.current?.(false); }, []);
+	const restoreFocus = useCallback(() => {
+		requestAnimationFrame(() => {
+			if (!editingRef.current) focusParentRef.current?.querySelector<HTMLElement>('button[aria-label^="More actions for "]')?.focus({ preventScroll: true });
+		});
+	}, []);
+	useEffect(() => {
+		if (!enabled && editingRef.current) {
+			editingRef.current = false;
+			onEditingChangeRef.current?.(false);
+			restoreFocus();
+		}
+	}, [enabled, restoreFocus]);
 
 	const start = useCallback(() => {
 		focusParentRef.current = anchor?.parentElement ?? null;
@@ -45,10 +101,8 @@ export function useJiraIssueSummaryEdit({ anchor, appearance, issueKey, issueTyp
 		editingRef.current = false;
 		setSession(null);
 		onEditingChangeRef.current?.(false);
-		requestAnimationFrame(() => {
-			if (!editingRef.current) focusParentRef.current?.querySelector<HTMLElement>('button[aria-label^="More actions for "]')?.focus({ preventScroll: true });
-		});
-	}, [onSummaryChange]);
+		restoreFocus();
+	}, [onSummaryChange, restoreFocus]);
 
 	return {
 		start: onSummaryChange ? start : undefined,
@@ -81,9 +135,7 @@ export function JiraIssueSummaryEditor({ appearance = "project-butter", issueKey
 	const descriptionId = useId();
 	const tooLong = draft.length > SUMMARY_LIMIT;
 	const canSave = draft.trim().length > 0 && !tooLong;
-	const boundary = tooLong && draft.charCodeAt(SUMMARY_LIMIT) >= 0xdc00 && draft.charCodeAt(SUMMARY_LIMIT) <= 0xdfff
-		&& draft.charCodeAt(SUMMARY_LIMIT - 1) >= 0xd800 && draft.charCodeAt(SUMMARY_LIMIT - 1) <= 0xdbff
-		? SUMMARY_LIMIT - 1 : SUMMARY_LIMIT;
+	const boundary = summaryHighlightBoundary(draft);
 
 	useEffect(() => {
 		const editor = editorRef.current;
@@ -94,21 +146,7 @@ export function JiraIssueSummaryEditor({ appearance = "project-butter", issueKey
 		if (mirrorRef.current) mirrorRef.current.scrollTop = editor.scrollTop;
 	}, []);
 
-	useEffect(() => {
-		if (!isPresent) return;
-		function onOutsidePointerDown(event: PointerEvent) {
-			if (event.target instanceof Node && !formRef.current?.contains(event.target)) {
-				event.preventDefault();
-				event.stopPropagation();
-				const suppressClick = (click: MouseEvent) => { click.preventDefault(); click.stopPropagation(); };
-				document.addEventListener("click", suppressClick, { capture: true, once: true });
-				window.setTimeout(() => document.removeEventListener("click", suppressClick, true), 1000);
-				onCancel();
-			}
-		}
-		document.addEventListener("pointerdown", onOutsidePointerDown, true);
-		return () => document.removeEventListener("pointerdown", onOutsidePointerDown, true);
-	}, [isPresent, onCancel]);
+	useSummaryOutsidePress(formRef, isPresent, onCancel);
 
 	return (
 		<form

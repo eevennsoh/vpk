@@ -555,6 +555,55 @@ test("pressing outside a summary edit cancels without activating the other contr
 	} finally { await view.unmount(); }
 });
 
+test("an outside press without a click eventually releases click suppression", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		source: `
+			import { useState } from "react";
+			import { JiraIssueSummaryEditor } from "@/components/blocks/jira-issue/summary-editor";
+			export function Fixture({ onAction }) {
+				const [editing, setEditing] = useState(true);
+				return <><button onClick={() => onAction("outside")}>Outside</button>{editing ? <JiraIssueSummaryEditor issueKey="PD-40" issueType="task" summary="Original" onCancel={() => setEditing(false)} onSave={onAction} /> : null}</>;
+			}
+		`,
+		exportName: "Fixture",
+		props: { onAction: (action) => actions.push(action) },
+	});
+	try {
+		const outside = view.getByRole("button", { name: "Outside" });
+		await act(async () => { outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true })); });
+		assert.equal(view.queryByRole("textbox", { name: "Summary for PD-40" }), null);
+		await new Promise((resolve) => setTimeout(resolve, 1100));
+		await view.click(outside);
+		assert.deepEqual(actions, ["outside"]);
+	} finally { await view.unmount(); }
+});
+
+test("removing the save capability ends an active summary edit", async () => {
+	const editing = [];
+	const props = {
+		appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Original",
+		onSummaryChange() {}, onSummaryEditChange: (active) => editing.push(active),
+	};
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/index.tsx", exportName: "JiraIssue", props });
+	try {
+		await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+		await view.click(view.getByRole("menuitem", { name: "Edit summary" }));
+		assert.ok(view.getByRole("textbox", { name: "Summary for PD-40" }));
+		await view.rerender({ ...props, onSummaryChange: undefined });
+		assert.equal(view.queryByRole("textbox", { name: "Summary for PD-40" }), null);
+		assert.equal(Boolean(view.container.querySelector('[data-slot="jira-issue-project-butter"]').closest("[inert]")), false);
+		assert.deepEqual(editing, [true, false]);
+		await view.rerender(props);
+		assert.equal(view.queryByRole("textbox", { name: "Summary for PD-40" }), null);
+		await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+		await view.click(view.getByRole("menuitem", { name: "Edit summary" }));
+		assert.equal(view.getByRole("textbox", { name: "Summary for PD-40" }).value, "Original");
+		await view.press(null, "Escape");
+		assert.deepEqual(editing, [true, false, true, false]);
+	} finally { await view.unmount(); }
+});
+
 test("Butter keeps overflow options enabled while unavailable actions remain no-ops", async () => {
 	const actions = [];
 	const view = await renderComponent({

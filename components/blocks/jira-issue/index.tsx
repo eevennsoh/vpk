@@ -787,12 +787,13 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const presentedIssueContent = onSummaryChange ? (
-		<div className="grid w-full min-w-0">
+	const hasSummaryEditorLayer = Boolean(onSummaryChange || summaryEdit.active);
+	const presentedIssueContent = (
+		<div className={hasSummaryEditorLayer ? "grid w-full min-w-0" : "contents"}>
 			<div
 				aria-hidden={summaryEdit.active || undefined}
 				inert={summaryEdit.active || undefined}
-				className={cn("col-start-1 row-start-1 min-w-0", appearance !== "project-butter" && "transition-opacity duration-fast ease-out-practical", appearance !== "project-butter" && summaryEdit.active && "opacity-0")}
+				className={hasSummaryEditorLayer ? cn("col-start-1 row-start-1 min-w-0", appearance !== "project-butter" && "transition-opacity duration-fast ease-out-practical", appearance !== "project-butter" && summaryEdit.active && "opacity-0") : "contents"}
 			>
 				{richIssueContent}
 			</div>
@@ -804,7 +805,7 @@ function JiraIssueDefault({
 				) : null}
 			</AnimatePresence>
 		</div>
-	) : richIssueContent;
+	);
 	const generativeActionMenu = generativeAction && (generativeActionPresentation === "sparkle" || !showMoreAction) ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
