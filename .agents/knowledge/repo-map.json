@@ -2579,14 +2579,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 74,
+			"ownerImportCount": 73,
 			"pageCount": 59,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
 				"inline": 2,
-				"redirect": 2,
-				"shell": 27
+				"redirect": 3,
+				"shell": 26
 			}
 		},
 		"pages": [
@@ -3331,33 +3331,15 @@
 				"source": "app/jira-team-eu26-end/page.tsx"
 			},
 			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"ownerCount": 0,
+				"owners": [],
 				"primaryOwner": {
-					"kind": "shell",
-					"sources": [
-						"components/arts/personal-graph"
-					]
+					"kind": "redirect",
+					"to": "/arts/personal-graph"
 				},
 				"routePath": "/personal-graph",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/arts/personal-graph",
-						"source": "components/arts/personal-graph",
-						"symbols": [
-							"PersonalGraph"
-						]
-					}
-				],
+				"shellOwnerCount": 0,
+				"shellOwners": [],
 				"source": "app/personal-graph/page.tsx"
 			},
 			{
