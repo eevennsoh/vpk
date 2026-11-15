@@ -13,8 +13,10 @@ test("a second real backend on the same data directory exits 1 naming the first 
 	const env = { VPK_BACKEND_DATA_DIR: dataDir };
 
 	const first = startBackend(t, { env });
-	await first.listening;
+	// Registered before any await and after the first backend's kill hook (hooks run in order),
+	// so the directory goes even when startup fails, and only once that backend is stopped.
 	t.after(remove);
+	await first.listening;
 	assert.equal(JSON.parse(fs.readFileSync(lockPath, "utf8")).pid, first.child.pid);
 
 	const second = startBackend(t, { env });
@@ -34,10 +36,13 @@ test("a second real backend on the same data directory exits 1 naming the first 
 	assert.equal(fs.existsSync(lockPath), false);
 
 	const third = startBackend(t, { env });
-	await third.listening;
-	assert.ok(!third.lines.some((line) => line.includes("stale backend lock")), third.lines.join("\n"));
-	third.child.kill("SIGTERM");
-	await third.exited;
+	try {
+		await third.listening;
+		assert.ok(!third.lines.some((line) => line.includes("stale backend lock")), third.lines.join("\n"));
+	} finally {
+		third.child.kill("SIGTERM");
+		await third.exited;
+	}
 });
 
 test("a real backend takes over a lock left by a process that is gone", { timeout: 60_000 }, async (t) => {
@@ -47,8 +52,8 @@ test("a real backend takes over a lock left by a process that is gone", { timeou
 	fs.writeFileSync(lockPath, `${JSON.stringify({ pid: 2 ** 30, startedAt: "2026-01-01T00:00:00.000Z" })}\n`);
 
 	const backend = startBackend(t, { env: { VPK_BACKEND_DATA_DIR: dataDir } });
-	await backend.listening;
 	t.after(remove);
+	await backend.listening;
 	assert.ok(backend.lines.some((line) => line.includes(`pid ${2 ** 30} is gone`)), backend.lines.join("\n"));
 	assert.equal(JSON.parse(fs.readFileSync(lockPath, "utf8")).pid, backend.child.pid);
 	backend.child.kill("SIGTERM");

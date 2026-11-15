@@ -2,6 +2,8 @@
 
 const path = require("node:path");
 
+const { resolveBackendDataDir } = require("../lib/backend-data-dir");
+
 const { createAIGatewayProvider } = require("../lib/ai-gateway-provider");
 const { createAgentsRfpDemoStateManager } = require("../lib/agents-rfp-demo-state");
 const { createCheckpointManager } = require("../lib/workspace-checkpoints");
@@ -32,7 +34,7 @@ const DEFAULT_FACTORIES = {
 
 
 function createBackendServices({
-	baseDir = path.join(__dirname, "..", "data"),
+	baseDir = resolveBackendDataDir({ backendDir: path.join(__dirname, "..") }),
 	factories = {},
 	logger = console,
 	projectRoot = path.join(__dirname, "..", ".."),

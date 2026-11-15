@@ -99,7 +99,9 @@ function acquireBackendDataDirLock({
 	fs.mkdirSync(dataDir, { recursive: true });
 	const lockPath = path.join(dataDir, LOCK_FILE_NAME);
 	/** @type {BackendLockRecord} */
-	const record = { pid, procStart: startTimeOf(pid), startedAt: new Date(now()).toISOString(), cwd: process.cwd(), port };
+	// Port "0" (tests) means "any free port", which names nothing useful in a conflict message.
+	const recordedPort = port && port !== "0" ? port : null;
+	const record = { pid, procStart: startTimeOf(pid), startedAt: new Date(now()).toISOString(), cwd: process.cwd(), port: recordedPort };
 	// A holder is this backend's rival only while its pid runs the same process it recorded: a
 	// dead holder's pid reused by an unrelated process, or by this very process (a container
 	// restart over a kept data volume starts from the same low pids), is not a rival.
@@ -113,13 +115,14 @@ function acquireBackendDataDirLock({
 
 	for (let attempt = 0; ; attempt += 1) {
 		if (publish(lockPath, record)) break;
-		/** @type {BackendLockRecord | null} */
-		const holder = readHolder(lockPath);
-		if (holder === null) continue;
-		if (holderAlive(holder)) throw new BackendDataDirLockedError({ dataDir, lockPath, holder });
 		if (attempt >= MAX_ATTEMPTS) {
 			throw new Error(`Could not take the backend data directory lock ${lockPath}: another process kept reclaiming it.`);
 		}
+		/** @type {BackendLockRecord | null} */
+		const holder = readHolder(lockPath);
+		// Gone between publish and read: another process released or reclaimed it; try again.
+		if (holder === null) continue;
+		if (holderAlive(holder)) throw new BackendDataDirLockedError({ dataDir, lockPath, holder });
 		log(`[STARTUP] Taking over a stale backend lock in ${dataDir} (${holder.pid ? `pid ${holder.pid} is gone` : "unreadable lock"})`);
 		if (!reclaimStale(lockPath, holder, { alive })) sleepSync(RETRY_MS);
 	}

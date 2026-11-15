@@ -61,6 +61,16 @@ test("a second backend fails fast naming the live holder's pid, and leaves its l
 	assert.equal(readLock(dataDir).pid, 1111);
 });
 
+test("an ephemeral port \"0\" is not recorded, so a conflict message never says \"port 0\"", (t) => {
+	const dataDir = tempDataDir(t);
+	acquireBackendDataDirLock({ ...quiet, dataDir, pid: 1111, port: "0" });
+	assert.equal(readLock(dataDir).port, null);
+	assert.throws(
+		() => acquireBackendDataDirLock({ ...quiet, dataDir, pid: 2222, alive: (pid) => pid === 1111 }),
+		(error) => !/port 0/u.test(error.message) && /already in use by backend pid 1111/u.test(error.message),
+	);
+});
+
 test("a lock whose holder is gone is stale and taken over", (t) => {
 	const dataDir = tempDataDir(t);
 	writeLock(dataDir, { pid: 999_999, startedAt: "2026-01-01T00:00:00.000Z" });
