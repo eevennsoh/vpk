@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { AnimatePresence, motion, PresenceContext, useReducedMotion } from "motion/react";
+import { use, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,23 @@ export interface GallerySelectedStageProps {
 	position: GalleryStagePosition;
 	resetKey: number;
 	renderSelectedItem: (item: GalleryItem) => ReactNode;
+}
+
+/**
+ * `<AnimatePresence initial={false}>` skips the entrance of the item shown on first render, but
+ * Motion memoizes that `initial: false` in the presence context, so every motion element mounted
+ * inside that item later (a hover preview, a handoff avatar) also loses its `initial` keyframe.
+ * Keep the block for the first render only; descendants that mount afterwards see no block.
+ */
+function ReleaseInitialBlockAfterMount({ children }: Readonly<{ children: ReactNode }>) {
+	const presence = use(PresenceContext);
+	const mounted = useRef(false);
+	useEffect(() => {
+		mounted.current = true;
+	}, []);
+	// Motion reads `initial` once, when a motion element mounts, so a getter is enough and nothing re-renders.
+	const released = useMemo(() => presence ? { ...presence, get initial() { return mounted.current ? undefined : presence.initial; } } : presence, [presence]);
+	return <PresenceContext value={released}>{children}</PresenceContext>;
 }
 
 export function GallerySelectedStage({
@@ -60,7 +77,7 @@ export function GallerySelectedStage({
 					)}
 					style={{ willChange: "transform, opacity" }}
 				>
-					{renderSelectedItem(item)}
+					<ReleaseInitialBlockAfterMount>{renderSelectedItem(item)}</ReleaseInitialBlockAfterMount>
 				</motion.div>
 			</AnimatePresence>
 		</motion.section>
