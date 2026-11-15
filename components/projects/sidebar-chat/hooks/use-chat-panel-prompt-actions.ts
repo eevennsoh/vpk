@@ -1,16 +1,15 @@
 import { useCallback } from "react";
 import type { FileUIPart } from "ai";
-import type { SendPromptOptions, useRovoChat } from "@/app/contexts";
+import type { SendPromptOptions } from "@/app/contexts";
 import { buildGenerativeWidgetSubmitPrompt, type GenerativeWidgetPrimaryActionPayload } from "@/components/projects/shared/lib/generative-widget";
 import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { isLocalConversationSubmitHandled } from "../lib/chat-panel-local-conversation";
-import type { ChatPanelLocalConversation, ChatPanelLocalConversationSubmitResult, ComposerInputContext } from "../lib/chat-panel-types";
+import type { ChatPanelLocalConversation, ChatPanelLocalConversationSubmitResult, ComposerInputContext, RovoChat } from "../lib/chat-panel-types";
 import type { useChatSubmit } from "./use-chat-submit";
 
-type RovoChat = ReturnType<typeof useRovoChat>;
 type ChatSubmit = ReturnType<typeof useChatSubmit>;
 
 interface UseChatPanelPromptActionsOptions {

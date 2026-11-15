@@ -3,7 +3,6 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for empty states and adornments.
 
 import type { CSSProperties } from "react";
-import type { useRovoChat } from "@/app/contexts";
 import { StreamingThinkingIndicator } from "@/components/projects/shared/components/streaming-thinking-indicator";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ui-custom/conversation";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
@@ -17,7 +16,7 @@ import { AwaitingUserResponseIndicator } from "@/components/projects/shared/comp
 import { cn } from "@/lib/utils";
 import { chatStyles } from "../data/styles";
 import { getTurnGeneratedResults } from "../lib/chat-panel-messages";
-import type { ChatPanelGreetingProps, ChatPanelProps } from "../lib/chat-panel-types";
+import type { ChatPanelGreetingProps, ChatPanelProps, RovoChat } from "../lib/chat-panel-types";
 import type { useScrollAnchor } from "../hooks/use-scroll-anchor";
 import type { useThinkingStatus } from "../hooks/use-thinking-status";
 import type { ChatPanelDecisions } from "../hooks/use-chat-panel-decisions";
@@ -26,8 +25,6 @@ import MessageBubble from "./message-bubble";
 import { ArtifactResultCard, type ArtifactResult } from "./artifact-result-card";
 import { AgentResultCard } from "./agent-result-card";
 import styles from "../chat.module.css";
-
-type RovoChat = ReturnType<typeof useRovoChat>;
 
 interface ChatPanelConversationProps
 	extends Pick<

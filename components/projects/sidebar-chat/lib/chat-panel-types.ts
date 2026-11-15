@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { SendPromptOptions } from "@/app/contexts";
+import type { SendPromptOptions, useRovoChat } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import type { GenerativeCardAnimationProps } from "@/components/projects/shared/components/generative-widget-card";
@@ -12,6 +12,8 @@ import type { ControlledChatHistoryDrawerProps } from "../components/chat-histor
 import type { ArtifactResult } from "../components/artifact-result-card";
 import type { AgentResultCreator } from "../components/agent-result-card";
 import type { ChatSubmitInterceptOutcome } from "../hooks/use-chat-submit";
+
+export type RovoChat = ReturnType<typeof useRovoChat>;
 
 export interface ChatPanelGeneratedAgentResultRenderInput {
 	agent: RovoDataParts["agent-result"];

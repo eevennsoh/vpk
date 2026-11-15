@@ -1,14 +1,12 @@
 // oxlint-disable react-doctor/exhaustive-deps -- The reporting effect reads a lazily created ref that dedupes artifact results across renders.
 
 import { useCallback, useEffect, useRef } from "react";
-import type { useRovoChat } from "@/app/contexts";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 import { getMessageArtifactResult, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ArtifactResult } from "../components/artifact-result-card";
+import type { RovoChat } from "../lib/chat-panel-types";
 
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
-
-type RovoChat = ReturnType<typeof useRovoChat>;
 
 /** Reports each artifact result in the thread to the host once. */
 export function useArtifactResultReporting(

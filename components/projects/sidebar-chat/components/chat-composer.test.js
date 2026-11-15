@@ -142,7 +142,7 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
 	const realtimeRequestSource = sourceBetween(sidebarPanel, "const lastStartRealtimeVoiceRequestKeyRef", "const handleToggleRealtimeVoice");
 	const clickyToggleSource = sourceBetween(sidebarPanel, "const handleToggleClicky", "// Cmd+Shift+K");
-	const keyboardShortcutSource = sourceBetween(sidebarPanel, "// Cmd+Shift+K", "const isStreamingLifecycleActive");
+	const keyboardShortcutSource = sourceBetween(sidebarPanel, "// Cmd+Shift+K", 'window.removeEventListener("keydown", handleKeyDown)');
 	const endVoiceSessionSource = sourceBetween(REALTIME_VOICE_HOOK_SOURCE, 'if (message.name === "end_voice_session")', '} else if (message.name === "delegate_to_rovo")');
 	const panelEndVoiceSessionSource = sourceBetween(sidebarPanel, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 

@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
-const { readChatPanelSource } = require("../chat-panel-source-harness");
+const { readChatPanelModule, readChatPanelSource } = require("../chat-panel-source-harness");
 
 const AGENT_RESULT_CARD_SOURCE = fs.readFileSync(
 	path.join(__dirname, "agent-result-card.tsx"),
@@ -13,6 +13,8 @@ const MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const CHAT_PANEL_SOURCE = readChatPanelSource();
+const CHAT_PANEL_MESSAGES_SOURCE = readChatPanelModule("lib/chat-panel-messages.ts");
+const CHAT_PANEL_CONVERSATION_SOURCE = readChatPanelModule("components/chat-panel-conversation.tsx");
 const MESSAGE_TURNS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../shared/message-turns.tsx"),
 	"utf8",
@@ -87,10 +89,15 @@ test("ChatPanel renders generated result cards after the turn container", () => 
 	assert.match(CHAT_PANEL_SOURCE, /getMessageArtifactResult/u);
 	assert.match(CHAT_PANEL_SOURCE, /hasTurnCompleteSignal/u);
 	assert.match(CHAT_PANEL_SOURCE, /import \{ ArtifactResultCard, type ArtifactResult \} from "\.\/artifact-result-card";/u);
-	assert.match(CHAT_PANEL_SOURCE, /import \{ isGeneratedAgentResult \} from "\.\.\/components\/agent-result-card";[\s\S]*import \{ AgentResultCard \} from "\.\/agent-result-card";/u);
+	assert.match(CHAT_PANEL_MESSAGES_SOURCE, /import \{ isGeneratedAgentResult \} from "\.\.\/components\/agent-result-card";/u);
+	assert.match(CHAT_PANEL_CONVERSATION_SOURCE, /import \{ AgentResultCard \} from "\.\/agent-result-card";/u);
 	assert.match(CHAT_PANEL_SOURCE, /const handleAgentResultSelect = useCallback\(\(agent: RovoDataParts\["agent-result"\]\) => \{[\s\S]*selectableAgents\.some\(\(selectableAgent\) => selectableAgent\.id === agent\.agentId\)[\s\S]*selectAgent\(agent\.agentId\);/u);
 	assert.match(
-		CHAT_PANEL_SOURCE,
-		/const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)[\s\S]*if \(artifactResult && !generatedAgentResult\)[\s\S]*if \(generatedAgentResult\)[\s\S]*renderTurnAfter=\{\(turn\) => \{[\s\S]*const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*getTurnGeneratedResults\(turn, shouldRenderGeneratedAgentResult\)[\s\S]*className="w-full space-y-2" data-testid="rovo-generated-result-group"[\s\S]*<ArtifactResultCard[\s\S]*<AgentResultCard[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u,
+		CHAT_PANEL_MESSAGES_SOURCE,
+		/const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)[\s\S]*if \(artifactResult && !generatedAgentResult\)[\s\S]*if \(generatedAgentResult\)/u,
+	);
+	assert.match(
+		CHAT_PANEL_CONVERSATION_SOURCE,
+		/renderTurnAfter=\{\(turn\) => \{[\s\S]*const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*getTurnGeneratedResults\(turn, shouldRenderGeneratedAgentResult\)[\s\S]*className="w-full space-y-2" data-testid="rovo-generated-result-group"[\s\S]*<ArtifactResultCard[\s\S]*<AgentResultCard[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u,
 	);
 });

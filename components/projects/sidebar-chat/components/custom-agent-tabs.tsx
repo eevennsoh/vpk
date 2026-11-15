@@ -3,18 +3,15 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- Tab panels take host-owned slot nodes and an empty-state node.
 
 import type { ReactNode } from "react";
-import type { useRovoChat } from "@/app/contexts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import EditIcon from "@atlaskit/icon/core/edit";
 import { cn } from "@/lib/utils";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { AgentVersionSelection } from "../hooks/use-agent-version-selection";
-import type { ChatPanelAgentVersionOption, ChatPanelCustomAgentTabs } from "../lib/chat-panel-types";
+import type { ChatPanelAgentVersionOption, ChatPanelCustomAgentTabs, RovoChat } from "../lib/chat-panel-types";
 import { AgentActivityTimeline } from "./agent-activity-timeline";
 import { AgentVersionMenu } from "./agent-version-menu";
-
-type RovoChat = ReturnType<typeof useRovoChat>;
 
 function CustomAgentTabEmptyState({
 	description,

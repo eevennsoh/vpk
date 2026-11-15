@@ -20,11 +20,9 @@ import {
 	type PlanApprovalSelection,
 } from "@/components/projects/shared/lib/plan-approval";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
-import type { useRovoChat } from "@/app/contexts";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { RovoChat } from "../lib/chat-panel-types";
 import type { useChatSubmit } from "./use-chat-submit";
-
-type RovoChat = ReturnType<typeof useRovoChat>;
 
 interface UseChatPanelDecisionsOptions {
 	acceptPlanReview: RovoChat["acceptPlanReview"];
