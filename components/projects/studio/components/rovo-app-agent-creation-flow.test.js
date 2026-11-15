@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readChatPanelModule, readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 
 const SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-shell.tsx"),
@@ -67,10 +68,8 @@ const CUSTOM_AGENTS_TABLE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-custom-agents-table.tsx"),
 	"utf8",
 );
-const CHAT_PANEL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
-	"utf8",
-);
+const CHAT_PANEL_SOURCE = readChatPanelSource();
+const CHAT_PANEL_MESSAGES_SOURCE = readChatPanelModule("lib/chat-panel-messages.ts");
 const STUDIO_CHAT_HELPERS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "lib", "studio-chat-helpers.ts"),
 	"utf8",
@@ -1313,7 +1312,9 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*return createStudioAgentEditCards\(\{[\s\S]*entry: activeSessionAgentEntry,[\s\S]*sourceMessageId: activeAgentConfig\?\.sourceMessageId \?\? null,[\s\S]*\}\);[\s\S]*\}, \[activeSessionAgentEntry, activeAgentConfig\?\.sourceMessageId\]\);/u);
 	assert.match(STUDIO_CHAT_HELPERS_SOURCE, /generatedAgentResult: freshGenerationMessageId \? entry\.sourceResult : null,[\s\S]*shouldRenderGeneratedAgentResult: \(\{ message \}\) => message\.id === freshGenerationMessageId/u);
 	assert.match(CHAT_PANEL_SOURCE, /shouldRenderGeneratedAgentResult\?: \(input: ChatPanelGeneratedAgentResultRenderInput\) => boolean;/u);
-	assert.match(CHAT_PANEL_SOURCE, /const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)/u);
+	// ChatPanel threads cards.shouldRenderGeneratedAgentResult into this helper;
+	// agent-result-card.source.test.js pins that call site.
+	assert.match(CHAT_PANEL_MESSAGES_SOURCE, /shouldRenderGeneratedAgentResult: ChatPanelCardsProps\["shouldRenderGeneratedAgentResult"\],[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)/u);
 	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*cards=\{agentEditCards\}[\s\S]*localConversation=\{agentOnboardingLocalConversation\}/u);
 	assert.match(SHELL_SOURCE, /const \[agentOnboardingLiveVoiceRequestKey, setAgentOnboardingLiveVoiceRequestKey\] = useState\(0\);/u);
 	assert.match(SHELL_SOURCE, /setAgentOnboardingLiveVoiceRequestKey\(0\);[\s\S]*setAgentOnboardingLiveVoiceRequestKey\(\(currentKey\) => currentKey \+ 1\);/u);

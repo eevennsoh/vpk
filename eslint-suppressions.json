@@ -2075,6 +2075,11 @@
       "count": 6
     }
   },
+  "components/projects/sidebar-chat/hooks/use-chat-panel-decisions.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
   "components/projects/sidebar-chat/hooks/use-scroll-anchor.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
@@ -2083,14 +2088,6 @@
   "components/projects/sidebar-chat/page-plan-approval.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
-    }
-  },
-  "components/projects/sidebar-chat/page.tsx": {
-    "react-hooks/immutability": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.source.test.js": {

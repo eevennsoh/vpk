@@ -1,9 +1,10 @@
 const assert = require("node:assert/strict");
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const { readChatPanelSource } = require("./chat-panel-source-harness");
 
-const SIDEBAR_CHAT_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+const SIDEBAR_CHAT_SOURCE = readChatPanelSource();
 const RETIRED_COMPATIBILITY_MODULE = join(
 	__dirname,
 	"components",
