@@ -160,6 +160,7 @@ export function WebPreviewNavigationButton({
 	disabled,
 	tooltip,
 	children,
+	"aria-label": ariaLabel,
 	...props
 }: Readonly<WebPreviewNavigationButtonProps>) {
 	const { chromiumControls } = useWebPreview();
@@ -179,6 +180,7 @@ export function WebPreviewNavigationButton({
 				<TooltipTrigger
 					render={
 						<Button
+							aria-label={ariaLabel ?? tooltip}
 							className="h-8 w-8 p-0 hover:text-foreground"
 							disabled={disabled ?? actionDisabled}
 							onClick={

@@ -329,6 +329,8 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 							placeholder={placeholder}
 							aria-label="Chat message input"
+							// Stable hook for surfaces that move focus to a composer (multiport F6); lands on the editor's container.
+							data-chat-composer-input=""
 							rows={1}
 							className={composerTextareaClassName}
 						/>

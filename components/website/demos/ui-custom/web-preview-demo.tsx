@@ -11,6 +11,8 @@ import {
 } from "@/components/ui-custom/web-preview";
 import { ArrowLeftIcon as ArrowLeft, ArrowRightIcon as ArrowRight, ExternalLinkIcon as ExternalLink, MaximizeIcon as Maximize2, MousePointerClickIcon as MousePointerClick, RotateCwIcon as RotateCw } from "@/components/ui/vpk-icons";
 
+// The backend runs one shared Chromium session, so only the External URL demo uses it; the others
+// stay on the iframe engine so the catalog page's instances don't drive each other's navigation.
 const EXAMPLE_URL = "https://www.theverge.com";
 
 const SAMPLE_LOGS = [
@@ -21,7 +23,7 @@ const SAMPLE_LOGS = [
 
 export function WebPreviewDemoBasic() {
 	return (
-		<WebPreview defaultUrl={EXAMPLE_URL} className="h-[400px]">
+		<WebPreview defaultUrl={EXAMPLE_URL} engine="iframe" className="h-[400px]">
 			<WebPreviewNavigation>
 				<WebPreviewNavigationButton action="back" tooltip="Back">
 					<ArrowLeft className="size-4" />
@@ -41,7 +43,7 @@ export function WebPreviewDemoBasic() {
 
 export function WebPreviewDemoWithConsole() {
 	return (
-		<WebPreview defaultUrl={EXAMPLE_URL} className="h-[400px]">
+		<WebPreview defaultUrl={EXAMPLE_URL} engine="iframe" className="h-[400px]">
 			<WebPreviewNavigation>
 				<WebPreviewNavigationButton action="back" tooltip="Back">
 					<ArrowLeft className="size-4" />
@@ -69,7 +71,7 @@ export function WebPreviewDemoFullscreen() {
 	);
 
 	return (
-		<WebPreview defaultUrl={EXAMPLE_URL} className="h-[400px]">
+		<WebPreview defaultUrl={EXAMPLE_URL} engine="iframe" className="h-[400px]">
 			<WebPreviewNavigation>
 				<WebPreviewNavigationButton action="back" tooltip="Back">
 					<ArrowLeft className="size-4" />
@@ -104,7 +106,7 @@ export function WebPreviewDemoUrlChange() {
 			<div className="text-sm text-muted-foreground">
 				Last navigated URL: <code className="rounded bg-muted px-1 py-0.5">{lastUrl}</code>
 			</div>
-			<WebPreview defaultUrl={EXAMPLE_URL} onUrlChange={setLastUrl} className="h-[400px]">
+			<WebPreview defaultUrl={EXAMPLE_URL} engine="iframe" onUrlChange={setLastUrl} className="h-[400px]">
 				<WebPreviewNavigation>
 					<WebPreviewNavigationButton action="back" tooltip="Back">
 						<ArrowLeft className="size-4" />
