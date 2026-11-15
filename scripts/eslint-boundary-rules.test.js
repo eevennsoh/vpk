@@ -583,7 +583,11 @@ test("feature code cannot render a second main landmark; only MainLandmark owns 
 		"\t\t<>",
 		"\t\t\t<main className=\"h-screen\" />",
 		"\t\t\t<div role=\"main\" />",
+		"\t\t\t<div role={\"main\"} />",
+		"\t\t\t<div role={`main`} />",
+		"\t\t\t<motion.main />",
 		"\t\t\t<section aria-label=\"Settings\" />",
+		"\t\t\t<div role={\"region\"} />",
 		"\t\t\t<div />",
 		"\t\t</>",
 		"\t);",
@@ -593,9 +597,11 @@ test("feature code cannot render a second main landmark; only MainLandmark owns 
 		"components/projects/demo/lint-contract-fixture.tsx",
 		"components/ui/lint-contract-fixture.tsx",
 		"app/demo/lint-contract-fixture.tsx",
+		"lib/demo/lint-contract-fixture.tsx",
+		"hooks/lint-contract-fixture.tsx",
 	]) {
 		const findings = await ruleFindings(source, filePath, ruleIds);
-		assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), [[4, 2], [5, 2]], filePath);
+		assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), [[4, 2], [5, 2], [6, 2], [7, 2], [8, 2]], filePath);
 		assert.match(findings[0].message, /only main landmark/u);
 	}
 	assert.deepEqual(await ruleFindings(source, "components/utils/main-landmark.tsx", ruleIds), []);

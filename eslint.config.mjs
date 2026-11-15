@@ -428,13 +428,19 @@ const eslintConfig = defineConfig([
 		},
 	},
 	{
-		files: ["app/**/*.{jsx,tsx}", "components/**/*.{jsx,tsx}"],
+		files: ["app/**/*.{jsx,tsx}", "components/**/*.{jsx,tsx}", "hooks/**/*.{jsx,tsx}", "lib/**/*.{jsx,tsx}"],
 		ignores: ["components/utils/main-landmark.tsx", "**/*.test.{jsx,tsx}"],
 		plugins: { "vpk-landmarks": vpkLandmarks },
 		rules: {
 			"vpk-landmarks/no-nested-main": ["error", {
-				selector: "JSXOpeningElement[name.name='main'], JSXAttribute[name.name='role'][value.value='main']",
-				message: "The root layout's MainLandmark is the page's only main landmark: render a <section aria-label> or a <div> instead (gotchas-ui.md).",
+				selector: [
+					"JSXOpeningElement[name.name='main']",
+					"JSXOpeningElement[name.property.name='main']",
+					"JSXAttribute[name.name='role'][value.value='main']",
+					"JSXAttribute[name.name='role'] > JSXExpressionContainer Literal[value='main']",
+					"JSXAttribute[name.name='role'] > JSXExpressionContainer TemplateElement[value.raw='main']",
+				].join(", "),
+				message: "The root layout's MainLandmark is the page's only main landmark: render a <section> (when the surface holds a <header>) or a <div> instead (gotchas-ui.md).",
 			}],
 		},
 	},

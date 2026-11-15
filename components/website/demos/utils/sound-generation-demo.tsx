@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/media-has-caption -- These media previews render generated or user-supplied media where no caption asset is available; transcript or metadata is rendered separately when provided.
 
-import { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactElement, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface LogEntry {
@@ -60,6 +60,7 @@ function formatBytes(value: number): string {
 }
 
 export default function SoundGenerationDemo(): ReactElement {
+	const headingId = useId();
 	const [input, setInput] = useState(
 		"Read this in a friendly, clear voice: the deployment is complete and all systems are healthy."
 	);
@@ -192,9 +193,9 @@ export default function SoundGenerationDemo(): ReactElement {
 	}, []);
 
 	return (
-		<section aria-label="Sound Generation" className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
+		<section aria-labelledby={headingId} className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
 			<header className="flex flex-col gap-3">
-				<h1 className="text-2xl font-semibold">Sound Generation</h1>
+				<h1 id={headingId} className="text-2xl font-semibold">Sound Generation</h1>
 				<p className="text-sm text-muted-foreground">
 					Converts text to speech using{" "}
 					<code className="rounded bg-muted px-1.5 py-0.5 text-xs">tts-latest</code>{" "}

@@ -9,7 +9,7 @@ import { code } from "@streamdown/code";
 import { math } from "@/components/ui-custom/streamdown-math";
 import { mermaid } from "@streamdown/mermaid";
 import type { ComponentProps, ReactElement } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { LinkSafetyConfig } from "streamdown";
 import { Streamdown } from "streamdown";
 
@@ -160,6 +160,7 @@ function Mention({
 }
 
 export default function StreamdownDemo(): ReactElement {
+	const headingId = useId();
 	const [streamedMarkdown, setStreamedMarkdown] = useState("");
 	const [streamedMessageResponseMarkdown, setStreamedMessageResponseMarkdown] = useState("");
 	const [isAnimating, setIsAnimating] = useState(false);
@@ -224,10 +225,10 @@ export default function StreamdownDemo(): ReactElement {
 	}, [runStreamingDemo, stopStreaming]);
 
 	return (
-		<section aria-label="Streamdown Latest API Demo" className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+		<section aria-labelledby={headingId} className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
 			<header className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold">Streamdown Latest API Demo</h1>
+					<h1 id={headingId} className="text-2xl font-semibold">Streamdown Latest API Demo</h1>
 					<p className="max-w-3xl text-sm text-muted-foreground">
 						This page now covers the current Streamdown surface:{" "}
 						<code>animated</code>, caret streaming, line numbers, link safety,

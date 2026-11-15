@@ -20,3 +20,22 @@ export default function Harness() {
 	}
 	assert.equal(view.container.textContent.includes(importPath), true);
 });
+
+test("the doc hero breadcrumb stays a distinct landmark beside an inline Breadcrumb demo", async () => {
+	const view = await renderComponent({
+		source: `import { DocHero } from "@/components/website/component-doc/components/doc-hero";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+export default function Harness() {
+	return (
+		<>
+			<DocHero name="Sidebar 07" category="blocks" importReferences={[]} />
+			<Breadcrumb><BreadcrumbList><BreadcrumbItem><BreadcrumbPage>Data Fetching</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
+		</>
+	);
+}`,
+	});
+	const labels = [...view.container.querySelectorAll("nav")].map((nav) => (nav.getAttribute("aria-label") ?? "").toLowerCase());
+	assert.equal(labels.length, 2);
+	// axe landmark-unique compares accessible names case-insensitively.
+	assert.equal(new Set(labels).size, 2, labels.join(" | "));
+});

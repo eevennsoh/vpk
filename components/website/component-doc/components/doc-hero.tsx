@@ -29,9 +29,9 @@ export function DocHero({ name, description, category, importReferences, referen
 				borderBottom: `1px solid ${token("color.border")}`,
 			}}
 		>
-			{/* Breadcrumb */}
+			{/* Named apart from the Breadcrumb primitive's "breadcrumb" so inline breadcrumb demos keep axe landmark-unique clean. */}
 			<nav
-				aria-label="Breadcrumb"
+				aria-label="Catalog breadcrumb"
 				style={{
 					display: "flex",
 					alignItems: "center",
