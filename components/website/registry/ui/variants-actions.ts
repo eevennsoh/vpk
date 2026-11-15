@@ -483,56 +483,6 @@ export const UI_ACTION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	// Chart
-	"chart-demo-default": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoDefault,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-with-legend": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoWithLegend,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-area-chart": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoAreaChart,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-bar-chart": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoBarChart,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-line-chart": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoLineChart,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-radar-chart": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoRadarChart,
-			})),
-		{ ssr: false },
-	),
-	"chart-demo-radial-chart": dynamic(
-		() =>
-			import("../../demos/ui/chart-demo").then((mod) => ({
-				default: mod.ChartDemoRadialChart,
-			})),
-		{ ssr: false },
-	),
 	// Sidebar
 	"sidebar-demo-default": dynamic(
 		() =>

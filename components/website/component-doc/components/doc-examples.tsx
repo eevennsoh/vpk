@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, createElement, type ComponentType, use } from "react";
+import { Suspense, createElement, type ComponentType, use, useRef } from "react";
 import { token } from "@/lib/tokens";
 import type { DemoLayout, ExampleDefinition } from "@/app/data/component-detail-types";
 import {
@@ -11,6 +11,8 @@ import { Lozenge } from "@/components/ui/lozenge";
 import { AnchorLinkButton, DocSection } from "./doc-section";
 import { DemoPreviewShell } from "./demo-preview-shell";
 import { resolveExamplesShellLayout } from "./preview-layout";
+import { exampleGroupId, toExampleRows } from "./example-groups";
+import { useNearViewport } from "./use-near-viewport";
 
 /** Map example badge variant (Badge-style names) to Lozenge variant. */
 const badgeVariantToLozenge: Record<string, "neutral" | "success" | "danger" | "information" | "discovery" | "warning"> = {
@@ -27,6 +29,16 @@ const badgeVariantToLozenge: Record<string, "neutral" | "success" | "danger" | "
 
 function slugify(name: string) {
 	return name.replace(/\s+/g, "-").toLowerCase();
+}
+
+function ExampleGroupHeading({ group }: Readonly<{ group: string }>) {
+	const id = exampleGroupId(group);
+	return (
+		<div id={id} className="group flex items-center gap-1">
+			<h3 style={{ font: token("font.heading.small"), color: token("color.text"), margin: 0 }}>{group}</h3>
+			<AnchorLinkButton id={id} label={group} />
+		</div>
+	);
 }
 
 interface DocExamplesProps {
@@ -67,8 +79,13 @@ function ExampleItem({
 }: Readonly<{ category: DemoCategory; example: ExampleDefinition; Demo: ComponentType; demoLayout?: DemoLayout }>) {
 	const id = example.id ?? slugify(example.title);
 	const shell = resolveExamplesShellLayout(category, demoLayout);
+	// Examples under a group heading sit one heading level below it.
+	const Heading = example.group ? "h4" : "h3";
+	const containerRef = useRef<HTMLDivElement>(null);
+	const shouldMount = useNearViewport(containerRef, demoLayout?.examplesMount === "near-viewport");
 	return (
 		<div
+			ref={containerRef}
 			id={id}
 			className="group"
 			style={{
@@ -79,7 +96,7 @@ function ExampleItem({
 		>
 			<div>
 				<div className="flex items-center gap-1">
-					<h3
+					<Heading
 						style={{
 							fontSize: "14px",
 							fontWeight: 600,
@@ -96,7 +113,7 @@ function ExampleItem({
 								{example.badge.label}
 							</Lozenge>
 						) : null}
-					</h3>
+					</Heading>
 					<AnchorLinkButton id={id} label={example.title} />
 				</div>
 				{example.description ? <p
@@ -115,9 +132,13 @@ function ExampleItem({
 				fullPage={shell.fullPage}
 				fitContent={shell.fitContent}
 			>
-				<Suspense fallback={<ExampleSkeleton />}>
-					{createElement(Demo)}
-				</Suspense>
+				{shouldMount ? (
+					<Suspense fallback={<ExampleSkeleton />}>
+						{createElement(Demo)}
+					</Suspense>
+				) : (
+					<ExampleSkeleton />
+				)}
 			</DemoPreviewShell>
 		</div>
 	);
@@ -157,15 +178,19 @@ function ResolvedDocExamples({
 					gap: token("space.400"),
 				}}
 			>
-				{resolvedExamples.map(({ example, Demo }) => (
-					<ExampleItem
-						category={category}
-						key={example.demoSlug}
-						example={example}
-						Demo={Demo}
-						demoLayout={demoLayout}
-					/>
-				))}
+				{toExampleRows(resolvedExamples).map((row) =>
+					row.kind === "group" ? (
+						<ExampleGroupHeading key={`group:${row.group}`} group={row.group} />
+					) : (
+						<ExampleItem
+							category={category}
+							key={row.example.demoSlug}
+							example={row.example}
+							Demo={row.Demo}
+							demoLayout={demoLayout}
+						/>
+					),
+				)}
 			</div>
 		</DocSection>
 	);
