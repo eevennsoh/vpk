@@ -1,18 +1,10 @@
+import type { JiraInlineCreateDraft } from "@/components/blocks/jira-inline-create";
 import type {
-	AgentSessionWorkItemDraft,
 	AgentSessionWorkItemOption,
 } from "@/components/blocks/agent-session";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type { JiraIssueSubtask } from "@/components/blocks/jira-issue";
 
-export interface BoardWorkItemDraft extends AgentSessionWorkItemDraft {
-	readonly parentIssueKey?: string;
-	readonly tags?: readonly string[];
-	readonly subtaskKeys?: readonly string[];
-	readonly dueDate?: string;
-	readonly priority?: JiraKanbanCardData["priority"];
-	readonly assignee?: JiraKanbanCardData["assignee"];
-}
 
 export function indexBoardSubtasks(columns: readonly JiraKanbanColumnData[]) {
 	const byParent = new Map<string, { card: JiraKanbanCardData; columnTitle: string; subtask: JiraIssueSubtask }[]>();
@@ -116,7 +108,7 @@ export function boardHasWorkItem(
  */
 export function appendBoardCardFromDraft(
 	columns: readonly JiraKanbanColumnData[],
-	draft: BoardWorkItemDraft,
+	draft: JiraInlineCreateDraft,
 	columnTitle?: string,
 ): Readonly<{ columns: readonly JiraKanbanColumnData[]; issueKey: string | undefined }> {
 	const targetColumn = columnTitle === undefined ? columns[0] : columns.find((column) => column.title === columnTitle);

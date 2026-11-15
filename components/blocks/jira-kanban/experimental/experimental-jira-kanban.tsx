@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode, type ComponentType } from "react";
 import { hasJiraSelectionToggleModifier } from "../selection-modifiers";
 import { SessionColumnSlot, SessionColumnDropMarker } from "./components/session-column-placement";
 import { BoardColumnDropRing } from "./components/board-column-drop-ring";
@@ -39,8 +39,8 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumn } from "./components/board-column";
-import { BoardCreateCard } from "./components/board-create-card";
-import { indexBoardSubtasks, nextBoardIssueKey, type BoardWorkItemDraft } from "./lib/board-work-item-options";
+import { JiraInlineCreate, type JiraInlineCreateDraft, type JiraInlineCreateProps } from "@/components/blocks/jira-inline-create";
+import { indexBoardSubtasks, nextBoardIssueKey } from "./lib/board-work-item-options";
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
@@ -148,7 +148,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Expanded columns share available horizontal space; fixed remains the default. */
 	columnWidth?: BoardColumnWidth;
 	/** Creates a named work item without attaching or capturing an agent session. */
-	onCreateWorkItem?: (columnTitle: string, draft: BoardWorkItemDraft) => void;
+	onCreateWorkItem?: (columnTitle: string, draft: JiraInlineCreateDraft) => void;
+	inlineCreateComponent?: ComponentType<JiraInlineCreateProps>;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
 	 * the scrollport.
@@ -429,6 +430,7 @@ function ExperimentalJiraKanbanView({
 	boardColumns,
 	createWorkItemColumns,
 	createWorkItemAssignees,
+	inlineCreateComponent: InlineCreate = JiraInlineCreate,
 	onCreateActiveChange,
 	cardGenerativeActionPresentation = "sparkle",
 	cardGenerativeActionPinnedAgentIds,
@@ -866,7 +868,7 @@ function ExperimentalJiraKanbanView({
 								columnSizing={columnSizing}
 								count={column.cards.length}
 								creating={createCard.column !== null}
-								createDraft={createCard.column === column.title ? <BoardCreateCard assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft); createCard.close(); }} /> : undefined}
+								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft); createCard.close(); }} /> : undefined}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
@@ -874,7 +876,6 @@ function ExperimentalJiraKanbanView({
 								hideScrollbar={cardAppearance === "project-butter"}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
-								onCreateWorkItem={onCreateWorkItem}
 								onStartCreate={onCreateWorkItem ? (trigger) => createCard.start(column.title, trigger) : undefined}
 								onToggleAgent={
 									onToggleColumnAgent

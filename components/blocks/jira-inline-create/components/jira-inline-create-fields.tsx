@@ -5,6 +5,8 @@ import AddIcon from "@atlaskit/icon/core/add";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import PersonIcon from "@atlaskit/icon/core/person";
 import type { JiraKanbanAssigneeData, JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-parent-field";
+import { ArtifactLabelsField } from "@/components/blocks/artifact-pane/artifact-labels-field";
 import { ButterPriorityIcon } from "@/components/blocks/jira-issue/priority";
 import { getButterSubtaskProgress } from "@/components/blocks/jira-issue/project-butter-model";
 import { PriorityRowField, type PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
@@ -16,9 +18,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { BoardWorkItemDraft } from "../lib/board-work-item-options";
+import type { JiraInlineCreateDraft } from "../types";
 
-type Metadata = Omit<BoardWorkItemDraft, "summary" | "issueType">;
+type Metadata = Omit<JiraInlineCreateDraft, "summary" | "issueType">;
 
 const chipClass = "h-6 gap-1 border-border px-1.5 text-xs font-normal";
 const BOARD_PRIORITY: Readonly<Record<PriorityValue, JiraKanbanCardData["priority"]>> = { Highest: "critical", High: "major", Medium: "medium", Low: "minor", Lowest: "trivial" };
@@ -48,16 +50,13 @@ function SearchChoices({ label, options, selected, multiple, onSelect }: Readonl
 	</>;
 }
 
-export function BoardCreateCardFields({ assignees: availableAssignees = [], columns, value, onChange, saveAction }: Readonly<{
+export function JiraInlineCreateFields({ assignees: availableAssignees = [], columns, value, onChange, saveAction }: Readonly<{
 	assignees?: readonly JiraKanbanAssigneeData[];
 	columns: readonly JiraKanbanColumnData[];
 	value: Metadata;
 	onChange: (patch: Metadata) => void;
 	saveAction: React.ReactNode;
 }>) {
-	const [tagQuery, setTagQuery] = useState("");
-	const [tagsOpen, setTagsOpen] = useState(false);
-	const [parentOpen, setParentOpen] = useState(false);
 	const [dueOpen, setDueOpen] = useState(false);
 	const [assigneeOpen, setAssigneeOpen] = useState(false);
 	const cards = useMemo(() => columns.flatMap((column) => column.cards), [columns]);
@@ -72,7 +71,7 @@ export function BoardCreateCardFields({ assignees: availableAssignees = [], colu
 		}
 		return true;
 	};
-	const parentOptions = cards.filter((card) => card.issueType !== "subtask" && canBeParent(card)).map((card) => ({ id: card.code, label: `${card.code} ${card.title}` }));
+	const parentOptions = cards.filter((card) => card.issueType !== "subtask" && canBeParent(card)).map((card) => ({ key: card.code, summary: card.title }));
 	const ancestors = new Set<string>();
 	let ancestor = value.parentIssueKey;
 	while (ancestor && !ancestors.has(ancestor)) {
@@ -94,32 +93,22 @@ export function BoardCreateCardFields({ assignees: availableAssignees = [], colu
 	return <>
 		<div className="flex flex-wrap items-center gap-1 pt-3">
 			<div className={parent ? "w-full min-w-0" : undefined}>
-				<Popover open={parentOpen} onOpenChange={setParentOpen}>
-					<PopoverTrigger render={<Chip label={parent ? `Parent, ${parent.code} ${parent.title}` : "Add parent"}>{parent ? <span className="max-w-48 truncate">{parent.title}</span> : <><Icon render={<AddIcon label="" size="small" />} /> Parent</>}</Chip>} />
-					<PopoverContent align="start" aria-label="Choose parent">
-						<SearchChoices label="Parents" options={parentOptions} selected={value.parentIssueKey ? [value.parentIssueKey] : []} onSelect={(id) => { onChange({ parentIssueKey: id }); setParentOpen(false); }} />
-						{parent ? <Button size="compact" type="button" variant="ghost" onClick={() => { onChange({ parentIssueKey: undefined }); setParentOpen(false); }}>Remove parent</Button> : null}
-					</PopoverContent>
-				</Popover>
+				<ArtifactParentField
+					onChange={(parentIssueKey) => onChange({ parentIssueKey })}
+					onClear={() => onChange({ parentIssueKey: undefined })}
+					options={parentOptions}
+					trigger={<Chip label={parent ? `Parent, ${parent.code} ${parent.title}` : "Add parent"}>{parent ? <span className="max-w-48 truncate">{parent.title}</span> : <><Icon render={<AddIcon label="" size="small" />} /> Parent</>}</Chip>}
+					value={value.parentIssueKey ?? null}
+				/>
 			</div>
 			<div className="contents">
-				{selectedTags.map((tag) => <span className="rounded-sm border border-border px-1 text-xs text-text-subtle" key={tag}>{tag}</span>)}
-				<Popover open={tagsOpen} onOpenChange={(open) => { setTagsOpen(open); if (!open) setTagQuery(""); }}>
-					<PopoverTrigger render={<Chip label="Add labels"><Icon render={<AddIcon label="" size="small" />} /> Labels</Chip>} />
-					<PopoverContent align="start" aria-label="Choose labels">
-						<input aria-label="Add label" className="h-8 w-full rounded-md border border-border bg-surface px-2 text-sm" onChange={(event) => setTagQuery(event.target.value)} onKeyDown={(event) => {
-							if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
-							event.preventDefault();
-							const query = tagQuery.trim();
-							const exact = tags.find((tag) => tag.toLowerCase() === query.toLowerCase());
-							const tag = query && !exact ? query : exact ?? tags.find((item) => item.toLowerCase().includes(query.toLowerCase()));
-							if (tag) onChange({ tags: toggle(selectedTags, tag) });
-							setTagQuery("");
-						}} value={tagQuery} />
-						{tagQuery.trim() && !tags.some((tag) => tag.toLowerCase() === tagQuery.trim().toLowerCase()) ? <Button size="compact" type="button" variant="ghost" onClick={() => { onChange({ tags: [...selectedTags, tagQuery.trim()] }); setTagQuery(""); }}>Create “{tagQuery.trim()}”</Button> : null}
-						<div aria-label="Labels" className="max-h-48 overflow-auto" role="group">{tags.filter((tag) => tag.toLowerCase().includes(tagQuery.trim().toLowerCase())).map((tag) => <label className="flex items-center gap-2 px-2 py-1.5" key={tag}><input checked={selectedTags.includes(tag)} onChange={() => onChange({ tags: toggle(selectedTags, tag) })} type="checkbox" />{tag}</label>)}</div>
-					</PopoverContent>
-				</Popover>
+				<ArtifactLabelsField
+					hideSelected
+					onChange={(tags) => onChange({ tags })}
+					options={tags}
+					trigger={<Chip label="Add labels"><Icon render={<AddIcon label="" size="small" />} /> Labels</Chip>}
+					value={selectedTags}
+				/>
 				<Popover>
 					<PopoverTrigger render={<Chip label={subtaskProgress.total ? `${subtaskProgress.completed} of ${subtaskProgress.total} subtasks complete` : "Add subtasks"}>{subtaskProgress.total ? <><ProgressCircle aria-hidden animated={false} segmented segments={subtaskProgress.segments} size="xs" /> {subtaskProgress.completed}/{subtaskProgress.total}</> : <><Icon render={<AddIcon label="" size="small" />} /> Subtasks</>}</Chip>} />
 					<PopoverContent align="start" aria-label="Choose subtasks"><SearchChoices label="Subtasks" multiple options={subtaskOptions} selected={selectedSubtasks} onSelect={(id) => onChange({ subtaskKeys: toggle(selectedSubtasks, id) })} /></PopoverContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactElement } from "react";
 
 import DeleteIcon from "@atlaskit/icon/core/delete";
 
@@ -85,7 +85,8 @@ export function ArtifactLabelsField({
 	onChange,
 	options = LABEL_OPTIONS,
 	value,
-}: Readonly<{ hideSelected?: boolean; onChange: (next: string[]) => void; options?: readonly string[]; value: readonly string[] }>) {
+	trigger,
+}: Readonly<{ hideSelected?: boolean; onChange: (next: string[]) => void; options?: readonly string[]; value: readonly string[]; trigger?: ReactElement }>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const fieldRef = useRef<HTMLDivElement>(null);
@@ -127,19 +128,20 @@ export function ArtifactLabelsField({
 			}
 			setOpen(nextOpen);
 		}} open={open}>
-			<div className="relative -mx-2 w-full min-w-0 px-2 py-1.5" ref={fieldRef}>
-				<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="absolute inset-0 m-0 h-full w-full" />} />
+			<div className={trigger ? "contents" : "relative -mx-2 w-full min-w-0 px-2 py-1.5"} ref={fieldRef}>
+				{trigger ? null : <PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="absolute inset-0 m-0 h-full w-full" />} />}
 				{value.length > 0 ? (
-					<TagGroup className="pointer-events-none relative gap-1 [&_[data-slot=tag-after]_button]:pointer-events-auto">
+					<TagGroup className={trigger ? "contents" : "pointer-events-none relative gap-1 [&_[data-slot=tag-after]_button]:pointer-events-auto"}>
 						{value.map((label) => (
 							<Tag color={labelColor(label)} key={label} onRemove={open ? () => toggle(label) : undefined}>
 								{label}
 							</Tag>
 						))}
 					</TagGroup>
-				) : (
+				) : trigger ? null : (
 					<span className="pointer-events-none relative text-sm text-text-subtlest">Add label</span>
 				)}
+				{trigger ? <PopoverTrigger render={trigger} /> : null}
 			</div>
 			<PopoverContent
 				align="start"

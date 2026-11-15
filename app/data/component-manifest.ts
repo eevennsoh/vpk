@@ -473,6 +473,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("jira-epic", "Jira Epic"),
 	blockComponent("agent-list", "Agent List"),
 	blockComponent("jira-activity", "Jira Activity"),
+	blockComponent("jira-inline-create", "Jira Inline Create"),
 	blockComponent("jira-insight", "Jira Insight"),
 	blockComponent("jira-issue", "Jira Issue"),
 	blockComponent("jira-linking", "Jira Linking"),

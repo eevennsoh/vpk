@@ -170,9 +170,8 @@ test("the card viewport retains its stacking context and fade during inline inse
 	}
 });
 
-test("normal create uses the full-width compact button and the shared creation field", () => {
+test("normal create uses the full-width compact button", () => {
 	assert.match(FOOTER, /aria-label=\{control\?\.active \? [^\n]+ : `Create in \$\{title\}`\}[\s\S]*"w-full border-dashed group-hover\/board-column:border-solid"[\s\S]*size=\{size\}[\s\S]*variant="outline"/u);
-	assert.match(FOOTER, /<CreateWorkItemField/u);
 });
 
 test("scrolling dismisses a hovered creation gap until the pointer moves again", async () => {

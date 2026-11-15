@@ -56,6 +56,7 @@ import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
 import { JIRA_FILTER_DETAIL } from "./blocks/jira-filter";
+import { JIRA_INLINE_CREATE_DETAIL } from "./blocks/jira-inline-create";
 import { JIRA_INSIGHT_DETAIL } from "./blocks/jira-insight";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
@@ -179,6 +180,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
 	"jira-epic": JIRA_EPIC_DETAIL,
 	"jira-filter": JIRA_FILTER_DETAIL,
+	"jira-inline-create": JIRA_INLINE_CREATE_DETAIL,
 	"jira-insight": JIRA_INSIGHT_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,

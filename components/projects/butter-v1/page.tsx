@@ -35,6 +35,7 @@ import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/ag
 import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
+import { JiraInlineCreate } from "@/components/blocks/jira-inline-create";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
@@ -897,6 +898,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 				>
 					<ButterInlineAgentPickerContext value>
 					<ExperimentalJiraKanbanPage
+						inlineCreateComponent={JiraInlineCreate}
 						onBoardCreateActiveChange={onBoardCreateActiveChange}
 						boardOnly={boardOnly}
 						collapsedColumns={collapsedColumns}

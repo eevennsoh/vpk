@@ -61,6 +61,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-dropzone": dynamic(() => import("../demos/blocks/jira-dropzone-demo"), { ssr: false }),
 	"jira-epic": dynamic(() => import("../demos/blocks/jira-epic-demo"), { ssr: false }),
 	"jira-filter": dynamic(() => import("../demos/blocks/jira-filter-demo"), { ssr: false }),
+	"jira-inline-create": dynamic(() => import("../demos/blocks/jira-inline-create-demo"), { ssr: false }),
 	"jira-insight": dynamic(() => import("../demos/blocks/jira-insight-demo"), { ssr: false }),
 	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), { ssr: false }),
 	"jira-kanban": dynamic(() => import("../demos/blocks/jira-kanban-demo"), { ssr: false }),

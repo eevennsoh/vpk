@@ -35,7 +35,6 @@ import {
 import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardEmptyColumnInsertionSlot } from "./board-card-insertion-line";
 import { BoardColumnAddButton } from "./create-work-item-drop-zone";
-import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
 
 function toDropBounds(rect: DOMRectReadOnly): BoardAgentSessionDropBounds {
 	return {
@@ -94,7 +93,7 @@ export function BoardColumnCardList({
 	insertionArmed,
 	isEmpty,
 	isSessionDragging = false,
-	onCreateWorkItem,
+	onStartCreate,
 }: Readonly<{
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
@@ -108,7 +107,7 @@ export function BoardColumnCardList({
 	insertionArmed: boolean;
 	isEmpty: boolean;
 	isSessionDragging?: boolean;
-	onCreateWorkItem?: (draft: AgentSessionWorkItemDraft) => void;
+	onStartCreate?: (trigger: HTMLElement) => void;
 }>) {
 	const { ref, hasVerticalOverflow, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
 	const cardListRef = useRef<HTMLDivElement | null>(null);
@@ -239,7 +238,7 @@ export function BoardColumnCardList({
 							className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
 							data-board-work-item-create=""
 						>
-							<BoardColumnAddButton onCreateWorkItem={onCreateWorkItem} title={columnTitle} />
+							<BoardColumnAddButton onStartCreate={onStartCreate} title={columnTitle} />
 						</div> : null}
 						</div>
 						{createDraft}

@@ -172,6 +172,7 @@ export default function ExperimentalJiraKanbanPage({
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
 	boardOnly = false,
+	inlineCreateComponent,
 	collapsedColumns: controlledCollapsedColumns,
 	onCollapsedColumnsChange,
 	onBoardCreateActiveChange,
@@ -992,6 +993,7 @@ function ExperimentalJiraKanbanPageContent({
 								boardColumns={filteredBoardColumns}
 								createWorkItemColumns={boardColumns}
 								createWorkItemAssignees={assignees}
+								inlineCreateComponent={inlineCreateComponent}
 								cardGenerativeActionFooterActions={cardGenerativeActionFooterActions}
 								cardGenerativeActionPinnedAgentIds={cardGenerativeActionPinnedAgentIds}
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
