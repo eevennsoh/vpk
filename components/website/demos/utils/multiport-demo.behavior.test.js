@@ -79,3 +79,36 @@ test("Shift+Tab from the first composer reaches its header instead of wrapping t
 		await view.unmount();
 	}
 });
+
+test("F6 and Shift+F6 cycle focus between the ports' contenteditable composers", async () => {
+	const view = await renderMultiport();
+	try {
+		await settleEffects();
+		assert.equal(focusedName(), "Port 0 input");
+		const reached = [];
+		for (let step = 0; step < 3; step += 1) {
+			await view.press(null, "F6");
+			reached.push(focusedName());
+		}
+		assert.deepEqual(reached, ["Port 1 input", "Port 2 input", "Port 0 input"]);
+		await view.press(null, "F6", { shiftKey: true });
+		assert.equal(focusedName(), "Port 2 input");
+	} finally {
+		await view.unmount();
+	}
+});
+
+test("F6 from a port's other controls moves to the next port's composer", async () => {
+	const view = await renderMultiport();
+	try {
+		await settleEffects();
+		await view.focus(view.getByRole("button", { name: "Port 1 send" }));
+		await view.press(null, "F6");
+		assert.equal(focusedName(), "Port 2 input");
+		await view.focus(view.getByRole("button", { name: "Port 1 header" }));
+		await view.press(null, "F6", { shiftKey: true });
+		assert.equal(focusedName(), "Port 0 input");
+	} finally {
+		await view.unmount();
+	}
+});

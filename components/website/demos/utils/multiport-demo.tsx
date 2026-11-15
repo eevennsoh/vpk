@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useEffect, useId, useRef } from "react";
 import { RovoChatProvider } from "@/app/contexts";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type { GenerativeCardAnimationProps } from "@/components/projects/shared/components/generative-widget-card";
@@ -11,11 +11,63 @@ const MULTIPORT_GENERATIVE_CARD_ANIMATION: GenerativeCardAnimationProps = {
 	distortion: false,
 };
 
+// The live composer is a contenteditable Tiptap editor, so match it by its accessible name, not its tag.
+const COMPOSER_SELECTOR = '[aria-label="Chat message input"]';
+
+/**
+ * F6 / Shift+F6 cycle focus between the ports' composers, the conventional "next pane" key, so
+ * Tab and Shift+Tab keep their normal order through each port's controls.
+ */
+function handlePortSwitchKeyDown(container: HTMLElement, event: KeyboardEvent) {
+	if (event.key !== "F6" || event.altKey || event.ctrlKey || event.metaKey) {
+		return;
+	}
+	const ports = Array.from(container.querySelectorAll<HTMLElement>("[data-multiport-port]"));
+	const composers = ports.map((port) => port.querySelector<HTMLElement>(COMPOSER_SELECTOR));
+	if (composers.every((composer) => composer === null)) {
+		return;
+	}
+	const target = event.target instanceof Node ? event.target : null;
+	const currentIndex = ports.findIndex((port) => target !== null && port.contains(target));
+	const step = event.shiftKey ? -1 : 1;
+	for (let offset = 1; offset <= ports.length; offset += 1) {
+		const start = currentIndex === -1 ? (event.shiftKey ? 0 : -1) : currentIndex;
+		const index = (start + step * offset + ports.length * offset) % ports.length;
+		const composer = composers[index];
+		if (composer) {
+			event.preventDefault();
+			composer.focus();
+			return;
+		}
+	}
+}
+
 export default function MultiportDemo(): ReactElement {
+	const shortcutHintId = useId();
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	// A native listener scoped to the demo container: F6 only acts while focus is inside it.
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container) return;
+		const onKeyDown = (event: KeyboardEvent) => handlePortSwitchKeyDown(container, event);
+		container.addEventListener("keydown", onKeyDown);
+		return () => container.removeEventListener("keydown", onKeyDown);
+	}, []);
+
 	return (
-		<div className="mx-auto flex h-screen items-center justify-center gap-12 px-6">
+		<div
+			ref={containerRef}
+			aria-describedby={shortcutHintId}
+			aria-label="Multiport chat"
+			className="mx-auto flex h-screen items-center justify-center gap-12 px-6"
+			role="group"
+		>
+			<span id={shortcutHintId} className="sr-only">
+				Press F6 to move to the next chat composer, Shift+F6 for the previous one.
+			</span>
 			{Array.from({ length: PORT_COUNT }, (_, i) => (
-				<div key={i} className="flex h-full min-w-0 flex-1 justify-center" style={{ maxWidth: 400 }}>
+				<div key={i} data-multiport-port={i} className="flex h-full min-w-0 flex-1 justify-center" style={{ maxWidth: 400 }}>
 					<RovoChatProvider portIndex={i}>
 						<ChatPanel
 							onClose={() => {}}

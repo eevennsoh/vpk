@@ -21,7 +21,13 @@ import {
 } from "react";
 import { Input } from "@/components/ui/input";
 import { API_ENDPOINTS } from "@/lib/api-config";
-import { isPreviewFocusNavigationKey, PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
+import { PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
+import { usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
+import {
+	PreviewKeyCaptureStatus,
+	PreviewKeyCaptureToggle,
+	previewKeyCaptureViewportClassName,
+} from "@/components/ui-custom/preview-key-capture";
 import { cn } from "@/lib/utils";
 import { BrowserPreviewOverlay } from "@/components/projects/shared/components/browser-preview-overlay";
 import {
@@ -152,6 +158,8 @@ function EmbeddedBrowserWorkspacePreview({
 
 	const liveViewportRef = useRef<HTMLDivElement | null>(null);
 	const keyboardHintId = useId();
+	const keyCapture = usePreviewKeyCapture(liveViewportRef);
+	const { interceptKey: interceptCaptureKey } = keyCapture;
 	const pendingWheelRef = useRef({
 		x: 0,
 		y: 0,
@@ -493,7 +501,7 @@ function EmbeddedBrowserWorkspacePreview({
 
 	const handleLiveKeyDown = useCallback(
 		(event: ReactKeyboardEvent<HTMLDivElement>) => {
-			if (isPreviewFocusNavigationKey(event)) {
+			if (interceptCaptureKey(event)) {
 				return;
 			}
 
@@ -503,7 +511,7 @@ function EmbeddedBrowserWorkspacePreview({
 				ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey, shiftKey: event.shiftKey,
 			});
 		},
-		[dispatchControl],
+		[dispatchControl, interceptCaptureKey],
 	);
 
 	const handlePaste = useCallback(
@@ -623,23 +631,29 @@ function EmbeddedBrowserWorkspacePreview({
 				>
 					<ExternalLink className="size-4" />
 				</button>
+				<PreviewKeyCaptureToggle capture={keyCapture} />
 			</div>
 
 			<div
 				ref={liveViewportRef}
-				className="relative min-h-0 flex-1 overflow-hidden bg-surface-raised/40 outline-none"
+				className={cn(
+					"relative min-h-0 flex-1 overflow-hidden bg-surface-raised/40",
+					previewKeyCaptureViewportClassName(keyCapture.captured),
+				)}
 				role="application"
 				aria-label={workspaceState?.title || "Browser preview"}
 				aria-describedby={keyboardHintId}
 				tabIndex={0}
 				onPointerDown={handleLivePointerDown}
 				onWheel={handleLiveWheel}
+				onBlur={keyCapture.handleViewportBlur}
 				onKeyDown={handleLiveKeyDown}
 				onPaste={handlePaste}
 			>
 					<span id={keyboardHintId} className="sr-only">
 						{PREVIEW_KEYBOARD_HINT}
 					</span>
+					<PreviewKeyCaptureStatus capture={keyCapture} />
 					<canvas
 						ref={liveCanvasRef}
 						className={cn(
