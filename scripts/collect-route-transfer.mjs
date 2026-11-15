@@ -13,12 +13,16 @@
 // A route whose page attaches an iframe, or that has a fetchedJsBytesAllFrames budget in
 // scripts/perf-route-budgets.json, gets a second pass with embedded documents allowed (same
 // quiet-window rules, prefetches still blocked) that sums the same-origin .js of every frame,
-// recorded as fetchedJsAllFrames: a page that embeds whole projects would otherwise look light.
-// What that pass counts: same-origin .js only (no CSS); each URL once across frames, so N
-// iframes running the same chunks count them once; only frames that load at the 1440x900
-// viewport without scrolling, so lazy iframes below the fold do not count. A route whose pass
-// saw no iframe attach records its top-document number with source "top-document", which the
-// verifier rejects for a route that budgets all frames.
+// recorded as fetchedJsAllFrames (and its .css as fetchedCssAllFrames): a page that embeds whole
+// projects would otherwise look light. Those count each URL once across frames, so N iframes
+// running the same chunks count them once, and only frames that load at the 1440x900 viewport
+// without scrolling. The same pass then scrolls the page through to the bottom (the largest
+// scrollable element, a viewport at a time) and waits for the same quiet window again, so lazy
+// iframes below the fold load too; everything fetched by then is fetchedJsFullPage and
+// fetchedCssFullPage, and frameDocuments/fullPageFrameDocuments count the embedded documents
+// each phase loaded. The viewport numbers are taken before the scroll starts, so they are what
+// they were without it. A route whose pass saw no iframe attach records its top-document numbers
+// with source "top-document", which the verifier rejects for a route that budgets all frames.
 // Usage:
 //   node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 [--runs 3]
 //     [--input output/perf-baseline.json] [--output output/perf-baseline.json]
@@ -44,10 +48,13 @@ const NAVIGATION_TIMEOUT_MS = 90_000;
 const SETTLE_CAP_MS = 60_000;
 const ROUTE_BUDGETS_PATH = new URL("./perf-route-budgets.json", import.meta.url);
 
-// Route ids whose budget includes fetchedJsBytesAllFrames: they always get the all-frames pass,
+// Budget metrics measured by the all-frames pass (owned by the verifier).
+const { ALL_FRAMES_METRICS } = require("./verify-perf-baseline-budget.js");
+
+// Route ids whose budget includes an all-frames metric: they always get the all-frames pass,
 // so an iframe that stops attaching in the iframe-blocked pass cannot skip the check.
 export function routesWithAllFramesBudget(budgets) {
-	return new Set(Object.entries(budgets).filter(([, budget]) => Object.hasOwn(budget, "fetchedJsBytesAllFrames")).map(([routeId]) => routeId));
+	return new Set(Object.entries(budgets).filter(([, budget]) => ALL_FRAMES_METRICS.some((metric) => Object.hasOwn(budget, metric))).map(([routeId]) => routeId));
 }
 
 export function needsAllFramesPass(routeId, routeRuns, allFramesRoutes) {
@@ -98,17 +105,32 @@ export function median(values) {
 	return sorted.length % 2 === 1 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 }
 
-// The all-frames JS for a route: the median of its all-frames pass, or, when no iframe attached
-// (the pass was skipped, or ran for a budgeted route and saw none), the top-document number,
-// marked so the verifier can tell an all-frames budget is no longer measuring any frame.
+function summarizeField(runs, field) {
+	const values = runs.map((run) => run[field]);
+	return { bytes: median(values), range: Math.max(...values) - Math.min(...values), source: "all-frames" };
+}
+
+// The all-frames numbers for a route: the medians of its all-frames pass, or, when no iframe
+// attached (the pass was skipped, or ran for a budgeted route and saw none), the top-document
+// numbers, marked so the verifier can tell an all-frames budget is no longer measuring any frame.
 export function summarizeAllFramesRuns(topDocumentSummary, allFramesRuns) {
 	if (!allFramesRuns || !embedsFrames(allFramesRuns)) {
-		return { ...(allFramesRuns ? { fetchedAllFramesRuns: allFramesRuns } : {}), fetchedJsAllFrames: { ...topDocumentSummary.fetchedJs, source: "top-document" } };
+		const js = { ...topDocumentSummary.fetchedJs, source: "top-document" };
+		const css = { ...topDocumentSummary.fetchedCss, source: "top-document" };
+		return {
+			...(allFramesRuns ? { fetchedAllFramesRuns: allFramesRuns } : {}),
+			fetchedCssAllFrames: css,
+			fetchedCssFullPage: css,
+			fetchedJsAllFrames: js,
+			fetchedJsFullPage: js,
+		};
 	}
-	const js = allFramesRuns.map((run) => run.jsBytes);
 	return {
 		fetchedAllFramesRuns: allFramesRuns,
-		fetchedJsAllFrames: { bytes: median(js), range: Math.max(...js) - Math.min(...js), source: "all-frames" },
+		fetchedCssAllFrames: summarizeField(allFramesRuns, "cssBytes"),
+		fetchedCssFullPage: summarizeField(allFramesRuns, "fullPageCssBytes"),
+		fetchedJsAllFrames: summarizeField(allFramesRuns, "jsBytes"),
+		fetchedJsFullPage: summarizeField(allFramesRuns, "fullPageJsBytes"),
 	};
 }
 
@@ -194,6 +216,33 @@ export async function waitForAssetQuiet({ capMs, now = () => Date.now(), pollMs 
 	}
 }
 
+// Runs in the page: scrolls the largest scrollable element (the document, or an app shell's own
+// scroll container) a viewport at a time to the bottom, two animation frames and a short pause
+// per step so lazy iframes and content-visibility sections near each position start loading,
+// until the bottom holds for two steps (content that grows while loading extends the walk).
+export async function scrollThroughPage({ maxSteps = 400, pauseMs = 100 } = {}) {
+	const scrollable = (element) => {
+		if (element === document.scrollingElement) return element.scrollHeight > element.clientHeight;
+		const { overflowY } = getComputedStyle(element);
+		return (overflowY === "auto" || overflowY === "scroll") && element.scrollHeight > element.clientHeight + 1;
+	};
+	const candidates = [document.scrollingElement, ...document.querySelectorAll("*")].filter((element) => element && scrollable(element));
+	if (candidates.length === 0) return { scrollHeight: document.documentElement.scrollHeight, steps: 0 };
+	const scroller = candidates.reduce((best, element) => (element.scrollHeight - element.clientHeight > best.scrollHeight - best.clientHeight ? element : best));
+	const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+	let steps = 0;
+	let atBottom = 0;
+	while (steps < maxSteps && atBottom < 2) {
+		scroller.scrollTop += Math.max(scroller.clientHeight, 1);
+		steps += 1;
+		await frame();
+		await frame();
+		await new Promise((resolve) => setTimeout(resolve, pauseMs));
+		atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 ? atBottom + 1 : 0;
+	}
+	return { scrollHeight: scroller.scrollHeight, steps };
+}
+
 async function measureOnce(browser, origin, routePath, { allFrames = false } = {}) {
 	const context = await browser.newContext({ viewport: VIEWPORT });
 	const page = await context.newPage();
@@ -224,7 +273,9 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	const pending = [];
 	const seen = new Set();
 	let blockedFrames = 0;
+	let frameDocuments = 0;
 	let framesAttached = 0;
+	let scrolled = false;
 	let jsBytes = 0;
 	let cssBytes = 0;
 	let scripts = 0;
@@ -250,6 +301,7 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	});
 	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
+		if (allFrames && response.request().isNavigationRequest() && response.frame() !== page.mainFrame() && response.status() < 400) frameDocuments += 1;
 		const kind = classifyAsset(response.url(), origin);
 		if (!kind || seen.has(response.url()) || !counts(response.frame())) return;
 		seen.add(response.url());
@@ -259,7 +311,7 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 		}
 		const frame = response.frame() === page.mainFrame() ? "main" : "sub";
 		pending.push(response.body().then((body) => {
-			assets.push({ bytes: body.length, frame, kind, path: response.url().replace(origin, "") });
+			assets.push({ bytes: body.length, frame, kind, path: response.url().replace(origin, ""), ...(scrolled ? { scrolled: true } : {}) });
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, (error) => {
 			assetFailures.push(`${response.url().replace(origin, "")} (body unreadable: ${error.message.split("\n")[0]})`);
@@ -269,10 +321,28 @@ async function measureOnce(browser, origin, routePath, { allFrames = false } = {
 	assertNavigationOk(response?.status(), `${origin}${routePath}`);
 	await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
 	await Promise.all(pending);
+	const viewport = { cssBytes, frameDocuments, jsBytes, scripts, stylesheets };
+	let fullPage = null;
+	if (allFrames) {
+		// The viewport numbers above are final; now scroll so lazy iframes below the fold load,
+		// under the same quiet-window rules, and count everything fetched by the end.
+		scrolled = true;
+		const scrollStartedAt = Date.now();
+		const scroll = await page.evaluate(scrollThroughPage);
+		await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
+		await Promise.all(pending);
+		fullPage = {
+			fullPageCssBytes: cssBytes,
+			fullPageFrameDocuments: frameDocuments,
+			fullPageJsBytes: jsBytes,
+			scrollMs: Date.now() - scrollStartedAt,
+			scrollSteps: scroll.steps,
+		};
+	}
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
 	assets.sort((left, right) => left.path.localeCompare(right.path));
-	return { assets, blockedFrames, cssBytes, framesAttached, jsBytes, prefetchesBlocked, scripts, stylesheets };
+	return { assets, blockedFrames, framesAttached, prefetchesBlocked, ...viewport, ...fullPage };
 }
 
 export async function collectRouteTransfer({ allFramesRoutes = new Set(), baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
@@ -316,6 +386,9 @@ export function mergeIntoBaseline(baseline, transfer, browser = null) {
 				fetchedCss: transfer[route.id].fetchedCss,
 				fetchedJs: transfer[route.id].fetchedJs,
 				...(transfer[route.id].fetchedJsAllFrames ? { fetchedJsAllFrames: transfer[route.id].fetchedJsAllFrames } : {}),
+				...(transfer[route.id].fetchedCssAllFrames ? { fetchedCssAllFrames: transfer[route.id].fetchedCssAllFrames } : {}),
+				...(transfer[route.id].fetchedJsFullPage ? { fetchedJsFullPage: transfer[route.id].fetchedJsFullPage } : {}),
+				...(transfer[route.id].fetchedCssFullPage ? { fetchedCssFullPage: transfer[route.id].fetchedCssFullPage } : {}),
 				...(transfer[route.id].fetchedAllFramesRuns ? { fetchedAllFramesRuns: transfer[route.id].fetchedAllFramesRuns } : {}),
 				fetchedPath: transfer[route.id].path,
 				fetchedRuns: transfer[route.id].fetchedRuns,
@@ -334,7 +407,7 @@ async function main() {
 	writeFileSync(options.output, `${JSON.stringify(mergeIntoBaseline(baseline, transfer, browser), null, 2)}\n`);
 	for (const [routeId, result] of Object.entries(transfer)) {
 		const allFrames = result.fetchedJsAllFrames.source === "all-frames"
-			? `, js all frames ${result.fetchedJsAllFrames.bytes} (range ${result.fetchedJsAllFrames.range})`
+			? `, all frames js ${result.fetchedJsAllFrames.bytes} (range ${result.fetchedJsAllFrames.range}) css ${result.fetchedCssAllFrames.bytes}, full page js ${result.fetchedJsFullPage.bytes} (range ${result.fetchedJsFullPage.range}) css ${result.fetchedCssFullPage.bytes}, frames ${result.fetchedAllFramesRuns.map((run) => `${run.frameDocuments}/${run.fullPageFrameDocuments}`).join(" ")} (viewport/full page), scroll ${result.fetchedAllFramesRuns.map((run) => `${run.scrollMs} ms`).join(" ")}`
 			: result.fetchedAllFramesRuns ? ", all-frames pass saw no iframe" : "";
 		console.log(`${routeId} ${result.path}: js ${result.fetchedJs.bytes} (range ${result.fetchedJs.range}), css ${result.fetchedCss.bytes} (range ${result.fetchedCss.range})${allFrames} over ${result.fetchedRuns.length} runs`);
 	}
