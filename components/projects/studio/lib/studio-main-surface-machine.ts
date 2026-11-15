@@ -3,11 +3,13 @@
  * (which agent, which view) and the two agent-picking dialogs. No React; the `node:test`
  * transition table drives it directly, and `useStudioMainSurface` wires it into the shell.
  *
- * Whether the user sees the agents home, a custom agent's landing or the chat follows from
- * the chat's own state, so it is derived (`deriveStudioMainSurface`), not stored.
+ * Whether the user sees the agents home or the chat follows from the chat's own state, so the
+ * booleans the shell renders from are derived (`deriveStudioMainSurface`), not stored.
  */
-import type { AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { HOME_STARTER_DEFAULT_CATEGORY, type HomeStarterCategory } from "@/components/projects/studio/data/home-starter-templates";
+
+/** Which view the agent config pane shows. The panel re-exports it. */
+export type AgentConfigView = "configure" | "insights" | "test";
 
 /** The agent open in the config pane, and the chat message whose result created it, if any. */
 export interface StudioAgentConfigTarget {
@@ -166,17 +168,7 @@ export interface StudioMainSurfaceFacts {
 	readonly visibleMessageCount: number;
 }
 
-export type StudioMainSurfaceKind =
-	/** The agent config pane (configure, insights or test view). */
-	| "agent-config"
-	/** The default agents home: starter bento, composer and agents table. */
-	| "agents-home"
-	/** An empty thread with a custom or built-in agent picked to chat with. */
-	| "agent-home"
-	| "chat";
-
 export interface StudioMainSurface {
-	readonly kind: StudioMainSurfaceKind;
 	/** No conversation is on screen (also true under the config pane when the thread is empty). */
 	readonly showHomeState: boolean;
 	readonly isDefaultAgentHomeState: boolean;
@@ -191,12 +183,5 @@ export function deriveStudioMainSurface(facts: StudioMainSurfaceFacts): StudioMa
 	const shouldShowChatHeader = !facts.hasAgentConfigPane
 		&& (facts.visibleMessageCount > 0 || facts.hasActiveThreadRun || facts.isStreaming);
 	const isDefaultAgentHomeState = showHomeState && !facts.isCustomAgentSelected && !facts.hasAgentConfigPane;
-	const kind: StudioMainSurfaceKind = facts.hasAgentConfigPane
-		? "agent-config"
-		: isDefaultAgentHomeState
-			? "agents-home"
-			: showHomeState
-				? "agent-home"
-				: "chat";
-	return { isDefaultAgentHomeState, kind, shouldShowChatHeader, showHomeState };
+	return { isDefaultAgentHomeState, shouldShowChatHeader, showHomeState };
 }

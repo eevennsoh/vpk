@@ -46,7 +46,7 @@ import { isStudioAutomationDiscoveryDemoPrompt } from "@/components/projects/stu
 import {
 	RovoAppMessages,
 } from "@/components/projects/studio/components/rovo-app-messages";
-import type { AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
+import type { AgentConfigView } from "@/components/projects/studio/lib/studio-main-surface-machine";
 import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
 import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
 import {
@@ -835,6 +835,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				return;
 			}
 
+			// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
 			dispatchMainSurface({ type: "close-agent-config" });
 		}
 	}, [activeAgentConfig, activeSessionAgentEntry, dispatchMainSurface, studioAgentRegistry]);
@@ -872,6 +873,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				// greeting (the "two clicks to leave Test" bug).
 				generatedAgentTestViewKeysRef.current.add(agentResultKey);
 				if (activeAgentConfigView !== "test") {
+					// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
 					dispatchMainSurface({ type: "set-agent-config-view", view: "test" });
 					openAgentCreationAskRovoChat();
 				}
@@ -2375,6 +2377,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		}
 
 		hasQueuedAgentOnboardingTourPreviewRef.current = true;
+		// Still a state update in an effect: the dispatch only hides it from react-hooks/set-state-in-effect.
 		dispatchMainSurface({ type: "set-agent-config-view", view: "test" });
 		openAgentCreationAskRovoChat();
 		let frame = 0;

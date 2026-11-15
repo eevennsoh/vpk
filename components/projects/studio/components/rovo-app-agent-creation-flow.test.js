@@ -913,7 +913,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	// on the first template tab (AGENT_TEMPLATE_CATEGORIES[0].id) via the config
 	// panel, regardless of the bento's auto-cycling category.
 	assert.match(SHELL_SOURCE, /import \{ AGENT_TEMPLATE_CATEGORIES,[\s\S]*\} from "@\/components\/blocks\/agent-template";/u);
-	assert.match(SHELL_SOURCE, /const handleBrowseAgentsDirectory = useCallback\(\(\) => \{[\s\S]*setSidebarAgentBrowserInitialCategory\(AGENT_TEMPLATE_CATEGORIES\[0\]\.id\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const handleBrowseAgentsDirectory = useCallback\(\(\) => \{[\s\S]*dispatchMainSurface\(\{ type: "open-directory", category: AGENT_TEMPLATE_CATEGORIES\[0\]\.id \}\);[\s\S]*\}, \[dispatchMainSurface\]\);/u);
 	assert.match(SHELL_SOURCE, /const handleStartAgentWithTemplate = handleBrowseAgentsDirectory;/u);
 	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*onStartWithTemplate=\{handleStartAgentWithTemplate\}[\s\S]*\/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onStartWithTemplate=\{onStartWithTemplate\}/u);

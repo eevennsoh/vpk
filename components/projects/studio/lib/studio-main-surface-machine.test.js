@@ -146,25 +146,25 @@ const FACTS = {
 };
 
 test("an empty thread with the default agent is the agents home, without a chat header", () => {
-	assert.deepEqual(derive(FACTS), { isDefaultAgentHomeState: true, kind: "agents-home", shouldShowChatHeader: false, showHomeState: true });
+	assert.deepEqual(derive(FACTS), { isDefaultAgentHomeState: true, shouldShowChatHeader: false, showHomeState: true });
 });
 
 test("an empty thread with a picked agent is that agent's landing, not the agents home", () => {
-	assert.deepEqual(derive({ ...FACTS, isCustomAgentSelected: true }), { isDefaultAgentHomeState: false, kind: "agent-home", shouldShowChatHeader: false, showHomeState: true });
+	assert.deepEqual(derive({ ...FACTS, isCustomAgentSelected: true }), { isDefaultAgentHomeState: false, shouldShowChatHeader: false, showHomeState: true });
 });
 
 test("the config pane wins over everything and hides the chat header, even with messages", () => {
-	assert.deepEqual(derive({ ...FACTS, hasAgentConfigPane: true }), { isDefaultAgentHomeState: false, kind: "agent-config", shouldShowChatHeader: false, showHomeState: true });
-	assert.deepEqual(derive({ ...FACTS, hasAgentConfigPane: true, isStreaming: true, visibleMessageCount: 3 }), { isDefaultAgentHomeState: false, kind: "agent-config", shouldShowChatHeader: false, showHomeState: false });
+	assert.deepEqual(derive({ ...FACTS, hasAgentConfigPane: true }), { isDefaultAgentHomeState: false, shouldShowChatHeader: false, showHomeState: true });
+	assert.deepEqual(derive({ ...FACTS, hasAgentConfigPane: true, isStreaming: true, visibleMessageCount: 3 }), { isDefaultAgentHomeState: false, shouldShowChatHeader: false, showHomeState: false });
 });
 
 test("messages, a background run, an open artifact or a loading thread leave the home state", () => {
-	assert.deepEqual(derive({ ...FACTS, visibleMessageCount: 2 }), { isDefaultAgentHomeState: false, kind: "chat", shouldShowChatHeader: true, showHomeState: false });
-	assert.deepEqual(derive({ ...FACTS, hasActiveThreadRun: true }), { isDefaultAgentHomeState: false, kind: "chat", shouldShowChatHeader: true, showHomeState: false });
-	assert.deepEqual(derive({ ...FACTS, isArtifactOpen: true }), { isDefaultAgentHomeState: false, kind: "chat", shouldShowChatHeader: false, showHomeState: false });
-	assert.deepEqual(derive({ ...FACTS, isLoadingThread: true }), { isDefaultAgentHomeState: false, kind: "chat", shouldShowChatHeader: false, showHomeState: false });
+	assert.deepEqual(derive({ ...FACTS, visibleMessageCount: 2 }), { isDefaultAgentHomeState: false, shouldShowChatHeader: true, showHomeState: false });
+	assert.deepEqual(derive({ ...FACTS, hasActiveThreadRun: true }), { isDefaultAgentHomeState: false, shouldShowChatHeader: true, showHomeState: false });
+	assert.deepEqual(derive({ ...FACTS, isArtifactOpen: true }), { isDefaultAgentHomeState: false, shouldShowChatHeader: false, showHomeState: false });
+	assert.deepEqual(derive({ ...FACTS, isLoadingThread: true }), { isDefaultAgentHomeState: false, shouldShowChatHeader: false, showHomeState: false });
 });
 
 test("streaming into an empty thread shows the chat header while the home is still up", () => {
-	assert.deepEqual(derive({ ...FACTS, isStreaming: true }), { isDefaultAgentHomeState: true, kind: "agents-home", shouldShowChatHeader: true, showHomeState: true });
+	assert.deepEqual(derive({ ...FACTS, isStreaming: true }), { isDefaultAgentHomeState: true, shouldShowChatHeader: true, showHomeState: true });
 });
