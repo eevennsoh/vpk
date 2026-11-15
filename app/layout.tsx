@@ -8,6 +8,7 @@ import { PROJECT_COMPONENTS } from "@/app/data/component-manifest";
 import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
+import { MainLandmark } from "@/components/utils/main-landmark";
 import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
 import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
@@ -247,13 +248,14 @@ ${devStylesheetGuardScript}
 				<PreHydrationScript id="vpk-pre-hydration" html={preHydrationScript} />
 				<DocumentTitlePrefix projectNamesBySlug={PROJECT_NAMES_BY_SLUG} />
 				<a
+					data-shell-chrome
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-sm focus:bg-surface-raised focus:px-3 focus:py-2 focus:text-text focus:shadow-overlay focus:outline-2 focus:outline-offset-2 focus:outline-[color:var(--color-ring)]"
 				>
 					Skip to content
 				</a>
 				<Providers>
-					<main id="main-content">{children}</main>
+					<MainLandmark>{children}</MainLandmark>
 				</Providers>
 				{process.env.NODE_ENV === "development" ? <DevRootTools /> : null}
 			</body>

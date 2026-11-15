@@ -29,9 +29,9 @@ const GLYPH_FRAMES = [
 export default function RovoFable({
 	className,
 	...props
-}: Readonly<React.ComponentProps<"main">>) {
+}: Readonly<React.ComponentProps<"section">>) {
 	return (
-		<main
+		<section
 			className={cn(
 				"min-h-svh overflow-hidden bg-[#221b16] text-[#f1ead7]",
 				className,
@@ -102,6 +102,6 @@ export default function RovoFable({
 					<span>18 frames / 16s / 24 fps</span>
 				</footer>
 			</section>
-		</main>
+		</section>
 	);
 }
