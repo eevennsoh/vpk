@@ -472,6 +472,85 @@ test("Butter board prototype leaves unfinished actions enabled", async () => {
 	}
 });
 
+test("summary edits allow overflow but only save valid text; Escape cancels", async () => {
+	const saved = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: { appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Original", agentActivities: [{ id: "reviewer", name: "Review agent", state: "working", label: "Working" }], onSummaryChange: (value) => saved.push(value) },
+	});
+	try {
+		const card = view.container.querySelector('[data-slot="jira-issue-card"]');
+		const readSummary = view.container.querySelector('[data-slot="jira-issue-project-butter"]');
+		const agentRow = view.container.querySelector('[data-slot="jira-issue-agent-row"]');
+		assert.ok(agentRow);
+		await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+		await view.click(view.getByRole("menuitem", { name: "Edit summary" }));
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-card"]') === card, true);
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]') === readSummary, true);
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-agent-row"]') === agentRow, true);
+		assert.ok(agentRow.closest("[inert]"));
+		const editor = view.getByRole("textbox", { name: "Summary for PD-40" });
+		const counter = document.getElementById(editor.getAttribute("aria-describedby"));
+		assert.equal(view.isFocused(editor), true);
+		assert.match(counter.textContent, /^8\/255/u);
+		assert.equal(editor.selectionStart, editor.value.length);
+		assert.equal(editor.selectionEnd, editor.value.length);
+		await view.fill(editor, "a".repeat(255) + "extra");
+		assert.equal(editor.value.length, 260);
+		assert.equal(editor.getAttribute("aria-invalid"), "true");
+		assert.match(counter.textContent, /^-5\/255/u);
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-summary-editor"] [aria-hidden="true"] span')?.textContent, "extra");
+		assert.equal(view.getByRole("button", { name: "Save summary" }).disabled, true);
+		await view.press(editor, "Enter");
+		assert.deepEqual(saved, []);
+		await view.fill(editor, "a".repeat(255));
+		assert.equal(editor.getAttribute("aria-invalid"), null);
+		assert.match(counter.textContent, /^255\/255/u);
+		assert.equal(view.getByRole("button", { name: "Save summary" }).disabled, false);
+		await view.fill(editor, "a".repeat(343));
+		assert.match(counter.textContent, /^-88\/255/u);
+		await view.fill(editor, "a".repeat(254) + "😀");
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-summary-editor"] [aria-hidden="true"] span')?.textContent, "😀");
+		await view.fill(editor, "  Updated summary  ");
+		await view.press(editor, "Enter", { isComposing: true });
+		assert.deepEqual(saved, []);
+		await view.press(editor, "Enter");
+		assert.deepEqual(saved, ["Updated summary"]);
+		assert.equal(view.container.querySelector('[data-slot="jira-issue-agent-row"]') === agentRow, true);
+		assert.equal(Boolean(agentRow.closest("[inert]")), false);
+		await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+		await view.click(view.getByRole("menuitem", { name: "Edit summary" }));
+		await view.fill(view.getByRole("textbox", { name: "Summary for PD-40" }), "Discard this");
+		await view.press(null, "Escape");
+		assert.deepEqual(saved, ["Updated summary"]);
+		assert.equal(view.queryByRole("textbox", { name: "Summary for PD-40" }), null);
+	} finally { await view.unmount(); }
+});
+
+test("pressing outside a summary edit cancels without activating the other control", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		source: `
+			import { useState } from "react";
+			import { JiraIssueSummaryEditor } from "@/components/blocks/jira-issue/summary-editor";
+			export function Fixture({ onAction }) {
+				const [editing, setEditing] = useState(true);
+				return <><button onClick={() => onAction("outside")}>Outside</button>{editing ? <JiraIssueSummaryEditor issueKey="PD-40" issueType="task" summary="Original" onCancel={() => setEditing(false)} onSave={onAction} /> : null}</>;
+			}
+		`,
+		exportName: "Fixture",
+		props: { onAction: (action) => actions.push(action) },
+	});
+	try {
+		await view.click(view.getByRole("button", { name: "Outside" }));
+		assert.equal(view.queryByRole("textbox", { name: "Summary for PD-40" }), null);
+		assert.deepEqual(actions, []);
+		await view.click(view.getByRole("button", { name: "Outside" }));
+		assert.deepEqual(actions, ["outside"]);
+	} finally { await view.unmount(); }
+});
+
 test("Butter keeps overflow options enabled while unavailable actions remain no-ops", async () => {
 	const actions = [];
 	const view = await renderComponent({

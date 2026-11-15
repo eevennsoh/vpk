@@ -44,6 +44,7 @@ import { indexBoardSubtasks, nextBoardIssueKey } from "./lib/board-work-item-opt
 import { CollapsedColumnSessionDrop } from "./components/collapsed-column-session-drop";
 import { resolveBoardCreateDropzoneDrag } from "./lib/board-agent-session-drag";
 import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
+import { createBoardSummaryEditStore } from "./lib/board-summary-edit";
 import { CreatedCardInlineFlight } from "./components/created-card-inline-flight";
 import { useCreatedCardDropMotion } from "./hooks/use-created-card-drop-motion";
 import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
@@ -210,6 +211,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
 	cardAppearance?: JiraIssueAppearance;
+	onCardSummaryChange?: (issueKey: string, summary: string) => void;
 	/** Show issue priority on board cards; defaults to the issue component's behavior. */
 	showPriorityIndicator?: boolean;
 	/** Show the issue type, key, and assignee strip at the bottom of board cards. */
@@ -436,7 +438,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
-	iconScale = "compact", cardAppearance,
+	iconScale = "compact", cardAppearance, onCardSummaryChange,
 	showPriorityIndicator,
 	showFooterMetadata = true,
 	issueDragTransitions = false,
@@ -502,6 +504,7 @@ function ExperimentalJiraKanbanView({
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
+	const [summaryEditStore] = useState(createBoardSummaryEditStore);
 	const cardRemoval = useBoardCardRemoval(cardMoreMenuActions, shouldReduceMotion, onCardsRemove);
 	const receivingCreatedCards = useJiraDropzoneReceiving(createdCardArrival?.columnTitle);
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
@@ -932,6 +935,7 @@ function ExperimentalJiraKanbanView({
 											<CreatedCardArrivalMotion
 												key={card.code}
 												joinsPrevious={selectionBackdrop === "middle" || selectionBackdrop === "end"}
+										summaryEditStore={summaryEditStore}
 												positionMotion={{
 													layout: shouldAnimateCardLayout && !issueDropArrival.isReflowing ? "position" : false,
 													layoutId: shouldAnimateCardPosition && !issueDropArrival.isReflowing ? `jira-kanban-card-${card.code}` : undefined,
@@ -994,6 +998,8 @@ function ExperimentalJiraKanbanView({
 												onAgentDoneRunReview={onCardAgentDoneRunReview}
 												onAgentDoneRunView={onCardAgentDoneRunView}
 												onClick={handleClick}
+												onSummaryChange={onCardSummaryChange ? (summary) => onCardSummaryChange(card.code, summary) : undefined}
+												onSummaryEditChange={(editing) => summaryEditStore.setEditing(card.code, editing)}
 												onCreateWorkItem={proximityActions.onCreateWorkItem}
 												onDragEnd={handleCardDragEndInternal}
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}

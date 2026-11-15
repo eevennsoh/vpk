@@ -993,6 +993,7 @@ function ExperimentalJiraKanbanPageContent({
 								ariaLabel={ariaLabel}
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
+								onCardSummaryChange={controlledBoardColumns === undefined || onBoardColumnsChange ? (issueKey, summary) => updateBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, title: summary } : card) }))) : undefined}
 								createWorkItemColumns={boardColumns}
 								createWorkItemAssignees={assignees}
 								inlineCreateComponent={inlineCreateComponent}

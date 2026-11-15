@@ -106,6 +106,7 @@ export function JiraIssueSummary({
 	issueTypeLabel,
 	isMounted,
 	moreAction,
+	editingSummary,
 	parentEpicControl,
 	priority,
 	animatePullRequestOnMount,
@@ -139,6 +140,7 @@ export function JiraIssueSummary({
 	issueTypeLabel: string;
 	isMounted: boolean;
 	moreAction?: ReactNode;
+	editingSummary?: boolean;
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
 	animatePullRequestOnMount?: boolean;
@@ -161,6 +163,7 @@ export function JiraIssueSummary({
 	const compactIconClassName = iconMetrics.compactIconClassName;
 	if (appearance === "project-butter") {
 		return <ProjectButterSummary
+			editingSummary={editingSummary}
 			assignment={assignment} allowAddAgent={allowAddAgent}
 			issueKey={issueKey} summary={summary} metadata={metadata} priority={priority} tags={tags}
 			parentEpicControl={parentEpicControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen} moreAction={moreAction}

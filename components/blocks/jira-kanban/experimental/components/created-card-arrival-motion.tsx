@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useLayoutEffect, useState, type ReactNode } from "react";
+import { use, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion, type MotionProps } from "motion/react";
 
 import { JiraCreateEntrance } from "@/components/blocks/jira-creating/components/jira-creating-entrance";
@@ -23,6 +23,7 @@ import {
 import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardCardInsertionLine } from "./board-card-insertion-line";
 import type { BoardColumnWidth } from "../lib/board-column-collapse";
+import type { BoardSummaryEditStore } from "../lib/board-summary-edit";
 
 interface CreatedCardArrivalMotionProps {
 	arrival?: JiraKanbanCreatedCardArrival;
@@ -36,6 +37,7 @@ interface CreatedCardArrivalMotionProps {
 	className?: string;
 	/** Adjacent selected wells meet without the usual stack gutter. */
 	joinsPrevious?: boolean;
+	summaryEditStore?: BoardSummaryEditStore;
 	columnTitle: string;
 	columnWidth?: BoardColumnWidth;
 	dropTarget: "attach" | "unlink" | null | undefined;
@@ -85,6 +87,8 @@ function getCardMoveTransition(
 	return cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE;
 }
 
+const subscribeToNoSummaryEdit = () => () => {};
+
 export function CreatedCardArrivalMotion({
 	arrival: createdArrival,
 	moveArrival,
@@ -96,6 +100,7 @@ export function CreatedCardArrivalMotion({
 	children,
 	className,
 	joinsPrevious = false,
+	summaryEditStore,
 	columnTitle,
 	columnWidth = "fixed",
 	dropTarget,
@@ -106,6 +111,7 @@ export function CreatedCardArrivalMotion({
 	removalSpacing,
 	onRemovalComplete,
 }: Readonly<CreatedCardArrivalMotionProps>) {
+	const interactionMuted = useSyncExternalStore(summaryEditStore?.subscribe ?? subscribeToNoSummaryEdit, () => summaryEditStore?.isMuted(cardCode) ?? false, () => false);
 	const arrival = moveArrival?.columnTitle === columnTitle && moveArrival.cardCodes.includes(cardCode)
 		? moveArrival : createdArrival;
 	const hoverInsertion = use(BoardCardHoverInsertionContext);
@@ -142,7 +148,7 @@ export function CreatedCardArrivalMotion({
 			aria-hidden={waiting || removing || flightPending || undefined}
 			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, flightPending ? "invisible" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || removing || flightPending || undefined}
+			inert={waiting || removing || flightPending || interactionMuted || undefined}
 			style={{
 				maxWidth: columnWidth === "fluid" ? "none" : undefined,
 				marginBottom: removing && removalSpacing
@@ -160,6 +166,7 @@ export function CreatedCardArrivalMotion({
 					"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
 					"transition-[background-color,opacity] duration-normal ease-out-practical motion-reduce:transition-none",
 					getBoardCardInsertionAnchorClassName(insertionPosition),
+					interactionMuted && "opacity-30",
 					className,
 				)}
 				data-board-agent-session-drop-zone="issue"

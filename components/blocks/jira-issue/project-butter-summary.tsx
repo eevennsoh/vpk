@@ -37,7 +37,7 @@ type ProjectButterSummaryProps = Pick<
 	| "showPriorityIndicator"
 	| "showFooterMetadata"
 	| "assignment"
-> & { assignee?: ReactNode; moreAction?: ReactNode; allowAddAgent?: boolean };
+> & { assignee?: ReactNode; moreAction?: ReactNode; allowAddAgent?: boolean; editingSummary?: boolean };
 
 const WORK_TYPE_ICONS = { task: TaskIcon, story: StoryIcon, epic: EpicIcon, bug: BugIcon, subtask: SubtasksIcon };
 const WORK_TYPE_HOVER_CLASSES = {
@@ -48,10 +48,10 @@ const WORK_TYPE_HOVER_CLASSES = {
 	subtask: "group-hover/jira-issue:text-icon-brand",
 };
 
-export function ProjectButterIssueKey({ issueKey, issueType }: Readonly<{ issueKey: string; issueType: keyof typeof WORK_TYPE_ICONS }>) {
+export function ProjectButterIssueKey({ className, issueKey, issueType }: Readonly<{ className?: string; issueKey: string; issueType: keyof typeof WORK_TYPE_ICONS }>) {
 	const WorkTypeIcon = WORK_TYPE_ICONS[issueType];
 	return (
-		<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+		<span className={cn("flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle", className)}>
 			<span className={cn("inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none", WORK_TYPE_HOVER_CLASSES[issueType])}>
 				<WorkTypeIcon label={issueType} size="small" color="currentColor" />
 			</span>
@@ -81,18 +81,19 @@ export function ProjectButterSummary({
 	showFooterMetadata = true,
 	assignment,
 	allowAddAgent = true,
+	editingSummary = false,
 }: Readonly<ProjectButterSummaryProps>) {
 	const issueType = metadata?.issueType ?? "task";
 	return (
 		<div className="flex min-w-0 flex-col gap-3" data-slot="jira-issue-project-butter">
 			<div className="min-w-0">
 				<div className="flex min-h-6 items-center justify-between gap-2">
-					<ProjectButterIssueKey issueKey={issueKey} issueType={issueType} />
-					<div className="size-6 shrink-0">{moreAction}</div>
+					<ProjectButterIssueKey className={editingSummary ? "invisible" : undefined} issueKey={issueKey} issueType={issueType} />
+					<div className={cn("size-6 shrink-0 transition-opacity duration-fast ease-out-practical", editingSummary && "opacity-0")}>{moreAction}</div>
 				</div>
-				<p className="mt-0.5 line-clamp-2 break-words text-sm leading-5 text-text">{summary}</p>
+				<p className={cn("mt-0.5 line-clamp-2 break-words text-sm leading-5 text-text", editingSummary && "invisible")}>{summary}</p>
 			</div>
-			<div className="flex min-w-0 flex-col items-start gap-1">
+			<div className={cn("flex min-w-0 flex-col items-start gap-1 transition-opacity duration-fast ease-out-practical", editingSummary && "opacity-0")}>
 				{parentEpicControl}
 				{tags?.length || subtasks.length ? (
 					<TagGroup className="min-w-0 gap-1">
@@ -111,6 +112,7 @@ export function ProjectButterSummary({
 			</div>
 			{showFooterMetadata ? (
 				<ProjectButterFooter
+					editingSummary={editingSummary}
 					issueKey={issueKey}
 					assignment={assignment}
 					allowAddAgent={allowAddAgent}
@@ -131,6 +133,7 @@ export function ProjectButterSummary({
 }
 
 function ProjectButterFooter({
+	editingSummary,
 	issueKey,
 	assignment,
 	allowAddAgent,
@@ -159,13 +162,14 @@ function ProjectButterFooter({
 		| "issueKey"
 		| "assignment"
 		| "allowAddAgent"
+		| "editingSummary"
 	> & { pullRequestTitle: string }
 >) {
 	const dueDate = formatButterDueDate(metadata?.dueDate);
 	const [initiallyHasPullRequest] = useState(() => Boolean(pullRequestNumber));
 	const reducedMotion = useReducedMotion();
 	return (
-		<div className="flex min-h-6 min-w-0 items-center justify-between gap-1">
+		<div className={cn("flex min-h-6 min-w-0 items-center justify-between gap-1 transition-opacity duration-fast ease-out-practical", editingSummary && "opacity-0")}>
 			<div className={cn("flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-4 text-text-subtle", !dueDate && "-ml-1")}>
 				{dueDate ? (
 					<span className="mr-1 inline-flex shrink-0 items-center gap-1">

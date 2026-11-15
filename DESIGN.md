@@ -402,6 +402,12 @@ remain unframed.
 need movement or lift, and pair overlay surfaces with overlay shadow. Do not
 mix overlay shadow into ordinary inline content.
 
+**The single-perimeter rule.** Raised cards using an elevation shadow must not
+add a visible decorative outer border or ring. The shadow already defines the
+edge, so an added border creates a double outline. Keep distinct focus or
+selection indicators when they communicate state.
+<!-- 2026-11-15: "this extra 1px border on the card" -->
+
 ## 7. Components
 
 Shared components should feel compact, predictable, and stateful. Product and
