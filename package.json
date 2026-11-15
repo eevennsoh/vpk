@@ -232,7 +232,7 @@
 		"knip": "^6.44.1",
 		"portless": "^0.15.8",
 		"postcss": "^8.5.30",
-		"react-grab": "https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.3/react-grab-0.2.0-vpk.3.tgz",
+		"react-grab": "https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.5/react-grab-0.2.0-vpk.5.tgz",
 		"shadcn": "^4.22.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "npm:@typescript/typescript6@^6.0.2"
