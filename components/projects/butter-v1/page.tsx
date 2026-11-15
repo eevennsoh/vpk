@@ -943,7 +943,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						boardTitle={wacContent ? WAC_BOARD_TITLE : undefined}
 						boardColumns={boardColumns}
 						boardFilterScopeKey={contentMode}
-						defaultAgentSessionColumnCollapsed={wacContent}
+						defaultAgentSessionColumnCollapsed
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={wacContent ? WAC_HEADER_ASSIGNEES : BUTTER_PAY_HEADER_ASSIGNEES}
