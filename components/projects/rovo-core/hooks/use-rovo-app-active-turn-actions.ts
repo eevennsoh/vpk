@@ -3,6 +3,7 @@
 import type { ChatStatus } from "ai";
 import {
 	useCallback,
+	useState,
 	type Dispatch,
 	type MutableRefObject,
 	type SetStateAction,
@@ -22,17 +23,18 @@ import { buildRovoAppCancelUrl } from "@/components/projects/rovo-core/lib/rovo-
 import {
 	waitForRovoApp,
 } from "@/components/projects/rovo-core/lib/rovo-app-hook-helpers";
+import { createRovoCancelDebounce } from "@/lib/rovo-cancel-strategy";
 import type {
 	RovoAppActiveRun,
 	RovoAppDocument,
 	RovoAppRunStatus,
 } from "@/lib/rovo-app-types";
-import type {
-	RovoMessageInterruptionSource,
-	RovoUIMessage,
+import {
+	getLatestUserMessageId,
+	type RovoMessageInterruptionSource,
+	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 
-const EXPLICIT_CANCEL_DEBOUNCE_MS = 750;
 const ACTIVE_TURN_STOP_TIMEOUT_MS = 1_200;
 
 type RealtimeMessagesStateUpdater = (currentMessages: RovoUIMessage[]) => RovoUIMessage[];
@@ -59,13 +61,13 @@ interface UseRovoAppActiveTurnActionsOptions {
 		source: RovoMessageInterruptionSource;
 	}) => Promise<void>>;
 	interruptPromiseRef: MutableRefObject<Promise<void> | null>;
-	lastExplicitCancelAtRef: MutableRefObject<number>;
 	markLocalThreadRunPending: (threadId: string) => void;
 	mutateRealtimeMessagesState: MutateRealtimeMessagesState;
 	queueProcessorRunningRef: MutableRefObject<boolean>;
 	refreshThreads: () => Promise<unknown>;
 	releaseCompletedUseChatTurnIfNeeded: () => Promise<unknown>;
 	resetPendingArtifactAssociation: () => void;
+	rovoMessagesRef: MutableRefObject<RovoUIMessage[]>;
 	runSubscriptionAbortControllerRef: MutableRefObject<AbortController | null>;
 	runSubscriptionThreadIdRef: MutableRefObject<string | null>;
 	saveStreamingArtifactCheckpoint: () => Promise<RovoAppDocument | null>;
@@ -110,13 +112,13 @@ export function useRovoAppActiveTurnActions({
 	ensureThread,
 	interruptActiveTurnRef,
 	interruptPromiseRef,
-	lastExplicitCancelAtRef,
 	markLocalThreadRunPending,
 	mutateRealtimeMessagesState,
 	queueProcessorRunningRef,
 	refreshThreads,
 	releaseCompletedUseChatTurnIfNeeded,
 	resetPendingArtifactAssociation,
+	rovoMessagesRef,
 	runSubscriptionAbortControllerRef,
 	runSubscriptionThreadIdRef,
 	saveStreamingArtifactCheckpoint,
@@ -131,26 +133,28 @@ export function useRovoAppActiveTurnActions({
 	toUserErrorMessage,
 	useChatStatus,
 }: UseRovoAppActiveTurnActionsOptions): UseRovoAppActiveTurnActionsResult {
-	const requestExplicitCancel = useCallback(async () => {
+	// One debounce gate per hook: it owns the backend-cancel debounce per turn.
+	const [mayCancel] = useState(() => createRovoCancelDebounce());
+	const requestExplicitCancel = useCallback(async (turnId: string | null) => {
 		await requestExplicitRovoAppCancel({
 			activeThreadIdRef,
 			attachedRunStatus,
-			cancelDebounceMs: EXPLICIT_CANCEL_DEBOUNCE_MS,
 			cancelRun: cancelRovoAppRun,
 			cancelUrlForThread: buildRovoAppCancelUrl,
 			currentActiveRun: activeRun,
-			fetchCancel: (url) => fetch(url, { method: "POST" }),
-			lastExplicitCancelAtRef,
+			fetchCancel: (url, { signal }) => fetch(url, { method: "POST", signal }),
+			mayCancel,
 			queueProcessorRunningRef,
 			setAttachedRunStatus,
 			setHasActiveDispatch,
 			setLocalThreadActiveRun,
+			turnId,
 		});
 	}, [
 		activeRun,
 		activeThreadIdRef,
 		attachedRunStatus,
-		lastExplicitCancelAtRef,
+		mayCancel,
 		queueProcessorRunningRef,
 		setAttachedRunStatus,
 		setHasActiveDispatch,
@@ -194,6 +198,8 @@ export function useRovoAppActiveTurnActions({
 		}: {
 			source?: RovoMessageInterruptionSource;
 		} = {}) => {
+			// Read before stopping: the turn to cancel is the one running now.
+			const turnId = getLatestUserMessageId(rovoMessagesRef.current);
 			return interruptRovoAppActiveTurn({
 				activeThreadIdRef,
 				attachedRunStatus,
@@ -202,7 +208,7 @@ export function useRovoAppActiveTurnActions({
 				delegationAbortControllerRef,
 				interruptPromiseRef,
 				mutateRealtimeMessagesState,
-				requestExplicitCancel,
+				requestExplicitCancel: () => requestExplicitCancel(turnId),
 				runSubscriptionAbortControllerRef,
 				runSubscriptionThreadIdRef,
 				setAttachedRunStatus,
@@ -232,6 +238,7 @@ export function useRovoAppActiveTurnActions({
 			interruptPromiseRef,
 			mutateRealtimeMessagesState,
 			requestExplicitCancel,
+			rovoMessagesRef,
 			runSubscriptionAbortControllerRef,
 			runSubscriptionThreadIdRef,
 			setAttachedRunStatus,

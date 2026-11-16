@@ -378,7 +378,6 @@ export function useRovoAppCore({
 	const runSubscriptionAbortControllerRef = useRef<AbortController | null>(null);
 	const runSubscriptionThreadIdRef = useRef<string | null>(null);
 	const interruptPromiseRef = useRef<Promise<void> | null>(null);
-	const lastExplicitCancelAtRef = useRef(0);
 	const hasHydratedActiveThreadRef = useRef(false);
 	const lastLoadedInitialThreadIdRef = useRef<string | null>(null);
 	const pendingRouteThreadIdRef = useRef<string | null>(null);
@@ -978,13 +977,13 @@ export function useRovoAppCore({
 		ensureThread,
 		interruptActiveTurnRef,
 		interruptPromiseRef,
-		lastExplicitCancelAtRef,
 		markLocalThreadRunPending,
 		mutateRealtimeMessagesState,
 		queueProcessorRunningRef,
 		refreshThreads,
 		releaseCompletedUseChatTurnIfNeeded,
 		resetPendingArtifactAssociation,
+		rovoMessagesRef,
 		runSubscriptionAbortControllerRef,
 		runSubscriptionThreadIdRef,
 		saveStreamingArtifactCheckpoint,

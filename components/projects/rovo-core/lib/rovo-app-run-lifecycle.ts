@@ -1,5 +1,9 @@
 import type { ChatStatus } from "ai";
-import { shouldSendExplicitRovoCancel } from "@/lib/rovo-cancel-strategy";
+import {
+	EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS,
+	getRovoCancelDebounceKey,
+	shouldSendExplicitRovoCancel,
+} from "@/lib/rovo-cancel-strategy";
 import { markLastRovoAppAssistantMessageInterrupted } from "@/lib/rovo-app-interruptions";
 import type {
 	RovoAppActiveRun,
@@ -42,17 +46,20 @@ export type RovoAppExplicitCancelResult =
 export interface RequestExplicitRovoAppCancelInput {
 	activeThreadIdRef: MutableRef<string | null>;
 	attachedRunStatus: RovoAppRunStatus | null;
-	cancelDebounceMs: number;
-	cancelRun: (threadId: string) => Promise<boolean>;
+	cancelRun: (threadId: string, options: { signal: AbortSignal }) => Promise<boolean>;
 	cancelUrlForThread: (threadId: string | null) => string;
 	currentActiveRun: RovoAppActiveRun | null | undefined;
-	fetchCancel: (url: string) => Promise<unknown>;
-	lastExplicitCancelAtRef: MutableRef<number>;
-	now?: () => number;
+	fetchCancel: (url: string, options: { signal: AbortSignal }) => Promise<unknown>;
+	/** Shared debounce gate (createRovoCancelDebounce); refuses a repeat key. */
+	mayCancel: (debounceKey: string) => boolean;
 	queueProcessorRunningRef: MutableRef<boolean>;
 	setAttachedRunStatus: (status: RovoAppRunStatus | null) => void;
 	setHasActiveDispatch: (hasActiveDispatch: boolean) => void;
 	setLocalThreadActiveRun: (threadId: string, activeRun: RovoAppActiveRun | null) => void;
+	/** Caps the whole cancel (run cancel plus fallback) so the queue is not held. */
+	timeoutMs?: number;
+	/** The turn being stopped; a Stop on a new turn is never debounced by the last one. */
+	turnId: string | null;
 	warn?: (message: string, error: unknown) => void;
 }
 
@@ -163,30 +170,28 @@ export function completeRovoAppUseChatTurn({
 export async function requestExplicitRovoAppCancel({
 	activeThreadIdRef,
 	attachedRunStatus,
-	cancelDebounceMs,
 	cancelRun,
 	cancelUrlForThread,
 	currentActiveRun,
 	fetchCancel,
-	lastExplicitCancelAtRef,
-	now = Date.now,
+	mayCancel,
 	queueProcessorRunningRef,
 	setAttachedRunStatus,
 	setHasActiveDispatch,
 	setLocalThreadActiveRun,
+	timeoutMs = EXPLICIT_CANCEL_REQUEST_TIMEOUT_MS,
+	turnId,
 	warn = console.warn,
 }: RequestExplicitRovoAppCancelInput): Promise<RovoAppExplicitCancelResult> {
-	const currentTime = now();
-	if (currentTime - lastExplicitCancelAtRef.current < cancelDebounceMs) {
+	const activeThreadId = activeThreadIdRef.current;
+	if (!mayCancel(getRovoCancelDebounceKey({ threadId: activeThreadId }, turnId))) {
 		return "debounced";
 	}
 
-	lastExplicitCancelAtRef.current = currentTime;
-
+	const signal = AbortSignal.timeout(timeoutMs);
 	try {
-		const activeThreadId = activeThreadIdRef.current;
 		if (activeThreadId && (currentActiveRun || attachedRunStatus !== null)) {
-			const cancelled = await cancelRun(activeThreadId).catch(() => false);
+			const cancelled = await cancelRun(activeThreadId, { signal }).catch(() => false);
 			if (cancelled) {
 				queueProcessorRunningRef.current = false;
 				setHasActiveDispatch(false);
@@ -196,7 +201,7 @@ export async function requestExplicitRovoAppCancel({
 			}
 		}
 
-		await fetchCancel(cancelUrlForThread(activeThreadIdRef.current));
+		await fetchCancel(cancelUrlForThread(activeThreadId), { signal });
 		queueProcessorRunningRef.current = false;
 		setHasActiveDispatch(false);
 		if (activeThreadId) {
@@ -292,7 +297,9 @@ export async function interruptRovoAppActiveTurn({
 
 			const shouldRequestExplicitCancel = hadActiveTurn
 				? shouldSendExplicitRovoCancel({
-						explicitUserCancel: false,
+						// A user Stop always reaches the backend: stop() settles the chat
+						// locally whether or not the backend saw the disconnect.
+						explicitUserCancel: source === "user-stop",
 						hasBackgroundCancelableWork,
 						hasUseChatTurn,
 						stopSettledInTime: stoppedInTime,

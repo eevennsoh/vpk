@@ -15,6 +15,7 @@ const {
 	updateRovoAppThreadActiveRun,
 	waitForRovoAppActiveTurnToStop,
 } = loadRovoCoreModule("lib/rovo-app-run-lifecycle.ts");
+const { createRovoCancelDebounce } = require("../../../../lib/rovo-cancel-strategy.ts");
 
 function createThread(overrides = {}) {
 	return {
@@ -106,12 +107,12 @@ test("completeRovoAppUseChatTurn clears active run state and kicks the queue", (
 	]);
 });
 
-test("requestExplicitRovoAppCancel debounces repeated cancel attempts", async () => {
+test("requestExplicitRovoAppCancel skips a cancel the debounce gate refuses", async () => {
 	const calls = [];
+	const debounceKeys = [];
 	const result = await requestExplicitRovoAppCancel({
 		activeThreadIdRef: { current: "thread-1" },
 		attachedRunStatus: null,
-		cancelDebounceMs: 750,
 		cancelRun: async () => {
 			calls.push(["cancelRun"]);
 			return true;
@@ -121,8 +122,10 @@ test("requestExplicitRovoAppCancel debounces repeated cancel attempts", async ()
 		fetchCancel: async () => {
 			calls.push(["fetchCancel"]);
 		},
-		lastExplicitCancelAtRef: { current: 1_000 },
-		now: () => 1_100,
+		mayCancel(key) {
+			debounceKeys.push(key);
+			return false;
+		},
 		queueProcessorRunningRef: { current: true },
 		setAttachedRunStatus(status) {
 			calls.push(["setAttachedRunStatus", status]);
@@ -133,6 +136,7 @@ test("requestExplicitRovoAppCancel debounces repeated cancel attempts", async ()
 		setLocalThreadActiveRun(threadId, activeRun) {
 			calls.push(["setLocalThreadActiveRun", threadId, activeRun]);
 		},
+		turnId: "user-1",
 		warn(message, error) {
 			calls.push(["warn", message, error]);
 		},
@@ -140,18 +144,17 @@ test("requestExplicitRovoAppCancel debounces repeated cancel attempts", async ()
 
 	assert.equal(result, "debounced");
 	assert.deepEqual(calls, []);
+	assert.deepEqual(debounceKeys, ["thread-1:turn:user-1"]);
 });
 
 test("requestExplicitRovoAppCancel clears local active run state when run cancellation succeeds", async () => {
 	const calls = [];
 	const queueProcessorRunningRef = { current: true };
-	const lastExplicitCancelAtRef = { current: 0 };
 	const activeRun = createRovoAppLocalActiveRun({ threadId: "thread-1" });
 
 	const result = await requestExplicitRovoAppCancel({
 		activeThreadIdRef: { current: "thread-1" },
 		attachedRunStatus: "streaming",
-		cancelDebounceMs: 750,
 		cancelRun: async (threadId) => {
 			calls.push(["cancelRun", threadId]);
 			return true;
@@ -161,8 +164,7 @@ test("requestExplicitRovoAppCancel clears local active run state when run cancel
 		fetchCancel: async () => {
 			calls.push(["fetchCancel"]);
 		},
-		lastExplicitCancelAtRef,
-		now: () => 1_000,
+		mayCancel: () => true,
 		queueProcessorRunningRef,
 		setAttachedRunStatus(status) {
 			calls.push(["setAttachedRunStatus", status]);
@@ -173,11 +175,11 @@ test("requestExplicitRovoAppCancel clears local active run state when run cancel
 		setLocalThreadActiveRun(threadId, activeRun) {
 			calls.push(["setLocalThreadActiveRun", threadId, activeRun]);
 		},
+		turnId: "user-1",
 	});
 
 	assert.equal(result, "run-cancelled");
 	assert.equal(queueProcessorRunningRef.current, false);
-	assert.equal(lastExplicitCancelAtRef.current, 1_000);
 	assert.deepEqual(calls, [
 		["cancelRun", "thread-1"],
 		["setHasActiveDispatch", false],
@@ -325,6 +327,160 @@ test("interruptRovoAppActiveTurn escalates timed-out useChat stops and marks the
 		source: "user-stop",
 		interruptedAt: rovoMessages[0].metadata.interruption.interruptedAt,
 	});
+});
+
+function createInterruptInput(overrides = {}) {
+	const calls = [];
+	const input = {
+		activeThreadIdRef: { current: "thread-1" },
+		attachedRunStatus: null,
+		clearDirectDelegationState() {},
+		currentActiveRun: null,
+		delegationAbortControllerRef: { current: null },
+		interruptPromiseRef: { current: null },
+		mutateRealtimeMessagesState(updater) {
+			return updater([]);
+		},
+		requestExplicitCancel: async () => {
+			calls.push("requestExplicitCancel");
+		},
+		runSubscriptionAbortControllerRef: { current: null },
+		runSubscriptionThreadIdRef: { current: null },
+		setAttachedRunStatus() {},
+		setInputError() {},
+		setLocalThreadActiveRun() {},
+		setRovoMessages() {},
+		sleep: async () => {},
+		source: "user-stop",
+		statusRef: { current: "streaming" },
+		stopUseChat: async () => {
+			calls.push("stopUseChat");
+		},
+		toUserErrorMessage(error) {
+			return error.message;
+		},
+		useChatStatus: "streaming",
+		// AI SDK stop() settles the chat locally, so the wait always succeeds.
+		waitForActiveTurnToStop: async () => true,
+		warn() {},
+		...overrides,
+	};
+	return { calls, input };
+}
+
+test("interruptRovoAppActiveTurn sends a backend cancel on user Stop even when stop() settles in time", async () => {
+	const { calls, input } = createInterruptInput();
+
+	await interruptRovoAppActiveTurn(input);
+
+	assert.deepEqual(calls, ["stopUseChat", "requestExplicitCancel"]);
+});
+
+test("interruptRovoAppActiveTurn leaves a voice barge-in that settles in time to stop()", async () => {
+	const { calls, input } = createInterruptInput({ source: "voice-barge-in" });
+
+	await interruptRovoAppActiveTurn(input);
+
+	assert.deepEqual(calls, ["stopUseChat"]);
+});
+
+test("interruptRovoAppActiveTurn cancels an attached background run once across repeated Stops", async () => {
+	const backendCalls = [];
+	const mayCancel = createRovoCancelDebounce({ now: () => 1_000 });
+	const activeThreadIdRef = { current: "thread-1" };
+	const currentActiveRun = createRovoAppLocalActiveRun({ threadId: "thread-1" });
+	const requestExplicitCancel = () =>
+		requestExplicitRovoAppCancel({
+			activeThreadIdRef,
+			attachedRunStatus: "streaming",
+			cancelRun: async (threadId, { signal }) => {
+				backendCalls.push(["cancelRun", threadId, signal instanceof AbortSignal]);
+				return true;
+			},
+			cancelUrlForThread: () => "/cancel",
+			currentActiveRun,
+			fetchCancel: async (url) => {
+				backendCalls.push(["fetchCancel", url]);
+			},
+			mayCancel,
+			queueProcessorRunningRef: { current: true },
+			setAttachedRunStatus() {},
+			setHasActiveDispatch() {},
+			setLocalThreadActiveRun() {},
+			turnId: "user-1",
+		});
+
+	for (let attempt = 0; attempt < 2; attempt += 1) {
+		const { input } = createInterruptInput({
+			activeThreadIdRef,
+			attachedRunStatus: "streaming",
+			currentActiveRun,
+			requestExplicitCancel,
+		});
+		await interruptRovoAppActiveTurn(input);
+	}
+
+	assert.deepEqual(backendCalls, [["cancelRun", "thread-1", true]]);
+});
+
+test("requestExplicitRovoAppCancel keys the debounce on the turn so a Stop on a new turn still cancels", async () => {
+	const fetched = [];
+	const mayCancel = createRovoCancelDebounce({ now: () => 1_000 });
+	const request = (turnId) =>
+		requestExplicitRovoAppCancel({
+			activeThreadIdRef: { current: "thread-1" },
+			attachedRunStatus: null,
+			cancelRun: async () => true,
+			cancelUrlForThread: (threadId) => `/cancel?threadId=${threadId}`,
+			currentActiveRun: null,
+			fetchCancel: async (url) => {
+				fetched.push(url);
+			},
+			mayCancel,
+			queueProcessorRunningRef: { current: true },
+			setAttachedRunStatus() {},
+			setHasActiveDispatch() {},
+			setLocalThreadActiveRun() {},
+			turnId,
+		});
+
+	assert.equal(await request("user-1"), "cancel-requested");
+	assert.equal(await request("user-1"), "debounced");
+	assert.equal(await request("user-2"), "cancel-requested");
+	assert.deepEqual(fetched, ["/cancel?threadId=thread-1", "/cancel?threadId=thread-1"]);
+});
+
+test("requestExplicitRovoAppCancel caps a hanging cancel at the timeout", async () => {
+	const warnings = [];
+	const waitForAbort = (signal) =>
+		new Promise((_resolve, reject) => {
+			signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+		});
+	const startedAt = Date.now();
+
+	const result = await requestExplicitRovoAppCancel({
+		activeThreadIdRef: { current: "thread-1" },
+		attachedRunStatus: "streaming",
+		cancelRun: (_threadId, { signal }) => waitForAbort(signal),
+		cancelUrlForThread: () => "/cancel",
+		currentActiveRun: null,
+		fetchCancel: (_url, { signal }) =>
+			signal.aborted ? Promise.reject(signal.reason) : waitForAbort(signal),
+		mayCancel: () => true,
+		queueProcessorRunningRef: { current: true },
+		setAttachedRunStatus() {},
+		setHasActiveDispatch() {},
+		setLocalThreadActiveRun() {},
+		timeoutMs: 20,
+		turnId: "user-1",
+		warn(message) {
+			warnings.push(message);
+		},
+	});
+
+	assert.equal(result, "failed");
+	assert.ok(Date.now() - startedAt < 1_000);
+	assert.deepEqual(warnings, ["[RovoApp] Explicit cancel request failed:"]);
 });
 
 test("handleRovoAppUseChatError clears transient artifact and retries artifact creates", () => {
