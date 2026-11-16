@@ -20,7 +20,7 @@ export interface RelatedGroupVisibility {
 	shown: PerKind<boolean>;
 	/** Non-empty preset with nothing related: every shown group renders its empty state row. */
 	allEmpty: boolean;
-	/** Number of shown groups; the Related work heading appears at 2 or more. */
+	/** Number of available sections. */
 	count: number;
 }
 
@@ -45,11 +45,11 @@ export interface RelatedSummaryItem {
 
 const SUMMARY_NOUNS: PerKind<readonly [string, string]> = {
 	attachments: ["attachment", "attachments"],
-	children: ["subitem", "subitems"],
+	children: ["child work item", "child work items"],
 	linked: ["linked work item", "linked work items"],
 };
 
-/** Collapsed Related work summary: real counts for shown groups, zero counts omitted. */
+/** Real counts for available sections, zero counts omitted. */
 export function relatedSummaryItems(counts: PerKind<number>, shown: PerKind<boolean>): RelatedSummaryItem[] {
 	return (["attachments", "children", "linked"] as const)
 		.filter((kind) => shown[kind] && counts[kind] > 0)

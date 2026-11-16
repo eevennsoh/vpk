@@ -54,7 +54,7 @@ function createContent(
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
 	defaultAssignee?: WorkItemPerson,
-	initialRelatedSectionOpen = true,
+	initialRelatedGroupsOpen = false,
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -129,8 +129,7 @@ function createContent(
 	return {
 		suggestionAudit: null as { label: string; mode: "accept" | "undo" } | null,
 		attachmentEditor: createProjectButterAttachmentEditor(),
-		/** Related work heading open state. Add requests force it open. */
-		relatedSectionOpen: initialRelatedSectionOpen,
+		relatedGroupsOpen: { attachments: initialRelatedGroupsOpen, children: initialRelatedGroupsOpen, linked: initialRelatedGroupsOpen },
 		/** Groups hidden for the session through their empty-state Dismiss button. */
 		relatedDismissed,
 		activityView,
@@ -178,13 +177,13 @@ export function useProjectButterContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
-	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson; initialRelatedSectionOpen?: boolean }>,
+	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson; initialRelatedGroupsOpen?: boolean }>,
 ) {
 	const person = activityContext?.currentUser;
 	const currentUser = useMemo<JiraActivityActor>(() => person ? { id: `butter-person-${person.name}`, name: person.name, kind: "person", avatarSrc: person.avatarUrl } : PROJECT_BUTTER_CURRENT_USER, [person]);
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen),
-		[activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen, defaultReporter, initialSessions, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee, activityContext?.initialRelatedGroupsOpen),
+		[activityContext?.defaultAssignee, activityContext?.initialRelatedGroupsOpen, defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",
@@ -279,17 +278,17 @@ export function useProjectButterContent(
 				});
 			},
 			setAttachmentEditor: fieldSetter("attachmentEditor"),
-			setRelatedSectionOpen: fieldSetter("relatedSectionOpen"),
+			setRelatedGroupsOpen: fieldSetter("relatedGroupsOpen"),
 			setRelatedDismissed: fieldSetter("relatedDismissed"),
 			/**
 			 * The one add path for header +, empty-mode quick actions, empty states and Shift+A/C/K.
-			 * Opens Related work, un-dismisses the group, opens its composer (closing a display popover)
+			 * Opens and un-dismisses the group and its composer (closing a display popover)
 			 * and bumps its createSignal so a repeat press refocuses the input instead of toggling.
 			 */
 			openRelatedAdd: (kind: ProjectButterRelatedKind) => {
 				updateState((previous) => ({
 					...previous,
-					relatedSectionOpen: true,
+					relatedGroupsOpen: { ...previous.relatedGroupsOpen, [kind]: true },
 					relatedDismissed: previous.relatedDismissed.filter((candidate) => candidate !== kind),
 					...(kind === "attachments"
 						? { attachmentEditor: { ...previous.attachmentEditor, composerOpen: true, createSignal: previous.attachmentEditor.createSignal + 1 } }

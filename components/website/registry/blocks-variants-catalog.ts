@@ -2,6 +2,14 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const BLOCK_VARIANT_CATALOG_DEMO_ENTRIES: Record<string, ComponentType> = {
+	"jira-list-demo-project-butter": dynamic(
+		() => import("../demos/blocks/jira-list-demo").then((mod) => ({ default: mod.JiraListDemoProjectButter })),
+		{ ssr: false },
+	),
+	"jira-list-demo-classic": dynamic(
+		() => import("../demos/blocks/jira-list-demo").then((mod) => ({ default: mod.JiraListDemoClassic })),
+		{ ssr: false },
+	),
 	"rovo-button-demo-chat": dynamic(
 		() => import("../demos/blocks/rovo-button-demo").then((mod) => ({ default: mod.RovoButtonDemoChat })),
 		{ ssr: false },

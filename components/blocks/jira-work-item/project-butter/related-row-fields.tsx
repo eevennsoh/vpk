@@ -50,22 +50,22 @@ export function RelatedRelationshipField({ label, value, onChange }: Readonly<{ 
 		</span>
 	);
 }
-export function RelatedAssigneeField({ item, onChange }: Readonly<{ item: ProjectButterRelatedItem; onChange: (assignee: string) => void }>) {
+export function RelatedAssigneeField({ item, onChange, showName = false }: Readonly<{ item: ProjectButterRelatedItem; onChange: (assignee: string) => void; showName?: boolean }>) {
 	const [open, setOpen] = useState(false);
 	const names = [...new Set([item.assignee, ...PEOPLE])];
 	const people = names.map((name) => ({ id: name, label: name, icon: <PersonIcon label="" size="small" />, ...(UNASSIGNED.has(name) ? {} : { visual: { kind: "avatar" as const, shape: "circle" as const, src: projectButterPersonAvatar(name) } }) }));
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<Button aria-label={`Edit assignee for ${item.key}: ${item.assignee}. Edit`} className="-mx-1.5" size="icon-compact" type="button" variant="ghost" />}><RelatedAssigneeAvatar name={item.assignee} /></PopoverTrigger>
+			<PopoverTrigger render={<Button aria-label={`Edit assignee for ${item.key}: ${item.assignee}. Edit`} className="-mx-1.5 max-w-full justify-start font-normal" size={showName ? "compact" : "icon"} type="button" variant="ghost" />}><RelatedAssigneeAvatar name={item.assignee} size="sm" />{showName ? <span className="truncate">{item.assignee}</span> : null}</PopoverTrigger>
 			<PopoverContent align="end" className={METADATA_PICKER_POPOVER_CLASS} onKeyDown={stopEscape} positionerClassName="z-[650]"><MetadataSearchPicker emptyLabel="No people found" items={people} onEscape={() => setOpen(false)} onSelect={(person) => { onChange(person.id); setOpen(false); }} placeholder="Search people" /></PopoverContent>
 		</Popover>
 	);
 }
 
 /** xsmall avatar; Unassigned and Automatic show the empty avatar. */
-export function RelatedAssigneeAvatar({ name }: Readonly<{ name?: string }>) {
-	if (!name || UNASSIGNED.has(name)) return <AvatarUnassigned label="" size="xs" />;
-	return <Avatar label={name} size="xs"><AvatarImage src={projectButterPersonAvatar(name)} /><AvatarFallback>{name.slice(0, 1)}</AvatarFallback></Avatar>;
+export function RelatedAssigneeAvatar({ name, size = "xs" }: Readonly<{ name?: string; size?: "xs" | "sm" }>) {
+	if (!name || UNASSIGNED.has(name)) return <AvatarUnassigned label="" size={size} />;
+	return <Avatar label={name} size={size}><AvatarImage src={projectButterPersonAvatar(name)} /><AvatarFallback>{name.slice(0, 1)}</AvatarFallback></Avatar>;
 }
 
 export function RelatedDueDateField({ item, onChange }: Readonly<{ item: ProjectButterRelatedItem; onChange: (dueDate: string) => void }>) {

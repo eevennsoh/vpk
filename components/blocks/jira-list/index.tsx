@@ -59,7 +59,8 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableBody, TableHeader, TableRow } from "@/components/ui/table";
+import { JIRA_LIST_HEADER_CELL_CLASS, JiraListTable as Table, JiraListTableCell as TableCell, JiraListTableHead as TableHead } from "@/components/blocks/jira-list/jira-list-table";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -87,6 +88,7 @@ export type {
 	JiraListStatusOption,
 	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
+export { JiraListTable, JiraListTableCell, JiraListTableHead, type JiraListVariant } from "@/components/blocks/jira-list/jira-list-table";
 
 export {
 	NO_JIRA_LIST_ROW_FLASH,
@@ -142,8 +144,7 @@ const ISSUE_TYPE_OPTIONS: readonly {
 	{ label: "Subtask", value: "subtask" },
 ];
 
-const HEADER_CELL_CLASS =
-	"h-10 bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap";
+const HEADER_CELL_CLASS = JIRA_LIST_HEADER_CELL_CLASS;
 
 interface JiraListTrailingEdgeLayout {
 	frameTopBorderClassName?: string;
@@ -217,10 +218,10 @@ export function JiraList({
 	rows,
 	activeIssueKey,
 	ariaLabel = "Jira list view",
-	bordered = true,
+	variant = "project-butter",
 	className,
 	createLabel = "Create",
-	footerCountAlignment = "center",
+	footerCountAlignment = variant === "project-butter" ? "end" : "center",
 	totalCountLabel = `${rows.length}`,
 	visibleCount = rows.length,
 	selectedIssueKeys = new Set<string>(),
@@ -260,6 +261,7 @@ export function JiraList({
 	scrollEndInset = 0,
 	trailingOverlayRef,
 }: Readonly<JiraListProps>) {
+	const bordered = variant === "classic";
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const { begin: beginSummaryEdit, draft: editingSummary, editorRef: summaryEditorRef, finish: finishSummaryEdit, listRef } = useJiraListSummaryEdit(onSummaryChange);
 	const {
@@ -377,6 +379,7 @@ export function JiraList({
 		addAgentLabel,
 		copiedIssueKey,
 		editingSummaryIssueKey: editingSummary?.issueKey,
+		hierarchyExpansion: bordered ? hierarchyExpansion : undefined,
 		onAgentAssign,
 		onAssignedAgentIdsChange,
 		onAssignedAgentSelect,
@@ -386,6 +389,7 @@ export function JiraList({
 		onIssueKeyClick,
 		onSummaryEditStart: onSummaryChange ? beginSummaryEdit : undefined,
 		onStoryPointsChange,
+		onToggleExpand: bordered ? onToggleExpand : undefined,
 		renderAgentSessions,
 		onStatusChange,
 		openCopyTooltipIssueKey,
@@ -394,7 +398,7 @@ export function JiraList({
 	}), [
 		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onDueDateChange, onIssueClick, onIssueKeyClick,
-		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, openCopyTooltipIssueKey, statusOptions,
+		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, openCopyTooltipIssueKey, statusOptions, bordered, hierarchyExpansion, onToggleExpand,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
 	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(scrollEndInset, bordered);
@@ -635,6 +639,7 @@ export function JiraList({
 				className,
 			)}
 			data-testid="jira-list"
+			data-variant={variant}
 			ref={listRef}
 		>
 			<div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
@@ -662,11 +667,12 @@ export function JiraList({
 						sensors={sensors}
 					>
 					<Table
+					variant={variant}
 					className="min-w-[1570px] table-fixed border-separate border-spacing-0"
 					containerClassName="min-w-[1570px] shrink-0 overflow-visible"
 					>
 					<colgroup>
-						<col className="w-15" />
+						<col className={bordered ? "w-10" : "w-15"} />
 						{orderedColumns.map((column) => (
 							<col className={column.id === "work" ? undefined : column.widthClassName} key={column.id} />
 						))}
@@ -688,7 +694,7 @@ export function JiraList({
 										isIndeterminate={someRowsSelected}
 										onCheckedChange={(checked) => onSelectAllRows?.(Boolean(checked))}
 									/>
-									{hierarchyExpansion ? (
+									{!bordered && hierarchyExpansion ? (
 										<JiraListHierarchyButton
 											disabled={hierarchyExpansion.disabled}
 											expanded={hierarchyExpansion.allExpanded}
@@ -820,7 +826,7 @@ export function JiraList({
 																checked={isSelected}
 																onCheckedChange={(checked) => onSelectRow?.(row.issueKey, Boolean(checked))}
 															/>
-													{row.hasChildren && onToggleExpand ? (
+													{!bordered && row.hasChildren && onToggleExpand ? (
 														<JiraListHierarchyButton
 															expanded={Boolean(row.isExpanded)}
 															label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`}

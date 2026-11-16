@@ -7,6 +7,17 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("Project Butter is the default list and Classic remains an explicit variant", async () => {
+	const view = await renderComponent({ entry: "components/blocks/jira-list/index.tsx", exportName: "JiraList", props: { rows } });
+	assert.equal(document.querySelector('[data-testid="jira-list"]').getAttribute("data-variant"), "project-butter");
+	assert.equal(document.querySelector("table").getAttribute("data-jira-list-variant"), "project-butter");
+	await view.rerender({ rows, variant: "classic" });
+	assert.equal(document.querySelector('[data-testid="jira-list"]').getAttribute("data-variant"), "classic");
+	assert.equal(document.querySelector("table").getAttribute("data-jira-list-variant"), "classic");
+	assert.equal([...document.querySelectorAll("th[scope=col]")].some((header) => header.textContent.includes("Work")), true);
+	assert.equal(document.querySelectorAll("tbody tr").length, 2);
+});
+
 test("copying a work item link shows and clears feedback for that row", async () => {
 	const copied = [];
 	const props = { rows, onCopyLink: (row) => copied.push(row.issueKey) };
@@ -62,6 +73,25 @@ test("selection controls precede hierarchy controls and leave the issue type vis
 	assert.deepEqual(changes, [["PAY-1", true]]);
 	assert.equal(Boolean(view.getByRole("img", { name: "task" })), true);
 	await view.unmount();
+});
+
+test("Classic keeps hierarchy controls inside Work while checkboxes stay in the selection column", async () => {
+	const toggled = [];
+	let toggledAll = 0;
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx", exportName: "JiraList",
+		props: { rows: [{ ...rows[0], hasChildren: true }, rows[1]], variant: "classic", onToggleExpand: (key) => toggled.push(key), hierarchyExpansion: { allExpanded: false, disabled: false, onToggleAll: () => { toggledAll++; } } },
+	});
+	const checkboxCell = view.getByRole("checkbox", { name: "Select PAY-1" }).closest("td");
+	const expand = view.getByRole("button", { name: "Expand PAY-1" });
+	assert.equal(expand.closest("td") === checkboxCell.nextElementSibling, true);
+	assert.equal(expand.closest("td").textContent.includes("First item"), true);
+	assert.equal(view.getByRole("button", { name: "Expand all subtasks" }).closest("th").textContent.includes("Work"), true);
+	assert.equal(view.getByRole("checkbox", { name: "Select all work items" }).closest("th").textContent.includes("Work"), false);
+	await view.click(expand);
+	await view.click(view.getByRole("button", { name: "Expand all subtasks" }));
+	assert.deepEqual(toggled, ["PAY-1"]);
+	assert.equal(toggledAll, 1);
 });
 
 test("row selection is reachable and operable by keyboard without hovering", async () => {
@@ -270,7 +300,7 @@ test("starting a list session moves focus to its activity", async () => {
 test("Jira List preview uses Butter data and restores edits on refresh", async () => {
 	const view = await renderComponent({ entry: "components/website/demos/blocks/jira-list-demo.tsx" });
 	assert.equal(Boolean(view.getByRole("button", { name: "Add agent to PAY-118" })), true);
-	assert.equal(Boolean(view.getByRole("button", { name: "Edit story points for PAY-118, no estimate" })), true);
+	assert.equal(Boolean(view.getByRole("button", { name: "Edit story points for PAY-118, 3" })), true);
 	await view.click(view.getByRole("button", { name: /Edit summary for PAY-118:/u }));
 	const summary = view.getByRole("textbox", { name: "Summary for PAY-118" });
 	await view.fill(summary, "Updated preview item");

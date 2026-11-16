@@ -28,7 +28,7 @@ export interface RelatedListCardProps<T> {
 	className?: string;
 }
 
-/** Bordered list card shared by child, linked and attachment lists: pagination, last-row fade and the border pill. */
+/** Attachment list card: pagination, last-row fade and the border pill. */
 export function RelatedListCard<T>({ className, composer, empty, expanded, items, label, onExpandedChange, renderItem, toggleDisabled = false }: Readonly<RelatedListCardProps<T>>) {
 	const page = relatedListWindow(items, { expanded, composerOpen: Boolean(composer) });
 	const noun = label.toLowerCase();

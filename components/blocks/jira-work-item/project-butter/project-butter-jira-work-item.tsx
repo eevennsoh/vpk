@@ -39,7 +39,6 @@ export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
-	initialRelatedSectionOpen?: boolean;
 	compact?: boolean;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
@@ -79,7 +78,6 @@ export function ProjectButterJiraWorkItem({
 	open,
 	onClose,
 	initialPreset,
-	initialRelatedSectionOpen,
 	compact,
 	initialSuggestion = false,
 	defaultReporter,
@@ -160,10 +158,10 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity, defaultAssignee, initialRelatedSectionOpen },
+		{ currentUser, showAuditInActivity, defaultAssignee },
 	);
-	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
-	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
@@ -425,7 +423,6 @@ export function ProjectButterJiraWorkItem({
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						inlineSessionReplies={inlineSessionReplies}
-						alwaysCollapsibleRelatedWork={initialRelatedSectionOpen === false}
 						compact={compact}
 						key={workItem?.code ?? "reference"}
 						active={open}

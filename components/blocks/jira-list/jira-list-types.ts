@@ -9,6 +9,7 @@ import type { JiraIssuePriority, JiraIssueTag } from "@/components/blocks/jira-i
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { Lozenge } from "@/components/ui/lozenge";
+import type { JiraListVariant } from "@/components/blocks/jira-list/jira-list-appearance";
 
 export type JiraListPriority = JiraIssuePriority;
 export type JiraListTag = JiraIssueTag;
@@ -123,7 +124,7 @@ export interface JiraListProps {
 	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
-	bordered?: boolean;
+	variant?: JiraListVariant;
 	className?: string;
 	createLabel?: string;
 	footerCountAlignment?: "center" | "end";

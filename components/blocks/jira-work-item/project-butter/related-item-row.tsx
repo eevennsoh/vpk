@@ -1,25 +1,31 @@
 "use client";
 
 import { motion } from "motion/react";
+import { JiraListTableCell } from "@/components/blocks/jira-list/jira-list-table";
+import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
+import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
 import { RelatedRowActions } from "@/components/blocks/jira-work-item/project-butter/related-row-actions";
 import { RelatedAssigneeField, RelatedDueDateField, RelatedEstimateField, RelatedPriorityField, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
 import { RelatedStatusField } from "@/components/blocks/jira-work-item/project-butter/related-status-field";
 import { RelatedSummaryField } from "@/components/blocks/jira-work-item/project-butter/related-summary-field";
-import type { ProjectButterRelatedFields, ProjectButterRelatedItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { RelatedTableColumn } from "@/components/blocks/jira-work-item/project-butter/related-table-columns";
+import type { ProjectButterRelatedFields, ProjectButterRelatedItem, ProjectButterRelatedWorkType, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const FADE = "related-row-fade group-has-[:focus-visible]/work-row:mask-none group-has-[[aria-expanded=true]]/work-row:mask-none";
+const WORK_TYPES = { Epic: "epic", Story: "story", Task: "task", Bug: "bug", Subtask: "subtask" } as const satisfies Record<ProjectButterRelatedWorkType, JiraListIssueType>;
 
-export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, faded, fields, item, onChange, onDraftChange, onEdit, onFinish, openItem }: Readonly<{
-	/** Child rows get Change parent / Clone / Move / Archive / Delete; linked rows have no menu. */
+export function ProjectButterRelatedItemRow({ actions, columns, dimmed, draft, editing, faded, fields, item, linked, onChange, onDraftChange, onEdit, onFinish, openItem }: Readonly<{
 	actions?: { onClone: () => void; onDelete: () => void };
+	columns: readonly RelatedTableColumn[];
 	dimmed: boolean;
 	draft: string;
 	editing: boolean;
 	faded: boolean;
 	fields: ProjectButterRelatedFields;
 	item: ProjectButterRelatedItem;
+	linked: boolean;
 	onChange: (patch: Partial<ProjectButterRelatedItem>) => void;
 	onDraftChange: (summary: string) => void;
 	onEdit: () => void;
@@ -27,11 +33,36 @@ export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, f
 	openItem?: RelatedItemOpener;
 }>) {
 	const open = openItem?.(item.key);
-	const keyClass = cn("ml-1 shrink-0 whitespace-nowrap text-sm text-text-subtlest", faded && !editing && FADE);
+	function renderCell(column: RelatedTableColumn) {
+		switch (column.id) {
+			case "relationship":
+				return <RelatedRelationshipField label={`Edit relationship for ${item.key}: ${item.relationship ?? "Relates to"}. Edit`} onChange={(relationship) => onChange({ relationship })} value={item.relationship ?? "Relates to"} />;
+			case "work":
+				return <div className="flex min-w-0 items-center gap-1.5">
+					<IssueTypeGlyph issueType={WORK_TYPES[item.workType ?? (linked ? "Story" : "Subtask")]} large />
+					{fields.id ? open ? <button className="shrink-0 rounded-sm text-sm text-text-subtlest outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focused" onClick={open} type="button">{item.key}</button> : <span className="shrink-0 text-sm text-text-subtlest">{item.key}</span> : null}
+					<RelatedSummaryField draft={draft} editing={editing} faded={false} itemKey={item.key} onDraftChange={onDraftChange} onEdit={onEdit} onFinish={onFinish} summary={item.summary} />
+				</div>;
+			case "status":
+				return <RelatedStatusField itemKey={item.key} onChange={(status) => onChange({ status })} status={item.status} />;
+			case "assignee":
+				return <RelatedAssigneeField item={item} onChange={(assignee) => onChange({ assignee })} showName={linked} />;
+			case "priority":
+				return <RelatedPriorityField item={item} onChange={(priority) => onChange({ priority })} />;
+			case "labels":
+				return <span className="block truncate text-xs text-text-subtle">{item.labels?.join(", ") || "—"}</span>;
+			case "dueDate":
+				return <RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} />;
+			case "estimate":
+				return <RelatedEstimateField item={item} onChange={(estimate) => onChange({ estimate })} />;
+			case "actions":
+				return actions && !editing ? <RelatedRowActions itemKey={item.key} onClone={actions.onClone} onDelete={actions.onDelete} /> : null;
+		}
+	}
 	return (
-		<motion.li
+		<motion.tr
 			className={cn(
-				"group/work-row flex h-10 min-w-0 items-center gap-1.5 px-4 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered has-[:focus-visible]:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered",
+				"group/row group/work-row h-10 border-0 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered has-[:focus-visible]:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered",
 				dimmed && "pointer-events-none opacity-(--opacity-disabled)",
 				editing && "relative z-10",
 			)}
@@ -42,22 +73,7 @@ export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, f
 			onBlur={(event) => { if (editing && !(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) onFinish(true); }}
 			transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}
 		>
-			{item.relationship ? <span className={cn("flex shrink-0", faded && !editing && FADE)}><RelatedRelationshipField label={`Edit relationship for ${item.key}: ${item.relationship}. Edit`} onChange={(relationship) => onChange({ relationship })} value={item.relationship} /></span> : null}
-			{fields.status ? <RelatedStatusField itemKey={item.key} onChange={(status) => onChange({ status })} status={item.status} /> : null}
-			{fields.id ? open ? (
-				<button className={cn(keyClass, "rounded-sm outline-none hover:text-text-subtle hover:underline focus-visible:ring-2 focus-visible:ring-border-focused")} onClick={open} type="button">{item.key}</button>
-			) : <span className={keyClass}>{item.key}</span> : null}
-			<RelatedSummaryField draft={draft} editing={editing} faded={faded} itemKey={item.key} onDraftChange={onDraftChange} onEdit={onEdit} onFinish={onFinish} summary={item.summary} />
-			{editing ? null : (
-				<div className="flex shrink-0 items-center gap-3 pr-1">
-					{fields.labels && item.labels?.length ? <span className={cn("max-w-24 truncate text-xs text-text-subtle", faded && FADE)}>{item.labels.join(", ")}</span> : null}
-					{fields.dueDate ? <span className={cn("flex", faded && FADE)}><RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} /></span> : null}
-					{fields.estimate ? <RelatedEstimateField item={item} onChange={(estimate) => onChange({ estimate })} /> : null}
-					{actions ? <RelatedRowActions itemKey={item.key} onClone={actions.onClone} onDelete={actions.onDelete} /> : null}
-					{fields.priority ? <RelatedPriorityField item={item} onChange={(priority) => onChange({ priority })} /> : null}
-					{fields.assignee ? <RelatedAssigneeField item={item} onChange={(assignee) => onChange({ assignee })} /> : null}
-				</div>
-			)}
-		</motion.li>
+			{columns.map((column) => <JiraListTableCell className={cn(faded && !editing && FADE, editing && column.id !== "work" && "opacity-(--opacity-disabled)")} inert={editing && column.id !== "work" || undefined} key={column.id}>{renderCell(column)}</JiraListTableCell>)}
+		</motion.tr>
 	);
 }
