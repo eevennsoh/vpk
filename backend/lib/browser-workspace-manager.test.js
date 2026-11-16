@@ -263,6 +263,36 @@ test("preview-key messages relay their modifier keys to the runtime, and old mes
 	])
 })
 
+test("a preview keyUp the runtime sends nothing for skips the settle delay and state refresh", async () => {
+	const delays = []
+	let refreshes = 0
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-key-noop",
+		sessionId: "workspace-key-noop-session",
+		delayFn: async (ms) => {
+			delays.push(ms)
+		},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async keyEvent(eventType) {
+				return eventType !== "keyUp"
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	const refreshState = workspace._refreshState.bind(workspace)
+	workspace._refreshState = async (...args) => {
+		refreshes += 1
+		return refreshState(...args)
+	}
+	const modifiers = { type: "preview-key", key: "Tab", code: "Tab", shiftKey: true }
+	await workspace._handlePreviewControlMessage({ ...modifiers, eventType: "keyDown" })
+	const afterKeyDown = { delays: delays.length, refreshes }
+	await workspace._handlePreviewControlMessage({ ...modifiers, eventType: "keyUp" })
+	assert.ok(afterKeyDown.refreshes > 0)
+	assert.deepEqual({ delays: delays.length, refreshes }, afterKeyDown)
+})
+
 test("a preview paste the argument rules refuse is answered with a preview-error, never an unhandled rejection", async (t) => {
 	const { requireBrowserArgument } = require("./input-schemas")
 	const unhandled = []

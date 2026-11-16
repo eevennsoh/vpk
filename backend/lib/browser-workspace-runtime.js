@@ -828,9 +828,11 @@ class AgentBrowserRuntime {
 	async keyEvent(eventType, key, code, text, modifiers) {
 		await this._ensureBrowser()
 		const command = resolvePreviewKeyCommand({ eventType, key, code, text, modifiers })
-		if (command) {
-			await this._runCommand(command)
+		if (!command) {
+			return false
 		}
+		await this._runCommand(command)
+		return true
 	}
 
 	async insertText(text) {

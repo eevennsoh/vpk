@@ -366,8 +366,11 @@ test("a modified preview key goes out as one press with its modifiers, and an un
 	// A modifier key reports its own flag; a lone Shift stays a plain Shift.
 	await runtime.keyEvent("keyDown", "Shift", "ShiftLeft", undefined, shift)
 	await runtime.keyEvent("keyUp", "Shift", "ShiftLeft", undefined, shift)
+	// A modifier pressed while another is held is one press of both, and its keyUp sends nothing.
+	await runtime.keyEvent("keyDown", "Shift", "ShiftLeft", undefined, { ...shift, ctrlKey: true })
+	assert.equal(await runtime.keyEvent("keyUp", "Shift", "ShiftLeft", undefined, { ...shift, ctrlKey: true }), false)
 	// Older messages carry no modifiers.
-	await runtime.keyEvent("keyDown", "Tab", "Tab")
+	assert.equal(await runtime.keyEvent("keyDown", "Tab", "Tab"), true)
 	await runtime.keyEvent("keyUp", "Tab", "Tab", undefined, { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false })
 	assert.deepEqual(runtime.commands, [
 		["press", "Shift+Tab"],
@@ -377,6 +380,7 @@ test("a modified preview key goes out as one press with its modifiers, and an un
 		["press", "Shift++"],
 		["keydown", "Shift"],
 		["keyup", "Shift"],
+		["press", "Control+Shift"],
 		["keydown", "Tab"],
 		["keyup", "Tab"],
 	])

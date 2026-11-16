@@ -1451,13 +1451,17 @@ class BrowserWorkspace {
 					label: "Pressing key",
 				})
 			}
-			await this._runtime.keyEvent(
+			const sent = await this._runtime.keyEvent(
 				resolvedEventType,
 				typeof key === "string" ? key : undefined,
 				typeof code === "string" ? code : undefined,
 				typeof text === "string" ? text : undefined,
 				modifiers,
 			)
+			// A modified key's keyUp sends nothing (its keyDown was one press), so the page is unchanged.
+			if (sent === false) {
+				return
+			}
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })
 			await this._ensurePreviewStreaming()
