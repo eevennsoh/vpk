@@ -79,7 +79,7 @@ revalidate its route marker before retrying.
 SESSION="$(.agents/skills/vpk-verify/scripts/control-vpk session)"
 export AGENT_BROWSER_SESSION="$SESSION"
 export AGENT_BROWSER_RESTORE="$SESSION"
-.agents/skills/vpk-verify/scripts/control-vpk open-target /jira-team-eu26 --headed
+.agents/skills/vpk-verify/scripts/control-vpk open-target /jira-team-eu26
 ```
 
 Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch; pass `--entry-point` (also accepted by `capture`) only when the task verifies that landing page itself. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `pnpm control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
@@ -148,7 +148,9 @@ Proof standards:
 
 Cleanup leaves the browser and dev stack running for later checks. To close this chat’s browser, use `pnpm control-vpk cleanup --browser`. To stop a stack started by verify, use `pnpm control-vpk cleanup --stack` only when no other work needs it. Proof files under `output/agent-browser/vpk-verify/` stay.
 
-Close the chat’s browser with `cleanup --browser` when it is no longer needed; it is reused between checks in the same chat. Between checks, run `pnpm control-vpk park` so an animated route stops using CPU (it loads a static page; the next `open-target`, `capture` or `browser open` resumes). `control-vpk` records every browser it starts with the agent session that owns it; `pnpm control-vpk cleanup --orphaned-browsers` (run by the SessionStart hook and the `vpk-system-clean` sweep) closes recorded browsers whose owner has ended or that sat unused for 2 hours. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
+`control-vpk` runs headless even when the user's agent-browser config defaults to visible windows. Pass `--headed` only when the user requests a visible browser. Run `pnpm control-vpk park` between checks to release this chat's browser; it never opens an idle page, and the next `open-target`, `capture` or `browser open` starts a browser with saved session state. Close the chat's browser with `cleanup --browser` when finished. `control-vpk` records every browser it starts with the agent session that owns it; `pnpm control-vpk cleanup --orphaned-browsers` (run by the SessionStart hook and the `vpk-system-clean` sweep) closes recorded browsers whose owner has ended or that sat unused for 2 hours. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
+
+Browser lifecycle regression (real Chrome, isolated sessions): `node --test .agents/skills/vpk-verify/scripts/browser-lifecycle.e2e.js`.
 
 ## Helpers
 

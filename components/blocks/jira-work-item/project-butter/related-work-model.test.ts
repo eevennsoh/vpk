@@ -30,11 +30,11 @@ test("dismissed groups return with content, and a Subtask parent hides child wor
 	assert.equal(relatedGroupVisibility({ counts: none, composerOpen: closed, dismissed: [], empty: false, parentIsSubtask: true }).shown.children, true);
 });
 
-test("the collapsed summary uses real counts, singular labels and skips hidden or zero groups", () => {
+test("the section toggles use real counts, singular labels and skips hidden or zero groups", () => {
 	const shown = { attachments: true, children: true, linked: true };
-	assert.deepEqual(relatedSummaryItems({ attachments: 8, children: 15, linked: 8 }, shown).map((item) => item.label), ["8 attachments", "15 subitems", "8 linked work items"]);
+	assert.deepEqual(relatedSummaryItems({ attachments: 8, children: 15, linked: 8 }, shown).map((item) => item.label), ["8 attachments", "15 child work items", "8 linked work items"]);
 	assert.deepEqual(relatedSummaryItems({ attachments: 1, children: 0, linked: 1 }, { ...shown, linked: false }).map((item) => item.label), ["1 attachment"]);
-	assert.deepEqual(relatedSummaryItems({ attachments: 0, children: 1, linked: 1 }, shown).map((item) => item.label), ["1 subitem", "1 linked work item"]);
+	assert.deepEqual(relatedSummaryItems({ attachments: 0, children: 1, linked: 1 }, shown).map((item) => item.label), ["1 child work item", "1 linked work item"]);
 });
 
 test("list cards show 5 rows, 4 with the composer, and fade the last row only when rows are hidden", () => {

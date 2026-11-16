@@ -25,7 +25,6 @@ function createDependencies(overrides = {}) {
 			generatePlanMetadataViaGateway: async () => ({}),
 			handleRovoAppArtifactToolRequest: async () => {},
 			persistRovoAppBrowserScreenshotBuffer: async () => {},
-			startNextQueuedRovoAppRun: async () => {},
 			syncRovoAppThreadSessionFromCurrentPort: async () => {},
 			withStudioAgentGatewayFallbackTimeout: async (promise) => promise,
 		}),
@@ -47,7 +46,6 @@ function createDependencies(overrides = {}) {
 		replayViaRovo: async () => {},
 		requestUserInputQuestionMetaStore: new Map(),
 		resolvePreferredBackend: async () => "rovo",
-		resolveRovoAppPortAvailability: () => ({ port: 4100 }),
 		resolveStageTraceFromRequest: () => ({ mark() {} }),
 		rovoAppDocumentManager: { name: "documents" },
 		rovoAppGeneratedFilesManager: { name: "generated-files" },
@@ -59,7 +57,6 @@ function createDependencies(overrides = {}) {
 		rovoResumeToolCalls: async () => {},
 		runRovoBackgroundTask: async () => {},
 		sendGatewayErrorResponse: () => {},
-		setStartNextQueuedRovoAppRun: () => {},
 		streamTextViaGateway: async () => {},
 		streamViaRovo: async () => {},
 		takePausedRovoToolCall: () => null,
@@ -74,7 +71,6 @@ test("createChatRuntimeComposition wires the chat and Rovo runtime cycle", async
 		generatePlanMetadataViaGateway: async () => ({ title: "Plan" }),
 		handleRovoAppArtifactToolRequest: async () => {},
 		persistRovoAppBrowserScreenshotBuffer: async () => {},
-		startNextQueuedRovoAppRun: async () => "queued",
 		syncRovoAppThreadSessionFromCurrentPort: async () => {},
 		withStudioAgentGatewayFallbackTimeout: async (promise) => promise,
 	};
@@ -92,9 +88,6 @@ test("createChatRuntimeComposition wires the chat and Rovo runtime cycle", async
 			captured.dispatchInProcessHttpRequest = input;
 			return input.handleRequest();
 		},
-		setStartNextQueuedRovoAppRun: (callback) => {
-			captured.startNextQueuedCallback = callback;
-		},
 	});
 
 	const result = createChatRuntimeComposition(dependencies);
@@ -102,7 +95,6 @@ test("createChatRuntimeComposition wires the chat and Rovo runtime cycle", async
 	assert.equal(result.rovoAppRuntime, runtime);
 	assert.equal(result.handleChatSdkRequest, handler);
 	assert.equal(result.buildArtifactPreviewSummary, runtime.buildArtifactPreviewSummary);
-	assert.equal(captured.startNextQueuedCallback, runtime.startNextQueuedRovoAppRun);
 	assert.equal(captured.createRovoAppRuntimeComposition.updateAgentsRfpDemoState, dependencies.updateAgentsRfpDemoState);
 	assert.equal(
 		captured.createRovoAppRuntimeComposition.dispatchChatSdkRequestInProcess,
@@ -152,9 +144,5 @@ test("createChatRuntimeComposition validates composition functions", () => {
 	assert.throws(
 		() => createChatRuntimeComposition(createDependencies({ createChatSdkHandler: null })),
 		/createChatRuntimeComposition requires createChatSdkHandler/u
-	);
-	assert.throws(
-		() => createChatRuntimeComposition(createDependencies({ setStartNextQueuedRovoAppRun: null })),
-		/createChatRuntimeComposition requires setStartNextQueuedRovoAppRun/u
 	);
 });

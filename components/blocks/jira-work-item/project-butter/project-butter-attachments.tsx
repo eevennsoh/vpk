@@ -12,6 +12,7 @@ import { AttachmentFilterTabs } from "@/components/blocks/jira-work-item/project
 import { AttachmentList } from "@/components/blocks/jira-work-item/project-butter/attachment-list";
 import { AttachmentManageMenu } from "@/components/blocks/jira-work-item/project-butter/attachment-manage-menu";
 import { ProjectButterAttachmentPiles } from "@/components/blocks/jira-work-item/project-butter/attachment-piles";
+import { ProjectButterContentPreview } from "@/components/blocks/jira-work-item/project-butter/content-preview";
 import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
 import { attachmentDisplayName, attachmentFilterForType, attachmentType, effectiveAttachmentFilter, filterAttachments, mergeAttachments, sortAttachments, visibleAttachmentFilters, type ProjectButterAttachmentEditor } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 import { RelatedEmptyState } from "@/components/blocks/jira-work-item/project-butter/related-empty-state";
@@ -24,7 +25,9 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
  * create/search/paste composer. Delete confirmations are owned above the group (useAttachmentRemoval). Editor state lives in
  * `content.attachmentEditor` (never audited) so it survives close and reopen.
  */
-export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset = false, emptyState = false, onDismissGroup, onRequestRemove }: Readonly<{
+export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset = false, emptyState = false, onDismissGroup, onOpenChange, onRequestRemove, open }: Readonly<{
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	asSectionHeader: boolean;
 	content: ProjectButterContent;
 	/** The Empty preset: filter tabs only offer the types present. */
@@ -61,6 +64,8 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 	const onRemove = (item: ProjectButterAttachment) => onRequestRemove({ kind: "item", item });
 	return (
 		<RelatedWorkGroup
+			onOpenChange={onOpenChange}
+			open={open}
 			asSectionHeader={asSectionHeader}
 			extra={<>
 				<Tooltip>
@@ -81,7 +86,7 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 			) : (
 				<>
 					{composer ? <div className="relative mb-3 rounded-lg border border-border py-1.5"><ul aria-label="Add attachment">{composer}</ul></div> : null}
-					<ProjectButterAttachmentPiles items={sorted} onRemove={onRemove} />
+					<ProjectButterContentPreview expanded={editor.expanded} label="attachments" onExpandedChange={(expanded) => patch({ expanded })}><ProjectButterAttachmentPiles items={sorted} onRemove={onRemove} /></ProjectButterContentPreview>
 				</>
 			)}
 		</RelatedWorkGroup>

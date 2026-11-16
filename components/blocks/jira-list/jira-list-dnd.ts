@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { JIRA_LIST_CELL_CLASS } from "@/components/blocks/jira-list/jira-list-appearance";
 
 import type {
 	JiraListAgentSessionDropIntent,
@@ -129,7 +130,7 @@ export function getBodyCellClassName({
 	align?: "left" | "center";
 }>) {
 	return cn(
-		"relative h-10 px-3 py-0 align-middle whitespace-nowrap transition-colors",
+		JIRA_LIST_CELL_CLASS,
 		align === "center" && "text-center",
 		isEditing
 			? "bg-surface transition-none"

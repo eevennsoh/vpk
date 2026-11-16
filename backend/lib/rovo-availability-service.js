@@ -35,7 +35,6 @@ function createRovoAvailabilityService({
 	logger = console,
 	maxTries = 20,
 	now = () => Date.now(),
-	onPortAvailable = () => {},
 	portFile,
 	portsFile,
 	refreshIntervalMs = 60_000,
@@ -53,7 +52,6 @@ function createRovoAvailabilityService({
 	requireFunction("logger.log", logger?.log);
 	requireFunction("logger.warn", logger?.warn);
 	requireFunction("now", now);
-	requireFunction("onPortAvailable", onPortAvailable);
 	requireFunction("resolveRovoPorts", resolveRovoPorts);
 	requireFunction("rovoHealthCheck", rovoHealthCheck);
 	requireFunction("setTimer", setTimer);
@@ -147,12 +145,7 @@ function createRovoAvailabilityService({
 		if (rovoPool) {
 			rovoPool.updatePorts(healthyPorts);
 		} else {
-			rovoPool = createRovoPool(healthyPorts, {
-				waitForReady,
-				onPortAvailable: () => {
-					void onPortAvailable();
-				},
-			});
+			rovoPool = createRovoPool(healthyPorts, { waitForReady });
 			initPool(rovoPool);
 		}
 
@@ -226,26 +219,11 @@ function createRovoAvailabilityService({
 		return availability.status;
 	}
 
-	function resolveRovoAppPortAvailability() {
-		const poolStatus = rovoPool?.getStatus?.();
-		if (!rovoPool) {
-			return null;
-		}
-
-		const poolPorts = Array.isArray(poolStatus?.ports) ? poolStatus.ports : [];
-		if (poolPorts.length === 0) {
-			return null;
-		}
-		const hasAvailable = poolPorts.some((p) => p?.status === "available");
-		return hasAvailable ? { available: true } : null;
-	}
-
 	return {
 		getRovoAvailability,
 		getRovoPool,
 		isRovoAvailable,
 		refreshRovoAvailability,
-		resolveRovoAppPortAvailability,
 		shutdownRovoPool,
 	};
 }

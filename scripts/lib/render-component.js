@@ -43,7 +43,9 @@ const ENTER_ACTIVATES = `a[href], area[href], button, summary, input[type=image]
 const SPACE_ACTIVATES = `button, summary, input[type=checkbox], input[type=radio], ${BUTTON_INPUT}`;
 const IMPLICIT_ROLES = Object.entries({
 	button: `button, summary, ${BUTTON_INPUT}`,
+	cell: "td",
 	checkbox: "input[type=checkbox]",
+	columnheader: "th:not([scope=row]):not([scope=rowgroup])",
 	combobox: "select",
 	dialog: "dialog",
 	heading: "h1, h2, h3, h4, h5, h6",
@@ -53,6 +55,10 @@ const IMPLICIT_ROLES = Object.entries({
 	listitem: "li",
 	navigation: "nav",
 	radio: "input[type=radio]",
+	row: "tr",
+	rowgroup: "thead, tbody, tfoot",
+	rowheader: "th[scope=row], th[scope=rowgroup]",
+	table: "table",
 	textbox: "input:not([type]), input[type=email], input[type=search], input[type=tel], input[type=text], input[type=url], textarea",
 });
 

@@ -26,7 +26,6 @@ function createRequiredDependencies(overrides = {}) {
 		},
 		mapUiMessagesToConversation: () => [],
 		requestUserInputQuestionMetaStore: new Map(),
-		resolveRovoAppPortAvailability: () => ({ port: 4100 }),
 		rovoAppDocumentManager: { name: "documents" },
 		rovoAppGeneratedFilesManager: { name: "generated-files" },
 		rovoAppRunManager: { name: "runs" },
@@ -75,10 +74,6 @@ function createHarness() {
 		resolveRovoAppManagedRunRoute: async () => ({}),
 		startManagedRovoAppRun: async (run) => {
 			calls.push(["startManagedRovoAppRun", run]);
-		},
-		startNextQueuedRovoAppRun: async () => {
-			calls.push(["startNextQueuedRovoAppRun"]);
-			return "queued";
 		},
 		streamRovoAppArtifactToolResponse: () => {},
 		synchronizeRovoAppThreadGeneratedFiles: async () => {},
@@ -137,7 +132,6 @@ function createHarness() {
 			captured.managedRunLifecycle = input;
 			return {
 				startManagedRovoAppRun: values.startManagedRovoAppRun,
-				startNextQueuedRovoAppRun: values.startNextQueuedRovoAppRun,
 			};
 		},
 		createRovoAppManagedRunProxy: (input) => {
@@ -219,14 +213,11 @@ test("createRovoAppRuntimeComposition wires managed-run callbacks through the li
 
 	const run = { threadId: "thread-1" };
 	await captured.managedRunProxy.startManagedRovoAppRun(run);
-	await captured.runStateService.startNextQueuedRun();
 
 	assert.deepEqual(calls, [
 		["startManagedRovoAppRun", run],
-		["startNextQueuedRovoAppRun"],
 	]);
 	assert.equal(result.proxyRovoAppChatRequest, values.proxyRovoAppChatRequest);
-	assert.equal(result.startNextQueuedRovoAppRun, values.startNextQueuedRovoAppRun);
 	assert.equal(result.handleRovoAppArtifactToolRequest, values.handleRovoAppArtifactToolRequest);
 	assert.equal(result.persistRovoAppBrowserScreenshotBuffer, values.persistRovoAppBrowserScreenshotBuffer);
 	assert.equal(result.sweepOrphanedRovoAppRuns, values.sweepOrphanedRovoAppRuns);

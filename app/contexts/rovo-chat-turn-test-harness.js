@@ -97,6 +97,7 @@ function loadHarness() {
 			contents: `
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
 				export { getPayloadTooLargeUserMessage, toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
+				export { CUT_SHORT_MEDIA_WAIT_MS, MEDIA_GENERATION_TIMEOUT_MS } from "@/app/contexts/use-rovo-chat-media-generation";
 				export {
 					getChatInProgressRetryCountdownLabel,
 					getChatInProgressUserMessage,

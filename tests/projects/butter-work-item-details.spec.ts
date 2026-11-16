@@ -252,13 +252,15 @@ test("child work item actions appear on hover and keyboard focus", async ({ page
 	test.setTimeout(90_000);
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
-	const row = page.getByRole("list", { name: "Child work items" }).getByRole("listitem").first();
+	const toggle = page.getByRole("group", { name: "Work item sections" }).getByRole("button", { name: /child work items?$/u });
+	if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+	const row = page.getByRole("table", { name: "Child work items" }).locator("tbody").getByRole("row").first();
 	const action = row.getByRole("button", { name: /^More actions for / });
 	const actions = row.locator('[data-component="SubItemActionsMenu"]');
 	await page.mouse.move(0, 0);
 	await expect(actions).toHaveCSS("opacity", "0");
 	await row.getByRole("button", { name: /^Edit priority for / }).focus();
-	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Tab");
 	await expect(action).toBeFocused();
 	await expect(actions).toHaveCSS("opacity", "1");
 	await page.getByRole("button", { name: /^Collapse Child work items/ }).focus();

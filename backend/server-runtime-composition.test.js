@@ -48,8 +48,6 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		refreshRovoAvailability: createNamedFunction("refreshRovoAvailability", calls),
 		registerActiveDeferredToolCall: createNamedFunction("registerActiveDeferredToolCall", calls),
 		registerPausedRovoToolCall: createNamedFunction("registerPausedRovoToolCall", calls),
-		resolveRovoAppPortAvailability: createNamedFunction("resolveRovoAppPortAvailability", calls),
-		setStartNextQueuedRovoAppRun: createNamedFunction("setStartNextQueuedRovoAppRun", calls),
 		shutdownRovoPool: createNamedFunction("shutdownRovoPool", calls),
 		takePausedRovoToolCall: createNamedFunction("takePausedRovoToolCall", calls),
 		waitForPortReady: createNamedFunction("waitForPortReady", calls),

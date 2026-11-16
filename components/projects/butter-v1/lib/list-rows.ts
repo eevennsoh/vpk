@@ -410,6 +410,11 @@ function createListRow(
 		statusVariant: STATUS_VARIANTS[card.status ?? columnTitle],
 		assignee: card.assignee,
 		agentSessions: assignedAgentsFromCard(card, catalog),
+		pullRequest: card.pullRequestNumber ? {
+			number: card.pullRequestNumber,
+			status: card.pullRequestStatus ?? "open",
+			preview: card.pullRequestPreview ?? { title: card.title, additions: 0, deletions: 0 },
+		} : undefined,
 		labels: card.tags,
 		dueDate: card.dueDate,
 		contributors: card.assignee ? [card.assignee] : [],

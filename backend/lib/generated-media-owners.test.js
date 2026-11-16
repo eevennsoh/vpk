@@ -84,3 +84,35 @@ test("building a video preview during a caller's turn records them as its owner"
 		await store.flush();
 	});
 });
+
+test("a preview that declares a body the client does not play as a video records no owner", async () => {
+	await withMediaRoot(async ({ baseDir, projectRoot, writeVideo }) => {
+		const names = ["text-body.mp4", "image-body.mp4", "nested-url.mp4", "encoded-url.mp4", "unrenderable.mp4"];
+		for (const name of names) {
+			writeVideo(name);
+		}
+		const encodedUrl = `/api/rovo/generated-media?path=${encodeURIComponent("media/videos/encoded-url.mp4")}`;
+		const store = createGeneratedMediaOwnerStore({ baseDir, projectRoot });
+		runWithGeneratedMediaScope({ owner: "alice", store }, () => {
+			withCanonicalPreviewBody("genui-preview", { body: { kind: "text", text: "Saved media/videos/text-body.mp4" } });
+			withCanonicalPreviewBody("image-preview", { body: { kind: "image" }, summary: "media/videos/image-body.mp4" });
+			// A video-preview plays only its top-level URL.
+			withCanonicalPreviewBody("video-preview", {
+				body: { kind: "video", videoUrl: "/api/rovo/generated-media?path=media%2Fvideos%2Fnested-url.mp4" },
+			});
+			// Neither the client nor the server reads a video path out of an encoded URL.
+			withCanonicalPreviewBody("genui-preview", {
+				body: { kind: "json-render", spec: { root: "r", elements: { r: { type: "Text", props: { text: encodedUrl } } } } },
+			});
+			// A rejected video body with no renderable spec to fall back to plays nothing.
+			withCanonicalPreviewBody("genui-preview", {
+				body: { kind: "video" },
+				spec: { root: "r", elements: {} },
+				summary: "media/videos/unrenderable.mp4",
+			});
+		});
+		for (const name of names) {
+			assert.equal(store.ownerOf(`media/videos/${name}`), null, name);
+		}
+	});
+});

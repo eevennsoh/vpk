@@ -63,25 +63,42 @@ test("pruneTurnErrorsFrom keeps an unanchored error unless the first message is 
 	assert.deepEqual(pruneTurnErrorsFrom(errors, messages, "u1"), []);
 });
 
-test("hasTurnCompleteForActivePrompt reads only the latest assistant message for the active prompt", () => {
+const promptUser = (id, promptId, text = id) => ({ ...message(id, "user", text), metadata: { promptId } });
+
+test("hasTurnCompleteForActivePrompt reads only the latest assistant message after the active prompt's user message", () => {
 	const prompt = { id: "q", text: "Hello", files: [], createdAt: 1_000 };
 	const complete = { type: "data-turn-complete", data: { timestamp: new Date(2_000).toISOString() } };
-	const user = message("u1", "user", "Hello");
+	const user = promptUser("u1", "q", "Hello");
 	assert.equal(hasTurnCompleteForActivePrompt([user, { ...message("a1", "assistant"), parts: [complete] }], prompt), true);
 	assert.equal(hasTurnCompleteForActivePrompt([user, message("a1", "assistant", "partial")], prompt), false);
-	// A turn-complete from an earlier turn does not complete this one.
 	assert.equal(
-		hasTurnCompleteForActivePrompt([message("u0", "user", "Before"), { ...message("a0", "assistant"), parts: [complete] }], prompt),
+		hasTurnCompleteForActivePrompt([user, { ...message("a1", "assistant"), parts: [complete] }, message("a2", "assistant", "later")], prompt),
+		false,
+	);
+	// A turn-complete from an earlier turn does not complete this one, even for the same text.
+	assert.equal(
+		hasTurnCompleteForActivePrompt([promptUser("u0", "earlier", "Hello"), { ...message("a0", "assistant"), parts: [complete] }], prompt),
 		false,
 	);
 	assert.equal(hasTurnCompleteForActivePrompt([user], prompt), false);
 });
 
+// Regression: the signal's server timestamp used to be compared with the
+// client's prompt.createdAt with 1 s of tolerance, so a client clock more than
+// 1 s ahead flagged complete replies as cut short.
+test("hasTurnCompleteForActivePrompt ignores the clocks: a server timestamp well before the prompt still completes it", () => {
+	const prompt = { id: "q", text: "Hello", files: [], createdAt: Date.parse("2026-07-07T00:00:05.000Z") };
+	const complete = { type: "data-turn-complete", data: { timestamp: "2026-07-07T00:00:01.000Z" } };
+	const messages = [promptUser("u1", "q", "Hello"), { ...message("a1", "assistant"), parts: [complete] }];
+	assert.equal(hasTurnCompleteForActivePrompt(messages, prompt), true);
+	assert.equal(isIncompleteTurnFinish({ messages, isAbort: false, isError: false, activePrompt: prompt }), false);
+});
+
 test("isIncompleteTurnFinish flags only a clean finish that lacks turn-complete for the active prompt", () => {
 	const prompt = { id: "q", text: "Hello", files: [], createdAt: 1_000 };
 	const complete = { type: "data-turn-complete", data: { timestamp: new Date(2_000).toISOString() } };
-	const partial = [message("u1", "user", "Hello"), message("a1", "assistant", "partial")];
-	const finished = [message("u1", "user", "Hello"), { ...message("a1", "assistant"), parts: [complete] }];
+	const partial = [promptUser("u1", "q", "Hello"), message("a1", "assistant", "partial")];
+	const finished = [promptUser("u1", "q", "Hello"), { ...message("a1", "assistant"), parts: [complete] }];
 	const base = { isAbort: false, isError: false, activePrompt: prompt };
 	assert.equal(isIncompleteTurnFinish({ ...base, messages: partial }), true);
 	assert.equal(isIncompleteTurnFinish({ ...base, messages: finished }), false);

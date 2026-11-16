@@ -128,7 +128,6 @@ async function acquirePort({
  * @param {string} [params.sessionId] - Optional Serve session to restore before streaming
  * @param {AbortSignal} [params.signal] - Optional signal to abort the stream (e.g. on client disconnect)
  * @param {(port: number) => void} [params.onPortAcquired] - Called once with the resolved port after acquisition
- * @param {boolean} [params.cancelOnComplete] - Cancel lingering chat state before releasing the port after a successful stream
  * @param {boolean} [params.failOnError] - Reject on non-409 stream errors instead of writing inline warning text
  * @param {(stage: string, details?: object) => void} [params.onTimingStage] - Optional callback for low-level timing milestones
  * @param {number} [params.port] - Reuse an existing reserved port instead of acquiring one
@@ -158,7 +157,6 @@ async function streamViaRovo({
 	signal,
 	onPortAcquired,
 	onComplete,
-	cancelOnComplete = false,
 	failOnError = false,
 	onTimingStage,
 	port: providedPort,
@@ -455,26 +453,6 @@ async function streamViaRovo({
 				console.warn(
 					"[streamViaRovo] onComplete callback error:",
 					onCompleteErr?.message || onCompleteErr
-				);
-			}
-		}
-		if (
-			lease.isHeld() &&
-			!abortedBySignal &&
-			!signal?.aborted &&
-			cancelOnComplete
-		) {
-			try {
-				await cancelChat(handle.port, { timeoutMs: 3_000 });
-			} catch (error) {
-				console.warn(
-					`[streamViaRovo] port ${handle.port} cancel failed during cleanup: ${
-						error instanceof Error ? error.message : String(error)
-					}`
-				);
-				lease.settle(
-					"unhealthy",
-					error instanceof Error ? error.message : String(error)
 				);
 			}
 		}

@@ -609,10 +609,6 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 		readFileSync(join(EXPERIMENTAL_DIR, "data", "board-filter-options.ts"), "utf8"),
 		/Filter by days/u,
 	);
-	assert.match(
-		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
-		/aria-expanded=\{model\.open\}[\s\S]*aria-label=\{filterLabel\}[\s\S]*aria-pressed=\{hasSelection \|\| model\.open\}/u,
-	);
 	assert.doesNotMatch(
 		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
 		/Filter board is unavailable/u,

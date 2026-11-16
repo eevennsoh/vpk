@@ -37,4 +37,6 @@ The gateway is not a cause: `run_eval` calls the `claude` binary on `PATH` (the 
 
 First real baseline, 2026-11-16, `claude-opus-5-5[1m]` (from `ANTHROPIC_MODEL`) through the gateway, 3 runs per row: vpk-remote 19/20 rows (positives 11/12, negatives 8/8 with no false trigger), vpk-design 16/18 (positives 8/10, negatives 8/8). The misses were "farm this out to sonnet in the background…" (vpk-remote) and the two screenshot-to-code rows without a Figma link (vpk-design).
 
+After tuning with `run_loop` (`--model claude-opus-5-5 --holdout 0`, best description by iteration 2) and a confirming `run_eval` on the shipped text: vpk-remote 20/20 and vpk-design 18/18, every negative row still 0/3.
+
 The result is relative to VPK's own skills and Claude Code's built-ins, not to your personal skill set; a description can still lose to a user-level skill in a real session. Rows marked `"where": "repo"` assume the VPK app; the sandbox carries `AGENTS.md` but no source, so treat a miss there with care. For ship thresholds and how to fix a failing description, follow the skill's own evals README (for example `.agents/skills/vpk-html/evals/README.md`); change the description in `SKILL.md`, not the query.

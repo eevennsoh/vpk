@@ -22,6 +22,8 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
+import { JiraListPullRequestCell } from "@/components/blocks/jira-list/jira-list-pull-request-cell";
+import { JiraListHierarchyButton } from "@/components/blocks/jira-list/jira-list-work-controls";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -78,10 +80,12 @@ function JiraListDueDateCell({ dueDate, issueKey, onChange }: Readonly<{
 }
 
 export function createJiraListBaseColumns({
+	showPullRequests,
 	agentCatalog,
 	addAgentLabel,
 	copiedIssueKey,
 	editingSummaryIssueKey,
+	hierarchyExpansion,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
@@ -91,16 +95,19 @@ export function createJiraListBaseColumns({
 	onIssueKeyClick,
 	onSummaryEditStart,
 	onStoryPointsChange,
+	onToggleExpand,
 	renderAgentSessions,
 	onStatusChange,
 	openCopyTooltipIssueKey,
 	setOpenCopyTooltipIssueKey,
 	statusOptions,
 }: Readonly<{
+	showPullRequests?: boolean;
 	agentCatalog?: readonly AgentSelectorAgent[];
 	addAgentLabel?: string;
 	copiedIssueKey: string | null;
 	editingSummaryIssueKey?: string;
+	hierarchyExpansion?: JiraListProps["hierarchyExpansion"];
 	onAgentAssign?: JiraListProps["onAgentAssign"];
 	onAssignedAgentIdsChange?: JiraListProps["onAssignedAgentIdsChange"];
 	onAssignedAgentSelect?: JiraListProps["onAssignedAgentSelect"];
@@ -110,6 +117,7 @@ export function createJiraListBaseColumns({
 	onIssueKeyClick?: (row: JiraListRowData) => void;
 	onSummaryEditStart?: (row: JiraListRowData, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onStoryPointsChange?: JiraListProps["onStoryPointsChange"];
+	onToggleExpand?: JiraListProps["onToggleExpand"];
 	renderAgentSessions?: JiraListProps["renderAgentSessions"];
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	openCopyTooltipIssueKey: string | null;
@@ -121,6 +129,10 @@ export function createJiraListBaseColumns({
 			id: "work",
 			label: "Work",
 			widthClassName: "w-[438px]",
+			headerContent: onToggleExpand || hierarchyExpansion ? <>
+				<span className="inline-flex w-7 shrink-0">{hierarchyExpansion ? <JiraListHierarchyButton disabled={hierarchyExpansion.disabled} expanded={hierarchyExpansion.allExpanded} label={hierarchyExpansion.allExpanded ? "Collapse all subtasks" : "Expand all subtasks"} onClick={hierarchyExpansion.onToggleAll} /> : null}</span>
+				Work
+			</> : undefined,
 			renderCell: (row) => {
 				const indentLevel = row.indentLevel ?? 0;
 				const isCopiedRow = copiedIssueKey === row.issueKey;
@@ -129,6 +141,7 @@ export function createJiraListBaseColumns({
 				return (
 					<div className="flex min-w-0 items-center gap-2">
 						<div className="flex min-w-0 flex-1 items-center gap-1.5">
+							{onToggleExpand || hierarchyExpansion ? <span className="inline-flex w-7 shrink-0">{row.hasChildren && onToggleExpand ? <JiraListHierarchyButton expanded={Boolean(row.isExpanded)} label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`} onClick={() => onToggleExpand(row.issueKey)} /> : null}</span> : null}
 							<HierarchyConnector indentLevel={indentLevel} />
 							<IssueTypeGlyph issueType={row.issueType} large />
 							<div className="group/issue-key flex shrink-0 items-center">
@@ -293,6 +306,12 @@ export function createJiraListBaseColumns({
 				/>
 			),
 		},
+		...(showPullRequests ? [{
+			id: "pullRequest",
+			label: "Pull request",
+			widthClassName: "w-[240px]",
+			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell pullRequest={row.pullRequest} />,
+		}] : []),
 		{
 			id: "priority",
 			label: "Priority",

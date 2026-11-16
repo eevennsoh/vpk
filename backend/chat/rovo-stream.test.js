@@ -455,6 +455,34 @@ test("createRovoTextOutputController reset preserves started stream state", () =
 	assert.equal(controller.getTextStarted(), true);
 });
 
+// Without a rerun the controller writes what origin/main wrote; each expected string was taken by
+// running the same calls against origin/main's createRovoTextOutputController.
+test("createRovoTextOutputController without a rerun writes the pre-rerun-break text", () => {
+	for (const [name, steps, options, expected] of [
+		["a notice after a whitespace line", [["emitTextDelta", "A\n \n"], ["emitNoticeParagraph", "N"]], {}, "A\n \n\nN"],
+		// A pre-existing oddity, kept: a newline after a notice stands in for its paragraph break.
+		["a newline then text after a notice", [["emitNoticeParagraph", "N"], ["emitTextDelta", "\n"], ["emitTextDelta", "B"]], {}, "N\nB"],
+		["leading whitespace before the first visible text", [["emitTextDelta", "\n\n"], ["emitTextDelta", "  "], ["emitTextDelta", "B"]], {}, "\n\n  B"],
+		["whitespace only", [["emitTextDelta", "\n\n"]], {}, "\n\n"],
+		[
+			"deferred tool-first text with a notice",
+			[["emitTextDelta", "\n  A \n"], ["emitNoticeParagraph", "N"], ["flushDeferredToolFirstText"]],
+			{ shouldDeferToolFirstText: true },
+			"\n  A \n\nN",
+		],
+	]) {
+		const { controller, parts } = createTextOutputController({ isClassifierIntentLeakCandidate: () => false, ...options });
+		for (const [method, argument] of steps) {
+			controller[method](argument);
+		}
+
+		assert.equal(parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join(""), expected, name);
+		assert.equal(controller.getAssistantText(), expected, name);
+		assert.equal(controller.getUnsuppressedAssistantText(), expected, name);
+		assert.equal(controller.getTextStarted(), true, name);
+	}
+});
+
 function createDirectOutputOptions(overrides = {}) {
 	const parts = [];
 	const calls = {

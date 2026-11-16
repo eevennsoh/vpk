@@ -89,7 +89,7 @@ test("summary paste inserts plain normalized text at the selection", async () =>
 	assert.equal(view.getByRole("status", { name: "Saved summary" }).textContent, "Pasted summary");
 });
 
-test("direct description editing preserves drafts through unmount and commits on blur and collapse", async () => {
+test("direct description editing preserves drafts through unmount and commits on blur", async () => {
 	const view = await renderComponent({ source: EDITOR_HARNESS, props: { description: true } });
 	assert.equal(view.queryByRole("button", { name: "Save" }), null);
 	assert.equal(view.queryByRole("button", { name: "Cancel" }), null);
@@ -102,13 +102,13 @@ test("direct description editing preserves drafts through unmount and commits on
 	await view.focus(view.getByRole("textbox", { name: "Work item description" }));
 	await view.click(view.getByRole("button", { name: "Outside editor" }));
 	assert.equal(view.getByRole("status", { name: "Saved description" }).textContent, "Keep this draft");
-	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Saved by collapse");
-	await view.click(view.getByRole("button", { name: "Description" }));
-	assert.equal(view.getByRole("status", { name: "Saved description" }).textContent, "Saved by collapse");
-	assert.equal(view.queryByRole("textbox", { name: "Work item description" }), null);
-	assert.equal(view.tabOrder().includes("Work item description"), false);
-	await view.click(view.getByRole("button", { name: "Description" }));
-	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Saved by collapse");
+	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Saved on blur");
+	await view.focus(view.getByRole("button", { name: "Outside editor" }));
+	assert.equal(view.getByRole("status", { name: "Saved description" }).textContent, "Saved on blur");
+	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) !== null, true);
+	assert.equal(view.tabOrder().includes("Work item description"), true);
+	await view.focus(view.getByRole("button", { name: "Outside editor" }));
+	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Saved on blur");
 });
 
 test("empty description renders the editor without an accordion and commits on blur", async () => {

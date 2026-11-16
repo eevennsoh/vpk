@@ -6,13 +6,15 @@ import { cn } from "@/lib/utils"
 
 interface TableProps extends React.ComponentProps<"table"> {
 	containerClassName?: string
+	containerProps?: React.ComponentProps<"div">
 }
 
-function Table({ className, containerClassName, ...props }: Readonly<TableProps>) {
+function Table({ className, containerClassName, containerProps, ...props }: Readonly<TableProps>) {
 	return (
 		<div
+			{...containerProps}
 			data-slot="table-container"
-			className={cn("relative w-full overflow-x-auto", containerClassName)}
+			className={cn("relative w-full overflow-x-auto", containerProps?.className, containerClassName)}
 		>
 			<table
 				data-slot="table"

@@ -13,7 +13,7 @@ const {
 	removeBrowserRecord,
 	resolveOwner,
 } = require("./browser-registry.js");
-const { closeBrowserSessionBestEffort, closeOrphanedBrowsers, closeRecordedBrowser } = require("./browser.js");
+const { closeBrowserSessionBestEffort, closeOrphanedBrowsers, closeRecordedBrowser, parkBrowserSession } = require("./browser.js");
 
 const HOUR = 3_600_000;
 const NOW = Date.UTC(2026, 10, 13, 12, 0, 0);
@@ -30,6 +30,10 @@ function withRegistry(callback) {
 
 function fakeProcesses(table) {
 	return (pid) => table[pid] ?? null;
+}
+
+function sessionInfo(active) {
+	return { status: 0, stdout: JSON.stringify({ data: { active, runtime: { browserLaunched: active, pageCount: active ? 1 : 0 } } }) };
 }
 
 test("the owner is the nearest claude, codex or cursor-agent ancestor", () => {
@@ -75,12 +79,65 @@ test("cleanup --browser keeps this chat's record when the close fails", () => {
 	const forget = (session) => forgotten.push(session);
 	const resolveSession = () => "vpk-verify-mine";
 	const findRecord = () => null;
-	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 1, stderr: "daemon did not answer", stdout: "" }) }), false);
-	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: null, error: Object.assign(new Error("spawnSync ETIMEDOUT"), { code: "ETIMEDOUT" }) }) }), false);
+	const closing = (result) => ([, , command]) => command === "session" ? sessionInfo(true) : result;
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: closing({ status: 1, stderr: "daemon did not answer", stdout: "" }) }), false);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: closing({ status: null, error: Object.assign(new Error("spawnSync ETIMEDOUT"), { code: "ETIMEDOUT" }) }) }), false);
 	assert.deepEqual(forgotten, []);
-	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 0, stdout: "✓ Browser closed" }) }), true);
-	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: () => ({ status: 1, stderr: "No browser session found" }) }), true);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: closing({ status: 0, stdout: "✓ Browser closed" }) }), true);
+	assert.equal(closeBrowserSessionBestEffort({ findRecord, forget, resolveSession, runCommand: closing({ status: 1, stderr: "No browser session found" }) }), true);
 	assert.deepEqual(forgotten, ["vpk-verify-mine", "vpk-verify-mine"]);
+});
+
+test("parking releases only this chat's browser and forgets its record", () => {
+	const browsers = new Set(["mine", "other-chat"]);
+	const forgotten = [];
+	assert.equal(parkBrowserSession("mine", {
+		findRecord: () => null,
+		forget: (session) => forgotten.push(session),
+		runCommand: ([, session, command]) => {
+			if (command === "session") return sessionInfo(browsers.has(session));
+			if (command === "close") browsers.delete(session);
+			return { status: 0, stdout: "", stderr: "" };
+		},
+	}), true);
+	assert.deepEqual([...browsers], ["other-chat"]);
+	assert.deepEqual(forgotten, ["mine"]);
+});
+
+test("parking a missing browser repeatedly never launches a parked page", () => {
+	let mutations = 0;
+	const options = {
+		findRecord: () => null,
+		forget: () => {},
+		runCommand: ([, , command]) => {
+			if (command !== "session") mutations += 1;
+			return sessionInfo(false);
+		},
+	};
+	assert.equal(parkBrowserSession("missing", options), true);
+	assert.equal(parkBrowserSession("missing", options), true);
+	assert.equal(mutations, 0);
+});
+
+test("parking an absent browser removes its stale record without starting a daemon", () => {
+	let forgotten = false;
+	assert.equal(parkBrowserSession("missing", {
+		findRecord: () => ({ session: "missing" }),
+		closeRecorded: () => { throw new Error("an absent browser must not be closed again"); },
+		forget: () => { forgotten = true; },
+		runCommand: () => sessionInfo(false),
+	}), true);
+	assert.equal(forgotten, true);
+});
+
+test("parking reports a failed close and retains the browser for cleanup retry", () => {
+	let forgotten = false;
+	assert.equal(parkBrowserSession("mine", {
+		findRecord: () => null,
+		forget: () => { forgotten = true; },
+		runCommand: ([, , command]) => command === "session" ? sessionInfo(true) : { status: 1, stderr: "daemon did not answer", stdout: "" },
+	}), false);
+	assert.equal(forgotten, false);
 });
 
 test("a starting command records the browser; other commands only refresh a record", () => {
@@ -101,6 +158,17 @@ test("a starting command records the browser; other commands only refresh a reco
 
 		removeBrowserRecord("vpk-verify-a", { dir, namespace: "ns1" });
 		assert.deepEqual(listBrowserRecords({ dir }), []);
+	});
+});
+
+test("a session keeps its explicit visible mode across commands and resets on a headless restart", () => {
+	withRegistry((dir) => {
+		const options = { dir, env: {}, now: NOW, owner: OWNER };
+		noteBrowserUse("mine", { ...options, headed: true, started: true });
+		noteBrowserUse("mine", { ...options, started: false });
+		assert.equal(listBrowserRecords({ dir })[0].record.headed, true);
+		noteBrowserUse("mine", { ...options, started: true });
+		assert.equal(listBrowserRecords({ dir })[0].record.headed, false);
 	});
 });
 

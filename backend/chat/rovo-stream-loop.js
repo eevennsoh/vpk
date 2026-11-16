@@ -116,7 +116,8 @@ async function runRovoStreamRetryLoop({
 		const { activeAttemptMessage: attemptMessageAfterRecovery, next } = loopTurn.getState();
 		if (next === "rerun") {
 			if (resetAssistantText) {
-				resetAssistantTextForRetryAttempt();
+				// The text the stuck attempt already showed stays; the rerun starts a new paragraph.
+				resetAssistantTextForRetryAttempt({ continuesShownText: true });
 			}
 			continue;
 		}

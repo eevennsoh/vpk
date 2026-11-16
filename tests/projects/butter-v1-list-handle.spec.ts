@@ -9,6 +9,55 @@ async function openList(page: Page) {
 	return list;
 }
 
+function overlayPresentation(element: Element) {
+	const style = getComputedStyle(element);
+	return {
+		shadow: style.boxShadow.replaceAll("rgba(0, 0, 0, 0) 0px 0px 0px 0px, ", ""),
+		border: style.borderTopWidth,
+		radius: style.borderRadius,
+		background: style.backgroundColor,
+	};
+}
+
+test("list PR previews use the board card's single overlay perimeter", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	await page.getByRole("button", { name: "Pull request failed #1851: Port 3DS flow", exact: true }).click();
+	const boardPreview = page.locator('[aria-label="Pull request #1851 details"]');
+	await expect(boardPreview).toBeVisible();
+	const boardStyle = await boardPreview.evaluate(overlayPresentation);
+	await page.keyboard.press("Escape");
+	await openList(page);
+	await page.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true }).hover();
+	const listPreview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	await expect(listPreview).toBeVisible();
+	await expect.poll(() => listPreview.evaluate(overlayPresentation)).toEqual(boardStyle);
+});
+
+test("PR cells show the status icon and preview from the whole cell without underlining titles", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await openList(page);
+	const trigger = page.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true });
+	const cell = trigger.locator("xpath=ancestor::td");
+	const icon = trigger.getByRole("img", { name: "Pull request failed", exact: true });
+	await expect(icon).toBeVisible();
+	const targetBounds = await trigger.boundingBox();
+	const cellBounds = await cell.boundingBox();
+	expect(targetBounds).toEqual(cellBounds);
+	const title = trigger.getByText("Port 3DS flow", { exact: true });
+	await title.hover();
+	await expect(title).toHaveCSS("text-decoration-line", "none");
+	await page.mouse.move(0, 0);
+	const preview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	await expect(preview).toBeHidden();
+	if (!cellBounds) throw new Error("PR cell geometry is unavailable");
+	await cell.hover({ position: { x: cellBounds.width - 2, y: 2 } });
+	await expect(preview).toBeVisible();
+	await expect(trigger.locator("a")).toHaveCount(0);
+});
+
 test("two additional list rows cycle between their agents", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });

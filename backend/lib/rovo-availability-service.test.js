@@ -10,7 +10,7 @@ function createPool(ports, calls) {
 		getStatus: () => ({
 			ports: ports.map((port) => ({
 				port,
-				status: port === 9999 ? "busy" : "available",
+				status: "available",
 			})),
 		}),
 		shutdown: () => calls.push(["pool.shutdown", ports]),
@@ -57,7 +57,6 @@ function createHarness(overrides = {}) {
 			calls.push(["now"]);
 			return overrides.nowValue ?? 1000;
 		},
-		onPortAvailable: () => calls.push(["onPortAvailable"]),
 		portFile: "/tmp/rovo-port",
 		portsFile: "/tmp/rovo-ports",
 		refreshIntervalMs: 60_000,
@@ -210,23 +209,6 @@ test("isRovoAvailable refreshes on missing port files and cache expiry", async (
 	tick = 62_000;
 	assert.equal(await service.isRovoAvailable(), true);
 	assert.equal(resolveCount, 2);
-});
-
-test("resolveRovoAppPortAvailability reports whether a pool has available ports", async () => {
-	const { service } = createHarness({
-		resolveRovoPortsResult: {
-			ports: [9999],
-			source: "recorded",
-		},
-	});
-
-	assert.equal(service.resolveRovoAppPortAvailability(), null);
-	assert.equal(await service.refreshRovoAvailability(), true);
-	assert.equal(service.resolveRovoAppPortAvailability(), null);
-
-	const availableHarness = createHarness();
-	assert.equal(await availableHarness.service.refreshRovoAvailability(), true);
-	assert.deepEqual(availableHarness.service.resolveRovoAppPortAvailability(), { available: true });
 });
 
 function createDeferred() {

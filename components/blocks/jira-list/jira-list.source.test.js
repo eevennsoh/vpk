@@ -10,6 +10,8 @@ const { test } = require("node:test");
 const SOURCE = [
 	"index.tsx",
 	"jira-list-base-columns.tsx",
+	"jira-list-appearance.ts",
+	"jira-list-table.tsx",
 	"jira-list-dnd.ts",
 	"jira-list-row-zone.js",
 	"jira-list-cell-data.ts",

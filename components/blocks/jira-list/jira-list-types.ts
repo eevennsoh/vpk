@@ -6,9 +6,11 @@ import type {
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraIssuePriority, JiraIssueTag } from "@/components/blocks/jira-issue";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { Lozenge } from "@/components/ui/lozenge";
+import type { JiraListVariant } from "@/components/blocks/jira-list/jira-list-appearance";
 
 export type JiraListPriority = JiraIssuePriority;
 export type JiraListTag = JiraIssueTag;
@@ -18,6 +20,7 @@ export type JiraListBaseColumnId =
 	| "status"
 	| "assignee"
 	| "agentSessions"
+	| "pullRequest"
 	| "goals"
 	| "priority"
 	| "storyPoints"
@@ -72,6 +75,7 @@ export interface JiraListRowData {
 	isExpanded?: boolean;
 	assignee?: JiraListPerson;
 	agentSessions?: readonly JiraListAssignedAgent[];
+	pullRequest?: JiraIssuePullRequestItem;
 	goals?: readonly JiraListGoal[];
 	labels?: readonly JiraListTag[];
 	dueDate?: string;
@@ -120,10 +124,11 @@ export interface JiraListRowFlash {
 
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
+	showPullRequests?: boolean;
 	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
-	bordered?: boolean;
+	variant?: JiraListVariant;
 	className?: string;
 	createLabel?: string;
 	footerCountAlignment?: "center" | "end";

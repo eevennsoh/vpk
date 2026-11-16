@@ -99,6 +99,7 @@ check_workspace_deps() {
 SESSION_NAME="$(resolve_session_name)"
 REPO_ROOT_PHYSICAL="$(pwd -P)"
 FORCE_START=0
+AUTO_STOP=1
 # `stop --force` only: VPK_DEV_FORCE (a start over budget) never forces a stop.
 FORCE_STOP=0
 JSON_OUTPUT=0
@@ -227,6 +228,9 @@ check_stack_budget() {
 	local args=(check --worktree "$REPO_ROOT")
 	if [[ "$FORCE_START" == "1" ]]; then
 		args+=(--force)
+	fi
+	if [[ "$AUTO_STOP" == "0" ]]; then
+		args+=(--no-auto-stop)
 	fi
 	VPK_TMUX_BIN="$TMUX_BIN" node scripts/lib/dev-stack-budget.js "${args[@]}"
 }
@@ -467,7 +471,11 @@ usage() {
 	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)."
 	echo "          One session per worktree path: a session started under another name is adopted,"
 	echo "          extra ones are stopped. A new stack checks the machine-wide budget first;"
-	echo "          start --force (or VPK_DEV_FORCE=1) starts over budget."
+	echo "          Over the stack count it first auto-stops the fewest idle linked worktree stacks of"
+	echo "          this repo that gets it under budget (never the main checkout, a Codex worktree,"
+	echo "          another repo's server, or a stack in use), printing one line per stop."
+	echo "          start --no-auto-stop (or VPK_DEV_NO_AUTO_STOP=1) refuses instead of stopping;"
+	echo "          start --force (or VPK_DEV_FORCE=1) starts over budget and stops nothing."
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "          Exits $EXIT_NOT_READY unless the frontend and backend both become ready (VPK_DEV_TMUX_WAIT seconds)."
 	echo "  stop    Ctrl-C the session, let the recorded service processes drain, then end what is left"
@@ -481,6 +489,7 @@ usage() {
 	echo "  VPK_TMUX_SOCKET            Private socket name (default: vpk-dev)"
 	echo "  VPK_DEV_TMUX_SESSION       Exact session name override"
 	echo "  VPK_DEV_TMUX_SESSION_PREFIX Prefix for the auto session name (default: vpk-dev)"
+	echo "  VPK_DEV_NO_AUTO_STOP=1     Never auto-stop idle stacks when over budget (same as --no-auto-stop)"
 }
 
 command="${1:-start}"
@@ -496,6 +505,7 @@ for arg in "$@"; do
 			FORCE_STOP=1
 			;;
 		--json) JSON_OUTPUT=1 ;;
+		--no-auto-stop) AUTO_STOP=0 ;;
 		--keep-dev-output) CLEAN_DEV_OUTPUT=0 ;;
 		--) ;;
 		*)

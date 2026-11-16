@@ -2,9 +2,9 @@
 import type { ProjectButterRelatedItem, ProjectButterRelatedSearchItem } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
 const CHILD_SOURCE: readonly ProjectButterRelatedItem[] = [
-	{"id":"child-VITA-4","dueDate":"2026-08-27","estimate":"2","key":"VITA-4","summary":"Write copy for welcome screen","priority":"Medium","assignee":"Sia Vale","status":"In progress","createdAt":"2026-03-10"},
-	{"id":"child-VITA-5","dueDate":"2026-09-03","estimate":"5","key":"VITA-5","summary":"Design progress indicator component","priority":"High","assignee":"Amara Okafor","status":"Done","createdAt":"2026-03-10"},
-	{"id":"child-VITA-6","dueDate":"2026-09-18","estimate":"1","key":"VITA-6","summary":"Implement step validation logic","priority":"Low","assignee":"Unassigned","status":"Done","createdAt":"2026-03-11"},
+	{"id":"child-VITA-4","workType":"Subtask","dueDate":"2026-08-27","estimate":"2","key":"VITA-4","summary":"Write copy for welcome screen","priority":"Medium","assignee":"Sia Vale","status":"In progress","createdAt":"2026-03-10"},
+	{"id":"child-VITA-5","workType":"Subtask","dueDate":"2026-09-03","estimate":"5","key":"VITA-5","summary":"Design progress indicator component","priority":"High","assignee":"Amara Okafor","status":"Done","createdAt":"2026-03-10"},
+	{"id":"child-VITA-6","workType":"Subtask","dueDate":"2026-09-18","estimate":"1","key":"VITA-6","summary":"Implement step validation logic","priority":"Low","assignee":"Unassigned","status":"Done","createdAt":"2026-03-11"},
 ];
 
 export const PROJECT_BUTTER_CHILD_ITEMS: readonly ProjectButterRelatedItem[] = Array.from({ length: 15 }, (_, index) => {
@@ -13,14 +13,14 @@ export const PROJECT_BUTTER_CHILD_ITEMS: readonly ProjectButterRelatedItem[] = A
 });
 
 export const PROJECT_BUTTER_LINKED_ITEMS: readonly ProjectButterRelatedItem[] = [
-	{"id":"linked-VITA-9","key":"VITA-9","summary":"Customer interview video editing and distribution","priority":"Low","assignee":"Zoe Loft","status":"To do","relationship":"Blocks","createdAt":"2026-03-18"},
-	{"id":"linked-VITA-10","key":"VITA-10","summary":"Finalize brand guidelines for 2026 launch","priority":"High","assignee":"Marcus Aurelius","status":"To do","relationship":"Relates to","createdAt":"2026-03-20"},
-	{"id":"linked-VITA-13","key":"VITA-13","summary":"Set up feature flag for onboarding rollout","priority":"High","assignee":"Liam Wilson","status":"To do","relationship":"Blocked by","createdAt":"2026-03-22"},
-	{"id":"linked-VITA-14","key":"VITA-14","summary":"Migrate legacy user profile pages to new design system","priority":"Medium","assignee":"Sia Vale","status":"To do","relationship":"Relates to","createdAt":"2026-03-24"},
-	{"id":"linked-VITA-15","key":"VITA-15","summary":"Redesign onboarding flow for returning users","priority":"Low","assignee":"Amara Okafor","status":"To do","relationship":"Clones","createdAt":"2026-03-26"},
-	{"id":"linked-VITA-19","key":"VITA-19","summary":"Audit accessibility of new onboarding screens","priority":"Medium","assignee":"Marcus Aurelius","status":"To do","relationship":"Relates to","createdAt":"2026-03-28"},
-	{"id":"linked-VITA-20","key":"VITA-20","summary":"Fix back navigation losing state in onboarding wizard","priority":"High","assignee":"Oliver Knight","status":"To do","relationship":"Blocked by","createdAt":"2026-03-30"},
-	{"id":"linked-VITA-21","key":"VITA-21","summary":"Document onboarding flow architecture decisions","priority":"Low","assignee":"Sia Vale","status":"To do","relationship":"Relates to","createdAt":"2026-04-01"},
+	{"id":"linked-VITA-9","workType":"Story","key":"VITA-9","summary":"Customer interview video editing and distribution","priority":"Low","assignee":"Zoe Loft","status":"To do","relationship":"Blocks","createdAt":"2026-03-18"},
+	{"id":"linked-VITA-10","workType":"Task","key":"VITA-10","summary":"Finalize brand guidelines for 2026 launch","priority":"High","assignee":"Marcus Aurelius","status":"To do","relationship":"Relates to","createdAt":"2026-03-20"},
+	{"id":"linked-VITA-13","workType":"Task","key":"VITA-13","summary":"Set up feature flag for onboarding rollout","priority":"High","assignee":"Liam Wilson","status":"To do","relationship":"Blocked by","createdAt":"2026-03-22"},
+	{"id":"linked-VITA-14","workType":"Story","key":"VITA-14","summary":"Migrate legacy user profile pages to new design system","priority":"Medium","assignee":"Sia Vale","status":"To do","relationship":"Relates to","createdAt":"2026-03-24"},
+	{"id":"linked-VITA-15","workType":"Story","key":"VITA-15","summary":"Redesign onboarding flow for returning users","priority":"Low","assignee":"Amara Okafor","status":"To do","relationship":"Clones","createdAt":"2026-03-26"},
+	{"id":"linked-VITA-19","workType":"Task","key":"VITA-19","summary":"Audit accessibility of new onboarding screens","priority":"Medium","assignee":"Marcus Aurelius","status":"To do","relationship":"Relates to","createdAt":"2026-03-28"},
+	{"id":"linked-VITA-20","workType":"Bug","key":"VITA-20","summary":"Fix back navigation losing state in onboarding wizard","priority":"High","assignee":"Oliver Knight","status":"To do","relationship":"Blocked by","createdAt":"2026-03-30"},
+	{"id":"linked-VITA-21","workType":"Task","key":"VITA-21","summary":"Document onboarding flow architecture decisions","priority":"Low","assignee":"Sia Vale","status":"To do","relationship":"Relates to","createdAt":"2026-04-01"},
 ];
 
 

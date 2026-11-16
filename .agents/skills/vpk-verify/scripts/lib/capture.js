@@ -445,7 +445,7 @@ function formatCaptureSummary(manifest, manifestPath) {
 }
 
 const recordedCapture = (options) => runCapture(options, {
-	onBrowserOpened: (session) => noteBrowserUseBestEffort(session, { started: true }),
+	onBrowserOpened: (session) => noteBrowserUseBestEffort(session, { headed: options.headed, started: true }),
 });
 
 function captureCli(args, { capture = recordedCapture, env = process.env, stdout = process.stdout } = {}) {

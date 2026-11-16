@@ -642,7 +642,7 @@ export function ControlledChatHistoryDrawer({
 							id={DRAWER_ID}
 							aria-describedby="rovo-chat-history-description"
 							aria-labelledby="rovo-chat-history-title"
-							className="z-30 !w-80 max-w-[calc(100%_-_40px)] gap-0 overflow-hidden border-r border-border bg-surface-overlay p-0 shadow-xl"
+							className="z-30 !w-80 max-w-[calc(100%_-_40px)] gap-0 overflow-hidden bg-surface-overlay p-0"
 							contained
 							overlayClassName="z-20"
 							portalContainer={portalContainer}

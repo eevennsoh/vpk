@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ProjectButterContentPreview } from "@/components/blocks/jira-work-item/project-butter/content-preview";
 import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
 import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -21,6 +20,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 	const id = useId();
 	const pointerIntent = useRef(false);
 	const [pointerFocused, setPointerFocused] = useState(false);
+	const [expanded, setExpanded] = useState(false);
 	const [settlingReveal, setSettlingReveal] = useState<typeof reveal>(null);
 	const reduced = useReducedMotion();
 	const revealText = reveal && reveal.text === content.descriptionDraft && !content.editingDescription ? reveal.text : null;
@@ -98,17 +98,11 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 	return empty ? (
 		<section aria-label="Description" className="-mx-1 -mb-4 px-1 pt-1">{editor}</section>
 	) : (
-		<Collapsible defaultOpen onOpenChange={(open) => { if (!open) save(); }}>
-			<section aria-labelledby={`${id}-description`}>
-				<h2 id={`${id}-description`}>
-					<CollapsibleTrigger className="group flex items-center gap-2 rounded-sm text-left text-sm font-medium text-text outline-none focus-visible:ring-2 focus-visible:ring-ring">
-						Description<span className="text-icon-subtle group-data-[panel-open]:rotate-90"><ChevronRightIcon label="" size="small" /></span>
-					</CollapsibleTrigger>
-				</h2>
-				<CollapsibleContent className="-mx-1 px-1 pb-1 pt-2" hiddenUntilFound={false} keepMounted>
-					{editor}
-				</CollapsibleContent>
-			</section>
-		</Collapsible>
+		<section aria-labelledby={`${id}-description`}>
+			<h2 className="text-sm font-medium text-text" id={`${id}-description`}>Description</h2>
+			<div className="pt-2">
+				<ProjectButterContentPreview expanded={expanded} forceExpanded={content.editingDescription || Boolean(reveal)} label="description" onExpandedChange={setExpanded}>{editor}</ProjectButterContentPreview>
+			</div>
+		</section>
 	);
 }

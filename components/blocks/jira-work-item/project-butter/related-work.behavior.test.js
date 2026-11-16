@@ -10,7 +10,7 @@ function renderRelated(props = {}) {
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 			export default function RelatedProbe({ shown = true, onUnhandledEscape }) {
-				const content = useProjectButterContent("filled");
+				const content = useProjectButterContent("filled", undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 				return <MotionConfig reducedMotion="always"><div onKeyDown={(event) => { if (event.key === "Escape") onUnhandledEscape?.(); }}>
 					<button type="button">Outside related work</button>
 					{shown ? <ProjectButterRelatedWork content={content} /> : null}
@@ -24,7 +24,7 @@ function renderRelated(props = {}) {
 }
 
 const summaryButtons = (key) => [...document.querySelectorAll(`[role="textbox"][aria-label="Edit summary for ${key}"]`)];
-const childRows = (view) => [...view.getByRole("list", { name: "Child work items" }).children]
+const childRows = (view) => [...view.getByRole("table", { name: "Child work items" }).querySelector("tbody").children]
 	.filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
 const rowSummary = (row) => row.querySelector('[aria-label^="Edit summary"]').textContent;
 
@@ -436,57 +436,32 @@ const SECTIONS_HARNESS = `import React from "react";
 	import { ProjectButterDescription } from "@/components/blocks/jira-work-item/project-butter/project-butter-description";
 	import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 	export default function SectionsProbe() {
-		const content = useProjectButterContent("filled");
+		const content = useProjectButterContent("filled", undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 		return <ThemeWrapper><MotionConfig reducedMotion="always"><div className="flex flex-col gap-6">
 			<ProjectButterDescription content={content} empty={false} />
 			<ProjectButterRelatedWork content={content} />
 		</div></MotionConfig></ThemeWrapper>;
 	}`;
 
-test("Related work collapses to a summary and its groups collapse independently", async () => {
+test("section toggles hide each section independently", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
-	const childHeading = () => view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u });
-	const related = view.getByRole("button", { name: "Collapse Related work" });
-	assert.equal(related.getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("heading", { name: "Related work", level: 2 }) !== null, true);
-	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
-	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
-	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Add attachment" }) === null, true);
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) !== null, true);
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(childHeading().getAttribute("aria-label"), "Collapse Child work items 10 of 15 done, 5 in progress, 0 to do");
-	await view.click(childHeading());
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
-	assert.equal(childHeading().textContent.includes("10/15"), true);
-	assert.equal(view.queryByRole("button", { name: "Add child work item" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Collapse Linked work" }));
-	await view.click(view.getByRole("button", { name: "Description" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
-	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) === null, true);
-	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Expand Attachments" }), childHeading(), view.getByRole("button", { name: "Expand Linked work" })]) {
-		assert.equal(trigger.getAttribute("aria-expanded"), "false");
-	}
-	assert.equal(view.tabOrder().includes("Edit summary for VITA-9"), false);
-	assert.equal(view.tabOrder().includes("More actions for Hero Image - Summer Launch.png"), false);
-	await view.click(view.getByRole("button", { name: "Expand Linked work" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Collapse Related work" }));
-	assert.equal(view.getByRole("button", { name: "Expand Related work" }).getAttribute("aria-expanded"), "false");
-	assert.equal(view.getByRole("list", { name: "8 attachments, 15 subitems, 8 linked work items" }).textContent, "8158");
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
-	assert.equal(view.tabOrder().includes("Expand Attachments"), false);
-	await view.click(view.getByRole("button", { name: "Expand Related work" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
+	assert.equal(view.queryByRole("heading", { name: "Related work" }), null);
+	await view.click(view.getByRole("button", { name: "8 attachments" }));
+	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }), null);
+	assert.equal(view.queryByRole("table", { name: "Child work items" }) !== null, true);
+	assert.equal(view.queryByRole("table", { name: "Linked work" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
+	assert.equal(view.queryByRole("table", { name: "Child work items" }), null);
+	assert.equal(view.tabOrder().includes("Add child work item"), false);
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
+	assert.equal(view.queryByRole("table", { name: "Child work items" }) !== null, true);
 });
 
 test("collapsing sections preserves attachment stacks", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(view.getByRole("button", { name: "Documents, 4 attachments" }));
 	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
-	await view.click(view.getByRole("button", { name: "Expand Attachments" }));
+	await view.click(view.getByRole("button", { name: "8 attachments" }));
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
 });
@@ -495,9 +470,9 @@ test("collapsing child work commits the live summary edit", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(summaryButtons("VITA-4")[0]);
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Keep this collapsed draft");
-	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
 	assert.equal(view.queryByRole("textbox", { name: "Edit summary for VITA-4" }) === null, true);
-	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
 	// Leaving the row commits the live edit (reference InlineEditableTextCell), so collapsing keeps the text.
 	assert.equal(summaryButtons("VITA-4")[0].textContent, "Keep this collapsed draft");
 	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-4" }) === null, true);

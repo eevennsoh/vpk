@@ -355,6 +355,12 @@ export interface RovoMessageMetadata {
 	clarificationStatus?: "answered" | "dismissed";
 	/** Assistant turn status used for transcript rendering and persistence */
 	interruption?: RovoMessageInterruption;
+	/**
+	 * The queued prompt a user message was sent for. The chat provider matches
+	 * a turn's reply, turn-complete signal and media to its prompt by this id,
+	 * so no client clock is compared with a server timestamp.
+	 */
+	promptId?: string;
 }
 
 export type RovoUIMessage = UIMessage<RovoMessageMetadata, RovoDataParts>;
@@ -548,6 +554,25 @@ export function hasTurnCompleteSignal(
 	}
 
 	return false;
+}
+
+/** The index of the user message sent for the queued prompt `promptId` (its metadata.promptId), or -1 before it lands. */
+export function findPromptUserMessageIndex(
+	messages: ReadonlyArray<RovoUIMessage>,
+	promptId: string,
+): number {
+	return messages.findLastIndex((message) => message.role === "user" && message.metadata?.promptId === promptId);
+}
+
+/** The latest assistant message after the user message at `userMessageIndex`, or undefined when there is none yet. */
+export function findReplyAfter(
+	messages: ReadonlyArray<RovoUIMessage>,
+	userMessageIndex: number,
+): RovoUIMessage | undefined {
+	if (userMessageIndex === -1) {
+		return undefined;
+	}
+	return messages.findLast((message, index) => index > userMessageIndex && message.role === "assistant");
 }
 
 function getIsoTimestamp(value: unknown): string | undefined {

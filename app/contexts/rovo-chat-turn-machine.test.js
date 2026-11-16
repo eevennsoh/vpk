@@ -40,6 +40,7 @@ const {
 	findLatestMediaLoadingState,
 	isTurnWorkIdle,
 	rovoChatTurnReducer: reduce,
+	shouldNoticeCutShortTurn,
 	shouldStartSubmitPending,
 } = machine;
 
@@ -59,13 +60,14 @@ test("enqueue, remove and clear keep queue order and always write a new queue ar
 });
 
 test("dispatchNext moves the head of the queue into flight and starts its turn fresh", () => {
-	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, retryCount: 2 };
+	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, cutShort: true, retryCount: 2 };
 	const next = reduce(midTurn, { type: "dispatchNext" });
 	assert.equal(next.activePrompt.id, "a");
 	assert.deepEqual(next.queue.map((item) => item.id), ["b"]);
 	assert.equal(next.dispatching, true);
 	assert.equal(next.finalizeRequested, false);
 	assert.equal(next.turnCompleteSeen, false);
+	assert.equal(next.cutShort, false);
 	assert.equal(next.retryCount, 0);
 	assert.equal(reduce(INITIAL, { type: "dispatchNext" }), INITIAL);
 });
@@ -108,6 +110,16 @@ test("stopRequested finalizes the active prompt and is a no-op without one", () 
 	assert.equal(reduce(INITIAL, { type: "stopRequested" }), INITIAL);
 	const active = { ...INITIAL, activePrompt: prompt("a") };
 	assert.equal(reduce(active, { type: "stopRequested" }).finalizeRequested, true);
+	const failed = { ...active, finalizeRequested: true };
+	assert.equal(reduce(failed, { type: "stopRequested" }), failed);
+});
+
+test("Stop on a cut-short turn still waiting for media drops the cut-short notice", () => {
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, { type: "turnCutShort" });
+	const stopped = reduce(cut, { type: "stopRequested" });
+	assert.equal(stopped.finalizeRequested, true);
+	assert.equal(stopped.cutShort, false);
+	assert.equal(shouldNoticeCutShortTurn(stopped), false);
 });
 
 test("turnCompleteSeen is idempotent", () => {
@@ -141,10 +153,27 @@ test("an edit drops the queue and the active prompt but keeps the retry count, t
 });
 
 test("reset returns to the initial state with a fresh queue array", () => {
-	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, dispatching: true, retryCount: 3 };
+	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: true, dispatching: true, retryCount: 3 };
 	const reset = reduce(busy, { type: "reset" });
 	assert.deepEqual(reset, { ...INITIAL, queue: [] });
 	assert.notEqual(reset.queue, INITIAL.queue);
+});
+
+test("a cut-short turn requests finalize, waits for media, and notices only if turn-complete never arrives", () => {
+	assert.equal(reduce(INITIAL, { type: "turnCutShort" }), INITIAL);
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a"), retryCount: 1 }, { type: "turnCutShort" });
+	assert.equal(cut.finalizeRequested, true);
+	assert.equal(cut.cutShort, true);
+	assert.equal(cut.retryCount, 1);
+	// Regression: the notice used to be recorded as the stream closed, while an image or video was still loading.
+	assert.equal(canFinalizeActivePrompt(cut, { ...IDLE, isMediaGenerating: true }), false);
+	assert.equal(canFinalizeActivePrompt(cut, IDLE), true);
+	assert.equal(shouldNoticeCutShortTurn(cut), true);
+	assert.equal(shouldNoticeCutShortTurn(reduce(cut, { type: "turnCompleteSeen" })), false);
+	assert.equal(shouldNoticeCutShortTurn({ ...INITIAL, activePrompt: prompt("a"), finalizeRequested: true }), false);
+	for (const event of [{ type: "finalize" }, { type: "editStarted" }, { type: "retryDispatchStarted" }, { type: "reset" }]) {
+		assert.equal(reduce(cut, event).cutShort, false, event.type);
+	}
 });
 
 test("the active prompt finalizes after turn-complete once the stream closes, even while media loads", () => {
@@ -242,15 +271,31 @@ test("retry countdowns use the rate-limit text and the chat-in-progress thinking
 	assert.equal(inProgress.parts[0].data.label, machine.getChatInProgressRetryCountdownLabel(2));
 });
 
-test("the latest media loading state comes from the latest assistant message and skips user messages", () => {
+test("the media loading state comes from the current turn's latest assistant message", () => {
 	const loading = (type, value) => ({ type: "data-widget-loading", data: { type, loading: value } });
 	const assistant = (...parts) => ({ id: "a", role: "assistant", parts });
-	const user = { id: "u", role: "user", parts: [{ type: "text", text: "hi" }] };
-	assert.equal(findLatestMediaLoadingState([]), null);
-	assert.equal(findLatestMediaLoadingState([assistant({ type: "text", text: "no media" })]), null);
-	assert.equal(findLatestMediaLoadingState([assistant(loading("work-item-card", true))]), null);
-	assert.equal(findLatestMediaLoadingState([assistant(loading("image-preview", true))]), true);
-	assert.equal(findLatestMediaLoadingState([assistant(loading("audio-preview", true), loading("audio-preview", false))]), false);
-	assert.equal(findLatestMediaLoadingState([assistant(loading("video-preview", true)), user]), true);
-	assert.equal(findLatestMediaLoadingState([assistant(loading("image-preview", true)), assistant({ type: "text", text: "later" })]), null);
+	const user = (promptId) => ({ id: "u", role: "user", metadata: promptId ? { promptId } : undefined, parts: [{ type: "text", text: "hi" }] });
+	const scan = (messages) => findLatestMediaLoadingState(messages, "p1");
+	assert.equal(scan([]), null);
+	assert.equal(scan([user("p1"), assistant({ type: "text", text: "no media" })]), null);
+	assert.equal(scan([user("p1"), assistant(loading("work-item-card", true))]), null);
+	assert.equal(scan([user("p1"), assistant(loading("image-preview", true))]), true);
+	assert.equal(scan([user("p1"), assistant(loading("audio-preview", true), loading("audio-preview", false))]), false);
+	assert.equal(scan([user("p1"), assistant(loading("image-preview", true)), assistant({ type: "text", text: "later" })]), null);
+	// The active prompt's user message has not landed yet.
+	assert.equal(scan([user("p0"), assistant(loading("video-preview", true))]), null);
+});
+
+// Regression: the scan used to read the latest assistant message wherever it
+// was, so a widget an earlier turn left loading kept media generation up for
+// the next turn until the 120 s timeout.
+test("a widget an earlier turn left loading does not count for the next turn", () => {
+	const stale = { id: "a0", role: "assistant", parts: [{ type: "data-widget-loading", data: { type: "video-preview", loading: true } }] };
+	const user = (id, promptId) => ({ id, role: "user", metadata: promptId ? { promptId } : undefined, parts: [{ type: "text", text: "hi" }] });
+	assert.equal(findLatestMediaLoadingState([user("u0", "p0"), stale, user("u1", "p1")], "p1"), null);
+	assert.equal(findLatestMediaLoadingState([user("u0", "p0"), stale], "p1"), null);
+	// With no active prompt, a finalized queued turn does not count either...
+	assert.equal(findLatestMediaLoadingState([user("u0", "p0"), stale], null), null);
+	// ...but an edit resend (its user message carries no prompt id) does.
+	assert.equal(findLatestMediaLoadingState([user("u0"), stale], null), true);
 });
