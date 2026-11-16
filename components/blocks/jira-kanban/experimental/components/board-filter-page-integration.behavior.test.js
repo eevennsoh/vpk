@@ -9,7 +9,7 @@ const columns = [{ title: "To do", count: 2, cards: [
 ] }];
 const mocks = {
 	"@/components/blocks/jira-kanban/experimental/experimental-jira-kanban": `export function ExperimentalJiraKanban({ boardColumns }) { return <output data-testid="visible-cards">{boardColumns.flatMap(column => column.cards.map(card => card.code)).join(",")}</output>; }`,
-	"@/components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban": `export function ExperimentalV2JiraKanban({ boardColumns }) { return <output data-testid="visible-cards">{boardColumns.flatMap(column => column.cards.map(card => card.code)).join(",")}</output>; }`,
+	"@/components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban": `export function ExperimentalV2JiraKanban({ boardColumns, onCardSelect, selectedCardCodes }) { return <><button onClick={() => onCardSelect("PAY-1", "To do", 0, { source: "selection-control", shiftKey: false, metaOrCtrlKey: false })}>Select first card</button><output data-testid="selected-cards">{[...selectedCardCodes].join(",")}</output><output data-testid="visible-cards">{boardColumns.flatMap(column => column.cards.map(card => card.code)).join(",")}</output></>; }`,
 	"@/components/blocks/jira-kanban/experimental/pulse/experimental-pulse": `export function ExperimentalPulse() { return <div>Insights opened</div>; }`,
 };
 
@@ -18,6 +18,10 @@ for (const variant of ["experimental", "experimental-v2"]) {
 	const props = { boardColumns: columns, headerAssignees: assignees, insightsDefaultAssigneeIds: ["venn"] };
 	test(`${variant} supplies Status and Work type options and filters its cards`, async () => {
 		const view = await renderComponent({ entry, mocks, props: { ...props, insightsEnabled: false } });
+		if (variant === "experimental-v2") {
+			await view.click(view.getByRole("button", { name: "Select first card" }));
+			assert.equal(view.container.querySelector('[data-testid="selected-cards"]').textContent, "PAY-1");
+		}
 		await view.click(view.getByRole("button", { name: "Filter board" }));
 		await view.press(view.getByRole("menuitem", { name: "Status" }), "ArrowRight");
 		assert.equal(view.getByRole("menuitemcheckbox", { name: "To do" }).textContent.includes("To do"), true);
@@ -25,6 +29,7 @@ for (const variant of ["experimental", "experimental-v2"]) {
 		await view.press(view.getByRole("menuitem", { name: "Work type" }), "ArrowRight");
 		await view.click(view.getByRole("menuitemcheckbox", { name: "bug" }));
 		assert.equal(view.container.querySelector('[data-testid="visible-cards"]').textContent, "PAY-2");
+		if (variant === "experimental-v2") assert.equal(view.container.querySelector('[data-testid="selected-cards"]').textContent, "");
 		await view.unmount();
 	});
 

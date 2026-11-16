@@ -238,7 +238,11 @@ export default function ExperimentalV2JiraKanbanPage({
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
-	const boardFilter = useBoardFilter();
+	const resetFilterSelection = useCallback(() => {
+		setSelection(createJiraKanbanSelectionState());
+		setDraggedCard(null);
+	}, []);
+	const boardFilter = useBoardFilter({ onAssigneeChange: resetFilterSelection });
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		insightsEnabled && controlledMode === "pulse"
@@ -270,8 +274,6 @@ export default function ExperimentalV2JiraKanbanPage({
 
 		setPulseFocusSnapshotId(snapshotId);
 		markTimelineAsViewed();
-		setSelection(createJiraKanbanSelectionState());
-		setDraggedCard(null);
 		if (assigneePolicy === "default-assignees") {
 			const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
 				? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
@@ -481,8 +483,6 @@ export default function ExperimentalV2JiraKanbanPage({
 	};
 
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
-		setSelection(createJiraKanbanSelectionState());
-		setDraggedCard(null);
 		boardFilter.actions.setAssigneeIds(assigneeIds);
 	};
 
