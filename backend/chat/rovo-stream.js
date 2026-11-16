@@ -182,20 +182,15 @@ function resolveRovoNonStrictPostStreamRouting({
 }
 
 /**
- * The newlines that start a new paragraph after text ending in `trailingWhitespace`: the newlines
- * already in that whitespace count toward the blank line.
+ * The break that starts a new paragraph after `text`: none when nothing visible came before it or
+ * it already ends a paragraph. A caller that keeps only the end of the text says whether anything
+ * visible came before.
  */
-function paragraphBreakAfterWhitespace(trailingWhitespace) {
-	const newlines = trailingWhitespace.split("\n").length - 1;
-	return "\n".repeat(Math.max(0, 2 - newlines));
-}
-
-/** The break that starts a new paragraph after `text`: none when it shows nothing yet. */
-function paragraphSeparatorAfter(text) {
-	if (text.trim().length === 0) {
+function paragraphSeparatorAfter(text, hasVisibleText = text.trim().length > 0) {
+	if (!hasVisibleText || text.endsWith("\n\n")) {
 		return "";
 	}
-	return paragraphBreakAfterWhitespace(/\s*$/u.exec(text)[0]);
+	return text.endsWith("\n") ? "\n" : "\n\n";
 }
 
 /** Whole blank lines at the start of `text`; the first line with text keeps its indentation. */
@@ -234,11 +229,11 @@ function createRovoTextOutputController({
 	// Set when a rerun keeps the text already shown; its first shown text starts a new paragraph.
 	// The break goes on the wire only: the rerun's own text is what the turn hands on.
 	let shownParagraphBreakPending = false;
-	// Whether any visible (non-whitespace) text has gone on the wire, and the whitespace written
-	// after the last visible text. Together they tell where the next paragraph starts.
+	// Whether any visible (non-whitespace) text has gone on the wire, and the last two characters
+	// written. Together they tell where the next paragraph starts.
 	let hasShownVisibleText = false;
-	let shownTrailingWhitespace = "";
-	// Whitespace not yet written: nothing visible was shown, or a paragraph break is pending.
+	let shownTextEnd = "";
+	// The rerun's leading whitespace, held until its first visible text decides the break.
 	let heldWhitespace = "";
 
 	const afterPendingParagraphBreak = (delta) => {
@@ -259,23 +254,21 @@ function createRovoTextOutputController({
 	};
 
 	const writeShownTextDelta = (nextDelta) => {
-		const holdsWhitespace = !hasShownVisibleText || shownParagraphBreakPending;
-		if (holdsWhitespace && nextDelta.trim().length === 0) {
-			heldWhitespace += nextDelta;
-			return;
-		}
-		let delta = `${heldWhitespace}${nextDelta}`;
-		heldWhitespace = "";
+		let delta = nextDelta;
 		if (shownParagraphBreakPending) {
+			if (nextDelta.trim().length === 0) {
+				heldWhitespace += nextDelta;
+				return;
+			}
 			// The rerun's leading blank lines are part of the break, not added on top of it.
 			shownParagraphBreakPending = false;
-			delta = `${paragraphBreakAfterWhitespace(shownTrailingWhitespace)}${delta.replace(LEADING_BLANK_LINES, "")}`;
+			delta = `${paragraphSeparatorAfter(shownTextEnd, hasShownVisibleText)}${`${heldWhitespace}${nextDelta}`.replace(LEADING_BLANK_LINES, "")}`;
+			heldWhitespace = "";
 		}
-		const trailingWhitespace = /\s*$/u.exec(delta)[0];
-		shownTrailingWhitespace = trailingWhitespace.length === delta.length
-			? `${shownTrailingWhitespace}${delta}`
-			: trailingWhitespace;
-		hasShownVisibleText = true;
+		if (delta.trim().length > 0) {
+			hasShownVisibleText = true;
+		}
+		shownTextEnd = `${shownTextEnd}${delta}`.slice(-2);
 		startTextIfNeeded();
 		writer.write({ type: "text-delta", id: textId, delta });
 	};

@@ -141,11 +141,15 @@ test("a stuck port that recovers reruns the same attempt; what the first attempt
 	// A stuck-port rerun is the same tool-first attempt, recorded again as a first attempt.
 	assert.deepEqual(turn.attempts, ["first", "first"]);
 	assert.ok(statusLabels(turn.parts).includes("Recovered stuck port, retrying"));
-	// Before: the stuck attempt's held-back tail was dropped and the rerun's text ran straight on
-	// ("Lost withRecovered answer"). Now the whole first attempt shows and the rerun is its own paragraph.
-	assert.equal(visibleText(turn.parts), "Lost with the stuck port\n\nRecovered answer");
+	// Before: the rerun's text ran straight on ("Lost withRecovered answer"). The held-back tail
+	// " the stuck port" was never shown and is still dropped; the rerun is now its own paragraph.
+	assert.equal(visibleText(turn.parts), "Lost with\n\nRecovered answer");
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
+
+// The marker stream holds back an attempt's last 15 characters as a possible marker start, and a
+// rerun drops them unshown. Text followed by this tail has reached the wire before the stuck port.
+const HELD_BACK_TAIL = "~".repeat(15);
 
 function recoveringStuckPortStreams(attemptTexts) {
 	let streams = 0;
@@ -181,8 +185,12 @@ test("a stuck port that recovers before any text was shown starts the reply with
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
-test("two stuck-port recoveries in a row put one paragraph break between each attempt's text", async () => {
-	const { dependencies, getStreams } = recoveringStuckPortStreams(["First try", "Second try", "Third try"]);
+test("two stuck-port recoveries in a row put one paragraph break between each attempt's shown text", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams([
+		`First try${HELD_BACK_TAIL}`,
+		`Second try${HELD_BACK_TAIL}`,
+		"Third try",
+	]);
 	const turn = await runTurn(dependencies);
 
 	assert.equal(getStreams(), 3);
@@ -192,16 +200,18 @@ test("two stuck-port recoveries in a row put one paragraph break between each at
 });
 
 test("a rerun that shows nothing before the next recovery does not double the paragraph break", async () => {
-	const { dependencies, getStreams } = recoveringStuckPortStreams(["First try", "", "Third try"]);
-	const turn = await runTurn(dependencies);
+	for (const middleAttempt of ["", "short", "\n\n"]) {
+		const { dependencies, getStreams } = recoveringStuckPortStreams([`First try${HELD_BACK_TAIL}`, middleAttempt, "Third try"]);
+		const turn = await runTurn(dependencies);
 
-	assert.equal(getStreams(), 3);
-	assert.equal(visibleText(turn.parts), "First try\n\nThird try");
-	assert.equal(endsWithTurnComplete(turn.parts), true);
+		assert.equal(getStreams(), 3);
+		assert.equal(visibleText(turn.parts), "First try\n\nThird try", JSON.stringify(middleAttempt));
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
 });
 
 test("first-attempt text that already ends a paragraph gets no extra break before the rerun", async () => {
-	const { dependencies } = recoveringStuckPortStreams(["First try\n\n", "Recovered answer"]);
+	const { dependencies } = recoveringStuckPortStreams([`First try\n\n${HELD_BACK_TAIL}`, "Recovered answer"]);
 	const turn = await runTurn(dependencies);
 
 	assert.equal(visibleText(turn.parts), "First try\n\nRecovered answer");
@@ -214,7 +224,7 @@ test("first-attempt text ending in whitespace still gets exactly one blank line 
 		// A markdown hard break: the trailing spaces and newline are the first attempt's, then one blank line.
 		["A  \n", "A  \n\nB"],
 	]) {
-		const { dependencies } = recoveringStuckPortStreams([firstAttempt, "B"]);
+		const { dependencies } = recoveringStuckPortStreams([`${firstAttempt}${HELD_BACK_TAIL}`, "B"]);
 		const turn = await runTurn(dependencies);
 
 		assert.equal(visibleText(turn.parts), expected, JSON.stringify(firstAttempt));
@@ -223,7 +233,7 @@ test("first-attempt text ending in whitespace still gets exactly one blank line 
 
 test("leading newlines in the rerun's text count toward the paragraph break instead of adding to it", async () => {
 	for (const rerun of ["\n\nB", ["\n", "\n", "B"]]) {
-		const { dependencies } = recoveringStuckPortStreams(["A", rerun]);
+		const { dependencies } = recoveringStuckPortStreams([`A${HELD_BACK_TAIL}`, rerun]);
 		const turn = await runTurn(dependencies);
 
 		assert.equal(visibleText(turn.parts), "A\n\nB", JSON.stringify(rerun));
@@ -231,7 +241,7 @@ test("leading newlines in the rerun's text count toward the paragraph break inst
 	}
 });
 
-test("a timeout notice after an empty rerun follows the first attempt's text after one blank line", async () => {
+test("a timeout notice after an empty rerun follows the first attempt's shown text after one blank line", async () => {
 	let streams = 0;
 	let restarts = 0;
 	const turn = await runTurn({
@@ -244,7 +254,7 @@ test("a timeout notice after an empty rerun follows the first attempt's text aft
 			streams += 1;
 			onPortAcquired(43123);
 			if (streams === 1) {
-				onTextDelta("A");
+				onTextDelta(`A${HELD_BACK_TAIL}`);
 				throw createPortStuckError(43123);
 			}
 			throw Object.assign(new Error("Rovo turn still in progress"), { code: "ROVO_CHAT_IN_PROGRESS_TIMEOUT" });
@@ -255,21 +265,36 @@ test("a timeout notice after an empty rerun follows the first attempt's text aft
 	assert.match(visibleText(turn.parts), /^A\n\n⚠️ Automatic recovery timed out/u);
 });
 
-test("text the marker stream holds back as a possible marker is not shown when the attempt reruns", async () => {
-	for (const firstAttempt of ["WIDGET_", 'WIDGET_DATA:{"type":"plan"', "Lost with WIDGET_"]) {
+test("text the first attempt still held back is not shown when it reruns", async () => {
+	// Each expected string is the first attempt's text on main, then the rerun's after one blank line if any showed.
+	for (const [firstAttempt, expected] of [
+		// A spec fence and its payload stay hidden; only what main had already shown stays.
+		['X ```spec\n{"foo":1}', "X ``\n\nB"],
+		["X ```sp", "B"],
+		// Short enough to be held back whole as a possible marker start.
+		["A", "B"],
+		["WIDGET_", "B"],
+		['WIDGET_DATA:{"type":"plan"', "B"],
+		['Intro WIDGET_DATA:{"type":"plan"', "Intro \n\nB"],
+		["Lost with [[RESULT:", "Lost\n\nB"],
+	]) {
 		const { dependencies } = recoveringStuckPortStreams([firstAttempt, "B"]);
 		const turn = await runTurn(dependencies);
-		const expected = firstAttempt.startsWith("Lost") ? "Lost with \n\nB" : "B";
 
 		assert.equal(visibleText(turn.parts), expected, JSON.stringify(firstAttempt));
+		assert.equal(turn.endOfTurnFacts.assistantText, "B", JSON.stringify(firstAttempt));
 	}
 });
 
-test("a first attempt that shows only blank lines leaves no leading blank lines before the rerun", async () => {
-	const { dependencies } = recoveringStuckPortStreams(["\n\n", "B"]);
-	const turn = await runTurn(dependencies);
+test("a first attempt that shows only whitespace adds no paragraph break before the rerun", async () => {
+	// Held back whole: nothing was shown.
+	const heldBack = recoveringStuckPortStreams(["\n\n", "B"]);
+	assert.equal(visibleText((await runTurn(heldBack.dependencies)).parts), "B");
 
-	assert.equal(visibleText(turn.parts), "B");
+	// Whitespace that reached the wire stays, as on main; the rerun's text follows with nothing added.
+	const shown = recoveringStuckPortStreams([`\n\n${" ".repeat(20)}`, "B"]);
+	const turn = await runTurn(shown.dependencies);
+	assert.equal(visibleText(turn.parts), "\n\n     B");
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
@@ -301,8 +326,55 @@ test("on a tool-first turn that streams its text, the rerun's text starts a new 
 
 	assert.equal(getStreams(), 2);
 	assert.deepEqual(turn.attempts, ["first", "first"]);
-	assert.equal(visibleText(turn.parts), "Lost with the stuck port\n\nRecovered answer\n\nTool output was not available.");
+	assert.equal(visibleText(turn.parts), "Lost with\n\nRecovered answer\n\nTool output was not available.");
 	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+// Turns without a rerun write the same text as origin/main; the expected strings were taken by
+// running each sequence against origin/main's backend.
+test("without a rerun, a turn's text and its post-stream text match the pre-rerun-break output", async () => {
+	const failingAfter = (text) => ({
+		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
+		restartRovoPort: async () => ({ recovered: false }),
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			onPortAcquired(43123);
+			onTextDelta(text);
+			throw createPortStuckError(43123);
+		},
+	});
+	const streaming = (...steps) => ({
+		streamViaRovo: async ({ onPortAcquired, onTextDelta, onToolCallStart }) => {
+			onPortAcquired(43123);
+			for (const step of steps) {
+				if (typeof step === "string") {
+					onTextDelta(step);
+				} else {
+					onToolCallStart(step);
+				}
+			}
+		},
+	});
+	for (const [name, dependencies, turnOverrides, expected] of [
+		["text ending in a whitespace line, then a failure notice", failingAfter("A\n \n"), {}, "A\n \n\n⚠️ Rovo is busy."],
+		["leading whitespace before the first visible text", streaming("\n\n  ", "Answer"), {}, "\n\n  Answer"],
+		[
+			"whitespace around a tool part",
+			streaming("Looking it up \n", { toolCallId: "search-1", toolName: "search_issues" }, "\n\n Found it.  "),
+			{},
+			"Looking it up \n\n\n Found it.  ",
+		],
+		[
+			"deferred tool-first text",
+			streaming("\n Attempt \n"),
+			STRICT_SOFT_RETRY_TURN,
+			"\n Attempt \n\n\nTool output was not available.",
+		],
+	]) {
+		const turn = await runTurn(dependencies, turnOverrides);
+
+		assert.equal(visibleText(turn.parts), expected, name);
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, name);
+	}
 });
 
 test("a stuck port that cannot recover shows the failure and still completes the turn", async () => {
