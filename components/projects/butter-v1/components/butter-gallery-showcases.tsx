@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 
 import {
 	AGENT_SESSION_CLOUD_ITEMS,
@@ -58,30 +59,39 @@ const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; items: reado
 	{ title: "Local", items: withLifecycleStates(AGENT_SESSION_ITEMS) },
 	{ title: "Cloud", items: withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS) },
 ];
-const SESSION_DENSITIES = ["short", "long"] as const satisfies readonly AgentSessionDensity[];
-
-/** Short sits at its catalog width; long gets 560px so the fuller metadata line has room. */
-const SESSION_LIST_WIDTH: Readonly<Record<AgentSessionDensity, string>> = { unlinked: "w-80", short: "w-80", long: "w-[560px]" };
+/**
+ * Card sizes that show how a session row responds to its container. Large is
+ * the long row with room for its full metadata line, Medium the same row in a
+ * narrower panel where clauses truncate, and Small the short row.
+ */
+const SESSION_SIZES = [
+	{ value: "large", label: "Large", density: "long", width: "w-[560px]" },
+	{ value: "medium", label: "Medium", density: "long", width: "w-[420px]" },
+	{ value: "small", label: "Small", density: "short", width: "w-80" },
+] as const satisfies readonly Readonly<{ value: string; label: string; density: AgentSessionDensity; width: string }>[];
+type SessionSize = (typeof SESSION_SIZES)[number];
 
 export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly<{ galleryOpen: boolean; permission: ButterSessionPermission }>) {
+	const [size, setSize] = useState<SessionSize>(SESSION_SIZES[0]);
 	return (
 		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex flex-col overflow-auto px-6", galleryOpen ? "bottom-56" : "bottom-0")}>
-			<div className="pointer-events-auto m-auto flex flex-col gap-6 py-6">
+			<div className="pointer-events-auto m-auto flex flex-col items-center gap-6 py-6">
 				<h1 className="sr-only">Agent sessions</h1>
-				{BUTTER_AGENT_SESSION_ROWS.map((row) => (
-					<section aria-label={`${row.title} sessions`} className="flex flex-col gap-1.5" key={row.title}>
-						<h2 className="text-xs font-semibold text-text-subtle">{row.title}</h2>
-						<div className="flex items-start gap-6">
-							{SESSION_DENSITIES.map((density) => (
-								<div className="flex shrink-0 flex-col gap-1.5" key={density}>
-									{row.items.map((item) => (
-										<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface", SESSION_LIST_WIDTH[density])} density={density} items={[withPermission(item, permission)]} key={item.state} variant="large" />
-									))}
-								</div>
-							))}
-						</div>
-					</section>
-				))}
+				<ToggleGroup aria-label="Session card size" onValueChange={(values) => { const next = SESSION_SIZES.find((option) => option.value === values[0]); if (next) setSize(next); }} size="sm" value={[size.value]} variant="outline">
+					{SESSION_SIZES.map((option) => <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
+				</ToggleGroup>
+				<div className="grid grid-cols-[3rem_auto] gap-x-4 gap-y-6">
+					{BUTTER_AGENT_SESSION_ROWS.map((row) => (
+						<section aria-label={`${row.title} sessions`} className="col-span-2 grid grid-cols-subgrid items-start" key={row.title}>
+							<h2 className="pt-3 text-xs font-semibold text-text-subtle">{row.title}</h2>
+							<div className="flex flex-col gap-1.5">
+								{row.items.map((item) => (
+									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} variant="large" />
+								))}
+							</div>
+						</section>
+					))}
+				</div>
 			</div>
 		</div>
 	);
