@@ -385,11 +385,11 @@ or overlay affordance.
   separation.
 - **Overflow** (`shadow-lg`, `var(--ds-shadow-overflow)`): Use for content
   that scrolls or visually breaks out of its container.
-- **Overlay** (`shadow-xl`, `shadow-2xl`,
-  `var(--ds-shadow-overlay)`): Use for dialogs, popovers, command surfaces,
-  and floating controls. `shadow-2xl` is the ADS overlay alone; `shadow-xl`
-  adds a second 1px perimeter, so restyled overlay surfaces override it with
-  `shadow-2xl`. There is no `shadow-overlay` class.
+- **Overlay** (`shadow-2xl`, `var(--ds-shadow-overlay)`): Use for dialogs,
+  popovers, command surfaces, and floating controls. Shared primitive defaults
+  and consumer restyling must use `shadow-2xl` for overlay elevation. Never use
+  `shadow-xl` on overlay surfaces: it adds a second 1px perimeter to the ADS
+  overlay shadow. There is no `shadow-overlay` class.
 
 ### Named rules
 
@@ -404,11 +404,13 @@ remain unframed.
 need movement or lift, and pair overlay surfaces with overlay shadow. Do not
 mix overlay shadow into ordinary inline content.
 
-**The single-perimeter rule.** Raised cards using an elevation shadow must not
-add a visible decorative outer border or ring. The shadow already defines the
-edge, so an added border creates a double outline. Keep distinct focus or
-selection indicators when they communicate state.
+**The single-perimeter rule.** Raised cards and overlay surfaces using an
+elevation shadow, including shared primitive defaults, must never add a visible
+decorative outer border, ring, or additional perimeter shadow. The elevation
+shadow already defines the edge, so an added perimeter creates a double outline.
+Keep distinct focus or selection indicators when they communicate state.
 <!-- 2026-11-15: "this extra 1px border on the card" -->
+<!-- 2026-11-16: "we don't add this extra 1px border stroke on menu overlays because the overlay shadow already visually mimic that" -->
 
 ## 7. Components
 

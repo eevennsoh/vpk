@@ -22,6 +22,7 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
+import { JiraListPullRequestCell } from "@/components/blocks/jira-list/jira-list-pull-request-cell";
 import { JiraListHierarchyButton } from "@/components/blocks/jira-list/jira-list-work-controls";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { AvatarUnassigned } from "@/components/ui/avatar";
@@ -79,6 +80,7 @@ function JiraListDueDateCell({ dueDate, issueKey, onChange }: Readonly<{
 }
 
 export function createJiraListBaseColumns({
+	showPullRequests,
 	agentCatalog,
 	addAgentLabel,
 	copiedIssueKey,
@@ -100,6 +102,7 @@ export function createJiraListBaseColumns({
 	setOpenCopyTooltipIssueKey,
 	statusOptions,
 }: Readonly<{
+	showPullRequests?: boolean;
 	agentCatalog?: readonly AgentSelectorAgent[];
 	addAgentLabel?: string;
 	copiedIssueKey: string | null;
@@ -303,6 +306,12 @@ export function createJiraListBaseColumns({
 				/>
 			),
 		},
+		...(showPullRequests ? [{
+			id: "pullRequest",
+			label: "Pull request",
+			widthClassName: "w-[240px]",
+			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell pullRequest={row.pullRequest} />,
+		}] : []),
 		{
 			id: "priority",
 			label: "Priority",

@@ -1279,7 +1279,7 @@
   },
   "components/blocks/pull-request/pull-request.source.test.js": {
     "no-restricted-syntax": {
-      "count": 111
+      "count": 110
     }
   },
   "components/blocks/question-card/components/question-card.source.test.js": {
