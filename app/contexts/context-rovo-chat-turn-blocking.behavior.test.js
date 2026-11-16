@@ -12,6 +12,7 @@ const {
 	cancelRunCalls,
 	chatState,
 	describeMessages,
+	holdDetach,
 	mountChat,
 	send,
 	settle,
@@ -486,6 +487,40 @@ test("selecting the thread already shown during a cut-short wait leaves the wait
 	await timeouts.cutShort.fireLive();
 	await expectNoticeThenQueue(server, chat, notice);
 });
+
+// Regression: a thread change reset the departing turn before awaiting the
+// stop and detach, so a selection superseded in that window left the old
+// transcript shown with its wait, notice and queue gone for good.
+const SUPERSEDING_SELECTIONS = [
+	{
+		name: "a selection whose fetch fails",
+		run: async (chat) => {
+			window.testApi.failingThreadIds = new Set(["broken-thread"]);
+			await assert.rejects((await startAction(() => chat().selectThread("broken-thread")))(), /Thread fetch failed/);
+		},
+	},
+	{ name: "re-selecting the departing thread", run: async (chat, threadId) => (await startAction(() => chat().selectThread(threadId)))() },
+];
+
+for (const superseding of SUPERSEDING_SELECTIONS) {
+	test(`${superseding.name} while a switch detaches the departing run keeps the cut-short wait, its notice and the queue`, async (t) => {
+		const { server, chat, timeouts, notice, departingThreadId } = await startCutShortMediaWait(t);
+		const detach = holdDetach();
+		const switching = await startAction(() => chat().selectThread(STORED_THREAD.id));
+		await waitFor("the stop phase to reach the detach", () => detach.reached(departingThreadId));
+		await superseding.run(chat, departingThreadId);
+		await detach.open();
+		await switching();
+		await settle(20);
+		assert.equal(chat().activeThreadId, departingThreadId);
+		assert.equal(chat().activePrompt?.text, "Draw a cat");
+		assert.deepEqual(chat().queuedPrompts.map((prompt) => prompt.text), ["Then a dog"]);
+
+		await timeouts.cutShort.fireLive();
+		await expectNoticeThenQueue(server, chat, notice);
+		assert.equal(server.turns[1].body.id, departingThreadId);
+	});
+}
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {
 	const { harness, server, chat } = await mountChat(t);

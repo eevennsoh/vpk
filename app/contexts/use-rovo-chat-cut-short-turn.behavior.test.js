@@ -139,6 +139,18 @@ test("hidden through Activity the wait is cleared, and shown again it is armed f
 	assert.deepEqual(probe.timers.live().map((handle) => handle.delay), [0]);
 });
 
+// Regression: the delay was the stored end time minus the clock, unclamped, so
+// a clock moved back an hour between the finish and the commit armed a wait of
+// about an hour instead of at most the full short wait.
+test("a clock moved backwards never arms a wait longer than the full short wait", async (t) => {
+	const probe = await mountProbe(t);
+	probe.finish([user, reply(loadingImage)]);
+	const [{ mediaWaitEndsAt }] = probe.events;
+	probe.timers.clock.now = NOW - 3_600_000;
+	await probe.render({ wait: { promptId: "p1", endsAt: mediaWaitEndsAt } });
+	assert.deepEqual(probe.timers.live().map((handle) => handle.delay), [probe.waitMs()]);
+});
+
 test("under StrictMode one wait stays armed", async (t) => {
 	const probe = await mountProbe(t, { strictMode: true });
 	await probe.render({ wait: { promptId: "p1", endsAt: NOW + 3_000 } });

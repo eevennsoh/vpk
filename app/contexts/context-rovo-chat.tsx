@@ -140,7 +140,7 @@ import {
 import { useRovoChatTurnMachine } from "@/app/contexts/use-rovo-chat-turn-machine";
 import { useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
 import { useRovoChatCutShortTurn } from "@/app/contexts/use-rovo-chat-cut-short-turn";
-import { endDepartingTurn } from "@/app/contexts/rovo-chat-departing-turn";
+import { stopDepartingRequest } from "@/app/contexts/rovo-chat-departing-turn";
 import {
 	createTurnError,
 	hasTurnCompleteForActivePrompt,
@@ -1527,12 +1527,16 @@ export function RovoChatProvider({
 		}
 	}, [portIndex, sendBackendCancel, stop, turnRef, waitForStreamStop]);
 
-	const stopStreaming = useCallback(async () => {
-		const transitionToken = beginTransition("stop-streaming");
+	// Ends the turn of a request being stopped: by the user, or by a thread change that may be superseded.
+	const endStoppedTurn = useCallback(() => {
 		dispatchTurn({ type: "stopRequested" });
-
 		clearMediaGenerating();
 		clearSubmitPending();
+	}, [clearMediaGenerating, clearSubmitPending, dispatchTurn]);
+
+	const stopStreaming = useCallback(async () => {
+		const transitionToken = beginTransition("stop-streaming");
+		endStoppedTurn();
 		isCancellingRef.current = true;
 		try {
 			await cancelCurrentStream({ explicitUserCancel: true });
@@ -1550,18 +1554,15 @@ export function RovoChatProvider({
 		beginTransition,
 		finishTransition,
 		cancelCurrentStream,
-		clearMediaGenerating,
-		clearSubmitPending,
-		dispatchTurn,
+		endStoppedTurn,
 		queueTick,
 		refreshThreads,
 		hasCancellationOwner,
 		syncTransitionCancellation,
 	]);
 
-	// Ends the departing transcript's turn work (active turn and its cut-short
-	// wait, queue, retry, media hold, errors). Every path that replaces or drops
-	// the transcript runs it first, so nothing from the old turn lands on the new one.
+	// Ends the departing transcript's turn work (active turn and its cut-short wait, queue, retry,
+	// media hold, errors) at a thread change's commit point, as the transcript is replaced or dropped.
 	const resetTranscriptPending = useCallback(() => {
 		cancelRetryTimer();
 		clearMediaGenerating();
@@ -1570,15 +1571,16 @@ export function RovoChatProvider({
 		clearChatErrors();
 	}, [cancelRetryTimer, clearChatErrors, clearMediaGenerating, clearSubmitPending, dispatchTurn]);
 
-	// Ends the departing turn, then stops its request and detaches its run; see endDepartingTurn.
-	const endTurnForThreadChange = useCallback(() => endDepartingTurn({
+	// The stop phase of a thread change; it never resets the turn. See stopDepartingRequest.
+	const stopRequestForThreadChange = useCallback(() => stopDepartingRequest({
 		threadId: activeThreadIdRef.current,
 		isSendInFlight: () => isStreamingRef.current || hasSendInFlight(turnRef.current),
-		resetTurn: resetTranscriptPending,
+		isRequestLive: () => isStreamingRef.current || turnRef.current.dispatching,
+		endStoppedTurn,
 		stopRequest: stop,
 		waitForStreamStop,
 		detachRun: detachRovoAppRun,
-	}), [resetTranscriptPending, stop, turnRef, waitForStreamStop]);
+	}), [endStoppedTurn, stop, turnRef, waitForStreamStop]);
 
 	const selectThread = useCallback(
 		async (threadId: string) => {
@@ -1594,10 +1596,12 @@ export function RovoChatProvider({
 				if (!isCurrentTransition(transitionToken)) {
 					return;
 				}
-				await endTurnForThreadChange();
+				await stopRequestForThreadChange();
+				// Commit point: no await from this check to the new transcript, so every later prompt belongs to it.
 				if (!isCurrentTransition(transitionToken)) {
 					return;
 				}
+				resetTranscriptPending();
 				if (!thread) {
 					activeThreadIdRef.current = null;
 					setActiveThreadId(null);
@@ -1620,12 +1624,13 @@ export function RovoChatProvider({
 		},
 		[
 			beginTransition,
-			endTurnForThreadChange,
 			finishTransition,
 			isCurrentTransition,
 			queueTick,
 			refreshThreads,
+			resetTranscriptPending,
 			setMessages,
+			stopRequestForThreadChange,
 		]
 	);
 
@@ -1634,8 +1639,10 @@ export function RovoChatProvider({
 			const transitionToken = beginTransition("delete-thread");
 			try {
 				if (threadId === activeThreadIdRef.current) {
-					await endTurnForThreadChange();
+					await stopRequestForThreadChange();
+					// Commit point, as in selectThread.
 					if (isCurrentTransition(transitionToken)) {
+						resetTranscriptPending();
 						activeThreadIdRef.current = null;
 						setActiveThreadId(null);
 						setMessages([]);
@@ -1655,20 +1662,14 @@ export function RovoChatProvider({
 				}
 			}
 		},
-		[
-			beginTransition,
-			endTurnForThreadChange,
-			finishTransition,
-			isCurrentTransition,
-			queueTick,
-			refreshThreads,
-			setMessages,
-		]
+		[beginTransition, finishTransition, isCurrentTransition, queueTick, refreshThreads, resetTranscriptPending, setMessages, stopRequestForThreadChange]
 	);
 
 	const deleteAllThreads = useCallback(async () => {
 		const transitionToken = beginTransition("delete-all-threads");
-		const departed = endTurnForThreadChange();
+		// Reads what is in flight before the reset below clears it, so that request is still stopped.
+		const departed = stopRequestForThreadChange();
+		resetTranscriptPending();
 		setMessages([]);
 
 		try {
@@ -1689,15 +1690,7 @@ export function RovoChatProvider({
 				queueTick();
 			}
 		}
-	}, [
-		beginTransition,
-		endTurnForThreadChange,
-		finishTransition,
-		isCurrentTransition,
-		queueTick,
-		refreshThreads,
-		setMessages,
-	]);
+	}, [beginTransition, finishTransition, isCurrentTransition, queueTick, refreshThreads, resetTranscriptPending, setMessages, stopRequestForThreadChange]);
 
 	const cancelThreadRun = useCallback(
 		async (threadId: string) => {
@@ -1723,7 +1716,8 @@ export function RovoChatProvider({
 
 	const resetChat = useCallback(() => {
 		const transitionToken = beginTransition("reset-chat");
-		const departed = endTurnForThreadChange();
+		const departed = stopRequestForThreadChange(); // Before the reset, as in deleteAllThreads.
+		resetTranscriptPending();
 		setMessages([]);
 
 		void departed.finally(() => {
@@ -1740,15 +1734,7 @@ export function RovoChatProvider({
 			void refreshThreads(transitionToken);
 			queueTick();
 		});
-	}, [
-		beginTransition,
-		clearChatErrors,
-		endTurnForThreadChange,
-		finishTransition,
-		queueTick,
-		refreshThreads,
-		setMessages,
-	]);
+	}, [beginTransition, clearChatErrors, finishTransition, queueTick, refreshThreads, resetTranscriptPending, setMessages, stopRequestForThreadChange]);
 
 	const selectAgent = useCallback((agentId: string, options?: SelectAgentOptions) => {
 		const nextAgent = agentProfileById.get(agentId) ?? getRovoAgentProfile(agentId);

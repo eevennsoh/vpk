@@ -58,7 +58,8 @@ const mocks = {
 		}
 		export async function deleteAllRovoAppThreads() { api().threads.clear(); }
 		export async function deleteRovoAppThread(id) { api().threads.delete(id); }
-		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); return true; }
+		// \`detachGate\` holds a thread change's stop phase at the detach until the test opens it.
+		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); await api().detachGate; return true; }
 		export async function fetchRovoAppAITitle() { return null; }
 		export async function fetchRovoAppSuggestedQuestions() { return []; }
 		export async function getRovoAppThread(id) {
@@ -364,6 +365,21 @@ async function streamPartial(server, chat, turnIndex, text) {
 
 const cancelRunCalls = () => window.testApi.calls.filter((call) => call.startsWith("cancelRun:"));
 
+// Holds every run detach until `open`, so a test can act while a thread change
+// is in its stop phase, with the departing transcript still shown.
+function holdDetach() {
+	let openGate;
+	window.testApi.detachGate = new Promise((resolve) => {
+		openGate = resolve;
+	});
+	return {
+		reached: (threadId) => window.testApi.calls.includes(`detachRun:${threadId}`),
+		open: () => React.act(async () => {
+			openGate();
+		}),
+	};
+}
+
 module.exports = {
 	CANCEL_REQUEST_TIMEOUT_MS,
 	RETRY_DELAY_MS,
@@ -371,6 +387,7 @@ module.exports = {
 	cancelRunCalls,
 	chatState,
 	describeMessages,
+	holdDetach,
 	mountChat,
 	send,
 	settle,

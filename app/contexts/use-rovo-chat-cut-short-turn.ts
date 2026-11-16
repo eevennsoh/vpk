@@ -33,10 +33,12 @@ export function useRovoChatCutShortTurn(
 			return;
 		}
 
+		// Clamped, so a clock moved backwards never makes the wait longer than the full wait.
+		const timeLeft = Math.min(CUT_SHORT_MEDIA_WAIT_MS, Math.max(0, waitEndsAt - Date.now()));
 		const timer = setTimeout(() => {
 			dispatchTurn({ type: "cutShortMediaWaitElapsed", promptId: waitPromptId });
 			queueTick();
-		}, Math.max(0, waitEndsAt - Date.now()));
+		}, timeLeft);
 		return () => clearTimeout(timer);
 	}, [dispatchTurn, queueTick, waitEndsAt, waitPromptId]);
 

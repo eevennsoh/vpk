@@ -1,5 +1,5 @@
-// Unit tests for endDepartingTurn, the sequence every thread change runs before
-// it replaces the transcript. Provider-level behaviour: the
+// Unit tests for stopDepartingRequest, the stop phase every thread change runs
+// before it replaces the transcript. Provider-level behaviour: the
 // context-rovo-chat-turn-*.behavior.test.js suites.
 const assert = require("node:assert/strict");
 const path = require("node:path");
@@ -7,7 +7,7 @@ const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
-const { endDepartingTurn } = loadCjsModuleFromText(esbuild.buildSync({
+const { stopDepartingRequest } = loadCjsModuleFromText(esbuild.buildSync({
 	entryPoints: [path.join(process.cwd(), "app/contexts/rovo-chat-departing-turn.ts")],
 	bundle: true,
 	format: "cjs",
@@ -16,21 +16,22 @@ const { endDepartingTurn } = loadCjsModuleFromText(esbuild.buildSync({
 	write: false,
 }).outputFiles[0].text, "rovo-chat-departing-turn.cjs");
 
-function createOwner({ threadId = "t1", inFlight }) {
+function createOwner({ threadId = "t1", inFlight, live = inFlight }) {
 	const calls = [];
-	let turnInFlight = inFlight;
 	return {
 		calls,
 		owner: {
 			threadId,
 			isSendInFlight: () => {
-				calls.push(`inFlight:${turnInFlight}`);
-				return turnInFlight;
+				calls.push(`inFlight:${inFlight}`);
+				return inFlight;
 			},
-			// The reset clears the turn state isSendInFlight reads.
-			resetTurn: () => {
-				calls.push("reset");
-				turnInFlight = false;
+			isRequestLive: () => {
+				calls.push(`live:${live}`);
+				return live;
+			},
+			endStoppedTurn: () => {
+				calls.push("endStoppedTurn");
 			},
 			stopRequest: async () => {
 				calls.push("stop");
@@ -45,18 +46,30 @@ function createOwner({ threadId = "t1", inFlight }) {
 	};
 }
 
-// Regression: a request whose streaming status had not committed was not
-// stopped, because only the committed flag was read (and after the reset).
-test("a send in flight is read before the reset clears it, then stopped before the run detaches", async () => {
+// Regression: the stop phase reset the turn first, so a superseded change left
+// the old transcript shown with its turn already gone.
+test("a live request ends as a Stop ends it and is stopped before the run detaches; nothing resets the turn", async () => {
 	const { owner, calls } = createOwner({ inFlight: true });
-	await endDepartingTurn(owner);
-	assert.deepEqual(calls, ["inFlight:true", "reset", "stop", "waitForStop", "detach:t1"]);
+	await stopDepartingRequest(owner);
+	assert.deepEqual(calls, ["inFlight:true", "live:true", "endStoppedTurn", "stop", "waitForStop", "detach:t1"]);
 });
 
-test("with nothing in flight the turn resets and the run detaches without a stop", async () => {
+test("a turn waiting with no live request (a cut-short wait, a retry countdown) is stopped but not ended", async () => {
+	const { owner, calls } = createOwner({ inFlight: true, live: false });
+	await stopDepartingRequest(owner);
+	assert.deepEqual(calls, ["inFlight:true", "live:false", "stop", "waitForStop", "detach:t1"]);
+});
+
+test("what is in flight is read when called, before the first await, so a reset right after cannot hide it", () => {
+	const { owner, calls } = createOwner({ inFlight: true });
+	void stopDepartingRequest(owner);
+	assert.deepEqual(calls, ["inFlight:true", "live:true", "endStoppedTurn", "stop"]);
+});
+
+test("with nothing in flight the run detaches without a stop", async () => {
 	const { owner, calls } = createOwner({ inFlight: false });
-	await endDepartingTurn(owner);
-	assert.deepEqual(calls, ["inFlight:false", "reset", "detach:t1"]);
+	await stopDepartingRequest(owner);
+	assert.deepEqual(calls, ["inFlight:false", "detach:t1"]);
 });
 
 test("a failed stop still waits for the stream and detaches; no thread means no detach", async (t) => {
@@ -69,6 +82,6 @@ test("a failed stop still waits for the stream and detaches; no thread means no 
 	owner.detachRun = async () => {
 		throw new Error("detach must not run");
 	};
-	await endDepartingTurn(owner);
-	assert.deepEqual(calls, ["inFlight:true", "reset", "stop", "waitForStop"]);
+	await stopDepartingRequest(owner);
+	assert.deepEqual(calls, ["inFlight:true", "live:true", "endStoppedTurn", "stop", "waitForStop"]);
 });
