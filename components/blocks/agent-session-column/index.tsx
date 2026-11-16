@@ -608,7 +608,7 @@ export function AgentSessionColumn({
 		items: displayedItems,
 		newItemIds,
 		stateChangeVersions,
-		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "short"}`,
+		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "unlinked"}`,
 		reduceMotion: shouldReduceMotion === true,
 	});
 	// A controlled host can flip `collapsed` from its own affordance, which never

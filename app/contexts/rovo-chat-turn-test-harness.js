@@ -32,6 +32,7 @@ const { loadCjsModuleFromText } = require("../../scripts/lib/esbuild-cjs-loader.
 const RETRY_DELAY_MS = 150;
 const CHAT_ERROR_UTILS_PATH = path.join(process.cwd(), "lib/chat-error-utils.ts");
 const CANCEL_STRATEGY_PATH = path.join(process.cwd(), "lib/rovo-cancel-strategy.ts");
+const TURN_ERRORS_PATH = path.join(process.cwd(), "app/contexts/rovo-chat-turn-errors.ts");
 const CANCEL_REQUEST_TIMEOUT_MS = 150;
 
 const mocks = {
@@ -48,16 +49,27 @@ const mocks = {
 		}
 		export async function createRovoAppThread({ signal, ...thread }) {
 			api().calls.push("createThread:" + thread.title);
+			// \`createThreadGate\` holds a first prompt's send until the test opens it; a
+			// function gate gets the thread's title, so each send can be held separately.
+			const gate = api().createThreadGate;
+			await (typeof gate === "function" ? gate(thread.title) : gate);
 			const created = { ...thread, createdAt: 1, updatedAt: 1 };
 			api().threads.set(created.id, created);
 			return created;
 		}
 		export async function deleteAllRovoAppThreads() { api().threads.clear(); }
 		export async function deleteRovoAppThread(id) { api().threads.delete(id); }
-		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); return true; }
+		// \`detachGate\` holds a thread change's stop phase at the detach until the test opens it.
+		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); await api().detachGate; return true; }
 		export async function fetchRovoAppAITitle() { return null; }
 		export async function fetchRovoAppSuggestedQuestions() { return []; }
-		export async function getRovoAppThread(id) { return api().threads.get(id) ?? null; }
+		export async function getRovoAppThread(id) {
+			// \`threadFetchGate\` holds every thread fetch until the test opens it.
+			await api().threadFetchGate;
+			// \`failingThreadIds\` models a thread whose fetch rejects.
+			if (api().failingThreadIds?.has(id)) throw new Error("Thread fetch failed: " + id);
+			return api().threads.get(id) ?? null;
+		}
 		export async function listRovoAppThreads() { return Array.from(api().threads.values()); }
 		export async function updateRovoAppThread(id, patch) {
 			const updated = { ...(api().threads.get(id) ?? { id }), ...patch };
@@ -75,6 +87,16 @@ const mocks = {
 		export * from ${JSON.stringify(CHAT_ERROR_UTILS_PATH)};
 		export const RATE_LIMIT_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
 		export const CHAT_IN_PROGRESS_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
+	`,
+	// Real turn errors; the provider's onFinish reads every clean or aborted
+	// finish through readCutShortFinish, so \`onRequestFinish\` runs inside it.
+	"@/app/contexts/rovo-chat-turn-errors": `
+		import { readCutShortFinish as readFinish } from ${JSON.stringify(TURN_ERRORS_PATH)};
+		export * from ${JSON.stringify(TURN_ERRORS_PATH)};
+		export function readCutShortFinish(input) {
+			window.testApi?.onRequestFinish?.();
+			return readFinish(input);
+		}
 	`,
 };
 
@@ -95,6 +117,7 @@ function loadHarness() {
 	harnessPromise ??= esbuild.build({
 		stdin: {
 			contents: `
+				import { Activity, StrictMode } from "react";
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
 				export { getPayloadTooLargeUserMessage, toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
 				export { CUT_SHORT_MEDIA_WAIT_MS, MEDIA_GENERATION_TIMEOUT_MS } from "@/app/contexts/use-rovo-chat-media-generation";
@@ -112,8 +135,11 @@ function loadHarness() {
 					window.onTestChatRender?.();
 					return null;
 				}
-				export function Harness() {
-					return <RovoChatProvider><Probe /></RovoChatProvider>;
+				// \`hidden\` hides the provider through <Activity>, which cleans up its
+				// effects and sets them up again when shown, as retained views do.
+				export function Harness({ hidden = false, strict = false }) {
+					const chat = <Activity mode={hidden ? "hidden" : "visible"}><RovoChatProvider><Probe /></RovoChatProvider></Activity>;
+					return strict ? <StrictMode>{chat}</StrictMode> : chat;
 				}
 			`,
 			loader: "tsx", resolveDir: process.cwd(), sourcefile: "rovo-chat-turn-lifecycle-harness.tsx",
@@ -134,6 +160,7 @@ function createChatServer() {
 	const encoder = new TextEncoder();
 	const turns = [];
 	const failures = [];
+	const scripts = [];
 	const otherRequests = [];
 	const waiters = [];
 
@@ -195,6 +222,7 @@ function createChatServer() {
 			}
 			const turn = createTurn(body, init.signal);
 			turns.push(turn);
+			scripts.shift()?.(turn);
 			resolveWaiters();
 			return turn.response;
 		}
@@ -212,6 +240,9 @@ function createChatServer() {
 		otherRequests,
 		// `gate`, when given, holds the error response until the promise resolves.
 		failNext(status, body, gate) { failures.push({ status, body, gate }); },
+		// Writes the next turn's chunks before its response is returned, so the
+		// client can read the whole stream without waiting on the test.
+		respondNext(script) { scripts.push(script); },
 	};
 }
 
@@ -257,7 +288,8 @@ async function waitFor(description, predicate, timeoutMs = 3000) {
 	}
 }
 
-async function mountChat(t) {
+// \`strict\` renders under React StrictMode (double effects in development).
+async function mountChat(t, { strict = false } = {}) {
 	const harness = await loadHarness();
 	const server = createChatServer();
 	const originalFetch = globalThis.fetch;
@@ -270,7 +302,8 @@ async function mountChat(t) {
 	const container = document.createElement("div");
 	document.body.append(container);
 	const root = createRoot(container);
-	await React.act(async () => root.render(React.createElement(harness.Harness)));
+	const render = (props) => React.act(async () => root.render(React.createElement(harness.Harness, { strict, ...props })));
+	await render({});
 	t.after(async () => {
 		delete window.onTestChatRender;
 		await React.act(async () => root.unmount());
@@ -281,7 +314,13 @@ async function mountChat(t) {
 		delete window.testChat;
 		delete window.testApi;
 	});
-	return { harness, server, chat: () => window.testChat };
+	return {
+		harness,
+		server,
+		chat: () => window.testChat,
+		// Hides or shows the provider through <Activity>.
+		setHidden: (hidden) => render({ hidden }),
+	};
 }
 
 // Starts a provider action without holding one React act() scope open for its
@@ -302,6 +341,26 @@ async function startAction(action) {
 	};
 }
 
+// Runs `work` inside one act() scope, so React commits nothing it schedules until
+// `work` returns: provider callbacks run against the last committed state, as
+// they do when a whole response arrives before React gets to render. `work`
+// waits with plain timers (`waitForUncommitted`); waitFor would nest act().
+async function withCommitsHeld(work) {
+	await React.act(async () => {
+		await work();
+	});
+}
+
+async function waitForUncommitted(description, predicate, timeoutMs = 3000) {
+	const startedAt = Date.now();
+	while (!predicate()) {
+		if (Date.now() - startedAt > timeoutMs) {
+			throw new Error(`Timed out waiting for ${description}`);
+		}
+		await new Promise((resolve) => setTimeout(resolve, 5));
+	}
+}
+
 async function send(chat, prompt) {
 	await React.act(async () => {
 		await chat().sendPrompt(prompt);
@@ -319,17 +378,111 @@ async function streamPartial(server, chat, turnIndex, text) {
 
 const cancelRunCalls = () => window.testApi.calls.filter((call) => call.startsWith("cancelRun:"));
 
+// Holds every run detach until `open`, so a test can act while a thread change
+// is in its stop phase, with the departing transcript still shown.
+function holdDetach() {
+	let openGate;
+	window.testApi.detachGate = new Promise((resolve) => {
+		openGate = resolve;
+	});
+	return {
+		reached: (threadId) => window.testApi.calls.includes(`detachRun:${threadId}`),
+		open: () => React.act(async () => {
+			openGate();
+		}),
+	};
+}
+
+// Holds every thread fetch until the next chat request's onFinish runs, so a
+// selection's fetch resolves after that request finished but before its send settles.
+function holdThreadFetchUntilRequestFinishes() {
+	const gate = { opened: false };
+	window.testApi.threadFetchGate = new Promise((resolve) => {
+		window.testApi.onRequestFinish = () => {
+			gate.opened = true;
+			resolve();
+		};
+	});
+	return gate;
+}
+
+// Captures the provider's media timeouts (the full media timeout and the
+// cut-short wait) instead of scheduling them, so a test can release them
+// without real waits or mocking the harness's own timers. The cut-short wait
+// runs to a deadline, so a wait armed again (after its effect was cleaned up)
+// asks for the time remaining: a delay above a second, up to the wait, is it.
+// A cleared timeout stays captured but is marked, like a real one that will
+// never run: `fireLatest` and `fire` still run it (a stale callback must do
+// nothing), while `fireLive` runs only the newest timeout still scheduled.
+function captureMediaTimeouts(t, harness) {
+	const captured = { full: [], cutShort: [] };
+	const kindOf = (delay) => {
+		if (delay === harness.MEDIA_GENERATION_TIMEOUT_MS) return "full";
+		return delay > 1000 && delay <= harness.CUT_SHORT_MEDIA_WAIT_MS ? "cutShort" : null;
+	};
+	const entries = new Map();
+	const originals = { set: globalThis.setTimeout, clear: globalThis.clearTimeout, windowSet: window.setTimeout, windowClear: window.clearTimeout };
+	const capture = (schedule) => (callback, delay, ...args) => {
+		const kind = kindOf(delay);
+		if (kind) {
+			const entry = { callback, delay, cleared: false };
+			captured[kind].push(entry);
+			const handle = schedule(() => {}, 0);
+			entries.set(handle, entry);
+			return handle;
+		}
+		return schedule(callback, delay, ...args);
+	};
+	const release = (clear) => (handle) => {
+		const entry = entries.get(handle);
+		if (entry) entry.cleared = true;
+		return clear(handle);
+	};
+	globalThis.setTimeout = capture(originals.set);
+	window.setTimeout = capture(originals.windowSet.bind(window));
+	globalThis.clearTimeout = release(originals.clear);
+	window.clearTimeout = release(originals.windowClear.bind(window));
+	t.after(() => {
+		globalThis.setTimeout = originals.set;
+		globalThis.clearTimeout = originals.clear;
+		window.setTimeout = originals.windowSet;
+		window.clearTimeout = originals.windowClear;
+	});
+	const run = (entry) => React.act(async () => {
+		entry.callback();
+	});
+	const handle = (kind) => ({
+		count: () => captured[kind].length,
+		live: () => captured[kind].filter((entry) => !entry.cleared).length,
+		delays: () => captured[kind].map((entry) => entry.delay),
+		fire: (index) => run(captured[kind].at(index)),
+		fireLatest: () => run(captured[kind].at(-1)),
+		fireLive: () => {
+			const entry = captured[kind].findLast((candidate) => !candidate.cleared);
+			assert.ok(entry, `a scheduled ${kind} media timeout`);
+			entry.cleared = true;
+			return run(entry);
+		},
+	});
+	return { full: handle("full"), cutShort: handle("cutShort") };
+}
+
 module.exports = {
 	CANCEL_REQUEST_TIMEOUT_MS,
 	RETRY_DELAY_MS,
 	React,
 	cancelRunCalls,
+	captureMediaTimeouts,
 	chatState,
 	describeMessages,
+	holdDetach,
+	holdThreadFetchUntilRequestFinishes,
 	mountChat,
 	send,
 	settle,
 	startAction,
 	streamPartial,
 	waitFor,
+	waitForUncommitted,
+	withCommitsHeld,
 };

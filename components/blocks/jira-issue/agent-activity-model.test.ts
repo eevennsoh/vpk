@@ -129,7 +129,7 @@ test("completed agents never join an active chin row", () => {
 	);
 });
 
-test("completed-only activities render one session row per agent in either layout", () => {
+test("completed-only activities share one flyout row when merged and keep a row per agent when split", () => {
 	const activities = [
 		{ id: "service-impact-agent", state: "completed" },
 		{ id: "dependency-mapper", state: "completed" },
@@ -138,8 +138,13 @@ test("completed-only activities render one session row per agent in either layou
 	assert.deepEqual(
 		groupJiraIssueAgentActivityRows(activities, "merged"),
 		[
-			{ activities: [{ id: "service-impact-agent", state: "completed" }], key: "service-impact-agent" },
-			{ activities: [{ id: "dependency-mapper", state: "completed" }], key: "dependency-mapper" },
+			{
+				activities: [
+					{ id: "service-impact-agent", state: "completed" },
+					{ id: "dependency-mapper", state: "completed" },
+				],
+				key: "completed-2",
+			},
 		],
 	);
 	assert.deepEqual(
@@ -156,6 +161,22 @@ test("completed-only activities render one session row per agent in either layou
 			featuredActivityIndex: 0,
 			label: "Finished",
 			priorityCount: 1,
+			priorityState: "working",
+		},
+	);
+});
+
+test("a merged finished row reports a failure even when a success comes first", () => {
+	assert.deepEqual(
+		summarizeJiraIssueAgentActivities([
+			{ state: "completed", label: "Finished" },
+			{ state: "completed", label: "Failed" },
+		]),
+		{
+			activityCount: 2,
+			featuredActivityIndex: 1,
+			label: "Failed",
+			priorityCount: 2,
 			priorityState: "working",
 		},
 	);

@@ -6,7 +6,7 @@ test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {
 	await page.setViewportSize({ width: 1398, height: 1236 });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
 	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
@@ -31,13 +31,14 @@ test("Butter session menus name the work instead of the agent", async ({ page })
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const issue = board.locator('[data-issue-key="PAY-105"][data-board-column-title]');
 	await issue.getByRole("button", { name: "Cursor: Working" }).click();
 	const assignment = page.getByRole("dialog", { name: "Agent assignment" });
 	await expect(assignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
-	await expect(assignment.getByText("Cursor", { exact: true })).toBeVisible();
+	// A working session shows the agent mark, never its name.
+	await expect(assignment.getByText("Cursor", { exact: true })).toHaveCount(0);
 	await expect(assignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
@@ -52,7 +53,7 @@ test("board session flyout reveals more actions when hovering the status", async
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const issue = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-105"][data-board-column-title]');
 	await issue.getByRole("button", { name: "Cursor: Working" }).click();
 	const flyout = page.getByRole("dialog", { name: "Agent assignment" });
@@ -91,7 +92,7 @@ test("session titles describe their work in grouped, review, and List views", as
 	await expect(unlinked.getByText("Keep or delete the adapter", { exact: true })).toBeHidden();
 	await unlinked.getByRole("button", { name: "Expand Unlink sessions column" }).click();
 	await expect(unlinked.getByText("Keep or delete the adapter", { exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const grouped = board.locator('[data-issue-key="PAY-123"][data-board-column-title]');
@@ -132,7 +133,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const card = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();

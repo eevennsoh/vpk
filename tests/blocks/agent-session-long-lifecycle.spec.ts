@@ -53,7 +53,7 @@ test("long session lifecycle glyphs match the short row's 24px slot", async ({ p
 test("viewer and owner working indicators stay centered in the assignment menu", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const trigger = page.getByRole("button", { name: "2 agents: Working" });
 	await trigger.focus();
 	await page.keyboard.press("Enter");
@@ -187,7 +187,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const expired = cloudLong.locator("section").filter({
 				has: page.getByText("Expired", { exact: true }),
 			}).getByTestId("agent-session-row-cloud-figma-with-austin");
-			const more = expired.getByRole("button", { name: "More actions for Figma with Austin" });
+			const more = expired.getByRole("button", { name: "More actions for Hand off the off-road suspension controls to engineering" });
 			await expect(more).toBeVisible();
 			const size = await more.boundingBox();
 			expect(size?.width).toBe(24);
@@ -226,7 +226,8 @@ test("cloud long tool calls align with metadata and Working controls with the ro
 	await expect(workingRows).toHaveCount(2);
 
 	for (const row of await workingRows.all()) {
-		const agent = await row.locator('[title="Claude"]').boundingBox();
+		// Working rows show the agent mark, never its name, so align against the mark.
+		const agent = await row.locator("[data-agent-session-agent]").boundingBox();
 		const toolCall = await row.locator("[data-agent-session-tool-call]").boundingBox();
 		const workingControl = row.getByRole("button", { name: "Working", exact: true });
 		const working = await workingControl.count() > 0
@@ -250,7 +251,7 @@ test("cloud long tool calls align with metadata and Working controls with the ro
 	const ownerRow = workingRows.first();
 	await ownerRow.scrollIntoViewIfNeeded();
 	const cycle = await ownerRow.evaluate(async (row) => {
-		const agent = row.querySelector('span[title="Claude"]');
+		const agent = row.querySelector("[data-agent-session-agent]");
 		const firstTitle = row.querySelector("[data-agent-session-tool-call]")?.getAttribute("title");
 		if (agent === null || firstTitle === null || firstTitle === undefined) {
 			return { changed: false, maxOffset: Number.POSITIVE_INFINITY };

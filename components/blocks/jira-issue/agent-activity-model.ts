@@ -25,6 +25,8 @@ export type JiraIssueAgentActivityLayout = "merged" | "split";
 
 interface JiraIssueAgentActivitySummaryInput {
 	state: JiraIssueActiveAgentState | "completed";
+	/** Outcome copy for a completed run; `"Failed"` marks a failed run. */
+	label?: string;
 }
 
 interface JiraIssueAgentActivityRowInput extends JiraIssueAgentActivitySummaryInput {
@@ -55,12 +57,14 @@ export function summarizeJiraIssueAgentActivities(
 		const completedActivities = activities
 			.map((activity, index) => ({ activity, index }))
 			.filter(({ activity }) => activity.state === "completed");
-		const featured = completedActivities[0];
+		// A failure anywhere in the group decides its status, whatever the input order.
+		const failed = completedActivities.find(({ activity }) => activity.label === "Failed");
+		const featured = failed ?? completedActivities[0];
 
 		return {
 			activityCount: completedActivities.length,
 			featuredActivityIndex: featured === undefined ? null : featured.index,
-			label: "Finished",
+			label: failed === undefined ? "Finished" : "Failed",
 			priorityCount: completedActivities.length,
 			priorityState: "working",
 		};
@@ -89,8 +93,10 @@ export function summarizeJiraIssueAgentActivities(
 
 /**
  * Resolves the chin rows to render. Completed activities never join an active
- * row. When nothing is still running they become one session row per agent —
- * never a merged "N Finished" chip.
+ * row. When nothing is still running, `merged` gathers the finished agents into
+ * one row whose flyout lists every session, the same way it gathers working
+ * agents; `split` keeps one session row per agent. A lone finished agent keeps
+ * its own id so a session that completes in place does not remount.
  */
 export function groupJiraIssueAgentActivityRows<TActivity extends JiraIssueAgentActivityRowInput>(
 	activities: readonly TActivity[],
@@ -110,7 +116,9 @@ export function groupJiraIssueAgentActivityRows<TActivity extends JiraIssueAgent
 		return [{ activities: activeActivities, key }];
 	}
 
-	return activities
-		.filter((activity) => activity.state === "completed")
-		.map((activity) => ({ activities: [activity], key: activity.id }));
+	const completedActivities = activities.filter((activity) => activity.state === "completed");
+	if (layout === "merged" && completedActivities.length > 1) {
+		return [{ activities: completedActivities, key: `completed-${completedActivities.length}` }];
+	}
+	return completedActivities.map((activity) => ({ activities: [activity], key: activity.id }));
 }

@@ -104,7 +104,7 @@ test("Jira issue compact visual keeps stroke internals when chrome is raised", (
 	assert.match(SOURCE, /usesStrokeChrome=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /compact=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
-	assert.match(PAGE_SOURCE, /compact[\s\S]*onChromeChange=\{setChrome\}/);
+	assert.match(PAGE_SOURCE, /compact[\s\S]*onChromeChange=\{isProjectButter \? undefined : setChrome\}/);
 	assert.match(PAGE_SOURCE, /compact=\{compact\}/);
 });
 
@@ -955,13 +955,13 @@ test("Jira issue agent activity demo has an experimental stroke-chrome duplicate
 	assert.match(PAGE_SOURCE, /variant === "agent-activity-states"/);
 	assert.match(PAGE_SOURCE, /function JiraIssueExperimentalAgentActivityStatesPage\(\{[\s\S]*iconScale,[\s\S]*\}: Readonly<\{[\s\S]*iconScale\?: JiraIssueIconScale;[\s\S]*\}> = \{\}\): React\.ReactElement \{/);
 	assert.match(PAGE_SOURCE, /subtaskChrome="stroke"/);
-	assert.match(PAGE_SOURCE, /const \[chrome, setChrome\] = useState<JiraIssueChrome>\(issueProps\?\.appearance === "project-butter" \? "raised" : "stroke"\);/);
+	assert.match(PAGE_SOURCE, /const \[chrome, setChrome\] = useState<JiraIssueChrome>\(isProjectButter \? "raised" : "stroke"\);/);
 	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*agentActivityLayout\?: JiraIssueAgentActivityLayout;[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*onChromeChange\?: \(chrome: JiraIssueChrome\) => void;[\s\S]*\}/);
 	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{[\s\S]*agentActivityLayout = "merged",[\s\S]*chrome = "raised",[\s\S]*onChromeChange,[\s\S]*\}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
 	assert.match(PAGE_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}[\s\S]*chrome=\{chrome\}[\s\S]*compact=\{compact\}/);
-	assert.match(PAGE_SOURCE, /<JiraIssueAgentActivityStatesDemo[\s\S]*chrome=\{chrome\}[\s\S]*compact[\s\S]*onChromeChange=\{setChrome\}/);
+	assert.match(PAGE_SOURCE, /<JiraIssueAgentActivityStatesDemo[\s\S]*chrome=\{chrome\}[\s\S]*compact[\s\S]*onChromeChange=\{isProjectButter \? undefined : setChrome\}/);
 	assert.match(PAGE_SOURCE, /<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout="merged"[\s\S]*chrome=\{chrome\}/);
-	assert.match(PAGE_SOURCE, /onChromeChange=\{setChrome\}/);
+	assert.match(PAGE_SOURCE, /onChromeChange=\{isProjectButter \? undefined : setChrome\}/);
 	assert.match(PAGE_SOURCE, /aria-pressed=\{chrome === "raised"\}/);
 	assert.match(PAGE_SOURCE, /aria-pressed=\{chrome === "stroke"\}/);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoAgentActivityStatesExperimental\(\)/);

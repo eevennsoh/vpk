@@ -18,7 +18,7 @@ function loadTurnErrors() {
 	return loadCjsModuleFromText(result.outputFiles[0].text, "rovo-chat-turn-errors.cjs");
 }
 
-const { createTurnError, hasTurnCompleteForActivePrompt, insertTurnErrors, isIncompleteTurnFinish, pruneTurnErrorsFrom } = loadTurnErrors();
+const { createTurnError, hasTurnCompleteForActivePrompt, insertTurnErrors, pruneTurnErrorsFrom, readCutShortFinish } = loadTurnErrors();
 
 const message = (id, role = "user", text = id) => ({ id, role, parts: [{ type: "text", text }] });
 const errorMessage = (id) => message(id, "assistant", `error ${id}`);
@@ -91,18 +91,40 @@ test("hasTurnCompleteForActivePrompt ignores the clocks: a server timestamp well
 	const complete = { type: "data-turn-complete", data: { timestamp: "2026-07-07T00:00:01.000Z" } };
 	const messages = [promptUser("u1", "q", "Hello"), { ...message("a1", "assistant"), parts: [complete] }];
 	assert.equal(hasTurnCompleteForActivePrompt(messages, prompt), true);
-	assert.equal(isIncompleteTurnFinish({ messages, isAbort: false, isError: false, activePrompt: prompt }), false);
+	assert.equal(readCutShortFinish({ messages, isAbort: false, isError: false, activePrompt: prompt }), null);
 });
 
-test("isIncompleteTurnFinish flags only a clean finish that lacks turn-complete for the active prompt", () => {
+test("readCutShortFinish flags only a clean finish that lacks turn-complete for the active prompt", () => {
 	const prompt = { id: "q", text: "Hello", files: [], createdAt: 1_000 };
 	const complete = { type: "data-turn-complete", data: { timestamp: new Date(2_000).toISOString() } };
 	const partial = [promptUser("u1", "q", "Hello"), message("a1", "assistant", "partial")];
 	const finished = [promptUser("u1", "q", "Hello"), { ...message("a1", "assistant"), parts: [complete] }];
 	const base = { isAbort: false, isError: false, activePrompt: prompt };
-	assert.equal(isIncompleteTurnFinish({ ...base, messages: partial }), true);
-	assert.equal(isIncompleteTurnFinish({ ...base, messages: finished }), false);
-	assert.equal(isIncompleteTurnFinish({ ...base, messages: partial, isAbort: true }), false);
-	assert.equal(isIncompleteTurnFinish({ ...base, messages: partial, isError: true }), false);
-	assert.equal(isIncompleteTurnFinish({ ...base, messages: partial, activePrompt: null }), false);
+	assert.deepEqual(readCutShortFinish({ ...base, messages: partial }), { anchorMessageId: "a1", mediaLoading: false });
+	assert.equal(readCutShortFinish({ ...base, messages: finished }), null);
+	assert.equal(readCutShortFinish({ ...base, messages: partial, isAbort: true }), null);
+	assert.equal(readCutShortFinish({ ...base, messages: partial, isError: true }), null);
+	assert.equal(readCutShortFinish({ ...base, messages: partial, activePrompt: null }), null);
+	// Another request's snapshot (no user message for this prompt) does not cut it short.
+	const otherRequest = [promptUser("u0", "earlier", "Earlier"), message("a0", "assistant", "partial")];
+	assert.equal(readCutShortFinish({ ...base, messages: otherRequest }), null);
+});
+
+// Regression: the cut-short turn used to be read from committed React state,
+// which can still be empty when the whole response has arrived; the notice
+// then led the transcript and a loading widget was missed.
+test("readCutShortFinish reads the anchor and loading media from the finish snapshot alone", () => {
+	const prompt = { id: "q", text: "Draw", files: [], createdAt: 1_000 };
+	const widget = (type, loading) => ({ type: "data-widget-loading", data: { type, loading } });
+	const reply = (...parts) => ({ id: "a1", role: "assistant", parts: [{ type: "text", text: "Drawing" }, ...parts] });
+	const finish = (messages) => readCutShortFinish({ messages, isAbort: false, isError: false, activePrompt: prompt });
+	const user = promptUser("u1", "q", "Draw");
+	assert.deepEqual(finish([user, reply(widget("image-preview", true))]), { anchorMessageId: "a1", mediaLoading: true });
+	assert.deepEqual(finish([user, reply(widget("image-preview", true), widget("image-preview", false))]), { anchorMessageId: "a1", mediaLoading: false });
+	assert.deepEqual(finish([user, reply(widget("chart", true))]), { anchorMessageId: "a1", mediaLoading: false });
+	// No reply yet: the notice follows the question.
+	assert.deepEqual(finish([user]), { anchorMessageId: "u1", mediaLoading: false });
+	// A widget an earlier turn left loading is not this turn's.
+	const earlier = [promptUser("u0", "earlier", "Before"), { id: "a0", role: "assistant", parts: [widget("video-preview", true)] }];
+	assert.deepEqual(finish([...earlier, user, reply()]), { anchorMessageId: "a1", mediaLoading: false });
 });

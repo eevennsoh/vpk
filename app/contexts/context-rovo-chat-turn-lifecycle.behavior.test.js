@@ -10,12 +10,15 @@ const {
 	cancelRunCalls,
 	chatState,
 	describeMessages,
+	holdDetach,
 	mountChat,
 	send,
 	settle,
 	startAction,
 	streamPartial,
 	waitFor,
+	waitForUncommitted,
+	withCommitsHeld,
 } = require("./rovo-chat-turn-test-harness.js");
 
 test("submit marks the turn pending, streams the reply, and settles only after turn-complete", async (t) => {
@@ -617,6 +620,34 @@ test("selecting another thread mid-stream detaches the run and replaces the tran
 	assert.deepEqual(chatState().messages, ["user:Old question", "assistant:Old answer"]);
 });
 
+// Regression: the detached stream ends as an abort, which finalizes nothing,
+// so the departing prompt stayed active and every prompt sent on the new
+// thread queued behind it forever.
+test("a prompt sent after selecting another thread mid-stream goes out on the new thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", {
+		id: "stored-thread", title: "Stored",
+		messages: [{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] }],
+		realtimeMessages: [], visibility: "private", activeDocumentId: null, createdAt: 0, updatedAt: 0,
+	});
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Streaming");
+	await send(chat, "Queued on the old thread");
+
+	await (await startAction(() => chat().selectThread("stored-thread")))();
+	await settle(20);
+	assert.equal(chat().activePrompt, null);
+	assert.deepEqual(chat().queuedPrompts, []);
+	assert.equal(chat().hasInFlightTurn, false);
+
+	await send(chat, "New question");
+	await waitFor("the new request", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "New question");
+	assert.equal(server.turns[1].body.id, "stored-thread");
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Old question", "user:New question"]);
+});
+
 test("selecting a thread that no longer exists clears the transcript and active thread", async (t) => {
 	const { server, chat } = await mountChat(t);
 	await send(chat, "Something");
@@ -629,6 +660,248 @@ test("selecting a thread that no longer exists clears the transcript and active 
 	await (await startAction(() => chat().selectThread("missing-thread")))();
 	assert.equal(chat().activeThreadId, null);
 	assert.deepEqual(chatState().messages, []);
+});
+
+const storedThread = (messages = [{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] }]) => ({
+	id: "stored-thread", title: "Stored", messages, realtimeMessages: [], visibility: "private", activeDocumentId: null, createdAt: 0, updatedAt: 0,
+});
+
+// Holds each new thread's creation, by title, until the test opens it.
+function holdThreadCreations() {
+	const gates = new Map();
+	window.testApi.createThreadGate = (title) => new Promise((resolve) => {
+		gates.set(title, resolve);
+	});
+	return {
+		held: (title) => gates.has(title),
+		open: (title) => React.act(async () => {
+			gates.get(title)();
+		}),
+	};
+}
+
+// Regression: the superseded send's settlement was not scoped to its own
+// attempt, so it finalized the prompt sent after the thread change before that
+// prompt's request even started; that prompt then streamed with no active
+// prompt, and its cut-short notice never came.
+test("a send superseded by a thread change settles only itself, not the prompt sent after it", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const creations = holdThreadCreations();
+	await send(chat, "Prompt A");
+	await waitFor("A's thread creation", () => creations.held("Prompt A"));
+	await (await startAction(() => chat().selectThread("missing-thread")))();
+	await send(chat, "Prompt B");
+	await waitFor("B's thread creation", () => creations.held("Prompt B"));
+	assert.equal(chat().activePrompt?.text, "Prompt B");
+
+	await creations.open("Prompt A");
+	await settle(30);
+	assert.equal(chat().activePrompt?.text, "Prompt B");
+	assert.equal(chat().hasInFlightTurn, true);
+
+	await creations.open("Prompt B");
+	await waitFor("B's request", () => server.turns.length === 1);
+	assert.deepEqual(describeMessages(server.turns[0].body.messages), ["user:Prompt B"]);
+	await streamPartial(server, chat, 0, "Half of B");
+	server.turns[0].end();
+	await waitFor("B to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Prompt B", "assistant:Half of B", `assistant:${harness.getIncompleteTurnUserMessage()}`]);
+});
+
+// Regression: a request whose streaming status had not committed yet was not
+// stopped on a thread change (only the committed flag was read), so its reply
+// was appended to the newly selected thread.
+test("a request started before its streaming status commits is stopped by a thread change, and its reply stays off the new thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", storedThread());
+	let openThreadGate;
+	window.testApi.createThreadGate = new Promise((resolve) => {
+		openThreadGate = resolve;
+	});
+	await send(chat, "Live question");
+	await withCommitsHeld(async () => {
+		openThreadGate();
+		await waitForUncommitted("the request", () => server.turns.length === 1);
+		assert.equal(chat().isStreaming, false);
+		await chat().selectThread("stored-thread");
+	});
+	server.turns[0].text("t", "Old reply");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await settle(40);
+	assert.equal(server.turns[0].aborted, true);
+	assert.equal(chat().activeThreadId, "stored-thread");
+	assert.deepEqual(chatState().messages, ["user:Old question"]);
+	assert.equal(chat().activePrompt, null);
+
+	await send(chat, "New question");
+	await waitFor("the new request", () => server.turns.length === 2);
+	assert.equal(server.turns[1].body.id, "stored-thread");
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Old question", "user:New question"]);
+});
+
+// Regression: a thread change reset the departing turn before awaiting the
+// stop and detach, so a prompt submitted in that window, with the old
+// transcript still shown, queued on the reset turn and went out on the new
+// thread with the new thread's history.
+test("a prompt submitted while a switch stops the departing request is dropped when the switch commits, never sent on the new thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", storedThread());
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	const liveThreadId = chat().activeThreadId;
+	await streamPartial(server, chat, 0, "Streaming");
+	const detach = holdDetach();
+
+	const switching = await startAction(() => chat().selectThread("stored-thread"));
+	await waitFor("the stop phase to reach the detach", () => detach.reached(liveThreadId));
+	assert.deepEqual(chatState().messages, ["user:Live question", "assistant:Streaming"]);
+	await send(chat, "Prompt P");
+	await detach.open();
+	await switching();
+	await settle(40);
+	assert.equal(chat().activeThreadId, "stored-thread");
+	assert.deepEqual(chatState().messages, ["user:Old question"]);
+	assert.equal(chat().activePrompt, null);
+	assert.deepEqual(chat().queuedPrompts, []);
+	assert.equal(server.turns.length, 1);
+});
+
+// The same window when the switch is superseded: the old transcript stays, the
+// stopped request's turn ends as a Stop ends it (no notice), and the prompt
+// goes out on the old thread.
+test("a prompt submitted while a superseded switch stops the departing request goes out on the old thread after the stopped turn ends", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", storedThread());
+	window.testApi.failingThreadIds = new Set(["broken-thread"]);
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	const liveThreadId = chat().activeThreadId;
+	await streamPartial(server, chat, 0, "Streaming");
+	const detach = holdDetach();
+
+	const switching = await startAction(() => chat().selectThread("stored-thread"));
+	await waitFor("the stop phase to reach the detach", () => detach.reached(liveThreadId));
+	await send(chat, "Prompt P");
+	await assert.rejects((await startAction(() => chat().selectThread("broken-thread")))(), /Thread fetch failed/);
+	await detach.open();
+	await switching();
+	await waitFor("P's request", () => server.turns.length === 2);
+	assert.equal(server.turns[0].aborted, true);
+	assert.equal(server.turns[1].body.id, liveThreadId);
+	assert.equal(chat().activeThreadId, liveThreadId);
+	assert.equal(chat().activePrompt?.text, "Prompt P");
+	assert.deepEqual(chatState().messages.slice(0, 3), ["user:Live question", "assistant:Streaming", "user:Prompt P"]);
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
+});
+
+// Regression: selecting a thread reset the turn before its fetch, so a fetch
+// that failed left the current thread selected without its retry or countdown.
+test("a selection whose fetch fails during a retry countdown keeps the current thread's retry and countdown", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	window.testApi.failingThreadIds = new Set(["broken-thread"]);
+	server.failNext(429, "Too many requests");
+	await send(chat, "Busy prompt");
+	await waitFor("the countdown", () => chatState().messages.at(-1)?.startsWith("assistant:I'm experiencing high demand"));
+	const threadId = chat().activeThreadId;
+	const countdown = chatState().messages.at(-1);
+
+	const selection = await startAction(() => chat().selectThread("broken-thread"));
+	await assert.rejects(selection(), /Thread fetch failed/);
+	assert.equal(chat().activeThreadId, threadId);
+	assert.equal(chat().activePrompt?.text, "Busy prompt");
+	assert.equal(chatState().messages.at(-1), countdown);
+	assert.equal(countdown, `assistant:${harness.getRateLimitRetryCountdownMessage(1)}`);
+
+	await waitFor("the retry request", () => server.turns.length === 2);
+	server.turns[1].text("t", "Here you go");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Busy prompt", "assistant:Here you go+data-turn-complete"]);
+});
+
+// A failed request in its retry countdown has finished, even while React still
+// holds the commit of its idle status: a switch's stop phase does not end its
+// turn, so a superseded switch leaves the countdown and the retry in place.
+test("a request in its retry countdown whose switch started before its idle status commits, then superseded, keeps the countdown and retries on the current thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", storedThread());
+	window.testApi.failingThreadIds = new Set(["broken-thread"]);
+	let openFailure;
+	server.failNext(429, "Too many requests", new Promise((resolve) => {
+		openFailure = resolve;
+	}));
+	await send(chat, "Busy prompt");
+	await waitFor("the request to stream", () => server.turns.length === 1 && chat().isStreaming);
+	const threadId = chat().activeThreadId;
+	const detach = holdDetach();
+	let switched = false;
+	await withCommitsHeld(async () => {
+		openFailure();
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		assert.equal(chat().isStreaming, true);
+		void chat().selectThread("stored-thread").then(() => {
+			switched = true;
+		});
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	});
+	await waitFor("the stop phase to reach the detach", () => detach.reached(threadId));
+	await assert.rejects((await startAction(() => chat().selectThread("broken-thread")))(), /Thread fetch failed/);
+	await detach.open();
+	await waitFor("the switch to settle", () => switched);
+	assert.equal(chat().activeThreadId, threadId);
+	assert.equal(chat().activePrompt?.text, "Busy prompt");
+	assert.equal(chatState().messages.at(-1)?.startsWith("assistant:I'm experiencing high demand"), true);
+
+	await waitFor("the retry request", () => server.turns.length === 2);
+	assert.equal(server.turns[1].body.id, threadId);
+	server.turns[1].text("t", "Here you go");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Busy prompt", "assistant:Here you go+data-turn-complete"]);
+});
+
+// A selection that fails leaves the current thread's stream running, so its
+// prompt finalizes as usual and the queue behind it goes out on that thread;
+// nothing is left active for good.
+test("a selection whose fetch fails mid-stream leaves the stream, its prompt and the queue on the current thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.failingThreadIds = new Set(["broken-thread"]);
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	const threadId = chat().activeThreadId;
+	await streamPartial(server, chat, 0, "Streaming");
+	await send(chat, "Queued question");
+
+	const selection = await startAction(() => chat().selectThread("broken-thread"));
+	await assert.rejects(selection(), /Thread fetch failed/);
+	assert.equal(server.turns[0].aborted, false);
+	assert.equal(chat().activePrompt?.text, "Live question");
+	assert.deepEqual(chat().queuedPrompts.map((prompt) => prompt.text), ["Queued question"]);
+
+	server.turns[0].text("t-end", " and done");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the queued prompt to go out", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Queued question");
+	assert.equal(server.turns[1].body.id, threadId);
+});
+
+test("selecting the thread already shown mid-stream leaves the stream and its prompt alone", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Streaming");
+
+	await (await startAction(() => chat().selectThread(chat().activeThreadId)))();
+	assert.equal(server.turns[0].aborted, false);
+	assert.equal(chat().activePrompt?.text, "Live question");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Live question", "assistant:Streaming+data-turn-complete"]);
 });
 
 test("resetChat mid-stream drops queued prompts, aborts the run and starts a fresh session", async (t) => {

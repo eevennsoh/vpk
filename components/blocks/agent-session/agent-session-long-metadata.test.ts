@@ -18,6 +18,7 @@ type Input = {
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
 	toolCalls?: readonly string[];
+	state?: "running" | "needs-input" | "attention" | "complete";
 };
 
 const build = toAgentSessionMetadataSegments as (input: Input) => readonly Segment[];
@@ -37,19 +38,20 @@ function chunk(input: Input, kind: string): Segment | undefined {
 	return build(input).find((segment) => segment.kind === kind);
 }
 
-test("a fully described session reads agent, tool call, artifact, then host-tagged time", () => {
+test("a fully described working session reads agent mark, tool call, artifact, then host-tagged time", () => {
 	assert.deepEqual(
 		kinds({
 			agentName: "Claude",
 			artifactLabel: "#124: Cargo retract",
 			host: "local",
 			prStatus: "created",
+			state: "running",
 			toolCalls: ["Reading the relevant files.", "Editing the shared implementation."],
 		}),
 		["agent", "tool-call", "artifact", "time"],
 	);
 	assert.deepEqual(
-		chunk({ agentName: "Claude", toolCalls: ["Reading the relevant files.", "Editing the shared implementation."] }, "tool-call")?.toolCalls,
+		chunk({ agentName: "Claude", state: "running", toolCalls: ["Reading the relevant files.", "Editing the shared implementation."] }, "tool-call")?.toolCalls,
 		["Reading the relevant files.", "Editing the shared implementation."],
 	);
 	assert.equal(
@@ -64,7 +66,7 @@ test("a fully described session reads agent, tool call, artifact, then host-tagg
 
 test("empty tool-call labels are omitted instead of leaving a blank clause", () => {
 	assert.deepEqual(
-		kinds({ agentName: "Claude", toolCalls: ["", "  "] }),
+		kinds({ agentName: "Claude", state: "running", toolCalls: ["", "  "] }),
 		["agent", "time"],
 	);
 });
@@ -139,4 +141,38 @@ test("the builder is pure: same input, equal output, no shared mutation", () => 
 
 	assert.deepEqual(first, second);
 	assert.notEqual(first, second);
+});
+
+test("working and needs-input rows never print the agent name, but keep the agent mark", () => {
+	for (const state of ["running", "needs-input", "attention"] as const) {
+		const agent = build({ agentName: "Claude", state }).find((segment) => segment.kind === "agent");
+		assert.ok(agent, `${state} keeps the agent chunk for its mark`);
+		assert.equal(agent.label, undefined, `${state} hides the agent name`);
+	}
+	assert.equal(build({ agentName: "Claude", state: "complete" }).find((segment) => segment.kind === "agent")?.label, "Claude");
+});
+
+test("a row never shows the agent name and the working narration together", () => {
+	const toolCalls = ["Inspecting the current design frame."];
+	for (const state of ["running", "needs-input", "attention", "complete", undefined] as const) {
+		const segments = build({ agentName: "Figma", state, toolCalls });
+		const named = segments.find((segment) => segment.kind === "agent")?.label !== undefined;
+		const narrated = segments.some((segment) => segment.kind === "tool-call");
+		assert.notEqual(named, narrated, `${state ?? "no state"} shows exactly one of name or narration`);
+	}
+	// Finished names its agent and drops the narration entirely.
+	assert.deepEqual(kinds({ agentName: "Figma", state: "complete", toolCalls }), ["agent", "time"]);
+});
+
+test("the compact short line keeps only the agent mark, PR, and host-tagged time", () => {
+	const compact = (toAgentSessionMetadataSegments as (input: Input & { compact?: boolean }) => readonly Segment[])({
+		agentName: "Figma",
+		artifactLabel: "#124: Cargo retract",
+		compact: true,
+		host: "cloud",
+		state: "complete",
+		toolCalls: ["Preparing the latest frame."],
+	});
+	assert.deepEqual(compact.map((segment) => segment.kind), ["agent", "artifact", "time"]);
+	assert.equal(compact.find((segment) => segment.kind === "agent")?.label, undefined);
 });
