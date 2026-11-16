@@ -850,6 +850,7 @@ module.exports = {
 	collectStackFacts,
 	deriveStackStatus,
 	isSessionAlive,
+	listenerInWorktree: defaultListenerInWorktree,
 	readStackStatus,
 	stopRecordedProcesses,
 	normalizeStackRecord,

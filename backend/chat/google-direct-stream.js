@@ -1,5 +1,7 @@
 "use strict";
 
+const { buildTurnCompletePart } = require("./post-turn");
+
 function createGoogleDirectImageStream({
 	createUIMessageStream,
 	googleImageConfig,
@@ -69,6 +71,8 @@ function createGoogleDirectImageStream({
 			if (textStarted) {
 				writer.write({ type: "text-end", id: textId });
 			}
+			// The client treats a turn that closes without this signal as cut short.
+			writer.write(buildTurnCompletePart());
 		},
 		onError: (error) => {
 			if (error instanceof Error) {

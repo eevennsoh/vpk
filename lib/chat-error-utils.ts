@@ -65,3 +65,8 @@ export function getChatInProgressUserMessage(retryAttempt: number): string {
 
 	return "Automatic recovery timed out while waiting for the previous turn. Please retry or reset the chat.";
 }
+
+/** Shown when a reply stream closes before the backend signals the turn is complete. */
+export function getIncompleteTurnUserMessage(): string {
+	return "The response ended before it finished. Please try again.";
+}

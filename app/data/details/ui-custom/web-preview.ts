@@ -77,7 +77,7 @@ export const WEB_PREVIEW_DETAIL: ComponentDetail = {
 		{ name: "WebPreviewNavigation", description: "Flex navigation bar with border separator for buttons and URL input." },
 		{ name: "WebPreviewNavigationButton", description: "Ghost button with tooltip for navigation actions (back, forward, reload, fullscreen)." },
 		{ name: "WebPreviewUrl", description: "Editable URL input synced with context. Pressing Enter navigates to the entered URL." },
-		{ name: "WebPreviewBody", description: "Preview body that renders relative/local routes in a sandboxed iframe and external URLs through Chromium mirroring." },
+		{ name: "WebPreviewBody", description: "Preview body that renders relative/local routes in a sandboxed iframe and external URLs through Chromium mirroring. Keyboard (Chromium): keys are forwarded to the page, but Tab leaves the preview; press Enter on a preview reached by keyboard, or use the Capture keys toggle, to forward every key including Tab, and press Escape to release (Escape is not sent to the page while captured)." },
 		{ name: "WebPreviewConsole", description: "Collapsible console panel with color-coded log levels (log, warn, error) and timestamps." },
 	],
 	examples: [

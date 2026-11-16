@@ -292,6 +292,7 @@ export async function interruptRovoAppActiveTurn({
 
 			const shouldRequestExplicitCancel = hadActiveTurn
 				? shouldSendExplicitRovoCancel({
+						explicitUserCancel: false,
 						hasBackgroundCancelableWork,
 						hasUseChatTurn,
 						stopSettledInTime: stoppedInTime,
