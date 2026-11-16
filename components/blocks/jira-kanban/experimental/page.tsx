@@ -80,6 +80,7 @@ import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
 import { useAgentFilterSessions } from "./hooks/use-agent-filter-sessions";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
+import { boardFilterScopeEntryPolicy, type BoardFilterScopeEntryPolicy } from "./lib/board-jira-filter";
 import {
 	isExperimentalJiraListContent,
 	useAgentSessionLooseWork,
@@ -391,15 +392,17 @@ function ExperimentalJiraKanbanPageContent({
 	// gesture, and every caller — the toggle, the board filter's scope pick, and
 	// the route's floating nudge through the ref handle below — goes through
 	// here.
-	const handleOpenTimeline = useCallback((snapshotId: string | null = null) => {
+	const handleOpenTimeline = useCallback((snapshotId: string | null = null, assigneePolicy: BoardFilterScopeEntryPolicy = "default-assignees") => {
 		if (!insightsEnabled) return;
 
 		setPulseFocusSnapshotId(snapshotId);
 		markTimelineAsViewed();
-		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
-			? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
-			: new Set(insightsDefaultAssigneeIds);
-		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		if (assigneePolicy === "default-assignees") {
+			const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
+				? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
+				: new Set(insightsDefaultAssigneeIds);
+			boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		}
 		updateMode("pulse");
 	}, [boardFilter.actions, insightsDefaultAssigneeIds, insightsEnabled, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	useImperativeHandle(ref, () => ({
@@ -417,13 +420,18 @@ function ExperimentalJiraKanbanPageContent({
 	// same Venn default as the Insights toggle.
 	const filterActions = useMemo((): BoardFilterActions => ({
 		...boardFilter.actions,
+		setConditions: (conditions) => {
+			boardFilter.actions.setConditions(conditions);
+			const entryPolicy = boardFilterScopeEntryPolicy(conditions, boardFilter.model.conditions);
+			if (insightsEnabled && entryPolicy) handleOpenTimeline(null, entryPolicy);
+		},
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);
 			if (insightsEnabled && (fieldId === "parent" || fieldId === "sprint")) {
 				handleOpenTimeline();
 			}
 		},
-	}), [boardFilter.actions, handleOpenTimeline, insightsEnabled]);
+	}), [boardFilter.actions, boardFilter.model.conditions, handleOpenTimeline, insightsEnabled]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -511,6 +519,7 @@ function ExperimentalJiraKanbanPageContent({
 	} = useAgentFilterDisplay({
 		agentFilterId,
 		boardColumns,
+		filterConditions: boardFilter.model.conditions,
 		focusedCollapsedColumns,
 		selectedAssigneeIds,
 		untrackedSessionCount: displayedUntrackedAgentSessionItems.length,
@@ -885,6 +894,7 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
+						columns={boardColumns}
 						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}
 						surfaceLabel={activeView}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import type { JiraFilterCondition } from "@/components/blocks/jira-filter";
+import { filterBoardByJiraConditions } from "../lib/board-jira-filter";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import { filterJiraKanbanColumnsByAssignee } from "@/components/blocks/jira-kanban/state";
@@ -24,6 +26,7 @@ import type { CollapsedBoardColumns } from "../lib/board-column-collapse";
 export function useAgentFilterDisplay({
 	agentFilterId,
 	boardColumns,
+	filterConditions = [],
 	focusedCollapsedColumns,
 	selectedAssigneeIds,
 	untrackedSessionCount,
@@ -34,6 +37,7 @@ export function useAgentFilterDisplay({
 }: {
 	agentFilterId: BoardAgentFilterId | null;
 	boardColumns: readonly JiraKanbanColumnData[];
+	filterConditions?: readonly JiraFilterCondition[];
 	focusedCollapsedColumns: CollapsedBoardColumns | null;
 	selectedAssigneeIds: ReadonlySet<string>;
 	untrackedSessionCount: number;
@@ -43,8 +47,8 @@ export function useAgentFilterDisplay({
 	viewerShownSessionStateIds: ReadonlySet<BoardAgentSessionStateId>;
 }) {
 	const assigneeScopedColumns = useMemo(
-		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-		[boardColumns, selectedAssigneeIds],
+		() => filterBoardByJiraConditions(filterConditions.some((condition) => condition.field === "assignee") ? boardColumns : filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds), filterConditions),
+		[boardColumns, filterConditions, selectedAssigneeIds],
 	);
 	const displayedCollapsedColumns = useMemo(
 		() => displayedCollapsedColumnsForAgentFilter({

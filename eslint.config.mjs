@@ -24,7 +24,7 @@ const badgeRestyleContract = {
 // gotchas-ui.md: overlay elevation already defines the surface, so an outer border or
 // ring draws a double outline. Separators on the surface's children stay allowed.
 const overlaySurfaceContract = {
-	pattern: "^(Popover|DropdownMenu|DropdownMenuSub|HoverCard|ContextMenu|ContextMenuSub|Menubar|MenubarSub|Select|Combobox|NavigationMenu|Tooltip)Content$",
+	pattern: "^(Popover|DropdownMenu|DropdownMenuSub|HoverCard|ContextMenu|ContextMenuSub|Menubar|MenubarSub|Select|Combobox|NavigationMenu|Tooltip|Sheet)Content$",
 	allow: ["*"],
 	// Width classes only: border-0 / ring-0 removals stay legal.
 	deny: [

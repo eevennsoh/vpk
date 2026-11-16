@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { useControllableState } from "@/hooks/use-controllable-state";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -279,7 +280,38 @@ function SavedRow({
 	);
 }
 
+function ButterFilterTrigger({ compact, triggerLabel, activeCount, open, onClear }: Readonly<{
+	compact: boolean;
+	triggerLabel: string;
+	activeCount: number;
+	open: boolean;
+	onClear: () => void;
+}>) {
+	return (
+		<ButtonGroup aria-label="Filter controls" variant="split">
+			<DropdownMenuTrigger
+				aria-haspopup="dialog"
+				aria-label={activeCount ? `${triggerLabel} (${activeCount})` : triggerLabel}
+				aria-pressed={activeCount > 0 || open}
+				render={<Button size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
+			>
+				<FilterIcon label="" />{compact ? null : " Filter"}
+				{activeCount && !compact ? <Badge>{activeCount}</Badge> : null}
+			</DropdownMenuTrigger>
+			{activeCount ? (
+				<Button variant="secondary" size="icon" aria-label="Clear all filters" onClick={onClear}>
+					<CrossIcon label="" />
+				</Button>
+			) : null}
+		</ButtonGroup>
+	);
+}
+
 export function ProjectButterFilter({
+	compact = false,
+	triggerLabel = "Filter",
+	open: controlledOpen,
+	onOpenChange,
 	fields,
 	value,
 	onChange,
@@ -288,7 +320,7 @@ export function ProjectButterFilter({
 	onSaveView,
 	onSaveAsView,
 }: Readonly<JiraFilterProps>) {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useControllableState({ prop: controlledOpen, defaultProp: false, onChange: onOpenChange });
 	const [search, setSearch] = useState("");
 	const [scrolled, setScrolled] = useState(false);
 	const [visibleIds, setVisibleIds] = useState(() =>
@@ -404,29 +436,11 @@ export function ProjectButterFilter({
 				}
 			}}
 		>
-			<ButtonGroup aria-label="Filter controls" variant="split">
-				<DropdownMenuTrigger
-					aria-haspopup="dialog"
-					aria-label={activeCount ? `Filter (${activeCount})` : "Filter"}
-					render={<Button variant="secondary" />}
-				>
-					<FilterIcon label="" /> Filter{" "}
-					{activeCount ? <Badge>{activeCount}</Badge> : null}
-				</DropdownMenuTrigger>
-				{activeCount ? (
-					<Button
-						variant="secondary"
-						size="icon"
-						aria-label="Clear all filters"
-						onClick={() => {
-							clearAll();
-							setOpen(false);
-						}}
-					>
-						<CrossIcon label="" />
-					</Button>
-				) : null}
-			</ButtonGroup>
+			<ButterFilterTrigger compact={compact} triggerLabel={triggerLabel} activeCount={activeCount} open={open}
+				onClear={() => {
+					clearAll();
+					setOpen(false);
+				}} />
 			<DropdownMenuContent
 				align="start"
 				role="dialog"

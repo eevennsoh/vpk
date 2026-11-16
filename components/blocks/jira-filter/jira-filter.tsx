@@ -30,6 +30,10 @@ type Mode = "saved" | "basic" | "advanced" | "jql";
 
 export type JiraFilterProps = {
 	variant?: "default" | "project-butter";
+	compact?: boolean;
+	triggerLabel?: string;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	fields: readonly JiraFilterField[];
 	value: readonly JiraFilterCondition[];
 	onChange: (value: JiraFilterCondition[]) => void;

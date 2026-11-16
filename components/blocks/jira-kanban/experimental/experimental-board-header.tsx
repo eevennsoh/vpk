@@ -1,9 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import BoardIcon from "@atlaskit/icon/core/board";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -31,6 +30,8 @@ import {
 	BoardViewMenu,
 } from "./components/board-view-menu";
 import type { BoardAgentFilterId, BoardAgentSessionStateId } from "./data/board-view-options";
+import { BoardViewConfiguration } from "./components/board-view-configuration";
+import { useBoardViewConfigurationHost } from "./hooks/use-board-view-configuration-host";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	getHeaderFacepileAssigneeLimit,
@@ -104,7 +105,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 * agents — so one facepile drives whichever surface is showing.
 	 */
 	facepile?: ReactNode;
-	/** Clickable Filter control, including the two-pane popover. */
+	/** Shared Jira filter control. */
 	filterControl?: ReactNode;
 	headerControlsLayout?: "inline" | "trailing-icons";
 	/** Mode control, rendered inline with Filter and Group. */
@@ -125,8 +126,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	showMoreControls?: boolean;
 	/**
-	 * Outline Customize control before More when both sit at the end. Shown
-	 * when Simple views is off; missing capability stays display-only.
+	 * Outline Customize control opening Jira view settings before More.
 	 */
 	showCustomizeControl?: boolean;
 	surfaceLabel?: string;
@@ -245,10 +245,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 	title = JIRA_DESIGN_PROJECT.name,
 	avatar,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
+	const { headerRef, tabStripRef, hostRef: viewConfigurationHostRef } = useBoardViewConfigurationHost(showCustomizeControl);
 	return (
-		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
+		<header ref={headerRef} className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
 			<BoardHeaderTitleCluster avatar={avatar} surfaceLabel={surfaceLabel} title={title} />
-			{viewTabs ? <div inert={muted || undefined} className={cn("mt-2", muted ? "opacity-20" : null)}>{viewTabs}</div> : null}
+			{viewTabs ? <div ref={tabStripRef} inert={muted || undefined} className={cn("mt-2", muted ? "opacity-20" : null)}>{viewTabs}</div> : null}
 			{showBoardControls ? (
 				<BoardHeaderControlsRow
 					muted={muted}
@@ -268,6 +269,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 					searchPlaceholder={searchPlaceholder}
 					selectedAssigneeIds={selectedAssigneeIds}
 					showCustomizeControl={showCustomizeControl}
+					viewConfigurationHostRef={viewConfigurationHostRef}
 					showMoreControls={showMoreControls}
 					showUntracked={showUntracked}
 					shownSessionStateIds={shownSessionStateIds}
@@ -277,6 +279,13 @@ export function ExperimentalJiraKanbanBoardHeader({
 					simpleViews={simpleViews}
 					surfaceLabel={surfaceLabel}
 					{...{ endSlot, facepile, filterControl, modeToggle }}
+				/>
+			) : null}
+			{showCustomizeControl ? (
+				<div
+					ref={viewConfigurationHostRef}
+					data-slot="board-view-configuration-host"
+					className="pointer-events-none absolute inset-x-0 bottom-0 top-0 z-40 overflow-clip"
 				/>
 			) : null}
 		</header>
@@ -445,6 +454,7 @@ function BoardHeaderControlsRow({
 	searchPlaceholder,
 	selectedAssigneeIds,
 	showCustomizeControl,
+	viewConfigurationHostRef,
 	showMoreControls,
 	showUntracked,
 	shownSessionStateIds,
@@ -475,6 +485,7 @@ function BoardHeaderControlsRow({
 	searchPlaceholder: string;
 	selectedAssigneeIds: ReadonlySet<string>;
 	showCustomizeControl: boolean;
+	viewConfigurationHostRef: RefObject<HTMLDivElement | null>;
 	showMoreControls: boolean;
 	showUntracked?: boolean;
 	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
@@ -494,11 +505,7 @@ function BoardHeaderControlsRow({
 			<Icon render={<ShowMoreHorizontalIcon label="" />} />
 		</Button>
 	) : null;
-	const customizeControl = showCustomizeControl ? (
-		<Button aria-disabled aria-label="Customize" size="icon" variant="outline">
-			<Icon render={<CustomizeIcon label="" />} />
-		</Button>
-	) : null;
+	const customizeControl = showCustomizeControl ? <BoardViewConfiguration container={viewConfigurationHostRef} /> : null;
 
 	return (
 		<div
