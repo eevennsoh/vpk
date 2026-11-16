@@ -187,7 +187,7 @@ function LongMetadataSegment({
 	switch (segment.kind) {
 		case "agent":
 			return (
-				<span className="flex min-w-0 items-center gap-1">
+				<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">
 					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
 					{segment.label === undefined ? null : (
 						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>

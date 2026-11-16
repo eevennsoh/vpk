@@ -7,7 +7,7 @@ test("board chin avatars fit a 24px slot without shrinking list avatars", async 
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	for (const label of ["Cursor: Working", "2 agents: Working"]) {
 		const row = page.getByRole("button", { name: label, exact: true });
 		const avatar = row.locator('[data-slot="avatar"]').first();
@@ -306,7 +306,7 @@ test("start coding opens the development dropdown in a work item", async ({ page
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
@@ -327,7 +327,7 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });

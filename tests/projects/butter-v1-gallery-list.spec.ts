@@ -24,7 +24,7 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
 	await expect(workItem).toBeVisible();
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select List" }).click();
 	await expect(list).toBeVisible();

@@ -641,7 +641,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,
-		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
+		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
