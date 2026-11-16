@@ -72,7 +72,7 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
-import { ButterGalleryAgentSessions, ButterGalleryBoardCard } from "./components/butter-gallery-showcases";
+import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
@@ -144,6 +144,7 @@ export default function ButterPage(): React.ReactElement {
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
+	const [sessionPermission, setSessionPermission] = useState<ButterSessionPermission>("mine");
 	const [agentSessionsResetKey, setAgentSessionsResetKey] = useState(0);
 	const [boardCardResetKey, setBoardCardResetKey] = useState(0);
 	const [galleryOpen, setGalleryOpen] = useState(true);
@@ -217,7 +218,7 @@ export default function ButterPage(): React.ReactElement {
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
 			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
-		: null;
+		: selectedId === "agent-sessions" ? <ButterSessionPermissionControls permission={sessionPermission} onPermissionChange={setSessionPermission} /> : null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
@@ -231,7 +232,7 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setSessionPermission("mine"); setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "development-panel" ? (
@@ -265,7 +266,7 @@ export default function ButterPage(): React.ReactElement {
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "agent-sessions"} retain>
-				<ButterGalleryAgentSessions key={agentSessionsResetKey} galleryOpen={galleryOpen} />
+				<ButterGalleryAgentSessions key={agentSessionsResetKey} galleryOpen={galleryOpen} permission={sessionPermission} />
 			</RetainedView>
 			<RetainedView active={selectedId === "board-card"} retain>
 				<ButterGalleryBoardCard key={boardCardResetKey} galleryOpen={galleryOpen} />
