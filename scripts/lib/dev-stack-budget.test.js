@@ -123,8 +123,9 @@ test("a stack outside this repo's worktrees gets a PID stop command, not pnpm po
 	);
 	assert.equal(verdict.exitCode, EXIT_OVER_BUDGET);
 	const text = formatVerdict(verdict, { worktree: "/repo/.claude/worktrees/new" });
-	assert.match(text, /\/elsewhere\/vpk-grab\/apps\/website\n {5}Not a worktree of this repo, so `pnpm ports kill` can't stop it\.\n {5}Stop it: kill 14/u);
+	assert.match(text, /\/elsewhere\/vpk-grab\/apps\/website\n {5}Stop it: kill 14\n/u);
 	assert.doesNotMatch(text, /pnpm ports kill '\/elsewhere/u);
+	assert.doesNotMatch(text, /Not a worktree of this repo/u);
 	assert.match(text, /Stop it: pnpm ports kill '\/repo\/\.claude\/worktrees\/a'/u);
 });
 
