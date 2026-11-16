@@ -421,9 +421,9 @@ test("over the stack budget a start refuses, lists the live stacks, and --force 
 			const refused = startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: inventory });
 			assert.equal(refused.status, 3);
 			assert.match(refused.stderr, /Not starting: 4 dev stacks already run; starting this one would make 5 > budget 4/);
-			assert.match(refused.stderr, /quiet {2}\/tmp\/wt-one {2}\(pid 901 2%\)/);
-			assert.match(refused.stderr, /busy {3}\/tmp\/wt-two/);
-			assert.match(refused.stderr, /no live task seen; stop: pnpm ports kill '\/(?:private\/)?tmp\/wt-three'/);
+			assert.match(refused.stderr, /wt-one {2}\(quiet · pid 901 2%\)/);
+			assert.match(refused.stderr, /wt-two {2}\(busy · pid 902 150%\)/);
+			assert.match(refused.stderr, /\/tmp\/wt-three\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/(?:private\/)?tmp\/wt-three'/);
 			assert.match(refused.stderr, /pnpm run dev:tmux:start -- --force/);
 			assert.deepEqual(fake.sessions(), []);
 

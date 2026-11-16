@@ -73,12 +73,12 @@ test("each other stack is labelled by evidence of a live task, not by CPU", () =
 	const verdict = evaluateBudget(inventory, { env: { HOME: "/home/me" }, worktree: "/wt/new", worktreeRoots });
 	assert.equal(verdict.exitCode, EXIT_OVER_BUDGET);
 	const text = formatVerdict(verdict, { worktree: "/wt/new" });
-	assert.match(text, /quiet {2}\/main .*\n {8}in use: the primary checkout; leave it running/u);
-	assert.match(text, /quiet {2}\/wt\/attached .*\n {8}in use: a tmux client is attached to vpk-dev-attached; leave it running/u);
-	assert.match(text, /quiet {2}\/wt\/operated .*\n {8}in use: claude pid 77 has its cwd here; leave it running/u);
-	assert.match(text, /busy {3}\/wt\/free .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/free'/u);
-	assert.match(text, /quiet {2}\/home\/me\/\.codex\/worktrees\/ab12\/vpk .*\n {8}Codex worktree: check its thread before stopping/u);
-	assert.equal((text.match(/stop: pnpm ports kill/gu) ?? []).length, 1, "a stop command only for the stack with no live task");
+	assert.match(text, /\(quiet · pid 1 1%\)\n {5}\/main\n {5}In use: the primary checkout\. Leave it running\./u);
+	assert.match(text, /\/wt\/attached\n {5}In use: a tmux client is attached to vpk-dev-attached\. Leave it running\./u);
+	assert.match(text, /\/wt\/operated\n {5}In use: claude pid 77 has its cwd here\. Leave it running\./u);
+	assert.match(text, /free {2}\(busy · pid 4 150%\)\n {5}\/wt\/free\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/wt\/free'/u);
+	assert.match(text, /\/home\/me\/\.codex\/worktrees\/ab12\/vpk\n {5}Codex worktree\. Check its thread before stopping it\./u);
+	assert.equal((text.match(/Stop it: /gu) ?? []).length, 1, "a stop command only for the stack with no live task");
 	assert.doesNotMatch(text, /\bidle\b/u);
 });
 
@@ -100,6 +100,34 @@ test("a stack with recent activity is in use even with no agent process in it, a
 		{ worktree: "/wt/new", activityOf: (worktree) => activity[worktree] ?? null, now },
 	);
 	const text = formatVerdict(verdict, { worktree: "/wt/new" });
-	assert.match(text, /\/wt\/busy-agent .*\n {8}in use: recent activity: dev log written 4m ago; leave it running/u);
-	assert.match(text, /\/wt\/stale .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/stale'/u);
+	assert.match(text, /\/wt\/busy-agent\n {5}In use: recent activity: dev log written 4m ago\. Leave it running\./u);
+	assert.match(text, /\/wt\/stale\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/wt\/stale'/u);
+});
+
+// Regression: the budget listed a sibling repo's next-server (vpk-grab's docs site) with
+// "stop: pnpm ports kill '<its path>'", which fails because that path is not a worktree here.
+test("a stack outside this repo's worktrees gets a PID stop command, not pnpm ports kill", () => {
+	const worktreeRoots = ["/repo", "/repo/.claude/worktrees/a", "/repo/.claude/worktrees/b", "/repo/.claude/worktrees/c"];
+	const verdict = evaluateBudget(
+		{ ...calm, servers: [
+			{ pid: 11, cwd: "/repo/.claude/worktrees/a", cpu: 1 },
+			{ pid: 12, cwd: "/repo/.claude/worktrees/b", cpu: 1 },
+			{ pid: 13, cwd: "/repo/.claude/worktrees/c", cpu: 1 },
+			{ pid: 14, cwd: "/elsewhere/vpk-grab/apps/website", cpu: 30 },
+		] },
+		{ worktree: "/repo/.claude/worktrees/new", worktreeRoots, activityOf: () => null },
+	);
+	assert.equal(verdict.exitCode, EXIT_OVER_BUDGET);
+	const text = formatVerdict(verdict, { worktree: "/repo/.claude/worktrees/new" });
+	assert.match(text, /\/elsewhere\/vpk-grab\/apps\/website\n {5}Not a worktree of this repo, so `pnpm ports kill` can't stop it\.\n {5}Stop it: kill 14/u);
+	assert.doesNotMatch(text, /pnpm ports kill '\/elsewhere/u);
+	assert.match(text, /Stop it: pnpm ports kill '\/repo\/\.claude\/worktrees\/a'/u);
+});
+
+test("each listed stack is its own numbered block with its path on a separate line", () => {
+	const verdict = evaluateBudget({ ...calm, servers: stacks(4) }, { worktree: "/wt/new", activityOf: () => null });
+	const text = formatVerdict(verdict, { worktree: "/wt/new" });
+	assert.match(text, /Running dev stacks \(4\)/u);
+	assert.match(text, /\n {2}1\. 0 {2}\(quiet · pid 100 1%\)\n {5}\/wt\/0\n/u);
+	assert.match(text, /\n\n {2}2\. 1 /u, "a blank line separates stacks");
 });

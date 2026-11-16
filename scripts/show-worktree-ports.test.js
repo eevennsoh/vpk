@@ -15,6 +15,7 @@ const {
 	defaultBrowserCommand,
 	moveSelectionIndex,
 	reconcileSelectionIndex,
+	externalStopHint,
 } = require("./show-worktree-ports");
 
 function execGit(args, cwd) {
@@ -508,4 +509,19 @@ test("ports --json --sizes adds each worktree's .next split", async (t) => {
 	});
 	assert.deepEqual(measured, [root]);
 	assert.deepEqual(rows[0].nextDir, { totalBytes: 1 });
+});
+
+// Regression: the dev-stack budget suggested `pnpm ports kill '<path>'` for a sibling repo's
+// next-server, and that failed with "No worktree matches". The kill path now names the PID.
+test("externalStopHint names the PIDs of a next-server under a non-worktree path", () => {
+	const servers = [
+		{ pid: 41, cwd: "/Users/me/labs/vpk-grab/apps/website" },
+		{ pid: 42, cwd: "/Users/me/labs/vpk/.claude/worktrees/a" },
+	];
+	const hint = externalStopHint("/Users/me/labs/vpk-grab/apps/website", servers);
+	assert.ok(hint);
+	assert.match(hint.join("\n"), /is not a worktree of this repo/u);
+	assert.match(hint.join("\n"), /kill 41$/mu);
+	assert.equal(externalStopHint("/Users/me/labs/nothing-here", servers), null);
+	assert.equal(externalStopHint("vpk-dev-a", servers), null, "a non-path query keeps the normal not-found message");
 });

@@ -127,9 +127,13 @@ function describeStacks(inventory, {
 		byRoot.set(root, stack);
 	}
 	const primaryRoot = worktreeRoots[0] ?? null;
+	// With the repo's worktree list known, a stack outside every root is another project's
+	// next-server (e.g. a sibling repo's docs site): `pnpm ports kill` cannot stop it.
+	const knownRoots = new Set(worktreeRoots.map(realPath));
 	return [...byRoot.values()].map((stack) => ({
 		...stack,
 		codex: isCodexWorktree(stack.worktree, env),
+		external: knownRoots.size > 0 && !knownRoots.has(stack.worktree),
 		inUse: inUseEvidence(stack, inventory, { primaryRoot, activityOf, now, idleSecs }),
 		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
 	}));
@@ -167,6 +171,28 @@ function shellQuote(value) {
 	return `'${String(value).replace(/'/gu, "'\\''")}'`;
 }
 
+const RULE = "─".repeat(60);
+
+function describeServers(stack) {
+	const servers = stack.servers.map((server) => `pid ${server.pid} ${server.cpu ?? "?"}%`).join(", ");
+	return `${stack.quiet ? "quiet" : "busy"} · ${servers}`;
+}
+
+// What to do with one stack: leave it, check it, or the exact command that stops it.
+function stackAdvice(stack) {
+	if (stack.inUse) return [`In use: ${stack.inUse}. Leave it running.`];
+	if (stack.codex) return ["Codex worktree. Check its thread before stopping it."];
+	if (stack.external) {
+		return [
+			"Not a worktree of this repo, so `pnpm ports kill` can't stop it.",
+			`Stop it: kill ${stack.servers.map((server) => server.pid).join(" ")}`,
+		];
+	}
+	// `pnpm ports kill` names this worktree as the requester, so the target refuses the stop
+	// if the stack turns out to be in use and logs who stopped it.
+	return ["No live task seen.", `Stop it: pnpm ports kill ${shellQuote(stack.worktree)}`];
+}
+
 function formatVerdict(verdict, { worktree }) {
 	if (verdict.exitCode === EXIT_DUPLICATE_SERVER) {
 		return [
@@ -178,18 +204,18 @@ function formatVerdict(verdict, { worktree }) {
 	if (verdict.reasons.length === 0) return lines.join("\n");
 	lines.push(`[dev:tmux] ${verdict.forced ? "Starting anyway (--force): " : "Not starting: "}${verdict.reasons.join("; ")}.`);
 	if (verdict.otherStacks.length > 0) {
-		lines.push("[dev:tmux] Live dev stacks (quiet = every next-server under 20% CPU right now; that is not proof it is unused):");
-		for (const stack of verdict.otherStacks) {
-			const cpu = stack.servers.map((server) => `pid ${server.pid} ${server.cpu ?? "?"}%`).join(", ");
-			lines.push(`  ${stack.quiet ? "quiet" : "busy "}  ${stack.worktree}  (${cpu})`);
-			if (stack.inUse) lines.push(`        in use: ${stack.inUse}; leave it running`);
-			else if (stack.codex) lines.push("        Codex worktree: check its thread before stopping");
-			// `pnpm ports kill` names this worktree as the requester, so the target refuses the stop
-			// if the stack turns out to be in use and logs who stopped it.
-			else lines.push(`        no live task seen; stop: pnpm ports kill ${shellQuote(stack.worktree)}`);
+		lines.push("", `  Running dev stacks (${verdict.otherStacks.length})`, `  ${RULE}`);
+		for (const [index, stack] of verdict.otherStacks.entries()) {
+			if (index > 0) lines.push("");
+			lines.push(`  ${index + 1}. ${path.basename(stack.worktree)}  (${describeServers(stack)})`);
+			lines.push(`     ${stack.worktree}`);
+			for (const advice of stackAdvice(stack)) lines.push(`     ${advice}`);
 		}
+		lines.push(`  ${RULE}`, "  quiet = every next-server is under 20% CPU right now; that is not proof it is unused.");
 	}
-	if (!verdict.forced) lines.push(`[dev:tmux] Stop a stack with no live task above, or start anyway: pnpm run dev:tmux:start -- --force   (in ${worktree})`);
+	if (!verdict.forced) {
+		lines.push("", "[dev:tmux] Stop a stack marked \"Stop it\" above, or start anyway:", `  pnpm run dev:tmux:start -- --force   (in ${worktree})`);
+	}
 	return lines.join("\n");
 }
 

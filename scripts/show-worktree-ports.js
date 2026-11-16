@@ -471,6 +471,20 @@ function printKillCandidates(worktrees) {
 	}
 }
 
+// `pnpm ports kill` only stops this repo's worktree stacks. The dev-stack budget can list another
+// project's next-server by its path, so when that path is passed here, say how to stop it instead
+// of listing unrelated worktrees.
+function externalStopHint(query, servers) {
+	if (!query || !path.isAbsolute(query)) return null;
+	const root = path.resolve(query);
+	const inside = servers.filter((server) => server.cwd && (server.cwd === root || server.cwd.startsWith(`${root}${path.sep}`)));
+	if (inside.length === 0) return null;
+	return [
+		`${query} is not a worktree of this repo, so \`pnpm ports kill\` can't stop it.`,
+		`Its next-server: ${inside.map((server) => `pid ${server.pid}`).join(", ")}. Stop it with: kill ${inside.map((server) => server.pid).join(" ")}`,
+	];
+}
+
 function standaloneTmuxBinary() {
 	for (const candidate of [
 		process.env.VPK_TMUX_BIN,
@@ -703,6 +717,11 @@ function runKill(query, { force = false } = {}) {
 			console.error(`"${query}" matches multiple worktrees — be more specific:\n`);
 			printKillCandidates(result.candidates);
 		} else {
+			const hint = externalStopHint(query, require("./lib/dev-stack-budget").collectInventory().servers);
+			if (hint) {
+				for (const line of hint) console.error(line);
+				process.exit(1);
+			}
 			console.error(`No worktree matches "${query}". Available worktrees:\n`);
 			printKillCandidates(worktrees);
 		}
@@ -746,6 +765,7 @@ if (require.main === module) {
 module.exports = {
 	collectStackRows,
 	listDevSessions,
+	externalStopHint,
 	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,
