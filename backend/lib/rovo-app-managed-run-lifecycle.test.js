@@ -22,7 +22,6 @@ function createRun(threadId, overrides = {}) {
 function createHarness(overrides = {}) {
 	const calls = [];
 	const runs = new Map(overrides.runs || []);
-	const queuedThreadIds = [...(overrides.queuedThreadIds || [])];
 	const dependencies = {
 		executeRovoAppManagedRun: async (run) => {
 			calls.push(["executeRovoAppManagedRun", run.threadId]);
@@ -33,33 +32,17 @@ function createHarness(overrides = {}) {
 		persistRovoAppRunState: async (threadId, run) => {
 			calls.push(["persistRovoAppRunState", threadId, run]);
 		},
-		resolveRovoAppPortAvailability: () => {
-			calls.push(["resolveRovoAppPortAvailability"]);
-			return { available: true };
-		},
 		rovoAppRunManager: {
-			getRun: (threadId) => {
-				calls.push(["getRun", threadId]);
-				return runs.get(threadId) || null;
-			},
 			isCurrentRun: (run) => Boolean(run) && runs.get(run.threadId) === run,
 			hasSubscribers: (threadId) => {
 				calls.push(["hasSubscribers", threadId]);
 				return false;
-			},
-			listQueuedThreadIds: () => {
-				calls.push(["listQueuedThreadIds"]);
-				return [...queuedThreadIds];
 			},
 			markRunStarted: (threadId, patch) => {
 				calls.push(["markRunStarted", threadId, patch]);
 				const run = runs.get(threadId);
 				if (!run) {
 					return null;
-				}
-				const index = queuedThreadIds.indexOf(threadId);
-				if (index !== -1) {
-					queuedThreadIds.splice(index, 1);
 				}
 				const markedRun = {
 					...run,
@@ -68,13 +51,6 @@ function createHarness(overrides = {}) {
 				};
 				runs.set(threadId, markedRun);
 				return markedRun;
-			},
-			removeQueuedRun: (threadId) => {
-				calls.push(["removeQueuedRun", threadId]);
-				const index = queuedThreadIds.indexOf(threadId);
-				if (index !== -1) {
-					queuedThreadIds.splice(index, 1);
-				}
 			},
 		},
 		settleRovoAppRun: async (run, outcome, details) => {
@@ -88,7 +64,6 @@ function createHarness(overrides = {}) {
 	return {
 		calls,
 		lifecycle,
-		queuedThreadIds,
 		runs,
 	};
 }
@@ -110,14 +85,12 @@ function createRealLifecycle({ executeRovoAppManagedRun, persistRovoAppRunState 
 				return { id: threadId, ...patch };
 			},
 		},
-		startNextQueuedRun: () => {},
 		synchronizeRovoAppThreadGeneratedFiles: async () => {},
 	});
 	const lifecycle = createRovoAppManagedRunLifecycle({
 		executeRovoAppManagedRun: executeRovoAppManagedRun ?? (async () => {}),
 		logger: quiet,
 		persistRovoAppRunState: persistRovoAppRunState ?? state.persistRovoAppRunState,
-		resolveRovoAppPortAvailability: () => ({}),
 		rovoAppRunManager: runManager,
 		settleRovoAppRun: state.settleRovoAppRun,
 	});
@@ -276,10 +249,7 @@ test("a run whose final save and failure clear both fail ends failed without an 
 
 	const quiet = { error: () => {}, info: () => {}, warn: () => {} };
 	const runManager = createRovoAppRunManager({ logger: quiet });
-	let settled;
-	const queueStarted = new Promise((resolve) => {
-		settled = resolve;
-	});
+	let settling;
 	const state = createRovoAppRunStateService({
 		activeRequests: new Map(),
 		logger: quiet,
@@ -290,22 +260,22 @@ test("a run whose final save and failure clear both fail ends failed without an 
 				throw new Error("thread store unavailable");
 			},
 		},
-		startNextQueuedRun: () => settled(),
 		synchronizeRovoAppThreadGeneratedFiles: async () => {},
 	});
 	const lifecycle = createRovoAppManagedRunLifecycle({
-		executeRovoAppManagedRun: (markedRun) =>
-			state.settleRovoAppRun(markedRun, "completed", { messages: [{ id: "assistant-1" }] }),
+		executeRovoAppManagedRun: (markedRun) => {
+			settling = state.settleRovoAppRun(markedRun, "completed", { messages: [{ id: "assistant-1" }] });
+			return settling;
+		},
 		logger: quiet,
 		persistRovoAppRunState: async () => null,
-		resolveRovoAppPortAvailability: () => ({}),
 		rovoAppRunManager: runManager,
 		settleRovoAppRun: state.settleRovoAppRun,
 	});
 	const run = runManager.createRun({ threadId: "thread-1" });
 
 	await lifecycle.startManagedRovoAppRun(run);
-	await queueStarted;
+	await settling;
 	await flushMicrotasks();
 
 	assert.equal(run.status, "failed");
@@ -333,54 +303,6 @@ test("startManagedRovoAppRun suppresses logs for aborted execution failures", as
 	assert.equal(calls.some(([name]) => name === "settleRovoAppRun"), true);
 });
 
-test("startNextQueuedRovoAppRun removes stale queued runs and starts the first available run", async () => {
-	const threadOneRun = createRun("thread-1");
-	const threadTwoRun = createRun("thread-2");
-	const { calls, lifecycle, queuedThreadIds } = createHarness({
-		queuedThreadIds: ["missing-thread", "thread-1", "thread-2"],
-		runs: [
-			["thread-1", threadOneRun],
-			["thread-2", threadTwoRun],
-		],
-	});
-
-	await lifecycle.startNextQueuedRovoAppRun();
-	await flushMicrotasks();
-
-	assert.deepEqual(queuedThreadIds, ["thread-2"]);
-	assert.equal(
-		calls.some((call) => call[0] === "removeQueuedRun" && call[1] === "missing-thread"),
-		true,
-	);
-	assert.equal(
-		calls.some((call) => call[0] === "markRunStarted" && call[1] === "thread-1"),
-		true,
-	);
-	assert.equal(
-		calls.some((call) => call[0] === "markRunStarted" && call[1] === "thread-2"),
-		false,
-	);
-});
-
-test("startNextQueuedRovoAppRun leaves queued runs untouched when no port is available", async () => {
-	const run = createRun("thread-1");
-	const { calls, lifecycle, queuedThreadIds } = createHarness({
-		queuedThreadIds: ["thread-1"],
-		runs: [["thread-1", run]],
-		dependencies: {
-			resolveRovoAppPortAvailability: () => {
-				calls.push(["resolveRovoAppPortAvailability"]);
-				return null;
-			},
-		},
-	});
-
-	await lifecycle.startNextQueuedRovoAppRun();
-
-	assert.deepEqual(queuedThreadIds, ["thread-1"]);
-	assert.equal(calls.some(([name]) => name === "markRunStarted"), false);
-});
-
 test("a run executes as the caller who sent it, not as whatever started it", async () => {
 	const scopes = [];
 	const { lifecycle, runManager } = createRealLifecycle({
@@ -391,7 +313,7 @@ test("a run executes as the caller who sent it, not as whatever started it", asy
 	});
 	const aliceRun = runManager.createRun({ threadId: "thread-alice", mediaScope: { owner: "alice", store: {} } });
 	const localRun = runManager.createRun({ threadId: "thread-local" });
-	// Started from inside bob's turn (a queued run starts from another run's settle).
+	// Started from inside bob's turn.
 	await runWithGeneratedMediaScope({ owner: "bob", store: {} }, async () => {
 		await lifecycle.startManagedRovoAppRun(aliceRun);
 		await lifecycle.startManagedRovoAppRun(localRun);

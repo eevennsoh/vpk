@@ -53,7 +53,6 @@ function createRovoAppRunStateService({
 	logger = console,
 	rovoAppRunManager,
 	rovoAppThreadManager,
-	startNextQueuedRun,
 	synchronizeRovoAppThreadGeneratedFiles,
 } = {}) {
 	requireFunction("activeRequests.delete", activeRequests?.delete);
@@ -68,7 +67,6 @@ function createRovoAppRunStateService({
 	requireFunction("rovoAppRunManager.settleRun", rovoAppRunManager?.settleRun);
 	requireFunction("rovoAppThreadManager.listThreads", rovoAppThreadManager?.listThreads);
 	requireFunction("rovoAppThreadManager.updateThread", rovoAppThreadManager?.updateThread);
-	requireFunction("startNextQueuedRun", startNextQueuedRun);
 	requireFunction("synchronizeRovoAppThreadGeneratedFiles", synchronizeRovoAppThreadGeneratedFiles);
 
 	// A run another run has replaced on its thread. That is remembered after the newer run
@@ -155,7 +153,7 @@ function createRovoAppRunStateService({
 	 *   if that fails the run ends `failed` instead.
 	 * - `failed`: a failure card is appended unless the error is an abort, then the stored
 	 *   state is cleared.
-	 * Each settled run clears the thread's active request and starts queued work, once.
+	 * Each settled run clears the thread's active request, once.
 	 * A run that a newer run replaced touches nothing. A run that was already settled (it was
 	 * cancelled) only saves its late partial messages, if it finished with any.
 	 * Resolves true when this call settled the run.
@@ -194,7 +192,6 @@ function createRovoAppRunStateService({
 			if (activeRequest && activeRequest.abortController?.signal?.aborted !== false) {
 				activeRequests.delete(threadId);
 			}
-			void startNextQueuedRun();
 		};
 
 		if (outcome === "cancelled") {

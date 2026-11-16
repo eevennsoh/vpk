@@ -12,18 +12,6 @@ function hasStructuredContinuationBody(requestBody) {
 	);
 }
 
-function shouldReplaceActiveRunForRequest({ existingRun } = {}) {
-	if (!existingRun || typeof existingRun !== "object") {
-		return false;
-	}
-
-	// Structured continuations (clarification answers, plan approvals,
-	// deferred tool responses) are meant to resume the current paused run,
-	// not cancel and replace it.
-	return false;
-}
-
 module.exports = {
 	hasStructuredContinuationBody,
-	shouldReplaceActiveRunForRequest,
 };

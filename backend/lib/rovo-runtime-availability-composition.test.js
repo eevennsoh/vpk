@@ -26,7 +26,6 @@ function createHarness(overrides = {}) {
 		getRovoPool: () => "pool",
 		isRovoAvailable: async () => true,
 		refreshRovoAvailability: async () => true,
-		resolveRovoAppPortAvailability: () => ({ available: true }),
 		shutdownRovoPool: () => "shutdown",
 	};
 	const dependencies = {
@@ -118,22 +117,7 @@ test("createRovoRuntimeAvailabilityComposition wires Rovo availability and defer
 	assert.equal(result.getRovoPool, availabilityService.getRovoPool);
 	assert.equal(result.isRovoAvailable, availabilityService.isRovoAvailable);
 	assert.equal(result.refreshRovoAvailability, availabilityService.refreshRovoAvailability);
-	assert.equal(result.resolveRovoAppPortAvailability, availabilityService.resolveRovoAppPortAvailability);
 	assert.equal(result.shutdownRovoPool, availabilityService.shutdownRovoPool);
-});
-
-test("setStartNextQueuedRovoAppRun preserves the availability callback cycle", async () => {
-	const { calls, captured, result } = createHarness();
-
-	assert.equal(await captured.availabilityService.onPortAvailable(), undefined);
-
-	result.setStartNextQueuedRovoAppRun(async () => {
-		calls.push(["startNextQueuedRovoAppRun"]);
-		return "queued";
-	});
-
-	assert.equal(await captured.availabilityService.onPortAvailable(), "queued");
-	assert.deepEqual(calls, [["startNextQueuedRovoAppRun"]]);
 });
 
 test("createRovoRuntimeAvailabilityComposition uses the default port search max", () => {
