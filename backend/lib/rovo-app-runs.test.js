@@ -47,7 +47,6 @@ test("run manager replays buffered chunks to late subscribers and returns to bac
 	});
 	assert.equal(run.backend, "rovo");
 
-	manager.enqueueRun(run.threadId);
 	manager.markRunStarted(run.threadId, {
 		backend: "rovo",
 		portIndex: 1,
@@ -80,7 +79,7 @@ test("run manager replays buffered chunks to late subscribers and returns to bac
 	]);
 });
 
-test("settleRun cancelled aborts the run, ends subscribers, and clears queued entries", () => {
+test("settleRun cancelled aborts the run and ends subscribers", () => {
 	const manager = createRovoAppRunManager();
 	const run = manager.createRun({
 		threadId: "thread-2",
@@ -90,14 +89,12 @@ test("settleRun cancelled aborts the run, ends subscribers, and clears queued en
 	const response = createMockResponse();
 	manager.attachSubscriber(run.threadId, response);
 
-	manager.enqueueRun(run.threadId);
 	const cancelledRun = manager.settleRun(run.threadId, { outcome: "cancelled" });
 	assert.equal(cancelledRun, run);
 	assert.equal(run.status, "cancelled");
 	assert.equal(run.abortController.signal.aborted, true);
 	assert.equal(response.ended, true);
 	assert.equal(manager.getRun(run.threadId), null);
-	assert.deepEqual(manager.listQueuedThreadIds(), []);
 });
 
 test("settleRun settles a run once, and only the run it names", () => {

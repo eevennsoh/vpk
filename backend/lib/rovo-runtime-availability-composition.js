@@ -79,12 +79,6 @@ function createRovoRuntimeAvailabilityComposition({
 		waitForReady: waitForPortReady,
 	});
 
-	let startNextQueuedRovoAppRun = () => {};
-	function setStartNextQueuedRovoAppRun(nextStartNextQueuedRovoAppRun) {
-		requireFunction("nextStartNextQueuedRovoAppRun", nextStartNextQueuedRovoAppRun);
-		startNextQueuedRovoAppRun = nextStartNextQueuedRovoAppRun;
-	}
-
 	const availabilityService = createRovoAvailabilityService({
 		classifyRovoHealthCheck,
 		createRovoPool,
@@ -93,7 +87,6 @@ function createRovoRuntimeAvailabilityComposition({
 		initPool,
 		logger,
 		maxTries: portSearchMaxTries,
-		onPortAvailable: () => startNextQueuedRovoAppRun(),
 		portFile,
 		portsFile,
 		resolveRovoPorts,
@@ -111,8 +104,6 @@ function createRovoRuntimeAvailabilityComposition({
 		refreshRovoAvailability: availabilityService.refreshRovoAvailability,
 		registerActiveDeferredToolCall: deferredToolCallState.registerActiveDeferredToolCall,
 		registerPausedRovoToolCall: deferredToolCallState.registerPausedRovoToolCall,
-		resolveRovoAppPortAvailability: availabilityService.resolveRovoAppPortAvailability,
-		setStartNextQueuedRovoAppRun,
 		shutdownRovoPool: availabilityService.shutdownRovoPool,
 		takePausedRovoToolCall: deferredToolCallState.takePausedRovoToolCall,
 		waitForPortReady,

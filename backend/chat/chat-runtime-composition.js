@@ -45,7 +45,6 @@ function createChatRuntimeComposition({
 	replayViaRovo,
 	requestUserInputQuestionMetaStore,
 	resolvePreferredBackend,
-	resolveRovoAppPortAvailability,
 	resolveStageTraceFromRequest,
 	rovoAppDocumentManager,
 	rovoAppGeneratedFilesManager,
@@ -57,7 +56,6 @@ function createChatRuntimeComposition({
 	rovoResumeToolCalls,
 	runRovoBackgroundTask,
 	sendGatewayErrorResponse,
-	setStartNextQueuedRovoAppRun,
 	streamTextViaGateway,
 	streamViaRovo,
 	takePausedRovoToolCall,
@@ -66,7 +64,6 @@ function createChatRuntimeComposition({
 	requireFunction("updateAgentsRfpDemoState", updateAgentsRfpDemoState);
 	requireFunction("createRovoAppRuntimeComposition", createRovoAppRuntimeComposition);
 	requireFunction("dispatchInProcessHttpRequest", dispatchInProcessHttpRequest);
-	requireFunction("setStartNextQueuedRovoAppRun", setStartNextQueuedRovoAppRun);
 
 	let handleChatSdkRequest;
 
@@ -101,7 +98,6 @@ function createChatRuntimeComposition({
 		logger,
 		mapUiMessagesToConversation,
 		requestUserInputQuestionMetaStore,
-		resolveRovoAppPortAvailability,
 		rovoAppDocumentManager,
 		rovoAppGeneratedFilesManager,
 		rovoAppRunManager,
@@ -111,8 +107,6 @@ function createChatRuntimeComposition({
 		runRovoBackgroundTask,
 		streamTextViaGateway,
 	});
-
-	setStartNextQueuedRovoAppRun(rovoAppRuntime.startNextQueuedRovoAppRun);
 
 	handleChatSdkRequest = createChatSdkHandler({
 		_pausedRovoToolCallStore,
