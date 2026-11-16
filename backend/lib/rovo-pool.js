@@ -54,7 +54,6 @@ const DEFAULT_UNHEALTHY_QUARANTINE_MS = 15_000;
  * @param {number[]} ports - Array of port numbers to manage
  * @param {object} [options]
  * @param {number} [options.healthCheckIntervalMs] - Interval between health checks (default 30s)
- * @param {() => void} [options.onPortAvailable] - Called when a port transitions to available (after cooldown/health check). Use to drain external run queues that are separate from the pool's internal waiter list.
  * @param {number} [options.cooldownMs] - Delay before marking a released port as available (default 0). Used as fallback if waitForReady is not provided.
  * @param {(port: number) => Promise<void>} [options.waitForReady] - Async function that resolves when a port is ready for new requests. Replaces the blind cooldownMs timer with a deterministic readiness check.
  * @param {number} [options.unhealthyQuarantineMs] - Delay before an unhealthy port is reconsidered for acquisition.
@@ -70,7 +69,6 @@ const DEFAULT_UNHEALTHY_QUARANTINE_MS = 15_000;
 function createRovoPool(ports, options = {}) {
 	const {
 		healthCheckIntervalMs = DEFAULT_HEALTH_CHECK_INTERVAL_MS,
-		onPortAvailable,
 		cooldownMs = 0,
 		waitForReady,
 		unhealthyQuarantineMs = DEFAULT_UNHEALTHY_QUARANTINE_MS,
@@ -262,9 +260,6 @@ function createRovoPool(ports, options = {}) {
 					clearBusyLease(entry);
 					entry.quarantinedUntil = null;
 					tryNotifyWaiter();
-					if (typeof onPortAvailable === "function") {
-						try { onPortAvailable(); } catch {}
-					}
 				};
 
 				if (typeof waitForReady === "function") {
@@ -407,9 +402,6 @@ function createRovoPool(ports, options = {}) {
 				entry.quarantinedUntil = null;
 				entry.lastHealthCheck = Date.now();
 				tryNotifyWaiter();
-				if (typeof onPortAvailable === "function") {
-					try { onPortAvailable(); } catch {}
-				}
 			} catch {
 				if (!isCurrentEntryState(entry, checkedGeneration, checkedStatus)) {
 					continue;
