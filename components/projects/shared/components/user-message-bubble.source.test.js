@@ -17,10 +17,6 @@ const SIDEBAR_MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const CHAT_PANEL_SOURCE = readChatPanelSource();
-const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
-	"utf8",
-);
 const ROVO_CHAT_HELPERS_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/rovo-chat-helpers.ts"),
 	"utf8",
@@ -112,24 +108,10 @@ test("assistant bubbles render agent text before chain-of-thought and tool calls
 	);
 });
 
-test("compact chat edit uses AI SDK message replacement semantics", () => {
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/editMessage: \(messageId: string, nextText: string, options\?: SendPromptOptions\) => Promise<void>;/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/await sendMessage\(messagePayload, bodyPayload\);/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/messageId,\s*\};/u,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/setQueuedPrompts\(\[\]\);/,
-	);
-});
+// Compact chat edit semantics (resend in place with the same message id, drop
+// queued prompts) are proven by rendering the provider in
+// app/contexts/context-rovo-chat-turn-lifecycle.behavior.test.js and
+// app/contexts/context-rovo-chat-turn-blocking.behavior.test.js.
 
 test("compact chat message sanitizers tolerate persisted messages without parts arrays", () => {
 	assert.match(

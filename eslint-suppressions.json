@@ -2037,7 +2037,7 @@
   },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
-      "count": 35
+      "count": 31
     }
   },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
