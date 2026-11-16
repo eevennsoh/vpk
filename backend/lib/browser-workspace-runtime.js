@@ -8,6 +8,7 @@ const { createAgentBrowserCaller, isAgentBrowserCallTimeoutError } = require("./
 const { promisify } = require("node:util")
 const WebSocket = require("ws")
 const { requireAgentBrowserRef, requireBrowserArgument } = require("./input-schemas")
+const { resolvePreviewKeyCommand } = require("./preview-key-command")
 const {
 	DEFAULT_BROWSER_MODE,
 } = require("./browser-runtime-config")
@@ -824,21 +825,12 @@ class AgentBrowserRuntime {
 		await this._runCommand(["press", requireBrowserArgument(key, "A key")])
 	}
 
-	async keyEvent(eventType, key, code, text) {
+	async keyEvent(eventType, key, code, text, modifiers) {
 		await this._ensureBrowser()
-		const value =
-			typeof key === "string" && key
-				? key
-				: typeof text === "string" && text
-					? text
-					: typeof code === "string" && code
-						? code
-						: null
-		if (!value) {
-			return
+		const command = resolvePreviewKeyCommand({ eventType, key, code, text, modifiers })
+		if (command) {
+			await this._runCommand(command)
 		}
-
-		await this._runCommand([eventType === "keyUp" ? "keyup" : "keydown", requireBrowserArgument(value, "A key")])
 	}
 
 	async insertText(text) {

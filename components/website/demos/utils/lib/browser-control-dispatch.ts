@@ -71,13 +71,21 @@ export async function dispatchBrowserControl(
 			return;
 		case "key": {
 			const isPrintable = command.key.length === 1 && !command.metaKey && !command.ctrlKey && !command.altKey;
+			// Both events carry the modifiers: the backend sends a modified keyDown as one
+			// press and skips its keyUp. Messages without them read as unmodified.
+			const modifiers = {
+				shiftKey: command.shiftKey === true,
+				ctrlKey: command.ctrlKey === true,
+				altKey: command.altKey === true,
+				metaKey: command.metaKey === true,
+			};
 			if (tryPreview(delivery, {
 				type: "preview-key", eventType: "keyDown", key: command.key, code: command.code,
-				text: isPrintable ? command.key : undefined,
+				text: isPrintable ? command.key : undefined, ...modifiers,
 			})) {
 				// Once keyDown is accepted, retrying through HTTP would duplicate the
 				// input. Attempt its release without replaying an accepted command.
-				tryPreview(delivery, { type: "preview-key", eventType: "keyUp", key: command.key, code: command.code });
+				tryPreview(delivery, { type: "preview-key", eventType: "keyUp", key: command.key, code: command.code, ...modifiers });
 				return;
 			}
 			if (isPrintable) {
@@ -86,14 +94,14 @@ export async function dispatchBrowserControl(
 			}
 			const mappedKey = SPECIAL_KEY_MAP[command.key];
 			if (!mappedKey) return;
-			const modifiers = [
+			const modifierNames = [
 				command.ctrlKey ? "Control" : null,
 				command.metaKey ? "Meta" : null,
 				command.altKey ? "Alt" : null,
 				command.shiftKey ? "Shift" : null,
 			].filter((modifier) => modifier !== null);
 			await delivery.workspace("press", {
-				key: modifiers.length ? `${modifiers.join("+")}+${mappedKey}` : mappedKey,
+				key: modifierNames.length ? `${modifierNames.join("+")}+${mappedKey}` : mappedKey,
 			});
 		}
 	}

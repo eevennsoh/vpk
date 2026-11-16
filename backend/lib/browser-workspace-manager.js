@@ -869,6 +869,13 @@ class BrowserWorkspace {
 					message.key,
 					message.code,
 					message.text,
+					// Older clients send no modifiers; anything but `true` is unpressed.
+					{
+						shiftKey: message.shiftKey === true,
+						ctrlKey: message.ctrlKey === true,
+						altKey: message.altKey === true,
+						metaKey: message.metaKey === true,
+					},
 				)
 			case "preview-paste":
 				return this.previewInsertText(message.text)
@@ -1433,7 +1440,7 @@ class BrowserWorkspace {
 		}).catch((error) => this._reportPreviewActionFailure(error))
 	}
 
-	previewKeyEvent(eventType, key, code, text) {
+	previewKeyEvent(eventType, key, code, text, modifiers) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
 			const resolvedEventType =
@@ -1449,6 +1456,7 @@ class BrowserWorkspace {
 				typeof key === "string" ? key : undefined,
 				typeof code === "string" ? code : undefined,
 				typeof text === "string" ? text : undefined,
+				modifiers,
 			)
 			await this._delay(25)
 			await this._refreshState({ forceUpdated: true })

@@ -352,3 +352,42 @@ test("browser workspace runtime never passes a request value that reads as an op
 	await runtime.insertText("- 5 items")
 	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
 })
+
+test("a modified preview key goes out as one press with its modifiers, and an unmodified one as keydown/keyup", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	const shift = { shiftKey: true, ctrlKey: false, altKey: false, metaKey: false }
+	await runtime.keyEvent("keyDown", "Tab", "Tab", undefined, shift)
+	await runtime.keyEvent("keyUp", "Tab", "Tab", undefined, shift)
+	await runtime.keyEvent("keyDown", "Tab", "Tab", undefined, { shiftKey: true, ctrlKey: true, altKey: true, metaKey: true })
+	await runtime.keyEvent("keyDown", "A", "KeyA", "A", shift)
+	await runtime.keyEvent("keyDown", " ", "Space", " ", shift)
+	await runtime.keyEvent("keyDown", "+", "Equal", "+", shift)
+	// A modifier key reports its own flag; a lone Shift stays a plain Shift.
+	await runtime.keyEvent("keyDown", "Shift", "ShiftLeft", undefined, shift)
+	await runtime.keyEvent("keyUp", "Shift", "ShiftLeft", undefined, shift)
+	// Older messages carry no modifiers.
+	await runtime.keyEvent("keyDown", "Tab", "Tab")
+	await runtime.keyEvent("keyUp", "Tab", "Tab", undefined, { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false })
+	assert.deepEqual(runtime.commands, [
+		["press", "Shift+Tab"],
+		["press", "Control+Meta+Alt+Shift+Tab"],
+		["press", "Shift+A"],
+		["press", "Shift+Space"],
+		["press", "Shift++"],
+		["keydown", "Shift"],
+		["keyup", "Shift"],
+		["keydown", "Tab"],
+		["keyup", "Tab"],
+	])
+})
+
+test("a modified preview key that is not a key name is refused before reaching agent-browser", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	await assert.rejects(
+		runtime.keyEvent("keyDown", "--headed", undefined, undefined, { shiftKey: true }),
+		(error) => error?.status === 400 && error?.code === "INVALID_INPUT",
+	)
+	assert.deepEqual(runtime.commands, [])
+})
