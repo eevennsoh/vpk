@@ -46,7 +46,9 @@ export function ButterGalleryAgentSessions({ galleryOpen }: Readonly<{ galleryOp
 							{row.lists.map((list) => (
 								<div className="flex shrink-0 flex-col gap-1.5" key={list.density}>
 									<span className="text-xs text-text-subtlest">{list.density === "short" ? "Short" : "Long"}</span>
-									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface", SESSION_LIST_WIDTH[list.density])} density={list.density} items={list.items} variant="large" />
+									{list.items.map((item) => (
+										<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface", SESSION_LIST_WIDTH[list.density])} density={list.density} items={[item]} key={item.state} variant="large" />
+									))}
 								</div>
 							))}
 						</div>
