@@ -131,3 +131,19 @@ test("each listed stack is its own numbered block with its path on a separate li
 	assert.match(text, /\n {2}1\. 0 {2}\(quiet · pid 100 1%\)\n {5}\/wt\/0\n/u);
 	assert.match(text, /\n\n {2}2\. 1 /u, "a blank line separates stacks");
 });
+
+test("stacks that share a folder name are labelled with their parent folder", () => {
+	const verdict = evaluateBudget(
+		{ ...calm, servers: [
+			{ pid: 21, cwd: "/codex/c891/vpk", cpu: 0 },
+			{ pid: 22, cwd: "/codex/4b53/vpk", cpu: 0 },
+			{ pid: 23, cwd: "/elsewhere/website", cpu: 0 },
+			{ pid: 24, cwd: "/codex/43a8/vpk", cpu: 0 },
+		] },
+		{ worktree: "/repo", activityOf: () => null },
+	);
+	const text = formatVerdict(verdict, { worktree: "/repo" });
+	assert.match(text, /1\. c891\/vpk {2}\(/u);
+	assert.match(text, /2\. 4b53\/vpk {2}\(/u);
+	assert.match(text, /3\. website {2}\(/u);
+});

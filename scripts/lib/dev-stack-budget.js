@@ -193,6 +193,17 @@ function stackAdvice(stack) {
 	return ["No live task seen.", `Stop it: pnpm ports kill ${shellQuote(stack.worktree)}`];
 }
 
+// Codex worktrees all end in /vpk, so a bare basename repeats; widen a repeated
+// label to its parent folder too (e.g. "c891/vpk") so each stack reads distinctly.
+function stackLabels(worktrees) {
+	const basenames = worktrees.map((worktree) => path.basename(worktree));
+	return worktrees.map((worktree, index) =>
+		basenames.filter((name) => name === basenames[index]).length > 1
+			? `${path.basename(path.dirname(worktree))}/${basenames[index]}`
+			: basenames[index],
+	);
+}
+
 function formatVerdict(verdict, { worktree }) {
 	if (verdict.exitCode === EXIT_DUPLICATE_SERVER) {
 		return [
@@ -205,9 +216,10 @@ function formatVerdict(verdict, { worktree }) {
 	lines.push(`[dev:tmux] ${verdict.forced ? "Starting anyway (--force): " : "Not starting: "}${verdict.reasons.join("; ")}.`);
 	if (verdict.otherStacks.length > 0) {
 		lines.push("", `  Running dev stacks (${verdict.otherStacks.length})`, `  ${RULE}`);
+		const labels = stackLabels(verdict.otherStacks.map((stack) => stack.worktree));
 		for (const [index, stack] of verdict.otherStacks.entries()) {
 			if (index > 0) lines.push("");
-			lines.push(`  ${index + 1}. ${path.basename(stack.worktree)}  (${describeServers(stack)})`);
+			lines.push(`  ${index + 1}. ${labels[index]}  (${describeServers(stack)})`);
 			lines.push(`     ${stack.worktree}`);
 			for (const advice of stackAdvice(stack)) lines.push(`     ${advice}`);
 		}
