@@ -294,9 +294,10 @@ const STORED_THREAD = Object.freeze({
 	updatedAt: 0,
 });
 
-// Starts a turn that is cut short with its media widget still loading, so it
-// sits in the short cut-short wait, with "Then a dog" queued behind it.
-async function startCutShortMediaWait(t, options) {
+// Starts a turn streaming its reply, with "Then a dog" queued behind it: a
+// partial reply with its media widget loading or, when `completed`, a reply
+// that completed (turn-complete seen) on a stream still open.
+async function startStreamingTurn(t, { completed = false, ...options } = {}) {
 	const mounted = await mountChat(t, options);
 	const { harness, server, chat } = mounted;
 	const timeouts = captureMediaTimeouts(t, harness);
@@ -306,16 +307,30 @@ async function startCutShortMediaWait(t, options) {
 	await send(chat, "Then a dog");
 	const [turn] = server.turns;
 	turn.send({ type: "start" });
-	turn.text("t", "Drawing");
-	mediaLoading(turn, true);
-	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	if (completed) {
+		turn.text("t", "A cat");
+		turn.turnComplete();
+		await waitFor("the completed reply", () => chatState().messages.at(-1) === "assistant:A cat+data-turn-complete");
+	} else {
+		turn.text("t", "Drawing");
+		mediaLoading(turn, true);
+		await waitFor("media generation to start", () => chat().isMediaGenerating);
+	}
+	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
+	return { ...mounted, timeouts, turn, notice, departingThreadId: chat().activeThreadId };
+}
+
+// Starts a turn that is cut short with its media widget still loading, so it
+// sits in the short cut-short wait, with "Then a dog" queued behind it.
+async function startCutShortMediaWait(t, options) {
+	const started = await startStreamingTurn(t, options);
+	const { turn, chat, timeouts } = started;
 	turn.end();
 	await waitFor("the stream to end", () => !chat().isStreaming);
 	await settle(20);
 	assert.equal(timeouts.cutShort.count(), 1);
 	assert.equal(chat().activePrompt?.text, "Draw a cat");
-	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
-	return { ...mounted, timeouts, notice, departingThreadId: chat().activeThreadId };
+	return started;
 }
 
 // Every path that replaces or drops the transcript ends the departing turn
@@ -521,6 +536,100 @@ for (const superseding of SUPERSEDING_SELECTIONS) {
 		assert.equal(server.turns[1].body.id, departingThreadId);
 	});
 }
+
+// Ends the departing request, then starts a switch to the stored thread while
+// React still holds the commit of the idle status: the switch's stop phase runs
+// after the request's onFinish but reads a streaming flag that is still true.
+// When `superseded`, a selection whose fetch fails supersedes the switch while
+// it detaches the departing run.
+async function switchAfterFinishBeforeIdleCommits({ chat, turn, departingThreadId }, { superseded }) {
+	const detach = holdDetach();
+	let switched = false;
+	await withCommitsHeld(async () => {
+		turn.end();
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		assert.equal(chat().isStreaming, true);
+		void chat().selectThread(STORED_THREAD.id).then(() => { switched = true; });
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	});
+	await waitFor("the stop phase to reach the detach", () => detach.reached(departingThreadId));
+	if (superseded) {
+		window.testApi.failingThreadIds = new Set(["broken-thread"]);
+		await assert.rejects((await startAction(() => chat().selectThread("broken-thread")))(), /Thread fetch failed/);
+	}
+	await detach.open();
+	await waitFor("the switch to settle", () => switched);
+	await settle(20);
+}
+
+// Regression: the stop phase took the committed streaming flag, still true for
+// a moment after the request finished, for a live request and ended the
+// cut-short turn as a Stop: the superseded switch then left the old thread
+// without its wait and notice, and the queue went out at once.
+test("a cut-short request's switch started before its idle status commits, then superseded, keeps the wait, then shows the notice and advances the queue", async (t) => {
+	const started = await startStreamingTurn(t);
+	const { server, chat, timeouts, notice, departingThreadId } = started;
+	await switchAfterFinishBeforeIdleCommits(started, { superseded: true });
+	assert.equal(chat().activeThreadId, departingThreadId);
+	assert.equal(chat().activePrompt?.text, "Draw a cat");
+	assert.deepEqual(chat().queuedPrompts.map((prompt) => prompt.text), ["Then a dog"]);
+	assert.equal(server.turns.length, 1);
+	// The wait armed once, from the finish, and was never cleared or armed again.
+	assert.equal(timeouts.cutShort.count(), 1);
+	assert.equal(timeouts.cutShort.live(), 1);
+
+	await timeouts.cutShort.fireLive();
+	await expectNoticeThenQueue(server, chat, notice);
+	assert.equal(server.turns[1].body.id, departingThreadId);
+});
+
+test("a cut-short request's switch started before its idle status commits clears the old turn at its commit point, and nothing lands on the new thread", async (t) => {
+	const started = await startStreamingTurn(t);
+	const { server, chat, timeouts, notice } = started;
+	await switchAfterFinishBeforeIdleCommits(started, { superseded: false });
+	const stored = ["user:Old question", "assistant:Old answer"];
+	assert.equal(chat().activeThreadId, STORED_THREAD.id);
+	assert.deepEqual(chatState().messages, stored);
+	assert.equal(chat().activePrompt, null);
+	assert.deepEqual(chat().queuedPrompts, []);
+	assert.equal(chat().isMediaGenerating, false);
+	assert.equal(timeouts.cutShort.live(), 0);
+
+	// Any wait the departing turn armed runs out on the new transcript: nothing happens.
+	for (let index = 0; index < timeouts.cutShort.count(); index += 1) {
+		await timeouts.cutShort.fire(index);
+	}
+	await settle(20);
+	assert.deepEqual(chatState().messages, stored);
+	assert.equal(chatState().messages.includes(notice), false);
+	assert.equal(server.turns.length, 1);
+});
+
+test("a completed request's switch started before its idle status commits, then superseded, finalizes the turn once with no notice, and the queue goes out on the old thread", async (t) => {
+	const started = await startStreamingTurn(t, { completed: true });
+	const { server, chat, notice, departingThreadId } = started;
+	await switchAfterFinishBeforeIdleCommits(started, { superseded: true });
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activeThreadId, departingThreadId);
+	assert.equal(server.turns[1].body.id, departingThreadId);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.deepEqual(chatState().messages.slice(0, 3), ["user:Draw a cat", "assistant:A cat+data-turn-complete", "user:Then a dog"]);
+	assert.equal(chatState().messages.includes(notice), false);
+	await settle(40);
+	assert.equal(server.turns.length, 2);
+});
+
+test("a completed request's switch started before its idle status commits clears the old turn at its commit point, and nothing lands on the new thread", async (t) => {
+	const started = await startStreamingTurn(t, { completed: true });
+	const { server, chat, notice } = started;
+	await switchAfterFinishBeforeIdleCommits(started, { superseded: false });
+	assert.equal(chat().activeThreadId, STORED_THREAD.id);
+	assert.deepEqual(chatState().messages, ["user:Old question", "assistant:Old answer"]);
+	assert.equal(chatState().messages.includes(notice), false);
+	assert.equal(chat().activePrompt, null);
+	assert.deepEqual(chat().queuedPrompts, []);
+	assert.equal(server.turns.length, 1);
+});
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {
 	const { harness, server, chat } = await mountChat(t);

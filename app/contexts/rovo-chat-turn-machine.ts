@@ -232,6 +232,18 @@ export function hasSendInFlight(state: RovoChatTurnState): boolean {
 	return state.activePrompt !== null || state.dispatching;
 }
 
+/**
+ * Whether the current send's request is live: it has started and none of the
+ * request's own callbacks has finished it yet. Its onFinish or onError records
+ * the finish synchronously (cut short or failed sets finalizeRequested, a retry
+ * schedules its timer), turn-complete marks a reply that completed, Stop sets
+ * finalizeRequested, and the send settles once onFinish has run. The committed
+ * streaming flag is ignored: it stays true for a moment after the request ends.
+ */
+export function hasLiveRequest(state: RovoChatTurnState, env: RovoChatTurnEnvironment): boolean {
+	return state.dispatching && !state.finalizeRequested && !state.turnCompleteSeen && !env.retryScheduled;
+}
+
 /** The cut-short wait the active prompt is in, or null when it is not waiting. */
 export function findCutShortMediaWait(state: RovoChatTurnState): RovoChatCutShortMediaWait | null {
 	const endsAt = state.cutShort?.mediaWaitEndsAt ?? null;

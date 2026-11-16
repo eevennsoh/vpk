@@ -7,7 +7,11 @@ export interface RovoChatDepartingRequestOwner {
 	 * streaming status React has not committed yet shows only in the turn machine.
 	 */
 	readonly isSendInFlight: () => boolean;
-	/** Whether a request is streaming or being sent, so stopping it ends its turn. */
+	/**
+	 * Whether the request is live (started, and not yet finished by its own
+	 * onFinish or onError), so stopping it ends its turn. A request that already
+	 * finished keeps its turn's pending work, whatever the streaming flag says.
+	 */
 	readonly isRequestLive: () => boolean;
 	/** Ends the turn of the request being stopped as a user Stop does (no notice). */
 	readonly endStoppedTurn: () => void;

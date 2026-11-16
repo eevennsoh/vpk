@@ -131,7 +131,7 @@ import {
 	classifyTurnError,
 	createRetryCountdownMessage,
 	findCutShortNotice,
-	hasSendInFlight,
+	hasLiveRequest, hasSendInFlight,
 	isTurnWorkIdle,
 	shouldStartSubmitPending as shouldStartSubmitPendingForTurn,
 	type RovoChatRetryReason,
@@ -1575,12 +1575,12 @@ export function RovoChatProvider({
 	const stopRequestForThreadChange = useCallback(() => stopDepartingRequest({
 		threadId: activeThreadIdRef.current,
 		isSendInFlight: () => isStreamingRef.current || hasSendInFlight(turnRef.current),
-		isRequestLive: () => isStreamingRef.current || turnRef.current.dispatching,
+		isRequestLive: () => hasLiveRequest(turnRef.current, readTurnEnvironment()),
 		endStoppedTurn,
 		stopRequest: stop,
 		waitForStreamStop,
 		detachRun: detachRovoAppRun,
-	}), [endStoppedTurn, stop, turnRef, waitForStreamStop]);
+	}), [endStoppedTurn, readTurnEnvironment, stop, turnRef, waitForStreamStop]);
 
 	const selectThread = useCallback(
 		async (threadId: string) => {

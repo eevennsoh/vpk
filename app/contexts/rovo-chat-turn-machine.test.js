@@ -40,6 +40,7 @@ const {
 	findCutShortMediaWait,
 	findCutShortNotice,
 	findLatestMediaLoadingState,
+	hasLiveRequest,
 	hasSendInFlight,
 	isTurnWorkIdle,
 	rovoChatTurnReducer: reduce,
@@ -197,6 +198,34 @@ const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a", promptId = "a
 	finish: { anchorMessageId, mediaLoading },
 	mediaWaitEndsAt: mediaLoading ? WAIT_ENDS_AT : null,
 });
+
+// A request is live from its send's start until its own onFinish or onError has
+// run; the committed streaming flag, which lags the request's end, never decides.
+const SENDING = Object.freeze({ ...INITIAL, activePrompt: prompt("a"), dispatching: true });
+const SETTLED = Object.freeze({ ...SENDING, dispatching: false });
+const LIVENESS_BY_TURN_STATE = [
+	{ name: "idle", state: INITIAL, env: IDLE, live: false },
+	{ name: "a prompt sending or streaming", state: SENDING, env: IDLE, live: true },
+	{ name: "an edit resend sending or streaming", state: { ...INITIAL, dispatching: true }, env: IDLE, live: true },
+	{ name: "a retry resend sending or streaming", state: reduce(SETTLED, { type: "retryDispatchStarted" }), env: IDLE, live: true },
+	{ name: "cut short, before its send settles", state: reduce(SENDING, cutShortFinish(true)), env: IDLE, live: false },
+	{ name: "cut short and settled", state: reduce(SETTLED, cutShortFinish(true)), env: IDLE, live: false },
+	{ name: "completed (turn-complete seen), stream still open", state: reduce(SENDING, { type: "turnCompleteSeen" }), env: IDLE, live: false },
+	{ name: "completed and settled", state: SETTLED, env: IDLE, live: false },
+	{ name: "failed for good, before its send settles", state: reduce(SENDING, { type: "turnFailed", resetRetries: false }), env: IDLE, live: false },
+	{ name: "failed into a retry countdown, before its send settles", state: SENDING, env: { ...IDLE, retryScheduled: true }, live: false },
+	{ name: "failed into a retry countdown and settled", state: SETTLED, env: { ...IDLE, retryScheduled: true }, live: false },
+	{ name: "stopped, before its send settles", state: reduce(SENDING, { type: "stopRequested" }), env: IDLE, live: false },
+	{ name: "reset by a thread change", state: reduce(SENDING, { type: "reset" }), env: IDLE, live: false },
+];
+
+for (const row of LIVENESS_BY_TURN_STATE) {
+	for (const isStreaming of [false, true]) {
+		test(`hasLiveRequest: ${row.name}, streaming flag ${isStreaming ? "true" : "false"} → ${row.live ? "live" : "not live"}`, () => {
+			assert.equal(hasLiveRequest(row.state, { ...row.env, isStreaming }), row.live);
+		});
+	}
+}
 
 test("a cut-short turn keeps its finish snapshot's anchor and notices only if turn-complete never arrives", () => {
 	assert.equal(reduce(INITIAL, cutShortFinish(false)), INITIAL);

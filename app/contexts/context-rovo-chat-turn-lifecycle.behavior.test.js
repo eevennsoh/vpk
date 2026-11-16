@@ -821,6 +821,48 @@ test("a selection whose fetch fails during a retry countdown keeps the current t
 	assert.deepEqual(chatState().messages, ["user:Busy prompt", "assistant:Here you go+data-turn-complete"]);
 });
 
+// A failed request in its retry countdown has finished, even while React still
+// holds the commit of its idle status: a switch's stop phase does not end its
+// turn, so a superseded switch leaves the countdown and the retry in place.
+test("a request in its retry countdown whose switch started before its idle status commits, then superseded, keeps the countdown and retries on the current thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", storedThread());
+	window.testApi.failingThreadIds = new Set(["broken-thread"]);
+	let openFailure;
+	server.failNext(429, "Too many requests", new Promise((resolve) => {
+		openFailure = resolve;
+	}));
+	await send(chat, "Busy prompt");
+	await waitFor("the request to stream", () => server.turns.length === 1 && chat().isStreaming);
+	const threadId = chat().activeThreadId;
+	const detach = holdDetach();
+	let switched = false;
+	await withCommitsHeld(async () => {
+		openFailure();
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		assert.equal(chat().isStreaming, true);
+		void chat().selectThread("stored-thread").then(() => {
+			switched = true;
+		});
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	});
+	await waitFor("the stop phase to reach the detach", () => detach.reached(threadId));
+	await assert.rejects((await startAction(() => chat().selectThread("broken-thread")))(), /Thread fetch failed/);
+	await detach.open();
+	await waitFor("the switch to settle", () => switched);
+	assert.equal(chat().activeThreadId, threadId);
+	assert.equal(chat().activePrompt?.text, "Busy prompt");
+	assert.equal(chatState().messages.at(-1)?.startsWith("assistant:I'm experiencing high demand"), true);
+
+	await waitFor("the retry request", () => server.turns.length === 2);
+	assert.equal(server.turns[1].body.id, threadId);
+	server.turns[1].text("t", "Here you go");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the retried turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	assert.deepEqual(chatState().messages, ["user:Busy prompt", "assistant:Here you go+data-turn-complete"]);
+});
+
 // A selection that fails leaves the current thread's stream running, so its
 // prompt finalizes as usual and the queue behind it goes out on that thread;
 // nothing is left active for good.
