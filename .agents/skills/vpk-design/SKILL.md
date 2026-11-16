@@ -1,6 +1,6 @@
 ---
 name: vpk-design
-description: Inspect Figma URLs, inventory or export design assets, and translate screenshots, mockups, or pixel-perfect specs into VPK code. Use the official Figma MCP first. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks, and vpk-component for ADS or shadcn component harvesting.
+description: "Use this skill whenever the user hands you a visual design reference and wants VPK UI built, matched, or corrected to it: a Figma link or node, a screenshot, a mockup PNG, a slide or deck image, or a 'pixel-perfect' spec. Typical asks: 'recreate this', 'make this page match the mockup', 'build what the designer drew', 'the spacing is off vs the design file'. Also use it to pull assets out of Figma, such as icons, illustrations, or images, then compare them with local folders and export the missing files into the repo (e.g. public/). Inspect through the official Figma MCP first. Skip it for ADS/shadcn component harvesting (vpk-component), standalone ADS token or icon lookups, motion tweaks, refactors, and writing Figma plugins."
 ---
 
 # VPK Design
