@@ -108,11 +108,6 @@ test("assistant bubbles render agent text before chain-of-thought and tool calls
 	);
 });
 
-// Compact chat edit semantics (resend in place with the same message id, drop
-// queued prompts) are proven by rendering the provider in
-// app/contexts/context-rovo-chat-turn-lifecycle.behavior.test.js and
-// app/contexts/context-rovo-chat-turn-blocking.behavior.test.js.
-
 test("compact chat message sanitizers tolerate persisted messages without parts arrays", () => {
 	assert.match(
 		ROVO_CHAT_HELPERS_SOURCE,

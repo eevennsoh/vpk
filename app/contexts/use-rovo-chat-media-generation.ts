@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
-import { findLatestMediaLoadingState } from "@/app/contexts/rovo-chat-turn-machine";
+import { findLatestMediaLoadingState } from "@/app/contexts/rovo-chat-media-state";
 
 export const MEDIA_GENERATION_TIMEOUT_MS = 120_000;
 

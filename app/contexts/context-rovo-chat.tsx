@@ -17,7 +17,7 @@ import {
 	type ReactNode,
 	type SetStateAction,
 } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useChat, type UseChatHelpers } from "@ai-sdk/react";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import {
 	createAssistantTextMessage,
@@ -153,6 +153,7 @@ export type {
 export type { StudioSessionAgentSaveStatus } from "@/components/projects/rovo-core/lib/agent-records/session-agent-registry";
 export type { QueuedPromptItem, SendPromptOptions } from "@/app/contexts/rovo-chat-helpers";
 
+type SendMessageArgs = Parameters<UseChatHelpers<RovoUIMessage>["sendMessage"]>;
 const EXPLICIT_CANCEL_GRACE_MS = 1_200;
 const COMPACT_HISTORY_LIMIT = 40;
 const COMPACT_THREAD_PERSIST_DEBOUNCE_MS = 450;
@@ -704,7 +705,6 @@ export function RovoChatProvider({
 
 	// One send path for every dispatch: a send that trips over an invalid part
 	// state sanitizes the transcript and is sent once more.
-	type SendMessageArgs = Parameters<typeof sendMessage>;
 	const sendWithPartStateRecovery = useCallback(async (message: SendMessageArgs[0], options: SendMessageArgs[1]) => {
 		try {
 			await sendMessage(message, options);
@@ -1428,7 +1428,7 @@ export function RovoChatProvider({
 			try {
 				await sendWithPartStateRecovery(messagePayload, bodyPayload);
 			} finally {
-				dispatchTurn({ type: "dispatchSettled", failed: false });
+				dispatchTurn({ type: "dispatchSettled", failed: false }); // An edit has no active prompt, so even a thrown send never fails it.
 				void refreshThreads();
 				queueTick();
 			}

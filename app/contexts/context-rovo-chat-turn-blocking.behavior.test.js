@@ -405,6 +405,9 @@ test("editing a message mid-stream drops queued prompts and resends only the edi
 	assert.equal(chat().activePrompt, null);
 	assert.equal(server.turns[1].body.hasQueuedPrompts, false);
 	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Edited"]);
+	// The edit replaces the original message in place: same id, not a new message.
+	assert.equal(server.turns[1].body.messages[0].id, userMessageId);
+	assert.equal(chat().uiMessages[0].id, userMessageId);
 	server.turns[1].text("e", "Edited answer");
 	server.turns[1].turnComplete();
 	server.turns[1].end();
@@ -413,4 +416,40 @@ test("editing a message mid-stream drops queued prompts and resends only the edi
 	await settle(30);
 	assert.equal(server.turns.length, 2, "the dropped prompt must not be sent");
 	assert.equal(chat().hasInFlightTurn, false);
+});
+
+// After an edit resend there is no active prompt, so nothing but the media
+// flag holds back a prompt queued during the edit's stream.
+test("media generation alone holds back a prompt queued during an edit resend until Stop clears it", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Original");
+	await waitFor("the request", () => server.turns.length === 1);
+	server.turns[0].text("o", "Original answer");
+	server.turns[0].turnComplete();
+	server.turns[0].end();
+	await waitFor("the first turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	const userMessageId = chat().uiMessages[0].id;
+
+	const editFinished = await startAction(() => chat().editMessage(userMessageId, "Draw a cat"));
+	await waitFor("the edit request", () => server.turns.length === 2);
+	const editTurn = server.turns[1];
+	editTurn.send({ type: "start" });
+	mediaLoading(editTurn, true);
+	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	await send(chat, "Then a dog");
+	await waitFor("the prompt to queue", () => chatState().queued.length === 1);
+	editTurn.turnComplete();
+	editTurn.end();
+	await editFinished();
+	await waitFor("the edit stream to end", () => !chat().isStreaming);
+	await settle(80);
+
+	assert.equal(chat().activePrompt, null);
+	assert.equal(chat().isMediaGenerating, true);
+	assert.deepEqual(chatState().queued, ["Then a dog"]);
+	assert.equal(server.turns.length, 2, "the queued prompt must not dispatch while media is still generating");
+
+	await (await startAction(() => chat().stopStreaming()))();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 3);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
 });

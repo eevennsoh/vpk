@@ -11,6 +11,7 @@ function loadMachine() {
 		stdin: {
 			contents: `
 				export * from "@/app/contexts/rovo-chat-turn-machine";
+				export * from "@/app/contexts/rovo-chat-media-state";
 				export * from "@/lib/chat-error-utils";
 				export { getPayloadTooLargeUserMessage } from "@/app/contexts/rovo-chat-helpers";
 			`,

@@ -57,7 +57,11 @@ export type RovoChatTurnEvent =
 	| { readonly type: "editDispatchStarted" }
 	| { readonly type: "dispatchSettled"; readonly failed: boolean }
 	| { readonly type: "turnCompleteSeen" }
-	/** A final error or a cut-short stream. Give-ups after retries also reset the retry count. */
+	/**
+	 * A final error or a cut-short stream. Give-ups after retries also reset the retry count.
+	 * Fires with no active prompt too (an edit resend that errors); the flag it sets is
+	 * then cleared by the next `dispatchNext`.
+	 */
 	| { readonly type: "turnFailed"; readonly resetRetries: boolean }
 	| { readonly type: "stopRequested" }
 	| { readonly type: "finalize" }
@@ -230,35 +234,4 @@ export function createRetryCountdownMessage(
 			getChatInProgressRetryCountdownLabel(secondsRemaining),
 			getChatInProgressRetryContent(),
 		);
-}
-
-const MEDIA_WIDGET_TYPES = new Set(["image-preview", "audio-preview", "video-preview"]);
-
-/**
- * The loading state of the latest media widget (image, audio or video) on the
- * latest assistant message, or null when that message has none. User messages
- * are skipped, so an unfinished widget from the previous turn still counts
- * until a newer assistant message arrives.
- */
-export function findLatestMediaLoadingState(messages: ReadonlyArray<RovoUIMessage>): boolean | null {
-	for (let index = messages.length - 1; index >= 0; index -= 1) {
-		const message = messages[index];
-		if (message.role !== "assistant") {
-			continue;
-		}
-
-		let loading: boolean | null = null;
-		for (const part of message.parts) {
-			if (part.type !== "data-widget-loading") {
-				continue;
-			}
-			const data = (part as { data?: { type?: string; loading?: boolean } }).data;
-			if (data?.type && MEDIA_WIDGET_TYPES.has(data.type)) {
-				loading = !!data.loading;
-			}
-		}
-		return loading;
-	}
-
-	return null;
 }
