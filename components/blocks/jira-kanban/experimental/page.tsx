@@ -80,6 +80,7 @@ import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
 import { useAgentFilterSessions } from "./hooks/use-agent-filter-sessions";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
+import { boardFilterScopeEntryPolicy, type BoardFilterScopeEntryPolicy } from "./lib/board-jira-filter";
 import {
 	isExperimentalJiraListContent,
 	useAgentSessionLooseWork,
@@ -391,15 +392,17 @@ function ExperimentalJiraKanbanPageContent({
 	// gesture, and every caller — the toggle, the board filter's scope pick, and
 	// the route's floating nudge through the ref handle below — goes through
 	// here.
-	const handleOpenTimeline = useCallback((snapshotId: string | null = null) => {
+	const handleOpenTimeline = useCallback((snapshotId: string | null = null, assigneePolicy: BoardFilterScopeEntryPolicy = "default-assignees") => {
 		if (!insightsEnabled) return;
 
 		setPulseFocusSnapshotId(snapshotId);
 		markTimelineAsViewed();
-		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
-			? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
-			: new Set(insightsDefaultAssigneeIds);
-		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		if (assigneePolicy === "default-assignees") {
+			const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
+				? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
+				: new Set(insightsDefaultAssigneeIds);
+			boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		}
 		updateMode("pulse");
 	}, [boardFilter.actions, insightsDefaultAssigneeIds, insightsEnabled, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	useImperativeHandle(ref, () => ({
@@ -419,7 +422,8 @@ function ExperimentalJiraKanbanPageContent({
 		...boardFilter.actions,
 		setConditions: (conditions) => {
 			boardFilter.actions.setConditions(conditions);
-			if (insightsEnabled && conditions.some((condition) => (condition.field === "epic" || condition.field === "sprint") && condition.values.length && JSON.stringify(condition) !== JSON.stringify(boardFilter.model.conditions.find((current) => current.field === condition.field)))) handleOpenTimeline();
+			const entryPolicy = boardFilterScopeEntryPolicy(conditions, boardFilter.model.conditions);
+			if (insightsEnabled && entryPolicy) handleOpenTimeline(null, entryPolicy);
 		},
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);

@@ -1,5 +1,18 @@
 import type { JiraFilterCondition, JiraFilterField } from "@/components/blocks/jira-filter";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
+import { jiraFiltersEqual } from "@/components/blocks/jira-filter/model";
+
+export type BoardFilterScopeEntryPolicy = "default-assignees" | "preserve-assignees";
+
+export function boardFilterScopeEntryPolicy(next: readonly JiraFilterCondition[], current: readonly JiraFilterCondition[]): BoardFilterScopeEntryPolicy | null {
+	const scopeChanged = next.some((condition) =>
+		(condition.field === "epic" || condition.field === "sprint")
+		&& condition.operator === "is" && condition.values.length > 0
+		&& !jiraFiltersEqual([condition], current.filter((previous) => previous.field === condition.field)),
+	);
+	if (!scopeChanged) return null;
+	return next.some((condition) => condition.field === "assignee") ? "preserve-assignees" : "default-assignees";
+}
 const normalizeStatus = (status: string) => status.toLowerCase().replaceAll(" ", "-");
 
 function cardValues(card: JiraKanbanCardData, column: JiraKanbanColumnData, field: string): readonly string[] | null {

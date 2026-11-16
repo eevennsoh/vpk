@@ -9,11 +9,11 @@ import { BOARD_FILTER_VALUE_FIELD_IDS } from "../lib/board-filter";
 import { boardJiraFilterFields } from "../lib/board-jira-filter";
 
 export function BoardFilterPopover({
-	actions, assignees, columns = [], compact = false, model, surfaceLabel = "board",
+	actions, assignees, columns, compact = false, model, surfaceLabel = "board",
 }: Readonly<{
 	actions: BoardFilterActions;
 	assignees: readonly JiraKanbanAssigneeData[];
-	columns?: readonly JiraKanbanColumnData[];
+	columns: readonly JiraKanbanColumnData[];
 	compact?: boolean;
 	model: BoardFilterModel;
 	surfaceLabel?: string;
