@@ -263,7 +263,10 @@ const CHAT_SESSION_ROUTES = Object.freeze([
 	["/api/chat-sdk/skip-question", (req) => req.body?.sessionId, { required: true }],
 ]);
 
-// The chat routes whose turns can generate a video: the caller becomes its owner.
+// The chat routes whose turns can generate a video: the caller becomes its owner. These
+// are the only routes whose streams build the previews that play a generated video
+// (backend/lib/widget-preview-payload.js): realtime voice delegates its tasks through
+// /api/rovo/chat, and /api/genui-chat and skip-question stream text and specs only.
 const CHAT_MEDIA_ROUTES = Object.freeze(["/api/chat-sdk", "/api/rovo/chat"]);
 
 /**
