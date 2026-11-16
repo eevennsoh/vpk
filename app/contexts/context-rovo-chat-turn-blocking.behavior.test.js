@@ -387,3 +387,30 @@ test("staged local turns replace the pending reply stage by stage and can start 
 	assert.deepEqual(chatState().messages, ["user:Stages", "assistant:Step 1", "assistant:Second message"]);
 	assert.ok(seen.includes("user:Stages | assistant:Step 0"), `pending stage never rendered: ${JSON.stringify(seen)}`);
 });
+
+// ── Edit ──────────────────────────────────────────────────────────────────
+
+test("editing a message mid-stream drops queued prompts and resends only the edit", async (t) => {
+	const { server, chat } = await mountChat(t);
+	await send(chat, "Original");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Partial");
+	await send(chat, "Queued");
+	const userMessageId = chat().uiMessages[0].id;
+
+	const editFinished = await startAction(() => chat().editMessage(userMessageId, "Edited"));
+	await waitFor("the edit request", () => server.turns.length === 2);
+	assert.equal(server.turns[0].aborted, true);
+	assert.deepEqual(chatState().queued, []);
+	assert.equal(chat().activePrompt, null);
+	assert.equal(server.turns[1].body.hasQueuedPrompts, false);
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Edited"]);
+	server.turns[1].text("e", "Edited answer");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await editFinished();
+	await waitFor("the edit stream to end", () => !chat().isStreaming);
+	await settle(30);
+	assert.equal(server.turns.length, 2, "the dropped prompt must not be sent");
+	assert.equal(chat().hasInFlightTurn, false);
+});
