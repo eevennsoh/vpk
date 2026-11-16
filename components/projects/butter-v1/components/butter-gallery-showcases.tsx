@@ -2,40 +2,44 @@
 
 import dynamic from "next/dynamic";
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+	AGENT_SESSION_CLOUD_ITEMS,
+	AGENT_SESSION_ITEMS,
+	AgentSession,
+	type AgentSessionDensity,
+	type AgentSessionItem,
+} from "@/components/blocks/agent-session";
 import { cn } from "@/lib/utils";
 
-const AgentSessionPage = dynamic(() => import("@/components/blocks/agent-session/page"));
 const JiraIssuePage = dynamic(() => import("@/components/blocks/jira-issue/page"));
 
-export const BUTTER_AGENT_SESSION_FORMS = [
-	{ value: "local-short", label: "Local · Short", host: "local", density: "short" },
-	{ value: "local-long", label: "Local · Long", host: "local", density: "long" },
-	{ value: "cloud-short", label: "Cloud · Short", host: "cloud", density: "short" },
-	{ value: "cloud-long", label: "Cloud · Long", host: "cloud", density: "long" },
-] as const;
+type SessionList = Readonly<{ density: AgentSessionDensity; items: readonly AgentSessionItem[] }>;
 
-export type ButterAgentSessionForm = (typeof BUTTER_AGENT_SESSION_FORMS)[number];
+const asTeam = (items: readonly AgentSessionItem[]) => items.map((item) => ({ ...item, role: "viewer" as const }));
 
-export const DEFAULT_BUTTER_AGENT_SESSION_FORM: ButterAgentSessionForm = BUTTER_AGENT_SESSION_FORMS[0];
+/** Local and Cloud are the viewer's own sessions; Team sessions belong to teammates. */
+const BUTTER_AGENT_SESSION_COLUMNS: readonly Readonly<{ title: string; lists: readonly SessionList[] }>[] = [
+	{ title: "Local", lists: [{ density: "short", items: AGENT_SESSION_ITEMS.slice(0, 1) }, { density: "long", items: AGENT_SESSION_ITEMS.slice(0, 3) }] },
+	{ title: "Cloud", lists: [{ density: "short", items: AGENT_SESSION_CLOUD_ITEMS.slice(0, 1) }, { density: "long", items: AGENT_SESSION_CLOUD_ITEMS }] },
+	{ title: "Team", lists: [{ density: "short", items: asTeam(AGENT_SESSION_CLOUD_ITEMS.slice(0, 1)) }, { density: "long", items: asTeam(AGENT_SESSION_CLOUD_ITEMS) }] },
+];
 
-export function ButterAgentSessionFormControls({ form, onFormChange }: Readonly<{
-	form: ButterAgentSessionForm;
-	onFormChange: (form: ButterAgentSessionForm) => void;
-}>) {
+export function ButterGalleryAgentSessions({ galleryOpen }: Readonly<{ galleryOpen: boolean }>) {
 	return (
-		<ToggleGroup aria-label="Agent session form" onValueChange={(values) => { const next = BUTTER_AGENT_SESSION_FORMS.find((candidate) => candidate.value === values[0]); if (next) onFormChange(next); }} size="sm" value={[form.value]} variant="outline">
-			{BUTTER_AGENT_SESSION_FORMS.map((option) => <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
-		</ToggleGroup>
-	);
-}
-
-export function ButterGalleryAgentSessions({ form, galleryOpen }: Readonly<{ form: ButterAgentSessionForm; galleryOpen: boolean }>) {
-	return (
-		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex flex-col overflow-y-auto", galleryOpen ? "bottom-56" : "bottom-0")}>
-			<div key={form.value} className="pointer-events-auto my-auto flex w-full [&>div]:h-auto [&>div]:bg-transparent [&_ul[data-variant=large]]:relative [&_ul[data-variant=large]]:rounded-lg [&_ul[data-variant=large]]:border [&_ul[data-variant=large]]:border-border [&_ul[data-variant=large]]:bg-surface">
+		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex flex-col overflow-y-auto px-6", galleryOpen ? "bottom-56" : "bottom-0")}>
+			<div className="pointer-events-auto mx-auto my-auto grid w-full max-w-7xl grid-cols-1 gap-6 py-6 lg:grid-cols-3">
 				<h1 className="sr-only">Agent sessions</h1>
-				<AgentSessionPage density={form.density} host={form.host} />
+				{BUTTER_AGENT_SESSION_COLUMNS.map((column) => (
+					<section aria-label={`${column.title} sessions`} className="flex min-w-0 flex-col gap-4" key={column.title}>
+						<h2 className="text-center text-xs font-semibold text-text-subtle">{column.title}</h2>
+						{column.lists.map((list) => (
+							<div className="flex min-w-0 flex-col gap-1.5" key={list.density}>
+								<span className="text-xs text-text-subtlest">{list.density === "short" ? "Short" : "Long"}</span>
+								<AgentSession className="relative rounded-lg border border-border bg-surface" density={list.density} items={list.items} variant="large" />
+							</div>
+						))}
+					</section>
+				))}
 			</div>
 		</div>
 	);

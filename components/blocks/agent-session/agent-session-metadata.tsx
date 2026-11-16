@@ -7,6 +7,7 @@ import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
+import TeamsIcon from "@atlaskit/icon/core/teams";
 
 import {
 	AgentListPrStatusIcon,
@@ -37,10 +38,15 @@ function MetadataDot() {
 	);
 }
 
-function ViewerLock() {
+/**
+ * Trailing access mark. A team session — one the viewer can see but someone
+ * else owns — shows the team glyph; an owner's private session keeps the lock.
+ */
+function AccessMark({ access }: Readonly<{ access: "team" | "private" }>) {
+	const Glyph = access === "team" ? TeamsIcon : LockLockedIcon;
 	return (
-		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
-			<LockLockedIcon color="currentColor" label="" size="small" />
+		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!" data-access-mark={access}>
+			<Glyph color="currentColor" label="" size="small" />
 		</span>
 	);
 }
@@ -263,7 +269,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
-			{getAgentSessionRole(item) === "viewer" || item.privateTo ? <><MetadataDot /><ViewerLock /></> : null}
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : item.privateTo ? <><MetadataDot /><AccessMark access="private" /></> : null}
 		</span>
 	);
 }
@@ -316,7 +322,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
-			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : null}
 		</span>
 	);
 }
