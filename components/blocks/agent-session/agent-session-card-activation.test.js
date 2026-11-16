@@ -31,9 +31,9 @@ function loadHarness() {
 			["agent-list-card", `
 				import React from "react";
 				export function AgentListIdentity() { return null; }
-				export function AgentListRow({ item, onView, renderViewTrigger, hoverActions, renderIdentity }) {
+				export function AgentListRow({ item, onView, renderViewTrigger, hoverActions, renderIdentity, hideIdentity }) {
 					const body = onView ? React.createElement("button", { onClick: () => onView(item), "data-body-trigger": "" }, item.title) : React.createElement("span", { "data-body-readout": "" }, item.title);
-					return React.createElement(React.Fragment, null, renderIdentity(null), renderViewTrigger && onView ? renderViewTrigger(body) : body, hoverActions.menu);
+					return React.createElement(React.Fragment, null, React.createElement("span", { "data-row-layout": hideIdentity ? "title-led" : "avatar-led" }), renderIdentity(null), renderViewTrigger && onView ? renderViewTrigger(body) : body, hoverActions.menu);
 				}
 			`],
 			["agent-session-continue-menu", `
@@ -203,6 +203,24 @@ async function withCard(props, verify, Component) {
 }
 
 const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "local", state: "complete", agent: { id: "claude", name: "Claude", kind: "agent" } };
+
+test("only the unlinked density leads a local row with its avatar; short is title-led like cloud", async () => {
+	const CLOUD_ITEM = { ...LOCAL_ITEM, id: "cloud-readiness", host: "cloud" };
+	const layouts = [];
+	for (const [item, density] of [[LOCAL_ITEM, undefined], [LOCAL_ITEM, "unlinked"], [LOCAL_ITEM, "short"], [CLOUD_ITEM, "short"], [CLOUD_ITEM, "unlinked"], [LOCAL_ITEM, "long"]]) {
+		await withCard({ item, density }, async ({ document }) => {
+			layouts.push(`${item.host}:${density ?? "default"}=${document.querySelector("[data-row-layout]")?.getAttribute("data-row-layout")}`);
+		});
+	}
+	assert.deepEqual(layouts, [
+		"local:default=avatar-led",
+		"local:unlinked=avatar-led",
+		"local:short=title-led",
+		"cloud:short=title-led",
+		"cloud:unlinked=title-led",
+		"local:long=title-led",
+	]);
+});
 
 test("viewer lifecycle shows every state without an actionable status control", async () => {
 	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["attention", "Needs attention"], ["complete", "Finished"]]) {

@@ -95,7 +95,7 @@ export function AgentSession({
 	assignment,
 	canViewItem,
 	capturedItemIds,
-	density = "short",
+	density = "unlinked",
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
@@ -276,7 +276,7 @@ export function AgentSession({
 							<AgentSessionCard
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
-								arrivalStartOffset={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
+								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}
 								flyoutHandle={isLongDensity ? undefined : flyoutHandle}

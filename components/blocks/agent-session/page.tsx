@@ -156,7 +156,7 @@ function getMediumAttachedDemoAssignedAgents(
 }
 
 export default function AgentSessionPage({
-	density = "short",
+	density = "unlinked",
 	drag = false,
 	host = "local",
 	variant = "large",

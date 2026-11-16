@@ -9,6 +9,7 @@ const AgentSessionPage = dynamic(() => import("@/components/blocks/agent-session
 const JiraIssuePage = dynamic(() => import("@/components/blocks/jira-issue/page"));
 
 export const BUTTER_AGENT_SESSION_FORMS = [
+	{ value: "unlinked", label: "Unlinked", host: "local", density: "unlinked" },
 	{ value: "local-short", label: "Local · Short", host: "local", density: "short" },
 	{ value: "local-long", label: "Local · Long", host: "local", density: "long" },
 	{ value: "cloud-short", label: "Cloud · Short", host: "cloud", density: "short" },

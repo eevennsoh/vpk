@@ -626,9 +626,9 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 });
 
 test("the long density is title-led, with its own metadata line and lifecycle", () => {
-	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "short" \| "long";/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "unlinked" \| "short" \| "long";/u);
 	assert.match(TYPES_SOURCE, /density\?: AgentSessionDensity;/u);
-	assert.match(INDEX_SOURCE, /density = "short",/u);
+	assert.match(INDEX_SOURCE, /density = "unlinked",/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard[\s\S]*density=\{density\}/u);
 	assert.match(CARD_SOURCE, /const isLongDensity = density === "long";/u);
 	// A triage mark lives on the leading avatar, so a markable row keeps its
@@ -928,7 +928,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 		}
 	}
 	assert.match(DETAIL_SOURCE, /name: "density"/u);
-	assert.match(DETAIL_SOURCE, /type: '"short" \| "long"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"unlinked" \| "short" \| "long"'/u);
 	// Cloud fixtures stay a separate list: the column and the Pulse rail render
 	// AGENT_SESSION_ITEMS, and flipping those to cloud would change what those
 	// demos demonstrate.

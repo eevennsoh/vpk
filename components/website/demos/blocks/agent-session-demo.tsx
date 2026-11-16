@@ -22,6 +22,10 @@ export function AgentSessionDemoDrag() {
 	return <Page drag />;
 }
 
+export function AgentSessionDemoUnlinked() {
+	return <Page density="unlinked" host="local" />;
+}
+
 export function AgentSessionDemoLocalShort() {
 	return <Page density="short" host="local" />;
 }
