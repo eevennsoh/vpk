@@ -6,7 +6,7 @@
 		".agents/skills/vpk-html/scripts/shared.mjs": 1511,
 		".agents/skills/vpk-html/styles.css": 1221,
 		".agents/skills/vpk-tidy/references/patterns.md": 1004,
-		"app/contexts/context-rovo-chat.tsx": 2303,
+		"app/contexts/context-rovo-chat.tsx": 2083,
 		"app/globals.css": 1003,
 		"app/tailwind-theme.css": 1011,
 		"backend/chat/rovo-stream.test.js": 1511,

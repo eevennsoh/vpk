@@ -59,6 +59,7 @@ Rovo Serve integration (`backend/lib/rovo-gateway.js`):
 Key files:
 
 - `app/contexts/context-rovo-chat.tsx` — `useChat` integration, data part handling, message transformation
+- `app/contexts/rovo-chat-turn-machine.ts` — pure chat turn lifecycle the provider dispatches into: prompt queue, active prompt, finalize and dispatch guards, retry classification (held by `use-rovo-chat-turn-machine.ts`; media tracking in `use-rovo-chat-media-generation.ts`, its pure loading-widget scan in `rovo-chat-media-state.ts`)
 - `rovo/config.js` — system prompt builder, model config, payload construction
 - `backend/routes/chat-sdk.js` — Express route owner for `/api/chat-sdk`
 - `backend/routes/rovo-chat-proxy.js` — Express route owner for Rovo chat proxy traffic

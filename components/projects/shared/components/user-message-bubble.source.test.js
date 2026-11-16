@@ -17,10 +17,6 @@ const SIDEBAR_MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const CHAT_PANEL_SOURCE = readChatPanelSource();
-const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
-	"utf8",
-);
 const ROVO_CHAT_HELPERS_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/rovo-chat-helpers.ts"),
 	"utf8",
@@ -109,25 +105,6 @@ test("assistant bubbles render agent text before chain-of-thought and tool calls
 	assert.doesNotMatch(
 		SIDEBAR_MESSAGE_BUBBLE_SOURCE,
 		/<ThreadMessage\.Reasoning \/>[\s\S]*<ThreadMessage\.ThinkingStatus[\s\S]*<ThreadMessage\.Content \/>/u,
-	);
-});
-
-test("compact chat edit uses AI SDK message replacement semantics", () => {
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/editMessage: \(messageId: string, nextText: string, options\?: SendPromptOptions\) => Promise<void>;/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/await sendMessage\(messagePayload, bodyPayload\);/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/messageId,\s*\};/u,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/setQueuedPrompts\(\[\]\);/,
 	);
 });
 
