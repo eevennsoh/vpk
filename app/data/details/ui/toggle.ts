@@ -12,9 +12,9 @@ import { BoldIcon } from "@/components/ui/vpk-icons";
     props: [
       {
         name: "variant",
-        type: '"default" | "outline"',
+        type: '"default" | "subtle" | "outline"',
         default: '"default"',
-        description: "Visual style variant.",
+        description: "Visual style variant. Subtle uses darker text and icons when pressed, without a persistent selected background.",
       },
       {
         name: "size",

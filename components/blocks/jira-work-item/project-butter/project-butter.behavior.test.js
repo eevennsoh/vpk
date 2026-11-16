@@ -177,8 +177,8 @@ async function openSession(view, name) {
 	await view.click(action);
 }
 
-function renderWorkItem(props = {}) {
-	return renderComponent({
+async function renderWorkItem(props = {}) {
+	const view = await renderComponent({
 		source: `import React from "react";
 			import { SidebarProvider } from "@/app/contexts/context-sidebar";
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
@@ -192,6 +192,11 @@ function renderWorkItem(props = {}) {
 		},
 		props: { initialPreset: "filled", onClose() {}, open: true, ...props },
 	});
+	for (const name of ["8 attachments", "15 child work items", "8 linked work items"]) {
+		const toggle = view.queryByRole("button", { name });
+		if (toggle) await view.click(toggle);
+	}
+	return view;
 }
 
 test("a host chat shows Ask Rovo and receives agent session links instead of the floating session card", async () => {
@@ -293,7 +298,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("group", { name: "Agents field" }) !== null, true);
 	assert.equal(view.queryByText("Sarah Lim") === null, true);
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
-	await view.focus(view.getByRole("button", { name: "Description" }));
+	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	await showAllActivity(view);
 	await view.click(view.getByRole("button", { name: /^Inspect payment calls/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Claude" }), "First card reply draft");
@@ -462,7 +467,7 @@ test("clicking the description suppresses the focus ring that keyboard focus kee
 	await view.click(textbox());
 	assert.equal(view.isFocused(textbox()), true);
 	assert.equal(editor().hasAttribute("data-pointer-focused"), true);
-	await view.focus(view.getByRole("button", { name: "Description" }));
+	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	assert.equal(editor().hasAttribute("data-pointer-focused"), false);
 	await view.focus(textbox());
 	assert.equal(view.isFocused(textbox()), true);
@@ -472,7 +477,7 @@ test("clicking the description suppresses the focus ring that keyboard focus kee
 test("description edits and comment drafts survive closing and reopening the work item", async () => {
 	const view = await renderWorkItem();
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Updated onboarding scope");
-	await view.focus(view.getByRole("button", { name: "Description" }));
+	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	await view.fill(await commentEditor(view), "Keep this draft");
 	await view.rerender({ initialPreset: "filled", onClose() {}, open: false });
 	await view.rerender({ initialPreset: "filled", onClose() {}, open: true });
@@ -517,7 +522,7 @@ for (const presentation of ["full-screen", "modal", "side-panel"]) {
 test("switching presentation and Empty keeps saved edits and comment drafts scoped to each preset", async () => {
 	const view = await renderWorkItem();
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Keep this scope");
-	await view.focus(view.getByRole("button", { name: "Description" }));
+	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	await view.fill(await commentEditor(view), "Keep this comment draft");
 	await view.click(view.getByRole("button", { name: "Settings" }));
 	await view.click(view.getByRole("button", { name: "Side panel" }));
@@ -596,14 +601,15 @@ test("panel controls remain reachable while collapsed and development settings s
 	assert.equal(view.queryByText("Send reminder 24 hours before due date") !== null, true);
 });
 
-test("Details expands from an accessible chevron footer and hides that control with the panel", async () => {
+test("Details expands from a text footer and hides that control with the panel", async () => {
 	const view = await renderWorkItem();
 	const expand = view.getByRole("button", { name: "Show more details" });
-	assert.equal(expand.textContent.trim(), "");
+	assert.equal(expand.textContent.trim(), "Show more");
 	assert.equal(expand.getAttribute("aria-expanded"), "false");
 	await view.click(expand);
 	assert.equal(view.queryByRole("button", { name: "Change reporter" }) !== null, true);
 	assert.equal(view.getByRole("button", { name: "Show less details" }).getAttribute("aria-expanded"), "true");
+	assert.equal(view.getByRole("button", { name: "Show less details" }).textContent.trim(), "Show less");
 	await view.click(view.getByRole("button", { name: "Details" }));
 	assert.equal(view.queryByRole("button", { name: "Show less details" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Details" }));
@@ -716,7 +722,7 @@ test("related composers dismiss outside their row inside the work item dialog an
 	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks. Edit" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "Keep the unfinished child");
-	await view.click(view.getByRole("button", { name: "Description" }));
+	await view.click(view.getByRole("button", { name: "More work item actions" }));
 	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 180)); });
 	assert.equal(view.queryByRole("combobox", { name: "Create child work item" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));

@@ -38,6 +38,16 @@ test("renders an inline component with props", async () => {
 	assert.throws(() => view.getByRole("link"), /Found no element for role link[\s\S]*button "Increment"/u);
 });
 
+test("native tables expose headers, rows and cells without overriding their roles", async () => {
+	const view = await renderComponent({ source: `export default function TableProbe() { return <table aria-label="Work"><thead><tr><th scope="col">Summary</th></tr></thead><tbody><tr><th scope="row">PAY-1</th><td>First item</td></tr></tbody></table>; }` });
+	assert.equal(view.getByRole("table", { name: "Work" }).tagName, "TABLE");
+	assert.equal(view.getByRole("columnheader", { name: "Summary" }).tagName, "TH");
+	assert.equal(view.getByRole("rowheader", { name: "PAY-1" }).tagName, "TH");
+	assert.equal(view.getByRole("cell", { name: "First item" }).tagName, "TD");
+	assert.equal(view.getAllByRole("row").length, 2);
+	assert.equal(view.getAllByRole("rowgroup").length, 2);
+});
+
 test("click updates state and focuses the clicked button", async () => {
 	const view = await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
 	const button = view.getByRole("button", { name: "Increment" });

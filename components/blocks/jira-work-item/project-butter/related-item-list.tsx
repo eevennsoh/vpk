@@ -7,7 +7,8 @@ import { ProjectButterRelatedCreateRow } from "@/components/blocks/jira-work-ite
 import { ProjectButterRelatedDisplayOptions } from "@/components/blocks/jira-work-item/project-butter/related-display-options";
 import { RelatedEmptyState } from "@/components/blocks/jira-work-item/project-butter/related-empty-state";
 import { ProjectButterRelatedItemRow } from "@/components/blocks/jira-work-item/project-butter/related-item-row";
-import { RelatedListCard } from "@/components/blocks/jira-work-item/project-butter/related-list-card";
+import { ProjectButterRelatedItemTable } from "@/components/blocks/jira-work-item/project-butter/related-item-table";
+import { relatedTableColumns } from "@/components/blocks/jira-work-item/project-butter/related-table-columns";
 import { RelatedProgress } from "@/components/blocks/jira-work-item/project-butter/related-progress";
 import { RelatedTooltip } from "@/components/blocks/jira-work-item/project-butter/related-tooltip";
 import { RelatedWorkGroup } from "@/components/blocks/jira-work-item/project-butter/related-work-group";
@@ -19,7 +20,9 @@ const LIST_GROUPS = {
 	linked: { label: "Linked work", id: "section-linked-items", relatedType: "linked", add: "Add linked work", menu: "Linked work display options", shortcut: "Shift+K" },
 } as const;
 
-export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptyState = false, items, kind, onAdd, onAddRequest, onChange, onDismissGroup, onEditorChange, openItem, ownKey, scope }: Readonly<{
+export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptyState = false, items, kind, onAdd, onAddRequest, onChange, onDismissGroup, onEditorChange, onOpenChange, open, openItem, ownKey, scope }: Readonly<{
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	asSectionHeader: boolean;
 	editor: ProjectButterRelatedListEditor;
 	/** Every related group is empty: render the empty state row instead of an empty card. */
@@ -42,6 +45,7 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 	const addTrigger = useRef<HTMLButtonElement>(null);
 	const { add, id, label, menu, relatedType, shortcut } = LIST_GROUPS[kind];
 	const linked = kind === "linked";
+	const columns = relatedTableColumns(editor.visibleFields, linked);
 	const ordered = orderRelatedItems(items, editor);
 	const counts = relatedStatusCounts(items);
 	const { shown } = relatedListWindow(ordered, { expanded: editor.expanded, composerOpen: editor.composerOpen });
@@ -73,6 +77,8 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 	}
 	return (
 		<RelatedWorkGroup
+			onOpenChange={onOpenChange}
+			open={open}
 			asSectionHeader={asSectionHeader}
 			extra={<>
 				<RelatedTooltip label={add}><Button aria-keyshortcuts={shortcut} aria-label={add} data-related-add onClick={onAddRequest} ref={addTrigger} size="icon-compact" type="button" variant="ghost"><AddIcon label="" size="small" /></Button></RelatedTooltip>
@@ -87,16 +93,18 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 			revealKey={editor.createSignal}
 		>
 			{emptyState && items.length === 0 && !editor.composerOpen ? <RelatedEmptyState kind={kind} onAdd={onAddRequest} onDismiss={onDismissGroup} /> : (
-				<RelatedListCard
-					className="border-border-disabled"
+				<ProjectButterRelatedItemTable
+					columns={columns}
 					composer={editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={(reason) => { if (reason === "escape") addTrigger.current?.focus(); }} catalog={scope?.catalog} ownKey={ownKey} parentType={scope?.parentType} /> : null}
-					empty={<li className="px-4 py-3 text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</li>}
+					empty={<span className="text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</span>}
 					expanded={editor.expanded}
 					items={ordered}
 					label={label}
 					onExpandedChange={(expanded) => onEditorChange({ expanded })}
 					renderItem={(item, { faded }) => (
 						<ProjectButterRelatedItemRow
+							columns={columns}
+							linked={linked}
 							actions={linked ? undefined : { onClone: () => clone(item), onDelete: () => remove(item) }}
 							dimmed={editingId !== null && editingId !== item.id}
 							draft={editor.summaryDrafts[item.id] ?? item.summary}

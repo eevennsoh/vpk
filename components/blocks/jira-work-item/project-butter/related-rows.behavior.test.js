@@ -10,7 +10,7 @@ function renderRelated(props = {}) {
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 			export default function RelatedRowsProbe({ preset = "filled", empty = false, openKeys = [], onOpen, workItemKey }) {
-				const content = useProjectButterContent(preset);
+				const content = useProjectButterContent(preset, undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 				const openRelatedItem = onOpen ? (key) => openKeys.includes(key) ? () => onOpen(key) : undefined : undefined;
 				return <MotionConfig reducedMotion="always"><button type="button">Outside related work</button>
 					<button type="button" onClick={() => content.openRelatedAdd("children")}>Request child</button>
@@ -25,7 +25,7 @@ function renderRelated(props = {}) {
 
 const summaries = (key) => [...document.querySelectorAll(`[role="textbox"][aria-label="Edit summary for ${key}"]`)];
 const group = (type) => document.querySelector(`[data-related-type="${type}"]`);
-const rowsOf = (view, label) => [...view.getByRole("list", { name: label }).children].filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
+const rowsOf = (view, label) => [...view.getByRole("table", { name: label }).querySelector("tbody").children].filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
 const childTrigger = (view) => view.getByRole("button", { name: /^(Collapse|Expand) Child work items/u });
 
 test("the status menu offers three statuses with icons and updates the row and header counts", async () => {
@@ -37,7 +37,7 @@ test("the status menu offers three statuses with icons and updates the row and h
 	const trigger = view.getAllByRole("button", { name: "Edit status for VITA-4, In progress" })[0];
 	assert.equal(trigger.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "50", "the row circle matches the status");
 	for (const label of ["Child work items", "Linked work"]) {
-		const statusButtons = view.getByRole("list", { name: label }).querySelectorAll('button[aria-label^="Edit status for "]');
+		const statusButtons = view.getByRole("table", { name: label }).querySelectorAll('button[aria-label^="Edit status for "]');
 		assert.ok(statusButtons.length > 0);
 		for (const button of statusButtons) {
 			const dashes = button.querySelector('[data-slot="progress-circle-dashes"]');
@@ -90,11 +90,11 @@ test("the live summary edit commits on Enter, reverts on Escape or when empty, a
 test("child rows offer the reference actions; Clone copies with a new key and Delete removes", async () => {
 	const view = await renderRelated();
 	const action = view.getAllByRole("button", { name: "More actions for VITA-5" })[0];
-	const row = action.closest("li");
+	const row = action.closest("tr");
 	const priority = row.querySelector('button[aria-label^="Edit priority for VITA-5"]');
 	const assignee = row.querySelector('button[aria-label^="Edit assignee for VITA-5"]');
-	assert.equal(Boolean(action.compareDocumentPosition(priority) & Node.DOCUMENT_POSITION_FOLLOWING), true);
-	assert.equal(Boolean(priority.compareDocumentPosition(assignee) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(assignee.compareDocumentPosition(priority) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(priority.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING), true);
 	await view.click(action);
 	assert.equal(view.getByRole("menu", { name: "Actions for VITA-5" }) !== null, true);
 	assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent), ["Change parent", "Clone", "Move", "Archive", "Delete"]);

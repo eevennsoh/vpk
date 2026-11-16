@@ -106,7 +106,7 @@ export function useAttachmentDrop(zoneRef: RefObject<HTMLElement | null>, conten
 		setAnnouncement(attachmentDropMessage(added.length));
 		if (added.length === 0) return;
 		content.setAttachments((items) => mergeAttachments(items, added).items);
-		content.setRelatedSectionOpen(true);
+		content.setRelatedGroupsOpen((groups) => ({ ...groups, attachments: true }));
 		content.setAttachmentEditor((editor) => ({ ...editor, revealSignal: editor.revealSignal + 1, ...(editor.filter === "All" ? {} : { filter: "All" }) }));
 		land(added, { x: event.clientX, y: event.clientY });
 	});
