@@ -280,6 +280,10 @@ function SavedRow({
 }
 
 export function ProjectButterFilter({
+	compact = false,
+	triggerLabel = "Filter",
+	open: controlledOpen,
+	onOpenChange,
 	fields,
 	value,
 	onChange,
@@ -288,7 +292,12 @@ export function ProjectButterFilter({
 	onSaveView,
 	onSaveAsView,
 }: Readonly<JiraFilterProps>) {
-	const [open, setOpen] = useState(false);
+	const [localOpen, setLocalOpen] = useState(false);
+	const open = controlledOpen ?? localOpen;
+	const setOpen = (next: boolean) => {
+		setLocalOpen(next);
+		onOpenChange?.(next);
+	};
 	const [search, setSearch] = useState("");
 	const [scrolled, setScrolled] = useState(false);
 	const [visibleIds, setVisibleIds] = useState(() =>
@@ -407,11 +416,12 @@ export function ProjectButterFilter({
 			<ButtonGroup aria-label="Filter controls" variant="split">
 				<DropdownMenuTrigger
 					aria-haspopup="dialog"
-					aria-label={activeCount ? `Filter (${activeCount})` : "Filter"}
-					render={<Button variant="secondary" />}
+					aria-label={activeCount ? `${triggerLabel} (${activeCount})` : triggerLabel}
+					aria-pressed={activeCount > 0 || open}
+					render={<Button size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
 				>
-					<FilterIcon label="" /> Filter{" "}
-					{activeCount ? <Badge>{activeCount}</Badge> : null}
+					<FilterIcon label="" />{compact ? null : " Filter"}
+					{activeCount && !compact ? <Badge>{activeCount}</Badge> : null}
 				</DropdownMenuTrigger>
 				{activeCount ? (
 					<Button

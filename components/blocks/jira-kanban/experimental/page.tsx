@@ -417,13 +417,17 @@ function ExperimentalJiraKanbanPageContent({
 	// same Venn default as the Insights toggle.
 	const filterActions = useMemo((): BoardFilterActions => ({
 		...boardFilter.actions,
+		setConditions: (conditions) => {
+			boardFilter.actions.setConditions(conditions);
+			if (insightsEnabled && conditions.some((condition) => (condition.field === "epic" || condition.field === "sprint") && condition.values.length && JSON.stringify(condition) !== JSON.stringify(boardFilter.model.conditions.find((current) => current.field === condition.field)))) handleOpenTimeline();
+		},
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);
 			if (insightsEnabled && (fieldId === "parent" || fieldId === "sprint")) {
 				handleOpenTimeline();
 			}
 		},
-	}), [boardFilter.actions, handleOpenTimeline, insightsEnabled]);
+	}), [boardFilter.actions, boardFilter.model.conditions, handleOpenTimeline, insightsEnabled]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -511,6 +515,7 @@ function ExperimentalJiraKanbanPageContent({
 	} = useAgentFilterDisplay({
 		agentFilterId,
 		boardColumns,
+		filterConditions: boardFilter.model.conditions,
 		focusedCollapsedColumns,
 		selectedAssigneeIds,
 		untrackedSessionCount: displayedUntrackedAgentSessionItems.length,
@@ -885,6 +890,7 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
+						columns={boardColumns}
 						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}
 						surfaceLabel={activeView}
