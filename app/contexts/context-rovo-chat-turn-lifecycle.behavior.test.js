@@ -617,6 +617,34 @@ test("selecting another thread mid-stream detaches the run and replaces the tran
 	assert.deepEqual(chatState().messages, ["user:Old question", "assistant:Old answer"]);
 });
 
+// Regression: the detached stream ends as an abort, which finalizes nothing,
+// so the departing prompt stayed active and every prompt sent on the new
+// thread queued behind it forever.
+test("a prompt sent after selecting another thread mid-stream goes out on the new thread", async (t) => {
+	const { server, chat } = await mountChat(t);
+	window.testApi.threads.set("stored-thread", {
+		id: "stored-thread", title: "Stored",
+		messages: [{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] }],
+		realtimeMessages: [], visibility: "private", activeDocumentId: null, createdAt: 0, updatedAt: 0,
+	});
+	await send(chat, "Live question");
+	await waitFor("the request", () => server.turns.length === 1);
+	await streamPartial(server, chat, 0, "Streaming");
+	await send(chat, "Queued on the old thread");
+
+	await (await startAction(() => chat().selectThread("stored-thread")))();
+	await settle(20);
+	assert.equal(chat().activePrompt, null);
+	assert.deepEqual(chat().queuedPrompts, []);
+	assert.equal(chat().hasInFlightTurn, false);
+
+	await send(chat, "New question");
+	await waitFor("the new request", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "New question");
+	assert.equal(server.turns[1].body.id, "stored-thread");
+	assert.deepEqual(describeMessages(server.turns[1].body.messages), ["user:Old question", "user:New question"]);
+});
+
 test("selecting a thread that no longer exists clears the transcript and active thread", async (t) => {
 	const { server, chat } = await mountChat(t);
 	await send(chat, "Something");

@@ -1,5 +1,7 @@
 import { findPromptUserMessageIndex, findReplyAfter, hasTurnCompleteSignal, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
+import { findLatestMediaLoadingState } from "@/app/contexts/rovo-chat-media-state";
+import type { RovoChatCutShortFinish } from "@/app/contexts/rovo-chat-turn-machine";
 
 /**
  * The error a failed turn ended with, shown after the last transcript message
@@ -15,7 +17,12 @@ export function createTurnError(
 	message: RovoUIMessage,
 	transcript: ReadonlyArray<RovoUIMessage>,
 ): RovoChatTurnError {
-	return { anchorMessageId: transcript.at(-1)?.id ?? null, message };
+	return { anchorMessageId: findTurnErrorAnchor(transcript), message };
+}
+
+/** The message a turn error ending `transcript` follows: its last, or null when it is empty. */
+function findTurnErrorAnchor(transcript: ReadonlyArray<RovoUIMessage>): string | null {
+	return transcript.at(-1)?.id ?? null;
 }
 
 /**
@@ -89,22 +96,30 @@ export function hasTurnCompleteForActivePrompt(
 }
 
 /**
- * Whether a finished request left the active prompt without its
- * data-turn-complete signal. Every backend chat route must end a successful
- * turn with that signal (each route's stream test asserts it; see
+ * What a finished request says about a cut-short active prompt, or null when
+ * the turn was not cut short. A turn is cut short when its request finished
+ * without its data-turn-complete signal. Every backend chat route must end a
+ * successful turn with that signal (each route's stream test asserts it; see
  * backend/chat/chat-sdk-handler.contract.test.js), so a stream that closes
  * cleanly without it was cut short. Aborts belong to the
  * stop, thread-switch, reset and edit paths, and errors to onError.
+ *
+ * Reads only the finish snapshot (`messages`), never committed React state:
+ * the whole response can arrive before React renders any of it.
  */
-export function isIncompleteTurnFinish(input: {
+export function readCutShortFinish(input: {
 	readonly messages: ReadonlyArray<RovoUIMessage>;
 	readonly isAbort: boolean;
 	readonly isError: boolean;
 	readonly activePrompt: QueuedPromptItem | null;
-}): boolean {
-	if (input.isAbort || input.isError || !input.activePrompt) {
-		return false;
+}): RovoChatCutShortFinish | null {
+	const { messages, activePrompt } = input;
+	if (input.isAbort || input.isError || !activePrompt || hasTurnCompleteForActivePrompt(messages, activePrompt)) {
+		return null;
 	}
 
-	return !hasTurnCompleteForActivePrompt(input.messages, input.activePrompt);
+	return {
+		anchorMessageId: findTurnErrorAnchor(messages),
+		mediaLoading: findLatestMediaLoadingState(messages, activePrompt.id) === true,
+	};
 }

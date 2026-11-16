@@ -18,6 +18,8 @@ const {
 	startAction,
 	streamPartial,
 	waitFor,
+	waitForUncommitted,
+	withCommitsHeld,
 } = require("./rovo-chat-turn-test-harness.js");
 
 function mediaLoading(turn, loading, type = "image-preview") {
@@ -90,6 +92,9 @@ function captureMediaTimeouts(t, harness) {
 	});
 	const handle = (delay) => ({
 		count: () => captured.get(delay).length,
+		fire: (index) => React.act(async () => {
+			captured.get(delay).at(index)();
+		}),
 		fireLatest: () => React.act(async () => {
 			captured.get(delay).at(-1)();
 		}),
@@ -169,6 +174,222 @@ test("a cut-short turn whose media widget is still loading shows the notice afte
 		notice,
 	]);
 	assert.equal(chatState().messages.filter((message) => message === notice).length, 1);
+});
+
+// Holds the first prompt's send (at thread creation) until `deliver` runs. Then
+// the send, the whole scripted response and the request's onFinish all run
+// before React commits any of it, as when a fast response beats a render.
+function holdFirstSendUntilDelivery(server, script) {
+	let openThreadGate;
+	window.testApi.createThreadGate = new Promise((resolve) => {
+		openThreadGate = resolve;
+	});
+	server.respondNext(script);
+	return () => withCommitsHeld(async () => {
+		openThreadGate();
+		await waitForUncommitted("the request", () => server.turns.length > 0);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	});
+}
+
+// Regression: when the whole response (a loading media widget, then the close
+// without turn-complete) arrived before React committed anything, the turn
+// finalized from uncommitted state: no media flag, so no wait, and the notice
+// anchored to the transcript as last committed, which put it above the
+// question. Finalization now decides from the request's finish snapshot.
+test("a cut-short response that arrives in full before React commits waits the short wait for its loading widget, then shows the notice after the reply", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const timeouts = captureMediaTimeouts(t, harness);
+	const deliver = holdFirstSendUntilDelivery(server, (turn) => {
+		turn.send({ type: "start" });
+		turn.text("t", "Drawing");
+		mediaLoading(turn, true);
+		turn.end();
+	});
+	await send(chat, "Draw a cat");
+	await send(chat, "Then a dog");
+	assert.equal(server.turns.length, 0);
+	assert.equal(chat().isStreaming, false);
+
+	await deliver();
+	await waitFor("the reply to render", () => chatState().messages.length >= 2);
+	await settle(40);
+	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
+	assert.deepEqual(chatState().messages, ["user:Draw a cat", "assistant:Drawing+data-widget-loading"]);
+	assert.equal(chat().activePrompt?.text, "Draw a cat");
+	assert.equal(server.turns.length, 1);
+	assert.equal(chat().isMediaGenerating, true);
+	assert.equal(timeouts.cutShort.count(), 1);
+
+	await timeouts.cutShort.fireLatest();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.equal(chat().isMediaGenerating, false);
+	assert.deepEqual(chatState().messages.slice(0, 3), ["user:Draw a cat", "assistant:Drawing+data-widget-loading", notice]);
+	assert.equal(chatState().messages.filter((message) => message === notice).length, 1);
+});
+
+test("a cut-short response with no media that arrives in full before React commits shows the notice after the reply at once", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const timeouts = captureMediaTimeouts(t, harness);
+	const deliver = holdFirstSendUntilDelivery(server, (turn) => {
+		turn.send({ type: "start" });
+		turn.text("t", "Half an answer");
+		turn.end();
+	});
+	await send(chat, "Explain");
+	await deliver();
+	await waitFor("the turn to finalize", () => chat().activePrompt === null && chatState().messages.length === 3);
+	assert.deepEqual(chatState().messages, [
+		"user:Explain",
+		"assistant:Half an answer",
+		`assistant:${harness.getIncompleteTurnUserMessage()}`,
+	]);
+	assert.equal(timeouts.cutShort.count(), 0);
+});
+
+// ── Cut-short turns and transcript replacement ────────────────────────────
+
+const STORED_THREAD = Object.freeze({
+	id: "stored-thread",
+	title: "Stored",
+	messages: [
+		{ id: "s-u", role: "user", parts: [{ type: "text", text: "Old question" }] },
+		{ id: "s-a", role: "assistant", parts: [{ type: "text", text: "Old answer" }] },
+	],
+	realtimeMessages: [],
+	visibility: "private",
+	activeDocumentId: null,
+	createdAt: 0,
+	updatedAt: 0,
+});
+
+// Starts a turn that is cut short with its media widget still loading, so it
+// sits in the short cut-short wait, with "Then a dog" queued behind it.
+async function startCutShortMediaWait(t) {
+	const mounted = await mountChat(t);
+	const { harness, server, chat } = mounted;
+	const timeouts = captureMediaTimeouts(t, harness);
+	window.testApi.threads.set(STORED_THREAD.id, structuredClone(STORED_THREAD));
+	await send(chat, "Draw a cat");
+	await waitFor("the request", () => server.turns.length === 1);
+	await send(chat, "Then a dog");
+	const [turn] = server.turns;
+	turn.send({ type: "start" });
+	turn.text("t", "Drawing");
+	mediaLoading(turn, true);
+	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	turn.end();
+	await waitFor("the stream to end", () => !chat().isStreaming);
+	await settle(20);
+	assert.equal(timeouts.cutShort.count(), 1);
+	assert.equal(chat().activePrompt?.text, "Draw a cat");
+	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
+	return { ...mounted, timeouts, notice, departingThreadId: chat().activeThreadId };
+}
+
+// Every path that replaces or drops the transcript ends the departing turn
+// first: no notice on the new transcript, no media hold, no queued prompt from
+// the old thread, and the old cut-short wait no longer does anything.
+const TRANSCRIPT_REPLACEMENTS = [
+	{ name: "selectThread", run: (chat) => chat().selectThread(STORED_THREAD.id), messages: ["user:Old question", "assistant:Old answer"] },
+	{ name: "selectThread of a missing thread", run: (chat) => chat().selectThread("missing-thread"), messages: [] },
+	{ name: "deleteThread of the active thread", run: (chat) => chat().deleteThread(chat().activeThreadId), messages: [] },
+	{ name: "deleteAllThreads", run: (chat) => chat().deleteAllThreads(), messages: [] },
+	{ name: "resetChat", run: (chat) => chat().resetChat(), messages: [] },
+	{
+		name: "activateSession",
+		run: (chat) => chat().activateSession({ threadId: STORED_THREAD.id, messages: STORED_THREAD.messages }),
+		messages: ["user:Old question", "assistant:Old answer"],
+	},
+];
+
+for (const replacement of TRANSCRIPT_REPLACEMENTS) {
+	test(`${replacement.name} during a cut-short turn's media wait ends that turn without a notice anywhere`, async (t) => {
+		const { server, chat, timeouts, notice } = await startCutShortMediaWait(t);
+
+		await (await startAction(() => replacement.run(chat)))();
+		await settle(20);
+		assert.equal(chat().activePrompt, null);
+		assert.deepEqual(chat().queuedPrompts, []);
+		assert.equal(chat().isMediaGenerating, false);
+		assert.equal(chat().hasInFlightTurn, false);
+		assert.deepEqual(chatState().messages, replacement.messages);
+
+		// The departing turn's wait runs out on the new transcript: nothing happens.
+		await timeouts.cutShort.fireLatest();
+		await settle(20);
+		assert.deepEqual(chatState().messages, replacement.messages);
+		assert.equal(chatState().messages.includes(notice), false);
+		assert.equal(server.turns.length, 1);
+	});
+}
+
+test("the departing thread keeps its partial reply, saved without the notice, after a switch during the cut-short wait", async (t) => {
+	const { chat, timeouts, notice, departingThreadId } = await startCutShortMediaWait(t);
+	const partial = ["user:Draw a cat", "assistant:Drawing+data-widget-loading"];
+	await waitFor("the partial reply to be saved", () => describeMessages(window.testApi.threads.get(departingThreadId)?.messages ?? []).length === 2);
+
+	await (await startAction(() => chat().selectThread(STORED_THREAD.id)))();
+	await timeouts.cutShort.fireLatest();
+	await settle(20);
+	assert.deepEqual(describeMessages(window.testApi.threads.get(departingThreadId).messages), partial);
+
+	await (await startAction(() => chat().selectThread(departingThreadId)))();
+	await settle(20);
+	assert.deepEqual(chatState().messages, partial);
+	assert.equal(chatState().messages.includes(notice), false);
+	assert.equal(chat().activePrompt, null);
+	assert.equal(chat().isMediaGenerating, false);
+});
+
+test("a prompt sent on the newly selected thread before the old cut-short wait runs out is neither blocked, finalized nor annotated by it", async (t) => {
+	const { server, chat, timeouts, notice } = await startCutShortMediaWait(t);
+	await (await startAction(() => chat().selectThread(STORED_THREAD.id)))();
+
+	await send(chat, "Fresh question");
+	await waitFor("the fresh request", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Fresh question");
+	await streamPartial(server, chat, 1, "Fresh partial");
+
+	await timeouts.cutShort.fireLatest();
+	await settle(20);
+	assert.equal(chat().activePrompt?.text, "Fresh question");
+	assert.equal(chat().isStreaming, true);
+	assert.equal(chatState().messages.includes(notice), false);
+
+	server.turns[1].text("t1-end", " and done");
+	server.turns[1].turnComplete();
+	server.turns[1].end();
+	await waitFor("the fresh turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
+	await settle(20);
+	assert.equal(chatState().messages.includes(notice), false);
+	assert.deepEqual(chatState().messages.slice(0, 3), ["user:Old question", "assistant:Old answer", "user:Fresh question"]);
+	assert.equal(server.turns.length, 2);
+});
+
+test("the old cut-short wait running out does not release a new thread's cut-short turn that is waiting on its own media", async (t) => {
+	const { server, chat, timeouts, notice } = await startCutShortMediaWait(t);
+	await (await startAction(() => chat().selectThread(STORED_THREAD.id)))();
+	await send(chat, "Draw a dog");
+	await waitFor("the fresh request", () => server.turns.length === 2);
+	const fresh = server.turns[1];
+	fresh.send({ type: "start" });
+	fresh.text("t1", "Dog");
+	mediaLoading(fresh, true);
+	fresh.end();
+	await waitFor("the fresh stream to end", () => !chat().isStreaming && timeouts.cutShort.count() === 2);
+
+	await timeouts.cutShort.fire(0);
+	await settle(20);
+	assert.equal(chat().activePrompt?.text, "Draw a dog");
+	assert.equal(chatState().messages.includes(notice), false);
+
+	await timeouts.cutShort.fire(1);
+	await waitFor("the fresh turn to finalize", () => chat().activePrompt === null);
+	assert.deepEqual(chatState().messages, [
+		"user:Old question", "assistant:Old answer", "user:Draw a dog", "assistant:Dog+data-widget-loading", notice,
+	]);
 });
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {

@@ -48,6 +48,8 @@ const mocks = {
 		}
 		export async function createRovoAppThread({ signal, ...thread }) {
 			api().calls.push("createThread:" + thread.title);
+			// \`createThreadGate\` holds a first prompt's send until the test opens it.
+			await api().createThreadGate;
 			const created = { ...thread, createdAt: 1, updatedAt: 1 };
 			api().threads.set(created.id, created);
 			return created;
@@ -134,6 +136,7 @@ function createChatServer() {
 	const encoder = new TextEncoder();
 	const turns = [];
 	const failures = [];
+	const scripts = [];
 	const otherRequests = [];
 	const waiters = [];
 
@@ -195,6 +198,7 @@ function createChatServer() {
 			}
 			const turn = createTurn(body, init.signal);
 			turns.push(turn);
+			scripts.shift()?.(turn);
 			resolveWaiters();
 			return turn.response;
 		}
@@ -212,6 +216,9 @@ function createChatServer() {
 		otherRequests,
 		// `gate`, when given, holds the error response until the promise resolves.
 		failNext(status, body, gate) { failures.push({ status, body, gate }); },
+		// Writes the next turn's chunks before its response is returned, so the
+		// client can read the whole stream without waiting on the test.
+		respondNext(script) { scripts.push(script); },
 	};
 }
 
@@ -302,6 +309,26 @@ async function startAction(action) {
 	};
 }
 
+// Runs `work` inside one act() scope, so React commits nothing it schedules until
+// `work` returns: provider callbacks run against the last committed state, as
+// they do when a whole response arrives before React gets to render. `work`
+// waits with plain timers (`waitForUncommitted`); waitFor would nest act().
+async function withCommitsHeld(work) {
+	await React.act(async () => {
+		await work();
+	});
+}
+
+async function waitForUncommitted(description, predicate, timeoutMs = 3000) {
+	const startedAt = Date.now();
+	while (!predicate()) {
+		if (Date.now() - startedAt > timeoutMs) {
+			throw new Error(`Timed out waiting for ${description}`);
+		}
+		await new Promise((resolve) => setTimeout(resolve, 5));
+	}
+}
+
 async function send(chat, prompt) {
 	await React.act(async () => {
 		await chat().sendPrompt(prompt);
@@ -332,4 +359,6 @@ module.exports = {
 	startAction,
 	streamPartial,
 	waitFor,
+	waitForUncommitted,
+	withCommitsHeld,
 };

@@ -37,10 +37,10 @@ const {
 	canFinalizeActivePrompt,
 	classifyTurnError,
 	createRetryCountdownMessage,
+	findCutShortNotice,
 	findLatestMediaLoadingState,
 	isTurnWorkIdle,
 	rovoChatTurnReducer: reduce,
-	shouldNoticeCutShortTurn,
 	shouldStartSubmitPending,
 } = machine;
 
@@ -60,14 +60,14 @@ test("enqueue, remove and clear keep queue order and always write a new queue ar
 });
 
 test("dispatchNext moves the head of the queue into flight and starts its turn fresh", () => {
-	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, cutShort: true, retryCount: 2 };
+	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", awaitingMedia: true }, retryCount: 2 };
 	const next = reduce(midTurn, { type: "dispatchNext" });
 	assert.equal(next.activePrompt.id, "a");
 	assert.deepEqual(next.queue.map((item) => item.id), ["b"]);
 	assert.equal(next.dispatching, true);
 	assert.equal(next.finalizeRequested, false);
 	assert.equal(next.turnCompleteSeen, false);
-	assert.equal(next.cutShort, false);
+	assert.equal(next.cutShort, null);
 	assert.equal(next.retryCount, 0);
 	assert.equal(reduce(INITIAL, { type: "dispatchNext" }), INITIAL);
 });
@@ -115,11 +115,13 @@ test("stopRequested finalizes the active prompt and is a no-op without one", () 
 });
 
 test("Stop on a cut-short turn still waiting for media drops the cut-short notice", () => {
-	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, { type: "turnCutShort" });
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, { type: "turnCutShort", finish: { anchorMessageId: "r", mediaLoading: true } });
 	const stopped = reduce(cut, { type: "stopRequested" });
 	assert.equal(stopped.finalizeRequested, true);
-	assert.equal(stopped.cutShort, false);
-	assert.equal(shouldNoticeCutShortTurn(stopped), false);
+	assert.equal(stopped.cutShort, null);
+	assert.equal(findCutShortNotice(stopped), null);
+	// Stop's own path clears the media flag; the snapshot's media wait no longer holds the turn.
+	assert.equal(canFinalizeActivePrompt(stopped, IDLE), true);
 });
 
 test("turnCompleteSeen is idempotent", () => {
@@ -153,27 +155,57 @@ test("an edit drops the queue and the active prompt but keeps the retry count, t
 });
 
 test("reset returns to the initial state with a fresh queue array", () => {
-	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: true, dispatching: true, retryCount: 3 };
+	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", awaitingMedia: true }, dispatching: true, retryCount: 3 };
 	const reset = reduce(busy, { type: "reset" });
 	assert.deepEqual(reset, { ...INITIAL, queue: [] });
 	assert.notEqual(reset.queue, INITIAL.queue);
 });
 
-test("a cut-short turn requests finalize, waits for media, and notices only if turn-complete never arrives", () => {
-	assert.equal(reduce(INITIAL, { type: "turnCutShort" }), INITIAL);
-	const cut = reduce({ ...INITIAL, activePrompt: prompt("a"), retryCount: 1 }, { type: "turnCutShort" });
+const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a") => ({ type: "turnCutShort", finish: { anchorMessageId, mediaLoading } });
+
+test("a cut-short turn keeps its finish snapshot's anchor and notices only if turn-complete never arrives", () => {
+	assert.equal(reduce(INITIAL, cutShortFinish(false)), INITIAL);
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a"), retryCount: 1 }, cutShortFinish(false));
 	assert.equal(cut.finalizeRequested, true);
-	assert.equal(cut.cutShort, true);
+	assert.deepEqual(cut.cutShort, { anchorMessageId: "reply-a", awaitingMedia: false });
 	assert.equal(cut.retryCount, 1);
-	// Regression: the notice used to be recorded as the stream closed, while an image or video was still loading.
-	assert.equal(canFinalizeActivePrompt(cut, { ...IDLE, isMediaGenerating: true }), false);
-	assert.equal(canFinalizeActivePrompt(cut, IDLE), true);
-	assert.equal(shouldNoticeCutShortTurn(cut), true);
-	assert.equal(shouldNoticeCutShortTurn(reduce(cut, { type: "turnCompleteSeen" })), false);
-	assert.equal(shouldNoticeCutShortTurn({ ...INITIAL, activePrompt: prompt("a"), finalizeRequested: true }), false);
+	assert.deepEqual(findCutShortNotice(cut), { anchorMessageId: "reply-a", awaitingMedia: false });
+	assert.equal(findCutShortNotice(reduce(cut, { type: "turnCompleteSeen" })), null);
+	assert.equal(findCutShortNotice({ ...INITIAL, activePrompt: prompt("a"), finalizeRequested: true }), null);
 	for (const event of [{ type: "finalize" }, { type: "editStarted" }, { type: "retryDispatchStarted" }, { type: "reset" }]) {
-		assert.equal(reduce(cut, event).cutShort, false, event.type);
+		assert.equal(reduce(cut, event).cutShort, null, event.type);
 	}
+});
+
+// Regression: the cut-short decision used to read the committed media flag,
+// which lags a response that arrived in full before React rendered it.
+test("a cut-short turn's media comes from its finish snapshot, not the media flag", () => {
+	const noMedia = reduce({ ...INITIAL, activePrompt: prompt("a") }, cutShortFinish(false));
+	assert.equal(canFinalizeActivePrompt(noMedia, IDLE), true);
+	assert.equal(canFinalizeActivePrompt(noMedia, { ...IDLE, isMediaGenerating: true }), true);
+	assert.equal(canFinalizeActivePrompt(noMedia, { ...IDLE, isStreaming: true }), false);
+
+	const waiting = reduce({ ...INITIAL, activePrompt: prompt("a") }, cutShortFinish(true));
+	assert.equal(waiting.cutShort.awaitingMedia, true);
+	assert.equal(canFinalizeActivePrompt(waiting, IDLE), false);
+	assert.equal(reduce(waiting, { type: "cutShortMediaWaitElapsed", promptId: "other" }), waiting);
+	const elapsed = reduce(waiting, { type: "cutShortMediaWaitElapsed", promptId: "a" });
+	assert.deepEqual(elapsed.cutShort, { anchorMessageId: "reply-a", awaitingMedia: false });
+	assert.equal(canFinalizeActivePrompt(elapsed, { ...IDLE, isMediaGenerating: true }), true);
+	assert.equal(reduce(elapsed, { type: "cutShortMediaWaitElapsed", promptId: "a" }), elapsed);
+});
+
+test("a cut-short wait that outlives its turn changes nothing", () => {
+	const waiting = reduce({ ...INITIAL, queue: [prompt("b")], activePrompt: prompt("a") }, cutShortFinish(true));
+	const elapsed = { type: "cutShortMediaWaitElapsed", promptId: "a" };
+	// Stop, a transcript replacement (reset), or the next prompt taking over.
+	const stopped = reduce(waiting, { type: "stopRequested" });
+	assert.equal(reduce(stopped, elapsed), stopped);
+	const reset = reduce(waiting, { type: "reset" });
+	assert.equal(reduce(reset, elapsed), reset);
+	const next = run(waiting, { type: "finalize" }, { type: "dispatchNext" }, cutShortFinish(true, "reply-b"));
+	assert.equal(next.activePrompt.id, "b");
+	assert.equal(reduce(next, elapsed), next);
 });
 
 test("the active prompt finalizes after turn-complete once the stream closes, even while media loads", () => {

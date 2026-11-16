@@ -130,19 +130,19 @@ import {
 	canFinalizeActivePrompt,
 	classifyTurnError,
 	createRetryCountdownMessage,
+	findCutShortNotice,
 	isTurnWorkIdle,
-	shouldNoticeCutShortTurn,
 	shouldStartSubmitPending as shouldStartSubmitPendingForTurn,
 	type RovoChatRetryReason,
 	type RovoChatTurnEnvironment,
 } from "@/app/contexts/rovo-chat-turn-machine";
 import { useRovoChatTurnMachine } from "@/app/contexts/use-rovo-chat-turn-machine";
-import { CUT_SHORT_MEDIA_WAIT_MS, useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
+import { useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
+import { useRovoChatCutShortTurn } from "@/app/contexts/use-rovo-chat-cut-short-turn";
 import {
 	createTurnError,
 	hasTurnCompleteForActivePrompt,
 	insertTurnErrors,
-	isIncompleteTurnFinish,
 	pruneTurnErrorsFrom,
 	type RovoChatTurnError,
 } from "@/app/contexts/rovo-chat-turn-errors";
@@ -599,8 +599,7 @@ export function RovoChatProvider({
 
 	useEffect(() => cancelRetryTimer, [cancelRetryTimer]);
 
-	const recordTurnError = useCallback((message: RovoUIMessage, transcript: ReadonlyArray<RovoUIMessage>) => {
-		const turnError = createTurnError(message, transcript);
+	const recordTurnError = useCallback((turnError: RovoChatTurnError) => {
 		setTurnErrors((previous) => [...previous, turnError]);
 	}, []);
 
@@ -615,6 +614,7 @@ export function RovoChatProvider({
 			maybeFinalizeAndProcessRef.current();
 		});
 	}, []);
+	const handleCutShortFinish = useRovoChatCutShortTurn(dispatchTurn, queueTick);
 
 	// oxlint-disable react-doctor/no-event-handler -- The transport callback is invoked by the AI SDK request pipeline and must close over the current port index.
 	const transport = useMemo(
@@ -693,13 +693,10 @@ export function RovoChatProvider({
 			const pendingTurnError = pendingTurnErrorRef.current;
 			pendingTurnErrorRef.current = null;
 			if (pendingTurnError) {
-				recordTurnError(pendingTurnError, messages);
-			} else if (isIncompleteTurnFinish({ messages, isAbort, isError, activePrompt: turnRef.current.activePrompt })) {
-				// Cut short: keep the partial reply and finalize, with the notice, once
-				// media generation settles (a widget left loading settles only through
-				// the short cut-short media wait, since its loading:false would have come on this stream).
-				dispatchTurn({ type: "turnCutShort" });
-				queueTick();
+				recordTurnError(createTurnError(pendingTurnError, messages));
+			} else {
+				// Cut short: keep the partial reply and finalize with the notice, read from this snapshot.
+				handleCutShortFinish({ messages, isAbort, isError, activePrompt: turnRef.current.activePrompt });
 			}
 		},
 	});
@@ -797,7 +794,7 @@ export function RovoChatProvider({
 		}
 	}, [dispatchTurn, rawUiMessages, queueTick, turnRef]);
 
-	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating, shortenMediaWait } = useRovoChatMediaGeneration(rawUiMessages, activePrompt?.id ?? null, queueTick);
+	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating } = useRovoChatMediaGeneration(rawUiMessages, activePrompt?.id ?? null, queueTick);
 
 	// The provider-owned facts the turn machine's guards read alongside its own state.
 	const readTurnEnvironment = useCallback((): RovoChatTurnEnvironment => ({
@@ -1206,23 +1203,19 @@ export function RovoChatProvider({
 			return;
 		}
 
-		if (shouldNoticeCutShortTurn(turnRef.current)) {
+		const cutShortNotice = findCutShortNotice(turnRef.current);
+		if (cutShortNotice) {
 			errorCounterRef.current += 1;
-			recordTurnError(
-				createAssistantTextMessage(`error-${errorCounterRef.current}`, getIncompleteTurnUserMessage()),
-				rawUiMessagesRef.current,
-			);
+			recordTurnError({
+				anchorMessageId: cutShortNotice.anchorMessageId,
+				message: createAssistantTextMessage(`error-${errorCounterRef.current}`, getIncompleteTurnUserMessage()),
+			});
 		}
 		dispatchTurn({ type: "finalize" });
 		clearMediaGenerating();
-	}, [clearMediaGenerating, dispatchTurn, rawUiMessagesRef, recordTurnError, turnRef]);
+	}, [clearMediaGenerating, dispatchTurn, recordTurnError, turnRef]);
 
 	const maybeFinalizeAndProcess = useCallback(() => {
-		// A cut-short turn waits only briefly for a media widget still loading.
-		if (shouldNoticeCutShortTurn(turnRef.current)) {
-			shortenMediaWait(CUT_SHORT_MEDIA_WAIT_MS);
-		}
-
 		if (canFinalizeActivePrompt(turnRef.current, readTurnEnvironment())) {
 			finalizeActivePrompt();
 		}
@@ -1230,7 +1223,7 @@ export function RovoChatProvider({
 		if (!turnRef.current.activePrompt && !isCancellingRef.current) {
 			void processNextPromptRef.current();
 		}
-	}, [finalizeActivePrompt, readTurnEnvironment, shortenMediaWait, turnRef]);
+	}, [finalizeActivePrompt, readTurnEnvironment, turnRef]);
 
 	useEffect(() => {
 		maybeFinalizeAndProcessRef.current = maybeFinalizeAndProcess;
@@ -1560,6 +1553,17 @@ export function RovoChatProvider({
 		syncTransitionCancellation,
 	]);
 
+	// Ends the departing transcript's turn work (active turn and its cut-short
+	// wait, queue, retry, media hold, errors). Every path that replaces or drops
+	// the transcript runs it first, so nothing from the old turn lands on the new one.
+	const resetTranscriptPending = useCallback(() => {
+		cancelRetryTimer();
+		clearMediaGenerating();
+		clearSubmitPending();
+		dispatchTurn({ type: "reset" });
+		clearChatErrors();
+	}, [cancelRetryTimer, clearChatErrors, clearMediaGenerating, clearSubmitPending, dispatchTurn]);
+
 	const detachCurrentThreadForSwitch = useCallback(async () => {
 		const threadId = activeThreadIdRef.current;
 		if (isStreamingRef.current) {
@@ -1579,6 +1583,7 @@ export function RovoChatProvider({
 	const selectThread = useCallback(
 		async (threadId: string) => {
 			const transitionToken = beginTransition("select-thread");
+			resetTranscriptPending();
 			try {
 				await detachCurrentThreadForSwitch();
 				if (!isCurrentTransition(transitionToken)) {
@@ -1601,7 +1606,6 @@ export function RovoChatProvider({
 				setActiveThreadId(thread.id);
 				lastPersistedThreadKeyRef.current = buildCompactThreadPersistKey(thread.id, thread.messages);
 				setThreads((previousThreads) => [thread, ...previousThreads.filter((item) => item.id !== thread.id)]);
-				clearChatErrors();
 				setMessages(sanitizeRovoUiMessages(thread.messages));
 				setIsHistoryOpen(false);
 			} finally {
@@ -1612,12 +1616,12 @@ export function RovoChatProvider({
 		},
 		[
 			beginTransition,
-			clearChatErrors,
 			detachCurrentThreadForSwitch,
 			finishTransition,
 			isCurrentTransition,
 			queueTick,
 			refreshThreads,
+			resetTranscriptPending,
 			setMessages,
 		]
 	);
@@ -1627,12 +1631,12 @@ export function RovoChatProvider({
 			const transitionToken = beginTransition("delete-thread");
 			try {
 				if (threadId === activeThreadIdRef.current) {
+					resetTranscriptPending();
 					await detachCurrentThreadForSwitch();
 					if (isCurrentTransition(transitionToken)) {
 						activeThreadIdRef.current = null;
 						setActiveThreadId(null);
 						setMessages([]);
-						clearChatErrors();
 						lastPersistedThreadKeyRef.current = "";
 					}
 				}
@@ -1651,24 +1655,20 @@ export function RovoChatProvider({
 		},
 		[
 			beginTransition,
-			clearChatErrors,
 			detachCurrentThreadForSwitch,
 			finishTransition,
 			isCurrentTransition,
 			queueTick,
 			refreshThreads,
+			resetTranscriptPending,
 			setMessages,
 		]
 	);
 
 	const deleteAllThreads = useCallback(async () => {
 		const transitionToken = beginTransition("delete-all-threads");
-		cancelRetryTimer();
-		clearMediaGenerating();
-		clearSubmitPending();
-		dispatchTurn({ type: "reset" });
+		resetTranscriptPending();
 		setMessages([]);
-		clearChatErrors();
 
 		try {
 			await detachCurrentThreadForSwitch();
@@ -1690,16 +1690,12 @@ export function RovoChatProvider({
 		}
 	}, [
 		beginTransition,
-		cancelRetryTimer,
-		clearMediaGenerating,
-		clearChatErrors,
-		clearSubmitPending,
 		detachCurrentThreadForSwitch,
-		dispatchTurn,
 		finishTransition,
 		isCurrentTransition,
 		queueTick,
 		refreshThreads,
+		resetTranscriptPending,
 		setMessages,
 	]);
 
@@ -1724,14 +1720,6 @@ export function RovoChatProvider({
 
 		window.location.assign(`/rovo/${encodeURIComponent(threadId)}`);
 	}, []);
-
-	const resetTranscriptPending = useCallback(() => {
-		cancelRetryTimer();
-		clearMediaGenerating();
-		clearSubmitPending();
-		dispatchTurn({ type: "reset" });
-		clearChatErrors();
-	}, [cancelRetryTimer, clearChatErrors, clearMediaGenerating, clearSubmitPending, dispatchTurn]);
 
 	const resetChat = useCallback(() => {
 		const transitionToken = beginTransition("reset-chat");
