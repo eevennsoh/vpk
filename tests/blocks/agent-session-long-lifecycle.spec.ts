@@ -187,7 +187,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			const expired = cloudLong.locator("section").filter({
 				has: page.getByText("Expired", { exact: true }),
 			}).getByTestId("agent-session-row-cloud-figma-with-austin");
-			const more = expired.getByRole("button", { name: "More actions for Figma with Austin" });
+			const more = expired.getByRole("button", { name: "More actions for Hand off the off-road suspension controls to engineering" });
 			await expect(more).toBeVisible();
 			const size = await more.boundingBox();
 			expect(size?.width).toBe(24);
