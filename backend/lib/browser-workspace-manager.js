@@ -1458,7 +1458,7 @@ class BrowserWorkspace {
 				typeof text === "string" ? text : undefined,
 				modifiers,
 			)
-			// A modified key's keyUp sends nothing (its keyDown was one press), so the page is unchanged.
+			// A keyUp after press sends nothing, so the page is unchanged.
 			if (sent === false) {
 				return
 			}
