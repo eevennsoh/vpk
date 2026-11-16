@@ -9,17 +9,18 @@ const commands = [
 	{ type: "key", key: "a", code: "KeyA" },
 	{ type: "key", key: "Enter", code: "Enter", ctrlKey: true, shiftKey: true },
 ];
+const unmodified = { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false };
 const previewPayloads = [
 	[{ type: "preview-click", x: 125, y: 80 }],
 	[{ type: "preview-wheel", x: 100, y: 200, deltaX: -4, deltaY: 75 }],
 	[{ type: "preview-paste", text: "Pasted\ntext" }],
 	[
-		{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a" },
-		{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA" },
+		{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a", ...unmodified },
+		{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA", ...unmodified },
 	],
 	[
-		{ type: "preview-key", eventType: "keyDown", key: "Enter", code: "Enter", text: undefined },
-		{ type: "preview-key", eventType: "keyUp", key: "Enter", code: "Enter" },
+		{ type: "preview-key", eventType: "keyDown", key: "Enter", code: "Enter", text: undefined, ...unmodified, ctrlKey: true, shiftKey: true },
+		{ type: "preview-key", eventType: "keyUp", key: "Enter", code: "Enter", ...unmodified, ctrlKey: true, shiftKey: true },
 	],
 ];
 const workspacePayloads = [
@@ -109,5 +110,17 @@ test("shifted text and space remain typed text while unsupported shortcuts are i
 	assert.deepEqual(workspaceCalls, [
 		{ action: "type", body: { text: "A" } },
 		{ action: "type", body: { text: " " } },
+	]);
+});
+
+test("preview keys carry every modifier, so a captured Shift+Tab is not sent as plain Tab", async () => {
+	const { delivery, previewCalls } = harness(true);
+	await dispatchBrowserControl({ type: "key", key: "Tab", code: "Tab", shiftKey: true }, delivery);
+	await dispatchBrowserControl({ type: "key", key: "x", code: "KeyX", ctrlKey: true, metaKey: true, altKey: true }, delivery);
+	assert.deepEqual(previewCalls, [
+		{ type: "preview-key", eventType: "keyDown", key: "Tab", code: "Tab", text: undefined, ...unmodified, shiftKey: true },
+		{ type: "preview-key", eventType: "keyUp", key: "Tab", code: "Tab", ...unmodified, shiftKey: true },
+		{ type: "preview-key", eventType: "keyDown", key: "x", code: "KeyX", text: undefined, shiftKey: false, ctrlKey: true, altKey: true, metaKey: true },
+		{ type: "preview-key", eventType: "keyUp", key: "x", code: "KeyX", shiftKey: false, ctrlKey: true, altKey: true, metaKey: true },
 	]);
 });

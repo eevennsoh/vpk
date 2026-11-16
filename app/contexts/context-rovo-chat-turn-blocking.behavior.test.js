@@ -86,18 +86,77 @@ test("a stream that ends without turn-complete while media is loading keeps the 
 	assert.deepEqual(chatState().queued, ["Then a dog"]);
 	assert.equal(chat().isMediaGenerating, true);
 	assert.equal(chat().hasInFlightTurn, true);
-	// The cut-short notice is recorded as soon as the request finishes.
+	// Regression: the cut-short notice used to show as soon as the request
+	// finished. It now waits for media generation to settle.
 	assert.deepEqual(chatState().messages, [
 		"user:Draw a cat",
 		"assistant:data-widget-loading",
-		`assistant:${harness.getIncompleteTurnUserMessage()}`,
 	]);
 
 	await (await startAction(() => chat().stopStreaming()))();
 	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
 	assert.equal(chat().activePrompt?.text, "Then a dog");
+	// The user ended the turn with Stop, so no cut-short notice follows it.
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
 	// No stream was live, so Stop sent no backend cancel.
 	assert.deepEqual(cancelRunCalls(), []);
+});
+
+// Captures the provider's media-generation timeout instead of scheduling it, so
+// a test can release it without waiting 120 s or mocking the harness's own timers.
+function captureMediaTimeout(t, timeoutMs) {
+	const captured = [];
+	const originalSetTimeout = globalThis.setTimeout;
+	const originalWindowSetTimeout = window.setTimeout;
+	const capture = (schedule) => (callback, delay, ...args) => {
+		if (delay === timeoutMs) {
+			captured.push(callback);
+			return schedule(() => {}, 0);
+		}
+		return schedule(callback, delay, ...args);
+	};
+	globalThis.setTimeout = capture(originalSetTimeout);
+	window.setTimeout = capture(originalWindowSetTimeout.bind(window));
+	t.after(() => {
+		globalThis.setTimeout = originalSetTimeout;
+		window.setTimeout = originalWindowSetTimeout;
+	});
+	return {
+		count: () => captured.length,
+		fireLatest: () => React.act(async () => {
+			captured.at(-1)();
+		}),
+	};
+}
+
+test("a cut-short turn whose media widget is still loading shows the notice once the media timeout releases it, then advances the queue", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const mediaTimeout = captureMediaTimeout(t, harness.MEDIA_GENERATION_TIMEOUT_MS);
+	await send(chat, "Draw a cat");
+	await waitFor("the request", () => server.turns.length === 1);
+	await send(chat, "Then a dog");
+	const [turn] = server.turns;
+	turn.send({ type: "start" });
+	mediaLoading(turn, true);
+	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	turn.end();
+	await waitFor("the stream to end", () => !chat().isStreaming);
+	await settle(40);
+	assert.equal(server.turns.length, 1);
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
+	assert.equal(mediaTimeout.count(), 1);
+
+	await mediaTimeout.fireLatest();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.equal(chat().isMediaGenerating, false);
+	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
+	assert.deepEqual(chatState().messages.slice(0, 3), [
+		"user:Draw a cat",
+		"assistant:data-widget-loading",
+		notice,
+	]);
+	assert.equal(chatState().messages.filter((message) => message === notice).length, 1);
 });
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {
@@ -115,12 +174,12 @@ test("current behaviour: turn-complete finalizes the turn even while a media wid
 	assert.equal(chat().activePrompt?.text, "Then a dog");
 });
 
-// Finalizing clears the media flag, but the scan for loading parts skips user
-// messages, so once the next prompt's user message lands it finds the earlier
-// turn's unfinished loading part and raises the flag again. It stays up while
-// the next turn streams, and only that turn's finalize clears it.
-test("current behaviour: an earlier turn's unfinished media widget re-flags media generation once the next prompt dispatches", async (t) => {
-	const { server, chat } = await mountChat(t);
+// Regression: the loading-part scan used to read the latest assistant message
+// wherever it was, so once the next prompt's user message landed it found the
+// earlier turn's unfinished part and raised the flag again, and a next turn
+// that was cut short then waited out the 120 s media timeout.
+test("an earlier turn's unfinished media widget does not flag media generation for the next turn", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
 	await send(chat, "Draw a cat");
 	await waitFor("the request", () => server.turns.length === 1);
 	await send(chat, "Then a dog");
@@ -130,16 +189,15 @@ test("current behaviour: an earlier turn's unfinished media widget re-flags medi
 	server.turns[0].end();
 	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
 	await settle(20);
-	assert.equal(chat().isMediaGenerating, true);
-
-	server.turns[1].text("d", "A dog");
-	await waitFor("the second reply", () => chatState().messages.at(-1) === "assistant:A dog");
-	assert.equal(chat().isMediaGenerating, true);
-	server.turns[1].turnComplete();
-	server.turns[1].end();
-	await waitFor("the second turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
 	assert.equal(chat().isMediaGenerating, false);
-	assert.equal(chat().hasInFlightTurn, false);
+
+	await send(chat, "Then a bird");
+	await streamPartial(server, chat, 1, "A do");
+	assert.equal(chat().isMediaGenerating, false);
+	server.turns[1].end();
+	await waitFor("the third prompt to dispatch", () => server.turns.length === 3);
+	assert.equal(chat().activePrompt?.text, "Then a bird");
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), true);
 });
 
 test("resetChat clears media generation and the blocked queue", async (t) => {

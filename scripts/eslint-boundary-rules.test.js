@@ -255,16 +255,19 @@ test("overlay surfaces reject an added outer border or ring but allow removals a
 	const findings = await ruleFindings(`
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { PopoverContent } from "@/components/ui/popover";
+import { SheetContent } from "@/components/ui/sheet";
 export const Overlays = () => (
 	<>
 		<PopoverContent className="w-80 border border-border" />
 		<HoverCardContent className="ring-1 ring-border" />
 		<HoverCardContent className="border-0 p-0 [&_[data-slot=surface]]:border-0" />
 		<PopoverContent className="w-80"><div className="border-b border-border" /></PopoverContent>
+		<SheetContent className="border-l border-border" />
+		<SheetContent className="w-80 shadow-2xl"><div className="border-b border-border" /></SheetContent>
 	</>
 );
 `, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle"]);
-	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 7]);
+	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [7, 8, 11]);
 	assert.ok(findings.every(({ severity }) => severity === 2), "repo-wide overlay contract is an error");
 	assert.match(findings[0].message, /overlay elevation/u);
 });

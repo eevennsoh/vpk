@@ -15,6 +15,7 @@ const {
 	defaultBrowserCommand,
 	moveSelectionIndex,
 	reconcileSelectionIndex,
+	externalStopHint,
 } = require("./show-worktree-ports");
 
 function execGit(args, cwd) {
@@ -508,4 +509,59 @@ test("ports --json --sizes adds each worktree's .next split", async (t) => {
 	});
 	assert.deepEqual(measured, [root]);
 	assert.deepEqual(rows[0].nextDir, { totalBytes: 1 });
+});
+
+// Regression: the dev-stack budget suggested `pnpm ports kill '<path>'` for a sibling repo's
+// next-server, and that failed with "No worktree matches". The kill path now names the PID.
+test("externalStopHint names the PIDs of a next-server under a non-worktree path", () => {
+	const servers = [
+		{ pid: 41, cwd: "/Users/me/labs/vpk-grab/apps/website" },
+		{ pid: 42, cwd: "/Users/me/labs/vpk/.claude/worktrees/a" },
+	];
+	const hint = externalStopHint("/Users/me/labs/vpk-grab/apps/website", servers);
+	assert.ok(hint);
+	assert.match(hint.join("\n"), /is not a worktree of this repo/u);
+	assert.match(hint.join("\n"), /kill 41$/mu);
+	assert.equal(externalStopHint("/Users/me/labs/nothing-here", servers), null);
+	assert.equal(externalStopHint("vpk-dev-a", servers), null, "a non-path query keeps the normal not-found message");
+});
+
+// Regression: lsof reports realpaths (/private/tmp/...), so a query through a symlink (/tmp/...)
+// matched nothing and fell back to listing every worktree.
+test("externalStopHint matches a query given through a symlink", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "external-stop-hint-")));
+	try {
+		const real = path.join(tempDir, "other-repo", "apps", "website");
+		fs.mkdirSync(real, { recursive: true });
+		const link = path.join(tempDir, "link");
+		fs.symlinkSync(path.join(tempDir, "other-repo"), link);
+		const hint = externalStopHint(path.join(link, "apps", "website"), [{ pid: 51, cwd: real }]);
+		assert.ok(hint);
+		assert.match(hint.join("\n"), /kill 51$/mu);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+// A raw kill would skip the in-use refusal of `pnpm ports kill`, so servers inside one of this
+// repo's worktrees are never offered, even when the query names a folder above or below them or
+// reaches the worktree through a symlink git does not know about.
+test("externalStopHint never offers a raw kill for a server inside this repo's worktrees", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "external-stop-hint-")));
+	try {
+		const worktree = path.join(tempDir, "repo", ".claude", "worktrees", "a");
+		fs.mkdirSync(path.join(worktree, "apps"), { recursive: true });
+		const link = path.join(tempDir, "alias");
+		fs.symlinkSync(worktree, link);
+		const servers = [{ pid: 61, cwd: path.join(worktree, "apps") }];
+		const worktrees = [{ path: link }];
+		assert.equal(externalStopHint(path.join(worktree, "apps"), servers, worktrees), null);
+		assert.equal(externalStopHint(path.join(tempDir, "repo"), servers, worktrees), null);
+		assert.equal(externalStopHint(worktree, servers, worktrees), null);
+		const foreign = [...servers, { pid: 62, cwd: path.join(tempDir, "repo", "docs") }];
+		fs.mkdirSync(path.join(tempDir, "repo", "docs"));
+		assert.match(externalStopHint(path.join(tempDir, "repo"), foreign, worktrees).join("\n"), /kill 62$/mu);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
 });
