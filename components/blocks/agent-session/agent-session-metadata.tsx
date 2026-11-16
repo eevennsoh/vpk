@@ -133,7 +133,7 @@ function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: Agen
 
 /** Cycles only while visible; reduced motion holds the first tool call still. */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
-function AgentSessionToolCall({ animated = true, toolCalls }: Readonly<{ animated?: boolean; toolCalls: readonly string[] }>) {
+function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
 	const [cycleIndex, setCycleIndex] = useState(0);
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const wrapperRef = useRef<HTMLSpanElement>(null);
@@ -163,22 +163,16 @@ function AgentSessionToolCall({ animated = true, toolCalls }: Readonly<{ animate
 				contentKey={toolCall}
 				slide={false}
 			>
-				{animated ? (
-					<Shimmer
-						as="span"
-						className="max-w-full truncate align-top text-text-subtle"
-						data-agent-session-tool-call=""
-						duration={1.4}
-						spread={2}
-						title={toolCall}
-					>
-						{toolCall}
-					</Shimmer>
-				) : (
-					<span className="inline-block max-w-full truncate align-top text-text-subtle" data-agent-session-tool-call="" title={toolCall}>
-						{toolCall}
-					</span>
-				)}
+				<Shimmer
+					as="span"
+					className="max-w-full truncate align-top text-text-subtle"
+					data-agent-session-tool-call=""
+					duration={1.4}
+					spread={2}
+					title={toolCall}
+				>
+					{toolCall}
+				</Shimmer>
 			</CyclingByline>
 		</span>
 	);
@@ -203,7 +197,7 @@ function LongMetadataSegment({
 				</span>
 			);
 		case "tool-call":
-			return <AgentSessionToolCall animated={segment.animated} toolCalls={segment.toolCalls ?? []} />;
+			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "branch":
 			return <span className="flex min-w-0 items-center gap-1"><span className="grid size-3 shrink-0 place-items-center [&_span]:size-3! [&_svg]:size-3!"><BranchIcon label="" size="small" /></span><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":

@@ -19,8 +19,6 @@ export interface AgentSessionMetadataSegment {
 	readonly prStatus?: AgentListPrStatus;
 	/** Tool-call labels cycled by the long-form renderer. */
 	readonly toolCalls?: readonly string[];
-	/** Tool call shimmers only while the session is still in progress. */
-	readonly animated?: boolean;
 	/**
 	 * Declared session host, attached to the time chunk so the byline can
 	 * render icon + timestamp as one clause instead of `Cloud · 12s`.
@@ -45,7 +43,7 @@ export interface AgentSessionMetadataInput {
 	readonly prStatus?: AgentListPrStatus;
 	/** Human-readable tool calls, in display order. */
 	readonly toolCalls?: readonly string[];
-	/** Lifecycle state; decides whether the agent is named and the tool call shimmers. */
+	/** Lifecycle state; an active row narrates its tool call, a settled row names its agent. */
 	readonly state?: AgentListState;
 	/** Short-density line: agent mark only, no agent name, no tool call. */
 	readonly compact?: boolean;
@@ -77,12 +75,14 @@ export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>
 export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
+	const isActive = isActiveAgentSessionState(input.state);
 	const segments: AgentSessionMetadataSegment[] = [
-		input.compact || isActiveAgentSessionState(input.state) ? { kind: "agent" } : { kind: "agent", label: input.agentName },
+		input.compact || isActive ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
-	// The compact (short) line has no room for narration: the mark stands in for
-	// the agent and the tool call is dropped, leaving PR, host, and time.
-	const toolCalls = input.compact ? undefined : input.toolCalls
+	// The agent name and the working narration never share a line: an active
+	// row narrates its tool call behind the bare mark, a settled row names its
+	// agent and drops the narration. The compact (short) line carries neither.
+	const toolCalls = input.compact || !isActive ? undefined : input.toolCalls
 		?.map((toolCall) => toolCall.trim())
 		.filter((toolCall) => toolCall.length > 0);
 	if (input.branch) {
@@ -90,7 +90,7 @@ export function toAgentSessionMetadataSegments(
 	}
 
 	if (toolCalls !== undefined && toolCalls.length > 0) {
-		segments.push({ kind: "tool-call", toolCalls, animated: input.state !== "complete" });
+		segments.push({ kind: "tool-call", toolCalls });
 	}
 
 	if (input.artifactLabel !== undefined && input.artifactLabel.length > 0) {
