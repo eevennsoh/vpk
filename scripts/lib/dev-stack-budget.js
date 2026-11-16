@@ -182,12 +182,7 @@ function describeServers(stack) {
 function stackAdvice(stack) {
 	if (stack.inUse) return [`In use: ${stack.inUse}. Leave it running.`];
 	if (stack.codex) return ["Codex worktree. Check its thread before stopping it."];
-	if (stack.external) {
-		return [
-			"Not a worktree of this repo, so `pnpm ports kill` can't stop it.",
-			`Stop it: kill ${stack.servers.map((server) => server.pid).join(" ")}`,
-		];
-	}
+	if (stack.external) return [`Stop it: kill ${stack.servers.map((server) => server.pid).join(" ")}`];
 	// `pnpm ports kill` names this worktree as the requester, so the target refuses the stop
 	// if the stack turns out to be in use and logs who stopped it.
 	return ["No live task seen.", `Stop it: pnpm ports kill ${shellQuote(stack.worktree)}`];
