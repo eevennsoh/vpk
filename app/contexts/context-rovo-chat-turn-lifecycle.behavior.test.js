@@ -89,6 +89,25 @@ test("a stream that ends without turn-complete finalizes the turn, keeps the par
 	assert.equal(chat().hasInFlightTurn, false);
 });
 
+// Regression: turn-complete used to match the active prompt by comparing its
+// server timestamp with the client's clock (1 s of tolerance), so a client
+// clock running ahead flagged complete replies as cut short.
+test("a complete reply is not flagged as cut short when the client clock runs ahead of the server", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	await send(chat, "First");
+	await waitFor("the first request", () => server.turns.length === 1);
+	await send(chat, "Second");
+	const sentUser = server.turns[0].body.messages.at(-1);
+	assert.equal(sentUser.metadata?.promptId, chat().activePrompt?.id, "the user message carries its prompt id");
+
+	server.turns[0].text("t1", "Done");
+	server.turns[0].send({ type: "data-turn-complete", data: { timestamp: new Date(Date.now() - 60_000).toISOString() } });
+	server.turns[0].end();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.deepEqual(chatState().messages, ["user:First", "assistant:Done+data-turn-complete", "user:Second"]);
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
+});
+
 test("a lone stream that ends without turn-complete clears in-flight state", async (t) => {
 	const { harness, server, chat } = await mountChat(t);
 	await send(chat, "Only");

@@ -355,6 +355,12 @@ export interface RovoMessageMetadata {
 	clarificationStatus?: "answered" | "dismissed";
 	/** Assistant turn status used for transcript rendering and persistence */
 	interruption?: RovoMessageInterruption;
+	/**
+	 * The queued prompt a user message was sent for. The chat provider matches
+	 * a turn's reply, turn-complete signal and media to its prompt by this id,
+	 * so no client clock is compared with a server timestamp.
+	 */
+	promptId?: string;
 }
 
 export type RovoUIMessage = UIMessage<RovoMessageMetadata, RovoDataParts>;

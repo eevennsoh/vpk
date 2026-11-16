@@ -99,9 +99,11 @@ import {
 import {
 	buildSelectableAgents,
 	buildCompactThreadPersistKey,
-	buildSendMessageBody, clearSkillInvocationForEdit,
+	buildSendMessageBody,
 	createQueueItemId,
 	deriveCompactThreadTitle,
+	getEditResendMetadata,
+	getPromptMessageMetadata,
 	hasRichCompactMessageState,
 	hasRichCompactThreadState,
 	isClarificationResolutionPrompt,
@@ -129,6 +131,7 @@ import {
 	classifyTurnError,
 	createRetryCountdownMessage,
 	isTurnWorkIdle,
+	shouldNoticeCutShortTurn,
 	shouldStartSubmitPending as shouldStartSubmitPendingForTurn,
 	type RovoChatRetryReason,
 	type RovoChatTurnEnvironment,
@@ -692,16 +695,16 @@ export function RovoChatProvider({
 			if (pendingTurnError) {
 				recordTurnError(pendingTurnError, messages);
 			} else if (isIncompleteTurnFinish({ messages, isAbort, isError, activePrompt: turnRef.current.activePrompt })) {
-				// Cut short: finalize so the queue moves on, keep the partial reply, flag it.
-				errorCounterRef.current += 1;
-				recordTurnError(createAssistantTextMessage(`error-${errorCounterRef.current}`, getIncompleteTurnUserMessage()), messages);
-				dispatchTurn({ type: "turnFailed", resetRetries: false });
+				// Cut short: finalize once media generation settles so the queue moves on,
+				// keep the partial reply, and flag it then if turn-complete never came.
+				dispatchTurn({ type: "turnCutShort" });
 				queueTick();
 			}
 		},
 	});
 
 	const isStreaming = status === "submitted" || status === "streaming";
+	const rawUiMessagesRef = useLatestRef(rawUiMessages);
 
 	// One send path for every dispatch: a send that trips over an invalid part
 	// state sanitizes the transcript and is sent once more.
@@ -735,7 +738,7 @@ export function RovoChatProvider({
 				await stop();
 			}
 			await sendWithPartStateRecovery(
-				{ files: promptItem.files, text: promptItem.text, metadata: promptItem.options?.messageMetadata },
+				{ files: promptItem.files, text: promptItem.text, metadata: getPromptMessageMetadata(promptItem) },
 				{ body: buildSendMessageBody(promptItem.options, turnRef.current.queue.length > 0) },
 			);
 		} catch (retryError) {
@@ -793,7 +796,7 @@ export function RovoChatProvider({
 		}
 	}, [dispatchTurn, rawUiMessages, queueTick, turnRef]);
 
-	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating } = useRovoChatMediaGeneration(rawUiMessages, queueTick);
+	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating } = useRovoChatMediaGeneration(rawUiMessages, activePrompt?.id ?? null, queueTick);
 
 	// The provider-owned facts the turn machine's guards read alongside its own state.
 	const readTurnEnvironment = useCallback((): RovoChatTurnEnvironment => ({
@@ -1166,7 +1169,7 @@ export function RovoChatProvider({
 			const messagePayload = {
 				files: promptItem.files,
 				text: promptItem.text,
-				metadata: promptItem.options?.messageMetadata,
+				metadata: getPromptMessageMetadata(promptItem),
 			};
 			const bodyPayload = {
 				body: buildSendMessageBody(
@@ -1202,9 +1205,16 @@ export function RovoChatProvider({
 			return;
 		}
 
+		if (shouldNoticeCutShortTurn(turnRef.current)) {
+			errorCounterRef.current += 1;
+			recordTurnError(
+				createAssistantTextMessage(`error-${errorCounterRef.current}`, getIncompleteTurnUserMessage()),
+				rawUiMessagesRef.current,
+			);
+		}
 		dispatchTurn({ type: "finalize" });
 		clearMediaGenerating();
-	}, [clearMediaGenerating, dispatchTurn, turnRef]);
+	}, [clearMediaGenerating, dispatchTurn, rawUiMessagesRef, recordTurnError, turnRef]);
 
 	const maybeFinalizeAndProcess = useCallback(() => {
 		if (canFinalizeActivePrompt(turnRef.current, readTurnEnvironment())) {
@@ -1417,7 +1427,7 @@ export function RovoChatProvider({
 			const messagePayload = {
 				files,
 				text: trimmedText,
-				metadata: clearSkillInvocationForEdit(message.metadata),
+				metadata: getEditResendMetadata(message.metadata),
 				messageId,
 			};
 			const bodyPayload = {
@@ -1874,7 +1884,6 @@ export function RovoChatProvider({
 		}
 	}, [commitSessionAgentEntries, resetChat, setSelectedAgentIdState]);
 
-	const rawUiMessagesRef = useLatestRef(rawUiMessages);
 	const transcriptOwner = useMemo<RovoChatTranscriptOwner>(() => ({
 		begin: (kind) => {
 			const token = beginTransition(kind);

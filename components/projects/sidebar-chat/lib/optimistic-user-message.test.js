@@ -82,6 +82,7 @@ test("compact chat does not duplicate the optimistic bubble after the SDK user m
 		{
 			id: "sdk-user-1",
 			role: "user",
+			metadata: { promptId: prompt.id },
 			parts: [{ type: "text", text: prompt.text, state: "done" }],
 		},
 	];
@@ -133,6 +134,7 @@ test("compact chat keeps the SDK user message once the assistant has started str
 		{
 			id: "sdk-user-1",
 			role: "user",
+			metadata: { promptId: prompt.id },
 			parts: [{ type: "text", text: prompt.text, state: "done" }],
 		},
 		{
@@ -155,6 +157,7 @@ test("compact chat does not re-add the active prompt after a completed question-
 		{
 			id: "sdk-user-1",
 			role: "user",
+			metadata: { promptId: prompt.id },
 			parts: [{ type: "text", text: prompt.text, state: "done" }],
 		},
 		{
@@ -178,6 +181,32 @@ test("compact chat does not re-add the active prompt after a completed question-
 
 	assert.equal(result.length, 2);
 	assert.equal(result, messages);
+});
+
+// Regression: matching used to compare the server's turn-complete timestamp with
+// the client's prompt.createdAt and allowed 1 s of skew, so a client clock more
+// than 1 s ahead re-added the prompt as a duplicate bubble after its reply.
+test("compact chat does not re-add the active prompt after its reply when the client clock runs ahead", async () => {
+	const { appendOptimisticCompactUserMessage } = await loadOptimisticUserMessageModule();
+	const prompt = createPrompt({ createdAt: Date.parse("2026-05-18T01:00:05.000Z") });
+	const messages = [
+		{
+			id: "sdk-user-1",
+			role: "user",
+			metadata: { promptId: prompt.id },
+			parts: [{ type: "text", text: prompt.text, state: "done" }],
+		},
+		{
+			id: "assistant-1",
+			role: "assistant",
+			parts: [
+				{ type: "text", text: "Done", state: "done" },
+				{ type: "data-turn-complete", data: { timestamp: "2026-05-18T01:00:01.000Z" } },
+			],
+		},
+	];
+
+	assert.equal(appendOptimisticCompactUserMessage(messages, prompt), messages);
 });
 
 test("compact chat does not render hidden synthetic prompts as optimistic user bubbles", async () => {

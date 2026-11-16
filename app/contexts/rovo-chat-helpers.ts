@@ -11,7 +11,6 @@ import {
 } from "@/lib/rovo-app-types";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import {
-	getMessageText,
 	type RovoMessageMetadata,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
@@ -52,12 +51,18 @@ export interface QueuedPromptItem {
 	createdAt: number;
 }
 
-export function clearSkillInvocationForEdit(
+/**
+ * The metadata an edited user message is resent with. It drops the stale
+ * skill-invocation display, and the prompt id of the queued turn it first
+ * belonged to, since an edit resend runs outside the queue.
+ */
+export function getEditResendMetadata(
 	metadata: RovoMessageMetadata | undefined,
 ): RovoMessageMetadata | undefined {
-	if (!metadata?.skillInvocation) return metadata;
+	if (!metadata?.skillInvocation && !metadata?.promptId) return metadata;
 	const nextMetadata = { ...metadata };
 	delete nextMetadata.skillInvocation;
+	delete nextMetadata.promptId;
 	return nextMetadata;
 }
 
@@ -66,7 +71,6 @@ type RovoUIMessagePart = RovoUIMessage["parts"][number];
 const INLINE_DATA_PLACEHOLDER = "[inline data omitted]";
 const CHAT_REQUEST_MAX_BYTES = 4 * 1024 * 1024;
 const CHAT_REQUEST_MIN_MESSAGES = 8;
-const TURN_COMPLETE_TIMESTAMP_TOLERANCE_MS = 1_000;
 
 type AgentSelectorProfile = Pick<
 	RovoAgentProfile,
@@ -313,88 +317,17 @@ function getClarificationResolutionOutput(options: SendPromptOptions | undefined
 		: "Answers received.";
 }
 
-function getTurnCompleteTimestampMs(message: RovoUIMessage): number | null | undefined {
-	for (let index = message.parts.length - 1; index >= 0; index -= 1) {
-		const part = message.parts[index];
-		if (part.type !== "data-turn-complete") {
-			continue;
-		}
-
-		const timestamp = (part as { data?: { timestamp?: unknown } }).data?.timestamp;
-		if (typeof timestamp !== "string") {
-			return null;
-		}
-
-		const timestampMs = Date.parse(timestamp);
-		return Number.isFinite(timestampMs) ? timestampMs : null;
-	}
-
-	return undefined;
+/** The metadata a queued prompt's user message is sent with: its own, tagged with the prompt id. */
+export function getPromptMessageMetadata(prompt: QueuedPromptItem): RovoMessageMetadata {
+	return { ...prompt.options?.messageMetadata, promptId: prompt.id };
 }
 
-export function hasTurnCompleteForPrompt(
-	message: RovoUIMessage,
-	prompt: QueuedPromptItem,
-): boolean {
-	const timestampMs = getTurnCompleteTimestampMs(message);
-	if (timestampMs === undefined) {
-		return false;
-	}
-
-	return (
-		timestampMs === null ||
-		timestampMs + TURN_COMPLETE_TIMESTAMP_TOLERANCE_MS >= prompt.createdAt
-	);
-}
-
-function getFileSignature(file: FileUIPart): string {
-	return [
-		file.url,
-		file.filename ?? "",
-		file.mediaType ?? "",
-	].join("\u0000");
-}
-
-function hasMatchingFileParts(
-	message: RovoUIMessage,
-	files: ReadonlyArray<FileUIPart>,
-): boolean {
-	if (files.length === 0) {
-		return false;
-	}
-
-	const messageFileSignatures = new Set(
-		message.parts
-			.filter((part): part is FileUIPart => part.type === "file")
-			.map(getFileSignature),
-	);
-
-	return files.every((file) => messageFileSignatures.has(getFileSignature(file)));
-}
-
-export function didAssistantCompleteActivePrompt(
+/** The index of the user message sent for `promptId`, or -1 before it lands. */
+export function findPromptUserMessageIndex(
 	messages: ReadonlyArray<RovoUIMessage>,
-	assistantIndex: number,
-	prompt: QueuedPromptItem,
-): boolean {
-	const promptText = prompt.text.trim();
-	for (let index = assistantIndex - 1; index >= 0; index -= 1) {
-		const message = messages[index];
-		if (message.role === "assistant") {
-			return false;
-		}
-
-		if (message.role !== "user") {
-			continue;
-		}
-
-		return (
-			(promptText.length > 0 && getMessageText(message).trim() === promptText) ||
-			hasMatchingFileParts(message, prompt.files)
-		);
-	}
-
-	return false;
+	promptId: string,
+): number {
+	return messages.findLastIndex((message) => message.role === "user" && message.metadata?.promptId === promptId);
 }
 
 export function markPendingClarificationResolvedInMessages(

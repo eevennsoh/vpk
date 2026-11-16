@@ -1,9 +1,5 @@
-import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
-import {
-	didAssistantCompleteActivePrompt,
-	hasTurnCompleteForPrompt,
-	type QueuedPromptItem,
-} from "@/app/contexts/rovo-chat-helpers";
+import { hasTurnCompleteSignal, type RovoUIMessage } from "@/lib/rovo-ui-messages";
+import { findPromptUserMessageIndex, type QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
 
 /**
  * The error a failed turn ended with, shown after the last transcript message
@@ -79,27 +75,22 @@ export function pruneTurnErrorsFrom(
 }
 
 /**
- * Whether the latest assistant message carries the data-turn-complete signal
- * for `prompt`. Only the last assistant message counts, so a stale signal from
- * an earlier turn never completes the current one.
+ * Whether the reply to `prompt` carries the data-turn-complete signal: the
+ * latest assistant message after the user message sent for that prompt (matched
+ * by prompt id). Matching by id instead of by timestamp keeps a stale signal
+ * from an earlier turn from completing this one, whatever the client clock says.
  */
 export function hasTurnCompleteForActivePrompt(
 	messages: ReadonlyArray<RovoUIMessage>,
 	prompt: QueuedPromptItem,
 ): boolean {
-	for (let index = messages.length - 1; index >= 0; index -= 1) {
-		const message = messages[index];
-		if (message.role !== "assistant") {
-			continue;
-		}
-
-		return (
-			hasTurnCompleteForPrompt(message, prompt) &&
-			didAssistantCompleteActivePrompt(messages, index, prompt)
-		);
+	const promptIndex = findPromptUserMessageIndex(messages, prompt.id);
+	if (promptIndex === -1) {
+		return false;
 	}
 
-	return false;
+	const reply = messages.findLast((message, index) => index > promptIndex && message.role === "assistant");
+	return reply !== undefined && hasTurnCompleteSignal(reply);
 }
 
 /**
