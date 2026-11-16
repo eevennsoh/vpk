@@ -181,6 +181,21 @@ function resolveRovoNonStrictPostStreamRouting({
 	};
 }
 
+/**
+ * The break that starts a new paragraph after `text`: none when nothing visible came before it or
+ * it already ends a paragraph. A caller that keeps only the end of the text says whether anything
+ * visible came before.
+ */
+function paragraphSeparatorAfter(text, hasVisibleText = text.trim().length > 0) {
+	if (!hasVisibleText || text.endsWith("\n\n")) {
+		return "";
+	}
+	return text.endsWith("\n") ? "\n" : "\n\n";
+}
+
+/** Whole blank lines at the start of `text`; the first line with text keeps its indentation. */
+const LEADING_BLANK_LINES = /^(?:[ \t]*\r?\n)+/u;
+
 function createRovoTextOutputController({
 	classifierJsonBufferMaxChars = 0,
 	isClassifierIntentLeakCandidate = () => false,
@@ -211,6 +226,15 @@ function createRovoTextOutputController({
 	let hasSuppressedLargeAssistantJson = false;
 	// Set after a notice paragraph; the next text starts a new paragraph.
 	let paragraphBreakPending = false;
+	// Set when a rerun keeps the text already shown; its first shown text starts a new paragraph.
+	// The break goes on the wire only: the rerun's own text is what the turn hands on.
+	let shownParagraphBreakPending = false;
+	// Whether any visible (non-whitespace) text has gone on the wire, and the last two characters
+	// written. Together they tell where the next paragraph starts.
+	let hasShownVisibleText = false;
+	let shownTextEnd = "";
+	// The rerun's leading whitespace, held until its first visible text decides the break.
+	let heldWhitespace = "";
 
 	const afterPendingParagraphBreak = (delta) => {
 		if (!paragraphBreakPending) {
@@ -229,6 +253,26 @@ function createRovoTextOutputController({
 		textStarted = true;
 	};
 
+	const writeShownTextDelta = (nextDelta) => {
+		let delta = nextDelta;
+		if (shownParagraphBreakPending) {
+			if (nextDelta.trim().length === 0) {
+				heldWhitespace += nextDelta;
+				return;
+			}
+			// The rerun's leading blank lines are part of the break, not added on top of it.
+			shownParagraphBreakPending = false;
+			delta = `${paragraphSeparatorAfter(shownTextEnd, hasShownVisibleText)}${`${heldWhitespace}${nextDelta}`.replace(LEADING_BLANK_LINES, "")}`;
+			heldWhitespace = "";
+		}
+		if (delta.trim().length > 0) {
+			hasShownVisibleText = true;
+		}
+		shownTextEnd = `${shownTextEnd}${delta}`.slice(-2);
+		startTextIfNeeded();
+		writer.write({ type: "text-delta", id: textId, delta });
+	};
+
 	const emitTextDeltaRaw = (delta) => {
 		if (!delta) {
 			return;
@@ -242,8 +286,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({ type: "text-delta", id: textId, delta });
+		writeShownTextDelta(delta);
 	};
 
 	const flushBufferedAssistantText = ({ force = false } = {}) => {
@@ -334,12 +377,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({
-			type: "text-delta",
-			id: textId,
-			delta: deferredToolFirstText,
-		});
+		writeShownTextDelta(deferredToolFirstText);
 		deferredToolFirstText = "";
 	};
 
@@ -362,10 +400,7 @@ function createRovoTextOutputController({
 			return;
 		}
 		paragraphBreakPending = false;
-		const separator = assistantText.trim().length === 0 || assistantText.endsWith("\n\n")
-			? ""
-			: assistantText.endsWith("\n") ? "\n" : "\n\n";
-		emitForcedTextDelta(`${separator}${text}`);
+		emitForcedTextDelta(`${paragraphSeparatorAfter(assistantText)}${text}`);
 		paragraphBreakPending = true;
 	};
 
@@ -378,8 +413,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({ type: "text-delta", id: textId, delta: assistantText });
+		writeShownTextDelta(assistantText);
 	};
 
 	const removeToolFirstFailureNarrative = () => {
@@ -401,7 +435,16 @@ function createRovoTextOutputController({
 		}
 	};
 
-	const resetAssistantTextForRetryAttempt = () => {
+	/**
+	 * Clears the attempt's text for the next attempt. A rerun that keeps the text already shown
+	 * (`continuesShownText`) starts its first shown text as a new paragraph.
+	 */
+	const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
+		if (continuesShownText && hasShownVisibleText) {
+			shownParagraphBreakPending = true;
+		}
+		// Whitespace an attempt never showed is dropped with it.
+		heldWhitespace = "";
 		assistantText = "";
 		unsuppressedAssistantText = "";
 		bufferedAssistantText = "";

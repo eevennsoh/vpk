@@ -88,9 +88,6 @@ function createHarness(overrides = {}) {
 				return nextThread;
 			},
 		},
-		startNextQueuedRun: () => {
-			calls.push(["startNextQueuedRun"]);
-		},
 		synchronizeRovoAppThreadGeneratedFiles: async (thread, options) => {
 			calls.push(["synchronizeRovoAppThreadGeneratedFiles", thread, options]);
 		},
@@ -290,7 +287,7 @@ test("persistRovoAppRunMessagesSnapshot updates only valid existing thread snaps
 	]);
 });
 
-test("settleRovoAppRun completed saves final messages, synchronizes files, clears the active request, settles, and starts queued work", async () => {
+test("settleRovoAppRun completed saves final messages, synchronizes files, clears the active request, and settles", async () => {
 	const messages = [{ id: "assistant-1" }];
 	const streamedMessages = [{ id: "assistant-1", parts: [] }];
 	const run = { id: "run-1", threadId: "thread-1" };
@@ -315,7 +312,6 @@ test("settleRovoAppRun completed saves final messages, synchronizes files, clear
 		],
 		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
 		["activeRequests.delete", "thread-1"],
-		["startNextQueuedRun"],
 	]);
 });
 
@@ -332,7 +328,6 @@ test("settleRovoAppRun completed without a final message list only clears the st
 		["updateThread", "thread-1", { activeRun: null }],
 		["settleRun", "thread-1", { outcome: "completed", runId: "run-1", error: null }],
 		["activeRequests.delete", "thread-1"],
-		["startNextQueuedRun"],
 	]);
 });
 
@@ -350,7 +345,6 @@ test("settleRovoAppRun failed appends the failure card before clearing; an abort
 		["updateThread", "thread-1", { activeRun: null }],
 		["settleRun", "thread-1", { outcome: "failed", runId: "run-1", error: "Rovo run failed" }],
 		["activeRequests.delete", "thread-1"],
-		["startNextQueuedRun"],
 	]);
 
 	const abortedRun = { id: "run-2", threadId: "thread-2" };
@@ -388,18 +382,26 @@ function createSubscriber() {
 }
 
 // The service over the real run manager; thread writes fail while `failWrites.value` is true.
+// `getServiceSettles()` counts the service's calls to the manager's `settleRun`; a test's own
+// direct `runManager.settleRun` calls are not counted.
 function createRealRunHarness({ failWrites = false } = {}) {
 	const runManager = createRovoAppRunManager({ logger: QUIET_LOGGER });
+	let serviceSettles = 0;
 	const activeRequests = new Map();
 	const threadWrites = [];
 	const errors = [];
 	const writeFailure = { value: failWrites };
-	let queuedStarts = 0;
 	const service = createRovoAppRunStateService({
 		activeRequests,
 		createFailureSseChunks: () => ["failure-chunk"],
 		logger: { ...QUIET_LOGGER, error: (...args) => errors.push(args) },
-		rovoAppRunManager: runManager,
+		rovoAppRunManager: {
+			...runManager,
+			settleRun: (...args) => {
+				serviceSettles += 1;
+				return runManager.settleRun(...args);
+			},
+		},
 		rovoAppThreadManager: {
 			listThreads: async () => [],
 			updateThread: async (threadId, patch) => {
@@ -410,15 +412,12 @@ function createRealRunHarness({ failWrites = false } = {}) {
 				return { id: threadId, ...patch };
 			},
 		},
-		startNextQueuedRun: () => {
-			queuedStarts += 1;
-		},
 		synchronizeRovoAppThreadGeneratedFiles: async () => {},
 	});
 	return {
 		activeRequests,
 		errors,
-		getQueuedStarts: () => queuedStarts,
+		getServiceSettles: () => serviceSettles,
 		runManager,
 		service,
 		threadWrites,
@@ -445,7 +444,7 @@ test("a finished run whose save and clear both fail ends failed instead of rejec
 	assert.equal(subscriber.ended, true);
 	assert.deepEqual(harness.threadWrites.map(([, patch]) => Object.keys(patch).sort()), [["activeRun", "messages"], ["activeRun"]]);
 	assert.equal(harness.errors.length, 2);
-	assert.equal(harness.getQueuedStarts(), 1);
+	assert.equal(harness.getServiceSettles(), 1);
 });
 
 test("a late settle of a cancelled run leaves the run that replaced it alone", async () => {
@@ -468,7 +467,7 @@ test("a late settle of a cancelled run leaves the run that replaced it alone", a
 		assert.equal(replacement.status, "streaming", outcome);
 		assert.equal(harness.activeRequests.has("thread-1"), true, outcome);
 		assert.deepEqual(harness.threadWrites, [], outcome);
-		assert.equal(harness.getQueuedStarts(), 0, outcome);
+		assert.equal(harness.getServiceSettles(), 0, outcome);
 	}
 });
 
@@ -483,7 +482,7 @@ test("a late settle of a cancelled run with no successor still saves its message
 
 	assert.equal(run.status, "cancelled");
 	assert.deepEqual(harness.threadWrites, [["thread-1", { activeRun: null, messages: [{ id: "partial" }] }]]);
-	assert.equal(harness.getQueuedStarts(), 0);
+	assert.equal(harness.getServiceSettles(), 0);
 });
 
 test("a cancelled run that settles after its successor finished touches nothing", async () => {
@@ -497,7 +496,8 @@ test("a cancelled run that settles after its successor finished touches nothing"
 	assert.equal(harness.runManager.getRun("thread-1"), null);
 	harness.threadWrites.length = 0;
 	harness.activeRequests.set("thread-1", { port: 8003 });
-	const queuedStartsBefore = harness.getQueuedStarts();
+	// One settle for the cancel, one for the successor's completion.
+	assert.equal(harness.getServiceSettles(), 2);
 
 	for (const [outcome, details] of [
 		["completed", { messages: [{ id: "old-partial" }] }],
@@ -509,7 +509,7 @@ test("a cancelled run that settles after its successor finished touches nothing"
 
 	assert.deepEqual(harness.threadWrites, []);
 	assert.equal(harness.activeRequests.has("thread-1"), true);
-	assert.equal(harness.getQueuedStarts(), queuedStartsBefore);
+	assert.equal(harness.getServiceSettles(), 2);
 	assert.equal(successor.status, "completed");
 });
 
@@ -523,14 +523,14 @@ test("a run settles once: a late failure after its cancel has no second set of e
 	assert.equal(run.status, "cancelled");
 	assert.equal(run.abortController.signal.aborted, true);
 	assert.equal(harness.activeRequests.has("thread-1"), false);
-	assert.equal(harness.getQueuedStarts(), 1);
+	assert.equal(harness.getServiceSettles(), 1);
 	assert.equal(harness.threadWrites.length, 1);
 
 	const abortError = Object.assign(new Error("aborted"), { name: "AbortError" });
 	assert.equal(await harness.service.settleRovoAppRun(run, "failed", { error: abortError }), false);
 	assert.equal(await harness.service.settleRovoAppRun(run, "cancelled"), false);
 	assert.equal(run.status, "cancelled");
-	assert.equal(harness.getQueuedStarts(), 1);
+	assert.equal(harness.getServiceSettles(), 1);
 	assert.equal(harness.threadWrites.length, 1);
 });
 

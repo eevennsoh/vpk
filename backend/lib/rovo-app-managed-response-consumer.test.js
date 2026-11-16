@@ -275,7 +275,6 @@ function createRealConsumer() {
 				return { id: threadId, ...patch };
 			},
 		},
-		startNextQueuedRun: () => {},
 		synchronizeRovoAppThreadGeneratedFiles: async () => {},
 	});
 	const { consumeRovoAppManagedResponse } = createRovoAppManagedResponseConsumer({

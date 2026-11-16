@@ -82,7 +82,6 @@ function createRovoAppRuntimeComposition({
 	logger = console,
 	mapUiMessagesToConversation,
 	requestUserInputQuestionMetaStore,
-	resolveRovoAppPortAvailability,
 	rovoAppDocumentManager,
 	rovoAppGeneratedFilesManager,
 	rovoAppRunManager,
@@ -129,7 +128,6 @@ function createRovoAppRuntimeComposition({
 	requireFunction("hasGatewayUrlConfigured", hasGatewayUrlConfigured);
 	requireFunction("isRovoAvailable", isRovoAvailable);
 	requireFunction("mapUiMessagesToConversation", mapUiMessagesToConversation);
-	requireFunction("resolveRovoAppPortAvailability", resolveRovoAppPortAvailability);
 	requireFunction("rovoCancelChat", rovoCancelChat);
 	requireFunction("runRovoBackgroundTask", runRovoBackgroundTask);
 	requireFunction("streamTextViaGateway", streamTextViaGateway);
@@ -157,7 +155,6 @@ function createRovoAppRuntimeComposition({
 		rovoAppUploadManager,
 	});
 
-	let startNextQueuedRovoAppRun = () => {};
 	const {
 		clearRovoAppRunState,
 		persistRovoAppRunBackend,
@@ -172,7 +169,6 @@ function createRovoAppRuntimeComposition({
 		logger,
 		rovoAppRunManager,
 		rovoAppThreadManager,
-		startNextQueuedRun: () => startNextQueuedRovoAppRun(),
 		synchronizeRovoAppThreadGeneratedFiles,
 	});
 
@@ -288,15 +284,10 @@ function createRovoAppRuntimeComposition({
 		executeRovoAppManagedRun,
 		logger,
 		persistRovoAppRunState,
-		resolveRovoAppPortAvailability,
 		rovoAppRunManager,
 		settleRovoAppRun,
 	});
-	const {
-		startManagedRovoAppRun,
-		startNextQueuedRovoAppRun: resolvedStartNextQueuedRovoAppRun,
-	} = rovoAppManagedRunLifecycle;
-	startNextQueuedRovoAppRun = resolvedStartNextQueuedRovoAppRun;
+	const { startManagedRovoAppRun } = rovoAppManagedRunLifecycle;
 
 	const agentsRfpDemoChatStreamOwner = createAgentsRfpDemoChatStreamOwner({
 		agentsRfpDemoStateManager,
@@ -315,8 +306,6 @@ function createRovoAppRuntimeComposition({
 		persistRovoAppRunState,
 		persistRovoAppRunStateInBackground,
 		rovoAppRunManager,
-		rovoCancelChat,
-		settleRovoAppRun,
 		startManagedRovoAppRun,
 	});
 
@@ -334,7 +323,6 @@ function createRovoAppRuntimeComposition({
 		proxyRovoAppChatRequest,
 		reconcileOrphanedRovoAppThread,
 		settleRovoAppRun,
-		startNextQueuedRovoAppRun,
 		sweepOrphanedRovoAppRuns,
 		syncRovoAppThreadSessionFromCurrentPort,
 		withStudioAgentGatewayFallbackTimeout,

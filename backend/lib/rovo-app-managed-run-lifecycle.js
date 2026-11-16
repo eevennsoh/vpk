@@ -13,23 +13,16 @@ function createRovoAppManagedRunLifecycle({
 	executeRovoAppManagedRun,
 	logger = console,
 	persistRovoAppRunState,
-	resolveRovoAppPortAvailability,
 	rovoAppRunManager,
 	settleRovoAppRun,
 } = {}) {
 	requireFunction("executeRovoAppManagedRun", executeRovoAppManagedRun);
 	requireFunction("logger.error", logger?.error);
 	requireFunction("persistRovoAppRunState", persistRovoAppRunState);
-	requireFunction("resolveRovoAppPortAvailability", resolveRovoAppPortAvailability);
-	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
 	requireFunction("rovoAppRunManager.hasSubscribers", rovoAppRunManager?.hasSubscribers);
 	requireFunction("rovoAppRunManager.isCurrentRun", rovoAppRunManager?.isCurrentRun);
-	requireFunction("rovoAppRunManager.listQueuedThreadIds", rovoAppRunManager?.listQueuedThreadIds);
 	requireFunction("rovoAppRunManager.markRunStarted", rovoAppRunManager?.markRunStarted);
-	requireFunction("rovoAppRunManager.removeQueuedRun", rovoAppRunManager?.removeQueuedRun);
 	requireFunction("settleRovoAppRun", settleRovoAppRun);
-
-	let isProcessingRovoAppRunQueue = false;
 
 	// Settling never throws, so a run whose failure cannot be saved still ends.
 	async function failRovoAppRun(run, error) {
@@ -58,8 +51,7 @@ function createRovoAppManagedRunLifecycle({
 		if (!rovoAppRunManager.isCurrentRun(markedRun) || markedRun.abortController.signal.aborted) {
 			return;
 		}
-		// Run as the turn of the caller who sent it, never of whatever started it
-		// (a queued run starts from another caller's settle).
+		// Run as the turn of the caller who sent it.
 		void runWithGeneratedMediaScope(markedRun.mediaScope ?? null, () => executeRovoAppManagedRun(markedRun)).catch(async (error) => {
 			const wasAborted = markedRun.abortController.signal.aborted;
 			if (!wasAborted) {
@@ -69,38 +61,9 @@ function createRovoAppManagedRunLifecycle({
 		});
 	}
 
-	async function startNextQueuedRovoAppRun() {
-		if (isProcessingRovoAppRunQueue) {
-			return;
-		}
-
-		isProcessingRovoAppRunQueue = true;
-		try {
-			const queuedThreadIds = rovoAppRunManager.listQueuedThreadIds();
-			for (const threadId of queuedThreadIds) {
-				const run = rovoAppRunManager.getRun(threadId);
-				if (!run) {
-					rovoAppRunManager.removeQueuedRun(threadId);
-					continue;
-				}
-
-				const assignment = resolveRovoAppPortAvailability();
-				if (!assignment) {
-					continue;
-				}
-
-				await startManagedRovoAppRun(run);
-				break;
-			}
-		} finally {
-			isProcessingRovoAppRunQueue = false;
-		}
-	}
-
 	return {
 		failRovoAppRun,
 		startManagedRovoAppRun,
-		startNextQueuedRovoAppRun,
 	};
 }
 
