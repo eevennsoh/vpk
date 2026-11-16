@@ -32,6 +32,7 @@ const { loadCjsModuleFromText } = require("../../scripts/lib/esbuild-cjs-loader.
 const RETRY_DELAY_MS = 150;
 const CHAT_ERROR_UTILS_PATH = path.join(process.cwd(), "lib/chat-error-utils.ts");
 const CANCEL_STRATEGY_PATH = path.join(process.cwd(), "lib/rovo-cancel-strategy.ts");
+const TURN_ERRORS_PATH = path.join(process.cwd(), "app/contexts/rovo-chat-turn-errors.ts");
 const CANCEL_REQUEST_TIMEOUT_MS = 150;
 
 const mocks = {
@@ -63,6 +64,8 @@ const mocks = {
 		export async function fetchRovoAppAITitle() { return null; }
 		export async function fetchRovoAppSuggestedQuestions() { return []; }
 		export async function getRovoAppThread(id) {
+			// \`threadFetchGate\` holds every thread fetch until the test opens it.
+			await api().threadFetchGate;
 			// \`failingThreadIds\` models a thread whose fetch rejects.
 			if (api().failingThreadIds?.has(id)) throw new Error("Thread fetch failed: " + id);
 			return api().threads.get(id) ?? null;
@@ -84,6 +87,16 @@ const mocks = {
 		export * from ${JSON.stringify(CHAT_ERROR_UTILS_PATH)};
 		export const RATE_LIMIT_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
 		export const CHAT_IN_PROGRESS_RETRY_DELAY_MS = ${RETRY_DELAY_MS};
+	`,
+	// Real turn errors; the provider's onFinish reads every clean or aborted
+	// finish through readCutShortFinish, so \`onRequestFinish\` runs inside it.
+	"@/app/contexts/rovo-chat-turn-errors": `
+		import { readCutShortFinish as readFinish } from ${JSON.stringify(TURN_ERRORS_PATH)};
+		export * from ${JSON.stringify(TURN_ERRORS_PATH)};
+		export function readCutShortFinish(input) {
+			window.testApi?.onRequestFinish?.();
+			return readFinish(input);
+		}
 	`,
 };
 
@@ -380,14 +393,90 @@ function holdDetach() {
 	};
 }
 
+// Holds every thread fetch until the next chat request's onFinish runs, so a
+// selection's fetch resolves after that request finished but before its send settles.
+function holdThreadFetchUntilRequestFinishes() {
+	const gate = { opened: false };
+	window.testApi.threadFetchGate = new Promise((resolve) => {
+		window.testApi.onRequestFinish = () => {
+			gate.opened = true;
+			resolve();
+		};
+	});
+	return gate;
+}
+
+// Captures the provider's media timeouts (the full media timeout and the
+// cut-short wait) instead of scheduling them, so a test can release them
+// without real waits or mocking the harness's own timers. The cut-short wait
+// runs to a deadline, so a wait armed again (after its effect was cleaned up)
+// asks for the time remaining: a delay above a second, up to the wait, is it.
+// A cleared timeout stays captured but is marked, like a real one that will
+// never run: `fireLatest` and `fire` still run it (a stale callback must do
+// nothing), while `fireLive` runs only the newest timeout still scheduled.
+function captureMediaTimeouts(t, harness) {
+	const captured = { full: [], cutShort: [] };
+	const kindOf = (delay) => {
+		if (delay === harness.MEDIA_GENERATION_TIMEOUT_MS) return "full";
+		return delay > 1000 && delay <= harness.CUT_SHORT_MEDIA_WAIT_MS ? "cutShort" : null;
+	};
+	const entries = new Map();
+	const originals = { set: globalThis.setTimeout, clear: globalThis.clearTimeout, windowSet: window.setTimeout, windowClear: window.clearTimeout };
+	const capture = (schedule) => (callback, delay, ...args) => {
+		const kind = kindOf(delay);
+		if (kind) {
+			const entry = { callback, delay, cleared: false };
+			captured[kind].push(entry);
+			const handle = schedule(() => {}, 0);
+			entries.set(handle, entry);
+			return handle;
+		}
+		return schedule(callback, delay, ...args);
+	};
+	const release = (clear) => (handle) => {
+		const entry = entries.get(handle);
+		if (entry) entry.cleared = true;
+		return clear(handle);
+	};
+	globalThis.setTimeout = capture(originals.set);
+	window.setTimeout = capture(originals.windowSet.bind(window));
+	globalThis.clearTimeout = release(originals.clear);
+	window.clearTimeout = release(originals.windowClear.bind(window));
+	t.after(() => {
+		globalThis.setTimeout = originals.set;
+		globalThis.clearTimeout = originals.clear;
+		window.setTimeout = originals.windowSet;
+		window.clearTimeout = originals.windowClear;
+	});
+	const run = (entry) => React.act(async () => {
+		entry.callback();
+	});
+	const handle = (kind) => ({
+		count: () => captured[kind].length,
+		live: () => captured[kind].filter((entry) => !entry.cleared).length,
+		delays: () => captured[kind].map((entry) => entry.delay),
+		fire: (index) => run(captured[kind].at(index)),
+		fireLatest: () => run(captured[kind].at(-1)),
+		fireLive: () => {
+			const entry = captured[kind].findLast((candidate) => !candidate.cleared);
+			assert.ok(entry, `a scheduled ${kind} media timeout`);
+			entry.cleared = true;
+			return run(entry);
+		},
+	});
+	return { full: handle("full"), cutShort: handle("cutShort") };
+}
+
 module.exports = {
 	CANCEL_REQUEST_TIMEOUT_MS,
 	RETRY_DELAY_MS,
 	React,
 	cancelRunCalls,
+	captureMediaTimeouts,
 	chatState,
 	describeMessages,
 	holdDetach,
+	holdThreadFetchUntilRequestFinishes,
 	mountChat,
 	send,
 	settle,

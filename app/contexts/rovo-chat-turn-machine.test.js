@@ -203,6 +203,8 @@ const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a", promptId = "a
 // run; the committed streaming flag, which lags the request's end, never decides.
 const SENDING = Object.freeze({ ...INITIAL, activePrompt: prompt("a"), dispatching: true });
 const SETTLED = Object.freeze({ ...SENDING, dispatching: false });
+const FINISHED = { type: "requestFinished" };
+const EDIT_SENDING = Object.freeze(run(INITIAL, { type: "editStarted" }, { type: "editDispatchStarted" }));
 const LIVENESS_BY_TURN_STATE = [
 	{ name: "idle", state: INITIAL, env: IDLE, live: false },
 	{ name: "a prompt sending or streaming", state: SENDING, env: IDLE, live: true },
@@ -217,6 +219,13 @@ const LIVENESS_BY_TURN_STATE = [
 	{ name: "failed into a retry countdown and settled", state: SETTLED, env: { ...IDLE, retryScheduled: true }, live: false },
 	{ name: "stopped, before its send settles", state: reduce(SENDING, { type: "stopRequested" }), env: IDLE, live: false },
 	{ name: "reset by a thread change", state: reduce(SENDING, { type: "reset" }), env: IDLE, live: false },
+	{ name: "an edit resend still streaming", state: EDIT_SENDING, env: IDLE, live: true },
+	{ name: "an edit resend finished (onFinish ran) but not settled", state: reduce(EDIT_SENDING, FINISHED), env: IDLE, live: false },
+	{ name: "a queued send finished cleanly (onFinish ran) but not settled", state: reduce(SENDING, FINISHED), env: IDLE, live: false },
+	// A finish recorded for one send never carries into the next.
+	{ name: "an edit resend started after the previous request finished", state: run(SENDING, FINISHED, { type: "editStarted" }, { type: "editDispatchStarted" }), env: IDLE, live: true },
+	{ name: "a retry resend started after its failed request finished", state: run(SENDING, FINISHED, settledEvent(SENDING, false), { type: "retryDispatchStarted" }), env: IDLE, live: true },
+	{ name: "a send after a reset that followed a finish", state: run(SENDING, FINISHED, { type: "reset" }, { type: "enqueue", prompt: prompt("b") }, { type: "dispatchNext" }), env: IDLE, live: true },
 ];
 
 for (const row of LIVENESS_BY_TURN_STATE) {
@@ -226,6 +235,20 @@ for (const row of LIVENESS_BY_TURN_STATE) {
 		});
 	}
 }
+
+test("a request finish is recorded only while a send dispatches, and leaves the send's settlement as it was", () => {
+	// A finish arriving after a reset (no send dispatching) records nothing.
+	const reset = reduce(SENDING, { type: "reset" });
+	assert.equal(reduce(reset, FINISHED), reset);
+	assert.equal(reduce(INITIAL, FINISHED), INITIAL);
+	const finished = reduce(SENDING, FINISHED);
+	assert.equal(reduce(finished, FINISHED), finished);
+	assert.deepEqual(finished, { ...SENDING, requestFinished: true });
+	// The send still settles by its own attempt, and only its own.
+	assert.equal(reduce(finished, { type: "dispatchSettled", attempt: finished.sendAttempt + 1, failed: false }), finished);
+	assert.equal(reduce(finished, settledEvent(finished, false)).dispatching, false);
+	assert.equal(hasSendInFlight(finished), true);
+});
 
 test("a cut-short turn keeps its finish snapshot's anchor and notices only if turn-complete never arrives", () => {
 	assert.equal(reduce(INITIAL, cutShortFinish(false)), INITIAL);

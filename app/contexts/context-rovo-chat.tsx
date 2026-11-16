@@ -689,9 +689,9 @@ export function RovoChatProvider({
 			dispatchTurn({ type: "turnFailed", resetRetries: classification.resetRetries });
 			queueTick();
 		},
-		// Runs once per request, after onError when it failed, so a final error
-		// anchors to the transcript as the request left it (partial reply included).
+		// Runs once per request, after onError when it failed, so a final error anchors to the transcript as the request left it.
 		onFinish: ({ messages, isAbort, isError }) => {
+			dispatchTurn({ type: "requestFinished" }); // With or without an active prompt, so the request no longer counts as live.
 			const pendingTurnError = pendingTurnErrorRef.current;
 			pendingTurnErrorRef.current = null;
 			if (pendingTurnError) {

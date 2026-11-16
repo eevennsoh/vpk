@@ -10,9 +10,11 @@ const test = require("node:test");
 const {
 	React,
 	cancelRunCalls,
+	captureMediaTimeouts,
 	chatState,
 	describeMessages,
 	holdDetach,
+	holdThreadFetchUntilRequestFinishes,
 	mountChat,
 	send,
 	settle,
@@ -70,67 +72,6 @@ test("audio and video widgets count as media generation too; other widgets do no
 	turn.end();
 	await waitFor("the turn to finalize", () => chat().activePrompt === null && !chat().isStreaming);
 });
-
-// Captures the provider's media timeouts (the full media timeout and the
-// cut-short wait) instead of scheduling them, so a test can release them
-// without real waits or mocking the harness's own timers. The cut-short wait
-// runs to a deadline, so a wait armed again (after its effect was cleaned up)
-// asks for the time remaining: a delay above a second, up to the wait, is it.
-// A cleared timeout stays captured but is marked, like a real one that will
-// never run: `fireLatest` and `fire` still run it (a stale callback must do
-// nothing), while `fireLive` runs only the newest timeout still scheduled.
-function captureMediaTimeouts(t, harness) {
-	const captured = { full: [], cutShort: [] };
-	const kindOf = (delay) => {
-		if (delay === harness.MEDIA_GENERATION_TIMEOUT_MS) return "full";
-		return delay > 1000 && delay <= harness.CUT_SHORT_MEDIA_WAIT_MS ? "cutShort" : null;
-	};
-	const entries = new Map();
-	const originals = { set: globalThis.setTimeout, clear: globalThis.clearTimeout, windowSet: window.setTimeout, windowClear: window.clearTimeout };
-	const capture = (schedule) => (callback, delay, ...args) => {
-		const kind = kindOf(delay);
-		if (kind) {
-			const entry = { callback, delay, cleared: false };
-			captured[kind].push(entry);
-			const handle = schedule(() => {}, 0);
-			entries.set(handle, entry);
-			return handle;
-		}
-		return schedule(callback, delay, ...args);
-	};
-	const release = (clear) => (handle) => {
-		const entry = entries.get(handle);
-		if (entry) entry.cleared = true;
-		return clear(handle);
-	};
-	globalThis.setTimeout = capture(originals.set);
-	window.setTimeout = capture(originals.windowSet.bind(window));
-	globalThis.clearTimeout = release(originals.clear);
-	window.clearTimeout = release(originals.windowClear.bind(window));
-	t.after(() => {
-		globalThis.setTimeout = originals.set;
-		globalThis.clearTimeout = originals.clear;
-		window.setTimeout = originals.windowSet;
-		window.clearTimeout = originals.windowClear;
-	});
-	const run = (entry) => React.act(async () => {
-		entry.callback();
-	});
-	const handle = (kind) => ({
-		count: () => captured[kind].length,
-		live: () => captured[kind].filter((entry) => !entry.cleared).length,
-		delays: () => captured[kind].map((entry) => entry.delay),
-		fire: (index) => run(captured[kind].at(index)),
-		fireLatest: () => run(captured[kind].at(-1)),
-		fireLive: () => {
-			const entry = captured[kind].findLast((candidate) => !candidate.cleared);
-			assert.ok(entry, `a scheduled ${kind} media timeout`);
-			entry.cleared = true;
-			return run(entry);
-		},
-	});
-	return { full: handle("full"), cutShort: handle("cutShort") };
-}
 
 test("a stream that ends without turn-complete while media is loading keeps the prompt active and the queue blocked until Stop", async (t) => {
 	const { harness, server, chat } = await mountChat(t);
@@ -629,6 +570,75 @@ test("a completed request's switch started before its idle status commits clears
 	assert.equal(chat().activePrompt, null);
 	assert.deepEqual(chat().queuedPrompts, []);
 	assert.equal(server.turns.length, 1);
+});
+
+// An edit resend (no active prompt, so no cut-short fact) leaves a media widget
+// loading with "Then a dog" queued. A selection's held fetch resolves once the
+// edit's request has finished cleanly, before its send settles, with commits
+// held; when `superseded`, a failing selection supersedes it during the detach.
+async function switchAsEditResendFinishes(t, { superseded }) {
+	const { harness, server, chat } = await mountChat(t);
+	const timeouts = captureMediaTimeouts(t, harness);
+	window.testApi.threads.set(STORED_THREAD.id, structuredClone(STORED_THREAD));
+	server.respondNext((turn) => { turn.turnComplete(); turn.end(); });
+	await send(chat, "Original");
+	await waitFor("the first turn to finalize", () => server.turns.length === 1 && chat().activePrompt === null && !chat().isStreaming);
+	const departingThreadId = chat().activeThreadId;
+	const editing = await startAction(() => chat().editMessage(chat().uiMessages[0].id, "Draw a cat"));
+	await waitFor("the edit request", () => server.turns.length === 2);
+	const editTurn = server.turns[1];
+	editTurn.send({ type: "start" });
+	editTurn.text("e", "Drawing");
+	mediaLoading(editTurn, true);
+	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	await send(chat, "Then a dog");
+	const fetchGate = holdThreadFetchUntilRequestFinishes();
+	const detach = holdDetach();
+	const switching = await startAction(() => chat().selectThread(STORED_THREAD.id));
+	await withCommitsHeld(async () => {
+		editTurn.end();
+		await waitForUncommitted("the stop phase to reach the detach", () => detach.reached(departingThreadId));
+	});
+	assert.equal(fetchGate.opened, true);
+	if (superseded) await SUPERSEDING_SELECTIONS[0].run(chat); // A selection whose fetch fails.
+	await detach.open();
+	await switching();
+	await editing();
+	await settle(20);
+	return { server, chat, timeouts, departingThreadId };
+}
+
+// Regression: the edit's request still counted as live there, so the stop phase
+// cleared the media hold as a Stop does and the queue went out at once.
+test("an edit resend that finished before its send settles keeps its media hold and queue through a superseded switch, until the media timeout", async (t) => {
+	const { server, chat, timeouts, departingThreadId } = await switchAsEditResendFinishes(t, { superseded: true });
+	assert.equal(chat().activeThreadId, departingThreadId);
+	assert.deepEqual(chatState().messages, ["user:Draw a cat", "assistant:Drawing+data-widget-loading"]);
+	assert.equal(chat().isMediaGenerating, true);
+	assert.deepEqual(chatState().queued, ["Then a dog"]);
+	assert.equal(server.turns.length, 2);
+
+	await timeouts.full.fireLive();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 3);
+	assert.equal(chat().isMediaGenerating, false);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.equal(server.turns[2].body.id, departingThreadId);
+});
+
+test("an edit resend that finished before its send settles is cleared by its switch's commit point, and nothing lands on the new thread", async (t) => {
+	const { server, chat, timeouts } = await switchAsEditResendFinishes(t, { superseded: false });
+	const stored = ["user:Old question", "assistant:Old answer"];
+	assert.equal(chat().activeThreadId, STORED_THREAD.id);
+	assert.deepEqual(chatState().messages, stored);
+	assert.equal(chat().isMediaGenerating, false);
+	assert.deepEqual(chatState().queued, []);
+	assert.equal(chat().activePrompt, null);
+
+	// The departing reply's media timeout runs out on the new transcript: nothing happens.
+	await timeouts.full.fireLatest();
+	await settle(20);
+	assert.deepEqual(chatState().messages, stored);
+	assert.equal(server.turns.length, 2);
 });
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {

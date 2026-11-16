@@ -44,6 +44,13 @@ export interface RovoChatTurnState {
 	/** A send (first attempt, retry or edit resend) is between dispatch and its request settling. */
 	readonly dispatching: boolean;
 	/**
+	 * The current send's request has finished: its onFinish ran (it follows
+	 * onError too), whether or not a prompt is active. Every send start and
+	 * every reset clears it. See {@link hasLiveRequest} for why a finish
+	 * recorded here always belongs to the current send.
+	 */
+	readonly requestFinished: boolean;
+	/**
 	 * Names the current send. Every send start and every reset moves it on, and a
 	 * send's settlement carries the value it started with, so a send that a reset
 	 * or a later send superseded cannot settle the turn that replaced it.
@@ -98,6 +105,8 @@ export type RovoChatTurnEvent =
 	| { readonly type: "editDispatchStarted" }
 	/** The send started as `attempt` settled. Ignored unless it is still the current send. */
 	| { readonly type: "dispatchSettled"; readonly attempt: number; readonly failed: boolean }
+	/** The request's own onFinish ran. Ignored unless a send is dispatching. */
+	| { readonly type: "requestFinished" }
 	| { readonly type: "turnCompleteSeen" }
 	/**
 	 * A final error or a cut-short stream. Give-ups after retries also reset the retry count.
@@ -128,6 +137,7 @@ export const ROVO_CHAT_TURN_INITIAL_STATE: RovoChatTurnState = Object.freeze({
 	turnCompleteSeen: false,
 	cutShort: null,
 	dispatching: false,
+	requestFinished: false,
 	sendAttempt: 0,
 	retryCount: 0,
 });
@@ -155,6 +165,7 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				turnCompleteSeen: false,
 				cutShort: null,
 				dispatching: true,
+				requestFinished: false,
 				sendAttempt: state.sendAttempt + 1,
 				retryCount: 0,
 			};
@@ -166,6 +177,7 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				finalizeRequested: false,
 				cutShort: null,
 				dispatching: true,
+				requestFinished: false,
 				sendAttempt: state.sendAttempt + 1,
 			};
 		case "editStarted":
@@ -173,7 +185,7 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 			// stream that ends without turn-complete is not flagged as cut short.
 			return { ...state, queue: [], activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null };
 		case "editDispatchStarted":
-			return { ...state, dispatching: true, sendAttempt: state.sendAttempt + 1 };
+			return { ...state, dispatching: true, requestFinished: false, sendAttempt: state.sendAttempt + 1 };
 		case "dispatchSettled":
 			if (event.attempt !== state.sendAttempt) {
 				return state;
@@ -183,6 +195,8 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				dispatching: false,
 				finalizeRequested: event.failed ? true : state.finalizeRequested,
 			};
+		case "requestFinished":
+			return state.dispatching && !state.requestFinished ? { ...state, requestFinished: true } : state;
 		case "turnCompleteSeen":
 			return state.turnCompleteSeen ? state : { ...state, turnCompleteSeen: true };
 		case "turnFailed":
@@ -234,14 +248,23 @@ export function hasSendInFlight(state: RovoChatTurnState): boolean {
 
 /**
  * Whether the current send's request is live: it has started and none of the
- * request's own callbacks has finished it yet. Its onFinish or onError records
- * the finish synchronously (cut short or failed sets finalizeRequested, a retry
- * schedules its timer), turn-complete marks a reply that completed, Stop sets
- * finalizeRequested, and the send settles once onFinish has run. The committed
- * streaming flag is ignored: it stays true for a moment after the request ends.
+ * request's own callbacks has finished it yet. Its onFinish records the finish
+ * (requestFinished), with or without an active prompt; before that, a cut-short
+ * or failed finish sets finalizeRequested, a retry schedules its timer,
+ * turn-complete marks a reply that completed, and Stop sets finalizeRequested.
+ * The committed streaming flag is ignored: it stays true for a moment after the
+ * request ends.
+ *
+ * A recorded finish belongs to the current send: the AI SDK runs a request's
+ * onFinish before that request's sendMessage (and stop(), which awaits it)
+ * resolves. A queued send starts only once the previous send settled or a
+ * thread change stopped its request, an edit resend stops a streaming request
+ * first, and a retry starts from the timer its failed request armed just
+ * before that request's onFinish, so no older request finishes once a newer
+ * send has started.
  */
 export function hasLiveRequest(state: RovoChatTurnState, env: RovoChatTurnEnvironment): boolean {
-	return state.dispatching && !state.finalizeRequested && !state.turnCompleteSeen && !env.retryScheduled;
+	return state.dispatching && !state.requestFinished && !state.finalizeRequested && !state.turnCompleteSeen && !env.retryScheduled;
 }
 
 /** The cut-short wait the active prompt is in, or null when it is not waiting. */
