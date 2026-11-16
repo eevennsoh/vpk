@@ -68,9 +68,14 @@ function summarizeStacks(stacks, { worktrees = [], killCommand, footprints = new
 			codex: stack.codex === true,
 			codexVerdict,
 			current,
-			// Always through `pnpm ports kill`, which accepts a path and runs the in-use guard: a bare
-			// `dev:tmux:stop` in another worktree names no requester and would skip it.
-			stop: worktree ? killCommand(worktree) : `pnpm ports kill '${stack.worktree.replaceAll("'", "'\\''")}'`,
+			// Through `pnpm ports kill`, which accepts a path and runs the in-use guard: a bare
+			// `dev:tmux:stop` in another worktree names no requester and would skip it. Another
+			// project's next-server is not a worktree here, so that command can't stop it: name its PIDs.
+			stop: worktree
+				? killCommand(worktree)
+				: stack.external
+					? `kill ${stack.servers.map((server) => server.pid).join(" ")}`
+					: `pnpm ports kill '${stack.worktree.replaceAll("'", "'\\''")}'`,
 		};
 	});
 }

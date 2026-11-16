@@ -57,6 +57,16 @@ test("stacks get the pnpm ports kill command for their worktree and sum their se
 	assert.deepEqual([unmeasured.footprintGb, unmeasured.idle, unmeasured.stop], [null, false, "pnpm ports kill '/w/y'"]);
 });
 
+// Regression: the machine line told the user to `pnpm ports kill '<path>'` a sibling repo's
+// next-server, which fails with "No worktree matches".
+test("a stack outside this repo's worktrees is stopped by PID", () => {
+	const [external] = summarizeStacks(
+		[{ worktree: "/elsewhere/vpk-grab/apps/website", servers: [{ pid: 7 }, { pid: 8 }], quiet: true, inUse: null, external: true }],
+		{ killCommand: () => "unused", footprints: new Map() },
+	);
+	assert.equal(external.stop, "kill 7 8");
+});
+
 test("--hook prints the line from the cache under faked pressure and nothing below it", async (t) => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "machine-state-"));
 	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

@@ -4,7 +4,11 @@ const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./me
 // Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
 const OVER = SWAP + 13;
 
-const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+
+const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, describeStacks, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
 
 const calm = { servers: [], swapUsedGb: 2, pressureLevel: 1 };
 const stacks = (count) => Array.from({ length: count }, (_, index) => ({ pid: 100 + index, cwd: `/wt/${index}`, cpu: 1 }));
@@ -122,6 +126,46 @@ test("a stack outside this repo's worktrees gets a PID stop command, not pnpm po
 	assert.match(text, /\/elsewhere\/vpk-grab\/apps\/website\n {5}Not a worktree of this repo, so `pnpm ports kill` can't stop it\.\n {5}Stop it: kill 14/u);
 	assert.doesNotMatch(text, /pnpm ports kill '\/elsewhere/u);
 	assert.match(text, /Stop it: pnpm ports kill '\/repo\/\.claude\/worktrees\/a'/u);
+});
+
+test("own worktrees are never external: Codex roots, subfolders, and prefix siblings classify correctly", () => {
+	const codexRoot = "/Users/me/.codex/worktrees/ab12/vpk";
+	const env = { HOME: "/Users/me" };
+	const byWorktree = (inventory, worktreeRoots) => Object.fromEntries(
+		describeStacks(inventory, { env, worktreeRoots, activityOf: () => null }).map((stack) => [stack.worktree, stack]),
+	);
+	const stacks = byWorktree({ servers: [
+		{ pid: 1, cwd: codexRoot, cpu: 1 },
+		{ pid: 2, cwd: "/a/vpk/apps/docs", cpu: 1 },
+		{ pid: 3, cwd: "/a/vpk-other", cpu: 1 },
+		{ pid: 4, cwd: "/Users/me/.codex/worktrees/cd34/vpk", cpu: 1 },
+	] }, ["/a/vpk", codexRoot]);
+	assert.equal(stacks[codexRoot].external, false, "a listed Codex worktree is ours");
+	assert.equal(stacks[codexRoot].codex, true);
+	assert.equal(stacks["/a/vpk"].external, false, "a server in a subfolder groups under its worktree");
+	assert.equal(stacks["/a/vpk-other"].external, true, "a prefix sibling is not inside /a/vpk");
+	assert.equal(stacks["/Users/me/.codex/worktrees/cd34/vpk"].external, true, "a Codex checkout git does not list is foreign");
+	assert.ok(Object.values(byWorktree({ servers: [{ pid: 5, cwd: "/x", cpu: 1 }] }, [])).every((stack) => !stack.external), "with no worktree list, nothing is external");
+});
+
+test("a worktree root given through a symlink still matches the server's real cwd", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-stack-budget-")));
+	try {
+		const real = path.join(tempDir, "repo");
+		const foreign = path.join(tempDir, "other");
+		fs.mkdirSync(real);
+		fs.mkdirSync(foreign);
+		const link = path.join(tempDir, "link");
+		fs.symlinkSync(real, link);
+		const stacks = describeStacks(
+			{ servers: [{ pid: 1, cwd: real, cpu: 1 }, { pid: 2, cwd: foreign, cpu: 1 }] },
+			{ worktreeRoots: [link], activityOf: () => null },
+		);
+		assert.equal(stacks.find((stack) => stack.worktree === real)?.external, false);
+		assert.equal(stacks.find((stack) => stack.worktree === foreign)?.external, true);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
 });
 
 test("each listed stack is its own numbered block with its path on a separate line", () => {
