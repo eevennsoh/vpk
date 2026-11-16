@@ -34,6 +34,12 @@ for arbitrary process killing, repository cleanup, or generated-artifact removal
   private-socket stacks are stopped through that worktree's own
   `dev-tmux-plain.sh stop` so Portless drops only this route. Legacy sessions
   on tmux's default socket get SIGINT and an exact session stop.
+- A leftover stack is in use, and kept, while an agent process has its cwd
+  there or its dev log, stack record or git index was written in the last 30
+  minutes (`scripts/lib/dev-stack-activity.js`, which `install.sh` copies next
+  to the sweep; rerun `install.sh` after it changes). The stop script refuses a
+  stop the sweep requests for a stack in use and logs every stop to that
+  worktree's `output/logs/<worktree>/dev-stops.log`.
 - The skill does not run `sudo`. Missing sudoers support is reported for the
   user to repair deliberately.
 

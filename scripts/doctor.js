@@ -91,6 +91,7 @@ async function collectDoctorReport({
 	stack = () => require("../.agents/skills/vpk-verify/scripts/lib/stack.js").collectDoctor(),
 	tmuxSessions = listTmuxSessions,
 	measureNext = () => require("./lib/next-dev-output").measureNextDir(repoRoot),
+	listenerCwds = () => require("./lib/port-liveness").listListenerCwds(),
 	env = process.env,
 } = {}) {
 	const preflightReport = summarizePreflight(preflight());
@@ -100,6 +101,22 @@ async function collectDoctorReport({
 	const health = stackReport.origin ? await requestHealth(`${stackReport.origin}/api/health`) : null;
 	const healthJson = health ? parseJson(health.body) : null;
 
+	// A port file can name a port whose listener runs in another worktree; that port is not this
+	// worktree's running port, and its stack talks to the other worktree's server.
+	const { listenerOwnership } = require("./lib/port-liveness");
+	const owners = listenerCwds();
+	const running = {};
+	const heldElsewhere = [];
+	for (const [service, file] of [["frontend", ".dev-frontend-port"], ["backend", ".dev-backend-port"]]) {
+		const port = readPortFile(file);
+		if (port && listenerOwnership(owners, port, repoRoot) === false) {
+			running[service] = null;
+			heldElsewhere.push({ service, port, owners: [...owners.get(Number(port))] });
+		} else {
+			running[service] = port;
+		}
+	}
+
 	const report = {
 		worktree: repoRoot,
 		preflight: preflightReport,
@@ -107,7 +124,8 @@ async function collectDoctorReport({
 			worktreeName: portInfo.worktreeName,
 			slot: portInfo.slot,
 			reserved: { frontend: portInfo.frontendBase, backend: portInfo.backendBase, rovo: portInfo.rovoBase },
-			running: { frontend: readPortFile(".dev-frontend-port"), backend: readPortFile(".dev-backend-port") },
+			running,
+			...(heldElsewhere.length > 0 ? { heldElsewhere } : {}),
 		},
 		stack: {
 			ok: stackReport.ok,
@@ -131,7 +149,7 @@ async function collectDoctorReport({
 			error: healthJson ? null : (health?.error || (health ? "response was not JSON" : "no origin")),
 		},
 	};
-	report.ok = report.preflight.ok && report.stack.ok && report.health.ok;
+	report.ok = report.preflight.ok && report.stack.ok && report.health.ok && heldElsewhere.length === 0;
 	return report;
 }
 
@@ -155,7 +173,11 @@ function formatDoctorReport(report) {
 	for (const failure of report.preflight.failures) lines.push(`       ${failure}`);
 	for (const warning of report.preflight.warnings) lines.push(`       warning: ${warning}`);
 	const { reserved, running } = report.ports;
-	lines.push(`     ports      slot ${report.ports.slot} (${report.ports.worktreeName}): frontend ${reserved.frontend}, backend ${reserved.backend}, rovo ${reserved.rovo}; running frontend ${running.frontend ?? "-"}, backend ${running.backend ?? "-"}`);
+	const heldElsewhere = report.ports.heldElsewhere ?? [];
+	lines.push(`${heldElsewhere.length > 0 ? mark(false) : "    "} ports      slot ${report.ports.slot} (${report.ports.worktreeName}): frontend ${reserved.frontend}, backend ${reserved.backend}, rovo ${reserved.rovo}; running frontend ${running.frontend ?? "-"}, backend ${running.backend ?? "-"}`);
+	for (const held of heldElsewhere) {
+		lines.push(`       ${held.service} port file says ${held.port}, but another directory's process holds it (${held.owners.join(", ")}); restart this stack: pnpm run dev:tmux:stop && pnpm run dev:tmux:start`);
+	}
 	const sessions = report.stack.tmuxSessions.length > 0 ? report.stack.tmuxSessions.join(", ") : "none";
 	lines.push(`${mark(report.stack.ok)} stack      ${report.stack.origin ?? "no origin"}; tmux ${sessions}; frontend ${report.stack.frontendListening ? `listening, GET / ${report.stack.frontendStatus || "no answer"}` : "not listening"}`);
 	if (report.stack.log) lines.push(`       log ${report.stack.log}`);

@@ -8,10 +8,14 @@ const { subscribeProcessSignals } = require("./rovo-supervisor");
 
 // Substitute local OS dependencies at the implementation's require seam. Tests
 // invoke the same complete launch operation as both CLI entry points.
-function harness({ recorded, lock = false, occupied = [], healthy = true, owned = false, failRecord = false } = {}) {
+// loopbackOccupied: ports held on 127.0.0.1 only (a dev backend). On macOS, 0.0.0.0 and :: still
+// bind then, so only a probe that includes loopback sees them. claimed: port -> another worktree
+// whose port files record it. foreignListeners: ports whose listener runs in another worktree.
+function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [], claimed = {}, foreignListeners = [], healthy = true, owned = false, failRecord = false } = {}) {
 	const files = new Map(Object.entries(recorded ?? {}).map(([name, value]) => [`/worktree/${name}`, value]));
 	if (lock) files.set("/worktree/.next/dev/lock", "locked");
 	const busyPorts = new Set(occupied);
+	const loopbackPorts = new Set(loopbackOccupied);
 	const children = [];
 	const spawns = [];
 	const probes = [];
@@ -63,11 +67,20 @@ function harness({ recorded, lock = false, occupied = [], healthy = true, owned 
 			getNextDevHostname: () => "localhost",
 			getNextDevEnv: ({ port, backendPort }) => ({ PORT: String(port), NEXT_PUBLIC_BACKEND_PORT: backendPort }),
 		},
-		"./worktree-ports": { getFrontendBasePort: () => 4000, getBackendBasePort: () => 8000 },
-		"./rovo-utils": { isPortAvailable: async (port, options) => { probes.push({ port, ...options }); return !busyPorts.has(port); } },
+		"./worktree-ports": {
+			getFrontendBasePort: () => 4000,
+			getBackendBasePort: () => 8000,
+			getPortsClaimedByOtherWorktrees: () => new Map(Object.entries(claimed).map(([port, worktree]) => [Number(port), worktree])),
+		},
+		"./rovo-utils": { isPortAvailable: async (port, options = {}) => {
+			probes.push({ port, ...options });
+			if (busyPorts.has(port)) return false;
+			return !(loopbackPorts.has(port) && options.includeLoopback !== false);
+		} },
 		"./rovo-supervisor": { subscribeProcessSignals },
 		"./dev-stack-state": {
 			readProcessIdentity: (pid) => ({ state: "alive", start: `start-${pid}`, command: `command-${pid}` }),
+			listenerInWorktree: (port) => (foreignListeners.includes(port) ? false : true),
 			recordService: (cwd, service, entry) => {
 				if (failRecord) throw new Error("lock timed out");
 				stackRecords.push({ service, ...entry });
@@ -105,7 +118,7 @@ for (const service of ["frontend", "backend"]) {
 		if (service === "frontend") assert.equal(h.spawns[0].options.env.NEXT_PUBLIC_BACKEND_PORT, "8002");
 		// The stack record names the launcher and the server it spawned.
 		assert.deepEqual(h.stackRecords.at(-1), { service, port: base + 1, pid: 100, pidStart: "start-100", pidCommand: "command-100", childPid: 500, childStart: "start-500", childCommand: "command-500" });
-		assert.equal(h.probes.every((probe) => probe.includeLoopback === (service === "frontend")), true);
+		assert.equal(h.probes.every((probe) => probe.includeLoopback !== false), true, "every probe includes loopback");
 		h.signalTarget.emit("SIGHUP");
 		assert.equal(h.killed[0].signal, "SIGHUP");
 		h.children[0].emit("exit", null, "SIGHUP");
@@ -148,6 +161,34 @@ test("backend reuses only a healthy recorded server and rejects reuse for sessio
 	const owned = harness({ ...options, owned: true });
 	await assert.rejects(owned.launch("backend"), /tmux-owned session/);
 	assert.equal(owned.spawns.length, 0);
+});
+
+// Regression: the backend probed 0.0.0.0 and :: only. Another worktree's backend holds
+// 127.0.0.1:<port> (the dev backend binds loopback), so the port looked free, the new stack
+// recorded it, and its frontend talked to the other worktree's backend.
+test("backend skips a port another worktree's backend holds on loopback only", async () => {
+	const h = harness({ loopbackOccupied: [8000] });
+	await h.launch("backend");
+	assert.equal(h.files.get("/worktree/.dev-backend-port"), "8001");
+	assert.equal(h.spawns[0].options.env.PORT, "8001");
+});
+
+for (const service of ["frontend", "backend"]) {
+	test(`${service} skips ports another worktree's stack has recorded, even before they listen`, async () => {
+		const base = service === "frontend" ? 4000 : 8000;
+		const h = harness({ claimed: { [base]: "/other-worktree", [base + 1]: "/other-worktree" } });
+		await h.launch(service);
+		assert.equal(h.files.get(`/worktree/.dev-${service}-port`), String(base + 2), "the first port neither listening nor recorded elsewhere");
+		assert.equal(h.probes.some((probe) => probe.port === base || probe.port === base + 1), false);
+		assert.equal(h.logs.some((log) => log.message.includes(`Port ${base} is recorded by another worktree's stack (/other-worktree)`)), true);
+	});
+}
+
+test("backend never reuses a healthy server whose listener runs in another worktree", async () => {
+	const h = harness({ recorded: { ".dev-backend-port": "8001" }, occupied: [8001], foreignListeners: [8001] });
+	await h.launch("backend");
+	assert.equal(h.spawns.length, 1, "started its own backend");
+	assert.equal(h.files.get("/worktree/.dev-backend-port"), "8000");
 });
 
 test("backend skips unhealthy listeners and ignores out-of-range records", async () => {

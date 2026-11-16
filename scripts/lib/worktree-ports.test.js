@@ -338,3 +338,21 @@ test("base port helpers honor explicit environment overrides", () => {
 		}
 	}
 });
+
+test("getPortsClaimedByOtherWorktrees lists every other worktree's recorded ports, never its own", () => {
+	const fixture = createGitWorktreeFixture();
+	try {
+		fs.writeFileSync(path.join(fixture.worktreeBPath, ".dev-backend-port"), "9740\n");
+		fs.writeFileSync(path.join(fixture.worktreeBPath, ".dev-frontend-port"), "4700");
+		fs.writeFileSync(path.join(fixture.worktreeBPath, ".dev-rovo-ports"), "[9660, 9661]");
+		fs.writeFileSync(path.join(fixture.worktreeAPath, ".dev-backend-port"), "9780");
+		fs.writeFileSync(path.join(fixture.repoPath, ".dev-frontend-port"), "not a port");
+
+		const fromA = runWorktreePortsExpression(fixture.worktreeAPath, `[...mod.getPortsClaimedByOtherWorktrees(process.cwd()).keys()].sort()`);
+		assert.deepEqual(fromA, [4700, 9660, 9661, 9740]);
+		const fromB = runWorktreePortsExpression(fixture.worktreeBPath, `[...mod.getPortsClaimedByOtherWorktrees(process.cwd())]`);
+		assert.deepEqual(fromB, [[9780, fs.realpathSync(fixture.worktreeAPath)]]);
+	} finally {
+		fixture.cleanup();
+	}
+});

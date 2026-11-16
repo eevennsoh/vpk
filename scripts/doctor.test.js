@@ -32,6 +32,7 @@ function fakes(overrides = {}) {
 			{ name: "vpk-dev-other", path: "/repo/other" },
 		],
 		env: {},
+		listenerCwds: () => new Map([[3040, new Set([REPO])], [8120, new Set([REPO])]]),
 		measureNext: () => ({ totalBytes: 11 * 1024 ** 3, devOutputBytes: 6.3 * 1024 ** 3, devCacheBytes: 4.4 * 1024 ** 3, devOtherBytes: 0, buildCacheBytes: 0, buildOutputBytes: 0 }),
 		...overrides,
 	};
@@ -61,6 +62,18 @@ test("a ready worktree reports ok with its ports, its own tmux session and SET/M
 	assert.match(text, /^ok {3}health {5}\/api\/health OK$/mu);
 	assert.match(text, /^ {5}\.next {6}11\.0 GiB: dev output 6\.3 GiB, dev cache 4\.4 GiB, build cache 0\.0 GiB, build output 0\.0 GiB$/mu);
 	assert.match(text, /^ {7}ASAP_PRIVATE_KEY: SET$/mu);
+});
+
+// Regression: the port file named a port another worktree's backend held, and doctor reported it
+// as this worktree's running backend (and its /api/health as this stack's).
+test("a port file whose listener runs in another worktree is not reported as running, and fails doctor", async () => {
+	const report = await collectDoctorReport(fakes({ listenerCwds: () => new Map([[3040, new Set([REPO])], [8120, new Set(["/repo/smfe14"])]]) }));
+	assert.equal(report.ok, false);
+	assert.deepEqual(report.ports.running, { frontend: "3040", backend: null });
+	assert.deepEqual(report.ports.heldElsewhere, [{ service: "backend", port: "8120", owners: ["/repo/smfe14"] }]);
+	const text = formatDoctorReport(report);
+	assert.match(text, /^FAIL ports {6}slot 2 \(feature-x\): .*running frontend 3040, backend -$/mu);
+	assert.match(text, /backend port file says 8120, but another directory's process holds it \(\/repo\/smfe14\)/u);
 });
 
 test("with no backend only env file presence is known, and nothing opens an env file", async (t) => {
