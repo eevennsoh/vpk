@@ -158,6 +158,8 @@ export interface AgentSessionProps {
 	items?: readonly AgentSessionItem[];
 	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */
 	showWorkingSpinner?: boolean;
+	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
+	showLifecycleLabel?: boolean;
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.

@@ -270,8 +270,8 @@ export function AgentSessionLongMetadata({ compact = false, item, renderAgentAva
 					)}
 					key={segment.kind}
 				>
-					{/* An unnamed agent chunk is just the mark, so nothing after it needs a separator. */}
-					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
+					{/* A long row's unnamed agent mark runs straight into its tool call; the compact line keeps the dot before PR/host. */}
+					{index > 0 && (compact || !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined)) ? <MetadataDot /> : null}
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}

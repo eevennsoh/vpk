@@ -66,10 +66,10 @@ const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; items: reado
  * narrower panel where clauses truncate, and Small the short row.
  */
 const SESSION_SIZES = [
-	{ value: "large", label: "Large", density: "long", width: "w-[560px]" },
-	{ value: "medium", label: "Medium", density: "long", width: "w-[420px]" },
-	{ value: "small", label: "Small", density: "short", width: "w-80" },
-] as const satisfies readonly Readonly<{ value: string; label: string; density: AgentSessionDensity; width: string }>[];
+	{ value: "large", label: "Large", density: "long", width: "w-[560px]", showLifecycleLabel: true },
+	{ value: "medium", label: "Medium", density: "long", width: "w-[420px]", showLifecycleLabel: false },
+	{ value: "small", label: "Small", density: "short", width: "w-80", showLifecycleLabel: false },
+] as const satisfies readonly Readonly<{ value: string; label: string; density: AgentSessionDensity; width: string; showLifecycleLabel: boolean }>[];
 type SessionSize = (typeof SESSION_SIZES)[number];
 
 export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly<{ galleryOpen: boolean; permission: ButterSessionPermission }>) {
@@ -89,7 +89,7 @@ export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly
 								{row.items.map((item) => (
 									// Width, not scale: the row's truncation is what this toggle demonstrates,
 									// so the frame resizes in place and the content reflows with it.
-									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} variant="large" />
+									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} showLifecycleLabel={size.showLifecycleLabel} showWorkingSpinner variant="large" />
 								))}
 							</div>
 						</section>
