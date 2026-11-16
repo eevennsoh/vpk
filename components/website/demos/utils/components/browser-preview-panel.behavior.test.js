@@ -68,6 +68,8 @@ async function flushWheel() {
 	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 60)); });
 }
 
+const unmodified = { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false };
+
 test("rendered preview dispatches pointer and key controls through the real delivery module", async () => {
 	const preview = await renderPreview();
 	try {
@@ -77,8 +79,8 @@ test("rendered preview dispatches pointer and key controls through the real deli
 		await preview.view.press(preview.viewport, "a", { code: "KeyA" });
 		assert.deepEqual(preview.preview, [
 			{ type: "preview-click", x: 100, y: 60 },
-			{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a" },
-			{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA" },
+			{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a", ...unmodified },
+			{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA", ...unmodified },
 		]);
 		assert.deepEqual(preview.workspace, []);
 		assert.equal(preview.view.isFocused(preview.viewport), true);
@@ -172,9 +174,9 @@ test("Capture keys forwards Tab and Shift+Tab to the remote page until Escape re
 		await preview.view.press(null, "Tab", { code: "Tab" });
 		await preview.view.press(null, "Tab", { code: "Tab", shiftKey: true });
 		assert.equal(preview.view.isFocused(preview.viewport), true);
-		// The live preview-key message has no modifier field yet, so both arrive as Tab keyDown/keyUp pairs.
-		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.key}`), [
-			"keyDown:Tab", "keyUp:Tab", "keyDown:Tab", "keyUp:Tab",
+		// Shift travels with the key, so the remote page sees Shift+Tab rather than plain Tab.
+		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.shiftKey ? "Shift+" : ""}${message.key}`), [
+			"keyDown:Tab", "keyUp:Tab", "keyDown:Shift+Tab", "keyUp:Shift+Tab",
 		]);
 
 		const forwarded = preview.preview.length;

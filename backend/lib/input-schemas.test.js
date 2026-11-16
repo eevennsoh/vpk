@@ -183,7 +183,7 @@ test("refs and preview keys match what the UI sends and nothing else", () => {
 	for (const ref of ["--help", "#email", "e", "@e1 --x", "e1234567", 3, null]) {
 		assert.throws(() => requireAgentBrowserRef(ref), (error) => error.status === 400, String(ref));
 	}
-	for (const key of ["Enter", "Space", "ArrowUp", "PageDown", "Control+a", "Meta+Shift+Tab", "ControlOrMeta+c", "a", "7", "-", "+", "Shift+-", "Control++", "/", ".", "?", "é"]) {
+	for (const key of ["Enter", "Space", "ArrowUp", "PageDown", "Control+a", "Meta+Shift+Tab", "ControlOrMeta+c", "a", "7", "-", "+", "Shift+-", "Control++", "/", ".", "?", "é", "Shift+MediaTrackPrevious", "Shift+LaunchApplication1", "AudioSurroundModeToggle"]) {
 		assert.equal(requirePreviewKey(key), key, key);
 	}
 	for (const key of ["--help", "-x", "Control+", "Enter --x", "Super+a", "", " ", "\n", "x".repeat(40), {}]) {
