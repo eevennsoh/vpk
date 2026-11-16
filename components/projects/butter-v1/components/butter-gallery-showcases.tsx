@@ -55,9 +55,10 @@ const SESSION_STATES = ["running", "needs-input", "complete"] as const satisfies
 const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => ({ ...items[index % items.length], state }));
 
 /** Two session types; the header's permission toggle decides who can act on them. */
-const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; items: readonly AgentSessionItem[] }>[] = [
-	{ title: "Local", items: withLifecycleStates(AGENT_SESSION_ITEMS) },
-	{ title: "Cloud", items: withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS) },
+const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; items: readonly AgentSessionItem[]; teamShareable: boolean }>[] = [
+	// Local sessions run on one person's machine, so they have no team view.
+	{ title: "Local", items: withLifecycleStates(AGENT_SESSION_ITEMS), teamShareable: false },
+	{ title: "Cloud", items: withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS), teamShareable: true },
 ];
 /**
  * Card sizes that show how a session row responds to its container. Large is
@@ -81,7 +82,7 @@ export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly
 					{SESSION_SIZES.map((option) => <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
 				</ToggleGroup>
 				<div className="grid grid-cols-[3rem_auto] gap-x-4 gap-y-6">
-					{BUTTER_AGENT_SESSION_ROWS.map((row) => (
+					{BUTTER_AGENT_SESSION_ROWS.filter((row) => permission !== "team" || row.teamShareable).map((row) => (
 						<section aria-label={`${row.title} sessions`} className="col-span-2 grid grid-cols-subgrid items-start" key={row.title}>
 							<h2 className="pt-3 text-xs font-semibold text-text-subtle">{row.title}</h2>
 							<div className="flex flex-col gap-1.5">
