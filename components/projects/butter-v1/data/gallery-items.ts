@@ -37,7 +37,7 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		title: "Board (Card)",
 		titleLines: ["Board", "(Card)"],
 		description: "A Jira kanban card on its own.",
-		size: "portrait",
+		size: "1x1",
 	},
 	{
 		id: "work-item",
