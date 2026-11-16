@@ -43,6 +43,12 @@ export interface RovoChatTurnState {
 	readonly cutShort: RovoChatCutShortTurn | null;
 	/** A send (first attempt, retry or edit resend) is between dispatch and its request settling. */
 	readonly dispatching: boolean;
+	/**
+	 * Names the current send. Every send start and every reset moves it on, and a
+	 * send's settlement carries the value it started with, so a send that a reset
+	 * or a later send superseded cannot settle the turn that replaced it.
+	 */
+	readonly sendAttempt: number;
 	readonly retryCount: number;
 }
 
@@ -57,11 +63,20 @@ export interface RovoChatCutShortFinish {
 export interface RovoChatCutShortTurn {
 	readonly anchorMessageId: string | null;
 	/**
-	 * Waiting out the short cut-short wait for a widget the snapshot left loading.
-	 * The backend writes every widget-loading part into the same stream, so its
-	 * loading:false cannot arrive once the stream has closed.
+	 * When (epoch ms) the short cut-short wait for a widget the snapshot left
+	 * loading ends, or null when the turn is not waiting. The backend writes every
+	 * widget-loading part into the same stream, so its loading:false cannot
+	 * arrive once the stream has closed. Kept as a deadline, not a running timer,
+	 * so the timer can be armed again for the time left after its effect is
+	 * cleaned up (a provider hidden through <Activity>).
 	 */
-	readonly awaitingMedia: boolean;
+	readonly mediaWaitEndsAt: number | null;
+}
+
+/** The cut-short wait the active prompt is in: whose it is and when it ends. */
+export interface RovoChatCutShortMediaWait {
+	readonly promptId: string;
+	readonly endsAt: number;
 }
 
 /** State the provider owns outside the reducer, read when a guard runs. */
@@ -81,7 +96,8 @@ export type RovoChatTurnEvent =
 	| { readonly type: "retryDispatchStarted" }
 	| { readonly type: "editStarted" }
 	| { readonly type: "editDispatchStarted" }
-	| { readonly type: "dispatchSettled"; readonly failed: boolean }
+	/** The send started as `attempt` settled. Ignored unless it is still the current send. */
+	| { readonly type: "dispatchSettled"; readonly attempt: number; readonly failed: boolean }
 	| { readonly type: "turnCompleteSeen" }
 	/**
 	 * A final error or a cut-short stream. Give-ups after retries also reset the retry count.
@@ -89,8 +105,16 @@ export type RovoChatTurnEvent =
 	 * then cleared by the next `dispatchNext`.
 	 */
 	| { readonly type: "turnFailed"; readonly resetRetries: boolean }
-	/** The active prompt's stream closed without turn-complete; finalize once its snapshot's media wait ends. */
-	| { readonly type: "turnCutShort"; readonly finish: RovoChatCutShortFinish }
+	/**
+	 * `promptId`'s stream closed without turn-complete; finalize once the wait ending
+	 * at `mediaWaitEndsAt` (null: no wait) is over. Ignored unless that prompt is active.
+	 */
+	| {
+		readonly type: "turnCutShort";
+		readonly promptId: string;
+		readonly finish: RovoChatCutShortFinish;
+		readonly mediaWaitEndsAt: number | null;
+	}
 	/** The short cut-short wait started for `promptId` ran out. Ignored unless that prompt is still waiting. */
 	| { readonly type: "cutShortMediaWaitElapsed"; readonly promptId: string }
 	| { readonly type: "stopRequested" }
@@ -104,6 +128,7 @@ export const ROVO_CHAT_TURN_INITIAL_STATE: RovoChatTurnState = Object.freeze({
 	turnCompleteSeen: false,
 	cutShort: null,
 	dispatching: false,
+	sendAttempt: 0,
 	retryCount: 0,
 });
 
@@ -130,18 +155,29 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				turnCompleteSeen: false,
 				cutShort: null,
 				dispatching: true,
+				sendAttempt: state.sendAttempt + 1,
 				retryCount: 0,
 			};
 		}
 		case "retryDispatchStarted":
-			return { ...state, retryCount: state.retryCount + 1, finalizeRequested: false, cutShort: null, dispatching: true };
+			return {
+				...state,
+				retryCount: state.retryCount + 1,
+				finalizeRequested: false,
+				cutShort: null,
+				dispatching: true,
+				sendAttempt: state.sendAttempt + 1,
+			};
 		case "editStarted":
 			// An edit resend has no active prompt, so nothing finalizes it and a
 			// stream that ends without turn-complete is not flagged as cut short.
 			return { ...state, queue: [], activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null };
 		case "editDispatchStarted":
-			return state.dispatching ? state : { ...state, dispatching: true };
+			return { ...state, dispatching: true, sendAttempt: state.sendAttempt + 1 };
 		case "dispatchSettled":
+			if (event.attempt !== state.sendAttempt) {
+				return state;
+			}
 			return {
 				...state,
 				dispatching: false,
@@ -158,18 +194,18 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 		case "turnCutShort":
 			// Leaves turnCompleteSeen as is: findCutShortNotice still reads it,
 			// though turn-complete cannot arrive once its stream has closed.
-			return state.activePrompt
+			return state.activePrompt?.id === event.promptId
 				? {
 					...state,
 					finalizeRequested: true,
-					cutShort: { anchorMessageId: event.finish.anchorMessageId, awaitingMedia: event.finish.mediaLoading },
+					cutShort: { anchorMessageId: event.finish.anchorMessageId, mediaWaitEndsAt: event.mediaWaitEndsAt },
 				}
 				: state;
 		case "cutShortMediaWaitElapsed":
-			if (!state.cutShort?.awaitingMedia || state.activePrompt?.id !== event.promptId) {
+			if (state.cutShort?.mediaWaitEndsAt == null || state.activePrompt?.id !== event.promptId) {
 				return state;
 			}
-			return { ...state, cutShort: { ...state.cutShort, awaitingMedia: false } };
+			return { ...state, cutShort: { ...state.cutShort, mediaWaitEndsAt: null } };
 		case "stopRequested":
 			if (!state.activePrompt || (state.finalizeRequested && state.cutShort === null)) {
 				return state;
@@ -182,8 +218,24 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 			}
 			return { ...state, activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null, retryCount: 0 };
 		case "reset":
-			return { ...ROVO_CHAT_TURN_INITIAL_STATE, queue: [] };
+			// Moves the send on, so a send still settling from before the reset is ignored.
+			return { ...ROVO_CHAT_TURN_INITIAL_STATE, queue: [], sendAttempt: state.sendAttempt + 1 };
 	}
+}
+
+/**
+ * Whether a send is in flight by the turn's own account: a prompt is active or a
+ * send is dispatching. Unlike the committed streaming flag, this already holds
+ * while a request has started but React has not rendered its status yet.
+ */
+export function hasSendInFlight(state: RovoChatTurnState): boolean {
+	return state.activePrompt !== null || state.dispatching;
+}
+
+/** The cut-short wait the active prompt is in, or null when it is not waiting. */
+export function findCutShortMediaWait(state: RovoChatTurnState): RovoChatCutShortMediaWait | null {
+	const endsAt = state.cutShort?.mediaWaitEndsAt ?? null;
+	return state.activePrompt && endsAt !== null ? { promptId: state.activePrompt.id, endsAt } : null;
 }
 
 /**
@@ -198,7 +250,7 @@ export function canFinalizeActivePrompt(state: RovoChatTurnState, env: RovoChatT
 		return false;
 	}
 
-	const mediaSettled = state.cutShort ? !state.cutShort.awaitingMedia : !env.isMediaGenerating;
+	const mediaSettled = state.cutShort ? state.cutShort.mediaWaitEndsAt === null : !env.isMediaGenerating;
 	const completedByStream = state.turnCompleteSeen && !env.isStreaming;
 	const endedByFailure = state.finalizeRequested && !env.isStreaming && mediaSettled;
 	return completedByStream || endedByFailure;

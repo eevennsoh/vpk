@@ -105,7 +105,9 @@ export function hasTurnCompleteForActivePrompt(
  * stop, thread-switch, reset and edit paths, and errors to onError.
  *
  * Reads only the finish snapshot (`messages`), never committed React state:
- * the whole response can arrive before React renders any of it.
+ * the whole response can arrive before React renders any of it. A snapshot
+ * without the active prompt's user message finished some other request, so it
+ * says nothing about that prompt.
  */
 export function readCutShortFinish(input: {
 	readonly messages: ReadonlyArray<RovoUIMessage>;
@@ -114,7 +116,13 @@ export function readCutShortFinish(input: {
 	readonly activePrompt: QueuedPromptItem | null;
 }): RovoChatCutShortFinish | null {
 	const { messages, activePrompt } = input;
-	if (input.isAbort || input.isError || !activePrompt || hasTurnCompleteForActivePrompt(messages, activePrompt)) {
+	if (
+		input.isAbort ||
+		input.isError ||
+		!activePrompt ||
+		findPromptUserMessageIndex(messages, activePrompt.id) === -1 ||
+		hasTurnCompleteForActivePrompt(messages, activePrompt)
+	) {
 		return null;
 	}
 

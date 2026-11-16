@@ -105,6 +105,9 @@ test("readCutShortFinish flags only a clean finish that lacks turn-complete for 
 	assert.equal(readCutShortFinish({ ...base, messages: partial, isAbort: true }), null);
 	assert.equal(readCutShortFinish({ ...base, messages: partial, isError: true }), null);
 	assert.equal(readCutShortFinish({ ...base, messages: partial, activePrompt: null }), null);
+	// Another request's snapshot (no user message for this prompt) does not cut it short.
+	const otherRequest = [promptUser("u0", "earlier", "Earlier"), message("a0", "assistant", "partial")];
+	assert.equal(readCutShortFinish({ ...base, messages: otherRequest }), null);
 });
 
 // Regression: the cut-short turn used to be read from committed React state,

@@ -4,7 +4,9 @@ import { useCallback, useRef, useState } from "react";
 import type { QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
 import {
 	ROVO_CHAT_TURN_INITIAL_STATE,
+	findCutShortMediaWait,
 	rovoChatTurnReducer,
+	type RovoChatCutShortMediaWait,
 	type RovoChatTurnEvent,
 	type RovoChatTurnState,
 } from "@/app/contexts/rovo-chat-turn-machine";
@@ -13,13 +15,15 @@ import {
  * Holds the chat turn machine for RovoChatProvider. The provider's async flows
  * (request callbacks, retry timers, stop and edit) read the turn synchronously
  * between awaits, so the current state lives in a ref that every dispatch
- * updates at once. The queue and active prompt, which consumers render, are
- * mirrored into React state whenever a transition changes them.
+ * updates at once. The queue, the active prompt and its cut-short wait, which
+ * consumers render or effects follow, are mirrored into React state whenever a
+ * transition changes them.
  */
 export function useRovoChatTurnMachine() {
 	const turnRef = useRef<RovoChatTurnState>(ROVO_CHAT_TURN_INITIAL_STATE);
 	const [queuedPrompts, setQueuedPrompts] = useState<ReadonlyArray<QueuedPromptItem>>(ROVO_CHAT_TURN_INITIAL_STATE.queue);
 	const [activePrompt, setActivePrompt] = useState<QueuedPromptItem | null>(null);
+	const [cutShortMediaWait, setCutShortMediaWait] = useState<RovoChatCutShortMediaWait | null>(null);
 
 	const dispatchTurn = useCallback((event: RovoChatTurnEvent) => {
 		const previous = turnRef.current;
@@ -35,7 +39,10 @@ export function useRovoChatTurnMachine() {
 		if (next.activePrompt !== previous.activePrompt) {
 			setActivePrompt(next.activePrompt);
 		}
+		if (next.cutShort !== previous.cutShort || next.activePrompt !== previous.activePrompt) {
+			setCutShortMediaWait(findCutShortMediaWait(next));
+		}
 	}, []);
 
-	return { turnRef, dispatchTurn, queuedPrompts, activePrompt };
+	return { turnRef, dispatchTurn, queuedPrompts, activePrompt, cutShortMediaWait };
 }

@@ -48,8 +48,10 @@ const mocks = {
 		}
 		export async function createRovoAppThread({ signal, ...thread }) {
 			api().calls.push("createThread:" + thread.title);
-			// \`createThreadGate\` holds a first prompt's send until the test opens it.
-			await api().createThreadGate;
+			// \`createThreadGate\` holds a first prompt's send until the test opens it; a
+			// function gate gets the thread's title, so each send can be held separately.
+			const gate = api().createThreadGate;
+			await (typeof gate === "function" ? gate(thread.title) : gate);
 			const created = { ...thread, createdAt: 1, updatedAt: 1 };
 			api().threads.set(created.id, created);
 			return created;
@@ -59,7 +61,11 @@ const mocks = {
 		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); return true; }
 		export async function fetchRovoAppAITitle() { return null; }
 		export async function fetchRovoAppSuggestedQuestions() { return []; }
-		export async function getRovoAppThread(id) { return api().threads.get(id) ?? null; }
+		export async function getRovoAppThread(id) {
+			// \`failingThreadIds\` models a thread whose fetch rejects.
+			if (api().failingThreadIds?.has(id)) throw new Error("Thread fetch failed: " + id);
+			return api().threads.get(id) ?? null;
+		}
 		export async function listRovoAppThreads() { return Array.from(api().threads.values()); }
 		export async function updateRovoAppThread(id, patch) {
 			const updated = { ...(api().threads.get(id) ?? { id }), ...patch };
@@ -97,6 +103,7 @@ function loadHarness() {
 	harnessPromise ??= esbuild.build({
 		stdin: {
 			contents: `
+				import { Activity, StrictMode } from "react";
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
 				export { getPayloadTooLargeUserMessage, toUserFacingChatErrorMessage } from "@/app/contexts/rovo-chat-helpers";
 				export { CUT_SHORT_MEDIA_WAIT_MS, MEDIA_GENERATION_TIMEOUT_MS } from "@/app/contexts/use-rovo-chat-media-generation";
@@ -114,8 +121,11 @@ function loadHarness() {
 					window.onTestChatRender?.();
 					return null;
 				}
-				export function Harness() {
-					return <RovoChatProvider><Probe /></RovoChatProvider>;
+				// \`hidden\` hides the provider through <Activity>, which cleans up its
+				// effects and sets them up again when shown, as retained views do.
+				export function Harness({ hidden = false, strict = false }) {
+					const chat = <Activity mode={hidden ? "hidden" : "visible"}><RovoChatProvider><Probe /></RovoChatProvider></Activity>;
+					return strict ? <StrictMode>{chat}</StrictMode> : chat;
 				}
 			`,
 			loader: "tsx", resolveDir: process.cwd(), sourcefile: "rovo-chat-turn-lifecycle-harness.tsx",
@@ -264,7 +274,8 @@ async function waitFor(description, predicate, timeoutMs = 3000) {
 	}
 }
 
-async function mountChat(t) {
+// \`strict\` renders under React StrictMode (double effects in development).
+async function mountChat(t, { strict = false } = {}) {
 	const harness = await loadHarness();
 	const server = createChatServer();
 	const originalFetch = globalThis.fetch;
@@ -277,7 +288,8 @@ async function mountChat(t) {
 	const container = document.createElement("div");
 	document.body.append(container);
 	const root = createRoot(container);
-	await React.act(async () => root.render(React.createElement(harness.Harness)));
+	const render = (props) => React.act(async () => root.render(React.createElement(harness.Harness, { strict, ...props })));
+	await render({});
 	t.after(async () => {
 		delete window.onTestChatRender;
 		await React.act(async () => root.unmount());
@@ -288,7 +300,13 @@ async function mountChat(t) {
 		delete window.testChat;
 		delete window.testApi;
 	});
-	return { harness, server, chat: () => window.testChat };
+	return {
+		harness,
+		server,
+		chat: () => window.testChat,
+		// Hides or shows the provider through <Activity>.
+		setHidden: (hidden) => render({ hidden }),
+	};
 }
 
 // Starts a provider action without holding one React act() scope open for its

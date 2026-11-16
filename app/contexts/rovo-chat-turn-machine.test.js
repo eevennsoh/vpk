@@ -37,8 +37,10 @@ const {
 	canFinalizeActivePrompt,
 	classifyTurnError,
 	createRetryCountdownMessage,
+	findCutShortMediaWait,
 	findCutShortNotice,
 	findLatestMediaLoadingState,
+	hasSendInFlight,
 	isTurnWorkIdle,
 	rovoChatTurnReducer: reduce,
 	shouldStartSubmitPending,
@@ -60,11 +62,12 @@ test("enqueue, remove and clear keep queue order and always write a new queue ar
 });
 
 test("dispatchNext moves the head of the queue into flight and starts its turn fresh", () => {
-	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", awaitingMedia: true }, retryCount: 2 };
+	const midTurn = { ...INITIAL, queue: [prompt("a"), prompt("b")], finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", mediaWaitEndsAt: 5_000 }, retryCount: 2 };
 	const next = reduce(midTurn, { type: "dispatchNext" });
 	assert.equal(next.activePrompt.id, "a");
 	assert.deepEqual(next.queue.map((item) => item.id), ["b"]);
 	assert.equal(next.dispatching, true);
+	assert.equal(next.sendAttempt, midTurn.sendAttempt + 1);
 	assert.equal(next.finalizeRequested, false);
 	assert.equal(next.turnCompleteSeen, false);
 	assert.equal(next.cutShort, null);
@@ -72,22 +75,42 @@ test("dispatchNext moves the head of the queue into flight and starts its turn f
 	assert.equal(reduce(INITIAL, { type: "dispatchNext" }), INITIAL);
 });
 
+const settledEvent = (state, failed) => ({ type: "dispatchSettled", attempt: state.sendAttempt, failed });
+
 test("a settled dispatch requests finalize only when the send failed", () => {
 	const inFlight = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" });
-	const ok = reduce(inFlight, { type: "dispatchSettled", failed: false });
+	const ok = reduce(inFlight, settledEvent(inFlight, false));
 	assert.equal(ok.dispatching, false);
 	assert.equal(ok.finalizeRequested, false);
-	const failed = reduce(inFlight, { type: "dispatchSettled", failed: true });
+	const failed = reduce(inFlight, settledEvent(inFlight, true));
 	assert.equal(failed.dispatching, false);
 	assert.equal(failed.finalizeRequested, true);
 });
 
+// Regression: settlements were not scoped, so a send superseded by a reset
+// (a thread change) finalized the prompt sent after it before its request started.
+test("a settlement from a send that a reset or a later send superseded is ignored", () => {
+	const first = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" });
+	const stale = settledEvent(first, true);
+	const replaced = run(first, { type: "reset" }, { type: "enqueue", prompt: prompt("b") }, { type: "dispatchNext" });
+	assert.equal(replaced.activePrompt.id, "b");
+	assert.equal(reduce(replaced, stale), replaced);
+	assert.equal(reduce(reduce(first, { type: "reset" }), stale).finalizeRequested, false);
+	const retrying = reduce(first, { type: "retryDispatchStarted" });
+	assert.equal(reduce(retrying, stale), retrying);
+	const editing = run(first, { type: "editStarted" }, { type: "editDispatchStarted" });
+	assert.equal(reduce(editing, stale), editing);
+	assert.equal(reduce(editing, settledEvent(editing, false)).dispatching, false);
+});
+
 test("a retry counts the attempt, withdraws a pending finalize, and dispatches again", () => {
-	const failedOnce = { ...run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" }, { type: "dispatchSettled", failed: true }) };
+	const inFlight = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" });
+	const failedOnce = reduce(inFlight, settledEvent(inFlight, true));
 	const retrying = reduce(failedOnce, { type: "retryDispatchStarted" });
 	assert.equal(retrying.retryCount, 1);
 	assert.equal(retrying.finalizeRequested, false);
 	assert.equal(retrying.dispatching, true);
+	assert.equal(retrying.sendAttempt, failedOnce.sendAttempt + 1);
 	assert.equal(reduce(retrying, { type: "retryDispatchStarted" }).retryCount, 2);
 });
 
@@ -115,7 +138,7 @@ test("stopRequested finalizes the active prompt and is a no-op without one", () 
 });
 
 test("Stop on a cut-short turn still waiting for media drops the cut-short notice", () => {
-	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, { type: "turnCutShort", finish: { anchorMessageId: "r", mediaLoading: true } });
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, cutShortFinish(true));
 	const stopped = reduce(cut, { type: "stopRequested" });
 	assert.equal(stopped.finalizeRequested, true);
 	assert.equal(stopped.cutShort, null);
@@ -151,25 +174,40 @@ test("an edit drops the queue and the active prompt but keeps the retry count, t
 	assert.equal(edited.retryCount, 1);
 	const sending = reduce(edited, { type: "editDispatchStarted" });
 	assert.equal(sending.dispatching, true);
-	assert.equal(reduce(sending, { type: "dispatchSettled", failed: false }).finalizeRequested, false);
+	assert.equal(reduce(sending, settledEvent(sending, false)).finalizeRequested, false);
 });
 
-test("reset returns to the initial state with a fresh queue array", () => {
-	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", awaitingMedia: true }, dispatching: true, retryCount: 3 };
+test("reset returns to the initial state with a fresh queue array and moves the send on", () => {
+	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", mediaWaitEndsAt: 5_000 }, dispatching: true, sendAttempt: 4, retryCount: 3 };
 	const reset = reduce(busy, { type: "reset" });
-	assert.deepEqual(reset, { ...INITIAL, queue: [] });
+	assert.deepEqual(reset, { ...INITIAL, queue: [], sendAttempt: 5 });
 	assert.notEqual(reset.queue, INITIAL.queue);
 });
 
-const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a") => ({ type: "turnCutShort", finish: { anchorMessageId, mediaLoading } });
+test("hasSendInFlight holds while a prompt is active or a send is dispatching", () => {
+	assert.equal(hasSendInFlight(INITIAL), false);
+	assert.equal(hasSendInFlight({ ...INITIAL, activePrompt: prompt("a") }), true);
+	assert.equal(hasSendInFlight({ ...INITIAL, dispatching: true }), true);
+});
+
+const WAIT_ENDS_AT = 9_000;
+const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a", promptId = "a") => ({
+	type: "turnCutShort",
+	promptId,
+	finish: { anchorMessageId, mediaLoading },
+	mediaWaitEndsAt: mediaLoading ? WAIT_ENDS_AT : null,
+});
 
 test("a cut-short turn keeps its finish snapshot's anchor and notices only if turn-complete never arrives", () => {
 	assert.equal(reduce(INITIAL, cutShortFinish(false)), INITIAL);
+	// Another prompt's finish does not cut this one short.
+	const other = { ...INITIAL, activePrompt: prompt("b") };
+	assert.equal(reduce(other, cutShortFinish(false)), other);
 	const cut = reduce({ ...INITIAL, activePrompt: prompt("a"), retryCount: 1 }, cutShortFinish(false));
 	assert.equal(cut.finalizeRequested, true);
-	assert.deepEqual(cut.cutShort, { anchorMessageId: "reply-a", awaitingMedia: false });
+	assert.deepEqual(cut.cutShort, { anchorMessageId: "reply-a", mediaWaitEndsAt: null });
 	assert.equal(cut.retryCount, 1);
-	assert.deepEqual(findCutShortNotice(cut), { anchorMessageId: "reply-a", awaitingMedia: false });
+	assert.deepEqual(findCutShortNotice(cut), { anchorMessageId: "reply-a", mediaWaitEndsAt: null });
 	assert.equal(findCutShortNotice(reduce(cut, { type: "turnCompleteSeen" })), null);
 	assert.equal(findCutShortNotice({ ...INITIAL, activePrompt: prompt("a"), finalizeRequested: true }), null);
 	for (const event of [{ type: "finalize" }, { type: "editStarted" }, { type: "retryDispatchStarted" }, { type: "reset" }]) {
@@ -186,11 +224,14 @@ test("a cut-short turn's media comes from its finish snapshot, not the media fla
 	assert.equal(canFinalizeActivePrompt(noMedia, { ...IDLE, isStreaming: true }), false);
 
 	const waiting = reduce({ ...INITIAL, activePrompt: prompt("a") }, cutShortFinish(true));
-	assert.equal(waiting.cutShort.awaitingMedia, true);
+	assert.equal(waiting.cutShort.mediaWaitEndsAt, WAIT_ENDS_AT);
+	assert.deepEqual(findCutShortMediaWait(waiting), { promptId: "a", endsAt: WAIT_ENDS_AT });
+	assert.equal(findCutShortMediaWait(noMedia), null);
 	assert.equal(canFinalizeActivePrompt(waiting, IDLE), false);
 	assert.equal(reduce(waiting, { type: "cutShortMediaWaitElapsed", promptId: "other" }), waiting);
 	const elapsed = reduce(waiting, { type: "cutShortMediaWaitElapsed", promptId: "a" });
-	assert.deepEqual(elapsed.cutShort, { anchorMessageId: "reply-a", awaitingMedia: false });
+	assert.deepEqual(elapsed.cutShort, { anchorMessageId: "reply-a", mediaWaitEndsAt: null });
+	assert.equal(findCutShortMediaWait(elapsed), null);
 	assert.equal(canFinalizeActivePrompt(elapsed, { ...IDLE, isMediaGenerating: true }), true);
 	assert.equal(reduce(elapsed, { type: "cutShortMediaWaitElapsed", promptId: "a" }), elapsed);
 });
@@ -203,7 +244,7 @@ test("a cut-short wait that outlives its turn changes nothing", () => {
 	assert.equal(reduce(stopped, elapsed), stopped);
 	const reset = reduce(waiting, { type: "reset" });
 	assert.equal(reduce(reset, elapsed), reset);
-	const next = run(waiting, { type: "finalize" }, { type: "dispatchNext" }, cutShortFinish(true, "reply-b"));
+	const next = run(waiting, { type: "finalize" }, { type: "dispatchNext" }, cutShortFinish(true, "reply-b", "b"));
 	assert.equal(next.activePrompt.id, "b");
 	assert.equal(reduce(next, elapsed), next);
 });

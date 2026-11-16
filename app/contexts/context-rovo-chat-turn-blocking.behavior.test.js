@@ -72,34 +72,63 @@ test("audio and video widgets count as media generation too; other widgets do no
 
 // Captures the provider's media timeouts (the full media timeout and the
 // cut-short wait) instead of scheduling them, so a test can release them
-// without real waits or mocking the harness's own timers.
+// without real waits or mocking the harness's own timers. The cut-short wait
+// runs to a deadline, so a wait armed again (after its effect was cleaned up)
+// asks for the time remaining: a delay above a second, up to the wait, is it.
+// A cleared timeout stays captured but is marked, like a real one that will
+// never run: `fireLatest` and `fire` still run it (a stale callback must do
+// nothing), while `fireLive` runs only the newest timeout still scheduled.
 function captureMediaTimeouts(t, harness) {
-	const captured = new Map([[harness.MEDIA_GENERATION_TIMEOUT_MS, []], [harness.CUT_SHORT_MEDIA_WAIT_MS, []]]);
-	const originalSetTimeout = globalThis.setTimeout;
-	const originalWindowSetTimeout = window.setTimeout;
+	const captured = { full: [], cutShort: [] };
+	const kindOf = (delay) => {
+		if (delay === harness.MEDIA_GENERATION_TIMEOUT_MS) return "full";
+		return delay > 1000 && delay <= harness.CUT_SHORT_MEDIA_WAIT_MS ? "cutShort" : null;
+	};
+	const entries = new Map();
+	const originals = { set: globalThis.setTimeout, clear: globalThis.clearTimeout, windowSet: window.setTimeout, windowClear: window.clearTimeout };
 	const capture = (schedule) => (callback, delay, ...args) => {
-		if (captured.has(delay)) {
-			captured.get(delay).push(callback);
-			return schedule(() => {}, 0);
+		const kind = kindOf(delay);
+		if (kind) {
+			const entry = { callback, delay, cleared: false };
+			captured[kind].push(entry);
+			const handle = schedule(() => {}, 0);
+			entries.set(handle, entry);
+			return handle;
 		}
 		return schedule(callback, delay, ...args);
 	};
-	globalThis.setTimeout = capture(originalSetTimeout);
-	window.setTimeout = capture(originalWindowSetTimeout.bind(window));
+	const release = (clear) => (handle) => {
+		const entry = entries.get(handle);
+		if (entry) entry.cleared = true;
+		return clear(handle);
+	};
+	globalThis.setTimeout = capture(originals.set);
+	window.setTimeout = capture(originals.windowSet.bind(window));
+	globalThis.clearTimeout = release(originals.clear);
+	window.clearTimeout = release(originals.windowClear.bind(window));
 	t.after(() => {
-		globalThis.setTimeout = originalSetTimeout;
-		window.setTimeout = originalWindowSetTimeout;
+		globalThis.setTimeout = originals.set;
+		globalThis.clearTimeout = originals.clear;
+		window.setTimeout = originals.windowSet;
+		window.clearTimeout = originals.windowClear;
 	});
-	const handle = (delay) => ({
-		count: () => captured.get(delay).length,
-		fire: (index) => React.act(async () => {
-			captured.get(delay).at(index)();
-		}),
-		fireLatest: () => React.act(async () => {
-			captured.get(delay).at(-1)();
-		}),
+	const run = (entry) => React.act(async () => {
+		entry.callback();
 	});
-	return { full: handle(harness.MEDIA_GENERATION_TIMEOUT_MS), cutShort: handle(harness.CUT_SHORT_MEDIA_WAIT_MS) };
+	const handle = (kind) => ({
+		count: () => captured[kind].length,
+		live: () => captured[kind].filter((entry) => !entry.cleared).length,
+		delays: () => captured[kind].map((entry) => entry.delay),
+		fire: (index) => run(captured[kind].at(index)),
+		fireLatest: () => run(captured[kind].at(-1)),
+		fireLive: () => {
+			const entry = captured[kind].findLast((candidate) => !candidate.cleared);
+			assert.ok(entry, `a scheduled ${kind} media timeout`);
+			entry.cleared = true;
+			return run(entry);
+		},
+	});
+	return { full: handle("full"), cutShort: handle("cutShort") };
 }
 
 test("a stream that ends without turn-complete while media is loading keeps the prompt active and the queue blocked until Stop", async (t) => {
@@ -266,8 +295,8 @@ const STORED_THREAD = Object.freeze({
 
 // Starts a turn that is cut short with its media widget still loading, so it
 // sits in the short cut-short wait, with "Then a dog" queued behind it.
-async function startCutShortMediaWait(t) {
-	const mounted = await mountChat(t);
+async function startCutShortMediaWait(t, options) {
+	const mounted = await mountChat(t, options);
 	const { harness, server, chat } = mounted;
 	const timeouts = captureMediaTimeouts(t, harness);
 	window.testApi.threads.set(STORED_THREAD.id, structuredClone(STORED_THREAD));
@@ -390,6 +419,72 @@ test("the old cut-short wait running out does not release a new thread's cut-sho
 	assert.deepEqual(chatState().messages, [
 		"user:Old question", "assistant:Old answer", "user:Draw a dog", "assistant:Dog+data-widget-loading", notice,
 	]);
+});
+
+// ── The cut-short wait across effect cleanup ──────────────────────────────
+
+async function expectNoticeThenQueue(server, chat, notice) {
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.deepEqual(chatState().messages.slice(0, 3), ["user:Draw a cat", "assistant:Drawing+data-widget-loading", notice]);
+	assert.equal(chatState().messages.filter((message) => message === notice).length, 1);
+}
+
+// Regression: the wait's timer started inside the request callback, so hiding
+// the provider through <Activity> (which cleans up its effects, as retained
+// views do) cancelled it and showing it again did not start it, leaving the
+// prompt active and the queue blocked for good. The turn now keeps when its
+// wait ends, and an effect arms the timer from that.
+test("a cut-short wait hidden through Activity and shown again ends with the time it had left, then shows the notice and advances the queue", async (t) => {
+	const { harness, server, chat, timeouts, notice, setHidden } = await startCutShortMediaWait(t);
+	await setHidden(true);
+	await settle(20);
+	assert.equal(timeouts.cutShort.live(), 0);
+	await setHidden(false);
+	await settle(20);
+	assert.equal(chat().activePrompt?.text, "Draw a cat");
+	assert.equal(server.turns.length, 1);
+	assert.equal(timeouts.cutShort.live(), 1);
+	assert.ok(timeouts.cutShort.delays().at(-1) <= harness.CUT_SHORT_MEDIA_WAIT_MS);
+
+	await timeouts.cutShort.fireLive();
+	await expectNoticeThenQueue(server, chat, notice);
+});
+
+test("a cut-short wait whose end passed while hidden through Activity ends as soon as it is shown again", async (t) => {
+	const { harness, server, chat, notice, setHidden } = await startCutShortMediaWait(t);
+	await setHidden(true);
+	await settle(20);
+	const realNow = Date.now;
+	Date.now = () => realNow() + harness.CUT_SHORT_MEDIA_WAIT_MS + 1;
+	t.after(() => {
+		Date.now = realNow;
+	});
+	await setHidden(false);
+	await expectNoticeThenQueue(server, chat, notice);
+});
+
+test("under StrictMode a cut-short turn's media wait runs once, then shows the notice and advances the queue", async (t) => {
+	const { server, chat, timeouts, notice } = await startCutShortMediaWait(t, { strict: true });
+	assert.equal(timeouts.cutShort.live(), 1);
+	await timeouts.cutShort.fireLive();
+	await expectNoticeThenQueue(server, chat, notice);
+	assert.equal(timeouts.cutShort.live(), 0);
+});
+
+// Regression: selecting a thread reset the turn before knowing the transcript
+// would be replaced, so selecting the thread already shown dropped the pending
+// notice for good.
+test("selecting the thread already shown during a cut-short wait leaves the wait, its notice and the queue in place", async (t) => {
+	const { server, chat, timeouts, notice, departingThreadId } = await startCutShortMediaWait(t);
+	await (await startAction(() => chat().selectThread(departingThreadId)))();
+	await settle(20);
+	assert.equal(chat().activeThreadId, departingThreadId);
+	assert.equal(chat().activePrompt?.text, "Draw a cat");
+	assert.deepEqual(chat().queuedPrompts.map((prompt) => prompt.text), ["Then a dog"]);
+
+	await timeouts.cutShort.fireLive();
+	await expectNoticeThenQueue(server, chat, notice);
 });
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {

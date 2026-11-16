@@ -131,6 +131,7 @@ import {
 	classifyTurnError,
 	createRetryCountdownMessage,
 	findCutShortNotice,
+	hasSendInFlight,
 	isTurnWorkIdle,
 	shouldStartSubmitPending as shouldStartSubmitPendingForTurn,
 	type RovoChatRetryReason,
@@ -139,6 +140,7 @@ import {
 import { useRovoChatTurnMachine } from "@/app/contexts/use-rovo-chat-turn-machine";
 import { useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
 import { useRovoChatCutShortTurn } from "@/app/contexts/use-rovo-chat-cut-short-turn";
+import { endDepartingTurn } from "@/app/contexts/rovo-chat-departing-turn";
 import {
 	createTurnError,
 	hasTurnCompleteForActivePrompt,
@@ -314,7 +316,7 @@ export function RovoChatProvider({
 	// Final errors stay on the failed turn until the transcript is replaced or that turn is edited.
 	const [turnErrors, setTurnErrors] = useState<ReadonlyArray<RovoChatTurnError>>([]);
 	// The turn lifecycle (queue, active prompt, finalize flags) is a pure reducer; see rovo-chat-turn-machine.ts.
-	const { turnRef, dispatchTurn, queuedPrompts, activePrompt } = useRovoChatTurnMachine();
+	const { turnRef, dispatchTurn, queuedPrompts, activePrompt, cutShortMediaWait } = useRovoChatTurnMachine();
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 	const [threads, setThreads] = useState<RovoAppThread[]>([]);
 	const [threadsLoaded, setThreadsLoaded] = useState(false);
@@ -614,7 +616,7 @@ export function RovoChatProvider({
 			maybeFinalizeAndProcessRef.current();
 		});
 	}, []);
-	const handleCutShortFinish = useRovoChatCutShortTurn(dispatchTurn, queueTick);
+	const handleCutShortFinish = useRovoChatCutShortTurn(dispatchTurn, queueTick, cutShortMediaWait);
 
 	// oxlint-disable react-doctor/no-event-handler -- The transport callback is invoked by the AI SDK request pipeline and must close over the current port index.
 	const transport = useMemo(
@@ -729,6 +731,7 @@ export function RovoChatProvider({
 			return lastUserIndex === -1 ? prev : prev.filter((_, i) => i !== lastUserIndex);
 		});
 		dispatchTurn({ type: "retryDispatchStarted" });
+		const attempt = turnRef.current.sendAttempt;
 
 		let failed = false;
 		try {
@@ -743,7 +746,7 @@ export function RovoChatProvider({
 			failed = true;
 			console.error("[RovoChatProvider] Retry send failed:", retryError);
 		} finally {
-			dispatchTurn({ type: "dispatchSettled", failed });
+			dispatchTurn({ type: "dispatchSettled", attempt, failed });
 			queueTick();
 		}
 	}, [clearRetryCountdownInterval, dispatchTurn, queueTick, sendWithPartStateRecovery, setMessages, stop, turnRef]);
@@ -1236,6 +1239,7 @@ export function RovoChatProvider({
 
 		const nextPrompt = turnRef.current.queue[0];
 		dispatchTurn({ type: "dispatchNext" });
+		const attempt = turnRef.current.sendAttempt;
 		let failed = false;
 		try {
 			await sendChatMessageRef.current(nextPrompt);
@@ -1243,7 +1247,7 @@ export function RovoChatProvider({
 			failed = true;
 			console.error("[RovoChatProvider] Failed to send queued prompt:", error);
 		} finally {
-			dispatchTurn({ type: "dispatchSettled", failed });
+			dispatchTurn({ type: "dispatchSettled", attempt, failed });
 			if (!isStreamingRef.current && retryTimerRef.current === null) {
 				queueTick();
 			}
@@ -1434,10 +1438,11 @@ export function RovoChatProvider({
 			};
 
 			dispatchTurn({ type: "editDispatchStarted" });
+			const attempt = turnRef.current.sendAttempt;
 			try {
 				await sendWithPartStateRecovery(messagePayload, bodyPayload);
 			} finally {
-				dispatchTurn({ type: "dispatchSettled", failed: false }); // An edit has no active prompt, so even a thrown send never fails it.
+				dispatchTurn({ type: "dispatchSettled", attempt, failed: false }); // An edit has no active prompt, so even a thrown send never fails it.
 				void refreshThreads();
 				queueTick();
 			}
@@ -1456,6 +1461,7 @@ export function RovoChatProvider({
 			sendWithPartStateRecovery,
 			startSubmitPending,
 			stop,
+			turnRef,
 			waitForStreamStop,
 		]
 	);
@@ -1564,33 +1570,31 @@ export function RovoChatProvider({
 		clearChatErrors();
 	}, [cancelRetryTimer, clearChatErrors, clearMediaGenerating, clearSubmitPending, dispatchTurn]);
 
-	const detachCurrentThreadForSwitch = useCallback(async () => {
-		const threadId = activeThreadIdRef.current;
-		if (isStreamingRef.current) {
-			try {
-				await stop();
-			} catch (error) {
-				console.warn("[RovoChatProvider] Failed to detach compact stream:", error);
-			}
-			await waitForStreamStop();
-		}
-
-		if (threadId) {
-			await detachRovoAppRun(threadId).catch(() => {});
-		}
-	}, [stop, waitForStreamStop]);
+	// Ends the departing turn, then stops its request and detaches its run; see endDepartingTurn.
+	const endTurnForThreadChange = useCallback(() => endDepartingTurn({
+		threadId: activeThreadIdRef.current,
+		isSendInFlight: () => isStreamingRef.current || hasSendInFlight(turnRef.current),
+		resetTurn: resetTranscriptPending,
+		stopRequest: stop,
+		waitForStreamStop,
+		detachRun: detachRovoAppRun,
+	}), [resetTranscriptPending, stop, turnRef, waitForStreamStop]);
 
 	const selectThread = useCallback(
 		async (threadId: string) => {
 			const transitionToken = beginTransition("select-thread");
-			resetTranscriptPending();
 			try {
-				await detachCurrentThreadForSwitch();
+				// The thread already shown keeps its turn; the transition only supersedes a pending selection.
+				if (threadId === activeThreadIdRef.current) {
+					setIsHistoryOpen(false);
+					return;
+				}
+				// Fetch before ending anything: a selection that fails or is superseded keeps the current turn.
+				const thread = await getRovoAppThread(threadId);
 				if (!isCurrentTransition(transitionToken)) {
 					return;
 				}
-
-				const thread = await getRovoAppThread(threadId);
+				await endTurnForThreadChange();
 				if (!isCurrentTransition(transitionToken)) {
 					return;
 				}
@@ -1616,12 +1620,11 @@ export function RovoChatProvider({
 		},
 		[
 			beginTransition,
-			detachCurrentThreadForSwitch,
+			endTurnForThreadChange,
 			finishTransition,
 			isCurrentTransition,
 			queueTick,
 			refreshThreads,
-			resetTranscriptPending,
 			setMessages,
 		]
 	);
@@ -1631,8 +1634,7 @@ export function RovoChatProvider({
 			const transitionToken = beginTransition("delete-thread");
 			try {
 				if (threadId === activeThreadIdRef.current) {
-					resetTranscriptPending();
-					await detachCurrentThreadForSwitch();
+					await endTurnForThreadChange();
 					if (isCurrentTransition(transitionToken)) {
 						activeThreadIdRef.current = null;
 						setActiveThreadId(null);
@@ -1655,23 +1657,22 @@ export function RovoChatProvider({
 		},
 		[
 			beginTransition,
-			detachCurrentThreadForSwitch,
+			endTurnForThreadChange,
 			finishTransition,
 			isCurrentTransition,
 			queueTick,
 			refreshThreads,
-			resetTranscriptPending,
 			setMessages,
 		]
 	);
 
 	const deleteAllThreads = useCallback(async () => {
 		const transitionToken = beginTransition("delete-all-threads");
-		resetTranscriptPending();
+		const departed = endTurnForThreadChange();
 		setMessages([]);
 
 		try {
-			await detachCurrentThreadForSwitch();
+			await departed;
 			if (isCurrentTransition(transitionToken)) {
 				activeThreadIdRef.current = null;
 				setActiveThreadId(null);
@@ -1690,12 +1691,11 @@ export function RovoChatProvider({
 		}
 	}, [
 		beginTransition,
-		detachCurrentThreadForSwitch,
+		endTurnForThreadChange,
 		finishTransition,
 		isCurrentTransition,
 		queueTick,
 		refreshThreads,
-		resetTranscriptPending,
 		setMessages,
 	]);
 
@@ -1723,11 +1723,10 @@ export function RovoChatProvider({
 
 	const resetChat = useCallback(() => {
 		const transitionToken = beginTransition("reset-chat");
-		resetTranscriptPending();
+		const departed = endTurnForThreadChange();
 		setMessages([]);
-		clearChatErrors();
 
-		void detachCurrentThreadForSwitch().finally(() => {
+		void departed.finally(() => {
 			if (!finishTransition(transitionToken)) {
 				return;
 			}
@@ -1742,10 +1741,9 @@ export function RovoChatProvider({
 			queueTick();
 		});
 	}, [
-		resetTranscriptPending,
 		beginTransition,
 		clearChatErrors,
-		detachCurrentThreadForSwitch,
+		endTurnForThreadChange,
 		finishTransition,
 		queueTick,
 		refreshThreads,
