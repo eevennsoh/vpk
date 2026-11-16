@@ -157,9 +157,12 @@ function recoveringStuckPortStreams(attemptTexts) {
 			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
 				streams += 1;
 				onPortAcquired(43123);
+				// An attempt's text is one chunk, or a list of chunks streamed in order.
 				const text = attemptTexts[Math.min(streams, attemptTexts.length) - 1];
-				if (text) {
-					onTextDelta(text);
+				for (const chunk of [text].flat()) {
+					if (chunk) {
+						onTextDelta(chunk);
+					}
 				}
 				if (streams < attemptTexts.length) {
 					throw createPortStuckError(43123);
@@ -202,6 +205,72 @@ test("first-attempt text that already ends a paragraph gets no extra break befor
 	const turn = await runTurn(dependencies);
 
 	assert.equal(visibleText(turn.parts), "First try\n\nRecovered answer");
+});
+
+test("first-attempt text ending in whitespace still gets exactly one blank line before the rerun", async () => {
+	for (const [firstAttempt, expected] of [
+		["A  ", "A  \n\nB"],
+		["A \n", "A \n\nB"],
+		// A markdown hard break: the trailing spaces and newline are the first attempt's, then one blank line.
+		["A  \n", "A  \n\nB"],
+	]) {
+		const { dependencies } = recoveringStuckPortStreams([firstAttempt, "B"]);
+		const turn = await runTurn(dependencies);
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(firstAttempt));
+	}
+});
+
+test("leading newlines in the rerun's text count toward the paragraph break instead of adding to it", async () => {
+	for (const rerun of ["\n\nB", ["\n", "\n", "B"]]) {
+		const { dependencies } = recoveringStuckPortStreams(["A", rerun]);
+		const turn = await runTurn(dependencies);
+
+		assert.equal(visibleText(turn.parts), "A\n\nB", JSON.stringify(rerun));
+		assert.equal(turn.endOfTurnFacts.assistantText, [rerun].flat().join(""));
+	}
+});
+
+test("a timeout notice after an empty rerun follows the first attempt's text after one blank line", async () => {
+	let streams = 0;
+	let restarts = 0;
+	const turn = await runTurn({
+		restartRovoPort: async () => {
+			restarts += 1;
+			return { recovered: restarts === 1 };
+		},
+		shouldRetryInteractiveStuckPortRecovery: ({ attemptCount }) => attemptCount < 1,
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			streams += 1;
+			onPortAcquired(43123);
+			if (streams === 1) {
+				onTextDelta("A");
+				throw createPortStuckError(43123);
+			}
+			throw Object.assign(new Error("Rovo turn still in progress"), { code: "ROVO_CHAT_IN_PROGRESS_TIMEOUT" });
+		},
+	});
+
+	assert.equal(streams, 2);
+	assert.match(visibleText(turn.parts), /^A\n\n⚠️ Automatic recovery timed out/u);
+});
+
+test("text the marker stream holds back as a possible marker is not shown when the attempt reruns", async () => {
+	for (const firstAttempt of ["WIDGET_", 'WIDGET_DATA:{"type":"plan"', "Lost with WIDGET_"]) {
+		const { dependencies } = recoveringStuckPortStreams([firstAttempt, "B"]);
+		const turn = await runTurn(dependencies);
+		const expected = firstAttempt.startsWith("Lost") ? "Lost with \n\nB" : "B";
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(firstAttempt));
+	}
+});
+
+test("a first attempt that shows only blank lines leaves no leading blank lines before the rerun", async () => {
+	const { dependencies } = recoveringStuckPortStreams(["\n\n", "B"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(visibleText(turn.parts), "B");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
 test("the post-stream pipeline sees only the rerun's text after a stuck-port recovery", async () => {

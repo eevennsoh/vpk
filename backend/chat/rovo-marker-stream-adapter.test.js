@@ -207,3 +207,26 @@ test("agent-result marker uses tolerant chunked parsing and normalization", () =
 	assert.equal(parts[0].data.agentId, "studio-agent-ops-triage");
 	assert.equal(parts[0].data.name, "Ops Triage");
 });
+
+test("flushPlainText shows held-back plain text and drops a marker start or an unfinished marker", () => {
+	for (const [pushed, shown] of [
+		["A", "A"],
+		["A  \n", "A  \n"],
+		["Lost with the stuck port", "Lost with the stuck port"],
+		["Lost with WIDGET", "Lost with WIDGET"],
+		["WIDGET_", ""],
+		["Lost with WIDGET_", "Lost with "],
+		["Done. THINKING_STAT", "Done. "],
+		['WIDGET_DATA:{"type":"plan"', ""],
+		['Intro WIDGET_DATA:{"type":"plan"', "Intro "],
+	]) {
+		const { adapter, parts, textDeltas } = createAdapter();
+		adapter.push(pushed);
+		adapter.flushPlainText();
+		adapter.push("B");
+		adapter.flush();
+
+		assert.equal(textDeltas.join(""), `${shown}B`, JSON.stringify(pushed));
+		assert.deepEqual(parts, [], JSON.stringify(pushed));
+	}
+});

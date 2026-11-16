@@ -106,6 +106,28 @@ function createRovoMarkerStreamAdapter({
 			creationMode === "agent" ? agentResultPrefix.length : 0
 		) - 1;
 
+	const markerPrefixes = [
+		WIDGET_LOADING_PREFIX,
+		WIDGET_DATA_PREFIX,
+		THINKING_STATUS_PREFIX,
+		AGENT_EXECUTION_PREFIX,
+		...(creationMode === "agent" ? [agentResultPrefix] : []),
+	];
+
+	/**
+	 * Length of the longest end of `value` that reads as the start of a marker. An end still inside
+	 * a marker's leading word ("A", "WIDGET") is an ordinary word; past it ("WIDGET_") it is a marker.
+	 */
+	const markerCandidateSuffixLength = (value) => {
+		for (let length = Math.min(value.length, partialMarkerBufferLength); length > 0; length -= 1) {
+			const suffix = value.slice(-length);
+			if (markerPrefixes.some((prefix) => prefix.startsWith(suffix) && length > /^[A-Za-z]*/u.exec(prefix)[0].length)) {
+				return length;
+			}
+		}
+		return 0;
+	};
+
 	const findNextMarkerIndex = (value) => {
 		const loadingIndex = value.indexOf(WIDGET_LOADING_PREFIX);
 		const dataIndex = value.indexOf(WIDGET_DATA_PREFIX);
@@ -478,6 +500,21 @@ function createRovoMarkerStreamAdapter({
 	return {
 		flush() {
 			processTextBuffer(true);
+		},
+		/**
+		 * Shows held-back text that cannot be part of a marker and drops the rest: a trailing
+		 * marker prefix, or a marker whose payload has not finished.
+		 */
+		flushPlainText() {
+			const markerIndex = findNextMarkerIndex(textBuffer);
+			const plainLength = markerIndex === -1
+				? textBuffer.length - markerCandidateSuffixLength(textBuffer)
+				: markerIndex;
+			const plainText = textBuffer.slice(0, plainLength);
+			textBuffer = "";
+			if (plainText) {
+				emitTextDelta(plainText);
+			}
 		},
 		push(delta) {
 			if (typeof delta !== "string" || delta.length === 0) {

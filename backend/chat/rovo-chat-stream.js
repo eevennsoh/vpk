@@ -312,9 +312,9 @@ function createRovoTurnRunner(dependencies = {}) {
 				stageTrace,
 			});
 			const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
-				// A rerun keeps what was shown, so text the marker stream still holds back goes out first.
+				// A rerun keeps what was shown, so held-back text that cannot be a marker goes out first.
 				if (continuesShownText) {
-					rovoMarkerStream.flush();
+					rovoMarkerStream.flushPlainText();
 				}
 				rovoMarkerStream.reset();
 				resetAssistantTextForRetryAttemptState({ continuesShownText });
