@@ -74,18 +74,18 @@ function defaultStop(stack, { ownRoot }) {
 }
 
 /**
- * Stop the planned stacks until the start fits, then re-evaluate the budget without them.
- * Returns the new verdict with `autoStop: { needed, safe, stopped }` attached.
+ * Stop the planned stacks until the start fits, then re-evaluate the budget on a fresh inventory
+ * (`refresh()`). Returns the new verdict with `autoStop: { needed, safe, stopped }` attached.
  */
 function autoStopOverBudget(verdict, {
 	evaluate,
-	inventory,
 	worktree,
 	env = process.env,
 	log = (line) => process.stderr.write(`${line}\n`),
 	now = Date.now(),
 	recheck = (stack) => defaultRecheck(stack, { env }),
 	stop = (stack) => defaultStop(stack, { ownRoot: realPath(worktree) }),
+	refresh,
 }) {
 	const plan = planAutoStop(verdict, { worktree });
 	const summary = { needed: plan.needed, safe: plan.candidates.length, stopped: 0 };
@@ -106,13 +106,26 @@ function autoStopOverBudget(verdict, {
 			log(`[dev:tmux] Could not auto-stop ${label} (${stack.worktree}): its stop exited ${status}.`);
 			continue;
 		}
-		stopped.push(stack);
+		stopped.push({ stack, label });
+	}
+	if (stopped.length === 0) return { ...verdict, autoStop: summary };
+
+	// A stop can exit 0 and leave a server behind (its stop is best effort, and its listener
+	// backstop only matches servers whose cwd is the worktree root), so count a stack as stopped
+	// only once a fresh inventory no longer shows its servers.
+	const fresh = refresh();
+	const livePids = new Set(fresh.servers.map((server) => server.pid));
+	let confirmed = 0;
+	for (const { stack, label } of stopped) {
+		const survivors = stack.servers.filter((server) => livePids.has(server.pid)).map((server) => server.pid);
+		if (survivors.length > 0) {
+			log(`[dev:tmux] Could not auto-stop ${label} (${stack.worktree}): its stop exited 0 but pid ${survivors.join(", ")} still runs.`);
+			continue;
+		}
+		confirmed += 1;
 		log(`[dev:tmux] Auto-stopped ${label} (${stack.worktree}): a linked worktree of this repo with no agent, tool or attached tmux client, ${describeIdle(stack.lastActivityMs, now)}.`);
 	}
-
-	const stoppedPids = new Set(stopped.flatMap((stack) => stack.servers.map((server) => server.pid)));
-	const next = evaluate({ ...inventory, servers: inventory.servers.filter((server) => !stoppedPids.has(server.pid)) });
-	return { ...next, autoStop: { ...summary, stopped: stopped.length } };
+	return { ...evaluate(fresh), autoStop: { ...summary, stopped: confirmed } };
 }
 
 module.exports = { autoStopOverBudget, idlestFirst, isSafeToStop, planAutoStop };

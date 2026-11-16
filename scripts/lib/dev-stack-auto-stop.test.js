@@ -53,14 +53,15 @@ function crowdedMachine() {
 	};
 }
 
-function runAutoStop({ inventory, options }, { budget = 4, recheck = () => null, stopStatus = () => 0 } = {}) {
+function runAutoStop({ inventory, options }, { budget = 4, recheck = () => null, stopStatus = () => 0, survives = () => false } = {}) {
 	const evaluate = (remaining) => evaluateBudget(remaining, { ...options, budget });
 	const verdict = evaluate(inventory);
 	const stopped = [];
 	const log = [];
+	// The fake machine: a stopped stack's servers are gone unless `survives` keeps them.
+	const gone = new Set();
 	const result = autoStopOverBudget(verdict, {
 		evaluate,
-		inventory,
 		worktree: OWN,
 		env: ENV,
 		now: NOW,
@@ -68,11 +69,25 @@ function runAutoStop({ inventory, options }, { budget = 4, recheck = () => null,
 		recheck,
 		stop: (stack) => {
 			stopped.push(stack.worktree);
-			return stopStatus(stack);
+			const status = stopStatus(stack);
+			if (status === 0 && !survives(stack)) for (const server of stack.servers) gone.add(server.pid);
+			return status;
 		},
+		refresh: () => ({ ...inventory, servers: inventory.servers.filter((server) => !gone.has(server.pid)) }),
 	});
 	return { verdict, result, stopped, log };
 }
+
+// Regression (Codex review on #2348): a stop that exits 0 but leaves its server running must not
+// count toward the budget.
+test("a stop that exits 0 but leaves its server running does not count", () => {
+	const machine = crowdedMachine();
+	const { result, stopped, log } = runAutoStop(machine, { budget: 8, survives: (stack) => stack.worktree === wt("never") });
+	assert.deepEqual(stopped, [wt("never")]);
+	assert.equal(result.exitCode, EXIT_OVER_BUDGET);
+	assert.match(log[0], /Could not auto-stop never .*its stop exited 0 but pid 8 still runs\./u);
+	assert.match(formatVerdict(result, { worktree: OWN }), /Running dev stacks \(8\)/u);
+});
 
 test("only idle linked worktrees of this repo are candidates, idlest first", () => {
 	const { inventory, options } = crowdedMachine();
@@ -121,7 +136,7 @@ test("a failed or refused stop does not count, and a shortfall still refuses", (
 	const machine = crowdedMachine();
 	const { result, log } = runAutoStop(machine, { budget: 6, stopStatus: (stack) => (stack.worktree === wt("idle-2h") ? 6 : 0) });
 	assert.equal(result.exitCode, EXIT_OVER_BUDGET);
-	assert.match(log.at(-1), /Could not auto-stop idle-2h .*exited 6/u);
+	assert.ok(log.some((line) => /Could not auto-stop idle-2h .*exited 6/u.test(line)), log.join("\n"));
 	assert.match(formatVerdict(result, { worktree: OWN }), /Auto-stopped 2 stacks, but 1 stack more must stop/u);
 });
 
@@ -174,7 +189,9 @@ function createRepo() {
 			[
 				"#!/usr/bin/env bash",
 				`echo "$PWD|\${VPK_DEV_TMUX_SESSION:-}|\${VPK_TMUX_SOCKET:-}|$*" >> ${JSON.stringify(stopCalls)}`,
-				`exec node ${JSON.stringify(path.join(__dirname, "dev-stack-activity.js"))} stop-guard --worktree "$PWD" --session "\${VPK_DEV_TMUX_SESSION:-none}"`,
+				`node ${JSON.stringify(path.join(__dirname, "dev-stack-activity.js"))} stop-guard --worktree "$PWD" --session "\${VPK_DEV_TMUX_SESSION:-none}" || exit $?`,
+				// The guard allowed it, so the fake server under this worktree exits: drop it from the fake inventory.
+				`node -e 'const fs=require("fs");const f=process.env.VPK_DEV_STACK_INVENTORY;const i=JSON.parse(fs.readFileSync(f,"utf8"));i.servers=i.servers.filter((s)=>s.cwd!==process.argv[1]);fs.writeFileSync(f,JSON.stringify(i))' "$PWD"`,
 			].join("\n"),
 		);
 	}

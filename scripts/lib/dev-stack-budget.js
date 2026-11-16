@@ -278,7 +278,8 @@ function main(argv, { env = process.env, stderr = process.stderr } = {}) {
 		const { autoStopOverBudget } = require("./dev-stack-auto-stop.js");
 		verdict = autoStopOverBudget(verdict, {
 			evaluate: (remaining) => evaluateBudget(remaining, options),
-			inventory,
+			// Re-read after the stops: a stop that exits 0 can still leave a server running.
+			refresh: () => readInventory(env),
 			worktree,
 			env,
 			log: (line) => stderr.write(`${line}\n`),
