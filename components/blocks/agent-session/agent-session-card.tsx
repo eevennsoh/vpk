@@ -751,7 +751,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}

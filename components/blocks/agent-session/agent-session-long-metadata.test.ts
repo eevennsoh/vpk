@@ -158,3 +158,16 @@ test("a finished session's tool call stops shimmering", () => {
 	assert.equal(build({ agentName: "Figma", state: "running", toolCalls }).find((segment) => segment.kind === "tool-call")?.animated, true);
 	assert.equal(build({ agentName: "Figma", state: "needs-input", toolCalls }).find((segment) => segment.kind === "tool-call")?.animated, true);
 });
+
+test("the compact short line keeps only the agent mark, PR, and host-tagged time", () => {
+	const compact = (toAgentSessionMetadataSegments as (input: Input & { compact?: boolean }) => readonly Segment[])({
+		agentName: "Figma",
+		artifactLabel: "#124: Cargo retract",
+		compact: true,
+		host: "cloud",
+		state: "complete",
+		toolCalls: ["Preparing the latest frame."],
+	});
+	assert.deepEqual(compact.map((segment) => segment.kind), ["agent", "artifact", "time"]);
+	assert.equal(compact.find((segment) => segment.kind === "agent")?.label, undefined);
+});

@@ -47,6 +47,8 @@ export interface AgentSessionMetadataInput {
 	readonly toolCalls?: readonly string[];
 	/** Lifecycle state; decides whether the agent is named and the tool call shimmers. */
 	readonly state?: AgentListState;
+	/** Short-density line: agent mark only, no agent name, no tool call. */
+	readonly compact?: boolean;
 }
 
 /**
@@ -76,9 +78,11 @@ export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
 	const segments: AgentSessionMetadataSegment[] = [
-		isActiveAgentSessionState(input.state) ? { kind: "agent" } : { kind: "agent", label: input.agentName },
+		input.compact || isActiveAgentSessionState(input.state) ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
-	const toolCalls = input.toolCalls
+	// The compact (short) line has no room for narration: the mark stands in for
+	// the agent and the tool call is dropped, leaving PR, host, and time.
+	const toolCalls = input.compact ? undefined : input.toolCalls
 		?.map((toolCall) => toolCall.trim())
 		.filter((toolCall) => toolCall.length > 0);
 	if (input.branch) {

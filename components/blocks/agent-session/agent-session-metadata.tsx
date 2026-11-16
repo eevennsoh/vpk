@@ -244,7 +244,7 @@ function LongMetadataSegment({
  * unit-tested; this component only decides how each chunk looks.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch = false }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, item, renderAgentAvatar, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
@@ -253,6 +253,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 		agentName: item.agent.name,
 		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
+		compact,
 		host: declaredHost,
 		prStatus: item.prStatus,
 		state: item.state,
