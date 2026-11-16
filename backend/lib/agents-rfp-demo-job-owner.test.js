@@ -1,10 +1,5 @@
 const assert = require("node:assert/strict");
-const http = require("node:http");
 const test = require("node:test");
-const express = require("express");
-
-const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
-const { createRovoAppThreadOwnership } = require("./rovo-app-thread-ownership");
 
 const {
 	buildAgentsRfpDemoJob,
@@ -81,6 +76,15 @@ function createHarness({
 			},
 		},
 		rovoAppThreadManager: {
+			assignOwnerIfMissing: async (threadId, nextOwner) => {
+				calls.push(["assignOwner", threadId, nextOwner]);
+				const thread = threadRecords.get(threadId);
+				if (!thread) return { status: "missing", thread: null };
+				if (thread.owner) return { status: "owned", thread };
+				const owned = { ...thread, owner: nextOwner };
+				threadRecords.set(threadId, owned);
+				return { status: "assigned", thread: owned };
+			},
 			createThread: async (thread) => {
 				calls.push(["createThread", thread.id]);
 				threadRecords.set(thread.id, thread);
@@ -242,45 +246,76 @@ test("a failed mutation rejects its caller and does not poison later runs", asyn
 	assert.equal(result.job.runHistory[0].id, "retry");
 });
 
-// A route guarded like GET /api/rovo/threads/:threadId, over the harness's threads.
-async function withThreadReadServer(threadRecords, run) {
-	const ownership = createRovoAppThreadOwnership({
-		rovoAppThreadManager: { getThread: async (threadId) => threadRecords.get(threadId) ?? null },
+const ALICE = Object.freeze({ owner: "alice", local: false });
+const BOB = Object.freeze({ owner: "bob", local: false });
+
+function createOwnedRunHarness(options = {}) {
+	return createHarness({
+		runRfpDraftingAgent: (current, runOptions) => ({
+			...stateRun(current, runOptions),
+			threadRecords: [{ ...createThreadRecord("agents-rfp-demo-rfp-1"), title: `Run ${runOptions.runId}` }],
+		}),
+		state: { agent: null, workItems: { "RFP-1": { agentSessionThreadId: "agents-rfp-demo-rfp-1" } } },
+		...options,
 	});
-	const app = express();
-	app.use(createCallerIdentityMiddleware({ env: { NODE_ENV: "production" }, logger: { log() {}, warn() {} } }));
-	app.get("/api/rovo/threads/:threadId", ownership.requireCaller, ownership.rejectForeignThread((req) => req.params.threadId), (req, res) => {
-		res.status(200).json({ thread: threadRecords.get(req.params.threadId) ?? null });
-	});
-	const server = http.createServer(app);
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	try {
-		await run(`http://127.0.0.1:${server.address().port}`);
-	} finally {
-		await new Promise((resolve) => server.close(resolve));
-	}
 }
 
-test("an RFP demo thread belongs to the caller whose run created it, and a later run by someone else keeps that owner", async () => {
-	const harness = createHarness({
-		runRfpDraftingAgent: (current, options) => ({
-			...stateRun(current, options),
-			threadRecords: [createThreadRecord("rfp-thread-1")],
+test("an RFP demo thread belongs to the caller whose run created it", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice-2" });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").title, "Run run-alice-2");
+});
+
+test("another caller's run does not overwrite an RFP demo thread", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	await harness.owner.runAgentsRfpDemoJob({ caller: BOB, runId: "run-bob" });
+	const thread = harness.threadRecords.get("agents-rfp-demo-rfp-1");
+	assert.equal(thread.owner, "alice");
+	assert.equal(thread.title, "Run run-alice");
+	assert.equal(harness.calls.some(([name, threadId]) => name === "updateThread" && threadId === "agents-rfp-demo-rfp-1"), false);
+});
+
+test("a run adopts an RFP demo thread stored with no owner", async () => {
+	const harness = createOwnedRunHarness({ threads: [["agents-rfp-demo-rfp-1", { ...createThreadRecord("agents-rfp-demo-rfp-1"), owner: null }]] });
+	await harness.owner.runAgentsRfpDemoJob({ caller: BOB, runId: "run-bob" });
+	const thread = harness.threadRecords.get("agents-rfp-demo-rfp-1");
+	assert.equal(thread.owner, "bob");
+	assert.equal(thread.title, "Run run-bob");
+});
+
+test("another caller's reset does not delete an RFP demo thread, and the owner's does", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	await harness.owner.resetAgentsRfpDemo({ caller: BOB });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1")?.owner, "alice");
+	assert.equal(harness.calls.some(([name]) => name === "deleteThread"), false);
+
+	harness.state.workItems = { "RFP-1": { agentSessionThreadId: "agents-rfp-demo-rfp-1" } };
+	await harness.owner.resetAgentsRfpDemo({ caller: ALICE });
+	assert.equal(harness.threadRecords.has("agents-rfp-demo-rfp-1"), false);
+});
+
+test("processing keeps the owner of the thread its run created, and recreates a deleted one for the starting caller", async () => {
+	let threadRecords = [];
+	const harness = createOwnedRunHarness({
+		advanceRfpDraftingAgentProcessing: async (current) => ({
+			changed: true,
+			state: current,
+			threadRecords: threadRecords.map((record) => ({ ...record })),
 		}),
 	});
-	await harness.owner.runAgentsRfpDemoJob({ owner: "alice", runId: "run-alice" });
-	assert.equal(harness.threadRecords.get("rfp-thread-1").owner, "alice");
-	await harness.owner.runAgentsRfpDemoJob({ owner: "bob", runId: "run-bob-2" });
-	assert.equal(harness.threadRecords.get("rfp-thread-1").owner, "alice");
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	threadRecords = [{ ...createThreadRecord("agents-rfp-demo-rfp-1"), title: "Completed" }];
+	await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").title, "Completed");
 
-	await withThreadReadServer(harness.threadRecords, async (baseUrl) => {
-		const foreign = await fetch(`${baseUrl}/api/rovo/threads/rfp-thread-1`, { headers: { "x-slauth-subject": "bob" } });
-		assert.equal(foreign.status, 404);
-		assert.deepEqual(await foreign.json(), { error: "Thread not found" });
-		const own = await fetch(`${baseUrl}/api/rovo/threads/rfp-thread-1`, { headers: { "x-slauth-subject": "alice" } });
-		assert.equal(own.status, 200);
-		assert.equal((await own.json()).thread.owner, "alice");
-	});
+	harness.threadRecords.delete("agents-rfp-demo-rfp-1");
+	await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
 });
 
 test("an RFP demo thread created with no starting caller has no owner", async () => {

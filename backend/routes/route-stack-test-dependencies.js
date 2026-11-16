@@ -98,6 +98,7 @@ function createRuntimeRouteStackTestDependencies() {
 		generateAgentDataFlowText: noop,
 		generateAgentsRfpDemoReportPreview: noop,
 		generatedFilesManager: createMethodBag(["deleteGeneratedFilesForThreads", "deleteLegacyRootFiles"]),
+		generatedMediaOwnerStore: createMethodBag(["claim", "ownerOf"]),
 		generateSuggestedQuestions: noop,
 		generateTextViaGateway: noop,
 		getAiGatewayConfigReport: () => ({}),

@@ -1,5 +1,7 @@
 "use strict";
 
+const { runWithGeneratedMediaScope } = require("./generated-media-owners");
+
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
 		throw new Error(`createRovoAppManagedRunLifecycle requires ${name}`);
@@ -56,7 +58,9 @@ function createRovoAppManagedRunLifecycle({
 		if (!rovoAppRunManager.isCurrentRun(markedRun) || markedRun.abortController.signal.aborted) {
 			return;
 		}
-		void executeRovoAppManagedRun(markedRun).catch(async (error) => {
+		// Run as the turn of the caller who sent it, never of whatever started it
+		// (a queued run starts from another caller's settle).
+		void runWithGeneratedMediaScope(markedRun.mediaScope ?? null, () => executeRovoAppManagedRun(markedRun)).catch(async (error) => {
 			const wasAborted = markedRun.abortController.signal.aborted;
 			if (!wasAborted) {
 				logger.error("[FUTURE-CHAT] Managed run failed:", error);

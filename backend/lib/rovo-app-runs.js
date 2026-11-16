@@ -50,7 +50,12 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 		return run && (!runId || run.id === runId) ? run : null;
 	}
 
-	function createRun({ backend = "ai-gateway", threadId, requestBody, requestedPortIndex = null }) {
+	/**
+	 * @param {{ backend?: string, threadId: string, requestBody?: object, requestedPortIndex?: number | null,
+	 *   mediaScope?: object | null }} input - `mediaScope`: the caller a video the run generates
+	 *   belongs to (lib/generated-media-owners.js), kept for a run that starts later.
+	 */
+	function createRun({ backend = "ai-gateway", threadId, requestBody, requestedPortIndex = null, mediaScope = null }) {
 		const existingRun = runs.get(threadId);
 		if (existingRun) {
 			return existingRun;
@@ -77,6 +82,7 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 			subscribers: new Map(),
 			abortController: new AbortController(),
 			error: null,
+			mediaScope,
 		};
 
 		runs.set(threadId, run);

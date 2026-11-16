@@ -271,6 +271,8 @@ function createDependencies(overrides = {}) {
 			state: { defaultUrl, threadId, workspaceId: `browser-${threadId}` },
 		}),
 		generatedFilesManager: createGeneratedFilesManager(state),
+		// No generated video has an owner unless a test records one.
+		generatedMediaOwnerStore: { ownerOf: () => null },
 		getThreadBrowserWorkspace: async ({ threadId }) => ({
 			state: { threadId, workspaceId: `browser-${threadId}` },
 		}),

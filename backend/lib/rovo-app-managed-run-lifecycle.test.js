@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
+const { currentGeneratedMediaScope, runWithGeneratedMediaScope } = require("./generated-media-owners");
 const { createRovoAppManagedRunLifecycle } = require("./rovo-app-managed-run-lifecycle");
 const { createRovoAppRunManager } = require("./rovo-app-runs");
 const { createRovoAppRunStateService } = require("./rovo-app-run-state");
@@ -378,4 +379,23 @@ test("startNextQueuedRovoAppRun leaves queued runs untouched when no port is ava
 
 	assert.deepEqual(queuedThreadIds, ["thread-1"]);
 	assert.equal(calls.some(([name]) => name === "markRunStarted"), false);
+});
+
+test("a run executes as the caller who sent it, not as whatever started it", async () => {
+	const scopes = [];
+	const { lifecycle, runManager } = createRealLifecycle({
+		executeRovoAppManagedRun: async (run) => {
+			await Promise.resolve();
+			scopes.push([run.threadId, currentGeneratedMediaScope()?.owner ?? null]);
+		},
+	});
+	const aliceRun = runManager.createRun({ threadId: "thread-alice", mediaScope: { owner: "alice", store: {} } });
+	const localRun = runManager.createRun({ threadId: "thread-local" });
+	// Started from inside bob's turn (a queued run starts from another run's settle).
+	await runWithGeneratedMediaScope({ owner: "bob", store: {} }, async () => {
+		await lifecycle.startManagedRovoAppRun(aliceRun);
+		await lifecycle.startManagedRovoAppRun(localRun);
+	});
+	await flushMicrotasks();
+	assert.deepEqual(scopes.sort(), [["thread-alice", "alice"], ["thread-local", null]]);
 });

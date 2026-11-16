@@ -7,6 +7,7 @@ const { resolveBackendDataDir } = require("../lib/backend-data-dir");
 const { createAIGatewayProvider } = require("../lib/ai-gateway-provider");
 const { createAgentsRfpDemoStateManager } = require("../lib/agents-rfp-demo-state");
 const { createCheckpointManager } = require("../lib/workspace-checkpoints");
+const { createGeneratedMediaOwnerStore } = require("../lib/generated-media-owners");
 const { createOrchestratorLog } = require("../lib/orchestrator-log");
 const { createRovoAppDocumentManager } = require("../lib/rovo-app-documents");
 const {
@@ -23,6 +24,7 @@ const DEFAULT_FACTORIES = {
 	createAIGatewayProvider,
 	createAgentsRfpDemoStateManager,
 	createCheckpointManager,
+	createGeneratedMediaOwnerStore,
 	createOrchestratorLog,
 	createRovoAppDocumentManager,
 	createRovoAppGeneratedFilesManager,
@@ -52,6 +54,11 @@ function createBackendServices({
 	services.checkpointManager = serviceFactories.createCheckpointManager({
 		baseDir,
 		maxCheckpoints: DEFAULT_CHECKPOINT_LIMIT,
+	});
+	services.generatedMediaOwnerStore = serviceFactories.createGeneratedMediaOwnerStore({
+		baseDir,
+		logger,
+		projectRoot,
 	});
 	services.orchestratorLog = serviceFactories.createOrchestratorLog({
 		baseDir,

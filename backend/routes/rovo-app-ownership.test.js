@@ -8,6 +8,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { createGeneratedMediaOwnerStore } = require("../lib/generated-media-owners");
 const { createDependencies, withServer } = require("./rovo-app-test-dependencies");
 
 const PRODUCTION_ENV = Object.freeze({ NODE_ENV: "production" });
@@ -157,24 +158,24 @@ test("in production documents, files, and background streams of another caller a
 	}, { env: PRODUCTION_ENV });
 });
 
-test("in production a generated video is served only to a caller with a thread that mentions it", async () => {
-	const projectRoot = mkdtempSync(path.join(os.tmpdir(), "rovo-app-media-owner-"));
+test("in production a generated video is served only to the caller whose turn generated it", async () => {
+	const root = mkdtempSync(path.join(os.tmpdir(), "rovo-app-media-owner-"));
+	const projectRoot = path.join(root, "project");
 	try {
 		mkdirSync(path.join(projectRoot, "media/videos/demo"), { recursive: true });
-		writeFileSync(path.join(projectRoot, "media/videos/demo/alice.mp4"), "alice video");
-		writeFileSync(path.join(projectRoot, "media/videos/demo/loose.mp4"), "loose video");
-		const dependencies = createDependencies({ projectRoot });
-		const { state } = dependencies;
-		state.threads.set("thread-a", {
-			id: "thread-a",
-			owner: "alice",
-			title: "Alice",
-			messages: [{ role: "assistant", parts: [{ type: "text", text: "Rendered ./media/videos/demo/alice.mp4" }] }],
-		});
-		state.threads.set("thread-legacy", {
-			id: "thread-legacy",
-			title: "Legacy",
-			messages: [{ role: "assistant", parts: [{ type: "text", text: "media/videos/demo/loose.mp4" }] }],
+		for (const name of ["alice.mp4", "loose.mp4"]) {
+			writeFileSync(path.join(projectRoot, `media/videos/demo/${name}`), `${name} video`);
+		}
+		const generatedMediaOwnerStore = createGeneratedMediaOwnerStore({ baseDir: path.join(root, "data"), projectRoot });
+		// Alice's turn generated alice.mp4; loose.mp4 has no recorded owner (older than owners).
+		assert.equal(generatedMediaOwnerStore.claim("./media/videos/demo/alice.mp4", "alice"), true);
+		const dependencies = createDependencies({ generatedMediaOwnerStore, projectRoot });
+		// Mentioning a path in your own thread does not make the video yours.
+		dependencies.state.threads.set("thread-bob", {
+			id: "thread-bob",
+			owner: "bob",
+			title: "Bob",
+			messages: [{ role: "user", parts: [{ type: "text", text: "media/videos/demo/alice.mp4 /api/rovo/generated-media?path=media%2Fvideos%2Fdemo%2Falice.mp4" }] }],
 		});
 		const mediaUrl = (name) => `/api/rovo/generated-media?path=${encodeURIComponent(`media/videos/demo/${name}`)}`;
 		await withServer(dependencies, async (baseUrl) => {
@@ -185,22 +186,44 @@ test("in production a generated video is served only to a caller with a thread t
 			}
 			const own = await fetch(`${baseUrl}${mediaUrl("alice.mp4")}`, as("alice"));
 			assert.equal(own.status, 200);
-			assert.equal(await own.text(), "alice video");
+			assert.equal(await own.text(), "alice.mp4 video");
 
 			// Path validation still answers first.
 			const invalid = await fetch(`${baseUrl}/api/rovo/generated-media?path=${encodeURIComponent("../secret.mp4")}`, as("bob"));
 			assert.equal(invalid.status, 400);
 		}, { env: PRODUCTION_ENV });
 
-		// Locally the one caller reaches every generated video, mentioned or not.
+		// Locally the one caller reaches every generated video, recorded or not.
 		await withServer(dependencies, async (baseUrl) => {
 			for (const name of ["alice.mp4", "loose.mp4"]) {
 				assert.equal((await fetch(`${baseUrl}${mediaUrl(name)}`)).status, 200, name);
 			}
 		}, { env: {} });
+		await generatedMediaOwnerStore.flush();
 	} finally {
-		rmSync(projectRoot, { recursive: true, force: true });
+		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("in production a thread can store only a Rovo session no other caller's thread holds", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	state.threads.set("thread-a", { id: "thread-a", owner: "alice", title: "Alice", sessionId: "session-alice" });
+	state.threads.set("thread-b", { id: "thread-b", owner: "bob", title: "Bob" });
+	await withServer(dependencies, async (baseUrl) => {
+		const forgedCreate = await fetch(`${baseUrl}/api/rovo/threads`, jsonAs("bob", "POST", { id: "thread-forged", title: "Forged", sessionId: "session-alice" }));
+		assert.equal(forgedCreate.status, 409);
+		assert.equal((await forgedCreate.json()).code, "SESSION_OWNED");
+		assert.equal(state.threads.has("thread-forged"), false);
+		const forgedUpdate = await fetch(`${baseUrl}/api/rovo/threads/thread-b`, jsonAs("bob", "PUT", { sessionId: "session-alice" }));
+		assert.equal(forgedUpdate.status, 409);
+		assert.equal(state.threads.get("thread-b").sessionId, undefined);
+
+		// The owner keeps writing it, and a fresh session becomes the first caller's.
+		assert.equal((await fetch(`${baseUrl}/api/rovo/threads/thread-a`, jsonAs("alice", "PUT", { sessionId: "session-alice" }))).status, 200);
+		assert.equal((await fetch(`${baseUrl}/api/rovo/threads/thread-b`, jsonAs("bob", "PUT", { sessionId: "session-bob" }))).status, 200);
+		assert.equal((await fetch(`${baseUrl}/api/rovo/threads`, jsonAs("alice", "POST", { id: "thread-a2", sessionId: "session-bob" }))).status, 409);
+	}, { env: PRODUCTION_ENV });
 });
 
 test("outside production the caller is the fixed owner local, who also sees threads stored without an owner", async () => {

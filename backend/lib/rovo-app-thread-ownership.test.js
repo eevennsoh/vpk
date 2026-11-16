@@ -5,6 +5,7 @@ const http = require("node:http");
 const test = require("node:test");
 const express = require("express");
 
+const { currentGeneratedMediaScope } = require("./generated-media-owners");
 const { registerChatThreadOwnershipGuards } = require("./rovo-app-thread-ownership");
 const { createCallerIdentityMiddleware } = require("../middleware/caller-identity");
 
@@ -19,20 +20,25 @@ async function withChatApp(env, run) {
 		listThreads: async ({ filter, limit } = {}) => [...threads.values()].filter((thread) => !filter || filter(thread)).slice(0, limit),
 	};
 	const reached = [];
+	const scopes = [];
+	const generatedMediaOwnerStore = { claim: () => true };
 	const app = express();
 	app.use(createCallerIdentityMiddleware({ env, logger: { log() {}, warn() {} } }));
 	app.use(express.json());
-	registerChatThreadOwnershipGuards(app, { rovoAppThreadManager });
+	registerChatThreadOwnershipGuards(app, { generatedMediaOwnerStore, rovoAppThreadManager });
 	for (const routePath of ["/api/chat-sdk", "/api/rovo/chat", "/api/chat-cancel", "/api/chat-sdk/skip-question"]) {
-		app.post(routePath, (req, res) => {
+		app.post(routePath, async (req, res) => {
+			await Promise.resolve();
 			reached.push(routePath);
+			const scope = currentGeneratedMediaScope();
+			scopes.push(scope ? { owner: scope.owner, store: scope.store === generatedMediaOwnerStore } : null);
 			res.status(200).json({ ok: true });
 		});
 	}
 	const server = http.createServer(app);
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	try {
-		await run(`http://127.0.0.1:${server.address().port}`, reached);
+		await run(`http://127.0.0.1:${server.address().port}`, reached, scopes);
 	} finally {
 		await new Promise((resolve) => server.close(resolve));
 	}
@@ -51,6 +57,9 @@ test("in production a chat request naming another caller's thread gets 404 and n
 			["/api/rovo/chat", { id: "thread-a" }],
 			["/api/chat-cancel?threadId=thread-a", {}],
 			["/api/chat-sdk", { id: "thread-legacy" }],
+			// The handler reads threadId before id, so a fresh id cannot carry a foreign threadId.
+			["/api/chat-sdk", { id: "thread-new", threadId: "thread-a" }],
+			["/api/chat-sdk", { id: "thread-a", threadId: "thread-new" }],
 		]) {
 			const response = await post(baseUrl, path, "bob", body);
 			assert.equal(response.status, 404, `${path} ${JSON.stringify(body)}`);
@@ -74,22 +83,52 @@ test("outside production the local caller reaches every chat thread, including o
 	});
 });
 
-test("in production skip-question only restores a Rovo session that one of the caller's threads stores", async () => {
+test("in production skip-question only restores a Rovo session one of the caller's threads first stored", async () => {
 	await withChatApp({ NODE_ENV: "production" }, async (baseUrl, reached) => {
 		for (const sessionId of ["session-a", "session-run", "session-legacy", "session-unbound"]) {
 			const response = await post(baseUrl, "/api/chat-sdk/skip-question", "bob", { sessionId });
 			assert.equal(response.status, 404, sessionId);
 			assert.deepEqual(await response.json(), { error: "Session not found" });
 		}
+		// Without a session it would talk to whatever session the Rovo port has loaded.
+		assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", "bob", {})).status, 404);
 		assert.deepEqual(reached, []);
 
 		for (const sessionId of ["session-a", "session-run"]) {
 			assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", "alice", { sessionId })).status, 200, sessionId);
 		}
-		// A skip without a session restores nothing, so it needs no thread.
-		assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", "bob", {})).status, 200);
 		assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", null, { sessionId: "session-a" })).status, 401);
-		assert.equal(reached.length, 3);
+		assert.equal(reached.length, 2);
+	});
+});
+
+test("in production a chat turn can resume only the caller's own Rovo session", async () => {
+	await withChatApp({ NODE_ENV: "production" }, async (baseUrl, reached) => {
+		for (const path of ["/api/chat-sdk", "/api/rovo/chat"]) {
+			const response = await post(baseUrl, path, "bob", { id: "thread-new", sessionId: "session-a" });
+			assert.equal(response.status, 404, path);
+			assert.deepEqual(await response.json(), { error: "Session not found" });
+		}
+		assert.deepEqual(reached, []);
+		assert.equal((await post(baseUrl, "/api/chat-sdk", "alice", { id: "thread-a", sessionId: "session-a" })).status, 200);
+		assert.equal((await post(baseUrl, "/api/rovo/chat", "alice", { id: "thread-a", sessionId: "session-run" })).status, 200);
+		// An ephemeral turn restores no session, and a turn without one restores nothing.
+		assert.equal((await post(baseUrl, "/api/chat-sdk", "bob", { id: "thread-new", sessionId: "session-a", sessionMode: "ephemeral" })).status, 200);
+		assert.equal((await post(baseUrl, "/api/chat-sdk", "bob", { id: "thread-new" })).status, 200);
+		assert.equal(reached.length, 4);
+	});
+});
+
+test("a chat turn runs as its SLAuth caller's media scope, and a local turn records no owner", async () => {
+	await withChatApp({ NODE_ENV: "production" }, async (baseUrl, _reached, scopes) => {
+		await post(baseUrl, "/api/chat-sdk", "bob", { id: "thread-new" });
+		await post(baseUrl, "/api/rovo/chat", "bob", { id: "thread-new" });
+		await post(baseUrl, "/api/chat-cancel?threadId=thread-new", "bob");
+		assert.deepEqual(scopes, [{ owner: "bob", store: true }, { owner: "bob", store: true }, null]);
+	});
+	await withChatApp({}, async (baseUrl, _reached, scopes) => {
+		await post(baseUrl, "/api/chat-sdk", null, { id: "thread-new" });
+		assert.deepEqual(scopes, [null]);
 	});
 });
 
@@ -98,7 +137,8 @@ test("outside production skip-question restores any session for the local caller
 		for (const sessionId of ["session-a", "session-unbound"]) {
 			assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", "bob", { sessionId })).status, 200, sessionId);
 		}
-		assert.equal(reached.length, 2);
+		assert.equal((await post(baseUrl, "/api/chat-sdk/skip-question", "bob", {})).status, 200);
+		assert.equal(reached.length, 3);
 	});
 });
 
@@ -106,5 +146,9 @@ test("registerChatThreadOwnershipGuards needs a thread manager that can list thr
 	assert.throws(
 		() => registerChatThreadOwnershipGuards(express(), { rovoAppThreadManager: { getThread: async () => null } }),
 		/rovoAppThreadManager\.listThreads/u,
+	);
+	assert.throws(
+		() => registerChatThreadOwnershipGuards(express(), { rovoAppThreadManager: { getThread: async () => null, listThreads: async () => [] } }),
+		/generatedMediaOwnerStore\.claim/u,
 	);
 });

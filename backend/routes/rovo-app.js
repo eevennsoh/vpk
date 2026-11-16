@@ -154,6 +154,7 @@ function createRovoAppRouter({
 	ensureThreadBrowserWorkspace,
 	fileAccess = fs.access,
 	generatedFilesManager,
+	generatedMediaOwnerStore,
 	getString = getNonEmptyString,
 	getThreadBrowserWorkspace,
 	inferGeneratedMediaContentTypeFn = inferGeneratedMediaContentType,
@@ -181,6 +182,7 @@ function createRovoAppRouter({
 	validateManager("rovoAppUploadManager", rovoAppUploadManager, REQUIRED_UPLOAD_MANAGER_METHODS);
 	validateManager("generatedFilesManager", generatedFilesManager, REQUIRED_GENERATED_FILES_MANAGER_METHODS);
 	validateManager("checkpointManager", checkpointManager, REQUIRED_CHECKPOINT_MANAGER_METHODS);
+	validateManager("generatedMediaOwnerStore", generatedMediaOwnerStore, ["ownerOf"]);
 	requireFunction("buildFileUrl", buildFileUrl);
 	requireFunction("buildThreadSummary", buildThreadSummary);
 	requireFunction("cancelChat", cancelChat);
@@ -208,6 +210,7 @@ function createRovoAppRouter({
 	router.use("/rovo", rejectInvalidRovoAppIds);
 	// Every thread-scoped route sees only the caller's threads (lib/rovo-app-thread-ownership.js).
 	const ownership = createRovoAppThreadOwnership({
+		generatedMediaOwnerStore,
 		rovoAppDocumentManager,
 		rovoAppThreadManager,
 		rovoAppUploadManager,
@@ -217,6 +220,8 @@ function createRovoAppRouter({
 	const foreignQueryThread = rejectForeignThread((req) => req.query.threadId);
 	const foreignBodyThread = rejectForeignThread((req) => req.body?.threadId);
 	const foreignParamThread = rejectForeignThread((req) => req.params.threadId);
+	// A thread may store only a Rovo session that is (or becomes) the caller's.
+	const claimBodySession = ownership.claimSession((req) => req.body?.sessionId);
 
 	// Cancels the thread's run, then removes the thread and everything stored under it.
 	// Cleanup failures never stop the thread's own delete.
@@ -416,7 +421,7 @@ function createRovoAppRouter({
 		} catch (error) {
 			return next(error);
 		}
-	}, async (req, res) => {
+	}, claimBodySession, async (req, res) => {
 		try {
 			const {
 				id: rawThreadId,
@@ -515,7 +520,7 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.put("/rovo/threads/:threadId", foreignParamThread, async (req, res) => {
+	router.put("/rovo/threads/:threadId", foreignParamThread, claimBodySession, async (req, res) => {
 		try {
 			const {
 				title,
@@ -939,7 +944,7 @@ function createRovoAppRouter({
 			}
 
 			// Another caller's video answers like a file that does not exist.
-			if (!(await ownership.ownsGeneratedMedia(callerOf(res), requestedPath))) {
+			if (!ownership.ownsGeneratedMedia(callerOf(res), requestedPath)) {
 				return res.status(404).json({ error: "Generated media file not found" });
 			}
 

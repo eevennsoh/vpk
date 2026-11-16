@@ -4,7 +4,9 @@ const {
 	buildGeneratedMediaUrl,
 	findGeneratedVideoPathInValue,
 	inferGeneratedMediaContentType,
+	parseGeneratedMediaUrlPath,
 } = require("./generated-media");
+const { recordGeneratedMediaForCurrentScope } = require("./generated-media-owners");
 
 function isObjectRecord(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,6 +44,10 @@ function buildVideoPreviewBody(payload) {
 	const directFileName =
 		getNonEmptyString(payload.fileName) || getNonEmptyString(payload.filename);
 	if (directVideoUrl) {
+		const generatedMediaPath = parseGeneratedMediaUrlPath(directVideoUrl);
+		if (generatedMediaPath) {
+			recordGeneratedMediaForCurrentScope(generatedMediaPath);
+		}
 		return {
 			kind: "video",
 			videoUrl: directVideoUrl,
@@ -55,6 +61,8 @@ function buildVideoPreviewBody(payload) {
 	if (generatedVideoPath) {
 		const generatedVideoUrl = buildGeneratedMediaUrl(generatedVideoPath);
 		if (generatedVideoUrl) {
+			// The turn that produced the video owns it (lib/generated-media-owners.js).
+			recordGeneratedMediaForCurrentScope(generatedVideoPath);
 			return {
 				kind: "video",
 				videoUrl: generatedVideoUrl,

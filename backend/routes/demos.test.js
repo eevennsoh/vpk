@@ -18,7 +18,7 @@ async function withServer(overrides, run, { env } = {}) {
 	}
 	app.use(express.json());
 	const calls = {
-		advance: 0, events: [], classify: [], getClaim: [], htmlReport: [], postClaim: [], deleteClaim: [], resetState: 0, runJob: [], standup: [], writeState: [],
+		advance: 0, events: [], classify: [], getClaim: [], htmlReport: [], postClaim: [], deleteClaim: [], resetCallers: [], resetState: 0, runJob: [], standup: [], writeState: [],
 	};
 	const stateManager = {
 		readState: async () => ({}),
@@ -57,17 +57,20 @@ async function withServer(overrides, run, { env } = {}) {
 			calls.postClaim.push(body);
 			return { body: { posted: true }, status: 201 };
 		},
-		resetAgentsRfpDemo: async () => stateManager.resetState(),
+		resetAgentsRfpDemo: async ({ caller }) => {
+			calls.resetCallers.push(caller?.owner);
+			return stateManager.resetState();
+		},
 		saveAgentsRfpDemoState: async (state) => stateManager.writeState(state),
-		handleAgentsRfpDemoTicketEvent: async ({ ticketCode, targetColumn, runId, owner }) => {
-			calls.events.push({ ticketCode, targetColumn, runId, owner });
+		handleAgentsRfpDemoTicketEvent: async ({ ticketCode, targetColumn, runId, caller }) => {
+			calls.events.push({ ticketCode, targetColumn, runId, owner: caller?.owner });
 			if (targetColumn !== "Drafting") {
 				return { job: { id: "job-1" }, state: { moved: { ticketCode, targetColumn } } };
 			}
 			return { job: { id: "job-1" }, state: { processed: true } };
 		},
-		runAgentsRfpDemoJob: async (input) => {
-			calls.runJob.push(input);
+		runAgentsRfpDemoJob: async ({ caller, ...input }) => {
+			calls.runJob.push({ ...input, owner: caller?.owner });
 			return {
 				job: { id: "job-1" },
 				state: { processed: true },
@@ -277,6 +280,14 @@ test("in production the RFP demo runs record the SLAuth caller who started them 
 		const anonymous = await fetch(`${baseUrl}/api/agents/rfp-demo/agent/apply`, { method: "POST" });
 		assert.equal(anonymous.status, 401);
 		assert.equal(calls.runJob.length, 1);
+
+		// A reset deletes only the resetting caller's demo threads, so it needs the caller.
+		const reset = await fetch(`${baseUrl}/api/agents/rfp-demo/reset`, {
+			headers: { "x-slauth-subject": "carol" },
+			method: "POST",
+		});
+		assert.equal(reset.status, 200);
+		assert.deepEqual(calls.resetCallers, ["carol"]);
 	}, { env: { NODE_ENV: "production" } });
 });
 

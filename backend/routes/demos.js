@@ -212,9 +212,9 @@ function createDemosRouter({
 		}
 	});
 
-	router.post("/agents/rfp-demo/reset", async (_req, res) => {
+	router.post("/agents/rfp-demo/reset", async (req, res) => {
 		try {
-			const state = await resetAgentsRfpDemo();
+			const state = await resetAgentsRfpDemo({ caller: getRequestCaller(req) });
 			return res.json({ state });
 		} catch (error) {
 			return res.status(500).json({
@@ -225,12 +225,10 @@ function createDemosRouter({
 	});
 
 	// The threads a run creates are the starting caller's (lib/agents-rfp-demo-job-owner.js).
-	const callerOwner = (req) => getRequestCaller(req)?.owner ?? null;
-
 	router.post("/agents/rfp-demo/agent/apply", async (req, res) => {
 		try {
 			const { job, state } = await runAgentsRfpDemoJob({
-				owner: callerOwner(req),
+				caller: getRequestCaller(req),
 				source: "agent-apply",
 			});
 			return res.json({ job, state });
@@ -251,7 +249,7 @@ function createDemosRouter({
 			}
 
 			const result = await handleAgentsRfpDemoTicketEvent({
-				ticketCode, targetColumn, runId: getString(req.body?.runId), owner: callerOwner(req),
+				ticketCode, targetColumn, runId: getString(req.body?.runId), caller: getRequestCaller(req),
 			});
 			return res.json(result);
 		} catch (error) {

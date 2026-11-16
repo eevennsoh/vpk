@@ -64,6 +64,15 @@ function buildGeneratedMediaUrl(requestedPath) {
 	return `${GENERATED_MEDIA_ROUTE}?path=${encodeURIComponent(normalizedPath)}`;
 }
 
+/** The media path a generated-media URL (as built by buildGeneratedMediaUrl) serves, or null. */
+function parseGeneratedMediaUrlPath(url) {
+	if (typeof url !== "string" || !url.trim().startsWith(`${GENERATED_MEDIA_ROUTE}?`)) {
+		return null;
+	}
+	const requestedPath = new URLSearchParams(url.trim().slice(GENERATED_MEDIA_ROUTE.length + 1)).get("path");
+	return requestedPath && buildGeneratedMediaUrl(requestedPath) ? normalizeRepoRelativePath(requestedPath) : null;
+}
+
 function resolveGeneratedMediaAbsolutePath(projectRoot, requestedPath) {
 	if (hasTraversalSegments(requestedPath)) {
 		return null;
@@ -151,5 +160,6 @@ module.exports = {
 	extractGeneratedVideoPathFromString,
 	findGeneratedVideoPathInValue,
 	inferGeneratedMediaContentType,
+	parseGeneratedMediaUrlPath,
 	resolveGeneratedMediaAbsolutePath,
 };
