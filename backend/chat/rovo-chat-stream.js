@@ -311,9 +311,13 @@ function createRovoTurnRunner(dependencies = {}) {
 				rovoMarkerStream,
 				stageTrace,
 			});
-			const resetAssistantTextForRetryAttempt = () => {
+			const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
+				// A rerun keeps what was shown, so text the marker stream still holds back goes out first.
+				if (continuesShownText) {
+					rovoMarkerStream.flush();
+				}
 				rovoMarkerStream.reset();
-				resetAssistantTextForRetryAttemptState();
+				resetAssistantTextForRetryAttemptState({ continuesShownText });
 			};
 			const exitPlanWidgetEmitter = createExitPlanWidgetEmitter({
 				getIsPlanWidgetLoading: () => facts().plan.loading,

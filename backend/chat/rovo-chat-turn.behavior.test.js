@@ -141,11 +141,98 @@ test("a stuck port that recovers reruns the same attempt; what the first attempt
 	// A stuck-port rerun is the same tool-first attempt, recorded again as a first attempt.
 	assert.deepEqual(turn.attempts, ["first", "first"]);
 	assert.ok(statusLabels(turn.parts).includes("Recovered stuck port, retrying"));
-	// Today: text already streamed by the stuck attempt stays in the reply; only its held-back
-	// tail is dropped, and the rerun's text follows with no separator.
-	assert.match(visibleText(turn.parts), /^Lost with/u);
-	assert.doesNotMatch(visibleText(turn.parts), /the stuck port/u);
-	assert.match(visibleText(turn.parts), /Recovered answer$/u);
+	// Before: the stuck attempt's held-back tail was dropped and the rerun's text ran straight on
+	// ("Lost withRecovered answer"). Now the whole first attempt shows and the rerun is its own paragraph.
+	assert.equal(visibleText(turn.parts), "Lost with the stuck port\n\nRecovered answer");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+function recoveringStuckPortStreams(attemptTexts) {
+	let streams = 0;
+	return {
+		getStreams: () => streams,
+		dependencies: {
+			restartRovoPort: async () => ({ recovered: true }),
+			shouldRetryInteractiveStuckPortRecovery: ({ attemptCount }) => attemptCount < attemptTexts.length - 1,
+			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+				streams += 1;
+				onPortAcquired(43123);
+				const text = attemptTexts[Math.min(streams, attemptTexts.length) - 1];
+				if (text) {
+					onTextDelta(text);
+				}
+				if (streams < attemptTexts.length) {
+					throw createPortStuckError(43123);
+				}
+			},
+		},
+	};
+}
+
+test("a stuck port that recovers before any text was shown starts the reply with the rerun's text", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams(["", "Recovered answer"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(getStreams(), 2);
+	assert.equal(visibleText(turn.parts), "Recovered answer");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("two stuck-port recoveries in a row put one paragraph break between each attempt's text", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams(["First try", "Second try", "Third try"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(getStreams(), 3);
+	assert.deepEqual(turn.attempts, ["first", "first", "first"]);
+	assert.equal(visibleText(turn.parts), "First try\n\nSecond try\n\nThird try");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("a rerun that shows nothing before the next recovery does not double the paragraph break", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams(["First try", "", "Third try"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(getStreams(), 3);
+	assert.equal(visibleText(turn.parts), "First try\n\nThird try");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("first-attempt text that already ends a paragraph gets no extra break before the rerun", async () => {
+	const { dependencies } = recoveringStuckPortStreams(["First try\n\n", "Recovered answer"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(visibleText(turn.parts), "First try\n\nRecovered answer");
+});
+
+test("the post-stream pipeline sees only the rerun's text after a stuck-port recovery", async () => {
+	const { dependencies } = recoveringStuckPortStreams(["Lost with the stuck port", "Recovered answer"]);
+	const turn = await runTurn(dependencies);
+
+	assert.equal(turn.endOfTurnFacts.assistantText, "Recovered answer");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("on a soft-retry tool-first turn, a stuck port that recovers shows no text from the deferred first attempt", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams(["Lost with the stuck port", "Recovered answer"]);
+	const turn = await runTurn(dependencies, STRICT_SOFT_RETRY_TURN);
+
+	// Stuck attempt, its rerun, then the two tool-first retries; only the last attempt's deferred text shows.
+	assert.equal(getStreams(), 4);
+	assert.deepEqual(turn.attempts, ["first", "first", "retry", "retry"]);
+	assert.equal(visibleText(turn.parts), "Recovered answer\n\nTool output was not available.");
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("on a tool-first turn that streams its text, the rerun's text starts a new paragraph", async () => {
+	const { dependencies, getStreams } = recoveringStuckPortStreams(["Lost with the stuck port", "Recovered answer"]);
+	const turn = await runTurn(dependencies, {
+		isStrictToolFirstTurn: true,
+		toolFirstPolicy: { domains: ["jira"], enforcement: {}, relevanceDomains: ["jira"] },
+	});
+
+	assert.equal(getStreams(), 2);
+	assert.deepEqual(turn.attempts, ["first", "first"]);
+	assert.equal(visibleText(turn.parts), "Lost with the stuck port\n\nRecovered answer\n\nTool output was not available.");
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 

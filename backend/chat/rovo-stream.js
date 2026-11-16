@@ -181,6 +181,14 @@ function resolveRovoNonStrictPostStreamRouting({
 	};
 }
 
+/** The break that starts a new paragraph after `text`: none when it is empty or already ends one. */
+function paragraphSeparatorAfter(text) {
+	if (text.trim().length === 0 || text.endsWith("\n\n")) {
+		return "";
+	}
+	return text.endsWith("\n") ? "\n" : "\n\n";
+}
+
 function createRovoTextOutputController({
 	classifierJsonBufferMaxChars = 0,
 	isClassifierIntentLeakCandidate = () => false,
@@ -211,6 +219,11 @@ function createRovoTextOutputController({
 	let hasSuppressedLargeAssistantJson = false;
 	// Set after a notice paragraph; the next text starts a new paragraph.
 	let paragraphBreakPending = false;
+	// Set when a rerun keeps the text already shown; its first shown text starts a new paragraph.
+	// The break goes on the wire only: the rerun's own text is what the turn hands on.
+	let shownParagraphBreakPending = false;
+	// The last characters written to the wire, enough to tell how the shown text ends.
+	let shownTextTail = "";
 
 	const afterPendingParagraphBreak = (delta) => {
 		if (!paragraphBreakPending) {
@@ -229,6 +242,17 @@ function createRovoTextOutputController({
 		textStarted = true;
 	};
 
+	const writeShownTextDelta = (nextDelta) => {
+		startTextIfNeeded();
+		let delta = nextDelta;
+		if (shownParagraphBreakPending) {
+			shownParagraphBreakPending = false;
+			delta = `${paragraphSeparatorAfter(shownTextTail)}${delta}`;
+		}
+		shownTextTail = `${shownTextTail}${delta}`.slice(-2);
+		writer.write({ type: "text-delta", id: textId, delta });
+	};
+
 	const emitTextDeltaRaw = (delta) => {
 		if (!delta) {
 			return;
@@ -242,8 +266,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({ type: "text-delta", id: textId, delta });
+		writeShownTextDelta(delta);
 	};
 
 	const flushBufferedAssistantText = ({ force = false } = {}) => {
@@ -334,12 +357,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({
-			type: "text-delta",
-			id: textId,
-			delta: deferredToolFirstText,
-		});
+		writeShownTextDelta(deferredToolFirstText);
 		deferredToolFirstText = "";
 	};
 
@@ -362,10 +380,7 @@ function createRovoTextOutputController({
 			return;
 		}
 		paragraphBreakPending = false;
-		const separator = assistantText.trim().length === 0 || assistantText.endsWith("\n\n")
-			? ""
-			: assistantText.endsWith("\n") ? "\n" : "\n\n";
-		emitForcedTextDelta(`${separator}${text}`);
+		emitForcedTextDelta(`${paragraphSeparatorAfter(assistantText)}${text}`);
 		paragraphBreakPending = true;
 	};
 
@@ -378,8 +393,7 @@ function createRovoTextOutputController({
 			return;
 		}
 
-		startTextIfNeeded();
-		writer.write({ type: "text-delta", id: textId, delta: assistantText });
+		writeShownTextDelta(assistantText);
 	};
 
 	const removeToolFirstFailureNarrative = () => {
@@ -401,7 +415,14 @@ function createRovoTextOutputController({
 		}
 	};
 
-	const resetAssistantTextForRetryAttempt = () => {
+	/**
+	 * Clears the attempt's text for the next attempt. A rerun that keeps the text already shown
+	 * (`continuesShownText`) starts its first shown text as a new paragraph.
+	 */
+	const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
+		if (continuesShownText && textStarted) {
+			shownParagraphBreakPending = true;
+		}
 		assistantText = "";
 		unsuppressedAssistantText = "";
 		bufferedAssistantText = "";

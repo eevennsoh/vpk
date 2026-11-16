@@ -42,8 +42,9 @@ function createBaseOptions(overrides = {}) {
 			recordToolFirstAttempt: ({ currentToolFirstAttempt, isRetry }) => {
 				events.push(["record", currentToolFirstAttempt, isRetry]);
 			},
-			resetAssistantTextForRetryAttempt: () => {
-				events.push(["reset"]);
+			// A tool-first retry resets with no options; a rerun says it keeps the text already shown.
+			resetAssistantTextForRetryAttempt: (resetOptions) => {
+				events.push(resetOptions ? ["reset", resetOptions] : ["reset"]);
 			},
 			resolveRetryPlan: ({ currentToolFirstAttempt, hasToolFirstSuccess }) => {
 				events.push(["retry-plan", currentToolFirstAttempt, hasToolFirstSuccess]);
@@ -164,7 +165,7 @@ test("runRovoStreamRetryLoop reruns the same attempt after retry-stream recovery
 		["record", 1, false],
 		["stream", 1, initialActiveAttemptMessage],
 		["recover", 1, streamError, 0],
-		["reset"],
+		["reset", { continuesShownText: true }],
 		["record", 1, false],
 		["stream", 1, initialActiveAttemptMessage],
 		["success"],
