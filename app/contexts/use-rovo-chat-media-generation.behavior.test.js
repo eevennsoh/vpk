@@ -1,20 +1,15 @@
 // Drives useRovoChatMediaGeneration directly, so a test can settle the media
-// widget after the cut-short wait is scheduled. In the provider that cannot
-// happen through the stream: once a turn is cut short its stream is closed.
+// widget and run out the media timeout without a stream.
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const React = require("react");
 const { cleanup, renderComponent } = require("../../scripts/lib/render-component.js");
 
 const PROBE_SOURCE = `
-	import {
-		CUT_SHORT_MEDIA_WAIT_MS,
-		MEDIA_GENERATION_TIMEOUT_MS,
-		useRovoChatMediaGeneration,
-	} from "@/app/contexts/use-rovo-chat-media-generation";
+	import { MEDIA_GENERATION_TIMEOUT_MS, useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
 	export default function Probe({ messages, onSettled }) {
 		window.testMedia = useRovoChatMediaGeneration(messages, "p1", onSettled);
-		window.testMediaWaits = { full: MEDIA_GENERATION_TIMEOUT_MS, cutShort: CUT_SHORT_MEDIA_WAIT_MS };
+		window.testMediaTimeoutMs = MEDIA_GENERATION_TIMEOUT_MS;
 		return null;
 	}
 `;
@@ -26,8 +21,8 @@ function turn(loading) {
 	];
 }
 
-// Records the hook's media timeouts (anything a second or longer) instead of
-// scheduling them, so the test fires them by hand.
+// Records the hook's media timeout (anything a second or longer) instead of
+// scheduling it, so the test fires it by hand.
 function captureLongTimeouts(t) {
 	const scheduled = [];
 	const originalSetTimeout = globalThis.setTimeout;
@@ -61,37 +56,29 @@ async function mountProbe(t) {
 	t.after(async () => {
 		await cleanup();
 		delete window.testMedia;
-		delete window.testMediaWaits;
+		delete window.testMediaTimeoutMs;
 	});
 	return {
 		timeouts,
 		settledCount: () => settled,
 		settleMedia: () => view.rerender({ messages: turn(false), onSettled }),
 		media: () => window.testMedia,
-		waits: () => window.testMediaWaits,
+		timeoutMs: () => window.testMediaTimeoutMs,
 	};
 }
 
-test("shortening the media wait replaces the full timeout with the cut-short wait, which releases the flag", async (t) => {
+test("a loading media widget raises the flag until the media timeout releases it", async (t) => {
 	const probe = await mountProbe(t);
-	assert.equal(probe.waits().cutShort < probe.waits().full, true);
-	assert.deepEqual(probe.timeouts.delays(), [probe.waits().full]);
+	assert.deepEqual(probe.timeouts.delays(), [probe.timeoutMs()]);
 	assert.equal(probe.media().isMediaGenerating, true);
 
-	probe.media().shortenMediaWait(probe.waits().cutShort);
-	assert.deepEqual(probe.timeouts.delays(), [probe.waits().full, probe.waits().cutShort]);
-	// A second request (every queue tick asks again) does not restart the wait.
-	probe.media().shortenMediaWait(probe.waits().cutShort);
-	assert.deepEqual(probe.timeouts.delays(), [probe.waits().full, probe.waits().cutShort]);
-
 	await probe.timeouts.fire(-1);
 	assert.equal(probe.media().isMediaGenerating, false);
 	assert.equal(probe.settledCount(), 1);
 });
 
-test("media that finishes inside the cut-short wait settles once, and the wait then does nothing", async (t) => {
+test("media that finishes settles once, and the media timeout then does nothing", async (t) => {
 	const probe = await mountProbe(t);
-	probe.media().shortenMediaWait(probe.waits().cutShort);
 
 	await probe.settleMedia();
 	assert.equal(probe.media().isMediaGenerating, false);
@@ -99,14 +86,4 @@ test("media that finishes inside the cut-short wait settles once, and the wait t
 
 	await probe.timeouts.fire(-1);
 	assert.equal(probe.settledCount(), 1);
-});
-
-test("shortening never lengthens a wait and does nothing once media is not generating", async (t) => {
-	const probe = await mountProbe(t);
-	probe.media().shortenMediaWait(probe.waits().full * 2);
-	assert.deepEqual(probe.timeouts.delays(), [probe.waits().full]);
-
-	await probe.settleMedia();
-	probe.media().shortenMediaWait(probe.waits().cutShort);
-	assert.deepEqual(probe.timeouts.delays(), [probe.waits().full]);
 });
