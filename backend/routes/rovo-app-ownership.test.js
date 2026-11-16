@@ -8,7 +8,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { createGeneratedMediaOwnerStore } = require("../lib/generated-media-owners");
+const { createGeneratedMediaOwnerStore, runWithGeneratedMediaScope } = require("../lib/generated-media-owners");
+const { withCanonicalPreviewBody } = require("../lib/widget-preview-payload");
 const { createDependencies, withServer } = require("./rovo-app-test-dependencies");
 
 const PRODUCTION_ENV = Object.freeze({ NODE_ENV: "production" });
@@ -199,6 +200,49 @@ test("in production a generated video is served only to the caller whose turn ge
 				assert.equal((await fetch(`${baseUrl}${mediaUrl(name)}`)).status, 200, name);
 			}
 		}, { env: {} });
+		await generatedMediaOwnerStore.flush();
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("in production a video a turn plays through a preview that already declares its body is that caller's alone", async () => {
+	const root = mkdtempSync(path.join(os.tmpdir(), "rovo-app-media-owner-body-"));
+	const projectRoot = path.join(root, "project");
+	const mediaPath = (name) => `media/videos/demo/${name}`;
+	const mediaUrl = (name) => `/api/rovo/generated-media?path=${encodeURIComponent(mediaPath(name))}`;
+	// Each preview shape the client plays a generated video from while keeping the body it
+	// was given (components/projects/shared/lib/generative-widget-parse.ts).
+	const previews = [
+		["video-body.mp4", "genui-preview", (name) => ({ body: { kind: "video", videoUrl: mediaUrl(name) } })],
+		["json-render.mp4", "genui-preview", (name) => ({
+			body: { kind: "json-render", spec: { root: "r", elements: {} } },
+			spec: { root: "r", elements: { r: { type: "Text", props: { text: `Rendered ${mediaPath(name)}` } } } },
+		})],
+		["video-preview.mp4", "video-preview", (name) => ({ videoUrl: mediaUrl(name), body: { kind: "video", videoUrl: mediaUrl(name) } })],
+	];
+	try {
+		mkdirSync(path.join(projectRoot, "media/videos/demo"), { recursive: true });
+		const generatedMediaOwnerStore = createGeneratedMediaOwnerStore({ baseDir: path.join(root, "data"), projectRoot });
+		for (const [name, type, buildPayload] of previews) {
+			writeFileSync(path.join(projectRoot, mediaPath(name)), `${name} video`);
+			const payload = buildPayload(name);
+			const wrapped = runWithGeneratedMediaScope(
+				{ owner: "alice", store: generatedMediaOwnerStore },
+				() => withCanonicalPreviewBody(type, payload),
+			);
+			assert.equal(wrapped, payload, `${name}: the declared body is kept`);
+		}
+		await withServer(createDependencies({ generatedMediaOwnerStore, projectRoot }), async (baseUrl) => {
+			for (const [name] of previews) {
+				const own = await fetch(`${baseUrl}${mediaUrl(name)}`, as("alice"));
+				assert.equal(own.status, 200, name);
+				assert.equal(await own.text(), `${name} video`);
+				const foreign = await fetch(`${baseUrl}${mediaUrl(name)}`, as("bob"));
+				assert.equal(foreign.status, 404, name);
+				assert.deepEqual(await foreign.json(), { error: "Generated media file not found" });
+			}
+		}, { env: PRODUCTION_ENV });
 		await generatedMediaOwnerStore.flush();
 	} finally {
 		rmSync(root, { recursive: true, force: true });

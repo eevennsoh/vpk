@@ -90,8 +90,47 @@ function buildVideoPreviewBody(payload) {
 	return null;
 }
 
+/** The generated video a video URL (as the client reads it) serves, or null. */
+function generatedMediaPathOfUrl(value) {
+	if (!isObjectRecord(value)) {
+		return null;
+	}
+	const videoUrl = getNonEmptyString(value.videoUrl) || getNonEmptyString(value.url);
+	return videoUrl ? parseGeneratedMediaUrlPath(videoUrl) : null;
+}
+
+/**
+ * The generated video the client plays for a payload that already declares its body
+ * (components/projects/shared/lib/generative-widget-parse.ts), or null. A video-preview
+ * plays its top-level URL; a genui-preview plays a video body's URL, or a generated video
+ * path anywhere in a json-render payload.
+ */
+function findPlayedGeneratedVideoPath(type, payload) {
+	if (type === "video-preview") {
+		return generatedMediaPathOfUrl(payload);
+	}
+	if (type !== "genui-preview") {
+		return null;
+	}
+	const kind = getNonEmptyString(payload.body.kind);
+	if (kind === "video") {
+		return generatedMediaPathOfUrl(payload.body);
+	}
+	return kind === "json-render" ? findGeneratedVideoPathInValue(payload) : null;
+}
+
 function withCanonicalPreviewBody(type, payload) {
-	if (!isObjectRecord(payload) || isObjectRecord(payload.body)) {
+	if (!isObjectRecord(payload)) {
+		return payload;
+	}
+
+	if (isObjectRecord(payload.body)) {
+		// The body is kept as declared, but the video it plays was just produced by this
+		// turn, so its caller owns it (lib/generated-media-owners.js).
+		const playedVideoPath = findPlayedGeneratedVideoPath(type, payload);
+		if (playedVideoPath) {
+			recordGeneratedMediaForCurrentScope(playedVideoPath);
+		}
 		return payload;
 	}
 

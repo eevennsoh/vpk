@@ -84,3 +84,17 @@ test("building a video preview during a caller's turn records them as its owner"
 		await store.flush();
 	});
 });
+
+test("a preview that declares a body the client does not play as a video records no owner", async () => {
+	await withMediaRoot(async ({ baseDir, projectRoot, writeVideo }) => {
+		writeVideo("text-body.mp4");
+		writeVideo("image-body.mp4");
+		const store = createGeneratedMediaOwnerStore({ baseDir, projectRoot });
+		runWithGeneratedMediaScope({ owner: "alice", store }, () => {
+			withCanonicalPreviewBody("genui-preview", { body: { kind: "text", text: "Saved media/videos/text-body.mp4" } });
+			withCanonicalPreviewBody("image-preview", { body: { kind: "image" }, summary: "media/videos/image-body.mp4" });
+		});
+		assert.equal(store.ownerOf("media/videos/text-body.mp4"), null);
+		assert.equal(store.ownerOf("media/videos/image-body.mp4"), null);
+	});
+});
