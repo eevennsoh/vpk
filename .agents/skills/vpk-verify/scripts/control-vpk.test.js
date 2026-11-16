@@ -241,6 +241,27 @@ test("browser subprocess timeout is configurable and classified distinctly", () 
 	}
 });
 
+test("VPK launches override inherited headed defaults and other commands preserve the browser mode", () => {
+	withTempDir("control-vpk-headless-", (root) => {
+		const fakeAgentBrowser = path.join(root, "agent-browser");
+		writeFileSync(fakeAgentBrowser, "#!/usr/bin/env node\nconsole.log(JSON.stringify({headed:process.env.AGENT_BROWSER_HEADED,args:process.argv.slice(2),session:process.env.AGENT_BROWSER_SESSION}));\n");
+		chmodSync(fakeAgentBrowser, 0o755);
+		for (const args of [["open", "about:blank"], ["open", "--headed", "about:blank"], ["get", "url"]]) {
+			const result = runAgentBrowser(args, {
+				binPath: fakeAgentBrowser,
+				encoding: "utf8",
+				env: { ...process.env, AGENT_BROWSER_HEADED: "true", AGENT_BROWSER_SESSION: "mine" },
+			});
+			assert.equal(result.status, 0);
+			assert.deepEqual(JSON.parse(result.stdout), {
+				headed: "true",
+				args: args.includes("--headed") ? args : ["--headed", "false", ...args],
+				session: "mine",
+			});
+		}
+	});
+});
+
 test("non-navigation commands refuse an inactive session before they can restore the wrong page", () => {
 	const calls = [];
 	const outcome = executeBrowserCommand(["snapshot", "-i"], {
