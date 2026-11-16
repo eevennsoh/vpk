@@ -690,7 +690,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
-	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !isLongDensity;/u);
+	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;/u);
 	assert.match(
 		CARD_SOURCE,
 		/if \(isLongDensity \|\| flyoutHandle === undefined \|\| flyoutSession === undefined\) \{\s*return card;/u,
@@ -698,9 +698,9 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /StatusInformationIcon|InformationCircleIcon/u);
 });
 
-test("long density large rows have no untracked-work flyout", () => {
-	assert.match(INDEX_SOURCE, /flyoutHandle=\{isLongDensity \? undefined : flyoutHandle\}/u);
-	assert.match(INDEX_SOURCE, /const flyoutSession = isLongDensity\s*\? undefined/u);
+test("only unlinked large rows open the untracked-work flyout", () => {
+	assert.match(INDEX_SOURCE, /const hasNoFlyout = variant === "large" && density !== "unlinked";/u);
+	assert.match(INDEX_SOURCE, /flyoutHandle=\{hasNoFlyout \? undefined : flyoutHandle\}/u);
 	assert.match(INDEX_SOURCE, /\{showUntrackedWorkFlyout \? \(/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\{isAttached \? null : \(\s*<JiraSessionFlyoutSurface/u);
 });
