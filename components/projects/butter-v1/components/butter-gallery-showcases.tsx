@@ -86,7 +86,9 @@ export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly
 							<h2 className="pt-3 text-xs font-semibold text-text-subtle">{row.title}</h2>
 							<div className="flex flex-col gap-1.5">
 								{row.items.map((item) => (
-									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} variant="large" />
+									// Width, not scale: the row's truncation is what this toggle demonstrates,
+									// so the frame resizes in place and the content reflows with it.
+									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} variant="large" />
 								))}
 							</div>
 						</section>
