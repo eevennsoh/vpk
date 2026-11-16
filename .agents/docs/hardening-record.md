@@ -24,8 +24,8 @@ Each line is settled. Reopen one only with the owner.
 - **Perf budgets re-baselined** (G-7) to about 3% over measured production builds; budgets only go down, and a raise needs a `raises` entry, which is the owner's call.
 - **OpenAI model** (#2277): one code-owned default in `backend/lib/openai-model.js`; stale overrides warn at startup, in `/api/health` and in `doctor`.
 - **Plan session "execution" mode**: a plain visible message keeps a plan session in execution, as before.
-- **Stuck-port rerun text**: approved and built. A rerun's text starts as its own paragraph; text the marker stream was holding as a possible marker is still discarded (`backend/chat/rovo-stream.js`, pinned in `backend/chat/rovo-chat-turn.behavior.test.js`).
-- **Three dead backend paths deleted** (owner decision "delete"): the run queue, the replace-on-request path and `cancelOnComplete`. One tail is open under Backend.
+- **Stuck-port rerun text**: approved and built. A rerun's text starts as its own paragraph; text that was still held back when the port stuck is discarded as before, so the first attempt's text ends where it had been shown (`backend/chat/rovo-stream.js`, pinned in `backend/chat/rovo-chat-turn.behavior.test.js`).
+- **Three dead backend paths deleted** (owner decision "delete"): the run queue, the replace-on-request path and `cancelOnComplete`. The port-available plumbing that only the queue used went with them.
 - **Cut-short notice wait**: a cut-short turn waits `CUT_SHORT_MEDIA_WAIT_MS` (5 s, provisional; the owner may change it) for pending media instead of the full media timeout (`app/contexts/use-rovo-chat-media-generation.ts`).
 
 ### Declined or deferred
@@ -56,7 +56,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ### Backend
 
-- Tail of the dead-path deletion: `resolveRovoAppPortAvailability` in `backend/lib/rovo-availability-service.js` and the pool's `onPortAvailable` hook have no production consumer now.
+- The failure-notice path shows held-back text before the notice, which can include a partial marker or spec fence (`backend/chat/rovo-chat-stream.js`); discarding it instead would cut the last few words of the reply. Owner's call.
 - `onDeferredToolRequest` is not awaited in `backend/lib/rovo-gateway-tool-event-dispatcher.js`, so a question or plan card can be written after post-stream work starts.
 - Unknown whether Rovo Serve sends keep-alive events during a pause; if not, a pause longer than the idle timeout ends the stream.
 - Smaller: delete-all threads does not cancel live runs; a run stays `queued` if attaching its subscriber throws after creation; clearing the Rovo pool while a paused record exists.
