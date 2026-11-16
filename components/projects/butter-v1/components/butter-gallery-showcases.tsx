@@ -31,8 +31,8 @@ const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; lists: reado
 	{ title: "Team", lists: [{ density: "short", items: asTeam(CLOUD_SESSIONS) }, { density: "long", items: asTeam(CLOUD_SESSIONS) }] },
 ];
 
-/** Short and long rows sit at the widths the Agent Session catalog demos them at. */
-const SESSION_LIST_WIDTH: Readonly<Record<AgentSessionDensity, string>> = { unlinked: "w-80", short: "w-80", long: "w-[520px]" };
+/** Short sits at its catalog width; long gets 560px so the fuller metadata line has room. */
+const SESSION_LIST_WIDTH: Readonly<Record<AgentSessionDensity, string>> = { unlinked: "w-80", short: "w-80", long: "w-[560px]" };
 
 export function ButterGalleryAgentSessions({ galleryOpen }: Readonly<{ galleryOpen: boolean }>) {
 	return (

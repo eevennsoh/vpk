@@ -19,6 +19,8 @@ export interface AgentSessionMetadataSegment {
 	readonly prStatus?: AgentListPrStatus;
 	/** Tool-call labels cycled by the long-form renderer. */
 	readonly toolCalls?: readonly string[];
+	/** Tool call shimmers only while the session is still in progress. */
+	readonly animated?: boolean;
 	/**
 	 * Declared session host, attached to the time chunk so the byline can
 	 * render icon + timestamp as one clause instead of `Cloud · 12s`.
@@ -43,6 +45,16 @@ export interface AgentSessionMetadataInput {
 	readonly prStatus?: AgentListPrStatus;
 	/** Human-readable tool calls, in display order. */
 	readonly toolCalls?: readonly string[];
+	/** Lifecycle state; decides whether the agent is named and the tool call shimmers. */
+	readonly state?: AgentListState;
+}
+
+/**
+ * Working and Needs input rows let the agent mark speak for itself — the line
+ * is about what the session is doing now, so the agent's name is never printed.
+ */
+export function isActiveAgentSessionState(state: AgentListState | undefined): boolean {
+	return state === "running" || state === "needs-input" || state === "attention";
 }
 
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
@@ -64,7 +76,7 @@ export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
 	const segments: AgentSessionMetadataSegment[] = [
-		{ kind: "agent", label: input.agentName },
+		isActiveAgentSessionState(input.state) ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
 	const toolCalls = input.toolCalls
 		?.map((toolCall) => toolCall.trim())
@@ -74,7 +86,7 @@ export function toAgentSessionMetadataSegments(
 	}
 
 	if (toolCalls !== undefined && toolCalls.length > 0) {
-		segments.push({ kind: "tool-call", toolCalls });
+		segments.push({ kind: "tool-call", toolCalls, animated: input.state !== "complete" });
 	}
 
 	if (input.artifactLabel !== undefined && input.artifactLabel.length > 0) {

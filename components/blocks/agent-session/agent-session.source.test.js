@@ -641,11 +641,11 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,
-		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
+		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
+		/segment\.kind === "agent"\s*\? segment\.label === undefined \? "shrink-0" : "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -657,7 +657,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);
-	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
+	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall animated=\{segment\.animated\} toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
 		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,

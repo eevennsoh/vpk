@@ -21,6 +21,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 import {
+	isActiveAgentSessionState,
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
@@ -132,7 +133,7 @@ function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: Agen
 
 /** Cycles only while visible; reduced motion holds the first tool call still. */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
-function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
+function AgentSessionToolCall({ animated = true, toolCalls }: Readonly<{ animated?: boolean; toolCalls: readonly string[] }>) {
 	const [cycleIndex, setCycleIndex] = useState(0);
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const wrapperRef = useRef<HTMLSpanElement>(null);
@@ -162,16 +163,22 @@ function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly stri
 				contentKey={toolCall}
 				slide={false}
 			>
-				<Shimmer
-					as="span"
-					className="max-w-full truncate align-top text-text-subtle"
-					data-agent-session-tool-call=""
-					duration={1.4}
-					spread={2}
-					title={toolCall}
-				>
-					{toolCall}
-				</Shimmer>
+				{animated ? (
+					<Shimmer
+						as="span"
+						className="max-w-full truncate align-top text-text-subtle"
+						data-agent-session-tool-call=""
+						duration={1.4}
+						spread={2}
+						title={toolCall}
+					>
+						{toolCall}
+					</Shimmer>
+				) : (
+					<span className="inline-block max-w-full truncate align-top text-text-subtle" data-agent-session-tool-call="" title={toolCall}>
+						{toolCall}
+					</span>
+				)}
 			</CyclingByline>
 		</span>
 	);
@@ -188,13 +195,15 @@ function LongMetadataSegment({
 			return (
 				<span className="flex min-w-0 items-center gap-1">
 					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
-					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
-						{segment.label}
-					</span>
+					{segment.label === undefined ? null : (
+						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
+							{segment.label}
+						</span>
+					)}
 				</span>
 			);
 		case "tool-call":
-			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
+			return <AgentSessionToolCall animated={segment.animated} toolCalls={segment.toolCalls ?? []} />;
 		case "branch":
 			return <span className="flex min-w-0 items-center gap-1"><span className="grid size-3 shrink-0 place-items-center [&_span]:size-3! [&_svg]:size-3!"><BranchIcon label="" size="small" /></span><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
@@ -246,6 +255,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 		artifactLabel: toArtifactLabel(item),
 		host: declaredHost,
 		prStatus: item.prStatus,
+		state: item.state,
 		toolCalls: item.toolCalls,
 	});
 
@@ -258,7 +268,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					className={cn(
 						"flex items-center gap-1",
 						segment.kind === "agent"
-							? "min-w-0 shrink"
+							? segment.label === undefined ? "shrink-0" : "min-w-0 shrink"
 							: segment.kind === "time"
 								? "shrink-0"
 								: "min-w-0 max-w-28 flex-initial",
@@ -291,9 +301,11 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{pullRequestLabel === undefined ? (
-				<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
-					{item.agent.name}
-				</span>
+				isActiveAgentSessionState(item.state) ? null : (
+					<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
+						{item.agent.name}
+					</span>
+				)
 			) : (
 				<span className="flex min-w-0 shrink items-center gap-1">
 					<AgentListPrStatusIcon
@@ -313,7 +325,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					</span>
 				</span>
 			)}
-			<MetadataDot />
+			{pullRequestLabel === undefined && isActiveAgentSessionState(item.state) ? null : <MetadataDot />}
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (
 					<AgentSessionHostSegment compact isLocal={declaredHost === "local"} />

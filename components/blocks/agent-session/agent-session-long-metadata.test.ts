@@ -9,6 +9,7 @@ type Segment = {
 	prStatus?: string;
 	host?: "cloud" | "local";
 	toolCalls?: readonly string[];
+	animated?: boolean;
 };
 
 type Input = {
@@ -18,6 +19,7 @@ type Input = {
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
 	toolCalls?: readonly string[];
+	state?: "running" | "needs-input" | "attention" | "complete";
 };
 
 const build = toAgentSessionMetadataSegments as (input: Input) => readonly Segment[];
@@ -139,4 +141,20 @@ test("the builder is pure: same input, equal output, no shared mutation", () => 
 
 	assert.deepEqual(first, second);
 	assert.notEqual(first, second);
+});
+
+test("working and needs-input rows never print the agent name, but keep the agent mark", () => {
+	for (const state of ["running", "needs-input", "attention"] as const) {
+		const agent = build({ agentName: "Claude", state }).find((segment) => segment.kind === "agent");
+		assert.ok(agent, `${state} keeps the agent chunk for its mark`);
+		assert.equal(agent.label, undefined, `${state} hides the agent name`);
+	}
+	assert.equal(build({ agentName: "Claude", state: "complete" }).find((segment) => segment.kind === "agent")?.label, "Claude");
+});
+
+test("a finished session's tool call stops shimmering", () => {
+	const toolCalls = ["Inspecting the current design frame."];
+	assert.equal(build({ agentName: "Figma", state: "complete", toolCalls }).find((segment) => segment.kind === "tool-call")?.animated, false);
+	assert.equal(build({ agentName: "Figma", state: "running", toolCalls }).find((segment) => segment.kind === "tool-call")?.animated, true);
+	assert.equal(build({ agentName: "Figma", state: "needs-input", toolCalls }).find((segment) => segment.kind === "tool-call")?.animated, true);
 });
