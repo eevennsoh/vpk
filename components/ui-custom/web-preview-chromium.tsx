@@ -17,6 +17,10 @@ import type {
 } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
+import {
+	PreviewKeyCaptureStatus,
+	PreviewKeyCaptureToggle,
+} from "@/components/ui-custom/preview-key-capture";
 import { TriangleAlertIcon } from "@/components/ui/vpk-icons";
 import {
 	useCallback,
@@ -27,8 +31,9 @@ import {
 	useState,
 } from "react";
 import { useReducedMotion } from "motion/react";
+import { previewKeyCaptureViewportClassName, usePreviewKeyCapture } from "@/hooks/use-preview-key-capture";
 import { API_ENDPOINTS } from "@/lib/api-config";
-import { isPreviewFocusNavigationKey, PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
+import { PREVIEW_KEYBOARD_HINT } from "@/lib/preview-keyboard";
 import { cn } from "@/lib/utils";
 
 export interface ChromiumPreviewState {
@@ -67,8 +72,10 @@ const DEFAULT_STATE: ChromiumPreviewState = {
 	canGoForward: false,
 };
 
-const EXTERNAL_URL_PATTERN =
-	/^(?:https?:\/\/|www\.|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,})(?:[/?#:].*)?$/i;
+const HTTP_URL_PATTERN = /^https?:\/\//i;
+// A scheme-less external address such as `example.com/path` or `www.example.com`.
+const BARE_HOST_PATTERN =
+	/^(?:www\.|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,})(?:[/?#:].*)?$/i;
 
 const SPECIAL_KEY_MAP: Record<string, string> = {
 	" ": "Space",
@@ -105,7 +112,11 @@ export function isChromiumPreviewUrl(url: string) {
 		return false;
 	}
 
-	return EXTERNAL_URL_PATTERN.test(url.trim());
+	const trimmed = url.trim();
+	if (HTTP_URL_PATTERN.test(trimmed)) {
+		return URL.canParse(trimmed) && new URL(trimmed).hostname !== "";
+	}
+	return BARE_HOST_PATTERN.test(trimmed);
 }
 
 function normalizeComparableUrl(url: string) {
@@ -114,10 +125,10 @@ function normalizeComparableUrl(url: string) {
 		return "";
 	}
 	try {
-		if (/^https?:\/\//i.test(trimmed) || trimmed === "about:blank") {
+		if (HTTP_URL_PATTERN.test(trimmed) || trimmed === "about:blank") {
 			return new URL(trimmed).toString();
 		}
-		if (EXTERNAL_URL_PATTERN.test(trimmed)) {
+		if (BARE_HOST_PATTERN.test(trimmed)) {
 			return new URL(`https://${trimmed}`).toString();
 		}
 	} catch {
@@ -168,6 +179,8 @@ export function ChromiumPreviewBody({
 }: Readonly<ChromiumPreviewBodyProps>) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const keyboardHintId = useId();
+	const keyCapture = usePreviewKeyCapture(containerRef);
+	const { handleViewportPointerDown, interceptKey: interceptCaptureKey } = keyCapture;
 	const wheelTimerRef = useRef<number | null>(null);
 	const wheelDeltaRef = useRef({ deltaX: 0, deltaY: 0 });
 	const [previewState, setPreviewState] = useState(DEFAULT_STATE);
@@ -507,6 +520,7 @@ export function ChromiumPreviewBody({
 				return;
 			}
 
+			handleViewportPointerDown();
 			const containerElement = containerRef.current;
 			if (!containerElement) {
 				return;
@@ -530,7 +544,7 @@ export function ChromiumPreviewBody({
 				{ busy: true, refreshImage: true },
 			);
 		},
-		[postAction, viewportSize.viewportHeight, viewportSize.viewportWidth],
+		[handleViewportPointerDown, postAction, viewportSize.viewportHeight, viewportSize.viewportWidth],
 	);
 
 	const handleWheel = useCallback(
@@ -564,7 +578,7 @@ export function ChromiumPreviewBody({
 
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>) => {
-			if (isPreviewFocusNavigationKey(event)) {
+			if (interceptCaptureKey(event)) {
 				return;
 			}
 
@@ -614,62 +628,72 @@ export function ChromiumPreviewBody({
 				{ busy: false, refreshImage: true },
 			);
 		},
-		[postAction],
+		[interceptCaptureKey, postAction],
 	);
 
 	return (
 		<div
-			aria-busy={isBusy}
-			aria-label={previewState.title || "Chromium preview"}
-			aria-describedby={keyboardHintId}
-			ref={containerRef}
-			className={cn(
-				"bg-surface flex size-full min-h-0 min-w-0 flex-col overflow-hidden outline-none",
-				className,
-			)}
-			onKeyDown={handleKeyDown}
-			onPaste={handlePaste}
-			onPointerDown={handlePointerDown}
-			onWheel={handleWheel}
-			tabIndex={0}
+			className={cn("relative flex size-full min-h-0 min-w-0 flex-col", className)}
 			{...props}
 		>
-			<span id={keyboardHintId} className="sr-only">
-				{PREVIEW_KEYBOARD_HINT}
-			</span>
-			<div className="relative flex-1 overflow-hidden">
-				{shouldRenderScreenshot ? (
-					<img
-						alt={previewState.title || "Chromium preview"}
-						className="size-full select-none object-fill"
-						draggable={false}
-						src={screenshotSrc}
-					/>
-				) : (
-					<div className="bg-surface-raised text-text-subtle flex size-full items-center justify-center text-sm">
-						Launching Chromium preview…
-					</div>
+			{/* A reserved strip keeps the toggle off the remote page, so it never blocks clicks there. */}
+			<div className="border-border flex shrink-0 justify-end border-b px-2 py-1">
+				<PreviewKeyCaptureToggle capture={keyCapture} />
+			</div>
+			<div
+				aria-busy={isBusy}
+				aria-label={previewState.title || "Chromium preview"}
+				aria-describedby={keyboardHintId}
+				ref={containerRef}
+				className={cn(
+					"bg-surface flex size-full min-h-0 min-w-0 flex-col overflow-hidden",
+					previewKeyCaptureViewportClassName(keyCapture.captured),
 				)}
-				{isBusy ? (
-						<div className="bg-surface absolute inset-0 flex items-center justify-center">
-						<Spinner className="size-7" />
-					</div>
-				) : null}
-				{error ? (
-					<div
-						aria-live="polite"
-							className="absolute inset-x-4 bottom-4 flex items-start gap-3 rounded-lg border border-border bg-surface p-3 shadow-sm"
-					>
-						<TriangleAlertIcon className="text-text-warning mt-0.5 size-4 shrink-0" />
-						<div className="min-w-0">
-							<p className="text-text text-sm font-medium">
-								Chromium preview unavailable
-							</p>
-							<p className="text-text-subtle mt-1 text-xs">{error}</p>
+				onBlur={keyCapture.handleViewportBlur}
+				onKeyDown={handleKeyDown}
+				onPaste={handlePaste}
+				onPointerDown={handlePointerDown}
+				onWheel={handleWheel}
+				tabIndex={0}
+			>
+				<span id={keyboardHintId} className="sr-only">
+					{PREVIEW_KEYBOARD_HINT}
+				</span>
+				<div className="relative flex-1 overflow-hidden">
+					<PreviewKeyCaptureStatus capture={keyCapture} />
+					{shouldRenderScreenshot ? (
+						<img
+							alt={previewState.title || "Chromium preview"}
+							className="size-full select-none object-fill"
+							draggable={false}
+							src={screenshotSrc}
+						/>
+					) : (
+						<div className="bg-surface-raised text-text-subtle flex size-full items-center justify-center text-sm">
+							Launching Chromium preview…
 						</div>
-					</div>
-				) : null}
-				{loading}
+					)}
+					{isBusy ? (
+							<div className="bg-surface absolute inset-0 flex items-center justify-center">
+							<Spinner className="size-7" />
+						</div>
+					) : null}
+					{error ? (
+						<div
+							aria-live="polite"
+								className="absolute inset-x-4 bottom-4 flex items-start gap-3 rounded-lg border border-border bg-surface p-3 shadow-sm"
+						>
+							<TriangleAlertIcon className="text-text-warning mt-0.5 size-4 shrink-0" />
+							<div className="min-w-0">
+								<p className="text-text text-sm font-medium">
+									Chromium preview unavailable
+								</p>
+								<p className="text-text-subtle mt-1 text-xs">{error}</p>
+							</div>
+						</div>
+					) : null}
+					{loading}
+				</div>
 			</div>
 		</div>
 	);

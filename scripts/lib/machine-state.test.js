@@ -54,7 +54,7 @@ test("stacks get the pnpm ports kill command for their worktree and sum their se
 	);
 	assert.deepEqual(summary, { worktree: "/w/x", name: "x-name", footprintGb: 5.5, idle: true, inUse: null, codex: false, codexVerdict: null, current: false, stop: "pnpm ports kill vpk-dev-x-name" });
 	const [unmeasured] = summarizeStacks([{ worktree: "/w/y", servers: [{ pid: 3 }], quiet: false, inUse: null }], { killCommand, footprints: new Map() });
-	assert.deepEqual([unmeasured.footprintGb, unmeasured.idle, unmeasured.stop], [null, false, "(cd /w/y && pnpm run dev:tmux:stop)"]);
+	assert.deepEqual([unmeasured.footprintGb, unmeasured.idle, unmeasured.stop], [null, false, "pnpm ports kill '/w/y'"]);
 });
 
 test("--hook prints the line from the cache under faked pressure and nothing below it", async (t) => {
