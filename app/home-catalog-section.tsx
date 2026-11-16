@@ -137,7 +137,7 @@ export function HomeCatalogSection({
 							<iframe
 								src={`${previewHrefPrefix}/${component.slug}?embedded=1`}
 								title={component.name}
-								className="h-full w-full border-0"
+								className="absolute inset-0 h-full w-full border-0"
 								loading={index === 0 ? "eager" : "lazy"}
 								sandbox="allow-same-origin allow-scripts"
 							/>
