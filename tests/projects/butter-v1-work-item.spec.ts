@@ -583,7 +583,7 @@ test("Butter v1 board and work item use the direct cloud agent selector", async 
 	await expect(workItem.getByText("Start a new session", { exact: true })).toHaveCount(0);
 	await expect(workItem.getByRole("list", { name: "Activity timeline" })).toContainText("Redesign onboarding flow for new users");
 
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await card.hover();
 	await card.getByRole("button", { name: "Add agent to PAY-118" }).click();
@@ -680,7 +680,7 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		await page.setViewportSize(viewport);
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Board" }).click();
+		await page.getByRole("button", { name: "Select Board", exact: true }).click();
 		const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 		const boardColumn = board.locator('[data-jira-kanban-column="To do"]');
 		await expect(boardColumn).toBeVisible();

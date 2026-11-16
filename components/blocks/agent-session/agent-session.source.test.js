@@ -626,9 +626,9 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 });
 
 test("the long density is title-led, with its own metadata line and lifecycle", () => {
-	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "short" \| "long";/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "unlinked" \| "short" \| "long";/u);
 	assert.match(TYPES_SOURCE, /density\?: AgentSessionDensity;/u);
-	assert.match(INDEX_SOURCE, /density = "short",/u);
+	assert.match(INDEX_SOURCE, /density = "unlinked",/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard[\s\S]*density=\{density\}/u);
 	assert.match(CARD_SOURCE, /const isLongDensity = density === "long";/u);
 	// A triage mark lives on the leading avatar, so a markable row keeps its
@@ -641,11 +641,11 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,
-		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
+		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
+		/segment\.kind === "agent"\s*\? segment\.label === undefined \? "shrink-0" : "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -690,7 +690,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
-	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !isLongDensity;/u);
+	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;/u);
 	assert.match(
 		CARD_SOURCE,
 		/if \(isLongDensity \|\| flyoutHandle === undefined \|\| flyoutSession === undefined\) \{\s*return card;/u,
@@ -698,9 +698,9 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /StatusInformationIcon|InformationCircleIcon/u);
 });
 
-test("long density large rows have no untracked-work flyout", () => {
-	assert.match(INDEX_SOURCE, /flyoutHandle=\{isLongDensity \? undefined : flyoutHandle\}/u);
-	assert.match(INDEX_SOURCE, /const flyoutSession = isLongDensity\s*\? undefined/u);
+test("only unlinked large rows open the untracked-work flyout", () => {
+	assert.match(INDEX_SOURCE, /const hasNoFlyout = variant === "large" && density !== "unlinked";/u);
+	assert.match(INDEX_SOURCE, /flyoutHandle=\{hasNoFlyout \? undefined : flyoutHandle\}/u);
 	assert.match(INDEX_SOURCE, /\{showUntrackedWorkFlyout \? \(/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\{isAttached \? null : \(\s*<JiraSessionFlyoutSurface/u);
 });
@@ -928,7 +928,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 		}
 	}
 	assert.match(DETAIL_SOURCE, /name: "density"/u);
-	assert.match(DETAIL_SOURCE, /type: '"short" \| "long"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"unlinked" \| "short" \| "long"'/u);
 	// Cloud fixtures stay a separate list: the column and the Pulse rail render
 	// AGENT_SESSION_ITEMS, and flipping those to cloud would change what those
 	// demos demonstrate.

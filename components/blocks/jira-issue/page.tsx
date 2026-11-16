@@ -664,7 +664,8 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 	iconScale?: JiraIssueIconScale;
 	issueProps?: ProjectButterDemoIssueProps;
 }> = {}): React.ReactElement {
-	const [chrome, setChrome] = useState<JiraIssueChrome>(issueProps?.appearance === "project-butter" ? "raised" : "stroke");
+	const isProjectButter = issueProps?.appearance === "project-butter";
+	const [chrome, setChrome] = useState<JiraIssueChrome>(isProjectButter ? "raised" : "stroke");
 
 	return (
 		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
@@ -674,7 +675,8 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 				chrome={chrome}
 				compact
 				iconScale={iconScale}
-				onChromeChange={setChrome}
+				// Project Butter cards are always raised, so there is no chrome to choose.
+				onChromeChange={isProjectButter ? undefined : setChrome}
 				showSessionTransferStates={iconScale !== "comfortable"}
 				subtaskChrome="stroke"
 			/>

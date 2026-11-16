@@ -34,7 +34,7 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 		await expect(page.getByRole("dialog", { name: state === "Multiple PRs" ? "Pull requests for PAY-999" : "Pull request #284 details" })).toBeVisible();
 		await page.keyboard.press("Escape");
 	}
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const failedCard = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]');
 	await failedCard.hover({ position: { x: 30, y: 30 } });
 	const failedTrigger = failedCard.getByRole("button", { name: /Pull request failed #1851/ });
@@ -163,7 +163,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	const boardCard = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-999"] [data-slot="jira-issue-card"]');
 	await expect(boardCard).toBeVisible();
 	const boardCardBounds = await boardCard.boundingBox();
@@ -215,7 +215,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	await card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true }).click();
 	await expect(workItem.getByRole("region", { name: "Pull request development" })).toContainText("Merged");
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await gallery.getByRole("button", { name: "Select Pull request" }).click();
 	await expect(statuses.getByRole("button", { name: "Merged PR" })).toHaveAttribute("aria-pressed", "true");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();

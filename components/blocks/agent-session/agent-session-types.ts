@@ -89,8 +89,11 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 /**
  * Row shape for the large footprint.
  *
- * `short` leads with a 32px identity and an agent · PR · host · time byline
- * (PR omitted when none is linked). `long`
+ * `unlinked` (the default) is the uncaptured-work row: a local session leads
+ * with a 32px agent+human identity and an agent · PR · host · time byline (PR
+ * omitted when none is linked); a cloud session stays title-led. `short` is
+ * title-led for every host — the title on its own line over the same compact
+ * byline, with the agent and invoker as a horizontal avatar stack. `long`
  * drops the leading avatar, gives the title the full width, and spends the
  * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
  * artifact, host, time) plus a trailing lifecycle label and icon. Progression
@@ -98,7 +101,7 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
-export type AgentSessionDensity = "short" | "long";
+export type AgentSessionDensity = "unlinked" | "short" | "long";
 
 /**
  * Finder-style modifiers for a selection gesture.
@@ -155,6 +158,8 @@ export interface AgentSessionProps {
 	items?: readonly AgentSessionItem[];
 	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */
 	showWorkingSpinner?: boolean;
+	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
+	showLifecycleLabel?: boolean;
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.

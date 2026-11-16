@@ -2,13 +2,19 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; tool calls shimmer and cycle, Working also shimmers, and Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show a 24×24 `…` menu with Delete and explain the 28-day retention window in a tooltip across the row. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in three densities: `unlinked` (the default) leads a local session with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), `short` is title-led for every host with the agent and invoker as a horizontal avatar stack in that byline, and `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; a row never shows the agent name and the working narration together: Working and Needs input rows show the agent mark with a cycling, shimmering tool call, while Finished rows name the agent and drop the tool call; Working also shimmers. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show a 24×24 `…` menu with Delete and explain the 28-day retention window in a tooltip across the row. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as an unlinked row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Unlinked large rows, medium detached, and small footprints open the untracked-work Agent Session Flyout with the PR card and Link, Create, and add-as-subtask actions; short and long densities are linked sessions and do not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
+			title: "Unlinked sessions",
+			description:
+				"The default avatar-led row for an unlinked session on the viewer's own machine, shown as owner and viewer. An owner byline reads agent · PR · host · time when a pull request is linked, and the more menu offers Continue in → the agent or Terminal. A viewer sees an information icon instead of that menu.",
+			demoSlug: "agent-session-demo-unlinked",
+		},
+		{
 			title: "Local — short",
 			description:
-				"The default avatar-led row for a session on the viewer's own machine, shown as owner and viewer. An owner byline reads agent · PR · host · time when a pull request is linked, and the more menu offers Continue in → the agent or Terminal. A viewer sees an information icon instead of that menu.",
+				"The compact title-led row for a linked local session, matching Cloud — short, with no hover flyout: the title on its own line, with the agent and invoker as a horizontal avatar stack in the agent · PR · host · time byline. The owner's more menu offers Continue in → the agent or Terminal; a viewer sees an information icon instead.",
 			demoSlug: "agent-session-demo-local-short",
 		},
 		{
@@ -32,7 +38,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		{
 			title: "Medium detached",
 			description:
-				"A 276px stroked white chip — the Jira issue card width — with 10px corners, the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
+				"A 276px stroked white chip — the Jira issue card width — with 10px corners, the same 32px agent+human identity as an unlinked row, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
 			demoSlug: "agent-session-demo-medium-detached",
 		},
 		{
@@ -71,10 +77,10 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "density",
-			type: '"short" | "long"',
-			default: '"short"',
+			type: '"unlinked" | "short" | "long"',
+			default: '"unlinked"',
 			description:
-				"Row shape for the large footprint. `short` leads with a 32px identity and an agent · PR · host · time byline (PR omitted when none is linked). `long` drops the leading avatar, gives the title the full width, and adds agent, a cycling tool call, an artifact chip, session type/time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
+				"Row shape for the large footprint. `unlinked` is the uncaptured-work row: a local session leads with a 32px identity and an agent · PR · host · time byline (PR omitted when none is linked), while a cloud session stays title-led. `short` is title-led for every host, with the agent and invoker as a horizontal avatar stack in the same byline. `long` drops the leading avatar, gives the title the full width, and adds agent, a cycling tool call, an artifact chip, session type/time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
 		},
 		{
 			name: "showBranch",

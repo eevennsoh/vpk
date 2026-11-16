@@ -28,7 +28,7 @@ async function openAgentPicker(page: Page, card: Locator, key: string) {
 test("Butter v1 cycles the selected agent into Working", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	for (const { key, name, option, agentId } of [{ key: "PAY-105", name: "Claude", option: "Claude (Recommended)", agentId: "claude-code" }, { key: "PAY-105", name: "Cursor", option: "Cursor", agentId: "test-agent" }]) {
 		const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 		// The gallery selection motion can move the board under a hover, so open the picker from the keyboard.
@@ -64,7 +64,7 @@ test("Butter v1 cycles the selected agent into Working", async ({ page }) => {
 test("Butter v1 starts a working session with reduced motion", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();
 	await page.keyboard.press("Enter");
@@ -77,7 +77,7 @@ test("Butter v1 starts a working session with reduced motion", async ({ page }) 
 test("Butter v1 cycles one avatar for three working agents in the board chin", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
 	for (const name of ["Claude (Recommended)", "Jira Coding Agent"]) {
 		await openAgentPicker(page, card, "PAY-105");
@@ -96,7 +96,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Butter v1 previews the agent under the pointer while scrolling (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Board" }).click();
+		await page.getByRole("button", { name: "Select Board", exact: true }).click();
 		const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
 		await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
 		await page.keyboard.press("Enter");

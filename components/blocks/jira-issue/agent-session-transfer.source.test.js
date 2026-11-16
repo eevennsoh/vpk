@@ -184,7 +184,7 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 		assert.doesNotMatch(BASE_DEMO_STATES_BLOCK, new RegExp(`"${value}"`, "u"));
 	}
 	assert.match(PAGE_SOURCE, /agentActivityLayout="merged"/u);
-	assert.match(PAGE_SOURCE, /onChromeChange=\{setChrome\}/u);
+	assert.match(PAGE_SOURCE, /onChromeChange=\{isProjectButter \? undefined : setChrome\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}/u);
 });
 

@@ -246,7 +246,7 @@ export function AgentSessionCard({
 	arrivalDelaySeconds,
 	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
 	captured = false,
-	density = "short",
+	density = "unlinked",
 	flyoutHandle,
 	flyoutSession,
 	getResumeCommand,
@@ -297,7 +297,7 @@ export function AgentSessionCard({
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset?: string;
 	captured?: boolean;
-	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led short row. */
+	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led unlinked row. */
 	density?: AgentSessionDensity;
 	/** Omit on long density — those rows have no hover flyout. */
 	flyoutHandle?: JiraSessionFlyoutHandle;
@@ -434,7 +434,7 @@ export function AgentSessionCard({
 	const cardAnchorRef = useRef<HTMLElement>(null);
 	const isCloudSession = !isLocalAgentListItem(item);
 	const isLongDensity = density === "long";
-	const isTitleLed = isLongDensity || (item.host ?? item.sessionDetails?.host) === "cloud";
+	const isTitleLed = density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud";
 	const menu = useAgentSessionMenu({
 		canResume,
 		isCloud: isCloudSession,
@@ -751,7 +751,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}

@@ -43,7 +43,7 @@ test("the standalone board hides an open sidebar chat and restores its draft", {
 	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
 	const composer = page.getByRole("textbox", { name: "Chat message input", exact: true });
 	await composer.fill("Keep this draft");
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(composer).toBeHidden();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
@@ -55,7 +55,7 @@ test("the standalone board is centered and remains scrollable on narrow screens"
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const first = board.locator('[data-jira-kanban-column="To do"]');
 	const last = board.locator('[data-jira-kanban-column="Done"]');

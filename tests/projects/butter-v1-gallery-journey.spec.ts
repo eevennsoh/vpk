@@ -306,14 +306,14 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await expect(gallery.getByRole("button", { name: "Select Agent & app selector" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
-	const boardTile = await gallery.getByRole("button", { name: "Select Board" }).boundingBox();
+	const boardTile = await gallery.getByRole("button", { name: "Select Board", exact: true }).boundingBox();
 	const agentTile = await gallery.getByRole("button", { name: "Select Agent & app selector" }).boundingBox();
 	if (!boardTile || !agentTile) throw new Error("Gallery tiles have no bounds");
 	expect(agentTile.height).toBeGreaterThan(boardTile.height);
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
 	const selectedTile = gallery.getByRole("button", { name: "Select e2e Journey" });
 	await expect(selectedTile.locator("canvas")).toHaveCount(0);
-	const textColor = await gallery.getByRole("button", { name: "Select Board" }).locator(".text-text").evaluate((element) => getComputedStyle(element).color);
+	const textColor = await gallery.getByRole("button", { name: "Select Board", exact: true }).locator(".text-text").evaluate((element) => getComputedStyle(element).color);
 	await expect.poll(() => selectedTile.locator("div").evaluateAll((elements, color) => elements.some((element) => getComputedStyle(element).backgroundColor === color), textColor)).toBe(true);
 	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();
 	const journeyColumn = page.locator('[data-butter-board-surface] [data-jira-kanban-column="To do"]');
@@ -322,7 +322,7 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	if (!journeyColumnBounds) throw new Error("Journey column has no bounds");
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	await expect(page.getByRole("tab", { name: "List", exact: true })).toHaveAttribute("aria-selected", "true");
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await expect(board).toBeVisible();
 	const boardBounds = await board.boundingBox();
@@ -341,12 +341,12 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toHaveCount(0);
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(page.getByRole("tab", { name: "List", exact: true })).toHaveAttribute("aria-selected", "true");
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await board.locator('[data-jira-kanban-column="To do"]').hover();
 	await board.getByRole("button", { name: "Collapse To do column" }).click();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(page.getByRole("tab", { name: "List", exact: true })).toHaveAttribute("aria-selected", "true");
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(board.getByRole("button", { name: "Expand To do column" })).toBeVisible();
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(board.getByRole("button", { name: "Collapse To do column" })).toBeVisible();
@@ -371,7 +371,7 @@ test("switching between the board and journey does not produce runtime errors", 
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(page.getByRole("region", { name: /Unlink sessions/ })).toBeVisible();
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(page.getByRole("region", { name: /Unlink sessions/ })).toBeVisible();
@@ -382,7 +382,7 @@ test("the Board and e2e Journey share work-item changes", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const card = board.locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await expect(card.getByRole("button", { name: "Add agent to PAY-118" })).toBeAttached();
@@ -396,7 +396,7 @@ test("the Board and e2e Journey share work-item changes", async ({ page }) => {
 	const journeyCard = page.locator('[data-butter-board-surface] [data-issue-key="PAY-118"][data-board-column-title]');
 	await expect(journeyCard.getByRole("img", { name: "Unassigned person" })).toBeVisible();
 	await page.getByRole("group", { name: "Merchant onboarding journey steps" }).getByRole("button", { name: "In progress", exact: true }).click();
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(board.locator('[data-issue-key="PAY-999"][data-board-column-title="In progress"]')).toBeVisible();
 });
 
@@ -408,7 +408,7 @@ test("journey board filters survive switching gallery tiles", async ({ page }) =
 	const filter = page.getByRole("button", { name: "Filter board by Venn" });
 	await filter.click();
 	await expect(filter).toHaveAttribute("aria-pressed", "true");
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(filter).toHaveAttribute("aria-pressed", "true");

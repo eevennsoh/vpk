@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
-const { renderComponent } = require("../../../scripts/lib/render-component.js");
+const { accessibleName, renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const rows = [
 	{ issueKey: "PAY-1", summary: "First item", issueType: "task", status: "To do", priority: "medium" },
@@ -319,7 +319,9 @@ test("assigned list sessions show the session without an assignment footer", asy
 	});
 	await view.click(view.getByRole("button", { name: "Edit agents" }));
 	assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
-	assert.notEqual(view.queryByRole("button", { name: /ClaudeClaude/u }), null);
+	// A working session names its agent only in the title; the byline shows the mark alone.
+	const sessionNames = view.getAllByRole("button", { name: /^Claude/u }).map(accessibleName);
+	assert.ok(sessionNames.some((name) => name !== "Claude: Working"), sessionNames.join(" | "));
 });
 
 test("starting a list session moves focus to its activity", async () => {

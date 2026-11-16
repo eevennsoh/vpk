@@ -21,9 +21,22 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		size: "landscape",
 	},
 	{
+		id: "agent-sessions",
+		title: "Agent sessions",
+		description: "Agent session cards in short and long form, local and cloud.",
+		size: "portrait",
+	},
+	{
 		id: "board",
 		title: "Board",
 		description: "The Jira board.",
+		size: "1x1",
+	},
+	{
+		id: "board-card",
+		title: "Board (Card)",
+		titleLines: ["Board", "(Card)"],
+		description: "A Jira kanban card on its own.",
 		size: "1x1",
 	},
 	{

@@ -43,6 +43,18 @@ export interface AgentSessionMetadataInput {
 	readonly prStatus?: AgentListPrStatus;
 	/** Human-readable tool calls, in display order. */
 	readonly toolCalls?: readonly string[];
+	/** Lifecycle state; an active row narrates its tool call, a settled row names its agent. */
+	readonly state?: AgentListState;
+	/** Short-density line: agent mark only, no agent name, no tool call. */
+	readonly compact?: boolean;
+}
+
+/**
+ * Working and Needs input rows let the agent mark speak for itself — the line
+ * is about what the session is doing now, so the agent's name is never printed.
+ */
+export function isActiveAgentSessionState(state: AgentListState | undefined): boolean {
+	return state === "running" || state === "needs-input" || state === "attention";
 }
 
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
@@ -63,10 +75,14 @@ export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>
 export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
+	const isActive = isActiveAgentSessionState(input.state);
 	const segments: AgentSessionMetadataSegment[] = [
-		{ kind: "agent", label: input.agentName },
+		input.compact || isActive ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
-	const toolCalls = input.toolCalls
+	// The agent name and the working narration never share a line: an active
+	// row narrates its tool call behind the bare mark, a settled row names its
+	// agent and drops the narration. The compact (short) line carries neither.
+	const toolCalls = input.compact || !isActive ? undefined : input.toolCalls
 		?.map((toolCall) => toolCall.trim())
 		.filter((toolCall) => toolCall.length > 0);
 	if (input.branch) {

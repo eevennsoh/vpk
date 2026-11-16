@@ -74,9 +74,10 @@ function buildArrivalDelays(
  * the same hover/focus action pair Agent List rows use — Resume, plus
  * Archive / Unarchive where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
- * `components/blocks/agent-session-flyout` uses, so hovering a short card offers
- * Link / Create / Add as a subtask without a footer chin. Long density has no
- * flyout — hover only highlights the row and reveals trailing controls. Medium
+ * `components/blocks/agent-session-flyout` uses, so hovering an unlinked card
+ * offers Link / Create / Add as a subtask without a footer chin. Short and long
+ * densities are linked sessions and have no flyout — hover only highlights the
+ * row and reveals trailing controls. Medium
  * detached keeps that uncaptured relationship as a 276px stroked white chip:
  * 24px human+agent identity, the session title, and a trailing up-arrow key,
  * with the untracked-work flyout. Medium attached reuses the Jira Issue
@@ -95,7 +96,7 @@ export function AgentSession({
 	assignment,
 	canViewItem,
 	capturedItemIds,
-	density = "short",
+	density = "unlinked",
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
@@ -128,6 +129,7 @@ export function AgentSession({
 	showUntrackedWorkFooter,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showLifecycleLabel = true,
 	showBranch = false,
 	style,
 	variant = "large",
@@ -136,10 +138,14 @@ export function AgentSession({
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const isLongDensity = variant === "large" && density === "long";
+	// The untracked-work flyout (PR card, Link / Create / Add as a subtask) is
+	// for unlinked sessions only. Large rows are unlinked only in the `unlinked`
+	// density; short and long large rows are linked sessions and get none.
+	const hasNoFlyout = variant === "large" && density !== "unlinked";
 	// Which accent layers this list paints, and the tuning vars that go with
 	// them. One declaration for the list rather than one per card.
 	const cardGlow = resolveAgentSessionGlow({ bloom: glowBloom, stroke: glowStroke, variant });
-	const showUntrackedWorkFlyout = !isAttached && !isLongDensity;
+	const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;
 	const shouldReduceMotion = useReducedMotion();
 	const sourceItems = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	const departure = useAgentSessionStatusDeparture({
@@ -262,7 +268,7 @@ export function AgentSession({
 							: handleView;
 
 					if (variant === "large") {
-						const flyoutSession = isLongDensity
+						const flyoutSession = hasNoFlyout
 							? undefined
 							: toAgentSessionUntrackedWorkFlyoutItem(
 								item,
@@ -276,10 +282,10 @@ export function AgentSession({
 							<AgentSessionCard
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
-								arrivalStartOffset={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
+								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
 								density={density}
-								flyoutHandle={isLongDensity ? undefined : flyoutHandle}
+								flyoutHandle={hasNoFlyout ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
 								glowBloom={cardGlow.bloom}
@@ -315,6 +321,7 @@ export function AgentSession({
 								sessionDrag={sessionDrag}
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
+								showLifecycleLabel={showLifecycleLabel}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}

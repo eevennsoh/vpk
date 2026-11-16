@@ -7,6 +7,7 @@ import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
+import TeamsIcon from "@atlaskit/icon/core/teams";
 
 import {
 	AgentListPrStatusIcon,
@@ -20,6 +21,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 import {
+	isActiveAgentSessionState,
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
@@ -37,10 +39,15 @@ function MetadataDot() {
 	);
 }
 
-function ViewerLock() {
+/**
+ * Trailing access mark. A team session — one the viewer can see but someone
+ * else owns — shows the team glyph; an owner's private session keeps the lock.
+ */
+function AccessMark({ access }: Readonly<{ access: "team" | "private" }>) {
+	const Glyph = access === "team" ? TeamsIcon : LockLockedIcon;
 	return (
-		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
-			<LockLockedIcon color="currentColor" label="" size="small" />
+		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!" data-access-mark={access}>
+			<Glyph color="currentColor" label="" size="small" />
 		</span>
 	);
 }
@@ -180,11 +187,13 @@ function LongMetadataSegment({
 	switch (segment.kind) {
 		case "agent":
 			return (
-				<span className="flex min-w-0 items-center gap-1">
+				<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">
 					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
-					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
-						{segment.label}
-					</span>
+					{segment.label === undefined ? null : (
+						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
+							{segment.label}
+						</span>
+					)}
 				</span>
 			);
 		case "tool-call":
@@ -229,7 +238,7 @@ function LongMetadataSegment({
  * unit-tested; this component only decides how each chunk looks.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch = false }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, item, renderAgentAvatar, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
@@ -238,8 +247,10 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 		agentName: item.agent.name,
 		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
+		compact,
 		host: declaredHost,
 		prStatus: item.prStatus,
+		state: item.state,
 		toolCalls: item.toolCalls,
 	});
 
@@ -252,18 +263,19 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					className={cn(
 						"flex items-center gap-1",
 						segment.kind === "agent"
-							? "min-w-0 shrink"
+							? segment.label === undefined ? "shrink-0" : "min-w-0 shrink"
 							: segment.kind === "time"
 								? "shrink-0"
 								: "min-w-0 max-w-28 flex-initial",
 					)}
 					key={segment.kind}
 				>
-					{index > 0 ? <MetadataDot /> : null}
+					{/* A long row's unnamed agent mark runs straight into its tool call; the compact line keeps the dot before PR/host. */}
+					{index > 0 && (compact || !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined)) ? <MetadataDot /> : null}
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
-			{getAgentSessionRole(item) === "viewer" || item.privateTo ? <><MetadataDot /><ViewerLock /></> : null}
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : item.privateTo ? <><MetadataDot /><AccessMark access="private" /></> : null}
 		</span>
 	);
 }
@@ -285,9 +297,11 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{pullRequestLabel === undefined ? (
-				<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
-					{item.agent.name}
-				</span>
+				isActiveAgentSessionState(item.state) ? null : (
+					<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
+						{item.agent.name}
+					</span>
+				)
 			) : (
 				<span className="flex min-w-0 shrink items-center gap-1">
 					<AgentListPrStatusIcon
@@ -307,7 +321,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					</span>
 				</span>
 			)}
-			<MetadataDot />
+			{pullRequestLabel === undefined && isActiveAgentSessionState(item.state) ? null : <MetadataDot />}
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (
 					<AgentSessionHostSegment compact isLocal={declaredHost === "local"} />
@@ -316,7 +330,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
-			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : null}
 		</span>
 	);
 }
