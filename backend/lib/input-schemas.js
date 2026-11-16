@@ -100,7 +100,9 @@ const NUMBER_ARGUMENT = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu;
 const AGENT_BROWSER_REF_PATTERN = /^@?e\d{1,6}$/u;
 // A key the Chromium preview sends: a named key, or one printable character (letters,
 // digits, punctuation such as `-` and `+`), with modifiers: `Enter`, `Control+a`, `Shift+-`.
-const PREVIEW_KEY_PATTERN = /^(?:(?:ControlOrMeta|Control|Meta|Alt|Shift)\+)*(?:[A-Za-z][A-Za-z0-9]{0,15}|[^\p{Cc}\p{Cs}\p{Z}])$/u;
+// Named keys run up to 32 characters so the longest DOM key names (`AudioSurroundModeToggle`,
+// `MediaTrackPrevious`) still pass with a modifier.
+const PREVIEW_KEY_PATTERN = /^(?:(?:ControlOrMeta|Control|Meta|Alt|Shift)\+)*(?:[A-Za-z][A-Za-z0-9]{0,31}|[^\p{Cc}\p{Cs}\p{Z}])$/u;
 // Wheel deltas and pointer coordinates go to agent-browser as numbers; JSON allows
 // `-1e999`, which is -Infinity, so they are bounded (provisional bound).
 const MAX_POINTER_MAGNITUDE = 100_000;
