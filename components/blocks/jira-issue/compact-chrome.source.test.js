@@ -19,7 +19,7 @@ test("compact internals stay on when raised chrome is selected", () => {
 	assert.match(SOURCE, /boxShadow: chromeStyles\.boxShadow,/u);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
 	assert.match(SUBTASKS_SOURCE, /const usesStrokeChrome = compact \|\| chrome === "stroke";/u);
-	assert.match(PAGE_SOURCE, /<JiraIssueAgentActivityStatesDemo[\s\S]*chrome=\{chrome\}[\s\S]*compact[\s\S]*onChromeChange=\{setChrome\}/);
+	assert.match(PAGE_SOURCE, /<JiraIssueAgentActivityStatesDemo[\s\S]*chrome=\{chrome\}[\s\S]*compact[\s\S]*onChromeChange=\{isProjectButter \? undefined : setChrome\}/);
 	assert.match(PAGE_SOURCE, /compact=\{compact\}/);
 	assert.match(PAGE_SOURCE, /const experimentalPullRequest = compact\s*\n\t\t\? getExperimentalDemoPullRequest\(agentActivityState\)\s*\n\t\t: \{\};/);
 	assert.doesNotMatch(PAGE_SOURCE, /if \(chrome !== "stroke"\)/);
