@@ -33,7 +33,7 @@ export function ButterAgentSessionFormControls({ form, onFormChange }: Readonly<
 export function ButterGalleryAgentSessions({ form, galleryOpen }: Readonly<{ form: ButterAgentSessionForm; galleryOpen: boolean }>) {
 	return (
 		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex flex-col overflow-y-auto", galleryOpen ? "bottom-56" : "bottom-0")}>
-			<div key={form.value} className="pointer-events-auto my-auto flex w-full [&>div]:h-auto [&>div]:bg-transparent">
+			<div key={form.value} className="pointer-events-auto my-auto flex w-full [&>div]:h-auto [&>div]:bg-transparent [&_ul[data-variant=large]]:relative [&_ul[data-variant=large]]:rounded-lg [&_ul[data-variant=large]]:border [&_ul[data-variant=large]]:border-border [&_ul[data-variant=large]]:bg-surface">
 				<h1 className="sr-only">Agent sessions</h1>
 				<AgentSessionPage density={form.density} host={form.host} />
 			</div>
