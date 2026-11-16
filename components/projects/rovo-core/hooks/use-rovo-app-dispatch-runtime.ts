@@ -10,14 +10,12 @@ import {
 	createRovoAppImmediateDispatchLifecycle,
 	type RovoAppImmediateDispatchLifecycle,
 } from "@/components/projects/rovo-core/lib/rovo-app-dispatch-lifecycle";
-import type { RovoMessageInterruptionSource } from "@/lib/rovo-ui-messages";
+import type { RovoAppInterruptActiveTurn } from "@/components/projects/rovo-core/lib/rovo-app-run-lifecycle";
 
 interface UseRovoAppDispatchRuntimeResult {
 	immediateDispatchInProgressRef: MutableRefObject<boolean>;
 	immediateDispatchLifecycle: RovoAppImmediateDispatchLifecycle;
-	interruptActiveTurnRef: MutableRefObject<(options?: {
-		source: RovoMessageInterruptionSource;
-	}) => Promise<void>>;
+	interruptActiveTurnRef: MutableRefObject<RovoAppInterruptActiveTurn>;
 	kickQueue: () => void;
 	processQueueRef: MutableRefObject<() => Promise<void>>;
 	queueProcessorRunningRef: MutableRefObject<boolean>;
@@ -27,9 +25,7 @@ export function useRovoAppDispatchRuntime(): UseRovoAppDispatchRuntimeResult {
 	const queueProcessorRunningRef = useRef(false);
 	const immediateDispatchInProgressRef = useRef(false);
 	const processQueueRef = useRef<() => Promise<void>>(async () => {});
-	const interruptActiveTurnRef = useRef<(options?: {
-		source: RovoMessageInterruptionSource;
-	}) => Promise<void>>(async () => {});
+	const interruptActiveTurnRef = useRef<RovoAppInterruptActiveTurn>(async () => {});
 	const immediateDispatchLifecycle = useMemo(
 		() =>
 			createRovoAppImmediateDispatchLifecycle({

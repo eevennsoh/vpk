@@ -1328,7 +1328,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 	const handleStop = useCallback(async () => {
 		realtimeConversation.interrupt();
-		await chat.interruptActiveTurn({ source: "user-stop" });
+		await chat.interruptActiveTurn({ explicitUserCancel: true, source: "user-stop" });
 	}, [chat, realtimeConversation]);
 
 	// --- Studio AI cursor companion ---

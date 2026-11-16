@@ -81,6 +81,35 @@ export async function requestRovoBackendCancel({
 export const BACKEND_CANCEL_DEBOUNCE_MS = 2_000;
 
 /**
+ * Debounce gate for backend cancels. The returned function answers whether a
+ * cancel with this key (see getRovoCancelDebounceKey) may go out now, and
+ * records it when it may: a repeat of the same key inside `debounceMs` is
+ * refused, while a different key (a new turn or thread) always passes. The
+ * window counts attempts, not successes: a cancel that fails or times out still
+ * suppresses a repeat of the same key until the window ends.
+ */
+export function createRovoCancelDebounce({
+	debounceMs = BACKEND_CANCEL_DEBOUNCE_MS,
+	now = Date.now,
+}: {
+	debounceMs?: number;
+	now?: () => number;
+} = {}): (key: string) => boolean {
+	let lastKey = "";
+	let lastAt = 0;
+	return (key) => {
+		const at = now();
+		if (key === lastKey && at - lastAt < debounceMs) {
+			return false;
+		}
+
+		lastKey = key;
+		lastAt = at;
+		return true;
+	};
+}
+
+/**
  * Sends a backend cancel at most once per debounce key (see
  * getRovoCancelDebounceKey) within `debounceMs`, waiting at most `timeoutMs`.
  * The returned function resolves true when a cancel request went out; request
@@ -101,17 +130,12 @@ export function createRovoBackendCanceller({
 	debounceMs?: number;
 	now?: () => number;
 }) {
-	let lastKey = "";
-	let lastAt = 0;
+	const mayCancel = createRovoCancelDebounce({ debounceMs, now });
 	return async (target: RovoCancelTarget, turnId: string | null): Promise<boolean> => {
-		const key = getRovoCancelDebounceKey(target, turnId);
-		const at = now();
-		if (key === lastKey && at - lastAt < debounceMs) {
+		if (!mayCancel(getRovoCancelDebounceKey(target, turnId))) {
 			return false;
 		}
 
-		lastKey = key;
-		lastAt = at;
 		try {
 			await requestRovoBackendCancel({
 				target,

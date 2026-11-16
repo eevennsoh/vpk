@@ -52,6 +52,7 @@ test("createRovoAppImmediateDispatchLifecycle toggles dispatch refs and interrup
 
 	assert.equal(immediateDispatchInProgressRef.current, false);
 	assert.equal(queueProcessorRunningRef.current, false);
+	// No explicitUserCancel: send-now cancels the backend only when stop() is slow.
 	assert.deepEqual(calls, [{ source: "user-stop" }]);
 });
 

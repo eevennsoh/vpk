@@ -96,10 +96,8 @@ import {
 import {
 	type PlanApprovalSelection,
 } from "@/components/projects/shared/lib/plan-approval";
-import {
-	type RovoMessageInterruptionSource,
-	type RovoUIMessage,
-} from "@/lib/rovo-ui-messages";
+import { type RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { RovoAppInterruptActiveTurn } from "@/components/projects/rovo-core/lib/rovo-app-run-lifecycle";
 import type { RovoAppPlanExecutionTrackerViewModel } from "@/components/projects/shared/lib/rovo-app-plan-execution-tracker";
 import {
 	waitForRovoApp,
@@ -145,9 +143,7 @@ export interface RovoAppHookResult {
 	editMessage: (messageId: string, nextText: string) => Promise<void>;
 	editingMessageId: string | null;
 	inputError: string | null;
-	interruptActiveTurn: (options?: {
-		source: RovoMessageInterruptionSource;
-	}) => Promise<void>;
+	interruptActiveTurn: RovoAppInterruptActiveTurn;
 	isArtifactOpen: boolean;
 	isGeneratingTitle: boolean;
 	isLoadingThread: boolean;
@@ -378,7 +374,6 @@ export function useRovoAppCore({
 	const runSubscriptionAbortControllerRef = useRef<AbortController | null>(null);
 	const runSubscriptionThreadIdRef = useRef<string | null>(null);
 	const interruptPromiseRef = useRef<Promise<void> | null>(null);
-	const lastExplicitCancelAtRef = useRef(0);
 	const hasHydratedActiveThreadRef = useRef(false);
 	const lastLoadedInitialThreadIdRef = useRef<string | null>(null);
 	const pendingRouteThreadIdRef = useRef<string | null>(null);
@@ -978,13 +973,13 @@ export function useRovoAppCore({
 		ensureThread,
 		interruptActiveTurnRef,
 		interruptPromiseRef,
-		lastExplicitCancelAtRef,
 		markLocalThreadRunPending,
 		mutateRealtimeMessagesState,
 		queueProcessorRunningRef,
 		refreshThreads,
 		releaseCompletedUseChatTurnIfNeeded,
 		resetPendingArtifactAssociation,
+		rovoMessagesRef,
 		runSubscriptionAbortControllerRef,
 		runSubscriptionThreadIdRef,
 		saveStreamingArtifactCheckpoint,
