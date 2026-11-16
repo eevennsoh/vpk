@@ -18,7 +18,6 @@ import type {
 } from "@/lib/rovo-app-types";
 import {
 	getMessageText,
-	type RovoMessageInterruptionSource,
 	type RovoMessageMetadata,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
@@ -33,6 +32,7 @@ import {
 	isRovoAppSendSettledTimeoutError,
 	waitForChatSendSettled,
 } from "@/components/projects/rovo-core/lib/rovo-app-send-guard";
+import type { RovoAppInterruptActiveTurn } from "@/components/projects/rovo-core/lib/rovo-app-run-lifecycle";
 import { getLatestRovoAppAssistantMessageId } from "@/components/projects/rovo-core/lib/rovo-app-planning-session";
 
 interface MutableRef<T> {
@@ -55,9 +55,7 @@ export interface RovoAppImmediateDispatchLifecycle {
 
 export interface CreateRovoAppImmediateDispatchLifecycleInput {
 	immediateDispatchInProgressRef: MutableRef<boolean>;
-	interruptActiveTurnRef: MutableRef<(options?: {
-		source: RovoMessageInterruptionSource;
-	}) => Promise<void>>;
+	interruptActiveTurnRef: MutableRef<RovoAppInterruptActiveTurn>;
 	queueProcessorRunningRef: MutableRef<boolean>;
 }
 
@@ -87,6 +85,8 @@ export function createRovoAppImmediateDispatchLifecycle({
 		complete: () => {
 			immediateDispatchInProgressRef.current = false;
 		},
+		// Send-now is not a Stop: it leaves explicitUserCancel unset, so a late
+		// backend cancel cannot land on the prompt it starts next on this thread.
 		interruptActiveTurn: () =>
 			interruptActiveTurnRef.current({ source: "user-stop" }),
 	};

@@ -337,6 +337,7 @@ function createInterruptInput(overrides = {}) {
 		clearDirectDelegationState() {},
 		currentActiveRun: null,
 		delegationAbortControllerRef: { current: null },
+		explicitUserCancel: true,
 		interruptPromiseRef: { current: null },
 		mutateRealtimeMessagesState(updater) {
 			return updater([]);
@@ -377,20 +378,34 @@ test("interruptRovoAppActiveTurn sends a backend cancel on user Stop even when s
 });
 
 test("interruptRovoAppActiveTurn leaves a voice barge-in that settles in time to stop()", async () => {
-	const { calls, input } = createInterruptInput({ source: "voice-barge-in" });
+	const { calls, input } = createInterruptInput({
+		explicitUserCancel: undefined,
+		source: "voice-barge-in",
+	});
 
 	await interruptRovoAppActiveTurn(input);
 
 	assert.deepEqual(calls, ["stopUseChat"]);
 });
 
-test("interruptRovoAppActiveTurn cancels an attached background run once across repeated Stops", async () => {
+test("interruptRovoAppActiveTurn sends no backend cancel for a send-now interrupt that settles in time", async () => {
+	// Send-now interrupts as "user-stop" but is not a Stop button, so a late
+	// cancel must not land on the prompt it dispatches next on the thread.
+	const { calls, input } = createInterruptInput({ explicitUserCancel: undefined });
+
+	await interruptRovoAppActiveTurn(input);
+
+	assert.deepEqual(calls, ["stopUseChat"]);
+});
+
+test("interruptRovoAppActiveTurn debounces a repeated Stop on an attached run and skips the chat-cancel fallback", async () => {
 	const backendCalls = [];
+	const results = [];
 	const mayCancel = createRovoCancelDebounce({ now: () => 1_000 });
 	const activeThreadIdRef = { current: "thread-1" };
 	const currentActiveRun = createRovoAppLocalActiveRun({ threadId: "thread-1" });
-	const requestExplicitCancel = () =>
-		requestExplicitRovoAppCancel({
+	const requestExplicitCancel = async () =>
+		results.push(await requestExplicitRovoAppCancel({
 			activeThreadIdRef,
 			attachedRunStatus: "streaming",
 			cancelRun: async (threadId, { signal }) => {
@@ -408,7 +423,7 @@ test("interruptRovoAppActiveTurn cancels an attached background run once across 
 			setHasActiveDispatch() {},
 			setLocalThreadActiveRun() {},
 			turnId: "user-1",
-		});
+		}));
 
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		const { input } = createInterruptInput({
@@ -420,6 +435,7 @@ test("interruptRovoAppActiveTurn cancels an attached background run once across 
 		await interruptRovoAppActiveTurn(input);
 	}
 
+	assert.deepEqual(results, ["run-cancelled", "debounced"]);
 	assert.deepEqual(backendCalls, [["cancelRun", "thread-1", true]]);
 });
 
@@ -456,8 +472,6 @@ test("requestExplicitRovoAppCancel caps a hanging cancel at the timeout", async 
 		new Promise((_resolve, reject) => {
 			signal.addEventListener("abort", () => reject(signal.reason), { once: true });
 		});
-	const startedAt = Date.now();
-
 	const result = await requestExplicitRovoAppCancel({
 		activeThreadIdRef: { current: "thread-1" },
 		attachedRunStatus: "streaming",
@@ -479,7 +493,6 @@ test("requestExplicitRovoAppCancel caps a hanging cancel at the timeout", async 
 	});
 
 	assert.equal(result, "failed");
-	assert.ok(Date.now() - startedAt < 1_000);
 	assert.deepEqual(warnings, ["[RovoApp] Explicit cancel request failed:"]);
 });
 

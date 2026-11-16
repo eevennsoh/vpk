@@ -84,7 +84,9 @@ export const BACKEND_CANCEL_DEBOUNCE_MS = 2_000;
  * Debounce gate for backend cancels. The returned function answers whether a
  * cancel with this key (see getRovoCancelDebounceKey) may go out now, and
  * records it when it may: a repeat of the same key inside `debounceMs` is
- * refused, while a different key (a new turn or thread) always passes.
+ * refused, while a different key (a new turn or thread) always passes. The
+ * window counts attempts, not successes: a cancel that fails or times out still
+ * suppresses a repeat of the same key until the window ends.
  */
 export function createRovoCancelDebounce({
 	debounceMs = BACKEND_CANCEL_DEBOUNCE_MS,

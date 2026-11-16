@@ -84,6 +84,7 @@ export interface InterruptRovoAppActiveTurnInput {
 	clearDirectDelegationState: () => void;
 	currentActiveRun: RovoAppActiveRun | null | undefined;
 	delegationAbortControllerRef: MutableRef<AbortController | null>;
+	explicitUserCancel?: boolean;
 	interruptPromiseRef: MutableRef<Promise<void> | null>;
 	mutateRealtimeMessagesState: (
 		updater: (currentMessages: RovoUIMessage[]) => RovoUIMessage[],
@@ -104,6 +105,23 @@ export interface InterruptRovoAppActiveTurnInput {
 	waitForActiveTurnToStop: () => Promise<boolean>;
 	warn?: (message: string) => void;
 }
+
+/**
+ * Options for interrupting the active Rovo app turn. `source` labels the
+ * interruption on the reply; `explicitUserCancel` is set only by a Stop
+ * button, so the backend is always told to cancel. Programmatic interrupts
+ * (send-now, voice barge-in, artifact submission) leave it unset and escalate
+ * to a backend cancel only when stop() does not settle in time, so a late
+ * cancel cannot land on the prompt they start next on the same thread.
+ */
+export interface RovoAppInterruptActiveTurnOptions {
+	explicitUserCancel?: boolean;
+	source?: RovoMessageInterruptionSource;
+}
+
+export type RovoAppInterruptActiveTurn = (
+	options?: RovoAppInterruptActiveTurnOptions,
+) => Promise<void>;
 
 export function updateRovoAppThreadActiveRun(
 	threads: ReadonlyArray<RovoAppThread>,
@@ -258,6 +276,7 @@ export async function interruptRovoAppActiveTurn({
 	clearDirectDelegationState,
 	currentActiveRun,
 	delegationAbortControllerRef,
+	explicitUserCancel = false,
 	interruptPromiseRef,
 	mutateRealtimeMessagesState,
 	requestExplicitCancel,
@@ -297,9 +316,9 @@ export async function interruptRovoAppActiveTurn({
 
 			const shouldRequestExplicitCancel = hadActiveTurn
 				? shouldSendExplicitRovoCancel({
-						// A user Stop always reaches the backend: stop() settles the chat
-						// locally whether or not the backend saw the disconnect.
-						explicitUserCancel: source === "user-stop",
+						// A Stop button always reaches the backend: stop() settles the
+						// chat locally whether or not the backend saw the disconnect.
+						explicitUserCancel,
 						hasBackgroundCancelableWork,
 						hasUseChatTurn,
 						stopSettledInTime: stoppedInTime,

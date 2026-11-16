@@ -14,6 +14,8 @@ import {
 	interruptRovoAppActiveTurn,
 	requestExplicitRovoAppCancel,
 	waitForRovoAppActiveTurnToStop,
+	type RovoAppInterruptActiveTurnOptions,
+	type RovoAppInterruptActiveTurn,
 } from "@/components/projects/rovo-core/lib/rovo-app-run-lifecycle";
 import {
 	dispatchRovoAppVoiceSteer,
@@ -31,7 +33,6 @@ import type {
 } from "@/lib/rovo-app-types";
 import {
 	getLatestUserMessageId,
-	type RovoMessageInterruptionSource,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 
@@ -57,9 +58,7 @@ interface UseRovoAppActiveTurnActionsOptions {
 	clearDirectDelegationState: () => void;
 	delegationAbortControllerRef: MutableRefObject<AbortController | null>;
 	ensureThread: (seedText: string) => Promise<string>;
-	interruptActiveTurnRef: MutableRefObject<(options?: {
-		source: RovoMessageInterruptionSource;
-	}) => Promise<void>>;
+	interruptActiveTurnRef: MutableRefObject<RovoAppInterruptActiveTurn>;
 	interruptPromiseRef: MutableRefObject<Promise<void> | null>;
 	markLocalThreadRunPending: (threadId: string) => void;
 	mutateRealtimeMessagesState: MutateRealtimeMessagesState;
@@ -96,9 +95,7 @@ interface UseRovoAppActiveTurnActionsOptions {
 interface UseRovoAppActiveTurnActionsResult {
 	applyVoiceSteer: (payload: RovoAppVoiceSteerPayload) => Promise<void>;
 	cancelThreadRun: (threadId: string) => Promise<boolean>;
-	interruptActiveTurn: (options?: {
-		source?: RovoMessageInterruptionSource;
-	}) => Promise<void>;
+	interruptActiveTurn: RovoAppInterruptActiveTurn;
 	stop: () => Promise<void>;
 }
 
@@ -194,10 +191,9 @@ export function useRovoAppActiveTurnActions({
 
 	const interruptActiveTurn = useCallback(
 		async ({
+			explicitUserCancel = false,
 			source = "user-stop",
-		}: {
-			source?: RovoMessageInterruptionSource;
-		} = {}) => {
+		}: RovoAppInterruptActiveTurnOptions = {}) => {
 			// Read before stopping: the turn to cancel is the one running now.
 			const turnId = getLatestUserMessageId(rovoMessagesRef.current);
 			return interruptRovoAppActiveTurn({
@@ -206,6 +202,7 @@ export function useRovoAppActiveTurnActions({
 				clearDirectDelegationState,
 				currentActiveRun: activeRun,
 				delegationAbortControllerRef,
+				explicitUserCancel,
 				interruptPromiseRef,
 				mutateRealtimeMessagesState,
 				requestExplicitCancel: () => requestExplicitCancel(turnId),
@@ -254,7 +251,7 @@ export function useRovoAppActiveTurnActions({
 	interruptActiveTurnRef.current = interruptActiveTurn;
 
 	const stop = useCallback(async () => {
-		await interruptActiveTurn({ source: "user-stop" });
+		await interruptActiveTurn({ explicitUserCancel: true, source: "user-stop" });
 	}, [interruptActiveTurn]);
 
 	const applyVoiceSteer = useCallback(
