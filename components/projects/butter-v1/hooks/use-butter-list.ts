@@ -386,6 +386,7 @@ export function useButterList({
 
 		return {
 			agentCatalog: BUTTER_AGENT_CATALOG,
+			showPullRequests: true,
 			ariaLabel: listAriaLabel,
 			className: "max-h-full",
 			copiedIssueKey,

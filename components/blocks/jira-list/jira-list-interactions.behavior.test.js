@@ -7,6 +7,50 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("Butter list PR titles stay non-navigating and reveal their card on keyboard focus", async () => {
+	const view = await renderComponent({ source: `
+		import { JiraList } from "@/components/blocks/jira-list";
+		import { createListRows } from "@/components/projects/butter-v1/lib/list-rows";
+		const columns = [{ title: "In progress", cards: [
+			{ code: "PAY-105", title: "Port 3DS", priority: "major", tags: [],
+				pullRequestNumber: 1851, pullRequestStatus: "failed",
+				pullRequestPreview: { title: "Port 3DS flow", href: "https://github.com/payments-platform/payments/pull/1851",
+					repository: "payments-platform/payments", branch: "pay-105-confirm-3ds-challenge", targetBranch: "main",
+					additions: 274, deletions: 52, filesChanged: 13 } },
+			{ code: "PAY-118", title: "No PR yet", priority: "medium", tags: [] },
+		] }];
+		export default function Probe() {
+			return <JiraList rows={createListRows(columns, [])} showPullRequests />;
+		}
+	` });
+	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull request" })), true);
+	const trigger = view.container.querySelector('[aria-label="Pull request #1851: Port 3DS flow"]');
+	assert.equal(trigger.textContent, "#1851 Port 3DS flow");
+	assert.equal(trigger.tagName, "SPAN");
+	assert.equal(trigger.hasAttribute("href"), false);
+	assert.equal(trigger.querySelectorAll("a, button").length, 0);
+	assert.equal(trigger.contains(view.getByRole("img", { name: "Pull request failed" })), true);
+	assert.equal(view.container.querySelectorAll("tbody a").length, 0);
+	assert.equal(view.container.querySelectorAll("tbody tr")[1].querySelectorAll("a").length, 0);
+	await view.click(trigger);
+	assert.equal(window.location.href, "http://localhost/");
+	await view.focus(trigger);
+	await require("react").act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 700));
+	});
+	const preview = document.querySelector('[aria-label="Pull request #1851 details"]');
+	assert.equal(Boolean(preview), true);
+	assert.equal(preview.textContent.includes("Failed"), true);
+	assert.equal(preview.textContent.includes("payments-platform/payments"), true);
+	assert.equal(preview.textContent.includes("pay-105-confirm-3ds-challenge"), true);
+	assert.equal(preview.textContent.includes("274"), true);
+	assert.equal(preview.textContent.includes("52"), true);
+	assert.equal(preview.querySelectorAll("a").length, 0);
+	await view.press(null, "Escape");
+	assert.equal(document.querySelector('[aria-label="Pull request #1851 details"]')?.hasAttribute("data-open") ?? false, false);
+	await view.unmount();
+});
+
 test("Project Butter is the default list and Classic remains an explicit variant", async () => {
 	const view = await renderComponent({ entry: "components/blocks/jira-list/index.tsx", exportName: "JiraList", props: { rows } });
 	assert.equal(document.querySelector('[data-testid="jira-list"]').getAttribute("data-variant"), "project-butter");

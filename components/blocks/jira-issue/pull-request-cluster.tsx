@@ -72,6 +72,13 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 	}
 }
 
+export function JiraIssuePullRequestStatusIcon({ status }: Readonly<{
+	status?: JiraIssuePullRequestStatus;
+}>) {
+	const { StatusIcon, colorClass, label } = getJiraIssuePullRequestPresentation(status);
+	return <Icon className={cn("shrink-0", colorClass)} label={label} render={<StatusIcon label="" size="small" color="currentColor" />} />;
+}
+
 function toPullRequestCardStatus(status: JiraIssuePullRequestStatus | undefined): PullRequestStatus {
 	switch (status) {
 		case "merged":

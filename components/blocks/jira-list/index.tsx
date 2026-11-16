@@ -216,6 +216,7 @@ function getJiraListColumnBoundaries(
 
 export function JiraList({
 	rows,
+	showPullRequests = false,
 	activeIssueKey,
 	ariaLabel = "Jira list view",
 	variant = "project-butter",
@@ -375,6 +376,7 @@ export function JiraList({
 		}
 	};
 	const baseColumns = useMemo(() => createJiraListBaseColumns({
+		showPullRequests,
 		agentCatalog,
 		addAgentLabel,
 		copiedIssueKey,
@@ -396,6 +398,7 @@ export function JiraList({
 		setOpenCopyTooltipIssueKey,
 		statusOptions,
 	}), [
+		showPullRequests,
 		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onDueDateChange, onIssueClick, onIssueKeyClick,
 		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, openCopyTooltipIssueKey, statusOptions, bordered, hierarchyExpansion, onToggleExpand,
