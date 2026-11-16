@@ -6,6 +6,7 @@ const {
 const {
 	shouldReplaceActiveRunForRequest: defaultShouldReplaceActiveRunForRequest,
 } = require("./rovo-app-run-continuation");
+const { currentGeneratedMediaScope } = require("./generated-media-owners");
 const { getNonEmptyString } = require("./shared-utils");
 
 function requireFunction(name, value) {
@@ -73,6 +74,9 @@ function createRovoAppManagedRunProxy({
 				threadId,
 				requestBody,
 				requestedPortIndex: null,
+				// The chat guard runs this request as its caller's turn; the run may start
+				// later, from another run's settle, so it keeps the caller with it.
+				mediaScope: currentGeneratedMediaScope(),
 			});
 
 		const subscriberId = rovoAppRunManager.attachSubscriber(threadId, res, {

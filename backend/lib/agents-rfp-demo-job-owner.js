@@ -10,6 +10,7 @@ const {
 	moveTicketToColumn,
 	runRfpDraftingAgent: defaultRunRfpDraftingAgent,
 } = require("./agents-rfp-demo-state");
+const { isOwnedByCaller } = require("./caller-identity");
 const { collectRovoAppUploadIdsFromMessages: defaultCollectRovoAppUploadIdsFromMessages } = require("./rovo-app-upload-helpers");
 const { getNonEmptyString } = require("./shared-utils");
 const { generateWorkItemVpkHtmlReport: defaultGenerateWorkItemVpkHtmlReport } = require("./work-item-vpk-html-report-generator");
@@ -58,6 +59,7 @@ function createAgentsRfpDemoJobOwner({
 		generateWorkItemVpkHtmlReport,
 		"rovoAppDocumentManager.deleteDocumentsByThread": rovoAppDocumentManager?.deleteDocumentsByThread,
 		"rovoAppGeneratedFilesManager.deleteLegacyRootFiles": rovoAppGeneratedFilesManager?.deleteLegacyRootFiles,
+		"rovoAppThreadManager.assignOwnerIfMissing": rovoAppThreadManager?.assignOwnerIfMissing,
 		"rovoAppThreadManager.createThread": rovoAppThreadManager?.createThread,
 		"rovoAppThreadManager.deleteThread": rovoAppThreadManager?.deleteThread,
 		"rovoAppThreadManager.getThread": rovoAppThreadManager?.getThread,
@@ -78,10 +80,32 @@ function createAgentsRfpDemoJobOwner({
 		return result;
 	}
 
-	async function upsertAgentsRfpDemoThread(threadRecord) {
-		const existingThread = await rovoAppThreadManager.getThread(threadRecord.id);
+	// The caller whose run created each demo thread, so processing that recreates a thread
+	// (after it was deleted mid-run) gives it the same owner. In memory: after a restart a
+	// recreated thread has no owner.
+	const runOwnerByThreadId = new Map();
+
+	// A demo thread belongs to the caller who started the run that created it
+	// (lib/caller-identity.js). Another caller's run never touches it: the board state is
+	// shared, but the thread is not theirs to rewrite. A thread with no owner (one stored
+	// before owners) is adopted by the next caller who runs its ticket. Processing has no
+	// caller: it updates the thread its run created and keeps that thread's owner.
+	async function upsertAgentsRfpDemoThread(threadRecord, caller) {
+		const threadId = threadRecord.id;
+		let existingThread = await rovoAppThreadManager.getThread(threadId);
+		if (existingThread && caller) {
+			if (!existingThread.owner) {
+				existingThread = (await rovoAppThreadManager.assignOwnerIfMissing(threadId, caller.owner)).thread;
+			}
+			if (!existingThread) {
+				return null;
+			}
+			if (existingThread.owner !== caller.owner) {
+				return existingThread;
+			}
+		}
 		if (existingThread) {
-			return rovoAppThreadManager.updateThread(threadRecord.id, {
+			return rovoAppThreadManager.updateThread(threadId, {
 				activeDocumentId: threadRecord.activeDocumentId ?? null,
 				messages: threadRecord.messages,
 				modelId: threadRecord.modelId ?? null,
@@ -93,11 +117,15 @@ function createAgentsRfpDemoJobOwner({
 			});
 		}
 
-		return rovoAppThreadManager.createThread(threadRecord);
+		const owner = caller ? caller.owner : runOwnerByThreadId.get(threadId) ?? null;
+		if (caller) {
+			runOwnerByThreadId.set(threadId, caller.owner);
+		}
+		return rovoAppThreadManager.createThread({ ...threadRecord, owner: getNonEmptyString(owner) });
 	}
 
-	async function persistResult(result) {
-		await Promise.all(result.threadRecords.map(upsertAgentsRfpDemoThread));
+	async function persistResult(result, { caller = null } = {}) {
+		await Promise.all(result.threadRecords.map((threadRecord) => upsertAgentsRfpDemoThread(threadRecord, caller)));
 		return agentsRfpDemoStateManager.writeState({
 			...result.state,
 			agent: result.state.agent ? {
@@ -108,7 +136,7 @@ function createAgentsRfpDemoJobOwner({
 		});
 	}
 
-	async function runFromState(currentState, { source = "manual", ticketCodes, runId } = {}) {
+	async function runFromState(currentState, { caller = null, source = "manual", ticketCodes, runId } = {}) {
 		const normalizedRunId = getNonEmptyString(runId);
 		if (normalizedRunId && currentState.agent?.jobRunSummaries?.some((run) => run.id === normalizedRunId)) {
 			return { job: buildAgentsRfpDemoJob(currentState), state: currentState };
@@ -119,7 +147,7 @@ function createAgentsRfpDemoJobOwner({
 			source: getNonEmptyString(source) ?? "manual",
 			ticketCodes: Array.isArray(ticketCodes) ? ticketCodes : undefined,
 		});
-		const state = await persistResult(result);
+		const state = await persistResult(result, { caller });
 		return { job: buildAgentsRfpDemoJob(state), state };
 	}
 
@@ -159,14 +187,14 @@ function createAgentsRfpDemoJobOwner({
 		return serialize(() => agentsRfpDemoStateManager.writeState(state));
 	}
 
-	function handleAgentsRfpDemoTicketEvent({ ticketCode, targetColumn, runId }) {
+	function handleAgentsRfpDemoTicketEvent({ ticketCode, targetColumn, runId, caller = null }) {
 		return serialize(async () => {
 			const currentState = await agentsRfpDemoStateManager.readState();
 			const state = await agentsRfpDemoStateManager.writeState(moveTicketToColumn(currentState, ticketCode, targetColumn));
 			if (targetColumn !== RFP_DRAFTING_EVENT_TRIGGER.column || !state.agent?.trigger) {
 				return { job: buildAgentsRfpDemoJob(state), state };
 			}
-			return runFromState(state, { source: "jira-column-entered", ticketCodes: [ticketCode], runId });
+			return runFromState(state, { caller, source: "jira-column-entered", ticketCodes: [ticketCode], runId });
 		});
 	}
 
@@ -189,10 +217,17 @@ function createAgentsRfpDemoJobOwner({
 		await rovoAppThreadManager.deleteThread(threadId);
 	}
 
-	function resetAgentsRfpDemo() {
+	// Resets the shared board, but deletes only the caller's demo threads (and the records
+	// left under a demo thread that is gone): another caller's thread stays theirs.
+	function resetAgentsRfpDemo({ caller = null } = {}) {
 		return serialize(async () => {
 			const state = await agentsRfpDemoStateManager.readState();
-			await Promise.all(getDemoCreatedThreadIds(state).map(deleteAgentsRfpDemoThread));
+			await Promise.all(getDemoCreatedThreadIds(state).map(async (threadId) => {
+				const thread = await rovoAppThreadManager.getThread(threadId);
+				if (!thread || isOwnedByCaller(thread.owner, caller)) {
+					await deleteAgentsRfpDemoThread(threadId);
+				}
+			}));
 			return agentsRfpDemoStateManager.resetState();
 		});
 	}

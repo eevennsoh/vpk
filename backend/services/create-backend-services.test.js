@@ -12,6 +12,7 @@ const SERVICE_FACTORY_NAMES = [
 	"createAIGatewayProvider",
 	"createAgentsRfpDemoStateManager",
 	"createCheckpointManager",
+	"createGeneratedMediaOwnerStore",
 	"createOrchestratorLog",
 	"createRovoAppDocumentManager",
 	"createRovoAppGeneratedFilesManager",
@@ -61,6 +62,7 @@ test("createBackendServices creates the backend service graph with shared paths 
 		"agentsRfpDemoStateManager",
 		"aiGatewayProvider",
 		"checkpointManager",
+		"generatedMediaOwnerStore",
 		"orchestratorLog",
 		"rovoAppDocumentManager",
 		"rovoAppGeneratedFilesManager",
@@ -79,6 +81,11 @@ test("createBackendServices creates the backend service graph with shared paths 
 		maxCheckpoints: DEFAULT_CHECKPOINT_LIMIT,
 	});
 	assert.deepEqual(harness.getCall("createRovoAppGeneratedFilesManager").options, {
+		baseDir: "/tmp/backend-data",
+		logger,
+		projectRoot: "/repo",
+	});
+	assert.deepEqual(harness.getCall("createGeneratedMediaOwnerStore").options, {
 		baseDir: "/tmp/backend-data",
 		logger,
 		projectRoot: "/repo",

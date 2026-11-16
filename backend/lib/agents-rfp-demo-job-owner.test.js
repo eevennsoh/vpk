@@ -76,6 +76,15 @@ function createHarness({
 			},
 		},
 		rovoAppThreadManager: {
+			assignOwnerIfMissing: async (threadId, nextOwner) => {
+				calls.push(["assignOwner", threadId, nextOwner]);
+				const thread = threadRecords.get(threadId);
+				if (!thread) return { status: "missing", thread: null };
+				if (thread.owner) return { status: "owned", thread };
+				const owned = { ...thread, owner: nextOwner };
+				threadRecords.set(threadId, owned);
+				return { status: "assigned", thread: owned };
+			},
 			createThread: async (thread) => {
 				calls.push(["createThread", thread.id]);
 				threadRecords.set(thread.id, thread);
@@ -235,6 +244,86 @@ test("a failed mutation rejects its caller and does not poison later runs", asyn
 	assert.equal(harness.state.agent, null);
 	const result = await harness.owner.runAgentsRfpDemoJob({ runId: "retry" });
 	assert.equal(result.job.runHistory[0].id, "retry");
+});
+
+const ALICE = Object.freeze({ owner: "alice", local: false });
+const BOB = Object.freeze({ owner: "bob", local: false });
+
+function createOwnedRunHarness(options = {}) {
+	return createHarness({
+		runRfpDraftingAgent: (current, runOptions) => ({
+			...stateRun(current, runOptions),
+			threadRecords: [{ ...createThreadRecord("agents-rfp-demo-rfp-1"), title: `Run ${runOptions.runId}` }],
+		}),
+		state: { agent: null, workItems: { "RFP-1": { agentSessionThreadId: "agents-rfp-demo-rfp-1" } } },
+		...options,
+	});
+}
+
+test("an RFP demo thread belongs to the caller whose run created it", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice-2" });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").title, "Run run-alice-2");
+});
+
+test("another caller's run does not overwrite an RFP demo thread", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	await harness.owner.runAgentsRfpDemoJob({ caller: BOB, runId: "run-bob" });
+	const thread = harness.threadRecords.get("agents-rfp-demo-rfp-1");
+	assert.equal(thread.owner, "alice");
+	assert.equal(thread.title, "Run run-alice");
+	assert.equal(harness.calls.some(([name, threadId]) => name === "updateThread" && threadId === "agents-rfp-demo-rfp-1"), false);
+});
+
+test("a run adopts an RFP demo thread stored with no owner", async () => {
+	const harness = createOwnedRunHarness({ threads: [["agents-rfp-demo-rfp-1", { ...createThreadRecord("agents-rfp-demo-rfp-1"), owner: null }]] });
+	await harness.owner.runAgentsRfpDemoJob({ caller: BOB, runId: "run-bob" });
+	const thread = harness.threadRecords.get("agents-rfp-demo-rfp-1");
+	assert.equal(thread.owner, "bob");
+	assert.equal(thread.title, "Run run-bob");
+});
+
+test("another caller's reset does not delete an RFP demo thread, and the owner's does", async () => {
+	const harness = createOwnedRunHarness();
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	await harness.owner.resetAgentsRfpDemo({ caller: BOB });
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1")?.owner, "alice");
+	assert.equal(harness.calls.some(([name]) => name === "deleteThread"), false);
+
+	harness.state.workItems = { "RFP-1": { agentSessionThreadId: "agents-rfp-demo-rfp-1" } };
+	await harness.owner.resetAgentsRfpDemo({ caller: ALICE });
+	assert.equal(harness.threadRecords.has("agents-rfp-demo-rfp-1"), false);
+});
+
+test("processing keeps the owner of the thread its run created, and recreates a deleted one for the starting caller", async () => {
+	let threadRecords = [];
+	const harness = createOwnedRunHarness({
+		advanceRfpDraftingAgentProcessing: async (current) => ({
+			changed: true,
+			state: current,
+			threadRecords: threadRecords.map((record) => ({ ...record })),
+		}),
+	});
+	await harness.owner.runAgentsRfpDemoJob({ caller: ALICE, runId: "run-alice" });
+	threadRecords = [{ ...createThreadRecord("agents-rfp-demo-rfp-1"), title: "Completed" }];
+	await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").title, "Completed");
+
+	harness.threadRecords.delete("agents-rfp-demo-rfp-1");
+	await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(harness.threadRecords.get("agents-rfp-demo-rfp-1").owner, "alice");
+});
+
+test("an RFP demo thread created with no starting caller has no owner", async () => {
+	const harness = createHarness({
+		advanceRfpDraftingAgentProcessing: async (current) => ({ changed: true, state: current, threadRecords: [createThreadRecord("rfp-thread-2")] }),
+	});
+	await harness.owner.advanceAgentsRfpDemoProcessing();
+	assert.equal(harness.threadRecords.get("rfp-thread-2").owner, null);
 });
 
 test("advance persists result threads, history and report generation", async () => {

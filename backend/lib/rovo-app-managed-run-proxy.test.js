@@ -167,6 +167,7 @@ test("proxyRovoAppChatRequest creates and starts AI Gateway managed runs", async
 		threadId: "thread-1",
 		requestBody,
 		requestedPortIndex: null,
+		mediaScope: null,
 	});
 	assert.equal(calls[6][1].backend, "ai-gateway");
 	assert.equal(calls[8][1], "thread-1");
