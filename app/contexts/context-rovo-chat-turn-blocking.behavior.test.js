@@ -96,14 +96,67 @@ test("a stream that ends without turn-complete while media is loading keeps the 
 	await (await startAction(() => chat().stopStreaming()))();
 	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
 	assert.equal(chat().activePrompt?.text, "Then a dog");
-	// The turn finalized without turn-complete, so the notice shows then.
+	// The user ended the turn with Stop, so no cut-short notice follows it.
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
+	// No stream was live, so Stop sent no backend cancel.
+	assert.deepEqual(cancelRunCalls(), []);
+});
+
+// Captures the provider's media-generation timeout instead of scheduling it, so
+// a test can release it without waiting 120 s or mocking the harness's own timers.
+function captureMediaTimeout(t, timeoutMs) {
+	const captured = [];
+	const originalSetTimeout = globalThis.setTimeout;
+	const originalWindowSetTimeout = window.setTimeout;
+	const capture = (schedule) => (callback, delay, ...args) => {
+		if (delay === timeoutMs) {
+			captured.push(callback);
+			return schedule(() => {}, 0);
+		}
+		return schedule(callback, delay, ...args);
+	};
+	globalThis.setTimeout = capture(originalSetTimeout);
+	window.setTimeout = capture(originalWindowSetTimeout.bind(window));
+	t.after(() => {
+		globalThis.setTimeout = originalSetTimeout;
+		window.setTimeout = originalWindowSetTimeout;
+	});
+	return {
+		count: () => captured.length,
+		fireLatest: () => React.act(async () => {
+			captured.at(-1)();
+		}),
+	};
+}
+
+test("a cut-short turn whose media widget is still loading shows the notice once the media timeout releases it, then advances the queue", async (t) => {
+	const { harness, server, chat } = await mountChat(t);
+	const mediaTimeout = captureMediaTimeout(t, harness.MEDIA_GENERATION_TIMEOUT_MS);
+	await send(chat, "Draw a cat");
+	await waitFor("the request", () => server.turns.length === 1);
+	await send(chat, "Then a dog");
+	const [turn] = server.turns;
+	turn.send({ type: "start" });
+	mediaLoading(turn, true);
+	await waitFor("media generation to start", () => chat().isMediaGenerating);
+	turn.end();
+	await waitFor("the stream to end", () => !chat().isStreaming);
+	await settle(40);
+	assert.equal(server.turns.length, 1);
+	assert.equal(chatState().messages.includes(`assistant:${harness.getIncompleteTurnUserMessage()}`), false);
+	assert.equal(mediaTimeout.count(), 1);
+
+	await mediaTimeout.fireLatest();
+	await waitFor("the queued prompt to dispatch", () => server.turns.length === 2);
+	assert.equal(chat().activePrompt?.text, "Then a dog");
+	assert.equal(chat().isMediaGenerating, false);
+	const notice = `assistant:${harness.getIncompleteTurnUserMessage()}`;
 	assert.deepEqual(chatState().messages.slice(0, 3), [
 		"user:Draw a cat",
 		"assistant:data-widget-loading",
-		`assistant:${harness.getIncompleteTurnUserMessage()}`,
+		notice,
 	]);
-	// No stream was live, so Stop sent no backend cancel.
-	assert.deepEqual(cancelRunCalls(), []);
+	assert.equal(chatState().messages.filter((message) => message === notice).length, 1);
 });
 
 test("current behaviour: turn-complete finalizes the turn even while a media widget is still loading, and the queue advances", async (t) => {

@@ -1,5 +1,4 @@
-import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
-import { findPromptUserMessageIndex } from "@/app/contexts/rovo-chat-helpers";
+import { findPromptUserMessageIndex, findReplyAfter, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 const MEDIA_WIDGET_TYPES = new Set(["image-preview", "audio-preview", "video-preview"]);
 
@@ -18,12 +17,7 @@ export function findLatestMediaLoadingState(
 	messages: ReadonlyArray<RovoUIMessage>,
 	activePromptId: string | null,
 ): boolean | null {
-	const turnStartIndex = findTurnUserMessageIndex(messages, activePromptId);
-	if (turnStartIndex === -1) {
-		return null;
-	}
-
-	const reply = messages.findLast((message, index) => index > turnStartIndex && message.role === "assistant");
+	const reply = findReplyAfter(messages, findTurnUserMessageIndex(messages, activePromptId));
 	if (!reply) {
 		return null;
 	}

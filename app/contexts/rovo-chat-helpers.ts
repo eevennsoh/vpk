@@ -322,14 +322,6 @@ export function getPromptMessageMetadata(prompt: QueuedPromptItem): RovoMessageM
 	return { ...prompt.options?.messageMetadata, promptId: prompt.id };
 }
 
-/** The index of the user message sent for `promptId`, or -1 before it lands. */
-export function findPromptUserMessageIndex(
-	messages: ReadonlyArray<RovoUIMessage>,
-	promptId: string,
-): number {
-	return messages.findLastIndex((message) => message.role === "user" && message.metadata?.promptId === promptId);
-}
-
 export function markPendingClarificationResolvedInMessages(
 	messages: ReadonlyArray<RovoUIMessage>,
 	options: SendPromptOptions | undefined,

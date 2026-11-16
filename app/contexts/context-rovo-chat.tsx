@@ -695,8 +695,9 @@ export function RovoChatProvider({
 			if (pendingTurnError) {
 				recordTurnError(pendingTurnError, messages);
 			} else if (isIncompleteTurnFinish({ messages, isAbort, isError, activePrompt: turnRef.current.activePrompt })) {
-				// Cut short: finalize once media generation settles so the queue moves on,
-				// keep the partial reply, and flag it then if turn-complete never came.
+				// Cut short: keep the partial reply and finalize, with the notice, once
+				// media generation settles (a widget left loading settles only through
+				// the media timeout, since its loading:false would have come on this stream).
 				dispatchTurn({ type: "turnCutShort" });
 				queueTick();
 			}

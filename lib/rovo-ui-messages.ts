@@ -556,6 +556,25 @@ export function hasTurnCompleteSignal(
 	return false;
 }
 
+/** The index of the user message sent for the queued prompt `promptId` (its metadata.promptId), or -1 before it lands. */
+export function findPromptUserMessageIndex(
+	messages: ReadonlyArray<RovoUIMessage>,
+	promptId: string,
+): number {
+	return messages.findLastIndex((message) => message.role === "user" && message.metadata?.promptId === promptId);
+}
+
+/** The latest assistant message after the user message at `userMessageIndex`, or undefined when there is none yet. */
+export function findReplyAfter(
+	messages: ReadonlyArray<RovoUIMessage>,
+	userMessageIndex: number,
+): RovoUIMessage | undefined {
+	if (userMessageIndex === -1) {
+		return undefined;
+	}
+	return messages.findLast((message, index) => index > userMessageIndex && message.role === "assistant");
+}
+
 function getIsoTimestamp(value: unknown): string | undefined {
 	if (typeof value !== "string") {
 		return undefined;

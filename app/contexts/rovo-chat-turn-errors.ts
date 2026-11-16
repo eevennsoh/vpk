@@ -1,5 +1,5 @@
-import { hasTurnCompleteSignal, type RovoUIMessage } from "@/lib/rovo-ui-messages";
-import { findPromptUserMessageIndex, type QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
+import { findPromptUserMessageIndex, findReplyAfter, hasTurnCompleteSignal, type RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
 
 /**
  * The error a failed turn ended with, shown after the last transcript message
@@ -84,12 +84,7 @@ export function hasTurnCompleteForActivePrompt(
 	messages: ReadonlyArray<RovoUIMessage>,
 	prompt: QueuedPromptItem,
 ): boolean {
-	const promptIndex = findPromptUserMessageIndex(messages, prompt.id);
-	if (promptIndex === -1) {
-		return false;
-	}
-
-	const reply = messages.findLast((message, index) => index > promptIndex && message.role === "assistant");
+	const reply = findReplyAfter(messages, findPromptUserMessageIndex(messages, prompt.id));
 	return reply !== undefined && hasTurnCompleteSignal(reply);
 }
 

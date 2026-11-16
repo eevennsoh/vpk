@@ -35,8 +35,11 @@ export interface RovoChatTurnState {
 	readonly turnCompleteSeen: boolean;
 	/**
 	 * The active prompt's stream closed cleanly without turn-complete. The
-	 * provider shows the cut-short notice when the turn finalizes (after media
-	 * generation settles), and only if turn-complete still has not arrived.
+	 * provider shows the cut-short notice when the turn finalizes, which waits
+	 * for media generation to settle. The backend writes every widget-loading
+	 * part into the same stream, so a widget still loading when the stream closed
+	 * settles only through the media timeout. Stop clears the flag: the user
+	 * ended the turn, so no notice follows.
 	 */
 	readonly cutShort: boolean;
 	/** A send (first attempt, retry or edit resend) is between dispatch and its request settling. */
@@ -134,9 +137,15 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				retryCount: event.resetRetries ? 0 : state.retryCount,
 			};
 		case "turnCutShort":
+			// Leaves turnCompleteSeen as is: shouldNoticeCutShortTurn still reads it,
+			// though turn-complete cannot arrive once its stream has closed.
 			return state.activePrompt ? { ...state, finalizeRequested: true, cutShort: true } : state;
 		case "stopRequested":
-			return state.activePrompt && !state.finalizeRequested ? { ...state, finalizeRequested: true } : state;
+			if (!state.activePrompt || (state.finalizeRequested && !state.cutShort)) {
+				return state;
+			}
+			// A deliberate Stop ends the turn without the cut-short notice.
+			return { ...state, finalizeRequested: true, cutShort: false };
 		case "finalize":
 			if (!state.activePrompt) {
 				return state;
@@ -164,7 +173,7 @@ export function canFinalizeActivePrompt(state: RovoChatTurnState, env: RovoChatT
 
 /**
  * Whether finalizing the active prompt now should show the cut-short notice:
- * its stream closed without turn-complete, and turn-complete never arrived
+ * its stream closed without turn-complete and the user did not press Stop
  * while the turn waited for media generation to settle.
  */
 export function shouldNoticeCutShortTurn(state: RovoChatTurnState): boolean {

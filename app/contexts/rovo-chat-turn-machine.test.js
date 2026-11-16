@@ -110,6 +110,16 @@ test("stopRequested finalizes the active prompt and is a no-op without one", () 
 	assert.equal(reduce(INITIAL, { type: "stopRequested" }), INITIAL);
 	const active = { ...INITIAL, activePrompt: prompt("a") };
 	assert.equal(reduce(active, { type: "stopRequested" }).finalizeRequested, true);
+	const failed = { ...active, finalizeRequested: true };
+	assert.equal(reduce(failed, { type: "stopRequested" }), failed);
+});
+
+test("Stop on a cut-short turn still waiting for media drops the cut-short notice", () => {
+	const cut = reduce({ ...INITIAL, activePrompt: prompt("a") }, { type: "turnCutShort" });
+	const stopped = reduce(cut, { type: "stopRequested" });
+	assert.equal(stopped.finalizeRequested, true);
+	assert.equal(stopped.cutShort, false);
+	assert.equal(shouldNoticeCutShortTurn(stopped), false);
 });
 
 test("turnCompleteSeen is idempotent", () => {

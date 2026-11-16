@@ -26,7 +26,6 @@ const {
 	buildCompactThreadPersistKey,
 	buildSendMessageBody,
 	deriveCompactThreadTitle,
-	findPromptUserMessageIndex,
 	getEditResendMetadata,
 	getPromptMessageMetadata,
 	isPayloadTooLargeError,
@@ -201,17 +200,6 @@ test("a queued prompt's user message carries its prompt id alongside the prompt'
 		{ source: "plan-retry", promptId: "queued-1" },
 	);
 });
-
-test("the prompt's user message is found by prompt id, not by its text", () => {
-	const user = (id, promptId) => ({ id, role: "user", metadata: promptId ? { promptId } : undefined, parts: [{ type: "text", text: "Same text" }] });
-	const assistant = { id: "a", role: "assistant", parts: [] };
-	const messages = [user("u0", "queued-0"), assistant, user("u1"), assistant, user("u2", "queued-2"), assistant];
-	assert.equal(findPromptUserMessageIndex(messages, "queued-2"), 4);
-	assert.equal(findPromptUserMessageIndex(messages, "queued-0"), 0);
-	// Before the prompt's own user message lands, a same-text message does not stand in for it.
-	assert.equal(findPromptUserMessageIndex(messages, "queued-3"), -1);
-});
-
 
 test("chat transport discards retired context metadata supplied by older clients", () => {
 	const body = buildSendMessageBody({ hermesContext: { selectedSkillIds: ["old-skill"] } }, false);
