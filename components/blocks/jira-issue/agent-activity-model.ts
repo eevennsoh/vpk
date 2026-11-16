@@ -25,6 +25,8 @@ export type JiraIssueAgentActivityLayout = "merged" | "split";
 
 interface JiraIssueAgentActivitySummaryInput {
 	state: JiraIssueActiveAgentState | "completed";
+	/** Outcome copy for a completed run; `"Failed"` marks a failed run. */
+	label?: string;
 }
 
 interface JiraIssueAgentActivityRowInput extends JiraIssueAgentActivitySummaryInput {
@@ -55,12 +57,14 @@ export function summarizeJiraIssueAgentActivities(
 		const completedActivities = activities
 			.map((activity, index) => ({ activity, index }))
 			.filter(({ activity }) => activity.state === "completed");
-		const featured = completedActivities[0];
+		// A failure anywhere in the group decides its status, whatever the input order.
+		const failed = completedActivities.find(({ activity }) => activity.label === "Failed");
+		const featured = failed ?? completedActivities[0];
 
 		return {
 			activityCount: completedActivities.length,
 			featuredActivityIndex: featured === undefined ? null : featured.index,
-			label: "Finished",
+			label: failed === undefined ? "Finished" : "Failed",
 			priorityCount: completedActivities.length,
 			priorityState: "working",
 		};

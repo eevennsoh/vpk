@@ -166,6 +166,22 @@ test("completed-only activities share one flyout row when merged and keep a row 
 	);
 });
 
+test("a merged finished row reports a failure even when a success comes first", () => {
+	assert.deepEqual(
+		summarizeJiraIssueAgentActivities([
+			{ state: "completed", label: "Finished" },
+			{ state: "completed", label: "Failed" },
+		]),
+		{
+			activityCount: 2,
+			featuredActivityIndex: 1,
+			label: "Failed",
+			priorityCount: 2,
+			priorityState: "working",
+		},
+	);
+});
+
 test("related detached sessions keep working mode so the grey backdrop stays", () => {
 	assert.equal(resolveRelatedJiraIssueAgentActivityMode("none", true), "working");
 	assert.equal(resolveRelatedJiraIssueAgentActivityMode(undefined, true), "working");
