@@ -212,11 +212,21 @@ test("in production a video a turn plays through a preview that already declares
 	const mediaPath = (name) => `media/videos/demo/${name}`;
 	const mediaUrl = (name) => `/api/rovo/generated-media?path=${encodeURIComponent(mediaPath(name))}`;
 	// Each preview shape the client plays a generated video from while keeping the body it
-	// was given (components/projects/shared/lib/generative-widget-parse.ts).
+	// was given (components/projects/shared/lib/generative-widget-parse.ts). The previews are
+	// built inside the caller's scope directly; that /api/chat-sdk and /api/rovo/chat turns
+	// run in it is covered by the generated-video test above and the managed-run suites.
 	const previews = [
 		["video-body.mp4", "genui-preview", (name) => ({ body: { kind: "video", videoUrl: mediaUrl(name) } })],
 		["json-render.mp4", "genui-preview", (name) => ({
 			body: { kind: "json-render", spec: { root: "r", elements: {} } },
+			spec: { root: "r", elements: { r: { type: "Text", props: { text: `Rendered ${mediaPath(name)}` } } } },
+		})],
+		["json-render-body.mp4", "genui-preview", (name) => ({
+			body: { kind: "json-render", spec: { root: "r", elements: { r: { type: "Text", props: { text: `Rendered ${mediaPath(name)}` } } } } },
+		})],
+		// A video body the client rejects falls back to the top-level spec and the video in it.
+		["invalid-video-body.mp4", "genui-preview", (name) => ({
+			body: { kind: "video" },
 			spec: { root: "r", elements: { r: { type: "Text", props: { text: `Rendered ${mediaPath(name)}` } } } },
 		})],
 		["video-preview.mp4", "video-preview", (name) => ({ videoUrl: mediaUrl(name), body: { kind: "video", videoUrl: mediaUrl(name) } })],
