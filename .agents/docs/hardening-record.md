@@ -27,6 +27,7 @@ Each line is settled. Reopen one only with the owner.
 - **Stuck-port rerun text**: approved and built. A rerun's text starts as its own paragraph; text that was still held back when the port stuck is discarded as before, so the first attempt's text ends where it had been shown (`backend/chat/rovo-stream.js`, pinned in `backend/chat/rovo-chat-turn.behavior.test.js`).
 - **Three dead backend paths deleted** (owner decision "delete"): the run queue, the replace-on-request path and `cancelOnComplete`. The port-available plumbing that only the queue used went with them.
 - **Cut-short notice wait**: a cut-short turn waits `CUT_SHORT_MEDIA_WAIT_MS` (5 s, provisional; the owner may change it) for pending media instead of the full media timeout (`app/contexts/use-rovo-chat-media-generation.ts`).
+- **Thread change in the chat provider** (#2358): a thread change stops and detaches the departing request first, then swaps the transcript and resets the turn in one synchronous step, so a stopped reply or a cut-short notice never lands on the new thread; request liveness comes from the turn reducer (`hasLiveRequest` in `app/contexts/rovo-chat-turn-machine.ts`). Switching threads now drops prompts still queued on the old thread (before, they were sent into the new one); the owner has not confirmed this yet.
 
 ### Declined or deferred
 
@@ -73,8 +74,11 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 - Studio shell is the largest source file: `components/projects/studio/components/rovo-app-shell.tsx`, 3,330 lines.
 - Eight behaviour differences between the Rovo and Studio shells were never decided (for example Studio ignores text typed after a prefill).
 - On `/rovo`, directory-autocomplete rows are clickable one render before the composer can take the click.
-- If a whole response (media loading, then close) arrives before React commits the submitted state, the turn finalizes at once: the cut-short notice can appear above the user's question with the widget still marked loading (`app/contexts/context-rovo-chat.tsx`, `maybeFinalizeAndProcess`).
-- Switching threads while a cut-short turn waits for media leaves its timer live; when it fires, the notice is attached to the newly selected thread's last message (`selectThread` in the same file).
+- A retry that fires while a thread switch is still detaching the old run streams its reply into the newly selected thread (`retryActivePrompt` in `app/contexts/context-rovo-chat.tsx` is not covered by the stop that already ran).
+- A first prompt that is waiting for its thread to be created disappears if a thread selection invalidates the creation and is then superseded.
+- An edit resend that is waiting for the stream status to commit survives a thread switch and then fails against the new thread.
+- An edit resend started before an earlier request's streaming status commits does not stop that request, so the two requests overlap and the earlier one's finish can be recorded against the resend. Fix direction: serialize request replacement for edits.
+- The retry countdown timer is cancelled when the provider is hidden through `<Activity>` (Butter's retained views) and is not restarted when it is shown again, so the prompt can stay active.
 - Remote preview capture: Ctrl/Cmd+V pastes the remote clipboard.
 - F-2c: 11 suspected Butter regressions; only the keyboard traps are fixed.
 - The pull-request details rail exists as three copies.
