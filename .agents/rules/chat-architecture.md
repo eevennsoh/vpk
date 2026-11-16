@@ -42,7 +42,7 @@ Custom data parts sent by the backend (`data-` prefix in SSE, stripped in fronte
 - `title` — thread/artifact title update
 - `route-decision` — routing metadata
 - `tool-approval` — tool approval request (file/bash permissions)
-- `turn-complete` — turn boundary signal. Every backend route must end a successful turn with it: `RovoChatProvider` treats a stream that closes without it as cut short and shows an error on that turn once media generation settles (a widget still loading when the stream closed settles only through the media timeout; Stop drops the notice). The reply is matched to its prompt by the user message's `metadata.promptId`, never by timestamp. Each route's stream test asserts it (for example `backend/chat/chat-sdk-handler.contract.test.js`).
+- `turn-complete` — turn boundary signal. Every backend route must end a successful turn with it: `RovoChatProvider` treats a stream that closes without it as cut short and shows an error on that turn once media generation settles (a widget still loading when the stream closed settles only through the short `CUT_SHORT_MEDIA_WAIT_MS` wait, not the full media timeout; Stop drops the notice). The reply is matched to its prompt by the user message's `metadata.promptId`, never by timestamp. Each route's stream test asserts it (for example `backend/chat/chat-sdk-handler.contract.test.js`).
 
 Backend streaming (`backend/chat/*`, mounted by route handlers):
 

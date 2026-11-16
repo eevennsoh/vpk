@@ -38,7 +38,7 @@ export interface RovoChatTurnState {
 	 * provider shows the cut-short notice when the turn finalizes, which waits
 	 * for media generation to settle. The backend writes every widget-loading
 	 * part into the same stream, so a widget still loading when the stream closed
-	 * settles only through the media timeout. Stop clears the flag: the user
+	 * settles only through the short cut-short media wait. Stop clears the flag: the user
 	 * ended the turn, so no notice follows.
 	 */
 	readonly cutShort: boolean;

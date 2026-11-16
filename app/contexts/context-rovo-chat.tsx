@@ -137,7 +137,7 @@ import {
 	type RovoChatTurnEnvironment,
 } from "@/app/contexts/rovo-chat-turn-machine";
 import { useRovoChatTurnMachine } from "@/app/contexts/use-rovo-chat-turn-machine";
-import { useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
+import { CUT_SHORT_MEDIA_WAIT_MS, useRovoChatMediaGeneration } from "@/app/contexts/use-rovo-chat-media-generation";
 import {
 	createTurnError,
 	hasTurnCompleteForActivePrompt,
@@ -697,7 +697,7 @@ export function RovoChatProvider({
 			} else if (isIncompleteTurnFinish({ messages, isAbort, isError, activePrompt: turnRef.current.activePrompt })) {
 				// Cut short: keep the partial reply and finalize, with the notice, once
 				// media generation settles (a widget left loading settles only through
-				// the media timeout, since its loading:false would have come on this stream).
+				// the short cut-short media wait, since its loading:false would have come on this stream).
 				dispatchTurn({ type: "turnCutShort" });
 				queueTick();
 			}
@@ -797,7 +797,7 @@ export function RovoChatProvider({
 		}
 	}, [dispatchTurn, rawUiMessages, queueTick, turnRef]);
 
-	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating } = useRovoChatMediaGeneration(rawUiMessages, activePrompt?.id ?? null, queueTick);
+	const { isMediaGenerating, isMediaGeneratingRef, clearMediaGenerating, shortenMediaWait } = useRovoChatMediaGeneration(rawUiMessages, activePrompt?.id ?? null, queueTick);
 
 	// The provider-owned facts the turn machine's guards read alongside its own state.
 	const readTurnEnvironment = useCallback((): RovoChatTurnEnvironment => ({
@@ -1218,6 +1218,11 @@ export function RovoChatProvider({
 	}, [clearMediaGenerating, dispatchTurn, rawUiMessagesRef, recordTurnError, turnRef]);
 
 	const maybeFinalizeAndProcess = useCallback(() => {
+		// A cut-short turn waits only briefly for a media widget still loading.
+		if (shouldNoticeCutShortTurn(turnRef.current)) {
+			shortenMediaWait(CUT_SHORT_MEDIA_WAIT_MS);
+		}
+
 		if (canFinalizeActivePrompt(turnRef.current, readTurnEnvironment())) {
 			finalizeActivePrompt();
 		}
@@ -1225,7 +1230,7 @@ export function RovoChatProvider({
 		if (!turnRef.current.activePrompt && !isCancellingRef.current) {
 			void processNextPromptRef.current();
 		}
-	}, [finalizeActivePrompt, readTurnEnvironment, turnRef]);
+	}, [finalizeActivePrompt, readTurnEnvironment, shortenMediaWait, turnRef]);
 
 	useEffect(() => {
 		maybeFinalizeAndProcessRef.current = maybeFinalizeAndProcess;
