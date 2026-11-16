@@ -4,13 +4,17 @@
 // Machine-wide budget for local dev stacks, read by `pnpm run dev:tmux:start` before it starts a
 // new stack:
 //
-//   node scripts/lib/dev-stack-budget.js check --worktree <path> [--force]
+//   node scripts/lib/dev-stack-budget.js check --worktree <path> [--force] [--no-auto-stop]
 //
 // Exit 0: start. Exit 3: over budget, or under memory pressure while another stack runs (lists
 // the live stacks, which show a live task, and how to stop the ones that do not; --force starts
 // anyway). Exit 4: a next-server already serves this
 // worktree outside its tmux session (never overridden: a second server for one worktree is the
 // duplicate this guard exists to stop).
+//
+// Over the stack count, the check first stops the fewest idle worktree stacks of this repo that
+// gets it back under budget (scripts/lib/dev-stack-auto-stop.js), then starts.
+// --no-auto-stop or VPK_DEV_NO_AUTO_STOP=1 turns that off; --force never stops anything.
 //
 // VPK_DEV_STACK_INVENTORY=<file.json> replaces the live inventory (tests).
 
@@ -94,13 +98,12 @@ function isCodexWorktree(worktree, env = process.env) {
 // Evidence that a live task uses this stack, or null. CPU is not evidence: a dev server in use
 // reads under 20% between requests. Recent activity is (scripts/lib/dev-stack-activity.js): an
 // agent working in a worktree often keeps its own cwd elsewhere.
-function inUseEvidence(stack, inventory, { primaryRoot, activityOf, now, idleSecs }) {
+function inUseEvidence(stack, inventory, { primaryRoot, newest, now, idleSecs }) {
 	if (primaryRoot && stack.worktree === realPath(primaryRoot)) return "the primary checkout";
 	const attached = (inventory.sessions ?? []).find((session) => session.attached && realPath(session.path) === stack.worktree);
 	if (attached) return `a tmux client is attached to ${attached.name}`;
 	const operator = (inventory.operators ?? []).find((candidate) => within(realPath(candidate.cwd), stack.worktree));
 	if (operator) return `${operator.name} pid ${operator.pid} has its cwd here`;
-	const newest = activityOf(stack.worktree);
 	if (newest && now - newest.mtimeMs < idleSecs * 1000) return `recent activity: ${newest.source} written ${Math.max(0, Math.round((now - newest.mtimeMs) / 60_000))}m ago`;
 	return null;
 }
@@ -130,13 +133,20 @@ function describeStacks(inventory, {
 	// With the repo's worktree list known, a stack outside every root is another project's
 	// next-server (e.g. a sibling repo's docs site): `pnpm ports kill` cannot stop it.
 	const knownRoots = new Set(worktreeRoots.map(realPath));
-	return [...byRoot.values()].map((stack) => ({
-		...stack,
-		codex: isCodexWorktree(stack.worktree, env),
-		external: knownRoots.size > 0 && !knownRoots.has(stack.worktree),
-		inUse: inUseEvidence(stack, inventory, { primaryRoot, activityOf, now, idleSecs }),
-		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
-	}));
+	return [...byRoot.values()].map((stack) => {
+		const newest = activityOf(stack.worktree);
+		return {
+			...stack,
+			codex: isCodexWorktree(stack.worktree, env),
+			external: knownRoots.size > 0 && !knownRoots.has(stack.worktree),
+			// A linked worktree `git worktree list` names, other than the primary checkout: the only
+			// stacks auto-stop may consider.
+			linkedWorktree: knownRoots.has(stack.worktree) && (!primaryRoot || stack.worktree !== realPath(primaryRoot)),
+			inUse: inUseEvidence(stack, inventory, { primaryRoot, newest, now, idleSecs }),
+			lastActivityMs: newest?.mtimeMs ?? null,
+			quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
+		};
+	});
 }
 
 function evaluateBudget(inventory, {
@@ -158,13 +168,14 @@ function evaluateBudget(inventory, {
 	const otherStacks = describeStacks(inventory, { env, idleCpuMax, extraRoots: [ownRoot], worktreeRoots, ...(activityOf ? { activityOf } : {}), ...(now ? { now } : {}) });
 	const reasons = [];
 	const warnings = [];
-	if (otherStacks.length + 1 > budget) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
+	const overBy = Math.max(0, otherStacks.length + 1 - budget);
+	if (overBy > 0) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
 	// Memory pressure refuses only when there is another stack to stop; with none, it warns.
 	const pressure = pressureReasons(inventory);
 	if (pressure.length > 0 && otherStacks.length > 0) reasons.push(...pressure);
 	else if (pressure.length > 0) warnings.push(`memory pressure (${pressure.join("; ")}), but no other dev stack runs; starting`);
 	const exitCode = reasons.length > 0 && !force ? EXIT_OVER_BUDGET : 0;
-	return { exitCode, forced: reasons.length > 0 && force, ownServers, otherStacks, reasons, warnings };
+	return { exitCode, forced: reasons.length > 0 && force, overBy, ownServers, otherStacks, pressure, reasons, warnings };
 }
 
 function shellQuote(value) {
@@ -199,6 +210,17 @@ function stackLabels(worktrees) {
 	);
 }
 
+// Why auto-stop did not get this start under budget, for the refusal message.
+function describeAutoStop(autoStop) {
+	if (!autoStop) return null;
+	if (autoStop.disabled) return "Auto-stop is off (--no-auto-stop or VPK_DEV_NO_AUTO_STOP=1).";
+	const { needed, safe, stopped } = autoStop;
+	const plural = (count) => `${count} stack${count === 1 ? "" : "s"}`;
+	if (stopped > 0) return `Auto-stopped ${plural(stopped)}, but ${plural(needed - stopped)} more must stop; the rest are listed below.`;
+	if (needed > 0) return `Auto-stop needs ${plural(needed)} safe to stop and found ${safe}, so it stopped nothing.`;
+	return null;
+}
+
 function formatVerdict(verdict, { worktree }) {
 	if (verdict.exitCode === EXIT_DUPLICATE_SERVER) {
 		return [
@@ -209,6 +231,8 @@ function formatVerdict(verdict, { worktree }) {
 	const lines = (verdict.warnings ?? []).map((warning) => `[dev:tmux] Warning: ${warning}.`);
 	if (verdict.reasons.length === 0) return lines.join("\n");
 	lines.push(`[dev:tmux] ${verdict.forced ? "Starting anyway (--force): " : "Not starting: "}${verdict.reasons.join("; ")}.`);
+	const autoStopNote = describeAutoStop(verdict.autoStop);
+	if (autoStopNote) lines.push(`[dev:tmux] ${autoStopNote}`);
 	if (verdict.otherStacks.length > 0) {
 		lines.push("", `  Running dev stacks (${verdict.otherStacks.length})`, `  ${RULE}`);
 		const labels = stackLabels(verdict.otherStacks.map((stack) => stack.worktree));
@@ -231,21 +255,39 @@ function readInventory(env = process.env) {
 	return collectInventory({ env });
 }
 
-function main(argv) {
+function autoStopDisabled(argv, env) {
+	return argv.includes("--no-auto-stop") || ["1", "true", "yes"].includes(String(env.VPK_DEV_NO_AUTO_STOP ?? "").toLowerCase());
+}
+
+function main(argv, { env = process.env, stderr = process.stderr } = {}) {
 	const [command, ...rest] = argv;
 	const worktreeIndex = rest.indexOf("--worktree");
 	const worktree = worktreeIndex >= 0 ? rest[worktreeIndex + 1] : null;
 	if (command !== "check" || !worktree) {
-		process.stderr.write("Usage: dev-stack-budget.js check --worktree <path> [--force]\n");
+		stderr.write("Usage: dev-stack-budget.js check --worktree <path> [--force] [--no-auto-stop]\n");
 		return 2;
 	}
-	const verdict = evaluateBudget(readInventory(), { force: rest.includes("--force"), worktree, worktreeRoots: listWorktreeRoots(worktree) });
+	const worktreeRoots = listWorktreeRoots(worktree);
+	const options = { env, force: rest.includes("--force"), worktree, worktreeRoots };
+	const inventory = readInventory(env);
+	let verdict = evaluateBudget(inventory, options);
+	if (verdict.exitCode === EXIT_OVER_BUDGET && autoStopDisabled(rest, env)) {
+		verdict = { ...verdict, autoStop: { disabled: true } };
+	} else if (verdict.exitCode === EXIT_OVER_BUDGET) {
+		// Required here, not at the top: the auto-stop's stop path loads modules that load this one.
+		const { autoStopOverBudget } = require("./dev-stack-auto-stop.js");
+		verdict = autoStopOverBudget(verdict, {
+			evaluate: (remaining) => evaluateBudget(remaining, options),
+			inventory,
+			worktree,
+			env,
+			log: (line) => stderr.write(`${line}\n`),
+		});
+	}
 	const message = formatVerdict(verdict, { worktree });
-	if (message) process.stderr.write(`${message}\n`);
+	if (message) stderr.write(`${message}\n`);
 	return verdict.exitCode;
 }
-
-if (require.main === module) process.exitCode = main(process.argv.slice(2));
 
 module.exports = {
 	DEV_STACK_BUDGET,
@@ -253,7 +295,14 @@ module.exports = {
 	EXIT_OVER_BUDGET,
 	collectInventory,
 	describeStacks,
+	listTmuxSessions,
+	main,
+	realPath,
+	stackLabels,
 	evaluateBudget,
 	formatVerdict,
 	listWorktreeRoots,
 };
+
+// After the exports: main() loads the auto-stop module, which requires this one back.
+if (require.main === module) process.exitCode = main(process.argv.slice(2));
