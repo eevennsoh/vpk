@@ -275,7 +275,8 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					)}
 					key={segment.kind}
 				>
-					{index > 0 ? <MetadataDot /> : null}
+					{/* An unnamed agent chunk is just the mark, so nothing after it needs a separator. */}
+					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
