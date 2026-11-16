@@ -4,7 +4,11 @@ const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./me
 // Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
 const OVER = SWAP + 13;
 
-const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+
+const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, describeStacks, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
 
 const calm = { servers: [], swapUsedGb: 2, pressureLevel: 1 };
 const stacks = (count) => Array.from({ length: count }, (_, index) => ({ pid: 100 + index, cwd: `/wt/${index}`, cpu: 1 }));
@@ -73,12 +77,12 @@ test("each other stack is labelled by evidence of a live task, not by CPU", () =
 	const verdict = evaluateBudget(inventory, { env: { HOME: "/home/me" }, worktree: "/wt/new", worktreeRoots });
 	assert.equal(verdict.exitCode, EXIT_OVER_BUDGET);
 	const text = formatVerdict(verdict, { worktree: "/wt/new" });
-	assert.match(text, /quiet {2}\/main .*\n {8}in use: the primary checkout; leave it running/u);
-	assert.match(text, /quiet {2}\/wt\/attached .*\n {8}in use: a tmux client is attached to vpk-dev-attached; leave it running/u);
-	assert.match(text, /quiet {2}\/wt\/operated .*\n {8}in use: claude pid 77 has its cwd here; leave it running/u);
-	assert.match(text, /busy {3}\/wt\/free .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/free'/u);
-	assert.match(text, /quiet {2}\/home\/me\/\.codex\/worktrees\/ab12\/vpk .*\n {8}Codex worktree: check its thread before stopping/u);
-	assert.equal((text.match(/stop: pnpm ports kill/gu) ?? []).length, 1, "a stop command only for the stack with no live task");
+	assert.match(text, /\(quiet · pid 1 1%\)\n {5}\/main\n {5}In use: the primary checkout\. Leave it running\./u);
+	assert.match(text, /\/wt\/attached\n {5}In use: a tmux client is attached to vpk-dev-attached\. Leave it running\./u);
+	assert.match(text, /\/wt\/operated\n {5}In use: claude pid 77 has its cwd here\. Leave it running\./u);
+	assert.match(text, /free {2}\(busy · pid 4 150%\)\n {5}\/wt\/free\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/wt\/free'/u);
+	assert.match(text, /\/home\/me\/\.codex\/worktrees\/ab12\/vpk\n {5}Codex worktree\. Check its thread before stopping it\./u);
+	assert.equal((text.match(/Stop it: /gu) ?? []).length, 1, "a stop command only for the stack with no live task");
 	assert.doesNotMatch(text, /\bidle\b/u);
 });
 
@@ -100,6 +104,90 @@ test("a stack with recent activity is in use even with no agent process in it, a
 		{ worktree: "/wt/new", activityOf: (worktree) => activity[worktree] ?? null, now },
 	);
 	const text = formatVerdict(verdict, { worktree: "/wt/new" });
-	assert.match(text, /\/wt\/busy-agent .*\n {8}in use: recent activity: dev log written 4m ago; leave it running/u);
-	assert.match(text, /\/wt\/stale .*\n {8}no live task seen; stop: pnpm ports kill '\/wt\/stale'/u);
+	assert.match(text, /\/wt\/busy-agent\n {5}In use: recent activity: dev log written 4m ago\. Leave it running\./u);
+	assert.match(text, /\/wt\/stale\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/wt\/stale'/u);
+});
+
+// Regression: the budget listed a sibling repo's next-server (vpk-grab's docs site) with
+// "stop: pnpm ports kill '<its path>'", which fails because that path is not a worktree here.
+test("a stack outside this repo's worktrees gets a PID stop command, not pnpm ports kill", () => {
+	const worktreeRoots = ["/repo", "/repo/.claude/worktrees/a", "/repo/.claude/worktrees/b", "/repo/.claude/worktrees/c"];
+	const verdict = evaluateBudget(
+		{ ...calm, servers: [
+			{ pid: 11, cwd: "/repo/.claude/worktrees/a", cpu: 1 },
+			{ pid: 12, cwd: "/repo/.claude/worktrees/b", cpu: 1 },
+			{ pid: 13, cwd: "/repo/.claude/worktrees/c", cpu: 1 },
+			{ pid: 14, cwd: "/elsewhere/vpk-grab/apps/website", cpu: 30 },
+		] },
+		{ worktree: "/repo/.claude/worktrees/new", worktreeRoots, activityOf: () => null },
+	);
+	assert.equal(verdict.exitCode, EXIT_OVER_BUDGET);
+	const text = formatVerdict(verdict, { worktree: "/repo/.claude/worktrees/new" });
+	assert.match(text, /\/elsewhere\/vpk-grab\/apps\/website\n {5}Not a worktree of this repo, so `pnpm ports kill` can't stop it\.\n {5}Stop it: kill 14/u);
+	assert.doesNotMatch(text, /pnpm ports kill '\/elsewhere/u);
+	assert.match(text, /Stop it: pnpm ports kill '\/repo\/\.claude\/worktrees\/a'/u);
+});
+
+test("own worktrees are never external: Codex roots, subfolders, and prefix siblings classify correctly", () => {
+	const codexRoot = "/Users/me/.codex/worktrees/ab12/vpk";
+	const env = { HOME: "/Users/me" };
+	const byWorktree = (inventory, worktreeRoots) => Object.fromEntries(
+		describeStacks(inventory, { env, worktreeRoots, activityOf: () => null }).map((stack) => [stack.worktree, stack]),
+	);
+	const stacks = byWorktree({ servers: [
+		{ pid: 1, cwd: codexRoot, cpu: 1 },
+		{ pid: 2, cwd: "/a/vpk/apps/docs", cpu: 1 },
+		{ pid: 3, cwd: "/a/vpk-other", cpu: 1 },
+		{ pid: 4, cwd: "/Users/me/.codex/worktrees/cd34/vpk", cpu: 1 },
+	] }, ["/a/vpk", codexRoot]);
+	assert.equal(stacks[codexRoot].external, false, "a listed Codex worktree is ours");
+	assert.equal(stacks[codexRoot].codex, true);
+	assert.equal(stacks["/a/vpk"].external, false, "a server in a subfolder groups under its worktree");
+	assert.equal(stacks["/a/vpk-other"].external, true, "a prefix sibling is not inside /a/vpk");
+	assert.equal(stacks["/Users/me/.codex/worktrees/cd34/vpk"].external, true, "a Codex checkout git does not list is foreign");
+	assert.ok(Object.values(byWorktree({ servers: [{ pid: 5, cwd: "/x", cpu: 1 }] }, [])).every((stack) => !stack.external), "with no worktree list, nothing is external");
+});
+
+test("a worktree root given through a symlink still matches the server's real cwd", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dev-stack-budget-")));
+	try {
+		const real = path.join(tempDir, "repo");
+		const foreign = path.join(tempDir, "other");
+		fs.mkdirSync(real);
+		fs.mkdirSync(foreign);
+		const link = path.join(tempDir, "link");
+		fs.symlinkSync(real, link);
+		const stacks = describeStacks(
+			{ servers: [{ pid: 1, cwd: real, cpu: 1 }, { pid: 2, cwd: foreign, cpu: 1 }] },
+			{ worktreeRoots: [link], activityOf: () => null },
+		);
+		assert.equal(stacks.find((stack) => stack.worktree === real)?.external, false);
+		assert.equal(stacks.find((stack) => stack.worktree === foreign)?.external, true);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("each listed stack is its own numbered block with its path on a separate line", () => {
+	const verdict = evaluateBudget({ ...calm, servers: stacks(4) }, { worktree: "/wt/new", activityOf: () => null });
+	const text = formatVerdict(verdict, { worktree: "/wt/new" });
+	assert.match(text, /Running dev stacks \(4\)/u);
+	assert.match(text, /\n {2}1\. 0 {2}\(quiet · pid 100 1%\)\n {5}\/wt\/0\n/u);
+	assert.match(text, /\n\n {2}2\. 1 /u, "a blank line separates stacks");
+});
+
+test("stacks that share a folder name are labelled with their parent folder", () => {
+	const verdict = evaluateBudget(
+		{ ...calm, servers: [
+			{ pid: 21, cwd: "/codex/c891/vpk", cpu: 0 },
+			{ pid: 22, cwd: "/codex/4b53/vpk", cpu: 0 },
+			{ pid: 23, cwd: "/elsewhere/website", cpu: 0 },
+			{ pid: 24, cwd: "/codex/43a8/vpk", cpu: 0 },
+		] },
+		{ worktree: "/repo", activityOf: () => null },
+	);
+	const text = formatVerdict(verdict, { worktree: "/repo" });
+	assert.match(text, /1\. c891\/vpk {2}\(/u);
+	assert.match(text, /2\. 4b53\/vpk {2}\(/u);
+	assert.match(text, /3\. website {2}\(/u);
 });

@@ -24,6 +24,7 @@ const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
 const { listListenerCwds, listenerOwnership, probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
+const { collectInventory } = require("./lib/dev-stack-budget");
 const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
 const { measureNextDir } = require("./lib/next-dev-output");
 const { EXIT_STOP_REFUSED, decideStop, recordStop, refusalMessage } = require("./lib/dev-stack-activity");
@@ -471,6 +472,28 @@ function printKillCandidates(worktrees) {
 	}
 }
 
+// `pnpm ports kill` only stops this repo's worktree stacks. The dev-stack budget can list another
+// project's next-server by its path, so when that path is passed here, say how to stop it instead
+// of listing unrelated worktrees. Paths are compared as realpaths (lsof reports /private/tmp, not
+// /tmp), and a server inside any of this repo's worktrees is never offered for a raw kill: that
+// would skip the in-use refusal `pnpm ports kill` gives.
+function externalStopHint(query, servers, worktrees = []) {
+	if (!query || !path.isAbsolute(query)) return null;
+	const root = canonicalWorktreePath(query);
+	const ours = worktrees.map((worktree) => ({ path: canonicalWorktreePath(worktree.path) }));
+	const inside = servers.filter((server) => {
+		if (!server.cwd) return false;
+		const cwd = canonicalWorktreePath(server.cwd);
+		if (cwd !== root && !cwd.startsWith(`${root}${path.sep}`)) return false;
+		return !findCurrentWorktree(cwd, ours);
+	});
+	if (inside.length === 0) return null;
+	return [
+		`${query} is not a worktree of this repo, so \`pnpm ports kill\` can't stop it.`,
+		`Its next-server: ${inside.map((server) => `pid ${server.pid}`).join(", ")}. Stop it with: kill ${inside.map((server) => server.pid).join(" ")}`,
+	];
+}
+
 function standaloneTmuxBinary() {
 	for (const candidate of [
 		process.env.VPK_TMUX_BIN,
@@ -703,6 +726,11 @@ function runKill(query, { force = false } = {}) {
 			console.error(`"${query}" matches multiple worktrees — be more specific:\n`);
 			printKillCandidates(result.candidates);
 		} else {
+			const hint = externalStopHint(query, collectInventory().servers, worktrees);
+			if (hint) {
+				for (const line of hint) console.error(line);
+				process.exit(1);
+			}
 			console.error(`No worktree matches "${query}". Available worktrees:\n`);
 			printKillCandidates(worktrees);
 		}
@@ -746,6 +774,7 @@ if (require.main === module) {
 module.exports = {
 	collectStackRows,
 	listDevSessions,
+	externalStopHint,
 	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,
