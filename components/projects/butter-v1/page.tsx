@@ -72,6 +72,7 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
+import { ButterAgentSessionFormControls, ButterGalleryAgentSessions, ButterGalleryBoardCard, DEFAULT_BUTTER_AGENT_SESSION_FORM, type ButterAgentSessionForm } from "./components/butter-gallery-showcases";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
@@ -143,6 +144,9 @@ export default function ButterPage(): React.ReactElement {
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
+	const [agentSessionForm, setAgentSessionForm] = useState<ButterAgentSessionForm>(DEFAULT_BUTTER_AGENT_SESSION_FORM);
+	const [agentSessionsResetKey, setAgentSessionsResetKey] = useState(0);
+	const [boardCardResetKey, setBoardCardResetKey] = useState(0);
 	const [galleryOpen, setGalleryOpen] = useState(true);
 	const galleryOpenRef = useRef(galleryOpen);
 	const galleryBeforeCreateRef = useRef<boolean | null>(null);
@@ -214,11 +218,13 @@ export default function ButterPage(): React.ReactElement {
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
 			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
-		: null;
+		: selectedId === "agent-sessions"
+			? <ButterAgentSessionFormControls form={agentSessionForm} onFormChange={setAgentSessionForm} />
+			: null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
-				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", selectedId === "pull-request" || selectedId === "work-item" || selectedId === "duplicative-sessions" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
+				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", selectedId === "pull-request" || selectedId === "work-item" || selectedId === "duplicative-sessions" || selectedId === "agent-sessions" || selectedId === "board-card" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
@@ -228,14 +234,14 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setAgentSessionForm(DEFAULT_BUTTER_AGENT_SESSION_FORM); setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "development-panel" ? (
 					<div className="pointer-events-auto h-64 w-full max-w-sm shrink-0">
 						<ProjectButterDevelopmentGallery author={{ ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } }} key={developmentResetKey} />
 					</div>
-				) : item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (
+				) : item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "agent-sessions" || item.id === "board-card" || item.id === "work-item" || item.id === "pull-request" ? null : (
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
 				)}
 			/>
@@ -260,6 +266,12 @@ export default function ButterPage(): React.ReactElement {
 				<RovoChatProvider key={duplicativeSessionsResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
 					<ButterGalleryWorkItem compact galleryOpen={galleryOpen} initialSessions={BUTTER_GALLERY_SESSIONS} open={selectedId === "duplicative-sessions"} onClose={() => selectGalleryItem("board")} />
 				</RovoChatProvider>
+			</RetainedView>
+			<RetainedView active={selectedId === "agent-sessions"} retain>
+				<ButterGalleryAgentSessions key={agentSessionsResetKey} form={agentSessionForm} galleryOpen={galleryOpen} />
+			</RetainedView>
+			<RetainedView active={selectedId === "board-card"} retain>
+				<ButterGalleryBoardCard key={boardCardResetKey} galleryOpen={galleryOpen} />
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
 				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
