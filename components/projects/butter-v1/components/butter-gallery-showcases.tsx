@@ -17,14 +17,18 @@ type SessionList = Readonly<{ density: AgentSessionDensity; items: readonly Agen
 
 const asTeam = (items: readonly AgentSessionItem[]) => items.map((item) => ({ ...item, role: "viewer" as const }));
 
-const LOCAL_SESSION = AGENT_SESSION_ITEMS.slice(0, 1);
-const CLOUD_SESSION = AGENT_SESSION_CLOUD_ITEMS.slice(0, 1);
+/** Working, Needs input, Finished — the three lifecycle states every row shows. */
+const SESSION_STATES = ["running", "needs-input", "complete"] as const satisfies readonly AgentSessionItem["state"][];
+const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => ({ ...items[index % items.length], state }));
+
+const LOCAL_SESSIONS = withLifecycleStates(AGENT_SESSION_ITEMS);
+const CLOUD_SESSIONS = withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS);
 
 /** Local and Cloud are the viewer's own sessions; Team sessions belong to teammates. */
 const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; lists: readonly SessionList[] }>[] = [
-	{ title: "Local", lists: [{ density: "short", items: LOCAL_SESSION }, { density: "long", items: LOCAL_SESSION }] },
-	{ title: "Cloud", lists: [{ density: "short", items: CLOUD_SESSION }, { density: "long", items: CLOUD_SESSION }] },
-	{ title: "Team", lists: [{ density: "short", items: asTeam(CLOUD_SESSION) }, { density: "long", items: asTeam(CLOUD_SESSION) }] },
+	{ title: "Local", lists: [{ density: "short", items: LOCAL_SESSIONS }, { density: "long", items: LOCAL_SESSIONS }] },
+	{ title: "Cloud", lists: [{ density: "short", items: CLOUD_SESSIONS }, { density: "long", items: CLOUD_SESSIONS }] },
+	{ title: "Team", lists: [{ density: "short", items: asTeam(CLOUD_SESSIONS) }, { density: "long", items: asTeam(CLOUD_SESSIONS) }] },
 ];
 
 /** Short and long rows sit at the widths the Agent Session catalog demos them at. */
