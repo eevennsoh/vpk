@@ -275,8 +275,7 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 
 	/**
 	 * The one way a run ends: makes it terminal (`completed`, `failed` or `cancelled`), aborts
-	 * it when cancelled, drops its queue entry, ends its subscribers and removes it from the
-	 * registry. With `runId`, only that run is settled, so a late settle of a run that was
+	 * it when cancelled, ends its subscribers and removes it from the registry. With `runId`, only that run is settled, so a late settle of a run that was
 	 * cancelled and replaced cannot end the thread's new run. Returns the settled run, or
 	 * null when there was nothing to settle.
 	 * @param {string} threadId
