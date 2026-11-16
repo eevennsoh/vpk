@@ -207,3 +207,110 @@ test("agent-result marker uses tolerant chunked parsing and normalization", () =
 	assert.equal(parts[0].data.agentId, "studio-agent-ops-triage");
 	assert.equal(parts[0].data.name, "Ops Triage");
 });
+
+test("flushVisibleText emits a held plain tail and leaves the adapter empty", () => {
+	const { adapter, parts, textDeltas } = createAdapter();
+
+	adapter.push("Here are the Jira issues I found so far");
+	adapter.flushVisibleText();
+	adapter.flush();
+
+	assert.equal(textDeltas.join(""), "Here are the Jira issues I found so far");
+	assert.deepEqual(parts, []);
+});
+
+test("flushVisibleText emits the text before a marker whose payload never finished, and drops the marker", () => {
+	for (const chunks of [
+		['Intro WIDGET_DATA:{"type":"plan"'],
+		["Intro WIDGET_DATA:", '{"type":"plan","title":"Pl'],
+		["Intro WIDGET_DATA:"],
+		["Intro WIDGET_DATA:   "],
+		["Intro WIDGET_LOADING:"],
+		['Intro THINKING_STATUS:{"label":"Work'],
+		['Intro AGENT_EXECUTION:{"taskId":"t-1","content":"{"'],
+	]) {
+		const { adapter, parts, textDeltas } = createAdapter();
+		for (const chunk of chunks) {
+			adapter.push(chunk);
+		}
+		adapter.flushVisibleText();
+		adapter.flush();
+
+		assert.equal(textDeltas.join(""), "Intro ", JSON.stringify(chunks));
+		assert.deepEqual(parts, [], JSON.stringify(chunks));
+	}
+});
+
+test("flushVisibleText drops a held tail that could still grow into a marker prefix", () => {
+	for (const [streamed, expected] of [
+		["Here is the answer WIDGET_DA", "Here is the answer "],
+		["Done.\nTHINKING_ST", "Done.\n"],
+		["Done.\nAGENT_", "Done.\n"],
+		["WIDGET_", ""],
+		// Not the start of any marker prefix: shown.
+		["Done.\nWIDGETS", "Done.\nWIDGETS"],
+		["Values: WIDGET_D_", "Values: WIDGET_D_"],
+	]) {
+		const { adapter, textDeltas } = createAdapter();
+		adapter.push(streamed);
+		adapter.flushVisibleText();
+		adapter.flush();
+
+		assert.equal(textDeltas.join(""), expected, JSON.stringify(streamed));
+	}
+});
+
+test("flushVisibleText processes a complete marker and emits the plain text after it", () => {
+	const { adapter, parts, textDeltas } = createAdapter();
+
+	adapter.push(`Intro\nTHINKING_STATUS:${JSON.stringify({ label: "Working" })}\nMore`);
+	adapter.flushVisibleText();
+	adapter.flush();
+
+	assert.equal(textDeltas.join(""), "Intro\nMore");
+	assert.deepEqual(parts, [{
+		type: "data-thinking-status",
+		data: { label: "Working", content: undefined, activity: undefined, source: undefined },
+	}]);
+});
+
+test("flushVisibleText shows a marker prefix with an invalid payload as text, as push does", () => {
+	const { adapter, textDeltas } = createAdapter();
+
+	adapter.push("Intro WIDGET_DATA:not json at all");
+	adapter.flushVisibleText();
+	adapter.flush();
+
+	assert.equal(textDeltas.join(""), "Intro WIDGET_DATA:not json at all");
+});
+
+test("flushVisibleText in agent mode drops a partial agent-result prefix and an unfinished payload", () => {
+	for (const streamed of [
+		"Building your agent AGENT_RES",
+		`Building your agent ${AGENT_RESULT_STREAM_PREFIX}`,
+		`Building your agent ${AGENT_RESULT_STREAM_PREFIX} {"name":"Ops`,
+	]) {
+		const { adapter, parts, textDeltas } = createAdapter({ creationMode: "agent" });
+		adapter.push(streamed);
+		adapter.flushVisibleText();
+		adapter.flush();
+
+		assert.equal(textDeltas.join(""), "Building your agent ", JSON.stringify(streamed));
+		assert.deepEqual(parts, [], JSON.stringify(streamed));
+	}
+
+	// Outside agent mode the agent-result prefix is ordinary text.
+	const { adapter, textDeltas } = createAdapter();
+	adapter.push("Building your agent AGENT_RES");
+	adapter.flushVisibleText();
+	assert.equal(textDeltas.join(""), "Building your agent AGENT_RES");
+});
+
+test("flush still treats a held unfinished marker as final text at the normal end of a stream", () => {
+	const { adapter, textDeltas } = createAdapter();
+
+	adapter.push('Intro WIDGET_DATA:{"type":"plan"');
+	adapter.flush();
+
+	assert.equal(textDeltas.join(""), 'Intro WIDGET_DATA:{"type":"plan"');
+});

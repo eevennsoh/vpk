@@ -688,6 +688,139 @@ test("a port failure during a tool-first retry follows that attempt's text with 
 	assert.equal(visibleText(turn.parts), "Attempt 2\n\n⚠️ Rovo is busy.\n\nTool output was not available.");
 });
 
+function failingAfterChunks(chunks, overrides = {}) {
+	return {
+		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
+		restartRovoPort: async () => ({ recovered: false }),
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			onPortAcquired(43123);
+			for (const chunk of [chunks].flat()) {
+				if (chunk) {
+					onTextDelta(chunk);
+				}
+			}
+			throw createPortStuckError(43123);
+		},
+		...overrides,
+	};
+}
+
+const BUSY_NOTICE = "⚠️ Rovo is busy.";
+
+test("a failure notice shows the text the marker stream held back, as its own paragraph after it", async () => {
+	for (const [streamed, expected] of [
+		["", BUSY_NOTICE],
+		// Held back whole as a possible marker start.
+		["Short", `Short\n\n${BUSY_NOTICE}`],
+		["Answer\n", `Answer\n\n${BUSY_NOTICE}`],
+		["Answer\n\n", `Answer\n\n${BUSY_NOTICE}`],
+		// A complete marker is still processed; the text after it is shown.
+		[`Intro\nTHINKING_STATUS:${JSON.stringify({ label: "Working" })}\nMore`, `Intro\nMore\n\n${BUSY_NOTICE}`],
+	]) {
+		const turn = await runTurn(failingAfterChunks(streamed));
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
+test("a failure notice drops a marker the stream had only started, and keeps the text before it", async () => {
+	// Before: the unfinished marker went out as text in front of the notice,
+	// for example 'Intro WIDGET_DATA:{"type":"plan"\n\n⚠️ Rovo is busy.'
+	for (const [streamed, expected, turnOverrides] of [
+		['Intro WIDGET_DATA:{"type":"plan"', `Intro \n\n${BUSY_NOTICE}`],
+		[["Intro WIDGET_DATA:", '{"type":"plan","title":"Pl'], `Intro \n\n${BUSY_NOTICE}`],
+		["Here is the answer WIDGET_DA", `Here is the answer \n\n${BUSY_NOTICE}`],
+		["Done.\nTHINKING_STATUS:", `Done.\n\n${BUSY_NOTICE}`],
+		['Done.\n\nAGENT_EXECUTION:{"taskId":"t-1"', `Done.\n\n${BUSY_NOTICE}`],
+		["Done.\n\nWIDGET_LOADING:", `Done.\n\n${BUSY_NOTICE}`],
+		["WIDGET_", BUSY_NOTICE],
+		["Building your agent AGENT_RES", `Building your agent \n\n${BUSY_NOTICE}`, { creationMode: "agent" }],
+		['Building your agent AGENT_RESULT: {"name":"Ops', `Building your agent \n\n${BUSY_NOTICE}`, { creationMode: "agent" }],
+	]) {
+		const turn = await runTurn(failingAfterChunks(streamed), turnOverrides);
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
+		assert.equal(turn.parts.some((part) => part.type.startsWith("data-widget") || part.type === "data-agent-result"), false);
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
+test("a failure notice after an unfinished spec or media fence drops the fence and is shown outside it", async () => {
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
+	const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
+	const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
+	// The text layer holds a reply that opens with a fence (a classifier-leak candidate) and splits
+	// the open fence off as pending. Before: the notice was appended inside that open fence, so it was
+	// held back with the fence and dropped with it, and the reply ended with no notice at all.
+	for (const [streamed, expected, turnOverrides] of [
+		['```spec\n{"root":"card","elements":{"card":{"type":"Card"', BUSY_NOTICE],
+		// The newline before the fence is ordinary text and still goes out.
+		['\n```spec\n{"root":"card","elements":{"card":{"type":"Card"', `\n${BUSY_NOTICE}`],
+		['```spec\n{"root":"card","elements":{"card":{"type":"Card"', `${BUSY_NOTICE}\n\nTool output was not available.`, STRICT_SOFT_RETRY_TURN],
+		['```image\n{"prompt":"A lighthouse at dusk, painted in oils"', BUSY_NOTICE],
+	]) {
+		const turn = await runTurn(failingAfterChunks(streamed, {
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+		}), turnOverrides);
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
+test("a failure notice after a rerun that showed only whitespace starts one blank line after the first attempt", async () => {
+	// Before: the rerun's held spaces went out in front of the notice: "A\n\n  ⚠️ Rovo is busy."
+	let streams = 0;
+	const turn = await runTurn({
+		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
+		restartRovoPort: async () => ({ recovered: streams === 1 }),
+		shouldRetryInteractiveStuckPortRecovery: ({ attemptCount }) => attemptCount < 1,
+		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+			streams += 1;
+			onPortAcquired(43123);
+			onTextDelta(streams === 1 ? `A${HELD_BACK_TAIL}` : "  ");
+			throw createPortStuckError(43123);
+		},
+	});
+
+	assert.equal(streams, 2);
+	assert.equal(visibleText(turn.parts), `A\n\n${BUSY_NOTICE}`);
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("a chat-in-progress timeout notice drops an unfinished marker and starts its own paragraph", async () => {
+	const timeoutNotice = "⚠️ Automatic recovery timed out while waiting for the previous turn. Please retry or reset the chat.";
+	// Before: the notice was streamed through the marker stream as text, so it ran into the open
+	// marker and both went out together, and with nothing shown it started with a blank line.
+	for (const [streamed, expected] of [
+		["", timeoutNotice],
+		["Partial answer", `Partial answer\n\n${timeoutNotice}`],
+		['Intro WIDGET_DATA:{"type":"plan"', `Intro \n\n${timeoutNotice}`],
+		["Intro WIDGET_DA", `Intro \n\n${timeoutNotice}`],
+	]) {
+		const turn = await runTurn({
+			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+				onPortAcquired(43123);
+				if (streamed) {
+					onTextDelta(streamed);
+				}
+				throw Object.assign(new Error("Rovo turn still in progress"), { code: "ROVO_CHAT_IN_PROGRESS_TIMEOUT" });
+			},
+		});
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
 test("tool starts that arrive after the turn ended are blocked once: Rovo is cancelled once", async () => {
 	const cancelledPorts = [];
 	let startTool = null;

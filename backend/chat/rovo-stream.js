@@ -289,20 +289,45 @@ function createRovoTextOutputController({
 		writeShownTextDelta(delta);
 	};
 
+	/** Held text split into what may be shown and what an open spec or media fence still holds back. */
+	const splitHeldAssistantText = (text) => {
+		const spec = splitSpecFenceTextForStreaming(text);
+		const media = splitDirectMediaTextForStreaming(spec.visibleText);
+		return { pendingText: `${media.pendingText}${spec.pendingText}`, visibleText: media.visibleText };
+	};
+
+	/** Drops text that was never shown from the end of the text the turn hands on. */
+	const dropUnshownTail = (text) => {
+		const cut = (value) => (text && value.endsWith(text) ? value.slice(0, -text.length) : value);
+		assistantText = cut(assistantText);
+		unsuppressedAssistantText = cut(unsuppressedAssistantText);
+	};
+
+	/**
+	 * Ends the held text before a notice: what the user was meant to see goes out, and what was held
+	 * back on purpose (an open fence, a classifier payload, a rerun's leading whitespace) is dropped,
+	 * also from the text the turn hands on, so the notice never lands inside it.
+	 */
+	const releaseHeldTextBeforeNotice = () => {
+		const heldText = bufferedAssistantText;
+		bufferedAssistantText = "";
+		if (heldText && parseClassifierIntentPayload(heldText)) {
+			dropUnshownTail(heldText);
+		} else if (heldText) {
+			emitTextDeltaRaw(splitHeldAssistantText(heldText).visibleText);
+		}
+		// Streaming drops an open fence from the buffer once the text before it is written; the turn's text still has it.
+		dropUnshownTail(splitHeldAssistantText(assistantText).pendingText);
+		heldWhitespace = "";
+	};
+
 	const flushBufferedAssistantText = ({ force = false } = {}) => {
 		if (!bufferedAssistantText) {
 			return;
 		}
 
-		const {
-			pendingText: pendingSpecText,
-			visibleText: textWithoutVisibleSpecFences,
-		} = splitSpecFenceTextForStreaming(bufferedAssistantText);
-		const {
-			pendingText: pendingDirectMediaText,
-			visibleText: visibleAssistantText,
-		} = splitDirectMediaTextForStreaming(textWithoutVisibleSpecFences);
-		const pendingAssistantText = `${pendingDirectMediaText}${pendingSpecText}`;
+		const { pendingText: pendingAssistantText, visibleText: visibleAssistantText } =
+			splitHeldAssistantText(bufferedAssistantText);
 		if (!visibleAssistantText) {
 			bufferedAssistantText = force ? "" : pendingAssistantText;
 			return;
@@ -393,12 +418,13 @@ function createRovoTextOutputController({
 		flushBufferedAssistantText({ force: true });
 	};
 
-	/** A notice as its own paragraph: a break before it after earlier text, and before any text after it. */
+	/** A notice as its own paragraph after the held text ends: a break before it after earlier text, and before any text after it. */
 	const emitNoticeParagraph = (notice) => {
 		const text = typeof notice === "string" ? notice.trim() : "";
 		if (!text) {
 			return;
 		}
+		releaseHeldTextBeforeNotice();
 		paragraphBreakPending = false;
 		emitForcedTextDelta(`${paragraphSeparatorAfter(assistantText)}${text}`);
 		paragraphBreakPending = true;

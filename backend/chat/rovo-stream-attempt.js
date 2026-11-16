@@ -14,7 +14,6 @@ async function handleRovoStreamAttemptError({
 	clarificationToolCallId,
 	forcePortRecoveryAttemptCount = 0,
 	getListeningPidsForPort,
-	handleStreamTextDelta,
 	hasPausedClarificationToolCall = false,
 	hasRetriedAsDeferredToolResponse = false,
 	interactiveChatForcePortRecoveryMaxAttempts,
@@ -99,7 +98,7 @@ async function handleRovoStreamAttemptError({
 			};
 		}
 
-		handleStreamTextDelta(`\n\n⚠️ ${recoveryDecision.textDelta}`);
+		emitFailureNotice(`⚠️ ${recoveryDecision.textDelta}`);
 		return {
 			action: "stream-timeout",
 			forcePortRecoveryAttemptCount: recoveryDecision.nextAttemptCount,
@@ -156,7 +155,6 @@ function createRovoStreamAttemptErrorHandler({
 	getListeningPidsForPort,
 	getResolvedRovoPort,
 	handleRovoStreamAttemptErrorFn = handleRovoStreamAttemptError,
-	handleStreamTextDelta,
 	hasPausedClarificationToolCall = false,
 	interactiveChatForcePortRecoveryMaxAttempts,
 	interactiveChatForcePortRecoveryTimeoutMs,
@@ -188,7 +186,6 @@ function createRovoStreamAttemptErrorHandler({
 			emitFailureNotice,
 			forcePortRecoveryAttemptCount,
 			getListeningPidsForPort,
-			handleStreamTextDelta,
 			hasPausedClarificationToolCall,
 			hasRetriedAsDeferredToolResponse,
 			interactiveChatForcePortRecoveryMaxAttempts,
