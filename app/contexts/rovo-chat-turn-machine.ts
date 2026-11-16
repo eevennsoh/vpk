@@ -255,13 +255,15 @@ export function hasSendInFlight(state: RovoChatTurnState): boolean {
  * The committed streaming flag is ignored: it stays true for a moment after the
  * request ends.
  *
- * A recorded finish belongs to the current send: the AI SDK runs a request's
- * onFinish before that request's sendMessage (and stop(), which awaits it)
- * resolves. A queued send starts only once the previous send settled or a
- * thread change stopped its request, an edit resend stops a streaming request
- * first, and a retry starts from the timer its failed request armed just
- * before that request's onFinish, so no older request finishes once a newer
- * send has started.
+ * A recorded finish belongs to the current send only while sends are
+ * serialized: the AI SDK runs a request's onFinish before that request's
+ * sendMessage (and stop(), which awaits it) resolves. A queued send starts
+ * only once the previous send settled or a thread change stopped its request,
+ * an edit resend stops a streaming request first, and a retry starts from the
+ * timer its failed request armed just before that request's onFinish. One
+ * path is not serialized: an edit resend started before an earlier request's
+ * streaming status commits does not stop that request, so the earlier
+ * request's finish can be recorded against the resend.
  */
 export function hasLiveRequest(state: RovoChatTurnState, env: RovoChatTurnEnvironment): boolean {
 	return state.dispatching && !state.requestFinished && !state.finalizeRequested && !state.turnCompleteSeen && !env.retryScheduled;
