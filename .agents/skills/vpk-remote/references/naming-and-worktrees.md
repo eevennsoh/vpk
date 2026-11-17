@@ -100,7 +100,13 @@ concurrent tasks remain readable in one place.
 ### Landing
 
 The worker commits its work to the task branch inside the worktree; the
-planner verifies the diff there and reports. **Stop at a verified diff** —
+planner verifies the diff there and reports. A GPT-lane worker can commit
+only through the narrow git grant in its canonical command, which opens its
+own branch and nothing else (see
+[gpt-executor.md § Commits](gpt-executor.md#commits)). Where that grant does
+not apply (under `--no-worktree`, or when its commit fails), the worker
+leaves the changes uncommitted and puts its proposed commit subject in its
+report, and the planner commits after verifying the diff. **Stop at a verified diff** —
 pushing the branch and opening a PR is `/vpk-git-ship`, run only when the user
 asks. Nothing outward-facing happens on the strength of a passing proof
 command alone.
