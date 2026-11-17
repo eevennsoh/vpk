@@ -15,6 +15,13 @@ function paragraphSeparatorAfter(text, hasVisibleText = text.trim().length > 0) 
 /** Whole blank lines at the start of `text`; the first line with text keeps its indentation. */
 const LEADING_BLANK_LINES = /^(?:[ \t]*\r?\n)+/u;
 
+/**
+ * An end of shown text that the next delta may turn into the opener of a fence the splitters hide:
+ * one to three backticks, or three and the start of `spec`, or of `image` or `audio` up to the
+ * newline that opens a media fence. Matched case-insensitively, as the splitters match openers.
+ */
+const PARTIAL_HIDDEN_FENCE_OPENER = /`{1,3}$|```(?:s|sp|spe|i|im|ima|imag|a|au|aud|audi|(?:image|audio)[^\S\n]*)$/iu;
+
 function createRovoTextOutputController({
 	classifierJsonBufferMaxChars = 0,
 	isClassifierIntentLeakCandidate = () => false,
@@ -40,7 +47,15 @@ function createRovoTextOutputController({
 	let textStarted = false;
 	let assistantText = "";
 	let unsuppressedAssistantText = "";
+	// Text held because it may be a classifier payload; none of it has reached the splitters yet.
 	let bufferedAssistantText = "";
+	// The end of the turn's text the wire follows: split as a whole, so an open fence keeps hiding
+	// its later chunks. It restarts once nothing in it can change how later text splits.
+	let streamedText = "";
+	// The part of the visible text of `streamedText` that went out.
+	let streamedVisibleText = "";
+	// Whether `streamedText` ends in an open fence (or a partial patch line) the splitters hold back.
+	let streamedTextHoldsPending = false;
 	let deferredToolFirstText = "";
 	let hasSuppressedLargeAssistantJson = false;
 	// Set after a notice paragraph; the next text starts a new paragraph.
@@ -54,9 +69,9 @@ function createRovoTextOutputController({
 	let shownTextEnd = "";
 	// The rerun's leading whitespace, held until its first visible text decides the break.
 	let heldWhitespace = "";
-	// Where the end of the turn's text that a forced flush cut off without letting it through (an open
-	// fence, a partial patch line) starts, in each stored text; null when nothing is cut off. A notice
-	// drops that end; text let through after it makes it part of the middle, and it stays.
+	// Where the end of the turn's text that ending the held text kept off the wire (an open fence, a
+	// partial patch line, a classifier payload) starts, in each stored text; null when nothing is. A
+	// notice drops that end; text let through after it makes it part of the middle, and it stays.
 	let withheldStart = null;
 	// A failure notice ends card-first suppression: the text goes out, then the notice.
 	let suppressingStreamingText = suppressStreamingTextForCardFirstGenui;
@@ -188,75 +203,81 @@ function createRovoTextOutputController({
 	};
 
 	/**
+	 * Writes what `streamedText` newly lets through. Unless `final`, the end of it that may still open
+	 * a hidden fence stays held too. Visible text only grows as the streamed text does (the splitters
+	 * hide a fence from its opener on and collapse blank lines without shortening a run's start), so
+	 * what went out is a prefix of it; if it ever is not, nothing more of the overlap goes out.
+	 * Returns the split.
+	 */
+	const advanceStreamedText = ({ final }) => {
+		const split = splitHeldAssistantText(streamedText);
+		const heldOpener = final || split.pendingText ? "" : (split.visibleText.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] ?? "");
+		const visibleText = split.visibleText.slice(0, split.visibleText.length - heldOpener.length);
+		if (visibleText.startsWith(streamedVisibleText)) {
+			emitTextDeltaRaw(visibleText.slice(streamedVisibleText.length));
+		}
+		streamedVisibleText = visibleText;
+		streamedTextHoldsPending = Boolean(split.pendingText);
+		// Ending outside a fence, past any newline (in it or standing in for a completed fence) or
+		// backtick, the text so far splits the same whatever follows it.
+		if (!split.pendingText && !heldOpener && !streamedText.endsWith("\n") && !visibleText.endsWith("\n")) {
+			streamedText = "";
+			streamedVisibleText = "";
+		}
+		return split;
+	};
+
+	/**
+	 * Ends the streamed text: everything visible goes out, and the end it holds back, then
+	 * `withheldText` (the stored text after it that never reaches the wire), is recorded as withheld.
+	 */
+	const finishStreamedText = (withheldText = "") => {
+		const heldText = streamedText;
+		const offset = heldText ? findWithheldOffset(heldText, advanceStreamedText({ final: true })) : 0;
+		streamedText = "";
+		streamedVisibleText = "";
+		streamedTextHoldsPending = false;
+		if (heldText || withheldText) {
+			recordWithheldEnd(`${heldText}${withheldText}`, offset);
+		}
+	};
+
+	/**
+	 * Ends all held text: what may be shown goes out; an open fence and a held classifier payload
+	 * that parses stay off the wire. Returns that payload, or null.
+	 */
+	const finishHeldText = () => {
+		const classifierPayload = bufferedAssistantText ? parseClassifierIntentPayload(bufferedAssistantText) : null;
+		const withheldText = classifierPayload ? bufferedAssistantText : "";
+		if (!classifierPayload) {
+			streamedText += bufferedAssistantText;
+		}
+		bufferedAssistantText = "";
+		finishStreamedText(withheldText);
+		return classifierPayload;
+	};
+
+	/**
 	 * Ends the held text before a notice: what the user was meant to see goes out, and what never
 	 * reached the wire at the end of the turn's text (an open fence, a classifier payload, a rerun's
 	 * held whitespace) is dropped from it too, so the notice never lands inside it.
 	 */
 	const releaseHeldTextBeforeNotice = () => {
-		const heldText = bufferedAssistantText;
-		bufferedAssistantText = "";
-		if (heldText && parseClassifierIntentPayload(heldText)) {
-			recordWithheldEnd(heldText, 0);
-		} else if (heldText) {
-			const split = splitHeldAssistantText(heldText);
-			emitTextDeltaRaw(split.visibleText);
-			recordWithheldEnd(heldText, findWithheldOffset(heldText, split));
-		}
+		finishHeldText();
 		dropWithheldEnd();
 		// The whitespace a rerun held at the wire comes after anything the rerun cut off.
 		dropHeldWhitespace();
 	};
 
-	const flushBufferedAssistantText = ({ force = false } = {}) => {
-		if (!bufferedAssistantText) {
-			return;
-		}
-
-		const heldText = bufferedAssistantText;
-		const split = splitHeldAssistantText(heldText);
-		const { pendingText: pendingAssistantText, visibleText: visibleAssistantText } = split;
-		if (!visibleAssistantText) {
-			bufferedAssistantText = force ? "" : pendingAssistantText;
-			if (force) {
-				recordWithheldEnd(heldText, findWithheldOffset(heldText, split));
-			}
-			return;
-		}
-
-		if (!force && isClassifierIntentLeakCandidate(visibleAssistantText)) {
-			if (visibleAssistantText.length <= classifierJsonBufferMaxChars) {
-				return;
-			}
-
-			const parsedClassifierPayload =
-				parseClassifierIntentPayload(visibleAssistantText);
-			if (parsedClassifierPayload) {
-				return;
-			}
-		}
-
-		const chunk = visibleAssistantText;
-		bufferedAssistantText = force ? "" : pendingAssistantText;
-		// Unforced, the pending end stays held in the buffer.
-		recordWithheldEnd(heldText, force ? findWithheldOffset(heldText, split) : heldText.length);
-		emitTextDeltaRaw(chunk);
+	/** Hands the held classifier candidate on to the splitters and writes what they let through. */
+	const releaseBufferedAssistantText = () => {
+		streamedText += bufferedAssistantText;
+		bufferedAssistantText = "";
+		advanceStreamedText({ final: false });
 	};
 
-	const finalizeBufferedAssistantText = () => {
-		if (!bufferedAssistantText) {
-			return null;
-		}
-
-		const parsedClassifierPayload =
-			parseClassifierIntentPayload(bufferedAssistantText);
-		if (parsedClassifierPayload) {
-			bufferedAssistantText = "";
-			return parsedClassifierPayload;
-		}
-
-		flushBufferedAssistantText({ force: true });
-		return null;
-	};
+	/** End of stream: returns a held classifier payload that parses, or ends the held text. */
+	const finalizeBufferedAssistantText = () => finishHeldText();
 
 	const emitTextDelta = (nextDelta) => {
 		if (!nextDelta) {
@@ -273,20 +294,16 @@ function createRovoTextOutputController({
 		assistantText += delta;
 		bufferedAssistantText += delta;
 
-		if (!isClassifierIntentLeakCandidate(bufferedAssistantText)) {
-			flushBufferedAssistantText({ force: true });
+		// Inside an open fence nothing is shown, so a classifier payload cannot start there.
+		if (
+			!streamedTextHoldsPending &&
+			isClassifierIntentLeakCandidate(bufferedAssistantText) &&
+			(bufferedAssistantText.length <= classifierJsonBufferMaxChars ||
+				parseClassifierIntentPayload(bufferedAssistantText))
+		) {
 			return;
 		}
-
-		if (bufferedAssistantText.length <= classifierJsonBufferMaxChars) {
-			return;
-		}
-
-		const parsedClassifierPayload =
-			parseClassifierIntentPayload(bufferedAssistantText);
-		if (!parsedClassifierPayload) {
-			flushBufferedAssistantText({ force: true });
-		}
+		releaseBufferedAssistantText();
 	};
 
 	const flushDeferredToolFirstText = () => {
@@ -306,8 +323,10 @@ function createRovoTextOutputController({
 
 		assistantText += delta;
 		unsuppressedAssistantText += delta;
-		bufferedAssistantText += delta;
-		flushBufferedAssistantText({ force: true });
+		// Forced: shown now, with no wait for a classifier payload, a fence's close or more text.
+		streamedText += `${bufferedAssistantText}${delta}`;
+		bufferedAssistantText = "";
+		finishStreamedText();
 	};
 
 	/**
@@ -391,6 +410,9 @@ function createRovoTextOutputController({
 		assistantText = "";
 		unsuppressedAssistantText = "";
 		bufferedAssistantText = "";
+		streamedText = "";
+		streamedVisibleText = "";
+		streamedTextHoldsPending = false;
 		withheldStart = null;
 		hasSuppressedLargeAssistantJson = false;
 		paragraphBreakPending = false;

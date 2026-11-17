@@ -1,14 +1,20 @@
 "use strict";
 
 // How a Rovo chat turn ends today: one test per ending, driven through the composed turn runner
-// with a stand-in Rovo stream. The end-of-turn facts are read from the routing telemetry, which
-// receives the turn's flags after the stream.
+// (`rovo-chat-turn.fixture.js`) with a stand-in Rovo stream.
 
 const assert = require("node:assert/strict");
 const { before, test } = require("node:test");
 const { loadAiSdk } = require("../lib/ai-sdk-runtime");
-const { createRovoTurnRunner } = require("./rovo-chat-stream");
-const { createContractDependencies, createRequestState } = require("./chat-sdk-handler.fixture");
+const {
+	BUSY_NOTICE,
+	createPortStuckError,
+	endsWithTurnComplete,
+	failingAfterChunks,
+	runTurn,
+	visibleText,
+	widgetParts,
+} = require("./rovo-chat-turn.fixture");
 
 before(async () => { await loadAiSdk(); });
 
@@ -21,65 +27,8 @@ const STRICT_SOFT_RETRY_TURN = {
 	},
 };
 
-function createTurn(overrides = {}) {
-	return {
-		...createRequestState({ backendPreference: "rovo" }),
-		isStrictToolFirstTurn: false,
-		isTaskLikeRequest: false,
-		prefersGenuiCardExperience: false,
-		smartGenerationActive: false,
-		stageTrace: { mark() {}, requestId: "request-1" },
-		toolFirstPolicy: { domains: [], enforcement: {}, relevanceDomains: [] },
-		userMessageText: "Hello",
-		...overrides,
-	};
-}
-
-function createPortStuckError(port) {
-	return Object.assign(new Error(`Rovo port ${port} is stuck`), { code: "ROVO_PORT_STUCK", port });
-}
-
-async function runTurn(dependencyOverrides = {}, turnOverrides = {}, signal = new AbortController().signal) {
-	const parts = [];
-	const attempts = [];
-	let endOfTurnFacts = null;
-	const { dependencies } = createContractDependencies({
-		buildRovoTurnRoutingTelemetry: (facts) => {
-			endOfTurnFacts = facts;
-			return facts;
-		},
-		recordToolFirstAttempt: (_state, { isRetry }) => attempts.push(isRetry ? "retry" : "first"),
-		...dependencyOverrides,
-	});
-	let result;
-	let error;
-	try {
-		result = await createRovoTurnRunner(dependencies)(createTurn(turnOverrides), {
-			signal,
-			emit: (part) => parts.push(part),
-		});
-	} catch (caught) {
-		error = caught;
-	}
-	return { activeRequests: dependencies.activeRequests, attempts, endOfTurnFacts, error, parts, result };
-}
-
-function visibleText(parts) {
-	return parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
-}
-
 function statusLabels(parts) {
 	return parts.filter((part) => part.type === "data-thinking-status").map((part) => part.data.label);
-}
-
-function widgetParts(parts, type) {
-	return parts.filter((part) => part.data?.type === type).map((part) =>
-		part.type === "data-widget-loading" ? `loading:${part.data.loading}` : part.type.replace(/^data-widget-/u, ""),
-	);
-}
-
-function endsWithTurnComplete(parts) {
-	return parts.at(-1)?.type === "data-turn-complete";
 }
 
 test("an aborted turn closes its text, keeps what was shown and writes no turn-complete", async () => {
@@ -268,8 +217,8 @@ test("a timeout notice after an empty rerun follows the first attempt's shown te
 test("text the first attempt still held back is not shown when it reruns", async () => {
 	// Each expected string is the first attempt's text on main, then the rerun's after one blank line if any showed.
 	for (const [firstAttempt, expected] of [
-		// A spec fence and its payload stay hidden; only what main had already shown stays.
-		['X ```spec\n{"foo":1}', "X ``\n\nB"],
+		// A spec fence and its payload stay hidden, as does the "``" that may open one.
+		['X ```spec\n{"foo":1}', "X \n\nB"],
 		["X ```sp", "B"],
 		// Short enough to be held back whole as a possible marker start.
 		["A", "B"],
@@ -688,25 +637,6 @@ test("a port failure during a tool-first retry follows that attempt's text with 
 	assert.equal(visibleText(turn.parts), "Attempt 2\n\n⚠️ Rovo is busy.\n\nTool output was not available.");
 });
 
-function failingAfterChunks(chunks, overrides = {}) {
-	return {
-		buildInteractiveStuckPortFailureMessage: () => "Rovo is busy.",
-		restartRovoPort: async () => ({ recovered: false }),
-		streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
-			onPortAcquired(43123);
-			for (const chunk of [chunks].flat()) {
-				if (chunk) {
-					onTextDelta(chunk);
-				}
-			}
-			throw createPortStuckError(43123);
-		},
-		...overrides,
-	};
-}
-
-const BUSY_NOTICE = "⚠️ Rovo is busy.";
-
 test("a failure notice shows the text the marker stream held back, as its own paragraph after it", async () => {
 	for (const [streamed, expected] of [
 		["", BUSY_NOTICE],
@@ -817,29 +747,6 @@ test("a chat-in-progress timeout notice drops an unfinished marker and starts it
 				throw Object.assign(new Error("Rovo turn still in progress"), { code: "ROVO_CHAT_IN_PROGRESS_TIMEOUT" });
 			},
 		});
-
-		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
-		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
-		assert.equal(endsWithTurnComplete(turn.parts), true);
-	}
-});
-
-test("a failure notice after a fence that followed text keeps the fence text already shown", async () => {
-	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
-	const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
-	const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
-	// A fence after ordinary text is not held across deltas, so its text goes out. Before: the notice
-	// cut it from the turn's text ("Intro\n\n⚠️ Rovo is busy.") and followed it after one newline.
-	for (const [streamed, expected] of [
-		[['Intro\n```spec\n{"root":', '"card"'], `Intro\n\`\`\`spec\n{"root":"card"\n\n${BUSY_NOTICE}`],
-		[['Intro\n```image\n{"prompt":', '"A lighthouse"'], `Intro\n\`\`\`image\n{"prompt":"A lighthouse"\n\n${BUSY_NOTICE}`],
-	]) {
-		const turn = await runTurn(failingAfterChunks(streamed, {
-			isClassifierIntentLeakCandidate,
-			parseClassifierIntentPayload,
-			splitDirectMediaTextForStreaming,
-			splitSpecFenceTextForStreaming,
-		}));
 
 		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
 		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
