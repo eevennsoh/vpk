@@ -412,37 +412,100 @@ test("removeRovoAppDirectMediaFences keeps a media body with backticks hidden", 
 	for (const block of [`${T}image\n{"prompt":"${T}js"}\n${T}`, `${T}audio\nplain ${T}js body\n${T}`]) {
 		assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${block}\nOutro`), { removed: true, text: "Intro\n\nOutro" }, block);
 	}
-	assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${T}image\n{"prompt":"${T}js`), { removed: true, text: "Intro" });
+	assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${T}image\n{"prompt":"draw`), { removed: true, text: "Intro" });
+	// With no close at a line edge, backticks with text on both sides of them close it, as before.
+	assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${T}image\nsunset${T}Outro`), { removed: true, text: "Intro\n\nOutro" });
 });
 
-test("removeRovoAppDirectMediaFences ends a media block where the backend does", () => {
-	// The display keeps its own copy of the closing fence rule; this fails when it drifts from
-	// backend/lib/direct-media-fence.js.
-	const { findDirectMediaFences } = require("../../../../backend/lib/direct-media-fence");
-	const byBackend = (text) => {
+test("every media block reader ends a block where the backend rule does", () => {
+	// The display keeps its own copy of the closing fence rule of backend/lib/direct-media-fence.js;
+	// this fails when it drifts, or when the stripper, the generation body or the streamed wire end a
+	// block anywhere else. Two differences are allowed, each counted below:
+	// - partial opener: text that ends in a partial opener ("```image ") right before a closed block
+	//   becomes an opener in the backend's stripper and splitter, which the display does not copy;
+	// - spec order: streaming removes spec fences before media fences, so the wire is compared with the
+	//   rule applied to the text without them.
+	// The generation body reads each kind on its own (per kind), so it is compared where that reading
+	// starts at the same block.
+	const { findDirectMediaFenceBody, findDirectMediaFences, stripDirectMediaFences, splitDirectMediaTextForStreaming } = require("../../../../backend/lib/direct-media-fence");
+	const { splitSpecFenceTextForStreaming } = require("../../../../backend/lib/tool-output-sanitizer");
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("../../../../backend/chat/classifier-intent");
+	const { createRovoTextOutputController } = require("../../../../backend/chat/rovo-text-output");
+	const OPENER = /```(?:image|audio)\s*\n/iu;
+	const collapse = (text) => text.replace(/\n{3,}/g, "\n\n");
+	/** `text` with each block the rule finds replaced by a paragraph break; an open one is cut off. */
+	const byRule = (text, { cutOpen }) => {
 		let result = "";
 		let at = 0;
 		for (const fence of findDirectMediaFences(text)) {
-			result += `${text.slice(at, fence.start)}\n\n`;
+			result += text.slice(at, fence.start);
+			if (!fence.closed && cutOpen) {
+				return result;
+			}
+			result += "\n\n";
 			at = fence.end;
 		}
-		return `${result}${text.slice(at)}`.replace(/\n{3,}/g, "\n\n").trim();
+		return `${result}${text.slice(at)}`;
 	};
+	const streamWire = (chunks) => {
+		const parts = [];
+		const controller = createRovoTextOutputController({
+			classifierJsonBufferMaxChars: 320,
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+			textId: "text-test",
+			writer: { write: (part) => parts.push(part) },
+		});
+		for (const chunk of chunks) {
+			controller.emitTextDelta(chunk);
+		}
+		controller.finalizeBufferedAssistantText();
+		return parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
+	};
+	const counted = { compared: 0, partialOpener: 0, perKind: 0, specOrder: 0, streamed: 0 };
 	const openers = [`${T}image\n`, `${T}AUDIO \n`, `${T}audio\r\n`];
-	const bodies = ["", "sunset", '{"prompt":"x"}', `{"prompt":"${T}js"}`, `plain ${T}js`, '{\n "a": "]}"\n}', "{open", `a ${T} b`, "line\n  "];
-	const closers = ["", T, `\n${T}`, `${T}\n`, `${T} \n`, `${T}x`, ` ${T} y`, `\n  ${T} z`, `${T}\``, `${T}spec\n{}\n${T}`];
-	const tails = ["", "\nOutro", ` ${T}image\nmore`, "``", `\n${T}audio\nx${T}\n`];
-	let compared = 0;
+	const bodies = ["", "sunset", '{"prompt":"x"}', `{"prompt":"${T}js"}`, `plain ${T}js`, '{\n "a": "]}"\n}', "{open", `a ${T} b`, "line\n  ", `{"prompt":"x ${"`".repeat(6)}js"}`, `plain ${"`".repeat(4)} more`];
+	const closers = ["", T, `\n${T}`, `${T}\n`, `${T} \n`, `${T}x`, ` ${T} y`, `\n  ${T} z`, `${T}\``, `${T}spec\n{}\n${T}`, `${"`".repeat(7)}\n`, `${T}${T}x`];
+	const tails = ["", "\nOutro", ` ${T}image\nmore`, "``", `\n${T}audio\nx${T}\n`, `\n${T}image ${T}audio\nx\n${T}`];
 	for (const opener of openers) {
 		for (const body of bodies) {
 			for (const closer of closers) {
 				for (const tail of tails) {
 					const text = `Intro ${opener}${body}${closer}${tail}`;
-					assert.equal(removeRovoAppDirectMediaFences(text).text, byBackend(text), JSON.stringify(text));
-					compared += 1;
+					const label = JSON.stringify(text);
+					const replaced = byRule(text, { cutOpen: false });
+					assert.equal(removeRovoAppDirectMediaFences(text).text, collapse(replaced).trim(), label);
+					if (OPENER.test(replaced)) {
+						counted.partialOpener += 1;
+					} else {
+						assert.equal(stripDirectMediaFences(text), collapse(replaced.replace(/[ \t]+\n/g, "\n")).trim(), label);
+					}
+					const fences = findDirectMediaFences(text);
+					for (const kind of ["image", "audio"]) {
+						const firstOfKind = new RegExp(`\`\`\`${kind}\\s*\\n`, "iu").exec(text);
+						const fence = fences.find((candidate) => candidate.kind === kind);
+						if (firstOfKind && fence?.start !== firstOfKind.index) {
+							counted.perKind += 1;
+						} else {
+							assert.equal(findDirectMediaFenceBody(text, kind), fence?.closed ? text.slice(fence.bodyStart, fence.bodyEnd) : null, `${kind} ${label}`);
+						}
+					}
+					const specless = splitSpecFenceTextForStreaming(text).visibleText;
+					counted.specOrder += specless === text ? 0 : 1;
+					const wireByRule = byRule(specless, { cutOpen: true });
+					if (!OPENER.test(wireByRule)) {
+						for (let cut = 0; cut < text.length; cut += 1) {
+							const chunks = cut === 0 ? [text] : [text.slice(0, cut), text.slice(cut)];
+							assert.equal(collapse(streamWire(chunks)), collapse(wireByRule), `${label} cut ${cut}`);
+							counted.streamed += 1;
+						}
+					}
+					counted.compared += 1;
 				}
 			}
 		}
 	}
-	assert.equal(compared, 1350);
+	assert.deepEqual(counted, { compared: 2376, partialOpener: 318, perKind: 42, specOrder: 198, streamed: 84563 });
 });

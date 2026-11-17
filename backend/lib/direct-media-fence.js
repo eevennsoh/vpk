@@ -1,6 +1,6 @@
 "use strict";
 
-const { jsonObjectEnd } = require("./json-object-end");
+const { scanJsonObject } = require("./json-object-end");
 
 const DIRECT_MEDIA_FENCE_OPENER = /```(image|audio)\s*\n/giu;
 const DIRECT_MEDIA_FENCE_OPENER_BY_KIND = {
@@ -9,43 +9,69 @@ const DIRECT_MEDIA_FENCE_OPENER_BY_KIND = {
 };
 
 /**
- * A run of backticks, matched at its first three, that starts its line (after spaces or tabs) or
- * ends it (only spaces, tabs or a carriage return after it, up to a newline or the end of the text).
- * Backticks with other text on both sides of them on their line are part of the body.
+ * Where an image or audio block ends. Every reader applies this rule: the streaming splitter, the
+ * stripper, the generation body, and a copy in
+ * `components/projects/rovo-core/lib/rovo-app-message-display.ts` that its test compares with this one.
+ *
+ * 1. The block closes at the first run of three or more backticks after its opener that starts its
+ *    line (spaces or tabs before it are allowed), ends its line (only spaces, tabs or a carriage
+ *    return after it, up to a newline or the end of the text), or directly follows, after spaces or
+ *    tabs, the end of a JSON object that opens the body.
+ * 2. When the complete text has no such run for the block, it closes at the first three backticks
+ *    after its opener, wherever they are, as every reader did before rule 1.
+ * 3. A block with neither stays open to the end of the text.
+ *
+ * A block closes at its run's first three backticks. While the text may still grow (`complete`
+ * false), rule 2 waits, so backticks with text on both sides of them on their line leave the block
+ * open, and the end of the text counts as the end of a line: backticks there close the block until
+ * more text says otherwise. The streaming controller holds both until the text decides or ends.
  */
 const LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[ \t]*```)|(?=`*[ \t\r]*(?:\n|$)))/gu;
 
 /**
- * Where the closing fence of the media block whose body starts at `bodyStart` starts (-1 while the
- * block is open): the first run of three or more backticks that starts or ends its line, or that
- * directly follows, after spaces or tabs, the end of a JSON object that opens the body. Backticks
- * inside the body's text or JSON strings do not close it. "The end of the text" counts as the end
- * of a line, so backticks at the end of streamed text are undecided until more text arrives.
- * Work is linear in the text up to the closing fence.
+ * Reads the JSON object that may open a body, up to `limit`: whitespace, then the object, then the
+ * spaces or tabs after it. Returns where backticks right after the object start, or -1.
  */
-function findDirectMediaFenceClose(text, bodyStart) {
+function findBacktickAfterBodyJson(text, bodyStart, limit) {
+	let at = bodyStart;
+	while (at < limit && /\s/u.test(text[at])) {
+		at += 1;
+	}
+	if (text[at] !== "{" || at >= limit) {
+		return -1;
+	}
+	const { end } = scanJsonObject(text, { at, depth: 0, end: -1, inString: false }, limit);
+	if (end < 0) {
+		return -1;
+	}
+	at = end;
+	while (at < limit && /[ \t\r]/u.test(text[at])) {
+		at += 1;
+	}
+	return at + 3 <= limit && text.startsWith("```", at) ? at : -1;
+}
+
+/**
+ * Where the closing fence of the block whose body starts at `bodyStart` starts (-1 while it is open).
+ * Work is linear in the text up to the close.
+ */
+function findDirectMediaFenceClose(text, bodyStart, complete) {
 	LINE_EDGE_FENCE.lastIndex = bodyStart;
 	const lineEdge = LINE_EDGE_FENCE.exec(text);
-	const lineEdgeStart = lineEdge ? lineEdge.index : -1;
-	const body = text.slice(bodyStart, lineEdge ? lineEdgeStart : text.length);
-	if (/^\s*\{/u.test(body)) {
-		const objectEnd = jsonObjectEnd(body);
-		if (objectEnd >= 0) {
-			const at = objectEnd + /^[ \t\r]*/u.exec(body.slice(objectEnd))[0].length;
-			if (body.startsWith("```", at)) {
-				return bodyStart + at;
-			}
-		}
+	const limit = lineEdge ? lineEdge.index : text.length;
+	const afterJson = findBacktickAfterBodyJson(text, bodyStart, limit);
+	if (afterJson >= 0 || lineEdge) {
+		return afterJson >= 0 ? afterJson : limit;
 	}
-	return lineEdgeStart;
+	return complete ? text.indexOf("```", bodyStart) : -1;
 }
 
 /**
  * The blocks that `opener` starts in `text`, in order: where each starts, its kind, where its body
  * starts and ends, and where the block ends. A block that never closes runs to the end of the text
- * (`closed` false) and is the last one.
+ * (`closed` false) and is the last one. `complete` says the text will not grow.
  */
-function scanDirectMediaFences(text, opener) {
+function scanDirectMediaFences(text, opener, complete) {
 	const fences = [];
 	if (typeof text !== "string") {
 		return fences;
@@ -53,7 +79,7 @@ function scanDirectMediaFences(text, opener) {
 	opener.lastIndex = 0;
 	for (let match = opener.exec(text); match; match = opener.exec(text)) {
 		const bodyStart = match.index + match[0].length;
-		const closeStart = findDirectMediaFenceClose(text, bodyStart);
+		const closeStart = findDirectMediaFenceClose(text, bodyStart, complete);
 		const closed = closeStart >= 0;
 		fences.push({
 			bodyEnd: closed ? closeStart : text.length,
@@ -71,18 +97,19 @@ function scanDirectMediaFences(text, opener) {
 	return fences;
 }
 
-/** The image and audio blocks in `text`, in order (see `scanDirectMediaFences`). */
+/** The image and audio blocks in the complete `text`, in order (see `scanDirectMediaFences`). */
 function findDirectMediaFences(text) {
-	return scanDirectMediaFences(text, DIRECT_MEDIA_FENCE_OPENER);
+	return scanDirectMediaFences(text, DIRECT_MEDIA_FENCE_OPENER, true);
 }
 
 /**
- * The body of the first closed block of `kind` ("image" or "audio") in `text`, or null. Each kind is
- * read on its own, so the backticks that close a block of one kind may also open one of the other.
+ * The body of the first closed block of `kind` ("image" or "audio") in the complete `text`, or null.
+ * Each kind is read on its own, so the backticks that close a block of one kind may also open one of
+ * the other.
  */
 function findDirectMediaFenceBody(text, kind) {
 	const value = String(text);
-	const fence = scanDirectMediaFences(value, DIRECT_MEDIA_FENCE_OPENER_BY_KIND[kind])[0];
+	const fence = scanDirectMediaFences(value, DIRECT_MEDIA_FENCE_OPENER_BY_KIND[kind], true)[0];
 	return fence?.closed ? value.slice(fence.bodyStart, fence.bodyEnd) : null;
 }
 
@@ -90,12 +117,18 @@ function findDirectMediaFenceBody(text, kind) {
  * `text` with each closed block replaced by a paragraph break, split at the first block opener in
  * the result: the visible text before it, and the open block from there to the end ("" if none).
  * Text that ends in a partial opener ("```image ") right before a closed block becomes an opener
- * with that break, and opens a block, as it always has.
+ * with that break, and opens a block, as it always has. `complete` says the text will not grow.
  */
-function removeClosedDirectMediaFences(text) {
+function removeClosedDirectMediaFences(text, complete) {
+	const fences = scanDirectMediaFences(text, DIRECT_MEDIA_FENCE_OPENER, complete);
+	if (!fences[0]?.closed) {
+		// Nothing replaced: the first opener in the text, if any, starts the open block.
+		const pendingStart = fences[0]?.start ?? text.length;
+		return { pendingText: text.slice(pendingStart), visibleText: text.slice(0, pendingStart) };
+	}
 	let replacedText = "";
 	let at = 0;
-	for (const fence of findDirectMediaFences(text)) {
+	for (const fence of fences) {
 		replacedText += text.slice(at, fence.start);
 		if (!fence.closed) {
 			at = fence.start;
@@ -121,7 +154,12 @@ function collapseDirectMediaFenceNewlines(text) {
 	return text.replace(/\n{3,}/g, "\n\n");
 }
 
-function splitDirectMediaTextForStreaming(text) {
+/**
+ * `text` split into what may be shown and the open block from its opener on. `complete` says the
+ * text has ended, so a block with no close under rule 1 closes under rule 2; while it may still grow,
+ * that block stays open.
+ */
+function splitDirectMediaTextForStreaming(text, { complete = false } = {}) {
 	if (typeof text !== "string" || text.length === 0) {
 		return {
 			pendingText: "",
@@ -129,7 +167,7 @@ function splitDirectMediaTextForStreaming(text) {
 		};
 	}
 
-	const { pendingText, visibleText } = removeClosedDirectMediaFences(text);
+	const { pendingText, visibleText } = removeClosedDirectMediaFences(text, complete);
 	return {
 		pendingText,
 		visibleText: collapseDirectMediaFenceNewlines(visibleText),
@@ -141,7 +179,7 @@ function stripDirectMediaFences(text) {
 		return "";
 	}
 
-	const { pendingText, visibleText } = removeClosedDirectMediaFences(text);
+	const { pendingText, visibleText } = removeClosedDirectMediaFences(text, true);
 	return normalizeDirectMediaFenceWhitespace(pendingText ? `${visibleText}\n\n` : visibleText);
 }
 

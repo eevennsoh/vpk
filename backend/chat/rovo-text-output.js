@@ -24,15 +24,57 @@ const LEADING_BLANK_LINES = /^(?:[ \t]*\r?\n)+/u;
  */
 const PARTIAL_HIDDEN_FENCE_OPENER = /`{1,3}$|```(?:s|sp|spe|i|im|ima|imag|a|au|aud|audi|(?:image|audio)[^\S\n]*)$/iu;
 
+/** An end of shown text that a paragraph break after it turns into a media fence's opener. */
+const PARTIAL_MEDIA_OPENER_END = /```(?:image|audio)[^\S\n]*$/iu;
+
 /** The start of a fence the splitters hide, as their pending patterns read an opener. */
 const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audio)\s*\n)/iu;
 
 /**
- * Backticks at the end of text inside a media fence, and what may follow them on their line so far:
- * the next text decides whether they close the fence (a newline after them) or not (other text after
- * them, or a spec opener that leaves the fence open, as spec fences are split first).
+ * The run of three or more backticks at the end of `text`, however long, and what follows it on its
+ * line so far: only spaces, tabs or a carriage return ("spaces"), the start of a spec opener
+ * ("spec"), or nothing ("run"). Inside a media fence the next text decides whether the run closes
+ * the fence (a newline after it) or not (other text after it, or a spec opener that leaves the fence
+ * open, as spec fences are split first). Once the text has ended (`ended`), spaces after the run no
+ * longer count: only a spec opener's start, or nothing, may follow it. Returns where the run ends and
+ * where the backticks, spaces and tabs just before it start (`regionStart`): without the run they
+ * would end the text and read as a close there. Null when there is none. Read from the end of the
+ * text, so the work is the tail's length.
  */
-const MEDIA_FENCE_END_TAIL = /```(?:[ \t\r]+|s|sp|spe|spec[^\S\n]*)?$/iu;
+function mediaFenceEndTail(text, { ended }) {
+	const tailBefore = (end, kind) => {
+		let start = end;
+		while (start > 0 && text[start - 1] === "`") {
+			start -= 1;
+		}
+		if (end - start < 3) {
+			return null;
+		}
+		while (start > 0 && /[` \t\r]/u.test(text[start - 1])) {
+			start -= 1;
+		}
+		return { kind, regionStart: start, runEnd: end };
+	};
+	let specEnd = text.length;
+	while (specEnd > 0 && /[^\S\n]/u.test(text[specEnd - 1])) {
+		specEnd -= 1;
+	}
+	for (const partial of ["spec", "spe", "sp", "s"]) {
+		const start = specEnd - partial.length;
+		const tail = (partial === "spec" || specEnd === text.length) && text.slice(start, specEnd).toLowerCase() === partial ? tailBefore(start, "spec") : null;
+		if (tail) {
+			return tail;
+		}
+	}
+	if (ended && specEnd < text.length) {
+		return null;
+	}
+	let spacesStart = text.length;
+	while (!ended && spacesStart > 0 && /[ \t\r]/u.test(text[spacesStart - 1])) {
+		spacesStart -= 1;
+	}
+	return spacesStart < text.length ? tailBefore(spacesStart, "spaces") : tailBefore(text.length, "run");
+}
 
 /**
  * Whether `text` opens a hidden fence, or is all a partial opener of one. A longer run of backticks
@@ -108,8 +150,8 @@ function createRovoTextOutputController({
 	// Text held because it may be a classifier payload; none of it has reached the splitters yet.
 	let bufferedAssistantText = "";
 	// The end of the turn's text the splitters let through none of yet, because it may still change
-	// how the text after it splits: an open spec or media fence ("fence"), a media fence whose closing
-	// backticks only spaces or tabs follow so far ("fenceEnd"), a partial patch line ("patch"), or an
+	// how the text after it splits: an open spec or media fence, or a media fence whose closing
+	// backticks the text so far leaves undecided ("fence"), a partial patch line ("patch"), or an
 	// end that may still open a hidden fence ("opener"). The next text is split after it; everything
 	// before it was split and went out, so work per delta stays bounded by it.
 	let heldText = "";
@@ -198,11 +240,12 @@ function createRovoTextOutputController({
 	/**
 	 * Held text split into what may be shown and what an open spec or media fence, or a partial patch
 	 * line, still holds back. `holdsFence` says an open fence is among what is held back,
-	 * `holdsMediaFence` that only an open media fence is.
+	 * `holdsMediaFence` that only an open media fence is. `complete` says the text has ended, so a
+	 * media fence the media rule leaves undecided closes (see `backend/lib/direct-media-fence.js`).
 	 */
-	const splitHeldAssistantText = (text) => {
+	const splitHeldAssistantText = (text, complete = false) => {
 		const spec = splitSpecFenceTextForStreaming(text);
-		const media = splitDirectMediaTextForStreaming(spec.visibleText);
+		const media = splitDirectMediaTextForStreaming(spec.visibleText, { complete });
 		return {
 			holdsFence: Boolean(media.pendingText) || spec.pendingText.startsWith("```"),
 			holdsMediaFence: Boolean(media.pendingText) && !spec.pendingText,
@@ -217,7 +260,7 @@ function createRovoTextOutputController({
 	 * text is not matched against the stored end: it starts where its first line occurs and the text
 	 * from there, split on its own, is all held back and reads the same.
 	 */
-	const findWithheldOffset = (heldText, { pendingText, visibleText }) => {
+	const findWithheldOffset = (heldText, { pendingText, visibleText }, complete) => {
 		if (!pendingText) {
 			return heldText.length;
 		}
@@ -227,7 +270,7 @@ function createRovoTextOutputController({
 		const firstLine = pendingText.split("\n", 1)[0];
 		let offset = firstLine ? heldText.lastIndexOf(firstLine) : -1;
 		while (offset >= 0) {
-			const tail = splitHeldAssistantText(heldText.slice(offset));
+			const tail = splitHeldAssistantText(heldText.slice(offset), complete);
 			if (!tail.visibleText && tail.pendingText === pendingText) {
 				return offset;
 			}
@@ -345,30 +388,51 @@ function createRovoTextOutputController({
 
 	/**
 	 * Splits `text` (the held end and the text after it) and writes what it lets through. Unless
-	 * `final`, the end that may still open a hidden fence stays held as well. Returns where, in
+	 * `final`, the end that may still open a hidden fence stays held as well. `ended` (implied by
+	 * `final`) says the text will not grow, as at a rerun reset: the media rule closes what it left
+	 * undecided, and only an end that may still open a hidden fence stays held. Returns where, in
 	 * `text`, the end the splitters hold back starts (`text.length` when none is).
 	 */
-	const splitAndWriteText = (text, { final }) => {
-		let split = splitHeldAssistantText(text);
+	const splitAndWriteText = (text, { final, ended = final }) => {
+		let split = splitHeldAssistantText(text, ended);
 		let splitText = text;
-		// Backticks at the end that would close a media fence are undecided: what follows them on their
-		// line decides whether they end it, and spec fences are split first, so they may still open a
-		// spec fence that leaves the media fence open. They stay held with the fence. Spaces after them
-		// leave them undecided only when other text after them would keep the fence open: backticks that
-		// start their line or follow the body's JSON object close it already, and go out as before.
-		const fenceEndTail = final || split.pendingText ? "" : (MEDIA_FENCE_END_TAIL.exec(text)?.[0] ?? "");
-		const tailEndsInSpaces = /[ \t\r]$/u.test(fenceEndTail);
-		let holdsFenceEnd = false;
-		if (fenceEndTail && (!tailEndsInSpaces || splitHeldAssistantText(`${text}x`).holdsMediaFence)) {
-			const head = text.slice(0, -fenceEndTail.length);
-			const headSplit = splitHeldAssistantText(head);
+		// Backticks at the end that would close a media fence may be undecided: what follows them on
+		// their line decides whether they end it, and spec fences are split first, so they may still
+		// open a spec fence that leaves the media fence open. When text glued to the run would keep
+		// the fence open, the whole run is undecided, with the backticks, spaces and tabs just before
+		// it, which without it would end the text and close the fence there; they stay held with the
+		// fence. Otherwise the run starts its line or follows the body's JSON object, and closes the
+		// fence whatever follows except a spec opener: its last three backticks and a spec opener's
+		// start after them stay held, and spaces after them go out, as before.
+		const tail = final || split.pendingText ? null : mediaFenceEndTail(text, { ended });
+		const heldTailStart = !tail
+			? -1
+			: !ended && splitHeldAssistantText(`${text}x`).holdsMediaFence
+				? tail.regionStart
+				: tail.kind === "spaces"
+					? -1
+					: tail.runEnd - 3;
+		if (heldTailStart >= 0) {
+			const head = text.slice(0, heldTailStart);
+			const headSplit = splitHeldAssistantText(head, ended);
 			if (headSplit.holdsMediaFence) {
 				split = headSplit;
 				splitText = head;
-				holdsFenceEnd = tailEndsInSpaces;
 			}
 		}
-		const offset = findWithheldOffset(splitText, split);
+		let offset = findWithheldOffset(splitText, split, ended);
+		// A partial media opener ("```image ") right before a media fence the text has not decided
+		// becomes an opener once the fence closes (`removeClosedDirectMediaFences`), as it did when that
+		// fence closed at once: it stays held with the fence until the fence closes or the text ends.
+		const openerBeforeFence = !ended && split.holdsMediaFence ? (split.visibleText.match(PARTIAL_MEDIA_OPENER_END)?.[0] ?? "") : "";
+		if (
+			openerBeforeFence &&
+			splitText.slice(offset - openerBeforeFence.length, offset) === openerBeforeFence &&
+			splitHeldAssistantText(splitText, true).pendingText !== split.pendingText
+		) {
+			offset -= openerBeforeFence.length;
+			split = { ...split, visibleText: split.visibleText.slice(0, -openerBeforeFence.length) };
+		}
 		const opener = final || split.pendingText ? "" : (split.visibleText.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] ?? "");
 		writeSplitText(split.visibleText.slice(0, split.visibleText.length - opener.length), {
 			atFenceStart: startsWithHiddenFence(text, split.visibleText),
@@ -381,7 +445,7 @@ function createRovoTextOutputController({
 			// What the splitters hold back decides the kind: held text that opens with a patch line the
 			// splitters dropped may still end in an open fence.
 			heldText = text.slice(offset);
-			heldKind = holdsFenceEnd ? "fenceEnd" : split.holdsFence ? "fence" : "patch";
+			heldKind = split.holdsFence ? "fence" : "patch";
 			if (!continuesHeldPatch) {
 				patchStartLength = heldText.length;
 			}
@@ -512,7 +576,7 @@ function createRovoTextOutputController({
 		releaseHeldTextBeforeNotice();
 		if (suppressingStreamingText) {
 			suppressingStreamingText = false;
-			const replayedText = splitHeldAssistantText(assistantText).visibleText;
+			const replayedText = splitHeldAssistantText(assistantText, true).visibleText;
 			if (!isClassifierIntentLeakCandidate(replayedText)) {
 				replayTextForTextRoute(replayedText);
 			} else if (parseClassifierIntentPayload(assistantText)) {
@@ -570,6 +634,12 @@ function createRovoTextOutputController({
 	 * (`continuesShownText`) starts its first shown text as a new paragraph.
 	 */
 	const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
+		// The end of the attempt's text ends a held media fence the media rule left undecided, as the
+		// end of a stream does: what the closed fence was holding back is split again, and only an end
+		// that may still open a hidden fence stays held, for the rule below.
+		if (heldKind === "fence") {
+			splitAndWriteText(heldText, { ended: true, final: false });
+		}
 		// Held text that opened no hidden fence is ordinary text, shown as the attempt streamed it:
 		// backticks alone, or an opener the text held after it as a possible classifier payload has
 		// already disproved. Anything else held is dropped with the attempt: an open fence or patch
@@ -577,11 +647,6 @@ function createRovoTextOutputController({
 		// complete.
 		if (heldKind === "opener" && (/^`+$/u.test(heldText) || (bufferedAssistantText && !isHiddenOpenerStart(`${heldText}${bufferedAssistantText}`)))) {
 			writeSplitText(heldText, { atFenceEnd: false, atFenceStart: false });
-		}
-		// A media fence whose closing backticks only spaces or tabs followed is closed by the end of the
-		// attempt's text, as the end of a stream closes it; what followed them is shown.
-		if (heldKind === "fenceEnd") {
-			splitAndWriteText(heldText, { final: true });
 		}
 		heldText = "";
 		heldKind = "";

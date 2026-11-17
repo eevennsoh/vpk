@@ -4,7 +4,8 @@ export const ROVO_APP_ARTIFACT_INTENT_LEAK_FALLBACK =
 	"I had an internal routing issue while generating that response. Please try again.";
 
 const ROVO_APP_DIRECT_MEDIA_FENCE_OPENER = /```(?:image|audio)\s*\n/giu;
-// The closing fence rule of `backend/lib/direct-media-fence.js`; the display test keeps them equal.
+// The closing fence rule of `backend/lib/direct-media-fence.js` for complete text; the display test
+// keeps the two equal.
 const ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[ \t]*```)|(?=`*[ \t\r]*(?:\n|$)))/gu;
 const ROVO_APP_SPEC_FENCE_PATTERN = /```spec\s*\n[\s\S]*?(?:```|$)/giu;
 const ROVO_APP_SPEC_PATCH_LINE_PATTERN =
@@ -119,8 +120,9 @@ function rovoAppJsonObjectEnd(text: string): number {
 }
 
 /**
- * Where a media block's closing fence starts (-1 while it is open): the first run of three or more
- * backticks that starts or ends its line, or directly follows the JSON object that opens the body.
+ * Where a media block's closing fence starts in the complete text (-1 while it is open): the first
+ * run of three or more backticks that starts or ends its line, or directly follows the JSON object
+ * that opens the body; failing that, the first three backticks after the opener.
  */
 function findRovoAppDirectMediaFenceClose(text: string, bodyStart: number): number {
 	ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE.lastIndex = bodyStart;
@@ -136,7 +138,7 @@ function findRovoAppDirectMediaFenceClose(text: string, bodyStart: number): numb
 			}
 		}
 	}
-	return lineEdgeStart;
+	return lineEdge ? lineEdgeStart : text.indexOf("```", bodyStart);
 }
 
 /** `rawText` with each media block, closed or still open, replaced by a paragraph break. */

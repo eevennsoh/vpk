@@ -80,11 +80,28 @@ test("a media block closes at backticks that start or end their line, or follow 
 	}
 });
 
-test("backticks with text on both sides of them on their line keep the block open", () => {
-	// The same text as backticks inside a body: the block stays open to the end of the text.
+test("a block with no close at a line edge or after its JSON closes at its first backticks, as before", () => {
+	// Backticks with text on both sides of them on their line close the block only when nothing later
+	// in the complete text closes it at a line edge.
+	for (const [text, stripped] of [
+		[`A ${T}image\nsunset${T}Outro`, "A\n\nOutro"],
+		[`A ${T}image\nsunset ${T} more`, "A\n\n more"],
+		[`A ${T}image\n{"prompt":"x"} done${T}x`, "A\n\nx"],
+		[`A ${T}image\n{"prompt":"${T}js`, "A\n\njs"],
+		[`A ${T}image\nplain ${T}js${T}more`, "A\n\njs```more"],
+	]) {
+		assert.equal(stripDirectMediaFences(text), stripped, text);
+		assert.equal(splitDirectMediaTextForStreaming(text, { complete: true }).pendingText, "", text);
+	}
+	// A later close at a line edge comes first.
+	assert.equal(stripDirectMediaFences(`A ${T}image\nsunset${T}Outro\n${T}\nB`), "A\n\nB");
+	// With no backticks at all, the block stays open to the end.
+	assert.equal(stripDirectMediaFences(`A ${T}image\nsunset Outro`), "A");
+});
+
+test("while the text may grow, backticks with text on both sides of them keep the block open", () => {
 	for (const text of [`A ${T}image\nsunset${T}Outro`, `A ${T}image\nsunset ${T} more`, `A ${T}image\n{"prompt":"x"} done${T}x`]) {
 		assert.deepEqual(splitDirectMediaTextForStreaming(text), { pendingText: text.slice(2), visibleText: "A " }, text);
-		assert.equal(stripDirectMediaFences(text), "A", text);
 	}
 });
 
@@ -92,7 +109,8 @@ test("findDirectMediaFenceBody reads the whole body of the first closed block of
 	const text = `Intro\n${T}image\n{"prompt":"draw ${T}js"}\n${T}\n${T}audio\n{"text":"say ${T}"}${T}\nOutro`;
 	assert.equal(findDirectMediaFenceBody(text, "image"), `{"prompt":"draw ${T}js"}\n`);
 	assert.equal(findDirectMediaFenceBody(text, "audio"), `{"text":"say ${T}"}`);
-	assert.equal(findDirectMediaFenceBody(`${T}image\n{"prompt":"open ${T}js"}`, "image"), null);
+	assert.equal(findDirectMediaFenceBody(`${T}image\n{"prompt":"open ${T}js"}`, "image"), '{"prompt":"open ');
+	assert.equal(findDirectMediaFenceBody(`${T}image\n{"prompt":"open"}`, "image"), null);
 	assert.equal(findDirectMediaFenceBody("no blocks", "audio"), null);
 });
 

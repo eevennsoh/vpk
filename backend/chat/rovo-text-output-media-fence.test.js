@@ -84,13 +84,19 @@ test("a media block with backticks inside its body stays off the wire however it
 	}
 });
 
-test("a failure notice inside a media body with backticks drops the whole block", () => {
-	// Before: 'A\n\njs"}\n\nN' on the wire, and the stored text kept the block's start.
-	for (const [start, rest] of [[`${T}image\n{"prompt":"`, `${T}js"}`], [`${T}audio\nplain `, `${T}js more`]]) {
+test("a failure notice inside a media body ends the text there", () => {
+	// With no backticks before it, the whole block is dropped.
+	for (const chunks of [[`A\n${T}image\n{"prompt":"`, "draw"], [`A\n${T}audio\nplain`]]) {
+		const result = stream([...chunks, { notice: "N" }]);
+		assert.equal(result.wire, "A\n\nN", JSON.stringify(chunks));
+		assert.equal(result.stored, "A\n\nN", JSON.stringify(chunks));
+	}
+	// After backticks with text on both sides of them, the block closes at them, as before the rule.
+	for (const [start, rest, shown] of [[`${T}image\n{"prompt":"`, `${T}js"}`, 'js"}'], [`${T}audio\nplain `, `${T}js more`, "js more"]]) {
 		for (const chunks of [[`A\n${start}`, rest], [`A\n${start}${rest}`], [`A\n${start}${rest.slice(0, 2)}`, rest.slice(2)]]) {
 			const result = stream([...chunks, { notice: "N" }]);
-			assert.equal(result.wire, "A\n\nN", JSON.stringify(chunks));
-			assert.equal(result.stored, "A\n\nN", JSON.stringify(chunks));
+			assert.equal(result.wire, `A\n\n${shown}\n\nN`, JSON.stringify(chunks));
+			assert.equal(result.stored, `A\n${start}${rest}\n\nN`, JSON.stringify(chunks));
 		}
 	}
 	// After the block closes, the notice follows the text after it.
@@ -135,9 +141,16 @@ test("backticks and spaces after a media body's JSON object close it at once, as
 });
 
 test("a media block that never closes stays off the wire to the end of the stream", () => {
-	for (const chunks of [[`A\n${T}image\n{"prompt":"${T}js`, " more"], [`A\n${T}audio\nplain ${T}js${T}more`]]) {
+	for (const chunks of [[`A\n${T}image\n{"prompt":"`, "draw"], [`A\n${T}audio\nplain body`, " more"]]) {
 		const result = stream(chunks);
 		assert.equal(result.wire, "A\n", JSON.stringify(chunks));
+		assert.equal(result.stored, chunks.join(""), JSON.stringify(chunks));
+	}
+	// With backticks inside its body that close nothing, it closes at them when the stream ends, as
+	// before the rule.
+	for (const [chunks, wire] of [[[`A\n${T}image\n{"prompt":"${T}js`, " more"], "A\n\njs more"], [[`A\n${T}audio\nplain ${T}js${T}more`], "A\n\njs```more"]]) {
+		const result = stream(chunks);
+		assert.equal(result.wire, wire, JSON.stringify(chunks));
 		assert.equal(result.stored, chunks.join(""), JSON.stringify(chunks));
 	}
 });
