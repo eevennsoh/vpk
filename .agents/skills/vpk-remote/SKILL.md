@@ -282,8 +282,8 @@ layout.
   verify, where the worker's diff is uncommitted and a post-consult
   `git status` could not distinguish an advisor's edit from the worker's.
 - Workspace-write sandboxing is the GPT-lane default; do not escalate to
-  bypass mode, not even for browser tests or commits. The commit grant trusts
-  the worker with the shared object store ([gpt-executor.md § Commits](references/gpt-executor.md#commits)).
+  bypass mode, not even for browser tests or commits. The commit grant, which
+  only a task worktree gets, trusts the worker with the shared object store ([gpt-executor.md § Commits](references/gpt-executor.md#commits)).
   The Claude lane runs with permissions skipped, so the brief's
   scope boundaries are its only guardrail — write them explicitly.
 - Never copy, link, or read `~/.codex/auth.json` or any OAuth credential

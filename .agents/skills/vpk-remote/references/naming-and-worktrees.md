@@ -99,15 +99,17 @@ concurrent tasks remain readable in one place.
 
 ### Landing
 
-The worker commits its work to the task branch inside the worktree; the
+In a task worktree, the worker commits its work to the task branch; the
 planner verifies the diff there and reports. A GPT-lane worker can commit
 only through the git grant in its canonical command, which opens its own
 branch and the repository's shared object store, and no other ref (see
-[gpt-executor.md § Commits](gpt-executor.md#commits)). Where the grant is
-`{}` (under `--no-worktree`, a detached or moved `HEAD`, or a planner who
-chose not to trust the worker with the object store) or a commit fails, the
-worker leaves the changes uncommitted and puts its proposed commit subject in
-its report, and the planner commits after verifying the diff. **Stop at a verified diff** —
+[gpt-executor.md § Commits](gpt-executor.md#commits)). A task under
+`--no-worktree` has no task branch, and its GPT worker gets no grant. Where
+the grant is `{}` (under `--no-worktree`, a detached or moved `HEAD`,
+worktree metadata the grant script does not accept, or a planner who chose
+not to trust the worker with the object store) or a commit fails, the worker
+leaves the changes uncommitted and puts its proposed commit subject in its
+report, and the planner commits after verifying the diff. **Stop at a verified diff** —
 pushing the branch and opening a PR is `/vpk-git-ship`, run only when the user
 asks. Nothing outward-facing happens on the strength of a passing proof
 command alone.

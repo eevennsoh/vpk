@@ -27,7 +27,8 @@ never inline it into a shell command. Every brief carries, in order:
 For parallel briefs, explicitly say whether the worker is read-only or list
 its exclusive write scope.
 
-**Git in briefs.** A writing worker commits only to its own task branch.
+**Git in briefs.** A writing worker in a task worktree commits only to its
+own task branch; under `--no-worktree` there is no task branch to commit to.
 Ask for `git add`, `git commit`, `git restore` / `git checkout -- <path>`
 and read-only git, nothing else: never `git stash` (the stash stack is shared
 with every worktree), switching branches, `git branch -f`, `git fetch`,
