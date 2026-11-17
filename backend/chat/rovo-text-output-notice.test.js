@@ -197,28 +197,36 @@ test("a notice drops what two forced flushes in a row each held back whole", () 
 	assert.equal(controller.getUnsuppressedAssistantText(), "N");
 });
 
-test("a notice on a card-first turn never replays a classifier payload, and the turn's text drops it", () => {
+test("a notice on a card-first turn never replays a classifier payload, and the turn's text drops one that parses", () => {
 	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
 	// Over the buffer limit and not yet parseable, the first delta is let through (suppressed) and the
 	// buffer is cleared, so the notice finds nothing held. Before: the replay wrote the payload, then
-	// the notice: wire '{"intent":…"}\n\nN', and the turn's text kept it.
+	// the notice: wire '{"intent":…"}\n\nN'.
 	const payload = `{"intent":"normal","reason":"${"x".repeat(321)}`;
-	const { controller, parts } = createTextOutputController({
-		classifierJsonBufferMaxChars: 320,
-		isClassifierIntentLeakCandidate,
-		parseClassifierIntentPayload,
-		suppressStreamingTextForCardFirstGenui: true,
-	});
-	controller.emitTextDelta(payload);
-	controller.emitTextDelta('"}');
-	controller.emitNoticeParagraph("N");
-	controller.finalizeBufferedAssistantText();
-	controller.emitBufferedAssistantTextForTextRoute();
+	for (const [name, deltas, stored] of [
+		["a payload that parses", [payload, '"}'], "N"],
+		// Not provably a payload: the turn's text keeps it, as it did before the replay.
+		["an unfinished payload", [payload], `${payload}\n\nN`],
+		["a payload with text after it", [payload, '"}more'], `${payload}"}more\n\nN`],
+	]) {
+		const { controller, parts } = createTextOutputController({
+			classifierJsonBufferMaxChars: 320,
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			suppressStreamingTextForCardFirstGenui: true,
+		});
+		for (const delta of deltas) {
+			controller.emitTextDelta(delta);
+		}
+		controller.emitNoticeParagraph("N");
+		controller.finalizeBufferedAssistantText();
+		controller.emitBufferedAssistantTextForTextRoute();
 
-	assert.equal(shownText(parts), "N");
-	assert.equal(controller.getAssistantText(), "N");
-	assert.equal(controller.getUnsuppressedAssistantText(), "N");
-	assert.equal(parts.filter((part) => part.type === "text-start").length, 1);
+		assert.equal(shownText(parts), "N", name);
+		assert.equal(controller.getAssistantText(), stored, name);
+		assert.equal(controller.getUnsuppressedAssistantText(), stored, name);
+		assert.equal(parts.filter((part) => part.type === "text-start").length, 1, name);
+	}
 });
 
 test("a notice cuts nothing from a turn's text replaced after a forced flush held back more than it", () => {

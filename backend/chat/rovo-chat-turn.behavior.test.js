@@ -934,27 +934,34 @@ test("tool starts that arrive after the turn ended are blocked once: Rovo is can
 
 test("a failure notice on a card-first turn never shows a classifier payload", async () => {
 	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
-	// Past the production buffer limit (320) and not yet parseable, the payload's first chunk is let
-	// through and the buffer cleared. Before: the notice's replay wrote the whole payload, then the notice.
 	const { finalizeRovoStudioAgentResult } = require("./rovo-stream");
+	// Past the production buffer limit (320) and not yet parseable, the payload's first chunk is let
+	// through and the buffer cleared. Before: the notice's replay wrote the payload, then the notice.
 	const payload = `{"intent":"normal","reason":"${"x".repeat(321)}`;
-	let storedTexts = null;
-	const turn = await runTurn(failingAfterChunks([payload, '"}', 'WIDGET_DATA:{"type":"genui-preview","title":"x"}'], {
-		CLASSIFIER_JSON_BUFFER_MAX_CHARS: 320,
-		finalizeRovoStudioAgentResult: (options) => {
-			storedTexts = [options.getAssistantText(), options.getUnsuppressedAssistantText()];
-			return finalizeRovoStudioAgentResult(options);
-		},
-		isClassifierIntentLeakCandidate,
-		parseClassifierIntentPayload,
-	}), { prefersGenuiCardExperience: true, smartGenerationActive: true });
+	const notice = `\n\n${BUSY_NOTICE}`;
+	for (const [name, chunks, stored] of [
+		// The turn's text drops a payload that parses, as it does one still held: the leak repair reads
+		// only the held buffer, which the notice empties, so it would only reach post-stream routing.
+		["a payload that parses", [payload, '"}'], BUSY_NOTICE],
+		// Not provably a payload, so the turn's text keeps it; the wire never shows it.
+		["an unfinished payload", [payload], `${payload}${notice}`],
+		["a payload with text after it", [payload, '"}more'], `${payload}"}more${notice}`],
+	]) {
+		let storedTexts = null;
+		const turn = await runTurn(failingAfterChunks([...chunks, 'WIDGET_DATA:{"type":"genui-preview","title":"x"}'], {
+			CLASSIFIER_JSON_BUFFER_MAX_CHARS: 320,
+			finalizeRovoStudioAgentResult: (options) => {
+				storedTexts = [options.getAssistantText(), options.getUnsuppressedAssistantText()];
+				return finalizeRovoStudioAgentResult(options);
+			},
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+		}), { prefersGenuiCardExperience: true, smartGenerationActive: true });
 
-	assert.equal(visibleText(turn.parts), BUSY_NOTICE);
-	assert.equal(turn.parts.filter((part) => part.type === "text-start").length, 1);
-	// The turn's text drops the payload as it does one still held: the leak repair reads only the held
-	// buffer, which the notice empties, so a stored payload would only reach post-stream routing.
-	assert.deepEqual(storedTexts, [BUSY_NOTICE, BUSY_NOTICE]);
-	assert.equal(turn.endOfTurnFacts.assistantText, BUSY_NOTICE);
-	assert.equal(widgetParts(turn.parts, "genui-preview").includes("data"), true);
-	assert.equal(endsWithTurnComplete(turn.parts), true);
+		assert.equal(visibleText(turn.parts), BUSY_NOTICE, name);
+		assert.equal(turn.parts.filter((part) => part.type === "text-start").length, 1, name);
+		assert.deepEqual(storedTexts, [stored, stored], name);
+		assert.equal(widgetParts(turn.parts, "genui-preview").includes("data"), true, name);
+		assert.equal(endsWithTurnComplete(turn.parts), true, name);
+	}
 });

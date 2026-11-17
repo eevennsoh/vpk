@@ -316,8 +316,8 @@ function createRovoTextOutputController({
 	 * the turn's text follows that text. On a card-first turn the suppressed text goes out first
 	 * through the text route's replay, so the notice always reaches the wire, once. The replay writes
 	 * only what streaming would have shown: no completed spec or media fence, which the turn's text
-	 * keeps for the post-stream pipeline, and no classifier payload, which the turn's text drops as it
-	 * does one still held.
+	 * keeps for the post-stream pipeline, and nothing that may be a classifier payload. The turn's text
+	 * drops a payload that parses, as it does one still held, and keeps text it cannot prove is one.
 	 */
 	const emitNoticeParagraph = (notice) => {
 		const text = typeof notice === "string" ? notice.trim() : "";
@@ -328,7 +328,7 @@ function createRovoTextOutputController({
 		if (suppressingStreamingText) {
 			suppressingStreamingText = false;
 			const replayedText = splitHeldAssistantText(assistantText).visibleText;
-			if (!parseClassifierIntentPayload(replayedText)) {
+			if (!isClassifierIntentLeakCandidate(replayedText)) {
 				replayTextForTextRoute(replayedText);
 			} else if (parseClassifierIntentPayload(assistantText)) {
 				recordWithheldEnd(assistantText, 0);
