@@ -49,6 +49,32 @@ function assertStream(name, chunks, expectedWire, options) {
 const SPEC_FENCE = '```spec\n{"root":"card","elements":{"card":{"type":"Card","props":{"title":"Hi"}}}}\n```';
 const IMAGE_FENCE = '```image\n{"prompt":"A lighthouse at dusk"}\n```';
 
+/**
+ * `reply` as one chunk, one character at a time, every 2-way split and 20 pseudo-random chunkings
+ * from a fixed seed, so the chunkings are the same on every run.
+ */
+function chunkingsOf(reply) {
+	let seed = 7;
+	const nextChunkLength = () => {
+		seed = (seed * 1103515245 + 12345) % 2147483648;
+		return 1 + (seed % 9);
+	};
+	const chunkings = [[reply], [...reply]];
+	for (let cut = 1; cut < reply.length; cut += 1) {
+		chunkings.push([reply.slice(0, cut), reply.slice(cut)]);
+	}
+	for (let run = 0; run < 20; run += 1) {
+		const chunks = [];
+		for (let start = 0; start < reply.length; ) {
+			const end = start + nextChunkLength();
+			chunks.push(reply.slice(start, end));
+			start = end;
+		}
+		chunkings.push(chunks);
+	}
+	return chunkings;
+}
+
 test("a spec fence that opens after text keeps hiding its later chunks", () => {
 	// Before: the second chunk went out as text: wire 'Intro\n"card"'.
 	assertStream("spec", ['Intro\n```spec\n{"root":', '"card"'], "Intro\n");
@@ -116,7 +142,7 @@ test("a fence still open at the end of the stream stays off the wire and in the 
 	assert.equal(result.controller.getAssistantText(), "Intro\n\nN");
 });
 
-test("however a reply is chunked, the wire text is the same and the stored text is the reply", () => {
+test("however a reply with a hidden fence is chunked, the wire text is the same and the stored text is the reply", () => {
 	const replies = [
 		`Intro\n${SPEC_FENCE}\nOutro`,
 		`Intro\n\n${SPEC_FENCE}\n\nOutro`,
@@ -125,31 +151,157 @@ test("however a reply is chunked, the wire text is the same and the stored text 
 		"Mixed ```IMAGE\nsunset\n``` case",
 		"Code:\n```js\nconst a = `x`;\n```\nDone",
 		"Open at the end:\n```spec\n{\"root\":\"card\"",
-		"Runs\n\n\nof newlines\n\n\n\nhere",
 	];
-	// A fixed pseudo-random sequence, so the chunkings are the same on every run.
-	let seed = 7;
-	const nextChunkLength = () => {
-		seed = (seed * 1103515245 + 12345) % 2147483648;
-		return 1 + (seed % 9);
-	};
 	for (const reply of replies) {
 		const expectedWire = streamChunks([reply]).wire;
-		const chunkings = [[...reply]];
-		for (let cut = 1; cut < reply.length; cut += 1) {
-			chunkings.push([reply.slice(0, cut), reply.slice(cut)]);
-		}
-		for (let run = 0; run < 20; run += 1) {
-			const chunks = [];
-			for (let start = 0; start < reply.length; ) {
-				const end = start + nextChunkLength();
-				chunks.push(reply.slice(start, end));
-				start = end;
-			}
-			chunkings.push(chunks);
-		}
-		for (const chunks of chunkings) {
+		for (const chunks of chunkingsOf(reply)) {
 			assertStream(JSON.stringify(chunks), chunks, expectedWire);
 		}
+	}
+});
+
+const T = "```";
+
+/**
+ * The wire text `36f992247` wrote for a reply with no hidden fence: each delta split on its own, so
+ * the joined chunks, with a run of three or more newlines inside one chunk collapsed to two (runs
+ * split across chunks were not joined). A reply that opens with a backtick fence was held whole as a
+ * possible classifier payload and split once; the ones below that do have no such runs, so the rule
+ * holds for them too.
+ */
+const baseWireFor = (chunks) => chunks.map((chunk) => chunk.replace(/\n{3,}/gu, "\n\n")).join("");
+
+test("a reply with no hidden fence goes on the wire as it did before, however it is chunked", () => {
+	// The "spec…" languages are the exception: before, a chunk holding "```spec" hid it and the rest of
+	// that chunk ("```specification" in one chunk showed nothing). They are ordinary code fences now,
+	// shown like any other, so their expected wire is the rule above.
+	const replies = [
+		"Plain text, with punctuation.",
+		"Inline `code` and ``double`` ticks, ending in ``",
+		"Code:\n```js\nconst a = `x`;\n```\nDone",
+		"```python\nprint(1)\n```\nAfter",
+		"Shell:\n```sh\nls\n```\n\n```json\n{\"a\":1}\n```",
+		"Runs\n\n\nof newlines\n\n\n\nhere\n\n\n",
+		"CRLF\r\n\r\n\r\nlines\r\nend",
+		`A ${T}specs-not\nX\n${T} tail`,
+		`${T}specification\nY\n${T}`,
+		"Tildes ~~~spec\nnot a backtick fence\n~~~",
+	];
+	for (const reply of replies) {
+		for (const chunks of chunkingsOf(reply)) {
+			assertStream(JSON.stringify(chunks), chunks, baseWireFor(chunks));
+		}
+	}
+});
+
+test("newlines split across chunks go out as each chunk had them", () => {
+	// Before: the controller split them as one run and wrote "A\n\nB".
+	assertStream("split run", ["A\n", "\n", "\nB"], "A\n\n\nB");
+	assertStream("one chunk", ["A\n\n\nB"], "A\n\nB");
+});
+
+test("a fence whose language only starts with spec is an ordinary code fence", () => {
+	// Before: everything after "```sp" was hidden: wire "A ".
+	const chunks = [`A ${T}sp`, `ecs-not\nX\n${T} tail`];
+	assertStream("specs-not", chunks, chunks.join(""));
+	assertStream("spec, then s", [`A ${T}spec`, `s-not\nX\n${T}`], `A ${T}specs-not\nX\n${T}`);
+	// "spec" as the whole language still hides, with whitespace after it or split anywhere.
+	assertStream("spec and spaces", [`A ${T}spec `, ' \n{"a":1}\n', `${T}\nB`], "A \n\nB");
+	// Still undecided at the end of the stream, it is held and dropped, as an open fence is.
+	assertStream("spec at the end", [`A ${T}spec`], "A ");
+});
+
+test("a classifier payload after a partial patch line stays held, as it did before", () => {
+	const patchLine = '{"op":"add","path":"/root","value":1}';
+	const payload = '{"intent":"normal"}';
+	const chunks = [`A\n${patchLine}`, `\n${payload}`];
+	// Before: the payload went out and the end of the stream returned null: wire 'A\n{"intent":"normal"}'.
+	const result = streamChunks(chunks);
+	assert.equal(result.wire, "A\n");
+	assert.deepEqual(result.classifierPayload, { confidence: null, intent: "normal", reason: null });
+	assert.equal(result.stored, chunks.join(""));
+
+	result.controller.emitNoticeParagraph("N");
+	assert.equal(result.controller.getAssistantText(), "A\n\nN");
+	assert.equal(result.controller.getUnsuppressedAssistantText(), "A\n\nN");
+
+	// The same before a notice, and through the card-first replay.
+	for (const suppressStreamingTextForCardFirstGenui of [false, true]) {
+		const parts = [];
+		const controller = createRovoTextOutputController({
+			classifierJsonBufferMaxChars: 320,
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+			suppressStreamingTextForCardFirstGenui,
+			textId: "text-test",
+			writer: { write: (part) => parts.push(part) },
+		});
+		for (const chunk of chunks) {
+			controller.emitTextDelta(chunk);
+		}
+		controller.emitNoticeParagraph("N");
+		const wire = parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
+		assert.equal(wire, "A\n\nN", `card-first ${suppressStreamingTextForCardFirstGenui}`);
+		assert.equal(controller.getAssistantText(), "A\n\nN", `card-first ${suppressStreamingTextForCardFirstGenui}`);
+	}
+});
+
+test("a patch line split across chunks stays off the wire and keeps the line break after it", () => {
+	const patchLine = '{"op":"add","path":"/root","value":1}';
+	// Each delta split on its own wrote "A\n" + "\nB" before; the line's rest, cut anywhere, stays hidden.
+	assertStream("whole line", [`A\n${patchLine}`, "\nB"], "A\n\nB");
+	assertStream("cut line", [`A\n${patchLine.slice(0, 30)}`, `${patchLine.slice(30)}\nB`], "A\n\nB");
+});
+
+test("a rerun writes held backticks that opened no hidden fence and drops what may have", () => {
+	// Each is the first attempt, then the rerun's "B". Before: the held "`" was dropped: "a\n\nB".
+	for (const [firstAttempt, expectedWire] of [
+		["a`", "a`\n\nB"],
+		[`a${T}`, `a${T}\n\nB`],
+		// A partial hidden opener the dropped attempt can no longer complete is dropped with it.
+		[`a${T}sp`, "a\n\nB"],
+		[`a${T}image`, "a\n\nB"],
+		[`a${T}spec\n{"root":`, "a\n\nB"],
+	]) {
+		const parts = [];
+		const controller = createRovoTextOutputController({
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+			textId: "text-test",
+			writer: { write: (part) => parts.push(part) },
+		});
+		controller.emitTextDelta(firstAttempt);
+		controller.resetAssistantTextForRetryAttempt({ continuesShownText: true });
+		controller.emitTextDelta("B");
+		controller.finalizeBufferedAssistantText();
+		const wire = parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
+		assert.equal(wire, expectedWire, firstAttempt);
+		assert.equal(controller.getAssistantText(), "B", firstAttempt);
+	}
+});
+
+test("the text handed to the splitters grows linearly with a long reply without fences", () => {
+	// Before: text ending in a newline was split again from the start on every delta, so ten
+	// thousand "x\n" deltas passed about 100 million characters through the spec splitter.
+	const charactersSplitFor = (chunks) => {
+		let characters = 0;
+		const counted = (split) => (text) => {
+			characters += text.length;
+			return split(text);
+		};
+		streamChunks(chunks, {
+			splitDirectMediaTextForStreaming: counted(splitDirectMediaTextForStreaming),
+			splitSpecFenceTextForStreaming: counted(splitSpecFenceTextForStreaming),
+		});
+		return characters;
+	};
+	for (const unit of [["x\n"], ["Line with `code`", "\n", "\n"], ["a ``", "b\n\n\n"]]) {
+		const short = charactersSplitFor(Array.from({ length: 500 }, () => unit).flat());
+		const long = charactersSplitFor(Array.from({ length: 2000 }, () => unit).flat());
+		assert.ok(long <= short * 4 * 1.05, `${JSON.stringify(unit)}: ${short} then ${long} characters`);
 	}
 });

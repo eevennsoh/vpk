@@ -217,8 +217,9 @@ test("a timeout notice after an empty rerun follows the first attempt's shown te
 test("text the first attempt still held back is not shown when it reruns", async () => {
 	// Each expected string is the first attempt's text on main, then the rerun's after one blank line if any showed.
 	for (const [firstAttempt, expected] of [
-		// A spec fence and its payload stay hidden, as does the "``" that may open one.
-		['X ```spec\n{"foo":1}', "X \n\nB"],
+		// A spec fence and its payload stay hidden; the "``" held because it might open one is ordinary
+		// text once the attempt is dropped, and goes out as it did on main.
+		['X ```spec\n{"foo":1}', "X ``\n\nB"],
 		["X ```sp", "B"],
 		// Short enough to be held back whole as a possible marker start.
 		["A", "B"],
