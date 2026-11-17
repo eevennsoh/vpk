@@ -252,7 +252,7 @@ test("root StrictMode replay leaves the mounted provider able to dispatch a queu
 	}
 });
 
-test("cancelled pending thread creation releases the mounted provider queue and rejects late completions", async () => {
+test("a prompt joining a pending cancelled local creation adopts its success or creates once after its failure", async () => {
 	const { Harness } = await loadHarness();
 	for (const lateOutcome of ["resolve", "reject"]) {
 		const created = [];
@@ -276,20 +276,20 @@ test("cancelled pending thread creation releases the mounted provider queue and 
 			await React.act(async () => root.render(React.createElement(React.StrictMode, null, React.createElement(Harness))));
 			await React.act(async () => { button("Start local").click(); await new Promise((resolve) => setTimeout(resolve, 10)); });
 			assert.equal(created.length, 1);
-			assert.equal(created[0].signal.aborted, false);
 			await React.act(async () => { button("Abort local").click(); await Promise.resolve(); });
 			assert.deepEqual(finished, [false]);
-			assert.equal(created[0].signal.aborted, true);
 			await React.act(async () => { button("Send").click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
-			assert.deepEqual(sent, ["Hello after replay"]);
-			assert.equal(created.length, 2);
-			assert.equal(container.querySelector("[data-active-thread]").textContent, created[1].id);
+			assert.deepEqual(sent, []);
+			assert.equal(created.length, 1);
+			assert.equal(container.querySelector("[data-active-thread]").textContent, "none");
 			await React.act(async () => {
 				if (lateOutcome === "resolve") resolveOld(created[0]);
 				else rejectOld(new Error("Old network request failed late"));
-				await Promise.resolve();
+				await new Promise((resolve) => setTimeout(resolve, 20));
 			});
-			assert.equal(container.querySelector("[data-active-thread]").textContent, created[1].id);
+			assert.deepEqual(sent, ["Hello after replay"]);
+			assert.equal(created.length, lateOutcome === "resolve" ? 1 : 2);
+			assert.equal(container.querySelector("[data-active-thread]").textContent, created.at(-1).id);
 			assert.deepEqual(finished, [false]);
 		} finally {
 			await React.act(async () => root.unmount());

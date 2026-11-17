@@ -33,9 +33,6 @@
     "@next/next/no-location-assign-relative-destination": {
       "count": 1
     },
-    "react-hooks/purity": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 5
     },
