@@ -196,3 +196,42 @@ test("a notice drops what two forced flushes in a row each held back whole", () 
 	assert.equal(controller.getAssistantText(), "N");
 	assert.equal(controller.getUnsuppressedAssistantText(), "N");
 });
+
+test("a notice on a card-first turn never replays a classifier payload, and the turn's text drops it", () => {
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
+	// Over the buffer limit and not yet parseable, the first delta is let through (suppressed) and the
+	// buffer is cleared, so the notice finds nothing held. Before: the replay wrote the payload, then
+	// the notice: wire '{"intent":…"}\n\nN', and the turn's text kept it.
+	const payload = `{"intent":"normal","reason":"${"x".repeat(321)}`;
+	const { controller, parts } = createTextOutputController({
+		classifierJsonBufferMaxChars: 320,
+		isClassifierIntentLeakCandidate,
+		parseClassifierIntentPayload,
+		suppressStreamingTextForCardFirstGenui: true,
+	});
+	controller.emitTextDelta(payload);
+	controller.emitTextDelta('"}');
+	controller.emitNoticeParagraph("N");
+	controller.finalizeBufferedAssistantText();
+	controller.emitBufferedAssistantTextForTextRoute();
+
+	assert.equal(shownText(parts), "N");
+	assert.equal(controller.getAssistantText(), "N");
+	assert.equal(controller.getUnsuppressedAssistantText(), "N");
+	assert.equal(parts.filter((part) => part.type === "text-start").length, 1);
+});
+
+test("a notice cuts nothing from a turn's text replaced after a forced flush held back more than it", () => {
+	// The held fence is longer than the replacement text, so its start in the replaced text is negative.
+	// Before: the cut ran from the wrong end and dropped the shown text: wire "Shown\n\nN", text "N".
+	// The unreplaced text is the held fence alone, none of which reached the wire, so it is dropped.
+	const { controller, parts } = createTextOutputController();
+	controller.emitTextDelta("```image\nP");
+	controller.setAssistantText("Shown");
+	controller.emitTextDeltaRaw("Shown");
+	controller.emitNoticeParagraph("N");
+
+	assert.equal(shownText(parts), "Shown\n\nN");
+	assert.equal(controller.getAssistantText(), "Shown\n\nN");
+	assert.equal(controller.getUnsuppressedAssistantText(), "N");
+});

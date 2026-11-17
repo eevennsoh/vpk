@@ -166,11 +166,15 @@ function createRovoTextOutputController({
 		};
 	};
 
-	/** Drops the end of the text the turn hands on that never reached the wire. */
+	/**
+	 * Drops the end of the text the turn hands on that never reached the wire. A start outside a text
+	 * (it was replaced after the cut-off) cuts nothing from it.
+	 */
 	const dropWithheldEnd = () => {
+		const cutAt = (value, start) => (start >= 0 && start <= value.length ? value.slice(0, start) : value);
 		if (withheldStart) {
-			assistantText = assistantText.slice(0, withheldStart.assistant);
-			unsuppressedAssistantText = unsuppressedAssistantText.slice(0, withheldStart.unsuppressed);
+			assistantText = cutAt(assistantText, withheldStart.assistant);
+			unsuppressedAssistantText = cutAt(unsuppressedAssistantText, withheldStart.unsuppressed);
 			withheldStart = null;
 		}
 	};
@@ -312,7 +316,8 @@ function createRovoTextOutputController({
 	 * the turn's text follows that text. On a card-first turn the suppressed text goes out first
 	 * through the text route's replay, so the notice always reaches the wire, once. The replay writes
 	 * only what streaming would have shown: no completed spec or media fence, which the turn's text
-	 * keeps for the post-stream pipeline.
+	 * keeps for the post-stream pipeline, and no classifier payload, which the turn's text drops as it
+	 * does one still held.
 	 */
 	const emitNoticeParagraph = (notice) => {
 		const text = typeof notice === "string" ? notice.trim() : "";
@@ -322,7 +327,13 @@ function createRovoTextOutputController({
 		releaseHeldTextBeforeNotice();
 		if (suppressingStreamingText) {
 			suppressingStreamingText = false;
-			replayTextForTextRoute(splitHeldAssistantText(assistantText).visibleText);
+			const replayedText = splitHeldAssistantText(assistantText).visibleText;
+			if (!parseClassifierIntentPayload(replayedText)) {
+				replayTextForTextRoute(replayedText);
+			} else if (parseClassifierIntentPayload(assistantText)) {
+				recordWithheldEnd(assistantText, 0);
+				dropWithheldEnd();
+			}
 		}
 		paragraphBreakPending = false;
 		const releasedTextEnd = `${shownTextEnd}${deferredToolFirstText}`;

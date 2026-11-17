@@ -931,3 +931,30 @@ test("tool starts that arrive after the turn ended are blocked once: Rovo is can
 
 	assert.deepEqual(cancelledPorts, [43123]);
 });
+
+test("a failure notice on a card-first turn never shows a classifier payload", async () => {
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
+	// Past the production buffer limit (320) and not yet parseable, the payload's first chunk is let
+	// through and the buffer cleared. Before: the notice's replay wrote the whole payload, then the notice.
+	const { finalizeRovoStudioAgentResult } = require("./rovo-stream");
+	const payload = `{"intent":"normal","reason":"${"x".repeat(321)}`;
+	let storedTexts = null;
+	const turn = await runTurn(failingAfterChunks([payload, '"}', 'WIDGET_DATA:{"type":"genui-preview","title":"x"}'], {
+		CLASSIFIER_JSON_BUFFER_MAX_CHARS: 320,
+		finalizeRovoStudioAgentResult: (options) => {
+			storedTexts = [options.getAssistantText(), options.getUnsuppressedAssistantText()];
+			return finalizeRovoStudioAgentResult(options);
+		},
+		isClassifierIntentLeakCandidate,
+		parseClassifierIntentPayload,
+	}), { prefersGenuiCardExperience: true, smartGenerationActive: true });
+
+	assert.equal(visibleText(turn.parts), BUSY_NOTICE);
+	assert.equal(turn.parts.filter((part) => part.type === "text-start").length, 1);
+	// The turn's text drops the payload as it does one still held: the leak repair reads only the held
+	// buffer, which the notice empties, so a stored payload would only reach post-stream routing.
+	assert.deepEqual(storedTexts, [BUSY_NOTICE, BUSY_NOTICE]);
+	assert.equal(turn.endOfTurnFacts.assistantText, BUSY_NOTICE);
+	assert.equal(widgetParts(turn.parts, "genui-preview").includes("data"), true);
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
