@@ -424,6 +424,7 @@ function ShowMoreBlock({
 					<Button
 						variant="ghost"
 						size="compact"
+						className="hover:bg-transparent hover:text-text active:bg-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent"
 						aria-expanded={expanded}
 						aria-controls={id}
 						onClick={() => setExpanded((prev) => !prev)}

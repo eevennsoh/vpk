@@ -73,7 +73,7 @@ function CodeBlockTitle({ className, ...props }: Readonly<React.ComponentProps<"
 		<div
 			data-slot="code-block-title"
 			className={cn(
-				"min-w-0 truncate font-sans text-sm font-medium text-foreground group-data-[size=sm]/code-block:text-xs group-data-[variant=destructive]/code-block:text-destructive [&_svg]:pointer-events-none [&_svg]:inline-block [&_svg]:align-middle [&_svg:not([class*='size-'])]:size-4 group-data-[size=sm]/code-block:[&_svg:not([class*='size-'])]:size-3.5 *:[svg]:me-1.5",
+				"min-w-0 truncate font-sans text-sm font-medium text-foreground group-data-[size=sm]/code-block:text-xs group-data-[variant=destructive]/code-block:text-destructive [&_svg]:pointer-events-none [&_svg]:inline-block [&_svg]:align-middle [&_svg:not([class*='size-'])]:size-4 group-data-[size=sm]/code-block:[&_svg:not([class*='size-'])]:size-3.5 *:[svg]:me-1.5 *:data-[slot=icon]:me-1.5 *:data-[slot=icon]:-mt-0.5 *:data-[slot=icon]:size-4 *:data-[slot=icon]:align-middle group-data-[size=sm]/code-block:*:data-[slot=icon]:size-3.5 group-data-[size=sm]/code-block:[&_[data-slot=icon]_svg]:size-3.5",
 				className
 			)}
 			{...props}
@@ -218,6 +218,8 @@ function CodeBlockContent({
 	startLine = 1,
 	...props
 }: Readonly<CodeBlockContentProps>) {
+	const fadesVertically = wrap || /(^|\s)scroll-fade-y(\s|$)/u.test(className ?? "")
+
 	return (
 		<pre
 			data-slot="code-block-content"
@@ -227,7 +229,10 @@ function CodeBlockContent({
 			tabIndex={0}
 			style={{ counterReset: `line ${startLine - 1}`, ...style }}
 			className={cn(
-				"min-h-0 min-w-0 scroll-fade-x scrollbar-thin overflow-auto px-4 py-4 text-start font-mono leading-relaxed outline-none group-has-data-[slot=code-block-footer]/code-block:pb-2 group-has-data-[slot=code-block-header]/code-block:pt-2 group-data-[size=sm]/code-block:px-3 group-data-[size=sm]/code-block:py-3 group-data-[size=sm]/code-block:group-has-data-[slot=code-block-header]/code-block:pt-1.5 data-wrap:scroll-fade-y data-wrap:wrap-break-word data-wrap:whitespace-pre-wrap",
+				// One scroll-fade axis only: two scroll-fade utilities overwrite each other's mask, and
+				// cn keeps both, so the winner would depend on stylesheet order.
+				fadesVertically ? "scroll-fade-y" : "scroll-fade-x",
+				"min-h-0 min-w-0 scrollbar-thin overflow-auto px-4 py-4 text-start font-mono leading-relaxed outline-none group-has-data-[slot=code-block-footer]/code-block:pb-2 group-has-data-[slot=code-block-header]/code-block:pt-2 group-data-[size=sm]/code-block:px-3 group-data-[size=sm]/code-block:py-3 group-data-[size=sm]/code-block:group-has-data-[slot=code-block-header]/code-block:pt-1.5 data-wrap:wrap-break-word data-wrap:whitespace-pre-wrap",
 				className
 			)}
 			{...props}
