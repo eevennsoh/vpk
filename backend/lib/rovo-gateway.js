@@ -248,7 +248,7 @@ async function streamViaRovo({
 
 				const streamHandle = sendMessageStreaming(message, {
 					onChunk: (chunk) => {
-						toolEventDispatcher.handleChunk(chunk);
+						return toolEventDispatcher.handleChunk(chunk);
 					},
 					onPauseToolCalls: async (rawEvent, control) => {
 						if (typeof onPausedToolCalls !== "function") {
@@ -522,7 +522,7 @@ async function replayViaRovo({
 					return;
 				}
 
-				toolEventDispatcher.handleChunk(chunk);
+				return toolEventDispatcher.handleChunk(chunk);
 			},
 			onDone: () => {
 				if (signal && onAbort) {

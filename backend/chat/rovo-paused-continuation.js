@@ -121,6 +121,7 @@ async function runPausedRovoToolContinuation({
 			replayViaRovo({
 				port: pausedToolCallRecord.port,
 				portHandle: pausedToolCallRecord.handle,
+				failOnError: streamCommonOptions.failOnError,
 				onTextDelta: streamCommonOptions.onTextDelta,
 				onThinkingStatus: streamCommonOptions.onThinkingStatus,
 				onThinkingEvent: streamCommonOptions.onThinkingEvent,
