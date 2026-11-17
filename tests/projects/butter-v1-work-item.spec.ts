@@ -2,6 +2,20 @@ import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 
+test("activity timestamp underlines when its detailed tooltip is shown", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const timestamp = page.getByRole("button", { name: /18 mins? ago\. Show full timestamp/ }).first();
+	await timestamp.hover();
+	await expect(timestamp).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("tooltip")).toContainText("November 1, 2026");
+	const sessionTimestamp = page.locator("article").filter({ hasText: "Review the onboarding flow" }).locator("[data-last-update]");
+	await sessionTimestamp.hover();
+	await expect(sessionTimestamp).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("tooltip")).toContainText("November 1, 2026");
+});
+
 test("work item opens local agents from Development instead of the header", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));

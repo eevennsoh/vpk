@@ -67,8 +67,10 @@ function sessionRoleLabel(role: AgentSessionRole): string {
 function withSessionRole(
 	items: readonly AgentSessionItem[],
 	role: AgentSessionRole,
+	team = false,
+	answeredSessionIds?: ReadonlySet<string>,
 ): readonly AgentSessionItem[] {
-	return items.map((item) => ({ ...item, role }));
+	return items.map((item) => ({ ...item, role, ...(team ? { sharedWithTeam: true } : {}), ...(answeredSessionIds?.has(item.id) ? { state: "running" as const } : {}) }));
 }
 
 const NO_DRAGGING_IDS: ReadonlySet<string> = new Set<string>();
@@ -156,16 +158,22 @@ function getMediumAttachedDemoAssignedAgents(
 }
 
 export default function AgentSessionPage({
+	answeredSessionIds,
 	density = "unlinked",
 	drag = false,
 	host = "local",
+	onOpenCloudSession,
+	team = false,
 	variant = "large",
 }: Readonly<{
+	answeredSessionIds?: ReadonlySet<string>;
 	density?: AgentSessionDensity;
 	/** Marks plus drag handles, so a cohort can be picked up as one stacked chip. */
 	drag?: boolean;
 	/** Which fixture list to render. Host is a property of the data, not the layout. */
 	host?: "local" | "cloud";
+	onOpenCloudSession?: (item: AgentSessionItem) => void;
+	team?: boolean;
 	variant?: AgentSessionVariant;
 }>) {
 	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -279,10 +287,11 @@ export default function AgentSessionPage({
 								{sessionRoleLabel(role)}
 							</span>
 							<AgentSession
+								allowViewerView={team && role === "viewer"}
 								capturedItemIds={capturedIds}
-								className={isLong ? "w-[520px]" : "w-[320px]"}
+								className={team ? "w-[720px] max-w-full gap-1.5 [&>[data-menu-row]]:rounded-lg [&>[data-menu-row]]:border [&>[data-menu-row]]:border-border [&>[data-menu-row]]:bg-surface" : isLong ? "w-[520px]" : "w-[320px]"}
 								density={density}
-								items={withSessionRole(items, role)}
+								items={withSessionRole(items, role, team, answeredSessionIds)}
 								onContinueInAgent={handleCapture}
 								onCreateWorkItem={handleCapture}
 								onDeleteSession={handleRemove}
@@ -291,11 +300,15 @@ export default function AgentSessionPage({
 								onSubtasks={handleCapture}
 								onToggleVisibility={handleRemove}
 								onUnlinkSession={handleUnlink}
+								onView={host === "cloud" ? onOpenCloudSession : undefined}
+								selectedItemId={onOpenCloudSession ? null : undefined}
+								showAgentName={team ? true : undefined}
+								showWorkingSpinner={team}
 								variant={variant}
 							/>
 						</section>
 					))}
-					{host === "cloud" && isLong ? (
+					{host === "cloud" && isLong && !team ? (
 						<section className="flex w-full flex-col items-center gap-1.5">
 							<span className="text-xs font-medium text-text-subtle">
 								{sessionRoleLabel("expired")}

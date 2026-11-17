@@ -277,16 +277,55 @@ test("the details agent stack stays unchanged as session states change", async (
 });
 
 test("the list session field shows the most urgent agent status and opens sessions", async () => {
-	const sessions = [crewSession("claude", "running", "Claude"), crewSession("cursor", "complete", "Cursor")];
-	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, sessions };
+	const claude = crewSession("claude", "running", "Claude");
+	const cursor = crewSession("cursor", "complete", "Cursor");
+	const opened = [];
+	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, sessions: [claude, cursor], onOpenSession: (session) => opened.push(session.id) };
 	const view = await renderCrew(props);
-	assert.equal(view.queryByRole("button", { name: "2 agents: Working" }) !== null, true);
-	assert.equal(Boolean(view.getByRole("group", { name: "Agents field" }).querySelector(".agent-loading-vertical")), true);
-	await view.rerender({ ...props, sessions: [sessions[0], { ...sessions[1], state: "needs-input" }] });
-	const trigger = view.getByRole("button", { name: "2 agents: Needs input" });
-	assert.equal(view.getByRole("group", { name: "Agents field" }).textContent.includes("Needs input"), true);
-	await view.click(trigger);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.rerender({ ...props, sessions: [claude, { ...cursor, state: "needs-input" }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Cursor: Needs input" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.click(view.getByRole("button", { name: "Cursor: Needs input" }));
 	assert.equal(view.queryByRole("dialog", { name: "Agent assignment" }) !== null, true);
+	assert.equal(Boolean(view.queryByText("Claude work")), true);
+	await view.click(view.getByText("Claude work"));
+	assert.deepEqual(opened, ["claude"]);
+	await view.rerender({ ...props, sessions: [claude, { ...cursor, state: "running" }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Working" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), true);
+	await view.rerender({ ...props, sessions: [{ ...claude, state: "needs-input" }, { ...crewSession("claude-two", "attention", "Claude"), role: "owner" }, cursor] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Needs input" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), true);
+	await view.rerender({ ...props, sessions: [{ ...claude, state: "complete" }, cursor] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Finished" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.unmount();
+});
+
+test("the list session field distinguishes personal and teammate sessions", async () => {
+	const mine = { ...crewSession("mine", "running", "Claude"), role: "owner" };
+	const teammate = { ...crewSession("team", "needs-input", "Cursor"), role: "viewer", invokedBy: { name: "Maya Ferreira" } };
+	const secondTeammate = { ...crewSession("team-two", "running", "Figma"), role: "viewer", invokedBy: { name: "Jordan Okafor" } };
+	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, onOpenSession() {} };
+	const view = await renderCrew({ ...props, sessions: [mine] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	await view.rerender({ ...props, sessions: [teammate, secondTeammate] });
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	assert.equal(field.textContent.includes("Needs input"), false);
+	await view.click(view.getByRole("button", { name: "2 other sessions" }));
+	assert.equal(Boolean(view.queryByText("Cursor work")), true);
+	assert.equal(Boolean(view.queryByText("Figma work")), true);
+	await view.click(view.getByRole("button", { name: "2 other sessions" }));
+	await view.rerender({ ...props, sessions: [teammate, mine] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	assert.equal(field.textContent.includes("Needs input"), false);
+	await view.click(view.getByRole("button", { name: "Claude: Working" }));
+	assert.equal(Boolean(view.queryByText("Cursor work")), true);
 	await view.unmount();
 });
 

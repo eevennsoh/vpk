@@ -151,6 +151,8 @@ export interface AgentListItem {
 	 * field.
 	 */
 	timeLabel?: string;
+	/** Absolute time of the update shown by the metadata timestamp. */
+	updatedAtMs?: number;
 	/**
 	 * Where the session runs. Defaults to `"cloud"`. Local rows render a devices
 	 * icon and {@link AgentListItem.machineName}, followed by a static timestamp,

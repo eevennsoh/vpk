@@ -145,12 +145,13 @@ export function useQuestionCard({
 	const hasFooterButton = shouldShowQuestionCardFooterButton(primaryAction);
 
 	useEffect(() => {
+		if (isSubmitting) return;
 		// preventScroll: focusing the card for keyboard handling must not scroll the
 		// card into view. When rendered inside a hover panel over a scrollable page
 		// (e.g. the jira-issue "awaiting input" flyout), a scrolling focus jumps the
 		// whole page to the top on hover.
 		cardRef.current?.focus({ preventScroll: true });
-	}, []);
+	}, [isSubmitting]);
 
 	const persistQuestionCardState = useCallback(
 		(nextAnswers: QuestionCardAnswers, nextQuestionIndex: number) => {

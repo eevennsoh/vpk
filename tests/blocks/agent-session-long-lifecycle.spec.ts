@@ -4,10 +4,44 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
-for (const [width, side] of [[1280, "right"], [1000, "left"]] as const) {
-	test(`teammate session tooltip opens on the ${side} at ${width}px`, async ({ page }) => {
+test("team session examples open owner and viewer conversations", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(`${AGENT_SESSION_URL}#team-sessions`);
+	const example = page.getByRole("heading", { name: "Team sessions", exact: true }).locator("xpath=../../..");
+	const rows = example.locator("article");
+	await expect(rows).toHaveCount(6);
+	const launcher = page.getByRole("button", { name: "Open Rovo chat" });
+	await expect(launcher).toHaveCount(1);
+	await launcher.click();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await rows.nth(0).click();
+	await expect(page.getByText("Checking the related work", { exact: true })).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeEnabled();
+	await rows.nth(3).click();
+	const ownerBar = page.getByRole("group", { name: "Session owner and status" });
+	await expect(ownerBar.getByText("Session from Priya Raman")).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+	await rows.nth(5).click();
+	await expect(ownerBar.getByText("Session from Austin Lee")).toBeVisible();
+	await expect(page.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
+	await expect(page.getByRole("region", { name: "Generated artifacts" }).getByText("Off-road suspension controls", { exact: true })).toBeVisible();
+	await expect(ownerBar.getByRole("img", { name: "Finished" })).toBeVisible();
+	await rows.nth(4).click();
+	await expect(ownerBar.getByText("Session from Jordan Okafor")).toBeVisible();
+	await expect(ownerBar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await page.getByRole("button", { name: /Prioritize off-road performance/ }).click();
+	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
+	await expect(ownerBar.getByRole("img", { name: "Working" })).toBeVisible();
+	await rows.nth(1).click();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeEnabled();
+});
+
+for (const width of [1280, 1000]) {
+	test(`team session rows do not show a row tooltip at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 720 });
 		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.clock.install();
 		await page.goto(appUrl("/components/blocks/agent-assignment"));
 		await page.getByRole("button", { name: "Edit agents", exact: true }).first().click();
 		await page.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }).click();
@@ -15,13 +49,8 @@ for (const [width, side] of [[1280, "right"], [1000, "left"]] as const) {
 		await page.mouse.move(0, 0);
 		await card.hover({ position: { x: 8, y: 8 } });
 		const tooltip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: "only Priya Raman can act on it" });
-		await expect(tooltip).toBeVisible();
-		await expect(tooltip).toHaveAttribute("data-side", side);
-		const cardBox = await card.boundingBox();
-		const tooltipBox = await tooltip.boundingBox();
-		if (cardBox === null || tooltipBox === null) throw new Error("Session card and tooltip must be visible");
-		if (side === "right") expect(tooltipBox.x).toBeGreaterThanOrEqual(cardBox.x + cardBox.width);
-		else expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(cardBox.x);
+		await page.clock.fastForward(1000);
+		await expect(tooltip).toHaveCount(0);
 	});
 }
 

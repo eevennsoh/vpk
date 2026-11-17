@@ -389,7 +389,6 @@ export function ExperimentalJiraKanbanCard({
 			selectionBackdrop={selectionBackdrop}
 			active={active}
 			agentActivities={card.agentActivities}
-			agentActivityAvatarSize={appearance === "project-butter" ? 20 : undefined}
 			agentActivityLayout={agentActivityLayout}
 			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign, onAgentActivityViewChat, onCreateCloudSession, columnTitle)}
 			agentLinkFlash={agentLinkFlash}
