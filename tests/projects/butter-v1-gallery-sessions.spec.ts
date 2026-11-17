@@ -219,6 +219,14 @@ test("team viewers can answer questions while their composer remains disabled", 
 	await expect(question.getByRole("button", { name: /Prioritize off-road performance/ })).toBeEnabled();
 	await expect(question.getByRole("button", { name: "Dismiss questions" })).toHaveCount(0);
 	await expect(question.getByRole("textbox", { name: /custom answer/ })).toBeEnabled();
+	await expect(shortcuts).not.toContainText("Esc to skip");
+	let chatRequests = 0;
+	page.on("request", (request) => { if (request.method() === "POST" && new URL(request.url()).pathname.includes("/api/chat")) chatRequests++; });
+	await questionCard.focus();
+	await page.keyboard.press("Escape");
+	await expect(questionCard).toBeVisible();
+	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect.poll(() => chatRequests).toBe(0);
 	await question.getByRole("button", { name: /Prioritize off-road performance/ }).click();
 	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
 	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();

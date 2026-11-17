@@ -129,7 +129,12 @@ export function ChatPanelComposerArea({
 		<div className={readOnly && shouldShowQuestionCard ? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"}>
 			{shouldShowQuestionCard && activeQuestionCard ? (
 				<>
-					<div className={readOnly ? "mb-3 min-h-0 shrink overflow-y-auto px-3" : "px-3"}>
+					<div className={readOnly ? "mb-3 min-h-0 shrink overflow-y-auto px-3" : "px-3"} onKeyDownCapture={(event) => {
+						if (readOnly && event.key === "Escape" && !(event.target instanceof HTMLInputElement)) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+					}}>
 						<ClarificationQuestionCard
 							cardClassName="shadow-none"
 							key={activeQuestionCardKey ?? undefined}
@@ -143,7 +148,7 @@ export function ChatPanelComposerArea({
 						/>
 					</div>
 					{readOnly ? <ReadOnlySessionComposer hideAiDisclaimer owner={readOnlyOwner} state={readOnlySessionState} /> : null}
-					<QuestionCardShortcutsFooter />
+					<QuestionCardShortcutsFooter showEscape={!readOnly} />
 				</>
 			) : shouldShowApprovalCard && activePendingPlan ? (
 				<>
