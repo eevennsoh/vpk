@@ -12,7 +12,6 @@ function createBaseOptions(overrides = {}) {
 	const state = {
 		failureNotices: [],
 		loggerWarnings: [],
-		streamTextDeltas: [],
 		writtenParts: [],
 	};
 
@@ -24,9 +23,6 @@ function createBaseOptions(overrides = {}) {
 			buildInteractiveStuckPortFailureMessage: () => "Port is stuck",
 			forcePortRecoveryAttemptCount: 0,
 			getListeningPidsForPort: () => [],
-			handleStreamTextDelta: (delta) => {
-				state.streamTextDeltas.push(delta);
-			},
 			hasPausedClarificationToolCall: false,
 			hasRetriedAsDeferredToolResponse: false,
 			interactiveChatForcePortRecoveryMaxAttempts: 1,
@@ -151,7 +147,7 @@ test("handleRovoStreamAttemptError retries after in-progress timeout recovery", 
 	assert.deepEqual(state.writtenParts, [
 		{ type: "data-thinking-status", data: { label: "Recovered" } },
 	]);
-	assert.deepEqual(state.streamTextDeltas, []);
+	assert.deepEqual(state.failureNotices, []);
 });
 
 test("handleRovoStreamAttemptError returns stream-timeout after failed in-progress recovery", async () => {
@@ -176,8 +172,9 @@ test("handleRovoStreamAttemptError returns stream-timeout after failed in-progre
 	assert.deepEqual(state.writtenParts, [
 		{ type: "data-thinking-status", data: { label: "Timed out" } },
 	]);
-	assert.deepEqual(state.streamTextDeltas, [
-		"\n\n⚠️ Previous turn did not clear.",
+	// The timeout notice goes through the same failure-notice path as the stuck-port one.
+	assert.deepEqual(state.failureNotices, [
+		"⚠️ Previous turn did not clear.",
 	]);
 });
 
@@ -274,7 +271,6 @@ test("createRovoStreamAttemptErrorHandler resolves live port and forwards retry 
 			calls.push(options);
 			return { action: "retry-stream" };
 		},
-		handleStreamTextDelta: () => {},
 		hasPausedClarificationToolCall: true,
 		interactiveChatForcePortRecoveryMaxAttempts: 3,
 		interactiveChatForcePortRecoveryTimeoutMs: 5000,

@@ -12,8 +12,10 @@ const {
 	createAIGatewayChatStream,
 } = require("./gateway-stream");
 const {
-	buildRovoPreprocessingTraceData,
 	createRovoTextOutputController,
+} = require("./rovo-text-output");
+const {
+	buildRovoPreprocessingTraceData,
 	emitRovoMissingStudioAgentResultFailure,
 	finalizeRovoClassifierLeakRepair,
 	finalizeRovoDirectOutputs,
