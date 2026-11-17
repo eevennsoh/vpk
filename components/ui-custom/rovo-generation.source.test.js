@@ -136,3 +136,15 @@ test("a new token retraces after the count-morph delay without remounting the wr
 	h.update({ playToken: 2 });
 	assert.equal(h.frames.size, 0, "unchanged values do not restart the lap");
 });
+
+test("a highlight can begin at the landing edge without changing the default origin", () => {
+	const top = highlightHarness({ delay: 0 });
+	const left = highlightHarness({ delay: 0, origin: "left-center" });
+	top.tick(100);
+	left.tick(100);
+	assert.equal(top.paths[0].attributes.d.startsWith("M 15.5 0"), true);
+	assert.equal(left.paths[0].attributes.d.startsWith("M 0 7.5"), true);
+	assert.equal(left.paths[0].attributes.d.endsWith("L 0 7.5 Z"), true);
+	top.unmount();
+	left.unmount();
+});

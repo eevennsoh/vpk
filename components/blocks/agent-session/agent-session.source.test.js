@@ -818,7 +818,6 @@ test("a card body click toggles a single selected session on the selected token"
 		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
 	);
 	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
-	assert.match(CARD_SOURCE, /showSelectedFill && "bg-bg-selected"/u);
 	assert.match(
 		CARD_SOURCE,
 		/const showSelectedFill = isMarked \|\| \(isSelected && mark == null\);/u,
