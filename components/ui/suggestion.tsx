@@ -42,6 +42,7 @@ function Suggestion({
 	onClick,
 	className,
 	variant = "ghost",
+	iconSize = "compact",
 	children,
 	...props
 }: Readonly<SuggestionProps>) {
@@ -50,6 +51,7 @@ function Suggestion({
 			data-slot="suggestion"
 			type="button"
 			variant={variant}
+			iconSize={iconSize}
 			className={cn(
 				"shrink-0 justify-start px-2 text-xs text-text-subtle",
 				className
