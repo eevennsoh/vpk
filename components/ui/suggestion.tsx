@@ -23,7 +23,7 @@ function Suggestions({
 			data-orientation={orientation}
 			className={cn(
 				orientation === "vertical"
-					? "flex flex-col items-stretch gap-0.5"
+					? "flex flex-col items-start gap-0.5"
 					: "flex scroll-fade-x scrollbar-none gap-2 overflow-x-auto overscroll-x-contain",
 				className
 			)}
