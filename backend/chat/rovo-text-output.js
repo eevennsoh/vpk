@@ -28,6 +28,23 @@ const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audi
 const firstLine = (text) => text.split("\n", 1)[0];
 const lastLine = (text) => text.slice(text.lastIndexOf("\n") + 1);
 
+/**
+ * Where, in a patch line, backticks start right after its whole JSON object ends (`line.length`
+ * when none do): a fence opener that follows the patch on its line. Backticks inside a JSON string
+ * leave the object unfinished, so they stay part of the patch.
+ */
+function backticksAfterJsonObject(line) {
+	for (let at = line.indexOf("```"); at >= 0; at = line.indexOf("```", at + 1)) {
+		try {
+			JSON.parse(line.slice(0, at));
+			return at;
+		} catch {
+			// Not the end of the object yet.
+		}
+	}
+	return line.length;
+}
+
 /** Whether `raw`, past its leading newlines, opens with a fence that its split `visible` hides. */
 function startsWithHiddenFence(raw, visible) {
 	const rawRest = raw.replace(/^\n+/u, "");
@@ -265,8 +282,9 @@ function createRovoTextOutputController({
 	 * start of a hidden fence (or leave a partial opener) go out as written and `text` is split on its
 	 * own, so they change nothing the splitters hide in it, as when each delta was split alone. A held
 	 * patch line that `text` continues stays held until its line ends, and is then dropped with the
-	 * rest of its line; one that `text` turns into an ordinary line is dropped and `text` split on its
-	 * own, as when each delta was.
+	 * rest of its line, up to backticks right after its JSON object, which are split as the start of a
+	 * fence; one that `text` turns into an ordinary line is dropped and `text` split on its own, as
+	 * when each delta was.
 	 */
 	const continueHeldText = (text) => {
 		if (heldKind === "opener") {
@@ -282,10 +300,13 @@ function createRovoTextOutputController({
 		}
 		const lineEnd = text.indexOf("\n");
 		const line = `${heldText}${lineEnd >= 0 ? text.slice(0, lineEnd) : text}`;
-		if (splitSpecFenceTextForStreaming(line).pendingText !== line) {
+		const fenceStart = backticksAfterJsonObject(line);
+		const patchLine = line.slice(0, fenceStart);
+		if (splitSpecFenceTextForStreaming(patchLine).pendingText !== patchLine) {
 			return text;
 		}
-		return lineEnd >= 0 ? text.slice(lineEnd) : line;
+		const lineRest = `${line.slice(fenceStart)}${lineEnd >= 0 ? text.slice(lineEnd) : ""}`;
+		return lineEnd >= 0 || fenceStart < line.length ? lineRest : line;
 	};
 
 	/**

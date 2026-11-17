@@ -95,6 +95,24 @@ test("a failure notice after a media fence held behind a hidden patch line drops
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
+test("a fence opener after the rest of a split patch line keeps its fence on a successful turn", async () => {
+	// The status marker makes the marker stream hand the patch line's start (past "/root") and its rest
+	// to the text layer as separate deltas. Before: the rest of the line was dropped with the opener after it, so
+	// the image fence's text went out and the code fence lost its opener: "A\n\nSECRET\n```\nB".
+	const status = 'THINKING_STATUS:{"label":"Working"}';
+	for (const [language, expectedWire] of [
+		["image", "A\n\nB"],
+		["js", "A\n```js\nSECRET\n```\nB"],
+	]) {
+		const chunks = ['A\n{"op":"add","path":"/root","value":{"type":"Card"', status, `,"props":{}}}\`\`\`${language}\nSECRET\n\`\`\`\nB`];
+		const turn = await runTurn(streamingChunks(chunks));
+
+		assert.equal(visibleText(turn.parts), expectedWire, language);
+		assert.equal(turn.endOfTurnFacts.assistantText, `${chunks[0]}${chunks[2]}`, language);
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
 test("a loading marker split inside its type starts loading the whole type", async () => {
 	// The same turn as one unsplit "WIDGET_LOADING:plan\n". Before: the turn started loading a "pl"
 	// widget and showed "an\nPlanning text".

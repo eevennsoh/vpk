@@ -368,26 +368,35 @@ test("held backticks do not change what a delta's patch filtering hides", () => 
  * The wire text `36f992247` wrote for a reply with no hidden fence, patch lines included: text that
  * may be a classifier payload held until it is not one (or passes 320 characters), and each released
  * delta split on its own. The one change: a patch line split across deltas stays hidden to its line
- * end, where 36f992247 dropped its start and showed the rest.
+ * end, or to backticks right after its JSON object, where 36f992247 dropped its start and showed the
+ * rest.
  */
 function baseWireWithPatchLines(chunks) {
 	let wire = "";
 	let buffer = "";
-	let inPatchLine = false;
+	let patchLine = "";
 	const release = () => {
 		let text = buffer;
 		buffer = "";
-		if (inPatchLine) {
+		if (patchLine) {
 			const lineEnd = text.indexOf("\n");
-			if (lineEnd < 0) {
+			const line = `${patchLine}${lineEnd < 0 ? text : text.slice(0, lineEnd)}`;
+			const fenceStart = [...line.matchAll(/```/gu)].find(({ index }) => {
+				try {
+					return typeof JSON.parse(line.slice(0, index)) === "object";
+				} catch {
+					return false;
+				}
+			})?.index;
+			if (fenceStart === undefined && lineEnd < 0) {
+				patchLine = line;
 				return;
 			}
-			text = text.slice(lineEnd);
-			inPatchLine = false;
+			text = fenceStart === undefined ? text.slice(lineEnd) : `${line.slice(fenceStart)}${lineEnd < 0 ? "" : text.slice(lineEnd)}`;
 		}
 		const spec = splitSpecFenceTextForStreaming(text);
 		wire += splitDirectMediaTextForStreaming(spec.visibleText).visibleText;
-		inPatchLine = spec.pendingText.length > 0;
+		patchLine = spec.pendingText;
 	};
 	for (const chunk of chunks) {
 		buffer += chunk;
@@ -408,10 +417,62 @@ test("a reply with an unfenced patch line next to inline code or a code fence go
 		`Code:\n${T}json\n${PATCH_LINE}\n${T}\nAfter`,
 		`${T}js\nx\n${T}\n${PATCH_LINE}\nDone`,
 		`Before ${T}\n${PATCH_LINE}\n${T} after`,
+		`A\n${PATCH_LINE}${T}js\nSECRET\n${T}\nB`,
+		`A\r\n${PATCH_LINE}${T}js\r\nSECRET\r\n${T}\r\nB`,
 	];
 	for (const reply of replies) {
 		for (const chunks of chunkingsOf(reply)) {
 			assertStream(JSON.stringify(chunks), chunks, baseWireWithPatchLines(chunks));
 		}
 	}
+});
+
+test("a fence opener after the rest of a split patch line keeps its fence", () => {
+	// The patch line's start ends the first delta; its rest, then a fence opener, start the second.
+	// On 36f992247 the second delta went out on its own: wire "A\n" + rest + what the splitters showed
+	// of the fence. Before: the rest of the line was dropped with the opener after it, so a media
+	// fence's text went out ("A\n\nSECRET\n```\nB") and a code fence lost its opener.
+	const start = '{"op":"add","path":"/root"';
+	const rest = ',"value":1}';
+	for (const newline of ["\n", "\r\n"]) {
+		const n = newline;
+		for (const [language, expectedWire] of [
+			["image", n === "\n" ? "A\n\nB" : "A\r\n\n\r\nB"],
+			["audio", n === "\n" ? "A\n\nB" : "A\r\n\n\r\nB"],
+			["spec", n === "\n" ? "A\n\nB" : "A\r\n\n\r\nB"],
+			["js", `A${n}${T}js${n}SECRET${n}${T}${n}B`],
+		]) {
+			const chunks = [`A${n}${start}`, `${rest}${T}${language}${n}SECRET${n}${T}${n}B`];
+			const name = `${language} ${JSON.stringify(n)}`;
+			assertStream(name, chunks, expectedWire);
+			const deferredParts = [];
+			const deferred = streamChunks(chunks, {
+				shouldDeferToolFirstText: true,
+				writer: { write: (part) => deferredParts.push(part) },
+			});
+			deferred.controller.flushDeferredToolFirstText();
+			const deferredWire = deferredParts.filter((part) => part.type === "text-delta").map((part) => part.delta).join("");
+			assert.equal(deferredWire, expectedWire, `${name} deferred tool-first`);
+			assert.equal(deferred.stored, chunks.join(""), `${name} deferred tool-first`);
+			assert.equal(deferred.unsuppressed, chunks.join(""), `${name} deferred tool-first`);
+			const deferredNotice = noticeAfterChunks(chunks, { shouldDeferToolFirstText: true });
+			assert.equal(deferredNotice.wire, `${expectedWire}\n\nN`, `${name} deferred tool-first notice`);
+			assert.equal(deferredNotice.stored, `${chunks.join("")}\n\nN`, `${name} deferred tool-first notice`);
+			assert.equal(deferredNotice.unsuppressed, `${chunks.join("")}\n\nN`, `${name} deferred tool-first notice`);
+			const noticed = noticeAfterChunks(chunks);
+			assert.equal(noticed.wire, `${expectedWire}\n\nN`, `${name} notice`);
+			assert.equal(noticed.stored, `${chunks.join("")}\n\nN`, `${name} notice`);
+			assert.equal(noticed.unsuppressed, `${chunks.join("")}\n\nN`, `${name} notice`);
+		}
+	}
+	// The opener's backticks split across the deltas, or still open when the delta ends.
+	assertStream("split backticks", [`A\n${start}`, `${rest}${b}`, `${b}${b}image\nSECRET\n${T}\nB`], "A\n\nB");
+	assertStream("open media fence", [`A\n${start}`, `${rest}${T}image\nSECRET`], "A\n");
+	// A notice drops the open fence that never reached the wire; the complete patch line stays stored.
+	const openNoticed = noticeAfterChunks([`A\n${start}`, `${rest}${T}image\nSECRET`]);
+	assert.equal(openNoticed.wire, "A\n\nN");
+	assert.equal(openNoticed.stored, `A\n${start}${rest}\n\nN`);
+	assert.equal(openNoticed.unsuppressed, `A\n${start}${rest}\n\nN`);
+	// Backticks inside a JSON string are part of the patch line, which stays hidden to its line end.
+	assertStream("backticks in a value", [`A\n${start}`, `,"value":"${T}js x"}\nB`], "A\n\nB");
 });
