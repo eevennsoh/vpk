@@ -1,6 +1,72 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("session choices use the shared dropdown hover color for pointer and keyboard selection", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Change status, In progress" }).click();
+	const status = page.getByRole("menuitem", { name: "To do", exact: true });
+	await status.hover();
+	const referenceColor = await status.evaluate((row) => getComputedStyle(row).backgroundColor);
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	const first = sessions.locator("article").first();
+	await first.hover();
+	await expect.poll(() => first.evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
+	await editor.focus();
+	await editor.press("ArrowDown");
+	await expect.poll(() => sessions.locator('article[data-selected="true"]').evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
+});
+
+test("the landing trace uses the selected agent's accent", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Cursor");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	const session = sessions.getByRole("button", { name: /Compare the Q3 revenue forecast/ });
+	await session.focus();
+	const overlap = page.evaluate(() => new Promise<boolean>((resolve) => {
+		const start = performance.now();
+		let tracedDuringFlight = false;
+		function sample() {
+			const flight = document.querySelector("[data-project-butter-mention-flight]");
+			const traces = document.querySelectorAll('[data-rovo-generation="highlight"][data-rovo-generation-active="true"] > div[aria-hidden="true"] > svg > path');
+			if (flight && [...traces].some((path) => Number(path.getAttribute("opacity")) > 0.01)) tracedDuringFlight = true;
+			if (performance.now() - start < 1300) requestAnimationFrame(sample);
+			else resolve(tracedDuringFlight);
+		}
+		requestAnimationFrame(sample);
+	}));
+	await session.press("Enter");
+	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
+	const highlight = reply.locator('xpath=ancestor::*[@data-rovo-generation="highlight"]');
+	await expect(highlight).toHaveAttribute("data-rovo-generation-active", "true");
+	const trace = highlight.locator(':scope > div[aria-hidden="true"] > svg > path').first();
+	await expect(trace).toHaveAttribute("stroke", "var(--color-icon)");
+	await expect.poll(async () => trace.getAttribute("d")).toMatch(/A [1-9]/u);
+	const geometry = await highlight.evaluate((wrapper) => {
+		const form = wrapper.querySelector("form")!;
+		const path = wrapper.querySelector(':scope > div[aria-hidden="true"] > svg > path')!;
+		return { radius: Number.parseFloat(getComputedStyle(form).borderRadius), arc: Number(path.getAttribute("d")?.match(/A ([\d.]+)/u)?.[1]) };
+	});
+	expect(geometry.radius).toBeGreaterThan(0);
+	expect(geometry.arc).toBeCloseTo(geometry.radius - 0.5, 1);
+	expect(await overlap).toBe(true);
+});
+
 test("work item session cards show Venn as their owner", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();

@@ -99,6 +99,7 @@ function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
 
 /** What a consumer-supplied reply composer receives; the thread keeps owning the draft, focus and submit flow. */
 export type JiraActivityReplyComposerProps = Readonly<{
+	entryId: string;
 	/** True when the composer mounted from a Reply click and should take focus. */
 	autoFocus: boolean;
 	onSubmit: (body: string, mentionedAgentIds?: readonly string[]) => void;
@@ -651,6 +652,7 @@ export function JiraActivityComment({
 						{renderReplyComposer ? (
 							<Fragment key={`${replyTarget?.key ?? "thread-reply"}-${handledReplyRequestId ?? 0}`}>
 								{renderReplyComposer({
+									entryId: entry.id,
 									autoFocus: collapsible,
 									onSubmit: submitReply,
 									onValueChange: setReplyDraft,

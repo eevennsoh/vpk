@@ -248,6 +248,11 @@ test("session cards show the correct hover and selection surfaces", async () => 
 		assert.equal(article().classList.contains("bg-surface-hovered"), false);
 		await render({ item, onView() {}, hoverTone: "menu", isHighlighted: true });
 		assert.equal(article().classList.contains("bg-bg-neutral-subtle-hovered"), true);
+		await render({ item, onView() {}, hoverTone: "menu", isSelected: true });
+		assert.equal(article().classList.contains("bg-bg-neutral-subtle-hovered"), true);
+		assert.equal(article().classList.contains("bg-bg-selected"), false);
+		await render({ item, onView() {}, hoverTone: "menu", triageRow: { mark: { isLead: true, isMarked: true, onActivate() {} } } });
+		assert.equal(article().classList.contains("bg-bg-selected"), true);
 		await render({ item, onView() {}, hoverTone: "menu" });
 		assert.equal(article().classList.contains("hover:bg-bg-neutral-subtle-hovered"), true);
 	});

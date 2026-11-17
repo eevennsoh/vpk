@@ -705,7 +705,7 @@ export function AgentSessionCard({
 						// fading the fill flashes transparent frames between nearby rows.
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						showSelectedFill && "bg-bg-selected",
+						showSelectedFill && (hoverTone === "menu" && !isMarked ? "bg-bg-neutral-subtle-hovered" : "bg-bg-selected"),
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
 						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
 						activateCard === undefined && role !== "viewer"
