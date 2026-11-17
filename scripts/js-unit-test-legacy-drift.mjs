@@ -30,7 +30,6 @@ export const LEGACY_DRIFT_TEST_FILES = [
 	"components/projects/shared/lib/rovo-app-plan-execution-tracker.test.js",
 	"components/projects/shared/thread-message/lib/plan-description-fallback.test.js",
 	"components/projects/sidebar-chat/components/chat-composer.test.js",
-	"components/projects/sidebar-chat/components/chat-greeting.test.js",
 	"components/projects/sidebar-chat/components/chat-history-drawer.test.js",
 	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
 	"components/ui-custom/context-bar/context-bar-prompt-flyout.test.js",
