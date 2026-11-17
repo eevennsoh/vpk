@@ -179,10 +179,47 @@ test("an edit drops the queue and the active prompt but keeps the retry count, t
 });
 
 test("reset returns to the initial state with a fresh queue array and moves the send on", () => {
-	const busy = { queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", mediaWaitEndsAt: 5_000 }, dispatching: true, sendAttempt: 4, retryCount: 3 };
+	const busy = { ...INITIAL, queue: [prompt("b")], activePrompt: prompt("a"), finalizeRequested: true, turnCompleteSeen: true, cutShort: { anchorMessageId: "r", mediaWaitEndsAt: 5_000 }, dispatching: true, sendAttempt: 4, retryCount: 3 };
 	const reset = reduce(busy, { type: "reset" });
-	assert.deepEqual(reset, { ...INITIAL, queue: [], sendAttempt: 5 });
+	assert.deepEqual(reset, { ...INITIAL, queue: [], sendAttempt: 5, transcriptVersion: 1, editId: 1 });
 	assert.notEqual(reset.queue, INITIAL.queue);
+});
+
+test("a transition holds dispatch until the current owner finishes; only commit invalidates transcript work", () => {
+	const queued = reduce(INITIAL, { type: "enqueue", prompt: prompt("a") });
+	const first = reduce(queued, { type: "transitionStarted", id: 1 });
+	assert.equal(canDispatchNextPrompt(first, IDLE), false);
+	const superseding = reduce(first, { type: "transitionStarted", id: 2 });
+	assert.equal(reduce(superseding, { type: "transitionFinished", id: 1 }), superseding);
+	const retained = reduce(superseding, { type: "transitionFinished", id: 2 });
+	assert.equal(retained.transcriptVersion, queued.transcriptVersion);
+	assert.equal(canDispatchNextPrompt(retained, IDLE), true);
+	const committed = reduce(first, { type: "reset" });
+	assert.equal(committed.transcriptVersion, first.transcriptVersion + 1);
+	assert.equal(committed.transitionId, first.transitionId, "commit still holds dispatch until the transition finishes");
+	assert.deepEqual(committed.queue, []);
+});
+
+test("retry deadlines survive transition and settlement, and Stop, edit and commit clear them", () => {
+	const sending = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" });
+	const retry = { promptId: "a", dueAt: 1_000, monotonicDueAt: 1_000, delayMs: 500, messageId: "retry", reason: "rate-limit" };
+	const waiting = reduce(sending, { type: "retryScheduled", retry });
+	const retained = run(waiting, settledEvent(waiting, false), { type: "transitionStarted", id: 1 }, { type: "transitionFinished", id: 1 });
+	assert.equal(retained.retry, retry);
+	assert.equal(canFinalizeActivePrompt(retained, IDLE), false);
+	for (const event of [{ type: "stopRequested" }, { type: "editStarted" }, { type: "reset" }, { type: "retryDispatchStarted" }]) {
+		assert.equal(reduce(retained, event).retry, null, event.type);
+	}
+	assert.equal(reduce(retained, { type: "retryScheduled", retry: { ...retry, promptId: "stale" } }), retained);
+});
+
+test("pending edits block the queue and only their own settlement releases preparation", () => {
+	const first = reduce(INITIAL, { type: "editStarted" });
+	const second = reduce(first, { type: "editStarted" });
+	const queued = reduce(second, { type: "enqueue", prompt: prompt("a") });
+	assert.equal(canDispatchNextPrompt(queued, IDLE), false);
+	assert.equal(reduce(queued, { type: "editSettled", id: first.editId }), queued);
+	assert.equal(canDispatchNextPrompt(reduce(queued, { type: "editSettled", id: second.editId }), IDLE), true);
 });
 
 test("hasSendInFlight holds while a prompt is active or a send is dispatching", () => {
@@ -201,14 +238,15 @@ const cutShortFinish = (mediaLoading, anchorMessageId = "reply-a", promptId = "a
 
 // A request is live from its send's start until its own onFinish or onError has
 // run; the committed streaming flag, which lags the request's end, never decides.
-const SENDING = Object.freeze({ ...INITIAL, activePrompt: prompt("a"), dispatching: true });
+const SENDING = Object.freeze({ ...INITIAL, activePrompt: prompt("a"), dispatching: true, requestStarted: true });
 const SETTLED = Object.freeze({ ...SENDING, dispatching: false });
 const FINISHED = { type: "requestFinished" };
 const EDIT_SENDING = Object.freeze(run(INITIAL, { type: "editStarted" }, { type: "editDispatchStarted" }));
 const LIVENESS_BY_TURN_STATE = [
 	{ name: "idle", state: INITIAL, env: IDLE, live: false },
 	{ name: "a prompt sending or streaming", state: SENDING, env: IDLE, live: true },
-	{ name: "an edit resend sending or streaming", state: { ...INITIAL, dispatching: true }, env: IDLE, live: true },
+	{ name: "a prompt creating its thread", state: run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" }), env: IDLE, live: false },
+	{ name: "an edit resend sending or streaming", state: EDIT_SENDING, env: IDLE, live: true },
 	{ name: "a retry resend sending or streaming", state: reduce(SETTLED, { type: "retryDispatchStarted" }), env: IDLE, live: true },
 	{ name: "cut short, before its send settles", state: reduce(SENDING, cutShortFinish(true)), env: IDLE, live: false },
 	{ name: "cut short and settled", state: reduce(SETTLED, cutShortFinish(true)), env: IDLE, live: false },
@@ -225,7 +263,7 @@ const LIVENESS_BY_TURN_STATE = [
 	// A finish recorded for one send never carries into the next.
 	{ name: "an edit resend started after the previous request finished", state: run(SENDING, FINISHED, { type: "editStarted" }, { type: "editDispatchStarted" }), env: IDLE, live: true },
 	{ name: "a retry resend started after its failed request finished", state: run(SENDING, FINISHED, settledEvent(SENDING, false), { type: "retryDispatchStarted" }), env: IDLE, live: true },
-	{ name: "a send after a reset that followed a finish", state: run(SENDING, FINISHED, { type: "reset" }, { type: "enqueue", prompt: prompt("b") }, { type: "dispatchNext" }), env: IDLE, live: true },
+	{ name: "a send after a reset that followed a finish", state: run(SENDING, FINISHED, { type: "reset" }, { type: "enqueue", prompt: prompt("b") }, { type: "dispatchNext" }, { type: "requestStarted" }), env: IDLE, live: true },
 ];
 
 for (const row of LIVENESS_BY_TURN_STATE) {

@@ -57,6 +57,28 @@ export interface RovoChatTurnState {
 	 */
 	readonly sendAttempt: number;
 	readonly retryCount: number;
+	/** A retry survives effect cleanup; only a dispatch, Stop or transcript commit drops it. */
+	readonly retry: RovoChatRetryWait | null;
+	/** Changes only when the transcript commits, never when a selection merely starts. */
+	readonly transcriptVersion: number;
+	/** The current transition holds every request start until it finishes or is superseded. */
+	readonly transitionId: number | null;
+	/** Effect cleanup suspends preparation; setup resumes it without dropping the transcript. */
+	readonly suspended: boolean;
+	readonly editId: number;
+	readonly editPending: boolean;
+	/** A dispatch may still be creating its thread, before it owns an SDK request. */
+	readonly requestStarted: boolean;
+}
+
+export interface RovoChatRetryWait {
+	readonly promptId: string;
+	readonly reason: RovoChatRetryReason;
+	readonly messageId: string;
+	readonly dueAt: number;
+	/** Monotonic deadline prevents a backwards wall clock from extending a suspended wait. */
+	readonly monotonicDueAt: number;
+	readonly delayMs: number;
 }
 
 /** What a cut-short request's finish snapshot says about its turn. */
@@ -101,7 +123,15 @@ export type RovoChatTurnEvent =
 	/** Moves the head of the queue into flight. Guard with {@link canDispatchNextPrompt}. */
 	| { readonly type: "dispatchNext" }
 	| { readonly type: "retryDispatchStarted" }
+	| { readonly type: "retryScheduled"; readonly retry: RovoChatRetryWait }
+	| { readonly type: "retryCancelled" }
+	| { readonly type: "transitionStarted"; readonly id: number }
+	| { readonly type: "transitionFinished"; readonly id: number }
+	| { readonly type: "providerSuspended" }
+	| { readonly type: "providerResumed" }
+	| { readonly type: "requestStarted" }
 	| { readonly type: "editStarted" }
+	| { readonly type: "editSettled"; readonly id: number }
 	| { readonly type: "editDispatchStarted" }
 	/** The send started as `attempt` settled. Ignored unless it is still the current send. */
 	| { readonly type: "dispatchSettled"; readonly attempt: number; readonly failed: boolean }
@@ -140,6 +170,13 @@ export const ROVO_CHAT_TURN_INITIAL_STATE: RovoChatTurnState = Object.freeze({
 	requestFinished: false,
 	sendAttempt: 0,
 	retryCount: 0,
+	retry: null,
+	transcriptVersion: 0,
+	transitionId: null,
+	suspended: false,
+	editId: 0,
+	editPending: false,
+	requestStarted: false,
 });
 
 // Queue writes always produce a new array, as the provider's queue state did
@@ -152,6 +189,20 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 			return { ...state, queue: state.queue.filter((prompt) => prompt.id !== event.id) };
 		case "clearQueue":
 			return { ...state, queue: [] };
+		case "transitionStarted":
+			return { ...state, transitionId: event.id };
+		case "transitionFinished":
+			return state.transitionId === event.id ? { ...state, transitionId: null } : state;
+		case "providerSuspended":
+			return state.suspended ? state : { ...state, suspended: true };
+		case "providerResumed":
+			return state.suspended ? { ...state, suspended: false } : state;
+		case "retryScheduled":
+			return state.activePrompt?.id === event.retry.promptId ? { ...state, retry: event.retry } : state;
+		case "retryCancelled":
+			return state.retry ? { ...state, retry: null } : state;
+		case "requestStarted":
+			return { ...state, requestStarted: true };
 		case "dispatchNext": {
 			const [nextPrompt, ...rest] = state.queue;
 			if (!nextPrompt) {
@@ -166,8 +217,10 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				cutShort: null,
 				dispatching: true,
 				requestFinished: false,
+				requestStarted: false,
 				sendAttempt: state.sendAttempt + 1,
 				retryCount: 0,
+				retry: null,
 			};
 		}
 		case "retryDispatchStarted":
@@ -178,14 +231,18 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 				cutShort: null,
 				dispatching: true,
 				requestFinished: false,
+				requestStarted: true,
+				retry: null,
 				sendAttempt: state.sendAttempt + 1,
 			};
 		case "editStarted":
 			// An edit resend has no active prompt, so nothing finalizes it and a
 			// stream that ends without turn-complete is not flagged as cut short.
-			return { ...state, queue: [], activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null };
+			return { ...state, queue: [], activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null, retry: null, editId: state.editId + 1, editPending: true };
 		case "editDispatchStarted":
-			return { ...state, dispatching: true, requestFinished: false, sendAttempt: state.sendAttempt + 1 };
+			return { ...state, dispatching: true, requestFinished: false, requestStarted: true, editPending: false, sendAttempt: state.sendAttempt + 1 };
+		case "editSettled":
+			return state.editId === event.id && state.editPending ? { ...state, editPending: false } : state;
 		case "dispatchSettled":
 			if (event.attempt !== state.sendAttempt) {
 				return state;
@@ -203,6 +260,7 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 			return {
 				...state,
 				finalizeRequested: true,
+				retry: null,
 				retryCount: event.resetRetries ? 0 : state.retryCount,
 			};
 		case "turnCutShort":
@@ -221,19 +279,19 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 			}
 			return { ...state, cutShort: { ...state.cutShort, mediaWaitEndsAt: null } };
 		case "stopRequested":
-			if (!state.activePrompt || (state.finalizeRequested && state.cutShort === null)) {
+			if (!state.activePrompt || (state.finalizeRequested && state.cutShort === null && state.retry === null)) {
 				return state;
 			}
 			// A deliberate Stop ends the turn without the cut-short notice.
-			return { ...state, finalizeRequested: true, cutShort: null };
+			return { ...state, finalizeRequested: true, cutShort: null, retry: null };
 		case "finalize":
 			if (!state.activePrompt) {
 				return state;
 			}
-			return { ...state, activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null, retryCount: 0 };
+			return { ...state, activePrompt: null, finalizeRequested: false, turnCompleteSeen: false, cutShort: null, retryCount: 0, retry: null };
 		case "reset":
 			// Moves the send on, so a send still settling from before the reset is ignored.
-			return { ...ROVO_CHAT_TURN_INITIAL_STATE, queue: [], sendAttempt: state.sendAttempt + 1 };
+			return { ...ROVO_CHAT_TURN_INITIAL_STATE, queue: [], sendAttempt: state.sendAttempt + 1, transcriptVersion: state.transcriptVersion + 1, transitionId: state.transitionId, suspended: state.suspended, editId: state.editId + 1 };
 	}
 }
 
@@ -259,14 +317,12 @@ export function hasSendInFlight(state: RovoChatTurnState): boolean {
  * serialized: the AI SDK runs a request's onFinish before that request's
  * sendMessage (and stop(), which awaits it) resolves. A queued send starts
  * only once the previous send settled or a thread change stopped its request,
- * an edit resend stops a streaming request first, and a retry starts from the
- * timer its failed request armed just before that request's onFinish. One
- * path is not serialized: an edit resend started before an earlier request's
- * streaming status commits does not stop that request, so the earlier
- * request's finish can be recorded against the resend.
+ * an edit resend stops and awaits the earlier request using reducer liveness,
+ * and a retry waits for its failed dispatch to settle. Every start also waits
+ * for the current transcript transition, then checks the transcript version.
  */
 export function hasLiveRequest(state: RovoChatTurnState, env: RovoChatTurnEnvironment): boolean {
-	return state.dispatching && !state.requestFinished && !state.finalizeRequested && !state.turnCompleteSeen && !env.retryScheduled;
+	return state.dispatching && state.requestStarted && !state.requestFinished && !state.finalizeRequested && !state.turnCompleteSeen && !state.retry && !env.retryScheduled;
 }
 
 /** The cut-short wait the active prompt is in, or null when it is not waiting. */
@@ -283,7 +339,7 @@ export function findCutShortMediaWait(state: RovoChatTurnState): RovoChatCutShor
  * messages and can lag a response that arrived before React rendered it.
  */
 export function canFinalizeActivePrompt(state: RovoChatTurnState, env: RovoChatTurnEnvironment): boolean {
-	if (!state.activePrompt || state.dispatching || env.retryScheduled || env.isCancelling) {
+	if (!state.activePrompt || state.dispatching || state.retry || env.retryScheduled || env.isCancelling) {
 		return false;
 	}
 
@@ -325,6 +381,10 @@ function hasTurnInFlight(state: RovoChatTurnState, env: RovoChatTurnEnvironment)
 	return (
 		state.activePrompt !== null ||
 		state.dispatching ||
+		state.editPending ||
+		state.transitionId !== null ||
+		state.suspended ||
+		state.retry !== null ||
 		env.isStreaming ||
 		env.isCancelling ||
 		env.retryScheduled
