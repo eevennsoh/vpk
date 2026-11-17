@@ -73,7 +73,7 @@ function CodeBlockTitle({ className, ...props }: Readonly<React.ComponentProps<"
 		<div
 			data-slot="code-block-title"
 			className={cn(
-				"min-w-0 truncate font-sans text-sm font-medium text-foreground group-data-[size=sm]/code-block:text-xs group-data-[variant=destructive]/code-block:text-destructive [&_svg]:pointer-events-none [&_svg]:inline-block [&_svg]:align-middle [&_svg:not([class*='size-'])]:size-4 group-data-[size=sm]/code-block:[&_svg:not([class*='size-'])]:size-3.5 *:[svg]:me-1.5 *:data-[slot=icon]:me-1.5 *:data-[slot=icon]:-mt-0.5 *:data-[slot=icon]:size-4 *:data-[slot=icon]:align-middle group-data-[size=sm]/code-block:*:data-[slot=icon]:size-3.5 group-data-[size=sm]/code-block:[&_[data-slot=icon]_svg]:size-3.5",
+				"min-w-0 truncate font-sans text-sm font-medium text-foreground group-data-[size=sm]/code-block:text-xs group-data-[variant=destructive]/code-block:text-destructive [&_svg]:pointer-events-none [&_svg]:inline-block [&_svg]:align-middle [&_svg:not([class*='size-'])]:size-4 group-data-[size=sm]/code-block:[&_svg:not([class*='size-'])]:size-3.5 *:[svg]:me-1.5 *:data-[slot=icon]:me-1.5 *:data-[slot=icon]:mt-0.5 *:data-[slot=icon]:size-4 *:data-[slot=icon]:align-top group-data-[size=sm]/code-block:*:data-[slot=icon]:mt-px group-data-[size=sm]/code-block:*:data-[slot=icon]:size-3.5 group-data-[size=sm]/code-block:[&_[data-slot=icon]_svg]:size-3.5",
 				className
 			)}
 			{...props}
