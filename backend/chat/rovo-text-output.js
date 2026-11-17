@@ -1,5 +1,7 @@
 "use strict";
 
+const { jsonObjectEnd } = require("../lib/json-object-end");
+
 /**
  * The break that starts a new paragraph after `text`: none when nothing visible came before it or
  * it already ends a paragraph. A caller that keeps only the end of the text says whether anything
@@ -25,8 +27,12 @@ const PARTIAL_HIDDEN_FENCE_OPENER = /`{1,3}$|```(?:s|sp|spe|i|im|ima|imag|a|au|a
 /** The start of a fence the splitters hide, as their pending patterns read an opener. */
 const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audio)\s*\n)/iu;
 
-/** Backticks, or the start of a spec opener, at the end of text: they may still open a spec fence. */
-const SPEC_OPENER_TAIL = /```(?:s|sp|spe|spec[^\S\n]*)?$/iu;
+/**
+ * Backticks at the end of text inside a media fence, and what may follow them on their line so far:
+ * the next text decides whether they close the fence (a newline after them) or not (other text after
+ * them, or a spec opener that leaves the fence open, as spec fences are split first).
+ */
+const MEDIA_FENCE_END_TAIL = /```(?:[ \t\r]+|s|sp|spe|spec[^\S\n]*)?$/iu;
 
 /**
  * Whether `text` opens a hidden fence, or is all a partial opener of one. A longer run of backticks
@@ -39,32 +45,6 @@ const isHiddenOpenerStart = (text) => {
 
 const firstLine = (text) => text.split("\n", 1)[0];
 const lastLine = (text) => text.slice(text.lastIndexOf("\n") + 1);
-
-/**
- * Where the JSON object that opens `line` ends, found in one scan that skips strings and their
- * escapes and counts nesting (-1 when it does not end). It finds the end only; JSON.parse checks it.
- */
-function jsonObjectEnd(line) {
-	let depth = 0;
-	let inString = false;
-	for (let at = line.indexOf("{"); at >= 0 && at < line.length; at += 1) {
-		const char = line[at];
-		if (inString) {
-			if (char === "\\") {
-				at += 1;
-			} else if (char === '"') {
-				inString = false;
-			}
-		} else if (char === '"') {
-			inString = true;
-		} else if (char === "{" || char === "[") {
-			depth += 1;
-		} else if ((char === "}" || char === "]") && --depth === 0) {
-			return at + 1;
-		}
-	}
-	return -1;
-}
 
 /**
  * Where, in a patch line, backticks start right after its whole JSON object ends (`line.length`
@@ -128,9 +108,10 @@ function createRovoTextOutputController({
 	// Text held because it may be a classifier payload; none of it has reached the splitters yet.
 	let bufferedAssistantText = "";
 	// The end of the turn's text the splitters let through none of yet, because it may still change
-	// how the text after it splits: an open spec or media fence ("fence"), a partial patch line
-	// ("patch"), or an end that may still open a hidden fence ("opener"). The next text is split
-	// after it; everything before it was split and went out, so work per delta stays bounded by it.
+	// how the text after it splits: an open spec or media fence ("fence"), a media fence whose closing
+	// backticks only spaces or tabs follow so far ("fenceEnd"), a partial patch line ("patch"), or an
+	// end that may still open a hidden fence ("opener"). The next text is split after it; everything
+	// before it was split and went out, so work per delta stays bounded by it.
 	let heldText = "";
 	let heldKind = "";
 	// How much of a held patch line came with the delta that started it, and whether the text being
@@ -370,15 +351,21 @@ function createRovoTextOutputController({
 	const splitAndWriteText = (text, { final }) => {
 		let split = splitHeldAssistantText(text);
 		let splitText = text;
-		// Spec fences are split before media fences, so backticks at the end that close a media fence
-		// may still open a spec fence inside it, which leaves the media fence open: it stays held.
-		const specOpenerTail = final || split.pendingText ? "" : (SPEC_OPENER_TAIL.exec(text)?.[0] ?? "");
-		if (specOpenerTail) {
-			const head = text.slice(0, -specOpenerTail.length);
+		// Backticks at the end that would close a media fence are undecided: what follows them on their
+		// line decides whether they end it, and spec fences are split first, so they may still open a
+		// spec fence that leaves the media fence open. They stay held with the fence. Spaces after them
+		// leave them undecided only when other text after them would keep the fence open: backticks that
+		// start their line or follow the body's JSON object close it already, and go out as before.
+		const fenceEndTail = final || split.pendingText ? "" : (MEDIA_FENCE_END_TAIL.exec(text)?.[0] ?? "");
+		const tailEndsInSpaces = /[ \t\r]$/u.test(fenceEndTail);
+		let holdsFenceEnd = false;
+		if (fenceEndTail && (!tailEndsInSpaces || splitHeldAssistantText(`${text}x`).holdsMediaFence)) {
+			const head = text.slice(0, -fenceEndTail.length);
 			const headSplit = splitHeldAssistantText(head);
 			if (headSplit.holdsMediaFence) {
 				split = headSplit;
 				splitText = head;
+				holdsFenceEnd = tailEndsInSpaces;
 			}
 		}
 		const offset = findWithheldOffset(splitText, split);
@@ -394,7 +381,7 @@ function createRovoTextOutputController({
 			// What the splitters hold back decides the kind: held text that opens with a patch line the
 			// splitters dropped may still end in an open fence.
 			heldText = text.slice(offset);
-			heldKind = split.holdsFence ? "fence" : "patch";
+			heldKind = holdsFenceEnd ? "fenceEnd" : split.holdsFence ? "fence" : "patch";
 			if (!continuesHeldPatch) {
 				patchStartLength = heldText.length;
 			}
@@ -590,6 +577,11 @@ function createRovoTextOutputController({
 		// complete.
 		if (heldKind === "opener" && (/^`+$/u.test(heldText) || (bufferedAssistantText && !isHiddenOpenerStart(`${heldText}${bufferedAssistantText}`)))) {
 			writeSplitText(heldText, { atFenceEnd: false, atFenceStart: false });
+		}
+		// A media fence whose closing backticks only spaces or tabs followed is closed by the end of the
+		// attempt's text, as the end of a stream closes it; what followed them is shown.
+		if (heldKind === "fenceEnd") {
+			splitAndWriteText(heldText, { final: true });
 		}
 		heldText = "";
 		heldKind = "";

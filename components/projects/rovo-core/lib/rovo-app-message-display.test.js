@@ -404,3 +404,45 @@ test("shouldRenderRovoAppAssistantMessage does not keep a blank shell for loadin
 		false,
 	);
 });
+
+const T = "```";
+
+test("removeRovoAppDirectMediaFences keeps a media body with backticks hidden", () => {
+	// Before: the block ended at the body's first backticks: text 'Intro\n\njs"}\n```\nOutro'.
+	for (const block of [`${T}image\n{"prompt":"${T}js"}\n${T}`, `${T}audio\nplain ${T}js body\n${T}`]) {
+		assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${block}\nOutro`), { removed: true, text: "Intro\n\nOutro" }, block);
+	}
+	assert.deepEqual(removeRovoAppDirectMediaFences(`Intro\n${T}image\n{"prompt":"${T}js`), { removed: true, text: "Intro" });
+});
+
+test("removeRovoAppDirectMediaFences ends a media block where the backend does", () => {
+	// The display keeps its own copy of the closing fence rule; this fails when it drifts from
+	// backend/lib/direct-media-fence.js.
+	const { findDirectMediaFences } = require("../../../../backend/lib/direct-media-fence");
+	const byBackend = (text) => {
+		let result = "";
+		let at = 0;
+		for (const fence of findDirectMediaFences(text)) {
+			result += `${text.slice(at, fence.start)}\n\n`;
+			at = fence.end;
+		}
+		return `${result}${text.slice(at)}`.replace(/\n{3,}/g, "\n\n").trim();
+	};
+	const openers = [`${T}image\n`, `${T}AUDIO \n`, `${T}audio\r\n`];
+	const bodies = ["", "sunset", '{"prompt":"x"}', `{"prompt":"${T}js"}`, `plain ${T}js`, '{\n "a": "]}"\n}', "{open", `a ${T} b`, "line\n  "];
+	const closers = ["", T, `\n${T}`, `${T}\n`, `${T} \n`, `${T}x`, ` ${T} y`, `\n  ${T} z`, `${T}\``, `${T}spec\n{}\n${T}`];
+	const tails = ["", "\nOutro", ` ${T}image\nmore`, "``", `\n${T}audio\nx${T}\n`];
+	let compared = 0;
+	for (const opener of openers) {
+		for (const body of bodies) {
+			for (const closer of closers) {
+				for (const tail of tails) {
+					const text = `Intro ${opener}${body}${closer}${tail}`;
+					assert.equal(removeRovoAppDirectMediaFences(text).text, byBackend(text), JSON.stringify(text));
+					compared += 1;
+				}
+			}
+		}
+	}
+	assert.equal(compared, 1350);
+});

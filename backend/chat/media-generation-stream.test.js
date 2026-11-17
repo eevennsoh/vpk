@@ -788,3 +788,44 @@ test("handleDirectRovoMediaFences strips malformed fences without invoking gener
 	assert.deepEqual(calls, []);
 	assert.equal(warnings[0][0], "[DIRECT-IMAGE] Failed to parse image fence JSON:");
 });
+
+test("handleDirectRovoMediaFences reads the whole body when it holds backticks", async () => {
+	// Before: the body ended at its first backticks, so JSON.parse failed and nothing was generated.
+	const T = "```";
+	const calls = [];
+	const { stripDirectMediaFences } = require("../lib/direct-media-fence");
+
+	const result = await handleDirectRovoMediaFences({
+		assistantText: [
+			"Before",
+			`${T}image`,
+			JSON.stringify({ prompt: `A sign that reads ${T}js` }),
+			T,
+			`${T}audio`,
+			`${JSON.stringify({ text: `Say ${T} twice` })}${T}`,
+			"After",
+		].join("\n"),
+		getEnvVars: () => ({}),
+		latestUserMessage: "Fallback prompt",
+		logger: createLogger().logger,
+		now: () => 7,
+		resolveGoogleImageGatewayConfig: () => ({ ok: true }),
+		streamDirectAudioFenceWidgetGeneration: async (input) => {
+			calls.push(["audio", input.audioPayload]);
+		},
+		streamDirectImageFenceWidgetGeneration: async (input) => {
+			calls.push(["image", input.imagePayload]);
+		},
+		stripDirectMediaFences,
+		widgetTypeAudio: "audio-preview",
+		widgetTypeImage: "image-preview",
+		writer: {},
+	});
+
+	assert.deepEqual(calls, [
+		["image", { prompt: `A sign that reads ${T}js` }],
+		["audio", { text: `Say ${T} twice` }],
+	]);
+	assert.equal(result.hasMediaFence, true);
+	assert.equal(result.assistantText, "Before\n\nAfter");
+});
