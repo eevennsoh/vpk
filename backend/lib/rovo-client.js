@@ -1193,6 +1193,7 @@ function openSseStream({
 			// An SSE event can span network chunks ("event:" in one, "data:" in the next),
 			// so the pending event name lives with the stream, not with each chunk.
 			let currentEvent = "";
+			let pendingChunkType = null;
 
 			const handleChunk = async (chunk) => {
 				if (isFinished()) {
@@ -1275,7 +1276,9 @@ function openSseStream({
 							}
 							const pendingChunk = callbacks.onChunk(chunkPayload);
 							if (typeof pendingChunk?.then === "function") {
+								pendingChunkType = chunkPayload.type;
 								await pendingChunk;
+								pendingChunkType = null;
 							}
 
 							if (
@@ -1335,24 +1338,38 @@ function openSseStream({
 				chunkQueue = chunkQueue
 					.then(() => handleChunk(chunk))
 					.catch((error) => {
-						// Our own handling failed (a callback, or a pause decision that threw):
-						// the turn may still be running on Rovo, so it is ended there too.
-						finish("failed", error instanceof Error ? error : new Error(String(error)), { cancel: true });
+						const rejectedDeferredHandler = pendingChunkType === "deferred-tool-request";
+						pendingChunkType = null;
+						const callbackError = error instanceof Error ? error : new Error(String(error));
+						// Cancel a still-open turn when our callback handling fails. A deferred
+						// rejection after a terminal outcome is reported without changing that outcome.
+						if (!finish("failed", callbackError, { cancel: true }) && rejectedDeferredHandler) {
+							console.warn("[rovo] Deferred tool handler rejected after stream finished:", {
+								port,
+								phase,
+								error: callbackError.message,
+							});
+						}
 					});
 			});
 
 			res.on("end", () => {
-				// The stream ends after every chunk it delivered has been handled. A pause
-				// decision still pending is waited for, bounded by the idle timeout, and
-				// nothing is cancelled: Rovo has already ended the stream.
+				// The SSE response has ended. Pending deferred handlers and pause decisions
+				// still get the idle timeout to finish; EOF itself does not cancel the Rovo turn.
 				streamEnded = true;
 				clearStreamSilenceTimer();
 				if (!isFinished()) {
 					streamSilenceTimer = setTimeout(() => {
+						const waitingForDeferredHandler = pendingChunkType === "deferred-tool-request";
+						const timeoutSeconds = Math.max(1, Math.ceil(idleTimeoutMs / 1000));
 						const error = new Error(
-							`Rovo stream ended but its pending tool pause decision did not complete within ${Math.max(1, Math.ceil(idleTimeoutMs / 1000))}s`,
+							waitingForDeferredHandler
+								? `Rovo stream ended but its deferred tool handler did not finish within ${timeoutSeconds}s`
+								: `Rovo stream ended but its pending tool pause decision did not complete within ${timeoutSeconds}s`,
 						);
-						error.code = "ROVO_STREAM_PAUSE_DECISION_TIMEOUT";
+						error.code = waitingForDeferredHandler
+							? "ROVO_STREAM_DEFERRED_HANDLER_TIMEOUT"
+							: "ROVO_STREAM_PAUSE_DECISION_TIMEOUT";
 						error.phase = "ended";
 						finish("failed", error);
 					}, idleTimeoutMs);

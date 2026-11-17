@@ -147,8 +147,6 @@ for (const mode of modes) {
 		try {
 			await entered.promise;
 			await nextTurn();
-			t.diagnostic(`Before the deferred handler settles: ${JSON.stringify(events)}`);
-			assert.deepEqual(events, ["deferred:start"]);
 		} finally {
 			gate.resolve();
 			await task;
@@ -232,7 +230,7 @@ for (const mode of modes) {
 		});
 	}
 
-	for (const failOnError of mode === "paused continuation" ? [false] : [false, true]) {
+	for (const failOnError of [false, true]) {
 		test(`${mode} handles deferred rejection with failOnError=${failOnError}`, { timeout: 5_000 }, async (t) => {
 			const gate = deferred();
 			const entered = deferred();
@@ -264,6 +262,52 @@ for (const mode of modes) {
 			assert.equal(events.includes("after"), false);
 		});
 	}
+
+	test(`${mode} awaits a deferred request before a pause decision in the same network chunk`, { timeout: 5_000 }, async (t) => {
+		const gate = deferred();
+		const entered = deferred();
+		const decision = deferred();
+		const pauseEntered = deferred();
+		const events = [];
+		const rovo = await startRovo(t, {
+			body: streamBody(mode, deferredRequest() + sse("on_call_tools_start", {
+				parts: [{ tool_name: "lookup", tool_call_id: "pause-2", args: {} }],
+			}) + textPart("after")),
+		});
+		const task = startGateway(mode, rovo.port, events, {
+			onDeferredToolRequest: async () => {
+				events.push("deferred:start");
+				entered.resolve();
+				await gate.promise;
+				events.push("card");
+			},
+			onToolCallStart: () => events.push("tool:start"),
+			onPausedToolCalls: async ({ control }) => {
+				events.push("pause:start");
+				pauseEntered.resolve();
+				await decision.promise;
+				await control.resume({ decisions: [{ tool_call_id: "pause-2", deny_message: null }] });
+				events.push("pause:resumed");
+				return { disconnect: false };
+			},
+		});
+		try {
+			await entered.promise;
+			assert.deepEqual(events, ["deferred:start"]);
+			gate.resolve();
+			await pauseEntered.promise;
+			assert.deepEqual(events, ["deferred:start", "card", "tool:start", "pause:start"]);
+		} finally {
+			gate.resolve();
+			decision.resolve();
+			await task;
+		}
+		assert.deepEqual(events.slice(0, 6), [
+			"deferred:start", "card", "tool:start", "pause:start", "pause:resumed", "after",
+		]);
+		assert.equal(rovo.requests.filter((request) => request === "POST /v3/resume_tool_calls").length,
+			mode === "paused continuation" ? 2 : 1);
+	});
 
 	for (const [settlement, keepOpen] of [["resolve", true], ["reject", true], ["resolve", false], ["reject", false]]) {
 		test(`${mode} aborts pending deferred work with keepOpen=${keepOpen} and handles its late ${settlement}`, { timeout: 5_000 }, async (t) => {
