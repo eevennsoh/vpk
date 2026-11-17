@@ -79,17 +79,20 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	skeleton: dynamic(() => import("../../demos/ui/skeleton-demo"), { ssr: false }),
 	slider: dynamic(() => import("../../demos/ui/slider-demo"), { ssr: false }),
 	sonner: dynamic(() => import("../../demos/ui/sonner-demo"), { ssr: false }),
+	sources: dynamic(() => import("../../demos/ui/sources-demo"), { ssr: false }),
 	spinner: dynamic(() => import("../../demos/ui/spinner-demo"), { ssr: false }),
 	suggestion: dynamic(() => import("../../demos/ui/suggestion-demo"), { ssr: false }),
 	switch: dynamic(() => import("../../demos/ui/switch-demo"), { ssr: false }),
 	table: dynamic(() => import("../../demos/ui/table-demo"), { ssr: false }),
 	tabs: dynamic(() => import("../../demos/ui/tabs-demo"), { ssr: false }),
 	tag: dynamic(() => import("../../demos/ui/tag-demo"), { ssr: false }),
+	task: dynamic(() => import("../../demos/ui/task-demo"), { ssr: false }),
 	tile: dynamic(() => import("../../demos/ui/tile-demo"), { ssr: false }),
 	"time-picker": dynamic(() => import("../../demos/ui/time-picker-demo"), { ssr: false }),
 	toggle: dynamic(() => import("../../demos/ui/toggle-demo"), { ssr: false }),
 	"toggle-group": dynamic(() => import("../../demos/ui/toggle-group-demo"), { ssr: false }),
 	tooltip: dynamic(() => import("../../demos/ui/tooltip-demo"), { ssr: false }),
+	trace: dynamic(() => import("../../demos/ui/trace-demo"), { ssr: false }),
 	// </generated: catalog-registry>
 
 

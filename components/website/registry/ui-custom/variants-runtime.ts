@@ -177,17 +177,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"source-demo-custom-rendering": dynamic(
-		() =>
-			import("../../demos/ui-custom/source-demo").then((mod) => ({
-				default: mod.SourceDemoCustomRendering,
-			})),
-		{ ssr: false },
-	),
-	"source-demo-preview-menu": dynamic(
-		() => import("../../demos/ui-custom/source-demo-preview-menu"),
-		{ ssr: false },
-	),
 	"speech-input-demo-with-transcript": dynamic(
 		() =>
 			import("../../demos/ui-custom/speech-input-demo").then((mod) => ({

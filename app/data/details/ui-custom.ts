@@ -66,10 +66,9 @@ import { SHIMMER_WAVE_DETAIL } from "./ui-custom/shimmer-wave";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
 import { SNIPPET_DETAIL } from "./ui-custom/snippet";
-import { SOURCE_DETAIL } from "./ui-custom/source";
+import { SOURCE_PREVIEW_MENU_DETAIL } from "./ui-custom/source-preview-menu";
 import { SPEECH_INPUT_DETAIL } from "./ui-custom/speech-input";
 import { STACK_TRACE_DETAIL } from "./ui-custom/stack-trace";
-import { TASK_DETAIL } from "./ui-custom/task";
 import { TERMINAL_DETAIL } from "./ui-custom/terminal";
 import { TEST_RESULT_DETAIL } from "./ui-custom/test-result";
 import { TOOL_DETAIL } from "./ui-custom/tool";
@@ -144,10 +143,9 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"sidebar-nav-item": SIDEBAR_NAV_ITEM_DETAIL,
 	"skill-tag": SKILL_TAG_DETAIL,
 	snippet: SNIPPET_DETAIL,
-	source: SOURCE_DETAIL,
+	"source-preview-menu": SOURCE_PREVIEW_MENU_DETAIL,
 	"speech-input": SPEECH_INPUT_DETAIL,
 	"stack-trace": STACK_TRACE_DETAIL,
-	task: TASK_DETAIL,
 	terminal: TERMINAL_DETAIL,
 	"test-result": TEST_RESULT_DETAIL,
 	tool: TOOL_DETAIL,

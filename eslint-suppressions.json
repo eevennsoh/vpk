@@ -3032,7 +3032,7 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
+  "components/website/demos/ui-custom/source-preview-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }

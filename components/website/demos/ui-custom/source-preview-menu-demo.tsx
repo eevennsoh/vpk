@@ -8,9 +8,9 @@ import {
 	SourcePreviewMenu,
 } from "@/components/ui-custom/source-preview-menu";
 
-const SOURCE_PREVIEW_TOASTER_ID = "source-demo-preview-menu";
+const SOURCE_PREVIEW_TOASTER_ID = "source-preview-menu-demo";
 
-export default function SourceDemoPreviewMenu() {
+export default function SourcePreviewMenuDemo() {
 	return (
 		<div className="not-prose mb-4 text-primary text-xs">
 			<SourcePreviewMenu

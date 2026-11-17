@@ -40,7 +40,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [suggestion](~/.agents/skills/ai-elements/references/suggestion.md) | `@/components/ui/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
 | [confirmation](~/.agents/skills/ai-elements/references/confirmation.md) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
 | [inline-citation](~/.agents/skills/ai-elements/references/inline-citation.md) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
-| [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui-custom/source` | Source reference list display | `Source` |
+| [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui/sources` | Source reference list display | `Source` |
 
 ## Input Controls
 
@@ -62,7 +62,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui-custom/stack-trace` | Error stack trace display | `StackTrace` |
 | [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui-custom/test-result` | Test execution results display | `TestResult` |
 | [file-tree](~/.agents/skills/ai-elements/references/file-tree.md) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
-| [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui-custom/task` | Task/step tracking display | `Task` |
+| [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui/task` | Task/step tracking display | `Task` |
 | [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui-custom/plan` | Multi-step plan visualization | `Plan` |
 
 ## Visual

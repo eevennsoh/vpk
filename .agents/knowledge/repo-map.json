@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 451,
+			"manifestEntryCount": 453,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 445,
+				"live": 447,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 83,
+				"entryCount": 86,
 				"entries": [
 					{
 						"category": "ui",
@@ -5988,6 +5988,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "sources",
+						"name": "Sources",
+						"importPath": "@/components/ui/sources",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "spinner",
 						"name": "Spinner",
 						"importPath": "@/components/ui/spinner",
@@ -6030,6 +6037,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "task",
+						"name": "Task",
+						"importPath": "@/components/ui/task",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "tile",
 						"name": "Tile",
 						"importPath": "@/components/ui/tile",
@@ -6061,6 +6075,13 @@
 						"slug": "tooltip",
 						"name": "Tooltip",
 						"importPath": "@/components/ui/tooltip",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "trace",
+						"name": "Trace",
+						"importPath": "@/components/ui/trace",
 						"status": "live"
 					}
 				]
@@ -6241,7 +6262,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 76,
+				"entryCount": 75,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6679,9 +6700,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "source",
-						"name": "Source",
-						"importPath": "@/components/ui-custom/source",
+						"slug": "source-preview-menu",
+						"name": "Source Preview Menu",
+						"importPath": "@/components/ui-custom/source-preview-menu",
 						"status": "live"
 					},
 					{
@@ -6696,13 +6717,6 @@
 						"slug": "stack-trace",
 						"name": "Stack Trace",
 						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "task",
-						"name": "Task",
-						"importPath": "@/components/ui-custom/task",
 						"status": "live"
 					},
 					{

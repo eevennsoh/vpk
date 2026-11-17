@@ -76,17 +76,20 @@ import { SIDEBAR_DETAIL } from "./ui/sidebar";
 import { SKELETON_DETAIL } from "./ui/skeleton";
 import { SLIDER_DETAIL } from "./ui/slider";
 import { SONNER_DETAIL } from "./ui/sonner";
+import { SOURCES_DETAIL } from "./ui/sources";
 import { SPINNER_DETAIL } from "./ui/spinner";
 import { SUGGESTION_DETAIL } from "./ui/suggestion";
 import { SWITCH_DETAIL } from "./ui/switch";
 import { TABLE_DETAIL } from "./ui/table";
 import { TABS_DETAIL } from "./ui/tabs";
 import { TAG_DETAIL } from "./ui/tag";
+import { TASK_DETAIL } from "./ui/task";
 import { TILE_DETAIL } from "./ui/tile";
 import { TIME_PICKER_DETAIL } from "./ui/time-picker";
 import { TOGGLE_DETAIL } from "./ui/toggle";
 import { TOGGLE_GROUP_DETAIL } from "./ui/toggle-group";
 import { TOOLTIP_DETAIL } from "./ui/tooltip";
+import { TRACE_DETAIL } from "./ui/trace";
 
 export const UI_DETAILS: Record<string, ComponentDetail> = {
 	accordion: ACCORDION_DETAIL,
@@ -161,15 +164,18 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	skeleton: SKELETON_DETAIL,
 	slider: SLIDER_DETAIL,
 	sonner: SONNER_DETAIL,
+	sources: SOURCES_DETAIL,
 	spinner: SPINNER_DETAIL,
 	suggestion: SUGGESTION_DETAIL,
 	switch: SWITCH_DETAIL,
 	table: TABLE_DETAIL,
 	tabs: TABS_DETAIL,
 	tag: TAG_DETAIL,
+	task: TASK_DETAIL,
 	tile: TILE_DETAIL,
 	"time-picker": TIME_PICKER_DETAIL,
 	toggle: TOGGLE_DETAIL,
 	"toggle-group": TOGGLE_GROUP_DETAIL,
 	tooltip: TOOLTIP_DETAIL,
+	trace: TRACE_DETAIL,
 };

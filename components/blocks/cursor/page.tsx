@@ -55,7 +55,7 @@ import {
 	TaskContent,
 	TaskItemFile,
 	TaskTrigger,
-} from "@/components/ui-custom/task"
+} from "@/components/ui/task"
 import { Terminal, TerminalContent } from "@/components/ui-custom/terminal"
 import { cn } from "@/lib/utils"
 import {
