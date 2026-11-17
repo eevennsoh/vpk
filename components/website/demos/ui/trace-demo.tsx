@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useChat } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
 
-import { createChat, getMessageText } from "@/lib/ai";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CodeBlock, CodeBlockContent, CodeBlockLine } from "@/components/ui/code-block";
 import {
 	Dialog,
 	DialogContent,
@@ -15,7 +13,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Message, MessageContent } from "@/components/ui/message";
 import {
 	Sheet,
 	SheetContent,
@@ -42,18 +39,18 @@ import {
 	CircleCheckIcon,
 	CircleIcon,
 	FilePenIcon,
+	FilePlusIcon,
 	FileTextIcon,
 	FolderSearchIcon,
 	GitBranchIcon,
+	GitCommitIcon,
 	GlobeIcon,
 	LoaderCircleIcon,
 	SearchIcon,
 	TerminalIcon,
 } from "@/components/ui/vpk-icons";
 
-export default function TraceDemo() {
-	return <TraceStatus />;
-}
+export { default } from "./trace-demo-chat";
 
 export function TraceStatic() {
 	return (
@@ -124,6 +121,76 @@ export function TraceDescriptionDemo() {
 				<TraceDescription>8 results</TraceDescription>
 			</TraceLine>
 		</Trace>
+	);
+}
+
+export function TraceCollapsibleDemo() {
+	return (
+		<div className="w-full max-w-sm">
+			<TraceCollapsible>
+				<TraceCollapsibleTrigger>
+					<TraceLine>
+						<TraceIcon>
+							<TerminalIcon label="" />
+						</TraceIcon>
+						<TraceTitle>Ran node --version</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent>
+					<CodeBlock size="sm">
+						<CodeBlockContent wrap className="max-h-64">
+							{"$ node --version\nv24.18.0"}
+						</CodeBlockContent>
+					</CodeBlock>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
+		</div>
+	);
+}
+
+export function TraceOpen() {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div className="flex w-full max-w-sm flex-col items-start gap-4">
+			<TraceCollapsible defaultOpen>
+				<TraceCollapsibleTrigger>
+					<TraceLine>
+						<TraceIcon>
+							<TerminalIcon label="" />
+						</TraceIcon>
+						<TraceTitle>Ran node --version</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent>
+					<CodeBlock size="sm">
+						<CodeBlockContent wrap className="max-h-64">
+							{"$ node --version\nv24.18.0"}
+						</CodeBlockContent>
+					</CodeBlock>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
+			<TraceCollapsible open={open} onOpenChange={setOpen}>
+				<TraceCollapsibleTrigger>
+					<TraceLine>
+						<TraceIcon>
+							<TerminalIcon label="" />
+						</TraceIcon>
+						<TraceTitle>Ran pnpm --version</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent>
+					<CodeBlock size="sm">
+						<CodeBlockContent wrap className="max-h-64">
+							{"$ pnpm --version\n10.33.4"}
+						</CodeBlockContent>
+					</CodeBlock>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
+			<Button variant="outline" onClick={() => setOpen((prev) => !prev)}>
+				{open ? "Hide" : "Show"} the pnpm output
+			</Button>
+		</div>
 	);
 }
 
@@ -327,128 +394,256 @@ export function TraceSources() {
 	);
 }
 
-const chat = createChat()
-	.user("Why is the checkout deploy so slow?")
-	.assistant(({ writer }) => {
-		writer.reasoning(
-			"The build log shows install and compile finish in under a minute. Image optimization takes almost four, and it reruns on every deploy because the cache key includes the commit hash.",
-			{ delayMs: 60 },
-		);
-		writer.sleep(400);
-		writer.text(
-			"Image optimization is the bottleneck. Key its cache on the lockfile and the image directory instead of the commit hash.",
-		);
-	});
-
-const initialMessages = chat.get(0);
-const transport = chat.transport({ delayMs: 20 });
-
-function ThinkingTrace({ text, running }: Readonly<{ text: string; running: boolean }>) {
-	const [open, setOpen] = useState<boolean>();
-
-	const line = (
-		<TraceLine status={running ? "running" : undefined}>
-			<TraceIcon>
-				<BrainIcon label="" />
-			</TraceIcon>
-			<TraceTitle>{running ? "Thinking" : "Thought"}</TraceTitle>
-		</TraceLine>
-	);
-
-	if (text.length === 0) {
-		return line;
-	}
-
+export function TraceSteps() {
 	return (
-		<TraceCollapsible open={open ?? running} onOpenChange={setOpen}>
-			<TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-			<TraceCollapsibleContent className="whitespace-pre-wrap">{text}</TraceCollapsibleContent>
-		</TraceCollapsible>
+		<div className="w-full max-w-sm">
+			<TraceCollapsible defaultOpen>
+				<TraceCollapsibleTrigger>
+					<TraceLine status="running">
+						<TraceTitle>Looking into the slow deploy</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent keepMounted>
+					<Trace>
+						<TraceCollapsible>
+							<TraceCollapsibleTrigger>
+								<TraceLine>
+									<TraceIcon>
+										<SearchIcon label="" />
+									</TraceIcon>
+									<TraceTitle>Searched for the checkout build log</TraceTitle>
+								</TraceLine>
+							</TraceCollapsibleTrigger>
+							<TraceCollapsibleContent className="flex flex-wrap gap-1.5">
+								<Badge variant="neutral">vercel.com</Badge>
+								<Badge variant="neutral">github.com</Badge>
+							</TraceCollapsibleContent>
+						</TraceCollapsible>
+						<a href="#steps">
+							<TraceLine>
+								<TraceIcon>
+									<FileTextIcon label="" />
+								</TraceIcon>
+								<TraceTitle>Read the last twelve deploys</TraceTitle>
+								<TraceIcon>
+									<ChevronRightIcon label="" />
+								</TraceIcon>
+							</TraceLine>
+						</a>
+						<TraceCollapsible>
+							<TraceCollapsibleTrigger>
+								<TraceLine status="running">
+									<TraceIcon>
+										<SearchIcon label="" />
+									</TraceIcon>
+									<TraceTitle>Searching for the cache key</TraceTitle>
+								</TraceLine>
+							</TraceCollapsibleTrigger>
+							<TraceCollapsibleContent>
+								<CodeBlock size="sm">
+									<CodeBlockContent wrap className="max-h-64">
+										cache key image optimization
+									</CodeBlockContent>
+								</CodeBlock>
+							</TraceCollapsibleContent>
+						</TraceCollapsible>
+					</Trace>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
+		</div>
 	);
 }
 
-function groupParts(parts: UIMessage["parts"]) {
-	const runs: { trace: boolean; parts: UIMessage["parts"] }[] = [];
+const commitFiles = [
+	{
+		path: "app/login/page.tsx",
+		added: false,
+		additions: 2,
+		deletions: 2,
+		diff: `@@ -14,7 +14,7 @@ export async function LoginPage({
+   searchParams,
+ }) {
+   const { next } = await searchParams
+-  const redirectTo =
+-    next && next.startsWith("/") ? next : "/"
++  const redirectTo = safeRedirect(next)
++
+   return <LoginForm redirectTo={redirectTo} />
+ }`,
+	},
+	{
+		path: "lib/auth/redirect.ts",
+		added: true,
+		additions: 7,
+		deletions: 0,
+		diff: `@@ -0,0 +1,7 @@
++export function safeRedirect(next: string | undefined) {
++  if (!next || !next.startsWith("/") || next.startsWith("//")) {
++    return "/"
++  }
++
++  return next
++}`,
+	},
+];
 
-	for (const part of parts) {
-		const trace = part.type === "reasoning";
-
-		if (!trace && part.type !== "text") {
-			continue;
-		}
-
-		const last = runs.at(-1);
-
-		if (last?.trace === trace) {
-			last.parts.push(part);
-		} else {
-			runs.push({ trace, parts: [part] });
-		}
+function getDiffVariant(line: string) {
+	if (line.startsWith("+")) {
+		return "added";
 	}
 
-	return runs;
+	return line.startsWith("-") ? "removed" : "default";
 }
 
-export function TraceThinking() {
-	const { messages, sendMessage, setMessages, status } = useChat({
-		messages: initialMessages,
-		transport,
+function DiffLines({ diff }: Readonly<{ diff: string }>) {
+	return diff.split("\n").map((line, index) => {
+		if (line.startsWith("@@")) {
+			return (
+				<CodeBlockLine key={index} className="text-muted-foreground">
+					{line}
+				</CodeBlockLine>
+			);
+		}
+
+		return (
+			<CodeBlockLine key={index} variant={getDiffVariant(line)}>
+				{line.slice(1)}
+			</CodeBlockLine>
+		);
 	});
-	const nextMessage = chat.next(messages);
-	const busy = status === "submitted" || status === "streaming";
+}
 
+export function TraceCommit() {
 	return (
-		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
-			{messages.map((message) => {
-				if (message.role === "user") {
-					return (
-						<Message key={message.id} align="end">
-							<MessageContent>
-								<Bubble align="end" variant="muted">
-									<BubbleContent>{getMessageText(message)}</BubbleContent>
-								</Bubble>
-							</MessageContent>
-						</Message>
-					);
-				}
+		<Trace className="max-w-sm">
+			<TraceCollapsible defaultOpen>
+				<TraceCollapsibleTrigger>
+					<TraceLine>
+						<TraceIcon>
+							<GitCommitIcon label="" />
+						</TraceIcon>
+						<TraceTitle>Committed a1b2c3: Fix the login redirect</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent>
+					<Trace>
+						{commitFiles.map((file) => (
+							<Sheet key={file.path}>
+								<SheetTrigger>
+									<TraceLine>
+										<TraceIcon>{file.added ? <FilePlusIcon label="" /> : <FilePenIcon label="" />}</TraceIcon>
+										<TraceTitle>
+											{file.added ? "Added" : "Edited"} {file.path}
+										</TraceTitle>
+										<TraceDescription className="font-mono">
+											+{file.additions} −{file.deletions}
+										</TraceDescription>
+										<TraceIcon>
+											<ChevronRightIcon label="" />
+										</TraceIcon>
+									</TraceLine>
+								</SheetTrigger>
+								<SheetContent>
+									<SheetHeader>
+										<SheetTitle className="font-mono">{file.path}</SheetTitle>
+										<SheetDescription>
+											{file.additions} additions, {file.deletions} deletions
+										</SheetDescription>
+									</SheetHeader>
+									<CodeBlock className="mx-6 mb-6 w-auto">
+										<CodeBlockContent>
+											<DiffLines diff={file.diff} />
+										</CodeBlockContent>
+									</CodeBlock>
+								</SheetContent>
+							</Sheet>
+						))}
+					</Trace>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
+		</Trace>
+	);
+}
 
-				const live = status === "streaming" && message === messages.at(-1);
-
-				return (
-					<Message key={message.id}>
-						<MessageContent className="gap-4">
-							{groupParts(message.parts).map((run, runIndex) =>
-								run.trace ? (
-									<Trace key={runIndex}>
-										{run.parts.map((part, index) =>
-											part.type === "reasoning" ? (
-												<ThinkingTrace
-													key={index}
-													text={part.text}
-													running={live && part.state === "streaming"}
-												/>
-											) : null,
-										)}
-									</Trace>
-								) : (
-									run.parts.map((part, index) =>
-										part.type === "text" ? <p key={`${runIndex}-${index}`}>{part.text}</p> : null,
-									)
-								),
-							)}
-						</MessageContent>
-					</Message>
-				);
-			})}
-			{busy ? null : (
-				<Button
-					variant="outline"
-					className="mt-auto self-start"
-					onClick={() => (nextMessage ? sendMessage(nextMessage) : setMessages(initialMessages))}
-				>
-					{nextMessage ? "Send message" : "Reset"}
-				</Button>
-			)}
+export function TraceTurn() {
+	return (
+		<div className="w-full max-w-sm">
+			<TraceCollapsible defaultOpen>
+				<TraceCollapsibleTrigger>
+					<TraceLine status="error">
+						<TraceTitle>Worked for 2m 4s, 1 command failed</TraceTitle>
+					</TraceLine>
+				</TraceCollapsibleTrigger>
+				<TraceCollapsibleContent keepMounted className="flex flex-col gap-2">
+					<Trace>
+						<TraceCollapsible>
+							<TraceCollapsibleTrigger>
+								<TraceLine>
+									<TraceIcon>
+										<BrainIcon label="" />
+									</TraceIcon>
+									<TraceTitle>Thought</TraceTitle>
+									<TraceDescription>12s</TraceDescription>
+								</TraceLine>
+							</TraceCollapsibleTrigger>
+							<TraceCollapsibleContent className="whitespace-pre-wrap">
+								I should check which package managers are installed before I scaffold anything.
+							</TraceCollapsibleContent>
+						</TraceCollapsible>
+						<TraceCollapsible defaultOpen>
+							<TraceCollapsibleTrigger>
+								<TraceLine status="error">
+									<TraceIcon>
+										<TerminalIcon label="" />
+									</TraceIcon>
+									<TraceTitle>Ran 2 commands, 1 failed</TraceTitle>
+								</TraceLine>
+							</TraceCollapsibleTrigger>
+							<TraceCollapsibleContent keepMounted>
+								<Trace>
+									<TraceLine>
+										<TraceIcon>
+											<TerminalIcon label="" />
+										</TraceIcon>
+										<TraceTitle>Ran node --version</TraceTitle>
+									</TraceLine>
+									<TraceCollapsible>
+										<TraceCollapsibleTrigger>
+											<TraceLine status="error">
+												<TraceIcon>
+													<TerminalIcon label="" />
+												</TraceIcon>
+												<TraceTitle>Failed to run pnpm --version</TraceTitle>
+											</TraceLine>
+										</TraceCollapsibleTrigger>
+										<TraceCollapsibleContent>
+											<CodeBlock size="sm" variant="destructive">
+												<CodeBlockContent wrap className="max-h-64">
+													command not found: pnpm
+												</CodeBlockContent>
+											</CodeBlock>
+										</TraceCollapsibleContent>
+									</TraceCollapsible>
+								</Trace>
+							</TraceCollapsibleContent>
+						</TraceCollapsible>
+					</Trace>
+					<p>Node is installed and pnpm is not. Reading the docs config.</p>
+					<Trace>
+						<a href="#turn">
+							<TraceLine>
+								<TraceIcon>
+									<FileTextIcon label="" />
+								</TraceIcon>
+								<TraceTitle>Read apps/v4/lib/docs.ts</TraceTitle>
+								<TraceIcon>
+									<ChevronRightIcon label="" />
+								</TraceIcon>
+							</TraceLine>
+						</a>
+					</Trace>
+				</TraceCollapsibleContent>
+			</TraceCollapsible>
 		</div>
 	);
 }

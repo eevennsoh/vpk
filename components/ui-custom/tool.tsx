@@ -25,10 +25,35 @@ import {
   CodeBlockCopyButton,
   CodeBlockDownloadButton,
   CodeBlockHeader,
-  type CodeBlockSize,
+  type CodeBlockProps,
   CodeBlockTitle,
   CodeBlockFilename,
-} from "./code-block";
+} from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "./highlighted-code-content";
+
+type CodeBlockSize = NonNullable<CodeBlockProps["size"]>;
+
+function ToolCodeBlock({
+  code,
+  label,
+  language,
+  size,
+}: Readonly<{ code: string; label: string; language: string; size: CodeBlockSize }>) {
+  return (
+    <CodeBlock className="text-xs" size={size}>
+      <CodeBlockHeader>
+        <CodeBlockTitle>
+          <CodeBlockFilename>{label}</CodeBlockFilename>
+        </CodeBlockTitle>
+        <CodeBlockActions>
+          <CodeBlockDownloadButton value={code} language={language} />
+          <CodeBlockCopyButton value={code} />
+        </CodeBlockActions>
+      </CodeBlockHeader>
+      <HighlightedCodeContent className="leading-5" code={code} language={language} />
+    </CodeBlock>
+  );
+}
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
@@ -397,22 +422,7 @@ export const ToolInput = ({
         Parameters
       </h4>
       <div className="rounded-md bg-muted/50">
-        <CodeBlock
-          className="text-xs leading-5"
-          code={inputPreview.text}
-          language="json"
-          size={codeBlockSize}
-        >
-          <CodeBlockHeader>
-            <CodeBlockTitle>
-              <CodeBlockFilename>json</CodeBlockFilename>
-            </CodeBlockTitle>
-            <CodeBlockActions>
-              <CodeBlockDownloadButton />
-              <CodeBlockCopyButton />
-            </CodeBlockActions>
-          </CodeBlockHeader>
-        </CodeBlock>
+        <ToolCodeBlock code={inputPreview.text} label="json" language="json" size={codeBlockSize} />
       </div>
       {inputPreview.truncated ? (
         <p className="text-[11px] leading-4 text-text-subtle">
@@ -489,22 +499,7 @@ export const ToolOutput = ({
     outputLanguage === "json" ? "json" : "result";
 
   const Output = (
-    <CodeBlock
-      className="text-xs leading-5"
-      code={displayedOutputText}
-      language={outputLanguage}
-      size={codeBlockSize}
-    >
-      <CodeBlockHeader>
-        <CodeBlockTitle>
-          <CodeBlockFilename>{outputLabel}</CodeBlockFilename>
-        </CodeBlockTitle>
-        <CodeBlockActions>
-          <CodeBlockDownloadButton />
-          <CodeBlockCopyButton />
-        </CodeBlockActions>
-      </CodeBlockHeader>
-    </CodeBlock>
+    <ToolCodeBlock code={displayedOutputText} label={outputLabel} language={outputLanguage} size={codeBlockSize} />
   );
 
   return (
@@ -555,22 +550,7 @@ export const ToolOutput = ({
             Raw output
           </summary>
           <div className="mt-2 overflow-x-auto rounded-md bg-muted/50 text-foreground">
-            <CodeBlock
-              className="text-xs leading-5"
-              code={exactRawOutputText}
-              language={outputLanguage}
-              size={codeBlockSize}
-            >
-              <CodeBlockHeader>
-                <CodeBlockTitle>
-                  <CodeBlockFilename>raw</CodeBlockFilename>
-                </CodeBlockTitle>
-                <CodeBlockActions>
-                  <CodeBlockDownloadButton />
-                  <CodeBlockCopyButton />
-                </CodeBlockActions>
-              </CodeBlockHeader>
-            </CodeBlock>
+            <ToolCodeBlock code={exactRawOutputText} label="raw" language={outputLanguage} size={codeBlockSize} />
           </div>
         </details>
       ) : null}

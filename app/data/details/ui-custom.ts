@@ -14,9 +14,7 @@ import { ATTACHMENT_DETAIL } from "./ui-custom/attachment";
 import { AUDIO_PLAYER_DETAIL } from "./ui-custom/audio-player";
 import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { CHAIN_OF_THOUGHT_DETAIL } from "./ui-custom/chain-of-thought";
-import { CODE_BLOCK_DETAIL } from "./ui-custom/code-block";
 import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
-import { COMMIT_DETAIL } from "./ui-custom/commit";
 import { CONFIRMATION_DETAIL } from "./ui-custom/confirmation";
 import { CONNECTION_DETAIL } from "./ui-custom/connection";
 import { CONTEXT_DETAIL } from "./ui-custom/context";
@@ -90,9 +88,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"audio-player": AUDIO_PLAYER_DETAIL,
 	canvas: CANVAS_DETAIL,
 	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
-	"code-block": CODE_BLOCK_DETAIL,
 	"code-list": CODE_LIST_DETAIL,
-	commit: COMMIT_DETAIL,
 	confirmation: CONFIRMATION_DETAIL,
 	connection: CONNECTION_DETAIL,
 	context: CONTEXT_DETAIL,

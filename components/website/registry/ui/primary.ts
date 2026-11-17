@@ -26,6 +26,7 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	chart: dynamic(() => import("../../demos/ui/chart-demo"), { ssr: false }),
 	checkbox: dynamic(() => import("../../demos/ui/checkbox-demo"), { ssr: false }),
 	checkpoint: dynamic(() => import("../../demos/ui/checkpoint-demo"), { ssr: false }),
+	"code-block": dynamic(() => import("../../demos/ui/code-block-demo"), { ssr: false }),
 	collapsible: dynamic(() => import("../../demos/ui/collapsible-demo"), { ssr: false }),
 	combobox: dynamic(() => import("../../demos/ui/combobox-demo"), { ssr: false }),
 	command: dynamic(() => import("../../demos/ui/command-demo"), { ssr: false }),

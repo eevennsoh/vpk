@@ -21,7 +21,8 @@ import {
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
 } from "@/components/ui-custom/chain-of-thought";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
 import { isTimelineOnlyContent } from "@/components/ui-custom/reasoning";
 import { Shimmer } from "@/components/ui-custom/shimmer";
@@ -793,7 +794,9 @@ export function AssistantThinkingTrace({
 				<ChainOfThoughtContent>
 					{state.shouldShowThinkingSection ? (
 						<ChainOfThoughtStep icon={StepThinkingIcon} label={getReasoningSectionTitle("thinking")} status={state.isThinkingStreaming ? "active" : "complete"}>
-							<CodeBlock code={state.accumulatedThinkingContent} language="markdown" size="sm" />
+							<CodeBlock size="sm">
+								<HighlightedCodeContent code={state.accumulatedThinkingContent} language="markdown" />
+							</CodeBlock>
 						</ChainOfThoughtStep>
 					) : null}
 					{state.data.hasTodoProgressItems ? (

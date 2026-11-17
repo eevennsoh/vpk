@@ -186,34 +186,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"commit-demo-full": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoFull,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-with-files": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoWithFiles,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-minimal": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMinimal,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMultiple,
-			})),
-		{ ssr: false },
-	),
 	"confirmation-demo-request": dynamic(
 		() =>
 			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({

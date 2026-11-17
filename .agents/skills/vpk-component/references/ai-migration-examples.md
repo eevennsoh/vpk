@@ -135,7 +135,7 @@ function CustomCode({ code, language }) {
   );
 }
 
-// AFTER: ui-custom CodeBlock
+// AFTER: ui CodeBlock
 import {
   CodeBlock,
   CodeBlockHeader,
@@ -143,19 +143,21 @@ import {
   CodeBlockActions,
   CodeBlockCopyButton,
   CodeBlockFilename,
-} from "@/components/ui-custom/code-block";
+} from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 
 function CodeDisplay({ code, language, filename }) {
   return (
-    <CodeBlock code={code} language={language}>
+    <CodeBlock>
       <CodeBlockHeader>
         <CodeBlockTitle>
           <CodeBlockFilename>{filename}</CodeBlockFilename>
         </CodeBlockTitle>
         <CodeBlockActions>
-          <CodeBlockCopyButton />
+          <CodeBlockCopyButton value={code} />
         </CodeBlockActions>
       </CodeBlockHeader>
+      <HighlightedCodeContent code={code} language={language} />
     </CodeBlock>
   );
 }

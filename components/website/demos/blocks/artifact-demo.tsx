@@ -17,7 +17,8 @@ import {
 	type ArtifactDocument,
 } from "@/components/blocks/artifact";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -571,12 +572,9 @@ export function ArtifactDemoCompound() {
 				</div>
 			</ArtifactHeader>
 			<ArtifactContent className="p-0">
-				<CodeBlock
-					className="border-none"
-					code={dijkstraCode}
-					language="python"
-					showLineNumbers
-				/>
+				<CodeBlock className="rounded-none ring-0">
+					<HighlightedCodeContent code={dijkstraCode} language="python" lineNumbers />
+				</CodeBlock>
 			</ArtifactContent>
 		</Artifact>
 	);
