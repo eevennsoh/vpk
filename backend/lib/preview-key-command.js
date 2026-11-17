@@ -10,8 +10,9 @@ const PREVIEW_KEY_MODIFIERS = [
 
 /**
  * The agent-browser arguments for one forwarded preview key event, or null when there is
- * no key. agent-browser's keydown/keyup take a bare key and keep no modifier state, so a
- * modified key goes out as one `press Shift+Tab` on keyDown and its keyUp sends nothing.
+ * no key. agent-browser's keydown/keyup take a bare key, keep no modifier state, and do
+ * not insert printable text. Modified and printable keys go out as one `press` on
+ * keyDown; their keyUp sends nothing.
  * A modifier key's own flag is dropped (pressing Shift reports `shiftKey`), so a lone
  * Shift stays a plain keydown/keyup. Messages without modifiers read as unmodified.
  * @param {{ eventType?: unknown, key?: unknown, code?: unknown, text?: unknown, modifiers?: Record<string, unknown> }} event
@@ -33,12 +34,14 @@ function resolvePreviewKeyCommand({ eventType, key, code, text, modifiers }) {
 	const modifierNames = modifiers && typeof modifiers === "object"
 		? PREVIEW_KEY_MODIFIERS.filter(([flag, name]) => modifiers[flag] === true && name !== value).map(([, name]) => name)
 		: []
-	if (modifierNames.length > 0) {
+	const isPrintable = value === " " || (value.length === 1 && !/[\p{Cc}\p{Cs}\p{Z}]/u.test(value))
+	if (modifierNames.length > 0 || isPrintable) {
 		if (eventType === "keyUp") {
 			return null
 		}
 		const pressKey = value === " " ? "Space" : value
-		return ["press", requirePreviewKey(`${modifierNames.join("+")}+${pressKey}`)]
+		const shortcut = modifierNames.length > 0 ? `${modifierNames.join("+")}+${pressKey}` : pressKey
+		return ["press", requirePreviewKey(shortcut)]
 	}
 
 	return [eventType === "keyUp" ? "keyup" : "keydown", requireBrowserArgument(value, "A key")]
