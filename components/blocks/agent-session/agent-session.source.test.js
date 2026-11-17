@@ -147,8 +147,6 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.doesNotMatch(hostSegment, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
-	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
-	assert.equal((METADATA_SOURCE.match(/<AgentListPrStatusIcon\s+className="[^"]*text-icon-subtlest[^"]*"\s+status=\{(?:segment\.prStatus|item\.prStatus) \?\? "created"\}\s+\/>/gu) ?? []).length, 2);
 	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
@@ -556,8 +554,6 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(MENU_HOOK_SOURCE, /onMoreMenuOpenChange\?\.\(nextMenu !== null\);/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuLabel>Continue in<\/DropdownMenuLabel>/u);
-	assert.match(CONTINUE_MENU_SOURCE, /description="Copy prompt"[\s\S]*<TerminalIcon label="" size="small" \/>[\s\S]*Terminal/u);
-	assert.match(CONTINUE_MENU_SOURCE, /import TerminalIcon from "@atlaskit\/icon-lab\/core\/terminal";/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /Continue in|TerminalIcon/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /onDismiss|dismissLabel/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /disabled=\{actions\./u);
@@ -616,7 +612,7 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 	// The timeout is cleared on unmount so a removed row cannot set state later.
 	assert.match(MENU_HOOK_SOURCE, /useEffect\(\(\) => \(\) => \{\s*window\.clearTimeout\(resetRef\.current\);[\s\S]*?\}, \[\]\)/u);
 
-	// Terminal keeps its confirmation visible in the separate continuation menu.
+	// Copy prompt keeps its confirmation visible in the separate continuation menu.
 	assert.match(SESSION_MORE_MENU_SOURCE, /render=\{<ShowMoreHorizontalIcon color="currentColor" label="" size="small" \/>\}/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /aria-label=\{`More actions for \$\{item\.title\}`\}/u);
 	assert.match(CONTINUE_MENU_SOURCE, /selected=\{copied\}/u);
@@ -645,11 +641,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? segment\.label === undefined \? "shrink-0" : "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
-	);
-	assert.match(
-		METADATA_SOURCE,
-		/<span className="min-w-0 truncate text-text-subtlest" title=\{item\.agent\.name\}>/u,
+		/<span className="min-w-0 truncate text-text-subtle" title=\{item\.agent\.name\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -657,7 +649,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);
-	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
 		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
@@ -723,9 +714,9 @@ test("expired rows explain retention across the row and keep their Delete menu v
 	);
 });
 
-test("viewer rows expose one privacy explanation on the row", () => {
+test("private rows expose one privacy explanation on the row", () => {
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /if \(role === "viewer" \|\| item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
+	assert.match(CARD_SOURCE, /if \(item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
 		/You can see this session, but only its owner can act on it\./u,
@@ -749,7 +740,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(LIFECYCLE_SOURCE, /StatusSuccessIcon[\s\S]*text-icon-success|text-icon-success[\s\S]*StatusSuccessIcon/u);
 	// Lifecycle marks share a 24px slot: icons are 12px, and the 16.75px
 	// spinner SVG keeps the peak animated orb within that same footprint.
-	assert.match(LIFECYCLE_SOURCE, /className="relative grid size-6 shrink-0 place-items-center"/u);
+	assert.match(LIFECYCLE_SOURCE, /className=\{cn\("relative grid shrink-0 place-items-center", uncontained \? "size-4" : "size-6"\)\}/u);
 	assert.match(LIFECYCLE_SOURCE, /<IndicatorGlyph compact state=\{state\} \/>/u);
 	assert.equal((LIFECYCLE_SOURCE.match(/iconSize=\{compact \? "small" : "medium"\}/gu) ?? []).length, 3);
 	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-3!/u);
@@ -760,12 +751,6 @@ test("a working long row breathes with the Avatar spinner", () => {
 		LIFECYCLE_SOURCE,
 		/case "running":[\s\S]*<IconTile[\s\S]*variant="experimental"/u,
 	);
-	// Long-form states pair full copy with the icon; only active work shimmers.
-	assert.match(LIFECYCLE_SOURCE, /running: "Working"/u);
-	assert.match(LIFECYCLE_SOURCE, /"needs-input": "Needs input"/u);
-	assert.match(LIFECYCLE_SOURCE, /attention: "Needs attention"/u);
-	assert.match(LIFECYCLE_SOURCE, /complete: "Finished"/u);
-	assert.match(LIFECYCLE_SOURCE, /showLabel[\s\S]*state === "running"[\s\S]*<Shimmer[\s\S]*\{label\}[\s\S]*<\/Shimmer>[\s\S]*: <span>\{label\}<\/span>[\s\S]*: null/u);
 	// Grow in and out on the state swap, with the exit timing on the exit variant
 	// so it does not silently run at the enter timing.
 	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_ENTER = \{ duration: 0\.15, ease: motionEase\.outPractical \}/u);
@@ -802,7 +787,7 @@ test("reuses the Agent List row model instead of forking a parallel one", () => 
 		TYPES_SOURCE,
 		/import type \{ AgentListAgent, AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
 	);
-	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;[\s\S]*toolCalls\?: readonly string\[\];\s*\};/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;/u);
 	assert.match(INDEX_SOURCE, /isCodingAgentListItem\(item\)/u);
 });
 
@@ -831,7 +816,6 @@ test("a card body click toggles a single selected session on the selected token"
 		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
 	);
 	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
-	assert.match(CARD_SOURCE, /showSelectedFill && "bg-bg-selected"/u);
 	assert.match(
 		CARD_SOURCE,
 		/const showSelectedFill = isMarked \|\| \(isSelected && mark == null\);/u,

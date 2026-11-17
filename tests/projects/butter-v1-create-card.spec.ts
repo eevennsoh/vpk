@@ -3,6 +3,23 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("subtask count shows hover and open states", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	const trigger = page.locator('[data-issue-key="PAY-118"]').getByRole("button", { name: "0 of 3 subtasks complete" });
+	await expect(trigger).toBeVisible({ timeout: 20_000 });
+	const tag = trigger.locator('[data-slot="tag"]');
+	const background = () => tag.evaluate((element) => getComputedStyle(element).backgroundColor);
+	const resting = await background();
+	await trigger.hover();
+	await expect.poll(background).not.toBe(resting);
+	await trigger.click();
+	await expect(trigger).toHaveAttribute("aria-expanded", "true");
+	await expect(tag).toHaveClass(/bg-bg-selected/);
+	await page.keyboard.press("Escape");
+	await expect(trigger).toHaveAttribute("aria-expanded", "false");
+	await expect(tag).not.toHaveClass(/bg-bg-selected/);
+});
+
 test("inline picker search headers match Labels and Parent", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 720 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

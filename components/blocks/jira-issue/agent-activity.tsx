@@ -307,14 +307,18 @@ function resolveJiraIssueAgentRowPresentation(
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isCompletedRow
+	const rowLabel = isViewerRow
+		? `${summary.activityCount} other ${summary.activityCount === 1 ? "session" : "sessions"}`
+		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isSingleAgent
+	const rowAriaLabel = isViewerRow
+		? rowLabel
+		: isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
@@ -638,7 +642,7 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={
-				animateStateTransition ? <AgentSessionShortLifecycleIcon
+				isViewerRow ? undefined : animateStateTransition ? <AgentSessionShortLifecycleIcon
 					accessibleState={lifecycleState}
 					animateTransition
 					transitionEffect="fade"

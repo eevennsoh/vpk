@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+import { formatDetailedTimestamp } from "@/lib/format-detailed-timestamp";
 
 function commentLink(id: string) {
 	return `${location.origin}${location.pathname}#comment-${encodeURIComponent(id)}`;
@@ -43,18 +44,7 @@ export function ProjectButterTimestamp({
 			}).format(new Date(parsed))
 		: item.timestamp;
 	const detailed = Number.isFinite(parsed)
-		? new Intl.DateTimeFormat("en-US", {
-				weekday: "long",
-				year: "numeric",
-				month: "long",
-				day: "numeric",
-				hour: "2-digit",
-				minute: "2-digit",
-				second: "2-digit",
-				hourCycle: "h23",
-				timeZone: "Asia/Kuala_Lumpur",
-				timeZoneName: "short",
-			}).format(new Date(parsed))
+		? formatDetailedTimestamp(parsed)
 		: item.timestamp;
 	const visibleTimestamp = full ? formatted : item.timestamp;
 	const showTooltip = tooltipOpen && !full && Number.isFinite(parsed);
@@ -67,7 +57,7 @@ export function ProjectButterTimestamp({
 						aria-describedby={showTooltip ? tooltipId : undefined}
 						aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
 						aria-pressed={full}
-						className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+						className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle underline-offset-2 outline-none hover:text-text hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring"
 						onClick={() => setFull((value) => !value)}
 						type="button"
 					/>}

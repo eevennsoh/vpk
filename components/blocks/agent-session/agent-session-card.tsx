@@ -243,6 +243,7 @@ function useAgentSessionCardTransition({
 
 export function AgentSessionCard({
 	animateLayout = true,
+	allowViewerView = false,
 	arrivalDelaySeconds,
 	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
 	captured = false,
@@ -265,6 +266,7 @@ export function AgentSessionCard({
 	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
+	moreMenuVariant,
 	tooltipPositionerClassName,
 	onArrivalComplete,
 	onDepartureComplete,
@@ -285,6 +287,8 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
+	showAgentName,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showBranch = false,
@@ -294,6 +298,7 @@ export function AgentSessionCard({
 	workItemOptions,
 }: Readonly<{
 	animateLayout?: boolean;
+	allowViewerView?: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset?: string;
 	captured?: boolean;
@@ -334,6 +339,7 @@ export function AgentSessionCard({
 	isSelected?: boolean;
 	item: AgentSessionItem;
 	localSessionAction?: AgentSessionProps["localSessionAction"];
+	moreMenuVariant?: AgentSessionProps["moreMenuVariant"];
 	onArrivalComplete?: () => void;
 	onDepartureComplete?: () => void;
 	onStateChangeComplete?: () => void;
@@ -377,6 +383,8 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
+	showAgentName?: AgentSessionProps["showAgentName"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
@@ -489,7 +497,7 @@ export function AgentSessionCard({
 	const canOpenLocalMenu = role === "owner" && !isCloudSession && localSessionAction === "continue" && (canResume || onContinueInAgent !== undefined);
 	const viewSession: typeof onView = role === "owner"
 		? isCloudSession || localSessionAction === "view" ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
-		: undefined;
+		: role === "viewer" && allowViewerView && isCloudSession && !item.privateTo ? onView : undefined;
 	function renderLocalContinuation(trigger?: ReactElement) {
 		return (
 			<AgentSessionContinueMenu
@@ -543,9 +551,8 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen || menu.isContinueOpen;
-	// Every density keeps lifecycle state outside the authored title and byline.
-	// Short rows use a settled-state glyph in the same slot the hover/focus menu
-	// replaces; long rows keep their full trailing progression control.
+	// The trailing glyph shares its slot with hover actions. Long rows can move
+	// their state label into metadata while retaining the short row's glyph.
 	const trailingControl = (() => {
 		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
@@ -569,6 +576,7 @@ export function AgentSessionCard({
 						portalled={moreMenuPortalled}
 						positionerClassName={moreMenuPositionerClassName}
 						showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
+						variant={moreMenuVariant}
 						workItemOptions={workItemOptions}
 					/>
 				);
@@ -582,7 +590,7 @@ export function AgentSessionCard({
 	// and falls back to its own `STATE_META` indicator.
 	const lifecycleIndicator = role === "expired"
 		? null
-		: isLongDensity
+		: isLongDensity && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
@@ -699,7 +707,7 @@ export function AgentSessionCard({
 						// fading the fill flashes transparent frames between nearby rows.
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						showSelectedFill && "bg-bg-selected",
+						showSelectedFill && (hoverTone === "menu" && !isMarked ? "bg-bg-neutral-subtle-hovered" : "bg-bg-selected"),
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
 						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
 						activateCard === undefined && role !== "viewer"
@@ -716,7 +724,7 @@ export function AgentSessionCard({
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
 							role={articleRole}
-							tabIndex={articleTabIndex ?? (role === "viewer" || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
+							tabIndex={articleTabIndex ?? ((role === "viewer" && (!allowViewerView || item.privateTo) && activateCard === undefined) || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
 						>
 							{/*
 								No resting ring: the session list is a flush stack of
@@ -746,15 +754,14 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// Agent Session owns lifecycle outside the title and byline. The
-								// shared trailing slot lets hover actions replace it in place.
+								// The shared trailing slot lets hover actions replace the glyph in place.
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} showAgentName={showAgentName} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
+								metadataOutsideViewTrigger
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								viewDescription={item.privateTo ? agentSessionPrivacyHint(item.privateTo) : undefined}
@@ -801,9 +808,11 @@ export function AgentSessionCard({
 					if (role === "expired") {
 						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
-					if (role === "viewer" || item.privateTo) {
-						return <AgentSessionViewerTooltip person={item.privateTo ?? item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (item.privateTo) {
+						return <AgentSessionViewerTooltip person={item.privateTo} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
+					if (role === "viewer" && !allowViewerView) return <AgentSessionViewerTooltip person={item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (role === "viewer") return card;
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {
 						return card;

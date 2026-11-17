@@ -94,6 +94,7 @@ export function AgentSession({
 	stateChangedItemIds,
 	stateChangeVersions,
 	assignment,
+	allowViewerView = false,
 	canViewItem,
 	capturedItemIds,
 	density = "unlinked",
@@ -106,6 +107,7 @@ export function AgentSession({
 	issueKey,
 	isResumable,
 	localSessionAction = "continue",
+	moreMenuVariant,
 	newItemIds,
 	onContinueInAgent,
 	onCopyResume,
@@ -130,6 +132,8 @@ export function AgentSession({
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
+	showAgentName,
 	showBranch = false,
 	style,
 	variant = "large",
@@ -280,6 +284,7 @@ export function AgentSession({
 							);
 						return (
 							<AgentSessionCard
+								allowViewerView={allowViewerView}
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
 								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
@@ -301,6 +306,7 @@ export function AgentSession({
 								item={item}
 								key={item.id}
 								localSessionAction={localSessionAction}
+								moreMenuVariant={moreMenuVariant}
 								onContinueInAgent={onContinueInAgent}
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}
@@ -322,6 +328,8 @@ export function AgentSession({
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
 								showLifecycleLabel={showLifecycleLabel}
+								lifecycleLabelPlacement={lifecycleLabelPlacement}
+								showAgentName={showAgentName}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}

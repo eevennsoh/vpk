@@ -24,15 +24,14 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  * Starts from the Agent List row rendered by the shared `AgentListRow`
  * presenter instead of forking a parallel model. Consumers that already build
  * `AgentListItem` values (Pulse maps loose-work fixtures into them) need no
- * conversion step. `role` and `toolCalls` are session-card vocabulary: Agent
- * List rows have neither the owner/viewer split nor the long-form tool cycle.
+ * conversion step. `role` adds the session card's owner/viewer split.
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** The session is shared with the team, including when viewed by its owner. */
+	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
 	privateTo?: string;
-	/** Human-readable tool calls cycled in the long-form metadata line. */
-	toolCalls?: readonly string[];
 };
 
 /** Defaults to `owner` so existing payloads keep the more menu. */
@@ -160,6 +159,10 @@ export interface AgentSessionProps {
 	showWorkingSpinner?: boolean;
 	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
 	showLifecycleLabel?: boolean;
+	/** Title-led rows can show lifecycle text beside the avatar stack. */
+	lifecycleLabelPlacement?: "trailing" | "metadata";
+	/** Override agent-name visibility in title-led metadata. */
+	showAgentName?: boolean;
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.
@@ -239,6 +242,8 @@ export interface AgentSessionProps {
 	 * This affects only that manual menu path; other linking capabilities remain wired.
 	 */
 	showLinkWorkItemMenuItem?: boolean;
+	/** Owner controls for the My session prototype, using the shared more menu. */
+	moreMenuVariant?: "default" | "owner";
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.
@@ -283,6 +288,8 @@ export interface AgentSessionProps {
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
+	/** Allow a team viewer to open the session in a read-only surface. */
+	allowViewerView?: boolean;
 	/**
 	 * Id of the session whose card is selected. Omit to let the list own a
 	 * single-select toggle; pass `null` to control an empty selection.

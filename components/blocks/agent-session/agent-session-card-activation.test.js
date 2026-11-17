@@ -43,7 +43,7 @@ function loadHarness() {
 						trigger ? React.cloneElement(trigger, { onClick: () => onOpenChange(true) }) : null,
 						open ? React.createElement("div", { role: "menu", "data-menu": "continue", "data-anchor": anchor?.current?.tagName ?? "BUTTON" },
 							React.createElement("span", null, "Continue in"),
-							React.createElement("button", { role: "menuitem", onClick: actions.onCopyPrompt, "data-copied": copied }, "Terminal"),
+							React.createElement("button", { role: "menuitem", onClick: actions.onCopyPrompt, "data-copied": copied }, "Copy prompt"),
 							React.createElement("button", { role: "menuitem", onClick: () => onOpenChange(false) }, "Close")) : null);
 				}
 			`],
@@ -70,12 +70,13 @@ function loadHarness() {
 				export function DropdownMenu({ children }) { return children; }
 				export function DropdownMenuTrigger({ render, children }) { return React.cloneElement(render, null, children); }
 				export function DropdownMenuContent({ children, anchor, ref, side, align, sideOffset }) { return React.createElement("div", { ref, role: "menu", "data-anchor-kind": anchor ? "explicit" : "trigger", "data-side": side, "data-align": align, "data-side-offset": sideOffset }, children); }
-				export function DropdownMenuItem({ children, disabled }) { return React.createElement("button", { role: "menuitem", disabled }, children); }
+				export function DropdownMenuItem({ children, disabled, render }) { return render ? React.cloneElement(render, { role: "menuitem", disabled }) : React.createElement("button", { role: "menuitem", disabled }, children); }
 				export function DropdownMenuGroup({ children }) { return React.createElement("div", null, children); }
 				export function DropdownMenuLabel({ children }) { return React.createElement("span", null, children); }
 				export function DropdownMenuSeparator() { return null; }
 			`],
 			["button", `import React from "react"; export function Button({ children, ...props }) { return React.createElement("button", props, children); }`],
+			["copy-prompt-button", `import React from "react"; export function CopyPromptButton({ feedback, presentation, ...props }) { return React.createElement("button", props, feedback === "copied" ? "Prompt copied" : "Copy prompt"); }`],
 			["tooltip", `
 				import React from "react";
 				export function Tooltip({ children }) { return children; }
@@ -247,6 +248,11 @@ test("session cards show the correct hover and selection surfaces", async () => 
 		assert.equal(article().classList.contains("bg-surface-hovered"), false);
 		await render({ item, onView() {}, hoverTone: "menu", isHighlighted: true });
 		assert.equal(article().classList.contains("bg-bg-neutral-subtle-hovered"), true);
+		await render({ item, onView() {}, hoverTone: "menu", isSelected: true });
+		assert.equal(article().classList.contains("bg-bg-neutral-subtle-hovered"), true);
+		assert.equal(article().classList.contains("bg-bg-selected"), false);
+		await render({ item, onView() {}, hoverTone: "menu", triageRow: { mark: { isLead: true, isMarked: true, onActivate() {} } } });
+		assert.equal(article().classList.contains("bg-bg-selected"), true);
 		await render({ item, onView() {}, hoverTone: "menu" });
 		assert.equal(article().classList.contains("hover:bg-bg-neutral-subtle-hovered"), true);
 	});
@@ -279,20 +285,24 @@ test("owner cards retain their hover session preview while viewer cards keep it 
 	}
 });
 
-test("viewer cards expose their explanation from the keyboard without an extra action", async () => {
-	await withCard({ item: { ...LOCAL_ITEM, role: "viewer" } }, async ({ document }) => {
+test("private viewer cards expose their explanation from the keyboard without an extra action", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, role: "viewer", privateTo: "Annie Cook" } }, async ({ document }) => {
 		assert.equal(document.querySelector("article").getAttribute("tabindex"), "0");
 		assert.equal(document.querySelector("button"), null);
 	});
 });
 
-test("viewer cards explain who can act on the session", async () => {
-	await withCard({ item: { ...LOCAL_ITEM, role: "viewer", invokedBy: { name: "Jordan Okafor" } } }, async ({ document, render }) => {
-		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Jordan Okafor can act on it.");
+test("team viewer cards omit the row tooltip while private cards explain access", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, host: "cloud", role: "viewer", sharedWithTeam: true, invokedBy: { name: "Jordan Okafor" } }, allowViewerView: true, onView() {} }, async ({ document, render, click }) => {
+		assert.equal(document.querySelector('[role="tooltip"]'), null);
+		assert.notEqual(document.querySelector("[data-body-trigger]"), null);
+		await click(document.querySelector("[data-body-trigger]"));
+		assert.equal(document.querySelector('[role="tooltip"]'), null);
 		await render({ item: { ...LOCAL_ITEM, role: "viewer", privateTo: "Annie Cook", invokedBy: { name: "Jordan Okafor" } } });
 		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Annie Cook can act on it.");
-		await render({ item: { ...LOCAL_ITEM, role: "viewer" } });
-		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only its owner can act on it.");
+		await render({ item: { ...LOCAL_ITEM, role: "viewer" }, allowViewerView: true });
+		assert.equal(document.querySelector('[role="tooltip"]'), null);
+		assert.equal(document.querySelector("article").hasAttribute("tabindex"), false);
 	});
 });
 
@@ -390,7 +400,7 @@ test("local continuation and more actions never open together", async () => {
 	});
 });
 
-test("the resume gate prevents copying while the prototype Terminal option stays enabled", async () => {
+test("the resume gate prevents copying while the prototype Copy prompt option stays enabled", async () => {
 	await withCard({ item: LOCAL_ITEM, sessionDrag: {}, isResumable: () => false, onContinueInAgent: () => {} }, async ({ document, click, copied }) => {
 		await click(document.querySelector("article"));
 		const terminal = document.querySelector('[data-menu="continue"] button');
@@ -426,6 +436,20 @@ test("expired session menus offer only Delete and require the delete capability"
 		const items = [...document.querySelectorAll('[role="menuitem"]')];
 		assert.deepEqual(items.map((item) => item.textContent), ["Delete"]);
 		assert.equal(items[0].disabled, !canDelete);
+	}
+});
+
+test("My session menus offer owner controls in order for local and cloud sessions", async () => {
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { AgentSessionMoreMenu } = await loadHarness();
+	for (const isCloud of [false, true]) {
+		const html = renderToStaticMarkup(React.createElement(AgentSessionMoreMenu, {
+			actions: {}, item: LOCAL_ITEM, open: true, onOpenChange() {}, isCloud, variant: "owner",
+		}));
+		const { document } = parseHTML(html);
+		const items = [...document.querySelectorAll('[role="menuitem"]')];
+		assert.deepEqual(items.map((item) => item.textContent), ["Stop session", "Pin", "Rename", "Delete"]);
+		assert.equal(items.every((item) => !item.disabled), true);
 	}
 });
 
@@ -479,7 +503,7 @@ test("prototype continuation options stay enabled and use the card's right edge"
 		const { document } = parseHTML(html);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-anchor-kind"), "explicit");
 		const items = [...document.querySelectorAll('[role="menuitem"]')];
-		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Terminal"]);
+		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Copy prompt"]);
 		assert.deepEqual(items.map((item) => item.disabled), [false, false]);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-side"), "right");
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-align"), "start");
@@ -608,6 +632,19 @@ test("the session list preserves local continuation by default and lets hosts op
 			assert.equal(document.querySelector('[data-menu="continue"]') !== null, localSessionAction !== "view");
 		}, AgentSession);
 	}
+});
+
+test("a host can open a cloud session without retaining selection", async () => {
+	const { AgentSession } = await loadHarness();
+	const item = { ...LOCAL_ITEM, host: "cloud" };
+	const viewed = [];
+	await withCard({ items: [item], density: "long", selectedItemId: null, onView: (session) => viewed.push(session.id) }, async ({ document, click }) => {
+		await click(document.querySelector("[data-body-trigger]"));
+		assert.equal(document.querySelector("article").hasAttribute("data-selected"), false);
+		await click(document.querySelector("[data-body-trigger]"));
+		assert.deepEqual(viewed, [item.id, item.id]);
+		assert.equal(document.querySelector("article").hasAttribute("data-selected"), false);
+	}, AgentSession);
 });
 
 test("local View activation applies to a draggable owner card and preserves viewer restrictions", async () => {

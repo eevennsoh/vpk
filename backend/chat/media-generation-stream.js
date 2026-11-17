@@ -1,5 +1,6 @@
 "use strict";
 
+const { findDirectMediaFenceBody } = require("../lib/direct-media-fence");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
 function requireFunction(name, value) {
@@ -644,12 +645,14 @@ async function handleDirectRovoMediaFences({
 	requireFunction("streamDirectImageFenceWidgetGeneration", streamDirectImageFenceWidgetGeneration);
 	requireFunction("stripDirectMediaFences", stripDirectMediaFences);
 
-	const imageFenceMatch = String(assistantText).match(/```image\s*\n([\s\S]*?)```/i);
-	const audioFenceMatch = String(assistantText).match(/```audio\s*\n([\s\S]*?)```/i);
+	// The body of the first closed block of each kind, read by the rule every media fence reader uses.
+	const imageFenceBody = findDirectMediaFenceBody(assistantText, "image");
+	const audioFenceBody = findDirectMediaFenceBody(assistantText, "audio");
+	const hasMediaFence = imageFenceBody !== null || audioFenceBody !== null;
 
-	if (imageFenceMatch) {
+	if (imageFenceBody !== null) {
 		try {
-			const imagePayload = JSON.parse(imageFenceMatch[1].trim());
+			const imagePayload = JSON.parse(imageFenceBody.trim());
 			const imageWidgetId = `widget-direct-image-${now()}`;
 			await streamDirectImageFenceWidgetGeneration({
 				imagePayload,
@@ -679,9 +682,9 @@ async function handleDirectRovoMediaFences({
 		}
 	}
 
-	if (audioFenceMatch) {
+	if (audioFenceBody !== null) {
 		try {
-			const audioPayload = JSON.parse(audioFenceMatch[1].trim());
+			const audioPayload = JSON.parse(audioFenceBody.trim());
 			const audioWidgetId = `widget-direct-audio-${now()}`;
 			await streamDirectAudioFenceWidgetGeneration({
 				audioPayload,
@@ -703,10 +706,10 @@ async function handleDirectRovoMediaFences({
 	}
 
 	return {
-		assistantText: imageFenceMatch || audioFenceMatch
+		assistantText: hasMediaFence
 			? stripDirectMediaFences(assistantText)
 			: assistantText,
-		hasMediaFence: Boolean(imageFenceMatch || audioFenceMatch),
+		hasMediaFence,
 	};
 }
 

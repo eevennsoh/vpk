@@ -12,8 +12,13 @@ import type { AgentResultCreator } from "@/components/projects/sidebar-chat/comp
 import FloatingRovoButton from "@/components/blocks/rovo-button";
 import type { FloatingRovoButtonInsightsConfig, FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
+import type { ChatPanelProps } from "@/components/projects/sidebar-chat/lib/chat-panel-types";
 
 interface JgpRovoOverlayProps {
+	renderWidget?: ChatPanelProps["renderWidget"];
+	readOnly?: boolean;
+	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
+	readOnlySessionState?: import("@/components/blocks/agent-list").AgentListState;
 	portalContainer?: HTMLElement | null;
 	contained?: boolean;
 	agentCreator?: AgentResultCreator;
@@ -43,6 +48,10 @@ interface JgpRovoOverlayProps {
 
 /** Keeps JGP Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function JgpRovoOverlay({
+	renderWidget,
+	readOnly = false,
+	readOnlyOwner,
+	readOnlySessionState,
 	portalContainer,
 	contained = false,
 	agentCreator,
@@ -139,6 +148,10 @@ export function JgpRovoOverlay({
 				{showFloatingChat && RovoFloatingChat ? (
 					<RovoFloatingChat
 						agentCreator={agentCreator}
+						renderWidget={renderWidget}
+						readOnly={readOnly}
+						readOnlyOwner={readOnlyOwner}
+						readOnlySessionState={readOnlySessionState}
 						key="floating-chat"
 						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}

@@ -3,7 +3,10 @@ import type { RoutingDecision, RovoUIMessage } from "@/lib/rovo-ui-messages";
 export const ROVO_APP_ARTIFACT_INTENT_LEAK_FALLBACK =
 	"I had an internal routing issue while generating that response. Please try again.";
 
-const ROVO_APP_DIRECT_MEDIA_FENCE_PATTERN = /```(?:image|audio)\s*\n[\s\S]*?(?:```|$)/giu;
+const ROVO_APP_DIRECT_MEDIA_FENCE_OPENER = /```(?:image|audio)\s*\n/giu;
+// The closing fence rule of `backend/lib/direct-media-fence.js` for complete text; the display test
+// keeps the two equal.
+const ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[^\S\n]*```)|(?=`*[^\S\n]*(?:\n|$)))/gu;
 const ROVO_APP_SPEC_FENCE_PATTERN = /```spec\s*\n[\s\S]*?(?:```|$)/giu;
 const ROVO_APP_SPEC_PATCH_LINE_PATTERN =
 	/^\s*\{"op"\s*:\s*"(?:add|replace|remove)"\s*,\s*"path"\s*:\s*"\/(?:root|elements|state)\b.*$/gmu;
@@ -93,6 +96,73 @@ export function getRovoAppAssistantSuggestionQuestions({
 		: [];
 }
 
+/** Where the JSON object that opens `text` ends (-1 when it does not), skipping strings. */
+function rovoAppJsonObjectEnd(text: string): number {
+	let depth = 0;
+	let inString = false;
+	for (let at = text.indexOf("{"); at >= 0 && at < text.length; at += 1) {
+		const char = text[at];
+		if (inString) {
+			if (char === "\\") {
+				at += 1;
+			} else if (char === '"') {
+				inString = false;
+			}
+		} else if (char === '"') {
+			inString = true;
+		} else if (char === "{" || char === "[") {
+			depth += 1;
+		} else if ((char === "}" || char === "]") && --depth === 0) {
+			return at + 1;
+		}
+	}
+	return -1;
+}
+
+/**
+ * Where a media block's closing fence starts in the complete text (-1 while it is open): the first
+ * run of three or more backticks that starts or ends its line, or follows the JSON object that opens
+ * the body, with only whitespace (`\s`) between; failing that, the first three backticks after the
+ * opener.
+ */
+function findRovoAppDirectMediaFenceClose(text: string, bodyStart: number): number {
+	ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE.lastIndex = bodyStart;
+	const lineEdge = ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE.exec(text);
+	const lineEdgeStart = lineEdge ? lineEdge.index : -1;
+	const body = text.slice(bodyStart, lineEdge ? lineEdgeStart : text.length);
+	if (/^\s*\{/u.test(body)) {
+		const objectEnd = rovoAppJsonObjectEnd(body);
+		if (objectEnd >= 0) {
+			const at = objectEnd + (/^\s*/u.exec(body.slice(objectEnd))?.[0].length ?? 0);
+			if (body.startsWith("```", at)) {
+				return bodyStart + at;
+			}
+		}
+	}
+	return lineEdge ? lineEdgeStart : text.indexOf("```", bodyStart);
+}
+
+/** `rawText` with each media block, closed or still open, replaced by a paragraph break. */
+function replaceRovoAppDirectMediaFences(rawText: string): string {
+	let text = "";
+	let at = 0;
+	ROVO_APP_DIRECT_MEDIA_FENCE_OPENER.lastIndex = 0;
+	for (
+		let opener = ROVO_APP_DIRECT_MEDIA_FENCE_OPENER.exec(rawText);
+		opener;
+		opener = ROVO_APP_DIRECT_MEDIA_FENCE_OPENER.exec(rawText)
+	) {
+		text += `${rawText.slice(at, opener.index)}\n\n`;
+		const closeStart = findRovoAppDirectMediaFenceClose(rawText, opener.index + opener[0].length);
+		if (closeStart < 0) {
+			return text;
+		}
+		at = closeStart + 3;
+		ROVO_APP_DIRECT_MEDIA_FENCE_OPENER.lastIndex = at;
+	}
+	return `${text}${rawText.slice(at)}`;
+}
+
 export function removeRovoAppDirectMediaFences(rawText: string): {
 	removed: boolean;
 	text: string;
@@ -104,10 +174,7 @@ export function removeRovoAppDirectMediaFences(rawText: string): {
 		};
 	}
 
-	const sanitizedText = rawText.replace(
-		ROVO_APP_DIRECT_MEDIA_FENCE_PATTERN,
-		"\n\n"
-	);
+	const sanitizedText = replaceRovoAppDirectMediaFences(rawText);
 	if (sanitizedText === rawText) {
 		return {
 			removed: false,

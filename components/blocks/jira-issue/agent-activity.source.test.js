@@ -70,7 +70,7 @@ test("new Jira agent sessions show Working immediately", async () => {
 		},
 	});
 	assert.ok(Boolean(view.getByText("Working")));
-	assert.equal(view.getByRole("button", { name: "Claude: Working" }).querySelector('[data-slot="avatar"]')?.classList.contains("size-6"), true);
+	assert.equal(view.getByRole("button", { name: "Claude: Working" }).querySelector('[data-slot="avatar"]')?.classList.contains("size-5"), true);
 	assert.equal(Boolean(view.queryByText("Let's get started")), false);
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
@@ -103,7 +103,7 @@ test("the compact assignment field shows session state and cycles multiple agent
 		props: { addAgentLabel: "Add agent", assignedAgents: [working, other], compactStatus: true },
 	});
 	assert.equal(Boolean(view.getByText("Working")), true);
-	assert.equal(view.container.querySelector('.agent-loading-vertical [data-slot="avatar"]')?.classList.contains("size-6"), true);
+	assert.equal(view.container.querySelector('.agent-loading-vertical [data-slot="avatar"]')?.classList.contains("size-5"), true);
 	const visibleAgentIds = () => [...view.container.querySelectorAll('.agent-loading-vertical [data-agent-id]')].map((agent) => agent.getAttribute("data-agent-id"));
 	assert.deepEqual(visibleAgentIds(), ["claude"]);
 	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
@@ -120,7 +120,7 @@ for (const host of ["local", "cloud"]) {
 			["awaiting-input", "Needs input", "awaiting-input"],
 			["completed", "Finished", "finished"],
 		]) {
-			test(`${host} ${role} sessions show ${label} and its indicator`, async () => {
+			test(`${host} ${role} sessions show ${role === "viewer" ? "the other-session count" : `${label} and its indicator`}`, async () => {
 				const view = await renderComponent({
 					entry: "components/blocks/jira-issue/agent-activity.tsx",
 					exportName: "JiraIssueAgentActivityRows",
@@ -132,8 +132,13 @@ for (const host of ["local", "cloud"]) {
 						renderAgentActivityIndicator: (kind) => React.createElement("span", null, `indicator: ${kind}`),
 					},
 				});
-				assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
-				assert.equal(Boolean(view.getByText(`indicator: ${indicator}`)), true);
+				if (role === "viewer") {
+					assert.equal(Boolean(view.getByRole("button", { name: "1 other session" })), true);
+					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
+				} else {
+					assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
+					assert.equal(Boolean(view.getByText(`indicator: ${indicator}`)), true);
+				}
 			});
 		}
 	}

@@ -20,6 +20,22 @@ async function mentionGalleryClaude(page: Page) {
 	return editor;
 }
 
+test("session replies render without uncached promise warnings", async ({ page }) => {
+	const errors: string[] = [];
+	page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
+	await expect(reply).toBeFocused();
+	await reply.pressSequentially(" Please review this reply");
+	await reply.press("Enter");
+	await expect(page.getByText("Please review this reply", { exact: false }).first()).toBeVisible();
+	expect(errors.filter((message) => message.includes("uncached promise"))).toEqual([]);
+});
+
 test("gallery Claude mentions offer the existing completed session", async ({ page }) => {
 	const editor = await openGalleryCommentEditor(page);
 	await mentionGalleryClaude(page);
@@ -31,6 +47,97 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	await expect(sessions.getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
 	await sessions.getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
 	await expect(page.getByRole("textbox", { name: "Leave a reply..." })).toContainText("Review the remaining action items");
+});
+
+test("continuing a session focuses its reply and keeps the bottom composer usable", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await editor.pressSequentially(" Review the action items");
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
+	await expect(reply).toBeFocused();
+	await expect(reply).toContainText("Review the action items");
+	await expect(reply.locator(".rich-text-mention-chip")).toHaveText("Claude");
+	await expect(reply.locator('xpath=ancestor::*[@data-rovo-generation="highlight"]')).toHaveAttribute("data-rovo-generation-active", "false");
+	const bar = page.getByRole("region", { name: "Work item full screen view" }).locator("[data-project-butter-comment-bar]");
+	await expect(bar).toHaveAttribute("data-visible", "true");
+	await expect(bar).not.toHaveAttribute("inert", "");
+	await editor.click();
+	await expect(editor).toBeFocused();
+	await editor.pressSequentially("A separate note");
+	await expect(editor).toContainText("A separate note");
+	await expect(reply).toContainText("Review the action items");
+	await editor.fill("");
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	await expect(reply).toBeFocused();
+	await expect(reply).toContainText("Review the action items");
+	await expect(reply.locator(".rich-text-mention-chip")).toHaveCount(1);
+});
+
+test("the agent mention travels from the bottom composer into the session reply", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	const start = await editor.locator(".rich-text-mention-chip").boundingBox();
+	const samples = page.evaluate(() => new Promise<{ points: Array<{ x: number; y: number; width: number; height: number; time: number }>; width: number; height: number }>((resolve) => {
+		const points: Array<{ x: number; y: number; width: number; height: number; time: number }> = [];
+		const started = performance.now();
+		function sample() {
+			const flight = document.querySelector<HTMLElement>("[data-project-butter-mention-flight]");
+			if (flight) { const rect = flight.getBoundingClientRect(); points.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, time: performance.now() }); }
+			if (performance.now() - started < 1200) requestAnimationFrame(sample);
+			else resolve({ points, width: innerWidth, height: innerHeight });
+		}
+		requestAnimationFrame(sample);
+	}));
+	await editor.press("Enter");
+	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
+	await expect(reply.locator(".rich-text-mention-chip")).toHaveText("Claude");
+	const { points, width, height } = await samples;
+	expect(start).not.toBeNull();
+	expect(points.length).toBeGreaterThan(3);
+	expect(points.at(-1)!.time - points[0]!.time).toBeGreaterThan(400);
+	for (const point of points) {
+		expect(point.x).toBeGreaterThanOrEqual(0);
+		expect(point.y).toBeGreaterThanOrEqual(0);
+		expect(point.x + point.width).toBeLessThanOrEqual(width);
+		expect(point.y + point.height).toBeLessThanOrEqual(height);
+	}
+	expect(Math.abs(points[0]!.x - start!.x)).toBeLessThan(5);
+	expect(Math.abs(points[0]!.y - start!.y)).toBeLessThan(5);
+	const last = points.at(-1)!;
+	const lineDeviation = points.map((point) => Math.abs((last.x - points[0]!.x) * (points[0]!.y - point.y) - (points[0]!.x - point.x) * (last.y - points[0]!.y)) / Math.hypot(last.x - points[0]!.x, last.y - points[0]!.y));
+	expect(Math.max(...lineDeviation)).toBeGreaterThan(3);
+	await expect(page.locator("[data-project-butter-mention-flight]")).toHaveCount(0);
+	await expect(reply.locator(".rich-text-mention-chip")).toBeVisible();
+	await expect(reply).toBeFocused();
+	const highlight = reply.locator('xpath=ancestor::*[@data-rovo-generation="highlight"]');
+	await expect(highlight).toHaveAttribute("data-rovo-generation-active", "true");
+	const trace = highlight.locator(':scope > div[aria-hidden="true"] > svg > path');
+	await expect(trace.first()).toHaveAttribute("stroke", "#d97757");
+	await expect.poll(() => trace.evaluateAll((paths) => paths.some((path) => Number(path.getAttribute("opacity")) > 0))).toBe(true);
+});
+
+test("clicking outside during the mention flight keeps both composers usable", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	await expect(page.locator("[data-project-butter-mention-flight]")).toBeVisible();
+	await page.getByRole("heading", { name: "Activity" }).click({ force: true });
+	await expect(page.locator("[data-project-butter-mention-flight]")).toHaveCount(0);
+	await expect(page.getByRole("textbox", { name: "Leave a reply..." }).locator(".rich-text-mention-chip")).toBeVisible();
+	await expect(editor).toBeVisible();
 });
 
 test("session previews match comment hover and mask the timeline behind reply controls", async ({ page }) => {

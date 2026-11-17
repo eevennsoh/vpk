@@ -3,6 +3,64 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
+function copyRowAppearance(row: Element) {
+	const style = getComputedStyle(row);
+	return { height: style.height, padding: style.padding, gap: style.gap, radius: style.borderRadius, color: style.color, font: style.font };
+}
+
+test("local session continuation keeps app tiles centered beside single-line actions", async ({ page }) => {
+	const errors: string[] = [];
+	page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.addInitScript(() => {
+		Object.defineProperty(navigator, "clipboard", { value: { writeText: async () => {
+			document.body.dataset.copyCount = String(Number(document.body.dataset.copyCount ?? "0") + 1);
+		} } });
+	});
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent & app selector", exact: true }).click();
+	const reference = page.getByRole("region", { name: "Jira Local Agent", exact: true }).getByRole("button", { name: "Copy prompt", exact: true });
+	const referenceAppearance = await reference.evaluate(copyRowAppearance);
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Small", exact: true }).click();
+	const local = page.getByRole("region", { name: "Local sessions", exact: true });
+	for (const [name, title, glyphSize] of [
+		["Claude", /^The adapter keep-or-delete argument/, 24],
+		["Cursor", /^Kill switch as a prerequisite/, 24],
+		["Rovo", /^Overnight contract-suite session/, 15],
+	] as const) {
+		await local.getByRole("button", { name: title }).click();
+		const menu = page.getByRole("menu").filter({ hasText: "Continue in" });
+		const app = menu.getByRole("menuitem", { name, exact: true });
+		const tile = app.locator('[data-slot="avatar"][data-shape="square"]');
+		await expect(tile).toBeVisible();
+		await expect(tile).toHaveCSS("width", "24px");
+		await expect(tile).toHaveCSS("height", "24px");
+		const glyph = tile.locator("svg, img").first();
+		await expect(glyph).toHaveCSS("width", `${glyphSize}px`);
+		await expect(glyph).toHaveCSS("height", `${glyphSize}px`);
+		const centers = await app.evaluate((row) => {
+			const boxes = [row, row.querySelector('[data-slot="avatar"]'), row.children[1]].map((element) => element?.getBoundingClientRect());
+			return boxes.map((box) => box ? box.y + box.height / 2 : null);
+		});
+		expect(centers[1]).toBe(centers[0]);
+		expect(centers[2]).toBe(centers[0]);
+		const copy = menu.getByRole("menuitem", { name: "Copy prompt", exact: true });
+		await expect(copy).toBeVisible();
+		expect(await copy.evaluate(copyRowAppearance)).toEqual(referenceAppearance);
+		await expect(copy.locator('[data-slot="dropdown-menu-item-description"]')).toHaveCount(0);
+		await expect(copy.locator("svg").first()).toHaveCSS("width", "16px");
+		await copy.focus();
+		await page.keyboard.press("Enter");
+		await expect(menu.getByRole("menuitem", { name: "Prompt copied", exact: true })).toBeVisible();
+		await expect(menu.getByRole("status")).toHaveText("Prompt copied");
+		await page.keyboard.press("Escape");
+		await expect(menu).toHaveCount(0);
+	}
+	await expect(page.locator("body")).toHaveAttribute("data-copy-count", "3");
+	expect(errors).toEqual([]);
+});
+
 test("work item field and development icons fit 12-pixel glyphs in 16-pixel slots", async ({ page }) => {
 	await page.addInitScript(() => {
 		Object.defineProperty(navigator, "clipboard", { value: { writeText: async () => {} } });

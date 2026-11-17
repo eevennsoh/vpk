@@ -40,6 +40,7 @@ interface ChatPanelConversationProps
 		| "renderWidget"
 		| "showAgentTestControls"
 		| "showAwaitingIndicator"
+		| "readOnly"
 	> {
 	answeredTraceMessageIds: ReadonlySet<string>;
 	decisions: Pick<ChatPanelDecisions, "handleBuildPlan" | "resolvePlanBuildState" | "shouldShowQuestionCard">;
@@ -73,6 +74,7 @@ interface ChatPanelConversationProps
 
 /** Scrollable thread: greeting or message turns, generated result cards, and thinking indicators. */
 export function ChatPanelConversation({
+	readOnly = false,
 	agentCreator,
 	answeredTraceMessageIds,
 	cards,
@@ -178,13 +180,13 @@ export function ChatPanelConversation({
 								message={message}
 								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId || message.id === externalThinkingMessageId) && message.id === lastAssistantMessageId}
 								treatQuestionToolCallsAsAnswered={answeredTraceMessageIds.has(message.id)}
-								onSuggestionClick={handleFollowUpSuggestionClick}
-								showFollowUpSuggestions={message.id === lastAssistantMessageId && !hasPendingChatWork}
+								onSuggestionClick={readOnly ? undefined : handleFollowUpSuggestionClick}
+								showFollowUpSuggestions={!readOnly && message.id === lastAssistantMessageId && !hasPendingChatWork}
 								enableSmartWidgets={enableSmartWidgets}
 								generativeCardAnimation={cards?.generativeAnimation}
-								editingMessageId={editingMessageId}
-								onEditMessage={onEditMessage}
-								onSetEditingMessageId={setEditingMessageId}
+								editingMessageId={readOnly ? null : editingMessageId}
+								onEditMessage={readOnly ? undefined : onEditMessage}
+								onSetEditingMessageId={readOnly ? undefined : setEditingMessageId}
 								onWidgetPrimaryAction={handleWidgetPrimaryAction}
 								onOpenAgentEditSummary={onOpenAgentEditSummary}
 								renderWidget={renderWidget}

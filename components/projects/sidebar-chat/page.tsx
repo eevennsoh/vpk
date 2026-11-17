@@ -60,6 +60,9 @@ export type {
 } from "./lib/chat-panel-types";
 
 export default function ChatPanel({ onClose, agentCreator,
+	readOnly = false,
+	readOnlyOwner,
+	readOnlySessionState,
 	onBackToRovo,
 	addMenuItemsBefore,
 	composerToolsAfterAdd,
@@ -361,6 +364,7 @@ export default function ChatPanel({ onClose, agentCreator,
 	};
 	const chatConversationBody = (
 		<ChatPanelConversation
+			readOnly={readOnly}
 			agentCreator={agentCreator}
 			answeredTraceMessageIds={answeredTraceMessageIds}
 			cards={cards}
@@ -406,6 +410,9 @@ export default function ChatPanel({ onClose, agentCreator,
 	);
 	const chatComposerBody = (
 		<ChatPanelComposerArea
+			readOnly={readOnly}
+			readOnlyOwner={readOnlyOwner}
+			readOnlySessionState={readOnlySessionState}
 			addMenuItemsBefore={addMenuItemsBefore}
 			autoFocusComposer={autoFocusComposer}
 			chatContextBar={chatContextBar}

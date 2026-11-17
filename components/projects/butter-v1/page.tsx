@@ -266,7 +266,7 @@ export default function ButterPage(): React.ReactElement {
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "agent-sessions"} retain>
-				<ButterGalleryAgentSessions key={agentSessionsResetKey} galleryOpen={galleryOpen} permission={sessionPermission} />
+				<ButterGalleryAgentSessions key={agentSessionsResetKey} active={selectedId === "agent-sessions"} galleryOpen={galleryOpen} permission={sessionPermission} />
 			</RetainedView>
 			<RetainedView active={selectedId === "board-card"} retain>
 				<ButterGalleryBoardCard key={boardCardResetKey} galleryOpen={galleryOpen} />
@@ -898,6 +898,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						showCustomizeControl
 						simpleViews={false}
 						needsInputCount={needsInputCount}
+						showNeedsInputButton={false}
 						viewTabs={(
 							<JiraViewTabs
 								animateIndicator

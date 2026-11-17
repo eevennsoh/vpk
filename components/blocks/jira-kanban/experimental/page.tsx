@@ -263,6 +263,7 @@ function ExperimentalJiraKanbanPageContent({
 	showMoreControls,
 	showCustomizeControl,
 	needsInputCount,
+	showNeedsInputButton,
 	simpleViews,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
@@ -876,6 +877,7 @@ function ExperimentalJiraKanbanPageContent({
 				agentFilterId={agentFilterId}
 				onAgentFilterIdChange={handleAgentFilterChange}
 				needsInputCount={needsInputCount}
+				showNeedsInputButton={showNeedsInputButton}
 				headerControlsLayout={headerControlsLayout}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
