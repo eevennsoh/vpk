@@ -26,8 +26,9 @@ Each line is settled. Reopen one only with the owner.
 - **Plan session "execution" mode**: a plain visible message keeps a plan session in execution, as before.
 - **Stuck-port rerun text**: approved and built. A rerun's text starts as its own paragraph; text that was still held back when the port stuck is discarded as before, so the first attempt's text ends where it had been shown (`backend/chat/rovo-stream.js`, pinned in `backend/chat/rovo-chat-turn.behavior.test.js`).
 - **Three dead backend paths deleted** (owner decision "delete"): the run queue, the replace-on-request path and `cancelOnComplete`. The port-available plumbing that only the queue used went with them.
-- **Cut-short notice wait**: a cut-short turn waits `CUT_SHORT_MEDIA_WAIT_MS` (5 s, provisional; the owner may change it) for pending media instead of the full media timeout (`app/contexts/use-rovo-chat-media-generation.ts`).
-- **Thread change in the chat provider** (#2358): a thread change stops and detaches the departing request first, then swaps the transcript and resets the turn in one synchronous step, so a stopped reply or a cut-short notice never lands on the new thread; request liveness comes from the turn reducer (`hasLiveRequest` in `app/contexts/rovo-chat-turn-machine.ts`). Switching threads now drops prompts still queued on the old thread (before, they were sent into the new one); the owner has not confirmed this yet.
+- **Cut-short notice wait**: a cut-short turn waits `CUT_SHORT_MEDIA_WAIT_MS` (5 s, confirmed by the owner on 17 Nov 2026) for pending media instead of the full media timeout (`app/contexts/use-rovo-chat-media-generation.ts`).
+- **Thread change in the chat provider** (#2358): a thread change stops and detaches the departing request first, then swaps the transcript and resets the turn in one synchronous step, so a stopped reply or a cut-short notice never lands on the new thread; request liveness comes from the turn reducer (`hasLiveRequest` in `app/contexts/rovo-chat-turn-machine.ts`). Switching threads drops prompts still queued on the old thread (before, they were sent into the new one); the owner confirmed this on 17 Nov 2026. Keeping a queue per thread is not planned.
+- **Chat failure notice** (#2361, owner decision "fix that"): a failure notice is its own paragraph and reaches the client once on every turn type. Before it, held plain text is shown; an unfinished marker, an open fence at the start of a reply and a classifier payload are dropped, from the stored reply too; text that reached the client is never removed. The text output controller lives in `backend/chat/rovo-text-output.js`; the marker adapter's `flushVisibleText()` is the failure-path flush and `flush()` stays for the end of a stream.
 
 ### Declined or deferred
 
@@ -59,6 +60,10 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 - The failure-notice path shows held-back text before the notice, which can include a partial marker or spec fence (`backend/chat/rovo-chat-stream.js`); discarding it instead would cut the last few words of the reply. Owner's call.
 - `onDeferredToolRequest` is not awaited in `backend/lib/rovo-gateway-tool-event-dispatcher.js`, so a question or plan card can be written after post-stream work starts.
+- During normal streaming a spec or media fence that follows ordinary text is not held across chunks, so part of it reaches the client as text (`emitTextDelta` in `backend/chat/rovo-text-output.js` flushes with `force`).
+- A `WIDGET_LOADING:` marker split across chunks is read with a truncated widget type (`backend/chat/rovo-marker-stream-adapter.js`).
+- A card built after a failed turn has the failure notice in its summary, because the summary is the stored reply without the fence.
+- On a card-first turn with no widget, a reply that starts with `{` or a code fence and then trips the inability or clarification detectors is not shown before a failure notice; it stays in the stored reply. A rerun's held whitespace is matched as a string, so three or more collapsed newlines can leave part of it in the stored reply.
 - Unknown whether Rovo Serve sends keep-alive events during a pause; if not, a pause longer than the idle timeout ends the stream.
 - Smaller: delete-all threads does not cancel live runs; a run stays `queued` if attaching its subscriber throws after creation; clearing the Rovo pool while a paused record exists.
 - Voice barge-in does not always cancel the old turn on the backend.
