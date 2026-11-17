@@ -102,6 +102,43 @@ test("selecting a session opens its inline reply with the draft", async ({ page 
 	await expect(reply).toHaveCount(0);
 });
 
+test("a submitted handoff does not prefill later manual replies", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await editor.pressSequentially(" Please check this instruction once");
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]');
+	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
+	await expect(reply).toContainText("Please check this instruction once");
+	await reply.press("Enter");
+	await expect(reply).toHaveCount(0);
+	const header = thread.locator('[data-slot="jira-activity-comment-header"]').first();
+	await header.hover();
+	await header.getByRole("button", { name: "Reply", exact: true }).click();
+	await expect(reply).toBeFocused();
+	await expect(reply).not.toContainText("Please check this instruction once");
+	await reply.press("ControlOrMeta+A");
+	await reply.press("Backspace");
+	await expect(reply).toHaveText("");
+	await header.hover();
+	await header.getByRole("button", { name: "Reply", exact: true }).click();
+	await thread.getByRole("button", { name: /Show \d+ more replies/u }).click();
+	const participant = thread.locator('[data-slot="jira-activity-comment-header"]').filter({ hasText: "Sarah Lim" });
+	await participant.hover();
+	await participant.getByRole("button", { name: "Reply", exact: true }).click();
+	await expect(reply).toBeFocused();
+	await expect(reply).toContainText("Sarah Lim");
+	await expect(reply).not.toContainText("Please check this instruction once");
+});
+
 test("Backspace returns to session choices at the agent mention", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1170, height: 1000 });

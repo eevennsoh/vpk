@@ -261,13 +261,14 @@ export function ProjectButterActivity({
 					renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
 					renderEarlierRepliesLabel={earlierRepliesLabel}
 					renderReplyComposer={(composer) => {
-						const prefill = replyRequest?.entryId === composer.entryId ? replyRequest.prefill : undefined;
+						const request = replyRequest?.entryId === composer.entryId && replyRequest.id === composer.requestId ? replyRequest : undefined;
+						const prefill = request?.prefill;
 						const agent = prefill ? mentionAgents.find((candidate) => candidate.name === prefill.agentName) : undefined;
 						const item = agent ? mapAgentToMentionItem(agent) : undefined;
 						const mention = item && prefill && !composer.value.includes(`@[${item.id}]`) ? { mention: item, textAfter: prefill.preserveContent ? " " : prefill.text ? ` ${prefill.text}` : " ", preserveContent: prefill.preserveContent } : composer.prefillMention;
-						const autoFocus = composer.autoFocus && (replyFocusId === undefined || replyRequest?.entryId !== composer.entryId || replyFocusId === composer.entryId);
+						const autoFocus = composer.autoFocus && (!request || replyFocusId === undefined || replyFocusId === composer.entryId);
 						const editor = <ProjectButterCommentEditor agents={mentionAgents} ariaLabel="Reply editor" elevation="flat" focusRequest={autoFocus ? 1 : 0} handoffMentionId={item?.id} mentionHandoffPending={pendingReplyId === composer.entryId} onHandoffInterrupt={onReplyHandoffInterrupt} onSave={(body, _plainText, mentionedAgentIds) => composer.onSubmit(body, mentionedAgentIds)} onValueChange={composer.onValueChange} placeholder={composer.placeholder} prefillMention={mention} textboxLabel={composer.placeholder} value={composer.value} />;
-						const session = replyRequest?.entryId === composer.entryId ? sessionFor(composer.entryId) : undefined;
+						const session = request ? sessionFor(composer.entryId) : undefined;
 						return session ? <RovoGeneration.Highlight active={traceReplyId === replyRequest?.id} className="block w-full" color={agentSessionAccentColor(session)} delay={0} duration={motionDuration.slowest * 2} onHighlightComplete={() => { if (replyRequest) onReplyTraceComplete?.(replyRequest.id); }} origin="left-center">{editor}</RovoGeneration.Highlight> : editor;
 					}}
 					renderEntry={(entry) => {

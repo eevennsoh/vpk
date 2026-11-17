@@ -100,6 +100,8 @@ function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
 /** What a consumer-supplied reply composer receives; the thread keeps owning the draft, focus and submit flow. */
 export type JiraActivityReplyComposerProps = Readonly<{
 	entryId: string;
+	/** Present only for the composer opened by that external request. */
+	requestId?: number;
 	/** True when the composer mounted from a Reply click and should take focus. */
 	autoFocus: boolean;
 	onSubmit: (body: string, mentionedAgentIds?: readonly string[]) => void;
@@ -426,13 +428,14 @@ export function JiraActivityComment({
 		key: string;
 		actor: JiraActivityActor;
 		initialDraft: string;
+		requestId?: number;
 	} | null>(null);
 	const [localReplyDraft, setLocalReplyDraft] = useState("");
 	const replyDraft = controlledReplyDraft ?? localReplyDraft;
 	const [handledReplyRequestId, setHandledReplyRequestId] = useState<number | undefined>();
 	if (replyRequestId !== undefined && replyRequestId !== handledReplyRequestId) {
 		setHandledReplyRequestId(replyRequestId);
-		setReplyTarget({ key: entry.id, actor: entry.actor, initialDraft: replyDraft });
+		setReplyTarget({ key: entry.id, actor: entry.actor, initialDraft: replyDraft, requestId: replyRequestId });
 	}
 	function setReplyDraft(value: string) {
 		if (controlledReplyDraft === undefined) setLocalReplyDraft(value);
@@ -653,6 +656,7 @@ export function JiraActivityComment({
 							<Fragment key={`${replyTarget?.key ?? "thread-reply"}-${handledReplyRequestId ?? 0}`}>
 								{renderReplyComposer({
 									entryId: entry.id,
+									requestId: replyTarget?.requestId,
 									autoFocus: collapsible,
 									onSubmit: submitReply,
 									onValueChange: setReplyDraft,
