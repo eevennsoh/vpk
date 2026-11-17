@@ -62,7 +62,7 @@ belongs to whoever provisions the staging CloudID.
 ## Regression checks
 
 ```bash
-node --test scripts/vpk-ai-api.test.js scripts/vpk-remote-preflight.test.js scripts/vpk-remote-tools.test.js
+node --test scripts/vpk-ai-api.test.js scripts/vpk-remote-preflight.test.js scripts/vpk-remote-tools.test.js scripts/vpk-remote-browser-server.test.js scripts/vpk-remote-git-grant.test.js
 python3 scripts/test_vpk_remote_tools.py
 node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ```
@@ -71,6 +71,11 @@ The maintained sources are `scripts/vpk-ai-api.sh`,
 `scripts/vpk-remote-preflight.js`, `scripts/vpk_remote_tools.py`, and
 `scripts/vpk_remote_callback.py`; change these before reinstalling, rather than
 patching site-packages or leaving the fix only in a machine-local script.
+`scripts/vpk-remote-browser-server.js` (the GPT lane's browser server, see
+[gpt-executor.md § Browser tests](gpt-executor.md#browser-tests-playwright))
+and `scripts/vpk-remote-git-grant.js` (its commit grant, see
+[gpt-executor.md § Commits](gpt-executor.md#commits)) run from the checkout
+and need no reinstall.
 
 A 400 `tools: Tool names must be unique` on a Codex-to-Claude fork can come from
 historical `additional_tools` bundles repeating the current tools. The callback
