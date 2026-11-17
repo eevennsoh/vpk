@@ -898,6 +898,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						showCustomizeControl
 						simpleViews={false}
 						needsInputCount={needsInputCount}
+						showNeedsInputButton={false}
 						viewTabs={(
 							<JiraViewTabs
 								animateIndicator
