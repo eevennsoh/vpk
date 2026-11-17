@@ -24,6 +24,7 @@ const {
 	buildRovoAppFileUrl,
 } = require("../lib/rovo-app-upload-helpers");
 const { createRovoAppThreadOwnership } = require("../lib/rovo-app-thread-ownership");
+const { createRovoAppThreadCleanup } = require("../lib/rovo-app-thread-cleanup");
 
 const REQUIRED_THREAD_MANAGER_METHODS = [
 	"createThread",
@@ -222,17 +223,18 @@ function createRovoAppRouter({
 	const foreignParamThread = rejectForeignThread((req) => req.params.threadId);
 	// A thread may store only a Rovo session that is (or becomes) the caller's.
 	const claimBodySession = ownership.claimSession((req) => req.body?.sessionId);
+	const { cancelAllRuns, cancelRun, deleteThreadBrowsers } = createRovoAppThreadCleanup({
+		cancelChat,
+		deleteThreadBrowserWorkspace,
+		destroyMirrorBrowser,
+		rovoAppRunManager,
+		settleRun,
+	});
 
 	// Cancels the thread's run, then removes the thread and everything stored under it.
 	// Cleanup failures never stop the thread's own delete.
 	async function deleteStoredThread(threadId, { cleanGeneratedFiles = true } = {}) {
-		const activeRun = rovoAppRunManager.getRun(threadId);
-		if (activeRun) {
-			if (typeof activeRun.rovoPort === "number" && activeRun.rovoPort > 0) {
-				await cancelChat(activeRun.rovoPort).catch(() => {});
-			}
-			await settleRun(activeRun, "cancelled");
-		}
+		await cancelRun(rovoAppRunManager.getRun(threadId));
 		const thread = await rovoAppThreadManager.getThread(threadId);
 		const uploadIds = collectUploadIdsFromMessages(thread?.messages);
 		if (thread) {
@@ -241,8 +243,7 @@ function createRovoAppRouter({
 			if (cleanGeneratedFiles) {
 				await generatedFilesManager.deleteLegacyRootFiles(threadId).catch(() => 0);
 			}
-			await deleteThreadBrowserWorkspace(threadId).catch(() => ({}));
-			await destroyMirrorBrowser(`mirror-${threadId}`);
+			await deleteThreadBrowsers(threadId);
 		}
 		await Promise.all(
 			uploadIds.map((uploadId) =>
@@ -472,13 +473,15 @@ function createRovoAppRouter({
 			const caller = callerOf(res);
 			const threads = await rovoAppThreadManager.listThreads({
 				limit: Number.MAX_SAFE_INTEGER,
-				filter: ownership.ownedBy(caller),
+				filter: caller.local ? undefined : ownership.ownedBy(caller),
 			});
 			// One cleanup for every thread (one git view, one deadline), and it never fails
 			// delete-all.
 			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
 
 			if (caller.local) {
+				await cancelAllRuns();
+				await Promise.all(threads.map((thread) => deleteThreadBrowsers(thread.id)));
 				// A local caller is the only caller there is: clear the stores whole, as
 				// before owners, which also drops records no thread points at. An SLAuth
 				// caller never takes this path, even when every stored thread is theirs:
@@ -657,13 +660,9 @@ function createRovoAppRouter({
 				return res.status(404).json({ error: "No active run for threadId" });
 			}
 
-			if (typeof run.rovoPort === "number" && run.rovoPort > 0) {
-				await cancelChat(run.rovoPort).catch(() => {});
-			}
-
 			// The run read above, not one that took its place during the wait. `cancelled` is
 			// false when that run ended or was replaced while Rovo's cancel was awaited.
-			const cancelled = await settleRun(run, "cancelled");
+			const cancelled = await cancelRun(run);
 			return res.status(200).json({ cancelled });
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to cancel run:", error);
