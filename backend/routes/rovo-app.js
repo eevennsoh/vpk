@@ -145,6 +145,7 @@ function validateManager(name, manager, requiredMethods) {
 }
 
 function createRovoAppRouter({
+	browserCleanupTimeoutMs,
 	buildFileUrl = buildRovoAppFileUrl,
 	buildThreadSummary = buildRovoAppThreadSummary,
 	cancelChat,
@@ -223,7 +224,8 @@ function createRovoAppRouter({
 	const foreignParamThread = rejectForeignThread((req) => req.params.threadId);
 	// A thread may store only a Rovo session that is (or becomes) the caller's.
 	const claimBodySession = ownership.claimSession((req) => req.body?.sessionId);
-	const { cancelAllRuns, cancelRun, deleteThreadBrowsers } = createRovoAppThreadCleanup({
+	const { cancelAllRuns, cancelRun, cancelThreadRuns, deleteAllThreadBrowsers, deleteThreadBrowsers } = createRovoAppThreadCleanup({
+		browserCleanupTimeoutMs,
 		cancelChat,
 		deleteThreadBrowserWorkspace,
 		destroyMirrorBrowser,
@@ -475,13 +477,18 @@ function createRovoAppRouter({
 				limit: Number.MAX_SAFE_INTEGER,
 				filter: caller.local ? undefined : ownership.ownedBy(caller),
 			});
-			// One cleanup for every thread (one git view, one deadline), and it never fails
-			// delete-all.
-			await generatedFilesManager.deleteGeneratedFilesForThreads(threads.map((thread) => thread.id)).catch(() => 0);
-
+			const threadIds = threads.map((thread) => thread.id);
 			if (caller.local) {
 				await cancelAllRuns();
-				await Promise.all(threads.map((thread) => deleteThreadBrowsers(thread.id)));
+				await deleteAllThreadBrowsers(threadIds);
+			} else {
+				await cancelThreadRuns(threadIds);
+			}
+			// Cancel first so a run completing during cancel can record its files before
+			// this one cleanup (one git view, one deadline). Cleanup never fails delete-all.
+			await generatedFilesManager.deleteGeneratedFilesForThreads(threadIds).catch(() => 0);
+
+			if (caller.local) {
 				// A local caller is the only caller there is: clear the stores whole, as
 				// before owners, which also drops records no thread points at. An SLAuth
 				// caller never takes this path, even when every stored thread is theirs:
