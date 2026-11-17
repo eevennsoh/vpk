@@ -340,6 +340,17 @@ test("flushVisibleText in agent mode drops a partial agent-result prefix and an 
 	assert.equal(short.textDeltas.join(""), "Building your agent AGENT");
 });
 
+test("flushVisibleText shows the start of a custom agent-result prefix without an underscore", () => {
+	// Such a prefix is started only once it is all there. Before: a single matching letter ("R") was
+	// held as a started marker and dropped.
+	for (const streamed of ["Ready? R", "Ready? RESUL"]) {
+		const { adapter, textDeltas } = createAdapter({ agentResultPrefix: "RESULT:", creationMode: "agent" });
+		adapter.push(streamed);
+		adapter.flushVisibleText();
+		assert.equal(textDeltas.join(""), streamed);
+	}
+});
+
 test("flush still treats a held unfinished marker as final text at the normal end of a stream", () => {
 	const { adapter, textDeltas } = createAdapter();
 

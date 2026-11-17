@@ -118,6 +118,13 @@ function createRovoMarkerStreamAdapter({
 		return minIndex;
 	};
 
+	// How much of each prefix marks a started marker: through its first underscore, or the whole
+	// prefix when it has none.
+	const startedMarkerPrefixes = markerPrefixes.map((prefix) => ({
+		prefix,
+		startedLength: prefix.includes("_") ? prefix.indexOf("_") + 1 : prefix.length,
+	}));
+
 	/**
 	 * Length of the end of `value` that is a started marker: the start of a marker prefix that reaches
 	 * the prefix's first underscore (`WIDGET_`, `WIDGET_DA`). A shorter end (`W`, `WIDGET`) is text.
@@ -125,7 +132,7 @@ function createRovoMarkerStreamAdapter({
 	const getStartedMarkerPrefixLength = (value) => {
 		for (let length = Math.min(value.length, partialMarkerBufferLength); length > 0; length -= 1) {
 			const tail = value.slice(-length);
-			if (markerPrefixes.some((prefix) => prefix.startsWith(tail) && length > prefix.indexOf("_"))) {
+			if (startedMarkerPrefixes.some(({ prefix, startedLength }) => length >= startedLength && prefix.startsWith(tail))) {
 				return length;
 			}
 		}

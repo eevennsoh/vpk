@@ -882,6 +882,36 @@ test("a failure notice on a card-first turn reaches the wire once", async () => 
 	}
 });
 
+test("a failure notice on a card-first turn shows no spec fence, and the turn's text keeps it", async () => {
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
+	const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
+	const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
+	const { extractDirectSpec } = require("../lib/genui-spec-utils");
+	const { buildDirectSpecWidgetParts } = require("../lib/direct-spec-widget-parts");
+	const fence = '```spec\n{"op":"add","path":"/root","value":"card"}\n{"op":"add","path":"/elements/card","value":{"type":"Card","props":{"title":"Status"},"children":[]}}\n```';
+	// Before: the notice's replay wrote the turn's raw text, so the spec fence went out in front of it.
+	for (const [streamed, expected] of [
+		[fence, BUSY_NOTICE],
+		[`Here is the summary\n${fence}`, `Here is the summary\n\n${BUSY_NOTICE}`],
+	]) {
+		const turn = await runTurn(failingAfterChunks(streamed, {
+			buildDirectSpecWidgetParts,
+			extractDirectSpec,
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+		}), { prefersGenuiCardExperience: true, smartGenerationActive: true });
+
+		assert.equal(visibleText(turn.parts), expected, streamed);
+		assert.equal(turn.parts.filter((part) => part.type === "text-start").length, 1, streamed);
+		// The post-stream pipeline still reads the completed spec from the turn's text and shows it as a card.
+		assert.equal(turn.endOfTurnFacts.assistantText, `${streamed}\n\n${BUSY_NOTICE}`, streamed);
+		assert.equal(widgetParts(turn.parts, "generative-ui").includes("data"), true, streamed);
+		assert.equal(endsWithTurnComplete(turn.parts), true, streamed);
+	}
+});
+
 test("tool starts that arrive after the turn ended are blocked once: Rovo is cancelled once", async () => {
 	const cancelledPorts = [];
 	let startTool = null;

@@ -133,3 +133,66 @@ test("a notice on a card-first turn goes out once, after the suppressed text", (
 		assert.equal(parts.filter((part) => part.type === "text-start").length, 1, name);
 	}
 });
+
+const SPEC_FENCE = '```spec\n{"root":"card","elements":{"card":{"type":"Card"}}}\n```';
+
+test("a notice on a card-first turn shows only the narrative streaming would have shown", () => {
+	// Before: the replay wrote the turn's raw text, so a completed spec or media fence went out in front
+	// of the notice. The turn's text keeps a completed fence for the post-stream pipeline.
+	for (const [name, streamed, expectedWire, expectedText] of [
+		["a completed spec fence", SPEC_FENCE, "N", `${SPEC_FENCE}\n\nN`],
+		["narrative, then a completed spec fence", `Here is the summary\n${SPEC_FENCE}`, "Here is the summary\n\nN", `Here is the summary\n${SPEC_FENCE}\n\nN`],
+		["a completed media fence", "```image\nA lighthouse\n```", "N", "```image\nA lighthouse\n```\n\nN"],
+		[
+			"narrative, a completed spec fence, then an open media fence",
+			`Here is the summary\n${SPEC_FENCE}\n\`\`\`image\nA light`,
+			"Here is the summary\n\nN",
+			`Here is the summary\n${SPEC_FENCE}\n\nN`,
+		],
+	]) {
+		const { controller, parts } = createTextOutputController({ suppressStreamingTextForCardFirstGenui: true });
+		controller.emitTextDelta(streamed);
+		controller.emitNoticeParagraph("N");
+		controller.finalizeBufferedAssistantText();
+		controller.emitBufferedAssistantTextForTextRoute();
+
+		assert.equal(shownText(parts), expectedWire, name);
+		assert.equal(controller.getAssistantText(), expectedText, name);
+		assert.equal(controller.getUnsuppressedAssistantText(), expectedText, name);
+		assert.equal(parts.filter((part) => part.type === "text-start").length, 1, name);
+	}
+});
+
+test("a notice drops an open fence from the turn's text even after the splitters rewrote it", () => {
+	// The spec splitter collapses the blank lines inside an open media fence before the media splitter
+	// holds it back, so the held-back text no longer matches the stored end. Before: wire "N", turn's
+	// text '```image\nfoo\n\n\nbar\n\nN'.
+	for (const [name, streamed, expected] of [
+		["an open media fence with a run of blank lines", "```image\nfoo\n\n\nbar", "N"],
+		["text, then the same fence", "Intro\n```image\nfoo\n\n\nbar", "Intro\n\nN"],
+	]) {
+		const { controller, parts } = createTextOutputController();
+		controller.emitTextDelta(streamed);
+		controller.emitNoticeParagraph("N");
+		controller.finalizeBufferedAssistantText();
+
+		assert.equal(shownText(parts), expected, name);
+		assert.equal(controller.getAssistantText(), expected, name);
+		assert.equal(controller.getUnsuppressedAssistantText(), expected, name);
+	}
+});
+
+test("a notice drops what two forced flushes in a row each held back whole", () => {
+	// Each delta opens a fence at the start of the reply, so each forced flush lets nothing through:
+	// the second continues the first's held-back end. If it replaced it, the first fence would stay in
+	// the turn's text with the notice after it.
+	const { controller, parts } = createTextOutputController({ isClassifierIntentLeakCandidate: () => false });
+	controller.emitTextDelta("```image\nA lighthouse");
+	controller.emitTextDelta('```spec\n{"root":"card"');
+	controller.emitNoticeParagraph("N");
+	controller.finalizeBufferedAssistantText();
+
+	assert.equal(shownText(parts), "N");
+	assert.equal(controller.getAssistantText(), "N");
+	assert.equal(controller.getUnsuppressedAssistantText(), "N");
+});

@@ -54,10 +54,10 @@ function createRovoTextOutputController({
 	let shownTextEnd = "";
 	// The rerun's leading whitespace, held until its first visible text decides the break.
 	let heldWhitespace = "";
-	// The end of the turn's text that a forced flush cut off without letting it through (an open
-	// fence, a partial patch line). A notice drops it from the turn's text; text let through after it
-	// makes it part of the middle, and it stays.
-	let unreleasedTail = "";
+	// Where the end of the turn's text that a forced flush cut off without letting it through (an open
+	// fence, a partial patch line) starts, in each stored text; null when nothing is cut off. A notice
+	// drops that end; text let through after it makes it part of the middle, and it stays.
+	let withheldStart = null;
 	// A failure notice ends card-first suppression: the text goes out, then the notice.
 	let suppressingStreamingText = suppressStreamingTextForCardFirstGenui;
 
@@ -122,18 +122,65 @@ function createRovoTextOutputController({
 	};
 
 	/**
-	 * Records the end of the turn's text that `heldText` leaves unreleased: its `cutOff` end. When
-	 * nothing else of `heldText` was let through, that end continues the earlier unreleased end.
+	 * Where, in `heldText` as it was stored, the part `split` holds back starts (`heldText.length` when
+	 * nothing is). The splitters rewrite text (completed fences, runs of blank lines), so the held-back
+	 * text is not matched against the stored end: it starts where its first line occurs and the text
+	 * from there, split on its own, is all held back and reads the same.
 	 */
-	const recordUnreleasedEnd = (heldText, cutOff) => {
-		unreleasedTail = heldText === cutOff ? `${unreleasedTail}${cutOff}` : cutOff;
+	const findWithheldOffset = (heldText, { pendingText, visibleText }) => {
+		if (!pendingText) {
+			return heldText.length;
+		}
+		if (!visibleText) {
+			return 0;
+		}
+		const firstLine = pendingText.split("\n", 1)[0];
+		let offset = firstLine ? heldText.lastIndexOf(firstLine) : -1;
+		while (offset >= 0) {
+			const tail = splitHeldAssistantText(heldText.slice(offset));
+			if (!tail.visibleText && tail.pendingText === pendingText) {
+				return offset;
+			}
+			offset = offset > 0 ? heldText.lastIndexOf(firstLine, offset - 1) : -1;
+		}
+		// Not found in the stored text: keep it there rather than cut text that may have gone out.
+		return heldText.length;
 	};
 
-	/** Drops text that never reached the wire from the end of the text the turn hands on. */
-	const dropUnshownTail = (text) => {
-		const cut = (value) => (text && value.endsWith(text) ? value.slice(0, -text.length) : value);
+	/**
+	 * Records the end of the turn's text that `heldText`, the stored text's end, leaves unreleased:
+	 * from `offset` on. When none of `heldText` was let through, that end continues the earlier one.
+	 */
+	const recordWithheldEnd = (heldText, offset) => {
+		if (offset >= heldText.length) {
+			withheldStart = null;
+			return;
+		}
+		if (offset === 0 && withheldStart) {
+			return;
+		}
+		const withheldLength = heldText.length - offset;
+		withheldStart = {
+			assistant: assistantText.length - withheldLength,
+			unsuppressed: unsuppressedAssistantText.length - withheldLength,
+		};
+	};
+
+	/** Drops the end of the text the turn hands on that never reached the wire. */
+	const dropWithheldEnd = () => {
+		if (withheldStart) {
+			assistantText = assistantText.slice(0, withheldStart.assistant);
+			unsuppressedAssistantText = unsuppressedAssistantText.slice(0, withheldStart.unsuppressed);
+			withheldStart = null;
+		}
+	};
+
+	/** Drops whitespace a rerun held at the wire from the end of the text the turn hands on. */
+	const dropHeldWhitespace = () => {
+		const cut = (value) => (heldWhitespace && value.endsWith(heldWhitespace) ? value.slice(0, -heldWhitespace.length) : value);
 		assistantText = cut(assistantText);
 		unsuppressedAssistantText = cut(unsuppressedAssistantText);
+		heldWhitespace = "";
 	};
 
 	/**
@@ -145,17 +192,15 @@ function createRovoTextOutputController({
 		const heldText = bufferedAssistantText;
 		bufferedAssistantText = "";
 		if (heldText && parseClassifierIntentPayload(heldText)) {
-			recordUnreleasedEnd(heldText, heldText);
+			recordWithheldEnd(heldText, 0);
 		} else if (heldText) {
-			const { pendingText, visibleText } = splitHeldAssistantText(heldText);
-			emitTextDeltaRaw(visibleText);
-			recordUnreleasedEnd(heldText, pendingText);
+			const split = splitHeldAssistantText(heldText);
+			emitTextDeltaRaw(split.visibleText);
+			recordWithheldEnd(heldText, findWithheldOffset(heldText, split));
 		}
-		dropUnshownTail(unreleasedTail);
-		unreleasedTail = "";
+		dropWithheldEnd();
 		// The whitespace a rerun held at the wire comes after anything the rerun cut off.
-		dropUnshownTail(heldWhitespace);
-		heldWhitespace = "";
+		dropHeldWhitespace();
 	};
 
 	const flushBufferedAssistantText = ({ force = false } = {}) => {
@@ -164,12 +209,12 @@ function createRovoTextOutputController({
 		}
 
 		const heldText = bufferedAssistantText;
-		const { pendingText: pendingAssistantText, visibleText: visibleAssistantText } =
-			splitHeldAssistantText(heldText);
+		const split = splitHeldAssistantText(heldText);
+		const { pendingText: pendingAssistantText, visibleText: visibleAssistantText } = split;
 		if (!visibleAssistantText) {
 			bufferedAssistantText = force ? "" : pendingAssistantText;
 			if (force) {
-				recordUnreleasedEnd(heldText, pendingAssistantText);
+				recordWithheldEnd(heldText, findWithheldOffset(heldText, split));
 			}
 			return;
 		}
@@ -189,7 +234,7 @@ function createRovoTextOutputController({
 		const chunk = visibleAssistantText;
 		bufferedAssistantText = force ? "" : pendingAssistantText;
 		// Unforced, the pending end stays held in the buffer.
-		recordUnreleasedEnd(heldText, force ? pendingAssistantText : "");
+		recordWithheldEnd(heldText, force ? findWithheldOffset(heldText, split) : heldText.length);
 		emitTextDeltaRaw(chunk);
 	};
 
@@ -265,7 +310,9 @@ function createRovoTextOutputController({
 	 * A notice as its own paragraph after the held text ends: a break before it after earlier text,
 	 * and before any text after it. The break on the wire follows what went out there; the break in
 	 * the turn's text follows that text. On a card-first turn the suppressed text goes out first
-	 * through the text route's replay, so the notice always reaches the wire, once.
+	 * through the text route's replay, so the notice always reaches the wire, once. The replay writes
+	 * only what streaming would have shown: no completed spec or media fence, which the turn's text
+	 * keeps for the post-stream pipeline.
 	 */
 	const emitNoticeParagraph = (notice) => {
 		const text = typeof notice === "string" ? notice.trim() : "";
@@ -275,7 +322,7 @@ function createRovoTextOutputController({
 		releaseHeldTextBeforeNotice();
 		if (suppressingStreamingText) {
 			suppressingStreamingText = false;
-			emitBufferedAssistantTextForTextRoute();
+			replayTextForTextRoute(splitHeldAssistantText(assistantText).visibleText);
 		}
 		paragraphBreakPending = false;
 		const releasedTextEnd = `${shownTextEnd}${deferredToolFirstText}`;
@@ -286,17 +333,20 @@ function createRovoTextOutputController({
 		paragraphBreakPending = true;
 	};
 
-	const emitBufferedAssistantTextForTextRoute = () => {
+	/** On a card-first turn whose text was suppressed and never started, writes `replayedText` once. */
+	const replayTextForTextRoute = (replayedText) => {
 		if (
 			!suppressStreamingTextForCardFirstGenui ||
 			textStarted ||
-			assistantText.trim().length === 0
+			replayedText.trim().length === 0
 		) {
 			return;
 		}
 
-		writeShownTextDelta(assistantText);
+		writeShownTextDelta(replayedText);
 	};
+
+	const emitBufferedAssistantTextForTextRoute = () => replayTextForTextRoute(assistantText);
 
 	const removeToolFirstFailureNarrative = () => {
 		if (!toolFirstFailureNarrativeEnabled) {
@@ -330,7 +380,7 @@ function createRovoTextOutputController({
 		assistantText = "";
 		unsuppressedAssistantText = "";
 		bufferedAssistantText = "";
-		unreleasedTail = "";
+		withheldStart = null;
 		hasSuppressedLargeAssistantJson = false;
 		paragraphBreakPending = false;
 		if (shouldDeferToolFirstText) {
@@ -361,7 +411,7 @@ function createRovoTextOutputController({
 		setAssistantText: (nextAssistantText) => {
 			assistantText =
 				typeof nextAssistantText === "string" ? nextAssistantText : "";
-			unreleasedTail = "";
+			withheldStart = null;
 		},
 		writeTextEndIfStarted,
 	};
