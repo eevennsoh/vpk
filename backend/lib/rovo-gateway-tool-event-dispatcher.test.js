@@ -200,3 +200,25 @@ test("dispatcher emits normalized deferred tool requests", () => {
 		},
 	]);
 });
+
+test("dispatcher returns the deferred handler promise and keeps other chunks synchronous", () => {
+	const pending = Promise.resolve();
+	const dispatcher = createRovoToolEventDispatcher({
+		onTextDelta: () => pending,
+		onToolCallStart: () => pending,
+		onToolCallResult: () => pending,
+		onDeferredToolRequest: () => pending,
+	});
+	for (const chunk of [
+		{ type: "text", text: "hello" },
+		{ type: "tool_call_start", toolName: "lookup", toolCallId: "tool-1" },
+		{ type: "tool_call_args", toolCallId: "tool-1", text: "{}" },
+		{ type: "tool_result", toolCallId: "tool-1", text: "done" },
+		{ type: "tool_error", toolCallId: "tool-1", text: "failed" },
+		null,
+	]) {
+		assert.equal(dispatcher.handleChunk(chunk), undefined);
+	}
+	assert.equal(dispatcher.handleChunk({ type: "deferred-tool-request" }), pending);
+	assert.equal(createRovoToolEventDispatcher({}).handleChunk({ type: "deferred-tool-request" }), undefined);
+});
