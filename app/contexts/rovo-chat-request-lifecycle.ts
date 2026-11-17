@@ -16,10 +16,11 @@ export async function sendForTranscript(
 	isCurrent: (state: RovoChatTurnState) => boolean,
 	preparations: ReadonlyArray<() => Promise<unknown>>,
 	send: () => Promise<void>,
+	canPrepare: (state: RovoChatTurnState) => boolean = () => true,
 ): Promise<void> {
 	const version = gate.turnRef.current.transcriptVersion;
-	const current = (state: RovoChatTurnState) => state.transcriptVersion === version && isCurrent(state);
-	const blocked = (state: RovoChatTurnState) => state.transitionId !== null || state.suspended;
+	const current = (state: RovoChatTurnState) => !state.disposed && state.transcriptVersion === version && isCurrent(state);
+	const blocked = (state: RovoChatTurnState) => state.transitionId !== null || !canPrepare(state);
 	preparation: while (current(gate.turnRef.current)) {
 		await gate.waitForTurn((state) => !current(state) || !blocked(state));
 		if (!current(gate.turnRef.current)) return;
@@ -29,9 +30,6 @@ export async function sendForTranscript(
 				await prepare();
 			} catch (error) {
 				if (!current(gate.turnRef.current)) return;
-				// Starting a selection invalidates creation. If its transcript stays,
-				// retain the prompt and create its thread again after that selection.
-				if (error instanceof DOMException && error.name === "AbortError") continue preparation;
 				throw error;
 			}
 			if (!current(gate.turnRef.current)) return;

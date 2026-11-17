@@ -202,7 +202,7 @@ test("a transition holds dispatch until the current owner finishes; only commit 
 
 test("retry deadlines survive transition and settlement, and Stop, edit and commit clear them", () => {
 	const sending = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" });
-	const retry = { promptId: "a", dueAt: 1_000, monotonicDueAt: 1_000, delayMs: 500, messageId: "retry", reason: "rate-limit" };
+	const retry = { promptId: "a", phase: "waiting", dueAt: 1_000, monotonicDueAt: 1_000, delayMs: 500, messageId: "retry", reason: "rate-limit" };
 	const waiting = reduce(sending, { type: "retryScheduled", retry });
 	const retained = run(waiting, settledEvent(waiting, false), { type: "transitionStarted", id: 1 }, { type: "transitionFinished", id: 1 });
 	assert.equal(retained.retry, retry);
@@ -220,6 +220,31 @@ test("pending edits block the queue and only their own settlement releases prepa
 	assert.equal(canDispatchNextPrompt(queued, IDLE), false);
 	assert.equal(reduce(queued, { type: "editSettled", id: first.editId }), queued);
 	assert.equal(canDispatchNextPrompt(reduce(queued, { type: "editSettled", id: second.editId }), IDLE), true);
+});
+
+test("only the current waiting retry becomes ready; it remains ready through effect cleanup", () => {
+	const retry = { promptId: "a", phase: "waiting", dueAt: 1_000, monotonicDueAt: 1_000, delayMs: 500, messageId: "retry", reason: "rate-limit" };
+	const waiting = run(INITIAL, { type: "enqueue", prompt: prompt("a") }, { type: "dispatchNext" }, { type: "retryScheduled", retry });
+	assert.equal(reduce(waiting, { type: "retryElapsed", retry: { ...retry } }), waiting);
+	const ready = reduce(waiting, { type: "retryElapsed", retry });
+	assert.equal(ready.retry.phase, "ready");
+	assert.equal(reduce(ready, { type: "retryElapsed", retry }), ready);
+	const resumed = run(ready, { type: "retrySuspended" }, { type: "retryResumed" });
+	assert.equal(resumed.retry, ready.retry);
+	const stopped = reduce(ready, { type: "stopRequested" });
+	assert.equal(reduce(stopped, { type: "retryElapsed", retry: ready.retry }), stopped);
+});
+
+test("disposal invalidates preparation and ignores every later transition, while retry suspension allows ordinary queued sends", () => {
+	const queued = run(INITIAL, { type: "retrySuspended" }, { type: "enqueue", prompt: prompt("a") });
+	assert.equal(canDispatchNextPrompt(queued, IDLE), true);
+	const disposed = reduce(queued, { type: "providerDisposed" });
+	assert.equal(disposed.disposed, true);
+	assert.equal(disposed.transcriptVersion, queued.transcriptVersion + 1);
+	assert.equal(canDispatchNextPrompt(disposed, IDLE), false);
+	for (const event of [{ type: "retryResumed" }, { type: "enqueue", prompt: prompt("b") }, { type: "reset" }, { type: "dispatchSettled", attempt: queued.sendAttempt, failed: true }]) {
+		assert.equal(reduce(disposed, event), disposed);
+	}
 });
 
 test("hasSendInFlight holds while a prompt is active or a send is dispatching", () => {

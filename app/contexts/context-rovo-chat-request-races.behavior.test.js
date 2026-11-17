@@ -166,7 +166,7 @@ test("a first prompt awaiting thread creation survives a superseded selection", 
 	assert.equal(chat().activePrompt?.text, "Keep my first prompt");
 });
 
-test("a first prompt whose creation finishes while hidden through Activity waits for reveal before recreating and sending", async (t) => {
+test("a first prompt whose creation finishes while hidden through Activity adopts and sends on its only thread", async (t) => {
 	const { server, chat, setHidden } = await mountChat(t);
 	let createThread;
 	window.testApi.createThreadGate = new Promise((resolve) => { createThread = resolve; });
@@ -175,11 +175,13 @@ test("a first prompt whose creation finishes while hidden through Activity waits
 	await setHidden(true);
 	await React.act(async () => { createThread(); });
 	await settle(40);
-	assert.equal(server.turns.length, 0, "hidden preparation must not start another request");
+	assert.equal(server.turns.length, 1, "hiding does not suspend ordinary prompt preparation");
 	await setHidden(false);
 	await waitFor("the retained prompt", () => server.turns.length === 1);
 	assert.deepEqual(describeMessages(server.turns[0].body.messages), ["user:First prompt"]);
 	assert.equal(chat().activePrompt?.text, "First prompt");
+	assert.equal(window.testApi.calls.filter((call) => call === "createThread:First prompt").length, 1);
+	assert.equal(window.testApi.threads.size, 1);
 });
 
 for (const superseded of [false, true]) {
@@ -210,7 +212,7 @@ for (const superseded of [false, true]) {
 		await editing();
 	});
 
-	test(`thread creation resolving during a selection ${superseded ? "restarts for the retained first prompt" : "never sends the departing first prompt"}`, async (t) => {
+	test(`thread creation resolving during a selection ${superseded ? "is adopted for the retained first prompt" : "never sends the departing first prompt"}`, async (t) => {
 		const { server, chat } = await mountChat(t);
 		window.testApi.threads.set("stored-thread", storedThread());
 		window.testApi.failingThreadIds = new Set(["broken-thread"]);
@@ -234,7 +236,8 @@ for (const superseded of [false, true]) {
 		await switching();
 		if (superseded) {
 			await waitFor("the retained prompt", () => server.turns.length === 1);
-			assert.equal(window.testApi.calls.filter((call) => call === "createThread:First prompt").length, 2);
+			assert.equal(window.testApi.calls.filter((call) => call === "createThread:First prompt").length, 1);
+			assert.equal([...window.testApi.threads.values()].filter((thread) => thread.title === "First prompt").length, 1);
 			assert.deepEqual(describeMessages(server.turns[0].body.messages), ["user:First prompt"]);
 		} else {
 			await settle(40);

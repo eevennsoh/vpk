@@ -6,8 +6,8 @@ const { cleanup, renderComponent } = require("../../scripts/lib/render-component
 const PROBE = `
 	import { Activity } from "react";
 	import { useRovoChatRetry } from "@/app/contexts/use-rovo-chat-retry";
-	function Hook({ retry, show, resend, dispatch }) {
-		window.scheduleRetry = useRovoChatRetry(retry, show, resend, dispatch);
+	function Hook({ retry, show, resend, dispatch, turnRef }) {
+		window.scheduleRetry = useRovoChatRetry(retry, show, resend, dispatch, turnRef);
 		return null;
 	}
 	export default function Probe({ hidden = false, ...props }) {
@@ -19,10 +19,16 @@ async function mountProbe(t, strictMode = false) {
 	const events = [];
 	const messages = [];
 	const sends = [];
+	const turnRef = { current: { retry: null, disposed: false, retrySuspended: false } };
 	const props = {
 		retry: null, show: (message) => messages.push(message),
 		resend: { current: async (retry) => { sends.push(retry); } },
-		dispatch: (event) => events.push(event),
+		turnRef,
+		dispatch: (event) => {
+			events.push(event);
+			if (event.type === "retryScheduled") turnRef.current.retry = event.retry;
+			if (event.type === "retryElapsed" && turnRef.current.retry === event.retry) turnRef.current.retry = { ...event.retry, phase: "ready" };
+		},
 	};
 	const view = await renderComponent({ source: PROBE, props, strictMode });
 	t.after(async () => { await cleanup(); delete window.scheduleRetry; });
@@ -56,7 +62,11 @@ async function mountProbe(t, strictMode = false) {
 		clock, events, messages, sends, schedule,
 		timers: () => timers.filter((timer) => !timer.cleared),
 		intervals: () => intervals.filter((timer) => !timer.cleared),
-		render: (next) => view.rerender({ ...props, ...next }),
+		currentRetry: () => turnRef.current.retry,
+		render: (next) => {
+			turnRef.current.retry = next.retry;
+			return view.rerender({ ...props, ...next });
+		},
 	};
 }
 
@@ -85,7 +95,9 @@ test("Activity reveal re-arms retry and countdown for the remaining time, then r
 	await React.act(async () => probe.intervals()[0].callback());
 	assert.equal(probe.messages.at(-1).parts[0].text.includes("2 seconds"), true);
 	await React.act(async () => probe.timers()[0].callback());
-	assert.deepEqual(probe.sends, [retry]);
+	assert.equal(probe.messages.at(-1), null);
+	await probe.render({ retry: probe.currentRetry() });
+	assert.deepEqual(probe.sends, [{ ...retry, phase: "ready" }]);
 	assert.deepEqual(probe.intervals(), []);
 });
 

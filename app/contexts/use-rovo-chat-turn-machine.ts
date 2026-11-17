@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useInsertionEffect, useRef, useState } from "react";
 import type { QueuedPromptItem } from "@/app/contexts/rovo-chat-helpers";
 import {
 	ROVO_CHAT_TURN_INITIAL_STATE,
@@ -50,6 +50,7 @@ export function useRovoChatTurnMachine() {
 
 		turnRef.current = next;
 		for (const notify of listeners.current) notify();
+		if (next.disposed) return;
 		if (next.retry !== previous.retry) setRetry(next.retry);
 		if (next.queue !== previous.queue) {
 			setQueuedPrompts(next.queue);
@@ -61,6 +62,11 @@ export function useRovoChatTurnMachine() {
 			setCutShortMediaWait(findCutShortMediaWait(next));
 		}
 	}, []);
+
+	// Insertion effects stay connected through Activity hide/show. Their final
+	// cleanup marks physical unmount without scheduling any React state update,
+	// and releases async gate waiters before they can touch the departed provider.
+	useInsertionEffect(() => () => dispatchTurn({ type: "providerDisposed" }), [dispatchTurn]);
 
 	return { turnRef, dispatchTurn, queuedPrompts, activePrompt, cutShortMediaWait, retry, waitForTurn };
 }
