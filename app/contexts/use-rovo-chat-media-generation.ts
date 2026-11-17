@@ -11,8 +11,8 @@ export const MEDIA_GENERATION_TIMEOUT_MS = 120_000;
  * waits for a media widget that is loading before the turn finalizes with the
  * cut-short notice. The widget's loading:false would have come on the closed
  * stream, so it cannot arrive now; the wait only gives the transcript a moment
- * to settle. Provisional: the owner may change this value. Runs in
- * useRovoChatCutShortTurn; a cut-short turn does not wait on the media flag.
+ * to settle. Runs in useRovoChatCutShortTurn; a cut-short turn does not wait
+ * on the media flag.
  */
 export const CUT_SHORT_MEDIA_WAIT_MS = 5_000;
 
