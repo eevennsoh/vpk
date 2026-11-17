@@ -118,11 +118,14 @@ function createRovoMarkerStreamAdapter({
 		return minIndex;
 	};
 
-	/** Length of the longest end of `value` that could still grow into a marker prefix. */
+	/**
+	 * Length of the end of `value` that is a started marker: the start of a marker prefix that reaches
+	 * the prefix's first underscore (`WIDGET_`, `WIDGET_DA`). A shorter end (`W`, `WIDGET`) is text.
+	 */
 	const getStartedMarkerPrefixLength = (value) => {
 		for (let length = Math.min(value.length, partialMarkerBufferLength); length > 0; length -= 1) {
 			const tail = value.slice(-length);
-			if (markerPrefixes.some((prefix) => prefix.startsWith(tail))) {
+			if (markerPrefixes.some((prefix) => prefix.startsWith(tail) && length > prefix.indexOf("_"))) {
 				return length;
 			}
 		}
@@ -489,12 +492,12 @@ function createRovoMarkerStreamAdapter({
 		},
 		/**
 		 * The stream stopped early (a failure): the held text the user was meant to see goes out, and
-		 * a marker that had only started (a held tail that could still grow into a marker prefix, or a
-		 * prefix whose payload never finished) is dropped. Leaves the adapter empty.
+		 * a marker that had only started (a held tail that reaches a marker prefix's first underscore,
+		 * or a prefix whose payload never finished) is dropped. Leaves the adapter empty.
 		 */
 		flushVisibleText() {
-			// A prefix with an invalid payload goes out as text and leaves the rest for the next chunk,
-			// so process until nothing moves.
+			// A prefix with an invalid payload goes out as text and stops processing with the rest still
+			// held, so process until nothing moves.
 			let previousBuffer;
 			do {
 				previousBuffer = textBuffer;

@@ -712,6 +712,9 @@ test("a failure notice shows the text the marker stream held back, as its own pa
 		["", BUSY_NOTICE],
 		// Held back whole as a possible marker start.
 		["Short", `Short\n\n${BUSY_NOTICE}`],
+		// Short of a marker prefix's first underscore: ordinary text. Before: "Plan \n\n⚠️ Rovo is busy."
+		["Plan A", `Plan A\n\n${BUSY_NOTICE}`],
+		["The answer ends in WIDGET", `The answer ends in WIDGET\n\n${BUSY_NOTICE}`],
 		["Answer\n", `Answer\n\n${BUSY_NOTICE}`],
 		["Answer\n\n", `Answer\n\n${BUSY_NOTICE}`],
 		// A complete marker is still processed; the text after it is shown.
@@ -818,6 +821,64 @@ test("a chat-in-progress timeout notice drops an unfinished marker and starts it
 		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
 		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
 		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
+test("a failure notice after a fence that followed text keeps the fence text already shown", async () => {
+	const { isClassifierIntentLeakCandidate, parseClassifierIntentPayload } = require("./classifier-intent");
+	const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
+	const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
+	// A fence after ordinary text is not held across deltas, so its text goes out. Before: the notice
+	// cut it from the turn's text ("Intro\n\n⚠️ Rovo is busy.") and followed it after one newline.
+	for (const [streamed, expected] of [
+		[['Intro\n```spec\n{"root":', '"card"'], `Intro\n\`\`\`spec\n{"root":"card"\n\n${BUSY_NOTICE}`],
+		[['Intro\n```image\n{"prompt":', '"A lighthouse"'], `Intro\n\`\`\`image\n{"prompt":"A lighthouse"\n\n${BUSY_NOTICE}`],
+	]) {
+		const turn = await runTurn(failingAfterChunks(streamed, {
+			isClassifierIntentLeakCandidate,
+			parseClassifierIntentPayload,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+		}));
+
+		assert.equal(visibleText(turn.parts), expected, JSON.stringify(streamed));
+		assert.equal(turn.endOfTurnFacts.assistantText, expected, JSON.stringify(streamed));
+		assert.equal(endsWithTurnComplete(turn.parts), true);
+	}
+});
+
+test("a failure notice after a marker prefix with an invalid payload keeps processing the markers after it", async () => {
+	const turn = await runTurn(failingAfterChunks('WIDGET_DATA:xTHINKING_STATUS:{"label":"Done"}'));
+
+	assert.equal(visibleText(turn.parts), `WIDGET_DATA:x\n\n${BUSY_NOTICE}`);
+	assert.deepEqual(statusLabels(turn.parts).filter((label) => label === "Done"), ["Done"]);
+	assert.equal(endsWithTurnComplete(turn.parts), true);
+});
+
+test("a failure notice on a card-first turn reaches the wire once", async () => {
+	const CARD_FIRST_TURN = { prefersGenuiCardExperience: true, smartGenerationActive: true };
+	const timeoutNotice = "⚠️ Automatic recovery timed out while waiting for the previous turn. Please retry or reset the chat.";
+	const chatInProgressTimeout = () => Object.assign(new Error("Rovo turn still in progress"), { code: "ROVO_CHAT_IN_PROGRESS_TIMEOUT" });
+	const widget = 'WIDGET_DATA:{"type":"genui-preview","title":"x"}';
+	// Before: the notice was suppressed with the turn's text, and after a widget the text is never
+	// replayed, so the wire had no text at all; without a widget the text route did not replay either.
+	for (const [name, dependencyOverrides, expected, expectsWidget] of [
+		["a widget, then a stuck port", failingAfterChunks(widget), BUSY_NOTICE, true],
+		["a widget, then a chat-in-progress timeout", failingAfterChunks(widget, {
+			streamViaRovo: async ({ onPortAcquired, onTextDelta }) => {
+				onPortAcquired(43123);
+				onTextDelta(widget);
+				throw chatInProgressTimeout();
+			},
+		}), timeoutNotice, true],
+		["suppressed text, then a stuck port", failingAfterChunks("Here is the summary"), `Here is the summary\n\n${BUSY_NOTICE}`, false],
+	]) {
+		const turn = await runTurn(dependencyOverrides, CARD_FIRST_TURN);
+
+		assert.equal(visibleText(turn.parts), expected, name);
+		assert.equal(turn.parts.filter((part) => part.type === "text-start").length, 1, name);
+		assert.equal(widgetParts(turn.parts, "genui-preview").includes("data"), expectsWidget, name);
+		assert.equal(endsWithTurnComplete(turn.parts), true, name);
 	}
 });
 

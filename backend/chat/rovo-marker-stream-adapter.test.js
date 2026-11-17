@@ -241,12 +241,20 @@ test("flushVisibleText emits the text before a marker whose payload never finish
 	}
 });
 
-test("flushVisibleText drops a held tail that could still grow into a marker prefix", () => {
+test("flushVisibleText drops a held tail once it reaches a marker prefix's first underscore", () => {
 	for (const [streamed, expected] of [
 		["Here is the answer WIDGET_DA", "Here is the answer "],
+		["The answer ends in WIDGET_", "The answer ends in "],
 		["Done.\nTHINKING_ST", "Done.\n"],
 		["Done.\nAGENT_", "Done.\n"],
 		["WIDGET_", ""],
+		// Shorter than the first underscore: ordinary text, shown. Before: "Plan " and "The answer ends in ".
+		["Plan A", "Plan A"],
+		["The answer ends in WIDGET", "The answer ends in WIDGET"],
+		["Done.\nWIDG", "Done.\nWIDG"],
+		["Done.\nAGENT", "Done.\nAGENT"],
+		["Done.\nTHINKING", "Done.\nTHINKING"],
+		["W", "W"],
 		// Not the start of any marker prefix: shown.
 		["Done.\nWIDGETS", "Done.\nWIDGETS"],
 		["Values: WIDGET_D_", "Values: WIDGET_D_"],
@@ -257,6 +265,26 @@ test("flushVisibleText drops a held tail that could still grow into a marker pre
 		adapter.flush();
 
 		assert.equal(textDeltas.join(""), expected, JSON.stringify(streamed));
+	}
+});
+
+test("flushVisibleText keeps processing after a marker prefix with an invalid payload", () => {
+	// push() shows the invalid prefix and stops with the rest held; flushVisibleText processes on.
+	for (const [streamed, expected] of [
+		['WIDGET_DATA:xTHINKING_STATUS:{"label":"Done"}', "WIDGET_DATA:x"],
+		// Two invalid prefixes need a pass each before the marker after them is reached.
+		['WIDGET_DATA:xWIDGET_DATA:yTHINKING_STATUS:{"label":"Done"}', "WIDGET_DATA:xWIDGET_DATA:y"],
+	]) {
+		const { adapter, parts, textDeltas } = createAdapter();
+		adapter.push(streamed);
+		adapter.flushVisibleText();
+		adapter.flush();
+
+		assert.equal(textDeltas.join(""), expected, streamed);
+		assert.deepEqual(parts, [{
+			type: "data-thinking-status",
+			data: { label: "Done", content: undefined, activity: undefined, source: undefined },
+		}], streamed);
 	}
 });
 
@@ -304,6 +332,12 @@ test("flushVisibleText in agent mode drops a partial agent-result prefix and an 
 	adapter.push("Building your agent AGENT_RES");
 	adapter.flushVisibleText();
 	assert.equal(textDeltas.join(""), "Building your agent AGENT_RES");
+
+	// Short of the first underscore it is ordinary text in agent mode too.
+	const short = createAdapter({ creationMode: "agent" });
+	short.adapter.push("Building your agent AGENT");
+	short.adapter.flushVisibleText();
+	assert.equal(short.textDeltas.join(""), "Building your agent AGENT");
 });
 
 test("flush still treats a held unfinished marker as final text at the normal end of a stream", () => {

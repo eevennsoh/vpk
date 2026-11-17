@@ -6,7 +6,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { createRovoTextOutputController } = require("./rovo-stream");
+const { createRovoTextOutputController } = require("./rovo-text-output");
 const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
 const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
 
@@ -85,4 +85,51 @@ test("a notice after a rerun drops the rerun's held whitespace", () => {
 	controller.emitNoticeParagraph("N");
 
 	assert.equal(shownText(parts), "A\n\nN");
+	// The rerun's own text, which is what the turn hands on, loses the whitespace that never went out.
+	assert.equal(controller.getAssistantText(), "N");
+	assert.equal(controller.getUnsuppressedAssistantText(), "N");
+});
+
+test("a notice keeps text that already went out after an open fence, and breaks after what was shown", () => {
+	// A fence after ordinary text is not held across deltas, so its later chunks go out. Before: the
+	// notice cut that shown text from the turn's text and took its break from the shortened text:
+	// wire 'Intro\n"card"\nN', turn's text "Intro\n\nN".
+	for (const [name, chunks, expectedWire, expectedText] of [
+		["spec", ['Intro\n```spec\n{"root":', '"card"'], 'Intro\n"card"\n\nN', 'Intro\n```spec\n{"root":"card"\n\nN'],
+		["media", ['Intro\n```image\n{"prompt":', '"A lighthouse"'], 'Intro\n"A lighthouse"\n\nN', 'Intro\n```image\n{"prompt":"A lighthouse"\n\nN'],
+	]) {
+		const { controller, parts } = createTextOutputController();
+		for (const chunk of chunks) {
+			controller.emitTextDelta(chunk);
+		}
+		controller.emitNoticeParagraph("N");
+		controller.finalizeBufferedAssistantText();
+
+		assert.equal(shownText(parts), expectedWire, name);
+		assert.equal(controller.getAssistantText(), expectedText, name);
+		assert.equal(controller.getUnsuppressedAssistantText(), expectedText, name);
+	}
+});
+
+test("a notice on a card-first turn goes out once, after the suppressed text", () => {
+	// Before: the notice was suppressed with the text, and after a widget the text route never replays.
+	for (const [name, streamed, expected] of [
+		["no text (a widget took the turn)", "", "N"],
+		["suppressed text", "Here is the summary", "Here is the summary\n\nN"],
+		["suppressed text, then an open fence", 'Here is the summary\n```spec\n{"root":"card"', "Here is the summary\n\nN"],
+	]) {
+		const { controller, parts } = createTextOutputController({ suppressStreamingTextForCardFirstGenui: true });
+		controller.emitTextDelta(streamed);
+		controller.emitNoticeParagraph("N");
+		// Out without the text route's replay, which a turn with a widget never reaches.
+		assert.equal(shownText(parts), expected, name);
+
+		// The replay after the stream finds the text already out.
+		controller.finalizeBufferedAssistantText();
+		controller.emitBufferedAssistantTextForTextRoute();
+
+		assert.equal(shownText(parts), expected, name);
+		assert.equal(controller.getAssistantText(), expected, name);
+		assert.equal(parts.filter((part) => part.type === "text-start").length, 1, name);
+	}
 });
