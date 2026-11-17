@@ -294,7 +294,7 @@ function createRovoToolEventDispatcher({
 			return;
 		}
 
-		onDeferredToolRequest({
+		return onDeferredToolRequest({
 			toolName: normalizeToolName(chunk.toolName),
 			toolCallId: normalizeToolCallId(chunk.toolCallId),
 			toolInput:
@@ -420,8 +420,7 @@ function createRovoToolEventDispatcher({
 		}
 
 		if (chunk.type === "deferred-tool-request") {
-			handleDeferredToolRequest(chunk);
-			return;
+			return handleDeferredToolRequest(chunk);
 		}
 
 		if (chunk.type === "tool_result" || chunk.type === "tool_error") {

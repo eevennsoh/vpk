@@ -1273,7 +1273,10 @@ function openSseStream({
 									port,
 								});
 							}
-							callbacks.onChunk(chunkPayload);
+							const pendingChunk = callbacks.onChunk(chunkPayload);
+							if (typeof pendingChunk?.then === "function") {
+								await pendingChunk;
+							}
 
 							if (
 								currentEventName === "on_call_tools_start" &&
@@ -1321,8 +1324,8 @@ function openSseStream({
 				}
 			};
 
-			// Chunks are handled one at a time, in order: while a pause at a tool boundary
-			// waits for its decision, later chunks wait too, so nothing after a pause that
+			// Chunks are handled one at a time: while a deferred handler or tool pause
+			// decision is pending, later events wait too. Nothing after a pause that
 			// disconnects is delivered.
 			let chunkQueue = Promise.resolve();
 			res.on("data", (chunk) => {
@@ -1542,7 +1545,7 @@ function sendMessageStreaming(input, callbacks, port, options = {}) {
 						if (chunk.type === "text") {
 							fullText += chunk.text;
 						}
-						callbacks.onChunk(chunk);
+						return callbacks.onChunk(chunk);
 					},
 					onEvent: callbacks.onEvent,
 					onPauseToolCalls: callbacks.onPauseToolCalls,
@@ -1645,7 +1648,7 @@ function replayStreaming(callbacks, port, options = {}) {
 						if (chunk.type === "text") {
 							fullText += chunk.text;
 						}
-						callbacks.onChunk(chunk);
+						return callbacks.onChunk(chunk);
 					},
 					onEvent: callbacks.onEvent,
 					onPauseToolCalls: callbacks.onPauseToolCalls,
