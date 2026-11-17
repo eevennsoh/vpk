@@ -32,17 +32,20 @@ Ask for `git add`, `git commit`, `git restore` / `git checkout -- <path>`
 and read-only git, nothing else: never `git stash` (the stash stack is shared
 with every worktree), switching branches, `git branch -f`, `git fetch`,
 `git worktree`, or `git config`. On the GPT lane the sandbox refuses writes
-to the stash, other branches and git config (see
+to `HEAD`, the stash, other branches and git config (see
 [gpt-executor.md § Commits](gpt-executor.md#commits)). To compare
 with the old source, use `git show HEAD:<path>` or `git diff`, never a stash
-or a checkout of another revision. When the worker cannot commit (GPT lane
-under `--no-worktree`), the brief asks it to leave the changes uncommitted and
-put a proposed commit subject in its report.
+or a checkout of another revision. When the GPT worker gets no commit grant
+(`{}`: under `--no-worktree`, or when the planner keeps the object store
+closed), the brief asks it to leave the changes uncommitted and put a
+proposed commit subject in its report.
 
 **Browser proof on the GPT lane.** When the proof is a Playwright test,
 dispatch it with a browser server, per
 [gpt-executor.md § Browser tests](gpt-executor.md#browser-tests-playwright),
-and name the exact `playwright test` command in *Proof expected*.
+and name the exact `playwright test` command in *Proof expected*. The server
+gives the worker host capabilities outside its sandbox; use it only for a
+brief you would trust unsandboxed in the browser.
 
 ## Worker report contract
 

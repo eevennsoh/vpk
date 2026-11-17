@@ -33,21 +33,22 @@ copy anything from `~/.codex` into it. Besides `home/`, it holds the planner's
 wrapper writes, and `report.md`; `scripts/vpk-remote-status.js` reads them. Luna at `max` was verified end-to-end
 through Proximity on 2026-08-03.
 
-Expand `worker_root` to the absolute **main-checkout** path and `tree` to the
-absolute task worktree (the current checkout under `--no-worktree`) when
-writing `run.sh`.
+When writing `run.sh`, expand `worker_root` and `scripts` to absolute
+**main-checkout** paths, `tree` to the absolute task worktree, and
+`<branch>` to `task.json`'s `branch` (`vpk/<type>-<slug>`). Under
+`--no-worktree`, `tree` is the current checkout and the grant line takes
+`--no-worktree` instead of `--worktree` and `--branch`. Keep every expansion
+in double quotes; paths may hold spaces.
 
 ```bash
 worker_root="$PWD/output/remote-gpt/vpk-<type>-<slug>"
 tree="$PWD/.claude/worktrees/vpk-<type>-<slug>"
+scripts="$PWD/scripts"
 mkdir -p "$worker_root/home"
 
-# Commit access to this worktree's own branch only; see "Commits" below.
-gitdir="$(git -C "$tree" rev-parse --absolute-git-dir)"
-common="$(git -C "$tree" rev-parse --path-format=absolute --git-common-dir)"
-ref="$(git -C "$tree" symbolic-ref HEAD)"
-git_write='{}'
-[ "$gitdir" != "$common" ] && git_write="{\"$gitdir\"=\"write\", \"$gitdir/commondir\"=\"read\", \"$gitdir/gitdir\"=\"read\", \"$gitdir/config.worktree\"=\"read\", \"$common/objects\"=\"write\", \"$common/$ref\"=\"write\", \"$common/$ref.lock\"=\"write\", \"$common/logs/$ref\"=\"write\", \"$common/packed-refs.lock\"=\"write\"}"
+# Commit access to the task record's branch, or {} when anything is off; see "Commits".
+git_write="$(node "$scripts/vpk-remote-git-grant.js" --worktree "$tree" --branch "<branch>")"
+[ -n "$git_write" ] || git_write='{}'
 
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
   CODEX_HOME="$worker_root/home" \
@@ -68,16 +69,24 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   - < "$worker_root/brief.md"
 ```
 
-The `vpk-worker` permissions profile is the workspace-write sandbox: it extends
-the built-in `:workspace` profile, and codex still prints
-`sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)`.
-It replaces `--sandbox workspace-write` plus
-`sandbox_workspace_write.network_access=true` because codex applies a
-profile's filesystem entries only without `--sandbox`; with it, the profile
-is silently ignored. Both forms were checked side by side on 0.166.0: the
-same paths are writable (the workspace, `/tmp`, `$TMPDIR`), the same are
-read-only (the workspace root's `.git`, `.agents`, `.codex`, `.aws`, and
-everything outside the workspace), and loopback listen and connect work.
+The `vpk-worker` permissions profile stands in for `--sandbox workspace-write`
+plus `sandbox_workspace_write.network_access=true`, because only a profile
+can carry the git grant. Do not add `--sandbox` to it: with `--sandbox` the
+profile's filesystem entries are not applied. What was tested, on
+codex-cli 0.166.0 (2026-11-17), with real `gpt-6.1-sol` workers running the
+same probe script:
+
+- `--sandbox workspace-write` with `network_access=true`, and this profile
+  with a `{}` grant, gave identical results. Both print
+  `sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)`;
+  the workspace, `/tmp` and `$TMPDIR` were writable; the workspace's
+  `.agents/`, `.codex/` and `.git`, the worktree's git index, `$HOME` and a
+  directory outside the workspace were not; loopback listen and connect
+  worked.
+- The profile flags plus `--sandbox workspace-write` printed no network,
+  loopback failed, and the git grant did not apply.
+
+Nothing else was compared.
 
 Run via Bash with `run_in_background: true`; the harness notifies on exit.
 A Codex planner has no background notification: run it in the foreground
@@ -102,9 +111,9 @@ Why each isolation layer exists:
 - `wire_api="responses"` is the wire format Proximity's OpenAI path speaks.
 - Explicit model + effort pins mean an alias or config change cannot
   silently redirect the run.
-- Workspace-write (the `vpk-worker` profile) contains implementation to the
-  task worktree plus the narrow git grant below; do not escalate to
-  `--dangerously-bypass-approvals-and-sandbox` or
+- The `vpk-worker` profile contains the worker's commands to the task
+  worktree, `/tmp` and `$TMPDIR`, plus the git grant below; do not escalate
+  to `--dangerously-bypass-approvals-and-sandbox` or
   `--sandbox danger-full-access`, not even for browser tests or commits.
 - The leading `env` is an external command, so a same-name shell function
   (`codex` is one in the user's zshrc) cannot intercept the invocation.
@@ -115,15 +124,23 @@ planner's context.
 
 ## Resume a single worker
 
-Reuse the same `CODEX_HOME` and repeat every override, including the
-`git_write` lines from the first run (and the browser endpoint, when the run
-uses one). Exec-level flags must come **before** the `resume` subcommand
-(`codex exec resume --last --sandbox …` fails with `unexpected argument`).
+Reuse the same `CODEX_HOME` and repeat every override. Build the grant again
+with the same expected branch from `task.json`: the script checks the
+worktree afresh and yields `{}` if the worker moved `HEAD` off that branch.
+A run that uses a browser server starts its own in the follow-up script
+(`run-<k>.sh`), exactly as in [Browser tests](#browser-tests-playwright):
+the first run's trap stopped the first server. Exec-level flags must come
+**before** the `resume` subcommand (`codex exec resume --last --sandbox …`
+fails with `unexpected argument`).
 
 ```bash
 worker_root="$PWD/output/remote-gpt/vpk-<type>-<slug>"
 tree="$PWD/.claude/worktrees/vpk-<type>-<slug>"
-# gitdir, common, ref, git_write: the same four lines as the first run.
+scripts="$PWD/scripts"
+
+git_write="$(node "$scripts/vpk-remote-git-grant.js" --worktree "$tree" --branch "<branch>")"
+[ -n "$git_write" ] || git_write='{}'
+# Browser runs: the five server lines from "Browser tests" go here.
 
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
   CODEX_HOME="$worker_root/home" \
@@ -144,6 +161,10 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   resume --last - < "$worker_root/followup-1.md"
 ```
 
+For a browser run, add `PW_TEST_CONNECT_WS_ENDPOINT="$endpoint" \` after the
+`CODEX_HOME` line and end the script with the two status lines, as in the
+first run.
+
 Resuming keeps the session's prompt cache warm — a fresh `codex exec`
 re-pays the whole cold-start context read. Use `resume --last` only when this
 is the sole active/recent session in its isolated home; **never resume during
@@ -151,44 +172,111 @@ or immediately after fan-out** (the selected session is ambiguous).
 
 ## Commits
 
-The `git_write` grant lets a worker in a linked task worktree commit to its
-own branch. Without it, `git add`, `git commit`, `git checkout -- <path>` and
-anything else that writes the index fail with `Operation not permitted`: the
-worktree's git directory (`<repo>/.git/worktrees/<name>`) lies outside the
-workspace and `:workspace` keeps it read-only.
-`sandbox_workspace_write.writable_roots=["<repo>/.git"]` does not help, and
-neither does a profile entry granting all of `<repo>/.git`: the narrower
-read-only protection on the worktree's git directory wins over a broader
-grant. Entries for the exact paths do.
+`scripts/vpk-remote-git-grant.js` builds the `git_write` grant that lets a
+worker in a linked task worktree run `git add` and `git commit` on its own
+branch. Without it, anything that writes the index fails with
+`Operation not permitted`: the worktree's git directory
+(`<repo>/.git/worktrees/<name>`) lies outside the workspace and `:workspace`
+keeps it read-only. `sandbox_workspace_write.writable_roots=["<repo>/.git"]`
+does not help, and neither does a profile entry for all of `<repo>/.git`;
+entries for the exact paths do.
 
-What the grant opens for writing, and nothing else:
+The planner passes the worktree and the branch from `task.json`; the script
+never takes the branch from the worktree, so a worker cannot choose which
+branch a later run may move. It prints only the grant on stdout. It prints
+`{}` (no git writes), says why on stderr, and exits 0 when: the directory is
+not the top of a linked worktree; `HEAD` is detached; `HEAD` is not on the
+expected branch; the branch name is outside `[A-Za-z0-9._-]` components
+joined by `/`, each starting with a letter or digit (no `..`, no `.lock` or
+`.` endings); a git query fails; the branch's ref or log directory is
+missing; or a path holds a control character, a backslash or `*?[]{}`.
+`--no-worktree` always yields `{}`. Keys are written as escaped TOML
+strings, so a quote in a path cannot add an entry.
+
+What the grant opens for writing, and nothing else (found by running
+`git add` and `git commit` under the profile; codex-cli 0.166.0, git 2.53):
 
 | Path | Why |
 | --- | --- |
-| `<repo>/.git/worktrees/<name>/` | the worktree's index, `HEAD`, reflog, `COMMIT_EDITMSG` |
-| `<repo>/.git/objects/` | new blobs, trees and commits (shared by every branch, append-only in practice) |
+| `<repo>/.git/worktrees/<name>/index`, `index.lock` | staging |
+| `…/worktrees/<name>/COMMIT_EDITMSG` | the commit message |
+| `…/worktrees/<name>/logs/HEAD` | `HEAD`'s reflog |
+| `…/worktrees/<name>/HEAD.lock` | a commit locks `HEAD` to log the update; it never renames the lock over `HEAD` |
+| `…/worktrees/<name>/AUTO_MERGE.lock` | git 2.53 tries to clear `AUTO_MERGE` after a commit and prints an `error:` without it |
+| `<repo>/.git/objects/` | new blobs, trees and commits |
 | `<repo>/.git/refs/heads/<branch>` and its `.lock` | moving the task branch |
-| `<repo>/.git/logs/refs/heads/<branch>` | the task branch's reflog |
-| `<repo>/.git/packed-refs.lock` | git 2.53 takes it on every ref update and prints a harmless `error:` without it |
+| `<repo>/.git/logs/refs/heads/<branch>` | the branch's reflog |
+| `<repo>/.git/packed-refs.lock` | taken on every ref update when `packed-refs` exists; without it git prints an `error:` |
 
-The worktree's `commondir`, `gitdir` and `config.worktree` stay read-only,
-so a worker cannot repoint its worktree or set hooks through per-worktree
-config (VPK sets `extensions.worktreeConfig`). Every other branch, `main`,
-`refs/stash`, `<repo>/.git/config`, `<repo>/.git/hooks` and remote-tracking
-refs stay read-only too, so `git stash`, `git branch -f <other>`,
-`git config` and `git worktree add` fail for the worker. Verified 2026-11-17
-on 0.166.0: a real worker committed in a linked VPK worktree (with its Git LFS
-hooks installed) and was refused when it tried to move another branch.
+`HEAD` itself stays read-only, so the worker cannot switch its worktree to
+another branch; `commondir`, `gitdir`, `config.worktree`, `ORIG_HEAD`, every
+other branch, `refs/stash`, `<repo>/.git/config`, `<repo>/.git/hooks` and
+everything else directly under `<repo>/.git` stay read-only too, so
+`git stash`, switching branches, creating or moving another branch,
+`git config` and `git worktree add` fail for the worker.
 
-The grant needs the branch's loose ref directory (`refs/heads/vpk/`) to
-exist, which it does once any `vpk/*` branch is loose; `git worktree add -b`
-creates it. If a commit fails with `unable to create directory for
-…/refs/heads/…`, the worker reports its proposed subject and the planner
-commits. Under `--no-worktree` the grant is `{}` (the checkout's `.git` is
-the workspace root's own and stays protected), so the worker leaves its
-changes uncommitted.
+What the grant trusts the worker with:
+
+- **The object store.** `<repo>/.git/objects/` is shared by every branch
+  and worktree, and a worker with this grant can delete or corrupt any
+  object in it, not only add its own. Granting commits trusts the worker
+  with the repository's objects. A planner who does not want that builds
+  no grant (`--no-worktree`, which yields `{}`) and uses the uncommitted
+  flow: the worker leaves its changes uncommitted and proposes a commit
+  subject in its report, and the planner commits after verifying the diff.
+- **Hooks.** Read-only `config` and `hooks` do not stop
+  `git -c core.hooksPath=<dir> commit`; hooks chosen that way run, inside the
+  sandbox with the worker's own permissions.
+- **Its own branch.** The worker can point the task branch at any commit
+  (`git reset --soft`, `git update-ref`), so the planner checks the branch's
+  log from where the task started, not only the final diff.
+- **Locks.** A worker can leave `HEAD.lock` or `packed-refs.lock` behind,
+  which makes later git commands fail until the planner removes the file.
+
+Verified 2026-11-17 on 0.166.0 with real `gpt-6.1-sol` workers, in a linked
+worktree of a scratch repository with Git LFS hooks and a `packed-refs`
+file: `git add` and `git commit` succeeded; writing `HEAD` (directly, with
+`git symbolic-ref`, by renaming `HEAD.lock`, with `git checkout <other>`),
+another branch's ref, a new branch through the task branch's lock,
+`<repo>/.git/config` (`git config`, `git config --worktree`, an append),
+`packed-refs`, `hooks/`, the worktree's `gitdir` and `ORIG_HEAD`, and a new
+file directly under `<repo>/.git` were all refused. With `HEAD` detached
+before launch the script printed `{}` and the worker's `git add` failed with
+`Operation not permitted`.
+
+If a commit fails, the worker reports its proposed subject and the planner
+commits.
 
 ## Browser tests (Playwright)
+
+**What this gives the worker.** The worker's own commands stay sandboxed,
+but the browser connection gives it capabilities on the host. Use it only
+for workers and briefs you would trust without the sandbox for browser
+purposes. The sandbox still stops accidental writes by the worker's
+commands; the Claude lane has no sandbox at all. Per the installed
+Playwright 1.64.1 source
+(`node_modules/.pnpm/playwright-core@1.64.1/node_modules/playwright-core/lib/coreBundle.js`:
+`filterLaunchOptions` in the bundled `remote/playwrightServer.ts`, and the
+`CDPSession`, `Browser` and `Artifact` dispatchers), a client of this server:
+
+- cannot choose `args`, `executablePath`, `env`, `downloadsPath` or
+  `artifactsDir` at launch (`filterLaunchOptions` drops them; it was
+  `tracesDir` in older releases);
+- can open a raw CDP session (`newBrowserCDPSession`) and send any CDP
+  command, such as `Browser.setDownloadBehavior` with any host
+  `downloadPath`;
+- can navigate to `file://` URLs and read host files the planner can read;
+- can ask the server to save an artifact (download, video, trace) to any host
+  path (`ArtifactDispatcher.saveAs` copies to the path the client sends).
+
+So a worker set on it can write files outside its workspace through the
+browser, which could lead to running code on the host. The endpoint
+listens on loopback without authentication, so any local process can use
+that browser while it runs. A fixed-browser `launchServer()` would remove
+the client's launch choices but keep the CDP and artifact powers. Checked against this server on
+2026-11-17: `file:///etc/hosts` loaded, a download after a CDP
+`Browser.setDownloadBehavior` landed in a host directory, and a raw
+`saveAs` call wrote to a host path.
 
 Inside the sandbox Chromium cannot start. A Playwright test fails with
 
@@ -206,25 +294,26 @@ Seatbelt denies the Mach port lookup Chromium needs. Everything else a
 browser test needs works in the sandbox: building, a dev server on a local
 port (Playwright's `webServer` included), and connecting to localhost.
 
-The fix keeps the sandbox: run the browser outside it and let the worker's
-test runner connect. `scripts/vpk-remote-browser-server.js start` runs
+The recipe runs the browser outside the sandbox and lets the worker's test
+runner connect to it. `scripts/vpk-remote-browser-server.js start` runs
 `playwright run-server --host 127.0.0.1` from the task's own Playwright,
-waits until it listens, records `browser-server.json` in the worker
-directory, and returns. Setting `PW_TEST_CONNECT_WS_ENDPOINT` makes
-`playwright test` connect to that server instead of launching a browser, and
-the variable reaches the worker's commands despite `--ignore-user-config`.
-Add these lines to `run.sh` before the `env` command, with `server` expanded
-to the absolute main-checkout path:
+waits until it listens, writes `browser-server.json` in the worker directory,
+and returns; `endpoint` prints the live server's endpoint. Setting
+`PW_TEST_CONNECT_WS_ENDPOINT` makes `playwright test` connect to that server
+instead of launching a browser, and the variable reaches the worker's
+commands despite `--ignore-user-config`. Add these lines to `run.sh` before
+the `env` command:
 
 ```bash
-server="$PWD/scripts/vpk-remote-browser-server.js"
-node "$server" start --project "$tree" --worker-dir "$worker_root" || exit 1
-trap 'node "$server" stop --worker-dir "$worker_root" >/dev/null' EXIT
+stop_browser() { node "$scripts/vpk-remote-browser-server.js" stop --worker-dir "$worker_root" >&2; }
+trap stop_browser EXIT
 trap 'exit 129' HUP INT TERM
-endpoint="$(node -p 'require(process.argv[1]).endpoint' "$worker_root/browser-server.json")"
+node "$scripts/vpk-remote-browser-server.js" start --project "$tree" --worker-dir "$worker_root" >&2 || exit 1
+endpoint="$(node "$scripts/vpk-remote-browser-server.js" endpoint --worker-dir "$worker_root")" || exit 1
 ```
 
-and put the endpoint in the `env` prefix:
+then put the endpoint in the `env` prefix and end the script with the
+worker's status:
 
 ```bash
 env -u OPENAI_API_KEY -u CODEX_API_KEY \
@@ -232,13 +321,19 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   PW_TEST_CONNECT_WS_ENDPOINT="$endpoint" \
   codex exec --ignore-user-config -C "$tree" \
   …                                  # every other flag as in the canonical run
+status=$?
+exit "$status"
 ```
 
-- **Start before dispatch, stop after exit.** The traps tie the server to
-  `run.sh`: it stops when the worker exits, fails, or its pane closes. A
-  follow-up `run-<k>.sh` starts its own. Run `stop --worker-dir` by hand only
-  for a server started outside `run.sh`; it is safe to repeat. The server
-  also ends itself after `--ttl-minutes` (default 180). To find strays:
+- **One server per run script.** The trap is installed before the server
+  starts, so it stops the server however `run.sh` ends: the worker exits or
+  fails, the start or endpoint step fails, or the pane closes. `run.sh` then
+  exits with the worker's status. A `resume` script starts and traps its own.
+  `stop` ends the server and its browser processes, and is safe to repeat;
+  run it by hand only for a server started outside a run script. The server
+  also ends itself after `--ttl-minutes` (default 180) and if its supervisor
+  is killed. Two starts for one worker directory never leave two servers:
+  the second fails while the first is starting or running. To find strays:
   `ps -axww -o pid,command | grep '[v]pk-remote-browser-server.js supervise'`
   shows each one's `--state <worker-dir>/browser-server.json`; stop it with
   that worker directory.
@@ -251,11 +346,13 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   script that calls `browserType.launch()`, `chromium.launch()` or
   `launchPersistentContext()` itself still fails with the error above, and
   headed runs (`--headed`, `--debug`, `--ui`) are out on the worker side.
-  The browser runs outside the sandbox with the planner's network and file
-  access, so brief the worker to load only the task's own pages.
 
-Verified 2026-11-17 on 0.166.0 with Playwright 1.64.1: the same small spec
-passed with the endpoint and failed with the Mach error without it.
+Verified 2026-11-17 on 0.166.0 with Playwright 1.64.1 and real
+`gpt-6.1-sol` workers: a `run.sh` built from these lines passed one spec
+(`1 passed`), exited 0 with the worker, and left no server; a `resume`
+script built the same way passed it again. With a stand-in worker exiting 7
+the script exited 7, and on SIGHUP it exited 129; both stopped the server.
+Without the endpoint the same spec failed with the Mach error above.
 
 ## Other limits of the lane
 

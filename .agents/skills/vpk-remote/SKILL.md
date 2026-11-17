@@ -137,9 +137,10 @@ before naming a task or creating its worktree, and when deciding whether
    constraints, and the proof command. The planner judges; it keeps its
    context for decisions rather than mechanical coverage. Tiny read-only
    questions it can answer directly; any non-trivial mutation goes to a
-   worker. Before picking the GPT lane, check its limits: a Playwright proof
-   needs a browser server and `.agents/` edits go to the Claude lane, per
-   [gpt-executor.md § Browser tests](references/gpt-executor.md#browser-tests-playwright).
+   worker. GPT-lane limits: `.agents/` edits go to the Claude lane; a
+   Playwright proof needs a browser server, which gives a sandboxed worker
+   host capabilities, so use it only for briefs you would trust unsandboxed
+   in a browser ([gpt-executor.md § Browser tests](references/gpt-executor.md#browser-tests-playwright)).
 2. **Isolate.** If the brief writes files, create and warm the task worktree
    per [naming-and-worktrees.md](references/naming-and-worktrees.md#worktree-isolation),
    and confirm warmup finished before dispatch. Skip for read-only briefs and under `--no-worktree`.
@@ -281,8 +282,9 @@ layout.
   verify, where the worker's diff is uncommitted and a post-consult
   `git status` could not distinguish an advisor's edit from the worker's.
 - Workspace-write sandboxing is the GPT-lane default; do not escalate to
-  bypass mode, not even for browser tests or commits, which work inside it
-  ([gpt-executor.md § Commits](references/gpt-executor.md#commits)). The Claude lane runs with permissions skipped, so the brief's
+  bypass mode, not even for browser tests or commits. The commit grant trusts
+  the worker with the shared object store ([gpt-executor.md § Commits](references/gpt-executor.md#commits)).
+  The Claude lane runs with permissions skipped, so the brief's
   scope boundaries are its only guardrail — write them explicitly.
 - Never copy, link, or read `~/.codex/auth.json` or any OAuth credential
   into a worker home.
