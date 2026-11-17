@@ -59,13 +59,14 @@ export interface RovoChatTurnState {
 	readonly retryCount: number;
 	/** A retry survives effect cleanup; only a dispatch, Stop or transcript commit drops it. */
 	readonly retry: RovoChatRetryWait | null;
-	/** Changes only when the transcript commits, never when a selection merely starts. */
+	/** Invalidates preparation on transcript commit or disposal, never on selection start. */
 	readonly transcriptVersion: number;
 	/** The current transition holds every request start until it finishes or is superseded. */
 	readonly transitionId: number | null;
+	readonly selectionThreadId: string | null;
 	/** Only retry work pauses with effects; ordinary sends keep running while hidden. */
 	readonly retrySuspended: boolean;
-	/** Physical unmount ends preparation; Activity effect cleanup does not. */
+	/** Insertion-effect cleanup ends preparation; its setup can mount again. */
 	readonly disposed: boolean;
 	readonly editId: number;
 	readonly editPending: boolean;
@@ -128,11 +129,12 @@ export type RovoChatTurnEvent =
 	| { readonly type: "retryDispatchStarted" }
 	| { readonly type: "retryScheduled"; readonly retry: RovoChatRetryWait }
 	| { readonly type: "retryCancelled" }
-	| { readonly type: "transitionStarted"; readonly id: number }
+	| { readonly type: "transitionStarted"; readonly id: number; readonly selectionThreadId?: string }
 	| { readonly type: "transitionFinished"; readonly id: number }
 	| { readonly type: "retrySuspended" }
 	| { readonly type: "retryResumed" }
 	| { readonly type: "providerDisposed" }
+	| { readonly type: "providerMounted" }
 	| { readonly type: "retryElapsed"; readonly retry: RovoChatRetryWait }
 	| { readonly type: "requestStarted" }
 	| { readonly type: "editStarted" }
@@ -178,6 +180,7 @@ export const ROVO_CHAT_TURN_INITIAL_STATE: RovoChatTurnState = Object.freeze({
 	retry: null,
 	transcriptVersion: 0,
 	transitionId: null,
+	selectionThreadId: null,
 	retrySuspended: false,
 	disposed: false,
 	editId: 0,
@@ -188,6 +191,7 @@ export const ROVO_CHAT_TURN_INITIAL_STATE: RovoChatTurnState = Object.freeze({
 // Queue writes always produce a new array, as the provider's queue state did
 // before this reducer existed: consumers key effects on the queue's identity.
 export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTurnEvent): RovoChatTurnState {
+	if (event.type === "providerMounted") return state.disposed ? { ...state, disposed: false } : state;
 	if (state.disposed) return state;
 	switch (event.type) {
 		case "enqueue":
@@ -197,9 +201,9 @@ export function rovoChatTurnReducer(state: RovoChatTurnState, event: RovoChatTur
 		case "clearQueue":
 			return { ...state, queue: [] };
 		case "transitionStarted":
-			return { ...state, transitionId: event.id };
+			return { ...state, transitionId: event.id, selectionThreadId: event.selectionThreadId ?? null };
 		case "transitionFinished":
-			return state.transitionId === event.id ? { ...state, transitionId: null } : state;
+			return state.transitionId === event.id ? { ...state, transitionId: null, selectionThreadId: null } : state;
 		case "retrySuspended":
 			return state.retrySuspended ? state : { ...state, retrySuspended: true };
 		case "retryResumed":

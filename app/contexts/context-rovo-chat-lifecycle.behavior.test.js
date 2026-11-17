@@ -252,7 +252,7 @@ test("root StrictMode replay leaves the mounted provider able to dispatch a queu
 	}
 });
 
-test("cancelling a local creation releases the local action; the next send adopts its success or creates after its failure", async () => {
+test("a prompt joining a pending cancelled local creation adopts its success or creates once after its failure", async () => {
 	const { Harness } = await loadHarness();
 	for (const lateOutcome of ["resolve", "reject"]) {
 		const created = [];
@@ -278,13 +278,15 @@ test("cancelling a local creation releases the local action; the next send adopt
 			assert.equal(created.length, 1);
 			await React.act(async () => { button("Abort local").click(); await Promise.resolve(); });
 			assert.deepEqual(finished, [false]);
+			await React.act(async () => { button("Send").click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
+			assert.deepEqual(sent, []);
+			assert.equal(created.length, 1);
+			assert.equal(container.querySelector("[data-active-thread]").textContent, "none");
 			await React.act(async () => {
 				if (lateOutcome === "resolve") resolveOld(created[0]);
 				else rejectOld(new Error("Old network request failed late"));
-				await Promise.resolve();
+				await new Promise((resolve) => setTimeout(resolve, 20));
 			});
-			assert.equal(container.querySelector("[data-active-thread]").textContent, "none", "the cancelled local action cannot adopt the result");
-			await React.act(async () => { button("Send").click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
 			assert.deepEqual(sent, ["Hello after replay"]);
 			assert.equal(created.length, lateOutcome === "resolve" ? 1 : 2);
 			assert.equal(container.querySelector("[data-active-thread]").textContent, created.at(-1).id);

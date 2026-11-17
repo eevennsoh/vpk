@@ -63,10 +63,12 @@ export function useRovoChatTurnMachine() {
 		}
 	}, []);
 
-	// Insertion effects stay connected through Activity hide/show. Their final
-	// cleanup marks physical unmount without scheduling any React state update,
-	// and releases async gate waiters before they can touch the departed provider.
-	useInsertionEffect(() => () => dispatchTurn({ type: "providerDisposed" }), [dispatchTurn]);
+	// StrictMode replay and Activity leave insertion effects connected. Refresh
+	// can replay them: mount revives the provider, but never the disposed work.
+	useInsertionEffect(() => {
+		dispatchTurn({ type: "providerMounted" });
+		return () => dispatchTurn({ type: "providerDisposed" });
+	}, [dispatchTurn]);
 
 	return { turnRef, dispatchTurn, queuedPrompts, activePrompt, cutShortMediaWait, retry, waitForTurn };
 }

@@ -235,7 +235,7 @@ test("only the current waiting retry becomes ready; it remains ready through eff
 	assert.equal(reduce(stopped, { type: "retryElapsed", retry: ready.retry }), stopped);
 });
 
-test("disposal invalidates preparation and ignores every later transition, while retry suspension allows ordinary queued sends", () => {
+test("disposal invalidates preparation and ignores work, while retry suspension allows ordinary queued sends", () => {
 	const queued = run(INITIAL, { type: "retrySuspended" }, { type: "enqueue", prompt: prompt("a") });
 	assert.equal(canDispatchNextPrompt(queued, IDLE), true);
 	const disposed = reduce(queued, { type: "providerDisposed" });
@@ -245,6 +245,21 @@ test("disposal invalidates preparation and ignores every later transition, while
 	for (const event of [{ type: "retryResumed" }, { type: "enqueue", prompt: prompt("b") }, { type: "reset" }, { type: "dispatchSettled", attempt: queued.sendAttempt, failed: true }]) {
 		assert.equal(reduce(disposed, event), disposed);
 	}
+});
+
+test("only mounting revives a disposed provider, without restoring cancelled preparation identities", () => {
+	assert.equal(reduce(INITIAL, { type: "providerMounted" }), INITIAL);
+	const sending = run(INITIAL, { type: "enqueue", prompt: prompt("old") }, { type: "dispatchNext" });
+	const disposed = reduce(sending, { type: "providerDisposed" });
+	const mounted = reduce(disposed, { type: "providerMounted" });
+	assert.equal(mounted.disposed, false);
+	assert.equal(mounted.transcriptVersion, disposed.transcriptVersion);
+	assert.equal(mounted.sendAttempt, disposed.sendAttempt);
+	assert.equal(mounted.editId, disposed.editId);
+	assert.deepEqual(mounted.queue, []);
+	assert.equal(mounted.activePrompt, null);
+	assert.equal(reduce(mounted, settledEvent(sending, true)), mounted);
+	assert.equal(canDispatchNextPrompt(reduce(mounted, { type: "enqueue", prompt: prompt("new") }), IDLE), true);
 });
 
 test("hasSendInFlight holds while a prompt is active or a send is dispatching", () => {

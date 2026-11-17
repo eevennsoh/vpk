@@ -30,9 +30,7 @@ import {
 	shouldSendExplicitRovoCancel,
 	type RovoCancelTarget,
 } from "@/lib/rovo-cancel-strategy";
-import {
-	type RovoAppThread,
-} from "@/lib/rovo-app-types";
+import type { RovoAppThread } from "@/lib/rovo-app-types";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import {
 	normalizeSessionAgentEntry,
@@ -365,10 +363,10 @@ export function RovoChatProvider({
 		syncTransitionCancellation,
 	} = useRovoChatTransitionCoordinator({ isCancellingRef });
 	const transcriptAbortRef = useRef<AbortController | null>(null);
-	const beginTransition = useCallback((kind: RovoChatTransitionKind) => {
+	const beginTransition = useCallback((kind: RovoChatTransitionKind, selectionThreadId?: string) => {
 		transcriptAbortRef.current?.abort();
 		const token = beginProviderTransition(kind);
-		dispatchTurn({ type: "transitionStarted", id: token.id });
+		dispatchTurn({ type: "transitionStarted", id: token.id, selectionThreadId });
 		return token;
 	}, [beginProviderTransition, dispatchTurn]);
 	const finishTransition = useCallback((token: RovoChatTransitionToken) => {
@@ -382,7 +380,7 @@ export function RovoChatProvider({
 			const token = beginProviderTransition("destroy");
 			finishTransition(token);
 		};
-	}, [beginProviderTransition, dispatchTurn, finishTransition]);
+	}, [beginProviderTransition, finishTransition]);
 	// The one writer of the session-agent working copy: the ref that mutations read
 	// synchronously and the state that renders move together, normalized once here.
 	// Nothing copies state back into the ref, so a mutation made by a child's mount
@@ -1505,7 +1503,7 @@ export function RovoChatProvider({
 
 	const selectThread = useCallback(
 		async (threadId: string) => {
-			const transitionToken = beginTransition("select-thread");
+			const transitionToken = beginTransition("select-thread", threadId);
 			try {
 				// The thread already shown keeps its turn; the transition only supersedes a pending selection.
 				if (threadId === activeThreadIdRef.current) {
@@ -1557,9 +1555,11 @@ export function RovoChatProvider({
 
 	const deleteThread = useCallback(
 		async (threadId: string) => {
-			const transitionToken = threadId === activeThreadIdRef.current ? beginTransition("delete-thread") : null;
+			const deletesActive = threadId === activeThreadIdRef.current;
+			const transitionToken = deletesActive || threadId === turnRef.current.selectionThreadId ? beginTransition("delete-thread") : null;
+			if (transitionToken && !deletesActive && finishTransition(transitionToken)) queueTick();
 			try {
-				if (transitionToken) {
+				if (deletesActive && transitionToken) {
 					await stopRequestForThreadChange();
 					// Commit point, as in selectThread.
 					if (isCurrentTransition(transitionToken)) {
