@@ -390,6 +390,8 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
    */
   selected?: boolean;
   elemBefore?: ReactNode;
+	/** Match compact action glyphs without reserving an avatar-sized column. */
+	elemBeforeSize?: 16 | 24;
   elemAfter?: ReactNode;
   description?: string;
   onSelect?: DropdownMenuItemClickHandler;
@@ -402,6 +404,7 @@ function DropdownMenuItem({
   selected = false,
   allowTextWrap = false,
   elemBefore,
+	elemBeforeSize = 24,
   elemAfter,
   description,
   children,
@@ -441,7 +444,7 @@ function DropdownMenuItem({
       data-selected={isSelected || undefined}
       className={cn(
         dropdownStyles.itemBase,
-        "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg:not(:where([data-slot=avatar]_*))]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         // No selected-state styling on purpose. `data-selected` stays on the
         // element as a hook for consumers, but the trailing check mark is the
         // only thing that marks the active row — surface and label match every
@@ -452,7 +455,7 @@ function DropdownMenuItem({
       {...props}
     >
       {elemBefore ? (
-        <span className={dropdownMenuFrontSlotClassName}>
+        <span className={cn(dropdownMenuFrontSlotClassName, elemBeforeSize === 16 ? "size-4" : null)}>
           {elemBefore}
         </span>
       ) : null}

@@ -9,7 +9,7 @@ import type { AgentListHost, AgentListPrStatus, AgentListState } from "@/compone
  * than rendering an em-dash placeholder. Progression lives on the trailing
  * lifecycle icon, not in this line.
  */
-export type AgentSessionMetadataSegmentKind = "agent" | "branch" | "tool-call" | "artifact" | "time";
+export type AgentSessionMetadataSegmentKind = "agent" | "branch" | "artifact" | "time";
 
 export interface AgentSessionMetadataSegment {
 	readonly kind: AgentSessionMetadataSegmentKind;
@@ -17,8 +17,6 @@ export interface AgentSessionMetadataSegment {
 	readonly label?: string;
 	/** Pull-request lifecycle for the artifact chunk, selecting its glyph. */
 	readonly prStatus?: AgentListPrStatus;
-	/** Tool-call labels cycled by the long-form renderer. */
-	readonly toolCalls?: readonly string[];
 	/**
 	 * Declared session host, attached to the time chunk so the byline can
 	 * render icon + timestamp as one clause instead of `Cloud · 12s`.
@@ -28,6 +26,8 @@ export interface AgentSessionMetadataSegment {
 
 export interface AgentSessionMetadataInput {
 	readonly agentName: string;
+	/** Override the default visibility of the name beside the agent mark. */
+	readonly showAgentName?: boolean;
 	readonly branch?: string;
 	/**
 	 * Resolved session host, or `undefined` when the row never declared one.
@@ -41,18 +41,13 @@ export interface AgentSessionMetadataInput {
 	/** Pre-formatted artifact name, e.g. `#1306: Add guest checkout`. */
 	readonly artifactLabel?: string;
 	readonly prStatus?: AgentListPrStatus;
-	/** Human-readable tool calls, in display order. */
-	readonly toolCalls?: readonly string[];
-	/** Lifecycle state; an active row narrates its tool call, a settled row names its agent. */
+	/** Lifecycle state used by the default agent-name visibility. */
 	readonly state?: AgentListState;
-	/** Short-density line: agent mark only, no agent name, no tool call. */
+	/** Short-density line: agent mark only, no agent name. */
 	readonly compact?: boolean;
 }
 
-/**
- * Working and Needs input rows let the agent mark speak for itself — the line
- * is about what the session is doing now, so the agent's name is never printed.
- */
+/** Lifecycle states with ongoing work. */
 export function isActiveAgentSessionState(state: AgentListState | undefined): boolean {
 	return state === "running" || state === "needs-input" || state === "attention";
 }
@@ -60,7 +55,7 @@ export function isActiveAgentSessionState(state: AgentListState | undefined): bo
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
 export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>> = {
 	attention: "Needs attention",
-	complete: "Complete",
+	complete: "Finished",
 	"needs-input": "Needs input",
 	running: "Working",
 };
@@ -76,21 +71,12 @@ export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
 	const isActive = isActiveAgentSessionState(input.state);
+	const showAgentName = input.showAgentName ?? (!input.compact && !isActive);
 	const segments: AgentSessionMetadataSegment[] = [
-		input.compact || isActive ? { kind: "agent" } : { kind: "agent", label: input.agentName },
+		showAgentName ? { kind: "agent", label: input.agentName } : { kind: "agent" },
 	];
-	// The agent name and the working narration never share a line: an active
-	// row narrates its tool call behind the bare mark, a settled row names its
-	// agent and drops the narration. The compact (short) line carries neither.
-	const toolCalls = input.compact || !isActive ? undefined : input.toolCalls
-		?.map((toolCall) => toolCall.trim())
-		.filter((toolCall) => toolCall.length > 0);
 	if (input.branch) {
 		segments.push({ kind: "branch", label: input.branch });
-	}
-
-	if (toolCalls !== undefined && toolCalls.length > 0) {
-		segments.push({ kind: "tool-call", toolCalls });
 	}
 
 	if (input.artifactLabel !== undefined && input.artifactLabel.length > 0) {

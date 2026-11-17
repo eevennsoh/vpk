@@ -265,6 +265,7 @@ export function AgentSessionCard({
 	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
+	moreMenuVariant,
 	tooltipPositionerClassName,
 	onArrivalComplete,
 	onDepartureComplete,
@@ -285,6 +286,8 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
+	showAgentName,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showBranch = false,
@@ -334,6 +337,7 @@ export function AgentSessionCard({
 	isSelected?: boolean;
 	item: AgentSessionItem;
 	localSessionAction?: AgentSessionProps["localSessionAction"];
+	moreMenuVariant?: AgentSessionProps["moreMenuVariant"];
 	onArrivalComplete?: () => void;
 	onDepartureComplete?: () => void;
 	onStateChangeComplete?: () => void;
@@ -377,6 +381,8 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
+	showAgentName?: AgentSessionProps["showAgentName"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
@@ -543,9 +549,8 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen || menu.isContinueOpen;
-	// Every density keeps lifecycle state outside the authored title and byline.
-	// Short rows use a settled-state glyph in the same slot the hover/focus menu
-	// replaces; long rows keep their full trailing progression control.
+	// The trailing glyph shares its slot with hover actions. Long rows can move
+	// their state label into metadata while retaining the short row's glyph.
 	const trailingControl = (() => {
 		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
@@ -569,6 +574,7 @@ export function AgentSessionCard({
 						portalled={moreMenuPortalled}
 						positionerClassName={moreMenuPositionerClassName}
 						showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
+						variant={moreMenuVariant}
 						workItemOptions={workItemOptions}
 					/>
 				);
@@ -582,7 +588,7 @@ export function AgentSessionCard({
 	// and falls back to its own `STATE_META` indicator.
 	const lifecycleIndicator = role === "expired"
 		? null
-		: isLongDensity
+		: isLongDensity && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
@@ -746,12 +752,11 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// Agent Session owns lifecycle outside the title and byline. The
-								// shared trailing slot lets hover actions replace it in place.
+								// The shared trailing slot lets hover actions replace the glyph in place.
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} showAgentName={showAgentName} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}

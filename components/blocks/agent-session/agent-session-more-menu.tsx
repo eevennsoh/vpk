@@ -2,7 +2,9 @@
 
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
+import PinIcon from "@atlaskit/icon/core/pin";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusWorkflowStoppedIcon from "@atlaskit/icon-lab/core/status-workflow-stopped";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +19,7 @@ import { Icon } from "@/components/ui/icon";
 import { AgentSessionLinkWorkItemSubmenu } from "./agent-session-link-work-item-submenu";
 import type {
 	AgentSessionItem,
+	AgentSessionProps,
 	AgentSessionWorkItemDraft,
 	AgentSessionWorkItemOption,
 } from "./agent-session-types";
@@ -28,6 +31,8 @@ import type {
  * Optional callbacks make those selections safe no-ops.
  */
 export interface AgentSessionMoreMenuActions {
+	onStop?: () => void;
+	onPin?: () => void;
 	/** Reopen the session in its own agent. Labeled with the agent's name. */
 	onContinueInAgent?: () => void;
 	/** Copy the resume prompt for a terminal. Local only. */
@@ -54,6 +59,7 @@ export function AgentSessionMoreMenu({
 	positionerClassName,
 	portalled,
 	showLinkWorkItemMenuItem = true,
+	variant = "default",
 	workItemOptions = [],
 }: Readonly<{
 	actions: AgentSessionMoreMenuActions;
@@ -80,6 +86,7 @@ export function AgentSessionMoreMenu({
 	portalled?: boolean;
 	/** Shows the manual Link work item row when the host also supplies a capability. */
 	showLinkWorkItemMenuItem?: boolean;
+	variant?: AgentSessionProps["moreMenuVariant"];
 	/** Work items the Link work item submenu offers on its Link to existing tab. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
@@ -89,7 +96,8 @@ export function AgentSessionMoreMenu({
 	const deleteItem = (
 		<DropdownMenuItem
 			disabled={isExpired && actions.onDelete === undefined}
-			elemBefore={<DeleteIcon label="" size="small" />}
+			elemBefore={variant === "owner" ? <DeleteIcon label="" size="medium" /> : <DeleteIcon label="" size="small" />}
+			elemBeforeSize={variant === "owner" ? 16 : 24}
 			onSelect={() => actions.onDelete?.()}
 			variant="destructive"
 		>
@@ -130,7 +138,21 @@ export function AgentSessionMoreMenu({
 				portalled={portalled}
 				positionerClassName={positionerClassName}
 			>
-				{isExpired ? deleteItem : (
+				{isExpired ? deleteItem : variant === "owner" ? (
+					<>
+						<DropdownMenuItem elemBefore={<StatusWorkflowStoppedIcon label="" size="medium" />} elemBeforeSize={16} onSelect={() => actions.onStop?.()}>
+							Stop session
+						</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<PinIcon label="" size="medium" />} elemBeforeSize={16} onSelect={() => actions.onPin?.()}>
+							Pin
+						</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<EditIcon label="" size="medium" />} elemBeforeSize={16} onSelect={() => actions.onRename?.()}>
+							Rename
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						{deleteItem}
+					</>
+				) : (
 					<>
 						{isCloud ? (
 							<>

@@ -556,8 +556,6 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(MENU_HOOK_SOURCE, /onMoreMenuOpenChange\?\.\(nextMenu !== null\);/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuLabel>Continue in<\/DropdownMenuLabel>/u);
-	assert.match(CONTINUE_MENU_SOURCE, /description="Copy prompt"[\s\S]*<TerminalIcon label="" size="small" \/>[\s\S]*Terminal/u);
-	assert.match(CONTINUE_MENU_SOURCE, /import TerminalIcon from "@atlaskit\/icon-lab\/core\/terminal";/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /Continue in|TerminalIcon/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /onDismiss|dismissLabel/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /disabled=\{actions\./u);
@@ -616,7 +614,7 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 	// The timeout is cleared on unmount so a removed row cannot set state later.
 	assert.match(MENU_HOOK_SOURCE, /useEffect\(\(\) => \(\) => \{\s*window\.clearTimeout\(resetRef\.current\);[\s\S]*?\}, \[\]\)/u);
 
-	// Terminal keeps its confirmation visible in the separate continuation menu.
+	// Copy prompt keeps its confirmation visible in the separate continuation menu.
 	assert.match(SESSION_MORE_MENU_SOURCE, /render=\{<ShowMoreHorizontalIcon color="currentColor" label="" size="small" \/>\}/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /aria-label=\{`More actions for \$\{item\.title\}`\}/u);
 	assert.match(CONTINUE_MENU_SOURCE, /selected=\{copied\}/u);
@@ -645,10 +643,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/segment\.kind === "agent"\s*\? segment\.label === undefined \? "shrink-0" : "min-w-0 shrink"\s*: segment\.kind === "time"\s*\? "shrink-0"\s*: "min-w-0 max-w-28 flex-initial"/u,
-	);
-	assert.match(
-		METADATA_SOURCE,
 		/<span className="min-w-0 truncate text-text-subtlest" title=\{item\.agent\.name\}>/u,
 	);
 	assert.match(
@@ -657,7 +651,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);
-	assert.match(METADATA_SOURCE, /<CyclingByline[\s\S]*contentKey=\{toolCall\}[\s\S]*<Shimmer[\s\S]*case "tool-call":[\s\S]*<AgentSessionToolCall toolCalls=\{segment\.toolCalls \?\? \[\]\} \/>/u);
 	assert.match(
 		METADATA_SOURCE,
 		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
@@ -760,12 +753,6 @@ test("a working long row breathes with the Avatar spinner", () => {
 		LIFECYCLE_SOURCE,
 		/case "running":[\s\S]*<IconTile[\s\S]*variant="experimental"/u,
 	);
-	// Long-form states pair full copy with the icon; only active work shimmers.
-	assert.match(LIFECYCLE_SOURCE, /running: "Working"/u);
-	assert.match(LIFECYCLE_SOURCE, /"needs-input": "Needs input"/u);
-	assert.match(LIFECYCLE_SOURCE, /attention: "Needs attention"/u);
-	assert.match(LIFECYCLE_SOURCE, /complete: "Finished"/u);
-	assert.match(LIFECYCLE_SOURCE, /showLabel[\s\S]*state === "running"[\s\S]*<Shimmer[\s\S]*\{label\}[\s\S]*<\/Shimmer>[\s\S]*: <span>\{label\}<\/span>[\s\S]*: null/u);
 	// Grow in and out on the state swap, with the exit timing on the exit variant
 	// so it does not silently run at the enter timing.
 	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_ENTER = \{ duration: 0\.15, ease: motionEase\.outPractical \}/u);
@@ -802,7 +789,7 @@ test("reuses the Agent List row model instead of forking a parallel one", () => 
 		TYPES_SOURCE,
 		/import type \{ AgentListAgent, AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
 	);
-	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;[\s\S]*toolCalls\?: readonly string\[\];\s*\};/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem & \{\s*role\?: AgentSessionRole;/u);
 	assert.match(INDEX_SOURCE, /isCodingAgentListItem\(item\)/u);
 });
 
