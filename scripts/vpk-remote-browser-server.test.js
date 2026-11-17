@@ -4,9 +4,10 @@ const net = require("node:net");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
 
-const { LOCK_FILE, LOG_FILE, STATE_FILE, descendants, endpoint, parseArgs, processStart, resolvePlaywright, start, stop } = require("./vpk-remote-browser-server.js");
+const { LOCK_FILE, LOG_FILE, STATE_FILE, UNRECORDED_GRACE_MS, acquireLock, descendants, endpoint, parseArgs, processStart, resolvePlaywright, start, stop, supervisorsFor } = require("./vpk-remote-browser-server.js");
 
 const SCRIPT = path.join(__dirname, "vpk-remote-browser-server.js");
 const GRACE_MS = 500;
@@ -54,9 +55,9 @@ const server = net.createServer((socket) => socket.end());
 server.listen(port, host, () => console.log("Listening on ws://" + host + ":" + port + "/"));
 `;
 
-// Also starts a stand-in browser: its own process group, deaf to SIGTERM, pid in pidFile.
-const withBrowser = (pidFile) => `${LISTEN}
-const browser = require("node:child_process").spawn(process.execPath, ["-e", "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"], { detached: true, stdio: "ignore" });
+// Also starts a stand-in browser: its own process group, deaf to SIGTERM unless polite, pid in pidFile.
+const withBrowser = (pidFile, { polite = false } = {}) => `${LISTEN}
+const browser = require("node:child_process").spawn(process.execPath, ["-e", "${polite ? "" : "process.on('SIGTERM', () => {}); "}setInterval(() => {}, 1000)"], { detached: true, stdio: "ignore" });
 require("node:fs").writeFileSync(${JSON.stringify(pidFile)}, String(browser.pid));
 `;
 
@@ -101,6 +102,13 @@ test("parseArgs requires a command, a worker directory, and a project for start"
 	assert.throws(() => parseArgs(["start", "--project", "/p", "--worker-dir"]), /--worker-dir needs a value/u);
 	assert.throws(() => parseArgs(["start", "--project", "--worker-dir", "/w"]), /--project needs a value/u);
 	assert.throws(() => parseArgs(["start", "--project", "/p", "--worker-dir", "/w", "--host", "0.0.0.0"]), /unknown option --host/u);
+	assert.throws(() => parseArgs(["stop", "--worker-dir", "/w", "--token", "abc"]), /--token must be 32 lowercase hex digits/u);
+	assert.throws(() => parseArgs(["new-token", "--worker-dir", "/w"]), /new-token takes no options/u);
+	assert.deepEqual(parseArgs(["new-token"]), { command: "new-token" });
+	const token = "a".repeat(32);
+	assert.equal(parseArgs(["stop", "--worker-dir", "/w", "--token", token]).token, token);
+	assert.equal(parseArgs(["endpoint", "--worker-dir", "/w", "--token", token]).token, token);
+	assert.equal(parseArgs(["start", "--project", "/p", "--worker-dir", "/w", "--token", token]).token, token);
 });
 
 test("parseArgs validates port, TTL and timeout, and defaults to a free port", () => {
@@ -290,6 +298,228 @@ test("a server that never listens is ended at the timeout, browser included", as
 	const browser = browserPid(t, pidFile);
 	assert.equal(alive(browser), false);
 	assert.deepEqual(fs.readdirSync(workerDir), [LOG_FILE]);
+});
+
+test("a hung server and its browser end when the supervisor is killed", async (t) => {
+	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
+	const project = fakeProject({ cli: hung(pidFile) });
+	const { state, workerDir } = await startedServer(t, project);
+	const browser = browserPid(t, pidFile);
+	await sleep(1_500);
+	const [server] = descendants(state.pid);
+	assert.ok(server && alive(server.pid));
+	process.kill(state.pid, "SIGKILL");
+	assert.ok(await eventually(() => !alive(server.pid) && !alive(browser), 15_000), "a hung server or its browser outlived the killed supervisor");
+	assert.ok(await refusesConnections(state.port));
+	assert.equal((await stop({ workerDir })).reason, "already gone");
+});
+
+// Runs the CLI; resolves with its exit code and output.
+function cli(args, env = {}) {
+	return new Promise((resolve) => {
+		const child = spawn(process.execPath, [SCRIPT, ...args], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...env } });
+		let stdout = "";
+		let stderr = "";
+		child.stdout.on("data", (chunk) => { stdout += chunk; });
+		child.stderr.on("data", (chunk) => { stderr += chunk; });
+		child.on("exit", (code) => resolve({ code, stdout, stderr }));
+	});
+}
+
+// Starts the CLI with the hold-before-publish hook, waits until it holds, and kills it there.
+async function killStarterBeforePublish(t, project, workerDir, token) {
+	const holdFile = path.join(tempDir("browser-server-hold-"), "state.json");
+	const args = [SCRIPT, "start", "--project", project, "--worker-dir", workerDir, "--timeout-ms", "1000", ...(token ? ["--token", token] : [])];
+	const starter = spawn(process.execPath, args, { stdio: "ignore", env: { ...process.env, VPK_BROWSER_SERVER_TEST_HOLD_BEFORE_PUBLISH: holdFile } });
+	t.after(() => {
+		try {
+			starter.kill("SIGKILL");
+		} catch {}
+	});
+	assert.ok(await eventually(() => fs.existsSync(holdFile) && fs.statSync(holdFile).size > 0), "the starter never reached the publish step");
+	const held = JSON.parse(fs.readFileSync(holdFile, "utf8"));
+	t.after(() => {
+		try {
+			process.kill(-held.pid, "SIGKILL");
+		} catch {}
+	});
+	const exited = new Promise((resolve) => starter.once("exit", resolve));
+	starter.kill("SIGKILL");
+	await exited;
+	assert.equal(fs.existsSync(path.join(workerDir, STATE_FILE)), false, "nothing was published");
+	assert.ok(alive(held.pid), "the unrecorded supervisor is running");
+	return held;
+}
+
+test("a supervisor whose starter died before publishing ends itself; a later start runs exactly one server", async (t) => {
+	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
+	const project = fakeProject({ cli: withBrowser(pidFile, { polite: true }) });
+	const workerDir = tempDir("browser-server-worker-");
+	const held = await killStarterBeforePublish(t, project, workerDir);
+	const browser = browserPid(t, pidFile);
+	const [server] = descendants(held.pid);
+	assert.ok(await eventually(() => !alive(held.pid) && !alive(server.pid) && !alive(browser), 1_000 + UNRECORDED_GRACE_MS + 10_000), "the unrecorded server outlived its record timeout");
+	assert.match(fs.readFileSync(path.join(workerDir, LOG_FILE), "utf8"), /stopping \(no record named this server/u);
+	assert.ok(await refusesConnections(held.port));
+
+	const result = await cli(["start", "--project", project, "--worker-dir", workerDir]);
+	assert.equal(result.code, 0, result.stderr);
+	const state = JSON.parse(result.stdout);
+	browserPid(t, pidFile);
+	t.after(() => stop({ workerDir }));
+	assert.deepEqual(supervisorsFor(path.join(workerDir, STATE_FILE)).map(({ pid }) => pid), [state.pid]);
+	assert.equal((await stop({ workerDir })).stopped, true);
+	assert.deepEqual(supervisorsFor(path.join(workerDir, STATE_FILE)), []);
+});
+
+test("after a starter dies before publishing, the next start ends the orphan at once, and the run's stop --token does too", async (t) => {
+	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
+	const project = fakeProject({ cli: withBrowser(pidFile, { polite: true }) });
+	const workerDir = tempDir("browser-server-worker-");
+	const stateFile = path.join(workerDir, STATE_FILE);
+
+	const orphan = await killStarterBeforePublish(t, project, workerDir);
+	const orphanBrowser = browserPid(t, pidFile);
+	const result = await cli(["start", "--project", project, "--worker-dir", workerDir]);
+	assert.equal(result.code, 0, result.stderr);
+	assert.match(result.stderr, /ending 1 unrecorded supervisor/u);
+	const state = JSON.parse(result.stdout);
+	browserPid(t, pidFile);
+	t.after(() => stop({ workerDir }));
+	assert.equal(alive(orphan.pid), false);
+	assert.equal(alive(orphanBrowser), false);
+	assert.deepEqual(supervisorsFor(stateFile).map(({ pid }) => pid), [state.pid]);
+	assert.equal((await stop({ workerDir })).stopped, true);
+
+	const token = crypto.randomBytes(16).toString("hex");
+	const second = await killStarterBeforePublish(t, project, workerDir, token);
+	const secondBrowser = browserPid(t, pidFile);
+	assert.match((await stop({ workerDir, token: "f".repeat(32) })).reason, /no browser server recorded/u);
+	assert.ok(alive(second.pid), "stop with another token leaves it alone");
+	assert.deepEqual(await stop({ workerDir, token }), { stopped: true, reason: "ended unrecorded supervisor(s)", orphans: [second.pid] });
+	assert.equal(alive(second.pid), false);
+	assert.equal(alive(secondBrowser), false);
+	assert.deepEqual(supervisorsFor(stateFile), []);
+});
+
+test("following the recipe, a second run that cannot start leaves the first run's server serving", async (t) => {
+	const project = fakeProject({ cli: LISTEN });
+	const workerRoot = tempDir("browser-server-worker-");
+	const scratch = tempDir("browser-server-recipe-");
+	const go = path.join(scratch, "go");
+	// The recipe's lines from gpt-executor.md, with a stand-in worker that waits for `go` and exits 7.
+	const runScript = (name, worker) => {
+		const file = path.join(scratch, name);
+		fs.writeFileSync(file, `scripts=${JSON.stringify(__dirname)}
+worker_root=${JSON.stringify(workerRoot)}
+tree=${JSON.stringify(project)}
+browser_token="$(node "$scripts/vpk-remote-browser-server.js" new-token)" || exit 1
+stop_browser() { node "$scripts/vpk-remote-browser-server.js" stop --worker-dir "$worker_root" --token "$browser_token" >&2; }
+trap stop_browser EXIT
+trap 'exit 129' HUP INT TERM
+node "$scripts/vpk-remote-browser-server.js" start --project "$tree" --worker-dir "$worker_root" --token "$browser_token" >&2 || exit 1
+endpoint="$(node "$scripts/vpk-remote-browser-server.js" endpoint --worker-dir "$worker_root" --token "$browser_token")" || exit 1
+env PW_TEST_CONNECT_WS_ENDPOINT="$endpoint" ${worker}
+status=$?
+exit "$status"
+`);
+		return file;
+	};
+	const run = (file) => {
+		const child = spawn("bash", [file], { stdio: ["ignore", "pipe", "pipe"] });
+		let stderr = "";
+		child.stderr.on("data", (chunk) => { stderr += chunk; });
+		t.after(() => child.kill("SIGKILL"));
+		return { child, done: new Promise((resolve) => child.on("exit", (code) => resolve({ code, stderr }))) };
+	};
+	const first = run(runScript("run-1.sh", `node -e 'const fs = require("node:fs"); fs.writeFileSync(${JSON.stringify(path.join(scratch, "endpoint"))}, process.env.PW_TEST_CONNECT_WS_ENDPOINT); const wait = () => fs.existsSync(${JSON.stringify(go)}) ? process.exit(7) : setTimeout(wait, 50); wait();'`));
+	t.after(() => stop({ workerDir: workerRoot }));
+	assert.ok(await eventually(() => fs.existsSync(path.join(scratch, "endpoint"))), "the first run's worker never started");
+	const state = JSON.parse(fs.readFileSync(path.join(workerRoot, STATE_FILE), "utf8"));
+	assert.equal(fs.readFileSync(path.join(scratch, "endpoint"), "utf8"), state.endpoint);
+
+	const second = await run(runScript("run-2.sh", "true")).done;
+	assert.equal(second.code, 1, second.stderr);
+	assert.match(second.stderr, /already running/u);
+	assert.match(second.stderr, /started by another run \(token mismatch\); not signalled/u);
+	assert.ok(alive(state.pid), "the first run's server was stopped by the second run's trap");
+	assert.equal(await refusesConnections(state.port), false, "the first run's server no longer serves");
+	assert.equal(endpoint({ workerDir: workerRoot }), state.endpoint);
+
+	fs.writeFileSync(go, "");
+	const firstResult = await first.done;
+	assert.equal(firstResult.code, 7, "the run script exits with the worker's status");
+	assert.equal(alive(state.pid), false);
+	assert.ok(await refusesConnections(state.port));
+	assert.deepEqual(supervisorsFor(path.join(workerRoot, STATE_FILE)), []);
+});
+
+// --- Lock -------------------------------------------------------------------------------
+
+const lockRecord = (extra) => JSON.stringify({ pid: process.pid, start: processStart(process.pid), token: crypto.randomBytes(16).toString("hex"), purpose: "start", ...extra });
+const STALE = { start: "Thu Jan  1 00:00:00 1970" };
+
+test("a stale lock is taken over, and released without leftovers", async () => {
+	const workerDir = tempDir("browser-server-lock-");
+	fs.writeFileSync(path.join(workerDir, LOCK_FILE), lockRecord(STALE));
+	const release = await acquireLock(workerDir, { waitMs: 0, purpose: "start" });
+	assert.equal(JSON.parse(fs.readFileSync(path.join(workerDir, LOCK_FILE), "utf8")).purpose, "start");
+	release();
+	assert.deepEqual(fs.readdirSync(workerDir), []);
+});
+
+test("taking over a stale lock never removes a live lock that replaced it", async () => {
+	const workerDir = tempDir("browser-server-lock-");
+	const lockFile = path.join(workerDir, LOCK_FILE);
+	fs.writeFileSync(lockFile, lockRecord(STALE));
+	const live = lockRecord({ purpose: "stop" });
+	// Between seeing the stale lock and removing it, another reclaimer removes it and a third
+	// process takes the lock.
+	await assert.rejects(acquireLock(workerDir, { waitMs: 0, purpose: "start", hooks: { beforeTakeover: () => {
+		fs.rmSync(lockFile);
+		fs.writeFileSync(lockFile, live);
+	} } }), /another stop for .* is in progress/u);
+	assert.equal(fs.readFileSync(lockFile, "utf8"), live);
+	assert.deepEqual(fs.readdirSync(workerDir), [LOCK_FILE]);
+});
+
+test("a takeover in progress elsewhere is waited for a bounded number of attempts; an interrupted one is reported", async () => {
+	const workerDir = tempDir("browser-server-lock-");
+	const lockFile = path.join(workerDir, LOCK_FILE);
+	const stale = lockRecord(STALE);
+	const { token } = JSON.parse(stale);
+	fs.writeFileSync(lockFile, stale);
+	const guard = `${lockFile}.reclaim-${token}`;
+	fs.writeFileSync(guard, lockRecord({}));
+	await assert.rejects(acquireLock(workerDir, { waitMs: 0, purpose: "start" }), /could not take over the stale lock .* in 5 attempts/u);
+	fs.writeFileSync(guard, lockRecord(STALE));
+	await assert.rejects(acquireLock(workerDir, { waitMs: 0, purpose: "start" }), /takeover of the stale lock .* was interrupted/u);
+	assert.equal(fs.readFileSync(lockFile, "utf8"), stale, "the stale lock is left for the operator");
+	// A guard for a lock that is already gone is cleared.
+	fs.rmSync(lockFile);
+	fs.writeFileSync(lockFile, lockRecord(STALE));
+	const release = await acquireLock(workerDir, { waitMs: 0, purpose: "start" });
+	release();
+	assert.deepEqual(fs.readdirSync(workerDir), [path.basename(guard)], "the old guard stays until a reclaimer of its token comes by");
+});
+
+test("an unreadable or malformed lock ends in an error after a bounded wait", async (t) => {
+	const workerDir = tempDir("browser-server-lock-");
+	const lockFile = path.join(workerDir, LOCK_FILE);
+	for (const body of ["not json", "{}", JSON.stringify({ pid: process.pid, start: "x", nonce: "old format" })]) {
+		fs.writeFileSync(lockFile, body);
+		const began = Date.now();
+		await assert.rejects(acquireLock(workerDir, { waitMs: 60_000, purpose: "stop", unreadableWaitMs: 300 }), /cannot be read as a lock \((not JSON|not a lock record)\)/u);
+		const waited = Date.now() - began;
+		assert.ok(waited >= 300 && waited < 5_000, `waited ${waited}ms`);
+		assert.equal(fs.readFileSync(lockFile, "utf8"), body, "left in place");
+	}
+	if (process.getuid?.() !== 0) {
+		fs.writeFileSync(lockFile, lockRecord({}));
+		fs.chmodSync(lockFile, 0o000);
+		t.after(() => fs.chmodSync(lockFile, 0o600));
+		await assert.rejects(acquireLock(workerDir, { waitMs: 0, purpose: "start", unreadableWaitMs: 300 }), /cannot be read as a lock \(EACCES\)/u);
+	}
 });
 
 const repoPlaywright = (() => {

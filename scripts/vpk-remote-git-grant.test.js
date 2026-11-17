@@ -93,7 +93,9 @@ function assertNoForbidden(grant, { common, gitDir }) {
 
 test("parseArgs takes a worktree and an expected branch, or --no-worktree alone", () => {
 	assert.deepEqual(parseArgs(["--worktree", "w", "--branch", "vpk/a-b"]), { worktree: path.resolve("w"), branch: "vpk/a-b" });
+	assert.deepEqual(parseArgs(["--worktree", "w", "--branch", "vpk/a-b", "--repo", "r"]), { worktree: path.resolve("w"), branch: "vpk/a-b", repo: path.resolve("r") });
 	assert.deepEqual(parseArgs(["--no-worktree"]), { noWorktree: true });
+	assert.throws(() => parseArgs(["--no-worktree", "--repo", "r"]), /unknown option --no-worktree/u);
 	assert.throws(() => parseArgs([]), /both required/u);
 	assert.throws(() => parseArgs(["--worktree", "w"]), /both required/u);
 	assert.throws(() => parseArgs(["--no-worktree", "--worktree", "w"]), /unknown option --no-worktree/u);
@@ -195,6 +197,107 @@ test("a branch whose ref directory is missing gets no grant", (t) => {
 	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /refs\/heads\/vpk does not exist/u);
 });
 
+test("a symlinked objects directory gets no grant", (t) => {
+	const tree = fixture(t);
+	fs.renameSync(path.join(tree.common, "objects"), path.join(tree.common, "objects-real"));
+	fs.symlinkSync(path.join(tree.common, "objects-real"), path.join(tree.common, "objects"));
+	const result = buildGrant({ worktree: tree.worktree, branch: BRANCH });
+	assert.equal(result.grant, NO_GRANT);
+	assert.match(result.reason, /\/objects is a symlink/u);
+});
+
+test("a symlinked parent of the branch's ref gets no grant", (t) => {
+	const tree = fixture(t);
+	const heads = path.join(tree.common, "refs", "heads");
+	fs.renameSync(path.join(heads, "vpk"), path.join(heads, "vpk-real"));
+	fs.symlinkSync(path.join(heads, "vpk-real"), path.join(heads, "vpk"));
+	assert.equal(git(tree.worktree, "symbolic-ref", "HEAD"), `refs/heads/${BRANCH}`);
+	const result = buildGrant({ worktree: tree.worktree, branch: BRANCH });
+	assert.equal(result.grant, NO_GRANT);
+	assert.match(result.reason, /refs\/heads\/vpk is a symlink/u);
+});
+
+test("granted files of the wrong type, or symlinked, get no grant", (t) => {
+	const tree = fixture(t);
+	const index = fs.readFileSync(path.join(tree.gitDir, "index"));
+	fs.rmSync(path.join(tree.gitDir, "index"));
+	fs.mkdirSync(path.join(tree.gitDir, "index"));
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /\/index is not a regular file/u);
+	fs.rmSync(path.join(tree.gitDir, "index"), { recursive: true });
+	fs.writeFileSync(path.join(tree.gitDir, "index"), index);
+	fs.symlinkSync(path.join(tree.common, "config"), path.join(tree.gitDir, "COMMIT_EDITMSG"));
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /COMMIT_EDITMSG is a symlink/u);
+	fs.rmSync(path.join(tree.gitDir, "COMMIT_EDITMSG"));
+	fs.mkdirSync(path.join(tree.common, "packed-refs.lock"));
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /packed-refs\.lock is not a regular file/u);
+	fs.rmSync(path.join(tree.common, "packed-refs.lock"), { recursive: true });
+	assert.equal(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, null, "a missing COMMIT_EDITMSG or lock is allowed");
+});
+
+test("a missing index, reflog or loose branch ref gets no grant, since a missing entry opens as a directory", (t) => {
+	const tree = fixture(t);
+	const missing = [
+		[path.join(tree.gitDir, "index"), /\/index does not exist \(a missing entry would open as a directory\)/u],
+		[path.join(tree.gitDir, "logs", "HEAD"), /logs\/HEAD does not exist/u],
+		[path.join(tree.common, "logs", "refs", "heads", "vpk", "test-grant"), /logs\/refs\/heads\/vpk\/test-grant does not exist/u],
+	];
+	for (const [file, reason] of missing) {
+		const saved = fs.readFileSync(file);
+		fs.rmSync(file);
+		assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, reason);
+		fs.writeFileSync(file, saved);
+	}
+	git(tree.repo, "pack-refs", "--all");
+	assert.equal(fs.existsSync(path.join(tree.common, "refs", "heads", "vpk", "test-grant")), false);
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /refs\/heads\/vpk(\/test-grant)? does not exist/u, "a packed branch ref gets no grant");
+});
+
+test("worktree back-links that disagree get no grant", (t) => {
+	const tree = fixture(t);
+	const other = path.join(path.dirname(tree.worktree), "wt two");
+	git(tree.repo, "worktree", "add", "-q", "-b", "vpk/other", other, "main");
+	const otherGitDir = path.join(tree.common, "worktrees", "wt-two");
+	const gitdirFile = path.join(tree.gitDir, "gitdir");
+	const original = fs.readFileSync(gitdirFile, "utf8");
+
+	// This git directory's gitdir names another worktree's .git file.
+	fs.writeFileSync(gitdirFile, `${other}/.git\n`);
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /gitdir names .*wt two\/\.git, not .*wt one\/\.git/u);
+	fs.writeFileSync(gitdirFile, original);
+
+	// The worktree's .git file names another valid worktree's git directory, whose HEAD was edited onto the task branch.
+	fs.writeFileSync(path.join(otherGitDir, "HEAD"), `ref: refs/heads/${BRANCH}\n`);
+	fs.writeFileSync(path.join(tree.worktree, ".git"), `gitdir: ${otherGitDir}\n`);
+	const swapped = buildGrant({ worktree: tree.worktree, branch: BRANCH });
+	assert.equal(swapped.grant, NO_GRANT);
+	assert.match(swapped.reason, /wt-two\/gitdir names .*wt two\/\.git, not .*wt one\/\.git/u);
+	fs.writeFileSync(path.join(tree.worktree, ".git"), `gitdir: ${tree.gitDir}\n`);
+
+	// commondir names a copy of the common directory.
+	const copy = path.join(path.dirname(tree.repo), "copy.git");
+	fs.cpSync(tree.common, copy, { recursive: true });
+	fs.writeFileSync(path.join(tree.gitDir, "commondir"), `${copy}\n`);
+	assert.equal(buildGrant({ worktree: tree.worktree, branch: BRANCH }).grant, NO_GRANT);
+	fs.writeFileSync(path.join(tree.gitDir, "commondir"), "../..\n");
+
+	// A .git that is a symlink to the real link file.
+	fs.renameSync(path.join(tree.worktree, ".git"), path.join(tree.worktree, "git-link"));
+	fs.symlinkSync(path.join(tree.worktree, "git-link"), path.join(tree.worktree, ".git"));
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH }).reason, /\.git is not a regular file/u);
+});
+
+test("a pinned repository other than the worktree's gets no grant", (t) => {
+	const tree = fixture(t);
+	assert.equal(buildGrant({ worktree: tree.worktree, branch: BRANCH, repo: tree.repo }).reason, null);
+	assert.equal(buildGrant({ worktree: tree.worktree, branch: BRANCH, repo: tree.common }).reason, null);
+	const elsewhere = fixture(t, "another repo");
+	const result = buildGrant({ worktree: tree.worktree, branch: BRANCH, repo: elsewhere.repo });
+	assert.equal(result.grant, NO_GRANT);
+	assert.match(result.reason, /not the pinned repository/u);
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH, repo: tree.worktree }).reason, /not the pinned repository/u);
+	assert.match(buildGrant({ worktree: tree.worktree, branch: BRANCH, repo: path.join(tree.repo, "missing") }).reason, /does not exist/u);
+});
+
 test("--no-worktree always yields no grant", () => {
 	assert.deepEqual(buildGrant({ noWorktree: true }), { grant: NO_GRANT, reason: "--no-worktree: the checkout's own .git stays protected" });
 });
@@ -209,10 +312,12 @@ test("no grant ever names the common directory, logs, refs, config or hooks", (t
 test("the CLI prints only the grant on stdout, with the reason on stderr", (t) => {
 	const tree = fixture(t);
 	const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: "utf8" });
-	const granted = run("--worktree", tree.worktree, "--branch", BRANCH);
+	const granted = run("--worktree", tree.worktree, "--branch", BRANCH, "--repo", tree.repo);
 	assert.equal(granted.status, 0);
 	assert.deepEqual(Object.keys(parseInlineTable(granted.stdout.trimEnd())), expectedPaths(tree));
 	assert.match(granted.stderr, /commits to refs\/heads\/vpk\/test-grant/u);
+	const pinnedElsewhere = run("--worktree", tree.worktree, "--branch", BRANCH, "--repo", tree.worktree);
+	assert.deepEqual([pinnedElsewhere.status, pinnedElsewhere.stdout], [0, "{}\n"]);
 	const wrong = run("--worktree", tree.worktree, "--branch", "vpk/other");
 	assert.deepEqual([wrong.status, wrong.stdout], [0, "{}\n"]);
 	assert.match(wrong.stderr, /no git writes: HEAD is on/u);

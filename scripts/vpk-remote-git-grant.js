@@ -4,17 +4,21 @@
 // `permissions.vpk-worker.filesystem` that lets `git add` and `git commit` move the task
 // branch in a linked worktree, and nothing else.
 //
-//   node scripts/vpk-remote-git-grant.js --worktree <dir> --branch <name>
+//   node scripts/vpk-remote-git-grant.js --worktree <dir> --branch <name> [--repo <dir>]
 //   node scripts/vpk-remote-git-grant.js --no-worktree
 //
 // --branch is the expected branch from the task record (task.json), never read from the
-// worktree, so a worker cannot choose which branch a later run may move.
+// worktree, so a worker cannot choose which branch a later run may move. --repo pins the
+// repository: the main checkout or its common git directory; any other repository yields `{}`.
 //
 // Stdout is the grant and nothing else: an inline TOML table, or `{}` (no git writes). It
 // fails closed: `{}` with the reason on stderr, exit 0, whenever anything is off (not a
 // linked worktree, HEAD detached or on another branch, a branch name outside BRANCH_PATTERN,
-// a failed git query, a missing ref directory, or a path that cannot be serialised safely).
-// --no-worktree always yields `{}`. A usage error prints `{}` too, and exits 2.
+// a failed git query, worktree back-links that disagree, another repository than --repo, a
+// granted path or one of its parents that is a symlink or of the wrong type, a missing
+// parent directory, a missing index, reflog or loose branch ref, or a path that cannot be
+// serialised safely). --no-worktree always yields
+// `{}`. A usage error prints `{}` too, and exits 2.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -28,21 +32,21 @@ const BRANCH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-
 const MAX_BRANCH_LENGTH = 200;
 // Characters codex may read as glob syntax in a filesystem entry, and the backslash.
 const UNSAFE_PATH_CHARS = /[*?[\]{}\\]/u;
-const USAGE = "usage: vpk-remote-git-grant.js --worktree <dir> --branch <name>\n       vpk-remote-git-grant.js --no-worktree";
+const USAGE = "usage: vpk-remote-git-grant.js --worktree <dir> --branch <name> [--repo <dir>]\n       vpk-remote-git-grant.js --no-worktree";
 
 function parseArgs(argv) {
 	if (argv.length === 1 && argv[0] === "--no-worktree") return { noWorktree: true };
 	const options = {};
 	for (let index = 0; index < argv.length; index += 2) {
 		const [flag, value] = [argv[index], argv[index + 1]];
-		const key = { "--worktree": "worktree", "--branch": "branch" }[flag];
+		const key = { "--worktree": "worktree", "--branch": "branch", "--repo": "repo" }[flag];
 		if (!key) throw new Error(`unknown option ${flag}`);
 		if (value === undefined || value === "" || value.startsWith("--")) throw new Error(`${flag} needs a value`);
 		if (key in options) throw new Error(`${flag} given twice`);
 		options[key] = value;
 	}
 	if (!options.worktree || !options.branch) throw new Error("--worktree and --branch are both required, or --no-worktree alone");
-	return { worktree: path.resolve(options.worktree), branch: options.branch };
+	return { worktree: path.resolve(options.worktree), branch: options.branch, ...(options.repo ? { repo: path.resolve(options.repo) } : {}) };
 }
 
 function isSafeBranch(branch) {
@@ -76,22 +80,87 @@ function serialiseGrant(paths) {
 
 // What `git add` and `git commit` on the task branch write, found by running them under the
 // profile with codex-cli 0.166.0 and git 2.53. HEAD itself stays read-only: a commit takes
-// HEAD.lock to log the update but never renames it over HEAD.
-function grantPaths({ gitDir, commonDir, branch }) {
-	const ref = path.join(commonDir, "refs", "heads", ...branch.split("/"));
+// HEAD.lock to log the update but never renames it over HEAD. Each entry is a base (the
+// worktree's git directory or the common one), the components below it, what the last
+// component must be when it exists, and whether it must exist.
+//
+// codex 0.166.0 opens an entry that is a file at launch as that file only, but an entry that
+// does not exist as a whole subtree: the worker can make a directory there and write under it.
+// So the entries that matter must exist: the index, HEAD's reflog, and the branch's loose ref
+// and reflog (a missing ref would let the worker create refs under refs/heads/<branch>/). The
+// lock files cannot exist at launch, and COMMIT_EDITMSG is missing before a worktree's first
+// commit; git reads nothing beneath any of them.
+function grantEntries({ gitDir, commonDir, branch }) {
+	const branchParts = branch.split("/");
+	const leaf = branchParts.at(-1);
+	const parents = branchParts.slice(0, -1);
+	const file = (base, ...parts) => ({ base, parts, type: "file", mustExist: false });
+	const existingFile = (base, ...parts) => ({ base, parts, type: "file", mustExist: true });
 	return [
-		path.join(gitDir, "index"),
-		path.join(gitDir, "index.lock"),
-		path.join(gitDir, "HEAD.lock"),
-		path.join(gitDir, "AUTO_MERGE.lock"),
-		path.join(gitDir, "COMMIT_EDITMSG"),
-		path.join(gitDir, "logs", "HEAD"),
-		path.join(commonDir, "objects"),
-		ref,
-		`${ref}.lock`,
-		path.join(commonDir, "logs", "refs", "heads", ...branch.split("/")),
-		path.join(commonDir, "packed-refs.lock"),
+		existingFile(gitDir, "index"),
+		file(gitDir, "index.lock"),
+		file(gitDir, "HEAD.lock"),
+		file(gitDir, "AUTO_MERGE.lock"),
+		file(gitDir, "COMMIT_EDITMSG"),
+		existingFile(gitDir, "logs", "HEAD"),
+		{ base: commonDir, parts: ["objects"], type: "directory", mustExist: true },
+		existingFile(commonDir, "refs", "heads", ...parents, leaf),
+		file(commonDir, "refs", "heads", ...parents, `${leaf}.lock`),
+		existingFile(commonDir, "logs", "refs", "heads", ...parents, leaf),
+		file(commonDir, "packed-refs.lock"),
 	];
+}
+
+const entryPath = ({ base, parts }) => path.join(base, ...parts);
+
+// Null when every component of the entry below its base is what it should be: a real
+// directory for each parent (which must exist, since git cannot create one under a file
+// grant), and a real file or directory of the expected type for the last component, which
+// may be missing only when the entry allows it. lstat never follows a symlink, so a symlink
+// anywhere fails.
+function entryProblem({ base, parts, type, mustExist }) {
+	for (let index = 0; index < parts.length; index += 1) {
+		const current = path.join(base, ...parts.slice(0, index + 1));
+		const stat = fs.lstatSync(current, { throwIfNoEntry: false });
+		const last = index === parts.length - 1;
+		if (!stat) return last && !mustExist ? null : `${current} does not exist${last ? " (a missing entry would open as a directory)" : ""}`;
+		if (stat.isSymbolicLink()) return `${current} is a symlink`;
+		const want = last ? type : "directory";
+		if (want === "directory" ? !stat.isDirectory() : !stat.isFile()) return `${current} is not a ${want === "file" ? "regular file" : "directory"}`;
+	}
+	return null;
+}
+
+// The contents of a regular file (never a symlink), trimmed; throws otherwise.
+function readPlainFile(file) {
+	const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+	if (!stat?.isFile()) throw new Error(`${file} is not a regular file`);
+	return fs.readFileSync(file, "utf8").trim();
+}
+
+// The worktree's links must agree both ways: its `.git` file names this git directory, the
+// git directory's `gitdir` names this `.git` file, and its `commondir` names the common
+// directory git reported. Relative values are resolved as git does.
+function backLinkProblem({ top, gitDir, commonDir }) {
+	try {
+		const dotGit = path.join(top, ".git");
+		const match = /^gitdir: (.+)$/u.exec(readPlainFile(dotGit));
+		if (!match) return `${dotGit} is not a gitdir link`;
+		if (realpath(path.resolve(top, match[1])) !== gitDir) return `${dotGit} names ${match[1]}, not ${gitDir}`;
+		const gitdirLink = readPlainFile(path.join(gitDir, "gitdir"));
+		if (realpath(path.resolve(gitDir, gitdirLink)) !== dotGit) return `${path.join(gitDir, "gitdir")} names ${gitdirLink}, not ${dotGit}`;
+		const commondirLink = readPlainFile(path.join(gitDir, "commondir"));
+		if (realpath(path.resolve(gitDir, commondirLink)) !== commonDir) return `${path.join(gitDir, "commondir")} names ${commondirLink}, not ${commonDir}`;
+	} catch (error) {
+		return `cannot check the worktree's back-links: ${error.message}`;
+	}
+	return null;
+}
+
+// The common git directory --repo names: <repo>/.git for a main checkout, else <repo>.
+function pinnedCommonDir(repo) {
+	const dotGit = path.join(repo, ".git");
+	return fs.lstatSync(dotGit, { throwIfNoEntry: false })?.isDirectory() ? realpath(dotGit) : realpath(repo);
 }
 
 // Paths a grant must never name, whatever the inputs.
@@ -120,7 +189,7 @@ const realpath = (value) => fs.realpathSync.native(value);
 const none = (reason) => ({ grant: NO_GRANT, reason });
 
 // Returns { grant, reason } where reason is null only for a real grant.
-function buildGrant({ worktree, branch, noWorktree }, { git = runGit } = {}) {
+function buildGrant({ worktree, branch, repo, noWorktree }, { git = runGit } = {}) {
 	if (noWorktree) return none("--no-worktree: the checkout's own .git stays protected");
 	if (!isSafeBranch(branch)) return none(`branch ${JSON.stringify(branch)} is outside the allowed character set`);
 	let top;
@@ -149,13 +218,23 @@ function buildGrant({ worktree, branch, noWorktree }, { git = runGit } = {}) {
 	if (head.status !== 0) return none(`git symbolic-ref failed: ${head.stderr}`);
 	const ref = head.stdout.trim();
 	if (ref !== `refs/heads/${branch}`) return none(`HEAD is on ${ref}, expected refs/heads/${branch}`);
-	const paths = grantPaths({ gitDir, commonDir, branch });
-	// The grant opens files, not directories: git cannot create a missing ref or log
-	// directory under it, so a commit would fail halfway.
-	const branchParts = branch.split("/").slice(0, -1);
-	for (const directory of [path.join(gitDir, "logs"), path.join(commonDir, "refs", "heads", ...branchParts), path.join(commonDir, "logs", "refs", "heads", ...branchParts)]) {
-		if (!fs.statSync(directory, { throwIfNoEntry: false })?.isDirectory()) return none(`${directory} does not exist`);
+	if (repo !== undefined) {
+		let pinned;
+		try {
+			pinned = pinnedCommonDir(repo);
+		} catch {
+			return none(`--repo ${repo} does not exist`);
+		}
+		if (pinned !== commonDir) return none(`${top} belongs to ${commonDir}, not the pinned repository ${pinned}`);
 	}
+	const backLink = backLinkProblem({ top, gitDir, commonDir });
+	if (backLink !== null) return none(backLink);
+	const entries = grantEntries({ gitDir, commonDir, branch });
+	for (const entry of entries) {
+		const problem = entryProblem(entry);
+		if (problem !== null) return none(problem);
+	}
+	const paths = entries.map(entryPath);
 	const unsafe = paths.find((entry) => !isSerialisablePath(entry));
 	if (unsafe !== undefined) return none(`cannot serialise ${JSON.stringify(unsafe)} safely`);
 	const forbidden = forbiddenPaths(commonDir);
