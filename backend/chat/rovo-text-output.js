@@ -25,24 +25,65 @@ const PARTIAL_HIDDEN_FENCE_OPENER = /`{1,3}$|```(?:s|sp|spe|i|im|ima|imag|a|au|a
 /** The start of a fence the splitters hide, as their pending patterns read an opener. */
 const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audio)\s*\n)/iu;
 
+/** Backticks, or the start of a spec opener, at the end of text: they may still open a spec fence. */
+const SPEC_OPENER_TAIL = /```(?:s|sp|spe|spec[^\S\n]*)?$/iu;
+
+/**
+ * Whether `text` opens a hidden fence, or is all a partial opener of one. A longer run of backticks
+ * counts by its last three, as the splitters find an opener inside it.
+ */
+const isHiddenOpenerStart = (text) => {
+	const opener = text.replace(/^`+(?=```)/u, "");
+	return HIDDEN_FENCE_OPENER_START.test(opener) || opener.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] === opener;
+};
+
 const firstLine = (text) => text.split("\n", 1)[0];
 const lastLine = (text) => text.slice(text.lastIndexOf("\n") + 1);
 
 /**
- * Where, in a patch line, backticks start right after its whole JSON object ends (`line.length`
- * when none do): a fence opener that follows the patch on its line. Backticks inside a JSON string
- * leave the object unfinished, so they stay part of the patch.
+ * Where the JSON object that opens `line` ends, found in one scan that skips strings and their
+ * escapes and counts nesting (-1 when it does not end). It finds the end only; JSON.parse checks it.
  */
-function backticksAfterJsonObject(line) {
-	for (let at = line.indexOf("```"); at >= 0; at = line.indexOf("```", at + 1)) {
-		try {
-			JSON.parse(line.slice(0, at));
-			return at;
-		} catch {
-			// Not the end of the object yet.
+function jsonObjectEnd(line) {
+	let depth = 0;
+	let inString = false;
+	for (let at = line.indexOf("{"); at >= 0 && at < line.length; at += 1) {
+		const char = line[at];
+		if (inString) {
+			if (char === "\\") {
+				at += 1;
+			} else if (char === '"') {
+				inString = false;
+			}
+		} else if (char === '"') {
+			inString = true;
+		} else if (char === "{" || char === "[") {
+			depth += 1;
+		} else if ((char === "}" || char === "]") && --depth === 0) {
+			return at + 1;
 		}
 	}
-	return line.length;
+	return -1;
+}
+
+/**
+ * Where, in a patch line, backticks start right after its whole JSON object ends (`line.length`
+ * when none do): a fence opener that follows the patch on its line, after JSON whitespace. Backticks
+ * inside a JSON string leave the object unfinished, so they stay part of the patch. Work is linear
+ * in the line: one scan and at most one parse.
+ */
+function backticksAfterJsonObject(line) {
+	const end = jsonObjectEnd(line);
+	const at = end < 0 ? -1 : end + /^[ \t\r]*/u.exec(line.slice(end))[0].length;
+	if (at < 0 || !line.startsWith("```", at)) {
+		return line.length;
+	}
+	try {
+		JSON.parse(line.slice(0, at));
+		return at;
+	} catch {
+		return line.length;
+	}
 }
 
 /** Whether `raw`, past its leading newlines, opens with a fence that its split `visible` hides. */
@@ -92,6 +133,10 @@ function createRovoTextOutputController({
 	// after it; everything before it was split and went out, so work per delta stays bounded by it.
 	let heldText = "";
 	let heldKind = "";
+	// How much of a held patch line came with the delta that started it, and whether the text being
+	// split continues that line. Each delta split alone dropped that start whole, backticks included.
+	let patchStartLength = 0;
+	let continuesHeldPatch = false;
 	// The newlines that end the text the splitters let through, and whether a hidden fence stands
 	// just before them. A fence's paragraph break joins them as it would in one chunk.
 	let streamedNewlineRun = 0;
@@ -171,13 +216,15 @@ function createRovoTextOutputController({
 
 	/**
 	 * Held text split into what may be shown and what an open spec or media fence, or a partial patch
-	 * line, still holds back. `holdsFence` says an open fence is among what is held back.
+	 * line, still holds back. `holdsFence` says an open fence is among what is held back,
+	 * `holdsMediaFence` that only an open media fence is.
 	 */
 	const splitHeldAssistantText = (text) => {
 		const spec = splitSpecFenceTextForStreaming(text);
 		const media = splitDirectMediaTextForStreaming(spec.visibleText);
 		return {
 			holdsFence: Boolean(media.pendingText) || spec.pendingText.startsWith("```"),
+			holdsMediaFence: Boolean(media.pendingText) && !spec.pendingText,
 			pendingText: `${media.pendingText}${spec.pendingText}`,
 			visibleText: media.visibleText,
 		};
@@ -282,14 +329,14 @@ function createRovoTextOutputController({
 	 * start of a hidden fence (or leave a partial opener) go out as written and `text` is split on its
 	 * own, so they change nothing the splitters hide in it, as when each delta was split alone. A held
 	 * patch line that `text` continues stays held until its line ends, and is then dropped with the
-	 * rest of its line, up to backticks right after its JSON object, which are split as the start of a
-	 * fence; one that `text` turns into an ordinary line is dropped and `text` split on its own, as
-	 * when each delta was.
+	 * rest of its line, up to backticks right after its JSON object that came after the line's first
+	 * delta or open a hidden fence, which are split as the start of a fence; one that `text` turns into
+	 * an ordinary line is dropped and `text` split on its own, as when each delta was.
 	 */
 	const continueHeldText = (text) => {
 		if (heldKind === "opener") {
 			const joined = `${heldText}${text}`;
-			if (HIDDEN_FENCE_OPENER_START.test(joined) || joined.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] === joined) {
+			if (isHiddenOpenerStart(joined)) {
 				return joined;
 			}
 			writeSplitText(heldText, { atFenceEnd: false, atFenceStart: false });
@@ -300,13 +347,19 @@ function createRovoTextOutputController({
 		}
 		const lineEnd = text.indexOf("\n");
 		const line = `${heldText}${lineEnd >= 0 ? text.slice(0, lineEnd) : text}`;
-		const fenceStart = backticksAfterJsonObject(line);
+		const jsonFenceStart = backticksAfterJsonObject(line);
+		// Backticks that came with the line's start were dropped with it, unless they open a hidden fence.
+		const opensHiddenFence = HIDDEN_FENCE_OPENER_START.test(`${line.slice(jsonFenceStart)}${lineEnd >= 0 ? text.slice(lineEnd) : ""}`);
+		const fenceStart = jsonFenceStart >= patchStartLength || opensHiddenFence ? jsonFenceStart : line.length;
 		const patchLine = line.slice(0, fenceStart);
 		if (splitSpecFenceTextForStreaming(patchLine).pendingText !== patchLine) {
 			return text;
 		}
-		const lineRest = `${line.slice(fenceStart)}${lineEnd >= 0 ? text.slice(lineEnd) : ""}`;
-		return lineEnd >= 0 || fenceStart < line.length ? lineRest : line;
+		if (lineEnd < 0 && fenceStart === line.length) {
+			continuesHeldPatch = true;
+			return line;
+		}
+		return `${line.slice(fenceStart)}${lineEnd >= 0 ? text.slice(lineEnd) : ""}`;
 	};
 
 	/**
@@ -315,8 +368,20 @@ function createRovoTextOutputController({
 	 * `text`, the end the splitters hold back starts (`text.length` when none is).
 	 */
 	const splitAndWriteText = (text, { final }) => {
-		const split = splitHeldAssistantText(text);
-		const offset = findWithheldOffset(text, split);
+		let split = splitHeldAssistantText(text);
+		let splitText = text;
+		// Spec fences are split before media fences, so backticks at the end that close a media fence
+		// may still open a spec fence inside it, which leaves the media fence open: it stays held.
+		const specOpenerTail = final || split.pendingText ? "" : (SPEC_OPENER_TAIL.exec(text)?.[0] ?? "");
+		if (specOpenerTail) {
+			const head = text.slice(0, -specOpenerTail.length);
+			const headSplit = splitHeldAssistantText(head);
+			if (headSplit.holdsMediaFence) {
+				split = headSplit;
+				splitText = head;
+			}
+		}
+		const offset = findWithheldOffset(splitText, split);
 		const opener = final || split.pendingText ? "" : (split.visibleText.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] ?? "");
 		writeSplitText(split.visibleText.slice(0, split.visibleText.length - opener.length), {
 			atFenceStart: startsWithHiddenFence(text, split.visibleText),
@@ -330,10 +395,14 @@ function createRovoTextOutputController({
 			// splitters dropped may still end in an open fence.
 			heldText = text.slice(offset);
 			heldKind = split.holdsFence ? "fence" : "patch";
+			if (!continuesHeldPatch) {
+				patchStartLength = heldText.length;
+			}
 		} else {
 			heldText = opener;
 			heldKind = opener ? "opener" : "";
 		}
+		continuesHeldPatch = false;
 		return offset;
 	};
 
@@ -402,10 +471,9 @@ function createRovoTextOutputController({
 		assistantText += delta;
 		bufferedAssistantText += delta;
 
-		// Inside an open fence nothing is shown, so a classifier payload cannot start there. After a
-		// partial patch line or a held opener one can, as it could when each delta was split alone.
+		// Held as a possible classifier payload as when each delta was split alone, whatever is held
+		// before it: an open fence, a partial patch line or an opener.
 		if (
-			heldKind !== "fence" &&
 			isClassifierIntentLeakCandidate(bufferedAssistantText) &&
 			(bufferedAssistantText.length <= classifierJsonBufferMaxChars ||
 				parseClassifierIntentPayload(bufferedAssistantText))
@@ -515,10 +583,12 @@ function createRovoTextOutputController({
 	 * (`continuesShownText`) starts its first shown text as a new paragraph.
 	 */
 	const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
-		// Held backticks that opened no hidden fence are ordinary text, shown as the attempt streamed
-		// it. Anything else held is dropped with the attempt: an open fence or patch line, or a partial
-		// hidden opener ("```sp", "```image") that the dropped attempt can no longer complete.
-		if (heldKind === "opener" && /^`+$/u.test(heldText)) {
+		// Held text that opened no hidden fence is ordinary text, shown as the attempt streamed it:
+		// backticks alone, or an opener the text held after it as a possible classifier payload has
+		// already disproved. Anything else held is dropped with the attempt: an open fence or patch
+		// line, or a partial hidden opener ("```sp", "```image") the dropped attempt can no longer
+		// complete.
+		if (heldKind === "opener" && (/^`+$/u.test(heldText) || (bufferedAssistantText && !isHiddenOpenerStart(`${heldText}${bufferedAssistantText}`)))) {
 			writeSplitText(heldText, { atFenceEnd: false, atFenceStart: false });
 		}
 		heldText = "";

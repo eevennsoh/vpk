@@ -88,10 +88,11 @@ test("createRovoTextOutputController can replay suppressed card-first text", () 
 });
 
 test("createRovoTextOutputController holds complete spec and direct media fences", () => {
-	// The splitters stand a completed fence in for a paragraph break.
-	for (const [name, fence, before, after] of [
-		["spec", "```spec\n{\"type\":\"card\"}\n```", "Before ", " After"],
-		["media", "```image\nsunset\n```", "Intro ", " Outro"],
+	// The splitters stand a completed fence in for a paragraph break. A media fence whose closing
+	// backticks end a delta stays held until the next one, which may still open a spec fence with them.
+	for (const [name, fence, before, after, deltas] of [
+		["spec", "```spec\n{\"type\":\"card\"}\n```", "Before ", " After", ["Before ", "\n\n", " After"]],
+		["media", "```image\nsunset\n```", "Intro ", " Outro", ["Intro ", "\n\n Outro"]],
 	]) {
 		const { controller, parts } = createTextOutputController({
 			isClassifierIntentLeakCandidate: () => false,
@@ -106,9 +107,7 @@ test("createRovoTextOutputController holds complete spec and direct media fences
 
 		assert.deepEqual(parts, [
 			{ type: "text-start", id: "text-test" },
-			{ type: "text-delta", id: "text-test", delta: before },
-			{ type: "text-delta", id: "text-test", delta: "\n\n" },
-			{ type: "text-delta", id: "text-test", delta: after },
+			...deltas.map((delta) => ({ type: "text-delta", id: "text-test", delta })),
 		], name);
 		assert.equal(controller.getAssistantText(), `${before}${fence}${after}`, name);
 	}

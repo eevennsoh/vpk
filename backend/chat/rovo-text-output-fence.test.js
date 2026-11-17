@@ -368,13 +368,14 @@ test("held backticks do not change what a delta's patch filtering hides", () => 
  * The wire text `36f992247` wrote for a reply with no hidden fence, patch lines included: text that
  * may be a classifier payload held until it is not one (or passes 320 characters), and each released
  * delta split on its own. The one change: a patch line split across deltas stays hidden to its line
- * end, or to backticks right after its JSON object, where 36f992247 dropped its start and showed the
- * rest.
+ * end, or to backticks right after its JSON object that came after the delta that started the line,
+ * where 36f992247 dropped that delta's part of the line and showed the rest.
  */
 function baseWireWithPatchLines(chunks) {
 	let wire = "";
 	let buffer = "";
 	let patchLine = "";
+	let patchStartLength = 0;
 	const release = () => {
 		let text = buffer;
 		buffer = "";
@@ -383,7 +384,7 @@ function baseWireWithPatchLines(chunks) {
 			const line = `${patchLine}${lineEnd < 0 ? text : text.slice(0, lineEnd)}`;
 			const fenceStart = [...line.matchAll(/```/gu)].find(({ index }) => {
 				try {
-					return typeof JSON.parse(line.slice(0, index)) === "object";
+					return index >= patchStartLength && typeof JSON.parse(line.slice(0, index)) === "object";
 				} catch {
 					return false;
 				}
@@ -397,6 +398,7 @@ function baseWireWithPatchLines(chunks) {
 		const spec = splitSpecFenceTextForStreaming(text);
 		wire += splitDirectMediaTextForStreaming(spec.visibleText).visibleText;
 		patchLine = spec.pendingText;
+		patchStartLength = patchLine.length;
 	};
 	for (const chunk of chunks) {
 		buffer += chunk;
@@ -475,4 +477,85 @@ test("a fence opener after the rest of a split patch line keeps its fence", () =
 	assert.equal(openNoticed.unsuppressed, `A\n${start}${rest}\n\nN`);
 	// Backticks inside a JSON string are part of the patch line, which stays hidden to its line end.
 	assertStream("backticks in a value", [`A\n${start}`, `,"value":"${T}js x"}\nB`], "A\n\nB");
+});
+
+test("finding where a split patch line's JSON object ends parses it at most once per delta", () => {
+	// Before: JSON.parse ran on a growing prefix at every backtick run: 501,500 parses for 1000 deltas.
+	const start = '{"op":"add","path":"/root"';
+	const chunks = [`A\n${start}`, ',"value":"', ...Array.from({ length: 1000 }, () => `x${T}`), '"}\nB'];
+	let parses = 0;
+	const parse = JSON.parse;
+	JSON.parse = (...args) => {
+		parses += 1;
+		return parse(...args);
+	};
+	let result;
+	try {
+		result = streamChunks(chunks);
+	} finally {
+		JSON.parse = parse;
+	}
+	assert.ok(parses <= chunks.length, `${parses} parses for ${chunks.length} deltas`);
+	assert.equal(result.wire, "A\n\nB");
+	assert.equal(result.stored, chunks.join(""));
+});
+
+test("a rerun writes a held opener that the text held after it already disproved", () => {
+	// "```a" was held as a possible "```audio"; the classifier candidate after it, held too, makes it
+	// ordinary text. Before: the reset dropped it: wire "A\n\nB".
+	const parts = [];
+	const controller = createRovoTextOutputController({
+		classifierJsonBufferMaxChars: 320,
+		isClassifierIntentLeakCandidate,
+		parseClassifierIntentPayload,
+		splitDirectMediaTextForStreaming,
+		splitSpecFenceTextForStreaming,
+		textId: "text-test",
+		writer: { write: (part) => parts.push(part) },
+	});
+	for (const chunk of [`A${b}`, `${b}${b}a`, '{"intent":"normal"}']) {
+		controller.emitTextDelta(chunk);
+	}
+	controller.resetAssistantTextForRetryAttempt({ continuesShownText: true });
+	controller.emitTextDelta("B");
+	controller.finalizeBufferedAssistantText();
+	assert.equal(parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join(""), `A${T}a\n\nB`);
+	assert.equal(controller.getAssistantText(), "B");
+	assert.equal(controller.getUnsuppressedAssistantText(), "B");
+});
+
+test("a media fence closed by backticks that go on to open a spec fence stays open, as in one chunk", () => {
+	// The splitters remove spec fences first, so "```spec" after a media fence's body leaves that
+	// fence open. Before: the media fence went out as closed and the spec fence's text after it as
+	// text: wire 'A\n\nspec\n{"a":3}\n```\nB'.
+	for (const [middle, end] of [[`sunset${T}`, "spec"], [`sunset${T}S`, "pec"], [`sunset${T}sp`, "ec"]]) {
+		assertStream(middle, [`A\n${T}image\n`, middle, `${end}\n{"a":3}\n${T}\nB`], "A\n");
+	}
+	assertStream("one chunk", [`A\n${T}image\nsunset${T}spec\n{"a":3}\n${T}\nB`], "A\n");
+});
+
+test("a delta that closes a hidden fence is held as a possible classifier payload, as before", () => {
+	// Starting with backticks, it was held until it could not be a payload, so a patch line split
+	// early in it stayed hidden. Before: it went out at once and the patch line's start with it.
+	for (const [fence, cut] of [[`${T}image\nsunset\n`, '{"op":"ad'], [`${T}audio\nhi\n`, '{"op":"add","path":']]) {
+		const rest = '{"op":"add","path":"/root","value":1}'.slice(cut.length);
+		assertStream(cut, [`A\n${fence}`, `${T}\n${cut}`, `${rest}\nB`], "A\n\nB");
+	}
+});
+
+test("backticks held with a patch line's start are dropped with it unless they open a hidden fence", () => {
+	// Each delta split alone dropped them with the line's start. Before: the opener after the JSON
+	// object came out at the end of the stream: wire "A\n```js x".
+	assertStream("end of stream", [`A\n${PATCH_LINE}${T}js x`], "A\n");
+	assertStream("next line", [`A\n${PATCH_LINE}${T}js x`, "\nB"], "A\n\nB");
+	// A hidden fence they open stays hidden.
+	assertStream("media", [`A\n${PATCH_LINE}${T}image`, `\nSECRET\n${T}\nB`], "A\n\nB");
+});
+
+test("a hidden opener after a longer run of backticks split across deltas is hidden, as in one chunk", () => {
+	// The splitters find "```audio" inside "````audio". Before: "``" then "``audio" were each too short
+	// to open it, and the fence went out: wire "A ````audio\nSECRET\n```\nB".
+	for (const chunks of [[`A ${b}${b}`, `${b}${b}audio\nSECRET\n${T}\nB`], [`A ${b}${b}`, `${b}${b}`, `audio\nSECRET\n${T}\nB`]]) {
+		assertStream(JSON.stringify(chunks), chunks, `A ${b}\n\nB`);
+	}
 });
