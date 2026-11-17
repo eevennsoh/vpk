@@ -279,20 +279,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"suggestion-demo-vertical": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoVertical,
-			})),
-		{ ssr: false },
-	),
-	"suggestion-demo-with-icons": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoWithIcons,
-			})),
-		{ ssr: false },
-	),
 	"tool-demo-running": dynamic(
 		() =>
 			import("../../demos/ui-custom/tool-demo").then((mod) => ({

@@ -37,7 +37,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [suggestion](~/.agents/skills/ai-elements/references/suggestion.md) | `@/components/ui-custom/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
+| [suggestion](~/.agents/skills/ai-elements/references/suggestion.md) | `@/components/ui/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
 | [confirmation](~/.agents/skills/ai-elements/references/confirmation.md) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
 | [inline-citation](~/.agents/skills/ai-elements/references/inline-citation.md) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
 | [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui-custom/source` | Source reference list display | `Source` |
@@ -57,7 +57,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [checkpoint](~/.agents/skills/ai-elements/references/checkpoint.md) | `@/components/ui-custom/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
+| [checkpoint](~/.agents/skills/ai-elements/references/checkpoint.md) | `@/components/ui/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
 | [commit](~/.agents/skills/ai-elements/references/commit.md) | `@/components/ui-custom/commit` | Code commit display | `Commit` |
 | [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui-custom/stack-trace` | Error stack trace display | `StackTrace` |
 | [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui-custom/test-result` | Test execution results display | `TestResult` |

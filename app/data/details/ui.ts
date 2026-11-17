@@ -22,6 +22,7 @@ import { CARD_DETAIL } from "./ui/card";
 import { CAROUSEL_DETAIL } from "./ui/carousel";
 import { CHART_DETAIL } from "./ui/chart";
 import { CHECKBOX_DETAIL } from "./ui/checkbox";
+import { CHECKPOINT_DETAIL } from "./ui/checkpoint";
 import { COLLAPSIBLE_DETAIL } from "./ui/collapsible";
 import { COMBOBOX_DETAIL } from "./ui/combobox";
 import { COMMAND_DETAIL } from "./ui/command";
@@ -76,6 +77,7 @@ import { SKELETON_DETAIL } from "./ui/skeleton";
 import { SLIDER_DETAIL } from "./ui/slider";
 import { SONNER_DETAIL } from "./ui/sonner";
 import { SPINNER_DETAIL } from "./ui/spinner";
+import { SUGGESTION_DETAIL } from "./ui/suggestion";
 import { SWITCH_DETAIL } from "./ui/switch";
 import { TABLE_DETAIL } from "./ui/table";
 import { TABS_DETAIL } from "./ui/tabs";
@@ -105,6 +107,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	carousel: CAROUSEL_DETAIL,
 	chart: CHART_DETAIL,
 	checkbox: CHECKBOX_DETAIL,
+	checkpoint: CHECKPOINT_DETAIL,
 	collapsible: COLLAPSIBLE_DETAIL,
 	combobox: COMBOBOX_DETAIL,
 	command: COMMAND_DETAIL,
@@ -159,6 +162,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	slider: SLIDER_DETAIL,
 	sonner: SONNER_DETAIL,
 	spinner: SPINNER_DETAIL,
+	suggestion: SUGGESTION_DETAIL,
 	switch: SWITCH_DETAIL,
 	table: TABLE_DETAIL,
 	tabs: TABS_DETAIL,

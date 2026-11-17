@@ -114,6 +114,7 @@ import ZoomOutIconGlyph from "@atlaskit/icon/core/zoom-out";
 import DiagramSymbolPackageIconGlyph from "@atlaskit/icon-lab/core/diagram-symbol-package";
 import AiBotIconGlyph from "@atlaskit/icon-lab/core/ai-bot";
 import ArrowCurvedDownLeftIconGlyph from "@atlaskit/icon-lab/core/arrow-curved-down-left";
+import ArrowCurvedDownRightIconGlyph from "@atlaskit/icon-lab/core/arrow-curved-down-right";
 import BluetoothIconGlyph from "@atlaskit/icon-lab/core/bluetooth";
 import HistoryIconGlyph from "@atlaskit/icon-lab/core/history";
 import MicrophoneStrikethroughIconGlyph from "@atlaskit/icon-lab/core/microphone-strikethrough";
@@ -289,6 +290,7 @@ export function LoaderIcon(props: Readonly<VpkIconProps>) { return <LoaderCircle
 export function RefreshCwIcon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
 export function Loader2Icon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
 export function CornerDownLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowCurvedDownLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CornerDownRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowCurvedDownRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function AlertTriangleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={WarningIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function AudioWaveformIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AudioWaveformIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function AudioLinesIcon(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }

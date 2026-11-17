@@ -8,7 +8,7 @@ import {
 	Checkpoint,
 	CheckpointIcon,
 	CheckpointTrigger,
-} from "@/components/ui-custom/checkpoint"
+} from "@/components/ui/checkpoint"
 import { CodeBlock } from "@/components/ui-custom/code-block"
 import {
 	Conversation,
