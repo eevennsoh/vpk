@@ -19,7 +19,7 @@ function Trace({ className, ...props }: Readonly<TraceProps>) {
 		<div
 			data-slot="trace"
 			className={cn(
-				"flex w-full min-w-0 flex-col gap-2 *:has-[>[data-slot=trace-line]]:flex *:has-[>[data-slot=trace-line]]:w-fit *:has-[>[data-slot=trace-line]]:max-w-full *:has-[>[data-slot=trace-line]]:min-w-0 *:has-[>[data-slot=trace-line]]:rounded-lg *:has-[>[data-slot=trace-line]]:text-left *:has-[>[data-slot=trace-line]]:outline-none *:has-[>[data-slot=trace-line]]:focus-visible:ring-3 *:has-[>[data-slot=trace-line]]:focus-visible:ring-ring/30",
+				"flex w-full min-w-0 flex-col gap-2 *:has-[>[data-slot=trace-line]]:flex *:has-[>[data-slot=trace-line]]:w-fit *:has-[>[data-slot=trace-line]]:max-w-full *:has-[>[data-slot=trace-line]]:min-w-0 *:has-[>[data-slot=trace-line]]:rounded-lg *:has-[>[data-slot=trace-line]]:text-left *:has-[>[data-slot=trace-line]]:no-underline *:has-[>[data-slot=trace-line]]:outline-none *:has-[>[data-slot=trace-line]]:focus-visible:ring-3 *:has-[>[data-slot=trace-line]]:focus-visible:ring-ring/30",
 				className
 			)}
 			{...props}
@@ -53,7 +53,7 @@ function TraceIcon({ className, ...props }: Readonly<TraceIconProps>) {
 			data-slot="trace-icon"
 			aria-hidden="true"
 			className={cn(
-				"flex size-4 shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [[data-slot=trace-title]~&]:-ml-1",
+				"flex size-4 shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [[data-slot=trace-title]~&]:-ml-1 [[data-slot=trace-title]~&]:[&_[data-slot=icon]]:size-3! [[data-slot=trace-title]~&]:[&_svg]:size-3!",
 				className
 			)}
 			{...props}
@@ -67,7 +67,7 @@ function TraceTitle({ className, ...props }: Readonly<TraceTitleProps>) {
 	return (
 		<span
 			data-slot="trace-title"
-			className={cn("min-w-0 truncate motion-reduce:shimmer-none", className)}
+			className={cn("min-w-0 truncate underline-offset-3 in-[a:hover]:underline motion-reduce:shimmer-none", className)}
 			{...props}
 		/>
 	)
@@ -120,7 +120,7 @@ function TraceCollapsibleTrigger({
 			{...props}
 		>
 			{children}
-			<TraceIcon className="transition-transform duration-medium ease-in-out group-aria-expanded/trace-collapsible-trigger:rotate-90">
+			<TraceIcon className="transition-transform duration-medium ease-in-out group-aria-expanded/trace-collapsible-trigger:rotate-90 [&_[data-slot=icon]]:size-3! [&_svg]:size-3!">
 				<ChevronRightIcon label="" />
 			</TraceIcon>
 		</CollapsibleTrigger>

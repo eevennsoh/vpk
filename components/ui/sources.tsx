@@ -17,6 +17,7 @@ import {
 	type TraceCollapsibleTriggerProps,
 } from "@/components/ui/trace"
 import { ArrowUpRightIcon, GlobeIcon } from "@/components/ui/vpk-icons"
+import { cn } from "@/lib/utils"
 
 export type SourcesProps = TraceCollapsibleProps
 
@@ -59,9 +60,16 @@ function SourcesContent({ children, ...props }: Readonly<SourcesContentProps>) {
 
 export type SourceProps = React.ComponentProps<"a">
 
-function Source({ href, title, children, ...props }: Readonly<SourceProps>) {
+function Source({ href, title, className, children, ...props }: Readonly<SourceProps>) {
 	return (
-		<a data-slot="source" href={href} target="_blank" rel="noreferrer" {...props}>
+		<a
+			data-slot="source"
+			href={href}
+			target="_blank"
+			rel="noreferrer"
+			className={cn("no-underline", className)}
+			{...props}
+		>
 			{children ?? (
 				<TraceLine>
 					<TraceIcon>
