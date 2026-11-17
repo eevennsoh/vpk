@@ -5,6 +5,74 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("viewer session chins show a static stack of session owners", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	const boardRow = card(page, "PAY-107").locator('[data-slot="jira-issue-agent-row"]');
+	await expect(boardRow.getByRole("button", { name: "2 other sessions" })).toBeVisible();
+	await expect(boardRow.locator('[data-slot="avatar"][title="Maya Ferreira"]')).toBeVisible();
+	await expect(boardRow.locator('[data-slot="avatar"][title="Jordan Okafor"]')).toBeVisible();
+	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
+	const playground = page.getByRole("region", { name: "Project butter playground" });
+	for (const [state, count] of [["1 agent, not owner", 1], ["1-n agents, not owner", 2]] as const) {
+		await playground.getByRole("button", { name: state, exact: true }).click();
+		const row = playground.locator('[data-slot="jira-issue-agent-row"]');
+		await expect(row).toBeVisible();
+		await expect(row.getByRole("button", { name: `${count} other ${count === 1 ? "session" : "sessions"}` })).toBeVisible();
+		await expect(row.getByText(/Working|Needs input/)).toHaveCount(0);
+		await expect(row.locator('[data-slot="jira-issue-agent-status-icon"]')).toHaveCount(0);
+		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
+		await expect(chevron).toBeHidden();
+		await row.hover();
+		await expect(chevron).toBeVisible();
+		await expect(row.locator('[data-slot="avatar-group"] [data-slot="avatar"]')).toHaveCount(count);
+		await expect(row.locator('[data-slot="avatar-group"] [data-slot="avatar"]').first()).toHaveAttribute("title", /.+/);
+		await row.getByRole("button").first().click();
+		await expect(page.getByRole("dialog", { name: "Agent assignment" })).toBeVisible();
+		await page.keyboard.press("Escape");
+	}
+	await playground.getByRole("button", { name: "1 agent as owner", exact: true }).click();
+	await expect(playground.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
+	await expect(playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar-group"]')).toHaveCount(0);
+	await expect(playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]')).toHaveCount(1);
+	await page.goto(appUrl("/components/blocks/jira-issue#project-butter"));
+	const original = page.getByRole("region", { name: "Project butter playground" });
+	await original.getByRole("button", { name: "1-n agents, not owner", exact: true }).click();
+	const originalRow = original.locator('[data-slot="jira-issue-agent-row"]');
+	await expect(originalRow.locator('[data-slot="avatar"][title="Andrea Wilson"]')).toBeVisible();
+	await expect(originalRow.locator('[data-slot="avatar"][title="Andrew Park"]')).toBeVisible();
+});
+
+test("agent avatars match between the Butter board and the original card playground", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	const boardAvatar = card(page, "PAY-105").locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]').first();
+	await expect(boardAvatar).toHaveCSS("width", "20px");
+	await expect(boardAvatar).toHaveCSS("height", "20px");
+	const boardRow = card(page, "PAY-105").locator('[data-slot="jira-issue-agent-row"]');
+	const [boardAvatarBox, boardRowBox] = await Promise.all([boardAvatar.boundingBox(), boardRow.boundingBox()]);
+	if (!boardAvatarBox || !boardRowBox) throw new Error("Missing board agent row geometry");
+	expect(Math.abs(boardAvatarBox.y + boardAvatarBox.height / 2 - boardRowBox.y - boardRowBox.height / 2)).toBeLessThan(1);
+	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
+	const playground = page.getByRole("region", { name: "Project butter playground" });
+	await playground.getByRole("button", { name: "1 agent as owner", exact: true }).click();
+	const playgroundAvatar = playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]').first();
+	await expect(playgroundAvatar).toHaveCSS("width", "20px");
+	await expect(playgroundAvatar).toHaveCSS("height", "20px");
+	const playgroundRow = playground.locator('[data-slot="jira-issue-agent-row"]').first();
+	const [playgroundAvatarBox, playgroundRowBox] = await Promise.all([playgroundAvatar.boundingBox(), playgroundRow.boundingBox()]);
+	if (!playgroundAvatarBox || !playgroundRowBox) throw new Error("Missing playground agent row geometry");
+	expect(Math.abs(playgroundAvatarBox.y + playgroundAvatarBox.height / 2 - playgroundRowBox.y - playgroundRowBox.height / 2)).toBeLessThan(1);
+	await page.goto(appUrl("/components/blocks/jira-issue#project-butter"));
+	const original = page.getByRole("region", { name: "Project butter playground" });
+	await original.getByRole("button", { name: "1 agent as owner", exact: true }).click();
+	const originalAvatar = original.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]').first();
+	await expect(originalAvatar).toHaveCSS("width", "20px");
+	await expect(originalAvatar).toHaveCSS("height", "20px");
+});
+
 test("Butter v1 cards keep the same bottom inset with or without an agent", async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.emulateMedia({ reducedMotion: "reduce" });

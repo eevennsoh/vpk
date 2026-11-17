@@ -94,6 +94,7 @@ export function AgentSession({
 	stateChangedItemIds,
 	stateChangeVersions,
 	assignment,
+	allowViewerView = false,
 	canViewItem,
 	capturedItemIds,
 	density = "unlinked",
@@ -283,6 +284,7 @@ export function AgentSession({
 							);
 						return (
 							<AgentSessionCard
+								allowViewerView={allowViewerView}
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
 								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}

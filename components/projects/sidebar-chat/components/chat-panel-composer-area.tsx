@@ -7,6 +7,7 @@ import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import type { ChatPanelDecisions } from "../hooks/use-chat-panel-decisions";
 import type { ChatPanelProps } from "../lib/chat-panel-types";
 import ChatComposer from "./chat-composer";
+import { ReadOnlySessionComposer } from "./read-only-session-composer";
 
 type ChatComposerProps = ComponentProps<typeof ChatComposer>;
 
@@ -27,6 +28,9 @@ interface ChatPanelComposerAreaProps
 		| "hideComposerSourceAndModelControls"
 		| "onComposerPrefillConsumed"
 		| "resolveComposerPlaceholder"
+		| "readOnly"
+		| "readOnlyOwner"
+		| "readOnlySessionState"
 	> {
 	autoFocusComposer: boolean;
 	clickyActive: boolean;
@@ -60,6 +64,9 @@ interface ChatPanelComposerAreaProps
 
 /** Bottom of the panel: a docked question card, a pending plan approval, or the composer. */
 export function ChatPanelComposerArea({
+	readOnly = false,
+	readOnlyOwner,
+	readOnlySessionState,
 	addMenuItemsBefore,
 	autoFocusComposer,
 	chatContextBar,
@@ -119,13 +126,15 @@ export function ChatPanelComposerArea({
 	} = decisions;
 
 	return (
-		<div className="min-w-0 shrink-0">
+		<div className={readOnly && shouldShowQuestionCard ? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"}>
 			{shouldShowQuestionCard && activeQuestionCard ? (
 				<>
-					<div className="px-3">
+					<div className={readOnly ? "mb-3 min-h-0 shrink overflow-y-auto px-3" : "px-3"}>
 						<ClarificationQuestionCard
+							cardClassName="shadow-none"
 							key={activeQuestionCardKey ?? undefined}
 							questionCard={activeQuestionCard}
+							showDismissButton={!readOnly}
 							onSubmit={(answers) => {
 								handleClarificationSubmit(answers);
 								hideQuestionCard();
@@ -133,6 +142,7 @@ export function ChatPanelComposerArea({
 							onDismiss={dismissQuestionCard}
 						/>
 					</div>
+					{readOnly ? <ReadOnlySessionComposer hideAiDisclaimer owner={readOnlyOwner} state={readOnlySessionState} /> : null}
 					<QuestionCardShortcutsFooter />
 				</>
 			) : shouldShowApprovalCard && activePendingPlan ? (
@@ -145,6 +155,8 @@ export function ChatPanelComposerArea({
 					/>
 					<QuestionCardShortcutsFooter escLabel="cancel" />
 				</>
+			) : readOnly ? (
+				<ReadOnlySessionComposer context={chatContextBar} hideAiDisclaimer={hideAiDisclaimer} onContextBarOpenChange={setIsContextBarOpen} owner={readOnlyOwner} state={readOnlySessionState} />
 			) : (
 				<>
 					<ChatComposer

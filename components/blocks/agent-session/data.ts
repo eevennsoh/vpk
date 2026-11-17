@@ -29,6 +29,7 @@ function createRovoAgent(): AgentListAgent {
 
 const GITHUB_REPOSITORY = "acme/storefront";
 const GITHUB_TARGET_BRANCH = "main";
+const DEMO_UPDATED_AT = Date.UTC(2026, 10, 17, 2);
 
 /** Shared GitHub PR author used by the catalog pull-request Smart Link. */
 const GITHUB_PR_AUTHOR = {
@@ -55,6 +56,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "Priya’s MacBook",
 		timeLabel: "Last week",
+		updatedAtMs: DEMO_UPDATED_AT - 7 * 24 * 60 * 60 * 1000,
 		sessionDetails: {
 			additions: 86,
 			branch: "feature/shop-4821-guest-checkout",
@@ -89,6 +91,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "Work Laptop",
 		timeLabel: "18m",
+		updatedAtMs: DEMO_UPDATED_AT - 18 * 60 * 1000,
 		sessionDetails: {
 			additions: 148,
 			branch: "fix/comment-highlight",
@@ -126,6 +129,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 		machineName: "MBP-M4-MAX",
 		timeLabel: "Yesterday",
+		updatedAtMs: DEMO_UPDATED_AT - 24 * 60 * 60 * 1000,
 		sessionDetails: {
 			additions: 214,
 			branch: "fix/pay-113-3ds-contract-suite",
@@ -210,6 +214,7 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		shortTitle: "Off-road damping",
 		state: "running",
 		timeLabel: "2m",
+		updatedAtMs: DEMO_UPDATED_AT - 2 * 60 * 1000,
 		title: "Refactor active air suspension dampening logic for off-road mode",
 	},
 	{
@@ -234,6 +239,7 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		shortTitle: "Suspension roadmap",
 		state: "needs-input",
 		timeLabel: "2m",
+		updatedAtMs: DEMO_UPDATED_AT - 2 * 60 * 1000,
 		title: "Active air suspension roadmap",
 	},
 	{
@@ -258,6 +264,7 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		shortTitle: "Suspension controls handoff",
 		state: "complete",
 		timeLabel: "29d",
+		updatedAtMs: DEMO_UPDATED_AT - 29 * 24 * 60 * 60 * 1000,
 		title: "Hand off the off-road suspension controls to engineering",
 	},
 ];

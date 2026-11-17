@@ -28,6 +28,8 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** The session is shared with the team, including when viewed by its owner. */
+	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
 	privateTo?: string;
 };
@@ -286,6 +288,8 @@ export interface AgentSessionProps {
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
+	/** Allow a team viewer to open the session in a read-only surface. */
+	allowViewerView?: boolean;
 	/**
 	 * Id of the session whose card is selected. Omit to let the list own a
 	 * single-select toggle; pass `null` to control an empty selection.

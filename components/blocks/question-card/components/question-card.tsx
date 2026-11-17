@@ -33,10 +33,14 @@ export interface QuestionCardProps extends Omit<React.ComponentProps<"div">, "on
 	questions: ReadonlyArray<QuestionCardQuestion>;
 	/** When `true`, all interactions are disabled and a loading state is shown. */
 	isSubmitting?: boolean;
+	/** Show the question without allowing the viewer to answer or dismiss it. */
+	readOnly?: boolean;
 	/** Called with the collected answers when the user completes all questions or clicks Submit. */
 	onSubmit: (answers: QuestionCardAnswers) => void;
 	/** Called when the user dismisses the card (Escape, Skip for deferred cards, or header close). When omitted, the dismiss button is hidden. */
 	onDismiss?: () => void;
+	/** Whether to show the header dismiss control. */
+	showDismissButton?: boolean;
 	/** When set, Skip closes the whole card (deferred clarification); parent should cancel the tool in `onDismiss`. */
 	toolCallId?: string;
 	/** Maximum number of pre-defined options to display per question. Additional options are truncated. @default 3 */
@@ -228,8 +232,10 @@ function QuestionInput({
 function QuestionCardContent({
 	questions,
 	isSubmitting = false,
+	readOnly = false,
 	onSubmit,
 	onDismiss,
+	showDismissButton = true,
 	toolCallId,
 	maxVisibleOptions = DEFAULT_MAX_VISIBLE_OPTIONS,
 	customInputPlaceholder = DEFAULT_CUSTOM_INPUT_PLACEHOLDER,
@@ -266,7 +272,7 @@ function QuestionCardContent({
 		onDismiss: handleDismiss,
 	} = useQuestionCard({
 		questions,
-		isSubmitting,
+		isSubmitting: isSubmitting || readOnly,
 		maxVisibleOptions,
 		showCustomInput,
 		defaultAnswers,
@@ -285,14 +291,14 @@ function QuestionCardContent({
 	switch (primaryAction) {
 		case "submit":
 			footerActionButton = (
-				<Button ref={footerButtonRef} disabled={isSubmitting} onClick={handleSubmit} tabIndex={-1} className="shrink-0">
+				<Button ref={footerButtonRef} disabled={isSubmitting || readOnly} onClick={handleSubmit} tabIndex={-1} className="shrink-0">
 					{footerActionLabel}
 				</Button>
 			);
 			break;
 		case "next":
 			footerActionButton = (
-				<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting} onClick={handleNext} tabIndex={-1} className="shrink-0">
+				<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting || readOnly} onClick={handleNext} tabIndex={-1} className="shrink-0">
 					{footerActionLabel}
 				</Button>
 			);
@@ -311,9 +317,9 @@ function QuestionCardContent({
 			ref={cardRef}
 			data-slot="question-card"
 			data-testid="question-card"
-			tabIndex={0}
+			tabIndex={readOnly ? -1 : 0}
 			role="dialog"
-			aria-modal="true"
+			aria-modal={readOnly ? undefined : "true"}
 			aria-label={`Question ${safeQuestionIndex + 1} of ${totalQuestions}: ${currentQuestion.label}`}
 			onKeyDown={handleKeyDown}
 			className={cn("mx-auto flex max-h-[min(70vh,32rem)] w-full flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_-2px_50px_8px_rgba(30,31,33,0.08)] outline-none", className)}
@@ -330,7 +336,7 @@ function QuestionCardContent({
 										aria-label="Previous question"
 										size="icon"
 										variant="ghost"
-										disabled={!canGoToPreviousQuestion || isSubmitting}
+										disabled={!canGoToPreviousQuestion || isSubmitting || readOnly}
 										onClick={() => goToPreviousQuestion()}
 										tabIndex={-1}
 										className="shrink-0"
@@ -343,7 +349,7 @@ function QuestionCardContent({
 										aria-label="Next question"
 										size="icon"
 										variant="ghost"
-										disabled={!canGoToNextQuestion || isSubmitting}
+										disabled={!canGoToNextQuestion || isSubmitting || readOnly}
 										onClick={() => goToNextQuestion()}
 										tabIndex={-1}
 										className="shrink-0"
@@ -352,8 +358,8 @@ function QuestionCardContent({
 									</Button>
 								</div>
 							</div>
-							{onDismiss ? (
-								<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
+							{onDismiss && showDismissButton ? (
+								<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting || readOnly} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
 									<CrossIcon label="" size="small" />
 								</Button>
 							) : null}
@@ -363,8 +369,8 @@ function QuestionCardContent({
 				) : (
 					<div className="flex items-center justify-between gap-2">
 						<h5 className="min-w-0 whitespace-normal break-words text-text">{currentQuestion.label}</h5>
-						{onDismiss ? (
-							<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
+						{onDismiss && showDismissButton ? (
+							<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting || readOnly} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
 								<CrossIcon label="" size="small" />
 							</Button>
 						) : null}
@@ -392,7 +398,7 @@ function QuestionCardContent({
 						question={currentQuestion}
 						answerValue={answers[currentQuestion.id]}
 						focusedIndex={focusedIndex}
-						isSubmitting={isSubmitting}
+						isSubmitting={isSubmitting || readOnly}
 						maxVisibleOptions={maxVisibleOptions}
 						onFocusIndex={setFocusedIndex}
 						onAnswerChange={handleAnswerChange}
@@ -416,7 +422,7 @@ function QuestionCardContent({
 								value={customInputValue ?? ""}
 								onChange={(event) => handleAnswerChange((event.target as HTMLInputElement).value)}
 								onFocus={handleCustomInputFocus}
-								disabled={isSubmitting}
+								disabled={isSubmitting || readOnly}
 								placeholder={currentQuestion.placeholder ?? customInputPlaceholder}
 								className="h-8 min-w-0 flex-1 px-0 text-sm leading-5 focus-visible:ring-0 focus-visible:border-transparent"
 							/>

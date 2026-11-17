@@ -140,9 +140,9 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 	} finally { await view.unmount(); }
 });
 
-test("viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
+test("private viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
 	let selected = 0;
-	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { privateTo: "Sample Alpha", invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		await view.press(trigger, "Enter");
@@ -291,7 +291,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/moreMenuOpenRef\.current[\s\S]*reason === "outside-press"[\s\S]*reason === "trigger-hover"/u,
 	);
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
-	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\)\}/u);
+	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col outline-none", dropdownStyles\.padding\)\}/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
 	assert.match(mapper, /const invokedBy = agent\.invokedBy;/u);
 	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);

@@ -29,10 +29,12 @@ const INDICATOR_EXIT = { duration: 0.1, ease: motionEase.in } as const;
 
 function IndicatorGlyph({
 	compact = false,
+	uncontained = false,
 	state,
-}: Readonly<{ compact?: boolean; state: AgentSessionItem["state"] }>) {
+}: Readonly<{ compact?: boolean; uncontained?: boolean; state: AgentSessionItem["state"] }>) {
 	switch (state) {
 		case "running":
+			if (uncontained) return <Spinner className="group-aria-pressed/button:text-icon-selected!" label="" pulse size="default" variant="bloom-avatar" />;
 			// Pulse and rotation extend the orb beyond its still-ring bounds.
 			// A 16.75px SVG box caps the short row's animated orbit at 12px.
 			return (
@@ -45,6 +47,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "needs-input":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-information"><StrokeWeightLargeIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -58,6 +61,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "attention":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-warning"><StatusWarningIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -71,6 +75,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "complete":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-success"><StatusSuccessIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -101,6 +106,7 @@ export function AgentSessionShortLifecycleIcon({
 	onTransitionComplete,
 	showWorkingSpinner = false,
 	showAllStates = false,
+	uncontained = false,
 	renderGlyph,
 	transitionEffect = "scale",
 }: Readonly<{
@@ -109,6 +115,8 @@ export function AgentSessionShortLifecycleIcon({
 	onTransitionComplete?: () => void;
 	showWorkingSpinner?: boolean;
 	showAllStates?: boolean;
+	/** Use a 16px glyph footprint when no action-swap slot is needed. */
+	uncontained?: boolean;
 	/** Preserve a consumer's glyph sizes while sharing the exact lifecycle swap. */
 	renderGlyph?: (state: AgentSessionItem["state"]) => ReactNode;
 	/** Fade preserves a consumer's glyph footprint throughout the state change. */
@@ -124,7 +132,7 @@ export function AgentSessionShortLifecycleIcon({
 	return (
 		<span
 			aria-label={LIFECYCLE_LABELS[accessibleState]}
-			className="relative grid size-6 shrink-0 place-items-center"
+			className={cn("relative grid shrink-0 place-items-center", uncontained ? "size-4" : "size-6")}
 			data-agent-session-lifecycle-current={accessibleState}
 			data-agent-session-lifecycle-shown={state}
 			role="img"
@@ -141,7 +149,7 @@ export function AgentSessionShortLifecycleIcon({
 					style={playMotion ? { willChange: scaleGlyph ? "opacity, transform" : "opacity" } : undefined}
 					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} />}
+					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} uncontained={uncontained} />}
 				</motion.span>
 			</AnimatePresence>
 		</span>

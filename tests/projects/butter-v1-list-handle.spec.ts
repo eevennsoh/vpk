@@ -58,18 +58,19 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	await expect(trigger.locator("a")).toHaveCount(0);
 });
 
-test("two additional list rows cycle between their agents", async ({ page }) => {
+test("list rows cycle only agents with the same highest-priority active status", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	const list = await openList(page);
-	// PAY-130's Cursor session waits for input, so its pair reads as needing input.
-	const pairs = [["PAY-130", "2 agents: Needs input"], ["PAY-128", "2 agents: Working"]] as const;
-	const rows = pairs.map(([key]) => list.getByRole("row").filter({ hasText: key }));
-	for (const [index, [, label]] of pairs.entries()) await expect(rows[index].getByRole("button", { name: label })).toBeVisible();
-	const avatars = rows.map((row) => row.locator(".agent-loading-vertical [data-agent-id]").first());
-	const initial = await Promise.all(avatars.map((avatar) => avatar.getAttribute("data-agent-id")));
-	await Promise.all(avatars.map((avatar, index) => expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial[index])));
+	const mixed = list.getByRole("row").filter({ hasText: "PAY-130" });
+	await expect(mixed.getByRole("button", { name: "Cursor: Needs input" })).toBeVisible();
+	await expect(mixed.locator(".agent-loading-vertical")).toHaveCount(0);
+	const working = list.getByRole("row").filter({ hasText: "PAY-128" });
+	await expect(working.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	const avatar = working.locator(".agent-loading-vertical [data-agent-id]").first();
+	const initial = await avatar.getAttribute("data-agent-id");
+	await expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial);
 });
 
 for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into list sessions for ${key}`, async ({ page }) => {

@@ -3,6 +3,280 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("team session rows do not reveal an access tooltip on hover", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.clock.install();
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	for (const label of ["Cloud (Owner) sessions", "Cloud (Viewer) sessions"]) {
+		const rows = page.getByRole("region", { name: label }).locator("article");
+		for (const row of await rows.all()) {
+			await row.hover({ position: { x: 8, y: 8 } });
+			await page.clock.fastForward(1000);
+			await expect(page.getByRole("tooltip").filter({ hasText: "You can see this session" })).toHaveCount(0);
+		}
+	}
+	await page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().click();
+	await expect(page.getByRole("group", { name: "Session owner and status" })).toBeVisible();
+});
+
+test("private and team access icons show who started the session", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Private session", exact: true }).click();
+	const privateIcon = page.getByRole("region", { name: "Cloud sessions" }).locator("article").first().locator('[data-access-mark="private"]');
+	await privateIcon.hover();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman");
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	const teamIcon = page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").first().locator('[data-access-mark="team"]');
+	await teamIcon.hover();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
+	await page.mouse.move(0, 0);
+	await page.keyboard.press("Tab");
+	await teamIcon.focus();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
+	await page.getByRole("button", { name: "Team session", exact: true }).focus();
+	await page.mouse.move(0, 0);
+	const viewerIcon = page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().locator('[data-access-mark="team"]');
+	await viewerIcon.hover();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
+});
+
+test("session metadata previews its timestamp and pull request", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	const row = page.getByRole("region", { name: "Local sessions" }).locator("article").first();
+	const timestamp = row.locator("[data-last-update]");
+	await timestamp.hover();
+	await expect(timestamp).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("tooltip")).toContainText("November 10, 2026");
+	await page.mouse.move(0, 0);
+	const pr = row.getByRole("group", { name: /Pull request #1306/ });
+	const icon = pr.getByRole("img", { name: "PR created" });
+	const restColor = await icon.evaluate((element) => getComputedStyle(element).color);
+	await row.hover({ position: { x: 20, y: 10 } });
+	await expect.poll(() => icon.evaluate((element) => getComputedStyle(element).color)).not.toBe(restColor);
+	await pr.hover();
+	await expect(pr.locator("[data-session-pr-title]")).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("region", { name: "Pull request #1306 details" })).toBeVisible();
+	await pr.click();
+	await expect(page.getByRole("menu")).toHaveCount(0);
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+	await page.mouse.move(0, 0);
+	await page.keyboard.press("Tab");
+	await timestamp.focus();
+	await expect(page.getByRole("tooltip")).toContainText("November 10, 2026");
+	await pr.focus();
+	await expect(page.getByRole("region", { name: "Pull request #1306 details" })).toBeVisible();
+});
+
+test("gallery expansion keeps session content in place", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	const row = page.getByRole("region", { name: "Cloud sessions" }).locator("article").first();
+	const expanded = await row.boundingBox();
+	if (!expanded) throw new Error("Missing cloud session row");
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await expect.poll(async () => (await row.boundingBox())?.y).toBe(expanded.y);
+	await page.getByRole("button", { name: "Open gallery" }).click();
+	await expect.poll(async () => (await row.boundingBox())?.y).toBe(expanded.y);
+});
+
+test("cloud sessions open their own scripted Rovo conversations", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	const launcher = page.getByRole("button", { name: "Open Rovo chat" });
+	await expect(launcher).toBeVisible();
+	await launcher.click();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	const cloud = page.getByRole("region", { name: "Cloud sessions" });
+	for (const [title, finished] of [["Refactor active air suspension dampening logic for off-road mode", false], ["Hand off the off-road suspension controls to engineering", true]] as const) {
+		const row = cloud.locator("article").filter({ hasText: title });
+		await row.click();
+		const chat = page.locator('[data-rovo-chat-placement="floating"]');
+		await expect(chat.getByText(finished ? "The work is complete. The relevant details are ready for the team to review." : `I’m reviewing the context for ${title}. I’ll check the relevant details and prepare the next steps.`)).toBeVisible();
+		if (finished) {
+			const artifacts = chat.getByRole("region", { name: "Generated artifacts" });
+			await expect(artifacts.getByText("Off-road suspension controls", { exact: true })).toBeVisible();
+			await expect(artifacts.getByText("Suspension controls handoff", { exact: true })).toBeVisible();
+			await expect(artifacts.getByText("Off-road control acceptance criteria", { exact: true })).toBeVisible();
+			await expect(chat.getByText("Checking the related work", { exact: true })).toHaveCount(0);
+			await expect(chat.getByRole("button", { name: /^(Thinking|Working)/ })).toHaveCount(0);
+		} else {
+			await expect(chat.getByText("Checking the related work", { exact: true })).toBeVisible();
+			await expect(chat.getByRole("region", { name: "Generated artifacts" })).toHaveCount(0);
+		}
+		await page.mouse.move(0, 0);
+		await expect(row).not.toHaveAttribute("data-selected", "true");
+		await expect(row).toHaveCSS("background-color", await page.getByRole("region", { name: "Local sessions" }).locator("article").first().evaluate((element) => getComputedStyle(element).backgroundColor));
+	}
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await expect(launcher).toBeVisible();
+	await cloud.locator("article").last().click();
+	await expect(page.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
+});
+
+test("a cloud session needing input opens a question and resumes after an answer", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	const row = page.getByRole("region", { name: "Cloud sessions" }).locator("article").filter({ hasText: "Active air suspension roadmap" });
+	await row.click();
+	await expect(page.getByRole("heading", { name: "What should the suspension roadmap prioritize?" })).toBeVisible();
+	await page.getByRole("button", { name: /Prioritize off-road performance/ }).click();
+	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
+	await expect(row.getByText("Working", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await row.click();
+	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
+	await expect(page.getByRole("heading", { name: "What should the suspension roadmap prioritize?" })).toHaveCount(0);
+});
+
+test("team viewers can answer questions while their composer remains disabled", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	const owner = page.getByRole("region", { name: "Cloud (Owner) sessions" });
+	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
+	await expect(owner.locator("article")).toHaveCount(3);
+	await expect(viewer.locator("article")).toHaveCount(3);
+	await owner.locator("article").first().hover();
+	await expect(owner.getByRole("button", { name: /^More actions for/ }).first()).toBeVisible();
+	await expect(viewer.getByRole("button", { name: /^More actions for/ })).toHaveCount(0);
+	await viewer.locator("article").first().click();
+	const input = page.getByRole("textbox", { name: "Chat message input" });
+	await expect(input).toHaveCount(0);
+	const bar = page.getByRole("group", { name: "Session owner and status" });
+	await expect(bar).toHaveCSS("height", "32px");
+	await expect(bar).toHaveCSS("border-top-width", "1px");
+	await expect(bar).toHaveCSS("cursor", "default");
+	await expect(bar.getByText("Session from Priya Raman", { exact: true })).toBeVisible();
+	await expect(bar.locator('img[src="/avatar-user/ting-chen/color/asow-teamwork-blue.png"]')).toBeVisible();
+	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
+	await expect(bar.getByRole("img", { name: "Working" })).toHaveCSS("width", "16px");
+	await expect(bar.getByRole("img", { name: "Working" })).toHaveCSS("height", "16px");
+	await expect(bar.locator('[data-slot="spinner"]')).toBeVisible();
+	await expect.poll(() => bar.evaluate((element) => {
+		const label = element.querySelector("span.truncate")?.getBoundingClientRect();
+		const cue = element.querySelector('[data-agent-session-lifecycle-current]')?.getBoundingClientRect();
+		const bounds = element.getBoundingClientRect();
+		return label && cue ? Math.max(Math.abs(label.top + label.height / 2 - cue.top - cue.height / 2), Math.abs(bounds.right - 13 - cue.right)) : Infinity;
+	})).toBeLessThanOrEqual(1);
+	await expect(page.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
+	await expect(bar.getByText("Skip all")).toHaveCount(0);
+	await bar.hover();
+	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
+	await bar.click();
+	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
+	await expect(input).toHaveCount(0);
+	await page.mouse.move(0, 0);
+	await page.keyboard.press("Tab");
+	await bar.focus();
+	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
+	await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
+	await viewer.locator("article").last().click();
+	await expect(input).toHaveCount(0);
+	await expect(bar.getByText("Session from Austin Lee", { exact: true })).toBeVisible();
+	await expect(bar).toHaveCSS("height", "32px");
+	await expect(bar.getByRole("img", { name: "Finished" })).toBeVisible();
+	const finishedChat = page.locator('[data-rovo-chat-placement="floating"]');
+	await expect(finishedChat.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
+	await expect(finishedChat.getByText("Checking the related work", { exact: true })).toHaveCount(0);
+	await expect(finishedChat.getByRole("button", { name: /^(Thinking|Working)/ })).toHaveCount(0);
+	await expect(bar.getByRole("img", { name: "Finished" })).toHaveCSS("width", "16px");
+	await bar.hover();
+	await expect(page.getByRole("tooltip")).toHaveText("Only Austin Lee, the session owner, can steer this session. You can unblock it and review the outcome.");
+	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	const question = page.getByRole("region", { name: "Clarification questions — answer or skip to continue chatting" });
+	await expect(bar.getByText("Session from Jordan Okafor", { exact: true })).toBeVisible();
+	await expect(bar).toHaveCSS("height", "32px");
+	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect(bar.getByRole("img", { name: "Needs input" })).toHaveCSS("width", "16px");
+	const questionCard = question.getByRole("dialog");
+	await expect(questionCard).toHaveCSS("box-shadow", /^(?:none|(?:rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(?:, )?)+)$/);
+	await expect.poll(async () => {
+		const [questionBounds, barBounds] = await Promise.all([questionCard.boundingBox(), bar.boundingBox()]);
+		return questionBounds && barBounds ? barBounds.y - (questionBounds.y + questionBounds.height) : null;
+	}).toBe(12);
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const shortcuts = chat.locator('[data-slot="footer"]');
+	await expect(shortcuts).toHaveCount(1);
+	await expect(shortcuts).toContainText("Enter to select");
+	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toHaveCount(0);
+	await expect.poll(async () => {
+		const [barBounds, footerBounds] = await Promise.all([bar.boundingBox(), shortcuts.boundingBox()]);
+		return barBounds && footerBounds ? footerBounds.y >= barBounds.y + barBounds.height : false;
+	}).toBe(true);
+	await expect(question.getByRole("button", { name: /Prioritize off-road performance/ })).toBeEnabled();
+	await expect(question.getByRole("button", { name: "Dismiss questions" })).toHaveCount(0);
+	await expect(question.getByRole("textbox", { name: /custom answer/ })).toBeEnabled();
+	await question.getByRole("button", { name: /Prioritize off-road performance/ }).click();
+	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
+	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
+	await expect(chat.getByText("Enter to select", { exact: true })).toHaveCount(0);
+	await expect(input).toHaveCount(0);
+	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
+	await expect(owner.getByText("Working", { exact: true })).toHaveCount(2);
+	await viewer.locator("article").first().click();
+	await expect(input).toHaveCount(0);
+	await owner.locator("article").first().click();
+	await expect(input).toBeEnabled();
+});
+
+test("team owners retain the question dismiss control", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	const question = page.getByRole("region", { name: "Clarification questions — answer or skip to continue chatting" });
+	await expect(question.getByRole("dialog")).toHaveCSS("box-shadow", /^(?:none|(?:rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(?:, )?)+)$/);
+	await expect(question.getByRole("button", { name: "Dismiss questions" })).toBeEnabled();
+});
+
+test("viewer status stays visible with the question card at a compact viewport", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
+	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const bar = chat.getByRole("group", { name: "Session owner and status" });
+	await expect(chat.getByRole("heading", { name: "What should the suspension roadmap prioritize?" })).toBeVisible();
+	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect.poll(() => chat.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const footer = element.querySelector('[data-slot="footer"]')?.getBoundingClientRect();
+		return footer ? footer.bottom - bounds.bottom : Infinity;
+	})).toBeLessThanOrEqual(1);
+	await chat.getByRole("button", { name: /Balance both goals/ }).click();
+	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
+});
+
+test("team viewers can submit a custom question answer", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	const answer = page.getByRole("textbox", { name: /custom answer/ });
+	await answer.fill("Start with a pilot on rough terrain.");
+	await answer.press("Enter");
+	await expect(page.getByText("Start with a pilot on rough terrain.")).toBeVisible();
+	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
+});
+
 test("Small joins the avatar stack directly to metadata and keeps the PR-time separator", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -108,8 +382,8 @@ test("session timestamps remain last in the metadata at every size", async ({ pa
 		await page.getByRole("button", { name: size, exact: true }).click();
 		await expect.poll(() => rows.evaluateAll((elements) => elements.map((row) => {
 			const identity = row.querySelector("[data-agent-session-agent]")?.getBoundingClientRect();
-			const time = row.querySelector('[title="Last update"]')?.getBoundingClientRect();
-			const artifact = row.querySelector('[title^="#"]')?.getBoundingClientRect();
+			const time = row.querySelector('[data-last-update]')?.getBoundingClientRect();
+			const artifact = row.querySelector('[data-session-pr-title]')?.getBoundingClientRect();
 			return identity !== undefined && time !== undefined && time.x >= identity.right && (artifact === undefined || time.x >= artifact.right);
 		})), size).toEqual([true, true, true, true, true, true]);
 	}
@@ -170,13 +444,13 @@ test("large session metadata reveals more text when the card has space", async (
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
 	const row = page.getByRole("region", { name: "Local sessions", exact: true }).locator("article").first();
-	const artifact = row.locator('[title^="#1306:"]');
+	const artifact = row.locator('[data-session-pr-title]');
 	await page.getByRole("button", { name: "Medium", exact: true }).click();
 	const mediumWidth = await artifact.evaluate((element) => element.getBoundingClientRect().width);
 	await page.getByRole("button", { name: "Large", exact: true }).click();
 	await expect.poll(() => artifact.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(mediumWidth);
 	await expect.poll(() => artifact.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
-	const timestamp = row.locator('[title="Last update"]');
+	const timestamp = row.locator('[data-last-update]');
 	await expect(timestamp).toBeVisible();
 	const bounds = await row.boundingBox();
 	const timeBounds = await timestamp.boundingBox();
@@ -197,6 +471,27 @@ test("session cards do not expose individual tool calls at any size", async ({ p
 		await expect(sessions.getByText("Tool call:")).toHaveCount(0);
 		await expect(sessions.getByText("Editing the shared implementation.", { exact: true })).toHaveCount(0);
 	}
+});
+
+test("session menu keeps the divider inset equal to the row side inset", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
+	const menu = page.getByRole("dialog", { name: "Agent assignment" });
+	const row = menu.locator("article").first();
+	const separator = menu.locator('[data-slot="dropdown-menu-separator"]').first();
+	await expect(separator).toBeVisible();
+	const gaps = await menu.evaluate((element) => {
+		const rowBox = element.querySelector("article")?.getBoundingClientRect();
+		const separatorBox = element.querySelector('[data-slot="dropdown-menu-separator"]')?.getBoundingClientRect();
+		const menuBox = element.getBoundingClientRect();
+		if (!rowBox || !separatorBox) throw new Error("Missing session row or divider");
+		return { side: rowBox.left - menuBox.left, bottom: separatorBox.top - rowBox.bottom };
+	});
+	await expect(row).toBeVisible();
+	expect(Math.abs(gaps.bottom - gaps.side)).toBeLessThan(0.5);
 });
 
 test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {

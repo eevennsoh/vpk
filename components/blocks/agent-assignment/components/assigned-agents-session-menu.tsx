@@ -107,7 +107,7 @@ export function AgentSessionsMenu({
 	);
 
 	return (
-		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding)} ref={containerRef} tabIndex={-1}>
+		<div className={cn("flex w-full flex-col outline-none", dropdownStyles.padding)} ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}

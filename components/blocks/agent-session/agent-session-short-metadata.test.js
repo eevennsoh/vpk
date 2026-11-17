@@ -35,8 +35,8 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		}));
 		assert.equal(markup.replace(/<[^>]*>/gu, ""), "#1893 Log refund decisions·7m");
 		assert.doesNotMatch(markup, /Claude/u);
-		assert.match(markup, /title="#1893 Log refund decisions"/u);
-		assert.match(markup, /title="Last update"/u);
+		assert.match(markup, /aria-label="Pull request #1893 Log refund decisions"/u);
+		assert.match(markup, /data-last-update=""/u);
 	}
 
 	const numberOnlyMarkup = renderToStaticMarkup(createElement(AgentSessionShortMetadata, {
@@ -56,6 +56,6 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		item: { ...item, role: "viewer" },
 	}));
 	assert.equal(viewerMarkup.replace(/<[^>]*>/gu, ""), "Claude·7m·");
-	assert.match(viewerMarkup, /aria-hidden="true" class="inline-flex size-4[^>]*><span[^>]*><svg/u);
+	assert.match(viewerMarkup, /aria-label="Team session"[^>]*data-access-mark="team" role="img"/u);
 	assert.doesNotMatch(viewerMarkup, /<button/u);
 });
