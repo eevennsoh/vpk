@@ -20,8 +20,10 @@ const {
 
 before(async () => { await loadAiSdk(); });
 
-// The fixture passes text through; these are the production splitters and classifier checks.
+// The fixture passes text through and holds classifier payloads up to 4096 characters; these are the
+// production splitters, classifier checks and buffer limit.
 const PRODUCTION_TEXT_FILTERS = {
+	CLASSIFIER_JSON_BUFFER_MAX_CHARS: 320,
 	isClassifierIntentLeakCandidate,
 	parseClassifierIntentPayload,
 	splitDirectMediaTextForStreaming,
@@ -78,6 +80,19 @@ test("a failure notice after a fence that followed text drops the whole fence", 
 		assert.equal(turn.endOfTurnFacts.assistantText, `Intro\n\n${BUSY_NOTICE}`, JSON.stringify(chunks));
 		assert.equal(endsWithTurnComplete(turn.parts), true);
 	}
+});
+
+test("a failure notice after a media fence held behind a hidden patch line drops the fence", async () => {
+	// The status marker makes the marker stream let "A\n" through on its own, so the fence chunk reaches
+	// the text layer as its own delta; it passes the classifier buffer, and the splitters drop the patch
+	// line that opens it. Before: the turn's text kept the open fence with the notice after it.
+	const fence = `{"op":"add","path":"/root","value":1}\n\`\`\`image\n${"x".repeat(280)}`;
+	const status = 'THINKING_STATUS:{"label":"Working"}';
+	const turn = await runTurn(failingAfterChunks(["A\n", status, fence], PRODUCTION_TEXT_FILTERS));
+
+	assert.equal(visibleText(turn.parts), `A\n\n${BUSY_NOTICE}`);
+	assert.equal(turn.endOfTurnFacts.assistantText, `A\n\n${BUSY_NOTICE}`);
+	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
 
 test("a loading marker split inside its type starts loading the whole type", async () => {

@@ -22,6 +22,9 @@ const LEADING_BLANK_LINES = /^(?:[ \t]*\r?\n)+/u;
  */
 const PARTIAL_HIDDEN_FENCE_OPENER = /`{1,3}$|```(?:s|sp|spe|i|im|ima|imag|a|au|aud|audi|(?:image|audio)[^\S\n]*)$/iu;
 
+/** The start of a fence the splitters hide, as their pending patterns read an opener. */
+const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audio)\s*\n)/iu;
+
 const firstLine = (text) => text.split("\n", 1)[0];
 const lastLine = (text) => text.slice(text.lastIndexOf("\n") + 1);
 
@@ -149,11 +152,18 @@ function createRovoTextOutputController({
 		writeShownTextDelta(delta);
 	};
 
-	/** Held text split into what may be shown and what an open spec or media fence still holds back. */
+	/**
+	 * Held text split into what may be shown and what an open spec or media fence, or a partial patch
+	 * line, still holds back. `holdsFence` says an open fence is among what is held back.
+	 */
 	const splitHeldAssistantText = (text) => {
 		const spec = splitSpecFenceTextForStreaming(text);
 		const media = splitDirectMediaTextForStreaming(spec.visibleText);
-		return { pendingText: `${media.pendingText}${spec.pendingText}`, visibleText: media.visibleText };
+		return {
+			holdsFence: Boolean(media.pendingText) || spec.pendingText.startsWith("```"),
+			pendingText: `${media.pendingText}${spec.pendingText}`,
+			visibleText: media.visibleText,
+		};
 	};
 
 	/**
@@ -251,11 +261,22 @@ function createRovoTextOutputController({
 	};
 
 	/**
-	 * The text to split next: the held end, then `text`. A held patch line that `text` continues stays
-	 * held until its line ends, and is then dropped with the rest of its line; one that `text` turns
-	 * into an ordinary line is dropped and `text` split on its own, as when each delta was.
+	 * The text to split next: the held end, then `text`. Held backticks that `text` does not make the
+	 * start of a hidden fence (or leave a partial opener) go out as written and `text` is split on its
+	 * own, so they change nothing the splitters hide in it, as when each delta was split alone. A held
+	 * patch line that `text` continues stays held until its line ends, and is then dropped with the
+	 * rest of its line; one that `text` turns into an ordinary line is dropped and `text` split on its
+	 * own, as when each delta was.
 	 */
 	const continueHeldText = (text) => {
+		if (heldKind === "opener") {
+			const joined = `${heldText}${text}`;
+			if (HIDDEN_FENCE_OPENER_START.test(joined) || joined.match(PARTIAL_HIDDEN_FENCE_OPENER)?.[0] === joined) {
+				return joined;
+			}
+			writeSplitText(heldText, { atFenceEnd: false, atFenceStart: false });
+			return text;
+		}
 		if (heldKind !== "patch") {
 			return `${heldText}${text}`;
 		}
@@ -284,8 +305,10 @@ function createRovoTextOutputController({
 			heldText = "";
 			heldKind = "";
 		} else if (offset < text.length) {
+			// What the splitters hold back decides the kind: held text that opens with a patch line the
+			// splitters dropped may still end in an open fence.
 			heldText = text.slice(offset);
-			heldKind = heldText.startsWith("```") ? "fence" : "patch";
+			heldKind = split.holdsFence ? "fence" : "patch";
 		} else {
 			heldText = opener;
 			heldKind = opener ? "opener" : "";

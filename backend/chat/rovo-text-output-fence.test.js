@@ -305,3 +305,113 @@ test("the text handed to the splitters grows linearly with a long reply without 
 		assert.ok(long <= short * 4 * 1.05, `${JSON.stringify(unit)}: ${short} then ${long} characters`);
 	}
 });
+
+const b = "`";
+const PATCH_LINE = '{"op":"add","path":"/root","value":1}';
+// A patch line, then a media fence still open, long enough that a chunk holding it passes the
+// production classifier buffer (320) and reaches the splitters.
+const PATCH_THEN_OPEN_MEDIA = `${PATCH_LINE}\n${T}image\n${"x".repeat(280)}`;
+
+/** Streams `chunks`, then a notice, through a controller wired as production wires it. */
+function noticeAfterChunks(chunks, options = {}) {
+	const parts = [];
+	const controller = createRovoTextOutputController({
+		classifierJsonBufferMaxChars: 320,
+		isClassifierIntentLeakCandidate,
+		parseClassifierIntentPayload,
+		splitDirectMediaTextForStreaming,
+		splitSpecFenceTextForStreaming,
+		textId: "text-test",
+		writer: { write: (part) => parts.push(part) },
+		...options,
+	});
+	for (const chunk of chunks) {
+		controller.emitTextDelta(chunk);
+	}
+	controller.emitNoticeParagraph("N");
+	controller.flushDeferredToolFirstText();
+	controller.finalizeBufferedAssistantText();
+	return {
+		stored: controller.getAssistantText(),
+		unsuppressed: controller.getUnsuppressedAssistantText(),
+		wire: parts.filter((part) => part.type === "text-delta").map((part) => part.delta).join(""),
+	};
+}
+
+test("a media fence held after a hidden patch line is held as a fence, and a notice drops it", () => {
+	// The patch line the splitters dropped opens the held text. Before: it was held as a patch line,
+	// the stored text kept the open fence with the notice after it ("A\n" + fence + "\n\nN"), and text
+	// after the fence went on the wire ("A\nSECRET").
+	for (const [name, options] of [
+		["plain", {}],
+		["deferred tool-first", { shouldDeferToolFirstText: true }],
+		["card-first", { suppressStreamingTextForCardFirstGenui: true }],
+	]) {
+		const result = noticeAfterChunks(["A\n", PATCH_THEN_OPEN_MEDIA], options);
+		assert.equal(result.wire, "A\n\nN", name);
+		assert.equal(result.stored, "A\n\nN", name);
+		assert.equal(result.unsuppressed, "A\n\nN", name);
+	}
+	assertStream("text after the open fence", ["A\n", PATCH_THEN_OPEN_MEDIA, "SECRET"], "A\n");
+});
+
+test("held backticks do not change what a delta's patch filtering hides", () => {
+	// On 36f992247 the second delta, split on its own, hid its patch line and the backtick after it.
+	// Before: the held backtick joined the patch line, which then no longer started its line: wire = J.
+	assertStream("inline code", [`Example: ${b}`, `${PATCH_LINE}${b}\nDone.`], `Example: ${b}Done.`);
+	assertStream("double backticks", [`Example: ${b}${b}`, `${PATCH_LINE}\nDone.`], `Example: ${b}${b}Done.`);
+	// Backticks that do open a hidden fence with the delta still hide it.
+	assertStream("hidden opener", [`A ${b}${b}`, `${b}spec\n${PATCH_LINE}\n${T}\nB`], "A \n\nB");
+});
+
+/**
+ * The wire text `36f992247` wrote for a reply with no hidden fence, patch lines included: text that
+ * may be a classifier payload held until it is not one (or passes 320 characters), and each released
+ * delta split on its own. The one change: a patch line split across deltas stays hidden to its line
+ * end, where 36f992247 dropped its start and showed the rest.
+ */
+function baseWireWithPatchLines(chunks) {
+	let wire = "";
+	let buffer = "";
+	let inPatchLine = false;
+	const release = () => {
+		let text = buffer;
+		buffer = "";
+		if (inPatchLine) {
+			const lineEnd = text.indexOf("\n");
+			if (lineEnd < 0) {
+				return;
+			}
+			text = text.slice(lineEnd);
+			inPatchLine = false;
+		}
+		const spec = splitSpecFenceTextForStreaming(text);
+		wire += splitDirectMediaTextForStreaming(spec.visibleText).visibleText;
+		inPatchLine = spec.pendingText.length > 0;
+	};
+	for (const chunk of chunks) {
+		buffer += chunk;
+		if (!isClassifierIntentLeakCandidate(buffer) || (buffer.length > 320 && !parseClassifierIntentPayload(buffer))) {
+			release();
+		}
+	}
+	if (buffer && !parseClassifierIntentPayload(buffer)) {
+		release();
+	}
+	return wire;
+}
+
+test("a reply with an unfenced patch line next to inline code or a code fence goes out as before", () => {
+	const replies = [
+		`Example: ${b}${PATCH_LINE}${b}\nDone.`,
+		`Use ${b}x${b} here\n${PATCH_LINE}\nDone ${b}${b}y${b}${b}`,
+		`Code:\n${T}json\n${PATCH_LINE}\n${T}\nAfter`,
+		`${T}js\nx\n${T}\n${PATCH_LINE}\nDone`,
+		`Before ${T}\n${PATCH_LINE}\n${T} after`,
+	];
+	for (const reply of replies) {
+		for (const chunks of chunkingsOf(reply)) {
+			assertStream(JSON.stringify(chunks), chunks, baseWireWithPatchLines(chunks));
+		}
+	}
+});
