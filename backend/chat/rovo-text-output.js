@@ -32,14 +32,14 @@ const HIDDEN_FENCE_OPENER_START = /^```(?:spec(?=[^\S\n]*(?:\n|$))|(?:image|audi
 
 /**
  * The run of three or more backticks at the end of `text`, however long, and what follows it on its
- * line so far: only spaces, tabs or a carriage return ("spaces"), the start of a spec opener
- * ("spec"), or nothing ("run"). Inside a media fence the next text decides whether the run closes
- * the fence (a newline after it) or not (other text after it, or a spec opener that leaves the fence
- * open, as spec fences are split first). Once the text has ended (`ended`), spaces after the run no
- * longer count: only a spec opener's start, or nothing, may follow it. Returns where the run ends and
- * where the backticks, spaces and tabs just before it start (`regionStart`): without the run they
- * would end the text and read as a close there. Null when there is none. Read from the end of the
- * text, so the work is the tail's length.
+ * line so far: only whitespace other than a newline ("spaces", as the media rule reads a line), the
+ * start of a spec opener ("spec"), or nothing ("run"). Inside a media fence the next text decides
+ * whether the run closes the fence (a newline after it) or not (other text after it, or a spec opener
+ * that leaves the fence open, as spec fences are split first). Once the text has ended (`ended`),
+ * spaces after the run no longer count: only a spec opener's start, or nothing, may follow it. Returns
+ * where the run ends and where the backticks and spaces just before it start (`regionStart`): without
+ * the run they would end the text and read as a close there. Null when there is none. Read from the
+ * end of the text, so the work is the tail's length.
  */
 function mediaFenceEndTail(text, { ended }) {
 	const tailBefore = (end, kind) => {
@@ -50,7 +50,7 @@ function mediaFenceEndTail(text, { ended }) {
 		if (end - start < 3) {
 			return null;
 		}
-		while (start > 0 && /[` \t\r]/u.test(text[start - 1])) {
+		while (start > 0 && /`|[^\S\n]/u.test(text[start - 1])) {
 			start -= 1;
 		}
 		return { kind, regionStart: start, runEnd: end };
@@ -70,7 +70,7 @@ function mediaFenceEndTail(text, { ended }) {
 		return null;
 	}
 	let spacesStart = text.length;
-	while (!ended && spacesStart > 0 && /[ \t\r]/u.test(text[spacesStart - 1])) {
+	while (!ended && spacesStart > 0 && /[^\S\n]/u.test(text[spacesStart - 1])) {
 		spacesStart -= 1;
 	}
 	return spacesStart < text.length ? tailBefore(spacesStart, "spaces") : tailBefore(text.length, "run");
@@ -399,11 +399,11 @@ function createRovoTextOutputController({
 		// Backticks at the end that would close a media fence may be undecided: what follows them on
 		// their line decides whether they end it, and spec fences are split first, so they may still
 		// open a spec fence that leaves the media fence open. When text glued to the run would keep
-		// the fence open, the whole run is undecided, with the backticks, spaces and tabs just before
-		// it, which without it would end the text and close the fence there; they stay held with the
-		// fence. Otherwise the run starts its line or follows the body's JSON object, and closes the
+		// the fence open, the whole run is undecided, with the backticks and whitespace on its line just
+		// before it, which without it would end the text and close the fence there; they stay held with
+		// the fence. Otherwise the run starts its line or follows the body's JSON object, and closes the
 		// fence whatever follows except a spec opener: its last three backticks and a spec opener's
-		// start after them stay held, and spaces after them go out, as before.
+		// start after them stay held, and whitespace after them goes out, as before.
 		const tail = final || split.pendingText ? null : mediaFenceEndTail(text, { ended });
 		const heldTailStart = !tail
 			? -1

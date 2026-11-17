@@ -6,7 +6,7 @@ export const ROVO_APP_ARTIFACT_INTENT_LEAK_FALLBACK =
 const ROVO_APP_DIRECT_MEDIA_FENCE_OPENER = /```(?:image|audio)\s*\n/giu;
 // The closing fence rule of `backend/lib/direct-media-fence.js` for complete text; the display test
 // keeps the two equal.
-const ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[ \t]*```)|(?=`*[ \t\r]*(?:\n|$)))/gu;
+const ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[^\S\n]*```)|(?=`*[^\S\n]*(?:\n|$)))/gu;
 const ROVO_APP_SPEC_FENCE_PATTERN = /```spec\s*\n[\s\S]*?(?:```|$)/giu;
 const ROVO_APP_SPEC_PATCH_LINE_PATTERN =
 	/^\s*\{"op"\s*:\s*"(?:add|replace|remove)"\s*,\s*"path"\s*:\s*"\/(?:root|elements|state)\b.*$/gmu;
@@ -121,8 +121,9 @@ function rovoAppJsonObjectEnd(text: string): number {
 
 /**
  * Where a media block's closing fence starts in the complete text (-1 while it is open): the first
- * run of three or more backticks that starts or ends its line, or directly follows the JSON object
- * that opens the body; failing that, the first three backticks after the opener.
+ * run of three or more backticks that starts or ends its line, or follows the JSON object that opens
+ * the body, with only whitespace (`\s`) between; failing that, the first three backticks after the
+ * opener.
  */
 function findRovoAppDirectMediaFenceClose(text: string, bodyStart: number): number {
 	ROVO_APP_DIRECT_MEDIA_LINE_EDGE_FENCE.lastIndex = bodyStart;
@@ -132,7 +133,7 @@ function findRovoAppDirectMediaFenceClose(text: string, bodyStart: number): numb
 	if (/^\s*\{/u.test(body)) {
 		const objectEnd = rovoAppJsonObjectEnd(body);
 		if (objectEnd >= 0) {
-			const at = objectEnd + (/^[ \t\r]*/u.exec(body.slice(objectEnd))?.[0].length ?? 0);
+			const at = objectEnd + (/^\s*/u.exec(body.slice(objectEnd))?.[0].length ?? 0);
 			if (body.startsWith("```", at)) {
 				return bodyStart + at;
 			}

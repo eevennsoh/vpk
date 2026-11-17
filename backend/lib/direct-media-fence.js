@@ -14,9 +14,11 @@ const DIRECT_MEDIA_FENCE_OPENER_BY_KIND = {
  * `components/projects/rovo-core/lib/rovo-app-message-display.ts` that its test compares with this one.
  *
  * 1. The block closes at the first run of three or more backticks after its opener that starts its
- *    line (spaces or tabs before it are allowed), ends its line (only spaces, tabs or a carriage
- *    return after it, up to a newline or the end of the text), or directly follows, after spaces or
- *    tabs, the end of a JSON object that opens the body.
+ *    line (only whitespace before it), ends its line (only whitespace after it, up to a newline or
+ *    the end of the text), or follows the JSON object that opens the body, with only whitespace
+ *    before the object and between it and the run. Whitespace is what `\s` matches, the characters
+ *    `String.prototype.trim` strips and so the generation body's `.trim()` accepts; within a line it
+ *    is every one of them but the newline.
  * 2. When the complete text has no such run for the block, it closes at the first three backticks
  *    after its opener, wherever they are, as every reader did before rule 1.
  * 3. A block with neither stays open to the end of the text.
@@ -26,11 +28,11 @@ const DIRECT_MEDIA_FENCE_OPENER_BY_KIND = {
  * open, and the end of the text counts as the end of a line: backticks there close the block until
  * more text says otherwise. The streaming controller holds both until the text decides or ends.
  */
-const LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[ \t]*```)|(?=`*[ \t\r]*(?:\n|$)))/gu;
+const LINE_EDGE_FENCE = /(?<!`)```(?:(?<=(?:^|\n)[^\S\n]*```)|(?=`*[^\S\n]*(?:\n|$)))/gu;
 
 /**
  * Reads the JSON object that may open a body, up to `limit`: whitespace, then the object, then the
- * spaces or tabs after it. Returns where backticks right after the object start, or -1.
+ * whitespace after it. Returns where backticks right after the object start, or -1.
  */
 function findBacktickAfterBodyJson(text, bodyStart, limit) {
 	let at = bodyStart;
@@ -45,7 +47,7 @@ function findBacktickAfterBodyJson(text, bodyStart, limit) {
 		return -1;
 	}
 	at = end;
-	while (at < limit && /[ \t\r]/u.test(text[at])) {
+	while (at < limit && /\s/u.test(text[at])) {
 		at += 1;
 	}
 	return at + 3 <= limit && text.startsWith("```", at) ? at : -1;
