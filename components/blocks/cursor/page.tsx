@@ -49,7 +49,7 @@ import {
 	QueueSectionContent,
 	QueueSectionLabel,
 	QueueSectionTrigger,
-} from "@/components/ui-custom/queue"
+} from "@/components/ui/queue"
 import {
 	Task,
 	TaskContent,

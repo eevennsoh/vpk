@@ -2460,7 +2460,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/queue.tsx": {
+  "components/ui/queue.tsx": {
     "no-restricted-syntax": {
       "count": 2
     }

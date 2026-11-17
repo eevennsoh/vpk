@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 86,
+				"entryCount": 87,
 				"entries": [
 					{
 						"category": "ui",
@@ -5911,6 +5911,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "queue",
+						"name": "Queue",
+						"importPath": "@/components/ui/queue",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "radio-group",
 						"name": "Radio Group",
 						"importPath": "@/components/ui/radio-group",
@@ -6262,7 +6269,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 75,
+				"entryCount": 74,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6605,13 +6612,6 @@
 						"slug": "prompt-input",
 						"name": "Prompt Input",
 						"importPath": "@/components/ui-custom/prompt-input",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "queue",
-						"name": "Queue",
-						"importPath": "@/components/ui-custom/queue",
 						"status": "live"
 					},
 					{

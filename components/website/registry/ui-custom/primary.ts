@@ -56,7 +56,6 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"progress-circle": dynamic(() => import("../../demos/ui-custom/progress-circle-demo"), { ssr: false }),
 	"progress-rovo": dynamic(() => import("../../demos/ui-custom/progress-rovo-demo"), { ssr: false }),
 	"prompt-input": dynamic(() => import("../../demos/ui-custom/prompt-input-demo"), { ssr: false }),
-	queue: dynamic(() => import("../../demos/ui-custom/queue-demo"), { ssr: false }),
 	reasoning: dynamic(() => import("../../demos/ui-custom/reasoning-demo"), { ssr: false }),
 	"rovo-cursor": dynamic(() => import("../../demos/ui-custom/rovo-cursor-demo"), { ssr: false }),
 	"rovo-generation": dynamic(() => import("../../demos/ui-custom/rovo-generation-demo"), { ssr: false }),

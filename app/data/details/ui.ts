@@ -65,6 +65,7 @@ import { PROGRESS_DETAIL } from "./ui/progress";
 import { PROGRESS_INDICATOR_DETAIL } from "./ui/progress-indicator";
 import { PROGRESS_TRACKER_DETAIL } from "./ui/progress-tracker";
 import { QUESTIONNAIRE_DETAIL } from "./ui/questionnaire";
+import { QUEUE_DETAIL } from "./ui/queue";
 import { RADIO_GROUP_DETAIL } from "./ui/radio-group";
 import { RESIZABLE_DETAIL } from "./ui/resizable";
 import { SCROLL_AREA_DETAIL } from "./ui/scroll-area";
@@ -153,6 +154,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	"progress-indicator": PROGRESS_INDICATOR_DETAIL,
 	"progress-tracker": PROGRESS_TRACKER_DETAIL,
 	questionnaire: QUESTIONNAIRE_DETAIL,
+	queue: QUEUE_DETAIL,
 	"radio-group": RADIO_GROUP_DETAIL,
 	resizable: RESIZABLE_DETAIL,
 	"scroll-area": SCROLL_AREA_DETAIL,

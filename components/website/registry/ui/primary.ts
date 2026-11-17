@@ -68,6 +68,7 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"progress-indicator": dynamic(() => import("../../demos/ui/progress-indicator-demo"), { ssr: false }),
 	"progress-tracker": dynamic(() => import("../../demos/ui/progress-tracker-demo"), { ssr: false }),
 	questionnaire: dynamic(() => import("../../demos/ui/questionnaire-demo"), { ssr: false }),
+	queue: dynamic(() => import("../../demos/ui/queue-demo"), { ssr: false }),
 	"radio-group": dynamic(() => import("../../demos/ui/radio-group-demo"), { ssr: false }),
 	resizable: dynamic(() => import("../../demos/ui/resizable-demo"), { ssr: false }),
 	"scroll-area": dynamic(() => import("../../demos/ui/scroll-area-demo"), { ssr: false }),

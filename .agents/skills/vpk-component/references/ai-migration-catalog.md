@@ -86,7 +86,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [context](~/.agents/skills/ai-elements/references/context.md) | `@/components/ui-custom/context` | Context/memory display | `Context` |
 | [controls](~/.agents/skills/ai-elements/references/controls.md) | `@/components/ui-custom/control` | Interactive parameter controls | `Control` |
 | [environment-variables](~/.agents/skills/ai-elements/references/environment-variables.md) | `@/components/ui-custom/environment-variable` | Environment variable display/editor | `EnvironmentVariable` |
-| [queue](~/.agents/skills/ai-elements/references/queue.md) | `@/components/ui-custom/queue` | Task queue display | `Queue` |
+| [queue](~/.agents/skills/ai-elements/references/queue.md) | `@/components/ui/queue` | Prompt queue (composer) or inline todo list (`variant="inline"`) | `Queue` |
 | [schema-display](~/.agents/skills/ai-elements/references/schema-display.md) | `@/components/ui-custom/schema-display` | Data schema visualization | `SchemaDisplay` |
 | [snippet](~/.agents/skills/ai-elements/references/snippet.md) | `@/components/ui-custom/snippet` | Code snippet display (lightweight) | `Snippet` |
 | [transcription](~/.agents/skills/ai-elements/references/transcription.md) | `@/components/ui-custom/transcription` | Audio/video transcription display | `Transcription` |

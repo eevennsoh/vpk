@@ -53,7 +53,6 @@ import { PLAN_DETAIL } from "./ui-custom/plan";
 import { PROGRESS_CIRCLE_DETAIL } from "./ui-custom/progress-circle";
 import { PROGRESS_ROVO_DETAIL } from "./ui-custom/progress-rovo";
 import { PROMPT_INPUT_DETAIL } from "./ui-custom/prompt-input";
-import { QUEUE_DETAIL } from "./ui-custom/queue";
 import { REASONING_DETAIL } from "./ui-custom/reasoning";
 import { ROVO_CURSOR_DETAIL } from "./ui-custom/rovo-cursor";
 import { ROVO_GENERATION_DETAIL } from "./ui-custom/rovo-generation";
@@ -130,7 +129,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"progress-circle": PROGRESS_CIRCLE_DETAIL,
 	"progress-rovo": PROGRESS_ROVO_DETAIL,
 	"prompt-input": PROMPT_INPUT_DETAIL,
-	queue: QUEUE_DETAIL,
 	reasoning: REASONING_DETAIL,
 	"rovo-cursor": ROVO_CURSOR_DETAIL,
 	"rovo-generation": ROVO_GENERATION_DETAIL,

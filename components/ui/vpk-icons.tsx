@@ -98,6 +98,7 @@ import SendIconGlyph from "@atlaskit/icon/core/send";
 import TableIconGlyph from "@atlaskit/icon/core/table";
 import TargetIconGlyph from "@atlaskit/icon/core/target";
 import TaskToDoIconGlyph from "@atlaskit/icon/core/task-to-do";
+import ListChecklistIconGlyph from "@atlaskit/icon/core/list-checklist";
 import TreeIconGlyph from "@atlaskit/icon/core/tree";
 import TextBoldIconGlyph from "@atlaskit/icon/core/text-bold";
 import TextItalicIconGlyph from "@atlaskit/icon/core/text-italic";
@@ -362,6 +363,7 @@ export function XCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFrom
 export function MessageSquareIcon(props: Readonly<VpkIconProps>) { return <MessageCircleIcon {...props} />; }
 export function MessageSquareDiffIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CommentAddIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ListTodoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TaskToDoIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ListChecksIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ListChecklistIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ListBulletedIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ClipboardListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ClipboardIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function UsersIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PeopleGroupIconGlyph as AtlaskitRenderIcon} {...props} />; }
