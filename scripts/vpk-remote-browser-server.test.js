@@ -11,7 +11,35 @@ const { LOCK_FILE, LOG_FILE, STATE_FILE, UNRECORDED_GRACE_MS, acquireLock, desce
 
 const SCRIPT = path.join(__dirname, "vpk-remote-browser-server.js");
 const GRACE_MS = 500;
-const tempDir = (prefix) => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
+// Each test's cleanups, run last-registered first once it ends, pass or fail, so a directory
+// outlives the server stopped in it. Every cleanup runs; the first error is rethrown.
+const cleanups = new WeakMap();
+function defer(t, cleanup) {
+	let stack = cleanups.get(t);
+	if (!stack) {
+		stack = [];
+		cleanups.set(t, stack);
+		t.after(async () => {
+			let firstError;
+			while (stack.length > 0) {
+				try {
+					await stack.pop()();
+				} catch (error) {
+					firstError ??= error;
+				}
+			}
+			if (firstError !== undefined) throw firstError;
+		});
+	}
+	stack.push(cleanup);
+}
+
+// A temporary directory the test removes when it ends.
+function tempDir(t, prefix) {
+	const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
+	defer(t, () => fs.rmSync(dir, { recursive: true, force: true }));
+	return dir;
+}
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const alive = (pid) => processStart(pid) !== null;
 
@@ -36,8 +64,8 @@ function refusesConnections(port) {
 }
 
 // A project with a fake Playwright package whose cli.js stands in for `run-server`.
-function fakeProject({ name = "@playwright/test", version = "9.8.7", cli }) {
-	const project = tempDir("browser-server-project-");
+function fakeProject(t, { name = "@playwright/test", version = "9.8.7", cli }) {
+	const project = tempDir(t, "browser-server-project-");
 	const pkg = path.join(project, "node_modules", ...name.split("/"));
 	fs.mkdirSync(pkg, { recursive: true });
 	fs.writeFileSync(path.join(pkg, "package.json"), JSON.stringify({ name, version, exports: { "./package.json": "./package.json", "./cli": "./cli.js" } }));
@@ -68,7 +96,7 @@ setTimeout(() => { for (;;) {} }, 300);
 
 function browserPid(t, pidFile) {
 	const pid = Number(fs.readFileSync(pidFile, "utf8"));
-	t.after(() => {
+	defer(t, () => {
 		try {
 			process.kill(pid, "SIGKILL");
 		} catch {}
@@ -81,9 +109,9 @@ function options(project, workerDir, extra = {}) {
 }
 
 async function startedServer(t, project, extra = {}) {
-	const workerDir = tempDir("browser-server-worker-");
+	const workerDir = tempDir(t, "browser-server-worker-");
 	const state = await start(options(project, workerDir, extra));
-	t.after(async () => {
+	defer(t, async () => {
 		await stop({ workerDir });
 		try {
 			process.kill(-state.pid, "SIGKILL");
@@ -123,23 +151,23 @@ test("parseArgs validates port, TTL and timeout, and defaults to a free port", (
 	assert.deepEqual(parseArgs(["endpoint", "--worker-dir", "w"]), { command: "endpoint", workerDir: path.resolve("w") });
 });
 
-test("Playwright resolution names the directory when neither package resolves", () => {
-	const project = tempDir("browser-server-empty-");
+test("Playwright resolution names the directory when neither package resolves", (t) => {
+	const project = tempDir(t, "browser-server-empty-");
 	assert.throws(() => resolvePlaywright(project), (error) => error.message.includes(project) && /neither @playwright\/test nor playwright resolves/u.test(error.message));
 	assert.throws(() => resolvePlaywright(path.join(project, "missing")), /is not a directory/u);
 });
 
-test("Playwright resolves from the project, preferring @playwright/test, else playwright", () => {
-	const testProject = fakeProject({ cli: "" });
+test("Playwright resolves from the project, preferring @playwright/test, else playwright", (t) => {
+	const testProject = fakeProject(t, { cli: "" });
 	assert.deepEqual(resolvePlaywright(testProject), { name: "@playwright/test", version: "9.8.7", cli: path.join(testProject, "node_modules", "@playwright", "test", "cli.js") });
-	const coreProject = fakeProject({ name: "playwright", version: "1.2.3", cli: "" });
+	const coreProject = fakeProject(t, { name: "playwright", version: "1.2.3", cli: "" });
 	assert.equal(resolvePlaywright(coreProject).name, "playwright");
 	assert.equal(resolvePlaywright(coreProject).version, "1.2.3");
 });
 
 test("start records the server, endpoint reports it, and stop ends it and its browser, twice safely", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile) });
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile) });
 	const { state, workerDir } = await startedServer(t, project);
 	const browser = browserPid(t, pidFile);
 	assert.equal(state.endpoint, `ws://127.0.0.1:${state.port}/`);
@@ -165,8 +193,8 @@ test("start records the server, endpoint reports it, and stop ends it and its br
 });
 
 test("two concurrent starts for one worker directory leave one server and a matching record", async (t) => {
-	const project = fakeProject({ cli: `setTimeout(() => {}, 300); ${LISTEN}` });
-	const workerDir = tempDir("browser-server-worker-");
+	const project = fakeProject(t, { cli: `setTimeout(() => {}, 300); ${LISTEN}` });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	const run = () => new Promise((resolve) => {
 		const child = spawn(process.execPath, [SCRIPT, "start", "--project", project, "--worker-dir", workerDir], { stdio: ["ignore", "pipe", "pipe"] });
 		let stdout = "";
@@ -180,7 +208,7 @@ test("two concurrent starts for one worker directory leave one server and a matc
 	const losers = results.filter((result) => result.code !== 0);
 	assert.equal(winners.length, 1, JSON.stringify(results));
 	const state = JSON.parse(winners[0].stdout);
-	t.after(async () => {
+	defer(t, async () => {
 		await stop({ workerDir });
 	});
 	assert.equal(losers.length, 1);
@@ -193,9 +221,9 @@ test("two concurrent starts for one worker directory leave one server and a matc
 });
 
 test("a failure while publishing state ends the server and its browser and releases the lock", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile) });
-	const workerDir = tempDir("browser-server-worker-");
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile) });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	let supervisor;
 	await assert.rejects(start(options(project, workerDir), { beforePublish: (state) => {
 		supervisor = state.pid;
@@ -212,9 +240,9 @@ test("a failure while publishing state ends the server and its browser and relea
 });
 
 test("stop never signals a process a stale or forged record points at", async (t) => {
-	const project = fakeProject({ cli: LISTEN });
+	const project = fakeProject(t, { cli: LISTEN });
 	const { state, workerDir } = await startedServer(t, project);
-	const other = tempDir("browser-server-worker-");
+	const other = tempDir(t, "browser-server-worker-");
 	const stateFile = path.join(other, STATE_FILE);
 	const write = (record) => fs.writeFileSync(stateFile, JSON.stringify(record));
 
@@ -247,8 +275,8 @@ test("stop never signals a process a stale or forged record points at", async (t
 });
 
 test("a server that hangs and a browser that ignores SIGTERM both end on stop", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: hung(pidFile) });
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: hung(pidFile) });
 	const { state, workerDir } = await startedServer(t, project);
 	const browser = browserPid(t, pidFile);
 	await sleep(1_500);
@@ -262,8 +290,8 @@ test("a server that hangs and a browser that ignores SIGTERM both end on stop", 
 });
 
 test("a killed supervisor takes the server and its browser with it", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile) });
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile) });
 	const { state, workerDir } = await startedServer(t, project);
 	const browser = browserPid(t, pidFile);
 	const [server] = descendants(state.pid);
@@ -274,8 +302,8 @@ test("a killed supervisor takes the server and its browser with it", async (t) =
 });
 
 test("a server nobody stops ends itself and its browser at its TTL and clears its record", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile) });
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile) });
 	const { state, workerDir } = await startedServer(t, project, { ttlMs: 1_500 });
 	const browser = browserPid(t, pidFile);
 	assert.ok(await eventually(() => !alive(state.pid) && !alive(browser)));
@@ -283,17 +311,17 @@ test("a server nobody stops ends itself and its browser at its TTL and clears it
 	assert.match(fs.readFileSync(path.join(workerDir, LOG_FILE), "utf8"), /stopping \(ttl expired\)/u);
 });
 
-test("a server that exits during start fails with its reason and leaves nothing behind", async () => {
-	const project = fakeProject({ cli: 'console.error("fake: port already in use"); process.exit(3);' });
-	const workerDir = tempDir("browser-server-worker-");
+test("a server that exits during start fails with its reason and leaves nothing behind", async (t) => {
+	const project = fakeProject(t, { cli: 'console.error("fake: port already in use"); process.exit(3);' });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	await assert.rejects(start(options(project, workerDir)), (error) => /did not start: exited with code 3/u.test(error.message) && error.message.includes("fake: port already in use"));
 	assert.deepEqual(fs.readdirSync(workerDir), [LOG_FILE]);
 });
 
 test("a server that never listens is ended at the timeout, browser included", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: `${withBrowser(pidFile).replace(LISTEN, "")} setInterval(() => {}, 1000);` });
-	const workerDir = tempDir("browser-server-worker-");
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: `${withBrowser(pidFile).replace(LISTEN, "")} setInterval(() => {}, 1000);` });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	await assert.rejects(start(options(project, workerDir, { timeoutMs: 1_500 })), /not listening on ws:\/\/127\.0\.0\.1:\d+\/ after 1500ms/u);
 	const browser = browserPid(t, pidFile);
 	assert.equal(alive(browser), false);
@@ -301,8 +329,8 @@ test("a server that never listens is ended at the timeout, browser included", as
 });
 
 test("a hung server and its browser end when the supervisor is killed", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: hung(pidFile) });
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: hung(pidFile) });
 	const { state, workerDir } = await startedServer(t, project);
 	const browser = browserPid(t, pidFile);
 	await sleep(1_500);
@@ -328,17 +356,17 @@ function cli(args, env = {}) {
 
 // Starts the CLI with the hold-before-publish hook, waits until it holds, and kills it there.
 async function killStarterBeforePublish(t, project, workerDir, token) {
-	const holdFile = path.join(tempDir("browser-server-hold-"), "state.json");
+	const holdFile = path.join(tempDir(t, "browser-server-hold-"), "state.json");
 	const args = [SCRIPT, "start", "--project", project, "--worker-dir", workerDir, "--timeout-ms", "1000", ...(token ? ["--token", token] : [])];
 	const starter = spawn(process.execPath, args, { stdio: "ignore", env: { ...process.env, VPK_BROWSER_SERVER_TEST_HOLD_BEFORE_PUBLISH: holdFile } });
-	t.after(() => {
+	defer(t, () => {
 		try {
 			starter.kill("SIGKILL");
 		} catch {}
 	});
 	assert.ok(await eventually(() => fs.existsSync(holdFile) && fs.statSync(holdFile).size > 0), "the starter never reached the publish step");
 	const held = JSON.parse(fs.readFileSync(holdFile, "utf8"));
-	t.after(() => {
+	defer(t, () => {
 		try {
 			process.kill(-held.pid, "SIGKILL");
 		} catch {}
@@ -352,9 +380,9 @@ async function killStarterBeforePublish(t, project, workerDir, token) {
 }
 
 test("a supervisor whose starter died before publishing ends itself; a later start runs exactly one server", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile, { polite: true }) });
-	const workerDir = tempDir("browser-server-worker-");
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile, { polite: true }) });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	const held = await killStarterBeforePublish(t, project, workerDir);
 	const browser = browserPid(t, pidFile);
 	const [server] = descendants(held.pid);
@@ -366,16 +394,16 @@ test("a supervisor whose starter died before publishing ends itself; a later sta
 	assert.equal(result.code, 0, result.stderr);
 	const state = JSON.parse(result.stdout);
 	browserPid(t, pidFile);
-	t.after(() => stop({ workerDir }));
+	defer(t, () => stop({ workerDir }));
 	assert.deepEqual(supervisorsFor(path.join(workerDir, STATE_FILE)).map(({ pid }) => pid), [state.pid]);
 	assert.equal((await stop({ workerDir })).stopped, true);
 	assert.deepEqual(supervisorsFor(path.join(workerDir, STATE_FILE)), []);
 });
 
 test("after a starter dies before publishing, the next start ends the orphan at once, and the run's stop --token does too", async (t) => {
-	const pidFile = path.join(tempDir("browser-server-pid-"), "pid");
-	const project = fakeProject({ cli: withBrowser(pidFile, { polite: true }) });
-	const workerDir = tempDir("browser-server-worker-");
+	const pidFile = path.join(tempDir(t, "browser-server-pid-"), "pid");
+	const project = fakeProject(t, { cli: withBrowser(pidFile, { polite: true }) });
+	const workerDir = tempDir(t, "browser-server-worker-");
 	const stateFile = path.join(workerDir, STATE_FILE);
 
 	const orphan = await killStarterBeforePublish(t, project, workerDir);
@@ -385,7 +413,7 @@ test("after a starter dies before publishing, the next start ends the orphan at 
 	assert.match(result.stderr, /ending 1 unrecorded supervisor/u);
 	const state = JSON.parse(result.stdout);
 	browserPid(t, pidFile);
-	t.after(() => stop({ workerDir }));
+	defer(t, () => stop({ workerDir }));
 	assert.equal(alive(orphan.pid), false);
 	assert.equal(alive(orphanBrowser), false);
 	assert.deepEqual(supervisorsFor(stateFile).map(({ pid }) => pid), [state.pid]);
@@ -403,9 +431,9 @@ test("after a starter dies before publishing, the next start ends the orphan at 
 });
 
 test("following the recipe, a second run that cannot start leaves the first run's server serving", async (t) => {
-	const project = fakeProject({ cli: LISTEN });
-	const workerRoot = tempDir("browser-server-worker-");
-	const scratch = tempDir("browser-server-recipe-");
+	const project = fakeProject(t, { cli: LISTEN });
+	const workerRoot = tempDir(t, "browser-server-worker-");
+	const scratch = tempDir(t, "browser-server-recipe-");
 	const go = path.join(scratch, "go");
 	// The recipe's lines from gpt-executor.md, with a stand-in worker that waits for `go` and exits 7.
 	const runScript = (name, worker) => {
@@ -429,11 +457,11 @@ exit "$status"
 		const child = spawn("bash", [file], { stdio: ["ignore", "pipe", "pipe"] });
 		let stderr = "";
 		child.stderr.on("data", (chunk) => { stderr += chunk; });
-		t.after(() => child.kill("SIGKILL"));
+		defer(t, () => child.kill("SIGKILL"));
 		return { child, done: new Promise((resolve) => child.on("exit", (code) => resolve({ code, stderr }))) };
 	};
 	const first = run(runScript("run-1.sh", `node -e 'const fs = require("node:fs"); fs.writeFileSync(${JSON.stringify(path.join(scratch, "endpoint"))}, process.env.PW_TEST_CONNECT_WS_ENDPOINT); const wait = () => fs.existsSync(${JSON.stringify(go)}) ? process.exit(7) : setTimeout(wait, 50); wait();'`));
-	t.after(() => stop({ workerDir: workerRoot }));
+	defer(t, () => stop({ workerDir: workerRoot }));
 	assert.ok(await eventually(() => fs.existsSync(path.join(scratch, "endpoint"))), "the first run's worker never started");
 	const state = JSON.parse(fs.readFileSync(path.join(workerRoot, STATE_FILE), "utf8"));
 	assert.equal(fs.readFileSync(path.join(scratch, "endpoint"), "utf8"), state.endpoint);
@@ -459,8 +487,8 @@ exit "$status"
 const lockRecord = (extra) => JSON.stringify({ pid: process.pid, start: processStart(process.pid), token: crypto.randomBytes(16).toString("hex"), purpose: "start", ...extra });
 const STALE = { start: "Thu Jan  1 00:00:00 1970" };
 
-test("a stale lock is taken over, and released without leftovers", async () => {
-	const workerDir = tempDir("browser-server-lock-");
+test("a stale lock is taken over, and released without leftovers", async (t) => {
+	const workerDir = tempDir(t, "browser-server-lock-");
 	fs.writeFileSync(path.join(workerDir, LOCK_FILE), lockRecord(STALE));
 	const release = await acquireLock(workerDir, { waitMs: 0, purpose: "start" });
 	assert.equal(JSON.parse(fs.readFileSync(path.join(workerDir, LOCK_FILE), "utf8")).purpose, "start");
@@ -468,8 +496,8 @@ test("a stale lock is taken over, and released without leftovers", async () => {
 	assert.deepEqual(fs.readdirSync(workerDir), []);
 });
 
-test("taking over a stale lock never removes a live lock that replaced it", async () => {
-	const workerDir = tempDir("browser-server-lock-");
+test("taking over a stale lock never removes a live lock that replaced it", async (t) => {
+	const workerDir = tempDir(t, "browser-server-lock-");
 	const lockFile = path.join(workerDir, LOCK_FILE);
 	fs.writeFileSync(lockFile, lockRecord(STALE));
 	const live = lockRecord({ purpose: "stop" });
@@ -483,8 +511,8 @@ test("taking over a stale lock never removes a live lock that replaced it", asyn
 	assert.deepEqual(fs.readdirSync(workerDir), [LOCK_FILE]);
 });
 
-test("a takeover in progress elsewhere is waited for a bounded number of attempts; an interrupted one is reported", async () => {
-	const workerDir = tempDir("browser-server-lock-");
+test("a takeover in progress elsewhere is waited for a bounded number of attempts; an interrupted one is reported", async (t) => {
+	const workerDir = tempDir(t, "browser-server-lock-");
 	const lockFile = path.join(workerDir, LOCK_FILE);
 	const stale = lockRecord(STALE);
 	const { token } = JSON.parse(stale);
@@ -504,7 +532,7 @@ test("a takeover in progress elsewhere is waited for a bounded number of attempt
 });
 
 test("an unreadable or malformed lock ends in an error after a bounded wait", async (t) => {
-	const workerDir = tempDir("browser-server-lock-");
+	const workerDir = tempDir(t, "browser-server-lock-");
 	const lockFile = path.join(workerDir, LOCK_FILE);
 	for (const body of ["not json", "{}", JSON.stringify({ pid: process.pid, start: "x", nonce: "old format" })]) {
 		fs.writeFileSync(lockFile, body);
@@ -517,7 +545,7 @@ test("an unreadable or malformed lock ends in an error after a bounded wait", as
 	if (process.getuid?.() !== 0) {
 		fs.writeFileSync(lockFile, lockRecord({}));
 		fs.chmodSync(lockFile, 0o000);
-		t.after(() => fs.chmodSync(lockFile, 0o600));
+		defer(t, () => fs.chmodSync(lockFile, 0o600));
 		await assert.rejects(acquireLock(workerDir, { waitMs: 0, purpose: "start", unreadableWaitMs: 300 }), /cannot be read as a lock \(EACCES\)/u);
 	}
 });

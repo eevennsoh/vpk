@@ -4,16 +4,17 @@
 // `permissions.vpk-worker.filesystem` that lets `git add` and `git commit` move the task
 // branch in a linked worktree, and nothing else.
 //
-//   node scripts/vpk-remote-git-grant.js --worktree <dir> --branch <name> [--repo <dir>]
+//   node scripts/vpk-remote-git-grant.js --worktree <dir> --branch <name> --repo <dir>
 //   node scripts/vpk-remote-git-grant.js --no-worktree
 //
 // --branch is the expected branch from the task record (task.json), never read from the
 // worktree, so a worker cannot choose which branch a later run may move. --repo pins the
-// repository: the main checkout or its common git directory; any other repository yields `{}`.
+// repository and is required: the main checkout or its common git directory; any other
+// repository yields `{}`.
 //
 // Stdout is the grant and nothing else: an inline TOML table, or `{}` (no git writes). It
-// fails closed: `{}` with the reason on stderr, exit 0, whenever anything is off (not a
-// linked worktree, HEAD detached or on another branch, a branch name outside BRANCH_PATTERN,
+// fails closed: `{}` with the reason on stderr, exit 0, whenever anything is off (no --repo,
+// not a linked worktree, HEAD detached or on another branch, a branch name outside BRANCH_PATTERN,
 // a failed git query, worktree back-links that disagree, another repository than --repo, a
 // granted path or one of its parents that is a symlink or of the wrong type, a missing
 // parent directory, a missing index, reflog or loose branch ref, or a path that cannot be
@@ -32,7 +33,7 @@ const BRANCH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-
 const MAX_BRANCH_LENGTH = 200;
 // Characters codex may read as glob syntax in a filesystem entry, and the backslash.
 const UNSAFE_PATH_CHARS = /[*?[\]{}\\]/u;
-const USAGE = "usage: vpk-remote-git-grant.js --worktree <dir> --branch <name> [--repo <dir>]\n       vpk-remote-git-grant.js --no-worktree";
+const USAGE = "usage: vpk-remote-git-grant.js --worktree <dir> --branch <name> --repo <dir>\n       vpk-remote-git-grant.js --no-worktree";
 
 function parseArgs(argv) {
 	if (argv.length === 1 && argv[0] === "--no-worktree") return { noWorktree: true };
@@ -191,6 +192,7 @@ const none = (reason) => ({ grant: NO_GRANT, reason });
 // Returns { grant, reason } where reason is null only for a real grant.
 function buildGrant({ worktree, branch, repo, noWorktree }, { git = runGit } = {}) {
 	if (noWorktree) return none("--no-worktree: the checkout's own .git stays protected");
+	if (repo === undefined) return none("--repo is required: without the pinned repository no grant is made");
 	if (!isSafeBranch(branch)) return none(`branch ${JSON.stringify(branch)} is outside the allowed character set`);
 	let top;
 	try {
@@ -218,15 +220,13 @@ function buildGrant({ worktree, branch, repo, noWorktree }, { git = runGit } = {
 	if (head.status !== 0) return none(`git symbolic-ref failed: ${head.stderr}`);
 	const ref = head.stdout.trim();
 	if (ref !== `refs/heads/${branch}`) return none(`HEAD is on ${ref}, expected refs/heads/${branch}`);
-	if (repo !== undefined) {
-		let pinned;
-		try {
-			pinned = pinnedCommonDir(repo);
-		} catch {
-			return none(`--repo ${repo} does not exist`);
-		}
-		if (pinned !== commonDir) return none(`${top} belongs to ${commonDir}, not the pinned repository ${pinned}`);
+	let pinned;
+	try {
+		pinned = pinnedCommonDir(repo);
+	} catch {
+		return none(`--repo ${repo} does not exist`);
 	}
+	if (pinned !== commonDir) return none(`${top} belongs to ${commonDir}, not the pinned repository ${pinned}`);
 	const backLink = backLinkProblem({ top, gitDir, commonDir });
 	if (backLink !== null) return none(backLink);
 	const entries = grantEntries({ gitDir, commonDir, branch });

@@ -190,11 +190,13 @@ does not help, and neither does a profile entry for all of `<repo>/.git`;
 entries for the exact paths do.
 
 For a task with a worktree, the planner passes the worktree, the branch from
-`task.json`, and `--repo` (the main checkout, or its common git directory).
-The script never takes the branch from the worktree, so a worker cannot
-choose which branch a later run may move. It prints only the grant on
-stdout. It prints `{}` (no git writes), says why on stderr, and exits 0 when:
+`task.json`, and `--repo` (the main checkout, or its common git directory);
+all three are required. The script never takes the branch from the worktree,
+so a worker cannot choose which branch a later run may move. It prints only
+the grant on stdout. It prints `{}` (no git writes), says why on stderr, and
+exits 0 when:
 
+- `--repo` is missing;
 - the directory is not the top of a linked worktree, or belongs to another
   repository than `--repo`;
 - the worktree's back-links disagree: its `.git` file must name its git
@@ -418,6 +420,14 @@ exit "$status"
   script that calls `browserType.launch()`, `chromium.launch()` or
   `launchPersistentContext()` itself still fails with the error above, and
   headed runs (`--headed`, `--debug`, `--ui`) are out on the worker side.
+  Tests that depend on tight key or pointer timing can need a retry,
+  because input travels over the connection. Observed 2026-11-17 on another
+  repository: three tests passed only on retry in a GPT worker's runs (one
+  about a rapid key release); each then passed 100 or more times in
+  isolation against the old source, and a planner run with a local browser
+  passed the whole suite with no retries. Treat a retry-only pass from a GPT
+  worker as a prompt for the planner's local run, not as proof of a
+  regression or of its absence.
 
 Verified 2026-11-17 on 0.166.0 with Playwright 1.64.1 and real
 `gpt-6.1-sol` workers: a `run.sh` built from these lines passed one spec
