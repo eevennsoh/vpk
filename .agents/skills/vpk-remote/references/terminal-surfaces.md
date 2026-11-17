@@ -66,6 +66,8 @@ Conventions and status reporting: `.agents/docs/herdr.md`.
 | What has actually landed? | `git status` / `git diff` in the task worktree |
 | What did it conclude? | `report.md` |
 
-There is no "needs input" state. Workers run headless with permissions
-skipped, so they cannot stop to ask; a blocked worker exits non-zero, or
+There is no "needs input" state. Workers run headless and cannot stop to
+ask: Claude-lane workers with permissions skipped, GPT-lane workers sandboxed
+with `approval_policy="never"`, so a refused command fails instead of
+prompting; a blocked worker exits non-zero, or
 exits 0 with the blocker written in its report.
