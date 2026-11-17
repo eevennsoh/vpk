@@ -1,6 +1,6 @@
 // Shared harness for the RovoChatProvider turn-lifecycle behaviour suites (SM-FE-15).
 // It renders the real provider with the real AI SDK `useChat` and
-// `DefaultChatTransport`; only the network is fake. `fetch` answers
+// `DefaultChatTransport`; an optional gate holds stop settlement. `fetch` answers
 // `/api/rovo/chat` from a scripted in-memory SSE server, and the thread API
 // module is an in-memory store, so no paid model call can happen.
 // Paths resolve from process.cwd(), like scripts/lib/render-component.js, so the
@@ -34,8 +34,21 @@ const CHAT_ERROR_UTILS_PATH = path.join(process.cwd(), "lib/chat-error-utils.ts"
 const CANCEL_STRATEGY_PATH = path.join(process.cwd(), "lib/rovo-cancel-strategy.ts");
 const TURN_ERRORS_PATH = path.join(process.cwd(), "app/contexts/rovo-chat-turn-errors.ts");
 const CANCEL_REQUEST_TIMEOUT_MS = 150;
+const AI_SDK_REACT_PATH = require.resolve("@ai-sdk/react");
 
 const mocks = {
+	"@ai-sdk/react": `
+		import { useCallback } from "react";
+		import { useChat as useRealChat } from ${JSON.stringify(AI_SDK_REACT_PATH)};
+		export function useChat(options) {
+			const chat = useRealChat(options);
+			const stop = useCallback(async () => {
+				await window.testApi?.stopGate;
+				return chat.stop();
+			}, [chat.stop]);
+			return { ...chat, stop };
+		}
+	`,
 	"@/components/projects/rovo-core/lib/api": `
 		// Late refreshes can land after a test tears down; they read an empty store.
 		const api = () => window.testApi ?? { threads: new Map(), calls: [] };
@@ -58,7 +71,7 @@ const mocks = {
 			return created;
 		}
 		export async function deleteAllRovoAppThreads() { api().threads.clear(); }
-		export async function deleteRovoAppThread(id) { api().threads.delete(id); }
+		export async function deleteRovoAppThread(id) { api().calls.push("deleteThread:" + id); await api().deleteThreadGate; api().threads.delete(id); }
 		// \`detachGate\` holds a thread change's stop phase at the detach until the test opens it.
 		export async function detachRovoAppRun(threadId) { api().calls.push("detachRun:" + threadId); await api().detachGate; return true; }
 		export async function fetchRovoAppAITitle() { return null; }
@@ -302,11 +315,17 @@ async function mountChat(t, { strict = false } = {}) {
 	const container = document.createElement("div");
 	document.body.append(container);
 	const root = createRoot(container);
+	let mounted = true;
+	const unmount = async () => {
+		if (!mounted) return;
+		await React.act(async () => root.unmount());
+		mounted = false;
+	};
 	const render = (props) => React.act(async () => root.render(React.createElement(harness.Harness, { strict, ...props })));
 	await render({});
 	t.after(async () => {
 		delete window.onTestChatRender;
-		await React.act(async () => root.unmount());
+		await unmount();
 		container.remove();
 		globalThis.fetch = originalFetch;
 		window.fetch = originalWindowFetch;
@@ -318,6 +337,7 @@ async function mountChat(t, { strict = false } = {}) {
 		harness,
 		server,
 		chat: () => window.testChat,
+		unmount,
 		// Hides or shows the provider through <Activity>.
 		setHidden: (hidden) => render({ hidden }),
 	};

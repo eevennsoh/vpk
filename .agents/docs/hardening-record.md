@@ -29,6 +29,7 @@ Each line is settled. Reopen one only with the owner.
 - **Cut-short notice wait**: a cut-short turn waits `CUT_SHORT_MEDIA_WAIT_MS` (5 s, confirmed by the owner on 17 Nov 2026) for pending media instead of the full media timeout (`app/contexts/use-rovo-chat-media-generation.ts`).
 - **Thread change in the chat provider** (#2358): a thread change stops and detaches the departing request first, then swaps the transcript and resets the turn in one synchronous step, so a stopped reply or a cut-short notice never lands on the new thread; request liveness comes from the turn reducer (`hasLiveRequest` in `app/contexts/rovo-chat-turn-machine.ts`). Switching threads drops prompts still queued on the old thread (before, they were sent into the new one); the owner confirmed this on 17 Nov 2026. Keeping a queue per thread is not planned.
 - **Chat failure notice** (#2361, owner decision "fix that"): a failure notice is its own paragraph and reaches the client once on every turn type. Before it, held plain text is shown; an unfinished marker, an open fence at the start of a reply and a classifier payload are dropped, from the stored reply too; text that reached the client is never removed. The text output controller lives in `backend/chat/rovo-text-output.js`; the marker adapter's `flushVisibleText()` is the failure-path flush and `flush()` stays for the end of a stream.
+- **Chat request gate** (#2367): requests belong to a transcript. Nothing starts for a transcript between a thread change's stop phase and its commit point; a committed change drops its retry, queue and edit resend, and a superseded or failed change lets them continue (`sendForTranscript` in `app/contexts/rovo-chat-request-lifecycle.ts`). The retry is reducer state with a due time and an effect arms it (`app/contexts/use-rovo-chat-retry.ts`), edit resends are serialized on reducer state, and a thread creation that was cut off is adopted for the same transcript instead of repeated. Queued prompts keep sending while the provider is hidden, and deleting a thread that is not active holds nothing up.
 
 ### Declined or deferred
 
@@ -58,7 +59,6 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ### Backend
 
-- The failure-notice path shows held-back text before the notice, which can include a partial marker or spec fence (`backend/chat/rovo-chat-stream.js`); discarding it instead would cut the last few words of the reply. Owner's call.
 - `onDeferredToolRequest` is not awaited in `backend/lib/rovo-gateway-tool-event-dispatcher.js`, so a question or plan card can be written after post-stream work starts.
 - During normal streaming a spec or media fence that follows ordinary text is not held across chunks, so part of it reaches the client as text (`emitTextDelta` in `backend/chat/rovo-text-output.js` flushes with `force`).
 - A `WIDGET_LOADING:` marker split across chunks is read with a truncated widget type (`backend/chat/rovo-marker-stream-adapter.js`).
@@ -79,11 +79,10 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 - Studio shell is the largest source file: `components/projects/studio/components/rovo-app-shell.tsx`, 3,330 lines.
 - Eight behaviour differences between the Rovo and Studio shells were never decided (for example Studio ignores text typed after a prefill).
 - On `/rovo`, directory-autocomplete rows are clickable one render before the composer can take the click.
-- A retry that fires while a thread switch is still detaching the old run streams its reply into the newly selected thread (`retryActivePrompt` in `app/contexts/context-rovo-chat.tsx` is not covered by the stop that already ran).
-- A first prompt that is waiting for its thread to be created disappears if a thread selection invalidates the creation and is then superseded.
-- An edit resend that is waiting for the stream status to commit survives a thread switch and then fails against the new thread.
-- An edit resend started before an earlier request's streaming status commits does not stop that request, so the two requests overlap and the earlier one's finish can be recorded against the resend. Fix direction: serialize request replacement for edits.
-- The retry countdown timer is cancelled when the provider is hidden through `<Activity>` (Butter's retained views) and is not restarted when it is shown again, so the prompt can stay active.
+- After a hot-reload edit to the chat provider or its hooks in development, the turn state React shows (active prompt, queue, retry countdown) can stay stale until the next send, because events are dropped while the provider is disposed (`app/contexts/use-rovo-chat-turn-machine.ts`). Not checked in a live dev session.
+- Cancelling a local turn no longer aborts its thread creation (the thread is adopted by the next send on the same transcript), so switching away before sending leaves an empty thread in history (`app/contexts/use-rovo-chat-thread-creation.ts`).
+- Deleting a thread and then selecting it can land on the deleted thread when the fetch beats the delete; a superseded selection's detach can arrive after a kept request on that thread has started; a failed delete of the thread being selected still cancels the selection.
+- Stop while an edit resend waits still sends the edit. A superseded `resetChat` or `deleteAllThreads` leaves the active thread id on the old thread behind an empty transcript, and a superseded delete of the active thread still deletes it on the server.
 - Remote preview capture: Ctrl/Cmd+V pastes the remote clipboard.
 - F-2c: 11 suspected Butter regressions; only the keyboard traps are fixed.
 - The pull-request details rail exists as three copies.
