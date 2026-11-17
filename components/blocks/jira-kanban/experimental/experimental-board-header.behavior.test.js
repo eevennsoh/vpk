@@ -73,6 +73,17 @@ test("the default header keeps Group and Needs input inline", async () => {
 });
 
 for (const activeView of ["board", "list"]) {
+	test(`${activeView} can keep Group without a separate Needs input button`, async () => {
+		const view = await renderComponent({
+			entry: "components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
+			exportName: "ExperimentalJiraKanbanBoardHeader",
+			props: { activeView, headerControlsLayout: "trailing-icons", needsInputCount: 4, showNeedsInputButton: false },
+		});
+		assert.equal(view.container.querySelector('button[aria-label^="Needs input:"]'), null);
+		assert.ok(view.getByRole("button", { name: "Group" }));
+		await view.unmount();
+	});
+
 	test(`${activeView} keeps Needs input as a separate text button in the trailing controls`, async () => {
 		const selections = [];
 		const view = await renderComponent({

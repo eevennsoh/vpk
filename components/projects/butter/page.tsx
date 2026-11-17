@@ -785,6 +785,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 						showCustomizeControl
 						simpleViews={false}
 						needsInputCount={needsInputCount}
+						showNeedsInputButton={false}
 						viewTabs={(
 							<JiraViewTabs
 								selectedTabLabel={selectedTabLabel}
