@@ -14,6 +14,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { AgentSessionItem } from "./agent-session-types";
+import { AGENT_SESSION_STATUS_LABEL as LIFECYCLE_LABELS } from "./agent-session-long-metadata";
 import { motionEase } from "@/lib/motion";
 
 /**
@@ -25,13 +26,6 @@ import { motionEase } from "@/lib/motion";
  */
 const INDICATOR_ENTER = { duration: 0.15, ease: motionEase.outPractical } as const;
 const INDICATOR_EXIT = { duration: 0.1, ease: motionEase.in } as const;
-
-const LIFECYCLE_LABELS = {
-	running: "Working",
-	"needs-input": "Needs input",
-	attention: "Needs attention",
-	complete: "Finished",
-} as const satisfies Record<AgentSessionItem["state"], string>;
 
 function IndicatorGlyph({
 	compact = false,
@@ -154,6 +148,13 @@ export function AgentSessionShortLifecycleIcon({
 	);
 }
 
+export function AgentSessionLifecycleLabel({ state }: Readonly<{ state: AgentSessionItem["state"] }>) {
+	const label = LIFECYCLE_LABELS[state];
+	return state === "running"
+		? <Shimmer as="span" className="text-xs text-text-subtle" duration={1.4} spread={2}>{label}</Shimmer>
+		: <span>{label}</span>;
+}
+
 function LifecycleState({
 	showLabel,
 	state,
@@ -161,19 +162,9 @@ function LifecycleState({
 	showLabel: boolean;
 	state: AgentSessionItem["state"];
 }>) {
-	const label = LIFECYCLE_LABELS[state];
-
 	return (
 		<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">
-			{showLabel
-				? state === "running"
-					? (
-						<Shimmer as="span" className="text-xs text-text-subtle" duration={1.4} spread={2}>
-							{label}
-						</Shimmer>
-					)
-					: <span>{label}</span>
-				: null}
+			{showLabel ? <AgentSessionLifecycleLabel state={state} /> : null}
 			<div className="grid size-6 shrink-0 place-items-center">
 				<IndicatorGlyph compact state={state} />
 			</div>

@@ -106,6 +106,7 @@ export function AgentSession({
 	issueKey,
 	isResumable,
 	localSessionAction = "continue",
+	moreMenuVariant,
 	newItemIds,
 	onContinueInAgent,
 	onCopyResume,
@@ -130,6 +131,8 @@ export function AgentSession({
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
+	showAgentName,
 	showBranch = false,
 	style,
 	variant = "large",
@@ -301,6 +304,7 @@ export function AgentSession({
 								item={item}
 								key={item.id}
 								localSessionAction={localSessionAction}
+								moreMenuVariant={moreMenuVariant}
 								onContinueInAgent={onContinueInAgent}
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}
@@ -322,6 +326,8 @@ export function AgentSession({
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
 								showLifecycleLabel={showLifecycleLabel}
+								lifecycleLabelPlacement={lifecycleLabelPlacement}
+								showAgentName={showAgentName}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}

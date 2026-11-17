@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useInView } from "motion/react";
-
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
@@ -15,20 +12,17 @@ import {
 } from "@/components/blocks/agent-list/agent-list-card";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
-import { Shimmer } from "@/components/ui-custom/shimmer";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 import {
+	AGENT_SESSION_STATUS_LABEL,
 	isActiveAgentSessionState,
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
-import { getAgentSessionRole, type AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionRole, type AgentSessionItem, type AgentSessionProps } from "./agent-session-types";
 import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
-
-const TOOL_CALL_CYCLE_MS = 2_200;
+import { AgentSessionLifecycleLabel } from "./agent-session-lifecycle";
 
 /** The `·` between metadata chunks. Decorative — the chunks read fine without it. */
 function MetadataDot() {
@@ -41,7 +35,7 @@ function MetadataDot() {
 
 /**
  * Trailing access mark. A team session — one the viewer can see but someone
- * else owns — shows the team glyph; an owner's private session keeps the lock.
+ * else owns — shows the team glyph; a private session keeps the lock.
  */
 function AccessMark({ access }: Readonly<{ access: "team" | "private" }>) {
 	const Glyph = access === "team" ? TeamsIcon : LockLockedIcon;
@@ -131,59 +125,13 @@ function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: Agen
 	return <span className="flex size-4 shrink-0 items-center justify-center">{renderAgentAvatar?.(item.agent, avatar) ?? avatar}</span>;
 }
 
-/** Cycles only while visible; reduced motion holds the first tool call still. */
-// react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
-function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
-	const [cycleIndex, setCycleIndex] = useState(0);
-	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
-	const wrapperRef = useRef<HTMLSpanElement>(null);
-	const isInView = useInView(wrapperRef);
-
-	useEffect(() => {
-		if (!isInView || shouldReduceMotion || toolCalls.length < 2) {
-			return undefined;
-		}
-
-		const intervalId = window.setInterval(() => {
-			setCycleIndex((index) => index + 1);
-		}, TOOL_CALL_CYCLE_MS);
-		return () => window.clearInterval(intervalId);
-	}, [isInView, shouldReduceMotion, toolCalls.length]);
-
-	const toolCall = toolCalls[cycleIndex % toolCalls.length];
-	if (toolCall === undefined) {
-		return null;
-	}
-
-	return (
-		<span className="min-w-0 max-w-28 truncate" ref={wrapperRef}>
-			<span className="sr-only">Tool call: </span>
-			<CyclingByline
-				className="text-xs leading-4 text-text-subtle"
-				contentKey={toolCall}
-				slide={false}
-			>
-				<Shimmer
-					as="span"
-					className="max-w-full truncate align-top text-text-subtle"
-					data-agent-session-tool-call=""
-					duration={1.4}
-					spread={2}
-					title={toolCall}
-				>
-					{toolCall}
-				</Shimmer>
-			</CyclingByline>
-		</span>
-	);
-}
-
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
 	item,
+	lifecycleLabelPlacement,
 	renderAgentAvatar,
 	segment,
-}: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
+}: Readonly<{ item: AgentSessionItem; lifecycleLabelPlacement: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
 	switch (segment.kind) {
 		case "agent":
 			return (
@@ -191,13 +139,11 @@ function LongMetadataSegment({
 					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
 					{segment.label === undefined ? null : (
 						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
-							{segment.label}
+							{lifecycleLabelPlacement === "metadata" ? <AgentSessionLifecycleLabel state={item.state} /> : segment.label}
 						</span>
 					)}
 				</span>
 			);
-		case "tool-call":
-			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "branch":
 			return <span className="flex min-w-0 items-center gap-1"><span className="grid size-3 shrink-0 place-items-center [&_span]:size-3! [&_svg]:size-3!"><BranchIcon label="" size="small" /></span><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
@@ -231,34 +177,32 @@ function LongMetadataSegment({
 }
 
 /**
- * Long-form metadata: `<mark> Claude · ☁ 2m` or `Claude · #1306: … · ☁ 2m`.
+ * Long-form metadata: `<mark> Claude · #1306: … · ☁ 2m`.
  *
- * Progression is the trailing lifecycle icon, not a byline clause. The chunk
- * list comes from {@link toAgentSessionMetadataSegments}, which is pure and
- * unit-tested; this component only decides how each chunk looks.
+ * The state label can replace the agent name; its glyph stays trailing. The
+ * chunk list comes from the pure, unit-tested metadata builder.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ compact = false, item, renderAgentAvatar, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showAgentName, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showAgentName?: boolean; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
+	const access = item.privateTo ? "private" : getAgentSessionRole(item) === "viewer" ? "team" : undefined;
 	const segments = toAgentSessionMetadataSegments({
-		agentName: item.agent.name,
+		agentName: lifecycleLabelPlacement === "metadata" ? AGENT_SESSION_STATUS_LABEL[item.state] : item.agent.name,
+		showAgentName: lifecycleLabelPlacement === "metadata" ? true : showAgentName,
 		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
 		compact,
 		host: declaredHost,
 		prStatus: item.prStatus,
 		state: item.state,
-		toolCalls: item.toolCalls,
 	});
 
 	return (
-		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+		<span className="@container/session-metadata flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{segments.map((segment, index) => (
-				// Keep clauses content-sized, with text yielding to the fixed
-				// host/time and lifecycle control when the row is narrow.
 				<span
 					className={cn(
 						"flex items-center gap-1",
@@ -266,16 +210,16 @@ export function AgentSessionLongMetadata({ compact = false, item, renderAgentAva
 							? segment.label === undefined ? "shrink-0" : "min-w-0 shrink"
 							: segment.kind === "time"
 								? "shrink-0"
-								: "min-w-0 max-w-28 flex-initial",
+								: "min-w-0 max-w-28 flex-initial @[32rem]/session-metadata:max-w-72",
 					)}
 					key={segment.kind}
 				>
-					{/* A long row's unnamed agent mark runs straight into its tool call; the compact line keeps the dot before PR/host. */}
-					{index > 0 && (compact || !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined)) ? <MetadataDot /> : null}
-					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
+					{/* An unnamed avatar stack joins its first metadata clause directly. */}
+					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
+					<LongMetadataSegment item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} segment={segment} />
+					{segment.kind === "time" && access !== undefined ? <><MetadataDot /><AccessMark access={access} /></> : null}
 				</span>
 			))}
-			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : item.privateTo ? <><MetadataDot /><AccessMark access="private" /></> : null}
 		</span>
 	);
 }
@@ -330,7 +274,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
-			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : null}
+			{item.privateTo ? <><MetadataDot /><AccessMark access="private" /></> : getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" /></> : null}
 		</span>
 	);
 }

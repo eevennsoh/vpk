@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const JiraIssuePage = dynamic(() => import("@/components/blocks/jira-issue/page"));
 
-/** Who can act on a session: mine, mine but private to me, or a teammate's. */
+/** Who can act on a session: mine, private to a teammate, or shared by a teammate. */
 export type ButterSessionPermission = "mine" | "private" | "team";
 
 const SESSION_PERMISSIONS: readonly Readonly<{ value: ButterSessionPermission; label: string }>[] = [
@@ -40,7 +40,7 @@ function withPermission(item: AgentSessionItem, permission: ButterSessionPermiss
 		case "mine":
 			return { ...item, role: "owner" };
 		case "private":
-			return { ...item, role: "owner", privateTo: item.invokedBy?.name ?? "you" };
+			return { ...item, role: "viewer", privateTo: item.invokedBy?.name ?? "its owner" };
 		case "team":
 			return { ...item, role: "viewer" };
 		default: {
@@ -66,7 +66,7 @@ const BUTTER_AGENT_SESSION_ROWS: readonly Readonly<{ title: string; items: reado
  * narrower panel where clauses truncate, and Small the short row.
  */
 const SESSION_SIZES = [
-	{ value: "large", label: "Large", density: "long", width: "w-[560px]", showLifecycleLabel: true },
+	{ value: "large", label: "Large", density: "long", width: "w-[720px]", showLifecycleLabel: true },
 	{ value: "medium", label: "Medium", density: "long", width: "w-[420px]", showLifecycleLabel: false },
 	{ value: "small", label: "Small", density: "short", width: "w-80", showLifecycleLabel: false },
 ] as const satisfies readonly Readonly<{ value: string; label: string; density: AgentSessionDensity; width: string; showLifecycleLabel: boolean }>[];
@@ -76,25 +76,23 @@ export function ButterGalleryAgentSessions({ galleryOpen, permission }: Readonly
 	const [size, setSize] = useState<SessionSize>(SESSION_SIZES[0]);
 	return (
 		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex flex-col overflow-auto px-6", galleryOpen ? "bottom-56" : "bottom-0")}>
-			<div className="pointer-events-auto m-auto flex flex-col items-center gap-6 py-6">
+			<div className="pointer-events-auto m-auto grid grid-cols-[3rem_auto] gap-x-4 gap-y-6 py-6">
 				<h1 className="sr-only">Agent sessions</h1>
-				<ToggleGroup aria-label="Session card size" onValueChange={(values) => { const next = SESSION_SIZES.find((option) => option.value === values[0]); if (next) setSize(next); }} size="sm" value={[size.value]} variant="outline">
+				<ToggleGroup aria-label="Session card size" className="col-start-2 justify-self-center" onValueChange={(values) => { const next = SESSION_SIZES.find((option) => option.value === values[0]); if (next) setSize(next); }} size="sm" value={[size.value]} variant="outline">
 					{SESSION_SIZES.map((option) => <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
 				</ToggleGroup>
-				<div className="grid grid-cols-[3rem_auto] gap-x-4 gap-y-6">
-					{BUTTER_AGENT_SESSION_ROWS.filter((row) => permission !== "team" || row.teamShareable).map((row) => (
-						<section aria-label={`${row.title} sessions`} className="col-span-2 grid grid-cols-subgrid items-start" key={row.title}>
-							<h2 className="pt-3 text-xs font-semibold text-text-subtle">{row.title}</h2>
-							<div className="flex flex-col gap-1.5">
-								{row.items.map((item) => (
-									// Width, not scale: the row's truncation is what this toggle demonstrates,
-									// so the frame resizes in place and the content reflows with it.
-									<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} showLifecycleLabel={size.showLifecycleLabel} showWorkingSpinner variant="large" />
-								))}
-							</div>
-						</section>
-					))}
-				</div>
+				{BUTTER_AGENT_SESSION_ROWS.filter((row) => permission !== "team" || row.teamShareable).map((row) => (
+					<section aria-label={`${row.title} sessions`} className="col-span-2 grid grid-cols-subgrid items-start" key={row.title}>
+						<h2 className="pt-3 text-xs font-semibold text-text-subtle">{row.title}</h2>
+						<div className="flex flex-col gap-1.5">
+							{row.items.map((item) => (
+								// Width, not scale: the row's truncation is what this toggle demonstrates,
+								// so the frame resizes in place and the content reflows with it.
+								<AgentSession className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[withPermission(item, permission)]} key={item.state} lifecycleLabelPlacement={size.value === "medium" ? "metadata" : "trailing"} moreMenuVariant={permission === "mine" ? "owner" : "default"} showAgentName={size.value === "large" ? true : undefined} showLifecycleLabel={size.showLifecycleLabel} showWorkingSpinner variant="large" />
+							))}
+						</div>
+					</section>
+				))}
 			</div>
 		</div>
 	);

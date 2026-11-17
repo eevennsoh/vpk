@@ -861,7 +861,7 @@ test("pinned local sessions open the continuation menu in place", async () => {
 	const view = await renderWorkItem({ initialSessions: sessions });
 	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null);
-	assert.equal(view.queryByRole("menuitem", { name: /Terminal/u }) !== null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Copy prompt" }) !== null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);

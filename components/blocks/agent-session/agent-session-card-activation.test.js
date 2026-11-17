@@ -43,7 +43,7 @@ function loadHarness() {
 						trigger ? React.cloneElement(trigger, { onClick: () => onOpenChange(true) }) : null,
 						open ? React.createElement("div", { role: "menu", "data-menu": "continue", "data-anchor": anchor?.current?.tagName ?? "BUTTON" },
 							React.createElement("span", null, "Continue in"),
-							React.createElement("button", { role: "menuitem", onClick: actions.onCopyPrompt, "data-copied": copied }, "Terminal"),
+							React.createElement("button", { role: "menuitem", onClick: actions.onCopyPrompt, "data-copied": copied }, "Copy prompt"),
 							React.createElement("button", { role: "menuitem", onClick: () => onOpenChange(false) }, "Close")) : null);
 				}
 			`],
@@ -70,12 +70,13 @@ function loadHarness() {
 				export function DropdownMenu({ children }) { return children; }
 				export function DropdownMenuTrigger({ render, children }) { return React.cloneElement(render, null, children); }
 				export function DropdownMenuContent({ children, anchor, ref, side, align, sideOffset }) { return React.createElement("div", { ref, role: "menu", "data-anchor-kind": anchor ? "explicit" : "trigger", "data-side": side, "data-align": align, "data-side-offset": sideOffset }, children); }
-				export function DropdownMenuItem({ children, disabled }) { return React.createElement("button", { role: "menuitem", disabled }, children); }
+				export function DropdownMenuItem({ children, disabled, render }) { return render ? React.cloneElement(render, { role: "menuitem", disabled }) : React.createElement("button", { role: "menuitem", disabled }, children); }
 				export function DropdownMenuGroup({ children }) { return React.createElement("div", null, children); }
 				export function DropdownMenuLabel({ children }) { return React.createElement("span", null, children); }
 				export function DropdownMenuSeparator() { return null; }
 			`],
 			["button", `import React from "react"; export function Button({ children, ...props }) { return React.createElement("button", props, children); }`],
+			["copy-prompt-button", `import React from "react"; export function CopyPromptButton({ feedback, presentation, ...props }) { return React.createElement("button", props, feedback === "copied" ? "Prompt copied" : "Copy prompt"); }`],
 			["tooltip", `
 				import React from "react";
 				export function Tooltip({ children }) { return children; }
@@ -390,7 +391,7 @@ test("local continuation and more actions never open together", async () => {
 	});
 });
 
-test("the resume gate prevents copying while the prototype Terminal option stays enabled", async () => {
+test("the resume gate prevents copying while the prototype Copy prompt option stays enabled", async () => {
 	await withCard({ item: LOCAL_ITEM, sessionDrag: {}, isResumable: () => false, onContinueInAgent: () => {} }, async ({ document, click, copied }) => {
 		await click(document.querySelector("article"));
 		const terminal = document.querySelector('[data-menu="continue"] button');
@@ -426,6 +427,20 @@ test("expired session menus offer only Delete and require the delete capability"
 		const items = [...document.querySelectorAll('[role="menuitem"]')];
 		assert.deepEqual(items.map((item) => item.textContent), ["Delete"]);
 		assert.equal(items[0].disabled, !canDelete);
+	}
+});
+
+test("My session menus offer owner controls in order for local and cloud sessions", async () => {
+	const { renderToStaticMarkup } = require("react-dom/server");
+	const { AgentSessionMoreMenu } = await loadHarness();
+	for (const isCloud of [false, true]) {
+		const html = renderToStaticMarkup(React.createElement(AgentSessionMoreMenu, {
+			actions: {}, item: LOCAL_ITEM, open: true, onOpenChange() {}, isCloud, variant: "owner",
+		}));
+		const { document } = parseHTML(html);
+		const items = [...document.querySelectorAll('[role="menuitem"]')];
+		assert.deepEqual(items.map((item) => item.textContent), ["Stop session", "Pin", "Rename", "Delete"]);
+		assert.equal(items.every((item) => !item.disabled), true);
 	}
 });
 
@@ -479,7 +494,7 @@ test("prototype continuation options stay enabled and use the card's right edge"
 		const { document } = parseHTML(html);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-anchor-kind"), "explicit");
 		const items = [...document.querySelectorAll('[role="menuitem"]')];
-		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Terminal"]);
+		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Copy prompt"]);
 		assert.deepEqual(items.map((item) => item.disabled), [false, false]);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-side"), "right");
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-align"), "start");
