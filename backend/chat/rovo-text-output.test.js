@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const { createRovoTextOutputController } = require("./rovo-text-output");
+const { splitDirectMediaTextForStreaming } = require("../lib/direct-media-fence");
+const { splitSpecFenceTextForStreaming } = require("../lib/tool-output-sanitizer");
 
 function createTextOutputController(options = {}) {
 	const parts = [];
@@ -85,50 +87,30 @@ test("createRovoTextOutputController can replay suppressed card-first text", () 
 	]);
 });
 
-test("createRovoTextOutputController holds complete and pending spec fences", () => {
-	const { controller, parts } = createTextOutputController({
-		isClassifierIntentLeakCandidate: () => false,
-		splitSpecFenceTextForStreaming: (text) => {
-			if (text.includes("```spec")) {
-				return { pendingText: text, visibleText: "" };
-			}
-			return { pendingText: "", visibleText: text };
-		},
-	});
+test("createRovoTextOutputController holds complete spec and direct media fences", () => {
+	// The splitters stand a completed fence in for a paragraph break. A media fence whose closing
+	// backticks end a delta stays held until the next one, which may still open a spec fence with them.
+	for (const [name, fence, before, after, deltas] of [
+		["spec", "```spec\n{\"type\":\"card\"}\n```", "Before ", " After", ["Before ", "\n\n", " After"]],
+		["media", "```image\nsunset\n```", "Intro ", " Outro", ["Intro ", "\n\n Outro"]],
+	]) {
+		const { controller, parts } = createTextOutputController({
+			isClassifierIntentLeakCandidate: () => false,
+			splitDirectMediaTextForStreaming,
+			splitSpecFenceTextForStreaming,
+		});
 
-	controller.emitTextDelta("Before ");
-	controller.emitTextDelta("```spec\n{\"type\":\"card\"}\n```");
-	controller.emitTextDelta(" After");
-	controller.finalizeBufferedAssistantText();
+		controller.emitTextDelta(before);
+		controller.emitTextDelta(fence);
+		controller.emitTextDelta(after);
+		controller.finalizeBufferedAssistantText();
 
-	assert.deepEqual(parts, [
-		{ type: "text-start", id: "text-test" },
-		{ type: "text-delta", id: "text-test", delta: "Before " },
-		{ type: "text-delta", id: "text-test", delta: " After" },
-	]);
-});
-
-test("createRovoTextOutputController holds direct media fences", () => {
-	const { controller, parts } = createTextOutputController({
-		isClassifierIntentLeakCandidate: () => false,
-		splitDirectMediaTextForStreaming: (text) => {
-			if (text.includes("```image") || text.includes("```audio")) {
-				return { pendingText: text, visibleText: "" };
-			}
-			return { pendingText: "", visibleText: text };
-		},
-	});
-
-	controller.emitTextDelta("Intro ");
-	controller.emitTextDelta("```image\nsunset\n```");
-	controller.emitTextDelta(" Outro");
-	controller.finalizeBufferedAssistantText();
-
-	assert.deepEqual(parts, [
-		{ type: "text-start", id: "text-test" },
-		{ type: "text-delta", id: "text-test", delta: "Intro " },
-		{ type: "text-delta", id: "text-test", delta: " Outro" },
-	]);
+		assert.deepEqual(parts, [
+			{ type: "text-start", id: "text-test" },
+			...deltas.map((delta) => ({ type: "text-delta", id: "text-test", delta })),
+		], name);
+		assert.equal(controller.getAssistantText(), `${before}${fence}${after}`, name);
+	}
 });
 
 test("createRovoTextOutputController defers and sanitizes tool-first fallback text", () => {
