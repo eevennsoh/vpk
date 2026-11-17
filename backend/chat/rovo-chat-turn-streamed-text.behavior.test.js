@@ -124,3 +124,29 @@ test("a loading marker split inside its type starts loading the whole type", asy
 	assert.equal(turn.endOfTurnFacts.assistantText, "Planning text");
 	assert.equal(endsWithTurnComplete(turn.parts), true);
 });
+
+test("a media block with backticks inside its body stays off the wire through the composed turn", async () => {
+	// Before: the block ended at the body's first backticks: 'Intro\n\njs"}\n```\nOutro' on the wire.
+	const T = "```";
+	for (const block of [`${T}image\n{"prompt":"draw ${T}js"}\n${T}`, `${T}audio\nread ${T}this${T} aloud\n${T}`]) {
+		const reply = `Intro\n${block}\nOutro`;
+		const cut = reply.indexOf(T, reply.indexOf("\n", 8)) + 1;
+		for (const chunks of [[reply], [reply.slice(0, cut), reply.slice(cut)], [...reply]]) {
+			const turn = await runTurn(streamingChunks(chunks));
+
+			assert.equal(visibleText(turn.parts), "Intro\n\nOutro", JSON.stringify(chunks));
+			assert.equal(turn.endOfTurnFacts.assistantText, reply, JSON.stringify(chunks));
+			assert.equal(endsWithTurnComplete(turn.parts), true);
+		}
+
+		// A failure notice inside the body ends the text there: with no backticks before it the whole
+		// block is dropped; after backticks with text on both sides it closes at them, as before.
+		const beforeTicks = reply.slice(0, cut - 1);
+		const failed = await runTurn(failingAfterChunks([beforeTicks.slice(0, -2), beforeTicks.slice(-2)], PRODUCTION_TEXT_FILTERS));
+		assert.equal(visibleText(failed.parts), `Intro\n\n${BUSY_NOTICE}`, block);
+		assert.equal(failed.endOfTurnFacts.assistantText, `Intro\n\n${BUSY_NOTICE}`, block);
+		const open = reply.slice(0, cut + 4);
+		const afterTicks = await runTurn(failingAfterChunks([open.slice(0, cut), open.slice(cut)], PRODUCTION_TEXT_FILTERS));
+		assert.equal(visibleText(afterTicks.parts), `Intro\n\n${open.slice(cut + 2)}\n\n${BUSY_NOTICE}`, block);
+	}
+});
