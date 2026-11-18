@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 
 const MAX_VISIBLE_TEAMMATES = 4;
 
-export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[] }>) {
+export function TeammateSessionAvatars({ items, sizePx = 16 }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[]; sizePx?: 16 | 20 | 24 }>) {
 	const people = new Map<string, { name: string; avatarSrc: string | undefined }>();
 	for (const { invokedBy } of items) {
 		const name = invokedBy?.name.trim().replace(/\s+/gu, " ") ?? "";
@@ -20,15 +20,15 @@ export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Pic
 	const visiblePeople = Array.from(people).slice(0, MAX_VISIBLE_TEAMMATES);
 
 	return (
-		<AvatarGroup aria-hidden="true" as="span" size="xs">
+		<AvatarGroup aria-hidden="true" as="span" size={sizePx === 24 ? "sm" : "xs"}>
 			{visiblePeople.map(([key, { name, avatarSrc }]) => (
-				<Avatar key={key} size="xs" animate={false} title={name || "Teammate"}>
+				<Avatar key={key} size={sizePx === 24 ? "sm" : "xs"} className={sizePx === 20 ? "size-5" : undefined} animate={false} title={name || "Teammate"}>
 					{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
 					<AvatarFallback>{name ? actorInitials(name) : <Icon render={<PersonIcon label="" size="small" />} />}</AvatarFallback>
 				</Avatar>
 			))}
 			{people.size > MAX_VISIBLE_TEAMMATES ? (
-				<AvatarGroupCount as="span">+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
+				<AvatarGroupCount as="span" className={sizePx === 20 ? "group-has-data-[size=xs]/avatar-group:size-5" : undefined}>+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
 			) : null}
 		</AvatarGroup>
 	);

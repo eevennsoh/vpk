@@ -317,10 +317,10 @@ test("the list session field distinguishes personal and teammate sessions", asyn
 	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
 	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
 	assert.equal(field.textContent.includes("Needs input"), false);
-	await view.click(view.getByRole("button", { name: "2 other sessions" }));
+	await view.click(view.getByRole("button", { name: "2 using agents" }));
 	assert.equal(Boolean(view.queryByText("Cursor work")), true);
 	assert.equal(Boolean(view.queryByText("Figma work")), true);
-	await view.click(view.getByRole("button", { name: "2 other sessions" }));
+	await view.click(view.getByRole("button", { name: "2 using agents" }));
 	await view.rerender({ ...props, sessions: [teammate, mine] });
 	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
 	assert.equal(field.textContent.includes("Needs input"), false);
@@ -392,9 +392,9 @@ test("project-butter crew opens its picker from the keyboard, continues existing
 		assert.equal(view.queryByText("Local work") !== null, true);
 		assert.equal(view.queryByText("Finished work") !== null, true);
 		assert.equal(view.queryByText("Teammate work"), null);
-		await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
+		await view.click(view.getByRole("button", { name: /(?:\d+ )?using agents/iu }));
 		assert.equal(view.queryByText("Teammate work") !== null, true);
-		await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
+		await view.click(view.getByRole("button", { name: /(?:\d+ )?using agents/iu }));
 		await view.press(view.getByRole("button", { name: /^Claude work/u }), "Escape");
 		assert.equal(view.queryByRole("dialog", { name: "Add agent" }), null);
 		assert.equal(view.isFocused(trigger), true);

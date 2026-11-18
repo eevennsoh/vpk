@@ -488,7 +488,7 @@ test("board and journey session menus show private marks for other people's sess
 	for (const view of ["Board", "e2e Journey"]) {
 		await page.getByRole("button", { name: `Select ${view}`, exact: true }).click();
 		for (const [key, button, owners] of [
-			["PAY-107", "2 other sessions", ["Maya Ferreira", "Jordan Okafor"]],
+			["PAY-107", "2 using agents", ["Maya Ferreira", "Jordan Okafor"]],
 			["PAY-123", "2 agents: Needs input", ["Jordan Okafor"]],
 		] as const) {
 			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
@@ -528,7 +528,7 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
-	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
+	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?using agents/iu });
 	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
 	await disclosure.click();
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");

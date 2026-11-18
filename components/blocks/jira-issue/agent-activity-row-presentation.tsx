@@ -334,7 +334,7 @@ export function JiraIssueAgentRowContent({
 	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
 	if (isViewerRow) {
-		avatar = <TeammateSessionAvatars items={activities} />;
+		avatar = <TeammateSessionAvatars items={activities} sizePx={avatarSize} />;
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>

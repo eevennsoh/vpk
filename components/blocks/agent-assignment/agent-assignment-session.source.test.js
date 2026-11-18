@@ -15,7 +15,7 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: /(?:\d+ )?other sessions?/iu };
+const disclosure = { name: /(?:\d+ )?using agents/iu };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
@@ -139,9 +139,9 @@ test("session menu can show a teammate count or expand a single teammate by defa
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
 	try {
-		assert.equal(view.getByText("2 other sessions").textContent, "2 other sessions");
+		assert.equal(view.getByText("2 using agents").textContent, "2 using agents");
 		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
-		const trigger = view.getByRole("button", { name: "1 other session" });
+		const trigger = view.getByRole("button", { name: "1 using agents" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
 		await view.click(trigger);
@@ -155,7 +155,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 	const view = await renderMenu(menuProps(items));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.equal(trigger.getAttribute("aria-label"), "Other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "Using agents");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.deepEqual(view.getAllByRole("listitem").map((row) => row.getAttribute("data-testid")), ["agent-session-row-mine", "agent-session-row-legacy"]);
@@ -166,7 +166,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
-		assert.equal(trigger.getAttribute("aria-label"), "2 other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "2 using agents");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");

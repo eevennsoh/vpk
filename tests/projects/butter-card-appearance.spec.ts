@@ -10,7 +10,7 @@ test("viewer session chins show a static stack of session owners", async ({ page
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const boardRow = card(page, "PAY-107").locator('[data-slot="jira-issue-agent-row"]');
-	await expect(boardRow.getByRole("button", { name: "2 other sessions" })).toBeVisible();
+	await expect(boardRow.getByRole("button", { name: "2 using agents" })).toBeVisible();
 	await expect(boardRow.locator('[data-slot="avatar"][title="Maya Ferreira"]')).toBeVisible();
 	await expect(boardRow.locator('[data-slot="avatar"][title="Jordan Okafor"]')).toBeVisible();
 	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
