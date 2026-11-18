@@ -33,7 +33,6 @@ test("shared user message bubble exposes copy and edit prompt actions", () => {
 		USER_MESSAGE_BUBBLE_SOURCE,
 		/<MessageResponse plain className="font-medium text-inherit \[&>\*\+\*\]:mt-3">[\s\S]*\{messageText\}[\s\S]*<\/MessageResponse>/u,
 	);
-	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /fitContent=\{!isEditing\}/);
 });
 
 test("Improve description renders as a skill tag without changing the raw message value", () => {

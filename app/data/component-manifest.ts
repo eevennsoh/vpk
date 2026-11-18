@@ -217,7 +217,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("animated-icon", "Animated Icon"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact-list", "Artifact List"),
-	customComponent("attachment", "Attachment"),
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
 	customComponent("entity-card", "Entity Card"),
@@ -246,7 +245,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("inline-citation", "Inline Citation"),
 	customComponent("jsx-preview", "JSX Preview"),
 	customComponent("list"),
-	customComponent("message"),
 	customComponent("mic-selector", "Mic Selector"),
 	customComponent("model-selector", "Model Selector"),
 	customComponent("node"),
@@ -461,7 +459,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("tool-approval", "Tool Approval"),
 	{ name: "Chat Configuration", slug: "chat-configuration", importPath: "@/components/projects/shared/components/chat-configuration/customize-menu", category: "blocks" },
 	blockComponent("chat-gallery", "Chat Gallery"),
-	blockComponent("chatbot", "Chatbot"),
 	blockComponent("chatgpt", "ChatGPT"),
 	blockComponent("code-review", "Code Review"),
 	blockComponent("cursor", "Cursor"),
@@ -668,7 +665,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	},
 	blockComponent("top-navigation", "Top Navigation"),
 	blockComponent("terminal-switch", "Terminal Switch"),
-	blockComponent("workflow", "Workflow"),
 ]);
 
 export const PROJECT_COMPONENTS: ComponentManifestEntry[] = catalogEntries([

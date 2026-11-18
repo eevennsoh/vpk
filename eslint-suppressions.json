@@ -1975,7 +1975,7 @@
   },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
-      "count": 31
+      "count": 30
     }
   },
   "components/projects/shared/lib/plan-card-utils.tsx": {

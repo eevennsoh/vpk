@@ -6,7 +6,7 @@ import {
 	type ReactNodeViewProps,
 } from "@tiptap/react";
 
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { cn } from "@/lib/utils";
 
 import {

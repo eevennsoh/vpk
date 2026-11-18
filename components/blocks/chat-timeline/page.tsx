@@ -2,8 +2,9 @@
 
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { cn } from "@/lib/utils";
 import {
@@ -157,8 +158,14 @@ function ChatTimelineBody({ messages }: Readonly<{ messages: ReadonlyArray<ChatT
 									messageNodesRef.current[message.id] = node;
 								}}
 							>
-								<Message from={message.role}>
-									<MessageContent>{message.text}</MessageContent>
+								<Message align={message.role === "user" ? "end" : "start"} className="cv-auto">
+									{message.role === "user" ? (
+										<MessageContent>
+											<MessageUserBubble>{message.text}</MessageUserBubble>
+										</MessageContent>
+									) : (
+										<MessageContent className="max-w-[80%]">{message.text}</MessageContent>
+									)}
 								</Message>
 							</MessageScrollerItem>
 						);

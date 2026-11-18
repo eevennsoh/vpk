@@ -2,24 +2,19 @@
 
 > Sub-component listings and key props for all ui-custom compound components.
 
-## Message (`components/ui-custom/message.tsx`)
+## Message (`components/ui/message.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `Message` | Root container, accepts `from` prop (`"user"` / `"assistant"`) |
-| `MessageContent` | Content wrapper |
-| `MessageResponse` | Markdown renderer (uses Streamdown) |
-| `MessageActions` | Action button container |
-| `MessageAction` | Individual action button with tooltip |
-| `MessageToolbar` | Toolbar wrapper for message-level actions |
-| `MessageBranch` | Response branch navigation root |
-| `MessageBranchContent` | Content area within a branch |
-| `MessageBranchSelector` | Branch selector controls |
-| `MessageBranchPrevious` | Previous branch button |
-| `MessageBranchNext` | Next branch button |
-| `MessageBranchPage` | Branch page indicator |
+| `Message` | Row for one turn; `align="end"` for the person's turn, `"start"` (default) for the agent |
+| `MessageContent` | Column holding bubbles, markdown, attachments, and the footer |
+| `MessageActions` | Footer row for action buttons; `reveal="hover"` hides it until hover/focus on md+ |
+| `MessageAction` | Ghost icon button with a tooltip; `label` is the accessible name |
+| `MessageCopyAction` / `MessageEditAction` / `MessageVoteActions` / `MessageRegenerateAction` | VPK preset actions |
 
-Key props: `from`, `className`, `children`
+Render the person's text with `MessageUserBubble` (`components/ui-custom/message-user-bubble.tsx`) and agent markdown with `MessageResponse` (`components/ui-custom/message-markdown.tsx`).
+
+Key props: `align`, `className`, `children`
 
 ## Conversation (`components/ui-custom/conversation.tsx`)
 

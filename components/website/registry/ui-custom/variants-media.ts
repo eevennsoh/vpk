@@ -144,48 +144,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"attachment-demo-grid": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoGrid,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-inline": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoInline,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-list": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoList,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-hover-card": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoHoverCard,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-read-only": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoReadOnly,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-empty": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoEmpty,
-			})),
-		{ ssr: false },
-	),
 	"confirmation-demo-request": dynamic(
 		() =>
 			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({

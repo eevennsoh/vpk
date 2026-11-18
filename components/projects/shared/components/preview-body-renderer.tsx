@@ -7,7 +7,7 @@ import Image from "next/image";
 import { JsonRenderView } from "@/lib/json-render/renderer";
 import { useProgressiveSpec } from "@/lib/json-render/use-progressive-spec";
 import { cn } from "@/lib/utils";
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import {

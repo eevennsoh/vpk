@@ -10,10 +10,10 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui-custom/message` | Chat message display with role-based styling, markdown, actions, and branching | `Message`, `MessageContent`, `MessageResponse`, `MessageActions`, `MessageAction`, `MessageBranch` |
+| [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui/message` | Chat message turn with start/end alignment and actions; user text via `MessageUserBubble`, markdown via `MessageResponse` (`@/components/ui-custom/message-markdown`) | `Message`, `MessageContent`, `MessageActions`, `MessageAction`, `MessageCopyAction`, `MessageVoteActions` |
 | [conversation](~/.agents/skills/ai-elements/references/conversation.md) | `@/components/ui-custom/conversation` | Auto-scrolling message container with scroll button and empty state | `Conversation`, `ConversationContent`, `ConversationScrollButton`, `ConversationEmptyState`, `ConversationDownload` |
 | [prompt-input](~/.agents/skills/ai-elements/references/prompt-input.md) | `@/components/ui-custom/prompt-input` | Message input with textarea, submit, file attachments, model selector, and action menu | `PromptInput`, `Input`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputBody`, `PromptInputHeader`, `PromptInputFooter`, `PromptInputTools`, `PromptInputSelect`, `PromptInputActionAddAttachments`, `PromptInputActionMenu`, `PromptInputButton` |
-| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui-custom/attachment` | File attachment display with previews and remove functionality | `Attachment`, `AttachmentItem`, `AttachmentPreview`, `AttachmentRemove` |
+| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui/attachment` | File attachment display with previews and remove actions; AI SDK part helpers in `@/lib/attachment-media` | `AttachmentGroup`, `Attachment`, `AttachmentMedia`, `AttachmentContent`, `AttachmentAction` |
 
 ## Content Display
 
