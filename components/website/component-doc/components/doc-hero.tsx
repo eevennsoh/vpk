@@ -116,7 +116,7 @@ export function DocHero({ name, description, category, importReferences, referen
 									aria-label={`${link.label} source for ${path}`}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex min-h-6 items-center no-underline decoration-text-subtlest underline-offset-2 hover:underline"
+									className="inline-flex min-h-6 items-center text-text-subtlest no-underline underline-offset-2 hover:underline"
 								>
 									<code style={referenceTextStyle}>{link.label}</code>
 								</a>
@@ -129,7 +129,7 @@ export function DocHero({ name, description, category, importReferences, referen
 							href={link.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="no-underline hover:underline decoration-text-subtlest w-fit"
+							className="w-fit text-text-subtlest no-underline hover:underline"
 						>
 							<code style={referenceTextStyle}>
 								{link.label}

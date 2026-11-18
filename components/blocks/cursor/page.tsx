@@ -49,13 +49,13 @@ import {
 	QueueSectionContent,
 	QueueSectionLabel,
 	QueueSectionTrigger,
-} from "@/components/ui-custom/queue"
+} from "@/components/ui/queue"
 import {
 	Task,
 	TaskContent,
 	TaskItemFile,
 	TaskTrigger,
-} from "@/components/ui-custom/task"
+} from "@/components/ui/task"
 import { Terminal, TerminalContent } from "@/components/ui-custom/terminal"
 import { cn } from "@/lib/utils"
 import {

@@ -197,6 +197,30 @@ export const tileToken = <span className="rounded-tile text-2xl" />;
 	assert.deepEqual(await ruleFindings('export const c = "bg-black";\n', "components/demo/x.test.ts", tokenRules), []);
 });
 
+test("underline color classes other than decoration-current are lint errors", async () => {
+	const rule = ["vpk-tokens/no-mismatched-underline-color"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const blue = <a className="text-text hover:underline decoration-link" />;
+export const subtle = <a className={cn("no-underline", "hover:decoration-text-subtlest")} />;
+export const arbitrary = <a className={\`underline \${"decoration-[#0c66e4]"}\`} />;
+export const current = <a className="underline decoration-current decoration-dotted decoration-2" />;
+export const shape = <a className="underline decoration-wavy decoration-from-font decoration-clone decoration-[length:3px]" />;
+export const name = "rich-text-decoration-mark";
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", rule);
+	assert.deepEqual(
+		findings.map(({ line, ruleId, severity }) => [line, ruleId, severity]),
+		[
+			[3, "vpk-tokens/no-mismatched-underline-color", 2],
+			[4, "vpk-tokens/no-mismatched-underline-color", 2],
+			[5, "vpk-tokens/no-mismatched-underline-color", 2],
+		],
+	);
+	assert.match(findings[0].message, /decoration-current/u);
+	assert.deepEqual(await ruleFindings('export const c = "decoration-link";\n', "components/demo/x.test.ts", rule), []);
+});
+
 test("shadow-overlay is rejected as a class because no such utility exists", async () => {
 	const rule = ["vpk-tokens/no-undefined-overlay-shadow"];
 	const source = `

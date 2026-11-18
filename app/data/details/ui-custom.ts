@@ -53,7 +53,6 @@ import { PLAN_DETAIL } from "./ui-custom/plan";
 import { PROGRESS_CIRCLE_DETAIL } from "./ui-custom/progress-circle";
 import { PROGRESS_ROVO_DETAIL } from "./ui-custom/progress-rovo";
 import { PROMPT_INPUT_DETAIL } from "./ui-custom/prompt-input";
-import { QUEUE_DETAIL } from "./ui-custom/queue";
 import { REASONING_DETAIL } from "./ui-custom/reasoning";
 import { ROVO_CURSOR_DETAIL } from "./ui-custom/rovo-cursor";
 import { ROVO_GENERATION_DETAIL } from "./ui-custom/rovo-generation";
@@ -66,10 +65,9 @@ import { SHIMMER_WAVE_DETAIL } from "./ui-custom/shimmer-wave";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
 import { SNIPPET_DETAIL } from "./ui-custom/snippet";
-import { SOURCE_DETAIL } from "./ui-custom/source";
+import { SOURCE_PREVIEW_MENU_DETAIL } from "./ui-custom/source-preview-menu";
 import { SPEECH_INPUT_DETAIL } from "./ui-custom/speech-input";
 import { STACK_TRACE_DETAIL } from "./ui-custom/stack-trace";
-import { TASK_DETAIL } from "./ui-custom/task";
 import { TERMINAL_DETAIL } from "./ui-custom/terminal";
 import { TEST_RESULT_DETAIL } from "./ui-custom/test-result";
 import { TOOL_DETAIL } from "./ui-custom/tool";
@@ -131,7 +129,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"progress-circle": PROGRESS_CIRCLE_DETAIL,
 	"progress-rovo": PROGRESS_ROVO_DETAIL,
 	"prompt-input": PROMPT_INPUT_DETAIL,
-	queue: QUEUE_DETAIL,
 	reasoning: REASONING_DETAIL,
 	"rovo-cursor": ROVO_CURSOR_DETAIL,
 	"rovo-generation": ROVO_GENERATION_DETAIL,
@@ -144,10 +141,9 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"sidebar-nav-item": SIDEBAR_NAV_ITEM_DETAIL,
 	"skill-tag": SKILL_TAG_DETAIL,
 	snippet: SNIPPET_DETAIL,
-	source: SOURCE_DETAIL,
+	"source-preview-menu": SOURCE_PREVIEW_MENU_DETAIL,
 	"speech-input": SPEECH_INPUT_DETAIL,
 	"stack-trace": STACK_TRACE_DETAIL,
-	task: TASK_DETAIL,
 	terminal: TERMINAL_DETAIL,
 	"test-result": TEST_RESULT_DETAIL,
 	tool: TOOL_DETAIL,
