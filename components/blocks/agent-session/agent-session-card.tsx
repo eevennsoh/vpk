@@ -415,6 +415,7 @@ export function AgentSessionCard({
 	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
 	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const departureFocus = useAgentSessionDepartureFocus({ glowPlaneSurface, isDeparting, isOnGlowPlane });
+	const { setRowNode } = departureFocus;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -665,7 +666,7 @@ export function AgentSessionCard({
 				}
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
-			ref={departureFocus.setRowNode}
+			ref={setRowNode}
 			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
 			initial={false}
 			// Track positions continuously; the layout transition decides whether
