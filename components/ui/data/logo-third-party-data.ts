@@ -49,7 +49,7 @@ export const THIRD_PARTY_LOGO_MANIFEST = [
 	{ name: "gamma", label: "Gamma", packageIcon: { entrypoint: "gamma", exportName: "GammaIcon" } },
 	{ name: "generic-mcp-server", label: "Generic MCP Server", packageIcon: { entrypoint: "generic-mcp-server", exportName: "GenericMCPServerIcon" } },
 	{ name: "giphy", label: "Giphy", packageIcon: { entrypoint: "giphy", exportName: "GiphyIcon" } },
-	{ name: "github", label: "GitHub", packageIcon: { entrypoint: "github", exportName: "GithubIcon" }, localAsset: true },
+	{ name: "github", label: "GitHub", packageIcon: { entrypoint: "github", exportName: "GitHubIcon" }, localAsset: true },
 	{ name: "github-copilot", label: "GitHub Copilot", localAsset: true },
 	{ name: "gitlab", label: "GitLab", packageIcon: { entrypoint: "gitlab", exportName: "GitlabIcon" }, localAsset: true },
 	{ name: "gmail", label: "Gmail", packageIcon: { entrypoint: "gmail", exportName: "GmailIcon" }, localAsset: true },
