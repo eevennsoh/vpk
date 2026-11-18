@@ -236,7 +236,7 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_CARD_LIST_SOURCE,
-		/overflowY: "auto",[\s\S]{0,180}padding(?:Top|Bottom|Inline): token\("space\.(?:050|100)"\)/u,
+		/padding(?:Top|Inline|Left|Right): token\(/u,
 	);
 	assert.match(
 		SOURCE,
