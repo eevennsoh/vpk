@@ -14,7 +14,6 @@ export const LEGACY_DRIFT_TEST_FILES = [
 	"components/blocks/subagent/subagent.test.js",
 	"components/blocks/tool-directory/tool-directory.test.js",
 	"components/blocks/twg-agent-card/twg-agent-card.test.js",
-	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
 	"components/ui/panel.test.js",
 	"components/ui/vpk-icons.test.js",
 	"components/website/demos/utils/lib/browser-preview-frame-queue.test.js",

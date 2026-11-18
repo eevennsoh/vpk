@@ -2107,7 +2107,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 812
+      "count": 788
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
