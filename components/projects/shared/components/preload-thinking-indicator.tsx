@@ -7,7 +7,7 @@ import {
 	ChainOfThoughtContent,
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import SearchIcon from "@atlaskit/icon/core/search";
 import { getPreloadShimmerLabel } from "@/lib/reasoning-labels";
 

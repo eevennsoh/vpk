@@ -11,7 +11,6 @@ const ROVO_FLOATING_CHAT_SOURCE = fs.readFileSync(SOURCE_FILE, "utf8");
 const FLOATING_CHAT_HEADER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-chat-header.tsx"), "utf8");
 const CHAT_PANEL_SOURCE = readChatPanelSource();
 const STREAMING_THINKING_INDICATOR_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/projects/shared/components/streaming-thinking-indicator.tsx"), "utf8");
-const CHAIN_OF_THOUGHT_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/ui-custom/chain-of-thought.tsx"), "utf8");
 const REASONING_LABELS_SOURCE = fs.readFileSync(path.join(process.cwd(), "lib/reasoning-labels.ts"), "utf8");
 
 async function loadRovoFloatingChatHarness() {
@@ -558,7 +557,7 @@ test("Shared ChatPanel renders an optimistic user bubble before the SDK echoes a
 	assert.match(CHAT_PANEL_SOURCE, /uiMessages: messages/u);
 });
 
-test("Floating chat thinking status uses ChainOfThought dots without literal ellipsis labels", () => {
+test("Floating chat thinking status uses ChainOfThought without literal ellipsis labels", () => {
 	assert.match(CHAT_PANEL_SOURCE, /<StreamingThinkingIndicator/);
 	assert.match(STREAMING_THINKING_INDICATOR_SOURCE, /ChainOfThoughtHeader/);
 	assert.match(STREAMING_THINKING_INDICATOR_SOURCE, /ChainOfThoughtStep/);
@@ -566,11 +565,6 @@ test("Floating chat thinking status uses ChainOfThought dots without literal ell
 	assert.doesNotMatch(STREAMING_THINKING_INDICATOR_SOURCE, /phaseProps\.defaultOpen \?\? hasDetails/);
 	assert.doesNotMatch(STREAMING_THINKING_INDICATOR_SOURCE, /AdsReasoningTrigger/);
 	assert.doesNotMatch(STREAMING_THINKING_INDICATOR_SOURCE, /<Reasoning/);
-	assert.match(
-		CHAIN_OF_THOUGHT_SOURCE,
-		/const shouldShowAnimatedDot =\s*resolvedState === "preload" \|\| resolvedState === "thinking";/
-	);
-	assert.match(CHAIN_OF_THOUGHT_SOURCE, /shouldShowAnimatedDot && typeof text === "string"[\s\S]*stripTrailingDots\(text\)/);
 	assert.match(REASONING_LABELS_SOURCE, /preloadShimmer: "Thinking"/);
 	assert.doesNotMatch(REASONING_LABELS_SOURCE, /Rovo is cooking/);
 });

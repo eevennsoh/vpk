@@ -11,7 +11,7 @@ import {
 	ChainOfThoughtSearchResult,
 	ChainOfThoughtSearchResults,
 	ChainOfThoughtStep,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@atlaskit/icon/core/search";
 

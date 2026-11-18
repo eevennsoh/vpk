@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 96,
+				"entryCount": 98,
 				"entries": [
 					{
 						"category": "ui",
@@ -5592,6 +5592,13 @@
 						"slug": "carousel",
 						"name": "Carousel",
 						"importPath": "@/components/ui/carousel",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "chain-of-thought",
+						"name": "Chain of Thought",
+						"importPath": "@/components/ui/chain-of-thought",
 						"status": "live"
 					},
 					{
@@ -5844,6 +5851,13 @@
 						"slug": "message-scroller",
 						"name": "Message Scroller",
 						"importPath": "@/components/ui/message-scroller",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "morphing-rovo",
+						"name": "Morphing Rovo",
+						"importPath": "@/components/ui/morphing-rovo",
 						"status": "live"
 					},
 					{
@@ -6332,7 +6346,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 66,
+				"entryCount": 64,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6395,13 +6409,6 @@
 						"slug": "canvas",
 						"name": "Canvas",
 						"importPath": "@/components/ui-custom/canvas",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "chain-of-thought",
-						"name": "Chain of Thought",
-						"importPath": "@/components/ui-custom/chain-of-thought",
 						"status": "live"
 					},
 					{
@@ -6577,13 +6584,6 @@
 						"slug": "model-selector",
 						"name": "Model Selector",
 						"importPath": "@/components/ui-custom/model-selector",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "morphing-rovo",
-						"name": "Morphing Rovo",
-						"importPath": "@/components/ui-custom/morphing-rovo",
 						"status": "live"
 					},
 					{

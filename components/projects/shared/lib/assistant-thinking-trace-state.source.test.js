@@ -928,27 +928,13 @@ test("resolveAssistantThinkingTraceResponseGenerationStep stays hidden outside p
 });
 
 test("completed thinking tool calls suppress the collapsed byline", () => {
-	const chainOfThoughtSource = fs.readFileSync(
-		path.join(__dirname, "../../../ui-custom/chain-of-thought.tsx"),
-		"utf8",
-	);
+	// ChainOfThoughtStep hides the byline for description={null}; that rendered
+	// contract lives in components/ui/chain-of-thought.behavior.test.js.
 	const assistantTraceSource = fs.readFileSync(
 		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),
 		"utf8",
 	);
 
-	assert.match(
-		chainOfThoughtSource,
-		/const shouldShowDescription = description !== null;/u,
-	);
-	assert.match(
-		chainOfThoughtSource,
-		/const shouldShowHeaderDescription = shouldShowDescription && \(!hasExpandableContent \|\| !isOpen\);/u,
-	);
-	assert.match(
-		chainOfThoughtSource,
-		/<CyclingByline>\{shouldShowHeaderDescription \? resolvedDescription : null\}<\/CyclingByline>/u,
-	);
 	assert.match(
 		assistantTraceSource,
 		/description=\{\s*tracePresentation\?\.headerRender \|\| toolCall\.state === "completed"\s*\?\s*null\s*:\s*getThinkingToolByline\(toolCall, narration\)\s*\}/u,

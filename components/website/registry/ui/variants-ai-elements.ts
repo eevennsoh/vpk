@@ -513,4 +513,116 @@ export const UI_AI_ELEMENTS_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"chain-of-thought-demo-usage": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo").then((mod) => ({
+				default: mod.ChainOfThoughtDemoUsage,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-steps": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo").then((mod) => ({
+				default: mod.ChainOfThoughtDemoSteps,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-preload": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoPreload,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-normal-tool-calling-replay": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-replay").then((mod) => ({
+				default: mod.ChainOfThoughtDemoNormalToolCallingReplay,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-awaiting-user-response-replay": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-replay").then((mod) => ({
+				default: mod.ChainOfThoughtDemoAwaitingUserResponseReplay,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-thinking": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoThinking,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-completed": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoCompleted,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-status-variants": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoStatusVariants,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-search-results": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoSearchResults,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-image-step": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoImageStep,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-studio-agent-generation-flow": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoStudioAgentGenerationFlow,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-automation-trigger-flow": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoAutomationTriggerFlow,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-research-retrieval-flow": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoResearchRetrievalFlow,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-twg-tool-call": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoTwgToolCall,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-tool-call-details-flow": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-vpk").then((mod) => ({
+				default: mod.ChainOfThoughtDemoToolCallDetailsFlow,
+			})),
+		{ ssr: false },
+	),
+	"chain-of-thought-demo-tool-icon-table": dynamic(
+		() =>
+			import("../../demos/ui/chain-of-thought-demo-tool-icons").then((mod) => ({
+				default: mod.ChainOfThoughtDemoToolIconTable,
+			})),
+		{ ssr: false },
+	),
 };
