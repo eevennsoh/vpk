@@ -89,6 +89,11 @@ function JiraIssueReorderItems({ reorder }: Readonly<{ reorder: JiraIssueReorder
 	) : null;
 }
 
+/** Any card-action set shows Select / Archive / Delete, except one that only reorders. */
+function hasCardActions(actions: JiraIssueMoreMenuActions | undefined): actions is JiraIssueMoreMenuActions {
+	return actions !== undefined && (actions.reorder === undefined || Object.keys(actions).some((key) => key !== "reorder"));
+}
+
 function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	return props.onSelectionToggle ? (
 		<div className="flex size-full items-center justify-center">
@@ -231,7 +236,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("edit-labels")} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-flag")} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 				</DropdownMenuGroup>
-				{moreMenuActions ? (
+				{hasCardActions(moreMenuActions) ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>

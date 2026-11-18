@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import type { JiraIssueReorderActions } from "@/components/blocks/jira-issue/more-menu";
+import type { JiraIssueMoreMenuActions, JiraIssueReorderActions } from "@/components/blocks/jira-issue/more-menu";
 import type { IssueCardMove } from "./use-issue-card-drop-arrival";
 
 /**
@@ -26,5 +26,12 @@ export function useBoardCardReorder(onCardsMove: ((move: IssueCardMove) => void)
 		};
 	}
 
-	return { announcement, getReorderActions };
+	/** A card's More actions: the removal set when the board removes cards, plus reorder when it reorders; undefined when neither. */
+	function getMoreMenuActions(removal: JiraIssueMoreMenuActions | undefined, card: JiraKanbanCardData, column: JiraKanbanColumnData): JiraIssueMoreMenuActions | undefined {
+		const reorder = getReorderActions(card, column);
+		if (!reorder) return removal;
+		return removal ? { ...removal, reorder } : { reorder };
+	}
+
+	return { announcement, getMoreMenuActions };
 }

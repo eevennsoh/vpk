@@ -74,3 +74,60 @@ test("a card at the top of its column cannot move up, and the last card cannot m
 	await settle();
 	assert.equal((await chooseMenuItem(view, "PAY-3", "Move down")).getAttribute("aria-disabled"), "true");
 });
+
+// A host that reorders but does not remove cards, and renders a filtered view of its board: the
+// board must still offer Move up / Move down (and no removal actions), each move placing only the
+// chosen card relative to its rendered neighbours.
+async function renderReorderOnlyBoard(hiddenCardCodes) {
+	return renderComponent({
+		mocks,
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ExperimentalJiraKanban } from "@/components/blocks/jira-kanban/experimental/experimental-jira-kanban";
+			import { moveJiraKanbanCardsToDropTarget } from "@/components/blocks/jira-kanban/card-drop";
+			export default function ReorderOnlyProbe({ initialColumns, hiddenCardCodes }) {
+				const [columns, setColumns] = React.useState(initialColumns);
+				const rendered = columns.map((column) => ({ ...column, cards: column.cards.filter((card) => !hiddenCardCodes.includes(card.code)) }));
+				return (
+					<ThemeWrapper>
+						<output data-board-order="">{columns[0].cards.map((card) => card.code).join(" ")}</output>
+						<ExperimentalJiraKanban boardColumns={rendered} onCardsReorder={(move) => setColumns((current) => moveJiraKanbanCardsToDropTarget(current, move.cardCodes, move.columnTitle, move.target))} />
+					</ThemeWrapper>
+				);
+			}`,
+		props: { initialColumns: [{ ...boardColumns[0], cards: [...boardColumns[0].cards, card("PAY-4", "Fourth")] }, boardColumns[1]], hiddenCardCodes },
+	});
+}
+const boardOrder = (view) => view.container.ownerDocument.querySelector("[data-board-order]").textContent;
+const menuItemNames = (view) => view.getAllByRole("menuitem").map((item) => item.textContent.trim());
+
+test("a board with reorder but no removal callbacks offers Move up / Move down and no Archive or Delete", async () => {
+	const view = await renderReorderOnlyBoard([]);
+
+	await chooseMenuItem(view, "PAY-2", "Move down");
+	const names = menuItemNames(view);
+	assert.equal(names.includes("Move up") && names.includes("Move down"), true, `menu items: ${names.join(", ")}`);
+	assert.equal(names.some((name) => ["Archive", "Delete"].includes(name)), false, `menu items: ${names.join(", ")}`);
+
+	await view.click(view.getByRole("menuitem", { name: "Move down" }));
+	await settle();
+	assert.deepEqual(columnOrder(view), ["PAY-1", "PAY-3", "PAY-2", "PAY-4"]);
+	assert.equal(boardOrder(view), "PAY-1 PAY-3 PAY-2 PAY-4");
+});
+
+test("in a filtered column, Move down and Move up step over the rendered neighbour and move only that card", async () => {
+	// PAY-2 is filtered out: the column renders PAY-1, PAY-3, PAY-4.
+	const view = await renderReorderOnlyBoard(["PAY-2"]);
+	assert.deepEqual(columnOrder(view), ["PAY-1", "PAY-3", "PAY-4"]);
+
+	await view.click(await chooseMenuItem(view, "PAY-1", "Move down"));
+	await settle();
+	assert.deepEqual(columnOrder(view), ["PAY-3", "PAY-1", "PAY-4"]);
+	assert.equal(boardOrder(view), "PAY-2 PAY-3 PAY-1 PAY-4");
+	assert.equal(liveRegionText(view).includes("Moved PAY-1 to position 2 of 3 in To do."), true);
+
+	await view.click(await chooseMenuItem(view, "PAY-4", "Move up"));
+	await settle();
+	assert.deepEqual(columnOrder(view), ["PAY-3", "PAY-4", "PAY-1"]);
+	assert.equal(boardOrder(view), "PAY-2 PAY-3 PAY-4 PAY-1");
+});

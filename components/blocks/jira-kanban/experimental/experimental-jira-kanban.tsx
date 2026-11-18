@@ -1018,7 +1018,7 @@ function ExperimentalJiraKanbanView({
 												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 												onSelectionToggle={onCardSelect && selectedColumnTitles.has(column.title) ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined}
-												moreMenuActions={cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined, reorder: cardReorder.getReorderActions(card, column) } : undefined}
+												moreMenuActions={cardReorder.getMoreMenuActions(cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined, card, column)}
 												selectionBackdrop={selectionBackdrop}
 												subtaskChrome={subtaskChrome}
 														subtasks={childItems?.map((item) => item.subtask)}
