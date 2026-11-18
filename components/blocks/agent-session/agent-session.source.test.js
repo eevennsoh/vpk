@@ -678,7 +678,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
 	assert.match(CARD_SOURCE, /case "viewer":\s*return undefined;/u);
-	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
 	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;/u);

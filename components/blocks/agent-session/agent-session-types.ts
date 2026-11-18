@@ -243,7 +243,7 @@ export interface AgentSessionProps {
 	 */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Owner controls for the My session prototype, using the shared more menu. */
-	moreMenuVariant?: "default" | "owner";
+	moreMenuVariant?: "default" | "owner" | "session-picker";
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.
