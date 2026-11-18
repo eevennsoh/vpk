@@ -291,7 +291,7 @@ test("assigned workspaces switch independently between chat, work item, and deta
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /const innerColumnStyle = fillContainer \? constrainedColumnStyle : undefined;/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /data-jira-work-item-scroll-region[\s\S]*style=\{innerColumnStyle\}/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /p-6 data-\[fill-container\]:pb-0[\s\S]*data-fill-container=\{fillContainer \? "" : undefined\}/u);
-	assert.match(WORK_ITEM_LAYOUT_SOURCE, /className="[^"]*bg-background[^"]*pb-4[^"]*@\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-composer-dock/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /className="[^"]*sticky bottom-0[^"]*bg-transparent[^"]*pb-4[^"]*@\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-composer-dock/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /ref: narrowScrollRef,[\s\S]*showBottomScrollMask: showNarrowBottomScrollMask,[\s\S]*ref=\{narrowScrollRef\}/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /showNarrowBottomScrollMask[\s\S]*data-jira-work-item-narrow-scroll-mask[\s\S]*NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS[\s\S]*bg-linear-to-b from-transparent to-background/u);
 	assert.doesNotMatch(WORK_ITEM_VIEW_SOURCE, /WorkItemModalProvider|<WorkItemModal\./u);
