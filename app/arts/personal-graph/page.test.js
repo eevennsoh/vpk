@@ -725,8 +725,8 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(GRAPH_DEFAULTS_SOURCE, /radialDepthCurve: 0\.8/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /nodeSize: 4/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /originMarkerSize: 12/);
-	assert.match(GRAPH_DEFAULTS_SOURCE, /originY: 0\.52/);
-	assert.match(GRAPH_DEFAULTS_SOURCE, /rayOriginY: 0\.52/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /originY: 0\.5,/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /rayOriginY: 0\.5,/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /signalColor: ROVO_GRAPH_COLORS\.default/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /signalFrequency: 0\.5/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /signalGlowEnabled: false/);

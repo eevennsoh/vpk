@@ -126,19 +126,19 @@ test("a suite under a skipped root never runs, while one under any other root ru
 });
 
 test("legacy-drift entries are excluded from unfiltered and prefix runs but an explicit --file force-runs them", async () => {
-	const { LEGACY_DRIFT_TEST_FILES } = await import("./js-unit-test-legacy-drift.mjs");
 	const { buildSelectionOptions, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
-	const frozenFile = LEGACY_DRIFT_TEST_FILES.find((filePath) => filePath.startsWith("components/"));
+	const frozenFile = "components/frozen.test.js";
 	const runningFile = "components/ui/button.test.js";
 	const testEntries = [frozenFile, runningFile].map((filePath) => ({ filePath, source: NODE_TEST_SOURCE }));
+	const options = (selection) => ({ ...buildSelectionOptions(selection), legacyDriftTestFiles: new Set([frozenFile]) });
 
-	assert.deepEqual(selectRunnableTestFiles(testEntries, buildSelectionOptions()), [runningFile]);
+	assert.deepEqual(selectRunnableTestFiles(testEntries, options()), [runningFile]);
 	assert.deepEqual(
-		selectRunnableTestFiles(testEntries, buildSelectionOptions({ prefixes: ["components/"] })),
+		selectRunnableTestFiles(testEntries, options({ prefixes: ["components/"] })),
 		[runningFile],
 	);
 	assert.deepEqual(
-		selectRunnableTestFiles(testEntries, buildSelectionOptions({ files: [frozenFile] })),
+		selectRunnableTestFiles(testEntries, options({ files: [frozenFile] })),
 		[frozenFile],
 	);
 });
@@ -148,6 +148,7 @@ test("the legacy-drift ratchet fails on an added suite, allows removals, and nee
 	const { LEGACY_DRIFT_TEST_FILES } = await import("./js-unit-test-legacy-drift.mjs");
 	const source = (files) => `export const LEGACY_DRIFT_TEST_FILES = [\n${files.map((file) => `\t"${file}",`).join("\n")}\n];\n`;
 	assert.deepEqual(parseLegacyDriftSource(source(["a/x.test.js", "b/y.test.ts"])), ["a/x.test.js", "b/y.test.ts"]);
+	assert.deepEqual(parseLegacyDriftSource(source([])), []);
 	assert.deepEqual(findLegacyDriftGrowth(["a.test.js", "b.test.js"], ["b.test.js"]), []);
 	// Membership, not size: swapping a graduated suite for a new one still fails.
 	assert.deepEqual(findLegacyDriftGrowth(["a.test.js", "b.test.js"], ["b.test.js", "c.test.js"]), ["c.test.js"]);
@@ -159,9 +160,11 @@ test("the legacy-drift ratchet fails on an added suite, allows removals, and nee
 		return null;
 	};
 	assert.doesNotThrow(() => assertLegacyDriftDidNotGrow({ env: {}, git: git([...LEGACY_DRIFT_TEST_FILES, "graduated.test.js"]) }));
+	assert.doesNotThrow(() => assertLegacyDriftDidNotGrow({ currentFiles: [], env: {}, git: git([]) }));
+	assert.doesNotThrow(() => assertLegacyDriftDidNotGrow({ currentFiles: [], env: {}, git: git(["graduated.test.js"]) }));
 	assert.throws(
-		() => assertLegacyDriftDidNotGrow({ env: {}, git: git(LEGACY_DRIFT_TEST_FILES.slice(1)) }),
-		new RegExp(`may only shrink, but these suites were added since base12345:\n- ${LEGACY_DRIFT_TEST_FILES[0].replaceAll(".", "\\.")}`, "u"),
+		() => assertLegacyDriftDidNotGrow({ currentFiles: ["added.test.js"], env: {}, git: git([]) }),
+		/may only shrink, but these suites were added since base12345:\n- added\.test\.js/u,
 	);
 	const warnings = [];
 	assertLegacyDriftDidNotGrow({ env: {}, git: () => null, log: (line) => warnings.push(line) });
