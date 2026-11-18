@@ -751,17 +751,16 @@ test("a working long row breathes with the Avatar spinner", () => {
 		LIFECYCLE_SOURCE,
 		/case "running":[\s\S]*<IconTile[\s\S]*variant="experimental"/u,
 	);
-	// Grow in and out on the state swap, with the exit timing on the exit variant
-	// so it does not silently run at the enter timing.
+	// The outgoing state exits before the new state enters.
 	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_ENTER = \{ duration: 0\.15, ease: motionEase\.outPractical \}/u);
 	assert.match(LIFECYCLE_SOURCE, /const INDICATOR_EXIT = \{ duration: 0\.1, ease: motionEase\.in \}/u);
 	assert.match(
 		LIFECYCLE_SOURCE,
-		/exit=\{shouldReduceMotion[\s\S]*\? undefined[\s\S]*: \{ opacity: 0, scale: 0\.6, transition: INDICATOR_EXIT \}\}/u,
+		/exit=\{\{ opacity: 0, scale: 0\.6, transition: INDICATOR_EXIT \}\}/u,
 	);
 	assert.match(LIFECYCLE_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// Shimmer and the presence transition both retain reduced-motion treatments.
-	assert.match(LIFECYCLE_SOURCE, /initial=\{shouldReduceMotion \? false : \{ opacity: 0, scale: 0\.6 \}\}/u);
+	assert.match(LIFECYCLE_SOURCE, /initial=\{\{ opacity: 0, scale: 0\.6 \}\}/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /const glyph = shouldReduceMotion \?/u);
 	assert.match(LIFECYCLE_SOURCE, /<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">/u);
 	assert.match(LIFECYCLE_SOURCE, /<motion\.div/u);

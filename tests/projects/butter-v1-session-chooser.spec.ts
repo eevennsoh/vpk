@@ -102,6 +102,67 @@ test("selecting a session opens its inline reply with the draft", async ({ page 
 	await expect(reply).toHaveCount(0);
 });
 
+for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an acknowledged reply resumes only the selected session (${reducedMotion})`, async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.emulateMedia({ reducedMotion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	const card = thread.getByTestId("agent-session-row-butter-claude-onboarding-feedback");
+	const other = page.getByTestId("agent-session-row-butter-claude-postmortem");
+	await expect(card).toContainText("Finished");
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).click();
+	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
+	await reply.pressSequentially(" Please check this");
+	const transition = page.evaluate(() => new Promise<{ state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[]>((resolve, reject) => {
+		const frames: { state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[] = [];
+		const started = performance.now();
+		let seenWorking = false;
+		function sample() {
+			const button = document.querySelector('[data-testid="agent-session-row-butter-claude-onboarding-feedback"] button[aria-label="Working"]');
+			const visuals = button?.querySelectorAll<HTMLElement>("[data-agent-session-lifecycle-state]");
+			const visual = visuals?.[0];
+			if (visual) {
+				const label = visual.querySelector<HTMLElement>("[data-agent-session-lifecycle-label]");
+				const glyph = visual.querySelector<HTMLElement>("[data-agent-session-lifecycle-glyph]");
+				const state = visual.dataset.agentSessionLifecycleState ?? "";
+				seenWorking ||= state === "running";
+				const glyphStyle = glyph ? getComputedStyle(glyph) : null;
+				const glyphTransform = glyphStyle?.transform ?? "none";
+				const scale = glyphTransform === "none" ? 1 : new DOMMatrixReadOnly(glyphTransform).a;
+				const labelStyle = label ? getComputedStyle(label) : null;
+				frames.push({ state, opacity: Number(glyphStyle?.opacity ?? 1), scale, count: visuals.length, label: label?.dataset.agentSessionLifecycleLabel ?? "", blur: Number(labelStyle?.filter.match(/blur\(([\d.]+)px\)/u)?.[1] ?? 0), labelTransform: labelStyle?.transform ?? "none" });
+				if (seenWorking && frames.length > 2 && frames.at(-1)!.label === "running" && frames.at(-1)!.opacity >= 0.999 && Math.abs(frames.at(-1)!.scale - 1) < 0.01 && frames.at(-1)!.blur < 0.01) { resolve(frames); return; }
+			}
+			if (performance.now() - started > 10000) reject(new Error(`Lifecycle transition did not settle (working: ${seenWorking})`));
+			else requestAnimationFrame(sample);
+		}
+		requestAnimationFrame(sample);
+	}));
+	await reply.press("Enter");
+	await expect(card).toContainText("Finished");
+	await expect(thread.getByRole("group", { name: "Reactions" }).getByText("👀")).toBeVisible({ timeout: 10_000 });
+	await expect(card).toContainText("Working");
+	const frames = await transition;
+	expect(frames.every((frame) => frame.count === 1)).toBe(true);
+	expect(frames.every((frame) => frame.label === frame.state && frame.labelTransform === "none"), JSON.stringify(frames)).toBe(true);
+	if (reducedMotion === "reduce") expect(frames.every((frame) => frame.state === "running" && frame.opacity === 1 && frame.scale === 1 && frame.blur === 0), JSON.stringify(frames)).toBe(true);
+	else {
+		expect(frames.some((frame) => frame.state === "complete" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.some((frame) => frame.state === "running" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.some((frame) => frame.state === "running" && frame.opacity >= 0.999 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.findIndex((frame) => frame.state === "running")).toBeGreaterThan(frames.findLastIndex((frame) => frame.state === "complete"));
+	}
+	await page.getByRole("button", { name: "Show more activity" }).click();
+	await expect(other).toContainText("Finished");
+});
+
 test("a submitted handoff does not prefill later manual replies", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

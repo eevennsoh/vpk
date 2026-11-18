@@ -105,7 +105,8 @@ function createContent(
 	const activitySort: ProjectButterActivitySort = "newest";
 	const activityFilters: ProjectButterActivityFilters = PROJECT_BUTTER_ACTIVITY_FILTERS_ALL;
 	const replyDrafts: Readonly<Record<string, string>> = {};
-	const pendingAgentReactions: readonly { entryId: string; replyId: string; actorIds: readonly string[]; dueAtMs: number }[] = [];
+	const pendingAgentReactions: readonly { entryId: string; replyId: string; actorIds: readonly string[]; dueAtMs: number; sessionId?: string }[] = [];
+	const resumedSessionIds: readonly string[] = [];
 	/** Top-level comments pinned to the head of the feed, most recently pinned first. */
 	const pinnedCommentIds: readonly string[] = [];
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
@@ -137,6 +138,7 @@ function createContent(
 		activityFilters,
 		replyDrafts,
 		pendingAgentReactions,
+		resumedSessionIds,
 		pinnedCommentIds,
 		auditChanges,
 		summary: workItem?.title ?? "Redesign onboarding flow for new users",
@@ -199,6 +201,7 @@ export function useProjectButterContent(
 				return {
 					...previous,
 					pendingAgentReactions: previous.pendingAgentReactions.filter((pending) => pending.dueAtMs > now),
+					resumedSessionIds: [...new Set([...previous.resumedSessionIds, ...due.flatMap((pending) => pending.sessionId ? [pending.sessionId] : [])])],
 					activityEntries: previous.activityEntries.map((entry) => entry.kind !== "comment" ? entry : {
 						...entry,
 						replies: entry.replies?.map((reply) => {
@@ -243,13 +246,13 @@ export function useProjectButterContent(
 			};
 		}
 		return {
-			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[]) => {
+			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[], sessionId?: string) => {
 				const createdAtMs = Date.now();
 				const reply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body };
 				updateState((previous) => ({
 					...previous,
 					activityEntries: previous.activityEntries.map((entry) => entry.id === entryId && entry.kind === "comment" ? { ...entry, replies: [...(entry.replies ?? []), reply] } : entry),
-					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000 }] : previous.pendingAgentReactions,
+					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000, sessionId }] : previous.pendingAgentReactions,
 				}));
 			},
 			beginSuggestionAudit: (label: string, mode: "accept" | "undo") => {

@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
 import RovoIconGlyph from "@atlaskit/icon-lab/core/rovo";
@@ -25,7 +25,7 @@ import NodeIcon from "@atlaskit/icon/core/node";
 import { createContext, memo, use, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 
-import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/components/ui-custom/lib/reasoning-labels";
+import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/lib/reasoning-labels";
 import { token } from "@/lib/tokens";
 
 interface ChainOfThoughtContextValue {

@@ -248,7 +248,9 @@ export function ProjectButterActivity({
 							const agent = mentionAgentsById.get(id);
 							return agent ? [agent.id] : [];
 						}))];
-						content.submitActivityReply(entry.id, body, actorIds);
+						const session = sessionFor(entry.id);
+						const mentionsSessionAgent = session && mentionedAgentIds.some((id) => mentionAgentsById.get(id)?.name.toLowerCase() === session.agent.name.toLowerCase());
+						content.submitActivityReply(entry.id, body, actorIds, mentionsSessionAgent ? session.id : undefined);
 						onReplySubmitted?.();
 					}}
 					onViewSession={(session) => onOpenSession(session.id)}
