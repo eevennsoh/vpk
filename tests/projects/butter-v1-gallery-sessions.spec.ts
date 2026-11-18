@@ -52,7 +52,7 @@ test("session metadata previews its timestamp and pull request", async ({ page }
 	const timestamp = row.locator("[data-last-update]");
 	await timestamp.hover();
 	await expect(timestamp).toHaveCSS("text-decoration-line", "underline");
-	await expect(page.getByRole("tooltip")).toContainText("November 10, 2026");
+	await expect(page.getByRole("tooltip")).toHaveText("Last run on Nov 10, 2026, 10:00 GMT+8");
 	await page.mouse.move(0, 0);
 	const pr = row.getByRole("group", { name: /Pull request #1306/ });
 	const icon = pr.getByRole("img", { name: "PR created" });
@@ -68,7 +68,7 @@ test("session metadata previews its timestamp and pull request", async ({ page }
 	await page.mouse.move(0, 0);
 	await page.keyboard.press("Tab");
 	await timestamp.focus();
-	await expect(page.getByRole("tooltip")).toContainText("November 10, 2026");
+	await expect(page.getByRole("tooltip")).toHaveText("Last run on Nov 10, 2026, 10:00 GMT+8");
 	await pr.focus();
 	await expect(page.getByRole("region", { name: "Pull request #1306 details" })).toBeVisible();
 });

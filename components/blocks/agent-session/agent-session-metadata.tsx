@@ -106,7 +106,7 @@ function SessionTimestamp({ item }: Readonly<{ item: AgentSessionItem }>) {
 			<TooltipTrigger render={<span className="rounded-sm text-text-subtle underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring" data-last-update="" data-session-drag-ignore="" tabIndex={0} />}>
 				<AgentListTime item={item} />
 			</TooltipTrigger>
-			<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">{formatDetailedTimestamp(timestamp)}</TooltipContent>
+			<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">Last run on {formatDetailedTimestamp(timestamp, true)}</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -218,7 +218,7 @@ function LongMetadataSegment({
 /**
  * Long-form metadata: `<mark> Claude · #1306: … · ☁ 2m`.
  *
- * In compact rows the state label can replace the agent name; its glyph stays trailing. The
+ * The state label can replace the agent name; its glyph stays trailing. The
  * chunk list comes from the pure, unit-tested metadata builder.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
@@ -228,7 +228,7 @@ export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabel
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
 	const access = item.privateTo ? "private" : item.sharedWithTeam || getAgentSessionRole(item) === "viewer" ? "team" : undefined;
-	const showLifecycleInMetadata = compact && lifecycleLabelPlacement === "metadata";
+	const showLifecycleInMetadata = lifecycleLabelPlacement === "metadata";
 	const segments = toAgentSessionMetadataSegments({
 		agentName: showLifecycleInMetadata ? AGENT_SESSION_STATUS_LABEL[item.state] : item.agent.name,
 		branch: showBranch ? item.branch : undefined,
