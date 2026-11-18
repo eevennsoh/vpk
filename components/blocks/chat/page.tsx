@@ -33,7 +33,7 @@ import {
 import { Footer } from "@/components/ui-custom/footer";
 import { chatStyles } from "./data/styles";
 import { useChatSubmit } from "./hooks/use-chat-submit";
-import styles from "./chat.module.css";
+import { latestTurnEnterClassName } from "@/components/projects/shared/message-turns";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 
@@ -103,7 +103,7 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 									key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}
 									messageId={turn[0]?.id}
 									scrollAnchor={turn[0]?.type === "user"}
-									className={turnIndex === orderedMessageTurns.length - 1 ? styles.latestTurn : undefined}
+									className={turnIndex === orderedMessageTurns.length - 1 ? latestTurnEnterClassName : undefined}
 									data-chat-latest-turn={turnIndex === orderedMessageTurns.length - 1 ? "true" : undefined}
 								>
 									{turn.map((message, messageIndex) => (

@@ -12,7 +12,6 @@ const { accessibleName, renderComponent } = require(path.join(process.cwd(), "sc
 const CSS_MODULE = "export default new Proxy({}, { get: (_, key) => String(key) });";
 const MOCKS = {
 	"@/components/projects/shared/components/chat-messages.module.css": CSS_MODULE,
-	"@/components/projects/sidebar-chat/chat.module.css": CSS_MODULE,
 };
 const WORK_ITEM = `
 import { ThemeWrapper } from "@/components/utils/theme-wrapper";
