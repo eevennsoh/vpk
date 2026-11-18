@@ -29,6 +29,7 @@ import { RovoAppConversationEmptyState } from "@/components/projects/rovo-core/c
 import { ROVO_APP_DEFAULT_EMPTY_STATE, type RovoAppEmptyStateConfig, type RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import { RovoAppScrollActiveTracker, RovoAppScrollAnchorSync } from "@/components/projects/rovo-core/components/rovo-app-scroll-sync";
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
+import { turnEnterClassName } from "@/components/projects/shared/message-turns";
 import { AssistantSuggestionsSection } from "@/components/projects/shared/components/assistant-suggestions-section";
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
 import { UserMessageAttachments } from "@/components/projects/shared/components/user-message-attachments";
@@ -209,7 +210,7 @@ function UserMessage({
 	return (
 		<Message
 			align="end"
-			className={cn("fade-in animate-in duration-medium", !(isEditing || isDismissed || clarificationSummaryRows.length > 0) && "cv-auto")}
+			className={cn(turnEnterClassName, !(isEditing || isDismissed || clarificationSummaryRows.length > 0) && "cv-auto")}
 			data-message-id={message.id}
 			data-role="user"
 			data-testid="message-user"

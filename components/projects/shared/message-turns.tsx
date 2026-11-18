@@ -6,10 +6,10 @@ import { Fragment, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Entrance for the newest turn: shadcn's default Message Scroller slide-up (fade and a 10px
+ * Entrance for a chat turn as it mounts (sidebar, ChatMessages, Rovo and Studio): shadcn's default Message Scroller slide-up (fade and a 10px
  * rise) on VPK motion tokens. The global reduced-motion reset removes it.
  */
-export const latestTurnEnterClassName = "animate-in fade-in slide-in-from-bottom-[10px] duration-slow ease-out";
+export const turnEnterClassName = "animate-in fade-in slide-in-from-bottom-[10px] duration-slow ease-out";
 
 export interface ThreadMessage {
 	id: string;
