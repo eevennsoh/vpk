@@ -128,6 +128,7 @@ export interface JiraIssueAgentActivity {
 	 * Omit to keep the owner menu.
 	 */
 	role?: AgentSessionRole;
+	privateTo?: string;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	startupSequence?: "jira-work-item-start";
@@ -224,6 +225,7 @@ export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentA
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }

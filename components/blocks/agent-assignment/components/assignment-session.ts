@@ -87,6 +87,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 			: agent.sessionTitle?.trim() || (role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name),
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
+		...(agent.privateTo ? { privateTo: agent.privateTo } : {}),
 		...(agent.timeLabel ? { timeLabel: agent.timeLabel } : {}),
 	};
 }
