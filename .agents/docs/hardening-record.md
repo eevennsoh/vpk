@@ -104,7 +104,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 - 47 jsx-a11y suppressions.
 - The five defects known on 16 Nov were fixed on 18 Nov (#2382): the Jira work-item modal is a modal dialog with a focus trap, Escape and focus return; kanban cards have Move up / Move down in their menu with a live-region announcement; Delete on task-progress and agent-progress is reachable and shown on keyboard focus; a button Tag no longer contains its remove button; the Confluence body editor is a named multiline textbox. No screen-reader test was run.
 - Accepted trade-off: while that modal is open, the floating Rovo launcher and chat are outside the dialog, so keyboard and screen-reader users reach them only after closing it (the sibling work-item dialogs behave the same).
-- Still open, found while fixing: progress cards are themselves `role="button"` and contain buttons; `SkillTag` nests a control the same way; the rich-text placeholder on `/preview/blocks/agent` is `aria-hidden` but focusable; agent chips' remove buttons read their label twice.
+- The four leftovers found while fixing those were fixed after it: remove buttons on agent chips and frontmatter list items are named once; `SkillTag` no longer contains its overlay control; the rich-text placeholder slot is no longer `aria-hidden` around a focusable button; task-progress and agent-progress cards carry their button role on a layer beside Stop, Retry and Delete, with a short name and an expanded state. Proven by rendered tests and the progress-card smoke spec; no screen-reader test was run.
 
 ### Tests and lint debt
 

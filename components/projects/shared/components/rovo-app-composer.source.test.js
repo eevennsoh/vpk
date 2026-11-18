@@ -563,7 +563,6 @@ test("auto-tagged chips do not expose the swap-back-to-text overlay action", () 
 test("skill mention chips expose the skewed focus state for tab and node selection", () => {
 	assert.match(SKILL_TAG_SOURCE, /focused\?: boolean;/u);
 	assert.match(SKILL_TAG_SOURCE, /focusable\?: boolean;/u);
-	assert.match(SKILL_TAG_SOURCE, /tabIndex=\{isInteractive \|\| focusable \? \(tabIndex \?\? 0\) : tabIndex\}/u);
 	assert.match(SKILL_TAG_SOURCE, /-skew-x-12[\s\S]*border border-transparent[\s\S]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(SKILL_TAG_SOURCE, /focused && "border-ring ring-3 ring-ring\/50"/u);
 	assert.doesNotMatch(SKILL_TAG_SOURCE, /ring-inset/u);
