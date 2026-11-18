@@ -203,6 +203,7 @@ export default function TaskProgress({
 		})
 	);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
+	const cardActionRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (runStatus !== "running" || !runCreatedAt) return;
@@ -288,24 +289,34 @@ export default function TaskProgress({
 				>
 					<div
 						className={cn(
-							"group/card w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-medium hover:shadow-2xl",
+							"group/card relative w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-medium hover:shadow-2xl has-[[data-slot=progress-card-action]:focus-visible]:outline-2 has-[[data-slot=progress-card-action]:focus-visible]:outline-ring has-[[data-slot=progress-card-action]:focus-visible]:outline-offset-2",
 							!isInteractive && "cursor-default",
 							className
 						)}
-						onClick={isInteractive ? handleCardActivate : undefined}
-						onKeyDown={isInteractive ? (e: React.KeyboardEvent) => {
-							// Keys from the Stop/Done/Delete buttons inside the card belong to them.
-							if (e.target !== e.currentTarget) return;
-							if (e.key === "Enter" || e.key === " ") {
-								e.preventDefault();
-								handleCardActivate();
-							}
+						onClick={isInteractive ? () => {
+							cardActionRef.current?.focus({ preventScroll: true });
+							handleCardActivate();
 						} : undefined}
-						aria-expanded={isCollapsible ? !collapsed : undefined}
-						aria-label={isInteractive ? cardAriaLabel : undefined}
-						role={isInteractive ? "button" : undefined}
-						tabIndex={isInteractive ? 0 : undefined}
+						role="presentation"
 					>
+						{/* Delegate pointer clicks through the shell so the timeline keeps its scroll hit area. */}
+						{isInteractive ? (
+							<div
+								ref={cardActionRef}
+								role="button"
+								tabIndex={0}
+								aria-label={cardAriaLabel}
+								aria-expanded={isCollapsible ? !collapsed : undefined}
+								className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
+								data-slot="progress-card-action"
+								onKeyDown={(event) => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										handleCardActivate();
+									}
+								}}
+							/>
+						) : null}
 						<style dangerouslySetInnerHTML={CARD_ANIMATION_INNER_HTML} />
 						<div className="flex flex-col gap-3 px-4 py-3">
 							<div className="flex items-center justify-between gap-3">
@@ -365,7 +376,7 @@ export default function TaskProgress({
 										<VideoStopOverlayIcon label="" size="small" />
 									</Button>
 								) : onDelete ? (
-									<span className={runStatus === "completed" ? "block" : "block sr-only group-hover/card:not-sr-only group-focus-visible/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only"}>
+									<span className={runStatus === "completed" ? "block" : "block sr-only group-hover/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only"}>
 										{runStatus === "completed" ? (
 											<Button
 												variant="ghost"

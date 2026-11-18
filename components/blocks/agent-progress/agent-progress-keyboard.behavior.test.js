@@ -1,6 +1,5 @@
-// The agent-progress card is itself a keyboard button (collapse / onCardClick) and holds
-// real buttons (Stop execution, Delete run, each status group's expand toggle and Retry).
-// Enter/Space on one of those nested buttons must run that button and leave the card alone.
+// The whole-card action, Stop/Delete/Retry buttons and group toggles are sibling
+// controls. Each action keeps its keyboard and pointer behavior without activating another.
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
@@ -21,37 +20,35 @@ async function renderCard(props) {
 			...props,
 		},
 	});
-	const [card] = view.getAllByRole("button").filter((button) => button.getAttribute("tabindex") === "0" && button.tagName === "DIV");
+	const card = view.getByRole("button", { name: "Release plan agent progress" });
 	return { calls, card, view };
 }
-
-const cardText = (card) => card.textContent;
 
 for (const key of ["Enter", " "]) {
 	const keyName = key === " " ? "Space" : key;
 
 	test(`${keyName} on Delete run deletes the run without activating the card`, async () => {
-		const { calls, card, view } = await renderCard({ runStatus: "failed" });
-		const before = cardText(card);
+		const { calls, view } = await renderCard({ runStatus: "failed" });
+		const before = view.container.textContent;
 		const deleteRun = view.getByRole("button", { name: "Delete run" });
 
 		await view.focus(deleteRun);
 		await view.press(deleteRun, key);
 
 		assert.deepEqual(calls, ["delete"]);
-		assert.equal(cardText(card), before, "the card did not collapse");
+		assert.equal(view.container.textContent, before, "the card did not collapse");
 	});
 
 	test(`${keyName} on Stop execution leaves the card alone`, async () => {
-		const { calls, card, view } = await renderCard({ runStatus: "running" });
-		const before = cardText(card);
+		const { calls, view } = await renderCard({ runStatus: "running" });
+		const before = view.container.textContent;
 		const stop = view.getByRole("button", { name: "Stop execution" });
 
 		await view.focus(stop);
 		await view.press(stop, key);
 
 		assert.deepEqual(calls, []);
-		assert.equal(cardText(card), before);
+		assert.equal(view.container.textContent, before);
 	});
 
 	test(`${keyName} on Retry failed tasks retries without activating the card`, async () => {
@@ -87,3 +84,53 @@ for (const key of ["Enter", " "]) {
 		assert.deepEqual(calls, ["card"]);
 	});
 }
+
+const failedTasks = {
+	done: [], inReview: [], inProgress: [], todo: [],
+	failed: [{ id: "failure", label: "Fix deployment", description: "" }],
+};
+
+for (const runStatus of ["running", "failed", "completed"]) {
+	test(`${runStatus} agent card keeps its action before sibling controls and preserves pointer activation`, async () => {
+		const { calls, card, view } = await renderCard({ runStatus, taskStatusGroups: failedTasks });
+		const secondaryName = runStatus === "running" ? "Stop execution" : "Delete run";
+		assert.equal(accessibleName(card), "Release plan agent progress");
+		assert.equal(card.getAttribute("aria-expanded"), "true");
+		assert.deepEqual(view.tabOrder(), ["Release plan agent progress", secondaryName, "Retry failed tasks", "1"]);
+		for (const button of view.getAllByRole("button")) {
+			assert.equal(button.parentElement.closest('button, [role="button"]') === null, true, "each control has no interactive ancestor");
+		}
+		await view.press(null, "Tab");
+		assert.equal(view.isFocused(card), true);
+		await view.press(card, "Tab");
+		assert.equal(view.isFocused(view.getByRole("button", { name: secondaryName })), true);
+		await view.click(view.getByText("Release plan"));
+		assert.deepEqual(calls, ["card"]);
+		assert.equal(card.getAttribute("aria-expanded"), "false");
+		assert.equal(accessibleName(card), "Release plan agent progress");
+		assert.equal(view.queryByText("Fix deployment") === null, true);
+		assert.equal(view.isFocused(card), true);
+		assert.deepEqual(view.tabOrder(), ["Release plan agent progress", secondaryName]);
+		await view.press(card, "Enter");
+		assert.equal(card.getAttribute("aria-expanded"), "true");
+		assert.equal(accessibleName(card), "Release plan agent progress");
+		assert.equal(view.queryByText("Fix deployment") !== null, true);
+		assert.deepEqual(calls, ["card", "card"]);
+		await view.click(view.getByRole("button", { name: "Retry failed tasks" }));
+		assert.deepEqual(calls, ["card", "card", "retry:failed"]);
+		await view.click(view.getByRole("button", { name: "1" }));
+		assert.equal(view.queryByText("Fix deployment") === null, true);
+		assert.deepEqual(calls, ["card", "card", "retry:failed"]);
+	});
+}
+
+test("a non-collapsible agent card keeps its callback and a passive card has only secondary controls", async () => {
+	const { calls, card, view } = await renderCard({ isCollapsible: false, taskStatusGroups: failedTasks });
+	await view.press(card, " ");
+	assert.deepEqual(calls, ["card"]);
+	assert.equal(card.hasAttribute("aria-expanded"), false);
+	assert.equal(view.queryByText("Fix deployment") !== null, true);
+	await view.rerender({ isCollapsible: false, runCreatedAt: null, taskStatusGroups: failedTasks });
+	assert.deepEqual(view.tabOrder(), ["Stop execution", "1"]);
+	assert.equal(view.getAllByRole("button").length, 2);
+});

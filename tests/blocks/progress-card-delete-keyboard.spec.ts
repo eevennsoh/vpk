@@ -6,8 +6,8 @@ import { appUrl } from "@/tests/helpers/origin";
 // user must reach it by Tab from the card and see it, without it showing at rest. The doc
 // pages render the "failed" example, the one with a Delete run action.
 const ROUTES = [
-	"/components/blocks/task-progress",
-	"/components/blocks/agent-progress",
+	{ route: "/components/blocks/task-progress", actionName: "Deploy Pipeline task progress" },
+	{ route: "/components/blocks/agent-progress", actionName: "Deploy Pipeline agent progress" },
 ];
 
 // The width the action's reveal wrapper paints; a visually hidden wrapper clips to 1px.
@@ -15,21 +15,28 @@ async function renderedWidth(locator: Locator): Promise<number> {
 	return (await locator.locator("..").boundingBox())?.width ?? 0;
 }
 
-async function openCard(page: Page, route: string) {
+async function openCard(page: Page, route: string, actionName: string) {
 	await page.goto(appUrl(route));
-	const card = page.locator("[role=button][tabindex='0']").filter({ hasText: "Deploy Pipeline" });
+	const card = page.getByRole("button", { name: actionName, exact: true });
 	await card.scrollIntoViewIfNeeded();
 	await expect(card).toBeVisible();
-	return { card, deleteRun: card.getByRole("button", { includeHidden: true, name: "Delete run" }) };
+	const shell = card.locator("..");
+	return {
+		card,
+		cardContent: shell.getByText("Deploy Pipeline", { exact: true }),
+		deleteRun: shell.getByRole("button", { includeHidden: true, name: "Delete run", exact: true }),
+	};
 }
 
-for (const route of ROUTES) {
+for (const { route, actionName } of ROUTES) {
 	test(`Tab from the card reaches a visible Delete run on ${route}`, { tag: "@smoke" }, async ({ page }) => {
-		const { card, deleteRun } = await openCard(page, route);
+		const { card, deleteRun } = await openCard(page, route, actionName);
 		await page.mouse.move(0, 0);
 		expect(await renderedWidth(deleteRun), "Delete run is not shown at rest").toBeLessThanOrEqual(1);
 
 		await card.focus();
+		await expect(card).toBeFocused();
+		expect(await renderedWidth(deleteRun), "Delete run is shown while the card action has focus").toBeGreaterThan(16);
 		await page.keyboard.press("Tab");
 
 		await expect(deleteRun).toBeFocused();
@@ -37,11 +44,11 @@ for (const route of ROUTES) {
 	});
 
 	test(`a mouse click on the card does not reveal Delete run once the pointer leaves on ${route}`, { tag: "@smoke" }, async ({ page }) => {
-		const { card, deleteRun } = await openCard(page, route);
-		await card.hover();
+		const { cardContent, deleteRun } = await openCard(page, route, actionName);
+		await cardContent.hover();
 		expect(await renderedWidth(deleteRun), "Delete run is shown on hover").toBeGreaterThan(16);
 
-		await card.click();
+		await cardContent.click();
 		await page.mouse.move(0, 0);
 
 		expect(await renderedWidth(deleteRun)).toBeLessThanOrEqual(1);

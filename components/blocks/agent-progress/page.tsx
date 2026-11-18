@@ -294,6 +294,7 @@ export default function AgentsProgress({
 	const [retryingGroupKey, setRetryingGroupKey] =
 		useState<RetryableStatusGroupKey | null>(null);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
+	const cardActionRef = useRef<HTMLDivElement>(null);
 	const resolvedPlanVisualIdentity = useMemo(
 		() => planVisualIdentity ?? resolvePlanVisualIdentity(planTitle),
 		[planTitle, planVisualIdentity]
@@ -393,22 +394,34 @@ export default function AgentsProgress({
 	return (
 		<div
 			className={cn(
-				"group/card w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-medium hover:shadow-xl",
+				"group/card relative w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-medium hover:shadow-xl has-[[data-slot=progress-card-action]:focus-visible]:outline-2 has-[[data-slot=progress-card-action]:focus-visible]:outline-ring has-[[data-slot=progress-card-action]:focus-visible]:outline-offset-2",
 				!isInteractive && "cursor-default",
 				className
 			)}
-			onClick={isInteractive ? handleCardActivate : undefined}
-			onKeyDown={isInteractive ? (e: React.KeyboardEvent) => {
-				// Keys from the Stop/Delete/Retry buttons inside the card belong to them.
-				if (e.target !== e.currentTarget) return;
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					handleCardActivate();
-				}
+			onClick={isInteractive ? () => {
+				cardActionRef.current?.focus({ preventScroll: true });
+				handleCardActivate();
 			} : undefined}
-			role={isInteractive ? "button" : undefined}
-			tabIndex={isInteractive ? 0 : undefined}
+			role="presentation"
 		>
+			{/* The action shares the shell with content and controls; pointer clicks keep bubbling through the shell. */}
+			{isInteractive ? (
+				<div
+					ref={cardActionRef}
+					role="button"
+					tabIndex={0}
+					aria-label={`${planTitle} agent progress`}
+					aria-expanded={isCollapsible ? !collapsed : undefined}
+					className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
+					data-slot="progress-card-action"
+					onKeyDown={(event) => {
+						if (event.key === "Enter" || event.key === " ") {
+							event.preventDefault();
+							handleCardActivate();
+						}
+					}}
+				/>
+			) : null}
 			<style dangerouslySetInnerHTML={CARD_ANIMATION_INNER_HTML} />
 			<div className="flex flex-col gap-3 px-4 py-3">
 				<div className="flex items-center justify-between gap-3">
@@ -456,7 +469,7 @@ export default function AgentsProgress({
 							<VideoStopOverlayIcon label="" />
 						</Button>
 					) : onDelete ? (
-						<span className="block sr-only group-hover/card:not-sr-only group-focus-visible/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only" onClick={(e) => e.stopPropagation()} role="presentation">
+						<span className="block sr-only group-hover/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only" onClick={(e) => e.stopPropagation()} role="presentation">
 							<Button
 								aria-label="Delete run"
 								variant="ghost"

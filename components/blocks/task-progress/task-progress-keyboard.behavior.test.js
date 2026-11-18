@@ -1,6 +1,5 @@
-// The task-progress card is itself a keyboard button (collapse / onCardClick) and holds
-// real buttons (Stop execution, Done, Delete run). Enter/Space on one of those nested
-// buttons must run that button and leave the card alone.
+// The card's whole-surface action and its Stop/Done/Delete controls are independent
+// buttons. Keyboard and pointer activation of a secondary action leave the card alone.
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
@@ -23,6 +22,38 @@ async function renderCard(props) {
 	const card = view.getByRole("button", { name: "Release plan task progress" });
 	return { calls, card, view };
 }
+
+for (const runStatus of ["running", "failed", "completed"]) {
+	test(`${runStatus} task card keeps its action before sibling controls and preserves pointer activation`, async () => {
+		const { calls, card, view } = await renderCard({ runStatus });
+		const secondaryName = runStatus === "running" ? "Stop execution" : runStatus === "failed" ? "Delete run" : "Done";
+		assert.deepEqual(view.tabOrder(), ["Release plan task progress", secondaryName]);
+		for (const button of view.getAllByRole("button")) {
+			assert.equal(button.parentElement.closest('button, [role="button"]') === null, true, "each control has no interactive ancestor");
+		}
+		await view.press(null, "Tab");
+		assert.equal(view.isFocused(card), true);
+		await view.press(card, "Tab");
+		assert.equal(view.isFocused(view.getByRole("button", { name: secondaryName })), true);
+		await view.click(view.getByText("Release plan"));
+		assert.deepEqual(calls, ["card"]);
+		assert.equal(card.getAttribute("aria-expanded"), "false");
+		assert.equal(view.isFocused(card), true);
+		await view.press(card, "Enter");
+		assert.equal(card.getAttribute("aria-expanded"), "true");
+		assert.deepEqual(calls, ["card", "card"]);
+	});
+}
+
+test("a non-collapsible task card keeps its callback and a passive card has only secondary controls", async () => {
+	const { calls, card, view } = await renderCard({ isCollapsible: false });
+	await view.press(card, " ");
+	assert.deepEqual(calls, ["card"]);
+	assert.equal(card.hasAttribute("aria-expanded"), false);
+	await view.rerender({ isCollapsible: false, runCreatedAt: null });
+	assert.deepEqual(view.tabOrder(), ["Stop execution"]);
+	assert.equal(view.getAllByRole("button").length, 1);
+});
 
 for (const key of ["Enter", " "]) {
 	const keyName = key === " " ? "Space" : key;
