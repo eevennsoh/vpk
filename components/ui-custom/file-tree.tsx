@@ -32,6 +32,7 @@ interface FileTreeContextType {
 	togglePath: (path: string) => void;
 	selectedPath?: string;
 	onSelect?: (path: string) => void;
+	onItemKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
 // Default noop for context default value
@@ -41,6 +42,7 @@ const noop = () => {};
 const FileTreeContext = createContext<FileTreeContextType>({
 	// oxlint-disable-next-line eslint-plugin-unicorn(no-new-builtin)
 	expandedPaths: new Set(),
+	onItemKeyDown: noop,
 	togglePath: noop,
 });
 
@@ -94,7 +96,6 @@ export function FileTree({
 	selectedPath,
 	onSelect,
 	onExpandedChange,
-	onKeyDown,
 	className,
 	children,
 	...props
@@ -116,22 +117,18 @@ export function FileTree({
 		[expandedPaths, onExpandedChange]
 	);
 
-	const contextValue = useMemo(
-		() => ({ expandedPaths, onSelect, selectedPath, togglePath }),
-		[expandedPaths, onSelect, selectedPath, togglePath]
-	);
-
 	// Tree keyboard model: Up/Down/Home/End move between visible rows, Right
 	// opens a folder or enters it, Left closes a folder or returns to its parent.
-	// Enter/Space activate the focused row natively (it is a button).
-	const handleKeyDown = useCallback(
-		(event: KeyboardEvent<HTMLDivElement>) => {
-			onKeyDown?.(event);
-			const item = event.target as HTMLElement;
-			if (event.defaultPrevented || item.getAttribute("role") !== "treeitem") {
+	// Enter/Space activate the focused row natively (it is a button). Each row
+	// handles its own keys so focus and handler stay on the same element.
+	const handleItemKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLElement>) => {
+			const item = event.currentTarget;
+			const tree = item.closest<HTMLElement>('[role="tree"]');
+			if (event.defaultPrevented || tree === null) {
 				return;
 			}
-			const items = getVisibleTreeItems(event.currentTarget);
+			const items = getVisibleTreeItems(tree);
 			const index = items.indexOf(item);
 			const level = getTreeItemLevel(item);
 			const expandedState = item.getAttribute("aria-expanded");
@@ -173,15 +170,18 @@ export function FileTree({
 			event.preventDefault();
 			next?.focus();
 		},
-		[onKeyDown, togglePath]
+		[togglePath]
+	);
+
+	const contextValue = useMemo(
+		() => ({ expandedPaths, onItemKeyDown: handleItemKeyDown, onSelect, selectedPath, togglePath }),
+		[expandedPaths, handleItemKeyDown, onSelect, selectedPath, togglePath]
 	);
 
 	return (
 		<FileTreeContext value={contextValue}>
-			{/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- Focus lives on the treeitem row Buttons; the tree only handles the keys they bubble. */}
 			<div
 				className={cn("flex flex-col rounded-lg font-mono text-sm", className)}
-				onKeyDown={handleKeyDown}
 				role="tree"
 				{...props}
 			>
@@ -215,7 +215,7 @@ export function FileTreeFolder({
 	children,
 	...props
 }: Readonly<FileTreeFolderProps>) {
-	const { expandedPaths, togglePath, selectedPath, onSelect } =
+	const { expandedPaths, togglePath, selectedPath, onSelect, onItemKeyDown } =
 		use(FileTreeContext);
 	const level = use(FileTreeLevelContext);
 	const isExpanded = expandedPaths.has(path);
@@ -248,6 +248,7 @@ export function FileTreeFolder({
 					aria-selected={isSelected}
 					data-path={path}
 					onClick={handleSelect}
+					onKeyDown={onItemKeyDown}
 					render={
 						<Button
 							className={cn(
@@ -327,7 +328,7 @@ export function FileTreeFile({
 	children,
 	...props
 }: Readonly<FileTreeFileProps>) {
-	const { selectedPath, onSelect } = use(FileTreeContext);
+	const { selectedPath, onSelect, onItemKeyDown } = use(FileTreeContext);
 	const level = use(FileTreeLevelContext);
 	const isSelected = selectedPath === path;
 	const hasCustomContent = children != null;
@@ -355,6 +356,7 @@ export function FileTreeFile({
 					)}
 					data-path={path}
 					onClick={handleClick}
+					onKeyDown={onItemKeyDown}
 					role="treeitem"
 					size="compact"
 					variant="ghost"
