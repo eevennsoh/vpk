@@ -98,7 +98,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? props.recommendationReason : undefined} verified={agent.verified} accentColor={agent.accentColor}
 			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
 			avatar={avatar ?? (agent.brandName ? (
-				<AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} label="" sizePx={48} /></AgentLanyardAvatarFrame>
+				<AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} thirdPartyLogoSize="xlarge" label="" sizePx={48} /></AgentLanyardAvatarFrame>
 			) : <AgentLanyardAvatarFrame><Image alt="" className={agent.avatarSrc.startsWith("/avatar-agent-new/") ? "h-full w-full" : "h-full w-full scale-110"} src={agent.avatarSrc} width={54} height={60} /></AgentLanyardAvatarFrame>)}
 			footer={recommended || footer === null ? null : footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>

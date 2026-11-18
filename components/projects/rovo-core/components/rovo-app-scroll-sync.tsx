@@ -2,66 +2,33 @@
 
 import { useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useConversationContext } from "@/components/ui-custom/conversation";
-type RovoAppScrollAnchorTarget = "bottom" | "follow";
+import { useMessageScroller } from "@/components/ui/message-scroller";
 
 export function RovoAppScrollAnchorSync({
 	scrollAnchorMessageId,
-	target = "follow",
 }: Readonly<{
 	scrollAnchorMessageId: string | null;
-	target?: RovoAppScrollAnchorTarget;
 }>) {
-	const { scrollToBottom } = useConversationContext();
+	const { scrollToMessage } = useMessageScroller();
 	const shouldReduceMotion = useReducedMotion();
 	const didInitialScrollRef = useRef(false);
-	const latestArgsRef = useRef({ scrollAnchorMessageId, target, scrollToBottom });
-
-	useEffect(() => {
-		latestArgsRef.current = { scrollAnchorMessageId, target, scrollToBottom };
-	});
-
-	// First-mount scroll happens synchronously before paint so long threads
-	// don't briefly show their top before jumping to the anchor.
 	useLayoutEffect(() => {
-		if (didInitialScrollRef.current) return;
-		const { scrollAnchorMessageId: id, target: anchorTarget, scrollToBottom: scroll } = latestArgsRef.current;
-		if (!id) return;
-
+		if (!scrollAnchorMessageId) return;
+		const behavior = !didInitialScrollRef.current || shouldReduceMotion ? "instant" : "smooth";
 		didInitialScrollRef.current = true;
-		void scroll({
-			animation: "instant",
-			ignoreEscapes: true,
-			target: anchorTarget,
-		});
-	}, []);
-
-	useEffect(() => {
-		if (!scrollAnchorMessageId) {
-			return;
-		}
-
-		if (!didInitialScrollRef.current) {
-			didInitialScrollRef.current = true;
-			return;
-		}
-
-		void scrollToBottom({
-			animation: target === "bottom" || shouldReduceMotion ? "instant" : "smooth",
-			ignoreEscapes: true,
-			target,
-		});
-	}, [scrollAnchorMessageId, scrollToBottom, shouldReduceMotion, target]);
+		scrollToMessage(scrollAnchorMessageId, { behavior, scrollMargin: 24 });
+	}, [scrollAnchorMessageId, scrollToMessage, shouldReduceMotion]);
 
 	return null;
 }
 
 export function RovoAppScrollActiveTracker({
 	onActiveChange,
+	scrollRef,
 }: Readonly<{
 	onActiveChange: (messageId: string | null) => void;
+	scrollRef: React.RefObject<HTMLDivElement | null>;
 }>) {
-	const { scrollRef } = useConversationContext();
 	const onActiveChangeRef = useRef(onActiveChange);
 
 	useEffect(() => {

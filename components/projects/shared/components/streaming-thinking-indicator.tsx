@@ -3,17 +3,17 @@
 import type { ReactNode } from "react";
 import type { getThinkingToolCallSummaries } from "@/lib/rovo-ui-messages";
 import type { ReasoningPhaseProps } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { Message } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import {
 	ChainOfThought,
 	ChainOfThoughtContent,
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { AssistantThinkingToolsSection } from "@/components/projects/shared/components/assistant-thinking-tools-section";
-import { getReasoningSectionTitle } from "@/components/ui-custom/lib/reasoning-labels";
+import { getReasoningSectionTitle } from "@/lib/reasoning-labels";
 import { cn } from "@/lib/utils";
 
 interface StreamingThinkingIndicatorProps {
@@ -60,49 +60,51 @@ export function StreamingThinkingIndicator({
 
 	return (
 		<div className={cn(containerClassName)} style={containerStyle}>
-			<Message from="assistant" className="max-w-full">
-				<ChainOfThought
-					key={`${reasoningKey}-${headerState}`}
-					className="mb-0"
-					defaultOpen={false}
-				>
-					<ChainOfThoughtHeader
-						state={headerState}
-						duration={phaseProps.duration}
-						showChevron={hasDetails}
+			<Message className="cv-auto">
+				<MessageContent>
+					<ChainOfThought
+						key={`${reasoningKey}-${headerState}`}
+						className="mb-0"
+						defaultOpen={false}
 					>
-						{shouldUseDefaultHeaderLabel ? undefined : label}
-					</ChainOfThoughtHeader>
-					{hasDetails ? (
-						<ChainOfThoughtContent>
-							{hasReasoningContent ? (
-								<ChainOfThoughtStep
-									label={getReasoningSectionTitle("thinking")}
-									status={stepStatus}
-								>
-									<CodeBlock size="sm">
-										<HighlightedCodeContent
-											code={trimmedReasoningContent}
-											language="markdown"
+						<ChainOfThoughtHeader
+							state={headerState}
+							duration={phaseProps.duration}
+							showChevron={hasDetails}
+						>
+							{shouldUseDefaultHeaderLabel ? undefined : label}
+						</ChainOfThoughtHeader>
+						{hasDetails ? (
+							<ChainOfThoughtContent>
+								{hasReasoningContent ? (
+									<ChainOfThoughtStep
+										label={getReasoningSectionTitle("thinking")}
+										status={stepStatus}
+									>
+										<CodeBlock size="sm">
+											<HighlightedCodeContent
+												code={trimmedReasoningContent}
+												language="markdown"
+											/>
+										</CodeBlock>
+									</ChainOfThoughtStep>
+								) : null}
+								{hasThinkingToolCalls ? (
+									<ChainOfThoughtStep
+										label={getReasoningSectionTitle("tools")}
+										status={stepStatus}
+									>
+										<AssistantThinkingToolsSection
+											defaultOpenMode="running"
+											idPrefix={lastMessageId ?? "stream"}
+											thinkingToolCalls={thinkingToolCalls}
 										/>
-									</CodeBlock>
-								</ChainOfThoughtStep>
-							) : null}
-							{hasThinkingToolCalls ? (
-								<ChainOfThoughtStep
-									label={getReasoningSectionTitle("tools")}
-									status={stepStatus}
-								>
-									<AssistantThinkingToolsSection
-										defaultOpenMode="running"
-										idPrefix={lastMessageId ?? "stream"}
-										thinkingToolCalls={thinkingToolCalls}
-									/>
-								</ChainOfThoughtStep>
-							) : null}
-						</ChainOfThoughtContent>
-					) : null}
-				</ChainOfThought>
+									</ChainOfThoughtStep>
+								) : null}
+							</ChainOfThoughtContent>
+						) : null}
+					</ChainOfThought>
+				</MessageContent>
 			</Message>
 		</div>
 	);

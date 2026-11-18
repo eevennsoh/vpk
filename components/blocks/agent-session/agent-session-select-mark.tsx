@@ -16,12 +16,14 @@ export function AgentSessionSelectMark({
 	isMarked,
 	label,
 	onActivate,
+	previewable = false,
 }: Readonly<{
 	identity: ReactNode;
 	isCompact?: boolean;
 	isMarked: boolean;
 	label: string;
 	onActivate: (gesture: AgentSessionSelectionGesture) => void;
+	previewable?: boolean;
 }>): ReactElement {
 	const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
 		event.stopPropagation();
@@ -34,11 +36,13 @@ export function AgentSessionSelectMark({
 			data-marked={isMarked || undefined}
 		>
 			<span
+				hidden={isMarked && previewable}
 				className={cn(
-					"pointer-events-none col-start-1 row-start-1 transition-none",
+					"col-start-1 row-start-1 transition-none",
+					!previewable || isMarked ? "pointer-events-none" : null,
 					isMarked
-						? "opacity-0"
-						: "opacity-100 group-hover/agent-row:opacity-0 group-has-[:focus-visible]/agent-row:opacity-0 group-data-[hovered]/agent-row:opacity-0",
+						? "invisible opacity-0"
+						: previewable ? "opacity-100" : "opacity-100 group-hover/agent-row:opacity-0 group-has-[:focus-visible]/agent-row:opacity-0 group-data-[hovered]/agent-row:opacity-0",
 				)}
 			>
 				{identity}
@@ -50,7 +54,7 @@ export function AgentSessionSelectMark({
 					isCompact ? "size-6" : "size-8",
 					isMarked
 						? "pointer-events-auto text-icon-selected opacity-100"
-						: cn(
+						: previewable ? "pointer-events-none opacity-0" : cn(
 							"pointer-events-none text-icon-subtle opacity-0",
 							"group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100",
 							"group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100",

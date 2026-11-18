@@ -37,6 +37,13 @@ function assignmentAgent(overrides = {}) {
 	};
 }
 
+test("preserves the Rovo logo in session and activity presentations", async () => {
+	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const agent = assignmentAgent({ id: "rovo-dev", name: "Rovo", vpkLogo: "rovo" });
+	assert.equal(toAssignmentSessionItem(agent).agent.vpkLogo, "rovo");
+	assert.equal(toAssignmentActivity(agent).agentVpkLogo, "rovo");
+});
+
 test("maps every assigned-agent status to the session and activity states users see", async () => {
 	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
 	const cases = [

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { Resvg } from "@resvg/resvg-js";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
@@ -10,16 +11,23 @@ test("viewer session chins show a static stack of session owners", async ({ page
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const boardRow = card(page, "PAY-107").locator('[data-slot="jira-issue-agent-row"]');
-	await expect(boardRow.getByRole("button", { name: "2 other sessions" })).toBeVisible();
+	await expect(boardRow.getByRole("button", { name: "Using agents", exact: true })).toBeVisible();
 	await expect(boardRow.locator('[data-slot="avatar"][title="Maya Ferreira"]')).toBeVisible();
 	await expect(boardRow.locator('[data-slot="avatar"][title="Jordan Okafor"]')).toBeVisible();
+	const stack = boardRow.locator('[data-slot="avatar-group"]');
+	await stack.evaluate((element) => { element.style.backgroundColor = "rgb(30, 180, 90)"; });
+	const screenshot = await stack.screenshot({ scale: "css" });
+	const png = `data:image/png;base64,${screenshot.toString("base64")}`;
+	const rendered = new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="20"><image href="${png}" width="36" height="20" /></svg>`).render();
+	const gapPixel = (10 * rendered.width + 20) * 4;
+	expect([...rendered.pixels.slice(gapPixel, gapPixel + 3)]).toEqual([30, 180, 90]);
 	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
 	const playground = page.getByRole("region", { name: "Project butter playground" });
 	for (const [state, count] of [["1 agent, not owner", 1], ["1-n agents, not owner", 2]] as const) {
 		await playground.getByRole("button", { name: state, exact: true }).click();
 		const row = playground.locator('[data-slot="jira-issue-agent-row"]');
 		await expect(row).toBeVisible();
-		await expect(row.getByRole("button", { name: `${count} other ${count === 1 ? "session" : "sessions"}` })).toBeVisible();
+		await expect(row.getByRole("button", { name: count === 1 ? "Using agent" : "Using agents", exact: true })).toBeVisible();
 		await expect(row.getByText(/Working|Needs input/)).toHaveCount(0);
 		await expect(row.locator('[data-slot="jira-issue-agent-status-icon"]')).toHaveCount(0);
 		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');

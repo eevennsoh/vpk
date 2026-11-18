@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 452,
+			"manifestEntryCount": 450,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 446,
+				"live": 444,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4452,7 +4452,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 123,
+				"entryCount": 121,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4669,13 +4669,6 @@
 						"slug": "chat-timeline",
 						"name": "Chat Timeline",
 						"importPath": "@/components/blocks/chat-timeline",
-						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "chatbot",
-						"name": "Chatbot",
-						"importPath": "@/components/blocks/chatbot",
 						"status": "live"
 					},
 					{
@@ -5308,13 +5301,6 @@
 						"name": "Visual Waveform",
 						"importPath": "@/components/blocks/visual-waveform",
 						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "workflow",
-						"name": "Workflow",
-						"importPath": "@/components/blocks/workflow",
-						"status": "live"
 					}
 				]
 			},
@@ -5480,7 +5466,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 88,
+				"entryCount": 98,
 				"entries": [
 					{
 						"category": "ui",
@@ -5592,6 +5578,13 @@
 						"slug": "carousel",
 						"name": "Carousel",
 						"importPath": "@/components/ui/carousel",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "chain-of-thought",
+						"name": "Chain of Thought",
+						"importPath": "@/components/ui/chain-of-thought",
 						"status": "live"
 					},
 					{
@@ -5848,6 +5841,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "morphing-rovo",
+						"name": "Morphing Rovo",
+						"importPath": "@/components/ui/morphing-rovo",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "native-select",
 						"name": "Native Select",
 						"importPath": "@/components/ui/native-select",
@@ -5879,6 +5879,13 @@
 						"slug": "panel",
 						"name": "Panel",
 						"importPath": "@/components/ui/panel",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "plan",
+						"name": "Plan",
+						"importPath": "@/components/ui/plan",
 						"status": "live"
 					},
 					{
@@ -5932,6 +5939,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "reasoning",
+						"name": "Reasoning",
+						"importPath": "@/components/ui/reasoning",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "resizable",
 						"name": "Resizable",
 						"importPath": "@/components/ui/resizable",
@@ -5970,6 +5984,13 @@
 						"slug": "sheet",
 						"name": "Sheet",
 						"importPath": "@/components/ui/sheet",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "shimmer",
+						"name": "Shimmer",
+						"importPath": "@/components/ui/shimmer",
 						"status": "live"
 					},
 					{
@@ -6016,6 +6037,20 @@
 					},
 					{
 						"category": "ui",
+						"slug": "stack-trace",
+						"name": "Stack Trace",
+						"importPath": "@/components/ui/stack-trace",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "subagent",
+						"name": "Subagent",
+						"importPath": "@/components/ui/subagent",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "suggestion",
 						"name": "Suggestion",
 						"importPath": "@/components/ui/suggestion",
@@ -6058,6 +6093,20 @@
 					},
 					{
 						"category": "ui",
+						"slug": "terminal",
+						"name": "Terminal",
+						"importPath": "@/components/ui/terminal",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "test-results",
+						"name": "Test Results",
+						"importPath": "@/components/ui/test-results",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "tile",
 						"name": "Tile",
 						"importPath": "@/components/ui/tile",
@@ -6082,6 +6131,13 @@
 						"slug": "toggle-group",
 						"name": "Toggle Group",
 						"importPath": "@/components/ui/toggle-group",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "tool",
+						"name": "Tool",
+						"importPath": "@/components/ui/tool",
 						"status": "live"
 					},
 					{
@@ -6276,7 +6332,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 72,
+				"entryCount": 62,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6322,13 +6378,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "attachment",
-						"name": "Attachment",
-						"importPath": "@/components/ui-custom/attachment",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "audio-player",
 						"name": "Audio Player",
 						"importPath": "@/components/ui-custom/audio-player",
@@ -6339,13 +6388,6 @@
 						"slug": "canvas",
 						"name": "Canvas",
 						"importPath": "@/components/ui-custom/canvas",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "chain-of-thought",
-						"name": "Chain of Thought",
-						"importPath": "@/components/ui-custom/chain-of-thought",
 						"status": "live"
 					},
 					{
@@ -6504,13 +6546,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "message",
-						"name": "Message",
-						"importPath": "@/components/ui-custom/message",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "mic-selector",
 						"name": "Mic Selector",
 						"importPath": "@/components/ui-custom/mic-selector",
@@ -6521,13 +6556,6 @@
 						"slug": "model-selector",
 						"name": "Model Selector",
 						"importPath": "@/components/ui-custom/model-selector",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "morphing-rovo",
-						"name": "Morphing Rovo",
-						"importPath": "@/components/ui-custom/morphing-rovo",
 						"status": "live"
 					},
 					{
@@ -6581,13 +6609,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "plan",
-						"name": "Plan",
-						"importPath": "@/components/ui-custom/plan",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "progress-circle",
 						"name": "Progress Circle",
 						"importPath": "@/components/ui-custom/progress-circle",
@@ -6605,13 +6626,6 @@
 						"slug": "prompt-input",
 						"name": "Prompt Input",
 						"importPath": "@/components/ui-custom/prompt-input",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "reasoning",
-						"name": "Reasoning",
-						"importPath": "@/components/ui-custom/reasoning",
 						"status": "live"
 					},
 					{
@@ -6658,13 +6672,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "shimmer",
-						"name": "Shimmer",
-						"importPath": "@/components/ui-custom/shimmer",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "shimmer-wave",
 						"name": "Shimmer Wave",
 						"importPath": "@/components/ui-custom/shimmer-wave",
@@ -6707,30 +6714,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "stack-trace",
-						"name": "Stack Trace",
-						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "terminal",
-						"name": "Terminal",
-						"importPath": "@/components/ui-custom/terminal",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "test-result",
-						"name": "Test Result",
-						"importPath": "@/components/ui-custom/test-result",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "tool",
-						"name": "Tool",
-						"importPath": "@/components/ui-custom/tool",
+						"slug": "terminal-window",
+						"name": "Terminal Window",
+						"importPath": "@/components/ui-custom/terminal-window",
 						"status": "live"
 					},
 					{

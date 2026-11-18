@@ -4,7 +4,7 @@
 
 import type { CSSProperties } from "react";
 import { StreamingThinkingIndicator } from "@/components/projects/shared/components/streaming-thinking-indicator";
-import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ui-custom/conversation";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
 import type { RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
 import type { GenerativeWidgetPrimaryActionPayload } from "@/components/projects/shared/lib/generative-widget";
@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { chatStyles } from "../data/styles";
 import { getTurnGeneratedResults } from "../lib/chat-panel-messages";
 import type { ChatPanelGreetingProps, ChatPanelProps, RovoChat } from "../lib/chat-panel-types";
-import type { useScrollAnchor } from "../hooks/use-scroll-anchor";
 import type { useThinkingStatus } from "../hooks/use-thinking-status";
 import type { ChatPanelDecisions } from "../hooks/use-chat-panel-decisions";
 import ChatGreeting from "./chat-greeting";
@@ -66,7 +65,7 @@ interface ChatPanelConversationProps
 	onWidgetPrimaryAction: (payload: GenerativeWidgetPrimaryActionPayload) => void;
 	prompt: string;
 	resolvedGreeting?: ChatPanelGreetingProps;
-	scrollAnchor: ReturnType<typeof useScrollAnchor>;
+	enableTurnAnchor: boolean;
 	shouldRenderGeneratedAgentFallbackCard: boolean;
 	shouldUseWideDirectoryAutocompleteList: boolean;
 	thinking: ReturnType<typeof useThinkingStatus>;
@@ -108,158 +107,155 @@ export function ChatPanelConversation({
 	prompt,
 	renderWidget,
 	resolvedGreeting,
-	scrollAnchor,
+	enableTurnAnchor,
 	shouldRenderGeneratedAgentFallbackCard,
 	shouldUseWideDirectoryAutocompleteList,
 	showAgentTestControls,
 	showAwaitingIndicator,
 	thinking,
 }: Readonly<ChatPanelConversationProps>): React.ReactElement {
-	const { conversationContextRef, scrollSpacerRef, getLatestTurnTargetTop, scrollFollowMode } = scrollAnchor;
 	const { handleBuildPlan, resolvePlanBuildState, shouldShowQuestionCard } = decisions;
 
 	return (
-		<Conversation
-			className="min-h-0 min-w-0 flex-1"
-			contextRef={conversationContextRef}
-			followMode={scrollFollowMode}
-			initial={false}
-			resize={isStreamingLifecycleActive ? "instant" : "smooth"}
-			resizeTarget={isStreamingLifecycleActive ? "bottom" : "follow"}
-			targetScrollTop={getLatestTurnTargetTop}
-		>
-			<ConversationContent
-				className={cn(
-					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
-					conversationContentClassName
-				)}
-				reserveScrollbarGutter={hasMessages}
-				revealScrollbarOnScroll={hasMessages}
-				// In the Test empty state, messagesContainerStyle grows this content
-				// track to full height and bottom-aligns (or centers when there are no
-				// starters) the greeting (inline values win over Tailwind classes).
-				style={messagesContainerStyle}
-			>
-				{messages.length === 0 ? (
-					<div className="w-full" style={chatStyles.emptyState}>
-						<ChatGreeting
-							heading={resolvedGreeting?.heading}
-							illustrationSrc={resolvedGreeting?.illustrationSrc}
-							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
-							isAgentTest={showAgentTestControls}
-							isComposing={prompt.trim().length > 0}
-							isMaxMode={isMaxMode}
-							selectedAgent={greetingAgent}
-							showHero={resolvedGreeting?.showHero}
-							showStarterGroupLabel={resolvedGreeting?.showStarterGroupLabel}
-							starterGroupLabel={resolvedGreeting?.starterGroupLabel}
-							agentTestSection={resolvedGreeting?.agentTestSection}
-							suggestions={resolvedGreeting?.suggestions}
-							directoryAutocompleteState={directoryAutocompleteState}
-							useWideSuggestionLayout={shouldUseWideDirectoryAutocompleteList}
-							onSuggestionClick={handleGreetingSuggestionClick}
-							onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
-						/>
-					</div>
-				) : (
-					<MessageTurns
-						isUserMessage={(message) => message.role === "user"}
-						getMessageContainerClassName={(message) => (message.role === "assistant" ? "[&:empty]:hidden" : undefined)}
-						getMessageContainerStyle={(message, messageIndex, turn) => {
-							return {
-								paddingLeft: message.role === "assistant" ? "12px" : "0",
-								paddingRight: message.role === "assistant" ? "12px" : "0",
-								marginTop: message.role === "assistant" && messageIndex > 0 && (turn[messageIndex - 1]?.role === "user" || turn[messageIndex - 1]?.role === "assistant") ? "24px" : "0",
-							};
-						}}
-						latestTurnClassName={styles.latestTurn}
-						latestTurnDataAttribute="data-chat-latest-turn"
-						messages={messages}
-						renderMessage={(message) => (
-							<MessageBubble
-								message={message}
-								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId || message.id === externalThinkingMessageId) && message.id === lastAssistantMessageId}
-								treatQuestionToolCallsAsAnswered={answeredTraceMessageIds.has(message.id)}
-								onSuggestionClick={readOnly ? undefined : handleFollowUpSuggestionClick}
-								showFollowUpSuggestions={!readOnly && message.id === lastAssistantMessageId && !hasPendingChatWork}
-								enableSmartWidgets={enableSmartWidgets}
-								generativeCardAnimation={cards?.generativeAnimation}
-								editingMessageId={readOnly ? null : editingMessageId}
-								onEditMessage={readOnly ? undefined : onEditMessage}
-								onSetEditingMessageId={readOnly ? undefined : setEditingMessageId}
-								onWidgetPrimaryAction={handleWidgetPrimaryAction}
-								onOpenAgentEditSummary={onOpenAgentEditSummary}
-								renderWidget={renderWidget}
-								getWidgetPosition={getWidgetPosition}
-								onBuildPlan={handleBuildPlan}
-								resolvePlanBuildState={resolvePlanBuildState}
+		<MessageScroller autoScroll scrollPreviousItemPeek={0} className="min-h-0 min-w-0 flex-1">
+			<MessageScrollerViewport className={cn(!hasMessages ? "[scrollbar-gutter:auto]" : null)}>
+				<MessageScrollerContent
+					className={cn(
+						"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
+						conversationContentClassName
+					)}
+					// In the Test empty state, messagesContainerStyle grows this content
+					// track to full height and bottom-aligns (or centers when there are no
+					// starters) the greeting (inline values win over Tailwind classes).
+					style={messagesContainerStyle}
+				>
+					{messages.length === 0 ? (
+						<MessageScrollerItem className="w-full [content-visibility:visible]" style={chatStyles.emptyState}>
+							<ChatGreeting
+								heading={resolvedGreeting?.heading}
+								illustrationSrc={resolvedGreeting?.illustrationSrc}
+								illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
+								isAgentTest={showAgentTestControls}
+								isComposing={prompt.trim().length > 0}
+								isMaxMode={isMaxMode}
+								selectedAgent={greetingAgent}
+								showHero={resolvedGreeting?.showHero}
+								showStarterGroupLabel={resolvedGreeting?.showStarterGroupLabel}
+								starterGroupLabel={resolvedGreeting?.starterGroupLabel}
+								agentTestSection={resolvedGreeting?.agentTestSection}
+								suggestions={resolvedGreeting?.suggestions}
+								directoryAutocompleteState={directoryAutocompleteState}
+								useWideSuggestionLayout={shouldUseWideDirectoryAutocompleteList}
+								onSuggestionClick={handleGreetingSuggestionClick}
+								onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
 							/>
-						)}
-						renderTurnAfter={(turn) => {
-							const shouldRenderGeneratedAgentResult = cards?.shouldRenderGeneratedAgentResult;
-							const generatedResults = getTurnGeneratedResults(turn, shouldRenderGeneratedAgentResult);
+						</MessageScrollerItem>
+					) : (
+						<MessageTurns
+							renderTurnContainer={(turn, children) => (
+								<MessageScrollerItem className="[content-visibility:visible]" messageId={turn[0]?.id} scrollAnchor={enableTurnAnchor && turn[0]?.role === "user"}>
+									{children}
+								</MessageScrollerItem>
+							)}
+							isUserMessage={(message) => message.role === "user"}
+							getMessageContainerClassName={(message) => (message.role === "assistant" ? "[&:empty]:hidden" : undefined)}
+							getMessageContainerStyle={(message, messageIndex, turn) => {
+								return {
+									paddingLeft: message.role === "assistant" ? "12px" : "0",
+									paddingRight: message.role === "assistant" ? "12px" : "0",
+									marginTop: message.role === "assistant" && messageIndex > 0 && (turn[messageIndex - 1]?.role === "user" || turn[messageIndex - 1]?.role === "assistant") ? "24px" : "0",
+								};
+							}}
+							latestTurnClassName={styles.latestTurn}
+							latestTurnDataAttribute="data-chat-latest-turn"
+							messages={messages}
+							renderMessage={(message) => (
+								<MessageBubble
+									message={message}
+									isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId || message.id === externalThinkingMessageId) && message.id === lastAssistantMessageId}
+									treatQuestionToolCallsAsAnswered={answeredTraceMessageIds.has(message.id)}
+									onSuggestionClick={readOnly ? undefined : handleFollowUpSuggestionClick}
+									showFollowUpSuggestions={!readOnly && message.id === lastAssistantMessageId && !hasPendingChatWork}
+									enableSmartWidgets={enableSmartWidgets}
+									generativeCardAnimation={cards?.generativeAnimation}
+									editingMessageId={readOnly ? null : editingMessageId}
+									onEditMessage={readOnly ? undefined : onEditMessage}
+									onSetEditingMessageId={readOnly ? undefined : setEditingMessageId}
+									onWidgetPrimaryAction={handleWidgetPrimaryAction}
+									onOpenAgentEditSummary={onOpenAgentEditSummary}
+									renderWidget={renderWidget}
+									getWidgetPosition={getWidgetPosition}
+									onBuildPlan={handleBuildPlan}
+									resolvePlanBuildState={resolvePlanBuildState}
+								/>
+							)}
+							renderTurnAfter={(turn) => {
+								const shouldRenderGeneratedAgentResult = cards?.shouldRenderGeneratedAgentResult;
+								const generatedResults = getTurnGeneratedResults(turn, shouldRenderGeneratedAgentResult);
 
-							return generatedResults.length > 0 ? (
-								<div className="w-full space-y-2" data-testid="rovo-generated-result-group">
-									{generatedResults.map((generatedResult) => (
-										generatedResult.type === "artifact" ? (
-											<ArtifactResultCard
-												key={`artifact-${generatedResult.result.documentId}-${generatedResult.result.action}`}
-												artifact={generatedResult.result}
-												inlineDocument={inlineArtifactDocuments?.[generatedResult.result.documentId]}
-												onDialogOpen={handleArtifactDialogOpen}
-												onDialogClose={releaseArtifactDialogFloatingPin}
-											/>
-										) : (
-											<AgentResultCard creator={agentCreator}
-												key={`agent-${generatedResult.result.agentId}-${generatedResult.result.action}`}
-												agent={generatedResult.result}
-												onSelectAgent={handleAgentResultSelect}
-											/>
-										)
-									))}
-								</div>
-							) : null;
-						}}
-					/>
-				)}
-				{shouldRenderGeneratedAgentFallbackCard && cards?.generatedAgentResult ? (
-					<div className="w-full px-3" data-testid="rovo-generated-result-group">
-						<AgentResultCard creator={agentCreator}
-							agent={cards.generatedAgentResult}
-							onSelectAgent={handleAgentResultSelect}
+								return generatedResults.length > 0 ? (
+									<div className="w-full space-y-2" data-testid="rovo-generated-result-group">
+										{generatedResults.map((generatedResult) => (
+											generatedResult.type === "artifact" ? (
+												<ArtifactResultCard
+													key={`artifact-${generatedResult.result.documentId}-${generatedResult.result.action}`}
+													artifact={generatedResult.result}
+													inlineDocument={inlineArtifactDocuments?.[generatedResult.result.documentId]}
+													onDialogOpen={handleArtifactDialogOpen}
+													onDialogClose={releaseArtifactDialogFloatingPin}
+												/>
+											) : (
+												<AgentResultCard creator={agentCreator}
+													key={`agent-${generatedResult.result.agentId}-${generatedResult.result.action}`}
+													agent={generatedResult.result}
+													onSelectAgent={handleAgentResultSelect}
+												/>
+											)
+										))}
+									</div>
+								) : null;
+							}}
 						/>
-					</div>
-				) : null}
-				{thinking.shouldShowPreloader ? (
-					<div style={chatStyles.thinkingContainer}>
-						<PreloadThinkingIndicator />
-					</div>
-				) : null}
-				{thinking.shouldShowThinkingStatus ? (
-					<StreamingThinkingIndicator
-						reasoningKey={thinking.streamingReasoningKey}
-						label={thinking.resolvedThinkingLabel}
-						hasDetails={thinking.hasThinkingDetails}
-						hasReasoningContent={thinking.hasReasoningContent}
-						trimmedReasoningContent={thinking.trimmedReasoningContent}
-						hasThinkingToolCalls={thinking.hasThinkingToolCalls}
-						thinkingToolCalls={thinking.thinkingToolCalls}
-						allowAutoCollapse={thinking.allowAutoCollapse}
-						lastMessageId={thinking.lastMessage?.id}
-						containerStyle={chatStyles.thinkingContainer}
-						phaseProps={thinking.reasoningPhaseProps}
-					/>
-				) : null}
-				{!thinking.shouldShowPreloader &&
-				!thinking.shouldShowThinkingStatus &&
-				showAwaitingIndicator &&
-				shouldShowQuestionCard ? (
-					<AwaitingUserResponseIndicator />
-				) : null}
-				{hasMessages ? <div ref={scrollSpacerRef} aria-hidden style={{ height: 0, flexShrink: 0 }} /> : null}
-			</ConversationContent>
-			<ConversationScrollButton className="z-10 transition-all" />
-		</Conversation>
+					)}
+					{shouldRenderGeneratedAgentFallbackCard && cards?.generatedAgentResult ? (
+						<MessageScrollerItem className="w-full px-3 [content-visibility:visible]" data-testid="rovo-generated-result-group">
+							<AgentResultCard creator={agentCreator}
+								agent={cards.generatedAgentResult}
+								onSelectAgent={handleAgentResultSelect}
+							/>
+						</MessageScrollerItem>
+					) : null}
+					{thinking.shouldShowPreloader ? (
+						<MessageScrollerItem style={chatStyles.thinkingContainer} className="[content-visibility:visible]">
+							<PreloadThinkingIndicator />
+						</MessageScrollerItem>
+					) : null}
+					{thinking.shouldShowThinkingStatus ? (
+						<MessageScrollerItem className="[content-visibility:visible]">
+							<StreamingThinkingIndicator
+								reasoningKey={thinking.streamingReasoningKey}
+								label={thinking.resolvedThinkingLabel}
+								hasDetails={thinking.hasThinkingDetails}
+								hasReasoningContent={thinking.hasReasoningContent}
+								trimmedReasoningContent={thinking.trimmedReasoningContent}
+								hasThinkingToolCalls={thinking.hasThinkingToolCalls}
+								thinkingToolCalls={thinking.thinkingToolCalls}
+								allowAutoCollapse={thinking.allowAutoCollapse}
+								lastMessageId={thinking.lastMessage?.id}
+								containerStyle={chatStyles.thinkingContainer}
+								phaseProps={thinking.reasoningPhaseProps}
+							/>
+						</MessageScrollerItem>
+					) : null}
+					{!thinking.shouldShowPreloader &&
+					!thinking.shouldShowThinkingStatus &&
+					showAwaitingIndicator &&
+					shouldShowQuestionCard ? (
+						<MessageScrollerItem className="[content-visibility:visible]"><AwaitingUserResponseIndicator /></MessageScrollerItem>
+					) : null}
+				</MessageScrollerContent>
+			</MessageScrollerViewport>
+			<MessageScrollerButton className="z-10" />
+		</MessageScroller>
 	);
 }

@@ -12,8 +12,8 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { CyclingByline } from "@/components/ui/cycling-byline";
+import { Shimmer } from "@/components/ui/shimmer";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,

@@ -13,7 +13,7 @@ const BOARD_VIEW_MENU_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../blocks/jira-kanban/experimental/components/board-view-menu.tsx"),
 	"utf8",
 );
-const SHIMMER_SOURCE = fs.readFileSync(path.join(__dirname, "../ui-custom/shimmer.tsx"), "utf8");
+const SHIMMER_SOURCE = fs.readFileSync(path.join(__dirname, "shimmer.tsx"), "utf8");
 const SHIMMER_WAVE_SOURCE = fs.readFileSync(path.join(__dirname, "../ui-custom/shimmer-wave.tsx"), "utf8");
 
 test("ProgressTracker supports optional bylines and warning steps without replacing default labels", () => {

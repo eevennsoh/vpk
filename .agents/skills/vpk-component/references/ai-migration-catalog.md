@@ -10,10 +10,10 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui-custom/message` | Chat message display with role-based styling, markdown, actions, and branching | `Message`, `MessageContent`, `MessageResponse`, `MessageActions`, `MessageAction`, `MessageBranch` |
+| [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui/message` | Chat message turn with start/end alignment and actions; user text via `MessageUserBubble`, markdown via `MessageResponse` (`@/components/ui-custom/message-markdown`) | `Message`, `MessageContent`, `MessageActions`, `MessageAction`, `MessageCopyAction`, `MessageVoteActions` |
 | [conversation](~/.agents/skills/ai-elements/references/conversation.md) | `@/components/ui-custom/conversation` | Auto-scrolling message container with scroll button and empty state | `Conversation`, `ConversationContent`, `ConversationScrollButton`, `ConversationEmptyState`, `ConversationDownload` |
 | [prompt-input](~/.agents/skills/ai-elements/references/prompt-input.md) | `@/components/ui-custom/prompt-input` | Message input with textarea, submit, file attachments, model selector, and action menu | `PromptInput`, `Input`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputBody`, `PromptInputHeader`, `PromptInputFooter`, `PromptInputTools`, `PromptInputSelect`, `PromptInputActionAddAttachments`, `PromptInputActionMenu`, `PromptInputButton` |
-| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui-custom/attachment` | File attachment display with previews and remove functionality | `Attachment`, `AttachmentItem`, `AttachmentPreview`, `AttachmentRemove` |
+| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui/attachment` | File attachment display with previews and remove actions; AI SDK part helpers in `@/lib/attachment-media` | `AttachmentGroup`, `Attachment`, `AttachmentMedia`, `AttachmentContent`, `AttachmentAction` |
 
 ## Content Display
 
@@ -28,10 +28,10 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [reasoning](~/.agents/skills/ai-elements/references/reasoning.md) | `@/components/ui-custom/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
-| [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui-custom/chain-of-thought` | Step-by-step reasoning chain visualization | `ChainOfThought` |
-| [tool](~/.agents/skills/ai-elements/references/tool.md) | `@/components/ui-custom/tool` | Tool invocation and result display | `Tool` |
-| [terminal](~/.agents/skills/ai-elements/references/terminal.md) | `@/components/ui-custom/terminal` | Terminal/command output display | `Terminal` |
+| [reasoning](~/.agents/skills/ai-elements/references/reasoning.md) | `@/components/ui/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
+| [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui/chain-of-thought` | Step-by-step reasoning chain visualization, on Trace | `ChainOfThought` |
+| [tool](~/.agents/skills/ai-elements/references/tool.md) | `@/components/ui/tool` | Tool invocation and result display | `Tool` |
+| [terminal](~/.agents/skills/ai-elements/references/terminal.md) | `@/components/ui/terminal` | Shell command line with streamed output, on Trace (`TerminalPanel` for full-pane IDE/TUI output) | `Terminal` |
 
 ## User Feedback
 
@@ -59,17 +59,18 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 |---|---|---|---|
 | [checkpoint](~/.agents/skills/ai-elements/references/checkpoint.md) | `@/components/ui/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
 | [commit](~/.agents/skills/ai-elements/references/commit.md) | `@/components/ui/trace` | Code commit display (a Trace example) | `Trace` |
-| [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui-custom/stack-trace` | Error stack trace display | `StackTrace` |
-| [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui-custom/test-result` | Test execution results display | `TestResult` |
+| [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui/stack-trace` | Failed tool call with its stack frames, on Trace | `StackTrace` |
+| [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui/test-results` | Test run summary, suites and failures, on Trace | `TestResult` |
 | [file-tree](~/.agents/skills/ai-elements/references/file-tree.md) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
 | [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui/task` | Task/step tracking display | `Task` |
-| [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui-custom/plan` | Multi-step plan visualization | `Plan` |
+| [agent](~/.agents/skills/ai-elements/references/agent.md) | `@/components/ui/subagent` | Subagent run with its tool calls and result, on Trace | `Agent` |
+| [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui/plan` | Multi-step plan visualization (card, or `variant="inline"` Trace line) | `Plan` |
 
 ## Visual
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui-custom/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
+| [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
 | [toolbar](~/.agents/skills/ai-elements/references/toolbar.md) | `@/components/ui-custom/toolbar` | Toolbar with action buttons | `Toolbar` |
 | [connection](~/.agents/skills/ai-elements/references/connection.md) | `@/components/ui-custom/connection` | Connection line between nodes | `Connection` |
 | [edge](~/.agents/skills/ai-elements/references/edge.md) | `@/components/ui-custom/edge` | Graph edge visualization | `Edge` |

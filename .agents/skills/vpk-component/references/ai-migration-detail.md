@@ -45,7 +45,7 @@ The source library's folder structure does not determine VPK ownership.
 
 | Need | Use |
 | --- | --- |
-| AI/chat message with rich response, actions, or branching | `ui-custom/message` |
+| AI/chat message turn with actions | `ui/message` (+ `ui-custom/message-user-bubble`, `ui-custom/message-markdown`) |
 | Assistant chat thread container | `ui-custom/conversation` |
 | AI SDK speech playback in assistant widgets | `ui-custom/audio-player` |
 | Inline composer microphone | `PromptInputMicrophone` or `ui-custom/speech-input` |
@@ -59,15 +59,15 @@ Alias imports whenever multiple families or a local type use the same name.
 
 | Source pattern | Likely target |
 | --- | --- |
-| Role-styled message bubble | `Message` + `MessageContent` |
+| Role-styled message bubble | `Message align` + `MessageContent` + `MessageUserBubble` |
 | Markdown/HTML response renderer | `MessageResponse` |
-| Copy, retry, like, dislike | `MessageActions` + `MessageAction` |
-| Response versions | `MessageBranch` |
+| Copy, retry, like, dislike | `MessageActions` + `MessageAction` or the `Message*Action` presets |
+| Response versions | No VPK owner; build on `Message` when needed |
 | Scroll-to-bottom thread | `Conversation` family |
 | Welcome or no-message view | `ConversationEmptyState` |
 | Message textarea and send button | `PromptInput` family |
 | Composer dictation | `PromptInputMicrophone` |
-| Uploads and attachment pills | `Attachments` + `Attachment` |
+| Uploads and attachment pills | `AttachmentGroup` + `Attachment` (`lib/attachment-media` for AI SDK parts) |
 | Prompt chips | `Suggestions` + `Suggestion` |
 | Syntax-highlighted code | `CodeBlock` family |
 | Expandable thinking | `Reasoning` |

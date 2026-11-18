@@ -136,7 +136,7 @@ export default function TaskDemo() {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>

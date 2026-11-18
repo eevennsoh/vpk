@@ -1,6 +1,48 @@
 # Invocation flags and effort
 
-Read this when a flag appears in the request, when choosing effort, or before raising effort on a task that failed once. Back to [SKILL.md](../SKILL.md).
+Read this before choosing a task model, when a flag appears, when choosing effort, or after a failed attempt. Back to [SKILL.md](../SKILL.md).
+
+## Choosing the model
+
+Choose for quality and task uncertainty; money and credits are not constraints.
+Explicit model requests win, including named advisors and council members.
+Resolve aliases from `~/.config/litellm-proximity/defaults.env` each run:
+`sol` is GPT-6.2 Sol, `astra` is GPT-6.2 Astra, `opus` is Claude Opus 5.5,
+and `sonnet` is Claude Sonnet 5.5. If a setting differs, report it rather than
+silently rewriting a model pin during a task.
+
+| Task shape without an explicit model | Selection |
+| --- | --- |
+| Clear requirements, established pattern, routine implementation or mechanical migration | `sol` |
+| Architecture, conflicting requirements, difficult diagnosis, subtle correctness, or unresolved judgment that could materially change the solution | `astra` |
+| Independent review of GPT work or a GPT planner's plan | `opus` at xhigh |
+| Independent review of Claude work or a Claude planner's plan | GPT family: `sol` for clear checks, `astra` for unresolved judgment, at xhigh |
+
+Choose by uncertainty, not line count: a small concurrency bug may warrant Astra;
+a large mechanical migration can suit Sol. Apply this to implementation,
+research, and the GPT seat in a council. Preserve the executor's lane constraints.
+For conversation handoffs, retain the configured app default unless the user
+chooses a model; task routing does not switch the planner's model.
+
+Keep Sonnet available for explicit requests and straightforward tasks where the
+user asks for a Claude alternative. Keep Opus as the automatic Claude reviewer;
+do not route to Sonnet automatically without a demonstrated advantage on the
+user's work. These are initial routing heuristics, not measured quality rankings.
+
+Before dispatch, name the resolved model, effort, and concrete selection reason
+in one line, for example: `codex · api · gpt-6.2-astra · xhigh — shared state ownership is unresolved`.
+
+After a failure, first distinguish a reasoning or approach failure from an
+underspecified brief, missing dependency, Gateway error, or broken environment.
+If an automatically selected Sol worker failed because of its understanding or
+approach, reassess and escalate to Astra with the evidence and any landed diff.
+Do not switch an explicitly selected model without the user's agreement.
+Inspect task-worktree status first; reuse the existing task and preserve its diff.
+Preflight Astra before dispatch and include prior attempts in its brief. Model
+escalation counts toward the existing two-correction limit; it never resets it.
+Infrastructure failures follow the preflight guidance, not model escalation.
+Record the reason for escalation and its outcome in the task report; use actual
+outcomes to refine routing rather than inventing model specialties.
 
 ## Explicit flags (optional)
 
@@ -8,7 +50,7 @@ Flags still work and override prose. They are never required.
 
 | Flag | Values | Default |
 | --- | --- | --- |
-| `--model` | any alias or full ID | `defaults.env` |
+| `--model` | any alias or full ID | task routing above; handoffs use `defaults.env` |
 | `--effort` | `medium` `high` `xhigh` `max` | `defaults.env` |
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes* in SKILL.md) |

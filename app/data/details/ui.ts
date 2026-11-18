@@ -20,6 +20,7 @@ import { BUTTON_GROUP_DETAIL } from "./ui/button-group";
 import { CALENDAR_DETAIL } from "./ui/calendar";
 import { CARD_DETAIL } from "./ui/card";
 import { CAROUSEL_DETAIL } from "./ui/carousel";
+import { CHAIN_OF_THOUGHT_DETAIL } from "./ui/chain-of-thought";
 import { CHART_DETAIL } from "./ui/chart";
 import { CHECKBOX_DETAIL } from "./ui/checkbox";
 import { CHECKPOINT_DETAIL } from "./ui/checkpoint";
@@ -56,11 +57,13 @@ import { MARKER_DETAIL } from "./ui/marker";
 import { MENUBAR_DETAIL } from "./ui/menubar";
 import { MESSAGE_DETAIL } from "./ui/message";
 import { MESSAGE_SCROLLER_DETAIL } from "./ui/message-scroller";
+import { MORPHING_ROVO_DETAIL } from "./ui/morphing-rovo";
 import { NATIVE_SELECT_DETAIL } from "./ui/native-select";
 import { NAVIGATION_MENU_DETAIL } from "./ui/navigation-menu";
 import { PAGE_HEADER_DETAIL } from "./ui/page-header";
 import { PAGINATION_DETAIL } from "./ui/pagination";
 import { PANEL_DETAIL } from "./ui/panel";
+import { PLAN_DETAIL } from "./ui/plan";
 import { POPOVER_DETAIL } from "./ui/popover";
 import { PROGRESS_DETAIL } from "./ui/progress";
 import { PROGRESS_INDICATOR_DETAIL } from "./ui/progress-indicator";
@@ -68,28 +71,35 @@ import { PROGRESS_TRACKER_DETAIL } from "./ui/progress-tracker";
 import { QUESTIONNAIRE_DETAIL } from "./ui/questionnaire";
 import { QUEUE_DETAIL } from "./ui/queue";
 import { RADIO_GROUP_DETAIL } from "./ui/radio-group";
+import { REASONING_DETAIL } from "./ui/reasoning";
 import { RESIZABLE_DETAIL } from "./ui/resizable";
 import { SCROLL_AREA_DETAIL } from "./ui/scroll-area";
 import { SCROLL_FADE_DETAIL } from "./ui/scroll-fade";
 import { SELECT_DETAIL } from "./ui/select";
 import { SEPARATOR_DETAIL } from "./ui/separator";
 import { SHEET_DETAIL } from "./ui/sheet";
+import { SHIMMER_DETAIL } from "./ui/shimmer";
 import { SIDEBAR_DETAIL } from "./ui/sidebar";
 import { SKELETON_DETAIL } from "./ui/skeleton";
 import { SLIDER_DETAIL } from "./ui/slider";
 import { SONNER_DETAIL } from "./ui/sonner";
 import { SOURCES_DETAIL } from "./ui/sources";
 import { SPINNER_DETAIL } from "./ui/spinner";
+import { STACK_TRACE_DETAIL } from "./ui/stack-trace";
+import { SUBAGENT_DETAIL } from "./ui/subagent";
 import { SUGGESTION_DETAIL } from "./ui/suggestion";
 import { SWITCH_DETAIL } from "./ui/switch";
 import { TABLE_DETAIL } from "./ui/table";
 import { TABS_DETAIL } from "./ui/tabs";
 import { TAG_DETAIL } from "./ui/tag";
 import { TASK_DETAIL } from "./ui/task";
+import { TERMINAL_DETAIL } from "./ui/terminal";
+import { TEST_RESULTS_DETAIL } from "./ui/test-results";
 import { TILE_DETAIL } from "./ui/tile";
 import { TIME_PICKER_DETAIL } from "./ui/time-picker";
 import { TOGGLE_DETAIL } from "./ui/toggle";
 import { TOGGLE_GROUP_DETAIL } from "./ui/toggle-group";
+import { TOOL_DETAIL } from "./ui/tool";
 import { TOOLTIP_DETAIL } from "./ui/tooltip";
 import { TRACE_DETAIL } from "./ui/trace";
 
@@ -110,6 +120,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	calendar: CALENDAR_DETAIL,
 	card: CARD_DETAIL,
 	carousel: CAROUSEL_DETAIL,
+	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
 	chart: CHART_DETAIL,
 	checkbox: CHECKBOX_DETAIL,
 	checkpoint: CHECKPOINT_DETAIL,
@@ -146,11 +157,13 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	menubar: MENUBAR_DETAIL,
 	message: MESSAGE_DETAIL,
 	"message-scroller": MESSAGE_SCROLLER_DETAIL,
+	"morphing-rovo": MORPHING_ROVO_DETAIL,
 	"native-select": NATIVE_SELECT_DETAIL,
 	"navigation-menu": NAVIGATION_MENU_DETAIL,
 	"page-header": PAGE_HEADER_DETAIL,
 	pagination: PAGINATION_DETAIL,
 	panel: PANEL_DETAIL,
+	plan: PLAN_DETAIL,
 	popover: POPOVER_DETAIL,
 	progress: PROGRESS_DETAIL,
 	"progress-indicator": PROGRESS_INDICATOR_DETAIL,
@@ -158,28 +171,35 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	questionnaire: QUESTIONNAIRE_DETAIL,
 	queue: QUEUE_DETAIL,
 	"radio-group": RADIO_GROUP_DETAIL,
+	reasoning: REASONING_DETAIL,
 	resizable: RESIZABLE_DETAIL,
 	"scroll-area": SCROLL_AREA_DETAIL,
 	"scroll-fade": SCROLL_FADE_DETAIL,
 	select: SELECT_DETAIL,
 	separator: SEPARATOR_DETAIL,
 	sheet: SHEET_DETAIL,
+	shimmer: SHIMMER_DETAIL,
 	sidebar: SIDEBAR_DETAIL,
 	skeleton: SKELETON_DETAIL,
 	slider: SLIDER_DETAIL,
 	sonner: SONNER_DETAIL,
 	sources: SOURCES_DETAIL,
 	spinner: SPINNER_DETAIL,
+	"stack-trace": STACK_TRACE_DETAIL,
+	subagent: SUBAGENT_DETAIL,
 	suggestion: SUGGESTION_DETAIL,
 	switch: SWITCH_DETAIL,
 	table: TABLE_DETAIL,
 	tabs: TABS_DETAIL,
 	tag: TAG_DETAIL,
 	task: TASK_DETAIL,
+	terminal: TERMINAL_DETAIL,
+	"test-results": TEST_RESULTS_DETAIL,
 	tile: TILE_DETAIL,
 	"time-picker": TIME_PICKER_DETAIL,
 	toggle: TOGGLE_DETAIL,
 	"toggle-group": TOGGLE_GROUP_DETAIL,
+	tool: TOOL_DETAIL,
 	tooltip: TOOLTIP_DETAIL,
 	trace: TRACE_DETAIL,
 };

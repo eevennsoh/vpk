@@ -97,6 +97,15 @@ test("merged layout keeps every active agent in one prioritized row", () => {
 	);
 });
 
+test("teammate changes do not change the owner's row identity", () => {
+	const mine = { id: "mine", state: "working", role: "owner", stateTransition: "agent-session" } as const;
+	const teammate = { id: "team", state: "awaiting-input", role: "viewer" } as const;
+	assert.equal(groupJiraIssueAgentActivityRows([mine], "merged")[0].key, "mine");
+	const row = groupJiraIssueAgentActivityRows([mine, teammate], "merged")[0];
+	assert.equal(row.key, "mine");
+	assert.equal(row.activities.length, 2);
+});
+
 test("split layout gives every active agent its own row keyed by agent id", () => {
 	assert.deepEqual(
 		groupJiraIssueAgentActivityRows(

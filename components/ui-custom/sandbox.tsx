@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
-import { getStatusLozenge } from "./tool";
+import { getStatusLozenge } from "@/components/ui/tool";
 
 export type SandboxRootProps = ComponentProps<typeof Collapsible>;
 

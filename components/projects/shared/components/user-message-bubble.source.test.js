@@ -33,7 +33,6 @@ test("shared user message bubble exposes copy and edit prompt actions", () => {
 		USER_MESSAGE_BUBBLE_SOURCE,
 		/<MessageResponse plain className="font-medium text-inherit \[&>\*\+\*\]:mt-3">[\s\S]*\{messageText\}[\s\S]*<\/MessageResponse>/u,
 	);
-	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /fitContent=\{!isEditing\}/);
 });
 
 test("Improve description renders as a skill tag without changing the raw message value", () => {
@@ -78,10 +77,10 @@ test("sidebar and floating chat thread messages wire compact edit state", () => 
 
 	assert.match(SIDEBAR_MESSAGE_BUBBLE_SOURCE, /showUserMessagePromptActions/);
 	assert.match(CHAT_PANEL_SOURCE, /const \{[\s\S]*editMessage,[\s\S]*editingMessageId,[\s\S]*setEditingMessageId,[\s\S]*\} = useRovoChat\(\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /ConversationScrollButton/);
+	assert.match(CHAT_PANEL_SOURCE, /MessageScrollerButton/);
 	assert.match(
 		CHAT_PANEL_SOURCE,
-		/<ConversationScrollButton className="z-10 transition-all" \/>/u,
+		/<MessageScrollerButton className="z-10" \/>/u,
 	);
 	assert.match(
 		CHAT_PANEL_SOURCE,

@@ -8,7 +8,7 @@ function readProjectFile(filePath) {
 }
 
 const SOURCE = readProjectFile("components/projects/skills/components/skill-creation-result-card.tsx");
-const GENERATIVE_CARD_SOURCE = readProjectFile("components/blocks/generative-card/index.tsx");
+const GENERATIVE_CARD_SOURCE = readProjectFile("components/ui/generative-card-header.tsx");
 
 test("generated skill result uses tile-backed generative card with collapsed header edit action", () => {
 	assert.match(SOURCE, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
@@ -26,9 +26,9 @@ test("generated skill result uses tile-backed generative card with collapsed hea
 });
 
 test("generative card header places action and collapse buttons 4px apart", () => {
-	assert.match(GENERATIVE_CARD_SOURCE, /showToggle\?: boolean;/u);
+	assert.match(GENERATIVE_CARD_SOURCE, /showToggle\?: boolean/u);
 	assert.match(GENERATIVE_CARD_SOURCE, /showToggle = true/u);
-	assert.match(GENERATIVE_CARD_SOURCE, /const shouldShowToggle = showToggle && typeof setExpanded === "function";/u);
+	assert.match(GENERATIVE_CARD_SOURCE, /const shouldShowToggle = showToggle && typeof setExpanded === "function"/u);
 	assert.match(GENERATIVE_CARD_SOURCE, /\{action \|\| shouldShowToggle \? \(/u);
 	assert.match(GENERATIVE_CARD_SOURCE, /<div className="flex items-center gap-1">[\s\S]*\{action\}[\s\S]*\{shouldShowToggle \? \(/u);
 });

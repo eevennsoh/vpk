@@ -43,11 +43,11 @@ always takes the worker flow above, so its result comes back here.
 
 **Extract model and effort from prose.** Short names resolve through the
 `ALIAS_*` entries in `~/.config/litellm-proximity/defaults.env` (`opus`,
-`sonnet`, `haiku`, `sol`, `terra`, `luna`, …), and a full model ID is
+`sonnet`, `haiku`, `sol`, `astra`, `terra`, `luna`, …), and a full model ID is
 accepted as-is. Effort words map directly: "medium", "high", "xhigh" /
-"extra high", "max" / "maximum" / "think as hard as you can". Unstated model
-or effort takes the defaults in that same file — read it each run, never
-hardcode values here.
+"extra high", "max" / "maximum" / "think as hard as you can". Unstated effort
+takes the defaults in that file. Before choosing an unstated task model, read
+[model selection](references/invocation-flags-and-effort.md#choosing-the-model); resolve aliases afresh.
 
 Only treat a word as a model or effort when the sentence uses it **as a
 setting** ("on sol", "with opus", "at high effort", "use terra"). In "fix
@@ -58,7 +58,7 @@ question rather than guess.
 Examples:
 
 ```text
-/vpk-remote fix the sidebar flicker                               → worker, defaults, verified here
+/vpk-remote fix the sidebar flicker                               → worker, choose model by uncertainty, verified here
 /vpk-remote rename useFoo to useBar with terra                   → worker, terra
 /vpk-remote second opinion from opus on this plan               → advisor consult
 /vpk-remote council review this PR                               → council mode (see *Mode: council*)
@@ -67,8 +67,7 @@ Examples:
 /vpk-remote what's the status of my tasks                        → status table (see *Status*)
 ```
 
-Always echo the parsed plan in one line before acting (app, billing, model, effort),
-so a misread costs one glance instead of a wrong run.
+Before acting, echo app, billing, resolved model, effort, and a short selection reason in one line.
 
 Flags (`--model`, `--effort`, `--advisor` / `--no-advisor`, `--fanout` /
 `--single`, `--worktree` / `--no-worktree`, `--status`) override prose and are
@@ -180,7 +179,7 @@ before naming a task or creating its worktree, and when deciding whether
    self-certifies. A worker that could not commit left its proposed subject
    in the report; commit with it once the diff is verified
    ([Landing](references/naming-and-worktrees.md#landing)).
-7. **Correct at most twice.** Send focused follow-ups to the same worker
+7. **Correct at most twice.** Reuse the worker unless model-selection guidance calls for escalation
    (GPT lane: `resume`; Claude lane: re-brief with the prior report + diff
    summary). After two failed correction cycles, stop and report the
    blocker — the planner does not silently take over implementation.
@@ -208,9 +207,9 @@ consult the entire task.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT-lane worker output (`sol` / `terra` / `luna`) | `opus` alias at xhigh |
-| Claude-lane worker output (`opus` / `sonnet`) | `sol` alias at xhigh |
-| A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` alias at xhigh |
+| GPT-lane worker output (`sol` / `astra` / `terra` / `luna`) | `opus` alias at xhigh |
+| Claude-lane worker output (`opus` / `sonnet`) | `sol` or `astra` by task uncertainty, at xhigh |
+| A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` or `astra` by task uncertainty, at xhigh |
 | A plan a GPT planner wrote, or nothing dispatched yet (`app=codex`, or a Claude Code session running a GPT model) | `opus` alias at xhigh |
 
 Explicit flags always win. Read
@@ -222,7 +221,7 @@ returns, state in a sentence what you adopt or reject, then continue.
 ## Mode: council
 
 `/vpk-remote council <subject>`, or a request for a council review, runs
-independent parallel read-only reviews (default `sol` and `opus` at xhigh) of
+independent parallel read-only reviews (`sol` or `astra` by task uncertainty, plus `opus`, at xhigh) of
 the same subject, reconciles them with scores, and repeats after accepted
 fixes. A complete round replaces the pre-completion advisor verify. Follow
 [references/council.md](references/council.md).

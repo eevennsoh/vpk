@@ -935,9 +935,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		realtimeTypedResponseStartedRef,
 		resetTypedScrollAnchorState,
 		scrollAnchorMessageId,
-		scrollFollowMode,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		typedScrollAnchorSourceRef,
 	} = scrollAnchor;
 	const [optimisticUserMessage, setOptimisticUserMessage] = useState<ReturnType<typeof createRovoAppUserMessage> | null>(null);
@@ -982,7 +980,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		dispatchDictation({ type: "stop" });
 		setScrollActiveTimelineSelection(null);
 		setScrollAnchorMessageId(null);
-		setScrollFollowMode("bottom");
 		setIsDefaultHomeSubmitTransition(false);
 		setDismissedBrowserArtifactKey(null);
 		studioAgentCreationThreadKeysRef.current.clear();
@@ -991,7 +988,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, [
 		dispatchMainSurface,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		studioAgentCreationThreadKeysRef,
 		studioAgentCreationThreadTouchedAtRef,
 	]);
@@ -2790,7 +2786,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 					pendingPlanMetadataMessageIds={chat.pendingPlanMetadataMessageIds}
 					pendingArtifactResult={chat.pendingArtifactResult}
 					scrollAnchorMessageId={scrollAnchorMessageId}
-					scrollFollowMode={scrollFollowMode}
 					selectedAgent={selectedAgent}
 					showEmptyState={showHomeState && shouldShowDefaultLandingContent}
 					shouldSuppressLatestAssistantSuggestions={chat.shouldSuppressLatestAssistantSuggestions}
@@ -2960,7 +2955,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 					onSelectItem={(messageId) => {
 						handleScrollActiveTimelineChange(messageId);
 						setScrollAnchorMessageId(messageId);
-						setScrollFollowMode("target");
 					}}
 				/>
 			) : null}

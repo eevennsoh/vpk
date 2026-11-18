@@ -48,7 +48,7 @@ export default function CheckpointDemo() {
 						{message.role === "user" ? (
 							<Message align="end">
 								<MessageContent>
-									<Bubble align="end" variant="muted">
+									<Bubble align="end">
 										<BubbleContent>{message.text}</BubbleContent>
 									</Bubble>
 								</MessageContent>
