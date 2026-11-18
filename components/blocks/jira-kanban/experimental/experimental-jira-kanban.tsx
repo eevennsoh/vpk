@@ -149,7 +149,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Expanded columns share available horizontal space; fixed remains the default. */
 	columnWidth?: BoardColumnWidth;
 	/** Creates a named work item without attaching or capturing an agent session. */
-	onCreateWorkItem?: (columnTitle: string, draft: JiraInlineCreateDraft) => void;
+	onCreateWorkItem?: (columnTitle: string, draft: JiraInlineCreateDraft, beforeCardCode?: string) => void;
 	inlineCreateComponent?: ComponentType<JiraInlineCreateProps>;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
@@ -871,7 +871,8 @@ function ExperimentalJiraKanbanView({
 								columnSizing={columnSizing}
 								count={column.cards.length}
 								creating={createCard.column !== null}
-								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft); createCard.close(); }} /> : undefined}
+								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft, createCard.beforeCardCode); createCard.close(); }} /> : undefined}
+								createBeforeCardCode={createCard.column === column.title ? createCard.beforeCardCode : undefined}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
@@ -879,7 +880,7 @@ function ExperimentalJiraKanbanView({
 								hideScrollbar={cardAppearance === "project-butter"}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
-								onStartCreate={onCreateWorkItem ? (trigger) => createCard.start(column.title, trigger) : undefined}
+								onStartCreate={onCreateWorkItem ? (trigger, beforeCardCode, returnFocus) => createCard.start(column.title, trigger, beforeCardCode, returnFocus) : undefined}
 								onToggleAgent={
 									onToggleColumnAgent
 										? (agentId) => onToggleColumnAgent(column.title, agentId)

@@ -105,7 +105,7 @@ test("owner-only, viewer-only, expired and empty menus retain their separate sem
 		await view.rerender(menuProps([session("teammate", "viewer")]));
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
-		assert.equal(view.getByText("teammate work").closest("article").tabIndex, 0);
+		assert.equal(view.getByText("teammate work").closest("article").tabIndex, -1);
 		assert.equal(view.getAllByRole("listitem").length, 1);
 		assert.equal(view.queryByRole("separator"), null);
 		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));
