@@ -120,7 +120,7 @@ export function AgentSessionsMenu({
 						</TeammateSessionsDisclosure>
 					) : (
 						<>
-							<p className={dropdownStyles.label}>{teammateSessionsPresentation === "count" ? `${teammateItems.length} using agents` : "Sessions from your teammates"}</p>
+							<p className={cn(dropdownStyles.label, "px-3 py-1")}>{teammateSessionsPresentation === "count" ? `${teammateItems.length} using ${teammateItems.length === 1 ? "agent" : "agents"}` : "Sessions from your teammates"}</p>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</>
 					)}

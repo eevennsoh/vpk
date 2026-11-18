@@ -15,7 +15,7 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: /(?:\d+ )?using agents/iu };
+const disclosure = { name: /(?:\d+ )?using agents?/iu };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
@@ -141,12 +141,20 @@ test("session menu can show a teammate count or expand a single teammate by defa
 	try {
 		assert.equal(view.getByText("2 using agents").textContent, "2 using agents");
 		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
-		const trigger = view.getByRole("button", { name: "1 using agents" });
+		const trigger = view.getByRole("button", { name: "1 using agent" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
 		await view.click(trigger);
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(trigger.getAttribute("aria-label"), "Using agent");
 		assert.equal(view.queryByText("first work"), null);
+		await view.rerender(menuProps([team[0]], { teammateSessionsPresentation: "count" }));
+		assert.equal(view.getByText("1 using agent").textContent, "1 using agent");
+		const onePerson = team.map((item) => ({ ...item, invokedBy: { name: "Jordan" } }));
+		await view.rerender(menuProps([session("mine", "owner"), ...onePerson]));
+		const singlePersonTrigger = view.getByRole("button", { name: "Using agent" });
+		await view.click(singlePersonTrigger);
+		assert.equal(singlePersonTrigger.getAttribute("aria-label"), "2 using agents");
 	} finally { await view.unmount(); }
 });
 

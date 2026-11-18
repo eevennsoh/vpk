@@ -132,7 +132,7 @@ for (const width of [1280, 1000]) {
 		await page.clock.install();
 		await page.goto(appUrl("/components/blocks/agent-assignment"));
 		await page.getByRole("button", { name: "Edit agents", exact: true }).first().click();
-		await page.getByRole("button", { name: /(?:\d+ )?using agents/iu }).click();
+		await page.getByRole("button", { name: /(?:\d+ )?using agents?/iu }).click();
 		const card = page.getByTestId("agent-session-row-readiness-checker").locator("article");
 		await page.mouse.move(0, 0);
 		await card.hover({ position: { x: 8, y: 8 } });

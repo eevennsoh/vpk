@@ -28,6 +28,7 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentStatusKind,
 } from "@/components/blocks/agent-assignment";
+import { getTeammateSessionPeople } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
@@ -310,7 +311,7 @@ function resolveJiraIssueAgentRowPresentation(
 		? activities[summary.featuredActivityIndex]
 		: undefined;
 	const rowLabel = isViewerRow
-		? `${summary.activityCount} using agents`
+		? getTeammateSessionPeople(activities).size === 1 ? "Using agent" : "Using agents"
 		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;

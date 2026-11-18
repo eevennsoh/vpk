@@ -120,7 +120,7 @@ for (const host of ["local", "cloud"]) {
 			["awaiting-input", "Needs input", "awaiting-input"],
 			["completed", "Finished", "finished"],
 		]) {
-			test(`${host} ${role} sessions show ${role === "viewer" ? "the other-session count" : `${label} and its indicator`}`, async () => {
+			test(`${host} ${role} sessions show ${role === "viewer" ? "the teammate label" : `${label} and its indicator`}`, async () => {
 				const view = await renderComponent({
 					entry: "components/blocks/jira-issue/agent-activity.tsx",
 					exportName: "JiraIssueAgentActivityRows",
@@ -133,7 +133,7 @@ for (const host of ["local", "cloud"]) {
 					},
 				});
 				if (role === "viewer") {
-					const row = view.getByRole("button", { name: "1 using agents" });
+					const row = view.getByRole("button", { name: "Using agent" });
 					assert.equal(row.querySelector('[data-slot="avatar"]')?.classList.contains("size-5"), true);
 					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
 				} else {

@@ -487,13 +487,22 @@ test("board and journey session menus show private marks for other people's sess
 	await page.goto(appUrl("/butter-v1"));
 	for (const view of ["Board", "e2e Journey"]) {
 		await page.getByRole("button", { name: `Select ${view}`, exact: true }).click();
+		let labelPadding: string[] | undefined;
 		for (const [key, button, owners] of [
-			["PAY-107", "2 using agents", ["Maya Ferreira", "Jordan Okafor"]],
+			["PAY-107", "Using agents", ["Maya Ferreira", "Jordan Okafor"]],
 			["PAY-123", "2 agents: Needs input", ["Jordan Okafor"]],
 		] as const) {
 			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
 			await card.getByRole("button", { name: button }).click();
 			const menu = page.getByRole("dialog", { name: "Agent assignment" });
+			const heading = key === "PAY-107" ? menu.getByText("2 using agents", { exact: true }) : menu.getByRole("button", { name: "1 using agent", exact: true });
+			await expect(heading).toBeVisible();
+			const padding = await heading.evaluate((element) => {
+				const style = getComputedStyle(element);
+				return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
+			});
+			if (labelPadding) expect(padding).toEqual(labelPadding);
+			else labelPadding = padding;
 			for (const owner of owners) await expect(menu.getByRole("img", { name: `Private session by ${owner}` })).toBeVisible();
 			await expect(menu.locator('[data-access-mark="team"]')).toHaveCount(0);
 			await page.keyboard.press("Escape");
@@ -528,7 +537,7 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
-	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?using agents/iu });
+	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?using agents?/iu });
 	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
 	await disclosure.click();
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
