@@ -203,7 +203,7 @@ export default function TaskProgress({
 		})
 	);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
-	const cardActionRef = useRef<HTMLDivElement>(null);
+	const cardActionRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (runStatus !== "running" || !runCreatedAt) return;
@@ -301,19 +301,17 @@ export default function TaskProgress({
 					>
 						{/* Delegate pointer clicks through the shell so the timeline keeps its scroll hit area. */}
 						{isInteractive ? (
-							<div
+							<button
 								ref={cardActionRef}
-								role="button"
-								tabIndex={0}
+								type="button"
 								aria-label={cardAriaLabel}
 								aria-expanded={isCollapsible ? !collapsed : undefined}
 								className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
 								data-slot="progress-card-action"
-								onKeyDown={(event) => {
-									if (event.key === "Enter" || event.key === " ") {
-										event.preventDefault();
-										handleCardActivate();
-									}
+								onClick={(event) => {
+									// Keyboard activation arrives as a click; the shell handles pointer clicks itself.
+									event.stopPropagation();
+									handleCardActivate();
 								}}
 							/>
 						) : null}

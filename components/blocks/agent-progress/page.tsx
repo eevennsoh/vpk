@@ -294,7 +294,7 @@ export default function AgentsProgress({
 	const [retryingGroupKey, setRetryingGroupKey] =
 		useState<RetryableStatusGroupKey | null>(null);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
-	const cardActionRef = useRef<HTMLDivElement>(null);
+	const cardActionRef = useRef<HTMLButtonElement>(null);
 	const resolvedPlanVisualIdentity = useMemo(
 		() => planVisualIdentity ?? resolvePlanVisualIdentity(planTitle),
 		[planTitle, planVisualIdentity]
@@ -406,19 +406,17 @@ export default function AgentsProgress({
 		>
 			{/* The action shares the shell with content and controls; pointer clicks keep bubbling through the shell. */}
 			{isInteractive ? (
-				<div
+				<button
 					ref={cardActionRef}
-					role="button"
-					tabIndex={0}
+					type="button"
 					aria-label={`${planTitle} agent progress`}
 					aria-expanded={isCollapsible ? !collapsed : undefined}
 					className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
 					data-slot="progress-card-action"
-					onKeyDown={(event) => {
-						if (event.key === "Enter" || event.key === " ") {
-							event.preventDefault();
-							handleCardActivate();
-						}
+					onClick={(event) => {
+						// Keyboard activation arrives as a click; the shell handles pointer clicks itself.
+						event.stopPropagation();
+						handleCardActivate();
 					}}
 				/>
 			) : null}
