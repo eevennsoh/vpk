@@ -1,4 +1,4 @@
-import { createElement, type ComponentType } from "react";
+import { type ComponentType } from "react";
 
 export const ATLASSIAN_LOGO_SOURCE = "atlassian";
 export const LOGO_TILE_SIZES = [
@@ -18,9 +18,7 @@ import type { LogoProps as AtlaskitLogoProps } from "@atlaskit/logo";
 import { SHARED_LOGO_WRAPPERS } from "@/components/ui/data/logo-wrappers";
 import { createLazyGlyph } from "@/components/ui/lazy-glyph";
 
-type AtlassianLogoComponentProps = AtlaskitLogoProps & {
-	shouldUseHexLogo?: boolean;
-};
+type AtlassianLogoComponentProps = AtlaskitLogoProps;
 
 // Each product logo loads its own `@atlaskit/logo` entrypoint the first time it renders: the
 // package's barrel is about 270 KB, while a route shows a few logos. Until it arrives, the logo's
@@ -36,14 +34,6 @@ function lazyLogo(load: () => Promise<ComponentType<AtlassianLogoComponentProps>
 
 // Keeps the shared logo wrappers and their stylesheets in the page (logo-wrappers.ts).
 void SHARED_LOGO_WRAPPERS;
-
-// The barrel's Rovo logos are the hex mark, with the retired `shouldUseHexLogo` flag dropped.
-function withoutHexLogoFlag(Component: ComponentType<AtlassianLogoComponentProps>): ComponentType<AtlassianLogoComponentProps> {
-	return function RovoHexLogo({ shouldUseHexLogo, ...props }: AtlassianLogoComponentProps) {
-		void shouldUseHexLogo;
-		return createElement(Component, props);
-	};
-}
 
 const AtlaskitAdminIcon = lazyLogo(() => import("@atlaskit/logo/admin/icon").then((module) => module.AdminIcon));
 const AtlaskitAdminLogo = lazyLogo(() => import("@atlaskit/logo/admin/logo").then((module) => module.AdminLogoCS));
@@ -114,8 +104,8 @@ const AtlaskitRovoDevAgentIcon = lazyLogo(() => import("@atlaskit/logo/rovo-dev-
 const AtlaskitRovoDevAgentLogo = lazyLogo(() => import("@atlaskit/logo/rovo-dev-agent/logo").then((module) => module.RovoDevAgentLogoCS));
 const AtlaskitRovoDevIcon = lazyLogo(() => import("@atlaskit/logo/rovo-dev/icon").then((module) => module.RovoDevIcon));
 const AtlaskitRovoDevLogo = lazyLogo(() => import("@atlaskit/logo/rovo-dev/logo").then((module) => module.RovoDevLogoCS));
-const AtlaskitRovoIcon = lazyLogo(() => import("@atlaskit/logo/rovo-hex/icon").then((module) => withoutHexLogoFlag(module.RovoHexIcon)));
-const AtlaskitRovoLogo = lazyLogo(() => import("@atlaskit/logo/rovo-hex/logo").then((module) => withoutHexLogoFlag(module.RovoHexLogoCS)));
+const AtlaskitRovoIcon = lazyLogo(() => import("@atlaskit/logo/rovo-hex/icon").then((module) => module.RovoHexIcon));
+const AtlaskitRovoLogo = lazyLogo(() => import("@atlaskit/logo/rovo-hex/logo").then((module) => module.RovoHexLogoCS));
 const AtlaskitSearchIcon = lazyLogo(() => import("@atlaskit/logo/search/icon").then((module) => module.SearchIcon));
 const AtlaskitSearchLogo = lazyLogo(() => import("@atlaskit/logo/search/logo").then((module) => module.SearchLogoCS));
 const AtlaskitStatuspageIcon = lazyLogo(() => import("@atlaskit/logo/statuspage/icon").then((module) => module.StatuspageIcon));

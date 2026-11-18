@@ -407,7 +407,6 @@ export function AgentCard({
 							iconColor="#FFFFFF"
 							label=""
 							name="atlassian"
-							shouldUseNewLogoDesign
 							size="xxsmall"
 							textColor="#FFFFFF"
 							themeAware={false}

@@ -224,7 +224,6 @@ export function EntityCardAgentExpanded({
 							appearance="inverse"
 							label=""
 							name="atlassian"
-							shouldUseNewLogoDesign
 							size="xxsmall"
 							themeAware={false}
 						/>
