@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 import type { AgentSessionItem } from "./agent-session-types";
 import { AGENT_SESSION_STATUS_LABEL as LIFECYCLE_LABELS } from "./agent-session-long-metadata";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 /**
  * Enter is the attention-getting beat, exit gets out of the way. Resolved token
@@ -26,6 +26,8 @@ import { motionEase } from "@/lib/motion";
  */
 const INDICATOR_ENTER = { duration: 0.15, ease: motionEase.outPractical } as const;
 const INDICATOR_EXIT = { duration: 0.1, ease: motionEase.in } as const;
+const LABEL_ENTER = { duration: motionDuration.slowest, ease: motionEase.outPractical } as const;
+const LABEL_EXIT = { duration: motionDuration.slower, ease: motionEase.in } as const;
 
 function IndicatorGlyph({
 	compact = false,
@@ -163,30 +165,12 @@ export function AgentSessionLifecycleLabel({ state }: Readonly<{ state: AgentSes
 		: <span>{label}</span>;
 }
 
-function LifecycleState({
-	showLabel,
-	state,
-}: Readonly<{
-	showLabel: boolean;
-	state: AgentSessionItem["state"];
-}>) {
-	return (
-		<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">
-			{showLabel ? <AgentSessionLifecycleLabel state={state} /> : null}
-			<div className="grid size-6 shrink-0 place-items-center">
-				<IndicatorGlyph compact state={state} />
-			</div>
-		</div>
-	);
-}
-
 /**
  * Trailing lifecycle indicator for a long-form session row.
  *
  * Unlike Agent List's built-in indicator this one covers `complete` too, with a
  * success check — a title-led row has no other place to say the work landed.
- * Each state grows in and out on the swap so a session moving from working to
- * finished reads as a transition rather than a substitution.
+ * The icon scales and the label blurs together as each state leaves and enters.
  *
  * The glyph is a ghost icon button so a click gets the shared selected chrome
  * (blue border, selected background, selected icon) instead of falling through
@@ -209,20 +193,23 @@ export function AgentSessionLifecycle({
 	const [pressed, setPressed] = useState(false);
 	const label = LIFECYCLE_LABELS[accessibleState];
 	const content = (
-		<AnimatePresence initial={false} mode="wait">
-			<motion.div
-				animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
-				className="grid place-items-center"
-				exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }}
-				initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.6 }}
-				key={state}
-				onAnimationComplete={shouldReduceMotion !== true && state === accessibleState ? onTransitionComplete : undefined}
-				style={shouldReduceMotion ? undefined : { willChange: "opacity, transform" }}
-				transition={shouldReduceMotion ? { duration: 0 } : INDICATOR_ENTER}
-			>
-				<LifecycleState showLabel={showLabel} state={state} />
-			</motion.div>
-		</AnimatePresence>
+		<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">
+			{shouldReduceMotion ? <div className="flex shrink-0 items-center gap-1" data-agent-session-lifecycle-state={state}>
+				{showLabel ? <span data-agent-session-lifecycle-label={state}><AgentSessionLifecycleLabel state={state} /></span> : null}
+				<div className="grid size-6 shrink-0 place-items-center" data-agent-session-lifecycle-glyph><IndicatorGlyph compact state={state} /></div>
+			</div> : <AnimatePresence initial={false} mode="wait">
+				<motion.div
+					className="flex shrink-0 items-center gap-1"
+					data-agent-session-lifecycle-state={state}
+					key={state}
+				>
+					{showLabel ? <motion.span animate={{ filter: "blur(0px)", opacity: 1 }} data-agent-session-lifecycle-label={state} exit={{ filter: "blur(4px)", opacity: 0, transition: LABEL_EXIT }} initial={{ filter: "blur(4px)", opacity: 0 }} style={{ willChange: "filter, opacity" }} transition={LABEL_ENTER}><AgentSessionLifecycleLabel state={state} /></motion.span> : null}
+					<div className="grid size-6 shrink-0 place-items-center">
+						<motion.div animate={{ opacity: 1, scale: 1 }} data-agent-session-lifecycle-glyph exit={{ opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }} initial={{ opacity: 0, scale: 0.6 }} onAnimationComplete={state === accessibleState ? onTransitionComplete : undefined} style={{ willChange: "opacity, transform" }} transition={INDICATOR_ENTER}><IndicatorGlyph compact state={state} /></motion.div>
+					</div>
+				</motion.div>
+			</AnimatePresence>}
+		</div>
 	);
 
 	if (readOnly) {
