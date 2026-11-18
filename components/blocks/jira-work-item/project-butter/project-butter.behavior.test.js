@@ -582,24 +582,30 @@ test("attachment stacks expand independently and Escape returns focus without cl
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
 });
 
-test("attachments can be added as links and removed through the reference confirmation without losing others", async () => {
+test("attachments can be added as links and removed through the reference confirmation without losing others", async (t) => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Add attachment" }));
 	const input = view.getByRole("combobox", { name: "Add attachment" });
 	await view.fill(input, "https://example.com/design");
 	assert.deepEqual([...view.getByRole("listbox", { name: "Matching attachments" }).querySelectorAll("[role=option]")].map((option) => option.textContent), ['Add link "Design"']);
+	// The arrival runs on timers that a loaded machine can finish before the test reads it, so
+	// they run on fake time until it has played.
+	t.mock.timers.enable({ apis: ["setTimeout"] });
 	await act(async () => input.form.requestSubmit());
 	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
 	assert.equal(document.querySelector("[data-attachment-arrival]") !== null, true, "the new card plays its arrival and stays inert meanwhile");
-	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
-	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1800)); });
-	assert.equal(document.querySelector("[data-attachment-arrival]"), null);
-	assert.equal(view.queryByRole("button", { name: /^Preview /u }), null, "cards have no preview");
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
+	for (let elapsed = 0; document.querySelector("[data-attachment-arrival]") && elapsed < 10_000; elapsed += 50) {
+		await act(async () => t.mock.timers.tick(50));
+	}
+	t.mock.timers.reset();
+	assert.equal(document.querySelector("[data-attachment-arrival]") === null, true);
+	assert.equal(view.queryByRole("button", { name: /^Preview /u }) === null, true, "cards have no preview");
 	await view.click(view.getByRole("button", { name: "More actions for Design" }));
 	await view.click(view.getByRole("menuitem", { name: "Remove" }));
 	assert.equal(view.getByRole("dialog", { name: "Remove content?" }).textContent.includes("Once removed, it'll no longer appear in this work item."), true);
 	await view.click(view.getByRole("button", { name: "Remove" }));
-	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 });
