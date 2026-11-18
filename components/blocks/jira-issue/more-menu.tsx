@@ -47,10 +47,18 @@ export type JiraIssueMoreAction =
 	| "edit-labels"
 	| "add-flag";
 
+/** Present when the board can reorder the card; a missing direction means the card is already at that end. */
+export interface JiraIssueReorderActions {
+	readonly onMoveUp?: () => void;
+	readonly onMoveDown?: () => void;
+}
+
 export interface JiraIssueMoreMenuActions {
 	readonly onArchive?: () => void;
 	readonly onSelect?: () => void;
 	readonly onDelete?: () => void;
+	/** Keyboard alternative to dragging the card within its column. */
+	readonly reorder?: JiraIssueReorderActions;
 }
 
 interface JiraIssueMoreMenuProps {
@@ -71,6 +79,15 @@ interface JiraIssueMoreMenuProps {
 }
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
+
+function JiraIssueReorderItems({ reorder }: Readonly<{ reorder: JiraIssueReorderActions | undefined }>) {
+	return reorder ? (
+		<>
+			<DropdownMenuItem disabled={!reorder.onMoveUp} onSelect={reorder.onMoveUp}>Move up</DropdownMenuItem>
+			<DropdownMenuItem disabled={!reorder.onMoveDown} onSelect={reorder.onMoveDown}>Move down</DropdownMenuItem>
+		</>
+	) : null;
+}
 
 function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	return props.onSelectionToggle ? (
@@ -169,6 +186,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
 					<DropdownMenuGroup>
+						<JiraIssueReorderItems reorder={moreMenuActions?.reorder} />
 						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 					</DropdownMenuGroup>
@@ -194,6 +212,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 				) : null}
 				<DropdownMenuGroup>
 					{onEditSummary ? <DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary}>Edit summary</DropdownMenuItem> : null}
+					<JiraIssueReorderItems reorder={moreMenuActions?.reorder} />
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 				</DropdownMenuGroup>
