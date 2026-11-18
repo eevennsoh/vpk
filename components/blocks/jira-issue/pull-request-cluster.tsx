@@ -101,6 +101,19 @@ function stopNestedActivation(event: MouseEvent<HTMLElement> | PointerEvent<HTML
 	event.stopPropagation();
 }
 
+export function PullRequestList({ pullRequests }: Readonly<{ pullRequests: readonly JiraIssuePullRequestItem[] }>) {
+	const [selected, setSelected] = useState<JiraIssuePullRequestItem | null>(null);
+	return (
+		<ul aria-label="Pull requests" className="pt-1">
+			{pullRequests.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
+				<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", index > 0 && (selected?.number === item.number || selected?.number === items[index - 1]?.number) && "pt-1", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
+					<PullRequest {...item.preview} additions={item.preview.additions ?? 0} checksExpandable={false} className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none" deletions={item.preview.deletions ?? 0} number={item.number} onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)} showDetails={selected?.number === item.number} showFix={false} status={toPullRequestCardStatus(item.status)} variant="flyout" />
+				</li>
+			))}
+		</ul>
+	);
+}
+
 export function JiraIssuePullRequestCluster({
 	animateIcon = false,
 	iconScale = "compact",
@@ -126,7 +139,6 @@ export function JiraIssuePullRequestCluster({
 }>) {
 	const hasMultiple = (pullRequests?.length ?? 0) > 1;
 	const { StatusIcon, colorClass, hoverColorClass, label } = getJiraIssuePullRequestPresentation(hasMultiple ? "draft" : pullRequestStatus);
-	const [selected, setSelected] = useState<JiraIssuePullRequestItem | null>(null);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const tooltipId = useId();
@@ -162,7 +174,7 @@ export function JiraIssuePullRequestCluster({
 	}
 
 	return (
-		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); else setSelected(null); }}>
+		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); }}>
 			<Tooltip open={tooltipOpen && !popoverOpen} onOpenChange={setTooltipOpen}>
 			<TooltipTrigger render={<PopoverTrigger
 				render={(
@@ -198,25 +210,7 @@ export function JiraIssuePullRequestCluster({
 				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
 				{hasMultiple ? (
-					<ul aria-label="Pull requests" className="pt-1">
-						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
-							<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", index > 0 && (selected?.number === item.number || selected?.number === items[index - 1]?.number) && "pt-1", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
-								<PullRequest
-									{...item.preview}
-									additions={item.preview.additions ?? 0}
-									checksExpandable={false}
-									className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none"
-									deletions={item.preview.deletions ?? 0}
-									number={item.number}
-									onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)}
-									showDetails={selected?.number === item.number}
-									showFix={false}
-									status={toPullRequestCardStatus(item.status)}
-									variant="flyout"
-								/>
-							</li>
-						))}
-					</ul>
+					<PullRequestList pullRequests={pullRequests ?? []} />
 				) : (
 				<PullRequest
 					additions={preview?.additions ?? 0}

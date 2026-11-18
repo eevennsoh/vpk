@@ -4,6 +4,70 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("Butter session multiple PRs show an expandable preview", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions" }).click();
+	await expect(page.getByRole("button", { name: "Multiple PRs", exact: true })).toHaveCount(0);
+	const row = page.getByTestId("agent-session-row-lw-night-suite-session");
+	const trigger = row.getByRole("group", { name: "2 pull requests" });
+	await trigger.hover();
+	const preview = page.getByRole("region", { name: "Pull requests" });
+	await expect(preview).toBeVisible();
+	await expect(preview.getByRole("listitem")).toHaveCount(2);
+	await preview.getByRole("button", { name: /1853/ }).click();
+	const openCard = preview.getByRole("group", { name: /Pull request #1853/ });
+	await expect(openCard.getByText("acme/storefront")).toBeVisible();
+	await expect(openCard.getByText("0/3 builds passed")).toBeVisible();
+	await preview.getByRole("button", { name: /1852/ }).click();
+	await expect(preview.getByRole("group", { name: /Pull request #1852/ }).getByText("3/3 builds passed")).toBeVisible();
+	await page.mouse.move(0, 0);
+	await expect(preview).toBeHidden();
+	await trigger.focus();
+	await expect(preview).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(preview).toBeHidden();
+	await page.getByTestId("agent-session-row-lw-scope-thread").getByRole("group", { name: /Pull request #1306/ }).hover();
+	await expect(page.getByRole("region", { name: "Pull request #1306 details" }).getByText("0/3 builds passed")).toBeVisible();
+});
+
+test("multiple PR details animate open and closed, and respect reduced motion", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions" }).click();
+	await page.getByRole("group", { name: "2 pull requests" }).hover();
+	const card = page.getByRole("group", { name: /Pull request #1853/ });
+	const button = card.getByRole("button", { name: /1853/ });
+	const panel = card.locator('[data-slot="collapsible-content"]');
+	const opening = await button.evaluate(async (node) => {
+		if (node instanceof HTMLElement) node.click();
+		await new Promise<void>((resolve) => setTimeout(resolve, 70));
+		const content = node.closest('[data-pull-request]')?.querySelector('[data-slot="collapsible-content"]');
+		return { height: content?.getBoundingClientRect().height ?? 0, animations: content?.getAnimations().length ?? 0 };
+	});
+	await expect(panel).toBeVisible();
+	await expect.poll(() => panel.evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThan(60);
+	await expect.poll(() => panel.evaluate((node) => node.getAnimations().length)).toBe(0);
+	expect(opening.animations).toBeGreaterThan(0);
+	expect(opening.height).toBeGreaterThan(0);
+	expect(opening.height).toBeLessThan(await panel.evaluate((node) => node.getBoundingClientRect().height));
+	const closing = await panel.evaluate(async (node) => {
+		const before = node.getBoundingClientRect().height;
+		node.closest('[data-pull-request]')?.querySelector("button")?.click();
+		await new Promise<void>((resolve) => setTimeout(resolve, 70));
+		return { before, during: node.getBoundingClientRect().height, animations: node.getAnimations().length };
+	});
+	expect(closing.animations).toBeGreaterThan(0);
+	expect(closing.during).toBeGreaterThan(0);
+	expect(closing.during).toBeLessThan(closing.before);
+	await expect(panel).toBeHidden();
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await button.click();
+	await expect(panel).toBeVisible();
+	await expect.poll(() => panel.evaluate((node) => node.getAnimations().length)).toBe(0);
+	await page.getByRole("button", { name: /1852.*Merged/ }).click();
+	await expect(button).toHaveAttribute("aria-expanded", "false");
+	await expect(page.getByRole("button", { name: /1852.*Merged/ })).toHaveAttribute("aria-expanded", "true");
+});
+
 test("team session examples open owner and viewer conversations", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(`${AGENT_SESSION_URL}#team-sessions`);

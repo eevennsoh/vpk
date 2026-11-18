@@ -12,6 +12,7 @@ import {
 	type AgentSessionItem,
 } from "@/components/blocks/agent-session";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { AGENT_SESSION_DEMO_CHECKS } from "@/components/blocks/agent-session/data";
 import { cn } from "@/lib/utils";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
@@ -60,8 +61,12 @@ function withPermission(item: AgentSessionItem, permission: ButterSessionPermiss
 const SESSION_STATES = ["running", "needs-input", "complete"] as const satisfies readonly AgentSessionItem["state"][];
 const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => ({ ...items[index % items.length], state }));
 
-const LOCAL_SESSIONS = withLifecycleStates(AGENT_SESSION_ITEMS);
 const CLOUD_SESSIONS = withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS);
+const MULTIPLE_SESSION_PULL_REQUESTS = [
+	{ number: 1853, status: "open", preview: { title: "Add 3-D Secure contract coverage", repository: "acme/storefront", branch: "fix/pay-113-contract-coverage", targetBranch: "main", additions: 86, deletions: 12, filesChanged: 4, checks: AGENT_SESSION_DEMO_CHECKS.running } },
+	{ number: 1852, status: "merged", preview: { title: "Stabilize the 3-D Secure contract suite", repository: "acme/storefront", branch: "fix/pay-113-3ds-contract-suite", targetBranch: "main", additions: 214, deletions: 48, filesChanged: 9, checks: AGENT_SESSION_DEMO_CHECKS.passed } },
+] as const satisfies NonNullable<AgentSessionItem["pullRequests"]>;
+const LOCAL_SESSIONS = withLifecycleStates(AGENT_SESSION_ITEMS).map((item) => item.id === "lw-night-suite-session" ? { ...item, pullRequests: MULTIPLE_SESSION_PULL_REQUESTS } : item);
 /**
  * Card sizes that show how a session row responds to its container. Large is
  * the long row with room for its full metadata line, Medium the same row in a

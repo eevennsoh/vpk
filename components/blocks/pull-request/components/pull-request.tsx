@@ -15,6 +15,7 @@ import {
 	PullRequestFlyoutMetaRow,
 } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
@@ -308,7 +309,7 @@ function PullRequestSpaciousBody({
 				    title wraps under itself rather than squeezing the status. */}
 				<div className="flex min-w-0 items-start gap-2">
 					<PullRequestInlineTitle
-						className="flex-1 font-medium"
+						className="flex-1"
 						number={number}
 						title={title}
 					/>
@@ -403,7 +404,7 @@ function PullRequestFlyoutBody({
 >) {
 	const reviewersLabel = reviewers ? pullRequestReviewersLabel(reviewers) : null;
 	const authorMeta = author ? (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
+		<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtlest">
 			<div className="flex min-w-0 items-center gap-1.5">
 				<PullRequestAuthorAvatar author={author} size="xs" />
 				<span className="min-w-0 truncate">{author.name}</span>
@@ -434,15 +435,64 @@ function PullRequestFlyoutBody({
 	const showFixAction = showFix && status !== "Merged" && (failedChecks.length > 0 || isFixing);
 	const hasActions = Boolean(reviewHref || showReview || showFixAction);
 
+	const details = (
+		<div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
+			{repository ? (
+				<PullRequestFlyoutMetaRow leading={<PullRequestProviderMark provider={provider} />}>
+					<span className="min-w-0 truncate text-xs leading-4 text-text">{repository}</span>
+				</PullRequestFlyoutMetaRow>
+			) : null}
+			{hasBranchPath ? (
+				<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
+					{/* With a repository row the provider mark leads that row instead. */}
+					{repository ? (
+						<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
+							<Icon aria-hidden render={<BranchIcon label="" size="small" />} />
+						</span>
+					) : (
+						<PullRequestProviderMark provider={provider} />
+					)}
+					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+				</div>
+			) : null}
+			<PullRequestFlyoutMetaRow leading={<Icon aria-hidden render={<FileIcon label="" size="small" />} />}>
+				{filesChanged != null ? (
+					<span className="text-xs leading-4 text-text-subtle tabular-nums">
+						{filesChanged} {filesChanged === 1 ? "file" : "files"}
+					</span>
+				) : null}
+				<PullRequestDiffStats
+					additions={additions}
+					deletions={deletions}
+					className="font-normal"
+				/>
+			</PullRequestFlyoutMetaRow>
+			{checks ? checksExpandable ? <PullRequestFlyoutChecks checks={checks} /> : <PullRequestChecksSummary checks={checks} /> : null}
+			{hasActions ? (
+				<div className="flex min-w-0 gap-2 pt-1">
+					{reviewHref ? (
+						<a className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")} href={reviewHref}>
+							Review
+						</a>
+					) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
+					{showFixAction ? (
+						<Button aria-label="Fix PR" className="min-w-0 flex-1" disabled={!onFix || isFixing || failedChecks.length === 0} isLoading={isFixing} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+							Fix PR
+						</Button>
+					) : null}
+				</div>
+			) : null}
+		</div>
+	);
+
 	return (
 		<>
 			{onToggleDetails ? <div className="min-w-0 px-1">
-				<div className="relative flex min-w-0 items-start gap-3 px-2 py-2">
+				<div className={cn("relative flex min-w-0 items-start gap-3 px-2 py-2 transition-[height] duration-normal ease-in-out [interpolate-size:allow-keywords]", showDetails ? "h-auto" : "h-9")}>
 					<Button aria-expanded={showDetails} aria-label={`#${number} ${title} ${status}`} className="absolute inset-0 h-full w-full aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring" onClick={onToggleDetails} type="button" variant="ghost" />
 					<PullRequestInlineTitle className={cn("pointer-events-none relative flex-1 [&_a]:pointer-events-auto [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} href={showDetails ? href : undefined} number={number} title={title} />
 					<div className="pointer-events-none relative"><PullRequestStatusLozenge status={status} /></div>
 				</div>
-				{showDetails && authorMeta ? <div className="px-2 pb-2">{authorMeta}</div> : null}
 			</div> : <div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
 					<PullRequestInlineTitle href={href} number={number} title={title} />
@@ -450,53 +500,12 @@ function PullRequestFlyoutBody({
 				</div>
 				<PullRequestStatusLozenge status={status} />
 			</div>}
-			{showDetails ? <div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
-				{repository ? (
-					<PullRequestFlyoutMetaRow leading={<PullRequestProviderMark provider={provider} />}>
-						<span className="min-w-0 truncate text-xs leading-4 text-text">{repository}</span>
-					</PullRequestFlyoutMetaRow>
-				) : null}
-				{hasBranchPath ? (
-					<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
-						{/* With a repository row the provider mark leads that row instead. */}
-						{repository ? (
-							<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
-								<Icon aria-hidden render={<BranchIcon label="" size="small" />} />
-							</span>
-						) : (
-							<PullRequestProviderMark provider={provider} />
-						)}
-						<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
-					</div>
-				) : null}
-				<PullRequestFlyoutMetaRow leading={<Icon aria-hidden render={<FileIcon label="" size="small" />} />}>
-					{filesChanged != null ? (
-						<span className="text-xs leading-4 text-text-subtle tabular-nums">
-							{filesChanged} {filesChanged === 1 ? "file" : "files"}
-						</span>
-					) : null}
-					<PullRequestDiffStats
-						additions={additions}
-						deletions={deletions}
-						className="font-normal"
-					/>
-				</PullRequestFlyoutMetaRow>
-				{checks ? checksExpandable ? <PullRequestFlyoutChecks checks={checks} /> : <PullRequestChecksSummary checks={checks} /> : null}
-				{hasActions ? (
-					<div className="flex min-w-0 gap-2 pt-1">
-						{reviewHref ? (
-							<a className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")} href={reviewHref}>
-								Review
-							</a>
-						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
-						{showFixAction ? (
-							<Button aria-label="Fix PR" className="min-w-0 flex-1" disabled={!onFix || isFixing || failedChecks.length === 0} isLoading={isFixing} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
-								Fix PR
-							</Button>
-						) : null}
-					</div>
-				) : null}
-			</div> : null}
+			{onToggleDetails ? <Collapsible open={showDetails}>
+				<CollapsibleContent hiddenUntilFound={false} className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-normal ease-in-out data-starting-style:h-0 data-ending-style:h-0 data-open:has-[:hover]:overflow-visible data-open:has-[:focus-visible]:overflow-visible">
+					{authorMeta ? <div className="px-3 pb-2">{authorMeta}</div> : null}
+					{details}
+				</CollapsibleContent>
+			</Collapsible> : showDetails ? details : null}
 		</>
 	);
 }
