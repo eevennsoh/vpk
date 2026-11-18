@@ -521,10 +521,24 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"plan-demo-usage": dynamic(
+	"plan-demo-summary-and-tasks": dynamic(
 		() =>
 			import("../../demos/ui/plan-demo").then((mod) => ({
-				default: mod.PlanDemoUsage,
+				default: mod.PlanDemoSummaryAndTasks,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-tasks-only": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoTasksOnly,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoInline,
 			})),
 		{ ssr: false },
 	),

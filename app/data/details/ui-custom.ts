@@ -47,7 +47,6 @@ import { OPEN_IN_CHAT_DETAIL } from "./ui-custom/open-in-chat";
 import { PACKAGE_INFO_DETAIL } from "./ui-custom/package-info";
 import { PERSONA_DETAIL } from "./ui-custom/persona";
 import { PIXEL_LOADER_DETAIL } from "./ui-custom/pixel-loader";
-import { PLAN_DETAIL } from "./ui-custom/plan";
 import { PROGRESS_CIRCLE_DETAIL } from "./ui-custom/progress-circle";
 import { PROGRESS_ROVO_DETAIL } from "./ui-custom/progress-rovo";
 import { PROMPT_INPUT_DETAIL } from "./ui-custom/prompt-input";
@@ -117,7 +116,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"package-info": PACKAGE_INFO_DETAIL,
 	persona: PERSONA_DETAIL,
 	"pixel-loader": PIXEL_LOADER_DETAIL,
-	plan: PLAN_DETAIL,
 	"progress-circle": PROGRESS_CIRCLE_DETAIL,
 	"progress-rovo": PROGRESS_ROVO_DETAIL,
 	"prompt-input": PROMPT_INPUT_DETAIL,

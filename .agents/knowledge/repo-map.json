@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 455,
+			"manifestEntryCount": 454,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 449,
+				"live": 448,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6325,7 +6325,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 68,
+				"entryCount": 67,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6626,13 +6626,6 @@
 						"slug": "pixel-loader",
 						"name": "Pixel Loader",
 						"importPath": "@/components/ui-custom/pixel-loader",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "plan",
-						"name": "Plan",
-						"importPath": "@/components/ui-custom/plan",
 						"status": "live"
 					},
 					{

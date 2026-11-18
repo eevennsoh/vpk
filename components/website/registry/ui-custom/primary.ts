@@ -50,7 +50,6 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"package-info": dynamic(() => import("../../demos/ui-custom/package-info-demo"), { ssr: false }),
 	persona: dynamic(() => import("../../demos/ui-custom/persona-demo"), { ssr: false }),
 	"pixel-loader": dynamic(() => import("../../demos/ui-custom/pixel-loader-demo"), { ssr: false }),
-	plan: dynamic(() => import("../../demos/ui-custom/plan-demo"), { ssr: false }),
 	"progress-circle": dynamic(() => import("../../demos/ui-custom/progress-circle-demo"), { ssr: false }),
 	"progress-rovo": dynamic(() => import("../../demos/ui-custom/progress-rovo-demo"), { ssr: false }),
 	"prompt-input": dynamic(() => import("../../demos/ui-custom/prompt-input-demo"), { ssr: false }),

@@ -32,7 +32,9 @@ import {
 	PlanDescription,
 	PlanHeader,
 	PlanTitle,
-} from "@/components/ui-custom/plan"
+} from "@/components/ui/plan"
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile"
+import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity"
 import type { PromptInputMessage } from "@/components/ui-custom/prompt-input"
 import {
 	PromptInput,
@@ -583,7 +585,7 @@ export default function CursorDemoBlock() {
 				<div className="border-b p-3">
 					<Plan defaultOpen>
 						<PlanHeader
-							leading={<PlanAvatar />}
+							leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity("Untitled task run")} /></PlanAvatar>}
 							title={<PlanTitle>Implementation Plan</PlanTitle>}
 							description={<PlanDescription>Adding form validation</PlanDescription>}
 						/>

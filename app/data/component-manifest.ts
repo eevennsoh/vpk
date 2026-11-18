@@ -258,7 +258,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("flow-panel", "Flow Panel"),
 	customComponent("persona"),
 	customComponent("pixel-loader", "Pixel Loader"),
-	customComponent("plan"),
 	customComponent("prompt-input", "Prompt Input"),
 	customComponent("rovo-cursor", "Rovo Cursor"),
 	customComponent("rovo-generation", "Rovo Generation"),

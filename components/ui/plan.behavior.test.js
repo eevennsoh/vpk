@@ -1,5 +1,5 @@
-// Rendered contract for the shadcn Plan on Trace, and for the ui-custom Plan's
-// variant="inline", which delegates its parts to it.
+// Rendered contract for the Plan: the default card variant, and variant="inline"
+// (shadcn's Plan on Trace), including the card parts rendered inline.
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
@@ -11,7 +11,7 @@ import { Plan, PlanContent, PlanDescription, PlanHeader, PlanIcon, PlanStep, Pla
 
 export default function Example({ isStreaming }: { isStreaming: boolean }) {
 	return (
-		<Plan defaultOpen isStreaming={isStreaming}>
+		<Plan defaultOpen isStreaming={isStreaming} variant="inline">
 			<PlanHeader>
 				<PlanIcon />
 				<PlanTitle>Plan: migrate to Base UI</PlanTitle>
@@ -30,7 +30,7 @@ export default function Example({ isStreaming }: { isStreaming: boolean }) {
 `;
 
 const CUSTOM_INLINE_SOURCE = `
-import { Plan, PlanAvatar, PlanContent, PlanDescription, PlanHeader, PlanTaskItem, PlanTaskList, PlanTitle, PlanTrigger } from "@/components/ui-custom/plan";
+import { Plan, PlanAvatar, PlanContent, PlanDescription, PlanHeader, PlanTaskItem, PlanTaskList, PlanTitle, PlanTrigger } from "@/components/ui/plan";
 
 export default function Example() {
 	return (
@@ -83,13 +83,68 @@ test("the whole header line toggles the steps", async () => {
 	assert.equal(trigger.getAttribute("aria-expanded"), "false");
 });
 
-test("ui-custom Plan variant=inline renders through the Trace Plan, without card chrome", async () => {
+test("the card parts render through the Trace Plan with variant=inline, without card chrome", async () => {
 	const view = await renderComponent({ source: CUSTOM_INLINE_SOURCE });
 
-	assert.equal(view.container.querySelector("[data-slot=card]") === null, true);
+	assert.equal(view.container.querySelector("[data-slot=plan]")?.className.includes("shadow-none"), false);
 	assert.equal(view.container.querySelector("[data-slot=plan-avatar]") === null, true);
 	assert.equal(view.container.querySelector("[data-slot=plan-icon]") !== null, true);
 	assert.equal(headerStatus(view), "running");
 	assert.deepEqual(lineStatuses(view), ["done:", "running:running"]);
 	assert.deepEqual(view.getAllByRole("button").map((button) => button.textContent.trim()), ["Plan: launch1 of 2 done"]);
+});
+
+const CARD_SOURCE = `
+import { Plan, PlanAvatar, PlanContent, PlanDescription, PlanHeader, PlanTaskItem, PlanTaskList, PlanTitle } from "@/components/ui/plan";
+
+export default function Example({ isStreaming }: { isStreaming: boolean }) {
+	return (
+		<Plan isStreaming={isStreaming}>
+			<PlanHeader
+				leading={<PlanAvatar><span data-testid="tile" /></PlanAvatar>}
+				title={<PlanTitle>Plan: launch</PlanTitle>}
+				description={<PlanDescription>2 tasks</PlanDescription>}
+			/>
+			<PlanContent>
+				<PlanTaskList>
+					<PlanTaskItem index={1} label="Write the policy" />
+					<PlanTaskItem index={2} label="Record the walkthrough" blockedByLabels={["1"]} />
+				</PlanTaskList>
+			</PlanContent>
+		</Plan>
+	);
+}
+`;
+
+test("the card is the default variant: card chrome, the caller's tile, and a header toggle", async () => {
+	const view = await renderComponent({ source: CARD_SOURCE, props: { isStreaming: false } });
+	const card = view.container.querySelector("[data-slot=plan]");
+
+	assert.equal(card.className.includes("shadow-none"), true);
+	assert.equal(view.container.querySelector("[data-slot=trace]") === null, true);
+	assert.equal(view.container.querySelector("[data-slot=plan-avatar] [data-testid=tile]") !== null, true);
+
+	const toggle = view.getByRole("button", { name: "Expand card details" });
+	await view.click(toggle);
+	assert.equal(view.getByRole("button", { name: "Collapse card details" }) !== null, true);
+	assert.equal(view.container.querySelector("[data-slot=plan-task-item]")?.textContent.includes("Write the policy"), true);
+});
+
+test("the closed card drops the gap and padding of its hidden content", async () => {
+	const view = await renderComponent({ source: CARD_SOURCE, props: { isStreaming: false } });
+	const card = view.container.querySelector("[data-slot=plan]");
+
+	assert.equal(card.className.includes("data-closed:gap-0"), true);
+	await view.click(view.getByRole("button", { name: "Expand card details" }));
+	const content = view.container.querySelector("[data-slot=plan-content]");
+	assert.equal(content.className.includes("data-closed:h-0 data-closed:overflow-hidden data-closed:py-0"), true);
+});
+
+test("the card shimmers string titles and descriptions only while streaming", async () => {
+	const view = await renderComponent({ source: CARD_SOURCE, props: { isStreaming: true } });
+	const shimmering = () => [...view.container.querySelectorAll(".shimmer")].map((node) => node.textContent);
+
+	assert.deepEqual(shimmering(), ["Plan: launch", "2 tasks"]);
+	await view.rerender({ isStreaming: false });
+	assert.deepEqual(shimmering(), []);
 });

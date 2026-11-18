@@ -64,7 +64,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [file-tree](~/.agents/skills/ai-elements/references/file-tree.md) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
 | [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui/task` | Task/step tracking display | `Task` |
 | [agent](~/.agents/skills/ai-elements/references/agent.md) | `@/components/ui/subagent` | Subagent run with its tool calls and result, on Trace | `Agent` |
-| [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui-custom/plan` | Multi-step plan visualization | `Plan` |
+| [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui/plan` | Multi-step plan visualization (card, or `variant="inline"` Trace line) | `Plan` |
 
 ## Visual
 
