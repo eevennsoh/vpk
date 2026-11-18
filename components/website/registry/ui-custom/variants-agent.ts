@@ -32,6 +32,13 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 		})),
 		{ ssr: false },
 	),
+	"prompt-input-demo-default": dynamic(
+		() =>
+			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
+				default: mod.PromptInputDemoDefault,
+			})),
+		{ ssr: false },
+	),
 	"prompt-input-demo-chat-composer": dynamic(
 		() =>
 			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
