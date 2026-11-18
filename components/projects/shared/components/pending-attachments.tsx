@@ -10,7 +10,7 @@ import {
 import { usePromptInputAttachments } from "@/components/ui-custom/prompt-input";
 import { XIcon } from "@/components/ui/vpk-icons";
 import { getAttachmentLabel } from "@/lib/attachment-media";
-import { AttachmentPartMedia } from "./attachment-part-media";
+import { AttachmentPartMedia } from "@/components/ui-custom/attachment-part-media";
 
 export function PendingAttachments() {
 	const attachments = usePromptInputAttachments();
