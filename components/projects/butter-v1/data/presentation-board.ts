@@ -21,11 +21,11 @@ import {
 	BUTTER_PAY_101_PULL_REQUEST_NUMBER,
 	PAY_101_INVENTORY_COMMIT_ARTIFACT,
 	PAY_101_INVENTORY_PR_ARTIFACT,
-	PAY_101_SUBTASK_KEYS,
 } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
 import { BUTTER_TODO_PLACEHOLDERS } from "./work-item-placeholders/todo";
+import { BUTTER_DONE_PLACEHOLDERS } from "./work-item-placeholders/done";
 
 export { BUTTER_PAY_CURRENT_USER };
 export { BUTTER_BOARD_AGENTS, BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
@@ -765,6 +765,11 @@ const PAY_WORK_ITEM_SCHEDULE: Readonly<Record<string, { storyPoints: number; due
 	"PAY-101": { storyPoints: 5, dueDate: "2026-11-06" },
 	"PAY-102": { storyPoints: 3, dueDate: "2026-11-09" },
 	"PAY-113": { storyPoints: 8, dueDate: "2026-11-10" },
+	"PAY-291": { storyPoints: 2, dueDate: "2026-08-13" },
+	"PAY-292": { storyPoints: 2, dueDate: "2026-08-13" },
+	"PAY-293": { storyPoints: 1, dueDate: "2026-08-13" },
+	"PAY-294": { storyPoints: 1, dueDate: "2026-08-13" },
+	"PAY-295": { storyPoints: 1, dueDate: "2026-08-13" },
 	"PAY-126": { storyPoints: 3, dueDate: "2026-11-11" },
 };
 
@@ -812,8 +817,9 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 		Low: "minor",
 		Lowest: "trivial",
 	} as const satisfies Readonly<Record<string, JiraKanbanCardData["priority"]>>;
-	const subtasks = (["PAY-118", "PAY-999", "PAY-127"] as const).flatMap((parentIssueKey) =>
-		BUTTER_TODO_PLACEHOLDERS[parentIssueKey].children.map((child) => ({
+	const parents = { ...BUTTER_TODO_PLACEHOLDERS, "PAY-113": BUTTER_DONE_PLACEHOLDERS["PAY-113"] };
+	const subtasks = (["PAY-118", "PAY-999", "PAY-127", "PAY-113"] as const).flatMap((parentIssueKey) =>
+		parents[parentIssueKey].children.map((child) => ({
 			status: child.status,
 			card: {
 				assignee: peopleByName[child.assignee],
@@ -821,7 +827,7 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 				dueDate: child.dueDate,
 				parentIssueKey,
 				priority: priorities[child.priority],
-				storyPoints: child.estimate ? Number(child.estimate) : undefined,
+				storyPoints: child.estimate && Number.isFinite(Number(child.estimate)) ? Number(child.estimate) : undefined,
 				tags: [],
 				title: child.summary,
 			} satisfies JiraKanbanCardData,
@@ -831,7 +837,6 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 		const cards = [...column.cards, ...subtasks.filter((item) => item.status === column.title).map((item) => item.card)].map((card) => ({
 			...cloneBoardCard(card),
 			...PAY_WORK_ITEM_SCHEDULE[card.code],
-			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : card.parentIssueKey,
 		}));
 		return { ...column, cards, count: cards.length };
 	});

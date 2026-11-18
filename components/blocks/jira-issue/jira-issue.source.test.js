@@ -883,9 +883,9 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	// selected (matching ASX), not a blank vanilla Rovo chat.
 	assert.doesNotMatch(PAGE_SOURCE, /openChat\("floating"\)/);
 	assert.match(PAGE_SOURCE, /const \{ chatContextBar, externalThinkingMessageId, openAgentChat \} = useAsxAgentChatDemo\(\);/);
-	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: chatAgents\?\.resolveId\(activity, activity\.id\) \?\? activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[chatAgents, openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
-	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[generativeAgentId, generativeAgentName, openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout="merged"[\s\S]*chrome="raised"[\s\S]*\/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);

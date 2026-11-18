@@ -15,7 +15,6 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssueIconScale,
-	type JiraIssuePullRequestPreview,
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
 import { AGENT_SESSION_ITEMS, AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
@@ -40,6 +39,8 @@ import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import { token } from "@/lib/tokens";
 import { ProjectButterPlayground, type ProjectButterDemoIssueProps } from "./project-butter-demo";
 import { BOARD_CARD_FINISHED_RUN, useBoardCardFinishedReplay } from "./project-butter-finished-demo";
+import { EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW } from "./jira-issue-demo-pull-request";
+import type { RovoAgentProfile } from "@/app/data/directory/agents";
 
 const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "Acmecorp", color: "discovery" },
@@ -522,6 +523,7 @@ function getExperimentalDemoPullRequest(
 interface JiraIssuePageProps {
 	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental" | "agent-activity-states-experimental-v2" | "project-butter";
 	boardCardState?: JiraIssueAgentActivityDemoState;
+	chatAgents?: { profiles: readonly RovoAgentProfile[]; resolveId: (agent: { id?: string; name: string }, sessionId: string) => string };
 }
 
 function JiraIssueUncapturedWorkDemo() {
@@ -554,7 +556,7 @@ function JiraIssueUncapturedWorkDemo() {
 	);
 }
 
-export default function JiraIssuePage({ variant = "default", boardCardState }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
+export default function JiraIssuePage({ variant = "default", boardCardState, chatAgents }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
 	const [selectedEpicId, setSelectedEpicId] = useState("agentic-jira");
 	const isExperimentalVariant = variant === "experimental";
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
@@ -571,7 +573,7 @@ export default function JiraIssuePage({ variant = "default", boardCardState }: R
 	if (variant === "project-butter") {
 		return (
 			<ProjectButterPlayground participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS} showControls={boardCardState === undefined}>
-				{(issueProps) => <JiraIssueExperimentalAgentActivityStatesPage key={boardCardState} boardCardState={boardCardState} iconScale="comfortable" issueProps={{ ...issueProps, subtasks: PROJECT_BUTTER_DEMO_SUBTASKS }} />}
+				{(issueProps) => <JiraIssueExperimentalAgentActivityStatesPage boardCardState={boardCardState} chatAgents={chatAgents} iconScale="comfortable" issueProps={{ ...issueProps, subtasks: PROJECT_BUTTER_DEMO_SUBTASKS }} />}
 			</ProjectButterPlayground>
 		);
 	}
@@ -636,24 +638,9 @@ export default function JiraIssuePage({ variant = "default", boardCardState }: R
 
 const JIRA_ISSUE_CHAT_ISSUE_KEY = "PD-40";
 const JIRA_ISSUE_CHAT_ISSUE_SUMMARY = "Implement advanced date-range filter";
-
-const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
-	additions: 86,
-	author: {
-		avatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
-		name: "Andrea Wilson",
-	},
-	branch: "feat/pd-40-date-range-filter",
-	deletions: 21,
-	filesChanged: 6,
-	relativeTime: "1h",
-	repository: "acme/storefront",
-	targetBranch: "main",
-	title: "Add date-range filter query params",
-};
-
 interface JiraIssueAgentActivityStatesDemoProps {
 	boardCardState?: JiraIssueAgentActivityDemoState;
+	chatAgents?: JiraIssuePageProps["chatAgents"];
 	issueProps?: ProjectButterDemoIssueProps;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	chrome?: JiraIssueChrome;
@@ -668,20 +655,23 @@ interface JiraIssueAgentActivityStatesDemoProps {
 
 function JiraIssueExperimentalAgentActivityStatesPage({
 	boardCardState,
+	chatAgents,
 	iconScale,
 	issueProps,
 }: Readonly<{
 	iconScale?: JiraIssueIconScale;
 	issueProps?: ProjectButterDemoIssueProps;
 	boardCardState?: JiraIssueAgentActivityDemoState;
+	chatAgents?: JiraIssuePageProps["chatAgents"];
 }> = {}): React.ReactElement {
 	const isProjectButter = issueProps?.appearance === "project-butter";
 	const [chrome, setChrome] = useState<JiraIssueChrome>(isProjectButter ? "raised" : "stroke");
 
 	return (
-		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={chatAgents?.profiles ?? ASX_CHAT_AGENT_PROFILES}>
 			<JiraIssueAgentActivityStatesDemo
 				boardCardState={boardCardState}
+				chatAgents={chatAgents}
 				issueProps={issueProps}
 				agentActivityLayout="merged"
 				chrome={chrome}
@@ -698,6 +688,7 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 
 function JiraIssueAgentActivityStatesDemo({
 	boardCardState,
+	chatAgents,
 	issueProps,
 	agentActivityLayout = "merged",
 	chrome = "raised",
@@ -723,6 +714,11 @@ function JiraIssueAgentActivityStatesDemo({
 	const [unlinkedSessionIds, setUnlinkedSessionIds] = useState<readonly string[]>([]);
 	const [linkedDetachedIds, setLinkedDetachedIds] = useState<readonly string[]>([]);
 	const [assignedDemoActivities, setAssignedDemoActivities] = useState<readonly JiraIssueAgentActivity[] | null>(null);
+	const [previousBoardCardState, setPreviousBoardCardState] = useState(boardCardState);
+	if (previousBoardCardState !== boardCardState) {
+		setPreviousBoardCardState(boardCardState);
+		setAssignedDemoActivities(null);
+	}
 	const isTransferPhase = showSessionTransferStates && isSessionTransferDemoState(agentActivityState);
 	const isUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-unlink";
 	const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";
@@ -734,11 +730,13 @@ function JiraIssueAgentActivityStatesDemo({
 	const fixtureActivities = assignedDemoActivities ?? getDemoAgentActivities(agentActivityState)?.map<JiraIssueAgentActivity>((activity, index) => (
 		demoSessionRole && agentActivityState !== "agent-session-expired" ? {
 			...activity,
+			...(boardCardState !== undefined ? { sessionTitle: activity.label } : {}),
 			...(boardCardState === "finished" ? { stateTransition: "agent-session" as const } : {}),
 			name: index === 0 ? "Claude" : index === 1 ? "Cursor" : "Service impact agent",
 			avatarSrc: undefined,
 			agentBrandName: index === 0 ? "claude" : index === 1 ? "cursor" : undefined,
 			role: agentActivityState === "mixed-agents-working" && index > 0 ? "viewer" : demoSessionRole,
+			...(boardCardState !== undefined && (demoSessionRole === "viewer" || (agentActivityState === "mixed-agents-working" && index > 0)) ? { privateTo: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[index % JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.length].name } : {}),
 			host: index === 0 ? "cloud" : "local",
 			timeLabel: "12m",
 			invokedBy: demoSessionRole === "owner" && (agentActivityState !== "mixed-agents-working" || index === 0)
@@ -815,18 +813,18 @@ function JiraIssueAgentActivityStatesDemo({
 	const openActivityChat = useCallback((activity: JiraIssueAgentActivity) => {
 		setPendingChatQuestion(activity.question ? { submit: () => undefined } : null);
 		openAgentChat({
-			agentId: activity.id,
+			agentId: chatAgents?.resolveId(activity, activity.id) ?? activity.id,
 			agentName: activity.name,
 			issueKey: JIRA_ISSUE_CHAT_ISSUE_KEY,
 			issueSummary: JIRA_ISSUE_CHAT_ISSUE_SUMMARY,
 			intro: activity.message,
 			question: activity.question,
 		});
-	}, [openAgentChat]);
+	}, [chatAgents, openAgentChat]);
 	const handleAgentActivityViewChat = openActivityChat;
 	const handleAgentDoneRunView = useCallback((run: JiraIssueCompletedAgentRun) => {
 		setPendingChatQuestion(null);
-		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
+		const agentId = chatAgents?.resolveId({ name: run.agentName }, run.id) ?? (run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id);
 		openAgentChat({
 			agentId,
 			agentName: run.agentName,
@@ -834,10 +832,10 @@ function JiraIssueAgentActivityStatesDemo({
 			issueSummary: run.issueSummary,
 			intro: run.description ?? run.summary,
 		});
-	}, [openAgentChat]);
+	}, [chatAgents, openAgentChat]);
 	const handleAgentDoneRunSubmit = useCallback((run: JiraIssueCompletedAgentRun, prompt: string) => {
 		setPendingChatQuestion(null);
-		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
+		const agentId = chatAgents?.resolveId({ name: run.agentName }, run.id) ?? (run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id);
 		openAgentChat({
 			agentId,
 			agentName: run.agentName,
@@ -845,17 +843,19 @@ function JiraIssueAgentActivityStatesDemo({
 			issueSummary: run.issueSummary,
 			request: prompt,
 		});
-	}, [openAgentChat]);
+	}, [chatAgents, openAgentChat]);
+	const generativeAgentName = chatAgents ? agentActivities?.[0]?.name ?? JIRA_ISSUE_AGENT_ACTIVITIES[0].name : JIRA_ISSUE_AGENT_ACTIVITIES[0].name;
+	const generativeAgentId = chatAgents?.resolveId({ name: generativeAgentName }, JIRA_ISSUE_AGENT_ACTIVITIES[0].id) ?? JIRA_ISSUE_AGENT_ACTIVITIES[0].id;
 	const handleGenerativeActionSubmit = useCallback((request: JiraIssueGenerativeActionRequest) => {
 		setPendingChatQuestion(null);
 		openAgentChat({
-			agentId: JIRA_ISSUE_AGENT_ACTIVITIES[0].id,
-			agentName: JIRA_ISSUE_AGENT_ACTIVITIES[0].name,
+			agentId: generativeAgentId,
+			agentName: generativeAgentName,
 			issueKey: JIRA_ISSUE_CHAT_ISSUE_KEY,
 			issueSummary: JIRA_ISSUE_CHAT_ISSUE_SUMMARY,
 			request: request.prompt,
 		});
-	}, [openAgentChat]);
+	}, [generativeAgentId, generativeAgentName, openAgentChat]);
 	const handleChatQuestionAnswer = useCallback(() => {
 		setPendingChatQuestion(null);
 	}, []);

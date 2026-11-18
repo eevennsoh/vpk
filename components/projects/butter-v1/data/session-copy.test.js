@@ -11,6 +11,8 @@ function loadData() {
 			contents: `
 				export * from "./components/projects/butter-v1/data/agent-session-sync";
 				export * from "./components/projects/butter-v1/data/presentation-board";
+				export * from "./components/projects/butter-v1/data/presentation-build";
+				export * from "./components/projects/butter-v1/data/work-item-placeholders/done";
 				export * from "./components/projects/butter-v1/data/wac-content";
 				export * from "./components/projects/butter-v1/data/merchant-journey";
 				export * from "./components/projects/butter-v1/lib/list-rows";
@@ -119,10 +121,15 @@ test("additional work items include their existing subtasks", async () => {
 	const data = await loadData();
 	const columns = data.createButterPayBoardColumns();
 	const cards = columns.flatMap((column) => column.cards);
+	assert.equal(cards.filter((card) => card.parentIssueKey === "PAY-101").length, 0);
+	for (const key of ["PAY-102", "PAY-104"]) assert.equal(cards.find((card) => card.code === key).parentIssueKey, undefined);
+	assert.equal(data.BUTTER_DONE_PLACEHOLDERS["PAY-101"].children.length, 0);
+	assert.equal(data.createButterPay101BuildState().contextResources.subtasks.length, 0);
 	for (const [parent, children] of Object.entries({
 		"PAY-118": ["PAY-201", "PAY-202", "PAY-203"],
 		"PAY-999": ["PAY-265", "PAY-266", "PAY-267"],
 		"PAY-127": ["PAY-210", "PAY-211", "PAY-212"],
+		"PAY-113": ["PAY-291", "PAY-292", "PAY-293", "PAY-294", "PAY-295"],
 	})) {
 		assert.deepEqual(cards.filter((card) => card.parentIssueKey === parent).map((card) => card.code).sort(), children);
 	}
@@ -131,14 +138,21 @@ test("additional work items include their existing subtasks", async () => {
 	assert.equal(quickstart.dueDate, "2026-08-25");
 	assert.equal(quickstart.assignee.name, "Maya Ferreira");
 	assert.equal(columns.find((column) => column.cards.includes(quickstart)).title, "To do");
+	const rows = data.createListRows(columns, data.BUTTER_PAY_BOARD_AGENTS);
+	const collapsed = data.arrangeListHierarchy(rows, new Set());
+	assert.equal(collapsed.some((row) => row.issueKey === "PAY-104"), true);
+	assert.equal(collapsed.some((row) => row.issueKey === "PAY-291"), false);
+	const expanded = data.arrangeListHierarchy(rows, new Set(["PAY-113"]));
+	assert.equal(expanded.some((row) => row.issueKey === "PAY-291" && row.parentIssueKey === "PAY-113"), true);
 });
 
-test("list projects teammate sessions and includes PAY-104 when its parent is expanded", async () => {
+test("list projects teammate sessions and keeps PAY-104 independent", async () => {
 	const data = await loadData();
-	const rows = data.arrangeListHierarchy(data.createListRows(data.createButterPayBoardColumns(), data.BUTTER_PAY_BOARD_AGENTS), new Set(["PAY-101"]));
+	const rows = data.arrangeListHierarchy(data.createListRows(data.createButterPayBoardColumns(), data.BUTTER_PAY_BOARD_AGENTS), new Set());
 	for (const [key, count] of [["PAY-132", 1], ["PAY-104", 2], ["PAY-121", 0], ["PAY-128", 0]]) {
 		const row = rows.find((item) => item.issueKey === key);
 		assert.ok(row, key);
+		if (key === "PAY-104") assert.equal(row.parentIssueKey, undefined);
 		assert.equal(row.agentSessions.length, count, key);
 		assert.ok(row.agentSessions.every((session) => session.role === "viewer" && session.statusKind === "working"), key);
 	}
@@ -147,7 +161,7 @@ test("list projects teammate sessions and includes PAY-104 when its parent is ex
 test("every Payments SDK work item has an estimate and due date by default", async () => {
 	const data = await loadData();
 	const cards = data.createButterPayBoardColumns().flatMap((column) => column.cards);
-	assert.equal(cards.length, 30);
+	assert.equal(cards.length, 35);
 	for (const card of cards) {
 		assert.equal(typeof card.storyPoints, "number", card.code);
 		assert.match(card.dueDate ?? "", /^\d{4}-\d{2}-\d{2}$/u, card.code);

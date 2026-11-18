@@ -35,6 +35,7 @@ import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-s
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
+	getJiraIssueVisibleActivities,
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
@@ -295,7 +296,8 @@ function resolveJiraIssueAgentRowPresentation(
 	activities: readonly JiraIssueAgentActivity[],
 	linkFlash: JiraIssueAgentLinkFlash | undefined,
 ) {
-	const summary = summarizeJiraIssueAgentActivities(activities);
+	const visibleActivities = getJiraIssueVisibleActivities(activities);
+	const summary = summarizeJiraIssueAgentActivities(visibleActivities);
 	const isCompletedRow = activities.length > 0
 		&& activities.every((activity) => activity.state === "completed");
 	const isFailedRow = isCompletedRow
@@ -308,7 +310,7 @@ function resolveJiraIssueAgentRowPresentation(
 		: null;
 	const isAwaitingInput = !isCompletedRow && summary.priorityState === "awaiting-input";
 	const featuredActivity = summary.featuredActivityIndex !== null
-		? activities[summary.featuredActivityIndex]
+		? visibleActivities[summary.featuredActivityIndex]
 		: undefined;
 	const rowLabel = isViewerRow
 		? getTeammateSessionPeople(activities).size === 1 ? "Using agent" : "Using agents"
@@ -322,7 +324,7 @@ function resolveJiraIssueAgentRowPresentation(
 	const rowAriaLabel = isViewerRow
 		? rowLabel
 		: isSingleAgent
-			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
+			? `${visibleActivities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
 	return {

@@ -94,6 +94,22 @@ test("adding an agent to an existing row shows Working immediately", async () =>
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
 
+test("mixed sessions show only the owner's agent and status in the chin", async () => {
+	const owner = { id: "mine", name: "Claude", agentBrandName: "claude", state: "working", label: "Working", role: "owner" };
+	const teammates = [
+		{ id: "team-a", name: "Cursor", agentBrandName: "cursor", state: "awaiting-input", label: "Needs input", role: "viewer", invokedBy: { name: "Andrew" } },
+		{ id: "team-b", name: "Other", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Priya" } },
+	];
+	const props = { activities: [owner, ...teammates], iconScale: "comfortable", shouldReduceMotion: true, usesStrokeChrome: true };
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/agent-activity.tsx", exportName: "JiraIssueAgentActivityRows", props });
+	try {
+		const row = view.getByRole("button", { name: "Claude: Working" });
+		assert.equal(Boolean(row.querySelector('.agent-loading-vertical')), false);
+		assert.equal(Boolean(view.getByRole("img", { name: "Claude" })), true);
+		assert.equal(Boolean(view.queryByText("Needs input")), false);
+	} finally { await view.unmount(); }
+});
+
 test("the compact assignment field shows session state and cycles multiple agents", async () => {
 	const working = { id: "claude", name: "Claude", byline: "", statusKind: "working", statusLabel: "Working" };
 	const other = { id: "cursor", name: "Cursor", byline: "", statusKind: "working", statusLabel: "Working" };
