@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -64,7 +64,7 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
-import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
+import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 import { motionEase } from "@/lib/motion";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
@@ -397,6 +397,7 @@ export function AgentSessionCard({
 	/** Work items the menu's Link work item submenu offers. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
+	const avatarPreview = use(AgentSessionAvatarPreviewContext);
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
@@ -759,7 +760,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} showAgentName={showAgentName} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showAgentName={showAgentName} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger
