@@ -22,6 +22,7 @@ import { CARD_DETAIL } from "./ui/card";
 import { CAROUSEL_DETAIL } from "./ui/carousel";
 import { CHAIN_OF_THOUGHT_DETAIL } from "./ui/chain-of-thought";
 import { CHART_DETAIL } from "./ui/chart";
+import { CHAT_DETAIL } from "./ui/chat";
 import { CHECKBOX_DETAIL } from "./ui/checkbox";
 import { CHECKPOINT_DETAIL } from "./ui/checkpoint";
 import { CODE_BLOCK_DETAIL } from "./ui/code-block";
@@ -122,6 +123,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	carousel: CAROUSEL_DETAIL,
 	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
 	chart: CHART_DETAIL,
+	chat: CHAT_DETAIL,
 	checkbox: CHECKBOX_DETAIL,
 	checkpoint: CHECKPOINT_DETAIL,
 	"code-block": CODE_BLOCK_DETAIL,

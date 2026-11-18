@@ -5466,7 +5466,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 98,
+				"entryCount": 99,
 				"entries": [
 					{
 						"category": "ui",
@@ -5592,6 +5592,13 @@
 						"slug": "chart",
 						"name": "Chart",
 						"importPath": "@/components/ui/chart",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "chat",
+						"name": "Chat",
+						"importPath": "@/components/ui/message-scroller",
 						"status": "live"
 					},
 					{
@@ -6332,7 +6339,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 62,
+				"entryCount": 61,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6430,13 +6437,6 @@
 						"slug": "control",
 						"name": "Control",
 						"importPath": "@/components/ui-custom/control",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "conversation",
-						"name": "Conversation",
-						"importPath": "@/components/ui-custom/conversation",
 						"status": "live"
 					},
 					{

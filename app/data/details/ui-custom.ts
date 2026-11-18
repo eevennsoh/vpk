@@ -18,7 +18,6 @@ import { CONNECTION_DETAIL } from "./ui-custom/connection";
 import { CONTEXT_DETAIL } from "./ui-custom/context";
 import { CONTEXT_BAR_DETAIL } from "./ui-custom/context-bar";
 import { CONTROL_DETAIL } from "./ui-custom/control";
-import { CONVERSATION_DETAIL } from "./ui-custom/conversation";
 import { EDGE_DETAIL } from "./ui-custom/edge";
 import { ENTITY_CARD_DETAIL } from "./ui-custom/entity-card";
 import { ENVIRONMENT_VARIABLE_DETAIL } from "./ui-custom/environment-variable";
@@ -82,7 +81,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	context: CONTEXT_DETAIL,
 	"context-bar": CONTEXT_BAR_DETAIL,
 	control: CONTROL_DETAIL,
-	conversation: CONVERSATION_DETAIL,
 	edge: EDGE_DETAIL,
 	"entity-card": ENTITY_CARD_DETAIL,
 	"environment-variable": ENVIRONMENT_VARIABLE_DETAIL,

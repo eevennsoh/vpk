@@ -25,6 +25,7 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	carousel: dynamic(() => import("../../demos/ui/carousel-demo"), { ssr: false }),
 	"chain-of-thought": dynamic(() => import("../../demos/ui/chain-of-thought-demo"), { ssr: false }),
 	chart: dynamic(() => import("../../demos/ui/chart-demo"), { ssr: false }),
+	chat: dynamic(() => import("../../demos/ui/chat-demo"), { ssr: false }),
 	checkbox: dynamic(() => import("../../demos/ui/checkbox-demo"), { ssr: false }),
 	checkpoint: dynamic(() => import("../../demos/ui/checkpoint-demo"), { ssr: false }),
 	"code-block": dynamic(() => import("../../demos/ui/code-block-demo"), { ssr: false }),

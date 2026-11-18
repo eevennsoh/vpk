@@ -236,7 +236,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("context"),
 	customComponent("context-bar", "Context Bar"),
 	customComponent("control", "Control"),
-	customComponent("conversation"),
 	customComponent("edge"),
 	customComponent("environment-variable", "Environment Variable"),
 	customComponent("file-tree", "File Tree"),
@@ -359,6 +358,8 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	uiComponent("lozenge"),
 	uiComponent("marker"),
 	uiComponent("menubar"),
+	// Chat is a composition page, as on shadcn: its source is Message Scroller.
+	{ ...uiComponent("chat"), importPath: "@/components/ui/message-scroller" },
 	uiComponent("message"),
 	uiComponent("message-scroller", "Message Scroller"),
 	uiComponent("morphing-rovo", "Morphing Rovo"),

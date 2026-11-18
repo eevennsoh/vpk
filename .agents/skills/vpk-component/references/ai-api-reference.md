@@ -16,17 +16,16 @@ Render the person's text with `MessageUserBubble` (`components/ui-custom/message
 
 Key props: `align`, `className`, `children`
 
-## Conversation (`components/ui-custom/conversation.tsx`)
+## Chat (docs: `/components/ui/chat`)
 
-| Sub-component | Purpose |
+Chat is a composition, not a component: `MessageScroller` > `MessageScrollerViewport` > `MessageScrollerContent` > `MessageScrollerItem` (`components/ui/message-scroller.tsx`), one `Message` per turn.
+
+| Part | Purpose |
 |---|---|
-| `Conversation` | Root scroll container with auto-scroll |
-| `ConversationContent` | Content area inside scroll |
-| `ConversationScrollButton` | Floating scroll-to-bottom button |
-| `ConversationEmptyState` | Placeholder when no messages |
-| `ConversationDownload` | Download conversation action |
-
-Key props: `className`, `children`
+| `MessageScroller` | Scroll owner; `autoScroll` follows the reply at the live edge |
+| `MessageScrollerItem` | One turn; `messageId`, and `scrollAnchor` on the person's turn |
+| `MessageScrollerButton` | Floating scroll-to-end button |
+| `Empty` (`components/ui/empty.tsx`) | Placeholder when there are no messages |
 
 ## PromptInput (`components/ui-custom/prompt-input/`)
 
