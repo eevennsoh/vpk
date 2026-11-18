@@ -21,6 +21,7 @@ minimumReleaseAgeExclude:
   # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
   # the public-supply-chain release-age gate does not apply.
   - "@atlassian/logo-third-party"
+  - '@zumer/snapdom@3.7.6'
 trustPolicy: no-downgrade
 trustPolicyExclude:
   # Existing transitive dependency blocks lockfile refresh under no-downgrade.
@@ -134,7 +135,7 @@ allowBuilds:
   # Upstream react-grab, still pulled in by @react-grab/mcp.
   react-grab: true
   # vpk-grab ships no install script; update:vpk-grab moves this key with the release.
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz: false
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz: false
   sharp: false
   tree-sitter-go: true
   tree-sitter-javascript: true

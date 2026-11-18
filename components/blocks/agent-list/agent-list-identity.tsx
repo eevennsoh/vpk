@@ -11,6 +11,7 @@ import {
 	AvatarImage,
 	type AvatarProps,
 } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { actorInitials } from "./agent-list-actor";
@@ -55,16 +56,15 @@ export function AgentListAttributionAvatarGroup({
 	sizePx: number;
 }>) {
 	const personAvatar = (
-		<Avatar
-			key="person"
-			label=""
-			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
-		>
-			{attributedBy.avatarSrc ? (
-				<AvatarImage alt="" src={attributedBy.avatarSrc} />
-			) : null}
-			<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
-		</Avatar>
+		<Tooltip key="person">
+			<TooltipTrigger render={<Avatar className="outline-none focus-visible:ring-2 focus-visible:ring-ring" label={attributedBy.name} size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"} tabIndex={0} />}>
+				{attributedBy.avatarSrc ? (
+					<AvatarImage alt="" src={attributedBy.avatarSrc} />
+				) : null}
+				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
+			</TooltipTrigger>
+			<TooltipContent positionerClassName="z-[850]" role="tooltip">{attributedBy.name}</TooltipContent>
+		</Tooltip>
 	);
 	const agentAvatar = (
 		<AgentAvatarVisual

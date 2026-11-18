@@ -43,7 +43,7 @@
 		"components/projects/shared/lib/generative-widget.test.js": 1090,
 		"components/projects/shared/lib/question-card-widget.test.js": 1051,
 		"components/projects/studio/components/rovo-app-agent-config-panel.tsx": 1772,
-		"components/projects/studio/components/rovo-app-agent-creation-flow.test.js": 1658,
+		"components/projects/studio/components/rovo-app-agent-creation-flow.source.test.js": 1658,
 		"components/projects/studio/components/rovo-app-shell.tsx": 3353,
 		"components/projects/studio/lib/demo-agent-builder.ts": 1480,
 		"components/ui-custom/animated-icon-art.tsx": 1158,

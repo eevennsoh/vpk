@@ -456,7 +456,7 @@ export default function AgentsProgress({
 							<VideoStopOverlayIcon label="" />
 						</Button>
 					) : onDelete ? (
-						<span className="hidden group-hover/card:block" onClick={(e) => e.stopPropagation()} role="presentation">
+						<span className="block sr-only group-hover/card:not-sr-only group-focus-visible/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only" onClick={(e) => e.stopPropagation()} role="presentation">
 							<Button
 								aria-label="Delete run"
 								variant="ghost"

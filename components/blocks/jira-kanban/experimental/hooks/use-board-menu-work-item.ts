@@ -15,10 +15,10 @@ import {
 	createBoardCardFromDraft,
 	linkBoardCardToSession,
 } from "../lib/board-menu-work-item";
-import { appendBoardCardFromDraft, toAgentSessionWorkItemOptions, boardHasWorkItem } from "../lib/board-work-item-options";
+import { insertBoardCardFromDraft, toAgentSessionWorkItemOptions, boardHasWorkItem } from "../lib/board-work-item-options";
 
 export interface BoardMenuWorkItem {
-	readonly onCreateColumnWorkItem: (columnTitle: string, draft: JiraInlineCreateDraft) => void;
+	readonly onCreateColumnWorkItem: (columnTitle: string, draft: JiraInlineCreateDraft, beforeCardCode?: string) => void;
 	readonly workItemOptions: readonly AgentSessionWorkItemOption[];
 	readonly onLinkWorkItem: (item: AgentSessionItem, workItemKey?: string) => void;
 	readonly onCreateWorkItemFromDraft: (
@@ -71,8 +71,8 @@ export function useBoardMenuWorkItem({
 	);
 
 	return {
-		onCreateColumnWorkItem: (columnTitle, draft) => {
-			updateBoardColumns((columns) => appendBoardCardFromDraft(columns, draft, columnTitle).columns);
+		onCreateColumnWorkItem: (columnTitle, draft, beforeCardCode) => {
+			updateBoardColumns((columns) => insertBoardCardFromDraft(columns, draft, columnTitle, beforeCardCode).columns);
 		},
 		onCreateWorkItemFromDraft: (item, draft) => {
 			if (hostCreate !== undefined) {

@@ -365,7 +365,7 @@ export default function TaskProgress({
 										<VideoStopOverlayIcon label="" size="small" />
 									</Button>
 								) : onDelete ? (
-									<span className={runStatus === "completed" ? "block" : "hidden group-hover/card:block"}>
+									<span className={runStatus === "completed" ? "block" : "block sr-only group-hover/card:not-sr-only group-focus-visible/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only"}>
 										{runStatus === "completed" ? (
 											<Button
 												variant="ghost"

@@ -2,7 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react"
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right"
-import { createContext, memo, use } from "react"
+import { memo } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card"
+import { useGenerativeCardContext } from "@/components/ui/generative-card-context"
 import { cn } from "@/lib/utils"
 
 /**
@@ -19,25 +20,6 @@ import { cn } from "@/lib/utils"
  * in ui so ui-level cards (Plan) can share them with the GenerativeCard block,
  * which re-exports them alongside its root.
  */
-
-export type GenerativeCardContextValue = {
-	expanded: boolean
-	setExpanded: (next: boolean) => void
-}
-
-export const GenerativeCardContext = createContext<GenerativeCardContextValue | null>(null)
-
-export function useGenerativeCardContext(optional: true): GenerativeCardContextValue | null
-export function useGenerativeCardContext(optional?: false): GenerativeCardContextValue
-export function useGenerativeCardContext(optional = false) {
-	const context = use(GenerativeCardContext)
-
-	if (context === null && !optional) {
-		throw new Error("GenerativeCard components must be used within <GenerativeCard>.")
-	}
-
-	return context
-}
 
 export type GenerativeCardHeaderProps = Omit<ComponentProps<typeof CardHeader>, "title"> & {
 	leading: ReactNode

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -46,6 +46,7 @@ import {
 	AgentSessionShortMetadata,
 } from "./agent-session-metadata";
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
@@ -64,7 +65,7 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
-import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
+import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 import { motionEase } from "@/lib/motion";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
@@ -397,6 +398,7 @@ export function AgentSessionCard({
 	/** Work items the menu's Link work item submenu offers. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
+	const avatarPreview = use(AgentSessionAvatarPreviewContext);
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
@@ -415,6 +417,7 @@ export function AgentSessionCard({
 	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
 	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const departureFocus = useAgentSessionDepartureFocus({ glowPlaneSurface, isDeparting, isOnGlowPlane });
+	const { setRowNode } = departureFocus;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -563,6 +566,17 @@ export function AgentSessionCard({
 				return undefined;
 			case "expired":
 			case "owner":
+				if (role === "owner" && !isCloudSession && visibilityLabel !== "Unarchive") {
+					return <AgentSessionContinueMenu
+						actions={menu.actions}
+						copied={menu.copied}
+						item={item}
+						onOpenChange={menu.setIsOpen}
+						open={menu.isOpen}
+						positionerClassName={moreMenuPositionerClassName}
+						trigger={agentSessionMoreTrigger(item)}
+					/>;
+				}
 				return (
 					<AgentSessionMoreMenu
 						actions={menu.actions}
@@ -665,7 +679,7 @@ export function AgentSessionCard({
 				}
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
-			ref={departureFocus.setRowNode}
+			ref={setRowNode}
 			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
 			initial={false}
 			// Track positions continuously; the layout transition decides whether
@@ -758,7 +772,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} showAgentName={showAgentName} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showAgentName={showAgentName} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger
@@ -785,7 +799,7 @@ export function AgentSessionCard({
 									return (
 										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? sessionIdentity
+												? (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity
 												: (
 													<AgentSessionSelectMark
 														identity={sessionIdentity}

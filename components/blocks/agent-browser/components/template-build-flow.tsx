@@ -198,6 +198,7 @@ export function TemplateBuildFlow({
 	} = useTemplateBuildFlow({ agent, onBuildAgent, onCancel });
 	const appSources = agent.sources ?? [];
 	const appListOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: appListOverflowRef } = appListOverflow;
 
 	if (phase === "building" || phase === "built" || phase === "error") {
 		return (
@@ -279,7 +280,7 @@ export function TemplateBuildFlow({
 						"mt-6 flex max-h-[304px] flex-col gap-1 overflow-y-auto pr-1",
 						appListOverflow.showBottomScrollMask && "scroll-mask-bottom overscroll-contain",
 					)}
-					ref={appListOverflow.ref}
+					ref={appListOverflowRef}
 				>
 					{appSources.length > 0 ? (
 						appSources.map((source) => {

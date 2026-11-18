@@ -543,8 +543,8 @@ importers:
         specifier: ^8.5.30
         version: 8.5.32
       react-grab:
-        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz
-        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz(@types/react@19.3.0)(react@19.3.1)
+        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz
+        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz(@types/react@19.3.0)(react@19.3.1)
       shadcn:
         specifier: ^4.23.0
         version: 4.23.0(supports-color@10.2.2)
@@ -4142,6 +4142,9 @@ packages:
   '@xyflow/system@0.0.84':
     resolution: {integrity: sha512-96zfGFjH3oZ3T0MRdH4gJ0SlXuCIxbBuHVevZ4xry5UTxqjzjt010+LRdholgepq7jhrcaz1JNtzrETscwnkEA==}
 
+  '@zumer/snapdom@3.7.6':
+    resolution: {integrity: sha512-w1q0HwSM1BF/vT2aF1tvgsYbktosFtfpjGIVrZkI1vUkKL7TLmLfBSIhCNp04c4DLfafHUXusz0UXsJC1bm03g==}
+
   abs-svg-path@0.1.1:
     resolution: {integrity: sha512-d8XPSGjfyzlXC3Xx891DJRyZfqk5JU0BJrDQcsWomFIV1/BIzPW5HDH5iDdWpqWaav0YVIEzT1RHTwWr0FFshA==}
 
@@ -7451,9 +7454,9 @@ packages:
       react:
         optional: true
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz:
-    resolution: {integrity: sha512-av7nCXaO8BU8ME6vKakDd9IanV1faHx+nEpCJJ17wQnF+cHak6WM09Vn/xCxse/ot+G1Rxt7LOpPsgQXIp5Lcg==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz}
-    version: 0.2.0-vpk.7
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz:
+    resolution: {integrity: sha512-44+MKRwWpquIq1C+GMlgAt7dVK/hE/r3Zfu2mM0ix811TLs4OlTEomEHLn5kEoa2Nqj8E4iZbjdBI0OCmnC3Ag==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz}
+    version: 0.2.0-vpk.11
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -12250,6 +12253,8 @@ snapshots:
       d3-selection: 3.0.1
       d3-zoom: 3.0.1
 
+  '@zumer/snapdom@3.7.6': {}
+
   abs-svg-path@0.1.1: {}
 
   accepts@2.0.0:
@@ -16160,9 +16165,10 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.7/react-grab-0.2.0-vpk.7.tgz(@types/react@19.3.0)(react@19.3.1):
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.11/react-grab-0.2.0-vpk.11.tgz(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       '@react-grab/cli': 0.2.0
+      '@zumer/snapdom': 3.7.6
       bippy: 0.7.3(@types/react@19.3.0)(react@19.3.1)
     optionalDependencies:
       react: 19.3.1

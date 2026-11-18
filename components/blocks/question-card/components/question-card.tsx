@@ -7,12 +7,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ReturnIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import ReturnIcon from "@atlaskit/icon-lab/core/return";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { shouldShowQuestionCardFooter } from "@/components/blocks/question-card/lib/footer-actions";
 import { getVisibleOptionCount } from "@/components/blocks/question-card/lib/option-slots";
@@ -151,11 +151,11 @@ function QuestionOptionRow({
 					<span
 						aria-hidden="true"
 						className={cn(
-							"inline-flex size-6 shrink-0 items-center justify-center text-icon-disabled opacity-0",
+							"inline-flex size-6 shrink-0 items-center justify-center opacity-0",
 							focused && "opacity-100",
 						)}
 					>
-						<ReturnIcon label="" />
+						<ReturnIcon className="size-3.5 text-icon-subtlest" />
 					</span>
 				) : null}
 			</button>

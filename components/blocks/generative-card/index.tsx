@@ -8,7 +8,7 @@ import {
 	GenerativeCardContext,
 	type GenerativeCardContextValue,
 	useGenerativeCardContext,
-} from "@/components/ui/generative-card-header";
+} from "@/components/ui/generative-card-context";
 import { cn } from "@/lib/utils";
 
 import { GenerativeCardBulgeCanvas, type DistortionTintMode } from "./generative-card-bulge-canvas";

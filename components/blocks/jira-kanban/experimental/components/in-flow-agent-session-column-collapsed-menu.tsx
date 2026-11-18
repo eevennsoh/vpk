@@ -60,6 +60,7 @@ export function InFlowAgentSessionColumnCollapsedMenu({
 		300,
 		() => triggerRef.current,
 	);
+	const { popupRef } = coneIntent;
 
 	const handleTriggerPointerEnter = (event: PointerEvent<HTMLElement>) => {
 		if (event.pointerType !== "touch") {
@@ -111,7 +112,7 @@ export function InFlowAgentSessionColumnCollapsedMenu({
 				align="start"
 				className="min-w-0 w-max"
 				finalFocus={shouldRestoreInFlowCollapsedMenuFocus}
-				ref={coneIntent.popupRef}
+				ref={popupRef}
 				side="right"
 			>
 				<DropdownMenuItem
