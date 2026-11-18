@@ -69,7 +69,8 @@ resolve_session_name() {
 # worktrees also get an explicit name from scripts/lib/worktree-ports.js.
 resolve_portless_args() {
 	node - <<'NODE'
-const { getPortlessRunArgs, getPortInfo, findAvailableWorktreePort } = require("./scripts/lib/worktree-ports");
+const { getPortlessRunArgs, getPortInfo } = require("./scripts/lib/worktree-ports");
+const { findAvailableWorktreePort } = require("./scripts/lib/dev-port-selection");
 async function main() {
 	const fixedPort = process.env.PORTLESS_APP_PORT;
 	const basePort = Number(fixedPort || process.env.PORT || getPortInfo().frontendBase);

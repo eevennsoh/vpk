@@ -5,6 +5,21 @@ const vm = require("node:vm");
 const { EventEmitter } = require("node:events");
 const { test } = require("node:test");
 const { subscribeProcessSignals } = require("./rovo-supervisor");
+const { findAvailableWorktreePort } = require("./dev-port-selection");
+
+test("port selection skips recorded worktree ports before Portless registers its route", async () => {
+	const probed = [];
+	const port = await findAvailableWorktreePort(4100, {
+		maxTries: 4,
+		claimedPorts: new Map([[4100, "/other-worktree"]]),
+		isPortAvailable: async (candidate) => {
+			probed.push(candidate);
+			return candidate !== 4101;
+		},
+	});
+	assert.equal(port, 4102);
+	assert.deepEqual(probed, [4101, 4102]);
+});
 
 // Substitute local OS dependencies at the implementation's require seam. Tests
 // invoke the same complete launch operation as both CLI entry points.
@@ -68,11 +83,11 @@ function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [],
 			getNextDevEnv: ({ port, backendPort }) => ({ PORT: String(port), NEXT_PUBLIC_BACKEND_PORT: backendPort }),
 		},
 		"./worktree-ports": {
-			findAvailableWorktreePort: require("./worktree-ports").findAvailableWorktreePort,
 			getFrontendBasePort: () => 4000,
 			getBackendBasePort: () => 8000,
 			getPortsClaimedByOtherWorktrees: () => new Map(Object.entries(claimed).map(([port, worktree]) => [Number(port), worktree])),
 		},
+		"./dev-port-selection": { findAvailableWorktreePort },
 		"./rovo-utils": { isPortAvailable: async (port, options = {}) => {
 			probes.push({ port, ...options });
 			if (busyPorts.has(port)) return false;

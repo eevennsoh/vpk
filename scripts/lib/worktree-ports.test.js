@@ -12,24 +12,9 @@ const {
 	getRovoBasePort,
 	getWorktreePortOffsetForPath,
 	buildPortlessRunArgs,
-	findAvailableWorktreePort,
 } = require("./worktree-ports");
 
 const WORKTREE_PORTS_MODULE_PATH = path.resolve(__dirname, "worktree-ports.js");
-
-test("port selection skips recorded worktree ports before Portless registers its route", async () => {
-	const probed = [];
-	const port = await findAvailableWorktreePort(4100, {
-		maxTries: 4,
-		claimedPorts: new Map([[4100, "/other-worktree"]]),
-		isPortAvailable: async (candidate) => {
-			probed.push(candidate);
-			return candidate !== 4101;
-		},
-	});
-	assert.equal(port, 4102);
-	assert.deepEqual(probed, [4101, 4102]);
-});
 
 function createGitWorktreeFixture() {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-ports-fixture-"));
