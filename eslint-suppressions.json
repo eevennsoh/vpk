@@ -275,22 +275,12 @@
       "count": 1
     }
   },
-  "components/blocks/agent-browser/components/template-build-flow.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    }
-  },
   "components/blocks/agent-card/components/agent-card.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 2
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
-    }
-  },
-  "components/blocks/agent-config-core/components/agent-compact-config-nav.tsx": {
-    "react-hooks/refs": {
-      "count": 5
     }
   },
   "components/blocks/agent-config-core/components/agent-compact-nav-menu.tsx": {
@@ -383,11 +373,6 @@
       "count": 20
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-rail.tsx": {
-    "react-hooks/refs": {
-      "count": 6
-    }
-  },
   "components/blocks/agent-session-column/agent-session-column-scrolling-effect.test.js": {
     "no-restricted-syntax": {
       "count": 21
@@ -434,9 +419,6 @@
   "components/blocks/agent-session/agent-session-card.tsx": {
     "jsx-a11y/no-noninteractive-element-interactions": {
       "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 3
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -520,11 +502,6 @@
   "components/blocks/agent/agent.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
-    }
-  },
-  "components/blocks/agent/components/agent-compact-config-nav.tsx": {
-    "react-hooks/refs": {
-      "count": 5
     }
   },
   "components/blocks/agent/components/agent-compact-nav-menu.tsx": {
@@ -842,11 +819,6 @@
       "count": 169
     }
   },
-  "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
-    "react-hooks/refs": {
-      "count": 26
-    }
-  },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 49
@@ -860,11 +832,6 @@
   "components/blocks/jira-kanban/experimental/components/created-card-inline-flight.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column-collapsed-menu.tsx": {
-    "react-hooks/refs": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx": {
@@ -1982,9 +1949,6 @@
     }
   },
   "components/projects/rovo/components/rovo-app-shell.tsx": {
-    "react-hooks/refs": {
-      "count": 17
-    },
     "react-hooks/set-state-in-effect": {
       "count": 4
     }
@@ -2098,9 +2062,6 @@
     }
   },
   "components/projects/studio/components/rovo-app-agent-config-panel.tsx": {
-    "react-hooks/refs": {
-      "count": 8
-    },
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
@@ -2125,7 +2086,7 @@
       "count": 4
     },
     "react-hooks/refs": {
-      "count": 24
+      "count": 6
     },
     "react-hooks/set-state-in-effect": {
       "count": 5
