@@ -1545,12 +1545,12 @@
       "count": 35
     }
   },
-  "components/projects/jira-for-you/jira-for-you-work-item-integration.test.js": {
+  "components/projects/jira-for-you/jira-for-you-work-item-integration.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-for-you/jira-for-you-workspace.test.js": {
+  "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
       "count": 235
     }
@@ -1640,12 +1640,12 @@
       "count": 11
     }
   },
-  "components/projects/jira-golden-journey-v1/queue-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/queue-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 206
     }
   },
-  "components/projects/jira-golden-journey-v1/session-gallery.test.js": {
+  "components/projects/jira-golden-journey-v1/session-gallery.source.test.js": {
     "no-restricted-syntax": {
       "count": 174
     }
@@ -1705,7 +1705,7 @@
       "count": 14
     }
   },
-  "components/projects/jira-queue/queue-conversation-workspace.test.js": {
+  "components/projects/jira-queue/queue-conversation-workspace.source.test.js": {
     "no-restricted-syntax": {
       "count": 54
     }
@@ -1803,7 +1803,7 @@
       "count": 14
     }
   },
-  "components/projects/jira/components/rfp-agent-chat-details.test.js": {
+  "components/projects/jira/components/rfp-agent-chat-details.source.test.js": {
     "no-restricted-syntax": {
       "count": 77
     }
@@ -1856,12 +1856,12 @@
       "count": 135
     }
   },
-  "components/projects/jira/rfp-context.test.js": {
+  "components/projects/jira/rfp-context.source.test.js": {
     "no-restricted-syntax": {
       "count": 64
     }
   },
-  "components/projects/page.test.js": {
+  "components/projects/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 148
     }
@@ -2012,7 +2012,7 @@
       "count": 1
     }
   },
-  "components/projects/shared/components/rovo-app-composer.test.js": {
+  "components/projects/shared/components/rovo-app-composer.source.test.js": {
     "no-restricted-syntax": {
       "count": 365
     }
@@ -2047,12 +2047,12 @@
       "count": 2
     }
   },
-  "components/projects/sidebar-chat/components/chat-composer.test.js": {
+  "components/projects/sidebar-chat/components/chat-composer.source.test.js": {
     "no-restricted-syntax": {
       "count": 65
     }
   },
-  "components/projects/sidebar-chat/components/chat-greeting.test.js": {
+  "components/projects/sidebar-chat/components/chat-greeting.source.test.js": {
     "no-restricted-syntax": {
       "count": 68
     }
@@ -2105,9 +2105,9 @@
       "count": 2
     }
   },
-  "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
+  "components/projects/studio/components/rovo-app-agent-creation-flow.source.test.js": {
     "no-restricted-syntax": {
-      "count": 788
+      "count": 785
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
@@ -2294,7 +2294,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/context-bar/context-bar-prompt-flyout.test.js": {
+  "components/ui-custom/context-bar/context-bar-prompt-flyout.source.test.js": {
     "no-restricted-syntax": {
       "count": 72
     }

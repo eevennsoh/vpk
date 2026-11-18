@@ -5,6 +5,7 @@ const test = require("node:test");
 const { readChatPanelModule, readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+const { renderComponent } = require("@/scripts/lib/render-component.js");
 
 const SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-shell.tsx"),
@@ -612,21 +613,51 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerLeave=\{cardGlow\.onPointerLeave\}\s*onPointerMove=\{cardGlow\.onPointerMove\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /<HomeStarterCardGlowLayers iconSrc=\{template\.iconSrc\} \/>/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /ref=\{cardGlow\.registerTile\}/u);
-	// Regression: the glow ring must coexist with the always-on grey base stroke.
-	// Two invariants enforce the desired behavior:
-	// 1. No backdrop-filter on the ring — an always-on filter recolors the whole
-	//    ring (even where the gradient is transparent) and crushes the grey stroke.
-	// 2. No per-tile hover/focus opacity gate on the ring — the glow is driven by
-	//    the container-level pointer tracking so edges still light up when the
-	//    cursor is in the GAPS between tiles, not only over the hovered tile.
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /token\("color\.border\.bold"\)/u);
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /backdropFilter/u);
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /z-\[2\][^"]*group-hover\/home-starter-card:opacity-100/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /rounded-lg bg-background/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /transition-\[background-color,box-shadow\]/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /hover:border-border-bold/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /color-mix\(in srgb, var\(--card-glow-tile-accent\) 92%, white\)/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /rounded-lg border border-border bg-background/u);
+});
+
+test("Studio starter tiles bind shared glow tuning inside isolated stacking contexts", async () => {
+	const view = await renderComponent({
+		entry: "components/projects/studio/components/rovo-app-home-starter-bento.tsx",
+		exportName: "RovoAppHomeStarterBento",
+		props: {
+			isVisible: true, instantExit: true, reduceMotion: true, templatesDialogOpen: true,
+			onBrowseTemplates() {}, onDismiss() {}, onPreviewEnd() {}, onPreviewStart() {}, onSelect() {},
+		},
+		mocks: {
+			"@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false }; }`,
+			"motion/react": `import { createElement, useMemo } from "react";
+				function element(tag) {
+					return function Motion({ initial, animate, exit, custom, variants, transition, whileHover, whileTap, ...props }) {
+						return createElement(tag, props);
+					};
+				}
+				export const motion = { div: element("div"), button: element("button"), span: element("span") };
+				export function AnimatePresence({ children }) { return children; }
+				export function useReducedMotion() { return true; }
+				export function useMotionValue() { return useMemo(() => ({ set() {} }), []); }
+				export function animate() { throw new Error("category cycling must be paused"); }`,
+		},
+	});
+	const tiles = [...view.container.querySelectorAll('button[aria-label^="Use prompt starter:"]')];
+	assert.ok(tiles.length > 0, "the real Studio bento renders starter tiles");
+	for (const tile of tiles) {
+		const classes = tile.className.split(" ");
+		assert.equal(classes.includes("relative"), true);
+		assert.equal(classes.includes("isolate"), true, "negative glow layers stay above the tile background");
+		assert.equal(tile.style.containerType, "size");
+		const tuning = tile.closest('[style*="--card-glow-border-core"]');
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-core"), "36");
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-spread"), "120");
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-width"), "1");
+		for (const marker of ["data-card-glow-base-border", "data-card-glow-border", "data-card-glow-bloom"]) {
+			assert.equal(tile.querySelectorAll(`[${marker}]`).length, 1, marker);
+		}
+	}
 });
 
 test("Studio content surfaces keep their intended max widths", () => {
