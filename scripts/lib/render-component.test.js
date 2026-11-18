@@ -361,3 +361,85 @@ test("the CommonJS loader does not keep the bundles it evaluates reachable from 
 	await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
 	assert.equal(loader.children.length, before);
 });
+
+// One callback registered on the same target and type in both phases: removing the registration a
+// test added must leave the one that predates the tests, whichever phase each is in. Dispatching on
+// <body> tells the phases apart: document hears the capture registration first, then the bubbling one.
+const phaseCalls = { bubblingKept: [], capturingKept: [] };
+const recordPhase = (calls) => (event) => calls.push(event.eventPhase === Event.CAPTURING_PHASE ? "capture" : "bubble");
+const bubblingKept = recordPhase(phaseCalls.bubblingKept);
+const capturingKept = recordPhase(phaseCalls.capturingKept);
+document.addEventListener("harness-phase-bubbling-kept", bubblingKept);
+document.addEventListener("harness-phase-capturing-kept", capturingKept, { capture: true });
+
+test("a test adds the same callback in the other phase", () => {
+	document.addEventListener("harness-phase-bubbling-kept", bubblingKept, { capture: true });
+	document.addEventListener("harness-phase-capturing-kept", capturingKept);
+	document.body.dispatchEvent(new Event("harness-phase-bubbling-kept", { bubbles: true }));
+	document.body.dispatchEvent(new Event("harness-phase-capturing-kept", { bubbles: true }));
+	assert.deepEqual(phaseCalls, { bubblingKept: ["capture", "bubble"], capturingKept: ["capture", "bubble"] });
+});
+
+test("only the registration added during the test is removed, in its own phase", () => {
+	phaseCalls.bubblingKept.length = 0;
+	phaseCalls.capturingKept.length = 0;
+	document.body.dispatchEvent(new Event("harness-phase-bubbling-kept", { bubbles: true }));
+	document.body.dispatchEvent(new Event("harness-phase-capturing-kept", { bubbles: true }));
+	assert.deepEqual(phaseCalls, { bubblingKept: ["bubble"], capturingKept: ["capture"] });
+});
+
+const nestedCalls = [];
+document.addEventListener("harness-nested", () => nestedCalls.push("file"));
+
+test("a parent test keeps the listener it added before a subtest while it runs", async (t) => {
+	document.addEventListener("harness-nested", () => nestedCalls.push("parent"));
+	await t.test("a subtest adds its own listener", () => {
+		document.addEventListener("harness-nested", () => nestedCalls.push("child"));
+	});
+	document.dispatchEvent(new Event("harness-nested"));
+	assert.deepEqual(nestedCalls, ["file", "parent"]);
+});
+
+test("the listener a parent test added before its subtest is removed when the parent ends", () => {
+	nestedCalls.length = 0;
+	document.dispatchEvent(new Event("harness-nested"));
+	assert.deepEqual(nestedCalls, ["file"]);
+});
+
+const manualCleanupCalls = [];
+document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("file"));
+
+test("a manual cleanup in the middle of a test leaves listeners to the end of the test", async (t) => {
+	document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("before cleanup"));
+	await renderComponent({ source: LEFTOVER_LISTENER_SOURCE });
+	await cleanup();
+	assert.equal(document.body.childNodes.length, 0);
+	document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("after cleanup"));
+	document.dispatchEvent(new Event("harness-manual-cleanup"));
+	assert.deepEqual(manualCleanupCalls, ["file", "before cleanup", "after cleanup"]);
+	// The rendering suites also call cleanup from t.after, which runs after the harness afterEach.
+	t.after(cleanup);
+});
+
+test("listeners added before and after a manual cleanup are removed at the end of that test; the file's stay", () => {
+	manualCleanupCalls.length = 0;
+	leftoverCalls.length = 0;
+	document.dispatchEvent(new Event("harness-manual-cleanup"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(manualCleanupCalls, ["file"]);
+	assert.deepEqual(leftoverCalls, []);
+});
+
+// Removal keeps each listener's options at its index, so a later `once` registration still fires once.
+const onceCalls = [];
+
+test("a test leaves a plain listener behind", () => {
+	document.addEventListener("harness-options", () => onceCalls.push("plain"));
+});
+
+test("a once listener added after that removal fires once", () => {
+	document.addEventListener("harness-options", () => onceCalls.push("once"), { once: true });
+	document.dispatchEvent(new Event("harness-options"));
+	document.dispatchEvent(new Event("harness-options"));
+	assert.deepEqual(onceCalls, ["once"]);
+});
