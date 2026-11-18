@@ -7,7 +7,7 @@
 //   node:assert inspects failing operands with custom inspectors disabled, and one happy-dom
 //   node expands into the whole window graph (minutes, then out of memory).
 const path = require("node:path");
-const { after, afterEach } = require("node:test");
+const { after, afterEach, beforeEach } = require("node:test");
 const { GlobalRegistrator } = require("@happy-dom/global-registrator");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require("./esbuild-cjs-loader.js");
@@ -33,6 +33,10 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const React = require("react");
 const { createRoot, hydrateRoot } = require("react-dom/client");
 const { renderToString } = require("react-dom/server");
+// react-dom adds a `selectionchange` listener to the document once, when the first root is
+// created, and marks the document so it never adds it again. Create a root now so that listener
+// predates every test and survives the per-test listener cleanup below.
+createRoot(document.createElement("div"));
 
 // Next.js runtime stand-ins. Override any of them via `mocks`.
 const DEFAULT_MOCKS = NEXT_RUNTIME_MOCKS;
@@ -355,6 +359,34 @@ async function hydrateInto(container, element, onRoot) {
 	}
 }
 
+/**
+ * Listeners on window and document, which outlive every test. A rendered bundle's libraries
+ * register some when they load (visibility, resize, load) and never remove them, and each listener
+ * keeps that whole bundle alive. Elements are left alone: react-dom attaches its delegated listeners
+ * to a portal container such as <body> once and marks it, so removing them breaks later portals.
+ * happy-dom keeps listeners under a symbol described "listeners"; removal goes through the public
+ * removeEventListener.
+ */
+function documentListeners() {
+	return [globalThis, document].flatMap((target) => {
+		const store = target[Object.getOwnPropertySymbols(target).find((symbol) => symbol.description === "listeners")];
+		return ["capturing", "bubbling"].flatMap((phase) => [...(store?.[phase] ?? [])]
+			.flatMap(([type, listeners]) => listeners.map((listener) => ({ capture: phase === "capturing", listener, target, type }))));
+	});
+}
+
+let listenersBeforeTest = null;
+
+function removeListenersAddedDuringTest() {
+	const kept = listenersBeforeTest;
+	if (!kept) return;
+	for (const { capture, listener, target, type } of documentListeners()) {
+		if (!kept.some((entry) => entry.target === target && entry.type === type && entry.capture === capture && entry.listener === listener)) {
+			target.removeEventListener(type, listener, { capture });
+		}
+	}
+}
+
 /** Unmounts every rendered view and empties the document. Runs automatically after each test. */
 async function cleanup() {
 	reportedErrors.length = 0;
@@ -365,9 +397,14 @@ async function cleanup() {
 	} finally {
 		mountedViews.clear();
 		document.body.replaceChildren();
+		// Like leaving the page: what the test's components and bundles left on the document goes.
+		removeListenersAddedDuringTest();
 	}
 }
 
+beforeEach(() => {
+	listenersBeforeTest = documentListeners();
+});
 afterEach(cleanup);
 after(() => GlobalRegistrator.unregister());
 

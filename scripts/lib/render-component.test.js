@@ -4,6 +4,7 @@ const test = require("node:test");
 
 // Assertions compare strings and booleans only; see the note atop render-component.js.
 const { accessibleName, cleanup, renderComponent } = require(path.join(__dirname, "render-component.js"));
+const { act } = require("react");
 
 const COUNTER_SOURCE = `
 	import { useState } from "react";
@@ -296,4 +297,67 @@ export function Probe({ log }) {
 test("the document starts empty for every test", () => {
 	assert.equal(document.body.childNodes.length, 0);
 	assert.ok(document.activeElement === document.body);
+});
+
+// A listener registered before the tests (here, at file load) belongs to the file and stays.
+const fileListenerCalls = [];
+window.addEventListener("resize", () => fileListenerCalls.push("file"));
+const leftoverCalls = [];
+globalThis.__renderComponentLeftoverCalls = leftoverCalls;
+const LEFTOVER_LISTENER_SOURCE = `
+	globalThis.__renderComponentLeftoverCalls.push("loaded");
+	window.addEventListener("resize", () => globalThis.__renderComponentLeftoverCalls.push("window"));
+	document.addEventListener("visibilitychange", () => globalThis.__renderComponentLeftoverCalls.push("document"));
+	export default function Probe() { return <p>Probe</p>; }
+`;
+
+test("a bundle's load-time window and document listeners work during its test", async () => {
+	await renderComponent({ source: LEFTOVER_LISTENER_SOURCE });
+	window.dispatchEvent(new Event("resize"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(leftoverCalls, ["loaded", "window", "document"]);
+});
+
+test("listeners a bundle leaves on window and document are removed after its test, so they cannot keep it alive", () => {
+	leftoverCalls.length = 0;
+	fileListenerCalls.length = 0;
+	window.dispatchEvent(new Event("resize"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(leftoverCalls, []);
+	assert.deepEqual(fileListenerCalls, ["file"]);
+});
+
+test("React events still reach body portals and onSelect after earlier tests rendered", async () => {
+	const selected = [];
+	const view = await renderComponent({
+		props: { onSelect: (value) => selected.push(value) },
+		source: `
+			import { useState } from "react";
+			import { createPortal } from "react-dom";
+			export default function Portal({ onSelect }) {
+				const [count, setCount] = useState(0);
+				return <>
+					<input aria-label="Field" defaultValue="selected text" onSelect={(event) => onSelect(event.currentTarget.value.slice(event.currentTarget.selectionStart, event.currentTarget.selectionEnd))} />
+					{createPortal(<button type="button" onClick={() => setCount((value) => value + 1)}>Portal clicks: {count}</button>, document.body)}
+				</>;
+			}
+		`,
+	});
+	await view.click(view.getByRole("button", { name: "Portal clicks: 0" }));
+	assert.equal(view.queryByRole("button", { name: "Portal clicks: 1" }) !== null, true);
+	const field = view.getByRole("textbox", { name: "Field" });
+	await view.focus(field);
+	field.setSelectionRange(0, 8);
+	await act(async () => {
+		document.dispatchEvent(new Event("selectionchange"));
+	});
+	assert.deepEqual(selected.slice(-1), ["selected"]);
+});
+
+test("the CommonJS loader does not keep the bundles it evaluates reachable from its own module", async () => {
+	const loader = require.cache[require.resolve("./esbuild-cjs-loader.js")];
+	const before = loader.children.length;
+	await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
+	await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
+	assert.equal(loader.children.length, before);
 });
