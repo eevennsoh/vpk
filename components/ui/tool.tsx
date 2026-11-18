@@ -29,7 +29,7 @@ import {
 	type TraceCollapsibleProps,
 	type TraceLineProps,
 } from "@/components/ui/trace"
-import { formatByteSize, stringifyToolValue, toToolValuePreview } from "@/components/ui/tool-value"
+import { toToolOutputDisplay, toToolValuePreview } from "@/components/ui/tool-value"
 import { WrenchIcon } from "@/components/ui/vpk-icons"
 import { cn } from "@/lib/utils"
 
@@ -164,30 +164,17 @@ function ToolOutput({
 		return null
 	}
 
-	const hasOutput = output !== undefined && output !== null
-	const isElement = React.isValidElement(output)
-	// Show the exact output unless the caller says it was dropped or it is a rendered element.
-	const showExact = hasOutput && !isElement && suppressedRawOutput !== true
-	const preview =
-		typeof outputPreview === "string" && outputPreview.length > 0
-			? { text: outputPreview, truncated: outputTruncated === true }
-			: toToolValuePreview(output)
-	const outputText = showExact ? stringifyToolValue(output) : preview.text
-	const showTruncationNotice = !showExact && (outputTruncated === true || preview.truncated)
-	const language = typeof output === "object" && !isElement ? "json" : "markdown"
-	const bytes = typeof outputBytes === "number" ? formatByteSize(outputBytes) : null
+	const display = toToolOutputDisplay(output, { outputPreview, outputTruncated, outputBytes, suppressedRawOutput })
 
 	return (
 		<div data-slot="tool-output" className={cn("flex min-w-0 flex-col gap-1", className)} {...props}>
 			{errorText ? (
 				<ToolCodeBlock code={errorText} title="Error" language="text" size={codeBlockSize} variant="destructive" />
 			) : null}
-			{outputText ? (
-				<ToolCodeBlock code={outputText} title="Result" language={language} size={codeBlockSize} />
+			{display.text ? (
+				<ToolCodeBlock code={display.text} title="Result" language={display.language} size={codeBlockSize} />
 			) : null}
-			{showTruncationNotice ? (
-				<ToolNote>Result preview truncated for display{bytes ? ` (${bytes} received)` : ""}.</ToolNote>
-			) : null}
+			{display.truncationNotice ? <ToolNote>{display.truncationNotice}</ToolNote> : null}
 			{suppressedRawOutput === true ? (
 				<ToolNote>Raw output is unavailable for this event. Showing the best preserved preview.</ToolNote>
 			) : null}

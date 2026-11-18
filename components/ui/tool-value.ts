@@ -1,5 +1,7 @@
 // Bounded, display-safe text for tool call input and output values.
 
+import { isValidElement } from "react"
+
 const MAX_TOOL_PREVIEW_CHARS = 1200
 const MAX_TOOL_PREVIEW_LINES = 20
 const MAX_SERIALIZE_DEPTH = 4
@@ -123,4 +125,48 @@ export function formatByteSize(bytes: number): string | null {
 		return `${(bytes / 1024).toFixed(1)} KB`
 	}
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export type ToolOutputDisplayOptions = {
+	outputPreview?: string
+	outputTruncated?: boolean
+	outputBytes?: number
+	suppressedRawOutput?: boolean
+}
+
+export type ToolOutputDisplay = {
+	text: string
+	language: "json" | "markdown"
+	truncationNotice: string | null
+}
+
+/**
+ * What ToolOutput shows for a value: the exact output unless the caller says it was
+ * dropped or it is a rendered element, otherwise the caller's or a bounded preview.
+ */
+export function toToolOutputDisplay(
+	output: unknown,
+	{ outputPreview, outputTruncated, outputBytes, suppressedRawOutput }: ToolOutputDisplayOptions = {}
+): ToolOutputDisplay {
+	const hasOutput = output !== undefined && output !== null
+	const isElement = isValidElement(output)
+	const showExact = hasOutput && !isElement && suppressedRawOutput !== true
+	const language = typeof output === "object" && !isElement ? "json" : "markdown"
+
+	if (showExact) {
+		return { text: stringifyToolValue(output), language, truncationNotice: null }
+	}
+
+	const preview =
+		typeof outputPreview === "string" && outputPreview.length > 0
+			? { text: outputPreview, truncated: outputTruncated === true }
+			: toToolValuePreview(output)
+	const truncated = outputTruncated === true || preview.truncated
+	const bytes = typeof outputBytes === "number" ? formatByteSize(outputBytes) : null
+
+	return {
+		text: preview.text,
+		language,
+		truncationNotice: truncated ? `Result preview truncated for display${bytes ? ` (${bytes} received)` : ""}.` : null,
+	}
 }

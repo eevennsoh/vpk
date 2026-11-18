@@ -5,8 +5,9 @@
 import * as React from "react"
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { useHighlightedCode } from "@/hooks/use-highlighted-code"
 import { Button, type ButtonProps } from "@/components/ui/button"
-import { CodeBlock, CodeBlockContent, type CodeBlockContentProps } from "@/components/ui/code-block"
+import { CodeBlock, CodeBlockContent, CodeBlockLine, type CodeBlockContentProps } from "@/components/ui/code-block"
 import {
 	Trace,
 	TraceCollapsible,
@@ -234,6 +235,16 @@ function useAutoScroll<T extends HTMLElement>(output: string, autoScroll: boolea
 
 export type TerminalContentProps = CodeBlockContentProps
 
+function TerminalOutputLines({ output }: Readonly<{ output: string }>) {
+	// Decodes ANSI escape sequences into colored spans instead of printing them.
+	const lines = useHighlightedCode(output, "ansi")
+
+	return lines.map((line, index) => (
+		// oxlint-disable-next-line react/no-array-index-key -- Lines have no identity beyond their position.
+		<CodeBlockLine key={index}>{line}</CodeBlockLine>
+	))
+}
+
 function TerminalContent({ className, children, ...props }: Readonly<TerminalContentProps>) {
 	const { output, autoScroll } = React.use(TerminalContext)
 	const ref = useAutoScroll<HTMLPreElement>(output, autoScroll)
@@ -244,10 +255,11 @@ function TerminalContent({ className, children, ...props }: Readonly<TerminalCon
 				<CodeBlockContent
 					ref={ref}
 					wrap
+					data-language="ansi"
 					className={cn("max-h-64", className)}
 					{...props}
 				>
-					{children ?? output}
+					{children ?? <TerminalOutputLines output={output} />}
 				</CodeBlockContent>
 			</CodeBlock>
 		</TraceCollapsibleContent>
