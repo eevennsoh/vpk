@@ -3,12 +3,11 @@
 import ChangesIcon from "@atlaskit/icon/core/changes";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { FileUIPart } from "ai";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
-import type { ConversationContextValue } from "@/components/ui-custom/conversation";
 import {
 	ContextBarPill,
 	ContextBarTagGroup,
@@ -191,8 +190,6 @@ export function QueueConversationWorkspace({
 	session,
 }: Readonly<QueueConversationWorkspaceProps>) {
 	const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-	const conversationContextRef = useRef<ConversationContextValue | null>(null);
-	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const shouldReduceMotion = useReducedMotion();
 	const awaitingQuestion = session.status === "awaiting-input" ? session.question : undefined;
 	const realtime = useRealtimeVoice({
@@ -221,19 +218,6 @@ export function QueueConversationWorkspace({
 			setIsSubmittingAnswer(false);
 		}
 	}, [onAnswerQuestion]);
-	useEffect(() => {
-		if (!awaitingQuestion) return;
-
-		const frameId = window.requestAnimationFrame(() => {
-			void conversationContextRef.current?.scrollToBottom({
-				animation: false,
-				ignoreEscapes: true,
-				target: "bottom",
-			});
-		});
-
-		return () => window.cancelAnimationFrame(frameId);
-	}, [awaitingQuestion]);
 
 	const chatBodyTransition = shouldReduceMotion || detailPanelResize.isResizing
 		? CHAT_BODY_REDUCED_MOTION_TRANSITION
@@ -274,12 +258,9 @@ export function QueueConversationWorkspace({
 						contentClassName="mx-auto max-w-[800px] px-6"
 						contentBottomPadding="32px"
 						contentTopPadding="32px"
-						conversationContextRef={conversationContextRef}
 						hideScrollbar={false}
 						isStreaming={session.status === "running"}
 						messageMode="ask"
-						resizeTarget={awaitingQuestion ? "bottom" : "follow"}
-						scrollSpacerRef={scrollSpacerRef}
 						showAwaitingIndicator={Boolean(awaitingQuestion)}
 						showFeedbackActions={false}
 						showFollowUpSuggestions={false}

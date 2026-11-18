@@ -27,6 +27,9 @@ test("session menu puts needs-input sessions first within each ownership group",
 		const lists = view.getAllByRole("list");
 		assert.deepEqual([...lists[0].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-waiting", "agent-session-row-running", "agent-session-row-complete"]);
 		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-waiting", "agent-session-row-team-running"]);
+		for (const row of view.container.querySelectorAll("[data-agent-session-agent]")) {
+			assert.equal(row.textContent, "Sample agent");
+		}
 		assert.deepEqual(items.map((item) => item.id), ["running", "waiting", "complete", "team-running", "team-waiting"]);
 	} finally { await view.unmount(); }
 });
@@ -112,7 +115,7 @@ test("session menu shows an agent name once and retains its Rovo avatar", async 
 	try {
 		const figma = view.container.querySelector('[data-testid="agent-session-row-figma"]');
 		const rovo = view.container.querySelector('[data-testid="agent-session-row-rovo"]');
-		assert.equal(figma.querySelector('[data-agent-session-agent]').textContent, "");
+		assert.equal(figma.querySelector('[data-agent-session-agent]').textContent, "Figma");
 		assert.equal(figma.querySelector('[data-agent-list-title]').textContent, "figma work");
 		assert.equal(Boolean(rovo.querySelector('[data-agent-session-agent] svg')), true);
 	} finally { await view.unmount(); }
