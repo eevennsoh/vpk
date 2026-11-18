@@ -23,6 +23,7 @@ import { CAROUSEL_DETAIL } from "./ui/carousel";
 import { CHART_DETAIL } from "./ui/chart";
 import { CHECKBOX_DETAIL } from "./ui/checkbox";
 import { CHECKPOINT_DETAIL } from "./ui/checkpoint";
+import { CODE_BLOCK_DETAIL } from "./ui/code-block";
 import { COLLAPSIBLE_DETAIL } from "./ui/collapsible";
 import { COMBOBOX_DETAIL } from "./ui/combobox";
 import { COMMAND_DETAIL } from "./ui/command";
@@ -112,6 +113,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	chart: CHART_DETAIL,
 	checkbox: CHECKBOX_DETAIL,
 	checkpoint: CHECKPOINT_DETAIL,
+	"code-block": CODE_BLOCK_DETAIL,
 	collapsible: COLLAPSIBLE_DETAIL,
 	combobox: COMBOBOX_DETAIL,
 	command: COMMAND_DETAIL,

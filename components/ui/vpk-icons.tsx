@@ -103,6 +103,8 @@ import TreeIconGlyph from "@atlaskit/icon/core/tree";
 import TextBoldIconGlyph from "@atlaskit/icon/core/text-bold";
 import TextItalicIconGlyph from "@atlaskit/icon/core/text-italic";
 import TextUnderlineIconGlyph from "@atlaskit/icon/core/text-underline";
+import TextWrapIconGlyph from "@atlaskit/icon/core/text-wrap";
+import UndoIconGlyph from "@atlaskit/icon/core/undo";
 import ThumbsDownIconGlyph from "@atlaskit/icon/core/thumbs-down";
 import ThumbsUpIconGlyph from "@atlaskit/icon/core/thumbs-up";
 import VolumeMutedIconGlyph from "@atlaskit/icon/core/volume-muted";
@@ -310,6 +312,7 @@ export function MailIcon(props: Readonly<VpkIconProps>) { return <EmailIcon {...
 export function InboxIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InboxIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function FileIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FileIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function FileTextIcon(props: Readonly<VpkIconProps>) { return <FileIcon {...props} />; }
+export function FilePlusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AddIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function FilePenIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={EditIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function FileChartColumnIcon(props: Readonly<VpkIconProps>) { return <BarChart3Icon {...props} />; }
 export function FileCodeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AngleBracketsIconGlyph as AtlaskitRenderIcon} {...props} />; }
@@ -397,6 +400,8 @@ export function CircleHelpIcon(props: Readonly<VpkIconProps>) { return <HelpCirc
 export function InfoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InformationCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function RadioIcon(props: Readonly<VpkIconProps>) { return <CircleDotIcon {...props} />; }
 export function RotateCwIcon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
+export function RotateCcwIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={UndoIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function WrapTextIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextWrapIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function Disc3(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }
 export function FlipHorizontalIcon(props: Readonly<VpkIconProps>) { return <ArrowRightIcon {...props} />; }
 export function FlipVerticalIcon(props: Readonly<VpkIconProps>) { return <ArrowDownIcon {...props} />; }

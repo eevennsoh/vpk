@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 453,
+			"manifestEntryCount": 452,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 447,
+				"live": 446,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 87,
+				"entryCount": 88,
 				"entries": [
 					{
 						"category": "ui",
@@ -5613,6 +5613,13 @@
 						"slug": "checkpoint",
 						"name": "Checkpoint",
 						"importPath": "@/components/ui/checkpoint",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "code-block",
+						"name": "Code Block",
+						"importPath": "@/components/ui/code-block",
 						"status": "live"
 					},
 					{
@@ -6269,7 +6276,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 74,
+				"entryCount": 72,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6343,23 +6350,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "code-block",
-						"name": "Code Block",
-						"importPath": "@/components/ui-custom/code-block",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "code-list",
 						"name": "Code List",
 						"importPath": "@/components/ui-custom/code-list",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "commit",
-						"name": "Commit",
-						"importPath": "@/components/ui-custom/commit",
 						"status": "live"
 					},
 					{

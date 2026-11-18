@@ -195,7 +195,7 @@ test("a fenced code block renders as a code block, not as inline code", async ()
 	const block = view.container.querySelector('[data-block="true"]');
 	assert.equal(block === null, false, "the fence reaches the code-block renderer");
 	assert.equal(block.textContent.includes("hello"), true);
-	assert.equal(view.getAllByRole("button", { name: "Download code" }).length, 1);
+	assert.equal(view.getAllByRole("button", { name: "Download" }).length, 1);
 	const inline = [...view.container.querySelectorAll("[data-inline-code-state]")].map((node) => node.textContent);
 	assert.deepEqual(inline, ["tick"], "only the backtick span is inline code");
 	await view.unmount();

@@ -9,7 +9,8 @@ import {
 	CheckpointIcon,
 	CheckpointTrigger,
 } from "@/components/ui/checkpoint"
-import { CodeBlock } from "@/components/ui-custom/code-block"
+import { CodeBlock } from "@/components/ui/code-block"
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content"
 import {
 	Conversation,
 	ConversationContent,
@@ -561,12 +562,13 @@ export default function CursorDemoBlock() {
 			{/* Center Panel - Code + Terminal */}
 			<div className="flex flex-1 flex-col overflow-hidden">
 				{/* Code Block */}
-				<CodeBlock
-					className="rounded-none border-0"
-					code={currentFile.content}
-					language={currentFile.language}
-					showLineNumbers
-				/>
+				<CodeBlock className="rounded-none ring-0">
+					<HighlightedCodeContent
+						code={currentFile.content}
+						language={currentFile.language}
+						lineNumbers
+					/>
+				</CodeBlock>
 
 				<Terminal
 					className="h-64 rounded-none border-0"

@@ -13,7 +13,8 @@ export const SANDBOX_DETAIL: ComponentDetail = {
   SandboxTabsTrigger,
   SandboxTabContent,
 } from "@/components/ui-custom/sandbox";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 
 <Sandbox>
   <SandboxHeader state={toolPart.state} title="code.tsx" />
@@ -26,10 +27,14 @@ import { CodeBlock } from "@/components/ui-custom/code-block";
         </SandboxTabsList>
       </SandboxTabsBar>
       <SandboxTabContent value="code">
-        <CodeBlock code={code} language="tsx" />
+        <CodeBlock>
+          <HighlightedCodeContent code={code} language="tsx" />
+        </CodeBlock>
       </SandboxTabContent>
       <SandboxTabContent value="output">
-        <CodeBlock code={output} language="log" />
+        <CodeBlock>
+          <HighlightedCodeContent code={output} language="log" />
+        </CodeBlock>
       </SandboxTabContent>
     </SandboxTabs>
   </SandboxContent>

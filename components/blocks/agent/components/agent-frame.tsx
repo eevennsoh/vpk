@@ -31,7 +31,8 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Lozenge } from "@/components/ui/lozenge";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { cn } from "@/lib/utils";
 
 export type AgentProps = ComponentProps<"div">;
@@ -254,7 +255,9 @@ export const AgentTool = memo(
 				</AccordionTrigger>
 				<AccordionContent className="px-3 pb-3">
 					<div className="rounded-md bg-surface-sunken">
-						<CodeBlock code={JSON.stringify(schema, null, 2)} language="json" />
+						<CodeBlock>
+							<HighlightedCodeContent code={JSON.stringify(schema, null, 2)} language="json" />
+						</CodeBlock>
 					</div>
 				</AccordionContent>
 			</AccordionItem>
@@ -273,7 +276,9 @@ export const AgentOutput = memo(
 				Output Schema
 			</span>
 			<div className="rounded-md bg-surface-sunken">
-				<CodeBlock code={schema} language="typescript" />
+				<CodeBlock>
+					<HighlightedCodeContent code={schema} language="typescript" />
+				</CodeBlock>
 			</div>
 		</div>
 	),
