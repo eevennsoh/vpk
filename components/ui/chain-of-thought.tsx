@@ -172,6 +172,8 @@ export type ChainOfThoughtStepProps = React.ComponentProps<"div"> &
 		iconRender?: React.ReactNode
 		iconContainerClassName?: string
 		iconContainerStyle?: React.CSSProperties
+		/** Sweeps a light wash over the step icon. Defaults to on for the active step. */
+		iconShimmer?: boolean
 		label: React.ReactNode
 		/** Byline under the label. `null` hides it; `undefined` shows the status default. */
 		description?: React.ReactNode
@@ -182,6 +184,32 @@ export type ChainOfThoughtStepProps = React.ComponentProps<"div"> &
 		onOpenChange?: (open: boolean) => void
 		headerRender?: (context: ChainOfThoughtStepHeaderRenderContext) => React.ReactNode
 	}
+
+// Step icons take the ADS icon roles: subtle once a step has started, subtlest while it is queued.
+const stepIconStyles: Record<ChainOfThoughtStepStatus, string> = {
+	active: "text-icon-subtle",
+	complete: "text-icon-subtle",
+	pending: "text-icon-subtlest",
+}
+
+function ChainOfThoughtIconSlot({ children, shimmer }: Readonly<{ children: React.ReactNode; shimmer: boolean }>) {
+	return (
+		<span
+			data-cot-icon-slot={shimmer ? "active" : undefined}
+			className={cn("inline-flex size-4 shrink-0 items-center justify-center", shimmer ? "relative" : null)}
+		>
+			{children}
+			{shimmer ? (
+				<span
+					aria-hidden="true"
+					className="cot-icon-wash pointer-events-none absolute inset-0 inline-flex items-center justify-center motion-safe:animate-cot-icon-shimmer motion-reduce:hidden"
+				>
+					{children}
+				</span>
+			) : null}
+		</span>
+	)
+}
 
 const stepStatusStyles: Record<ChainOfThoughtStepStatus, string> = {
 	active: "text-text",
@@ -201,6 +229,7 @@ function ChainOfThoughtStep({
 	iconRender,
 	iconContainerClassName,
 	iconContainerStyle,
+	iconShimmer,
 	label,
 	description,
 	status = "complete",
@@ -266,7 +295,7 @@ function ChainOfThoughtStep({
 		<motion.div
 			data-slot="chain-of-thought-step"
 			data-status={status}
-			className={cn("group/cot-step flex items-stretch gap-2 text-sm", stepStatusStyles[status], className)}
+			className={cn("group/cot-step flex items-stretch gap-2 text-sm [&_a]:text-inherit", stepStatusStyles[status], className)}
 			initial={shouldAnimateEntrance ? { opacity: 0, y: -6 } : false}
 			animate={shouldAnimateEntrance ? { opacity: 1, y: 0 } : undefined}
 			transition={shouldAnimateEntrance ? { duration: 0.22, ease: "easeOut", delay: entranceDelay } : undefined}
@@ -281,7 +310,9 @@ function ChainOfThoughtStep({
 				className={cn("relative mt-0.5 self-stretch", iconContainerClassName)}
 				style={iconContainerStyle}
 			>
-				<TraceIcon>{iconNode}</TraceIcon>
+				<TraceIcon className={stepIconStyles[status]}>
+					<ChainOfThoughtIconSlot shimmer={iconShimmer ?? status === "active"}>{iconNode}</ChainOfThoughtIconSlot>
+				</TraceIcon>
 				<div
 					data-slot="chain-of-thought-step-connector"
 					aria-hidden="true"

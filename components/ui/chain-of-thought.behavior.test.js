@@ -130,6 +130,18 @@ test("steps map active to Trace's running status and keep VPK's rail and connect
 	assert.equal(connectors[0].className.includes("group-last/cot-step:hidden"), true);
 });
 
+test("step icons use subtle or subtlest by status, and only the active step gets the icon wash", async () => {
+	const view = await renderComponent({ source: STEPS_SOURCE });
+	const steps = [...view.container.querySelectorAll('[data-slot="chain-of-thought-step-rail"] [data-slot="trace-icon"]')];
+	const classesFor = (index) => steps[index].className;
+	assert.equal(classesFor(0).includes("text-icon-subtle"), true, "complete step icon is subtle");
+	assert.equal(classesFor(1).includes("text-icon-subtle"), true, "active step icon is subtle");
+	assert.equal(classesFor(2).includes("text-icon-subtlest"), true, "pending step icon is subtlest");
+	const washed = [...view.container.querySelectorAll('[data-cot-icon-slot="active"]')];
+	assert.equal(washed.length, 1, "exactly one icon wash, on the active step");
+	assert.equal(washed[0].querySelector(".cot-icon-wash") !== null, true);
+});
+
 test("the TWG rail override offsets only the custom step's icon column (inline style wins over mt-0.5)", async () => {
 	const view = await renderComponent({ source: STEPS_SOURCE });
 	const rails = [...view.container.querySelectorAll("[data-slot=chain-of-thought-step-rail]")];

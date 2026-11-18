@@ -99,7 +99,7 @@ function Step({
 			defaultOpen={defaultOpen}
 			description={null}
 			icon={state === "error" ? StatusErrorIcon : CheckCircleIcon}
-			iconRender={state === "running" ? <Spinner label={title} /> : undefined}
+			iconRender={state === "running" ? <Spinner size="xs" label={title} /> : undefined}
 			label={title}
 			status={state === "running" ? "active" : "complete"}
 		>

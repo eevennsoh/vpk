@@ -217,7 +217,7 @@ function StudioReplayGeneratingResponseStep(): ReactNode {
 	return (
 		<ChainOfThoughtStep
 			description={null}
-			iconRender={<Spinner variant="rainbow" label="Generating a response" />}
+			iconRender={<Spinner size="xs" label="Generating a response" />}
 			label="Generating a response"
 			status="active"
 		/>

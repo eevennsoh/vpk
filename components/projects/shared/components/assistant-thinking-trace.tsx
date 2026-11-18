@@ -836,7 +836,7 @@ export function AssistantThinkingTrace({
 					})}
 					{state.shouldShowResponseGenerationStep ? (
 						<ChainOfThoughtStep
-							iconRender={<Spinner variant="rainbow" label="Generating a response" />}
+							iconRender={<Spinner size="xs" label="Generating a response" />}
 							label="Generating a response"
 							description={null}
 							status="active"
