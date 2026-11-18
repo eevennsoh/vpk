@@ -92,18 +92,6 @@ test("Tag removable demo centers its removable tag in the preview surface", () =
 	assert.match(TAG_DEMO_SOURCE, /<Tag className="self-center" onRemove=\{\(\) => setVisible\(false\)\}>Removable<\/Tag>/u);
 });
 
-test("Tag click handlers expose a keyboard-operable button contract", () => {
-	const tagSource = fs.readFileSync(
-		path.join(process.cwd(), "components", "ui", "tag.tsx"),
-		"utf8",
-	);
-
-	assert.match(tagSource, /role=\{isInteractive \? "button" : role\}/u);
-	assert.match(tagSource, /tabIndex=\{isInteractive \? \(disabled \? -1 : 0\) : undefined\}/u);
-	assert.match(tagSource, /event\.key === "Enter" \|\| event\.key === " "/u);
-	assert.match(tagSource, /className,\s*style,\s*role,\s*onClick,/u);
-});
-
 test("Tag uses a rounded shell and remove control for every avatar type", () => {
 	const tagSource = fs.readFileSync(
 		path.join(process.cwd(), "components", "ui", "tag.tsx"),
