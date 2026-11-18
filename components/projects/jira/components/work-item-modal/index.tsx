@@ -10,15 +10,18 @@
  * ```tsx
  * import WorkItemModal from "./work-item-modal";
  *
- * <WorkItemModal.Backdrop />
- * <WorkItemModal.Container>
- *   <WorkItemModal.Header />
- *   ...
- * </WorkItemModal.Container>
+ * <WorkItemModal.Root>
+ *   <WorkItemModal.Backdrop />
+ *   <WorkItemModal.Container>
+ *     <WorkItemModal.Header />
+ *     ...
+ *   </WorkItemModal.Container>
+ * </WorkItemModal.Root>
  * ```
  */
 
 import { ModalBackdrop } from "./modal-backdrop";
+import { ModalRoot } from "./modal-root";
 import { ModalContainer, TwoColumnLayout, LeftColumn, RightColumn } from "./modal-container";
 import { ModalHeader, ModalTitle } from "@/components/blocks/jira-work-item/components/work-item-modal/modal-header";
 import { Description } from "./description-section";
@@ -35,6 +38,7 @@ import { SidebarStack, StatusHeader } from "./sidebar-stack";
 import { DetailRow } from "./detail-row";
 
 const WorkItemModal = {
+	Root: ModalRoot,
 	Backdrop: ModalBackdrop,
 	Container: ModalContainer,
 	Header: ModalHeader,

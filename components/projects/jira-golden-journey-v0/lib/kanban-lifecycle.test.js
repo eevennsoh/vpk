@@ -255,7 +255,8 @@ test("toolbar clear-selection empties the selection", async () => {
 	assert.equal(state.anchor, null);
 });
 
-test("shared ranges shrink and moving the anchor invalidates it", async () => {
+// Shift-click ranges are additive in the shared Jira selection (eeaef75ba); only keyboard ranges resize.
+test("shared shift ranges stay additive and moving the anchor invalidates it", async () => {
 	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
 	let state = createInitialAsxKanbanState();
 	const choose = (code) => {
@@ -267,7 +268,8 @@ test("shared ranges shrink and moving the anchor invalidates it", async () => {
 	choose("RFP-102");
 	choose("RFP-104");
 	choose("RFP-103");
-	assert.deepEqual([...state.selectedCardCodes], ["RFP-102", "RFP-103"]);
+	assert.deepEqual([...state.selectedCardCodes].sort(), ["RFP-102", "RFP-103", "RFP-104"]);
+	assert.equal(state.anchor.cardCode, "RFP-102");
 	state = asxKanbanReducer(state, { type: "set-status", targetColumnTitle: "Review" });
 	assert.equal(state.anchor, null);
 });

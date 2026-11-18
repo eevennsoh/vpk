@@ -40,7 +40,7 @@ const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, recommendationReason, avatar, footer, verified = false,
-	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = true, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
+	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = false, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
 }: Readonly<AgentLanyardCardProps>) {
 	const Title = headingLevel === 2 ? "h2" : "h3";
 	const [hovered, setHovered] = useState(false);

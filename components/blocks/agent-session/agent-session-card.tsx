@@ -46,6 +46,7 @@ import {
 	AgentSessionShortMetadata,
 } from "./agent-session-metadata";
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
@@ -416,6 +417,7 @@ export function AgentSessionCard({
 	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
 	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const departureFocus = useAgentSessionDepartureFocus({ glowPlaneSurface, isDeparting, isOnGlowPlane });
+	const { setRowNode } = departureFocus;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -564,6 +566,17 @@ export function AgentSessionCard({
 				return undefined;
 			case "expired":
 			case "owner":
+				if (role === "owner" && !isCloudSession && visibilityLabel !== "Unarchive") {
+					return <AgentSessionContinueMenu
+						actions={menu.actions}
+						copied={menu.copied}
+						item={item}
+						onOpenChange={menu.setIsOpen}
+						open={menu.isOpen}
+						positionerClassName={moreMenuPositionerClassName}
+						trigger={agentSessionMoreTrigger(item)}
+					/>;
+				}
 				return (
 					<AgentSessionMoreMenu
 						actions={menu.actions}
@@ -666,7 +679,7 @@ export function AgentSessionCard({
 				}
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
-			ref={departureFocus.setRowNode}
+			ref={setRowNode}
 			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
 			initial={false}
 			// Track positions continuously; the layout transition decides whether
@@ -786,7 +799,7 @@ export function AgentSessionCard({
 									return (
 										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? sessionIdentity
+												? (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity
 												: (
 													<AgentSessionSelectMark
 														identity={sessionIdentity}

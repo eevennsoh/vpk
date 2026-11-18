@@ -1014,7 +1014,7 @@ function ExperimentalJiraKanbanPageContent({
 								cardMoreMenuActions={issueSelectionAppearance === "fused-backdrop" && (controlledBoardColumns === undefined || onBoardColumnsChange)
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}
-								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
+								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined} onCardsReorder={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsMove : undefined}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale} cardAppearance={cardAppearance}
 								showPriorityIndicator={showPriorityIndicator}
 								showFooterMetadata={showFooterMetadata}

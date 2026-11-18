@@ -126,6 +126,7 @@ export function AgentProgressDemoFailed() {
 				runCreatedAt="2025-01-15T10:00:00Z"
 				runCompletedAt="2025-01-15T10:03:22Z"
 				agentCount={3}
+				onDelete={() => {}}
 			/>
 		</div>
 	);

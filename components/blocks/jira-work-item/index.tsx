@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { AnimatePresence } from "motion/react";
 import dynamic from "next/dynamic";
 import { useRovoChatControls } from "@/app/contexts";
@@ -100,10 +100,10 @@ export function JiraWorkItem({
 }
 
 /** Shared open/close shell: the centered "Open work item" launcher container. */
-function JiraWorkItemShell({ onOpen, children }: Readonly<{ onOpen: () => void; children: ReactNode }>) {
+function JiraWorkItemShell({ launcherRef, onOpen, children }: Readonly<{ launcherRef?: RefObject<HTMLButtonElement | null>; onOpen: () => void; children: ReactNode }>) {
 	return (
 		<div className="flex h-full min-h-[400px] items-center justify-center p-4">
-			<Button type="button" onClick={onOpen}>
+			<Button ref={launcherRef} type="button" onClick={onOpen}>
 				Open work item
 			</Button>
 			{children}
@@ -119,6 +119,7 @@ function JiraWorkItemDefaultView({
 	onIssueClose?: () => void;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
+	const launcherRef = useRef<HTMLButtonElement | null>(null);
 	const { chatSurface } = useRovoChatControls();
 
 	function handleIssueClose() {
@@ -127,8 +128,9 @@ function JiraWorkItemDefaultView({
 	}
 
 	return (
-		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			<JiraWorkItemModal isOpen={isIssueOpen} onClose={handleIssueClose} />
+		<JiraWorkItemShell launcherRef={launcherRef} onOpen={() => setIsIssueOpen(true)}>
+			{/* Opened at mount, the modal has no opener to return focus to: it lands on the launcher. */}
+			<JiraWorkItemModal finalFocusFallback={launcherRef} isOpen={isIssueOpen} onClose={handleIssueClose} />
 			{isIssueOpen && chatSurface === null ? (
 				<FloatingRovoButton ariaLabel="Open Rovo chat" product="jira" />
 			) : null}

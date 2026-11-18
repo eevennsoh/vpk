@@ -50,7 +50,6 @@ function withPermission(item: AgentSessionItem, permission: ButterSessionPermiss
 const SESSION_STATES = ["running", "needs-input", "complete"] as const satisfies readonly AgentSessionItem["state"][];
 const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => ({ ...items[index % items.length], state }));
 
-const LOCAL_SESSIONS = withLifecycleStates(AGENT_SESSION_ITEMS);
 const CLOUD_SESSIONS = withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS);
 /**
  * Card sizes that show how a session row responds to its container. Large is
@@ -65,12 +64,12 @@ const SESSION_SIZES = [
 type SessionSize = (typeof SESSION_SIZES)[number];
 
 
-export function AgentSessionShowcase({ active, className, onSessionOpen, permission, profiles }: Readonly<{ active: boolean; className?: string; onSessionOpen?: () => void; permission: ButterSessionPermission; profiles: readonly RovoAgentProfile[] }>) {
+export function AgentSessionShowcase({ active, className, localItems = AGENT_SESSION_ITEMS, onSessionOpen, permission, profiles }: Readonly<{ active: boolean; className?: string; localItems?: readonly AgentSessionItem[]; onSessionOpen?: () => void; permission: ButterSessionPermission; profiles: readonly RovoAgentProfile[] }>) {
 	const chatProfiles = agentSessionDemoProfiles(profiles, AGENT_SESSION_CLOUD_ITEMS);
-	return <RovoChatProvider agentProfiles={chatProfiles}><HeaderLanyards positionerClassName="z-[600]" menuPositionerClassName="z-[700]"><AgentSessionShowcaseContent active={active} className={className} onSessionOpen={onSessionOpen} permission={permission} profiles={chatProfiles} /></HeaderLanyards></RovoChatProvider>;
+	return <RovoChatProvider agentProfiles={chatProfiles}><HeaderLanyards positionerClassName="z-[600]" menuPositionerClassName="z-[700]"><AgentSessionShowcaseContent active={active} className={className} localItems={localItems} onSessionOpen={onSessionOpen} permission={permission} profiles={chatProfiles} /></HeaderLanyards></RovoChatProvider>;
 }
 
-function AgentSessionShowcaseContent({ active, className, onSessionOpen, permission, profiles }: Readonly<{ active: boolean; className?: string; onSessionOpen?: () => void; permission: ButterSessionPermission; profiles: readonly RovoAgentProfile[] }>) {
+function AgentSessionShowcaseContent({ active, className, localItems, onSessionOpen, permission, profiles }: Readonly<{ active: boolean; className?: string; localItems: readonly AgentSessionItem[]; onSessionOpen?: () => void; permission: ButterSessionPermission; profiles: readonly RovoAgentProfile[] }>) {
 	const [size, setSize] = useState<SessionSize>(SESSION_SIZES[0]);
 	const [answeredSessions, setAnsweredSessions] = useState<ReadonlySet<string>>(new Set());
 	const [viewerChatOwner, setViewerChatOwner] = useState<NonNullable<AgentSessionItem["invokedBy"]> | null>(null);
@@ -80,7 +79,7 @@ function AgentSessionShowcaseContent({ active, className, onSessionOpen, permiss
 	const activeSessionState = answeredSessions.has(activeSessionId ?? "") ? "running" : CLOUD_SESSIONS.find((item) => item.id === activeSessionId)?.state;
 	const rows = permission === "team"
 		? [{ title: "Cloud (Owner)", items: CLOUD_SESSIONS, role: "owner" as const }, { title: "Cloud (Viewer)", items: CLOUD_SESSIONS, role: "viewer" as const }]
-		: [{ title: "Local", items: LOCAL_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }, { title: "Cloud", items: CLOUD_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }];
+		: [{ title: "Local", items: withLifecycleStates(localItems), role: permission === "mine" ? "owner" as const : "viewer" as const }, { title: "Cloud", items: CLOUD_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }];
 	return (
 		<>
 		<div className={cn("flex flex-col overflow-auto px-6", className)}>

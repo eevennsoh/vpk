@@ -100,6 +100,7 @@ test("board sessions show the requested ownership, status and menu defaults", as
 	const data = await loadData();
 	const cards = data.createButterPayBoardColumns().flatMap((column) => column.cards);
 	const card = (code) => cards.find((item) => item.code === code);
+	assert.deepEqual(card("PAY-105").agentActivities.map(({ name, role, state }) => [name, role, state]), [["Cursor", "owner", "working"], ["Claude", "owner", "working"]]);
 	assert.equal(card("PAY-107").teammateSessionsPresentation, "count");
 	assert.deepEqual(card("PAY-107").agentActivities.map(({ role, state }) => [role, state]), [["viewer", "working"], ["viewer", "awaiting-input"]]);
 	assert.deepEqual(card("PAY-107").agentActivities.map(({ privateTo }) => privateTo), ["Maya Ferreira", "Jordan Okafor"]);

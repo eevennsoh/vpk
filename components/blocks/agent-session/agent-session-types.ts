@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import type { AgentListAgent, AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentAssignment } from "@/components/blocks/jira-issue/agent-activity-row-presentation";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
 
 import type { ApproveTarget } from "./agent-session-approve";
@@ -28,6 +30,8 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
+	pullRequestChecks?: readonly PullRequestCheck[];
 	/** The session is shared with the team, including when viewed by its owner. */
 	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
@@ -243,7 +247,7 @@ export interface AgentSessionProps {
 	 */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Owner controls for the My session prototype, using the shared more menu. */
-	moreMenuVariant?: "default" | "owner";
+	moreMenuVariant?: "default" | "owner" | "session-picker";
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.
