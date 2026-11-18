@@ -11,7 +11,7 @@ const { subscribeProcessSignals } = require("./rovo-supervisor");
 // loopbackOccupied: ports held on 127.0.0.1 only (a dev backend). On macOS, 0.0.0.0 and :: still
 // bind then, so only a probe that includes loopback sees them. claimed: port -> another worktree
 // whose port files record it. foreignListeners: ports whose listener runs in another worktree.
-function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [], claimed = {}, foreignListeners = [], healthy = true, owned = false, failRecord = false } = {}) {
+function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [], claimed = {}, foreignListeners = [], healthy = true, owned = false, failRecord = false, portless = false } = {}) {
 	const files = new Map(Object.entries(recorded ?? {}).map(([name, value]) => [`/worktree/${name}`, value]));
 	if (lock) files.set("/worktree/.next/dev/lock", "locked");
 	const busyPorts = new Set(occupied);
@@ -26,7 +26,7 @@ function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [],
 	const stackRecords = [];
 	const signalTarget = new EventEmitter();
 	Object.assign(signalTarget, {
-		env: { PORT_SEARCH_MAX: "4", VPK_TMUX_OWNED: owned ? "1" : "0" },
+		env: { PORT_SEARCH_MAX: "4", VPK_TMUX_OWNED: owned ? "1" : "0", ...(portless ? { PORT: "4000", PORTLESS_URL: "https://fixture.localhost" } : {}) },
 		cwd: () => "/worktree", execPath: "/node", pid: 100,
 		exit: (code) => exits.push(code),
 		kill: (pid, signal) => killed.push({ pid, signal }),
@@ -68,6 +68,7 @@ function harness({ recorded, lock = false, occupied = [], loopbackOccupied = [],
 			getNextDevEnv: ({ port, backendPort }) => ({ PORT: String(port), NEXT_PUBLIC_BACKEND_PORT: backendPort }),
 		},
 		"./worktree-ports": {
+			findAvailableWorktreePort: require("./worktree-ports").findAvailableWorktreePort,
 			getFrontendBasePort: () => 4000,
 			getBackendBasePort: () => 8000,
 			getPortsClaimedByOtherWorktrees: () => new Map(Object.entries(claimed).map(([port, worktree]) => [Number(port), worktree])),
@@ -189,6 +190,37 @@ test("backend never reuses a healthy server whose listener runs in another workt
 	await h.launch("backend");
 	assert.equal(h.spawns.length, 1, "started its own backend");
 	assert.equal(h.files.get("/worktree/.dev-backend-port"), "8000");
+});
+
+test("frontend refuses a claimed Portless port instead of silently breaking its route", async () => {
+	const h = harness({ portless: true, claimed: { 4000: "/other-worktree" } });
+	await assert.rejects(h.launch("frontend"), /No available port/);
+	assert.equal(h.spawns.length, 0);
+	assert.equal(h.files.has("/worktree/.dev-frontend-port"), false);
+});
+
+test("frontend keeps the Portless port on an address race instead of retrying elsewhere", async () => {
+	const h = harness({ portless: true });
+	await h.launch("frontend");
+	assert.equal(h.files.get("/worktree/.dev-frontend-port"), "4000");
+	h.children[0].stderr.emit("data", Buffer.from("EADDRINUSE"));
+	h.children[0].emit("exit", 1, null);
+	await settle();
+	assert.equal(h.spawns.length, 1);
+	assert.deepEqual(h.exits, [1]);
+	assert.equal(h.files.has("/worktree/.dev-frontend-port"), false);
+});
+
+test("frontend does not reuse a lock on a different port from its Portless route", async () => {
+	const h = harness({ portless: true, recorded: { ".dev-frontend-port": "4001" }, lock: true, occupied: [4001] });
+	await h.launch("frontend");
+	assert.equal(h.files.get("/worktree/.dev-frontend-port"), "4000");
+	assert.equal(h.spawns[0].options.env.PORT, "4000");
+	h.children[0].stderr.emit("data", Buffer.from("Unable to acquire lock"));
+	h.children[0].emit("exit", 1, null);
+	await settle();
+	assert.deepEqual(h.exits, [1]);
+	assert.equal(h.files.has("/worktree/.dev-frontend-port"), false);
 });
 
 test("backend skips unhealthy listeners and ignores out-of-range records", async () => {
