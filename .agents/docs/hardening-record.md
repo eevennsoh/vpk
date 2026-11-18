@@ -84,7 +84,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ### Frontend and performance
 
-- `/rovo` and `/studio` are the heaviest routes (fetched-JS budgets 7.09 MB and 7.59 MB). The 402 KB directory chunk stays in first load. A source-only study on 18 Nov found that making the catalog repair lazy would save no startup bytes: about ten other static paths import the directory (the composer's mention sources, the header's agent selector, the agent creation context, Studio's template data), and startup needs only ids and names. The proposed first step, not started and the owner's call, is to load skill bodies (about 64 KB serialized) when a skill's detail editor opens.
+- `/rovo` and `/studio` are the heaviest routes (fetched-JS budgets 7.09 MB and 7.59 MB). The 402 KB directory chunk stays in first load. A source-only study on 18 Nov found that making the catalog repair lazy would save no startup bytes: about ten other static paths import the directory (the composer's mention sources, the header's agent selector, the agent creation context, Studio's template data), and startup needs only ids and names. The proposed first step, loading skill bodies (about 64 KB serialized) when a skill's detail editor opens, is not planned as of 18 Nov: it is under 1% of the route's JS and makes the skill editor asynchronous. Revisit it if route JS becomes a priority.
 - CSS byte budgets were raised by 3,000 bytes on 18 Nov with the owner's approval, each with a `raises` entry: home, components, butter, eu26 and heavy-visual after product changes on `main` (#2385), and rovo and studio for the accessibility fixes (#2382).
 - Hot-context narrowing (C-6) is half done: `useRovoChatControls` exists, but streamed messages still live in the one context that `useRovoChat` reads (26 non-test files outside the two context files name it). No interaction measurement recorded.
 - Studio shell is the largest source file: `components/projects/studio/components/rovo-app-shell.tsx`, 3,330 lines.
@@ -110,7 +110,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 - Source-regex suites: 326 `.source.test` files, and 16,631 `no-restricted-syntax` suppressions in 339 files (the file count rose on 18 Nov because repaired legacy suites took the `.source.test` name). That count undercounts, because suites that read into a local `source` variable are not matched; widening the selector is an open policy question.
 - React hooks lint: 264 suppressions (`refs` 68, `set-state-in-effect` 148, `immutability` 39, `purity` 4, `static-components` 5). The shared `refs` cause (reading a ref through a hook's result object in render) was fixed at the callers on 18 Nov (#2381) with no hook API change. What is left is mostly real work per site: derived state set in effects, external-store initialisation, imperative animation engines.
-- Legacy-drift baseline: 1 suite. The other 43 were repaired and returned to the gate on 18 Nov (#2383, #2384). `components/website/demos/visual/graph-demo.test.js` stays listed with one failing case that states a real defect: the demo declares an origin of 0.52 but the parameter clamp (minimum 0.5, step 0.05) rounds it to 0.5. The owner decides between a 0.5 default and a 0.01 step.
+- Legacy-drift baseline: empty. All 44 suites were repaired and returned to the gate on 18 Nov (#2383, #2384 and the change that emptied the list); the list may only shrink, so it stays empty. The graph demo's origin defaults now declare 0.5, the value the parameter clamp always produced, and a test checks that every numeric demo default survives the clamp unchanged.
 - Realtime voice reducer (SM-FE-16): characterization tests exist, the reducer does not.
 - Open policy question: enforce unused exports and types.
 
@@ -151,7 +151,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 | `no-restricted-syntax` suppressions | 16631 in 339 files | `node -e 'let c=0,f=0;for(const r of Object.values(require("./eslint-suppressions.json"))){const v=r["no-restricted-syntax"];if(v){c+=v.count;f++}}console.log(c+" in "+f+" files")'` |
 | React hooks suppressions | 264 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("react-hooks/"))n+=v.count;console.log(n)'` |
 | jsx-a11y suppressions | 47 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("jsx-a11y/"))n+=v.count;console.log(n)'` |
-| Legacy-drift suites | 1 | `node --input-type=module -e 'import("./scripts/js-unit-test-legacy-drift.mjs").then(m=>console.log(m.LEGACY_DRIFT_TEST_FILES.length))'` |
+| Legacy-drift suites | 0 | `node --input-type=module -e 'import("./scripts/js-unit-test-legacy-drift.mjs").then(m=>console.log(m.LEGACY_DRIFT_TEST_FILES.length))'` |
 | Non-test backend `.js` files | 316 | `git ls-files backend \| grep -E '\.js$' \| grep -v '\.test\.' \| grep -c .` |
 | Backend `@ts-check` files | 27 | `git ls-files backend \| grep -E '\.js$' \| grep -v '\.test\.' \| xargs grep -l '^// @ts-check' \| grep -c .` |
 | `noUncheckedIndexedAccess` errors | 2839 | `node --max-old-space-size=4096 ./node_modules/@typescript/native/bin/tsc --noEmit --noUncheckedIndexedAccess \| grep -c 'error TS'` |
