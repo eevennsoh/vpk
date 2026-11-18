@@ -121,6 +121,33 @@ function createExecutionAssistantMessage({
 
 // 1cdace1ff derives tracker tasks only from update_todo snapshots, so accepted plan tasks no
 // longer seed, label or re-id the tracker; the plan-task fallback cases went with it.
+test("resolveRovoAppPlanExecutionTracker counts distinct nonblank accepted-plan task agents before update_todo", () => {
+	const planWidget = createPlanWidgetPayload();
+	planWidget.tasks.push(
+		{ id: "task-4", label: "Review", blockedBy: [], agent: " Planner " },
+		{ id: "task-5", label: "Unassigned", blockedBy: [], agent: "   " },
+	);
+	const tracker = resolveRovoAppPlanExecutionTracker({
+		activeRun: {
+			id: "run-1",
+			status: "streaming",
+			rovoPort: 8000,
+			startedAt: "2026-03-30T10:00:10.000Z",
+			updatedAt: "2026-03-30T10:00:20.000Z",
+		},
+		messages: [
+			createPlanAssistantMessage(planWidget),
+			createApprovalUserMessage(getPlanApprovalKeyFromPlanWidget(planWidget)),
+		],
+		threadId: "thread-1",
+		threadUpdatedAt: "2026-03-30T10:00:20.000Z",
+	});
+
+	assert.equal(tracker?.agentCount, 2);
+	assert.equal(tracker?.taskCount, 1);
+	assert.equal(tracker?.taskStatusGroups.todo[0]?.id, "__pending-update-todo__");
+});
+
 test("resolveRovoAppPlanExecutionTracker maps update_todo snapshot into task groups", () => {
 	const planWidget = createPlanWidgetPayload();
 	const planKey = getPlanApprovalKeyFromPlanWidget(planWidget);
