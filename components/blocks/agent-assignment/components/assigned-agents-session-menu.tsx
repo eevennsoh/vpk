@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import {
 	type AgentAssignmentAgent,
@@ -8,7 +8,6 @@ import {
 import { toAssignmentSessionItem } from "@/components/blocks/agent-assignment/components/assignment-session";
 import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment/components/teammate-sessions-disclosure";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
-import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -71,9 +70,9 @@ export function AgentSessionsMenu({
 	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
-	const personalItems = items.filter((item) => item.role !== "viewer");
-	const teammateItems = items.filter((item) => item.role === "viewer");
+	const orderedItems = [...items].sort((left, right) => Number(right.state === "needs-input") - Number(left.state === "needs-input"));
+	const personalItems = orderedItems.filter((item) => item.role !== "viewer");
+	const teammateItems = orderedItems.filter((item) => item.role === "viewer");
 	const hasActionableSession = items.some((item) => item.role === undefined || item.role === "owner");
 
 	useEffect(() => {
@@ -100,7 +99,6 @@ export function AgentSessionsMenu({
 			onToggleVisibility={onToggleVisibility}
 			onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
 			padding="compact"
-			renderAgentAvatar={renderAgentAvatar ?? undefined}
 			showLifecycleLabel={false}
 			trailingAlign="center"
 		/>

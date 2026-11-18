@@ -6,6 +6,11 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
+			title: "Session sizes and permissions",
+			description: "Compare large, medium, and small session rows across personal, private, and team sessions, including working, needs input, and finished states.",
+			demoSlug: "agent-session-demo-comparison",
+		},
+		{
 			title: "Team sessions",
 			description: "Cloud sessions shown for both owners and viewers. Both can view the conversation and answer questions; only the owner can send chat messages. Viewers see an owner and status bar.",
 			demoSlug: "agent-session-demo-team",
