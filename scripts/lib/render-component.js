@@ -373,10 +373,17 @@ const LISTENER_TARGETS = [globalThis, document];
 
 function listenerStore(target, description) {
 	const symbol = Object.getOwnPropertySymbols(target).find((candidate) => candidate.description === description);
-	if (symbol === undefined) {
+	const store = symbol === undefined ? undefined : target[symbol];
+	if (!PHASES.every((phase) => store?.[phase] instanceof Map)) {
 		throw new Error(`happy-dom no longer keeps listeners under a "${description}" symbol; update render-component.js.`);
 	}
-	return target[symbol];
+	return store;
+}
+
+// Fail the file at load, not inside a test's afterEach, if happy-dom moved either store.
+for (const target of LISTENER_TARGETS) {
+	listenerStore(target, "listeners");
+	listenerStore(target, "listenerOptions");
 }
 
 function documentListeners() {
@@ -433,12 +440,22 @@ beforeEach((context) => {
 	listenersBeforeTest.set(context, documentListeners());
 });
 afterEach(async (context) => {
+	let unmountFailed = false;
+	let unmountError;
 	try {
 		await cleanup();
-	} finally {
+	} catch (error) {
+		unmountFailed = true;
+		unmountError = error;
+	}
+	try {
 		// Like leaving the page: what the test's components and bundles left on the document goes.
 		removeListenersAddedDuring(context);
+	} catch (removalError) {
+		// The unmount error came first and says more; a removal error only surfaces on its own.
+		if (!unmountFailed) throw removalError;
 	}
+	if (unmountFailed) throw unmountError;
 });
 after(() => GlobalRegistrator.unregister());
 
