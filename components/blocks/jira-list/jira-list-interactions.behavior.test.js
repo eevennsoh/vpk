@@ -266,6 +266,23 @@ for (const project of ["butter", "butter-v1"]) test(`${project} list uses the ca
 	assert.deepEqual(assigned, [["PAY-1", ["claude"]]]);
 });
 
+test("Butter v1 list hides finished sessions while showing active sessions", async () => {
+	const finished = { id: "claude", name: "Claude", statusKind: "finished", statusLabel: "Finished" };
+	const working = { id: "figma", name: "Figma", statusKind: "working", statusLabel: "Working" };
+	const props = {
+		agentCatalog: [{ id: "claude", name: "Claude", byline: "" }, { id: "figma", name: "Figma", byline: "" }],
+		onAssignedAgentIdsChange() {},
+		row: { ...rows[0], agentSessions: [finished] },
+	};
+	const view = await renderComponent({ entry: "components/projects/butter-v1/components/butter-list-agent-cell.tsx", exportName: "ButterListAgentCell", props });
+	assert.equal(view.queryByRole("button", { name: "Claude: Finished" }), null);
+	assert.equal(view.getByRole("button", { name: "Add agent to PAY-1" }) !== null, true);
+	await view.rerender({ ...props, row: { ...rows[0], agentSessions: [finished, working] } });
+	assert.equal(view.getByRole("button", { name: "Figma: Working" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Claude: Finished" }), null);
+	await view.unmount();
+});
+
 test("Butter list forwards agent directory actions to the picker", async () => {
 	const actions = [];
 	const view = await renderComponent({

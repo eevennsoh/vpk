@@ -27,7 +27,8 @@ export function ButterListAgentCell({ agentCatalog, onAgentAssigned, onAssignedA
 }
 
 function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }: Parameters<typeof ButterListAgentCell>[0]) {
-	const sessions = row.agentSessions ?? [];
+	const assignedSessions = row.agentSessions ?? [];
+	const sessions = assignedSessions.filter((session) => session.statusKind !== "finished");
 	const phase = useProjectButterInvocationPhase();
 	const { agent: selectedAgent } = useProjectButterInvocationPreview();
 	const crewSessions: AgentSessionItem[] = sessions.map((session) => ({
@@ -46,7 +47,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 			<div className="group/jira-issue flex min-w-0 items-center gap-2" data-butter-agent-surface>
 				<ProjectButterAddAgent alwaysVisible side="left" issueKey={row.issueKey} assignment={{
 					agents: agentCatalog,
-					assignedAgents: sessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
+					assignedAgents: assignedSessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
 					onAgentAssign: (agent) => onAgentAssigned?.(row.issueKey, agent),
 					onAssignedAgentIdsChange: (ids) => onAssignedAgentIdsChange(row.issueKey, ids),
 					onBrowseAgents,

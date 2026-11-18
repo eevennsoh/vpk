@@ -315,10 +315,11 @@ test("the list session field distinguishes personal and teammate sessions", asyn
 	await view.rerender({ ...props, sessions: [teammate, secondTeammate] });
 	const field = view.getByRole("group", { name: "Agents field" });
 	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
+	assert.equal(document.getElementById(view.getByRole("button", { name: "Using agents" }).getAttribute("aria-describedby")).textContent, "Maya Ferreira, Jordan Okafor");
 	assert.equal([...field.querySelectorAll('[data-slot="avatar"]')].every((avatar) => avatar.getAttribute("data-size") === "sm"), true);
 	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
 	assert.equal(field.textContent.includes("Needs input"), false);
-	await view.click(view.getByRole("button", { name: "Using agents" }));
+	await view.click(field.querySelector('[data-slot="avatar"]'));
 	assert.equal(Boolean(view.queryByText("2 using agents")), true);
 	assert.equal(Boolean(view.queryByText("Cursor work")), true);
 	assert.equal(Boolean(view.queryByText("Figma work")), true);

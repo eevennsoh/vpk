@@ -309,6 +309,7 @@ export function JiraIssueAgentRowContent({
 	rowLabel,
 	showUnlinkControl,
 	isViewerRow = false,
+	revealTeammateLabelOnHover = false,
 	statusIcon,
 	compactAvatarSlot = false,
 	animateStateTransition = false,
@@ -322,6 +323,7 @@ export function JiraIssueAgentRowContent({
 	rowLabel: string;
 	showUnlinkControl: boolean;
 	isViewerRow?: boolean;
+	revealTeammateLabelOnHover?: boolean;
 	statusIcon: ReactElement | null;
 	compactAvatarSlot?: boolean;
 	animateStateTransition?: boolean;
@@ -400,7 +402,7 @@ export function JiraIssueAgentRowContent({
 				>
 					{avatar}
 				</span>
-				{isViewerRow ? <JiraIssueAgentRowLabel isAwaitingInput={false} isWorking={false} rowLabel={rowLabel} /> : phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
+				{isViewerRow ? <span data-teammate-session-label className={revealTeammateLabelOnHover ? "[@media(hover:hover)]:opacity-0 group-hover/jira-issue:opacity-100 group-focus-within/jira-issue:opacity-100" : undefined}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking={false} rowLabel={rowLabel} /></span> : phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}

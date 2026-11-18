@@ -345,7 +345,7 @@ test("header avatars deduplicate identities and count people beyond the first fo
 	const view = await renderMenu(menuProps([session("mine", "owner"), ...people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))], { teammateSessionsPresentation: "count" }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("title")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
+		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("aria-label")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
 		assert.deepEqual(sources, ["/sample-alpha.svg", "/different-alpha.svg"]);
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group-count"]')), false);
 		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 5 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));
