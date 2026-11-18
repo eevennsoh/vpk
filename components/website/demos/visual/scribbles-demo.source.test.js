@@ -2,6 +2,11 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const {
+	SCRIBBLES_DEFAULT_OFFSETS,
+	SCRIBBLES_DEFAULT_INTERVAL_MS,
+	SCRIBBLES_DEFAULT_AMOUNT,
+} = require("./scribbles-defaults.ts");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 
@@ -33,9 +38,9 @@ test("Scribbles keeps the line-boil animation reduced-motion aware", () => {
 	assert.match(SCRIBBLES_SOURCE, /useReducedMotion/);
 	assert.match(SCRIBBLES_SOURCE, /window\.setInterval/);
 	assert.match(SCRIBBLES_SOURCE, /window\.clearInterval/);
-	assert.match(SCRIBBLES_SOURCE, /SCRIBBLES_DEFAULT_OFFSETS = \[-0\.02, 0\.01, -0\.01, 0\.02\] as const/);
-	assert.match(SCRIBBLES_SOURCE, /SCRIBBLES_DEFAULT_INTERVAL_MS = 100/);
-	assert.match(SCRIBBLES_SOURCE, /SCRIBBLES_DEFAULT_AMOUNT = 0\.5/);
+	assert.deepEqual(SCRIBBLES_DEFAULT_OFFSETS, [-0.02, 0.01, -0.01, 0.02]);
+	assert.equal(SCRIBBLES_DEFAULT_INTERVAL_MS, 100);
+	assert.equal(SCRIBBLES_DEFAULT_AMOUNT, 0.5);
 });
 
 test("Scribbles demo exposes the expected GUI controls", () => {
@@ -92,7 +97,7 @@ test("Scribbles demo uses a real SVG asset instead of the inline placeholder ill
 });
 
 test("Scribbles is wired into the visual catalog", () => {
-	assert.match(REGISTRY_SOURCE, /"scribbles": dynamic\(\(\) => import\("\.\/demos\/visual\/scribbles-demo"\)/);
+	assert.match(REGISTRY_SOURCE, /^\s*scribbles: dynamic\(\(\) => import\("\.\/demos\/visual\/scribbles-demo"\)/m);
 	assert.ok(COMPONENTS_SOURCE.includes('visualComponent("scribbles", "Scribbles"'));
 	assert.ok(MANIFEST_SOURCE.includes('visualComponent("scribbles", "Scribbles"'));
 	assert.match(DETAILS_SOURCE, /(?:"scribbles"|scribbles): \{/u);

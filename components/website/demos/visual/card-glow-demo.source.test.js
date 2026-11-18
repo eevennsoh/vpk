@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require("../../../../scripts/lib/esbuild-cjs-loader.js");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 
@@ -12,6 +14,10 @@ const COMPONENTS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-ma
 const MANIFEST_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const NAV_UTILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/nav-utils.ts"), "utf8");
 const DETAILS_SOURCE = readDetailCategorySource("visual");
+const { CARD_GLOW_DEFAULT_CONFIG } = loadCjsModuleFromText(esbuild.buildSync({
+	entryPoints: [path.join(__dirname, "card-glow-config.ts")],
+	bundle: true, format: "cjs", platform: "node", write: false,
+}).outputFiles[0].text);
 
 test("Card Glow is registered as a top-level visual component", () => {
 	assert.match(REGISTRY_SOURCE, /"card-glow": dynamic\(\(\) => import\("\.\/demos\/visual\/card-glow-demo"\)/);
@@ -27,24 +33,14 @@ test("Card Glow is registered as a top-level visual component", () => {
 });
 
 test("Card Glow exposes CodePen-equivalent defaults and GUI controls", () => {
+	assert.deepEqual(CARD_GLOW_DEFAULT_CONFIG, {
+		theme: "light", iconBlur: 28, iconSaturate: 5, iconBrightness: 1.3,
+		iconContrast: 1.4, iconScale: 3.4, iconOpacity: 0.25, borderSpread: 120,
+		borderWidth: 1, borderBlur: 0, borderSaturate: 4.2, borderBrightness: 2.5,
+		borderContrast: 2.5, exclude: false, css: true,
+	});
 	for (const expected of [
-		"export interface CardGlowConfig",
-		"export const CARD_GLOW_DEFAULT_CONFIG",
-		"theme: \"light\"",
-		"iconBlur: 28",
-		"iconSaturate: 5",
-		"iconBrightness: 1.3",
-		"iconContrast: 1.4",
-		"iconScale: 3.4",
-		"iconOpacity: 0.25",
-		"borderSpread: 120",
-		"borderWidth: 1",
-		"borderBlur: 0",
-		"borderSaturate: 4.2",
-		"borderBrightness: 2.5",
-		"borderContrast: 2.5",
-		"exclude: false",
-		"css: true",
+		'export { CARD_GLOW_DEFAULT_CONFIG, type CardGlowConfig } from "./card-glow-config"',
 		"label=\"blur\"",
 		"label=\"saturate\"",
 		"label=\"brightness\"",

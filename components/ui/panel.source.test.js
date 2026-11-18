@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../scripts/lib/render-component.js");
 
 const PANEL_SOURCE = fs.readFileSync(path.join(__dirname, "panel.tsx"), "utf8");
 const PANEL_DEMO_SOURCE = fs.readFileSync(
@@ -38,14 +39,21 @@ test("Panel layout uses fixed header and footer with a scrollable content region
 	assert.match(PANEL_SOURCE, /data-slot="panel-disclaimer"[\s\S]*bg-surface-sunken/u);
 });
 
-test("Panel action variants use panel-system labels and icons", () => {
+test("Panel action variants use panel-system labels and icons", async () => {
 	assert.match(PANEL_SOURCE, /@atlaskit\/icon\/core\/arrow-left/u);
 	assert.match(PANEL_SOURCE, /@atlaskit\/icon\/core\/cross/u);
 	assert.match(PANEL_SOURCE, /@atlaskit\/icon\/core\/grow-diagonal/u);
 	assert.match(PANEL_SOURCE, /@atlaskit\/icon\/core\/link-external/u);
 	assert.match(PANEL_SOURCE, /label \?\? "Close panel"/u);
 	assert.match(PANEL_SOURCE, /onBeforeClose/u);
-	assert.match(PANEL_SOURCE, /if \(href\)/u);
+	const view = await renderComponent({
+		source: `import { PanelAction } from "@/components/ui/panel";
+			import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+			export default function Probe() {
+				return <PanelAction href="/components" icon={ArrowLeftIcon} label="Back to catalog" />;
+			}`,
+	});
+	assert.equal(view.getByRole("link", { name: "Back to catalog" }).getAttribute("href"), "/components");
 	assert.doesNotMatch(PANEL_SOURCE, /href && !iconOnly/u);
 });
 

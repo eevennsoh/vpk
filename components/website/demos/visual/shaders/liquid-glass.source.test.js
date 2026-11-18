@@ -103,10 +103,12 @@ test("LiquidGlass demo applies shared visual settings and stage tracking to both
 		LIQUID_GLASS_DEMO_SOURCE,
 		/import LiquidGlass, \{\s+type LiquidGlassPointerInput,\s+type LiquidGlassProps,\s+\} from "\.\/shaders\/liquid-glass";/,
 	);
-	assert.match(
-		LIQUID_GLASS_BUTTON_SOURCE,
-		/export const LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS = \{[\s\S]*opacity: 0\.9,[\s\S]*blur: 4,[\s\S]*backgroundOpacity: 0\.18,[\s\S]*distortionScale: -40,[\s\S]*dispersion: 4,[\s\S]*borderOpacity: 1,[\s\S]*dropShadow: false,/,
-	);
+	const { LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS } = require("./liquid-glass-button-config.ts");
+	assert.deepEqual(LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS, {
+		borderRadius: 9999, borderWidth: 0.05, brightness: 50, opacity: 0.9,
+		blur: 4, backgroundOpacity: 0.18, saturation: 1, distortionScale: -40,
+		dispersion: 4, borderColor: "var(--ds-border)", borderOpacity: 1, dropShadow: false,
+	});
 	assert.match(
 		LIQUID_GLASS_BUTTON_SOURCE,
 		/\{\.\.\.LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS\}/,

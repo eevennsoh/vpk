@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8");
@@ -11,6 +12,11 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
 const EXPERIMENTAL_CARD_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban-card.tsx"), "utf8");
+const EXPERIMENTAL_COLUMN_SOURCE = readFileSync(join(__dirname, "experimental/components/board-column.tsx"), "utf8");
+const EXPERIMENTAL_CARD_LIST_SOURCE = readFileSync(join(__dirname, "experimental/components/board-column-card-list.tsx"), "utf8");
+const EXPERIMENTAL_ARRIVAL_SOURCE = readFileSync(join(__dirname, "experimental/components/created-card-arrival-motion.tsx"), "utf8");
+const EXPERIMENTAL_ASSIGNMENT_SOURCE = readFileSync(join(__dirname, "experimental/components/board-column-agent-assignment.tsx"), "utf8");
+const EXPERIMENTAL_CONFIGURATION_SOURCE = readFileSync(join(__dirname, "experimental/components/board-view-configuration.tsx"), "utf8");
 const EXPERIMENTAL_PAGE_SOURCE = [
 	readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8"),
 	readFileSync(join(__dirname, "experimental", "experimental-page-types.ts"), "utf8"),
@@ -198,7 +204,7 @@ test("Kanban header compacts its controls while an owning workspace is open", ()
 test("Kanban header supports owning surfaces with a custom search label", () => {
 	assert.match(HEADER_SOURCE, /searchPlaceholder\?: string;/u);
 	assert.match(HEADER_SOURCE, /searchPlaceholder = "Search board"/u);
-	assert.match(HEADER_SOURCE, /<InputGroupInput aria-label=\{searchPlaceholder\} placeholder=\{searchPlaceholder\} readOnly \/>/u);
+	assert.match(HEADER_SOURCE, /<InputGroupInput type="search" aria-label=\{searchPlaceholder\} placeholder=\{searchPlaceholder\} readOnly \/>/u);
 	assert.match(HEADER_SOURCE, /surfaceLabel = "board"/u);
 });
 
@@ -225,12 +231,12 @@ test("Kanban card list gives the first card room for its raised edge", () => {
 
 test("Experimental kanban card lists drop scroller padding while the default keeps its well", () => {
 	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
+		EXPERIMENTAL_CARD_LIST_SOURCE,
+		/overflow-y-auto overscroll-y-contain/u,
 	);
 	assert.doesNotMatch(
-		EXPERIMENTAL_SOURCE,
-		/overflowY: "auto",[\s\S]{0,180}padding(?:Top|Bottom|Inline): token\("space\.(?:050|100)"\)/u,
+		EXPERIMENTAL_CARD_LIST_SOURCE,
+		/padding(?:Top|Inline|Left|Right): token\(/u,
 	);
 	assert.match(
 		SOURCE,
@@ -240,16 +246,16 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 
 test("Experimental kanban default card gap and collapse padding come from the column recipe", () => {
 	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/gap: token\("space\.100"\),\n\s+\.\.\.cardListScrollMaskStyle,\n\s+\.\.\.chrome\.cardList,/u,
+		EXPERIMENTAL_CARD_LIST_SOURCE,
+		/gap: chrome\.cardList\.gap \?\? token\("space\.100"\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_COLUMN_SOURCE,
+		/headerStyle=\{chrome\.header\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/paddingBottom: token\("space\.100"\), \.\.\.chrome\.header/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/paddingTop=\{chrome\.header\.paddingTop \?\? paddingTop\}/u,
+		/style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /gap: token\("space\.025"\)/u);
 });
@@ -258,7 +264,7 @@ test("Experimental kanban collapse control is not padded by column chrome", () =
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /chrome\.resizeButtonClassName/u);
 	assert.doesNotMatch(EXPERIMENTAL_V2_SOURCE, /chrome\.resizeButtonClassName/u);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_COLUMN_SOURCE,
 		/BOARD_COLUMN_ACTION_REVEAL,\n\s+"group-hover\/board-column:pointer-events-auto/u,
 	);
 });
@@ -266,15 +272,15 @@ test("Experimental kanban collapse control is not padded by column chrome", () =
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
 		/<div className="flex min-h-full flex-1 items-stretch gap-2">/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
+		EXPERIMENTAL_CARD_LIST_SOURCE,
+		/overflow-y-auto overscroll-y-contain/u,
 	);
 	assert.match(
 		SOURCE,
@@ -287,10 +293,13 @@ test("Kanban columns retain a readable minimum width when the board narrows", ()
 });
 
 test("Experimental kanban columns lock a 280px min and max width", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /const outerWidth = `\$\{getBoardColumnOuterWidthPx\(collapsed\)\}px`;/u);
+	const { resolveBoardColumnShellSizing } = require("./experimental/lib/board-column-collapse.ts");
+	assert.deepEqual(resolveBoardColumnShellSizing(false), { flex: "1 1 0", minWidth: "280px", maxWidth: "280px" });
+	assert.deepEqual(resolveBoardColumnShellSizing(true), { flex: "1 1 0", minWidth: "36px", maxWidth: "36px" });
+	assert.deepEqual(resolveBoardColumnShellSizing(false, "fluid"), { flex: "1 1 0", minWidth: "280px", maxWidth: undefined });
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/chrome\.dropShellClassName,\s*"min-w-0",\s*collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u,
+		/const sizingStyle = resolveBoardColumnShellSizing\(collapsed, columnWidth\);[\s\S]*\.\.\.sizingStyle/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -299,7 +308,7 @@ test("Experimental kanban columns lock a 280px min and max width", () => {
 });
 
 test("Experimental kanban cards cap at 280px so generative agent chrome cannot stretch them", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /className="w-full min-w-0 max-w-\[280px\]"/u);
+	assert.match(EXPERIMENTAL_ARRIVAL_SOURCE, /"w-full min-w-0 max-w-\[280px\] motion-reduce:transition-none!"/u);
 });
 
 test("Experimental kanban does not show a create-column control", () => {
@@ -693,8 +702,8 @@ test("Kanban column wells come from the shared chrome recipe", () => {
 
 test("Experimental kanban column headers apply the chrome recipe over a board fallback", () => {
 	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/style=\{\{ paddingBottom: token\("space\.100"\), \.\.\.chrome\.header \}\}/u,
+		EXPERIMENTAL_COLUMN_SOURCE,
+		/const paddingBottom = headerStyle\?\.paddingBottom \?\? token\("space\.100"\);[\s\S]*style=\{\{ \.\.\.headerStyle, paddingBottom \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
@@ -771,7 +780,7 @@ test("Experimental kanban keeps the Unlink grey backdrop when a related session 
 test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
 	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
-	assert.match(EXPERIMENTAL_SOURCE, /"flex w-full min-w-0 max-w-\[280px\] flex-col gap-2 rounded-lg"/u);
+	assert.match(EXPERIMENTAL_ARRIVAL_SOURCE, /"flex w-full min-w-0 max-w-\[280px\] flex-col gap-2 rounded-lg"/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*issueKey=\{card\.code\}[\s\S]*items=\{detachedAgentSessions\}[\s\S]*style=\{\{ marginTop: token\("space\.025"\) \}\}[\s\S]*variant="medium-detached"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 });
@@ -779,7 +788,7 @@ test("Experimental kanban renders detached sessions beneath their source card wi
 test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /function getCardAssigneeAvatarSrc\(card: JiraKanbanCardData\)/);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /getCardAssigneeAvatarSrc\(card\)\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /getCardAssigneeAvatarSrc\(card\)\?\.match\(\/\^\\\/avatar-agent\(\?:-new\)\?\\\/\/u\) \? "hexagon" as const : undefined/);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /assigneeAvatarSrc=\{getCardAssigneeAvatarSrc\(card\)\}/);
 	assert.match(
@@ -790,46 +799,44 @@ test("Experimental kanban cards use the hexagon avatar for agent assignees", () 
 });
 
 test("Experimental kanban column wrappers stay overflow-visible so card strokes are not clipped", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /className=\{cn\("group\/board-column min-w-0 overflow-visible", chrome\.columnClassName\)\}/u);
+	assert.match(EXPERIMENTAL_COLUMN_SOURCE, /className=\{cn\("relative z-10 min-h-0 min-w-0 overflow-visible", chrome\.columnClassName/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u,
+		/^\t{3}className=\{cn\(\n\t{4}chrome\.dropShellClassName,\n\t{4}\/\/ The shell includes the empty space beneath content-sized columns\.\n\t{4}"group\/board-column min-w-0",\n\t{4}collapsed \? "group\/collapsed-column" : null,\n\t{4}columnSizing === "content" \? "group\/board-column-shell relative isolate flex min-h-0 flex-col" : null,\n\t{4}isResizing \? "overflow-hidden" : "overflow-visible",\n\t{3}\)\}$/mu,
 	);
 	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
 });
 
 test("Experimental kanban column card lists reuse the shared top and bottom scroll-mask", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
-	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
+	assert.match(EXPERIMENTAL_CARD_LIST_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
+	assert.match(EXPERIMENTAL_CARD_LIST_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+		EXPERIMENTAL_CARD_LIST_SOURCE,
+		/useHasVerticalOverflow<HTMLDivElement>\(\{ trackAnimatedOverflow: true \}\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)[\s\S]*ref=\{setCardListRef\}[\s\S]*overflow-y-auto overscroll-y-contain[\s\S]*\.\.\.scrollMaskStyle/u,
 	);
 	assert.match(EXPERIMENTAL_V2_SOURCE, /buildScrollMaskStyle\(\{[\s\S]*scrollbarWidth: 0,[\s\S]*\}\)/u);
 	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
 });
 
-test("Kanban Create footers stretch to the same width as column cards", () => {
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\) \}\}>[\s\S]*<Button[\s\S]*"w-full justify-start gap-2 rounded-lg"/u,
-	);
-	assert.doesNotMatch(
-		EXPERIMENTAL_SOURCE,
-		/<div(?: className="w-full")? style=\{\{ padding(?!Block): token\("space\.050"\) \}\}>[\s\S]*Create/u,
-	);
+test("Kanban Create controls retain full-width class wiring at their current owners", () => {
+	assert.match(EXPERIMENTAL_CARD_LIST_SOURCE, /data-board-work-item-create=""[\s\S]*<BoardColumnAddButton onStartCreate=\{onStartCreate\} title=\{columnTitle\} \/>/u);
 	assert.match(
 		SOURCE,
 		/<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\), \.\.\.chrome\.footer \}\}>[\s\S]*<Button className="w-full justify-start gap-2 rounded-lg"/u,
 	);
 });
 
-test("Experimental kanban Create is hover-revealed on the column while the default stays visible", () => {
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical[\s\S]*group-hover\/board-column:pointer-events-auto group-hover\/board-column:opacity-100[\s\S]*group-has-\[:focus-visible\]\/board-column:pointer-events-auto group-has-\[:focus-visible\]\/board-column:opacity-100[\s\S]*motion-reduce:transition-none[\s\S]*Create/u,
-	);
+test("Experimental kanban Create is hover-revealed on the column while the default stays visible", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
+		exportName: "BoardColumnAddButton",
+		props: { title: "Intake" },
+	});
+	const classes = view.getByRole("button", { name: "Create in Intake" }).classList;
+	for (const className of ["pointer-events-none", "opacity-0", "transition-opacity", "duration-normal", "ease-out-practical", "group-hover/board-column:pointer-events-auto", "group-hover/board-column:opacity-100", "group-has-[:focus-visible]/board-column:pointer-events-auto", "group-has-[:focus-visible]/board-column:opacity-100", "motion-reduce:transition-none"]) {
+		assert.equal(classes.contains(className), true, className);
+	}
 	assert.match(
 		SOURCE,
 		/<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">\n\t\t\t\t\t<Icon render=\{<AddIcon label="" size="small" \/>\} \/>\n\t\t\t\t\tCreate/u,
@@ -838,23 +845,23 @@ test("Experimental kanban Create is hover-revealed on the column while the defau
 
 test("Experimental kanban column agent assignment uses the compact trigger and work-item selector", () => {
 	assert.match(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_ASSIGNMENT_SOURCE,
 		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/components\/work-item-agent-selector";/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_ASSIGNMENT_SOURCE,
 		/const \[pinnedAgentIds, setPinnedAgentIds\] = useState<readonly string\[\]>\(DEFAULT_PINNED_SPACE_AGENT_IDS\);/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_ASSIGNMENT_SOURCE,
 		/hasAssignedAgents \? "default" : "icon-compact"/u,
 	);
 	assert.doesNotMatch(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_ASSIGNMENT_SOURCE,
 		/hasAssignedAgents \? "h-8 min-w-0 gap-1 px-1\.5" : "size-8"/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SOURCE,
+		EXPERIMENTAL_ASSIGNMENT_SOURCE,
 		/<WorkItemAgentSelector[\s\S]*agents=\{agents\}[\s\S]*onPinnedAgentIdsChange=\{setPinnedAgentIds\}[\s\S]*pinnedAgentIds=\{pinnedAgentIds\}[\s\S]*selectedAgentIds=\{assignedAgentIds\}/u,
 	);
 });
@@ -930,13 +937,18 @@ test("Experimental v2 mirrors the Golden Journey v4 board and list contract", ()
 	assert.match(DEMO_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
 });
 
-test("Experimental kanban header keeps only configure and more actions", () => {
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize";/u);
+test("Experimental kanban header keeps only configure and more actions", async () => {
+	assert.match(EXPERIMENTAL_CONFIGURATION_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize";/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
+		/showCustomizeControl \? <BoardViewConfiguration container=\{viewConfigurationHostRef\} \/> : null/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
+		exportName: "ExperimentalJiraKanbanBoardHeader", props: { showCustomizeControl: true },
+	});
+	assert.equal(view.getByRole("button", { name: "Customize" }).getAttribute("aria-label"), "Customize");
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /aria-label="(?:View insights|Undo board change|Board announcements)"/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /\$\{surfaceTitle\} settings/u);
 });
@@ -972,7 +984,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
