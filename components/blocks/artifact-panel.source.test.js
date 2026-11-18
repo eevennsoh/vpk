@@ -71,11 +71,11 @@ test("ArtifactPanel uses the Rovo Canvas version-history treatment instead of a 
 test("ArtifactPanel reuses Intl formatters across version history rows", () => {
 	assert.match(
 		ARTIFACT_SOURCE,
-		/const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{ dateStyle: "medium" \}\);/u,
+		/const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{\s*dateStyle: "medium",\s*timeZone: "UTC",\s*\}\);/u,
 	);
 	assert.match(
 		ARTIFACT_SOURCE,
-		/const ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{[\s\S]*dateStyle: "medium",[\s\S]*timeStyle: "short",[\s\S]*\}\);/u,
+		/const ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{\s*dateStyle: "medium",\s*timeZone: "UTC",\s*timeStyle: "short",\s*\}\);/u,
 	);
 	assert.match(
 		ARTIFACT_SOURCE,

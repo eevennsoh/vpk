@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import type { JiraKanbanCardData, JiraKanbanProps } from "@/components/blocks/jira-kanban";
-import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus } from "@/components/blocks/jira-kanban/card-drop";
+import { moveJiraKanbanCardsToDropTarget, moveJiraKanbanCardsToStatus, type JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
+import type { IssueCardMove } from "@/components/blocks/jira-kanban/experimental/hooks/use-issue-card-drop-arrival";
 import {
 	createJiraKanbanSelectionState,
 	getCommonJiraKanbanAgentIds,
@@ -70,9 +71,8 @@ export function useJiraDragging() {
 		},
 	});
 
-	const onCardDrop: JiraKanbanProps["onCardDrop"] = (columnTitle, target) => {
-		if (!draggedCardCode || !dragCohort.current) return;
-		const codes = dragCohort.current;
+	// A drop and a keyboard Move up / Move down from a card's menu commit the same way.
+	function commitCardsMove(codes: readonly string[], columnTitle: string, target?: JiraKanbanCardDropTarget) {
 		const multiDrag = codes.length > 1;
 		const columns = target
 			? moveJiraKanbanCardsToDropTarget(boardColumns, codes, columnTitle, target)
@@ -93,7 +93,12 @@ export function useJiraDragging() {
 		setBoardColumns(columns);
 		setSelection((current) => multiDrag ? createJiraKanbanSelectionState() : reconcileJiraKanbanSelection(current, columns));
 		cancelDrag();
+	}
+	const onCardDrop: JiraKanbanProps["onCardDrop"] = (columnTitle, target) => {
+		if (!draggedCardCode || !dragCohort.current) return;
+		commitCardsMove(dragCohort.current, columnTitle, target);
 	};
+	const onCardsReorder = (move: IssueCardMove) => commitCardsMove(move.cardCodes, move.columnTitle, move.target);
 
 	const onCardDragStart: JiraKanbanProps["onCardDragStart"] = (card) => {
 		dragCohort.current = selection.selectedCardCodes.has(card.code) ? [...selection.selectedCardCodes] : [card.code];
@@ -111,6 +116,7 @@ export function useJiraDragging() {
 		onCardSelect,
 		onCardDragStart,
 		onCardDrop,
+		onCardsReorder,
 		onAutoArrange,
 		onCardDragEnd: cancelDrag,
 		cardMoreMenuActions: {

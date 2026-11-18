@@ -846,12 +846,12 @@ export function AgentSessionColumnRail({
 	// motion the setting asks us to drop.
 	const isDocked = shouldReduceMotion !== true;
 	const dock = useNotchDock(visibleItems.length, isDocked);
+	const { centersRef, listRef } = dock;
 	const {
 		ref: overflowRef,
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLUListElement>();
-	const listRef = dock.listRef;
 	const setListRef = useCallback<RefCallback<HTMLUListElement>>((node) => {
 		listRef.current = node;
 		overflowRef(node);
@@ -939,7 +939,7 @@ export function AgentSessionColumnRail({
 						onView={onView}
 						playIntro={playIntro}
 						proximity={isDocked ? {
-							centersRef: dock.centersRef,
+							centersRef,
 							index,
 							magnify: dock.magnify,
 							nearestIndex: dock.nearestIndex,

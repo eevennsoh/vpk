@@ -706,6 +706,7 @@ export function AgentCompactEmptyConfigNav({
 	const navOverflow = useHasHorizontalOverflow<HTMLDivElement>({
 		edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,
 	});
+	const { ref: navOverflowRef } = navOverflow;
 	const scrollMaskStyle = navOverflow.canScrollLeft && navOverflow.canScrollRight
 		? AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE
 		: navOverflow.canScrollLeft
@@ -736,7 +737,7 @@ export function AgentCompactEmptyConfigNav({
 				// When the container is too tight, the row scrolls horizontally and the
 				// shared scroll-mask fades whichever edge has more content.
 				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-				ref={navOverflow.ref}
+				ref={navOverflowRef}
 				style={{
 					gap: AGENT_COMPACT_CONFIG_NAV_GAP,
 					...scrollMaskStyle,

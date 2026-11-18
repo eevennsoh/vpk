@@ -2,29 +2,47 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const CITY_POPOVER_FILE = path.join(__dirname, "city-popover.tsx");
 const CITY_POPOVER_SOURCE = fs.readFileSync(CITY_POPOVER_FILE, "utf8");
 
-test("CityRailEditor consumes each parent open request only once so Escape can close the manager", () => {
-	assert.match(CITY_POPOVER_SOURCE, /const handledOpenRequestKeyRef = useRef\(0\);/);
-	assert.match(
-		CITY_POPOVER_SOURCE,
-		/if \(\s*openRequestKey <= 0 \|\|\s*openRequestKey === handledOpenRequestKeyRef\.current\s*\) \{\s*return;\s*\}/s,
-	);
-	assert.match(
-		CITY_POPOVER_SOURCE,
-		/handledOpenRequestKeyRef\.current = openRequestKey;\s+playSound\("\/sound\/click-001\.mp3"\);\s+setIsOpen\(true\);\s+setHighlightedIndex\(0\);/s,
-	);
-	assert.match(
-		CITY_POPOVER_SOURCE,
-		/if \(event\.key === "Escape"\) \{\s+playSound\("\/sound\/click-004\.mp3"\);\s+setIsOpen\(false\);\s+return;\s+\}/s,
-	);
-	assert.match(CITY_POPOVER_SOURCE, /\}, \[openRequestKey\]\);/);
-	assert.doesNotMatch(
-		CITY_POPOVER_SOURCE,
-		/if \(openRequestKey <= 0 \|\| isOpen\) return;/,
-	);
+const editorProps = {
+	cities: [], selectedIndex: 0, setSelectedIndex() {}, addCity() {},
+};
+const editorMocks = {
+	"@/components/arts/awake/glass-slider": 'export function GlassSlider() { return <button role="slider" aria-label="Cities" />; }',
+	"@/components/arts/awake/use-city-search": 'export function useCitySearch() { return { results: [], isLoading: false, error: null }; }',
+	"@/components/website/demos/visual/shaders/liquid-glass": 'export default function LiquidGlass() { return null; }',
+};
+
+test("CityRailEditor consumes each parent open request only once so Escape can close the manager", async (t) => {
+	const sounds = [];
+	t.mock.method(HTMLMediaElement.prototype, "play", function play() {
+		if (this.volume > 0) sounds.push(new URL(this.src).pathname);
+		return Promise.resolve();
+	});
+	t.mock.method(HTMLMediaElement.prototype, "pause", () => {});
+	const view = await renderComponent({
+		entry: "components/arts/awake/city-popover.tsx", exportName: "CityRailEditor",
+		props: { ...editorProps, openRequestKey: 0 }, mocks: editorMocks,
+	});
+	assert.equal(view.getByRole("button", { name: "Add city" }).getAttribute("aria-expanded"), "false");
+	await view.rerender({ ...editorProps, openRequestKey: -1 });
+	assert.equal(view.getByRole("button", { name: "Add city" }).getAttribute("aria-expanded"), "false");
+	assert.deepEqual(sounds, []);
+	await view.rerender({ ...editorProps, openRequestKey: 1 });
+	assert.equal(view.getByRole("button", { name: "Close city manager" }).getAttribute("aria-expanded"), "true");
+	assert.deepEqual(sounds, ["/sound/click-001.mp3"]);
+	await view.press(view.getByRole("textbox", { name: "Search cities" }), "Escape");
+	assert.equal(view.getByRole("button", { name: "Add city" }).getAttribute("aria-expanded"), "false");
+	assert.deepEqual(sounds, ["/sound/click-001.mp3", "/sound/click-004.mp3"]);
+	await view.rerender({ ...editorProps, openRequestKey: 1 });
+	assert.equal(view.getByRole("button", { name: "Add city" }).getAttribute("aria-expanded"), "false");
+	assert.deepEqual(sounds, ["/sound/click-001.mp3", "/sound/click-004.mp3"]);
+	await view.rerender({ ...editorProps, openRequestKey: 2 });
+	assert.equal(view.getByRole("button", { name: "Close city manager" }).getAttribute("aria-expanded"), "true");
+	assert.deepEqual(sounds, ["/sound/click-001.mp3", "/sound/click-004.mp3", "/sound/click-001.mp3"]);
 });
 
 test("CityRailEditor keeps the manager open when mouse clicks toggle a city row", () => {
@@ -46,17 +64,29 @@ test("CityRailEditor keeps the manager open when mouse clicks toggle a city row"
 	);
 });
 
-test("CityRailEditor resets the highlighted result when search input changes or the manager closes", () => {
-	assert.match(
-		CITY_POPOVER_SOURCE,
-		/const handleSearchChange = useCallback\(\(event: ChangeEvent<HTMLInputElement>\) => \{\s*setSearch\(event\.target\.value\);\s*setHighlightedIndex\(0\);\s*\}, \[\]\);/s,
-	);
-	assert.match(
-		CITY_POPOVER_SOURCE,
-		/if \(!isOpen\) \{\s*setSearch\(""\);\s*setHighlightedIndex\(0\);\s*return;\s*\}/s,
-	);
-	assert.match(CITY_POPOVER_SOURCE, /value=\{search\}/);
-	assert.match(CITY_POPOVER_SOURCE, /onChange=\{handleSearchChange\}/);
+test("CityRailEditor resets the highlighted result when search input changes or the manager closes", async () => {
+	const addedCities = [];
+	const props = { ...editorProps, openRequestKey: 1, addCity: (city) => addedCities.push(city.id) };
+	const view = await renderComponent({
+		entry: "components/arts/awake/city-popover.tsx", exportName: "CityRailEditor",
+		props, mocks: editorMocks,
+	});
+	const search = view.getByRole("textbox", { name: "Search cities" });
+	await view.press(search, "ArrowDown");
+	await view.fill(search, "Tokyo");
+	await view.press(search, "Enter");
+	const { PRESET_CITIES } = require("./preset-cities.ts");
+	assert.deepEqual(addedCities, [PRESET_CITIES.find((city) => city.name === "Tokyo").id]);
+	assert.equal(view.getByRole("button", { name: "Close city manager" }).getAttribute("aria-expanded"), "true");
+	await view.fill(search, "");
+	await view.press(search, "ArrowDown");
+	await view.press(search, "Enter");
+	assert.equal(addedCities[1], PRESET_CITIES[1].id);
+	await view.press(search, "Escape");
+	await view.rerender({ ...props, openRequestKey: 2 });
+	assert.equal(view.getByRole("textbox", { name: "Search cities" }).value, "");
+	await view.press(view.getByRole("textbox", { name: "Search cities" }), "Enter");
+	assert.equal(addedCities[2], PRESET_CITIES[0].id);
 });
 
 test("CityRailEditor lets the city rows use the full list width", () => {

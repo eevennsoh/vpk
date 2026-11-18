@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -122,24 +123,34 @@ test("compact and expanded render one composer subtree so the draft survives the
 	assert.doesNotMatch(COMPONENT_SOURCE, /if \(isExpanded\) \{\s*return/u);
 });
 
-test("expanded pins the stacked FloatingComposer layout", () => {
+test("expanded pins the stacked FloatingComposer layout", async (t) => {
 	assert.match(
 		COMPONENT_SOURCE,
 		/layout=\{isExpanded \? "stacked" : "auto"\}/u,
 		"expanded must reserve a full-width editor row instead of waiting for the draft to wrap",
 	);
 	assert.match(FLOATING_COMPOSER_SOURCE, /layout\?: "auto" \| "stacked"/u);
-	assert.match(
-		FLOATING_COMPOSER_SOURCE,
-		/const isExpanded = layout === "stacked" \|\| isMeasuredExpanded/u,
-	);
-	// The probe cannot change a caller-pinned layout, so it must not run.
-	assert.match(
-		FLOATING_COMPOSER_SOURCE,
-		/if \(layout === "stacked"\) \{\s*return \(\) => undefined;\s*\}/u,
-	);
-	assert.match(FLOATING_COMPOSER_SOURCE, /\}, \[layout\]\);/u);
-	assert.match(FLOATING_COMPOSER_SOURCE, /data-slot="floating-composer-row"/u);
+	const resizeObserver = t.mock.method(globalThis, "ResizeObserver");
+	const view = await renderComponent({
+		source: `import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+			export default function Probe({ layout }) {
+				return <FloatingComposer layout={layout} onSubmit={() => {}} actions={<button>Send</button>}>
+					<textarea aria-label="Fix draft" defaultValue="" />
+				</FloatingComposer>;
+			}`,
+		props: { layout: "stacked" },
+	});
+	const fieldClasses = () => view.getByRole("textbox", { name: "Fix draft" }).parentElement.classList;
+	assert.equal(view.container.querySelectorAll('[data-slot="floating-composer-row"]').length, 1);
+	assert.equal(fieldClasses().contains("basis-full"), true);
+	assert.equal(fieldClasses().contains("order-1"), true);
+	await view.fill(view.getByRole("textbox", { name: "Fix draft" }), "Draft survives layout changes");
+	await view.rerender({ layout: "compact" });
+	assert.equal(fieldClasses().contains("basis-full"), false);
+	await view.rerender({ layout: "stacked" });
+	assert.equal(fieldClasses().contains("basis-full"), true);
+	assert.equal(view.getByRole("textbox", { name: "Fix draft" }).value, "Draft survives layout changes");
+	assert.equal(resizeObserver.mock.callCount(), 0, "pinned layouts must skip wrapping measurement");
 });
 
 test("submit requires a handler and non-empty editor content", () => {

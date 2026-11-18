@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -55,7 +56,7 @@ test("Tool Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /Search for a tool by name, or describe it/u);
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
-	assert.match(source, /<ToolCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
+	assert.match(source, /<ToolCard added=\{addedIds\.has\(tool\.id\)\} onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /<EntityCardToolCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
@@ -139,7 +140,7 @@ test("Tool Directory supports controlled and uncontrolled added tool state", () 
 	assert.match(source, /Add to agent/u);
 	assert.match(source, /Remove/u);
 	assert.match(source, /<Button variant="destructive" onClick=\{onRemoveTool\} type="button">[\s\S]*<DeleteIcon label="" size="small" \/>[\s\S]*Remove/u);
-	assert.match(source, /const presentation = resolveBrandLogoPresentation\(src\);[\s\S]*presentation\.hasBorder && src\.startsWith\("\/3p\/"\)[\s\S]*<Image[\s\S]*src=\{presentation\.src\}/u);
+	assert.match(source, /if \(tool\.brandName\) \{\s*return <LogoThirdParty label=\{tool\.name\} name=\{tool\.brandName\} size="xlarge" \/>;\s*\}\s*const src = tool\.logoSrc \?\? tool\.avatarSrc;\s*if \(!src\) return null;\s*return <CustomLogo label=\{tool\.name\} size="xlarge" src=\{src\} \/>;/u);
 	assert.doesNotMatch(source, /size="sm"/u);
 	assert.doesNotMatch(source, /className="h-px bg-border"/u);
 });
@@ -165,7 +166,7 @@ test("Tool Directory category data follows the requested category content", () =
 	assert.match(source, /Apps for CRM, lead tracking, and customer engagement\./u);
 });
 
-test("Tool Directory docs demo includes added and non-added detail states", () => {
+test("Tool Directory docs demo includes added and non-added detail states", async () => {
 	const source = readProjectFile("components/blocks/tool-directory/page.tsx");
 	const componentSource = readProjectFile("components/blocks/tool-directory/components/tool-directory.tsx");
 	// Tool data is now the single-source-of-truth JSON catalog (two groups).
@@ -193,7 +194,24 @@ test("Tool Directory docs demo includes added and non-added detail states", () =
 	assert.match(componentSource, /teammateCount=\{tool\.teammateCount\}/u);
 	assert.match(componentSource, /toolCount=\{tool\.toolCount\}/u);
 	assert.match(componentSource, /<p className="flex items-center gap-1">[\s\S]*<span>By<\/span>[\s\S]*<span className="truncate text-link">\{publisher\}<\/span>[\s\S]*StatusVerifiedIcon label="Verified"/u);
-	assert.doesNotMatch(componentSource, /<div className="flex items-center gap-2">[\s\S]*<h2 className="text-2xl font-semibold leading-7 text-text">\{tool\.name\}<\/h2>[\s\S]*StatusVerifiedIcon label="Verified"/u);
+	const tool = { ...allTools[0], verified: true, publisherName: "Example publisher" };
+	const view = await renderComponent({
+		entry: "components/blocks/tool-directory/components/tool-directory.tsx",
+		exportName: "ToolDirectoryDialog",
+		props: { tools: [tool], open: true, onOpenChange() {}, initialSelectedToolId: tool.id },
+		mocks: {
+			"@/components/utils/theme-wrapper": `export function useTheme() { return { actualTheme: "light" }; }`,
+		},
+	});
+	const verifiedMark = view.getByRole("img", { hidden: true, name: "Verified" });
+	assert.equal(verifiedMark.closest("h2") === null, true);
+	assert.equal(verifiedMark.closest("p")?.textContent, "ByExample publisher");
+	assert.equal(view.getAllByRole("heading", { name: tool.name }).every((heading) => heading.textContent === tool.name), true);
+	await view.rerender({ key: "legacy-calendar", tools: [{ ...tool, id: "legacy-calendar", logoName: undefined, brandName: undefined, logoSrc: "/3p/google-calendar/16.svg" }], open: true, onOpenChange() {}, initialSelectedToolId: "legacy-calendar" });
+	const logo = view.getByRole("dialog").querySelector('img[src="/3p/google-calendar/16-borderless.svg"]');
+	assert.equal(Boolean(logo), true, "legacy 3P sources resolve to the borderless glyph");
+	assert.equal(logo.closest('[data-slot="tile"]')?.classList.contains("border"), true);
+	assert.equal(logo.closest('[data-slot="tile"]')?.classList.contains("border-border"), true);
 	assert.match(componentSource, /\{tool\.teammateCount\.toLocaleString\("en-US"\)\} teammates/u);
 	assert.doesNotMatch(componentSource, /Used by \{tool\.teammateCount/u);
 	assert.doesNotMatch(componentSource, /teammateCount=\{tool\.teammateCount \?\? 258\}/u);
