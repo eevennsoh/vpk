@@ -24,7 +24,7 @@ import { PlanTabContent } from "@/components/projects/shared/lib/plan-card-utils
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import type { VisualIdentity } from "@/components/projects/shared/lib/visual-identity";
 import { Button } from "@/components/ui/button";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 

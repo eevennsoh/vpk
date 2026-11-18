@@ -70,7 +70,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui-custom/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
+| [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
 | [toolbar](~/.agents/skills/ai-elements/references/toolbar.md) | `@/components/ui-custom/toolbar` | Toolbar with action buttons | `Toolbar` |
 | [connection](~/.agents/skills/ai-elements/references/connection.md) | `@/components/ui-custom/connection` | Connection line between nodes | `Connection` |
 | [edge](~/.agents/skills/ai-elements/references/edge.md) | `@/components/ui-custom/edge` | Graph edge visualization | `Edge` |

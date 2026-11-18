@@ -79,6 +79,7 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	select: dynamic(() => import("../../demos/ui/select-demo"), { ssr: false }),
 	separator: dynamic(() => import("../../demos/ui/separator-demo"), { ssr: false }),
 	sheet: dynamic(() => import("../../demos/ui/sheet-demo"), { ssr: false }),
+	shimmer: dynamic(() => import("../../demos/ui/shimmer-demo"), { ssr: false }),
 	sidebar: dynamic(() => import("../../demos/ui/sidebar-demo"), { ssr: false }),
 	skeleton: dynamic(() => import("../../demos/ui/skeleton-demo"), { ssr: false }),
 	slider: dynamic(() => import("../../demos/ui/slider-demo"), { ssr: false }),

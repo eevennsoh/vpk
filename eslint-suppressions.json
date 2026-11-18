@@ -40,11 +40,6 @@
       "count": 3
     }
   },
-  "app/data/details/ui-custom/shimmer.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "app/data/directory/agents.test.js": {
     "no-restricted-syntax": {
       "count": 8
@@ -2973,14 +2968,6 @@
   "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
-    }
-  },
-  "components/website/demos/ui-custom/shimmer-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
     }
   },
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {

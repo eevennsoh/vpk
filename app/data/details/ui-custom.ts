@@ -56,7 +56,6 @@ import { ROVO_ILLUSTRATION_DETAIL } from "./ui-custom/rovo-illustration";
 import { ROVO_SPARKLE_DETAIL } from "./ui-custom/rovo-sparkle";
 import { SANDBOX_DETAIL } from "./ui-custom/sandbox";
 import { SCHEMA_DISPLAY_DETAIL } from "./ui-custom/schema-display";
-import { SHIMMER_DETAIL } from "./ui-custom/shimmer";
 import { SHIMMER_WAVE_DETAIL } from "./ui-custom/shimmer-wave";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
@@ -125,7 +124,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"rovo-sparkle": ROVO_SPARKLE_DETAIL,
 	sandbox: SANDBOX_DETAIL,
 	"schema-display": SCHEMA_DISPLAY_DETAIL,
-	shimmer: SHIMMER_DETAIL,
 	"shimmer-wave": SHIMMER_WAVE_DETAIL,
 	"sidebar-nav-item": SIDEBAR_NAV_ITEM_DETAIL,
 	"skill-tag": SKILL_TAG_DETAIL,

@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 95,
+				"entryCount": 96,
 				"entries": [
 					{
 						"category": "ui",
@@ -5988,6 +5988,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "shimmer",
+						"name": "Shimmer",
+						"importPath": "@/components/ui/shimmer",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "sidebar",
 						"name": "Sidebar",
 						"importPath": "@/components/ui/sidebar",
@@ -6325,7 +6332,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 67,
+				"entryCount": 66,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6689,13 +6696,6 @@
 						"slug": "schema-display",
 						"name": "Schema Display",
 						"importPath": "@/components/ui-custom/schema-display",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "shimmer",
-						"name": "Shimmer",
-						"importPath": "@/components/ui-custom/shimmer",
 						"status": "live"
 					},
 					{

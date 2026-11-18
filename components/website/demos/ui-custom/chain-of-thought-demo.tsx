@@ -34,7 +34,7 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import {
 	getAwaitingUserResponseLabel,
