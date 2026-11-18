@@ -1514,7 +1514,7 @@
   },
   "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 235
+      "count": 234
     }
   },
   "components/projects/jira-for-you/jira-for-you.source.test.js": {
@@ -1669,7 +1669,7 @@
   },
   "components/projects/jira-queue/queue-conversation-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 54
+      "count": 53
     }
   },
   "components/projects/jira-team-eu26-end/data/agent-session-sync.test.js": {
@@ -1912,7 +1912,7 @@
   },
   "components/projects/rovo-floating-chat/components/rovo-floating-chat.source.test.js": {
     "no-restricted-syntax": {
-      "count": 106
+      "count": 102
     }
   },
   "components/projects/rovo/components/rovo-app-brand.test.js": {
@@ -1927,7 +1927,7 @@
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.source.test.js": {
     "no-restricted-syntax": {
-      "count": 91
+      "count": 89
     }
   },
   "components/projects/rovo/components/rovo-app-shell-approval-card.source.test.js": {
@@ -2023,14 +2023,9 @@
       "count": 1
     }
   },
-  "components/projects/sidebar-chat/hooks/use-scroll-anchor.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 13
-    }
-  },
   "components/projects/sidebar-chat/page-plan-approval.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 14
     }
   },
   "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.source.test.js": {
@@ -2257,11 +2252,6 @@
   "components/ui-custom/context.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
-    }
-  },
-  "components/ui-custom/conversation.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 37
     }
   },
   "components/ui-custom/entity-card/agent-expanded.tsx": {

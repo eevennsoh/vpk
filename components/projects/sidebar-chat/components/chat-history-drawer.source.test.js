@@ -104,7 +104,7 @@ test("custom agent compact chat renders view tabs below the header", () => {
 	assert.match(chatPanelSource, /const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting \|\| isAgentTestEmptyState;/u);
 	// The Test-mode chat now always lets the conversation grow to full height so
 	// the composer pins to the bottom, aligning with the sidebar composer.
-	assert.match(chatPanelSource, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/u);
+	assert.match(chatPanelSource, /<MessageScroller autoScroll scrollPreviousItemPeek=\{0\} className="min-h-0 min-w-0 flex-1"/u);
 	assert.match(chatPanelSource, /<Tabs[\s\S]*aria-label="Custom agent views"[\s\S]*className=\{cn\([\s\S]*"min-h-0 min-w-0 flex-1"[\s\S]*isAgentTestEmptyState && "flex flex-col"/u);
 	assert.match(chatPanelSource, /<DropdownMenuTrigger[\s\S]*aria-label="Switch version"[\s\S]*variant="ghost"[\s\S]*<Badge variant=\{selectedAgentVersion\.variant \?\? "success"\}>[\s\S]*<ChevronDownIcon label="" size="small" spacing="none" \/>/u);
 	assert.match(chatPanelSource, /const selectAgentVersion = \(versionId: string\) => \{[\s\S]*onAgentVersionChange\?\.\(versionId\);[\s\S]*<DropdownMenuItem[\s\S]*onSelect=\{\(\) => onSelectVersion\(version\.id\)\}[\s\S]*elemAfter=\{version\.id === selectedAgentVersion\.id \? <CheckMarkIcon label="Selected" \/> : undefined\}/u);
@@ -275,7 +275,7 @@ test("sidebar, floating, and fullscreen chat message logs use 16px horizontal pa
 	const fullscreenWrapperSource = readProjectFile("components/projects/rovo/components/rovo-app-messages.tsx");
 	const fullscreenSource = readProjectFile("components/projects/rovo-core/components/rovo-app-messages.tsx");
 
-	assert.match(compactSource, /<ConversationContent[\s\S]*className="[^"]*px-4/u);
+	assert.match(compactSource, /<MessageScrollerContent[\s\S]*"mx-auto flex min-w-0 max-w-\[800px\] flex-col gap-4 px-4/u);
 	assert.match(fullscreenWrapperSource, /RovoAppMessages as RovoCoreAppMessages/u);
 	assert.match(fullscreenSource, /extraHorizontalPaddingWhenCompact && compact \? "px-9" : "px-4"/u);
 });

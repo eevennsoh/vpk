@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { Marker, MarkerContent } from "@/components/ui/marker";
+import { SonnerToast, Toaster } from "@/components/ui/sonner";
 
 const longText = `The accessibility review found two focus states that were visually too subtle in dark mode.
 
@@ -49,16 +50,16 @@ export default function BubbleDemo() {
 export function BubbleDemoSizes() {
 	return (
 		<div className="mx-auto flex w-full max-w-md flex-col gap-8">
-			<Bubble>
+			<Bubble align="end">
 				<BubbleContent>This is a one line bubble.</BubbleContent>
 			</Bubble>
-			<Bubble>
+			<Bubble align="end">
 				<BubbleContent>
 					This bubble has multiple lines. It should wrap to the next line and
 					you should see a different radius on the corners.
 				</BubbleContent>
 			</Bubble>
-			<Bubble>
+			<Bubble align="end">
 				<BubbleContent className="flex flex-col gap-2">
 					<p>This bubble has multiple lines.</p>
 					<p>
@@ -77,9 +78,11 @@ export function BubbleDemoVariants() {
 		<div className="mx-auto flex w-full max-w-md flex-col gap-8">
 			<Bubble>
 				<BubbleContent>
-					Default bubbles use the primary color for the active user side of a
-					chat.
+					Default bubbles use the neutral VPK message surface.
 				</BubbleContent>
+			</Bubble>
+			<Bubble variant="primary">
+				<BubbleContent>Primary bubbles use the emphasized brand surface.</BubbleContent>
 			</Bubble>
 			<Bubble variant="secondary">
 				<BubbleContent>
@@ -366,17 +369,24 @@ export function BubbleDemoReactionPlacement() {
 }
 
 export function BubbleDemoReactionsButtons() {
+	const toasterId = React.useId();
+	const showReaction = (title: string) => {
+		toast.custom(() => <SonnerToast title={title} />, { toasterId });
+	};
+
 	return (
 		<div className="mx-auto flex w-full max-w-md flex-col gap-8">
-			<Bubble>
-				<BubbleContent>This is a one line message.</BubbleContent>
+			<Toaster id={toasterId} />
+			<Bubble variant="destructive">
+				<BubbleContent>Are you sure I can run this command?</BubbleContent>
 				<BubbleReactions>
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="compact"
-						onClick={() => toast("You clicked the button in the bubble reaction")}
+						shape="circle"
+						onClick={() => showReaction("You clicked yes, running command...")}
 					>
-						Button
+						Yes, run it
 					</Button>
 				</BubbleReactions>
 			</Bubble>
@@ -386,8 +396,9 @@ export function BubbleDemoReactionsButtons() {
 					<Button
 						variant="ghost"
 						size="icon-compact"
+						shape="circle"
 						aria-label="Celebrate"
-						onClick={() => toast("Confetti!")}
+						onClick={() => showReaction("Confetti!")}
 					>
 						🎉
 					</Button>
@@ -401,16 +412,18 @@ export function BubbleDemoReactionsButtons() {
 					<Button
 						variant="secondary"
 						size="icon-compact"
+						shape="circle"
 						aria-label="Thumbs up"
-						onClick={() => toast("You agree!")}
+						onClick={() => showReaction("You agree!")}
 					>
 						<Icon render={<ThumbsUpIcon label="" size="small" />} label="" />
 					</Button>
 					<Button
 						variant="secondary"
 						size="icon-compact"
+						shape="circle"
 						aria-label="Thumbs down"
-						onClick={() => toast("You disagree!")}
+						onClick={() => showReaction("You disagree!")}
 					>
 						<Icon render={<ThumbsDownIcon label="" size="small" />} label="" />
 					</Button>

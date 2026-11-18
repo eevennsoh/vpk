@@ -26,7 +26,7 @@ const PROBE = `import { useState } from "react";
 			setMessages((current) => [...current, user("u" + (current.length + 1))]);
 		};
 		return <div>
-			<p data-probe="follow">{anchor.scrollFollowMode + ":" + (anchor.scrollAnchorMessageId ?? "none")}</p>
+			<p data-probe="follow">{anchor.scrollAnchorMessageId ?? "none"}</p>
 			<p data-probe="timeline">{follow.activeTimelineMessageId ?? "none"}</p>
 			<button type="button" onClick={() => submit("standard")}>typed submit</button>
 			<button type="button" onClick={() => submit("realtime")}>voice submit</button>
@@ -46,21 +46,21 @@ async function renderProbe() {
 
 test("a typed turn anchors on its new user message, then follows the bottom when the reply finishes", async () => {
 	const probe = await renderProbe();
-	assert.equal(read("follow"), "bottom:none");
+	assert.equal(read("follow"), "none");
 	await probe.press("typed submit");
-	assert.equal(read("follow"), "target:u2", "anchored on the message the submit added");
+	assert.equal(read("follow"), "u2", "anchored on the message the submit added");
 	await probe.press("reply done");
-	assert.equal(read("follow"), "bottom:none");
+	assert.equal(read("follow"), "none");
 });
 
 test("a voice turn stays anchored until the realtime reply completes", async () => {
 	const probe = await renderProbe();
 	await probe.press("voice submit");
-	assert.equal(read("follow"), "target:u2");
+	assert.equal(read("follow"), "u2");
 	await probe.press("reply done");
-	assert.equal(read("follow"), "target:u2", "a standard stream ending does not release a voice anchor");
+	assert.equal(read("follow"), "u2", "a standard stream ending does not release a voice anchor");
 	await probe.press("voice reply done");
-	assert.equal(read("follow"), "bottom:none");
+	assert.equal(read("follow"), "none");
 });
 
 test("changing thread releases the anchor and the scrolled-to timeline item", async () => {
@@ -69,5 +69,5 @@ test("changing thread releases the anchor and the scrolled-to timeline item", as
 	await probe.press("scroll to u1");
 	assert.equal(read("timeline"), "u1");
 	await probe.press("switch thread");
-	assert.deepEqual([read("follow"), read("timeline")], ["bottom:none", "u2"], "back to the latest item of the new thread");
+	assert.deepEqual([read("follow"), read("timeline")], ["none", "u2"], "back to the latest item of the new thread");
 });

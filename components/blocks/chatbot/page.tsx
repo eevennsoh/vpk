@@ -10,9 +10,12 @@ import {
 } from "@/components/ui/vpk-icons"
 
 import {
-	Conversation,
-	ConversationContent,
-} from "@/components/ui-custom/conversation"
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerItem,
+	MessageScrollerViewport,
+} from "@/components/ui/message-scroller"
 import {
 	Message,
 	MessageAction,
@@ -122,35 +125,40 @@ export default function AIChatbotBlock() {
 				</ModelSelector>
 			</div>
 
-			<Conversation className="flex-1">
-				<ConversationContent>
-					{messages.map((msg) => (
-						<Message key={msg.id} from={msg.role}>
-							<MessageContent>
-								{msg.reasoning ? <Reasoning defaultOpen={false} duration={12}>
-										<ReasoningTrigger />
-										<ReasoningContent>{msg.reasoning}</ReasoningContent>
-									</Reasoning> : null}
-								<MessageResponse>{msg.content}</MessageResponse>
-							</MessageContent>
-							{msg.role === "assistant" ? <MessageActions>
-									<MessageAction tooltip="Copy" label="Copy response">
-										<CopyIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Good response" label="Thumbs up">
-										<ThumbsUpIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Bad response" label="Thumbs down">
-										<ThumbsDownIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Regenerate" label="Regenerate response">
-										<RefreshCwIcon className="size-4" />
-									</MessageAction>
-								</MessageActions> : null}
-						</Message>
-					))}
-				</ConversationContent>
-			</Conversation>
+			<MessageScroller autoScroll className="flex-1">
+				<MessageScrollerViewport>
+					<MessageScrollerContent className="gap-8 p-4">
+						{messages.map((msg) => (
+							<MessageScrollerItem key={msg.id} messageId={msg.id} scrollAnchor={msg.role === "user"} className="[content-visibility:visible]">
+								<Message from={msg.role}>
+									<MessageContent>
+										{msg.reasoning ? <Reasoning defaultOpen={false} duration={12}>
+												<ReasoningTrigger />
+												<ReasoningContent>{msg.reasoning}</ReasoningContent>
+											</Reasoning> : null}
+										<MessageResponse>{msg.content}</MessageResponse>
+									</MessageContent>
+									{msg.role === "assistant" ? <MessageActions>
+											<MessageAction tooltip="Copy" label="Copy response">
+												<CopyIcon className="size-4" />
+											</MessageAction>
+											<MessageAction tooltip="Good response" label="Thumbs up">
+												<ThumbsUpIcon className="size-4" />
+											</MessageAction>
+											<MessageAction tooltip="Bad response" label="Thumbs down">
+												<ThumbsDownIcon className="size-4" />
+											</MessageAction>
+											<MessageAction tooltip="Regenerate" label="Regenerate response">
+												<RefreshCwIcon className="size-4" />
+											</MessageAction>
+										</MessageActions> : null}
+								</Message>
+							</MessageScrollerItem>
+						))}
+					</MessageScrollerContent>
+				</MessageScrollerViewport>
+				<MessageScrollerButton />
+			</MessageScroller>
 
 			<div className="border-t p-4">
 				<Suggestions className="mb-3">

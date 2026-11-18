@@ -504,7 +504,7 @@ test("Floating chat keeps chrome and composer outside the scrollable message vie
 		FLOATING_CHAT_HEADER_SOURCE,
 		/className=\{cn\("relative z-10 flex shrink-0 items-center justify-between px-3 py-3", className\)\}/,
 	);
-	assert.match(CHAT_PANEL_SOURCE, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/);
+	assert.match(CHAT_PANEL_SOURCE, /<MessageScroller autoScroll scrollPreviousItemPeek=\{0\} className="min-h-0 min-w-0 flex-1"/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className=\{readOnly && shouldShowQuestionCard \? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"\}>[\s\S]*<ChatComposer/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="shrink-0">[\s\S]*<ChatHeader/);
 });
@@ -527,27 +527,21 @@ test("Embedded chat lets the composer glow paint past the shell", () => {
 });
 
 test("Floating chat header does not force an always-on scroll fade", () => {
-	// Conversation owns the top/bottom scroll masks and only reveals them when
-	// the thread overflows and the user has scrolled away from an edge.
 	assert.doesNotMatch(FLOATING_CHAT_HEADER_SOURCE, /StickyRowScrollFade/u);
 	assert.doesNotMatch(FLOATING_CHAT_HEADER_SOURCE, /floating-chat-header-scroll-fade/u);
 });
 
 test("Shared ChatPanel renders the Rovo-style conversation body and scroll button", () => {
-	assert.match(CHAT_PANEL_SOURCE, /ConversationScrollButton/);
-	assert.match(CHAT_PANEL_SOURCE, /scrollFollowMode/);
-	assert.match(CHAT_PANEL_SOURCE, /isGenerationActive: isStreamingLifecycleActive/);
-	assert.match(CHAT_PANEL_SOURCE, /followMode=\{scrollFollowMode\}/);
-	assert.match(CHAT_PANEL_SOURCE, /enableTargetFollow: chatSurface !== "floating"/);
-	assert.match(CHAT_PANEL_SOURCE, /resize=\{isStreamingLifecycleActive \? "instant" : "smooth"\}/);
-	assert.match(CHAT_PANEL_SOURCE, /resizeTarget=\{isStreamingLifecycleActive \? "bottom" : "follow"\}/);
+	assert.match(CHAT_PANEL_SOURCE, /MessageScrollerButton/);
+	assert.match(CHAT_PANEL_SOURCE, /enableTurnAnchor=\{chatSurface !== "floating"\}/);
+	assert.match(CHAT_PANEL_SOURCE, /scrollAnchor=\{enableTurnAnchor && turn\[0\]\?\.role === "user"\}/);
 	assert.match(
 		CHAT_PANEL_SOURCE,
 		/className=\{cn\(\s*"mx-auto flex min-w-0 max-w-\[800px\] flex-col gap-4 px-4 py-6 md:gap-6",\s*conversationContentClassName\s*\)\}/,
 	);
 	assert.match(
 		CHAT_PANEL_SOURCE,
-		/<ConversationScrollButton className="z-10 transition-all" \/>/,
+		/<MessageScrollerButton className="z-10" \/>/,
 	);
 });
 
@@ -555,7 +549,7 @@ test("Shared ChatPanel renders an optimistic user bubble before the SDK echoes a
 	assert.match(CHAT_PANEL_SOURCE, /appendOptimisticCompactUserMessage/u);
 	assert.match(CHAT_PANEL_SOURCE, /activePrompt/u);
 	assert.match(CHAT_PANEL_SOURCE, /const optimisticPrompt = activePrompt \?\? \(isSubmitPending \? queuedPrompts\[0\] \?\? null : null\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /uiMessages: messages/u);
+	assert.match(CHAT_PANEL_SOURCE, /messages=\{messages\}/u);
 });
 
 test("Floating chat thinking status uses ChainOfThought dots without literal ellipsis labels", () => {
@@ -582,7 +576,7 @@ test("Floating chat compact empty greeting does not force a full-height message 
 	assert.match(CHAT_PANEL_SOURCE, /gridTemplateRows: "auto auto"/);
 	assert.match(CHAT_PANEL_SOURCE, /: hasMessages \|\| shouldUseNaturalEmptyGreeting\s*\? "flex-start"\s*: "flex-end"/u);
 	assert.match(CHAT_PANEL_SOURCE, /minHeight: isAgentTestEmptyState \? "100%" : shouldUseNaturalEmptyGreeting \? "auto" : "100%"/u);
-	assert.match(CHAT_PANEL_SOURCE, /<div className="w-full" style=\{chatStyles\.emptyState\}>/);
+	assert.match(CHAT_PANEL_SOURCE, /<MessageScrollerItem className="w-full \[content-visibility:visible\]" style=\{chatStyles\.emptyState\}>/);
 	assert.doesNotMatch(CHAT_PANEL_SOURCE, /<div className="w-\[90%\]" style=\{chatStyles\.emptyState\}>/);
 });
 

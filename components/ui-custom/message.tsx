@@ -21,6 +21,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Message as BaseMessage, MessageContent as BaseMessageContent } from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import EditIcon from "@atlaskit/icon/core/edit";
 import RetryIcon from "@atlaskit/icon/core/retry";
@@ -54,6 +56,8 @@ export interface MessageProps extends HTMLAttributes<HTMLDivElement> {
 	contain?: boolean;
 }
 
+const MessageRoleContext = createContext<UIMessage["role"] | null>(null);
+
 export function Message({
 	animate,
 	className,
@@ -63,30 +67,33 @@ export function Message({
 	...props
 }: Readonly<MessageProps>) {
 	return (
-		<div
-			className={cn(
-				// cv-auto: skip layout/paint for off-screen messages in long
-				// transcripts. `contain-intrinsic-size: auto 400px` makes each
-				// message remember its real height once rendered, so scroll
-				// anchoring stays stable. Applied here so every chat surface
-				// (chatbot, cursor, rovo, studio) benefits from one place.
-				// Opt out (`contain={false}`) when the message hosts content
-				// that grows after mount, since containment clips overflow.
-				"group group/message flex flex-col gap-2",
-				contain && "cv-auto",
-				from === "user"
-					? cn(
-							"is-user ml-auto w-fit items-end justify-end",
-							fitContent
-								? "max-w-[min(fit-content,80%)]"
-								: "max-w-[80%]",
-						)
-					: "is-assistant w-full max-w-[80%]",
-				animate && "fade-in animate-in duration-medium",
-				className,
-			)}
-			{...props}
-		/>
+		<MessageRoleContext value={from}>
+			<BaseMessage
+				align={from === "user" ? "end" : "start"}
+				className={cn(
+					// cv-auto: skip layout/paint for off-screen messages in long
+					// transcripts. `contain-intrinsic-size: auto 400px` makes each
+					// message remember its real height once rendered, so scroll
+					// anchoring stays stable. Applied here so every chat surface
+					// (chatbot, cursor, rovo, studio) benefits from one place.
+					// Opt out (`contain={false}`) when the message hosts content
+					// that grows after mount, since containment clips overflow.
+					"group group/message flex flex-col gap-2 data-[align=end]:flex-col",
+					contain && "cv-auto",
+					from === "user"
+						? cn(
+								"is-user ml-auto w-fit items-end justify-end",
+								fitContent
+									? "max-w-[min(fit-content,80%)]"
+									: "max-w-[80%]",
+							)
+						: "is-assistant w-full max-w-[80%]",
+					animate && "fade-in animate-in duration-medium",
+					className,
+				)}
+				{...props}
+			/>
+		</MessageRoleContext>
 	);
 }
 
@@ -97,19 +104,25 @@ export function MessageContent({
 	className,
 	...props
 }: Readonly<MessageContentProps>) {
+	const role = use(MessageRoleContext);
 	return (
-		<div
+		<BaseMessageContent
 			className={cn(
 				"flex w-full min-w-0 max-w-full break-words [overflow-wrap:break-word] flex-col gap-2 text-sm",
 				"group-[.is-user]:w-fit",
-				"group-[.is-user]:rounded-xl group-[.is-user]:rounded-br-none group-[.is-user]:bg-bg-neutral group-[.is-user]:hover:bg-bg-neutral-hovered group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-text",
 				"group-[.is-assistant]:text-foreground",
-				className,
+				role === "user" ? undefined : className,
 			)}
 			{...props}
 		>
-			{children}
-		</div>
+			{role === "user" ? (
+				<Bubble align="end">
+					<BubbleContent className={cn("w-full", className)}>
+						{children}
+					</BubbleContent>
+				</Bubble>
+			) : children}
+		</BaseMessageContent>
 	);
 }
 
