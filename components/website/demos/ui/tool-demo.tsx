@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIDataTypes, UIMessage } from "ai";
 
@@ -46,8 +47,12 @@ function getRowState(part: ToolPart, streaming: boolean): ToolPart["state"] {
 }
 
 function ToolRow({ part, streaming, defaultOpen }: Readonly<{ part: ToolPart; streaming: boolean; defaultOpen?: boolean }>) {
+	// Controlled: defaultOpen changes once the reply finishes, and an uncontrolled
+	// Collapsible only reads its default on mount.
+	const [open, setOpen] = useState<boolean>();
+
 	return (
-		<Tool defaultOpen={defaultOpen}>
+		<Tool open={open ?? defaultOpen ?? false} onOpenChange={setOpen}>
 			<ToolHeader
 				type={part.type}
 				state={getRowState(part, streaming)}
