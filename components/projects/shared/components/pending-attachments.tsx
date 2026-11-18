@@ -28,7 +28,7 @@ export function PendingAttachments() {
 						key={file.id}
 						className="h-8 min-w-0 gap-1.5 rounded-md has-data-[slot=attachment-content]:px-1.5 has-data-[slot=attachment-content]:py-0 has-data-[slot=attachment-media]:px-1.5 has-data-[slot=attachment-media]:py-0"
 					>
-						<AttachmentPartMedia data={file} className="size-5 rounded bg-surface" iconClassName="size-3" />
+						<AttachmentPartMedia data={file} className="size-5 rounded bg-surface" iconClassName="size-4" />
 						<AttachmentContent>
 							<AttachmentTitle>{label}</AttachmentTitle>
 						</AttachmentContent>

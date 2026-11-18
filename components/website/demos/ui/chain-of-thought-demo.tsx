@@ -215,7 +215,7 @@ export default function ChainOfThoughtDemo() {
 	const busy = status === "submitted" || status === "streaming";
 
 	return (
-		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+		<div className="flex min-h-72 mx-auto w-full max-w-sm flex-col gap-4 py-6 text-sm">
 			{messages.map((message) => {
 				if (message.role === "user") {
 					return (
@@ -267,7 +267,7 @@ export default function ChainOfThoughtDemo() {
 
 export function ChainOfThoughtDemoUsage() {
 	return (
-		<div className="w-full max-w-sm py-6">
+		<div className="mx-auto w-full max-w-sm py-6">
 			<ChainOfThought defaultOpen>
 				<ChainOfThoughtHeader state="completed">Researched in 3 steps</ChainOfThoughtHeader>
 				<ChainOfThoughtContent>
@@ -282,7 +282,7 @@ export function ChainOfThoughtDemoUsage() {
 
 export function ChainOfThoughtDemoSteps() {
 	return (
-		<div className="w-full max-w-sm py-6">
+		<div className="mx-auto w-full max-w-sm py-6">
 			<ChainOfThought defaultOpen>
 				<ChainOfThoughtHeader state="thinking">Researching</ChainOfThoughtHeader>
 				<ChainOfThoughtContent>
