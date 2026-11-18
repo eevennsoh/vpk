@@ -1,6 +1,7 @@
 "use client";
 
 import AgentsProgress from "@/components/blocks/agent-progress/page";
+import { useTimestampAgo } from "@/hooks/use-timestamp-ago";
 import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity";
 import type { ProgressStatusGroups } from "@/components/blocks/agent-progress/data/mock-tasks";
 
@@ -202,7 +203,7 @@ export function AgentProgressDemoAllStates() {
 // via runCreatedAt / runCompletedAt. This example documents those three states in place
 // of a standalone elapsed-time page.
 export function AgentProgressDemoElapsedTime() {
-	const runningStartedAt = new Date(Date.now() - 243_000).toISOString(); // started ~4m 03s ago
+	const runningStartedAt = useTimestampAgo(243_000); // started ~4m 03s before the demo mounted
 	return (
 		<div className="flex flex-col items-center gap-6 p-6">
 			<div className="flex w-full max-w-sm flex-col gap-2">
