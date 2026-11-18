@@ -872,7 +872,7 @@ function ExperimentalJiraKanbanView({
 								count={column.cards.length}
 								creating={createCard.column !== null}
 								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft, createCard.beforeCardCode); createCard.close(); }} /> : undefined}
-								createBeforeCardCode={createCard.column === column.title ? createCard.beforeCardCode : undefined}
+								createBeforeCardCode={createCard.column === column.title && column.cards.some((card) => card.code === createCard.beforeCardCode) ? createCard.beforeCardCode : undefined}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
