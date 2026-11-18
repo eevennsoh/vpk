@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
 import { token } from "@/lib/tokens";
-import { ModalFinalFocusContext } from "./modal-root";
+import { ModalFinalFocusContext } from "./modal-final-focus-context";
 
 const scrollColumnStyle: CSSProperties = {
 	minHeight: 0,

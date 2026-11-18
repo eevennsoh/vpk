@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
+import { ModalFinalFocusContext, type ModalFinalFocus } from "./modal-final-focus-context";
 
 /** A press or key from the document itself, or from anything rendered inside the modal's portal. */
 function comesFromModal(event: Event, portal: HTMLElement | null): boolean {
@@ -13,11 +14,6 @@ function comesFromModal(event: Event, portal: HTMLElement | null): boolean {
 	}
 	return portal?.contains(target) ?? false;
 }
-
-type FinalFocus = NonNullable<DialogPrimitive.Popup.Props["finalFocus"]>;
-
-/** Where focus lands when the modal closes; read by `ModalContainer`'s popup. */
-export const ModalFinalFocusContext = createContext<FinalFocus>(true);
 
 /** The element focused when the modal opened, unless nothing was (focus on the document body). */
 function focusedOpener(): HTMLElement | null {
@@ -38,7 +34,10 @@ export function ModalRoot({ children, finalFocusFallback }: Readonly<{ children:
 	const portalRef = useRef<HTMLDivElement | null>(null);
 	// Read before the popup mounts and moves focus inside.
 	const [opener] = useState(focusedOpener);
-	const finalFocus: FinalFocus = () => (opener?.isConnected ? true : finalFocusFallback?.current ?? true);
+	const finalFocus: ModalFinalFocus = useCallback(
+		() => (opener?.isConnected ? true : finalFocusFallback?.current ?? true),
+		[opener, finalFocusFallback],
+	);
 
 	return (
 		<DialogPrimitive.Root
