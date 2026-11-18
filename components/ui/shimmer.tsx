@@ -1,29 +1,28 @@
-"use client";
+"use client"
 
-import type { CSSProperties, ElementType, HTMLAttributes } from "react";
+import { memo, type CSSProperties, type ElementType, type HTMLAttributes } from "react"
 
-import { cn } from "@/lib/utils";
-import { memo } from "react";
+import { cn } from "@/lib/utils"
 
 export interface ShimmerProps
 	extends Omit<HTMLAttributes<HTMLElement>, "children"> {
-	children: string;
-	as?: ElementType;
-	className?: string;
+	children: string
+	as?: ElementType
+	className?: string
 	/** Seconds for one sweep. Omit to use the utility default (2s). */
-	duration?: number;
+	duration?: number
 	/**
 	 * Highlight band width, as a multiplier of the text length (the resolved
 	 * width is `children.length * spread` pixels). Omit to use the utility
 	 * default (`3ch + 40px`).
 	 */
-	spread?: number;
+	spread?: number
 	/**
 	 * Resting text colour. The utility derives both the gradient base and its
 	 * highlight from `currentColor`, so this sets `color` rather than a bespoke
 	 * variable. Defaults to `text-muted-foreground`.
 	 */
-	baseColor?: string;
+	baseColor?: string
 }
 
 /**
@@ -46,7 +45,7 @@ export interface ShimmerProps
  * For the per-character 3D wave, use `ShimmerWave`. It is a separate component,
  * not a mode of this one; the two share no rendering.
  */
-const ShimmerComponent = ({
+function ShimmerComponent({
 	children,
 	as: Component = "p",
 	className,
@@ -55,35 +54,35 @@ const ShimmerComponent = ({
 	baseColor,
 	style: styleProp,
 	...props
-}: ShimmerProps) => {
-	const style: CSSProperties = { ...styleProp };
+}: Readonly<ShimmerProps>) {
+	const style: CSSProperties & Record<`--${string}`, string> = { ...styleProp }
 
 	if (duration !== undefined) {
-		(style as Record<string, string>)["--shimmer-duration"] = `${duration}s`;
+		style["--shimmer-duration"] = `${duration}s`
 	}
 
 	if (spread !== undefined) {
-		(style as Record<string, string>)["--shimmer-spread"] =
-			`${children.length * spread}px`;
+		style["--shimmer-spread"] = `${children.length * spread}px`
 	}
 
 	if (baseColor !== undefined) {
-		style.color = baseColor;
+		style.color = baseColor
 	}
 
 	const PolymorphicShimmer = Component as ElementType<
 		HTMLAttributes<HTMLElement>
-	>;
+	>
 
 	return (
 		<PolymorphicShimmer
+			data-slot="shimmer"
 			className={cn("shimmer relative inline-block text-muted-foreground", className)}
 			style={style}
 			{...props}
 		>
 			{children}
 		</PolymorphicShimmer>
-	);
-};
+	)
+}
 
-export const Shimmer = memo(ShimmerComponent);
+export const Shimmer = memo(ShimmerComponent)

@@ -10,7 +10,7 @@ import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { AgentSessionItem } from "./agent-session-types";

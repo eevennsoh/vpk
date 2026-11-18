@@ -25,7 +25,7 @@ import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
 import { isTimelineOnlyContent } from "@/components/ui/reasoning";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Spinner } from "@/components/ui/spinner";
 import { ToolInput, ToolOutput } from "@/components/ui/tool";

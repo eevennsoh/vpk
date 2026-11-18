@@ -37,76 +37,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"shimmer-demo-custom-duration": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoCustomDuration,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-custom-spread": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoCustomSpread,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-color": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoColor,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-duration-utility": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoDurationUtility,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-spread-utility": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoSpreadUtility,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-angle": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoAngle,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-once": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoOnce,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-disabled": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoDisabled,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-rtl": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoRtl,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-marker": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoMarker,
-			})),
-		{ ssr: false },
-	),
 	"shimmer-wave-demo-basic": dynamic(
 		() =>
 			import("../../demos/ui-custom/shimmer-wave-demo").then((mod) => ({
@@ -146,13 +76,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui-custom/shimmer-wave-demo").then((mod) => ({
 				default: mod.ShimmerWaveDemoFullConfig,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-heading": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoHeading,
 			})),
 		{ ssr: false },
 	),

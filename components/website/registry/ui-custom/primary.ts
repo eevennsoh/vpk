@@ -59,7 +59,6 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"rovo-sparkle": dynamic(() => import("../../demos/ui-custom/rovo-sparkle-demo"), { ssr: false }),
 	sandbox: dynamic(() => import("../../demos/ui-custom/sandbox-demo"), { ssr: false }),
 	"schema-display": dynamic(() => import("../../demos/ui-custom/schema-display-demo"), { ssr: false }),
-	shimmer: dynamic(() => import("../../demos/ui-custom/shimmer-demo"), { ssr: false }),
 	"shimmer-wave": dynamic(() => import("../../demos/ui-custom/shimmer-wave-demo"), { ssr: false }),
 	"sidebar-nav-item": dynamic(() => import("../../demos/ui-custom/sidebar-nav-item-demo"), { ssr: false }),
 	"skill-tag": dynamic(() => import("../../demos/ui-custom/skill-tag-demo"), { ssr: false }),

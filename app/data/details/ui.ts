@@ -76,6 +76,7 @@ import { SCROLL_FADE_DETAIL } from "./ui/scroll-fade";
 import { SELECT_DETAIL } from "./ui/select";
 import { SEPARATOR_DETAIL } from "./ui/separator";
 import { SHEET_DETAIL } from "./ui/sheet";
+import { SHIMMER_DETAIL } from "./ui/shimmer";
 import { SIDEBAR_DETAIL } from "./ui/sidebar";
 import { SKELETON_DETAIL } from "./ui/skeleton";
 import { SLIDER_DETAIL } from "./ui/slider";
@@ -173,6 +174,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	select: SELECT_DETAIL,
 	separator: SEPARATOR_DETAIL,
 	sheet: SHEET_DETAIL,
+	shimmer: SHIMMER_DETAIL,
 	sidebar: SIDEBAR_DETAIL,
 	skeleton: SKELETON_DETAIL,
 	slider: SLIDER_DETAIL,
