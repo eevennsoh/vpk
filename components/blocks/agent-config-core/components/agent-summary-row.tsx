@@ -117,7 +117,7 @@ export function AgentReferenceChip({
 			elemBefore={resolvedElemBefore}
 			onClick={disabled ? undefined : onClick}
 			onRemove={onRemove}
-			removeButtonLabel={`Remove ${label}`}
+			removeButtonLabel="Remove"
 			removeVariant="overlay"
 			type={elemBefore ? "default" : getRichTextMentionTagType(visual)}
 			variant="editor"
