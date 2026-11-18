@@ -99,18 +99,18 @@ test("the Agents field avatar stack matches the selector's artwork and brand can
 		await view.rerender({ name });
 		const field = view.getByRole("group", { name: "Agents field" });
 		const stacked = field.querySelector('[data-agent-id="target"] [data-slot="avatar"]');
-		assert.notEqual(stacked, null, `${name} appears in the stack`);
+		assert.equal(stacked !== null, true, `${name} appears in the stack`);
 		const stackVisual = visual(stacked);
 		await view.click(field.querySelector("button"));
 		const picker = view.getByRole("dialog", { name: "Add agent" });
 		const option = [...picker.querySelectorAll("button[data-agent-id]")].find((button) => button.textContent.includes(name));
-		assert.notEqual(option, undefined, `${name} appears in the selector`);
+		assert.equal(option !== undefined, true, `${name} appears in the selector`);
 		assert.deepEqual(stackVisual, visual(option.querySelector('[data-slot="avatar"]')), name);
 		await view.click(field.querySelector("button"));
 	}
 	await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
 	await view.press(view.getByRole("textbox", { name: "Search agents" }), "Escape");
-	assert.equal(view.queryByRole("dialog", { name: "Add agent" }), null);
+	assert.equal(view.queryByRole("dialog", { name: "Add agent" }) === null, true);
 });
 
 test("one catalog demo opens each presentation directly and keeps its Empty setting", async () => {
@@ -131,7 +131,7 @@ test("one catalog demo opens each presentation directly and keeps its Empty sett
 	assert.equal(view.getByRole("switch", { name: "Suggestion" }).getAttribute("aria-checked"), "false");
 	for (const empty of [false, true]) {
 		if (empty) await view.click(view.getByRole("switch", { name: "Empty" }));
-		assert.equal(view.queryByRole("dialog"), null, "the Empty toggle must not launch a work item");
+		assert.equal(view.queryByRole("dialog") === null, true, "the Empty toggle must not launch a work item");
 		for (const [label, presentation] of [["Full screen", "full-screen"], ["Modal", "modal"], ["Side panel", "side-panel"]]) {
 			const button = view.getByRole("button", { name: label });
 			assert.equal(button.getAttribute("aria-pressed"), null, "presentation buttons launch rather than toggle selection");
@@ -163,7 +163,7 @@ test("the catalog's top preview opens Project butter with its Rovo chat host", a
 	await view.click(view.getByRole("button", { name: "Close work item" }));
 	await view.click(view.getByRole("button", { name: "Open experimental session" }));
 	assert.equal(view.queryByRole("dialog", { name: "experimental" }) !== null, true);
-	assert.equal(view.queryByText("Hosted chat"), null, "other variants keep their own chat");
+	assert.equal(view.queryByText("Hosted chat") === null, true, "other variants keep their own chat");
 });
 
 /** Opens every collapsed "N updates" row so individual changes are reachable. */
@@ -244,9 +244,9 @@ test("a host chat shows Ask Rovo and receives agent session links instead of the
 	assert.equal(document.querySelector('aside[aria-label="Host chat"]') !== null, true, "the host chat mounts beside the work item");
 	await view.click(view.getByRole("button", { name: /^Summarize onboarding feedback/u }));
 	assert.deepEqual(opened, ["butter-claude-onboarding-feedback"]);
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null, "the floating session card must not open when a host owns the chat");
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true, "the floating session card must not open when a host owns the chat");
 	await view.rerender({ hosted: false });
-	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }), null, "without a host chat there is nothing for Ask Rovo to open");
+	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }) === null, true, "without a host chat there is nothing for Ask Rovo to open");
 	await view.click(view.getByRole("button", { name: /^Summarize onboarding feedback/u }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) !== null, true, "without a host the floating card stays the fallback");
 	delete globalThis.__butterOpened;
@@ -345,7 +345,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	await view.click(view.getByRole("button", { name: "Open third card" }));
 	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
-	assert.equal(view.queryByText("Ready to work on PAY-120."), null);
+	assert.equal(view.queryByText("Ready to work on PAY-120.") === null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.click(view.getByRole("button", { name: "Open critical card" }));
@@ -422,7 +422,7 @@ test("side panel renders its chrome through the shared Panel and modal does not"
 
 test("modal keeps its own header outside the shared Panel", async () => {
 	await renderWorkItem({ initialPresentation: "modal" });
-	assert.equal(document.querySelector('[data-slot="panel-container"]'), null);
+	assert.equal(document.querySelector('[data-slot="panel-container"]') === null, true);
 	assert.equal(document.querySelector('section[aria-label="Work item modal view"]') !== null, true);
 });
 
@@ -446,13 +446,13 @@ test("empty Project butter opens the start coding menu", async () => {
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }) === null, true);
 });
 
 test("activity header keeps only the filter menu in both states", async () => {
 	for (const initialPreset of ["filled", "empty"]) {
 		const view = await renderWorkItem({ initialPreset });
-		assert.equal(view.queryByRole("button", { name: /^(Collapse|Expand) activity$/u }), null);
+		assert.equal(view.queryByRole("button", { name: /^(Collapse|Expand) activity$/u }) === null, true);
 		assert.equal(view.queryByRole("tablist", { name: "Activity views" }) === null, true);
 		assert.equal(view.queryByRole("button", { name: "Filter activity" }) !== null, true);
 		await view.unmount();
@@ -461,8 +461,8 @@ test("activity header keeps only the filter menu in both states", async () => {
 
 test("empty Project butter shows the reference empty layout without placeholder copy", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
-	assert.equal(view.queryByText("No activity yet. Add a comment or an agent to get started."), null);
-	assert.equal(view.queryByRole("button", { name: "Description" }), null);
+	assert.equal(view.queryByText("No activity yet. Add a comment or an agent to get started.") === null, true);
+	assert.equal(view.queryByRole("button", { name: "Description" }) === null, true);
 	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) !== null, true);
 	assert.equal(commentBarVisible(), true);
 	assert.equal(view.queryByRole("button", { name: "Mention an agent or person" }) !== null, true);
@@ -895,7 +895,7 @@ test("pinned local sessions open the continuation menu in place", async () => {
 	const sessions = PROJECT_BUTTER_SESSIONS.map((session) => session.id === "butter-claude" ? { ...session, role: "owner", invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" } } : session);
 	const view = await renderWorkItem({ initialSessions: sessions });
 	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
 	assert.equal(view.queryByRole("menuitem", { name: "Copy prompt" }) !== null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);

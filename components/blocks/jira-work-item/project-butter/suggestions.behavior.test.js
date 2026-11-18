@@ -116,10 +116,10 @@ test("a suggested description reveals once, stays editable, and yields immediate
 	await view.click(view.getByRole("button", { name: "Accept description" }));
 	const editor = view.getByRole("textbox", { name: "Work item description" });
 	const reveal = document.querySelector("[data-description-reveal]");
-	assert.notEqual(reveal, null);
+	assert.equal(reveal !== null, true);
 	assert.equal(reveal?.getAttribute("aria-hidden"), "true");
 	const animatedText = reveal?.querySelector("[data-suggestion-text-reveal]");
-	assert.notEqual(animatedText, null);
+	assert.equal(animatedText !== null, true);
 	assert.equal(animatedText?.querySelectorAll('[style*="transform"]').length, 0);
 	const coloredWords = [...animatedText.querySelectorAll("[data-description-color]")];
 	assert.equal(coloredWords.length > 0, true);
@@ -139,7 +139,7 @@ test("the description reveal finishes and does not replay when the item is reope
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
 	holdRevealOnFakeTime(t);
 	await view.click(view.getByRole("button", { name: "Accept description" }));
-	assert.notEqual(document.querySelector("[data-description-reveal]"), null);
+	assert.equal(document.querySelector("[data-description-reveal]") !== null, true);
 	await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, 3_000);
 	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
 	await view.rerender({ ...common, open: false });
@@ -190,7 +190,7 @@ test("accepting a due date fills its Details field", async () => {
 
 test("the shared stack accepts and dismisses Butter fields and supports undo", async () => {
 	const view = await openPaymentsSuggestions();
-	assert.notEqual(view.queryByRole("button", { name: "Show as list" }), null);
+	assert.equal(view.queryByRole("button", { name: "Show as list" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept due date" }));
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");
@@ -256,7 +256,7 @@ test("dismissed suggestions stay dismissed when the suggestion setting is toggle
 	await view.click(view.getByRole("switch", { name: "Suggestion" }));
 	await view.click(view.getByRole("switch", { name: "Suggestion" }));
 	await view.click(view.getByRole("button", { name: "View prototype" }));
-	assert.notEqual(view.queryByRole("button", { name: /4 suggestions/iu }), null);
+	assert.equal(view.queryByRole("button", { name: /4 suggestions/iu }) !== null, true);
 	await view.unmount();
 });
 
@@ -265,7 +265,7 @@ test("undoing a dismissal restores it to the work item", async () => {
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Dismiss description" }));
 	await view.click(view.getByRole("button", { name: "Undo dismissing Description" }));
-	assert.notEqual(view.queryByRole("button", { name: /5 suggestions/iu }), null);
+	assert.equal(view.queryByRole("button", { name: /5 suggestions/iu }) !== null, true);
 	await view.unmount();
 });
 
@@ -281,9 +281,9 @@ test("the source stack and grid appear together after the border trace", async (
 	for (let waited = 0; !banner.querySelector("[data-suggestion-grid]") && waited < 8_000; waited += 50) {
 		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
 	}
-	assert.notEqual(banner.querySelector("[data-suggestion-grid]"), null);
-	assert.notEqual(banner.querySelector('[aria-label="Confluence"]'), null);
-	assert.notEqual(view.queryByRole("button", { name: /5 suggestions/iu }), null);
+	assert.equal(banner.querySelector("[data-suggestion-grid]") !== null, true);
+	assert.equal(banner.querySelector('[aria-label="Confluence"]') !== null, true);
+	assert.equal(view.queryByRole("button", { name: /5 suggestions/iu }) !== null, true);
 	await view.unmount();
 });
 
