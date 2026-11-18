@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { createContext, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
@@ -14,15 +14,31 @@ function comesFromModal(event: Event, portal: HTMLElement | null): boolean {
 	return portal?.contains(target) ?? false;
 }
 
+type FinalFocus = NonNullable<DialogPrimitive.Popup.Props["finalFocus"]>;
+
+/** Where focus lands when the modal closes; read by `ModalContainer`'s popup. */
+export const ModalFinalFocusContext = createContext<FinalFocus>(true);
+
+/** The element focused when the modal opened, unless nothing was (focus on the document body). */
+function focusedOpener(): HTMLElement | null {
+	if (typeof document === "undefined") return null;
+	const active = document.activeElement;
+	return active instanceof HTMLElement && active !== document.body ? active : null;
+}
+
 /**
  * Modal-dialog behavior for the work item: focus moves in on open and stays inside, Escape
  * and backdrop presses close it, and focus returns to the opener. Focus is trapped without
  * blocking the pointer, so surfaces that float above the modal (the Rovo chat, an attachment
  * preview) stay clickable, and pressing or typing Escape in them does not close the work item.
+ * A modal that opened with nothing focused (mounted open) returns focus to `finalFocusFallback`.
  */
-export function ModalRoot({ children }: Readonly<{ children: ReactNode }>) {
+export function ModalRoot({ children, finalFocusFallback }: Readonly<{ children: ReactNode; finalFocusFallback?: RefObject<HTMLElement | null> }>) {
 	const { meta } = useWorkItemModal();
 	const portalRef = useRef<HTMLDivElement | null>(null);
+	// Read before the popup mounts and moves focus inside.
+	const [opener] = useState(focusedOpener);
+	const finalFocus: FinalFocus = () => (opener?.isConnected ? true : finalFocusFallback?.current ?? true);
 
 	return (
 		<DialogPrimitive.Root
@@ -37,7 +53,9 @@ export function ModalRoot({ children }: Readonly<{ children: ReactNode }>) {
 				meta.onClose();
 			}}
 		>
-			<DialogPrimitive.Portal ref={portalRef}>{children}</DialogPrimitive.Portal>
+			<DialogPrimitive.Portal ref={portalRef}>
+				<ModalFinalFocusContext value={finalFocus}>{children}</ModalFinalFocusContext>
+			</DialogPrimitive.Portal>
 		</DialogPrimitive.Root>
 	);
 }

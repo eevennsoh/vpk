@@ -1,10 +1,11 @@
 "use client";
 
-import { type CSSProperties, ReactNode } from "react";
+import { type CSSProperties, ReactNode, use } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
 import { token } from "@/lib/tokens";
+import { ModalFinalFocusContext } from "./modal-root";
 
 const scrollColumnStyle: CSSProperties = {
 	minHeight: 0,
@@ -25,11 +26,13 @@ interface ModalContainerProps {
 
 export function ModalContainer({ children }: Readonly<ModalContainerProps>) {
 	const { meta } = useWorkItemModal();
+	const finalFocus = use(ModalFinalFocusContext);
 
 	return (
 		<DialogPrimitive.Popup
 			aria-label={meta.workItem.title}
 			aria-modal="true"
+			finalFocus={finalFocus}
 			className="[&_a:visited]:text-link"
 			style={{
 				position: "fixed",
