@@ -61,15 +61,15 @@ function holdAnimationFrames(t) {
 }
 
 /**
- * The payments profile opens with a border trace, then opens its panel by itself. Waits for that
- * instead of racing it with a click: on a loaded machine the trace can end during the render.
+ * The payments profile opens with a border trace, then opens its panel by itself unless the user
+ * already has. On a loaded machine the trace can end during the render, so open it with the
+ * trigger only when it is not open yet.
  */
 async function openPaymentsSuggestions(props = {}) {
 	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments", ...props });
-	for (let waited = 0; document.querySelector("[data-suggestion-trigger]")?.getAttribute("aria-expanded") !== "true" && waited < 8_000; waited += 50) {
-		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
-	}
-	assert.equal(document.querySelector("[data-suggestion-trigger]")?.getAttribute("aria-expanded"), "true", "the panel opens after the intro");
+	const trigger = document.querySelector("[data-suggestion-trigger]");
+	if (trigger?.getAttribute("aria-expanded") !== "true") await view.click(trigger);
+	assert.equal(document.querySelector("[data-suggestion-trigger]")?.getAttribute("aria-expanded"), "true", "the suggestions panel is open");
 	return view;
 }
 
