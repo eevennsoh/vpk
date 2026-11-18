@@ -13,7 +13,7 @@ import {
 	PlanHeader,
 	PlanTitle,
 	type PlanTask,
-} from "@/components/ui-custom/plan";
+} from "@/components/ui/plan";
 import {
 	resolvePlanDisplayTitle,
 	resolvePlanVisualIdentity,
@@ -174,7 +174,7 @@ export function PlanWidgetInlineCard({
 				isStreaming={isStreaming}
 			>
 				<PlanHeader
-					leading={<PlanAvatar visualIdentity={displayVisualIdentity} />}
+					leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={displayVisualIdentity} /></PlanAvatar>}
 					title={<PlanTitle className="truncate text-sm leading-5 font-semibold text-text">{displayTitleNode}</PlanTitle>}
 					description={<PlanDescription className="truncate text-xs leading-4 text-text-subtlest">{displayDescriptionNode}</PlanDescription>}
 				/>

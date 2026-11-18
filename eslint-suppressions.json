@@ -1983,6 +1983,11 @@
       "count": 31
     }
   },
+  "components/projects/shared/lib/plan-card-utils.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -2355,19 +2360,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/plan.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/ui-custom/plan.tsx": {
-    "no-restricted-imports": {
-      "count": 4
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
   "components/ui-custom/progress-circle.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
@@ -2390,11 +2382,6 @@
     },
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/ui/queue.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/ui-custom/rich-text-editor/extensions.ts": {
@@ -2505,16 +2492,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "components/ui-custom/stack-trace.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/tool-output.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "components/ui-custom/twg-appstack.source.test.js": {
@@ -2649,6 +2626,11 @@
   "components/ui/progress-tracker.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
+    }
+  },
+  "components/ui/queue.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "components/ui/radio-group.source.test.js": {

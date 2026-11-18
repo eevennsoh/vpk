@@ -2,9 +2,37 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
-	shouldScheduleTimelineAutoCollapse,
+	shouldAutoExpandReasoning,
 	shouldScheduleCompletionAutoCollapse,
-} = require("./reasoning-auto-collapse.ts");
+	shouldScheduleTimelineAutoCollapse,
+	shouldScheduleToolIdleAutoCollapse,
+} = require("./reasoning-open-state.ts");
+
+const AUTO_EXPAND_BASE = {
+	autoExpandOnDetails: true,
+	hasDetails: true,
+	isStreaming: true,
+	isOpen: false,
+	isExplicitlyClosed: false,
+	hasUserClosed: false,
+};
+
+test("auto-expands when details appear during streaming and user has not closed", () => {
+	assert.equal(shouldAutoExpandReasoning(AUTO_EXPAND_BASE), true);
+});
+
+test("does not auto-expand after manual user collapse", () => {
+	assert.equal(shouldAutoExpandReasoning({ ...AUTO_EXPAND_BASE, hasUserClosed: true }), false);
+});
+
+test("does not auto-expand when details are not available", () => {
+	assert.equal(shouldAutoExpandReasoning({ ...AUTO_EXPAND_BASE, hasDetails: false }), false);
+});
+
+test("collapses when tools go idle while open", () => {
+	assert.equal(shouldScheduleToolIdleAutoCollapse({ toolsRunning: false, prevToolsRunning: true, isOpen: true }), true);
+	assert.equal(shouldScheduleToolIdleAutoCollapse({ toolsRunning: true, prevToolsRunning: true, isOpen: true }), false);
+});
 
 test("does not schedule timeline auto-collapse when disabled", () => {
 	assert.equal(

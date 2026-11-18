@@ -283,6 +283,41 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"stack-trace-demo-frame-links": dynamic(
+		() =>
+			import("../../demos/ui/stack-trace-demo").then((mod) => ({
+				default: mod.StackTraceFrames,
+			})),
+		{ ssr: false },
+	),
+	"terminal-demo-exit-code": dynamic(
+		() =>
+			import("../../demos/ui/terminal-demo").then((mod) => ({
+				default: mod.TerminalError,
+			})),
+		{ ssr: false },
+	),
+	"test-results-demo-suites": dynamic(
+		() =>
+			import("../../demos/ui/test-results-demo").then((mod) => ({
+				default: mod.TestResultsSuites,
+			})),
+		{ ssr: false },
+	),
+	"subagent-demo-running": dynamic(
+		() =>
+			import("../../demos/ui/subagent-demo").then((mod) => ({
+				default: mod.SubagentRunning,
+			})),
+		{ ssr: false },
+	),
+	"subagent-demo-details": dynamic(
+		() =>
+			import("../../demos/ui/subagent-demo").then((mod) => ({
+				default: mod.SubagentDetails,
+			})),
+		{ ssr: false },
+	),
 	"code-block-demo-basic": dynamic(
 		() =>
 			import("../../demos/ui/code-block-demo").then((mod) => ({
@@ -483,6 +518,34 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui/queue-demo").then((mod) => ({
 				default: mod.QueueDemoMinimal,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-summary-and-tasks": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoSummaryAndTasks,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-tasks-only": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoTasksOnly,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoInline,
+			})),
+		{ ssr: false },
+	),
+	"plan-demo-description": dynamic(
+		() =>
+			import("../../demos/ui/plan-demo").then((mod) => ({
+				default: mod.PlanDemoDescription,
 			})),
 		{ ssr: false },
 	),
@@ -864,6 +927,48 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui/badge-demo").then((mod) => ({
 				default: mod.BadgeDemoDisabled,
+			})),
+		{ ssr: false },
+	),
+	"reasoning-demo-duration": dynamic(
+		() =>
+			import("../../demos/ui/reasoning-demo").then((mod) => ({
+				default: mod.ReasoningDemoDuration,
+			})),
+		{ ssr: false },
+	),
+	"reasoning-demo-streaming": dynamic(
+		() =>
+			import("../../demos/ui/reasoning-demo").then((mod) => ({
+				default: mod.ReasoningDemoStreaming,
+			})),
+		{ ssr: false },
+	),
+	"reasoning-demo-timeline": dynamic(
+		() =>
+			import("../../demos/ui/reasoning-demo").then((mod) => ({
+				default: mod.ReasoningDemoTimeline,
+			})),
+		{ ssr: false },
+	),
+	"tool-demo-states": dynamic(
+		() =>
+			import("../../demos/ui/tool-demo").then((mod) => ({
+				default: mod.ToolDemoStates,
+			})),
+		{ ssr: false },
+	),
+	"tool-demo-input-output": dynamic(
+		() =>
+			import("../../demos/ui/tool-demo").then((mod) => ({
+				default: mod.ToolDemoInputOutput,
+			})),
+		{ ssr: false },
+	),
+	"tool-demo-label": dynamic(
+		() =>
+			import("../../demos/ui/tool-demo").then((mod) => ({
+				default: mod.ToolDemoLabel,
 			})),
 		{ ssr: false },
 	),

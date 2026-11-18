@@ -8,7 +8,7 @@ function readProjectFile(filePath) {
 }
 
 const SOURCE = readProjectFile("components/projects/shared/components/agent-edit-summary-card.tsx");
-const GENERATIVE_CARD_SOURCE = readProjectFile("components/blocks/generative-card/index.tsx");
+const GENERATIVE_CARD_SOURCE = readProjectFile("components/ui/generative-card-header.tsx");
 
 test("agent edit summary card uses a collapsed header edit action and expanded footer edit action", () => {
 	assert.match(SOURCE, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);

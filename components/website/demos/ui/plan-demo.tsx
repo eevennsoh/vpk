@@ -1,7 +1,15 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
+import { useState } from "react";
+
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
+import { PlanTabContent } from "@/components/projects/shared/lib/plan-card-utils";
+import { formatPlanStepCount, resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Message, MessageContent } from "@/components/ui/message";
 import {
 	Plan,
 	PlanAvatar,
@@ -9,14 +17,19 @@ import {
 	PlanDescription,
 	PlanFooter,
 	PlanHeader,
-	PlanTabContent,
+	PlanIcon,
+	PlanStep,
+	PlanSteps,
 	PlanTaskItem,
 	PlanTaskList,
 	PlanTitle,
+	type PlanStepStatus,
 	type PlanTask,
-} from "@/components/ui-custom/plan";
-import { formatPlanStepCount, resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity";
-import { useState } from "react";
+} from "@/components/ui/plan";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createChat, getMessageText } from "@/lib/ai";
+
+/* ----- Card (default variant) ----- */
 
 const PLAN_TASKS: PlanTask[] = [
 	{ id: "1", label: "Create Flexible Fridays Work-back Plan", blockedBy: [] },
@@ -55,7 +68,7 @@ function resolveBlockedByLabels(task: PlanTask): string[] {
 function PlanDemoHeader() {
 	return (
 		<PlanHeader
-			leading={<PlanAvatar visualIdentity={resolvePlanVisualIdentity("Plan title")} />}
+			leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity("Plan title")} /></PlanAvatar>}
 			title={<PlanTitle className="truncate text-sm leading-5 font-semibold text-text">Plan title</PlanTitle>}
 			description={<PlanDescription className="text-xs leading-4 text-text-subtlest">{`${formatPlanStepCount(PLAN_TASKS.length)} • Description`}</PlanDescription>}
 		/>
@@ -149,4 +162,151 @@ export function PlanDemoSummaryAndTasks() {
 
 export default function PlanDemo() {
 	return <PlanDemoSummaryAndTasks />;
+}
+
+/* ----- Inline variant ----- */
+
+type PlanData = {
+	title: string;
+	steps: { title: string; status: PlanStepStatus }[];
+};
+
+type ChatMessage = UIMessage<unknown, { plan: PlanData }>;
+
+const STEPS = [
+	"Install @base-ui/react",
+	"Replace the Radix imports",
+	"Rename asChild to render",
+	"Run the type checker",
+];
+
+function planAt(current: number): PlanData {
+	return {
+		title: "Plan: migrate to Base UI",
+		steps: STEPS.map((title, index) => ({
+			title,
+			status: index < current ? "done" : index === current ? "running" : "pending",
+		})),
+	};
+}
+
+const chat = createChat<ChatMessage>()
+	.user("Migrate the dialog components to Base UI.")
+	.assistant(({ writer }) => {
+		STEPS.forEach((_, index) => {
+			writer.data({ type: "data-plan", id: "plan", data: planAt(index) }).sleep(1200);
+		});
+		writer.data({ type: "data-plan", id: "plan", data: planAt(STEPS.length) });
+		writer.text("Migrated Dialog and AlertDialog. The type checker passes.");
+	});
+
+const transcript = chat.get();
+const [question] = chat.get(1);
+const transport = chat.transport({ delayMs: 20 });
+
+function PlanRow({ plan, streaming }: Readonly<{ plan: PlanData; streaming: boolean }>) {
+	const done = plan.steps.filter((step) => step.status === "done").length;
+	const running = streaming && done < plan.steps.length;
+
+	return (
+		<Plan defaultOpen isStreaming={running} variant="inline">
+			<PlanHeader>
+				<PlanIcon />
+				<PlanTitle>{plan.title}</PlanTitle>
+				<PlanDescription>
+					{done} of {plan.steps.length} done
+				</PlanDescription>
+			</PlanHeader>
+			<PlanContent>
+				<PlanSteps>
+					{plan.steps.map((step) => (
+						<PlanStep key={step.title} status={step.status}>
+							{step.title}
+						</PlanStep>
+					))}
+				</PlanSteps>
+			</PlanContent>
+		</Plan>
+	);
+}
+
+/** The inline variant as an agent streams it: shadcn's demo, with Replay. */
+export function PlanDemoInline() {
+	const { messages, sendMessage, setMessages, status } = useChat({
+		messages: transcript,
+		transport,
+	});
+	const busy = status === "submitted" || status === "streaming";
+
+	return (
+		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+			{messages.map((message) => {
+				if (message.role === "user") {
+					return (
+						<Message key={message.id} align="end">
+							<MessageContent>
+								<Bubble align="end" variant="muted">
+									<BubbleContent>{getMessageText(message)}</BubbleContent>
+								</Bubble>
+							</MessageContent>
+						</Message>
+					);
+				}
+
+				const streaming = busy && message === messages.at(-1);
+				const plan = message.parts.find((part) => part.type === "data-plan");
+				const text = getMessageText(message);
+
+				return (
+					<Message key={message.id}>
+						<MessageContent className="gap-4">
+							{plan ? <PlanRow plan={plan.data} streaming={streaming} /> : null}
+							{text ? <p>{text}</p> : null}
+						</MessageContent>
+					</Message>
+				);
+			})}
+			{busy ? null : (
+				<Button
+					className="mt-auto self-start"
+					onClick={() => {
+						setMessages([]);
+						void sendMessage(question);
+					}}
+					variant="outline"
+				>
+					Replay
+				</Button>
+			)}
+		</div>
+	);
+}
+
+const DESCRIPTION_STEPS = [
+	"Add a dark variant to the theme tokens",
+	"Read the theme from a cookie on the server",
+	"Add a toggle to the settings page",
+	"Check contrast on the charts",
+];
+
+export function PlanDemoDescription() {
+	return (
+		<Plan className="max-w-sm" defaultOpen variant="inline">
+			<PlanHeader>
+				<PlanIcon />
+				<PlanTitle>Plan: add dark mode</PlanTitle>
+				<PlanDescription>1 of {DESCRIPTION_STEPS.length} done</PlanDescription>
+			</PlanHeader>
+			<PlanContent className="flex flex-col gap-3">
+				<p>Store the theme in a cookie so the server renders the right one and the page does not flash on load.</p>
+				<PlanSteps>
+					{DESCRIPTION_STEPS.map((step, index) => (
+						<PlanStep key={step} status={index === 0 ? "done" : "pending"}>
+							{step}
+						</PlanStep>
+					))}
+				</PlanSteps>
+			</PlanContent>
+		</Plan>
+	);
 }
