@@ -63,28 +63,30 @@ export default function JiraWorkItemModal({
 			highlightedAttachmentKey={highlightedAttachmentKey}
 			workItem={resolvedWorkItem}
 		>
-			<WorkItemModal.Backdrop />
-			<WorkItemModal.Container>
-				<WorkItemModal.Header />
-				<WorkItemModal.TwoColumnLayout>
-					<WorkItemModal.LeftColumn>
-						<WorkItemModal.Title />
-						<WorkItemModal.Description />
-						<WorkItemModal.ChildItems />
-						<WorkItemModal.AgentPanel />
-						<WorkItemModal.Attachments />
-						<WorkItemModal.Activity />
-					</WorkItemModal.LeftColumn>
-					<WorkItemModal.RightColumn>
-						<WorkItemModal.StatusHeader />
-						<WorkItemModal.SidebarStack>
-							<WorkItemModal.DetailsAccordion />
-							<WorkItemModal.MoreFieldsAccordion />
-							<WorkItemModal.AutomationAccordion />
-						</WorkItemModal.SidebarStack>
-					</WorkItemModal.RightColumn>
-				</WorkItemModal.TwoColumnLayout>
-			</WorkItemModal.Container>
+			<WorkItemModal.Root>
+				<WorkItemModal.Backdrop />
+				<WorkItemModal.Container>
+					<WorkItemModal.Header />
+					<WorkItemModal.TwoColumnLayout>
+						<WorkItemModal.LeftColumn>
+							<WorkItemModal.Title />
+							<WorkItemModal.Description />
+							<WorkItemModal.ChildItems />
+							<WorkItemModal.AgentPanel />
+							<WorkItemModal.Attachments />
+							<WorkItemModal.Activity />
+						</WorkItemModal.LeftColumn>
+						<WorkItemModal.RightColumn>
+							<WorkItemModal.StatusHeader />
+							<WorkItemModal.SidebarStack>
+								<WorkItemModal.DetailsAccordion />
+								<WorkItemModal.MoreFieldsAccordion />
+								<WorkItemModal.AutomationAccordion />
+							</WorkItemModal.SidebarStack>
+						</WorkItemModal.RightColumn>
+					</WorkItemModal.TwoColumnLayout>
+				</WorkItemModal.Container>
+			</WorkItemModal.Root>
 		</WorkItemModalProvider>
 	);
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import { type CSSProperties, ReactNode } from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+
+import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
 import { token } from "@/lib/tokens";
 
 const scrollColumnStyle: CSSProperties = {
@@ -21,8 +24,12 @@ interface ModalContainerProps {
 }
 
 export function ModalContainer({ children }: Readonly<ModalContainerProps>) {
+	const { meta } = useWorkItemModal();
+
 	return (
-		<div
+		<DialogPrimitive.Popup
+			aria-label={meta.workItem.title}
+			aria-modal="true"
 			className="[&_a:visited]:text-link"
 			style={{
 				position: "fixed",
@@ -39,10 +46,11 @@ export function ModalContainer({ children }: Readonly<ModalContainerProps>) {
 				display: "grid",
 				gridTemplateRows: "auto minmax(0, 1fr)",
 				overflow: "hidden",
+				outline: "none",
 			}}
 		>
 			{children}
-		</div>
+		</DialogPrimitive.Popup>
 	);
 }
 
