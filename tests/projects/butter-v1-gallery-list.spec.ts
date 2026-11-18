@@ -10,6 +10,10 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await gallery.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
 	await expect(list).toBeVisible();
+	for (const [key, label] of [["PAY-132", "Using agent"], ["PAY-104", "Using agents"]]) {
+		const row = list.getByRole("button", { name: key, exact: true }).locator("xpath=ancestor::tr");
+		await expect(row.getByText(label, { exact: true })).toBeVisible();
+	}
 	for (const edge of ["top", "right", "bottom", "left"]) {
 		await expect(list).toHaveCSS(`border-${edge}-width`, "0px");
 	}
@@ -35,6 +39,7 @@ test("list work items align around the subtask expand control", async ({ page })
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await list.getByRole("button", { name: "Collapse PAY-101" }).click();
 	const leaf = list.getByRole("button", { name: "PAY-124", exact: true });
 	const parent = list.getByRole("button", { name: "PAY-101", exact: true });
 	const expand = list.getByRole("button", { name: "Expand PAY-101" });
@@ -215,6 +220,7 @@ test("expanded hierarchy chevrons do not look selected", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await list.getByRole("button", { name: "Collapse PAY-101" }).click();
 	const styles = (element: Element) => {
 		const button = getComputedStyle(element);
 		const icon = element.querySelector("svg");
