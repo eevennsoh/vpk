@@ -65,13 +65,25 @@ resolve_session_name() {
 	node scripts/lib/dev-tmux-session.js plain
 }
 
-# Resolve the extra args for `portless run` for this worktree: empty on main or a
-# branched worktree (vanilla portless derives the URL), or `--name <dir>` when
-# HEAD is detached. Shared logic lives in scripts/lib/worktree-ports.js.
+# Select a worktree-safe port before Portless registers its route. Detached
+# worktrees also get an explicit name from scripts/lib/worktree-ports.js.
 resolve_portless_args() {
 	node - <<'NODE'
-const { getPortlessRunArgs } = require("./scripts/lib/worktree-ports");
-process.stdout.write(getPortlessRunArgs().join(" "));
+const { getPortlessRunArgs, getPortInfo } = require("./scripts/lib/worktree-ports");
+const { findAvailableWorktreePort } = require("./scripts/lib/dev-port-selection");
+async function main() {
+	const fixedPort = process.env.PORTLESS_APP_PORT;
+	const basePort = Number(fixedPort || process.env.PORT || getPortInfo().frontendBase);
+	if (!Number.isInteger(basePort) || basePort < 1 || basePort > 65535) {
+		throw new Error("Frontend port must be an integer from 1 to 65535.");
+	}
+	const port = await findAvailableWorktreePort(basePort, fixedPort ? { maxTries: 1 } : {});
+	process.stdout.write([...getPortlessRunArgs(), "--app-port", String(port)].join(" "));
+}
+main().catch((error) => {
+	console.error(error.message);
+	process.exitCode = 1;
+});
 NODE
 }
 
@@ -328,8 +340,8 @@ launch_session() {
 	tm pipe-pane -t "=$SESSION_NAME:" -o "'$node_bin' '$REPO_ROOT/scripts/lib/dev-log-filter.js' --out '$DEV_LOG_FILE' --max-bytes '$DEV_LOG_MAX_BYTES'"
 	# Launch the dev stack THROUGH portless so this worktree gets a stable
 	# .localhost URL. `portless run` with no command runs the package.json
-	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
-	# only when HEAD is detached.
+	# "dev" script (frontend + backend); ${portless_args} pins the selected port
+	# and adds `--name <dir>` only when HEAD is detached.
 	tm send-keys -t "=$SESSION_NAME:" "cd \"$REPO_ROOT\" && CI=true pnpm exec portless run ${portless_args}" C-m
 	stack_state phase starting
 	echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."

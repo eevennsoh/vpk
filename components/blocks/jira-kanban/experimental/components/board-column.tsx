@@ -210,6 +210,7 @@ export function BoardColumn({
 	onStartCreate,
 	creating = false,
 	createDraft,
+	createBeforeCardCode,
 	hideScrollbar = false,
 	onToggleAgent,
 	sessionDragTransaction,
@@ -235,9 +236,10 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
-	onStartCreate?: (trigger: HTMLElement) => void;
+	onStartCreate?: (trigger: HTMLElement, beforeCardCode?: string, returnFocus?: HTMLElement | null) => void;
 	creating?: boolean;
 	createDraft?: ReactNode;
+	createBeforeCardCode?: string;
 	hideScrollbar?: boolean;
 	onToggleAgent?: (agentId: string) => void;
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
@@ -248,11 +250,12 @@ export function BoardColumn({
 	onIssueDrop?: (title: string, target?: JiraKanbanCardDropTarget) => void;
 }>) {
 	const issueDrop = useBoardIssueDrop({ source: issueDragSource, title, statuses, onDrop: onIssueDrop, moveVisual: issueMoveVisual });
+	const { rootRef } = issueDrop;
 	const insertionArmed = cardInsertion?.columnTitle === title;
 	const isEmptyColumn = count === 0;
 	// The moved source can unmount before dragend; settled columns must clear their drag paint.
-	useBoardColumnDropRing(issueDrop.rootRef, chrome, Boolean(issueDrop.current?.entered && issueDrop.current.surface !== "position"));
-	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueMoveVisual && issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, issueDrop.rootRef);
+	useBoardColumnDropRing(rootRef, chrome, Boolean(issueDrop.current?.entered && issueDrop.current.surface !== "position"));
+	const { minimumHeight: choiceHeight } = useCreateDropzoneHeight(issueMoveVisual && issueDrop.choosing && columnSizing === "content", "bottom", columnSizing, rootRef);
 	const createAction = <BoardColumnCreateAction
 		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
@@ -299,7 +302,7 @@ export function BoardColumn({
 					title={title}
 				/>
 			<div
-				ref={issueDrop.rootRef}
+				ref={rootRef}
 				{...issueDrop.handlers}
 				className={cn("relative flex min-h-0 flex-col", columnSizing === "fill" ? "flex-1" : null)}
 				// Fixed status targets reuse the create well's reserved magnetic clearance.
@@ -323,6 +326,7 @@ export function BoardColumn({
 						createdCardArrival={createdCardArrival}
 						creating={creating}
 						createDraft={createDraft}
+						createBeforeCardCode={createBeforeCardCode}
 						hideScrollbar={hideScrollbar}
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}

@@ -43,23 +43,9 @@ graph TD
 	assert.ok(!description.includes("Inferred order"));
 });
 
-test("buildPlanDescriptionFallback generates inferred linear mermaid when dependencies are missing", () => {
-	const description = buildPlanDescriptionFallback({
-		messageText: "# Plan\n\nDeliver the board refresh with the agreed scope.",
-		planPayload: createPlanPayload([
-			{ id: "task-1", label: "Review scope", blockedBy: [] },
-			{ id: "task-2", label: "Implement changes", blockedBy: [] },
-			{ id: "task-3", label: "Validate behavior", blockedBy: [] },
-		]),
-	});
-
-	assert.match(description, /### Task dependency graph/);
-	assert.match(description, /Inferred order: tasks are shown in a simple linear sequence/);
-	assert.match(description, /task_1 --> task_2/);
-	assert.match(description, /task_2 --> task_3/);
-});
-
-test("buildPlanDescriptionFallback does not add inferred note for explicit dependencies", () => {
+// 215d5801b stopped deriving a dependency graph from plan tasks: the graph section only
+// reuses mermaid the plan message already contains.
+test("buildPlanDescriptionFallback adds no task graph when the message has no mermaid", () => {
 	const description = buildPlanDescriptionFallback({
 		messageText: "# Plan\n\nShip work by dependency order.",
 		planPayload: createPlanPayload([
@@ -68,6 +54,5 @@ test("buildPlanDescriptionFallback does not add inferred note for explicit depen
 		]),
 	});
 
-	assert.match(description, /task_1 --> task_2/);
-	assert.ok(!description.includes("Inferred order"));
+	assert.equal(description, "Ship work by dependency order.");
 });

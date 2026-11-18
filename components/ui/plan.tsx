@@ -8,7 +8,7 @@ import type { ComponentProps, CSSProperties, ReactNode, RefObject } from "react"
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right"
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group"
 import { motion } from "motion/react"
-import { createContext, use, useEffect, useRef, useState } from "react"
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -93,15 +93,20 @@ export function Plan({ className, isStreaming = false, open, defaultOpen = false
 	const [isContentExpanded, setIsContentExpanded] = useState(defaultContentExpanded)
 	const isOpen = isControlled ? open : uncontrolledOpen
 
-	const setIsOpen = (next: boolean) => {
-		if (!isControlled) {
-			setUncontrolledOpen(next)
-		}
-		onOpenChange?.(next)
-	}
+	const setIsOpen = useCallback(
+		(next: boolean) => {
+			if (!isControlled) {
+				setUncontrolledOpen(next)
+			}
+			onOpenChange?.(next)
+		},
+		[isControlled, onOpenChange]
+	)
 
-	// oxlint-disable-next-line react-doctor/jsx-no-constructed-context-values -- The value combines live state and setters; memoizing would not reduce consumer churn.
-	const contextValue = { variant, isStreaming, isOpen, setIsOpen, isContentExpanded, setIsContentExpanded }
+	const contextValue = useMemo(
+		() => ({ variant, isStreaming, isOpen, setIsOpen, isContentExpanded, setIsContentExpanded }),
+		[variant, isStreaming, isOpen, setIsOpen, isContentExpanded]
+	)
 
 	if (variant === "inline") {
 		return (

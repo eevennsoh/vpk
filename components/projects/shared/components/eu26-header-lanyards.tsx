@@ -1,15 +1,38 @@
 "use client";
 
-import { createContext, use, useRef, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useId, useRef, useState, type ReactNode } from "react";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import { AgentLanyard, AgentLanyardHoverContent, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
-import { AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
-import { HoverCard, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
+import { ROVO_AGENT_ID } from "@/app/data/directory/agents";
+import { AgentLanyard, AgentLanyardHoverContent, AGENT_LANYARD_AGENTS, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
+import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+import { AgentLanyardAvatarFrame, AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
+import { HoverCard, HoverCardTrigger, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
 import { TOOLTIP_POPUP_ANIMATION_CLASSES } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type HeaderAgent = AgentLanyardAgent | AgentLanyardFirstPartyAgent;
 const HeaderLanyardContext = createContext<HoverCardHandle<HeaderAgent> | null>(null);
+const SESSION_AGENT_IDS = new Map([["claude", "claude"], ["cursor", "cursor"], ["openai-codex", "codex"], ["github-copilot", "copilot"]]);
+const ROVO_LANYARD_AGENT: AgentLanyardAgent = {
+	id: ROVO_AGENT_ID,
+	name: "Rovo",
+	publisher: "Atlassian",
+	description: "Find information, connect context, and get work done across your tools.",
+	avatarSrc: ROVO_LOGO_DATA_URI,
+	action: "chat",
+	verified: true,
+};
+const SESSION_APP_LANYARDS: readonly AgentLanyardAgent[] = [
+	{ id: "canva", name: "Canva", publisher: "Canva", description: "Create and collaborate on designs with Canva.", brandName: "canva", action: "connect" },
+	{ id: "figma", name: "Figma", publisher: "Figma", description: "Design and collaborate with Figma.", brandName: "figma", action: "connect" },
+];
+
+function SessionAvatarPreview({ agent, avatar, handle }: Readonly<{ agent: AgentLanyardAgent; avatar: ReactNode; handle: HoverCardHandle<HeaderAgent> }>) {
+	const id = useId();
+	return <HoverCardTrigger closeDelay={150} delay={150} handle={handle} id={id} payload={agent} render={<button aria-label={`Preview ${agent.name}`} className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" data-session-drag-ignore="" onClick={(event) => { event.stopPropagation(); handle.open(id); }} onKeyDown={(event) => { if (event.key === "Escape" && handle.isOpen) { event.stopPropagation(); handle.close(); } }} type="button">{avatar}</button>} />;
+}
 
 export function useHeaderLanyardHandle() {
 	const handle = use(HeaderLanyardContext);
@@ -24,6 +47,13 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 }>) {
 	const { openChat, selectAgent } = useRovoChatControls();
 	const [handle] = useState(() => createHoverCardHandle<HeaderAgent>());
+	const renderSessionAvatar = useCallback<AgentSessionAvatarPreview>((identity, avatar) => {
+		const id = identity.brandName ? SESSION_AGENT_IDS.get(identity.brandName) : undefined;
+		const agent = identity.vpkLogo === "rovo" || identity.id === ROVO_AGENT_ID || identity.avatarSrc === ROVO_LOGO_DATA_URI
+			? ROVO_LANYARD_AGENT
+			: [...AGENT_LANYARD_AGENTS, ...SESSION_APP_LANYARDS].find((candidate) => candidate.id === id || candidate.brandName === identity.brandName && identity.brandName !== undefined || (identity.avatarSrc && candidate.avatarSrc === identity.avatarSrc));
+		return agent ? <SessionAvatarPreview key="agent" agent={agent} avatar={avatar} handle={handle} /> : avatar;
+	}, [handle]);
 	const [menuAnnouncement, setMenuAnnouncement] = useState("");
 	const popupRef = useRef<HTMLDivElement>(null);
 	function chatWithAgent(agent: AgentLanyardAgent) {
@@ -37,7 +67,7 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 	}
 	return (
 		<HeaderLanyardContext value={handle}>
-			{children}
+			<AgentSessionAvatarPreviewContext value={renderSessionAvatar}>{children}</AgentSessionAvatarPreviewContext>
 			<HoverCard handle={handle} onOpenChange={(open) => {
 				// A fast switch can arrive before the first entrance has finished.
 				if (open && handle.isOpen) {
@@ -57,10 +87,9 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 						{agent ? (
 							<AgentLanyard
 								agent={agent}
-								avatar={"badge" in agent ? <AgentLanyardFirstPartyAvatar badge={agent.badge} backgroundColor={agent.accentColor} /> : undefined}
+								avatar={agent.id === ROVO_AGENT_ID ? <AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" label="" sizePx={48} vpkLogo="rovo" /></AgentLanyardAvatarFrame> : "badge" in agent ? <AgentLanyardFirstPartyAvatar badge={agent.badge} backgroundColor={agent.accentColor} /> : undefined}
 								perspectiveTilt={false}
-								animateGrid
-								gridAnimationTrigger="reveal"
+								animateGrid={false}
 								menuPositionerClassName={menuPositionerClassName}
 								headingLevel={2}
 								onAction={chatWithAgent}

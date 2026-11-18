@@ -119,9 +119,14 @@ function createExecutionAssistantMessage({
 	};
 }
 
-test("resolveRovoAppPlanExecutionTracker falls back to plan tasks while running (backward compat)", () => {
+// 1cdace1ff derives tracker tasks only from update_todo snapshots, so accepted plan tasks no
+// longer seed, label or re-id the tracker; the plan-task fallback cases went with it.
+test("resolveRovoAppPlanExecutionTracker counts distinct nonblank accepted-plan task agents before update_todo", () => {
 	const planWidget = createPlanWidgetPayload();
-	const planKey = getPlanApprovalKeyFromPlanWidget(planWidget);
+	planWidget.tasks.push(
+		{ id: "task-4", label: "Review", blockedBy: [], agent: " Planner " },
+		{ id: "task-5", label: "Unassigned", blockedBy: [], agent: "   " },
+	);
 	const tracker = resolveRovoAppPlanExecutionTracker({
 		activeRun: {
 			id: "run-1",
@@ -132,64 +137,15 @@ test("resolveRovoAppPlanExecutionTracker falls back to plan tasks while running 
 		},
 		messages: [
 			createPlanAssistantMessage(planWidget),
-			createApprovalUserMessage(planKey),
+			createApprovalUserMessage(getPlanApprovalKeyFromPlanWidget(planWidget)),
 		],
 		threadId: "thread-1",
 		threadUpdatedAt: "2026-03-30T10:00:20.000Z",
 	});
 
-	assert.equal(tracker?.runStatus, "running");
-	assert.equal(tracker?.taskCount, 3);
 	assert.equal(tracker?.agentCount, 2);
-	assert.deepEqual(
-		tracker?.taskStatusGroups.todo.map((task) => task.description),
-		["Ready to start", "Blocked by #1", "Blocked by #2"],
-	);
-});
-
-test("resolveRovoAppPlanExecutionTracker preserves plan labels before update_todo runs (backward compat)", () => {
-	const planWidget = {
-		title: "Jira Analytics Dashboard",
-		description: "Build the dashboard route",
-		markdown: "## Plan",
-		tasks: [
-			{
-				id: "task-1",
-				label: "Create route page at `app/dashboard-analytics/page.tsx`",
-				blockedBy: [],
-			},
-			{
-				id: "task-2",
-				label: "Create main view component at `components/projects/dashboard-analytics/page.tsx`",
-				blockedBy: ["task-1"],
-			},
-		],
-		deferredToolCallId: "tool-plan-dashboard",
-	};
-	const planKey = getPlanApprovalKeyFromPlanWidget(planWidget);
-	const tracker = resolveRovoAppPlanExecutionTracker({
-		activeRun: {
-			id: "run-1",
-			status: "streaming",
-			rovoPort: 8000,
-			startedAt: "2026-03-30T10:00:10.000Z",
-			updatedAt: "2026-03-30T10:00:20.000Z",
-		},
-		messages: [
-			createPlanAssistantMessage(planWidget),
-			createApprovalUserMessage(planKey),
-		],
-		threadId: "thread-1",
-		threadUpdatedAt: "2026-03-30T10:00:20.000Z",
-	});
-
-	assert.deepEqual(
-		tracker?.taskStatusGroups.todo.map((task) => task.label),
-		[
-			"Create route page at `app/dashboard-analytics/page.tsx`",
-			"Create main view component at `components/projects/dashboard-analytics/page.tsx`",
-		],
-	);
+	assert.equal(tracker?.taskCount, 1);
+	assert.equal(tracker?.taskStatusGroups.todo[0]?.id, "__pending-update-todo__");
 });
 
 test("resolveRovoAppPlanExecutionTracker maps update_todo snapshot into task groups", () => {
@@ -263,7 +219,7 @@ test("resolveRovoAppPlanExecutionTracker marks completed runs when all tasks are
 	assert.equal(tracker?.taskStatusGroups.done.length, 3);
 });
 
-test("resolveRovoAppPlanExecutionTracker aliases numeric todo ids to plan tasks (backward compat)", () => {
+test("resolveRovoAppPlanExecutionTracker accepts numeric todo ids from update_todo", () => {
 	const planWidget = createPlanWidgetPayload();
 	const planKey = getPlanApprovalKeyFromPlanWidget(planWidget);
 	const tracker = resolveRovoAppPlanExecutionTracker({
@@ -293,7 +249,7 @@ test("resolveRovoAppPlanExecutionTracker aliases numeric todo ids to plan tasks 
 	assert.equal(tracker?.taskStatusGroups.todo.length, 0);
 	assert.deepEqual(
 		tracker?.taskStatusGroups.done.map((task) => task.id),
-		["task-1", "task-2", "task-3"],
+		["1", "2", "3"],
 	);
 	assert.deepEqual(
 		tracker?.taskStatusGroups.done.map((task) => task.label),
@@ -511,6 +467,7 @@ test("resolveRovoAppPlanExecutionTracker shows placeholder progress before updat
 				id: "__pending-update-todo__",
 				label: "Preparing task list",
 				description: "Waiting for the first task update",
+				agentName: undefined,
 			},
 		],
 	});

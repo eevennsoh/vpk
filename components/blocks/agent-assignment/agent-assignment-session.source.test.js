@@ -20,6 +20,66 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("session menu puts needs-input sessions first within each ownership group", async () => {
+	const items = [session("running", "owner", { state: "running" }), session("waiting", "owner", { state: "needs-input" }), session("complete", "owner"), session("team-running", "viewer", { state: "running" }), session("team-waiting", "viewer", { state: "needs-input" })];
+	const view = await renderMenu(menuProps(items, { teammateSessionsPresentation: "expanded" }));
+	try {
+		const lists = view.getAllByRole("list");
+		assert.deepEqual([...lists[0].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-waiting", "agent-session-row-running", "agent-session-row-complete"]);
+		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-waiting", "agent-session-row-team-running"]);
+		assert.deepEqual(items.map((item) => item.id), ["running", "waiting", "complete", "team-running", "team-waiting"]);
+	} finally { await view.unmount(); }
+});
+
+test("person attribution reveals their name on keyboard focus", async () => {
+	const view = await renderMenu(menuProps([session("mine", "owner", { invokedBy: { name: "Venn" } })]));
+	try {
+		const avatar = view.getByRole("img", { name: "Venn" });
+		await view.focus(avatar);
+		assert.equal(view.getByRole("tooltip").textContent, "Venn");
+	} finally { await view.unmount(); }
+});
+
+test("session cards use the shared agent avatar preview across densities", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+			export default function Example({ item, density }) {
+				return <AgentSessionAvatarPreviewContext value={(agent, avatar) => <button key="agent" aria-label={"Preview " + agent.name}>{avatar}</button>}><ul><AgentSessionCard density={density} item={item} /></ul></AgentSessionAvatarPreviewContext>;
+			}
+		`,
+		props: { item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "long" },
+		mocks: themeMock,
+	});
+	try {
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "short" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "unlinked" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+	} finally { await view.unmount(); }
+});
+
+test("Rovo session avatars open the Rovo agent lanyard", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
+			export default function Example({ item }) { return <HeaderLanyards><ul><AgentSessionCard density="long" item={item} /></ul></HeaderLanyards>; }
+		`,
+		props: { item: session("rovo", "owner", { agent: { id: "rovo-dev", name: "Rovo", vpkLogo: "rovo" }, invokedBy: { name: "Maya" } }) },
+		mocks: { ...themeMock, "@/app/contexts/context-rovo-chat-controls": "export const useRovoChatControls = () => ({ openChat() {}, selectAgent() {} });" },
+	});
+	try {
+		await view.click(view.getByRole("button", { name: "Preview Rovo" }));
+		assert.equal(view.getByRole("heading", { name: "Rovo" }).textContent, "Rovo");
+		assert.equal(view.getByText("Atlassian").textContent, "Atlassian");
+		assert.equal(Boolean(document.querySelector('[data-slot="agent-lanyard-avatar"] svg')), true);
+		assert.equal(document.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
+	} finally { await view.unmount(); }
+});
+
 test("assignment activity keeps its private access mark in the session menu", async () => {
 	const view = await renderComponent({
 		source: `
@@ -97,15 +157,22 @@ test("rapidly toggling the teammate disclosure leaves one settled avatar stack",
 });
 
 test("owner-only, viewer-only, expired and empty menus retain their separate semantics without an assignment footer", async () => {
+	let selected = 0;
+	const onSelectSession = () => { selected++; };
 	const view = await renderMenu(menuProps([session("mine", "owner")]));
 	try {
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
-		await view.rerender(menuProps([session("teammate", "viewer")]));
+		await view.rerender(menuProps([session("teammate", "viewer")], { onSelectSession }));
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
-		assert.equal(view.getByText("teammate work").closest("article").tabIndex, 0);
+		const viewer = view.getByText("teammate work").closest("article");
+		assert.equal(viewer.tabIndex, 0);
+		await view.focus(viewer);
+		assert.equal(view.getByText("You can see this session, but only its owner can act on it.").textContent, "You can see this session, but only its owner can act on it.");
+		await view.press(viewer, "Enter");
+		assert.equal(selected, 0);
 		assert.equal(view.getAllByRole("listitem").length, 1);
 		assert.equal(view.queryByRole("separator"), null);
 		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));
@@ -140,18 +207,23 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 	try {
 		await view.click(view.getByRole("button", disclosure));
 		await view.click(view.getByRole("button", { name: /^cloud work/u }));
-		for (const name of ["Rename", "Delete", "Dismiss"]) {
+		for (const name of ["Rename", "Delete"]) {
 			await view.click(view.getByRole("button", { name: "More actions for cloud work" }));
 			assert.equal(view.container.contains(view.getByRole("menu")), false);
+			assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent.trim()), ["Stop session", "Pin", "Rename", "Delete"]);
 			await view.click(view.getByRole("menuitem", { name }));
 			assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "true");
 		}
+		await view.click(view.getByRole("button", { name: "More actions for local work" }));
+		assert.equal(view.getAllByRole("menuitem").length, 2);
+		assert.ok(view.getByRole("menuitem", { name: "Copy prompt" }));
+		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
 		await view.click(view.getByRole("button", { name: /^local work/u }));
 		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
 		await view.click(view.getByRole("button", { name: "More actions for old work" }));
 		assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent.trim()), ["Delete"]);
 		await view.click(view.getByRole("menuitem", { name: "Delete" }));
-		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["archive", "cloud"], ["continue", "local"], ["delete", "old"]]);
+		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["continue", "local"], ["continue", "local"], ["delete", "old"]]);
 		assert.equal(menuChanges.includes(true), true);
 		assert.equal(menuChanges.at(-1), false);
 	} finally { await view.unmount(); }

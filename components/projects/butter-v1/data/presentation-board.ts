@@ -449,6 +449,15 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					role: "owner",
 					state: "working",
 					timeLabel: "12m",
+				}), createActivity({
+					id: "PAY-105:claude-code",
+					agentName: "Claude",
+					agentBrandName: "claude",
+					host: "cloud",
+					label: "Porting the 3-D Secure challenge flow",
+					role: "owner",
+					state: "working",
+					timeLabel: "8m",
 				})],
 			}),
 			createCard({

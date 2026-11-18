@@ -191,6 +191,7 @@ function RovoAppDirectoryAutocompleteRows({
 
 export function RovoAppShell({ embedded = false, headingAs = "h1", initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const nav = useTopNavigation();
+	const { searchContainerRef, searchPanelRef } = nav;
 	const { selectedAgent } = useRovoSelectedAgent();
 	const selectedAgentContextDescription = getRovoAgentPromptContext(selectedAgent);
 	const isCustomAgentSelected = !isRovoAgentProfile(selectedAgent);
@@ -1509,7 +1510,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 							)}
 						>
 							<div
-								ref={nav.searchContainerRef}
+								ref={searchContainerRef}
 								className="relative flex h-9 min-w-0 grow items-center"
 								style={{
 									flexBasis: `${TOP_NAV_SEARCH_MIN_WIDTH_PX}px`,
@@ -1549,12 +1550,12 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 									/>
 								</InputGroup>
 								<SearchSuggestionsPanel
-									anchorRef={nav.searchContainerRef}
+									anchorRef={searchContainerRef}
 									isVisible={nav.isSearchFocused}
 									onSearchAllApps={nav.handleSearchAllApps}
 									onRecentItemClick={nav.handleRecentItemClick}
 									onRecentSearchClick={nav.handleRecentSearchClick}
-									panelRef={nav.searchPanelRef}
+									panelRef={searchPanelRef}
 								/>
 							</div>
 

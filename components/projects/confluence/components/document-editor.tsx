@@ -20,7 +20,10 @@ export default function DocumentEditor() {
 		immediatelyRender: false,
 		editorProps: {
 			attributes: {
+				"aria-label": "Page content",
+				"aria-multiline": "true",
 				class: "tiptap-editor",
+				role: "textbox",
 			},
 		},
 	});
