@@ -32,7 +32,7 @@ import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { Tile, TileAvatar } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import { getStudioSidebarRecentAgents, getStudioSidebarRecentAgentSelected } from "@/components/projects/studio/lib/studio-sidebar-recent-agents";

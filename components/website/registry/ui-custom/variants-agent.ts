@@ -81,27 +81,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"reasoning-demo-preload": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoPreload,
-			})),
-		{ ssr: false },
-	),
-	"reasoning-demo-thinking": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoThinking,
-			})),
-		{ ssr: false },
-	),
-	"reasoning-demo-completed": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoCompleted,
-			})),
-		{ ssr: false },
-	),
 	"sandbox-demo-running": dynamic(
 		() =>
 			import("../../demos/ui-custom/sandbox-demo").then((mod) => ({

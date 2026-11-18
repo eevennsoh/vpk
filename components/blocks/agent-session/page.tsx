@@ -302,7 +302,6 @@ export default function AgentSessionPage({
 								onUnlinkSession={handleUnlink}
 								onView={host === "cloud" ? onOpenCloudSession : undefined}
 								selectedItemId={onOpenCloudSession ? null : undefined}
-								showAgentName={team ? true : undefined}
 								showWorkingSpinner={team}
 								variant={variant}
 							/>

@@ -22,19 +22,23 @@ import {
 	PlanDescription,
 	PlanHeader,
 	PlanTitle,
-} from "@/components/ui-custom/plan"
+} from "@/components/ui/plan"
 import {
 	Tool,
 	ToolContent,
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool"
+} from "@/components/ui/tool"
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile"
 import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity"
 import {
-	Conversation,
-	ConversationContent,
-} from "@/components/ui-custom/conversation"
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerItem,
+	MessageScrollerViewport,
+} from "@/components/ui/message-scroller"
 import {
 	Message,
 	MessageContent,
@@ -105,68 +109,73 @@ export default function AIWorkflowBlock() {
 					</div>
 				</div>
 
-				<Conversation className="flex-1">
-					<ConversationContent className="gap-6">
-						{MOCK_WORKFLOW_MESSAGES.map((msg) => (
-							<Message key={msg.id} from={msg.role}>
-								<MessageContent>
-									{/* Plan rendering */}
-									{msg.plan ? <Plan defaultOpen className="mb-4">
-											<PlanHeader
-												leading={<PlanAvatar visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} />}
-												title={<PlanTitle>{msg.plan.title}</PlanTitle>}
-												description={<PlanDescription>{msg.plan.description}</PlanDescription>}
-											/>
-											<PlanContent>
-												<div className="space-y-2">
-													{MOCK_PLAN_STEPS.steps.map((step) => (
-														<div key={step.label} className="flex items-center gap-2 text-sm">
-															{stepIcons[step.status]}
-															<span className={step.status === "pending" ? "text-muted-foreground" : ""}>
-																{step.label}
-															</span>
+				<MessageScroller autoScroll className="flex-1">
+					<MessageScrollerViewport>
+						<MessageScrollerContent className="gap-6 p-4">
+							{MOCK_WORKFLOW_MESSAGES.map((msg) => (
+								<MessageScrollerItem key={msg.id} messageId={msg.id} scrollAnchor={msg.role === "user"} className="[content-visibility:visible]">
+									<Message from={msg.role}>
+										<MessageContent>
+											{/* Plan rendering */}
+											{msg.plan ? <Plan defaultOpen className="mb-4">
+													<PlanHeader
+														leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} /></PlanAvatar>}
+														title={<PlanTitle>{msg.plan.title}</PlanTitle>}
+														description={<PlanDescription>{msg.plan.description}</PlanDescription>}
+													/>
+													<PlanContent>
+														<div className="space-y-2">
+															{MOCK_PLAN_STEPS.steps.map((step) => (
+																<div key={step.label} className="flex items-center gap-2 text-sm">
+																	{stepIcons[step.status]}
+																	<span className={step.status === "pending" ? "text-muted-foreground" : ""}>
+																		{step.label}
+																	</span>
+																</div>
+															))}
 														</div>
-													))}
-												</div>
-											</PlanContent>
-										</Plan> : null}
+													</PlanContent>
+												</Plan> : null}
 
-									{/* Tool call rendering */}
-									{msg.toolCalls ? msg.toolCalls.map((tc, i) => (
-										<Tool key={`${msg.id}-tool-${i}`} defaultOpen={false}>
-											<ToolHeader
-												title={tc.name}
-												type="tool-invocation"
-												state={tc.state}
-											/>
-											<ToolContent>
-												<ToolInput input={tc.input} />
-												<ToolOutput output={tc.output} errorText={undefined} />
-											</ToolContent>
-										</Tool>
-									)) : null}
+											{/* Tool call rendering */}
+											{msg.toolCalls ? msg.toolCalls.map((tc, i) => (
+												<Tool key={`${msg.id}-tool-${i}`} defaultOpen={false}>
+													<ToolHeader
+														title={tc.name}
+														type="tool-invocation"
+														state={tc.state}
+													/>
+													<ToolContent>
+														<ToolInput input={tc.input} />
+														<ToolOutput output={tc.output} errorText={undefined} />
+													</ToolContent>
+												</Tool>
+											)) : null}
 
-									{/* Message content */}
-									{msg.content ? <MessageResponse>{msg.content}</MessageResponse> : null}
+											{/* Message content */}
+											{msg.content ? <MessageResponse>{msg.content}</MessageResponse> : null}
 
-									{/* Confirmation rendering */}
-									{msg.confirmation ? <Confirmation
-											state={msg.confirmation.state}
-											approval={{ id: msg.confirmation.id }}
-										>
-											<ConfirmationTitle>{msg.confirmation.message}</ConfirmationTitle>
-											<ConfirmationRequest>
-												<ConfirmationActions>
-													<ConfirmationAction variant="outline">Deny</ConfirmationAction>
-													<ConfirmationAction>Approve</ConfirmationAction>
-												</ConfirmationActions>
-											</ConfirmationRequest>
-										</Confirmation> : null}
-								</MessageContent>
-							</Message>
-						))}
-					</ConversationContent>
-				</Conversation>
+											{/* Confirmation rendering */}
+											{msg.confirmation ? <Confirmation
+													state={msg.confirmation.state}
+													approval={{ id: msg.confirmation.id }}
+												>
+													<ConfirmationTitle>{msg.confirmation.message}</ConfirmationTitle>
+													<ConfirmationRequest>
+														<ConfirmationActions>
+															<ConfirmationAction variant="outline">Deny</ConfirmationAction>
+															<ConfirmationAction>Approve</ConfirmationAction>
+														</ConfirmationActions>
+													</ConfirmationRequest>
+												</Confirmation> : null}
+										</MessageContent>
+									</Message>
+								</MessageScrollerItem>
+							))}
+						</MessageScrollerContent>
+					</MessageScrollerViewport>
+					<MessageScrollerButton />
+				</MessageScroller>
 
 				<div className="border-t p-4">
 					<PromptInput

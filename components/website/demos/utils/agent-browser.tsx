@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { RovoChatProvider, useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import { ChatMessages } from "@/components/projects/shared/components/chat-messages";
-import { useScrollAnchoring } from "@/components/projects/shared/hooks/use-scroll-anchoring";
 import { getRovoAppShellLayout } from "@/components/projects/rovo-core/lib/rovo-app-shell-layout";
 import { useBrowserWorkspace } from "@/components/website/demos/utils/hooks/use-browser-workspace";
 import { BrowserPreviewPanel } from "@/components/website/demos/utils/components/browser-preview-panel";
@@ -112,11 +111,6 @@ function AgentBrowserView() {
 	const isRequestInFlight = isStreaming || isSubmitPending
 	const isPreviewOpen = !previewDismissed
 	const isWorkspaceReady = Boolean(workspace.workspaceId)
-
-	const { conversationContextRef, scrollSpacerRef } = useScrollAnchoring({
-		uiMessages,
-		enabled: uiMessages.length > 0,
-	})
 
 	const shellRef = useRef<HTMLDivElement | null>(null)
 	const [shellWidth, setShellWidth] = useState(0)
@@ -275,10 +269,9 @@ function AgentBrowserView() {
 					<div className="flex flex-1 flex-col items-center overflow-hidden">
 						<div className="flex w-full max-w-[768px] flex-1 flex-col overflow-hidden">
 							<ChatMessages
+								defaultScrollPosition="last-anchor"
 								uiMessages={uiMessages}
 								onSuggestedQuestionClick={handleSuggestionClick}
-								conversationContextRef={conversationContextRef}
-								scrollSpacerRef={scrollSpacerRef}
 								isStreaming={isStreaming}
 								isSubmitPending={isSubmitPending}
 								messageMode="ask"

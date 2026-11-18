@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import ArrowDownIcon from "@atlaskit/icon/core/arrow-down"
+import { ArrowDownIcon } from "@/components/ui/vpk-icons"
 import {
 	MessageScroller as MessageScrollerPrimitive,
 	useMessageScroller,
@@ -10,7 +10,7 @@ import {
 } from "@shadcn/react/message-scroller"
 
 import { Button, type ButtonProps } from "@/components/ui/button"
-import { Icon } from "@/components/ui/icon"
+import { token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 
 export type MessageScrollerProviderProps = React.ComponentProps<
@@ -127,7 +127,7 @@ function MessageScrollerButton({
 	className,
 	children,
 	render,
-	variant = "secondary",
+	variant = "ghost",
 	size = "icon",
 	shape = "circle",
 	...props
@@ -140,17 +140,17 @@ function MessageScrollerButton({
 			data-size={size}
 			direction={direction}
 			className={cn(
-				"absolute inset-s-1/2 -translate-x-1/2 border-border bg-surface text-text transition-[translate,scale,opacity] duration-medium hover:bg-bg-neutral-subtle-hovered data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-slower data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_[data-slot=icon]]:rotate-180",
+				"absolute inset-s-1/2 -translate-x-1/2 rounded-full border-0 bg-surface text-text transition-[translate,scale,opacity] duration-medium hover:bg-surface-hovered data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-slower data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_[data-slot=icon]]:rotate-180",
 				className
 			)}
-			render={render ?? <Button variant={variant} size={size} shape={shape} />}
+			render={render ?? <Button variant={variant} size={size} shape={shape} style={{ boxShadow: token("elevation.shadow.overlay") }} />}
 			{...props}
 		>
 			{children ?? (
 				<>
-					<Icon render={<ArrowDownIcon label="" size="small" />} label="" />
+					<ArrowDownIcon className="size-3" />
 					<span className="sr-only">
-						{direction === "end" ? "Scroll to end" : "Scroll to start"}
+						{direction === "end" ? "Scroll to bottom" : "Scroll to top"}
 					</span>
 				</>
 			)}

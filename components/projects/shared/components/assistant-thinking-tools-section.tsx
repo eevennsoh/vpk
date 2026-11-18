@@ -1,12 +1,11 @@
-import type { ToolPart } from "@/components/ui-custom/tool";
+import type { ToolPart } from "@/components/ui/tool";
 import {
 	Tool,
 	ToolContent,
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/components/ui/tool";
 import type { ThinkingToolCallSummary } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -61,22 +60,6 @@ function toToolUiState(
 	return "output-available";
 }
 
-function getThinkingStatusIcon(
-	state: ThinkingToolCallSummary["state"]
-): React.ReactNode | undefined {
-	if (state !== "running") {
-		return undefined;
-	}
-
-	return (
-		<Spinner
-			size="xs"
-			label="Running"
-			className="text-current"
-		/>
-	);
-}
-
 function AssistantThinkingToolItem({
 	toolCall,
 	shouldDefaultOpen,
@@ -103,9 +86,8 @@ function AssistantThinkingToolItem({
 		<Tool open={isOpen} onOpenChange={setIsOpen}>
 			<ToolHeader
 				leadingIcon={renderResolvedToolIcon(resolvedIcon, { className: "size-4 text-muted-foreground" })}
-				title={getThinkingToolTitle(toolCall)}
+				label={getThinkingToolTitle(toolCall)}
 				state={toToolUiState(toolCall.state)}
-				statusIcon={getThinkingStatusIcon(toolCall.state)}
 				type="dynamic-tool"
 				toolName={toolCall.toolName}
 			/>
@@ -134,7 +116,7 @@ export function AssistantThinkingToolsSection({
 	className,
 }: Readonly<AssistantThinkingToolsSectionProps>): React.ReactElement {
 	return (
-		<div className={cn("space-y-2", className)}>
+		<div className={cn("flex flex-col gap-2", className)}>
 			{thinkingToolCalls.map((toolCall, index) => {
 				const hasDetails = hasToolDetails(toolCall);
 				const shouldDefaultOpen =

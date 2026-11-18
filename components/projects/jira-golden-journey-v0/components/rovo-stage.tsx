@@ -9,7 +9,7 @@ import {
 	JiraSessionRowActions,
 } from "@/components/blocks/product-sidebar/variants/jira";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import ChatPanel, {
 	type ChatPanelHistoryController,
 } from "@/components/projects/sidebar-chat/page";

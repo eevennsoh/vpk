@@ -19,7 +19,7 @@ import TextIcon from "@atlaskit/icon/core/text";
 import TimelineIcon from "@atlaskit/icon/core/timeline";
 import TranslateIcon from "@atlaskit/icon/core/translate";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
-import { Terminal, TerminalHeader, TerminalContent } from "@/components/ui-custom/terminal";
+import { TerminalWindow } from "@/components/ui-custom/terminal-window";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 
 type ViewMode = "chat" | "terminal";
@@ -342,7 +342,7 @@ function formatMessagesAsTerminalOutput(messages: ReadonlyArray<RovoUIMessage>):
 // Terminal View — connected to useRovoChat, styled with Textual Dark
 // ---------------------------------------------------------------------------
 function TerminalView() {
-	const { uiMessages, sendPrompt, isStreaming, hasInFlightTurn, resetChat } = useRovoChat();
+	const { uiMessages, sendPrompt, isStreaming, hasInFlightTurn } = useRovoChat();
 	const [commandInput, setCommandInput] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -350,10 +350,6 @@ function TerminalView() {
 	const hasMessages = renderableMessages.length > 0;
 
 	const terminalOutput = useMemo(() => (hasMessages ? formatMessagesAsTerminalOutput(uiMessages) : ""), [hasMessages, uiMessages]);
-
-	const handleClear = useCallback(() => {
-		resetChat();
-	}, [resetChat]);
 
 	const handleSubmit = useCallback(
 		(e: FormEvent) => {
@@ -370,10 +366,7 @@ function TerminalView() {
 		<div className="flex h-full flex-col" style={{ backgroundColor: TD.bg }}>
 			{/* Content: animated logo OR terminal messages */}
 			{hasMessages ? (
-				<Terminal output={terminalOutput} isStreaming={isStreaming} autoScroll onClear={handleClear} className="min-h-0 flex-1 rounded-none border-0" style={{ backgroundColor: TD.bg }}>
-					<TerminalHeader className="hidden" />
-					<TerminalContent className="max-h-none flex-1" style={{ backgroundColor: TD.bg }} />
-				</Terminal>
+				<TerminalWindow output={terminalOutput} isStreaming={isStreaming} className="min-h-0 flex-1 rounded-none border-0" style={{ backgroundColor: TD.bg }} />
 			) : (
 				<AnimatedRovoLogo />
 			)}

@@ -18,7 +18,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import {

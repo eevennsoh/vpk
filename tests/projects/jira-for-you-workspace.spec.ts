@@ -206,7 +206,7 @@ test("wide workspace caps chat at 800px and gives viewport surplus to the feed",
 		expect(await page.evaluate(() => (
 			document.documentElement.scrollWidth - document.documentElement.clientWidth
 		))).toBe(0);
-		await expectLocatorWithinPane(chatContent, conversationPane);
+		await expectLocatorWithinPane(conversationPane.locator('[data-slot="message-scroller-viewport"]'), conversationPane);
 		await expectLocatorWithinPane(composerContent, conversationPane);
 		await expectLocatorWithinPane(detailPanel, workspace);
 
