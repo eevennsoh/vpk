@@ -116,7 +116,7 @@ export function useButterList({
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 }>): UseButterListResult {
 	const BUTTER_AGENT_CATALOG = useMemo(() => mergeJiraKanbanAgentCatalog(agents), [agents]);
-	const [expandedKeys, setExpandedKeys] = useContentModeState(contentMode, () => new Set<string>());
+	const [expandedKeys, setExpandedKeys] = useContentModeState(contentMode, () => new Set<string>(["PAY-101"]));
 	const [listOrder, setListOrder] = useContentModeState<readonly string[]>(contentMode, () => []);
 	const [selectedIssueKeys, setSelectedIssueKeys] = useContentModeState(contentMode, () => new Set<string>());
 	const [copiedIssueKey, setCopiedIssueKey] = useContentModeState<string | null>(contentMode, () => null);

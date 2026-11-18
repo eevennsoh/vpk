@@ -307,7 +307,7 @@ const PAY_124: ButterWorkItemPlaceholder = {
 		{
 			id: "pay-124-export-diff",
 			author: "Priya Raman",
-			markdown: "I will confirm the list against the account export and the PAY-121 rules. GitHub Copilot is still validating one-percent targeting on that item, and PR #1866 is the flag this list arms.",
+			markdown: "I will confirm the list against the account export and the PAY-121 rules. PR #1866 is the flag this list arms.",
 			timestamp: "14 Aug 2026 at 10:15",
 			ageMs: 259_200_000,
 			replies: [
@@ -332,7 +332,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 	description: [
 		"The one-percent rollout needs a production board before the slice is armed. PAY-125 adds dashboards for confirm, decline, and rollback, read from the same account cohort as the English-only allow-list.",
 		"",
-		"Maya is building the panels. They read the flag series on PAY-121, where GitHub Copilot is validating targeting and PR #1866 is open. The rollback panel points at the rehearsal runbook on PAY-119.",
+		"Maya is building the panels. They read the flag series on PAY-121, where PR #1866 is open. The rollback panel points at the rehearsal runbook on PAY-119.",
 		"",
 		"- Chart confirm, decline, and rollback for the one-percent cohort.",
 		"- Use the English-only allow-list as that cohort.",
@@ -437,7 +437,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 		{
 			id: "pay-125-panel-set",
 			author: "Jordan Okafor",
-			markdown: "The one-percent board needs confirm, decline, and rollback together. GitHub Copilot is validating targeting on PAY-121, and PR #1866 is the flag these panels should read.",
+			markdown: "The one-percent board needs confirm, decline, and rollback together. PR #1866 is the flag these panels should read.",
 			timestamp: "12 Aug 2026 at 08:50",
 			ageMs: 446_400_000,
 		},
