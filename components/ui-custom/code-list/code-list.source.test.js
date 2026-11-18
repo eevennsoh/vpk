@@ -89,9 +89,9 @@ test("Code List expands a row into a small, line-numbered code block", () => {
 	assert.match(source, /aria-controls=\{panelId\}/u);
 	assert.match(source, /aria-expanded=\{isExpanded\}/u);
 	// The expanded panel reuses the shared CodeBlock in its small + line-numbers
-	// variant, with the container stroke removed so it blends into the row card.
-	assert.match(source, /<CodeBlock\b[\s\S]*?className="border-0"[\s\S]*?code=\{item\.code\}[\s\S]*?language=\{language\}[\s\S]*?showLineNumbers[\s\S]*?size="sm"/u);
-	assert.match(source, /import \{ CodeBlock \} from "@\/components\/ui-custom\/code-block";/u);
+	// variant, with the container ring removed so it blends into the row card.
+	assert.match(source, /<CodeBlock className="ring-0" size="sm">\s*<HighlightedCodeContent code=\{item\.code\} language=\{language\} lineNumbers \/>/u);
+	assert.match(source, /import \{ CodeBlock \} from "@\/components\/ui\/code-block";/u);
 });
 
 test("Code List summary header reports the file count, totals, and a minimise toggle", () => {

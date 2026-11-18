@@ -210,6 +210,7 @@ export function BoardColumn({
 	onStartCreate,
 	creating = false,
 	createDraft,
+	createBeforeCardCode,
 	hideScrollbar = false,
 	onToggleAgent,
 	sessionDragTransaction,
@@ -235,9 +236,10 @@ export function BoardColumn({
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
-	onStartCreate?: (trigger: HTMLElement) => void;
+	onStartCreate?: (trigger: HTMLElement, beforeCardCode?: string, returnFocus?: HTMLElement | null) => void;
 	creating?: boolean;
 	createDraft?: ReactNode;
+	createBeforeCardCode?: string;
 	hideScrollbar?: boolean;
 	onToggleAgent?: (agentId: string) => void;
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
@@ -324,6 +326,7 @@ export function BoardColumn({
 						createdCardArrival={createdCardArrival}
 						creating={creating}
 						createDraft={createDraft}
+						createBeforeCardCode={createBeforeCardCode}
 						hideScrollbar={hideScrollbar}
 						insertionArmed={insertionArmed}
 						isEmpty={isEmptyColumn}

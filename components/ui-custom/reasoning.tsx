@@ -36,7 +36,8 @@ import {
 import { AnimatedDot } from "./animated-dot";
 import { AnimatedRovo } from "./animated-rovo";
 
-import { CodeBlock } from "./code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "./highlighted-code-content";
 import { Shimmer } from "./shimmer";
 import { ShimmerWave } from "./shimmer-wave";
 import { shouldAutoExpandReasoning } from "./reasoning-open-state";
@@ -701,7 +702,11 @@ export function ReasoningText({
 		);
 	}
 
-	return <CodeBlock code={text} language="markdown" />;
+	return (
+		<CodeBlock>
+			<HighlightedCodeContent code={text} language="markdown" />
+		</CodeBlock>
+	);
 }
 
 export const ReasoningContent = memo(

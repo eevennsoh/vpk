@@ -408,7 +408,7 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/ui-custom/queue.tsx",
+			"filePath": "components/ui/queue.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */",

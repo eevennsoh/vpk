@@ -13,7 +13,7 @@ import {
 	QueueItemContent,
 	QueueItemIndicator,
 	QueueList,
-} from "@/components/ui-custom/queue";
+} from "@/components/ui/queue";
 import { textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { preloadMessageMarkdownForReply } from "@/components/projects/rovo-core/hooks/use-preload-message-markdown";
 import { Alert } from "@/components/ui/alert";

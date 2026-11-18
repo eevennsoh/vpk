@@ -199,7 +199,6 @@ export function EntityCardAgentProfile({
 						appearance="inverse"
 						label=""
 						name="atlassian"
-						shouldUseNewLogoDesign
 						size="xxsmall"
 						themeAware={false}
 					/>

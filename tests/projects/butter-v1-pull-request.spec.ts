@@ -8,14 +8,14 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 	await page.getByRole("button", { name: "Select Pull request" }).click();
 	const stage = page.locator("[data-butter-gallery-pull-request]");
 	const card = stage.locator('[data-slot="jira-issue-card"]');
-	const expectedColor = async (className: string) => page.evaluate((name) => {
+	const expectedColor = async (className: string, property: "color" | "backgroundColor" = "color") => page.evaluate(({ name, property }) => {
 		const probe = document.createElement("span");
 		probe.className = name;
 		document.body.append(probe);
-		const color = getComputedStyle(probe).color;
+		const color = getComputedStyle(probe)[property];
 		probe.remove();
 		return color;
-	}, className);
+	}, { name: className, property });
 	for (const [state, name, tokenClass, tooltip] of [
 		["Open PR", /Pull request #284/, "text-icon-accent-lime", "#284 Add merchant onboarding quickstart"],
 		["Merged PR", /Pull request merged #284/, "text-icon-accent-purple", "#284 Add merchant onboarding quickstart"],
@@ -32,7 +32,12 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 		await trigger.click();
 		await expect(page.getByRole("tooltip", { name: tooltip })).toBeHidden();
 		await expect(page.getByRole("dialog", { name: state === "Multiple PRs" ? "Pull requests for PAY-999" : "Pull request #284 details" })).toBeVisible();
+		await page.mouse.move(0, 0);
+		await expect(trigger).toHaveAttribute("aria-expanded", "true");
+		await expect(trigger).toHaveCSS("background-color", await expectedColor("bg-bg-selected", "backgroundColor"));
+		await expect(trigger.locator("svg")).toHaveCSS("color", color);
 		await page.keyboard.press("Escape");
+		await expect(trigger).toHaveAttribute("aria-expanded", "false");
 	}
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const failedCard = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]');
@@ -46,6 +51,13 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeHidden();
+	await failedTrigger.click();
+	await page.mouse.move(0, 0);
+	await expect(failedTrigger).toHaveAttribute("aria-expanded", "true");
+	await expect(failedTrigger).toHaveCSS("background-color", await expectedColor("bg-bg-selected", "backgroundColor"));
+	await expect(failedTrigger.locator("svg")).toHaveCSS("color", await expectedColor("text-icon-danger"));
+	await page.keyboard.press("Escape");
+	await expect(failedTrigger).toHaveAttribute("aria-expanded", "false");
 });
 
 test("multiple pull requests expand inline one at a time", async ({ page }) => {

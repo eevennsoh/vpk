@@ -4,6 +4,7 @@ import { useId, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import AddIcon from "@atlaskit/icon/core/add";
 
+import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,17 @@ export function BoardCardInsertionLine({
 	position,
 	seam,
 	marker = "add",
-}: Readonly<{ position: BoardCardInsertion["position"]; seam: BoardCardInsertionSeam; marker?: "add" | "circle" | "none" }>) {
+	onCreate,
+	onControlLeave,
+	createLabel,
+}: Readonly<{
+	position: BoardCardInsertion["position"];
+	seam: BoardCardInsertionSeam;
+	marker?: "add" | "circle" | "none";
+	onCreate?: (trigger: HTMLElement, returnFocus: HTMLElement | null) => void;
+	onControlLeave?: (next: EventTarget | null) => void;
+	createLabel?: string;
+}>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const anchorName = `--board-insertion-${insertionAnchorId}`;
 	const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
@@ -80,10 +91,9 @@ export function BoardCardInsertionLine({
 			} as CSSProperties}
 		>
 			{marker === "circle" ? <span className="absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border-selected" /> : null}
-			{/* Keep the rule and its inert + marker outside the viewport mask.
-			    Hovering a seam must not reveal every faded card in the column. */}
+			{/* Keep the rule and marker outside the viewport mask. */}
 			{marker === "add" && overlayHost ? createPortal(<div
-				aria-hidden
+				aria-hidden={onCreate ? undefined : true}
 				className="pointer-events-none fixed z-20 h-0.5 rounded-full bg-border-selected"
 				data-board-insertion-overlay={position}
 				style={{
@@ -95,12 +105,27 @@ export function BoardCardInsertionLine({
 					width: "anchor-size(width, 0px)",
 				}}
 			>
-				<span
+				{onCreate ? <Button
+					aria-label={createLabel}
+					className="pointer-events-auto absolute left-0 top-1/2 isolate size-5 -translate-x-1/2 -translate-y-1/2 border-border bg-surface-overlay text-icon-subtle before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-full hover:bg-surface-overlay hover:before:bg-bg-neutral-subtle-hovered active:bg-surface-overlay active:before:bg-bg-neutral-subtle-pressed [&_[data-slot=icon]]:relative [&_[data-slot=icon]]:z-10"
+					data-board-gap-create=""
+					data-board-insertion-marker={position}
+					onClick={(event) => {
+						const card = anchor?.closest('[data-board-agent-session-drop-zone="issue"]');
+						onCreate(event.currentTarget, card?.querySelector<HTMLElement>("button") ?? null);
+					}}
+					onPointerLeave={(event) => onControlLeave?.(event.relatedTarget)}
+					onBlur={(event) => onControlLeave?.(event.relatedTarget)}
+					shape="circle"
+					size="icon-compact"
+					type="button"
+					variant="outline"
+				><Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} /></Button> : <span
 					className="absolute left-0 top-1/2 flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-overlay text-icon-subtle"
 					data-board-insertion-marker={position}
 				>
 					<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />
-				</span>
+				</span>}
 			</div>, overlayHost) : null}
 		</div>
 	);

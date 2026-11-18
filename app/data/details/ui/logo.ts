@@ -48,18 +48,6 @@ export const LOGO_DETAIL: ComponentDetail = {
           "When true and appearance is omitted, picks brand/inverse based on theme.",
       },
       {
-        name: "shouldUseNewLogoDesign",
-        type: "boolean",
-        default: "true",
-        description:
-          "Uses the latest logo designs. Set to false for legacy logos.",
-      },
-      {
-        name: "shouldUseHexLogo",
-        type: "boolean",
-        description: "Rovo-only option for hex logo variant.",
-      },
-      {
         name: "svg",
         type: "ReactElement (CustomLogo only)",
         description:

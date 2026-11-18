@@ -1,17 +1,17 @@
 # Voice Glow integration
 
-Imported runtime: `voice-glow@0.2.0` by Jakub Antalik, MIT.
+Imported runtime: `voice-glow@0.3.0` by Jakub Antalik, MIT.
 Source: https://github.com/Jakubantalik/Libraries.dev/tree/main/packages/voice-glow
 Docs: https://libraries.dev/voice
-Published artifact: https://registry.npmjs.org/voice-glow/-/voice-glow-0.2.0.tgz
-SHA-1: `f49c6f1eceadf1b99741012c6c695aadcf808bf2`.
+Published artifact: https://registry.npmjs.org/voice-glow/-/voice-glow-0.3.0.tgz
+SHA-1: `a2705843adf7bc07ea1b6c32763b6967cc1a4d53`.
 
 VPK exports `VoiceGlow` as a thin alias of `VoiceBeam`, preserving every
 upstream prop and export. Existing VPK border glows and audio waveforms do
 not supply this sound-reactive lobe/band geometry. No upstream source is
 vendored. The MIT notice is retained in `LICENSE.md` for bundled distribution.
 
-Version policy: Cautious (`~0.2.0`), since this is a new pre-1.0 effect engine.
+Version policy: Cautious (`~0.3.0`), since this is a pre-1.0 effect engine.
 The explicitly requested package first appeared on 2026-09-17, so its initial
 release has an exact `minimumReleaseAgeExclude` entry. Future releases remain
 subject to the seven-day maturity gate and pnpm trust checks.
@@ -27,7 +27,8 @@ subject to the seven-day maturity gate and pnpm trust checks.
 | `voiceDefaults`, `voiceTypePresets`, `voiceTypeStyle`, `voicePalettes`, `voiceLobes`, `LOBE_SPACING`, `LOBE_SPAN`, `parseRgb`, remaining types | Re-exported advanced data/utilities; palettes also seed custom color controls |
 | `type`: default, pill, mobile | Main shape selector and dedicated pill/mobile examples |
 | `stream`, numeric/getter `level` | Live microphone and manual-intensity slider; getter API documented for frequent updates |
-| `active`, `paused`, `processing`, `bands`, `staticColors`, theme/palette | Interactive main controls; processing has a dedicated example |
+| `active`, `paused`, `bands`, `staticColors`, theme/palette | Interactive main controls |
+| `motion` | Re-exported upstream prop for externally driven beam motion; the former built-in processing mode is no longer part of the free package |
 | `colors`, `bandColors` | Optional seven-lobe palette and four band-color editors |
 | Every `VoiceGeometry` member, response/color/clock props | Grouped numeric controls; test checks full geometry coverage and every preset’s bounds |
 | `borderRadius` | Auto-detection by default; optional explicit-radius control |
@@ -51,7 +52,7 @@ playback. Observers and analysis disconnect on unmount; the microphone hook
 stops established tracks. A VPK demo guard stops permission requests completed
 after reset/unmount and prevents overlapping requests (see below). Offscreen
 instances stop analysis. Reduced motion stops decorative breathing, sideways
-flow, hue drift, distortion, and processing travel while retaining the sound
+flow, hue drift and distortion while retaining the sound
 meter response. Pause freezes the current frame. No compatibility wrappers
 are added to rendering; verify these behaviors on package upgrades.
 
@@ -72,14 +73,13 @@ Remove the demo guard once upstream cancels late requests itself.
 
 ## Verification
 
-- Full `pnpm run ci:pr` passed with the new unit suite discovered by the
-  unfiltered runner. Final responsive adjustments passed targeted ESLint and
-  `pnpm run typecheck` again.
+- The initial 0.2 integration passed `pnpm run ci:pr`; package upgrades should
+  rerun the focused suites and browser checks below.
 - Six unit tests cover current microphone status, the bounded speech signal, clock/reset, preset/theme defaults, complete control coverage,
   GUI bounds, and release of late microphone results.
 - `tests/visual/voice-glow.spec.ts`: rendered tests check simulated voice without
   microphone access, manual-mode/reset switching, and every
-  shape at 1280px and 390px, pause/resume, processing travel, reset, and dark
+  shape at 1280px and 390px, pause/resume, reset, and dark
   reduced motion. Surface and wrapper widths/positions must match; this guards
   the original mobile overflow and narrow-screen pill mismatch.
 - Next.js `get_compilation_issues` and `get_errors` returned no issues/errors.

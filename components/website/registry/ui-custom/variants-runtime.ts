@@ -177,17 +177,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"source-demo-custom-rendering": dynamic(
-		() =>
-			import("../../demos/ui-custom/source-demo").then((mod) => ({
-				default: mod.SourceDemoCustomRendering,
-			})),
-		{ ssr: false },
-	),
-	"source-demo-preview-menu": dynamic(
-		() => import("../../demos/ui-custom/source-demo-preview-menu"),
-		{ ssr: false },
-	),
 	"speech-input-demo-with-transcript": dynamic(
 		() =>
 			import("../../demos/ui-custom/speech-input-demo").then((mod) => ({
@@ -276,20 +265,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui-custom/stack-trace-demo").then((mod) => ({
 				default: mod.StackTraceDemoClickable,
-			})),
-		{ ssr: false },
-	),
-	"suggestion-demo-vertical": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoVertical,
-			})),
-		{ ssr: false },
-	),
-	"suggestion-demo-with-icons": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoWithIcons,
 			})),
 		{ ssr: false },
 	),

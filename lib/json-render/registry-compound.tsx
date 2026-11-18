@@ -6,10 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import type { BundledLanguage } from "shiki";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag as TagPrimitive } from "@/components/ui/tag";
-import { CodeBlock as CustomCodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { toSafeOptionalText } from "./registry-values";
 import type { Components } from "@json-render/react";
@@ -41,10 +41,9 @@ export const compoundComponents = {
 					</a>
 				) : null}
 				{code ? (
-					<CustomCodeBlock
-						code={code}
-						language={codeLanguage as BundledLanguage}
-					/>
+					<CodeBlock>
+						<HighlightedCodeContent code={code} language={codeLanguage} />
+					</CodeBlock>
 				) : null}
 				{links.length > 0 ? (
 					<div className="flex flex-wrap gap-2">
