@@ -40,6 +40,7 @@ export interface AgentSessionMetadataInput {
 	readonly host?: AgentListHost;
 	/** Pre-formatted artifact name, e.g. `#1306: Add guest checkout`. */
 	readonly artifactLabel?: string;
+	readonly showArtifact?: boolean;
 	readonly prStatus?: AgentListPrStatus;
 	/** Lifecycle state used by the default agent-name visibility. */
 	readonly state?: AgentListState;
@@ -79,7 +80,7 @@ export function toAgentSessionMetadataSegments(
 		segments.push({ kind: "branch", label: input.branch });
 	}
 
-	if (input.artifactLabel !== undefined && input.artifactLabel.length > 0) {
+	if (input.showArtifact !== false && input.artifactLabel !== undefined && input.artifactLabel.length > 0) {
 		segments.push({
 			kind: "artifact",
 			label: input.artifactLabel,

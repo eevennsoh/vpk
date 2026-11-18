@@ -4,6 +4,30 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("catalog compares session sizes and permissions", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(`${AGENT_SESSION_URL}#session-sizes-and-permissions`);
+	const example = page.locator("#session-sizes-and-permissions");
+	const local = example.getByRole("region", { name: "Local sessions" });
+	const cloud = example.getByRole("region", { name: "Cloud sessions" });
+	await expect(local.locator("article")).toHaveCount(3);
+	await expect(cloud.locator("article")).toHaveCount(3);
+	const row = cloud.locator("ul").first();
+	await expect.poll(async () => (await row.boundingBox())?.width).toBeGreaterThan(420);
+	await example.getByRole("button", { name: "Medium", exact: true }).click();
+	await expect(row).toHaveCSS("width", "420px");
+	await example.getByRole("button", { name: "Small", exact: true }).click();
+	await expect(row).toHaveCSS("width", "320px");
+	await example.getByRole("button", { name: "Private session" }).click();
+	await expect(local.getByRole("img", { name: /Private session by/ }).first()).toBeVisible();
+	await example.getByRole("button", { name: "Team session" }).click();
+	await expect(example.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article")).toHaveCount(3);
+	await expect(example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article")).toHaveCount(3);
+	await expect(example.getByRole("region", { name: "Local sessions" })).toHaveCount(0);
+	await example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().click();
+	await expect(page.getByRole("group", { name: "Session owner and status" })).toBeVisible();
+});
+
 test("team session examples open owner and viewer conversations", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(`${AGENT_SESSION_URL}#team-sessions`);

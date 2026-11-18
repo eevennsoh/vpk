@@ -20,6 +20,63 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("session menu puts needs-input sessions first within each ownership group", async () => {
+	const items = [session("running", "owner", { state: "running" }), session("waiting", "owner", { state: "needs-input" }), session("complete", "owner"), session("team-running", "viewer", { state: "running" }), session("team-waiting", "viewer", { state: "needs-input" })];
+	const view = await renderMenu(menuProps(items, { teammateSessionsPresentation: "expanded" }));
+	try {
+		const lists = view.getAllByRole("list");
+		assert.deepEqual([...lists[0].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-waiting", "agent-session-row-running", "agent-session-row-complete"]);
+		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-waiting", "agent-session-row-team-running"]);
+		assert.deepEqual(items.map((item) => item.id), ["running", "waiting", "complete", "team-running", "team-waiting"]);
+	} finally { await view.unmount(); }
+});
+
+test("person attribution reveals their name on keyboard focus", async () => {
+	const view = await renderMenu(menuProps([session("mine", "owner", { invokedBy: { name: "Venn" } })]));
+	try {
+		const avatar = view.getByRole("img", { name: "Venn" });
+		await view.focus(avatar);
+		assert.equal(view.getByRole("tooltip").textContent, "Venn");
+	} finally { await view.unmount(); }
+});
+
+test("session cards use the shared agent avatar preview across densities", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+			export default function Example({ item, density }) {
+				return <AgentSessionAvatarPreviewContext value={(agent, avatar) => <button key="agent" aria-label={"Preview " + agent.name}>{avatar}</button>}><ul><AgentSessionCard density={density} item={item} /></ul></AgentSessionAvatarPreviewContext>;
+			}
+		`,
+		props: { item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "long" },
+		mocks: themeMock,
+	});
+	try {
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "short" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+	} finally { await view.unmount(); }
+});
+
+test("Rovo session avatars open the Rovo agent lanyard", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
+			export default function Example({ item }) { return <HeaderLanyards><ul><AgentSessionCard density="long" item={item} /></ul></HeaderLanyards>; }
+		`,
+		props: { item: session("rovo", "owner", { agent: { id: "rovo-dev", name: "Rovo", vpkLogo: "rovo" }, invokedBy: { name: "Maya" } }) },
+		mocks: { ...themeMock, "@/app/contexts/context-rovo-chat-controls": "export const useRovoChatControls = () => ({ openChat() {}, selectAgent() {} });" },
+	});
+	try {
+		await view.click(view.getByRole("button", { name: "Preview Rovo" }));
+		assert.equal(view.getByRole("heading", { name: "Rovo" }).textContent, "Rovo");
+		assert.equal(view.getByText("Atlassian").textContent, "Atlassian");
+		assert.equal(Boolean(document.querySelector('[data-slot="agent-lanyard-avatar"] svg')), true);
+	} finally { await view.unmount(); }
+});
+
 test("assignment activity keeps its private access mark in the session menu", async () => {
 	const view = await renderComponent({
 		source: `
