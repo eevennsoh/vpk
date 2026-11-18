@@ -24,7 +24,7 @@ test("awaiting Queue sessions replace the composer with the shared question expe
 	assert.match(CHAT_MESSAGES_SOURCE, /<MessageScroller[\s\S]*<AwaitingScrollSync awaiting=\{showAwaitingIndicator\}/u);
 	assert.match(CHAT_MESSAGES_SOURCE, /if \(!awaiting\) return;[\s\S]*requestAnimationFrame\(\(\) => scrollToEnd\(\{ behavior: "instant" \}\)\)/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /StatusInformationIcon|components\/ui-custom\/shimmer/u);
-	assert.match(CHAT_MESSAGES_SOURCE, /import \{[\s\S]*ChainOfThought,[\s\S]*ChainOfThoughtHeader,[\s\S]*\} from "@\/components\/ui-custom\/chain-of-thought"/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /import \{[\s\S]*ChainOfThought,[\s\S]*ChainOfThoughtHeader,[\s\S]*\} from "@\/components\/ui\/chain-of-thought"/u);
 	assert.match(CHAT_MESSAGES_SOURCE, /<ChainOfThought>[\s\S]*<ChainOfThoughtHeader showChevron=\{false\} state="thinking">[\s\S]*\{awaitingIndicatorLabel\}/u);
 	assert.match(WORKSPACE_SOURCE, /onSubmit=\{\(answers\) => void handleAnswerQuestion\(answers\)\}/u);
 	assert.match(WORKSPACE_SOURCE, /<QuestionCard[\s\S]*<QuestionCardShortcutsFooter \/>/u);

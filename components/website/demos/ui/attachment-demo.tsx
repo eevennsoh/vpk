@@ -80,7 +80,7 @@ function FileAttachment({
 	state = "done",
 	title = "research-notes.pdf",
 	description = "2.4 MB",
-	icon = <FileIcon label="" size="small" />,
+	icon = <FileIcon label="" size="medium" />,
 	className,
 }: Readonly<{
 	state?: "idle" | "uploading" | "processing" | "error" | "done";
@@ -170,13 +170,13 @@ export function AttachmentDemoDefault() {
 				state="uploading"
 				title="sales-dashboard.pdf"
 				description="Uploading · 64%"
-				icon={<AttachmentIcon label="" size="small" />}
+				icon={<AttachmentIcon label="" size="medium" />}
 				className="w-full"
 			/>
 			<FileAttachment
 				title="message-renderer.tsx"
 				description="TypeScript · 12 KB"
-				icon={<FilesIcon label="" size="small" />}
+				icon={<FilesIcon label="" size="medium" />}
 				className="w-full"
 			/>
 		</div>
@@ -197,13 +197,13 @@ export function AttachmentDemoFiles() {
 					<FileAttachment
 						title="customer-import.csv"
 						description="CSV · 18 KB"
-						icon={<TableIcon label="" size="small" />}
+						icon={<TableIcon label="" size="medium" />}
 						className="w-full"
 					/>
 					<FileAttachment
 						title="message-renderer.tsx"
 						description="TypeScript · 12 KB"
-						icon={<FilesIcon label="" size="small" />}
+						icon={<FilesIcon label="" size="medium" />}
 						className="w-full"
 					/>
 				</div>
@@ -213,7 +213,7 @@ export function AttachmentDemoFiles() {
 				<AttachmentGroup className="w-full">
 					<Attachment orientation="vertical">
 						<AttachmentMedia>
-							<Icon render={<FileIcon label="" size="small" />} label="" />
+							<Icon render={<FileIcon label="" size="medium" />} label="" />
 						</AttachmentMedia>
 						<AttachmentContent>
 							<AttachmentTitle>sales-dashboard.pdf</AttachmentTitle>
@@ -225,7 +225,7 @@ export function AttachmentDemoFiles() {
 					</Attachment>
 					<Attachment orientation="vertical">
 						<AttachmentMedia>
-							<Icon render={<TableIcon label="" size="small" />} label="" />
+							<Icon render={<TableIcon label="" size="medium" />} label="" />
 						</AttachmentMedia>
 						<AttachmentContent>
 							<AttachmentTitle>customer-import.csv</AttachmentTitle>
@@ -237,7 +237,7 @@ export function AttachmentDemoFiles() {
 					</Attachment>
 					<Attachment orientation="vertical">
 						<AttachmentMedia>
-							<Icon render={<FilesIcon label="" size="small" />} label="" />
+							<Icon render={<FilesIcon label="" size="medium" />} label="" />
 						</AttachmentMedia>
 						<AttachmentContent>
 							<AttachmentTitle>source-assets.zip</AttachmentTitle>
@@ -249,7 +249,7 @@ export function AttachmentDemoFiles() {
 					</Attachment>
 					<Attachment orientation="vertical">
 						<AttachmentMedia>
-							<Icon render={<ArchiveBoxIcon label="" size="small" />} label="" />
+							<Icon render={<ArchiveBoxIcon label="" size="medium" />} label="" />
 						</AttachmentMedia>
 						<AttachmentContent>
 							<AttachmentTitle>quarterly-review.key</AttachmentTitle>
@@ -332,14 +332,14 @@ export function AttachmentDemoStates() {
 				state="idle"
 				title="selected-file.pdf"
 				description="Ready to upload"
-				icon={<ClockIcon label="" size="small" />}
+				icon={<ClockIcon label="" size="medium" />}
 				className="w-full"
 			/>
 			<FileAttachment
 				state="uploading"
 				title="design-system.zip"
 				description="Uploading · 64%"
-				icon={<AttachmentIcon label="" size="small" />}
+				icon={<AttachmentIcon label="" size="medium" />}
 				className="w-full"
 			/>
 			<FileAttachment
@@ -350,7 +350,7 @@ export function AttachmentDemoStates() {
 			/>
 			<Attachment state="error" className="w-full">
 				<AttachmentMedia>
-					<Icon render={<WarningIcon label="" size="small" />} label="" />
+					<Icon render={<WarningIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>financial-model.xlsx</AttachmentTitle>
@@ -367,7 +367,7 @@ export function AttachmentDemoStates() {
 				state="done"
 				title="uploaded-report.pdf"
 				description="Uploaded · 1.8 MB"
-				icon={<CheckMarkIcon label="" size="small" />}
+				icon={<CheckMarkIcon label="" size="medium" />}
 				className="w-full"
 			/>
 		</div>
@@ -412,7 +412,7 @@ export function AttachmentDemoSizes() {
 		<div className="mx-auto flex w-full max-w-sm flex-col gap-3">
 			<Attachment size="default" className="w-full">
 				<AttachmentMedia>
-					<Icon render={<FileIcon label="" size="small" />} label="" />
+					<Icon render={<FileIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>Default attachment</AttachmentTitle>
@@ -421,7 +421,7 @@ export function AttachmentDemoSizes() {
 			</Attachment>
 			<Attachment size="sm" className="w-full">
 				<AttachmentMedia>
-					<Icon render={<FileIcon label="" size="small" />} label="" />
+					<Icon render={<FileIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>Small attachment</AttachmentTitle>
@@ -430,7 +430,7 @@ export function AttachmentDemoSizes() {
 			</Attachment>
 			<Attachment size="xs" className="w-full">
 				<AttachmentMedia>
-					<Icon render={<FileIcon label="" size="small" />} label="" />
+					<Icon render={<FileIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>Extra small attachment</AttachmentTitle>
@@ -442,10 +442,10 @@ export function AttachmentDemoSizes() {
 
 export function AttachmentDemoGroup() {
 	const items = [
-		{ name: "briefing-notes.pdf", meta: "PDF · 1.4 MB", icon: <FileIcon label="" size="small" /> },
+		{ name: "briefing-notes.pdf", meta: "PDF · 1.4 MB", icon: <FileIcon label="" size="medium" /> },
 		{ name: "workspace.png", meta: "PNG · 820 KB", image: imageAttachments[0] },
-		{ name: "customers.csv", meta: "CSV · 18 KB", icon: <TableIcon label="" size="small" /> },
-		{ name: "renderer.tsx", meta: "TSX · 12 KB", icon: <FilesIcon label="" size="small" /> },
+		{ name: "customers.csv", meta: "CSV · 18 KB", icon: <TableIcon label="" size="medium" /> },
+		{ name: "renderer.tsx", meta: "TSX · 12 KB", icon: <FilesIcon label="" size="medium" /> },
 	] as const;
 
 	return (
@@ -484,7 +484,7 @@ export function AttachmentDemoTrigger() {
 		<div className="mx-auto flex w-full max-w-sm flex-col gap-3">
 			<Attachment className="w-full">
 				<AttachmentMedia>
-					<Icon render={<DownloadIcon label="" size="small" />} label="" />
+					<Icon render={<DownloadIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>contract-review.pdf</AttachmentTitle>
@@ -510,7 +510,7 @@ export function AttachmentDemoTrigger() {
 			<Dialog>
 				<Attachment className="w-full">
 					<AttachmentMedia>
-						<Icon render={<SearchIcon label="" size="small" />} label="" />
+						<Icon render={<SearchIcon label="" size="medium" />} label="" />
 					</AttachmentMedia>
 					<AttachmentContent>
 						<AttachmentTitle>research-summary.pdf</AttachmentTitle>
@@ -546,7 +546,7 @@ export function AttachmentDemoOrientation() {
 			<FileAttachment />
 			<Attachment orientation="vertical">
 				<AttachmentMedia>
-					<Icon render={<ImageIcon label="" size="small" />} label="" />
+					<Icon render={<ImageIcon label="" size="medium" />} label="" />
 				</AttachmentMedia>
 				<AttachmentContent>
 					<AttachmentTitle>brief.txt</AttachmentTitle>

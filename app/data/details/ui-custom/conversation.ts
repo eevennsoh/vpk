@@ -17,8 +17,9 @@ export const CONVERSATION_DETAIL: ComponentDetail = {
   ConversationDownload,
   ConversationScrollButton,
 } from "@/components/ui-custom/conversation";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 const messages = [
   { role: "user", content: "Summarize the latest conversation changes." },
@@ -33,8 +34,14 @@ const messages = [
         messageId={\`\${message.role}-\${message.content}\`}
         scrollAnchor={message.role === "user"}
       >
-        <Message from={message.role}>
-          <MessageContent>{message.content}</MessageContent>
+        <Message align={message.role === "user" ? "end" : "start"}>
+          <MessageContent>
+            {message.role === "user" ? (
+              <MessageUserBubble>{message.content}</MessageUserBubble>
+            ) : (
+              message.content
+            )}
+          </MessageContent>
         </Message>
       </MessageScrollerItem>
     ))}

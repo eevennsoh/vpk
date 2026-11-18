@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { ChainOfThoughtStepHeaderRenderContext } from "@/components/ui-custom/chain-of-thought";
+import type { ChainOfThoughtStepHeaderRenderContext } from "@/components/ui/chain-of-thought";
 import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
 import type {
 	ThinkingNarrationDetailRow,

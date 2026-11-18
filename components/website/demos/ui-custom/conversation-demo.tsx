@@ -4,8 +4,9 @@ import {
 	ConversationDownload,
 	ConversationScrollButton,
 } from "@/components/ui-custom/conversation";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 const DEMO_MESSAGES: Array<{
 	id: string;
@@ -60,8 +61,14 @@ export default function ConversationDemo() {
 			<ConversationContent className="min-h-full px-6 py-5 pr-20">
 				{DEMO_MESSAGES.map((message) => (
 					<MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={message.role === "user"} className="[content-visibility:visible]">
-						<Message from={message.role}>
-							<MessageContent>{message.content}</MessageContent>
+						<Message align={message.role === "user" ? "end" : "start"}>
+							{message.role === "user" ? (
+								<MessageContent>
+									<MessageUserBubble>{message.content}</MessageUserBubble>
+								</MessageContent>
+							) : (
+								<MessageContent className="max-w-[80%]">{message.content}</MessageContent>
+							)}
 						</Message>
 					</MessageScrollerItem>
 				))}

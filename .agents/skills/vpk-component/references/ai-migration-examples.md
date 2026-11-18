@@ -17,19 +17,23 @@ function MessageBubble({ message }) {
   );
 }
 
-// AFTER: ui-custom Message
-import { Message, MessageContent, MessageResponse } from "@/components/ui-custom/message";
+// AFTER: ui Message + VPK user bubble and markdown
+import { Message, MessageContent } from "@/components/ui/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 function ChatMessage({ message }) {
-  return (
-    <Message from={message.role}>
+  const text = message.parts.filter((part) => part.type === "text").map((part) => part.text).join("");
+  return message.role === "user" ? (
+    <Message align="end">
       <MessageContent>
-        {message.parts.map((part, i) => {
-          if (part.type === "text") {
-            return <MessageResponse key={i}>{part.text}</MessageResponse>;
-          }
-          return null;
-        })}
+        <MessageUserBubble>{text}</MessageUserBubble>
+      </MessageContent>
+    </Message>
+  ) : (
+    <Message>
+      <MessageContent>
+        <MessageResponse>{text}</MessageResponse>
       </MessageContent>
     </Message>
   );
@@ -109,10 +113,10 @@ function ActionBar({ onCopy, onRetry }) {
   );
 }
 
-// AFTER: ui-custom MessageActions
-import { MessageActions, MessageAction } from "@/components/ui-custom/message";
+// AFTER: ui MessageActions
+import { MessageActions, MessageAction } from "@/components/ui/message";
 
-// Inside a <Message> compound:
+// Inside <MessageContent>:
 <MessageActions>
   <MessageAction onClick={onCopy} tooltip="Copy">
     <CopyIcon className="size-4" />

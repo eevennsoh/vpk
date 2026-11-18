@@ -6,7 +6,7 @@ import { MessageScroller, MessageScrollerButton, MessageScrollerContent, Message
 import {
 	ChainOfThought,
 	ChainOfThoughtHeader,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { cn } from "@/lib/utils";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
 import { ThreadMessage } from "@/components/projects/shared/thread-message";
