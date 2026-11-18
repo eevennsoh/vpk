@@ -43,7 +43,7 @@ test("vpk icon module does not re-export deprecated Lucide-compatible aliases", 
 	for (const alias of DEPRECATED_LUCIDE_COMPAT_ALIASES) {
 		assert.doesNotMatch(
 			VPK_ICONS_SOURCE,
-			new RegExp(`export const ${alias}\\b`),
+			new RegExp(`export (?:const|function) ${alias}\\b`),
 			`${alias} should stay removed; use the stable ${alias}Icon export when one exists.`,
 		);
 	}

@@ -109,7 +109,7 @@ test("compact and expanded render one composer subtree so the draft survives the
 	assert.doesNotMatch(COMPONENT_SOURCE, /if \(isExpanded\) \{\s*return/u);
 });
 
-test("expanded pins the stacked FloatingComposer layout", async (t) => {
+test("FloatingComposer pins stacked markup and switches the automatic measurement subscription with layout", async (t) => {
 	assert.match(
 		COMPONENT_SOURCE,
 		/layout=\{isExpanded \? "stacked" : "auto"\}/u,
@@ -121,7 +121,7 @@ test("expanded pins the stacked FloatingComposer layout", async (t) => {
 		source: `import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 			export default function Probe({ layout }) {
 				return <FloatingComposer layout={layout} onSubmit={() => {}} actions={<button>Send</button>}>
-					<textarea aria-label="Review draft" defaultValue="" />
+					<div role="textbox" aria-label="Review draft" contentEditable suppressContentEditableWarning />
 				</FloatingComposer>;
 			}`,
 		props: { layout: "stacked" },
@@ -135,8 +135,27 @@ test("expanded pins the stacked FloatingComposer layout", async (t) => {
 	assert.equal(fieldClasses().contains("basis-full"), false);
 	await view.rerender({ layout: "stacked" });
 	assert.equal(fieldClasses().contains("basis-full"), true);
-	assert.equal(view.getByRole("textbox", { name: "Review draft" }).value, "Review survives layout changes");
+	assert.equal(view.getByRole("textbox", { name: "Review draft" }).textContent, "Review survives layout changes");
 	assert.equal(resizeObserver.mock.callCount(), 0, "pinned layouts must skip wrapping measurement");
+	let measure;
+	t.mock.method(window, "requestAnimationFrame", (callback) => { measure = callback; return 1; });
+	t.mock.method(HTMLElement.prototype, "getBoundingClientRect", function () {
+		return { width: this.getAttribute("data-slot") === "floating-composer-row" ? 320 : 40 };
+	});
+	let lines = 2;
+	t.mock.method(Range.prototype, "getClientRects", () => Array.from({ length: lines }, (_, index) => ({ width: 100, height: 20, top: index * 20 })));
+	const disconnect = t.mock.method(ResizeObserver.prototype, "disconnect");
+	await view.rerender({ layout: "auto" });
+	assert.equal(resizeObserver.mock.callCount(), 1, "entering auto subscribes to wrapping measurements");
+	// Synthetic line rectangles drive the decision; happy-dom does not lay out text.
+	await require("react").act(async () => { measure(0); });
+	assert.equal(fieldClasses().contains("basis-full"), true);
+	lines = 1;
+	await require("react").act(async () => { resizeObserver.mock.calls[0].arguments[0](); measure(0); });
+	assert.equal(fieldClasses().contains("basis-full"), false);
+	await view.rerender({ layout: "stacked" });
+	assert.equal(fieldClasses().contains("basis-full"), true);
+	assert.equal(disconnect.mock.callCount(), 1, "leaving auto unsubscribes from wrapping measurements");
 });
 
 test("submit enables when the editor has non-empty content", () => {

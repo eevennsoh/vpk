@@ -3145,7 +3145,7 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/graph-demo.test.js": {
+  "components/website/demos/visual/graph-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 188
     }

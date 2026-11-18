@@ -97,7 +97,7 @@ test("Scribbles demo uses a real SVG asset instead of the inline placeholder ill
 });
 
 test("Scribbles is wired into the visual catalog", () => {
-	assert.match(REGISTRY_SOURCE, /scribbles: dynamic\(\(\) => import\("\.\/demos\/visual\/scribbles-demo"\)/);
+	assert.match(REGISTRY_SOURCE, /^\s*scribbles: dynamic\(\(\) => import\("\.\/demos\/visual\/scribbles-demo"\)/m);
 	assert.ok(COMPONENTS_SOURCE.includes('visualComponent("scribbles", "Scribbles"'));
 	assert.ok(MANIFEST_SOURCE.includes('visualComponent("scribbles", "Scribbles"'));
 	assert.match(DETAILS_SOURCE, /(?:"scribbles"|scribbles): \{/u);

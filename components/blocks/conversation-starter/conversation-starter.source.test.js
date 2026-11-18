@@ -146,14 +146,19 @@ test("Conversation Starter keeps a draft so Cancel discards and Add commits", as
 	const saved = [];
 	const changed = [];
 	const closed = [];
-	const starters = [{ id: "starter-1", text: "Original", icon: "ai-chat" }];
+	const starters = [
+		{ id: "starter-1", text: "Original", icon: "ai-chat" },
+		{ id: "starter-2", text: "Second", icon: "ai-chat" },
+		{ id: "starter-3", text: "Truncated", icon: "ai-chat" },
+	];
 	const props = {
-		open: true, starters,
+		open: true, starters, maxStarters: 2,
 		onOpenChange: (open) => closed.push(open),
 		onSave: (rows) => saved.push(rows),
 		onStartersChange: (rows) => changed.push(rows),
 	};
 	const view = await renderComponent({ entry: DIALOG, exportName: "ConversationStarterDialog", props });
+	assert.equal(view.getAllByRole("textbox").length, 2);
 	await view.fill(view.getByRole("textbox", { name: "Conversation starter 1" }), "Discard me");
 	await view.click(view.getByRole("button", { name: "Cancel" }));
 	assert.deepEqual(saved, []);

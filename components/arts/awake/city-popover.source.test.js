@@ -78,11 +78,15 @@ test("CityRailEditor resets the highlighted result when search input changes or 
 	const { PRESET_CITIES } = require("./preset-cities.ts");
 	assert.deepEqual(addedCities, [PRESET_CITIES.find((city) => city.name === "Tokyo").id]);
 	assert.equal(view.getByRole("button", { name: "Close city manager" }).getAttribute("aria-expanded"), "true");
+	await view.fill(search, "");
+	await view.press(search, "ArrowDown");
+	await view.press(search, "Enter");
+	assert.equal(addedCities[1], PRESET_CITIES[1].id);
 	await view.press(search, "Escape");
 	await view.rerender({ ...props, openRequestKey: 2 });
 	assert.equal(view.getByRole("textbox", { name: "Search cities" }).value, "");
 	await view.press(view.getByRole("textbox", { name: "Search cities" }), "Enter");
-	assert.equal(addedCities[1], PRESET_CITIES[0].id);
+	assert.equal(addedCities[2], PRESET_CITIES[0].id);
 });
 
 test("CityRailEditor lets the city rows use the full list width", () => {

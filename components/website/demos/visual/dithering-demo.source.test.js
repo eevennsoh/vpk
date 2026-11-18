@@ -70,7 +70,7 @@ test("Dithering shader ports Shader Lab algorithms and color modes", () => {
 		algorithm: "bayer-2x2", colorMode: "duo-tone", highlightColor: "#9bbc0f",
 		levels: 4, pixelSize: 3, shadowColor: "#0f380f", spread: 0.5,
 	});
-	assert.match(SHADER_SOURCE, /bayer2/);
+	assert.match(SHADER_SOURCE, /bayer2[\s\S]*const presetDefaults = getDitheringPresetDefaults\(preset\);[\s\S]*const effectiveAlgorithm = algorithm \?\? presetDefaults\.algorithm \?\? "bayer-4x4";/);
 	assert.match(SHADER_SOURCE, /bayer4/);
 	assert.match(SHADER_SOURCE, /bayer8/);
 	assert.match(SHADER_SOURCE, /blueNoise/);

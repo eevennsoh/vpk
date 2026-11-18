@@ -23,21 +23,21 @@ test("Prompt gallery pills do not preview prompts on hover", () => {
 	assert.match(PROMPT_GALLERY_SOURCE, /<span className="min-w-0 truncate">\{suggestion\.label\}<\/span>/u);
 });
 
-test("Rovo composer preview placeholder stays one line with ellipsis", async () => {
+test("Rovo composer preview placeholder carries single-line ellipsis classes and yields to typed input", async (t) => {
 	assert.match(ROVO_COMPOSER_SOURCE, /previewPromptHeight: baseTextareaHeight/u);
+	t.mock.method(globalThis, "fetch", async () => new Response("[]", { headers: { "content-type": "application/json" } }));
 	const placeholder = "A long prompt preview that stays on one line";
 	const view = await renderComponent({
-		source: `import { PromptInputProvider, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
-			export default function Probe({ placeholder }) {
-				return <PromptInputProvider><PromptInputTextarea placeholder={placeholder} enableDirectoryAutocomplete={false} enableSuggestionMenus={false} /></PromptInputProvider>;
-			}`,
-		props: { placeholder },
+		entry: "components/projects/shared/components/rovo-app-composer.tsx", exportName: "RovoAppComposer",
+		props: { placeholder, previewPrompt: placeholder, composerStatus: "ready", hideSourceAndModelControls: true, onSubmit: async () => {}, onStop: async () => {} },
 	});
 	const preview = view.container.querySelector('[data-slot="prompt-input-placeholder"] span');
 	assert.equal(preview?.textContent, placeholder);
 	assert.equal(preview?.classList.contains("whitespace-nowrap"), true);
 	assert.equal(preview?.classList.contains("overflow-hidden"), true);
 	assert.equal(preview?.classList.contains("text-ellipsis"), true);
+	await view.fill(view.getByRole("textbox"), "My own prompt");
+	assert.equal(view.container.querySelector('[data-slot="prompt-input-placeholder"]') === null, true);
 });
 
 test("Prompt gallery illustration paths resolve to public assets", () => {

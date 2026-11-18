@@ -802,7 +802,7 @@ test("Experimental kanban column wrappers stay overflow-visible so card strokes 
 	assert.match(EXPERIMENTAL_COLUMN_SOURCE, /className=\{cn\("relative z-10 min-h-0 min-w-0 overflow-visible", chrome\.columnClassName/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/isResizing \? "overflow-hidden" : "overflow-visible"/u,
+		/^\t{3}className=\{cn\(\n\t{4}chrome\.dropShellClassName,\n\t{4}\/\/ The shell includes the empty space beneath content-sized columns\.\n\t{4}"group\/board-column min-w-0",\n\t{4}collapsed \? "group\/collapsed-column" : null,\n\t{4}columnSizing === "content" \? "group\/board-column-shell relative isolate flex min-h-0 flex-col" : null,\n\t{4}isResizing \? "overflow-hidden" : "overflow-visible",\n\t{3}\)\}$/mu,
 	);
 	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
 });
@@ -819,13 +819,7 @@ test("Experimental kanban column card lists reuse the shared top and bottom scro
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
 });
 
-test("Kanban Create controls stretch to the same width as column cards", async () => {
-	const view = await renderComponent({
-		entry: "components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
-		exportName: "BoardColumnAddButton",
-		props: { title: "Intake" },
-	});
-	assert.equal(view.getByRole("button", { name: "Create in Intake" }).classList.contains("w-full"), true);
+test("Kanban Create controls retain full-width class wiring at their current owners", () => {
 	assert.match(EXPERIMENTAL_CARD_LIST_SOURCE, /data-board-work-item-create=""[\s\S]*<BoardColumnAddButton onStartCreate=\{onStartCreate\} title=\{columnTitle\} \/>/u);
 	assert.match(
 		SOURCE,
@@ -943,13 +937,18 @@ test("Experimental v2 mirrors the Golden Journey v4 board and list contract", ()
 	assert.match(DEMO_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
 });
 
-test("Experimental kanban header keeps only configure and more actions", () => {
+test("Experimental kanban header keeps only configure and more actions", async () => {
 	assert.match(EXPERIMENTAL_CONFIGURATION_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize";/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/showCustomizeControl \? <BoardViewConfiguration container=\{viewConfigurationHostRef\} \/> : null/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
+		exportName: "ExperimentalJiraKanbanBoardHeader", props: { showCustomizeControl: true },
+	});
+	assert.equal(view.getByRole("button", { name: "Customize" }).getAttribute("aria-label"), "Customize");
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /aria-label="(?:View insights|Undo board change|Board announcements)"/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /\$\{surfaceTitle\} settings/u);
 });
