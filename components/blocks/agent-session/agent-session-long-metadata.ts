@@ -26,8 +26,6 @@ export interface AgentSessionMetadataSegment {
 
 export interface AgentSessionMetadataInput {
 	readonly agentName: string;
-	/** Override the default visibility of the name beside the agent mark. */
-	readonly showAgentName?: boolean;
 	readonly branch?: string;
 	/**
 	 * Resolved session host, or `undefined` when the row never declared one.
@@ -42,8 +40,6 @@ export interface AgentSessionMetadataInput {
 	readonly artifactLabel?: string;
 	readonly showArtifact?: boolean;
 	readonly prStatus?: AgentListPrStatus;
-	/** Lifecycle state used by the default agent-name visibility. */
-	readonly state?: AgentListState;
 	/** Short-density line: agent mark only, no agent name. */
 	readonly compact?: boolean;
 }
@@ -71,10 +67,8 @@ export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>
 export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
-	const isActive = isActiveAgentSessionState(input.state);
-	const showAgentName = input.showAgentName ?? (!input.compact && !isActive);
 	const segments: AgentSessionMetadataSegment[] = [
-		showAgentName ? { kind: "agent", label: input.agentName } : { kind: "agent" },
+		input.compact ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
 	if (input.branch) {
 		segments.push({ kind: "branch", label: input.branch });

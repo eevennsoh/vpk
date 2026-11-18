@@ -224,7 +224,7 @@ export default function TraceDemo() {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>
@@ -363,7 +363,7 @@ export function TraceThinking() {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>
@@ -509,7 +509,7 @@ export function TraceToolCalls() {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>

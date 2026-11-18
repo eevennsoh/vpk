@@ -1,21 +1,20 @@
 "use client"
 
 import type { ComponentProps, ReactNode, RefObject } from "react"
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { createContext, use, useCallback, useEffect, useMemo, useRef } from "react"
 import type { UIMessage } from "ai"
-import {
-  ArrowDownIcon,
-  DownloadIcon,
-} from "@/components/ui/vpk-icons"
-
-import { getVerticalOverflowState } from "@/components/hooks/use-has-vertical-overflow"
+import { DownloadIcon } from "@/components/ui/vpk-icons"
 import { Button } from "@/components/ui/button"
+import {
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerViewport,
+	useMessageScroller,
+	useMessageScrollerScrollable,
+} from "@/components/ui/message-scroller"
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask"
-import { token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
-
-const DEFAULT_SCROLL_THRESHOLD_PX = 24
-const USER_SCROLL_INTENT_TIMEOUT_MS = 180
 
 type ScrollAnimation = boolean | ScrollBehavior | "instant" | {
 	damping: number
@@ -34,7 +33,6 @@ export interface ConversationScrollTargetOptions {
 }
 
 export type ConversationFollowMode = "bottom" | "target"
-
 export type GetTargetScrollTop = (
 	defaultTargetTop: number,
 	options: ConversationScrollTargetOptions
@@ -44,47 +42,21 @@ export interface ConversationContextValue {
 	scrollRef: RefObject<HTMLDivElement | null>
 	contentRef: RefObject<HTMLDivElement | null>
 	isAtBottom: boolean
-	/** True only when the thread overflows and content is scrolled past the top edge. */
 	showTopScrollMask: boolean
-	/** True only when the thread overflows and content remains hidden below. */
 	showBottomScrollMask: boolean
 	scrollToBottom: (options?: ScrollToBottomOptions) => Promise<void>
 }
 
+type ConversationElements = {
+	setScrollElement: (element: HTMLDivElement | null) => void
+	setContentElement: (element: HTMLDivElement | null) => void
+}
 const ConversationContext = createContext<ConversationContextValue | null>(null)
-
-function resolveScrollBehavior(animation: ScrollAnimation | undefined): ScrollBehavior {
-	if (animation === false || animation === "instant") {
-		return "auto"
-	}
-
-	if (animation === "auto" || animation === "smooth") {
-		return animation
-	}
-
-	if (typeof animation === "object") {
-		return "smooth"
-	}
-
-	return "smooth"
-}
-
-function setContextRef(
-	contextRef: { current: ConversationContextValue | null } | undefined,
-	value: ConversationContextValue | null
-) {
-	if (contextRef) {
-		contextRef.current = value
-	}
-}
+const ConversationElementsContext = createContext<ConversationElements | null>(null)
 
 export function useConversationContext(): ConversationContextValue {
 	const context = use(ConversationContext)
-
-	if (!context) {
-		throw new Error("useConversationContext must be used within <Conversation>")
-	}
-
+	if (!context) throw new Error("useConversationContext must be used within <Conversation>")
 	return context
 }
 
@@ -97,6 +69,104 @@ export interface ConversationProps extends ComponentProps<"div"> {
 	targetScrollTop?: GetTargetScrollTop
 }
 
+function ConversationBridge({
+	children,
+	contextRef,
+	followMode,
+	resize,
+	resizeTarget,
+	targetScrollTop,
+}: Readonly<{
+	children: ReactNode
+	contextRef?: { current: ConversationContextValue | null }
+	followMode?: ConversationFollowMode
+	resize: ScrollAnimation
+	resizeTarget: ScrollToBottomOptions["target"]
+	targetScrollTop?: GetTargetScrollTop
+}>) {
+	const scrollRef = useRef<HTMLDivElement>(null)
+	const contentRef = useRef<HTMLDivElement>(null)
+	const setScrollElement = useCallback((element: HTMLDivElement | null) => {
+		scrollRef.current = element
+	}, [])
+	const setContentElement = useCallback((element: HTMLDivElement | null) => {
+		contentRef.current = element
+	}, [])
+	const { scrollToEnd } = useMessageScroller()
+	const scrollable = useMessageScrollerScrollable()
+	const targetFollowPausedRef = useRef(false)
+	const userScrollIntentRef = useRef(false)
+	const scrollToBottom = useCallback(async (options?: ScrollToBottomOptions) => {
+		if (options?.ignoreEscapes) {
+			targetFollowPausedRef.current = false
+			userScrollIntentRef.current = false
+		}
+		const animation = options?.animation
+		const behavior = animation === false || animation === "instant"
+			? "instant"
+			: animation === "auto" ? "auto" : "smooth"
+		const scrollElement = scrollRef.current
+		if (scrollElement && options?.target !== "bottom" && targetScrollTop && (followMode ?? "target") === "target") {
+			const bottom = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight)
+			scrollElement.scrollTo({ top: Math.max(0, targetScrollTop(bottom, { scrollElement })), behavior })
+			return
+		}
+		scrollToEnd({ behavior })
+	}, [followMode, scrollToEnd, targetScrollTop])
+	useEffect(() => {
+		const viewport = scrollRef.current
+		const content = contentRef.current
+		if (!viewport || !content || !targetScrollTop || (followMode ?? "target") !== "target" || resize === false || resizeTarget === "bottom" || typeof ResizeObserver === "undefined") {
+			return
+		}
+		const onIntent = () => { userScrollIntentRef.current = true }
+		const onScroll = () => {
+			if (!userScrollIntentRef.current) return
+			targetFollowPausedRef.current = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop > 24
+			userScrollIntentRef.current = false
+		}
+		viewport.addEventListener("wheel", onIntent, { passive: true })
+		viewport.addEventListener("touchmove", onIntent, { passive: true })
+		viewport.addEventListener("keydown", onIntent)
+		viewport.addEventListener("scroll", onScroll, { passive: true })
+		const observer = new ResizeObserver(() => {
+			if (!targetFollowPausedRef.current) void scrollToBottom({ animation: resize, target: resizeTarget })
+		})
+		observer.observe(viewport)
+		observer.observe(content)
+		return () => {
+			observer.disconnect()
+			viewport.removeEventListener("wheel", onIntent)
+			viewport.removeEventListener("touchmove", onIntent)
+			viewport.removeEventListener("keydown", onIntent)
+			viewport.removeEventListener("scroll", onScroll)
+		}
+	}, [followMode, resize, resizeTarget, scrollToBottom, targetScrollTop])
+	const elements = useMemo(() => ({ setScrollElement, setContentElement }), [setContentElement, setScrollElement])
+	const value = useMemo<ConversationContextValue>(() => ({
+		scrollRef,
+		contentRef,
+		isAtBottom: !scrollable.end,
+		showTopScrollMask: scrollable.start,
+		showBottomScrollMask: scrollable.end,
+		scrollToBottom,
+	}), [scrollable.end, scrollable.start, scrollToBottom])
+	useEffect(() => {
+		if (contextRef) contextRef.current = value
+		return () => {
+			if (contextRef) contextRef.current = null
+		}
+	}, [contextRef, value])
+	return (
+		<ConversationContext value={value}>
+			<ConversationElementsContext value={elements}>
+				<StickyRowScrollFade className={cn("top-0 z-10", scrollable.start ? "opacity-100" : null)} data-slot="conversation-top-scroll-fade" />
+				{children}
+			</ConversationElementsContext>
+		</ConversationContext>
+	)
+}
+
 export function Conversation({
 	children,
 	className,
@@ -105,271 +175,26 @@ export function Conversation({
 	initial = "smooth",
 	resize = "smooth",
 	resizeTarget = "follow",
-	role = "log",
 	targetScrollTop,
 	...props
 }: Readonly<ConversationProps>) {
-	const scrollRef = useRef<HTMLDivElement>(null)
-	const contentRef = useRef<HTMLDivElement>(null)
-	const [isAtBottom, setIsAtBottom] = useState(true)
-	const [showTopScrollMask, setShowTopScrollMask] = useState(false)
-	const [showBottomScrollMask, setShowBottomScrollMask] = useState(false)
-	const hasInitializedScrollRef = useRef(false)
-	const lastKnownScrollHeightRef = useRef(0)
-	const lastUserScrollIntentAtRef = useRef(0)
-	const isPointerScrollingRef = useRef(false)
-	const isFollowPausedRef = useRef(false)
-	const resolvedFollowMode = followMode ?? (targetScrollTop ? "target" : "bottom")
-
-	const hasActiveUserScrollIntent = useCallback(() => {
-		return (
-			isPointerScrollingRef.current ||
-			Date.now() - lastUserScrollIntentAtRef.current <= USER_SCROLL_INTENT_TIMEOUT_MS
-		)
-	}, [])
-
-	const getDefaultTargetTop = useCallback((scrollElement: HTMLElement) => {
-		return Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight)
-	}, [])
-
-	const getScrollTargetTop = useCallback((scrollElement: HTMLElement) => {
-		const defaultTargetTop = getDefaultTargetTop(scrollElement)
-		if (resolvedFollowMode === "target" && targetScrollTop) {
-			return targetScrollTop(defaultTargetTop, { scrollElement })
-		}
-
-		return defaultTargetTop
-	}, [getDefaultTargetTop, resolvedFollowMode, targetScrollTop])
-
-	const updateScrollMaskState = useCallback(() => {
-		const scrollElement = scrollRef.current
-		if (!scrollElement) {
-			setIsAtBottom(true)
-			setShowTopScrollMask(false)
-			setShowBottomScrollMask(false)
-			return true
-		}
-
-		const overflowState = getVerticalOverflowState({
-			clientHeight: scrollElement.clientHeight,
-			maxHeight: Number.POSITIVE_INFINITY,
-			scrollHeight: scrollElement.scrollHeight,
-			scrollTop: scrollElement.scrollTop,
-		})
-		const actualBottomTop = getDefaultTargetTop(scrollElement)
-		const distanceFromActualBottom = Math.abs(scrollElement.scrollTop - actualBottomTop)
-		const nextIsAtBottom = distanceFromActualBottom <= DEFAULT_SCROLL_THRESHOLD_PX
-		setIsAtBottom(nextIsAtBottom)
-		setShowTopScrollMask(overflowState.showTopScrollMask)
-		setShowBottomScrollMask(overflowState.showBottomScrollMask)
-		return nextIsAtBottom
-	}, [getDefaultTargetTop])
-
-	const updateIsAtBottom = updateScrollMaskState
-
-	const scrollToBottom = useCallback(
-		async (options?: ScrollToBottomOptions) => {
-			const scrollElement = scrollRef.current
-			if (!scrollElement) {
-				return
-			}
-
-			if (options?.ignoreEscapes) {
-				isFollowPausedRef.current = false
-				isPointerScrollingRef.current = false
-				lastUserScrollIntentAtRef.current = 0
-			}
-
-			const targetMode = options?.target ?? "follow"
-			const targetTop = targetMode === "bottom"
-				? getDefaultTargetTop(scrollElement)
-				: getScrollTargetTop(scrollElement)
-
-			scrollElement.scrollTo({
-				top: Math.max(0, targetTop),
-				behavior: resolveScrollBehavior(options?.animation),
-			})
-			updateIsAtBottom()
-		},
-		[getDefaultTargetTop, getScrollTargetTop, updateIsAtBottom]
-	)
-
-	const contextValue = useMemo<ConversationContextValue>(
-		() => ({
-			scrollRef,
-			contentRef,
-			isAtBottom,
-			showTopScrollMask,
-			showBottomScrollMask,
-			scrollToBottom,
-		}),
-		[isAtBottom, scrollToBottom, showBottomScrollMask, showTopScrollMask]
-	)
-
-	useEffect(() => {
-		setContextRef(contextRef, contextValue)
-		return () => {
-			setContextRef(contextRef, null)
-		}
-	}, [contextRef, contextValue])
-
-	useEffect(() => {
-		const scrollElement = scrollRef.current
-		if (!scrollElement) {
-			return
-		}
-
-		const markUserScrollIntent = () => {
-			lastUserScrollIntentAtRef.current = Date.now()
-		}
-
-		const handlePointerDown = () => {
-			isPointerScrollingRef.current = true
-			markUserScrollIntent()
-		}
-
-		const handlePointerUp = () => {
-			isPointerScrollingRef.current = false
-		}
-
-		scrollElement.addEventListener("wheel", markUserScrollIntent, { passive: true })
-		scrollElement.addEventListener("touchmove", markUserScrollIntent, { passive: true })
-		scrollElement.addEventListener("pointerdown", handlePointerDown, { passive: true })
-		window.addEventListener("pointerup", handlePointerUp, { passive: true })
-		window.addEventListener("pointercancel", handlePointerUp, { passive: true })
-
-		return () => {
-			scrollElement.removeEventListener("wheel", markUserScrollIntent)
-			scrollElement.removeEventListener("touchmove", markUserScrollIntent)
-			scrollElement.removeEventListener("pointerdown", handlePointerDown)
-			window.removeEventListener("pointerup", handlePointerUp)
-			window.removeEventListener("pointercancel", handlePointerUp)
-		}
-	}, [])
-
-	useEffect(() => {
-		const scrollElement = scrollRef.current
-		if (!scrollElement) {
-			return
-		}
-
-		const handleScroll = () => {
-			const nextIsAtBottom = updateIsAtBottom()
-			const didUserInitiateScroll = hasActiveUserScrollIntent()
-			if (didUserInitiateScroll) {
-				isFollowPausedRef.current = !nextIsAtBottom
-				return
-			}
-
-			if (isFollowPausedRef.current || !hasInitializedScrollRef.current) {
-				return
-			}
-		}
-
-		handleScroll()
-		scrollElement.addEventListener("scroll", handleScroll, { passive: true })
-
-		return () => {
-			scrollElement.removeEventListener("scroll", handleScroll)
-		}
-	}, [hasActiveUserScrollIntent, updateIsAtBottom])
-
-	useEffect(() => {
-		const scrollElement = scrollRef.current
-		if (!scrollElement) {
-			return
-		}
-
-		lastKnownScrollHeightRef.current = scrollElement.scrollHeight
-
-		if (hasInitializedScrollRef.current) {
-			return
-		}
-
-		hasInitializedScrollRef.current = true
-		if (initial === false) {
-			return
-		}
-
-		const frameId = window.requestAnimationFrame(() => {
-			void scrollToBottom({ animation: initial })
-		})
-
-		return () => {
-			window.cancelAnimationFrame(frameId)
-		}
-	}, [initial, scrollToBottom])
-
-	useEffect(() => {
-		const scrollElement = scrollRef.current
-		const observedContentElement = contentRef.current
-		if (!scrollElement || typeof ResizeObserver === "undefined") {
-			return
-		}
-
-		const observer = new ResizeObserver(() => {
-			const previousScrollHeight = lastKnownScrollHeightRef.current
-			const nextScrollHeight = scrollElement.scrollHeight
-			const shouldYieldToUserScroll =
-				hasInitializedScrollRef.current && hasActiveUserScrollIntent()
-			const shouldFollowContent =
-				!shouldYieldToUserScroll &&
-				(
-					!isFollowPausedRef.current ||
-					previousScrollHeight === 0 ||
-					!hasInitializedScrollRef.current
-				)
-
-			lastKnownScrollHeightRef.current = nextScrollHeight
-
-			if (resize === false || !shouldFollowContent) {
-				updateIsAtBottom()
-				return
-			}
-
-			void scrollToBottom({ animation: resize, target: resizeTarget })
-		})
-
-		observer.observe(scrollElement)
-		if (observedContentElement && observedContentElement !== scrollElement) {
-			observer.observe(observedContentElement)
-		}
-
-		return () => {
-			observer.disconnect()
-		}
-	}, [hasActiveUserScrollIntent, resize, resizeTarget, scrollToBottom, updateIsAtBottom])
-
 	return (
-		<ConversationContext value={contextValue}>
-			<div
-				className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}
-				role={role}
-				{...props}
-			>
-				{/* Soft edge under fixed header chrome; only when overflow is scrolled from the top. */}
-				<StickyRowScrollFade
-					className={cn("top-0 z-10", showTopScrollMask ? "opacity-100" : null)}
-					data-slot="conversation-top-scroll-fade"
-				/>
+		<MessageScroller
+			autoScroll={resize !== false && !(targetScrollTop && (followMode ?? "target") === "target" && resizeTarget === "follow")}
+			defaultScrollPosition={initial === false ? "start" : "end"}
+			scrollEdgeThreshold={24}
+			className={cn("min-h-0 min-w-0 flex-1", className)}
+			{...props}
+		>
+			<ConversationBridge contextRef={contextRef} followMode={followMode} resize={resize} resizeTarget={resizeTarget} targetScrollTop={targetScrollTop}>
 				{children}
-			</div>
-		</ConversationContext>
+			</ConversationBridge>
+		</MessageScroller>
 	)
 }
 
 export type ConversationContentProps = ComponentProps<"div"> & {
-	/**
-	 * Reserve space for the auto-hiding scrollbar track. Message threads keep this
-	 * stable to avoid horizontal reflow, but empty greetings should not show a
-	 * scrollbar gutter before there is scrollable content.
-	 */
 	reserveScrollbarGutter?: boolean
-	/**
-	 * Reveal the auto-hidden scrollbar while the user scrolls. Empty greetings opt
-	 * out so programmatic scroll/resize events during entrance motion cannot flash
-	 * a scrollbar on first load.
-	 */
 	revealScrollbarOnScroll?: boolean
 }
 
@@ -380,9 +205,12 @@ export function ConversationContent({
 	...props
 }: Readonly<ConversationContentProps>) {
 	const context = use(ConversationContext)
-
+	const elements = use(ConversationElementsContext)
+	if (!context || !elements) throw new Error("ConversationContent must be used within <Conversation>")
+	const setScrollElement = useCallback((element: HTMLDivElement | null) => elements.setScrollElement(element), [elements])
+	const setContentElement = useCallback((element: HTMLDivElement | null) => elements.setContentElement(element), [elements])
 	useEffect(() => {
-		const el = context?.scrollRef?.current
+		const el = context.scrollRef.current
 		if (!el) return
 		if (!revealScrollbarOnScroll) {
 			el.removeAttribute("data-scrolling")
@@ -392,39 +220,23 @@ export function ConversationContent({
 		function onScroll() {
 			el!.setAttribute("data-scrolling", "")
 			clearTimeout(timeout)
-			timeout = setTimeout(() => {
-				el!.removeAttribute("data-scrolling")
-			}, 1000)
+			timeout = setTimeout(() => el!.removeAttribute("data-scrolling"), 1000)
 		}
 		el.addEventListener("scroll", onScroll, { passive: true })
 		return () => {
 			el.removeEventListener("scroll", onScroll)
 			clearTimeout(timeout)
 		}
-	}, [context?.scrollRef, revealScrollbarOnScroll])
-
-	// Only fade the bottom edge when overflow exists and content remains hidden
-	// below. A short thread (or one scrolled to the bottom) stays unmasked.
-	const maskImage = context?.showBottomScrollMask
-		? "linear-gradient(to bottom, black 92%, transparent 100%)"
-		: undefined
-
+	}, [context.scrollRef, revealScrollbarOnScroll])
+	const maskImage = context.showBottomScrollMask ? "linear-gradient(to bottom, black 92%, transparent 100%)" : undefined
 	return (
-		<div
-			className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-auto-hide"
-			ref={context?.scrollRef}
-			style={{
-				maskImage,
-				WebkitMaskImage: maskImage,
-				scrollbarGutter: reserveScrollbarGutter ? undefined : "auto",
-			}}
+		<MessageScrollerViewport
+			ref={setScrollElement}
+			className="min-h-0 w-full flex-1 overflow-x-hidden scrollbar-auto-hide"
+			style={{ maskImage, WebkitMaskImage: maskImage, scrollbarGutter: reserveScrollbarGutter ? undefined : "auto" }}
 		>
-			<div
-				className={cn("flex flex-col gap-8 p-4", className)}
-				ref={context?.contentRef}
-				{...props}
-			/>
-		</div>
+			<MessageScrollerContent ref={setContentElement} className={cn("flex flex-col gap-8 p-4", className)} {...props} />
+		</MessageScrollerViewport>
 	)
 }
 
@@ -443,21 +255,13 @@ export function ConversationEmptyState({
 	...props
 }: Readonly<ConversationEmptyStateProps>) {
 	return (
-		<div
-			className={cn(
-				"flex size-full flex-col items-center justify-center gap-3 p-8 text-center",
-				className
-			)}
-			{...props}
-		>
+		<div className={cn("flex size-full flex-col items-center justify-center gap-3 p-8 text-center", className)} {...props}>
 			{children ?? (
 				<>
 					{icon ? <div className="text-muted-foreground">{icon}</div> : null}
 					<div className="space-y-1">
 						<h3 className="text-sm font-medium">{title}</h3>
-						{description ? (
-							<p className="text-muted-foreground text-sm">{description}</p>
-						) : null}
+						{description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
 					</div>
 				</>
 			)}
@@ -469,36 +273,29 @@ export type ConversationScrollButtonProps = ComponentProps<typeof Button>
 
 export function ConversationScrollButton({
 	className,
+	render,
 	style,
+	variant,
+	size,
+	shape,
 	"aria-label": ariaLabel = "Scroll to bottom",
 	...props
 }: Readonly<ConversationScrollButtonProps>) {
-	const { isAtBottom, scrollToBottom } = useConversationContext()
-
-	const handleScrollToBottom = useCallback(() => {
-		void scrollToBottom({ ignoreEscapes: true, target: "bottom" })
-	}, [scrollToBottom])
-
-	return !isAtBottom ? (
-		<Button
+	const customButton = render || typeof className === "function" || typeof style === "function"
+		? <Button render={render} variant={variant ?? "ghost"} size={size ?? "icon"} shape={shape ?? "circle"} className={typeof className === "function" ? className : undefined} style={typeof style === "function" ? style : undefined} />
+		: undefined
+	return (
+		<MessageScrollerButton
 			aria-label={ariaLabel}
-			className={cn(
-				"absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full border-0 bg-surface hover:bg-surface-hovered",
-				className
-			)}
-			onClick={handleScrollToBottom}
-			size="icon"
-			style={{
-				boxShadow: token("elevation.shadow.overlay"),
-				...style,
-			}}
-			type="button"
-			variant="ghost"
+			className={typeof className === "string" ? className : undefined}
+			style={typeof style === "function" ? undefined : style}
+			variant={variant}
+			size={size}
+			shape={shape}
+			render={customButton}
 			{...props}
-		>
-			<ArrowDownIcon className="size-4" />
-		</Button>
-	) : null
+		/>
+	)
 }
 
 export interface ConversationMessage {

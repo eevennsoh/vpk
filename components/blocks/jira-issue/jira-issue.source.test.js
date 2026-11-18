@@ -883,9 +883,9 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	// selected (matching ASX), not a blank vanilla Rovo chat.
 	assert.doesNotMatch(PAGE_SOURCE, /openChat\("floating"\)/);
 	assert.match(PAGE_SOURCE, /const \{ chatContextBar, externalThinkingMessageId, openAgentChat \} = useAsxAgentChatDemo\(\);/);
-	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: chatAgents\?\.resolveId\(activity, activity\.id\) \?\? activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[chatAgents, openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
-	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[generativeAgentId, generativeAgentName, openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout="merged"[\s\S]*chrome="raised"[\s\S]*\/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);
@@ -894,7 +894,7 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /\{ value: "awaiting-user-input", label: "Needs input" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "agent-completed-work", label: "Review" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "agent-dismissed-work", label: "Done" \}/);
-	assert.match(PAGE_SOURCE, /className="relative flex h-full min-h-\[480px\] w-full flex-col bg-surface"/);
+	assert.match(PAGE_SOURCE, /relative flex h-full min-h-\[480px\] w-full flex-col bg-surface/);
 	assert.match(PAGE_SOURCE, /className="sticky top-0 z-10 w-full bg-surface pb-4 pt-6"/);
 	assert.match(PAGE_SOURCE, /className="flex w-full flex-wrap items-center justify-center gap-2"/);
 	assert.match(PAGE_SOURCE, /className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6"/);
@@ -925,10 +925,10 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /case "awaiting-user-input":[\s\S]*pullRequestNumber: 812[\s\S]*pullRequestStatus: "open"/);
 	assert.match(PAGE_SOURCE, /case "agent-completed-work":[\s\S]*pullRequestStatus: "failed"/);
 	assert.match(PAGE_SOURCE, /case "agent-dismissed-work":[\s\S]*pullRequestStatus: "merged"/);
-	assert.match(PAGE_SOURCE, /pullRequestNumber=\{experimentalPullRequest\.pullRequestNumber\}/);
-	assert.match(PAGE_SOURCE, /pullRequestPreview=\{experimentalPullRequest\.pullRequestNumber \? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined\}/);
-	assert.match(PAGE_SOURCE, /pullRequestStatus=\{experimentalPullRequest\.pullRequestStatus\}/);
-	assert.match(PAGE_SOURCE, /pullRequestTitle=\{experimentalPullRequest\.pullRequestNumber \? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined\}/);
+	assert.match(PAGE_SOURCE, /pullRequestNumber=\{boardCardState === "finished" \? undefined : experimentalPullRequest\.pullRequestNumber\}/);
+	assert.match(PAGE_SOURCE, /pullRequestPreview=\{boardCardState !== "finished" && experimentalPullRequest\.pullRequestNumber \? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined\}/);
+	assert.match(PAGE_SOURCE, /pullRequestStatus=\{boardCardState === "finished" \? undefined : experimentalPullRequest\.pullRequestStatus\}/);
+	assert.match(PAGE_SOURCE, /pullRequestTitle=\{boardCardState !== "finished" && experimentalPullRequest\.pullRequestNumber \? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined\}/);
 	assert.match(PAGE_SOURCE, /generativeAction=\{\{[\s\S]*onSubmit: handleGenerativeActionSubmit,[\s\S]*\}\}/);
 	assert.match(PAGE_SOURCE, /onAgentActivityViewChat=\{handleAgentActivityViewChat\}/);
 	assert.match(PAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}[\s\S]*onQuestionAnswer=\{pendingChatQuestion \? handleChatQuestionAnswer : undefined\}[\s\S]*\/>/);

@@ -12,9 +12,12 @@ import {
 import { CodeBlock } from "@/components/ui/code-block"
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content"
 import {
-	Conversation,
-	ConversationContent,
-} from "@/components/ui-custom/conversation"
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerItem,
+	MessageScrollerViewport,
+} from "@/components/ui/message-scroller"
 import {
 	FileTree,
 	FileTreeFile,
@@ -650,35 +653,38 @@ export default function CursorDemoBlock() {
 
 				{/* Chat Messages */}
 				<div className="flex flex-1 flex-col overflow-hidden">
-					<Conversation className="flex-1">
-						<ConversationContent className="gap-4 p-3">
-							{messages.map((message) => (
-								<Message
-									align={message.from === "user" ? "end" : "start"}
-									className="cv-auto"
-									key={message.key}
-								>
-									{message.from === "user" ? (
-										<MessageContent>
-											<MessageUserBubble>{message.content}</MessageUserBubble>
-										</MessageContent>
-									) : (
-										<MessageContent className="max-w-[80%]">
-											<MessageResponse>{message.content}</MessageResponse>
-										</MessageContent>
-									)}
-								</Message>
-							))}
-							{showCheckpoint ? (
-								<Checkpoint>
-									<CheckpointIcon />
-									<CheckpointTrigger tooltip="Restore to this checkpoint">
-										Checkpoint saved
-									</CheckpointTrigger>
-								</Checkpoint>
-							) : null}
-						</ConversationContent>
-					</Conversation>
+					<MessageScroller autoScroll className="flex-1">
+						<MessageScrollerViewport>
+							<MessageScrollerContent className="gap-4 p-3">
+								{messages.map((message) => (
+									<MessageScrollerItem key={message.key} messageId={message.key} scrollAnchor={message.from === "user"} className="[content-visibility:visible]">
+										<Message align={message.from === "user" ? "end" : "start"} className="cv-auto">
+											{message.from === "user" ? (
+												<MessageContent>
+													<MessageUserBubble>{message.content}</MessageUserBubble>
+												</MessageContent>
+											) : (
+												<MessageContent className="max-w-[80%]">
+													<MessageResponse>{message.content}</MessageResponse>
+												</MessageContent>
+											)}
+										</Message>
+									</MessageScrollerItem>
+								))}
+								{showCheckpoint ? (
+									<MessageScrollerItem className="[content-visibility:visible]">
+										<Checkpoint>
+											<CheckpointIcon />
+											<CheckpointTrigger tooltip="Restore to this checkpoint">
+												Checkpoint saved
+											</CheckpointTrigger>
+										</Checkpoint>
+									</MessageScrollerItem>
+								) : null}
+							</MessageScrollerContent>
+						</MessageScrollerViewport>
+						<MessageScrollerButton />
+					</MessageScroller>
 
 					{/* Chat Input */}
 					<div className="border-t p-3">

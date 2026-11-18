@@ -49,6 +49,7 @@ interface MessageTurnsProps<MESSAGE extends ThreadMessage> {
 		turnIndex: number,
 		turns: ReadonlyArray<ReadonlyArray<MESSAGE>>
 	) => ReactNode;
+	renderTurnContainer?: (turn: ReadonlyArray<MESSAGE>, children: ReactNode) => ReactNode;
 	getMessageContainerClassName?: (
 		message: MESSAGE,
 		messageIndex: number,
@@ -79,6 +80,7 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 	getTurnContainerClassName,
 	getTurnContainerStyle,
 	renderTurnAfter,
+	renderTurnContainer,
 	getMessageContainerClassName,
 	getMessageContainerStyle,
 	renderMessage,
@@ -104,8 +106,8 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 					renderedTurnAfter === false
 				);
 
-				return (
-					<Fragment key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}>
+				const children = (
+					<>
 						<div
 							className={cn(
 								isLatestTurn ? latestTurnClassName : undefined,
@@ -152,6 +154,12 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 							})}
 						</div>
 						{hasRenderedTurnAfter ? renderedTurnAfter : null}
+					</>
+				);
+
+				return (
+					<Fragment key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}>
+						{renderTurnContainer ? renderTurnContainer(turn, children) : children}
 					</Fragment>
 				);
 			})}

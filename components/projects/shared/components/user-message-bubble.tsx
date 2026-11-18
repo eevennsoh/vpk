@@ -94,11 +94,12 @@ export function UserMessageBubble({
 					</Button>
 				</span>
 			) : null}
-			<UiMessage align="end" className={cn(!showClarificationSummary && "cv-auto")}>
+			<UiMessage align="end" className={cn(!isEditing && !showClarificationSummary && "cv-auto")}>
 				<MessageContent className={isEditing ? undefined : "max-w-[80%] items-end gap-2"}>
 					<UserMessageAttachments attachments={attachments} />
 					{isEditing && onEdit ? (
 						<InlineEdit
+							className="p-1 pb-11"
 							value={messageText}
 							multiline
 							startWithEditViewOpen

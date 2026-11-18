@@ -28,12 +28,14 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentStatusKind,
 } from "@/components/blocks/agent-assignment";
+import { getTeammateSessionPeople } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
+	getJiraIssueVisibleActivities,
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
@@ -294,7 +296,8 @@ function resolveJiraIssueAgentRowPresentation(
 	activities: readonly JiraIssueAgentActivity[],
 	linkFlash: JiraIssueAgentLinkFlash | undefined,
 ) {
-	const summary = summarizeJiraIssueAgentActivities(activities);
+	const visibleActivities = getJiraIssueVisibleActivities(activities);
+	const summary = summarizeJiraIssueAgentActivities(visibleActivities);
 	const isCompletedRow = activities.length > 0
 		&& activities.every((activity) => activity.state === "completed");
 	const isFailedRow = isCompletedRow
@@ -307,10 +310,10 @@ function resolveJiraIssueAgentRowPresentation(
 		: null;
 	const isAwaitingInput = !isCompletedRow && summary.priorityState === "awaiting-input";
 	const featuredActivity = summary.featuredActivityIndex !== null
-		? activities[summary.featuredActivityIndex]
+		? visibleActivities[summary.featuredActivityIndex]
 		: undefined;
 	const rowLabel = isViewerRow
-		? `${summary.activityCount} other ${summary.activityCount === 1 ? "session" : "sessions"}`
+		? getTeammateSessionPeople(activities).size === 1 ? "Using agent" : "Using agents"
 		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
@@ -321,7 +324,7 @@ function resolveJiraIssueAgentRowPresentation(
 	const rowAriaLabel = isViewerRow
 		? rowLabel
 		: isSingleAgent
-			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
+			? `${visibleActivities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
 	return {

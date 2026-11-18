@@ -289,7 +289,6 @@ export function AgentSessionCard({
 	showMoreMenu = true,
 	showLifecycleLabel = true,
 	lifecycleLabelPlacement = "trailing",
-	showAgentName,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showBranch = false,
@@ -385,7 +384,6 @@ export function AgentSessionCard({
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
 	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
-	showAgentName?: AgentSessionProps["showAgentName"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
@@ -772,7 +770,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showAgentName={showAgentName} showArtifact={density !== "short"} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger
@@ -792,6 +790,7 @@ export function AgentSessionCard({
 											onAnimationComplete={handleAvatarComplete}
 										/>
 									);
+									const previewIdentity = (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity;
 
 									// The travelling drag chip measures this box on
 									// pointerdown and flies out of it. Marked outside the
@@ -799,11 +798,12 @@ export function AgentSessionCard({
 									return (
 										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity
+												? previewIdentity
 												: (
 													<AgentSessionSelectMark
-														identity={sessionIdentity}
+														identity={previewIdentity}
 														isMarked={mark.isMarked}
+														previewable={previewIdentity !== sessionIdentity}
 														label={`Select "${item.title}"`}
 														onActivate={activateCard ?? mark.onActivate}
 													/>

@@ -85,7 +85,7 @@ export function AgentSessionsMenu({
 	const renderSession = (item: AgentSessionItem) => (
 		<AgentSessionCard
 			key={item.id}
-			density="long"
+			density="short"
 			hoverTone="menu"
 			item={item}
 			localSessionAction={localSessionAction}
@@ -114,12 +114,12 @@ export function AgentSessionsMenu({
 				<div>
 					{hasActionableSession ? <DropdownMenuSeparator /> : null}
 					{personalItems.length ? (
-						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
+						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation !== "count"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
 						<>
-							<p className={dropdownStyles.label}>{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
+							<p className={cn(dropdownStyles.label, "px-3 py-1")}>{`${teammateItems.length} using ${teammateItems.length === 1 ? "agent" : "agents"}`}</p>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</>
 					)}

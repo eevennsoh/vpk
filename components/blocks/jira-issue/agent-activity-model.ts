@@ -32,6 +32,12 @@ interface JiraIssueAgentActivitySummaryInput {
 interface JiraIssueAgentActivityRowInput extends JiraIssueAgentActivitySummaryInput {
 	stateTransition?: "agent-session";
 	id: string;
+	role?: string;
+}
+
+export function getJiraIssueVisibleActivities<TActivity extends { role?: string }>(activities: readonly TActivity[]): readonly TActivity[] {
+	const personal = activities.filter((activity) => activity.role !== "viewer");
+	return personal.length > 0 ? personal : activities;
 }
 
 export interface JiraIssueAgentActivityRowGroup<TActivity> {
@@ -109,10 +115,11 @@ export function groupJiraIssueAgentActivityRows<TActivity extends JiraIssueAgent
 			return activeActivities.map((activity) => ({ activities: [activity], key: activity.id }));
 		}
 
-		const summary = summarizeJiraIssueAgentActivities(activeActivities);
+		const visibleActivities = getJiraIssueVisibleActivities(activeActivities);
+		const summary = summarizeJiraIssueAgentActivities(visibleActivities);
 
-		const key = activeActivities.length === 1 && activeActivities[0].stateTransition === "agent-session"
-			? activeActivities[0].id : `${summary.priorityState}-${summary.activityCount}`;
+		const key = visibleActivities.length === 1 && visibleActivities[0].stateTransition === "agent-session"
+			? visibleActivities[0].id : `${summary.priorityState}-${summary.activityCount}`;
 		return [{ activities: activeActivities, key }];
 	}
 

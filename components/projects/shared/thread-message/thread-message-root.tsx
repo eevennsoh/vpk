@@ -22,6 +22,7 @@ import { filterThinkingToolCallsForVisibleWidget } from "./lib/thinking-tool-vis
 import {
 	isPostToolsGenuiGeneration as resolvePostToolsGenuiGeneration,
 } from "./lib/thinking-status-state";
+import { cn } from "@/lib/utils";
 
 interface ThreadMessageRootProps {
 	message: RovoRenderableUIMessage;
@@ -396,7 +397,10 @@ export function ThreadMessageRoot({
 				// after mount. `cv-auto` containment clips overflow at the
 				// contain-intrinsic-size estimate, scissoring the card's rounded
 				// corners — opt these messages out of containment.
-				className={contextValue.hasRenderedWidget ? undefined : "cv-auto"}
+				className={cn(
+					contextValue.hasRenderedWidget ? undefined : "cv-auto",
+					hasRenderableSuggestions ? "-mx-3 w-[calc(100%+1.5rem)] max-w-none px-3" : undefined,
+				)}
 			>
 				<MessageContent className="gap-2">{children}</MessageContent>
 			</UiMessage>

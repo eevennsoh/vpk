@@ -5,12 +5,12 @@ const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const mocks = {
 	"@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });",
 };
-const disclosure = { name: /(?:Sessions from your teammates|(?:\d+ )?other sessions?)/iu };
+const disclosure = { name: /(?:Sessions from your teammates|(?:\d+ )?using agents?)/iu };
 
 test("People fold reveals a single list of read-only sessions without teammate headings or counts", async () => {
 	const view = await renderComponent({ entry: "app/sandbox/agent-selector-canvas/teammate-session-previews.tsx", exportName: "PeopleFoldPreview", mocks });
 	try {
-		const trigger = view.getByRole("button", { name: "Other sessions" });
+		const trigger = view.getByRole("button", { name: "Using agents" });
 		assert.equal(trigger.textContent.includes("4 sessions"), false);
 		assert.equal(trigger.textContent.includes("3 teammates"), false);
 		for (const name of ["Teammate A", "Teammate B", "Teammate C"]) {
@@ -44,7 +44,7 @@ test("People fold derives avatar initials from distinct normalized teammate name
 		approach: "people", items: [sample("b", "Demo Beta", "running"), sample("a", "Sample Alpha", "complete"), sample("a2", " Sample Alpha ", "complete")],
 	} });
 	try {
-		assert.equal(view.getByRole("button", { name: "Other sessions" }).getAttribute("aria-expanded"), "false");
+		assert.equal(view.getByRole("button", { name: "Using agents" }).getAttribute("aria-expanded"), "false");
 		assert.deepEqual([...view.container.querySelectorAll('[data-slot="avatar-fallback"]')].map((avatar) => avatar.textContent), ["DB", "SA"]);
 	} finally { await view.unmount(); }
 });

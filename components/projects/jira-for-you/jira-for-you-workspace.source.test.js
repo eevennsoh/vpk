@@ -224,7 +224,6 @@ test("waiting Jira For You sessions show the shared awaiting indicator and quest
 	assert.match(WORKSPACE_DATA_SOURCE, /id: "unapproved-claims-treatment"[\s\S]*label: "How should I handle the unapproved claims\?"/u);
 	assert.match(WORKSPACE_DATA_SOURCE, /awaitingQuestions: agentSeed\?\.awaitingQuestions/u);
 	assert.match(CONVERSATION_SOURCE, /showAwaitingIndicator=\{shouldShowAwaitingQuestion\}/u);
-	assert.match(CONVERSATION_SOURCE, /resizeTarget=\{shouldShowAwaitingQuestion \? "bottom" : "follow"\}/u);
 	assert.match(CONVERSATION_SOURCE, /<QuestionCard[\s\S]*isSubmitting=\{isQuestionSubmitting\}[\s\S]*questions=\{awaitingQuestions\}/u);
 	assert.match(CONVERSATION_SOURCE, /<QuestionCardShortcutsFooter \/>/u);
 	assert.match(CONVERSATION_SOURCE, /shouldShowAwaitingQuestion && awaitingQuestions \? \([\s\S]*<QuestionCard[\s\S]*\) : \([\s\S]*<RovoAppComposer/u);

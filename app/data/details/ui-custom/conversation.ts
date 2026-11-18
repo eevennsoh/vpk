@@ -18,6 +18,7 @@ export const CONVERSATION_DETAIL: ComponentDetail = {
   ConversationScrollButton,
 } from "@/components/ui-custom/conversation";
 import { Message, MessageContent } from "@/components/ui/message";
+import { MessageScrollerItem } from "@/components/ui/message-scroller";
 import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 const messages = [
@@ -28,18 +29,21 @@ const messages = [
 <Conversation className="h-80 rounded-xl border bg-background">
   <ConversationContent className="min-h-full pr-20">
     {messages.map((message) => (
-      <Message
+      <MessageScrollerItem
         key={\`\${message.role}-\${message.content}\`}
-        align={message.role === "user" ? "end" : "start"}
+        messageId={\`\${message.role}-\${message.content}\`}
+        scrollAnchor={message.role === "user"}
       >
-        <MessageContent>
-          {message.role === "user" ? (
-            <MessageUserBubble>{message.content}</MessageUserBubble>
-          ) : (
-            message.content
-          )}
-        </MessageContent>
-      </Message>
+        <Message align={message.role === "user" ? "end" : "start"}>
+          <MessageContent>
+            {message.role === "user" ? (
+              <MessageUserBubble>{message.content}</MessageUserBubble>
+            ) : (
+              message.content
+            )}
+          </MessageContent>
+        </Message>
+      </MessageScrollerItem>
     ))}
   </ConversationContent>
   <ConversationDownload messages={messages} />
@@ -59,14 +63,14 @@ const messages = [
 			type: 'boolean | ScrollBehavior | "instant" | { damping: number; stiffness: number; mass: number }',
 			default: '"smooth"',
 			description:
-				"Initial scroll behavior applied when the conversation mounts.",
+				"Starts at the bottom by default; false starts at the top.",
 		},
 		{
 			name: "resize",
 			type: 'boolean | ScrollBehavior | "instant" | { damping: number; stiffness: number; mass: number }',
 			default: '"smooth"',
 			description:
-				"Follow behavior used when the transcript height changes.",
+				"Enables follow while the transcript grows; false disables automatic follow.",
 		},
 		{
 			name: "targetScrollTop",

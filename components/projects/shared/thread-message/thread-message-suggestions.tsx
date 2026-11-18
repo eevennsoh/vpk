@@ -24,6 +24,7 @@ export function ThreadMessageSuggestions({
 
 	return (
 		<AssistantSuggestionsSection
+			className="-ms-2"
 			messageId={message.id}
 			suggestedQuestions={suggestedQuestions}
 			onSuggestionClick={onSuggestionClick}
