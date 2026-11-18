@@ -799,7 +799,7 @@ export function AgentSessionCard({
 									return (
 										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? sessionIdentity
+												? (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity
 												: (
 													<AgentSessionSelectMark
 														identity={sessionIdentity}

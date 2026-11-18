@@ -9,7 +9,7 @@ import { AgentLanyard, AGENT_LANYARD_AGENTS, type AgentLanyardAgent } from "./in
 
 export default function AgentLanyardPage() {
 	const [perspectiveTilt, setPerspectiveTilt] = useState(true);
-	const [animateGrid, setAnimateGrid] = useState(true);
+	const [animateGrid, setAnimateGrid] = useState(false);
 	const [feedback, setFeedback] = useState("");
 	const [agents, setAgents] = useState<readonly AgentLanyardAgent[]>(AGENT_LANYARD_AGENTS);
 	const [starredIds, setStarredIds] = useState<readonly string[]>([]);

@@ -56,6 +56,8 @@ test("session cards use the shared agent avatar preview across densities", async
 		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
 		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "short" });
 		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "unlinked" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
 	} finally { await view.unmount(); }
 });
 
@@ -74,6 +76,7 @@ test("Rovo session avatars open the Rovo agent lanyard", async () => {
 		assert.equal(view.getByRole("heading", { name: "Rovo" }).textContent, "Rovo");
 		assert.equal(view.getByText("Atlassian").textContent, "Atlassian");
 		assert.equal(Boolean(document.querySelector('[data-slot="agent-lanyard-avatar"] svg')), true);
+		assert.equal(document.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
 	} finally { await view.unmount(); }
 });
 
