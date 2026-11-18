@@ -14,19 +14,21 @@ consulted mid-task for strategic guidance: it reads the situation, produces a
 decision or course-correction, and the planner continues. The advisor never
 generates the final output and never edits files.
 
-## Picking the advisor: independence, not tier
+## Picking the advisor
 
-Do not pick the advisor by capability tier. Every lane bills Proximity at the
-same boundary, so there is no cost gradient to arbitrage and no reason to
-reach for a "stronger" model.
+Pick the independent family first, then choose its model by task uncertainty.
+Cost does not constrain the selection; see
+[invocation-flags-and-effort.md](invocation-flags-and-effort.md#choosing-the-model).
 
 What a consult buys is **perspective diversity**. A model reviewing its own
 family's output re-runs largely the same priors and tends to ratify; a
 different family fails differently and is far likelier to surface the thing
 that was missed. So default the consult to the family that did *not* do the
-work: **`opus` xhigh only when reviewing GPT-lane output; `sol` xhigh
-otherwise** — Claude-lane output, a plan the planner authored, or a question
-with nothing dispatched yet. Explicit `--model` / `--effort` flags override.
+work: **`opus` xhigh for GPT-authored work; `sol` or `astra` xhigh for
+Claude-authored work**, chosen by task uncertainty. Judge plans and questions
+with no worker by the planner's model family, not the CLI app. Explicit
+`--model` / `--effort` flags override. Sonnet remains available explicitly;
+Opus stays the automatic Claude reviewer.
 
 Two corollaries worth remembering:
 
@@ -97,8 +99,8 @@ plan.
 
 **Default to the family that did not do the work.** Cost no longer picks the
 advisor — every lane bills Proximity — so what a consult buys is
-*independence*, not a capability tier. A GPT worker's blind spots are found
-most cheaply by a Claude reviewer and vice versa; asking the same family to
+*independence*, with task uncertainty choosing the model within that family.
+A GPT worker gets a Claude reviewer and vice versa; asking the same family to
 audit its own reasoning re-runs the same priors. The planner rows of the
 SKILL.md table follow the same rule: whatever the planner authored is its
 own family's work, so the reviewer comes from the other family. Judge by the

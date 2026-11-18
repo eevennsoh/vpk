@@ -13,6 +13,7 @@ function loadData() {
 				export * from "./components/projects/butter-v1/data/presentation-board";
 				export * from "./components/projects/butter-v1/data/wac-content";
 				export * from "./components/projects/butter-v1/data/merchant-journey";
+				export * from "./components/projects/butter-v1/lib/list-rows";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -108,6 +109,10 @@ test("board sessions show the requested ownership, status and menu defaults", as
 	assert.deepEqual(card("PAY-123").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["viewer", "awaiting-input", "Jordan Okafor"]]);
 	assert.deepEqual(card("PAY-123").agentActivities.map(({ privateTo }) => privateTo), [undefined, "Jordan Okafor"]);
 	assert.deepEqual(card("PAY-130").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["owner", "awaiting-input", "Venn"]]);
+	for (const [key, owners] of [["PAY-132", ["Diego Santos"]], ["PAY-104", ["Jordan Okafor", "Maya Ferreira"]]]) {
+		assert.deepEqual(card(key).agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), owners.map((owner) => ["viewer", "working", owner]));
+	}
+	for (const key of ["PAY-121", "PAY-128"]) assert.equal(card(key).agentActivities?.length ?? 0, 0);
 });
 
 test("additional work items include their existing subtasks", async () => {
@@ -126,6 +131,17 @@ test("additional work items include their existing subtasks", async () => {
 	assert.equal(quickstart.dueDate, "2026-08-25");
 	assert.equal(quickstart.assignee.name, "Maya Ferreira");
 	assert.equal(columns.find((column) => column.cards.includes(quickstart)).title, "To do");
+});
+
+test("list projects teammate sessions and includes PAY-104 when its parent is expanded", async () => {
+	const data = await loadData();
+	const rows = data.arrangeListHierarchy(data.createListRows(data.createButterPayBoardColumns(), data.BUTTER_PAY_BOARD_AGENTS), new Set(["PAY-101"]));
+	for (const [key, count] of [["PAY-132", 1], ["PAY-104", 2], ["PAY-121", 0], ["PAY-128", 0]]) {
+		const row = rows.find((item) => item.issueKey === key);
+		assert.ok(row, key);
+		assert.equal(row.agentSessions.length, count, key);
+		assert.ok(row.agentSessions.every((session) => session.role === "viewer" && session.statusKind === "working"), key);
+	}
 });
 
 test("every Payments SDK work item has an estimate and due date by default", async () => {
