@@ -314,10 +314,17 @@ repo's semantic Tailwind classes whenever a class exists.
   <!-- 2026-11-14: "if there's content above the subheading and we are not using a separator, we should be adding a margin-top of 6px" -->
 - **Menu and picker separators:** Use `DropdownMenuSeparator` from
   `components/ui/dropdown-menu.tsx` between sections instead of a border on an
-  adjacent row or container. Its shared treatment uses `bg-border`, a 1px line,
-  and `--menu-inset` for full-width alignment and equal vertical margins; set
-  `--menu-inset` to the surrounding menu's inset.
+  adjacent row or container. Every separator extends from the menu surface's
+  left edge to its right edge, including separators inside scrollable lists.
+  Its shared treatment uses `bg-border`, a 1px line, and `--menu-inset` for
+  edge-to-edge alignment and equal vertical margins; set `--menu-inset` to the
+  surrounding menu's inset without introducing horizontal scrolling.
   <!-- 2026-11-14: "for any separators, rather than a border bottom, we should be using this treatment" -->
+  <!-- 2026-11-18: "it should be extending all the way left and right in the new styling guide" -->
+- **Dropdown menus scroll vertically only:** Fit menu content within the available
+  width; never require horizontal scrolling. Why: users cannot perform the
+  intended top-to-bottom menu interaction with a horizontal scrollbar.
+  <!-- 2026-11-18: "it's always top to bottom, there's never horizontal scrollbar, user can't perform that" -->
 - **Radius by component intent:** Use the established shared primitive radius
   first, then the step for the component's class in
   [Radius by component](#radius-by-component). Choose by what the component
