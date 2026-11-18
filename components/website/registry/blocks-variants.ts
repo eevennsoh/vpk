@@ -166,6 +166,9 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	"agent-session-demo-team": dynamic(() => import("../demos/blocks/agent-session-demo").then((mod) => ({
 		default: mod.AgentSessionDemoTeam,
 	})), { ssr: false }),
+	"agent-session-demo-comparison": dynamic(() => import("../demos/blocks/agent-session-demo").then((mod) => ({
+		default: mod.AgentSessionDemoComparison,
+	})), { ssr: false }),
 	"agent-session-column-demo": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-column-demo").then((mod) => ({
