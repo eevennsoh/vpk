@@ -20,6 +20,7 @@ import { BUTTON_GROUP_DETAIL } from "./ui/button-group";
 import { CALENDAR_DETAIL } from "./ui/calendar";
 import { CARD_DETAIL } from "./ui/card";
 import { CAROUSEL_DETAIL } from "./ui/carousel";
+import { CHAIN_OF_THOUGHT_DETAIL } from "./ui/chain-of-thought";
 import { CHART_DETAIL } from "./ui/chart";
 import { CHECKBOX_DETAIL } from "./ui/checkbox";
 import { CHECKPOINT_DETAIL } from "./ui/checkpoint";
@@ -56,6 +57,7 @@ import { MARKER_DETAIL } from "./ui/marker";
 import { MENUBAR_DETAIL } from "./ui/menubar";
 import { MESSAGE_DETAIL } from "./ui/message";
 import { MESSAGE_SCROLLER_DETAIL } from "./ui/message-scroller";
+import { MORPHING_ROVO_DETAIL } from "./ui/morphing-rovo";
 import { NATIVE_SELECT_DETAIL } from "./ui/native-select";
 import { NAVIGATION_MENU_DETAIL } from "./ui/navigation-menu";
 import { PAGE_HEADER_DETAIL } from "./ui/page-header";
@@ -118,6 +120,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	calendar: CALENDAR_DETAIL,
 	card: CARD_DETAIL,
 	carousel: CAROUSEL_DETAIL,
+	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
 	chart: CHART_DETAIL,
 	checkbox: CHECKBOX_DETAIL,
 	checkpoint: CHECKPOINT_DETAIL,
@@ -154,6 +157,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	menubar: MENUBAR_DETAIL,
 	message: MESSAGE_DETAIL,
 	"message-scroller": MESSAGE_SCROLLER_DETAIL,
+	"morphing-rovo": MORPHING_ROVO_DETAIL,
 	"native-select": NATIVE_SELECT_DETAIL,
 	"navigation-menu": NAVIGATION_MENU_DETAIL,
 	"page-header": PAGE_HEADER_DETAIL,

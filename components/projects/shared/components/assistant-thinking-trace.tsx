@@ -20,13 +20,11 @@ import {
 	ChainOfThoughtContent,
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
 import { isTimelineOnlyContent } from "@/components/ui/reasoning";
-import { Shimmer } from "@/components/ui/shimmer";
-import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Spinner } from "@/components/ui/spinner";
 import { ToolInput, ToolOutput } from "@/components/ui/tool";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -838,16 +836,8 @@ export function AssistantThinkingTrace({
 					})}
 					{state.shouldShowResponseGenerationStep ? (
 						<ChainOfThoughtStep
-							iconRender={<Spinner variant="rainbow" label="Generating a response" />}
-							iconShimmer={false}
-							label={
-								<span className="inline-flex min-w-0 items-baseline">
-									<Shimmer as="span" duration={1.4} spread={2} className="min-w-0 truncate text-left">
-										Generating a response
-									</Shimmer>
-									<AnimatedDot />
-								</span>
-							}
+							iconRender={<Spinner size="xs" label="Generating a response" />}
+							label="Generating a response"
 							description={null}
 							status="active"
 						/>

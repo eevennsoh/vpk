@@ -29,7 +29,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
 | [reasoning](~/.agents/skills/ai-elements/references/reasoning.md) | `@/components/ui/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
-| [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui-custom/chain-of-thought` | Step-by-step reasoning chain visualization | `ChainOfThought` |
+| [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui/chain-of-thought` | Step-by-step reasoning chain visualization, on Trace | `ChainOfThought` |
 | [tool](~/.agents/skills/ai-elements/references/tool.md) | `@/components/ui/tool` | Tool invocation and result display | `Tool` |
 | [terminal](~/.agents/skills/ai-elements/references/terminal.md) | `@/components/ui/terminal` | Shell command line with streamed output, on Trace (`TerminalPanel` for full-pane IDE/TUI output) | `Terminal` |
 

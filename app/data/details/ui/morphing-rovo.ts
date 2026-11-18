@@ -4,7 +4,7 @@ export const MORPHING_ROVO_DETAIL: ComponentDetail = {
 	description:
 		"A morphing shape indicator that smoothly transitions between circle, square, triangle, and hexagon. Uses Motion's native path interpolation with compatible cubic bezier paths — no external shape-morphing library needed.",
 	demoLayout: { previewContentWidth: "full" },
-	usage: `import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
+	usage: `import { MorphingRovo } from "@/components/ui/morphing-rovo";
 
 <MorphingRovo.Shape size={32} />
 <MorphingRovo.Shape size={64} duration={0.8} rotationPerStep={180} />`,

@@ -9,7 +9,7 @@ import {
 	ChainOfThoughtContent,
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { AssistantThinkingToolsSection } from "@/components/projects/shared/components/assistant-thinking-tools-section";

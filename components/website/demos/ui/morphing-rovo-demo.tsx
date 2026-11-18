@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
+import { MorphingRovo } from "@/components/ui/morphing-rovo";
 import { GUI } from "@/components/utils/gui";
 
 const EASE_OPTIONS = [

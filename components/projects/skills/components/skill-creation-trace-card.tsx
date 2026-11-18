@@ -11,7 +11,7 @@ import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import PageIcon from "@atlaskit/icon/core/page";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
-import { ChainOfThoughtScenario, type ChainOfThoughtScenarioState, type ChainOfThoughtScenarioStep } from "@/components/ui-custom/chain-of-thought";
+import { ChainOfThoughtScenario, type ChainOfThoughtScenarioState, type ChainOfThoughtScenarioStep } from "@/components/ui/chain-of-thought";
 import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { getSkillIcon } from "@/app/data/directory/skills";
 import type { SkillCreationTracePayload } from "../lib/create-skill-flow";
