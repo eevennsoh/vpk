@@ -171,6 +171,111 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"suggestion-demo-follow-up": dynamic(
+		() =>
+			import("../../demos/ui/suggestion-demo").then((mod) => ({
+				default: mod.SuggestionDemoFollowUp,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-trace-line": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceStatic,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-status": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceStatus,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-description": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceDescriptionDemo,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-link": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceLink,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-dialog": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceDialog,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-sheet": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceSheet,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-group": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceGroupDemo,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-sources": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceSources,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-reasoning": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceThinking,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoInline,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-prompt-queue": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoPromptQueue,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-with-actions": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoWithActions,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-with-attachments": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoWithAttachments,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-minimal": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoMinimal,
+			})),
+		{ ssr: false },
+	),
 	"marker-demo-markers": dynamic(
 		() =>
 			import("../../demos/ui/marker-demo").then((mod) => ({

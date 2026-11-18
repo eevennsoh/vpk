@@ -2457,7 +2457,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/queue.tsx": {
+  "components/ui/queue.tsx": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -3029,7 +3029,7 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
+  "components/website/demos/ui-custom/source-preview-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }

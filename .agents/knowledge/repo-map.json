@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 451,
+			"manifestEntryCount": 453,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 445,
+				"live": 447,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 81,
+				"entryCount": 87,
 				"entries": [
 					{
 						"category": "ui",
@@ -5606,6 +5606,13 @@
 						"slug": "checkbox",
 						"name": "Checkbox",
 						"importPath": "@/components/ui/checkbox",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "checkpoint",
+						"name": "Checkpoint",
+						"importPath": "@/components/ui/checkpoint",
 						"status": "live"
 					},
 					{
@@ -5904,6 +5911,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "queue",
+						"name": "Queue",
+						"importPath": "@/components/ui/queue",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "radio-group",
 						"name": "Radio Group",
 						"importPath": "@/components/ui/radio-group",
@@ -5981,9 +5995,23 @@
 					},
 					{
 						"category": "ui",
+						"slug": "sources",
+						"name": "Sources",
+						"importPath": "@/components/ui/sources",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "spinner",
 						"name": "Spinner",
 						"importPath": "@/components/ui/spinner",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "suggestion",
+						"name": "Suggestion",
+						"importPath": "@/components/ui/suggestion",
 						"status": "live"
 					},
 					{
@@ -6012,6 +6040,13 @@
 						"slug": "tag",
 						"name": "Tag",
 						"importPath": "@/components/ui/tag",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "task",
+						"name": "Task",
+						"importPath": "@/components/ui/task",
 						"status": "live"
 					},
 					{
@@ -6047,6 +6082,13 @@
 						"slug": "tooltip",
 						"name": "Tooltip",
 						"importPath": "@/components/ui/tooltip",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "trace",
+						"name": "Trace",
+						"importPath": "@/components/ui/trace",
 						"status": "live"
 					}
 				]
@@ -6227,7 +6269,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 78,
+				"entryCount": 74,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6297,13 +6339,6 @@
 						"slug": "chain-of-thought",
 						"name": "Chain of Thought",
 						"importPath": "@/components/ui-custom/chain-of-thought",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "checkpoint",
-						"name": "Checkpoint",
-						"importPath": "@/components/ui-custom/checkpoint",
 						"status": "live"
 					},
 					{
@@ -6581,13 +6616,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "queue",
-						"name": "Queue",
-						"importPath": "@/components/ui-custom/queue",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "reasoning",
 						"name": "Reasoning",
 						"importPath": "@/components/ui-custom/reasoning",
@@ -6672,9 +6700,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "source",
-						"name": "Source",
-						"importPath": "@/components/ui-custom/source",
+						"slug": "source-preview-menu",
+						"name": "Source Preview Menu",
+						"importPath": "@/components/ui-custom/source-preview-menu",
 						"status": "live"
 					},
 					{
@@ -6689,20 +6717,6 @@
 						"slug": "stack-trace",
 						"name": "Stack Trace",
 						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "suggestion",
-						"name": "Suggestion",
-						"importPath": "@/components/ui-custom/suggestion",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "task",
-						"name": "Task",
-						"importPath": "@/components/ui-custom/task",
 						"status": "live"
 					},
 					{

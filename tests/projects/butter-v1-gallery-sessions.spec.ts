@@ -481,6 +481,26 @@ test("session cards do not expose individual tool calls at any size", async ({ p
 	}
 });
 
+test("board and journey session menus show private marks for other people's sessions", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	for (const view of ["Board", "e2e Journey"]) {
+		await page.getByRole("button", { name: `Select ${view}`, exact: true }).click();
+		for (const [key, button, owners] of [
+			["PAY-107", "2 other sessions", ["Maya Ferreira", "Jordan Okafor"]],
+			["PAY-123", "2 agents: Needs input", ["Jordan Okafor"]],
+		] as const) {
+			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
+			await card.getByRole("button", { name: button }).click();
+			const menu = page.getByRole("dialog", { name: "Agent assignment" });
+			for (const owner of owners) await expect(menu.getByRole("img", { name: `Private session by ${owner}` })).toBeVisible();
+			await expect(menu.locator('[data-access-mark="team"]')).toHaveCount(0);
+			await page.keyboard.press("Escape");
+		}
+	}
+});
+
 test("session menu keeps the divider inset equal to the row side inset", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

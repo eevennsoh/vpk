@@ -67,12 +67,12 @@ Key props: `className`, `children`
 
 Key props: `onSubmit`, `className`, `children`
 
-## Suggestion (`components/ui-custom/suggestion.tsx`)
+## Suggestion (`components/ui/suggestion.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `Suggestions` | Horizontally scrollable container for suggestion chips |
-| `Suggestion` | Individual clickable suggestion button |
+| `Suggestions` | Scroll-fade row, or a vertical stack with `orientation="vertical"` |
+| `Suggestion` | Subtle Button with a leading curved-arrow icon |
 
 Key props: `suggestion` (string, required), `onClick` (`(suggestion: string) => void`), `children` (optional, falls back to `suggestion` text)
 

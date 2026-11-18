@@ -1,7 +1,6 @@
 import {
 	getToolName,
 	isReasoningUIPart,
-	isTextUIPart,
 	isToolUIPart,
 	type DynamicToolUIPart,
 	type SourceDocumentUIPart,
@@ -9,6 +8,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
+import { getMessageText } from "@/lib/ai";
 import type { AgentAutomationRule } from "@/components/blocks/trigger/data/trigger-catalog";
 import type { RovoAppCreationMode, RovoAppPromptMode } from "@/lib/rovo-app-types";
 
@@ -639,15 +639,7 @@ export function getMessageInterruption(
 	return interruption;
 }
 
-export function getMessageText(
-	message: Pick<RovoUIMessage, "parts">
-): string {
-	return message.parts
-		.filter(isTextUIPart)
-		.map((part) => part.text)
-		.join("\n\n")
-		.trim();
-}
+export { getMessageText };
 
 export function isMessageTextStreaming(
 	message: Pick<RovoUIMessage, "parts">

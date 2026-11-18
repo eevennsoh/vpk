@@ -1,6 +1,5 @@
-import { Suggestion, Suggestions } from "@/components/ui-custom/suggestion";
+import { Suggestion, Suggestions } from "@/components/ui/suggestion";
 import { cn } from "@/lib/utils";
-import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
 interface AssistantSuggestionsSectionProps {
 	className?: string;
@@ -20,14 +19,9 @@ export function AssistantSuggestionsSection({
 			{suggestedQuestions.map((question, index) => (
 				<Suggestion
 					key={`${messageId}-suggestion-${question}-${index}`}
-					className="gap-2 !rounded-[min(var(--radius-md),12px)]"
 					onClick={onSuggestionClick}
 					suggestion={question}
-					variant="outline"
-				>
-					<AiChatIcon label="" size="small" />
-					<span className="font-medium">{question}</span>
-				</Suggestion>
+				/>
 			))}
 		</Suggestions>
 	);
