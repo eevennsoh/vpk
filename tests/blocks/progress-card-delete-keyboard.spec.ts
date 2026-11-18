@@ -24,7 +24,7 @@ async function openCard(page: Page, route: string) {
 }
 
 for (const route of ROUTES) {
-	test(`Tab from the card reaches a visible Delete run on ${route}`, async ({ page }) => {
+	test(`Tab from the card reaches a visible Delete run on ${route}`, { tag: "@smoke" }, async ({ page }) => {
 		const { card, deleteRun } = await openCard(page, route);
 		await page.mouse.move(0, 0);
 		expect(await renderedWidth(deleteRun), "Delete run is not shown at rest").toBeLessThanOrEqual(1);
@@ -36,7 +36,7 @@ for (const route of ROUTES) {
 		expect(await renderedWidth(deleteRun), "Delete run is shown while focused").toBeGreaterThan(16);
 	});
 
-	test(`a mouse click on the card does not reveal Delete run once the pointer leaves on ${route}`, async ({ page }) => {
+	test(`a mouse click on the card does not reveal Delete run once the pointer leaves on ${route}`, { tag: "@smoke" }, async ({ page }) => {
 		const { card, deleteRun } = await openCard(page, route);
 		await card.hover();
 		expect(await renderedWidth(deleteRun), "Delete run is shown on hover").toBeGreaterThan(16);
