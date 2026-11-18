@@ -2,8 +2,8 @@
 
 // One registry for every checked-in file a script regenerates, with the command that
 // regenerates it and the command that proves it is current. `generated:status` runs the
-// checkers; `fix:generated` regenerates what is stale. On a merge conflict in one of these
-// files, take either side and run `pnpm run fix:generated`.
+// checkers; `fix:generated` regenerates what is stale. On conflicts, take either side only
+// for fully regenerated files; merge prune-only baselines normally before running it.
 
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";

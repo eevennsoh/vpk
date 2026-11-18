@@ -189,6 +189,59 @@ test("manifest measurement rejects missing referenced assets instead of reportin
 	}
 });
 
+for (const retainedChunk of [
+	"rovo/page-def456.js",
+	"(group)/page-def456.js",
+	"@modal/page-def456.js",
+	"_not-found/page-def456.js",
+	"layout-def456.js",
+	"not-found-def456.js",
+	"error-def456.js",
+	"global-error-def456.js",
+]) {
+	test(`route JS counts the root page only on home and retains app/${retainedChunk} on other routes`, () => {
+		const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-root-page-"));
+		try {
+			const chunks = ["static/chunks/app/page-abc123.js", `static/chunks/app/${retainedChunk}`];
+			for (const [index, chunk] of chunks.entries()) {
+				const chunkPath = path.join(cwd, ".next", chunk);
+				mkdirSync(path.dirname(chunkPath), { recursive: true });
+				writeFileSync(chunkPath, "x".repeat(index === 0 ? 100 : 40));
+			}
+			for (const route of ["page", "rovo/page"]) {
+				const manifestPath = path.join(cwd, ".next/server/app", path.dirname(route), "page_client-reference-manifest.js");
+				mkdirSync(path.dirname(manifestPath), { recursive: true });
+				writeFileSync(manifestPath, `globalThis.__RSC_MANIFEST["/${route}"]=${JSON.stringify({ clientModules: { page: { chunks } } })};`);
+			}
+
+			const routes = collectManifestRoutes({ cwd });
+			assert.equal(routes.find((route) => route.path === "/").size.bytes, 140);
+			assert.equal(routes.find((route) => route.path === "/rovo").size.bytes, 40);
+			assert.equal(routes.find((route) => route.path === "/rovo").firstLoadJs.bytes, 140);
+			assert.equal(routes.find((route) => route.path === "/rovo").assetCount, 2);
+		} finally {
+			rmSync(cwd, { recursive: true, force: true });
+		}
+	});
+}
+
+test("route JS does not reintroduce an excluded root page through the shared-JS fallback", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-root-only-"));
+	try {
+		const chunk = "static/chunks/app/page-abc123.js";
+		const chunkPath = path.join(cwd, ".next", chunk);
+		mkdirSync(path.dirname(chunkPath), { recursive: true });
+		writeFileSync(chunkPath, "x".repeat(100));
+		const manifestDir = path.join(cwd, ".next/server/app/rovo");
+		mkdirSync(manifestDir, { recursive: true });
+		writeFileSync(path.join(manifestDir, "page_client-reference-manifest.js"),
+			`globalThis.__RSC_MANIFEST["/rovo/page"]=${JSON.stringify({ clientModules: { page: { chunks: [chunk] } } })};`);
+		assert.equal(collectManifestRoutes({ cwd })[0].size.bytes, 0);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("collectManifestRoutes measures client assets and aliases optional catch-all roots", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-manifest-"));
 	try {

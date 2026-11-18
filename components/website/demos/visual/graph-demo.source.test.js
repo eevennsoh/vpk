@@ -141,8 +141,8 @@ test("Graph renderer exposes hover, ray, edge, and label toggles through params"
 	assert.match(RENDERER_SOURCE, /if \(!options\.params\.showRays\) return;/);
 	assert.match(RENDERER_SOURCE, /if \(!options\.params\.showEdges\) return;/);
 	assert.match(RENDERER_SOURCE, /if \(!options\.params\.showLabels\) return;/);
-	assert.match(GRAPH_DEFAULTS_SOURCE, /originY: 0\.52/);
-	assert.match(GRAPH_DEFAULTS_SOURCE, /rayOriginY: 0\.52/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /originY: 0\.5,/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /rayOriginY: 0\.5,/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /layoutShape: "radialCluster"/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /radialArcAngle: 360/);
 	assert.match(GRAPH_DEFAULTS_SOURCE, /radialDepthCurve: 0\.8/);

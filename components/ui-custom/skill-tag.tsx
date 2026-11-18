@@ -68,6 +68,8 @@ function SkillTag({
 	overlayAction,
 	className,
 	tabIndex,
+	style,
+	ref,
 	...props
 }: Readonly<SkillTagProps>) {
 	const isInteractive = Boolean(onClick);
@@ -118,14 +120,22 @@ function SkillTag({
 		activateOnEnterOrSpace(event, onClick);
 	};
 	const shouldShowOverlayScrim = hasOverlayReveal;
+	const hasSeparateAction = isInteractive && overlayControl !== null;
+	const labelId = React.useId();
+	const hasCallerName = props["aria-label"] !== undefined || props["aria-labelledby"] !== undefined;
+	const actionProps = {
+		...props,
+		ref,
+		role: isInteractive ? "button" : props.role,
+		onClick,
+		onKeyDown: isInteractive ? handleKeyDown : onKeyDown,
+		tabIndex: isInteractive || focusable ? (tabIndex ?? 0) : tabIndex,
+	};
 
 	return (
 		<span
-			{...props}
-			role={isInteractive ? "button" : props.role}
-			onClick={onClick}
-			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
-			tabIndex={isInteractive || focusable ? (tabIndex ?? 0) : tabIndex}
+			{...(hasSeparateAction ? null : actionProps)}
+			style={style}
 			className={cn(
 				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm border border-transparent bg-clip-padding py-1 pl-2.5 align-middle text-xs leading-4 font-normal outline-none transition-[background-color,border-color,box-shadow,color]",
 				surfaceClassName,
@@ -138,6 +148,14 @@ function SkillTag({
 			data-focused={focused ? "true" : undefined}
 			data-slot="skill-tag"
 		>
+			{hasSeparateAction ? (
+				<span
+					{...actionProps}
+					aria-labelledby={hasCallerName ? props["aria-labelledby"] : labelId}
+					className="absolute -inset-px z-[2] rounded-[inherit] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+					data-slot="skill-tag-action"
+				/>
+			) : null}
 			{/* Colored slash bar */}
 			<span className={cn("absolute top-0 bottom-0 left-0 z-[1] w-0.5 rounded-l-sm", collection.slashClassName)} />
 
@@ -155,6 +173,7 @@ function SkillTag({
 					shouldShowOverlayScrim && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-has-[:focus-visible]/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-has-[:focus-visible]/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
 				)}
 				data-slot="skill-tag-label"
+				id={hasSeparateAction ? labelId : undefined}
 			>
 				{typeof children === "string" ? toKebabSkillLabel(children) : children}
 			</span>
@@ -178,6 +197,7 @@ function SkillTag({
 						}}
 						className={cn(
 							"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs transition-[opacity,background-color,color] duration-fast ease-out",
+							hasSeparateAction && "relative z-[3]",
 							overlaySurfaceClassName,
 							overlayControl.isOverlay
 								? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-has-[:focus-visible]/skill-tag:pointer-events-auto group-has-[:focus-visible]/skill-tag:opacity-100"

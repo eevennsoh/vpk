@@ -96,13 +96,13 @@ unavailable.
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
 6. Batch review fixes and reconcile conflicts before final validation. Regenerate
-   derived files with `pnpm run fix:generated`, then fold any changes into the
-   candidate commit. It regenerates only what its checker reports stale (route
-   manifest, API surfaces, Cursor rules, skills index, repo map, lockfile; add
-   `--all` to also prune ESLint suppressions), and `pnpm run generated:status`
-   lists the registry in `scripts/generated-artifacts.mjs`. **On a merge
-   conflict in one of those files, take either side and run `pnpm run
-   fix:generated`;** never hand-merge them. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
+   stale derived files with `pnpm run fix:generated` and fold changes into the
+   candidate commit; `pnpm run generated:status` lists the registry in
+   `scripts/generated-artifacts.mjs`. On conflicts, take either side of fully
+   regenerated files and regenerate. For `eslint-suppressions.json`, resolve only
+   conflicting hunks, preserving both sides' other changes; run
+   `pnpm run fix:generated -- --all` and confirm suppressions report current.
+   Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
    failures). Before pushing the **final reconciled candidate**, run the focused
    tests and ALL colocated exact-file contracts guarding affected source, plus
