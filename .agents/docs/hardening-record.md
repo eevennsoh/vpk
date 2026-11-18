@@ -2,7 +2,7 @@
 
 The durable record of the hardening programme that ran from 12 to 16 Nov 2026. It replaces the temporary session summary (`hardening-summary.md`, deleted) and folds in the independent review of that summary and the decision entries from the planner's local plan, which was never tracked.
 
-Use it to answer three questions before you change something in these areas: was this already decided, is it known to be open, and does the owner still have to act. The figures in **Counts and how to re-measure** were re-measured on 16 Nov 2026 at `d2884c076`, with the command for each; the status of the other items is as of when this record merged. Where the summary and the review disagreed, the review was right unless a line says otherwise.
+Use it to answer three questions before you change something in these areas: was this already decided, is it known to be open, and does the owner still have to act. The figures in **Counts and how to re-measure** were re-measured on 16 Nov 2026 at `d2884c076`, with the command for each (the six test and lint counts again on 18 Nov 2026, after #2381 to #2384); the status of the other items is as of when this record merged. Where the summary and the review disagreed, the review was right unless a line says otherwise.
 
 ## Decisions made
 
@@ -84,7 +84,8 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ### Frontend and performance
 
-- `/rovo` and `/studio` are the heaviest routes (fetched-JS budgets 7.09 MB and 7.59 MB). The 402 KB directory chunk stays in first load because the chat startup path imports the catalog repair statically; making it lazy changes how chat starts, so it is the owner's call.
+- `/rovo` and `/studio` are the heaviest routes (fetched-JS budgets 7.09 MB and 7.59 MB). The 402 KB directory chunk stays in first load. A source-only study on 18 Nov found that making the catalog repair lazy would save no startup bytes: about ten other static paths import the directory (the composer's mention sources, the header's agent selector, the agent creation context, Studio's template data), and startup needs only ids and names. The proposed first step, not started and the owner's call, is to load skill bodies (about 64 KB serialized) when a skill's detail editor opens.
+- CSS byte budgets were raised by 3,000 bytes on 18 Nov with the owner's approval, each with a `raises` entry: home, components, butter, eu26 and heavy-visual after product changes on `main` (#2385), and rovo and studio for the accessibility fixes (#2382).
 - Hot-context narrowing (C-6) is half done: `useRovoChatControls` exists, but streamed messages still live in the one context that `useRovoChat` reads (26 non-test files outside the two context files name it). No interaction measurement recorded.
 - Studio shell is the largest source file: `components/projects/studio/components/rovo-app-shell.tsx`, 3,330 lines.
 - Eight behaviour differences between the Rovo and Studio shells were never decided (for example Studio ignores text typed after a prefill).
@@ -100,14 +101,16 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ### Accessibility
 
-- 50 jsx-a11y suppressions.
-- Known defects: the work-item modal backdrop has no dialog role, Escape or focus trap; no keyboard reorder within kanban columns; hover-only Delete on task-progress and agent-progress; a remove button nested inside a button role on tags; the Confluence body editor has no accessible name.
+- 47 jsx-a11y suppressions.
+- The five defects known on 16 Nov were fixed on 18 Nov (#2382): the Jira work-item modal is a modal dialog with a focus trap, Escape and focus return; kanban cards have Move up / Move down in their menu with a live-region announcement; Delete on task-progress and agent-progress is reachable and shown on keyboard focus; a button Tag no longer contains its remove button; the Confluence body editor is a named multiline textbox. No screen-reader test was run.
+- Accepted trade-off: while that modal is open, the floating Rovo launcher and chat are outside the dialog, so keyboard and screen-reader users reach them only after closing it (the sibling work-item dialogs behave the same).
+- Still open, found while fixing: progress cards are themselves `role="button"` and contain buttons; `SkillTag` nests a control the same way; the rich-text placeholder on `/preview/blocks/agent` is `aria-hidden` but focusable; agent chips' remove buttons read their label twice.
 
 ### Tests and lint debt
 
-- Source-regex suites: 290 `.source.test` files, and 16,719 `no-restricted-syntax` suppressions in 341 files. That count undercounts, because suites that read into a local `source` variable are not matched; widening the selector is an open policy question.
-- React hooks lint: 361 suppressions (`refs` 161, `set-state-in-effect` 150, `immutability` 39, `purity` 6, `static-components` 5). About 45 share one cause (hooks returning a ref with values) and may need a hook API change.
-- Legacy-drift baseline: 44 suites that fail on `main` and are excluded from the gate.
+- Source-regex suites: 326 `.source.test` files, and 16,631 `no-restricted-syntax` suppressions in 339 files (the file count rose on 18 Nov because repaired legacy suites took the `.source.test` name). That count undercounts, because suites that read into a local `source` variable are not matched; widening the selector is an open policy question.
+- React hooks lint: 264 suppressions (`refs` 68, `set-state-in-effect` 148, `immutability` 39, `purity` 4, `static-components` 5). The shared `refs` cause (reading a ref through a hook's result object in render) was fixed at the callers on 18 Nov (#2381) with no hook API change. What is left is mostly real work per site: derived state set in effects, external-store initialisation, imperative animation engines.
+- Legacy-drift baseline: 1 suite. The other 43 were repaired and returned to the gate on 18 Nov (#2383, #2384). `components/website/demos/visual/graph-demo.test.js` stays listed with one failing case that states a real defect: the demo declares an origin of 0.52 but the parameter clamp (minimum 0.5, step 0.05) rounds it to 0.5. The owner decides between a 0.5 default and a 0.01 step.
 - Realtime voice reducer (SM-FE-16): characterization tests exist, the reducer does not.
 - Open policy question: enforce unused exports and types.
 
@@ -143,12 +146,12 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 | Count | Value | Command |
 |---|---|---|
-| `.source.test` files | 290 | `git ls-files \| grep -cE '\.source\.test\.'` |
-| `.behavior.test` files | 157 | `git ls-files \| grep -cE '\.behavior\.test\.'` |
-| `no-restricted-syntax` suppressions | 16719 in 341 files | `node -e 'let c=0,f=0;for(const r of Object.values(require("./eslint-suppressions.json"))){const v=r["no-restricted-syntax"];if(v){c+=v.count;f++}}console.log(c+" in "+f+" files")'` |
-| React hooks suppressions | 361 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("react-hooks/"))n+=v.count;console.log(n)'` |
-| jsx-a11y suppressions | 50 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("jsx-a11y/"))n+=v.count;console.log(n)'` |
-| Legacy-drift suites | 44 | `node --input-type=module -e 'import("./scripts/js-unit-test-legacy-drift.mjs").then(m=>console.log(m.LEGACY_DRIFT_TEST_FILES.length))'` |
+| `.source.test` files | 326 | `git ls-files \| grep -cE '\.source\.test\.'` |
+| `.behavior.test` files | 177 | `git ls-files \| grep -cE '\.behavior\.test\.'` |
+| `no-restricted-syntax` suppressions | 16631 in 339 files | `node -e 'let c=0,f=0;for(const r of Object.values(require("./eslint-suppressions.json"))){const v=r["no-restricted-syntax"];if(v){c+=v.count;f++}}console.log(c+" in "+f+" files")'` |
+| React hooks suppressions | 264 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("react-hooks/"))n+=v.count;console.log(n)'` |
+| jsx-a11y suppressions | 47 | `node -e 'let n=0;for(const r of Object.values(require("./eslint-suppressions.json")))for(const[k,v]of Object.entries(r))if(k.startsWith("jsx-a11y/"))n+=v.count;console.log(n)'` |
+| Legacy-drift suites | 1 | `node --input-type=module -e 'import("./scripts/js-unit-test-legacy-drift.mjs").then(m=>console.log(m.LEGACY_DRIFT_TEST_FILES.length))'` |
 | Non-test backend `.js` files | 316 | `git ls-files backend \| grep -E '\.js$' \| grep -v '\.test\.' \| grep -c .` |
 | Backend `@ts-check` files | 27 | `git ls-files backend \| grep -E '\.js$' \| grep -v '\.test\.' \| xargs grep -l '^// @ts-check' \| grep -c .` |
 | `noUncheckedIndexedAccess` errors | 2839 | `node --max-old-space-size=4096 ./node_modules/@typescript/native/bin/tsc --noEmit --noUncheckedIndexedAccess \| grep -c 'error TS'` |

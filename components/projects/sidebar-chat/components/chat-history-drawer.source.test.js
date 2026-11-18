@@ -66,7 +66,7 @@ test("compact chat header lets long agent names truncate before its actions", ()
 
 	assert.match(sidebarHeader, /className="flex min-w-0 flex-1 items-center gap-1"/u);
 	assert.match(sidebarHeader, /className="flex shrink-0 items-center gap-1"/u);
-	assert.match(appBrand, /className="h-8 min-w-0 shrink gap-1\.5 px-2 text-sm font-medium text-text"/u);
+	assert.match(appBrand, /className=\{cn\("h-8 min-w-0 shrink gap-1\.5 px-2 text-sm font-medium text-text", className\)\}/u);
 	assert.match(appBrand, /className="min-w-0 truncate font-semibold"/u);
 });
 
@@ -157,7 +157,7 @@ test("chat history drawer uses a contained left sheet with a local blanket", () 
 	const source = readProjectFile("components/projects/sidebar-chat/components/chat-history-drawer.tsx");
 	const sheetSource = readProjectFile("components/ui/sheet.tsx");
 
-	assert.match(source, /const \[shouldRenderSheet, setShouldRenderSheet\] = useState\(isHistoryOpen\);/u);
+	assert.match(source, /const \[shouldRenderSheet, setShouldRenderSheet\] = useReducer\(\s*\(_current: boolean, next: boolean\) => next,\s*isHistoryOpen,\s*\);/u);
 	assert.match(source, /setShouldRenderSheet\(true\);/u);
 	assert.match(source, /setShouldRenderSheet\(false\);/u);
 	assert.match(source, /if \(!active \|\| \(!isHistoryOpen && !shouldRenderSheet\)\) \{/u);
@@ -264,7 +264,7 @@ test("chat history drawer matches the Figma conversation-list content structure"
 	assert.match(source, /label="Tasks"/u);
 	assert.match(source, /label="Agents"/u);
 	assert.match(source, /label="Chats"/u);
-	assert.match(source, /FolderClosedIcon/u);
+	assert.match(source, /aria-label="New folder"[\s\S]*?<FolderAddIcon label="" size="small" \/>/u);
 	assert.match(source, /AddIcon/u);
 	assert.match(source, /rounded-lg p-1\.5/u);
 	assert.match(source, /text-xs leading-4/u);
@@ -290,7 +290,7 @@ test("compact chat send lifecycle refreshes thread metadata", () => {
 	);
 	assert.match(
 		source,
-		/await ensureCompactThread\(promptItem\.text \|\| promptItem\.files\[0\]\?\.filename \|\| "New chat"\);[\s\S]*void refreshThreads\(\);[\s\S]*finally \{[\s\S]*void refreshThreads\(\);/u,
+		/\[\(\) => ensureCompactThread\(promptItem\.text \|\| promptItem\.files\[0\]\?\.filename \|\| "New chat"\)\][\s\S]*void refreshThreads\(\);[\s\S]*finally \{[\s\S]*void refreshThreads\(\);/u,
 	);
 });
 
@@ -326,7 +326,7 @@ test("sidebar and floating compact chat show follow-up suggestions only on the l
 	assert.match(panelSource, /const hasPendingChatWork = isRequestInFlight \|\| queuedPrompts\.length > 0;/u);
 	assert.match(
 		panelSource,
-		/showFollowUpSuggestions=\{message\.id === lastAssistantMessageId && !hasPendingChatWork\}/u,
+		/showFollowUpSuggestions=\{!readOnly && message\.id === lastAssistantMessageId && !hasPendingChatWork\}/u,
 	);
 	assert.match(bubbleSource, /showFollowUpSuggestions = true/u);
 	assert.match(

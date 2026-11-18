@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 const { readChatPanelSource } = require("../chat-panel-source-harness");
 
 function readProjectFile(filePath) {
@@ -17,6 +19,71 @@ const LIVE_WAVEFORM_SOURCE = readProjectFile("components/ui-custom/live-waveform
 const PROMPT_INPUT_DICTATION_SOURCE = readProjectFile("components/ui-custom/prompt-input-dictation.tsx");
 const ROVO_CURSOR_SOURCE = readProjectFile("components/ui-custom/rovo-cursor.tsx");
 const ROVO_CHAT_HELPERS_SOURCE = readProjectFile("app/contexts/rovo-chat-helpers.ts");
+
+function loadSidebarChatState() {
+	const result = esbuild.buildSync({
+		entryPoints: [path.join(process.cwd(), "components/projects/sidebar-chat/lib/sidebar-chat-state.ts")],
+		bundle: true,
+		format: "cjs",
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	return loadCjsModuleFromText(result.outputFiles[0].text, "sidebar-chat-state.cjs");
+}
+
+// The deferred live-voice start listens for pointer and key activation and keeps listening
+// (no `once`) until its cleanup runs, so an untrusted first event cannot consume the listener.
+function assertUserActivationSubscriptionPersistsUntilCleanup() {
+	const { subscribeToUserActivation } = loadSidebarChatState();
+	const listeners = new Map();
+	const previousWindow = globalThis.window;
+	globalThis.window = {
+		addEventListener: (type, listener, options) => listeners.set(type, { listener, options }),
+		removeEventListener: (type, listener) => {
+			if (listeners.get(type)?.listener === listener) listeners.delete(type);
+		},
+	};
+	try {
+		const onActivation = () => {};
+		const cleanup = subscribeToUserActivation(onActivation);
+		for (const type of ["pointerdown", "keydown"]) {
+			assert.equal(listeners.get(type)?.listener === onActivation, true, `${type} listener registered`);
+			assert.equal(Boolean(listeners.get(type)?.options?.once), false, `${type} listener is not once`);
+		}
+		cleanup();
+		assert.equal(listeners.has("pointerdown") || listeners.has("keydown"), false);
+	} finally {
+		globalThis.window = previousWindow;
+	}
+}
+
+// Queued prompts carry their add-menu files through the shared chat turn queue.
+function assertQueuedPromptKeepsFiles() {
+	const result = esbuild.buildSync({
+		stdin: {
+			contents: 'export { rovoChatTurnReducer, ROVO_CHAT_TURN_INITIAL_STATE } from "@/app/contexts/rovo-chat-turn-machine";',
+			loader: "ts",
+			resolveDir: process.cwd(),
+			sourcefile: "chat-composer-turn-machine-entry.ts",
+		},
+		bundle: true,
+		format: "cjs",
+		loader: { ".css": "empty" },
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	const { rovoChatTurnReducer, ROVO_CHAT_TURN_INITIAL_STATE } = loadCjsModuleFromText(result.outputFiles[0].text, "chat-composer-turn-machine.cjs");
+	const file = { type: "file", mediaType: "image/png", filename: "diagram.png", url: "data:image/png;base64,AA==" };
+	const state = rovoChatTurnReducer(ROVO_CHAT_TURN_INITIAL_STATE, {
+		type: "enqueue",
+		prompt: { id: "queued-1", files: [file], text: "See attached", createdAt: 0 },
+	});
+	assert.deepEqual(state.queue.map((item) => item.files), [[file]]);
+}
 
 function sourceBetween(source, startNeedle, endNeedle) {
 	const start = source.indexOf(startNeedle);
@@ -60,7 +127,7 @@ test("compact chat animates sources and model selectors when edit-agent context 
 	assert.match(sidebarComposer, /setIsCustomizeMenuOpen\(false\);[\s\S]*setIsAutoMenuOpen\(false\);/u);
 	assert.match(sidebarComposer, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="sources-selector"[\s\S]*initial=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*animate=\{\{ opacity: 1, transform: "scale\(1\)" \}\}[\s\S]*exit=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*<Popover open=\{isCustomizeMenuOpen\}/u);
 	assert.match(sharedSendControls, /if \(hideReasoningSelector && open\) \{[\s\S]*onOpenChange\?\.\(false\);[\s\S]*\}/u);
-	assert.match(sharedSendControls, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="reasoning-selector"[\s\S]*initial=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*animate=\{\{ opacity: 1, transform: "scale\(1\)" \}\}[\s\S]*exit=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*<RovoComposerReasoningSelector/u);
+	assert.match(sharedSendControls, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="reasoning-selector"[\s\S]*initial=\{\{ opacity: 0, scale: shouldReduceMotion \? 1 : 0\.8 \}\}[\s\S]*animate=\{\{ opacity: 1, scale: 1 \}\}[\s\S]*exit=\{\{ opacity: 0, scale: shouldReduceMotion \? 1 : 0\.8 \}\}[\s\S]*<RovoComposerReasoningSelector/u);
 	assert.match(sharedSendControls, /style=\{\{ willChange: "transform, opacity" \}\}/u);
 });
 
@@ -158,10 +225,9 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 	assert.match(realtimeToggleSource, /clearDeferredStartRealtimeVoice\(\);[\s\S]*if \(realtime\.voiceState === "idle"\)/u);
 	assert.match(realtimeRequestSource, /const cleanupDeferredStartRealtimeVoiceRef = useRef<\(\(\) => void\) \| null>\(null\);/u);
 	assert.match(realtimeRequestSource, /return !navigator\.userActivation\.hasBeenActive;/u);
-	assert.match(realtimeRequestSource, /window\.addEventListener\("pointerdown", handleUserActivation, listenerOptions\);/u);
-	assert.match(realtimeRequestSource, /window\.addEventListener\("keydown", handleUserActivation, listenerOptions\);/u);
+	assert.match(realtimeRequestSource, /cleanupDeferredStartRealtimeVoiceRef\.current = subscribeToUserActivation\(handleUserActivation\);/u);
 	assert.match(realtimeRequestSource, /if \(!event\.isTrusted\) \{[\s\S]*return;[\s\S]*\}/u);
-	assert.doesNotMatch(realtimeRequestSource, /once: true/u);
+	assertUserActivationSubscriptionPersistsUntilCleanup();
 	assert.match(realtimeRequestSource, /if \(startRealtimeVoiceRequestKey <= 0\) \{[\s\S]*lastStartRealtimeVoiceRequestKeyRef\.current = 0;[\s\S]*clearDeferredStartRealtimeVoice\(\);/u);
 	assert.match(realtimeRequestSource, /if \(realtime\.voiceState !== "idle"\) \{[\s\S]*return;[\s\S]*\}/u);
 	assert.doesNotMatch(realtimeRequestSource, /if \(isLocalConversationActive\) \{[\s\S]*startRealtimeVoice\(\);/u);
@@ -312,13 +378,13 @@ test("compact chat opts its Rovo composer textarea into visual trace auto-taggin
 	assert.match(sidebarPanel, /prefillMentionRequest=\{[\s\S]*composerPrefillRequest\?\.mention[\s\S]*mention: composerPrefillRequest\.mention,[\s\S]*requestKey: composerPrefillRequest\.requestKey/u);
 	assert.match(sidebarComposer, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);
 	assert.match(sidebarComposer, /onPrefillMentionConsumed\?: \(requestKey: number\) => void;/u);
-	assert.match(sidebarComposer, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*enableVisualTraceAutoTagging[\s\S]*onChange=\{\(event\) => onPromptChange\(event\.currentTarget\.value\)\}/u);
+	assert.match(sidebarComposer, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*enableVisualTraceAutoTagging[\s\S]*onChange=\{\(event\) => \{[\s\S]*onPromptChange\(event\.currentTarget\.value\);/u);
 	assert.match(sidebarComposer, /<PromptInputTextarea[\s\S]*onPrefillMentionConsumed=\{onPrefillMentionConsumed\}[\s\S]*prefillMentionRequest=\{prefillMentionRequest\}/u);
 });
 
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/shared/components/composer-card-body.tsx");
-	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");
+	const popoverIndex = source.indexOf("<Popover open={resolvedCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");
 	const preferencesTriggerIndex = source.indexOf("<PopoverTrigger render={<PromptInputPreferencesButton aria-label=\"Customize\" />} />", popoverIndex);
 	const customizeMenuIndex = source.indexOf("<CustomizeMenu", preferencesTriggerIndex);
 	const showReasoningFalseIndex = source.indexOf("showReasoning={false}", customizeMenuIndex);
@@ -403,14 +469,14 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.doesNotMatch(source, /shouldShowRegionPaintControl/u);
 	assert.match(source, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-lg"/u);
 	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-lg bg-bg-neutral" \/>/u);
-	assert.match(source, /"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none"[\s\S]*clickyActive \? "w-16" : "w-8"/u);
-	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
+	assert.match(source, /"icon-sm": \{ active: "w-16", idle: "w-8" \}[\s\S]*"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none",\s*clickyActive\s*\? CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.active\s*: CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.idle/u);
+	assert.match(source, /"icon-sm": "relative z-10 flex h-8 w-16 items-center gap-0"[\s\S]*<div className=\{CURSOR_RAIL_INNER_CLASS_NAME_BY_SIZE\[size\]\}>/u);
 	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);
-	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:voice` : undefined\}/u);
+	assert.match(source, /"icon-sm": "flex h-9 items-center gap-1"[\s\S]*<div className=\{ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]\}>[\s\S]*<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:voice` : undefined\}/u);
 	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className\)\}/u);
 	assert.doesNotMatch(source, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
-	assert.match(source, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md/u);
+	assert.match(source, /"icon-sm": "size-8"[\s\S]*aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex shrink-0 items-center justify-center rounded-md [^"]*",\s*LIVE_VOICE_STOP_BUTTON_SIZE_CLASS_NAME_BY_SIZE\[size\]/u);
 	assert.match(source, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \(/u);
 	assert.match(source, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \([\s\S]*<RovoCursorTrackingIcon active=\{false\} \/>[\s\S]*\)/u);
 	assert.match(source, /<motion\.button[\s\S]*aria-label="Rovo cursor"/u);
@@ -440,7 +506,7 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-fill/u);
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-halo/u);
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /borderRadius: barWidth \/ 2/u);
-	assert.match(source, /aria-label="Stop live voice"[\s\S]*className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:bg-bg-neutral-bold-hovered/u);
+	assert.match(source, /"icon-sm": "size-8"[\s\S]*aria-label="Stop live voice"[\s\S]*"flex shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:bg-bg-neutral-bold-hovered[^"]*",\s*LIVE_VOICE_STOP_BUTTON_SIZE_CLASS_NAME_BY_SIZE\[size\]/u);
 	assert.match(source, /function ComposerVoiceWaveform/u);
 	assert.match(source, /barCount\?: 4 \| 8;/u);
 	assert.match(source, /barCount = 8/u);
@@ -476,7 +542,7 @@ test("Rovo composers default reasoning to Auto", () => {
 	assert.match(sharedMenuData, /export const DEFAULT_REASONING_OPTION_ID = "let-rovo-decide"/u);
 	assert.match(sidebarComposer, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
 	assert.match(rovoComposer, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
-	assert.match(rovoComposer, /if \(isPlanMode && selectedReasoning !== "max"\) \{[\s\S]*setSelectedReasoning\("max"\);[\s\S]*\} else if \(!isPlanMode && selectedReasoning === "max"\) \{[\s\S]*setSelectedReasoning\(DEFAULT_REASONING_OPTION_ID\);/u);
+	assert.match(rovoComposer, /const resolvedSelectedReasoning = isPlanMode\s*\? "max"\s*: selectedReasoning === "max"\s*\? DEFAULT_REASONING_OPTION_ID\s*: selectedReasoning;/u);
 	assert.doesNotMatch(sidebarComposer, /useState\("deep-research"\)/u);
 	assert.doesNotMatch(rovoComposer, /useState\("deep-research"\)/u);
 });
@@ -535,7 +601,7 @@ test("Rovo app Max reasoning owns plan mode without a separate Task button", () 
 	assert.match(rovoComposer, /const shouldEnablePlanMode = reasoning === "max"/u);
 	assert.match(rovoComposer, /shouldEnablePlanMode !== isPlanMode/u);
 	assert.match(rovoComposer, /onReasoningChange=\{handleReasoningChange\}/u);
-	assert.match(rovoComposer, /setSelectedReasoning\("max"\)/u);
+	assert.match(rovoComposer, /onReasoningChange=\{handleReasoningChange\}[\s\S]*selectedReasoning=\{resolvedSelectedReasoning\}/u);
 	assert.doesNotMatch(rovoComposer, /aria-label="Task mode"/u);
 	assert.doesNotMatch(rovoComposer, /ScorecardIcon/u);
 	assert.doesNotMatch(rovoComposer, /⌥ Tab/u);
@@ -575,7 +641,7 @@ test("compact chat submits add-menu files through the shared Rovo thread queue",
 	assert.match(submitHook, /handleSubmit: \(message: \{ text: string; files: FileUIPart\[\] \}\) => Promise<void>/u);
 	assert.match(submitHook, /recordLocalAssistantTurn: \(params: \{[\s\S]*assistantParts: RovoUIMessage\["parts"\];[\s\S]*promptText: string;[\s\S]*\}\) => Promise<void>/u);
 	assert.match(submitHook, /await sendPrompt\(promptText, defaultPromptOptions, files\)/u);
-	assert.match(context, /files: FileUIPart\[\];/u);
+	assertQueuedPromptKeepsFiles();
 	assert.match(context, /sendPrompt: \(prompt: string, options\?: SendPromptOptions, files\?: ReadonlyArray<FileUIPart>\) => Promise<void>/u);
 	assert.ok(sendChatMessageIndex > -1);
 	assert.ok(sendPromptIndex > sendChatMessageIndex);
@@ -678,7 +744,7 @@ test("compact chat exposes normalized Untitled agent names for session-created a
 	assert.match(context, /const normalizedSessionAgentEntries = useMemo\(/u);
 	assert.match(context, /\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => entry\.profile\)/u);
 	assert.match(context, /buildSelectableAgents\([\s\S]*normalizedSessionAgentEntries/u);
-	assert.match(context, /sessionAgentEntriesRef\.current = normalizedSessionAgentEntries;/u);
+	assert.match(context, /const normalizedEntries = entries\.map\(normalizeSessionAgentEntry\);\s*sessionAgentEntriesRef\.current = normalizedEntries;/u);
 	assert.match(context, /persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\);/u);
 	assert.match(context, /sessionAgentEntries: normalizedSessionAgentEntries,/u);
 	assert.match(contextsIndex, /getStudioSessionAgentDisplayName,/u);

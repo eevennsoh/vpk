@@ -4,7 +4,8 @@ const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
-test("shared ranges shrink, clear resets the anchor, and moves invalidate it", async () => {
+// Shift-click ranges are additive in the shared Jira selection (eeaef75ba); only keyboard ranges resize.
+test("shared shift ranges stay additive, clear resets the anchor, and moves invalidate it", async () => {
 	const { jgpKanbanReducer, createInitialJgpKanbanState } = await loadHarness();
 	let state = createInitialJgpKanbanState();
 	const intake = state.columns.find((candidate) => candidate.cards.length >= 3);
@@ -17,7 +18,8 @@ test("shared ranges shrink, clear resets the anchor, and moves invalidate it", a
 	choose(intake.cards[0].code);
 	choose(intake.cards[2].code);
 	choose(intake.cards[1].code);
-	assert.deepEqual([...state.selectedCardCodes], intake.cards.slice(0, 2).map((card) => card.code));
+	assert.deepEqual([...state.selectedCardCodes].sort(), intake.cards.slice(0, 3).map((card) => card.code).sort());
+	assert.equal(state.anchor.cardCode, intake.cards[0].code);
 	state = jgpKanbanReducer(state, { type: "clear-selection" });
 	assert.equal(state.anchor, null);
 	choose(intake.cards[0].code);

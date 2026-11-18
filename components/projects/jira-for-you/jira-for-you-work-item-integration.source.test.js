@@ -18,6 +18,6 @@ test("unassigned items route to the embedded canonical Jira Work Item", () => {
 		/<JiraForYouWorkItemWorkspace[\s\S]*workItem=\{unassignedItemData\.workItem\}/u,
 	);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /JiraForYouWorkItemDialog|dialogItem|Rovo Dev/u);
-	assert.match(WORKSPACE_SOURCE, /onItemClick=\{\(item\) => handleItemActivate\(item, "row"\)\}/u);
-	assert.match(WORKSPACE_SOURCE, /onView=\{\(item\) => handleItemActivate\(item, "view"\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /onItemClick=\{\(item, event\) => handleItemActivate\(item, "row", event\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /onView=\{\(item, event\) => handleItemActivate\(item, "view", event\)\}/u);
 });

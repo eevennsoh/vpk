@@ -3,6 +3,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { readChatPanelModule, readChatPanelSource } = require("../../sidebar-chat/chat-panel-source-harness");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+const { renderComponent } = require("@/scripts/lib/render-component.js");
 
 const SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-shell.tsx"),
@@ -218,6 +221,65 @@ const AGENT_ONBOARDING_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-agent-onboarding-tour.ts"),
 	"utf8",
 );
+
+// Each starter tile's hover stroke is its own agent-avatar colour, derived from
+// the avatar family in its icon path rather than an index-cycled palette.
+function assertAgentAvatarAccentFollowsAvatarGroup() {
+	const result = esbuild.buildSync({
+		entryPoints: [path.join(process.cwd(), "lib/agent-avatars.ts")],
+		bundle: true,
+		format: "cjs",
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	const { getAgentAvatarAccent } = loadCjsModuleFromText(result.outputFiles[0].text, "agent-avatars.cjs");
+	assert.equal(getAgentAvatarAccent("/avatar-agent/dev-agents/code-reviewer.svg"), "#82B536");
+	assert.equal(getAgentAvatarAccent("/avatar-agent/product-agents/roadmap.svg"), "#BF63F3");
+	assert.equal(getAgentAvatarAccent("/avatar-agent/teamwork-agents/standup.svg"), "#1868DB");
+}
+
+function loadTsModule(contents, name) {
+	const result = esbuild.buildSync({
+		stdin: { contents, loader: "ts", resolveDir: process.cwd(), sourcefile: `${name}-entry.ts` },
+		bundle: true,
+		external: ["react", "react-dom"],
+		format: "cjs",
+		jsx: "automatic",
+		loader: { ".css": "empty" },
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	return loadCjsModuleFromText(result.outputFiles[0].text, `${name}.cjs`);
+}
+
+// Details leads the compact header nav with the dashboard icon; the inline
+// default items start at Insights because Details opens from the agent identity.
+function assertCompactHeaderNavLeadsWithDetails() {
+	const navData = loadTsModule(
+		`export { AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS, AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM } from "@/components/blocks/agent/components/agent-compact-header-nav-data";
+		export { LayoutDashboardIcon } from "@/components/ui/vpk-icons";`,
+		"agent-compact-header-nav-data",
+	);
+	assert.equal(navData.AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM.label, "Details");
+	assert.equal(navData.AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM.icon.type === navData.LayoutDashboardIcon, true);
+	assert.equal(navData.AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS[0].label, "Insights");
+	assert.equal(navData.AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS.some((item) => item.value === "details"), false);
+}
+
+// Empty compact config rows invite adding with field-specific copy; filled rows edit.
+function assertEmptyConfigRowsInviteAdding() {
+	const { getAgentFilledSummaryAddLabel } = loadTsModule(
+		'export { getAgentFilledSummaryAddLabel } from "@/components/blocks/agent/components/agent-compact-config-nav-data";',
+		"agent-compact-config-nav-data",
+	);
+	assert.equal(getAgentFilledSummaryAddLabel("triggers", true, true), "Add flows for when this agent runs");
+	assert.equal(getAgentFilledSummaryAddLabel("conversationStarters", true, true), "Add prompts to help people start");
+	assert.equal(getAgentFilledSummaryAddLabel("triggers", false, true), "Edit");
+}
 
 function sourceBetween(source, startNeedle, endNeedle) {
 	const start = source.indexOf(startNeedle);
@@ -538,67 +600,64 @@ test("Studio home starters frame agent building instead of generic one-off tasks
 });
 
 test("Studio home bento applies card glow pointer flow to starter tiles", () => {
-	assert.match(HOME_STARTER_BENTO_SOURCE, /const HOME_STARTER_CARD_GLOW_EFFECT_STYLE/u);
-	// The hover stroke color is the tile's own agent-avatar color, derived from
-	// the avatar group in `iconSrc` (each /avatar-agent/<group>/ family shares one
-	// brand color) — not an index-cycled palette that drifts out of sync.
-	assert.match(HOME_STARTER_BENTO_SOURCE, /const HOME_STARTER_AVATAR_GROUP_ACCENTS: Readonly<Record<string, string>>/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /"teamwork-agents": "#1868DB"/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /function getHomeStarterCardGlowAccent\(iconSrc: string\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /getHomeStarterCardGlowAccent\(template\.iconSrc\)/u);
+	// 9615ff7d7 moved the glow ring, base border, pointer variables and the
+	// read-then-write frame loop into the shared `components/visual/card-glow`
+	// owner, whose suite covers them (it lists this bento as a migrated consumer).
+	// Here: the bento reads that owner, tints each tile with its own agent-avatar
+	// colour, and wires every tile into one pointer group.
+	assert.match(HOME_STARTER_BENTO_SOURCE, /function getHomeStarterCardStyle\(iconSrc: string\): CardGlowCSSProperties \{[\s\S]*cardGlowSurfaceStyle\(getAgentAvatarAccent\(iconSrc\), "container"\)/u);
+	assertAgentAvatarAccentFollowsAvatarGroup();
+	assert.match(HOME_STARTER_BENTO_SOURCE, /style=\{getHomeStarterCardStyle\(template\.iconSrc\)\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /function HomeStarterCardGlowLayers/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /const tileRefs = useRef<Array<HTMLButtonElement \| null>>\(\[\]\);/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerLeave=\{resetBentoPointer\}/u);
-	const pointerMoveStart = HOME_STARTER_BENTO_SOURCE.indexOf("const handleBentoPointerMove");
-	const pointerMoveSource = HOME_STARTER_BENTO_SOURCE.slice(
-		pointerMoveStart,
-		HOME_STARTER_BENTO_SOURCE.indexOf("const resetBentoPointer", pointerMoveStart),
-	);
-	const pointerReadIndex = pointerMoveSource.indexOf("const rect = tile.getBoundingClientRect();");
-	const pointerBatchIndex = pointerMoveSource.indexOf("pointerUpdates.push({");
-	const pointerWriteLoopIndex = pointerMoveSource.indexOf("for (const { tile, x, y } of pointerUpdates)");
-	const pointerWriteIndex = pointerMoveSource.indexOf("tile.style.setProperty");
-	assert.notEqual(pointerMoveStart, -1);
-	assert.ok(pointerReadIndex !== -1 && pointerReadIndex < pointerBatchIndex, "pointer tracking should read tile geometry before batching pointer updates");
-	assert.ok(pointerBatchIndex !== -1 && pointerBatchIndex < pointerWriteLoopIndex, "pointer tracking should batch every tile update before writing styles");
-	assert.ok(pointerWriteLoopIndex !== -1 && pointerWriteLoopIndex < pointerWriteIndex, "pointer tracking should write CSS variables from a separate loop");
-	assert.equal(pointerMoveSource.slice(0, pointerWriteLoopIndex).includes("style.setProperty"), false);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /x: normalizedX\.toFixed\(3\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /y: normalizedY\.toFixed\(3\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-x", x/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-y", y/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-tile-accent": accentColor/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-core": 36/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-spread": 120/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /const cardGlow = useCardGlowPointerGroup\(\);/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerLeave=\{cardGlow\.onPointerLeave\}\s*onPointerMove=\{cardGlow\.onPointerMove\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /<HomeStarterCardGlowLayers iconSrc=\{template\.iconSrc\} \/>/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /const HOME_STARTER_CARD_BASE_BORDER_STYLE: CSSProperties/u);
-	// Resting stroke uses the subtle `color.border` token (matches the tiles'
-	// pre-glow default), not the heavier `color.border.bold`.
-	assert.match(HOME_STARTER_BENTO_SOURCE, /boxShadow: `inset 0 0 0 calc\(var\(--card-glow-border-width\) \* 1px\) \$\{token\("color\.border"\)\}`/u);
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /token\("color\.border\.bold"\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /borderWidth: "calc\(var\(--card-glow-border-width\) \* 1px\)"/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /transparent calc\(var\(--card-glow-border-spread\) \* 1px\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /data-home-starter-card-base-border/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /data-home-starter-card-glow-border/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /absolute inset-0 z-\[1\] rounded-\[inherit\]/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /style=\{HOME_STARTER_CARD_BASE_BORDER_STYLE\}/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /absolute inset-0 z-\[2\] overflow-hidden rounded-\[inherit\] border border-transparent/u);
-	// Regression: the glow ring must coexist with the always-on grey base stroke.
-	// Two invariants enforce the desired behavior:
-	// 1. No backdrop-filter on the ring — an always-on filter recolors the whole
-	//    ring (even where the gradient is transparent) and crushes the grey stroke.
-	// 2. No per-tile hover/focus opacity gate on the ring — the glow is driven by
-	//    the container-level pointer tracking so edges still light up when the
-	//    cursor is in the GAPS between tiles, not only over the hovered tile.
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /backdropFilter/u);
-	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /z-\[2\][^"]*group-hover\/home-starter-card:opacity-100/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /ref=\{cardGlow\.registerTile\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /rounded-lg bg-background/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /transition-\[background-color,box-shadow\]/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /hover:border-border-bold/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /color-mix\(in srgb, var\(--card-glow-tile-accent\) 92%, white\)/u);
 	assert.doesNotMatch(HOME_STARTER_BENTO_SOURCE, /rounded-lg border border-border bg-background/u);
+});
+
+test("Studio starter tiles bind shared glow tuning inside isolated stacking contexts", async () => {
+	const view = await renderComponent({
+		entry: "components/projects/studio/components/rovo-app-home-starter-bento.tsx",
+		exportName: "RovoAppHomeStarterBento",
+		props: {
+			isVisible: true, instantExit: true, reduceMotion: true, templatesDialogOpen: true,
+			onBrowseTemplates() {}, onDismiss() {}, onPreviewEnd() {}, onPreviewStart() {}, onSelect() {},
+		},
+		mocks: {
+			"@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false }; }`,
+			"motion/react": `import { createElement, useMemo } from "react";
+				function element(tag) {
+					return function Motion({ initial, animate, exit, custom, variants, transition, whileHover, whileTap, ...props }) {
+						return createElement(tag, props);
+					};
+				}
+				export const motion = { div: element("div"), button: element("button"), span: element("span") };
+				export function AnimatePresence({ children }) { return children; }
+				export function useReducedMotion() { return true; }
+				export function useMotionValue() { return useMemo(() => ({ set() {} }), []); }
+				export function animate() { throw new Error("category cycling must be paused"); }`,
+		},
+	});
+	const tiles = [...view.container.querySelectorAll('button[aria-label^="Use prompt starter:"]')];
+	assert.ok(tiles.length > 0, "the real Studio bento renders starter tiles");
+	for (const tile of tiles) {
+		const classes = tile.className.split(" ");
+		assert.equal(classes.includes("relative"), true);
+		assert.equal(classes.includes("isolate"), true, "negative glow layers stay above the tile background");
+		assert.equal(tile.style.containerType, "size");
+		const tuning = tile.closest('[style*="--card-glow-border-core"]');
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-core"), "36");
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-spread"), "120");
+		assert.equal(tuning?.style.getPropertyValue("--card-glow-border-width"), "1");
+		for (const marker of ["data-card-glow-base-border", "data-card-glow-border", "data-card-glow-bloom"]) {
+			assert.equal(tile.querySelectorAll(`[${marker}]`).length, 1, marker);
+		}
+	}
 });
 
 test("Studio content surfaces keep their intended max widths", () => {
@@ -772,8 +831,8 @@ test("Studio agent insights panel frames agent performance and improvement oppor
 
 test("Studio agent config moves Details into compact nav and removes the config toggle group", () => {
 	assert.match(AGENT_BLOCK_SOURCE, /from "@\/components\/blocks\/agent\/components\/agent-compact-header-nav";/u);
-	assert.match(AGENT_COMPACT_HEADER_NAV_SOURCE, /import \{ LayoutDashboardIcon, MoreHorizontalIcon \} from "@\/components\/ui\/vpk-icons";/u);
-	assert.match(AGENT_COMPACT_HEADER_NAV_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*<LayoutDashboardIcon size="small" \/>[\s\S]*label: "Details"[\s\S]*label: "Insights"/u);
+	assert.match(AGENT_COMPACT_HEADER_NAV_SOURCE, /import \{ MoreHorizontalIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assertCompactHeaderNavLeadsWithDetails();
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const lastCompactSectionRef = useRef<AgentCompactHeaderSection>\("details"\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const activeHeaderSection: AgentCompactHeaderSection \| null =[\s\S]*activeView === "insights"[\s\S]*activeView === "configure"[\s\S]*activeCompactSection \?\? "details"[\s\S]*: null;/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const restoreCompactSection = useCallback\([\s\S]*if \(section === "details"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*return;[\s\S]*\}/u);
@@ -792,8 +851,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /"product-agents": "#BF63F3"/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /style=\{\{[\s\S]*backgroundColor: coverBackgroundColor,[\s\S]*backgroundImage: `url\("\$\{bannerSrc\}"\)`,[\s\S]*\}\}/u);
-	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /Add flows for when this agent runs/u);
-	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /Add prompts to help people start/u);
+	assertEmptyConfigRowsInviteAdding();
 	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
 	assert.match(AGENT_COMPACT_CONFIG_PANEL_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
 	assert.match(AGENT_INSTRUCTIONS_COMPOSER_SOURCE, /Press \/ to help me create the agent/u);
@@ -834,7 +892,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const existing = new Set\(current\.map\(\(value\) => getAgentConfigListLookupValue\(field, value\)\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const additions = nextValues\.filter\(\(value\) => !existing\.has\(getAgentConfigListLookupValue\(field, value\)\)\);/u);
-	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skill-frontmatter";/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigItems\(items: readonly string\[\] \| undefined\): readonly string\[\] \{[\s\S]*\.map\(getSkillConfigLabel\)/u);
@@ -849,7 +907,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
+	assert.match(fs.readFileSync(path.join(process.cwd(), "components/projects/studio/lib/studio-main-surface-machine.ts"), "utf8"), /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const restoreCompactSection = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*if \(section === "details"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*return;[\s\S]*\}[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /if \(value === "test"\) \{[\s\S]*lastCompactSectionRef\.current = activeHeaderSection;[\s\S]*handleTest\(\);/u);
@@ -992,7 +1050,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);
-	assert.match(CHAT_PANEL_SOURCE, /selectedAgent=\{greetingSelectedAgent \?\? selectedAgent\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /greetingAgent=\{greetingSelectedAgent \?\? selectedAgent\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /conversationStarterIcons: Array\.isArray\(config\.conversationStarterIcons\)[\s\S]*config\.conversationStarterIcons\.filter\(\(_, itemIndex\) => itemIndex !== index\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /saveLabel=\{conversationStarterDialogValue\.length > 0 \? "Save" : "Add"\}/u);
@@ -1361,9 +1419,9 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /setDisplayedText\(text\.slice\(0, index\)\);/u);
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /finishRequestKey\?: number;/u);
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /lastFinishRequestKeyRef\.current === finishRequestKey[\s\S]*startReturningPhase\(\);/u);
-	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const \[showTourPanel, setShowTourPanel\] = useState\(false\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const \[\{ phase, showFinalMessage, showTourPanel \}, dispatchPresentation\] = useReducer\(\s*reduceTourPresentation,\s*\{ phase: "tour", showFinalMessage: false, showTourPanel: false \},/u);
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const showPanel = \(phase === "tour" && showTourPanel\) \|\| \(phase === "returning" && showFinalMessage\);/u);
-	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /window\.setTimeout\(\(\) => setShowTourPanel\(true\), reducedMotion \? 0 : TOUR_PANEL_REVEAL_DELAY_MS\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /window\.setTimeout\(\s*\(\) => dispatchPresentation\(\{ type: "show-tour-panel" \}\),\s*reducedMotion \? 0 : TOUR_PANEL_REVEAL_DELAY_MS,\s*\)/u);
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /aria-describedby=\{bodyId\}[\s\S]*aria-labelledby=\{titleId\}/u);
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /left: panelPosition\.x,[\s\S]*top: panelPosition\.y,/u);
 	assert.doesNotMatch(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /animate=\{\{ opacity: 1, scale: 1, x: panelPosition\.x, y: panelPosition\.y \}\}/u);
@@ -1392,15 +1450,15 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(CHAT_PANEL_SOURCE, /const lastLocalInitialVoiceKeyRef = useRef<string \| null>\(null\);[\s\S]*const initialVoiceText = localConversation\.initialVoiceText\?\.trim\(\) \?\? "";[\s\S]*speakLocalConversationVoiceText\(\{ voiceText: initialVoiceText \}\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /localConversationVoiceSuppressedUntilRef\.current = 0;/u);
 	assert.match(CHAT_PANEL_SOURCE, /const isLocalConversationActive = localConversation !== null;/u);
-	assert.match(CHAT_PANEL_SOURCE, /if \(!localConversation\) \{[\s\S]*await handleSubmit\(\{ files, text \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(!localConversation\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /const result = await localConversation\.onSubmit\(promptText\);[\s\S]*if \(!isLocalConversationSubmitHandled\(result\)\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*setPrompt\(""\);[\s\S]*speakLocalConversationVoiceText\(result\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const localMessages = localConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.localMessages\];/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(!localConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*localConversation\.onSubmit\(promptText\)[\s\S]*if \(!isLocalConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakLocalConversationVoiceText\(result\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isLocalConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /realtimeVoiceStateRef\.current = realtime\.voiceState;/u);
 	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscript = useCallback", "const handleRealtimeTranscriptCompleted"), /Date\.now\(\) < localConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(localConversation\) \{[\s\S]*speakLocalConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /Date\.now\(\) < localConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;[\s\S]*if \(isClickyActive\)/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const handleRealtimeAssistantTextDelta"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(localConversation\) \{[\s\S]*speakLocalConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const handleRealtimeAssistantTextDelta"), /Date\.now\(\) < localConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;[\s\S]*if \(isClickyActive\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(localConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /isLocalConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor\}/u);
@@ -1477,7 +1535,7 @@ test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt va
 	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setInputFocused\(false\)\}/u);
 	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*shouldSuppressInitialAutoFocusRevealRef\.current = false;[\s\S]*setInputFocused\(true\);[\s\S]*replayRevealTraces\(\);[\s\S]*\}\}/u);
 	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = hasPromptValue \|\| isComposerHoverActive \|\| isInputFocused;/u);
-	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
+	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch && isRevealVisible \? \(/u);
 	// Reveal copy: default is "Or start from scratch"; when onBrowseTemplates is
 	// provided (bento dismissed) it becomes "Browse template or start from scratch".
 	assert.match(COMPOSER_SOURCE, /onClick=\{onBrowseTemplates\}[\s\S]*Browse\{" "\}[\s\S]*templates/u);
@@ -1487,7 +1545,7 @@ test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt va
 	// Footer-style copy: subtle text size + color.
 	assert.match(COMPOSER_SOURCE, /text-xs text-text-subtlest/u);
 	// Click must survive the textarea blur so the reveal isn't unmounted first.
-	assert.match(COMPOSER_SOURCE, /onMouseDown=\{\(event\) => event\.preventDefault\(\)\}/u);
+	assert.match(COMPOSER_SOURCE, /const keepComposerFocus = \(event: MouseEvent<HTMLButtonElement>\) => event\.preventDefault\(\);[\s\S]*onMouseDown=\{keepComposerFocus\}/u);
 
 	// Shell wires the affordance to a from-scratch agent registration that opens the config pane.
 	assert.match(SHELL_SOURCE, /const handleStartAgentFromScratch = useCallback\(\(\) => \{/u);

@@ -3,6 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
+const { Children, isValidElement } = require("react");
+const { renderComponent } = require("@/scripts/lib/render-component.js");
 const { loadCjsModuleFromText } = require(
 	path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"),
 );
@@ -68,6 +70,122 @@ async function loadBundled(relPathFromRoot) {
 function sessionFixture(agent) {
 	return { agent, id: "s1", state: "complete", title: "t" };
 }
+
+function glowLayer(tree, marker) {
+	const elements = [];
+	function visit(node) {
+		if (!isValidElement(node)) return;
+		if (Object.hasOwn(node.props, marker)) elements.push(node);
+		Children.forEach(node.props.children, visit);
+	}
+	visit(tree);
+	assert.equal(elements.length, 1, `exactly one ${marker} layer`);
+	return elements[0].props;
+}
+
+test("shared glow tuning preserves the 36px core, 120px spread and 1px border", async () => {
+	const { CARD_GLOW_DEFAULTS, CARD_GLOW_EFFECT_STYLE } = await loadCardGlow();
+	for (const [key, value] of Object.entries({ borderCore: 36, borderSpread: 120, borderWidth: 1 })) {
+		assert.equal(CARD_GLOW_DEFAULTS[key], value, key);
+	}
+	assert.equal(CARD_GLOW_EFFECT_STYLE["--card-glow-border-core"], 36);
+	assert.equal(CARD_GLOW_EFFECT_STYLE["--card-glow-border-spread"], 120);
+	assert.equal(CARD_GLOW_EFFECT_STYLE["--card-glow-border-width"], 1);
+});
+
+test("the base ring binds a subtle inset border shadow", async () => {
+	const { CardGlowLayers } = await loadCardGlow();
+	const base = glowLayer(CardGlowLayers({}), "data-card-glow-base-border");
+	assert.equal(base.style.boxShadow, "inset 0 0 0 calc(var(--card-glow-border-width) * 1px) var(--ds-border)");
+});
+
+test("the traced ring binds a transparent radial gradient to the same border geometry", async () => {
+	const { CardGlowLayers } = await loadCardGlow();
+	const ring = glowLayer(CardGlowLayers({}), "data-card-glow-border");
+	assert.equal(ring.style.background, "radial-gradient(circle at calc((var(--card-glow-pointer-x, -10) + 1) * 50%) calc((var(--card-glow-pointer-y, -10) + 1) * 50%), var(--card-glow-tile-accent) 0 calc(var(--card-glow-border-core) * 1px), transparent calc(var(--card-glow-border-spread) * 1px)) border-box");
+	assert.equal(ring.style.borderColor, "transparent");
+	assert.equal(ring.style.borderWidth, "calc(var(--card-glow-border-width) * 1px)");
+	assert.equal(ring.style.mask, "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box");
+	assert.equal(ring.style.maskComposite, "exclude");
+	assert.equal(ring.style.WebkitMask, ring.style.mask);
+	assert.equal(ring.style.WebkitMaskComposite, "xor");
+});
+
+test("both ring markers and the bloom occupy the surface below its content", async () => {
+	const { CardGlowLayers } = await loadCardGlow();
+	const tree = CardGlowLayers({});
+	for (const marker of ["data-card-glow-base-border", "data-card-glow-border", "data-card-glow-bloom"]) {
+		const layer = glowLayer(tree, marker);
+		const classes = layer.className.split(" ");
+		for (const name of ["pointer-events-none", "absolute", "inset-0", "rounded-[inherit]", "-z-[1]"]) {
+			assert.equal(classes.includes(name), true, `${marker}: ${name}`);
+		}
+	}
+});
+
+test("shared rings coexist without a bold border, backdrop filter or tile hover gate", async () => {
+	const { CardGlowLayers } = await loadCardGlow();
+	const tree = CardGlowLayers({});
+	const base = glowLayer(tree, "data-card-glow-base-border");
+	const ring = glowLayer(tree, "data-card-glow-border");
+	assert.doesNotMatch(base.style.boxShadow, /--ds-border-bold/u);
+	for (const layer of [base, ring]) {
+		assert.equal(layer.style.backdropFilter, undefined);
+		assert.equal(layer.style.WebkitBackdropFilter, undefined);
+		assert.doesNotMatch(layer.className, /backdrop-/u);
+	}
+	// Group pointer tracking must light edges from the gaps between tiles too.
+	assert.doesNotMatch(ring.className, /(?:group-(?:hover|focus)[^\s]*:opacity-|\bopacity-0\b)/u);
+	assert.equal(ring.style.opacity, "var(--card-glow-proximity, 1)");
+});
+
+test("a pointer frame reads every tile before writing x/y at three decimal places", async (t) => {
+	const frames = [];
+	t.mock.method(globalThis, "requestAnimationFrame", (callback) => {
+		frames.push(callback);
+		return frames.length;
+	});
+	const view = await renderComponent({
+		source: `import { useCardGlowPointerGroup } from "@/components/visual/card-glow";
+			export default function PointerTiles() {
+				const glow = useCardGlowPointerGroup();
+				return <div onPointerMove={glow.onPointerMove} onPointerLeave={glow.onPointerLeave}>
+					<div data-tile="first" ref={glow.registerTile} />
+					<div data-tile="second" ref={glow.registerTile} />
+				</div>;
+			}`,
+	});
+	const operations = [];
+	const rects = [
+		{ left: 10, top: 20, width: 300, height: 150 },
+		{ left: 500, top: 200, width: 200, height: 400 },
+	];
+	const tiles = [...view.container.querySelectorAll("[data-tile]")];
+	assert.equal(tiles.length, 2);
+	for (const [index, tile] of tiles.entries()) {
+		t.mock.method(tile, "getBoundingClientRect", () => {
+			operations.push(["read", index]);
+			return rects[index];
+		});
+		t.mock.method(tile.style, "setProperty", (name, value) => {
+			operations.push(["write", index, name, value]);
+		});
+	}
+	tiles[0].dispatchEvent(new PointerEvent("pointermove", {
+		bubbles: true, pointerType: "mouse", clientX: 123.456, clientY: 67.89,
+	}));
+	assert.deepEqual(operations, [], "no reads or variable writes before the animation frame");
+	assert.equal(frames.length, 1);
+	frames[0]();
+	assert.deepEqual(operations, [
+		["read", 0],
+		["read", 1],
+		["write", 0, "--card-glow-pointer-x", "-0.244"],
+		["write", 0, "--card-glow-pointer-y", "-0.361"],
+		["write", 1, "--card-glow-pointer-x", "-4.765"],
+		["write", 1, "--card-glow-pointer-y", "-1.661"],
+	]);
+});
 
 // ---------------------------------------------------------------------
 // Module shape

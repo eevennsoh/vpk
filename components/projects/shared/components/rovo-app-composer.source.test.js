@@ -154,13 +154,13 @@ test("RovoAppComposer does not render the ambient response gradient around the c
 });
 
 test("FloatingComposer restores compact mode and expands from compact-width measurement", () => {
-	assert.match(FLOATING_COMPOSER_SOURCE, /const \[isExpanded, setIsExpanded\] = useState\(false\);/u);
+	assert.match(FLOATING_COMPOSER_SOURCE, /const \[isMeasuredExpanded, setIsMeasuredExpanded\] = useState\(false\);[\s\S]*const isExpanded = layout === "stacked" \|\| \(layout === "auto" && isMeasuredExpanded\);/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /const compactFieldWidth = Math\.max\(/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /const getComposerPlainText = \(field: HTMLElement\): string => \{/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /querySelector<HTMLInputElement>\('\[data-slot="prompt-input-message"\]'\)/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /const probe = document\.createElement\("div"\);/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /probe\.textContent = fieldText;/u);
-	assert.match(FLOATING_COMPOSER_SOURCE, /setIsExpanded\(lineCount > 1\);/u);
+	assert.match(FLOATING_COMPOSER_SOURCE, /setIsMeasuredExpanded\(lineCount > 1\);/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className="flex w-full flex-wrap items-center gap-2"/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /isExpanded \? "order-1 basis-full" : "order-2 flex-1"/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className="order-3 ml-auto flex shrink-0 items-center gap-1"/u);
@@ -336,7 +336,7 @@ test("PromptInputTextarea fades overflowing Tiptap composer text with the shared
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const hasReachedVerticalLimit = hasFiniteMaxHeight && metrics\.clientHeight >= metrics\.maxHeight - 1;/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setElement\(node\);[\s\S]*window\.requestAnimationFrame\(updateScrollState\);/u);
-	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /\}, \[element, updateScrollState\]\);/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /\}, \[element, updateScrollState, trackAnimatedOverflow, trackInput\]\);/u);
 });
 
 test("PromptInputTextarea applies directory prefill as a rich mention without visual tracing", () => {
@@ -345,7 +345,7 @@ test("PromptInputTextarea applies directory prefill as a rich mention without vi
 	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const pendingMentionPrefillKeyRef = useRef\(0\);/u);
 	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const lastMentionPrefillTextRef = useRef<string \| null>\(null\);/u);
 	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /pendingMentionPrefillKeyRef\.current === prefillMentionRequest\.requestKey/u);
-	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /queueMicrotask\(\(\) => \{[\s\S]*if \(cancelled \|\| activeEditorRef\.current !== editor\) \{[\s\S]*lastMentionPrefillKeyRef\.current = requestKey;[\s\S]*clearPendingAutoTagging\(\);[\s\S]*resetVisualTraceEditorState\(editor\);[\s\S]*setDirectoryAutocompleteState\(null\);[\s\S]*type: "mention",[\s\S]*attrs: getMentionNodeAttrs\(mention\),[\s\S]*const prefillText = serializeComposerDoc\(editor\);[\s\S]*publishText\(prefillText, editor\.view\.dom, true\);/u);
+	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /const prefillFrame = requestAnimationFrame\(\(\) => \{[\s\S]*if \(cancelled \|\| activeEditorRef\.current !== editor\) \{[\s\S]*lastMentionPrefillKeyRef\.current = requestKey;[\s\S]*clearPendingAutoTagging\(\);[\s\S]*resetVisualTraceEditorState\(editor\);[\s\S]*setDirectoryAutocompleteState\(null\);[\s\S]*type: "mention",[\s\S]*attrs: getMentionNodeAttrs\(mention\)[\s\S]*const prefillText = serializeComposerDoc\(editor\);[\s\S]*publishText\(prefillText, editor\.view\.dom, true\);/u);
 	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /return \(\) => \{[\s\S]*cancelled = true;[\s\S]*pendingMentionPrefillKeyRef\.current = 0;[\s\S]*\};/u);
 	assert.match(PROMPT_INPUT_TEXTAREA_SOURCE, /if \(lastMentionPrefillTextRef\.current === currentText && resolvedValue !== currentText\) \{[\s\S]*return;[\s\S]*\}/u);
 });
@@ -563,7 +563,7 @@ test("auto-tagged chips do not expose the swap-back-to-text overlay action", () 
 test("skill mention chips expose the skewed focus state for tab and node selection", () => {
 	assert.match(SKILL_TAG_SOURCE, /focused\?: boolean;/u);
 	assert.match(SKILL_TAG_SOURCE, /focusable\?: boolean;/u);
-	assert.match(SKILL_TAG_SOURCE, /tabIndex=\{focusable \? \(tabIndex \?\? 0\) : tabIndex\}/u);
+	assert.match(SKILL_TAG_SOURCE, /tabIndex=\{isInteractive \|\| focusable \? \(tabIndex \?\? 0\) : tabIndex\}/u);
 	assert.match(SKILL_TAG_SOURCE, /-skew-x-12[\s\S]*border border-transparent[\s\S]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(SKILL_TAG_SOURCE, /focused && "border-ring ring-3 ring-ring\/50"/u);
 	assert.doesNotMatch(SKILL_TAG_SOURCE, /ring-inset/u);
@@ -582,7 +582,7 @@ test("Tag and SkillTag expose a distinct overlayAction (separate from remove sem
 		assert.match(source, /overlay-action/u);
 	}
 	// The shared helper lives in the tooltip primitive module.
-	assert.match(TAG_SOURCE, /import \{ withTooltip \} from "@\/components\/ui\/tooltip";/u);
+	assert.match(TAG_SOURCE, /import \{ withTooltip \} from "@\/components\/ui\/tooltip-utils";/u);
 	assert.match(TAG_SOURCE, /interface TagOverlayAction/u);
 });
 
@@ -593,7 +593,7 @@ test("RovoAppComposer threads dictation controls and text snapshots through both
 	assert.match(COMPOSER_SOURCE, /onStartDictation\?: \(\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /onStopDictation\?: \(\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /onTextChange\?: \(value: string\) => void;/u);
-	assert.match(COMPOSER_SOURCE, /<PromptInputProvider onInputChange=\{props\.onTextChange\}>/u);
+	assert.match(COMPOSER_SOURCE, /const handleInputChange = \(value: string\) => \{[\s\S]*onTextChange\?\.\(value\);[\s\S]*<PromptInputProvider onInputChange=\{handleInputChange\}>/u);
 	for (const source of [CARD_BODY_SOURCE, FLOATING_BODY_SOURCE]) {
 		assert.match(source, /dictationState/u);
 		assert.match(source, /dictationTranscriptPreview/u);

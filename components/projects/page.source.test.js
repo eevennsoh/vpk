@@ -59,11 +59,11 @@ test("hideFloatingRovo suppresses the layout-owned floating chat surface", () =>
 	);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
-		/const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;/,
+		/const isFloatingChatRequested = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;[\s\S]*const showFloatingChat = isFloatingChatRequested && RovoFloatingChat !== null;/,
 	);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
-		/const showFloatingRovoButton = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction;/,
+		/const showFloatingRovoButton = !isEmbedded && !hideShellChrome && !hideFloatingRovo && !shouldHideRovoAction;/,
 	);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
@@ -79,7 +79,7 @@ test("hideFloatingRovo suppresses the layout-owned floating chat surface", () =>
 	);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
-		/\{showFloatingChat \? \(\s*<RovoFloatingChat[\s\S]*\/>\s*\) : null\}/,
+		/\{showFloatingChat && RovoFloatingChat \? \(\s*<RovoFloatingChat[\s\S]*\/>\s*\) : null\}/,
 	);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
@@ -101,7 +101,7 @@ test("project layout hides Rovo shell actions while any Rovo Canvas is open", ()
 	assert.match(PROJECT_LAYOUT_SOURCE, /new MutationObserver\(updateRovoCanvasOpen\)/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /attributeFilter: \["data-rovo-canvas-open"\]/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /hideRovoAction=\{shouldHideRovoAction\}/u);
-	assert.match(PROJECT_LAYOUT_SOURCE, /!\s*shouldHideRovoAction \? \(/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /const hasSidebarChatSlot = !isEmbedded && !shouldHideRovoAction;[\s\S]*\{hasSidebarChatSlot \? \(/u);
 });
 
 test("Rovo Canvas publishes a document-level open flag for shell handoff", () => {
@@ -117,7 +117,7 @@ test("Rovo Canvas publishes a document-level open flag for shell handoff", () =>
 test("Rovo Canvas hides the view switcher for single-view artefacts", () => {
 	assert.match(
 		ROVO_CANVAS_SOURCE,
-		/resolvedViews\.length > 1 \? \(\s*<RovoCanvasViewSwitcher views=\{resolvedViews\} \/>\s*\) : \(\s*<div aria-hidden="true" \/>\s*\)/u,
+		/resolvedViews\.length > 1 \? \(\s*<RovoCanvasViewSwitcher[^>]*views=\{resolvedViews\}\s*\/>\s*\) : \(\s*<div aria-hidden="true" \/>\s*\)/u,
 	);
 });
 
@@ -147,7 +147,7 @@ test("Rovo Canvas header keeps Rovo as static text without the agent selector", 
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /<RovoCanvasBrand \/>/u);
 	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /RovoAppBrand/u);
 	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /Select Rovo agent/u);
-	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /ChevronDownIcon/u);
+	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /function RovoCanvasBrand\(\): React\.ReactElement \{(?:(?!\n\}\n)[\s\S])*ChevronDownIcon/u);
 	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /AgentSelector/u);
 });
 
@@ -170,7 +170,7 @@ test("Rovo Canvas version history entries expose selected state and selection ca
 test("Rovo Canvas select mode uses the shared artifact annotation layer", () => {
 	assert.match(
 		ROVO_CANVAS_SOURCE,
-		/import \{ ArtifactAnnotationLayer \} from "@\/components\/ui-custom\/artifact";/u,
+		/import \{ ArtifactAnnotationLayer \} from "@\/components\/blocks\/artifact";/u,
 	);
 	assert.match(
 		ROVO_CANVAS_SOURCE,
@@ -216,7 +216,7 @@ test("floating Rovo button has an exit transition for canvas handoff", () => {
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<motion\.button[\s\S]*exit=\{shouldReduceMotion \? \{ opacity: 0 \} : \{ opacity: 0, transition: \{ duration: 0\.08 \} \}\}/u,
+		/<motion\.button[\s\S]*exit=\{shouldReduceMotion \? \{ opacity: 0 \} : \{ opacity: 0, transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT \}\}/u,
 	);
 });
 
@@ -349,7 +349,7 @@ test("floating Rovo button default right reads the untracked panel width var", (
 test("floating Rovo button applies collapsed elevation to the button surface", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<motion\.button[\s\S]*className="flex h-full w-full items-center justify-center bg-bg-neutral-bold"[\s\S]*boxShadow: token\("elevation\.shadow\.overlay"\)/u,
+		/<motion\.button[\s\S]*className="flex h-full w-full items-center justify-center bg-bg-neutral-bold[^"]*"[\s\S]*boxShadow: token\("elevation\.shadow\.overlay"\)/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -419,7 +419,7 @@ test("floating Rovo button can render a collapsed proactive suggestion nudge", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/initial=\{\{ opacity: 0, scaleX: 0\.24, x: 52 \}\}[\s\S]*animate=\{\{ opacity: 1, scaleX: 1, x: 0 \}\}[\s\S]*exit=\{\{ opacity: 0, scaleX: 0\.24, x: 52 \}\}/u,
+		/initial=\{shouldReduceMotion \? false : \{ opacity: 0, scaleX: 0\.24, x: 52 \}\}[\s\S]*animate=\{\{ opacity: 1, scaleX: 1, x: 0 \}\}[\s\S]*exit=\{shouldReduceMotion \? \{ opacity: 0, transition: \{ duration: 0 \} \} : \{ opacity: 0, scaleX: 0\.24, x: 52 \}\}/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,

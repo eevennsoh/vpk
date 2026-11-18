@@ -95,7 +95,7 @@ test("JGP stages fill the Gallery viewport without margin compensation", () => {
 	}
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-\[100cqw\]/u);
 	assert.match(KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-\[100cqw\]/u);
-	assert.match(QUEUE_STAGE_SOURCE, /h-full min-h-0 w-\[100cqw\]/u);
+	assert.match(QUEUE_STAGE_SOURCE, /h-full min-h-0 w-full overflow-hidden/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /pb-56/u);
 });
 
@@ -129,13 +129,13 @@ test("JGP Rovo surfaces render at viewport level above the Gallery dock", () => 
 	);
 	assert.match(
 		ROVO_OVERLAY_SOURCE,
-		/const showLauncher = launcher === "auto"\s*&& chatSurface === null\s*&& !isRovoCanvasOpen\s*&& !isEmbeddedHostOpen;/u,
+		/const showLauncher = launcher === "auto"\s*&& \(chatSurface === null \|\| \(isFloatingChatRequested && !showFloatingChat\)\)\s*&& !isRovoCanvasOpen\s*&& \(!isEmbeddedHostOpen \|\| embeddedInDialog\);/u,
 	);
 	assert.match(
 		ROVO_OVERLAY_SOURCE,
-		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isEmbeddedHostOpen;/u,
+		/const isFloatingChatRequested = chat === "auto"\s*&& chatSurface === "floating"\s*&& \(!isEmbeddedHostOpen \|\| embeddedInDialog\);[\s\S]*const showFloatingChat = isFloatingChatRequested && RovoFloatingChat !== null;/u,
 	);
-	assert.match(ROVO_OVERLAY_SOURCE, /\{showFloatingChat \? \(\s*<RovoFloatingChat/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /\{showFloatingChat && RovoFloatingChat \? \(\s*<RovoFloatingChat/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /hideComposerSourceAndModelControls/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /showAgentBackButton=\{false\}/u);
@@ -306,7 +306,7 @@ test("Queue workspace reuses fullscreen message and Rovo composer primitives", (
 	assert.match(QUEUE_WORKSPACE_SOURCE, /realtimeVoiceState=\{realtime\.voiceState\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /hideSourceAndModelControls/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-chat-body"/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0 \}\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /layout\s*style=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0,/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /shouldReduceMotion \|\| detailPanelResize\.isResizing/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);
@@ -339,8 +339,8 @@ test("Queue detail panel reuses session details and adds sources and output", ()
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /h-full bg-surface/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /useReducedMotion\(\)/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /transform: "translateX\(100%\)"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: motionEase\.out/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: motionEase\.in/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Details<\/PanelTitle>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelActionClose label="Close detail panel" onClick=\{onClose\} \/>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
@@ -355,7 +355,7 @@ test("Queue detail panel reuses session details and adds sources and output", ()
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Session"/u);
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Agent"/u);
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /<Tag[\s\S]*type="agent"/u);
-	assert.match(JIRA_SESSION_FLYOUT_SOURCE, />Development</u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /hasDevelopment \? \([\s\S]*label="Pull request"/u);
 
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Sources"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Output"/u);
