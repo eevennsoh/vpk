@@ -130,20 +130,19 @@
 
 /* User-role message bubbles stay flat.
    User and assistant messages render through the same MessageResponse
-   (and thus the baked-in `.typeset` container); only the `.is-user`
-   ancestor that <Message> sets distinguishes them. Inside the
-   primary-colored bubble, typeset's own `color` must not override the
-   inherited inverse text color, and prompt headings should not gain the
-   prose hierarchy. `.is-user` scoping outranks typeset's single-class
-   rules, so this reliably flattens every user bubble regardless of any
-   `plain` opt-out. */
-.is-user .typeset,
-.is-user
+   (and thus the baked-in `.typeset` container); only the end-aligned
+   <Message align="end"> ancestor distinguishes them. Inside the bubble,
+   typeset's own `color` must not override the inherited bubble text
+   color, and prompt headings should not gain the prose hierarchy. The
+   two-attribute scope outranks typeset's single-class rules, so this
+   reliably flattens every user bubble regardless of any `plain` opt-out. */
+[data-slot="message"][data-align="end"] .typeset,
+[data-slot="message"][data-align="end"]
 	.typeset
 	:where(h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, a, code, kbd, pre, table, th, td) {
 	color: inherit;
 }
-.is-user .typeset :where(h1, h2, h3, h4, h5, h6) {
+[data-slot="message"][data-align="end"] .typeset :where(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;
 	font-weight: inherit;
 	line-height: inherit;

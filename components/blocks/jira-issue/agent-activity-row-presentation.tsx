@@ -21,11 +21,12 @@ import { useProjectButterInvocationPhase, useProjectButterInvocationPreview } fr
 import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
 import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
+import { getJiraIssueVisibleActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
@@ -329,12 +330,13 @@ export function JiraIssueAgentRowContent({
 	const preview = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const selectedAgent = phase === "handoff" || phase === "attached" ? preview.agent : null;
-	const selectedActivity = selectedAgent ? incomingActivities.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
-	const activities = selectedActivity ? [selectedActivity, ...incomingActivities.filter((activity) => activity !== selectedActivity)] : incomingActivities;
+	const visibleActivities = getJiraIssueVisibleActivities(incomingActivities);
+	const selectedActivity = selectedAgent ? visibleActivities.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
+	const activities = selectedActivity ? [selectedActivity, ...visibleActivities.filter((activity) => activity !== selectedActivity)] : visibleActivities;
 	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
 	if (isViewerRow) {
-		avatar = <TeammateSessionAvatars items={activities} />;
+		avatar = <TeammateSessionAvatars items={activities} sizePx={avatarSize} />;
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>

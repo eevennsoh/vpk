@@ -40,11 +40,6 @@
       "count": 3
     }
   },
-  "app/data/details/ui-custom/shimmer.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "app/data/directory/agents.test.js": {
     "no-restricted-syntax": {
       "count": 8
@@ -1519,7 +1514,7 @@
   },
   "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 235
+      "count": 234
     }
   },
   "components/projects/jira-for-you/jira-for-you.source.test.js": {
@@ -1674,7 +1669,7 @@
   },
   "components/projects/jira-queue/queue-conversation-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 54
+      "count": 53
     }
   },
   "components/projects/jira-team-eu26-end/data/agent-session-sync.test.js": {
@@ -1917,7 +1912,7 @@
   },
   "components/projects/rovo-floating-chat/components/rovo-floating-chat.source.test.js": {
     "no-restricted-syntax": {
-      "count": 106
+      "count": 100
     }
   },
   "components/projects/rovo/components/rovo-app-brand.test.js": {
@@ -1932,7 +1927,7 @@
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.source.test.js": {
     "no-restricted-syntax": {
-      "count": 91
+      "count": 89
     }
   },
   "components/projects/rovo/components/rovo-app-shell-approval-card.source.test.js": {
@@ -1980,7 +1975,12 @@
   },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
-      "count": 31
+      "count": 30
+    }
+  },
+  "components/projects/shared/lib/plan-card-utils.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
     }
   },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
@@ -2023,14 +2023,9 @@
       "count": 1
     }
   },
-  "components/projects/sidebar-chat/hooks/use-scroll-anchor.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 13
-    }
-  },
   "components/projects/sidebar-chat/page-plan-approval.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 14
     }
   },
   "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.source.test.js": {
@@ -2065,7 +2060,7 @@
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
     "no-restricted-syntax": {
-      "count": 117
+      "count": 116
     }
   },
   "components/projects/studio/components/rovo-app-custom-agents-table.tsx": {
@@ -2214,16 +2209,6 @@
       "count": 2
     }
   },
-  "components/ui-custom/chain-of-thought.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 72
-    }
-  },
-  "components/ui-custom/chain-of-thought.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/code-list/code-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -2257,11 +2242,6 @@
   "components/ui-custom/context.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
-    }
-  },
-  "components/ui-custom/conversation.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 37
     }
   },
   "components/ui-custom/entity-card/agent-expanded.tsx": {
@@ -2355,19 +2335,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/plan.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/ui-custom/plan.tsx": {
-    "no-restricted-imports": {
-      "count": 4
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
   "components/ui-custom/progress-circle.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
@@ -2390,11 +2357,6 @@
     },
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/ui/queue.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/ui-custom/rich-text-editor/extensions.ts": {
@@ -2505,16 +2467,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "components/ui-custom/stack-trace.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/tool-output.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "components/ui-custom/twg-appstack.source.test.js": {
@@ -2649,6 +2601,11 @@
   "components/ui/progress-tracker.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
+    }
+  },
+  "components/ui/queue.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "components/ui/radio-group.source.test.js": {
@@ -2934,19 +2891,6 @@
   "components/website/demos/projects/use-project-demo-embedded.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
-    }
-  },
-  "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "components/website/demos/ui-custom/shimmer-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
     }
   },
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {

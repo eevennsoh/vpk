@@ -7,20 +7,6 @@ export const UI_CUSTOM_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> =
 		() => import("../../demos/ui-custom/animated-icon-demo").then((mod) => ({ default: mod.AnimatedIconDemoRainbow })),
 		{ ssr: false },
 	),
-	"plan-demo-summary-and-tasks": dynamic(
-		() =>
-			import("../../demos/ui-custom/plan-demo").then((mod) => ({
-				default: mod.PlanDemoSummaryAndTasks,
-			})),
-		{ ssr: false },
-	),
-	"plan-demo-tasks-only": dynamic(
-		() =>
-			import("../../demos/ui-custom/plan-demo").then((mod) => ({
-				default: mod.PlanDemoTasksOnly,
-			})),
-		{ ssr: false },
-	),
 
 	// Migrated UI custom components
 	"footer-demo-default": dynamic(

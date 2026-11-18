@@ -40,7 +40,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"chat-configuration": dynamic(() => import("../demos/blocks/chat-configuration-demo"), { ssr: false }),
 	"chat-gallery": dynamic(() => import("../demos/blocks/chat-gallery-demo"), { ssr: false }),
 	"chat-timeline": dynamic(() => import("../demos/blocks/chat-timeline-demo"), { ssr: false }),
-	chatbot: dynamic(() => import("../demos/blocks/chatbot-demo"), { ssr: false }),
 	chatgpt: dynamic(() => import("../demos/blocks/chatgpt-demo"), { ssr: false }),
 	"code-review": dynamic(() => import("../demos/blocks/code-review-demo"), { ssr: false }),
 	"conversation-starter": dynamic(() => import("../demos/blocks/conversation-starter-demo"), { ssr: false }),
@@ -130,7 +129,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"twg-agent-card": dynamic(() => import("../demos/blocks/twg-agent-card-demo"), { ssr: false }),
 	video: dynamic(() => import("../demos/blocks/video-demo"), { ssr: false }),
 	"visual-waveform": dynamic(() => import("../demos/blocks/visual-waveform-demo"), { ssr: false }),
-	workflow: dynamic(() => import("../demos/blocks/workflow-demo"), { ssr: false }),
 	// </generated: catalog-registry>
 	// By hand: demo keys, not manifest slugs, for the named exports of one demo module each (the
 	// standard and experimental app-directory, skill-directory and jira-work-item demos).

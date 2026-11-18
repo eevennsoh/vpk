@@ -21,11 +21,10 @@ test("awaiting Queue sessions replace the composer with the shared question expe
 	assert.match(WORKSPACE_SOURCE, /import \{ QuestionCardShortcutsFooter \} from "@\/components\/projects\/shared\/components\/question-card-shortcuts-footer"/u);
 	assert.match(WORKSPACE_SOURCE, /session\.status === "awaiting-input" \? session\.question : undefined/u);
 	assert.match(WORKSPACE_SOURCE, /<ChatMessages[\s\S]*showAwaitingIndicator=\{Boolean\(awaitingQuestion\)\}/u);
-	assert.match(WORKSPACE_SOURCE, /resizeTarget=\{awaitingQuestion \? "bottom" : "follow"\}/u);
-	assert.match(CHAT_MESSAGES_SOURCE, /<Conversation[\s\S]*resizeTarget=\{resizeTarget\}/u);
-	assert.match(WORKSPACE_SOURCE, /if \(!awaitingQuestion\) return;[\s\S]*requestAnimationFrame\(\(\) => \{[\s\S]*scrollToBottom\(\{[\s\S]*animation: false,[\s\S]*ignoreEscapes: true,[\s\S]*target: "bottom"[\s\S]*cancelAnimationFrame\(frameId\)/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /<MessageScroller[\s\S]*<AwaitingScrollSync awaiting=\{showAwaitingIndicator\}/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /if \(!awaiting\) return;[\s\S]*requestAnimationFrame\(\(\) => scrollToEnd\(\{ behavior: "instant" \}\)\)/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /StatusInformationIcon|components\/ui-custom\/shimmer/u);
-	assert.match(CHAT_MESSAGES_SOURCE, /import \{[\s\S]*ChainOfThought,[\s\S]*ChainOfThoughtHeader,[\s\S]*\} from "@\/components\/ui-custom\/chain-of-thought"/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /import \{[\s\S]*ChainOfThought,[\s\S]*ChainOfThoughtHeader,[\s\S]*\} from "@\/components\/ui\/chain-of-thought"/u);
 	assert.match(CHAT_MESSAGES_SOURCE, /<ChainOfThought>[\s\S]*<ChainOfThoughtHeader showChevron=\{false\} state="thinking">[\s\S]*\{awaitingIndicatorLabel\}/u);
 	assert.match(WORKSPACE_SOURCE, /onSubmit=\{\(answers\) => void handleAnswerQuestion\(answers\)\}/u);
 	assert.match(WORKSPACE_SOURCE, /<QuestionCard[\s\S]*<QuestionCardShortcutsFooter \/>/u);

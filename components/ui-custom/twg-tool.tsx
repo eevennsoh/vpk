@@ -9,7 +9,7 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
+import { CyclingByline } from "@/components/ui/cycling-byline";
 import {
 	TwgToolSourceStack,
 	type TwgToolSource,

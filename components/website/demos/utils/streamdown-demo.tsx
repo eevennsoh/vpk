@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { Button } from "@/components/ui/button";
 import { renderLinkSafetyModal } from "@/components/ui-custom/link-safety-dialog";
 import { cn } from "@/lib/utils";

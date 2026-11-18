@@ -16,7 +16,7 @@ import {
 	ContextBarPill,
 	ContextBarTagGroup,
 } from "@/components/ui-custom/context-bar";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import ChatPanel, {
 	type ChatPanelHistoryController,
 	type ChatSubmitInterceptOutcome,

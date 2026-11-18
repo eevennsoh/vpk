@@ -921,7 +921,7 @@
 /* Not the `shimmer` utility above: that one builds a `currentColor` gradient
    and sets `color: transparent` on the same element, so `currentColor`
    resolves to transparent. Masking keeps the label in its inherited colour,
-   which is what makes it theme-correct. Same technique as `cot-icon-wash`. */
+   which is what makes it theme-correct. */
 @utility pixel-loader-shimmer {
 	mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.55) 33%, #000 50%, rgb(0 0 0 / 0.55) 67%);
 	mask-size: 300% 100%;

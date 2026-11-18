@@ -8,7 +8,7 @@ import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 
 export type ViewMode = "stack" | "list";

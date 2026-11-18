@@ -99,6 +99,7 @@ import TableIconGlyph from "@atlaskit/icon/core/table";
 import TargetIconGlyph from "@atlaskit/icon/core/target";
 import TaskToDoIconGlyph from "@atlaskit/icon/core/task-to-do";
 import ListChecklistIconGlyph from "@atlaskit/icon/core/list-checklist";
+import RoadmapIconGlyph from "@atlaskit/icon/core/roadmap";
 import TreeIconGlyph from "@atlaskit/icon/core/tree";
 import TextBoldIconGlyph from "@atlaskit/icon/core/text-bold";
 import TextItalicIconGlyph from "@atlaskit/icon/core/text-italic";
@@ -115,6 +116,8 @@ import VideoStopIconGlyph from "@atlaskit/icon/core/video-stop";
 import WarningIconGlyph from "@atlaskit/icon/core/warning";
 import ZoomInIconGlyph from "@atlaskit/icon/core/zoom-in";
 import ZoomOutIconGlyph from "@atlaskit/icon/core/zoom-out";
+import FlaskIconGlyph from "@atlaskit/icon/core/flask";
+import PagesIconGlyph from "@atlaskit/icon/core/pages";
 import DiagramSymbolPackageIconGlyph from "@atlaskit/icon-lab/core/diagram-symbol-package";
 import AiBotIconGlyph from "@atlaskit/icon-lab/core/ai-bot";
 import ArrowCurvedDownLeftIconGlyph from "@atlaskit/icon-lab/core/arrow-curved-down-left";
@@ -126,6 +129,8 @@ import PaintBrushIconGlyph from "@atlaskit/icon-lab/core/paint-brush";
 import PlusCircleIconGlyph from "@atlaskit/icon-lab/core/plus-circle";
 import SaveIconGlyph from "@atlaskit/icon-lab/core/save";
 import TerminalIconGlyph from "@atlaskit/icon-lab/core/terminal";
+import RovoIconGlyph from "@atlaskit/icon-lab/core/rovo";
+import ToolsIconGlyph from "@atlaskit/icon/core/tools";
 import TextNormalIconGlyph from "@atlaskit/icon-lab/core/text-normal";
 import AudioWaveformIconGlyph from "@atlaskit/icon-lab/core/audio-waveform";
 import ArrowStartIconGlyph from "@atlaskit/icon-lab/core/arrow-start";
@@ -264,6 +269,8 @@ export function ItalicIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromG
 export function UnderlineIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextUnderlineIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function PackageIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DiagramSymbolPackageIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function TerminalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TerminalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function RovoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={RovoIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function WrenchIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ToolsIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function CircleAlertIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InformationCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function TriangleAlertIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={WarningIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function SparklesIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AiSparkleIconGlyph as AtlaskitRenderIcon} {...props} />; }
@@ -363,10 +370,14 @@ export function CircleDashedIcon(props: Readonly<VpkIconProps>) { return <Circle
 export function UserCircleIcon(props: Readonly<VpkIconProps>) { return <PersonIcon {...props} />; }
 export function CirclePlusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PlusCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function XCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CrossCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleXIcon(props: Readonly<VpkIconProps>) { return <XCircleIcon {...props} />; }
+export function FlaskConicalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FlaskIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LayersIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PagesIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function MessageSquareIcon(props: Readonly<VpkIconProps>) { return <MessageCircleIcon {...props} />; }
 export function MessageSquareDiffIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CommentAddIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ListTodoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TaskToDoIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ListChecksIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ListChecklistIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function RouteIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={RoadmapIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ListBulletedIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function ClipboardListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ClipboardIconGlyph as AtlaskitRenderIcon} {...props} />; }
 export function UsersIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PeopleGroupIconGlyph as AtlaskitRenderIcon} {...props} />; }

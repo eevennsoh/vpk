@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
+import { CyclingByline } from "@/components/ui/cycling-byline";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,

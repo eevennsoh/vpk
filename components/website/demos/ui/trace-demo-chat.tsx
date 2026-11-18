@@ -218,13 +218,13 @@ export default function TraceDemo() {
 	const busy = status === "submitted" || status === "streaming";
 
 	return (
-		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+		<div className="flex min-h-72 mx-auto w-full max-w-sm flex-col gap-4 py-6 text-sm">
 			{messages.map((message) => {
 				if (message.role === "user") {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>
@@ -357,13 +357,13 @@ export function TraceThinking() {
 	const busy = status === "submitted" || status === "streaming";
 
 	return (
-		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+		<div className="flex min-h-72 mx-auto w-full max-w-sm flex-col gap-4 py-6 text-sm">
 			{messages.map((message) => {
 				if (message.role === "user") {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>
@@ -503,13 +503,13 @@ export function TraceToolCalls() {
 	const busy = status === "submitted" || status === "streaming";
 
 	return (
-		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+		<div className="flex min-h-72 mx-auto w-full max-w-sm flex-col gap-4 py-6 text-sm">
 			{messages.map((message) => {
 				if (message.role === "user") {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>

@@ -8,7 +8,7 @@ import {
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool";
+} from "@/components/ui/tool";
 import { useState } from "react";
 import { renderResolvedToolIcon, resolveToolIcon } from "@/components/projects/shared/lib/tool-icon-resolver";
 

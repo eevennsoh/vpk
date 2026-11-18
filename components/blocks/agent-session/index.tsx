@@ -133,7 +133,6 @@ export function AgentSession({
 	showWorkingSpinner = false,
 	showLifecycleLabel = true,
 	lifecycleLabelPlacement = "trailing",
-	showAgentName,
 	showBranch = false,
 	style,
 	variant = "large",
@@ -329,7 +328,6 @@ export function AgentSession({
 								showWorkingSpinner={showWorkingSpinner}
 								showLifecycleLabel={showLifecycleLabel}
 								lifecycleLabelPlacement={lifecycleLabelPlacement}
-								showAgentName={showAgentName}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}

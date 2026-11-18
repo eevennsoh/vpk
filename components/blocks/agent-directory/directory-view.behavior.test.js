@@ -88,7 +88,8 @@ test("directory lanyards respond to hover while selection and actions stay indep
 	const grid = card.querySelector('[data-slot="agent-lanyard-grid"]');
 	assert.equal(grid.getAttribute("data-animated"), "false");
 	await act(async () => { cardButton.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
-	assert.equal(grid.getAttribute("data-animated"), "true");
+	// Lanyard previews stay static (animateGrid defaults to false); hover only lifts the surface.
+	assert.equal(grid.getAttribute("data-animated"), "false");
 	assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("bg-surface-hovered"), true);
 	await view.click(view.getByRole("button", { name: "Chat with Alpha" }));
 	await view.click(cardButton);

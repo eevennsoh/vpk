@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { CyclingByline } from "@/components/ui/cycling-byline";
+import { Shimmer } from "@/components/ui/shimmer";
 
 export const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 

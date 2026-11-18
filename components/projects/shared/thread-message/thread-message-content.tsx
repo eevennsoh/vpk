@@ -5,10 +5,7 @@ import { cn } from "@/lib/utils";
 import {
 	getLatestDataPart,
 } from "@/lib/rovo-ui-messages";
-import {
-	MessageContent,
-	MessageResponse,
-} from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { ThreadMessageContext } from "./thread-message-context";
 
 export function ThreadMessageContent(): ReactNode {
@@ -28,8 +25,9 @@ export function ThreadMessageContent(): ReactNode {
 	const widgetDataPart = getLatestDataPart(message, "data-widget-data");
 
 	return (
-		<MessageContent
+		<div
 			className={cn(
+				"flex w-full min-w-0 flex-col gap-2 wrap-break-word text-text",
 				(widgetDataPart || isWidgetLoading) && "mb-2"
 			)}
 		>
@@ -42,6 +40,6 @@ export function ThreadMessageContent(): ReactNode {
 					{messageText}
 				</MessageResponse>
 			)}
-		</MessageContent>
+		</div>
 	);
 }

@@ -254,7 +254,7 @@ export function ProjectButterJiraWorkItem({
 		setActiveSessionId,
 		setDrafts,
 	} = model;
-	const sessions = projection.sessions;
+	const sessions = projection.sessions.map((session) => currentContent.resumedSessionIds.includes(session.id) ? { ...session, state: "running" as const } : session);
 	const activeSession = sessions.find((session) => session.id === model.activeSessionId);
 	function changeEmpty(next: boolean) {
 		setDescriptionReveal(null);

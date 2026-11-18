@@ -791,7 +791,7 @@ test("the v3 working-session byline is one shared module, not a per-surface copy
 	assert.doesNotMatch(contextPillsSource, /function WorkingSessionActivityByline|function getWorkingSessionActivity/u);
 	assert.doesNotMatch(contextPillsSource, /WORKING_SESSION_ACTIVITY_SCRIPTS|CI_REPAIR_ACTIVITY_SCRIPT|NEEDS_INPUT_STATUS_LABEL = /u);
 	assert.doesNotMatch(contextPillsSource, /import \{ AnimatedDot \}|import \{ CyclingByline \}/u);
-	assert.match(contextPillsSource, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/u);
+	assert.match(contextPillsSource, /import \{ Shimmer \} from "@\/components\/ui\/shimmer";/u);
 
 	// The composer menu still drives the byline the same way it always did.
 	assert.match(
