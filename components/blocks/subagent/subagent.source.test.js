@@ -13,7 +13,11 @@ const SUBAGENT_PROMPTS_LIB_SOURCE = readFileSync(
 	join(__dirname, "lib", "subagent-prompts.ts"),
 	"utf8",
 );
-const AGENT_SOURCE = readFileSync(join(__dirname, "..", "agent", "components", "agent.tsx"), "utf8");
+const AGENT_SOURCE = [
+	"agent.tsx",
+	"agent-config-profile.tsx",
+	"agent-compact-config-nav.tsx",
+].map((file) => readFileSync(join(__dirname, "..", "agent", "components", file), "utf8")).join("\n");
 const SUBAGENT_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "website", "demos", "blocks", "subagent-demo.tsx"),
 	"utf8",
@@ -102,7 +106,7 @@ test("Subagent switcher uses base agent header and trigger-name prompt rows", ()
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"pointer-events-auto opacity-100"\s*:\s*"pointer-events-none opacity-0"/u);
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2/u);
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /data-slot="subagent-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
-	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /className="size-5 object-contain"[\s\S]*height=\{20\}[\s\S]*width=\{20\}/u);
+	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /<Avatar shape="hexagon" size="sm" className="shrink-0 size-5">\s*<AvatarImage alt="" src=\{avatarSrc\} className="object-contain" \/>/u);
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /"dev-agents": "lime"/u);
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /lime: "text-lime-400 \[&_svg\]:text-lime-400!"/u);
 	assert.match(SUBAGENT_NAVIGATOR_SOURCE, /"border border-border bg-surface"[\s\S]*tagColor \? subagentTagColorIconClassName\[tagColor\] : "text-icon-subtlest"/u);
@@ -143,7 +147,7 @@ test("Subagent creation is routed through the compact control panel", () => {
 	assert.doesNotMatch(SUBAGENT_NAVIGATOR_SOURCE, /h-7 rounded-full px-3|variant="outline"/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
 	assert.match(AGENT_SOURCE, /Manage subagents/u);
-	assert.match(AGENT_SOURCE, /const isEmpty = item\.count === 0;[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*onClick=\{onCreateSubagent\}[\s\S]*Add subagent/u);
+	assert.match(AGENT_SOURCE, /const isEmpty = item\.count === 0;[\s\S]*<DropdownMenuItem[\s\S]*onClick=\{onCreateSubagent\}[\s\S]*Add subagent/u);
 	assert.match(AGENT_SOURCE, /onSelectListItem\?\.\("subagents", index\)/u);
 	assert.match(SUBAGENT_PAGE_SOURCE, /function handleSelectConfigListItem/u);
 	assert.match(SUBAGENT_PAGE_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
@@ -188,11 +192,8 @@ test("Agent profile header renders an inline back-to-parent icon button beside t
 	assert.match(AGENT_SOURCE, /data-agent-field="back-to-parent"/u);
 	assert.match(AGENT_SOURCE, /aria-label="Back to parent agent"/u);
 	assert.match(AGENT_SOURCE, /onClick=\{onSelectBaseAgent\}/u);
-	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" \/>/u);
-	// The button matches the name field's ~40px height so the icon row aligns,
-	// and forces the icon to 16px via the svg utility (no ADS size prop).
-	// `rounded-md` matches the InlineEdit name field's read-view radius beside it.
-	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded-md text-icon-subtle hover:text-icon \[&_svg\]:size-4"/u);
+	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" color="currentColor" \/>/u);
+	assert.match(AGENT_SOURCE, /data-agent-field="back-to-parent"[\s\S]*className="-ml-2 text-icon-subtle"[\s\S]*size="icon"[\s\S]*variant="ghost"/u);
 	// The old full-width "Back to parent" text row is gone.
 	assert.doesNotMatch(AGENT_SOURCE, /Back to parent</u);
 	// The big editable title switches to the subagent name with the restored

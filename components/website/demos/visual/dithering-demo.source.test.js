@@ -21,6 +21,7 @@ const NAV_UTILS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
+const { DITHERING_PRESETS, getDitheringPresetDefaults } = require("./shaders/dithering-config.ts");
 
 test("Dithering is registered as a visual shader component", () => {
 	assert.match(
@@ -63,9 +64,12 @@ test("Dithering demo exposes Shader Lab dithering controls", () => {
 });
 
 test("Dithering shader ports Shader Lab algorithms and color modes", () => {
-	assert.match(SHADER_SOURCE, /DITHERING_PRESETS/);
-	assert.match(SHADER_SOURCE, /getDitheringPresetDefaults/);
-	assert.match(SHADER_SOURCE, /gameboy/);
+	assert.deepEqual(DITHERING_PRESETS, ["custom", "gameboy"]);
+	assert.deepEqual(getDitheringPresetDefaults("custom"), {});
+	assert.deepEqual(getDitheringPresetDefaults("gameboy"), {
+		algorithm: "bayer-2x2", colorMode: "duo-tone", highlightColor: "#9bbc0f",
+		levels: 4, pixelSize: 3, shadowColor: "#0f380f", spread: 0.5,
+	});
 	assert.match(SHADER_SOURCE, /bayer2/);
 	assert.match(SHADER_SOURCE, /bayer4/);
 	assert.match(SHADER_SOURCE, /bayer8/);

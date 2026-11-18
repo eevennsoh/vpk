@@ -96,9 +96,9 @@
       "count": 1
     }
   },
-  "components/arts/awake/city-popover.test.js": {
+  "components/arts/awake/city-popover.source.test.js": {
     "no-restricted-syntax": {
-      "count": 23
+      "count": 13
     }
   },
   "components/arts/awake/city-popover.tsx": {
@@ -116,7 +116,7 @@
       "count": 1
     }
   },
-  "components/arts/awake/index.test.js": {
+  "components/arts/awake/index.source.test.js": {
     "no-restricted-syntax": {
       "count": 103
     }
@@ -196,9 +196,9 @@
       "count": 111
     }
   },
-  "components/arts/personal-graph/personal-graph-glass-panel.test.js": {
+  "components/arts/personal-graph/personal-graph-glass-panel.source.test.js": {
     "no-restricted-syntax": {
-      "count": 48
+      "count": 47
     }
   },
   "components/arts/personal-graph/personal-graph-glass-panel.tsx": {
@@ -565,7 +565,7 @@
       "count": 196
     }
   },
-  "components/blocks/artifact-panel.test.js": {
+  "components/blocks/artifact-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
     }
@@ -598,7 +598,7 @@
       "count": 1
     }
   },
-  "components/blocks/conversation-starter/conversation-starter.test.js": {
+  "components/blocks/conversation-starter/conversation-starter.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -618,9 +618,9 @@
       "count": 12
     }
   },
-  "components/blocks/editor-toolbar/editor-toolbar.test.js": {
+  "components/blocks/editor-toolbar/editor-toolbar.source.test.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 2
     }
   },
   "components/blocks/emoji-picker/emoji-picker.source.test.js": {
@@ -976,9 +976,9 @@
       "count": 5
     }
   },
-  "components/blocks/jira-kanban/jira-kanban.test.js": {
+  "components/blocks/jira-kanban/jira-kanban.source.test.js": {
     "no-restricted-syntax": {
-      "count": 302
+      "count": 299
     }
   },
   "components/blocks/jira-kanban/page.tsx": {
@@ -1229,7 +1229,7 @@
       "count": 1
     }
   },
-  "components/blocks/knowledge-directory/knowledge-directory.test.js": {
+  "components/blocks/knowledge-directory/knowledge-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -1249,17 +1249,17 @@
       "count": 97
     }
   },
-  "components/blocks/prompt-gallery/prompt-gallery.test.js": {
+  "components/blocks/prompt-gallery/prompt-gallery.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 4
     }
   },
-  "components/blocks/pull-request-fix/pull-request-fix.test.js": {
+  "components/blocks/pull-request-fix/pull-request-fix.source.test.js": {
     "no-restricted-syntax": {
-      "count": 109
+      "count": 105
     }
   },
-  "components/blocks/pull-request-header/pull-request-header.test.js": {
+  "components/blocks/pull-request-header/pull-request-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 217
     }
@@ -1269,9 +1269,9 @@
       "count": 1
     }
   },
-  "components/blocks/pull-request-review/pull-request-review.test.js": {
+  "components/blocks/pull-request-review/pull-request-review.source.test.js": {
     "no-restricted-syntax": {
-      "count": 78
+      "count": 74
     }
   },
   "components/blocks/pull-request/pull-request.source.test.js": {
@@ -1404,7 +1404,7 @@
       "count": 1
     }
   },
-  "components/blocks/subagent/subagent.test.js": {
+  "components/blocks/subagent/subagent.source.test.js": {
     "no-restricted-syntax": {
       "count": 136
     }
@@ -1427,7 +1427,7 @@
       "count": 3
     }
   },
-  "components/blocks/tool-directory/tool-directory.test.js": {
+  "components/blocks/tool-directory/tool-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -1470,7 +1470,7 @@
       "count": 71
     }
   },
-  "components/blocks/twg-agent-card/twg-agent-card.test.js": {
+  "components/blocks/twg-agent-card/twg-agent-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 128
     }
@@ -2716,9 +2716,9 @@
       "count": 11
     }
   },
-  "components/ui/panel.test.js": {
+  "components/ui/panel.source.test.js": {
     "no-restricted-syntax": {
-      "count": 23
+      "count": 22
     }
   },
   "components/ui/progress-tracker.source.test.js": {
@@ -2756,9 +2756,9 @@
       "count": 6
     }
   },
-  "components/ui/vpk-icons.test.js": {
+  "components/ui/vpk-icons.source.test.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 3
     }
   },
   "components/utils/cone-safezone.tsx": {
@@ -3115,7 +3115,7 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/card-glow-demo.test.js": {
+  "components/website/demos/visual/card-glow-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 59
     }
@@ -3125,9 +3125,9 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/dithering-demo.test.js": {
+  "components/website/demos/visual/dithering-demo.source.test.js": {
     "no-restricted-syntax": {
-      "count": 38
+      "count": 35
     }
   },
   "components/website/demos/visual/dropzone-effect-demo.tsx": {
@@ -3208,9 +3208,9 @@
       "count": 35
     }
   },
-  "components/website/demos/visual/scribbles-demo.test.js": {
+  "components/website/demos/visual/scribbles-demo.source.test.js": {
     "no-restricted-syntax": {
-      "count": 33
+      "count": 30
     }
   },
   "components/website/demos/visual/scribbles.tsx": {
@@ -3233,9 +3233,9 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/shaders/liquid-glass.test.js": {
+  "components/website/demos/visual/shaders/liquid-glass.source.test.js": {
     "no-restricted-syntax": {
-      "count": 109
+      "count": 108
     }
   },
   "components/website/demos/visual/shaders/ripple.tsx": {

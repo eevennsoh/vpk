@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -141,15 +142,30 @@ test("Conversation Starter generates a fallback set when no handler is given", (
 	assert.match(source, /seedDraft\(generated, maxStarters/u);
 });
 
-test("Conversation Starter keeps a draft so Cancel discards and Add commits", () => {
-	const source = readProjectFile(DIALOG);
-
-	// Draft is re-seeded each time the dialog opens.
-	assert.match(source, /if \(open && !wasOpen\.current\)/u);
-	assert.match(source, /setDraft\(seedDraft\(seedRef\.current, maxStarters, idCounter\)\)/u);
-	// Cancel just closes (no commit); Save trims, commits, and closes.
-	assert.match(source, /onClick=\{\(\) => onOpenChange\(false\)\}/u);
-	assert.match(source, /function handleSave\(\)/u);
-	assert.match(source, /\.filter\(\(s\) => s\.text\.length > 0\)/u);
-	assert.match(source, /onSave\?\.\(cleaned\)/u);
+test("Conversation Starter keeps a draft so Cancel discards and Add commits", async () => {
+	const saved = [];
+	const changed = [];
+	const closed = [];
+	const starters = [{ id: "starter-1", text: "Original", icon: "ai-chat" }];
+	const props = {
+		open: true, starters,
+		onOpenChange: (open) => closed.push(open),
+		onSave: (rows) => saved.push(rows),
+		onStartersChange: (rows) => changed.push(rows),
+	};
+	const view = await renderComponent({ entry: DIALOG, exportName: "ConversationStarterDialog", props });
+	await view.fill(view.getByRole("textbox", { name: "Conversation starter 1" }), "Discard me");
+	await view.click(view.getByRole("button", { name: "Cancel" }));
+	assert.deepEqual(saved, []);
+	assert.deepEqual(changed, []);
+	assert.deepEqual(closed, [false]);
+	await view.rerender({ ...props, open: false });
+	await view.rerender(props);
+	assert.equal(view.getByRole("textbox", { name: "Conversation starter 1" }).value, "Original");
+	await view.fill(view.getByRole("textbox", { name: "Conversation starter 1" }), "  Keep me  ");
+	await view.fill(view.getByRole("textbox", { name: "Conversation starter 2" }), "   ");
+	await view.click(view.getByRole("button", { name: "Add" }));
+	assert.deepEqual(saved, [[{ ...starters[0], text: "Keep me" }]]);
+	assert.deepEqual(changed, saved);
+	assert.deepEqual(closed, [false, false]);
 });

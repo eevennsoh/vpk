@@ -2,13 +2,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const GLASS_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "personal-graph-glass-panel.tsx"),
-	"utf8",
-);
-const BUTTON_SOURCE = fs.readFileSync(
-	path.join(__dirname, "..", "..", "ui", "button.tsx"),
 	"utf8",
 );
 
@@ -53,14 +50,21 @@ test("Personal Graph liquid glass icon buttons preserve the previous icon glyph 
 	assert.match(GLASS_PANEL_SOURCE, /className=\{cn\(/);
 });
 
-test("Personal Graph liquid glass icon buttons inherit shared ghost expanded state", () => {
+test("Personal Graph liquid glass icon buttons inherit shared ghost expanded state", async () => {
 	assert.match(GLASS_PANEL_SOURCE, /<Button/);
 	assert.match(GLASS_PANEL_SOURCE, /variant="ghost"/);
 	assert.match(GLASS_PANEL_SOURCE, /size="icon"/);
-	assert.match(
-		BUTTON_SOURCE,
-		/ghost:\s+"[^"]*aria-expanded:bg-bg-selected[^"]*aria-expanded:text-text-selected[^"]*aria-expanded:border-border-selected/,
-	);
+	const view = await renderComponent({
+		entry: "components/arts/personal-graph/personal-graph-glass-panel.tsx",
+		exportName: "PersonalGraphLiquidGlassIconButton",
+		props: { "aria-label": "Search graph", "aria-expanded": true },
+		mocks: { "@/components/website/demos/visual/shaders/liquid-glass": "export default function LiquidGlass() { return null; }" },
+	});
+	const button = view.getByRole("button", { name: "Search graph" });
+	assert.equal(button.getAttribute("aria-expanded"), "true");
+	for (const className of ["aria-expanded:bg-bg-selected", "aria-expanded:text-text-selected", "aria-expanded:border-border-selected"]) {
+		assert.equal(button.classList.contains(className), true, className);
+	}
 	assert.doesNotMatch(GLASS_PANEL_SOURCE, /aria-expanded:!bg-transparent/);
 	assert.doesNotMatch(GLASS_PANEL_SOURCE, /aria-expanded:!text-text-subtle/);
 	assert.doesNotMatch(GLASS_PANEL_SOURCE, /aria-expanded:!border-transparent/);

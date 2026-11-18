@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
@@ -14,7 +15,7 @@ function getIconPaths(source) {
 const PROMPT_GALLERY_SOURCE = readProjectFile("components/blocks/prompt-gallery/page.tsx");
 const PROMPT_GALLERY_DATA_SOURCE = readProjectFile("components/blocks/prompt-gallery/data/example-data.ts");
 const CHAT_GALLERY_DATA_SOURCE = readProjectFile("components/blocks/chat-gallery/data/example-data.ts");
-const ROVO_COMPOSER_SOURCE = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+const ROVO_COMPOSER_SOURCE = readProjectFile("components/projects/shared/hooks/use-rovo-app-composer-height.ts");
 
 test("Prompt gallery pills do not preview prompts on hover", () => {
 	assert.doesNotMatch(PROMPT_GALLERY_SOURCE, /onMouseEnter=\{\(\) => handlePreviewStart\(suggestionPrompt\)\}/u);
@@ -22,16 +23,21 @@ test("Prompt gallery pills do not preview prompts on hover", () => {
 	assert.match(PROMPT_GALLERY_SOURCE, /<span className="min-w-0 truncate">\{suggestion\.label\}<\/span>/u);
 });
 
-test("Rovo composer preview placeholder stays one line with ellipsis", () => {
+test("Rovo composer preview placeholder stays one line with ellipsis", async () => {
 	assert.match(ROVO_COMPOSER_SOURCE, /previewPromptHeight: baseTextareaHeight/u);
-	assert.match(
-		ROVO_COMPOSER_SOURCE,
-		/\.chat-composer-textarea\.chat-composer-textarea-preview-active:placeholder-shown \{[\s\S]*white-space: nowrap;[\s\S]*overflow: hidden;[\s\S]*text-overflow: ellipsis;/u,
-	);
-	assert.match(
-		ROVO_COMPOSER_SOURCE,
-		/\.chat-composer-textarea\.chat-composer-textarea-preview-active::placeholder \{[\s\S]*white-space: nowrap;[\s\S]*overflow: hidden;[\s\S]*text-overflow: ellipsis;/u,
-	);
+	const placeholder = "A long prompt preview that stays on one line";
+	const view = await renderComponent({
+		source: `import { PromptInputProvider, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+			export default function Probe({ placeholder }) {
+				return <PromptInputProvider><PromptInputTextarea placeholder={placeholder} enableDirectoryAutocomplete={false} enableSuggestionMenus={false} /></PromptInputProvider>;
+			}`,
+		props: { placeholder },
+	});
+	const preview = view.container.querySelector('[data-slot="prompt-input-placeholder"] span');
+	assert.equal(preview?.textContent, placeholder);
+	assert.equal(preview?.classList.contains("whitespace-nowrap"), true);
+	assert.equal(preview?.classList.contains("overflow-hidden"), true);
+	assert.equal(preview?.classList.contains("text-ellipsis"), true);
 });
 
 test("Prompt gallery illustration paths resolve to public assets", () => {

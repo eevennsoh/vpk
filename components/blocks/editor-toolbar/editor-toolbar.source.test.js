@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -96,7 +97,7 @@ test("rich text floating toolbars follow the editor scroll container", () => {
 	);
 });
 
-test("hover-reveal toolbars stay visible while the editor has focus", () => {
+test("hover-reveal toolbars stay visible while the editor has focus", async () => {
 	const globalCss = readProjectFile("app/globals.css");
 	const richTextEditorSource = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
 	const richTextEditorCss = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
@@ -146,10 +147,12 @@ test("hover-reveal toolbars stay visible while the editor has focus", () => {
 		globalCss,
 		/@container scroll-state\(stuck: top\) \{[\s\S]*\[data-sticky-row-scroll-fade\] \{[\s\S]*opacity: 1;/u,
 	);
-	assert.match(
-		readProjectFile("components/visual/scroll-mask/index.tsx"),
-		/pointer-events-none absolute inset-x-0 top-full h-8 opacity-0[\s\S]*data-sticky-row-scroll-fade=""/u,
-	);
+	const view = await renderComponent({ entry: "components/visual/scroll-mask/index.tsx", exportName: "StickyRowScrollFade" });
+	const fade = view.container.querySelector("[data-sticky-row-scroll-fade]");
+	assert.equal(fade?.getAttribute("aria-hidden"), "true");
+	for (const className of ["pointer-events-none", "absolute", "inset-x-0", "top-full", "h-4", "opacity-0"]) {
+		assert.equal(fade?.classList.contains(className), true, className);
+	}
 });
 
 test("Editor toolbar demo renders the block directly", () => {

@@ -10,14 +10,7 @@ function readProjectFile(relativePath) {
 }
 
 function readKnowledgeDetailsSection() {
-	const source = readDetailCategorySource("blocks");
-	const start = source.indexOf('\t"knowledge-directory": {');
-	const end = source.indexOf('\t"mermaid-diagram": {', start);
-
-	assert.notEqual(start, -1);
-	assert.notEqual(end, -1);
-
-	return source.slice(start, end);
+	return readProjectFile("app/data/details/blocks/knowledge-directory.ts");
 }
 
 function readKnowledgeApps() {

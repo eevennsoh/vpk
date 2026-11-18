@@ -42,7 +42,7 @@ test("TWG Agent Card reuses shared VPK and TWG primitives", () => {
 	assert.match(COMPONENT_SOURCE, /import \{ TWGLoader \} from "@\/components\/ui-custom\/twg-loader";/u);
 	assert.match(COMPONENT_SOURCE, /import PatternTile, \{ type PatternStrokeOptions \} from "@\/components\/website\/demos\/visual\/pattern-tile";/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /TwgToolBannerBackground/u);
-	assert.match(AGENT_CARD_INDEX_SOURCE, /export \{ AgentCardShell \} from "\.\/components\/agent-card-parts";/u);
+	assert.match(AGENT_CARD_INDEX_SOURCE, /export \{ AgentCardByline, AgentCardHeader, AgentCardShell \} from "\.\/components\/agent-card-parts";/u);
 	assert.match(AGENT_CARD_INDEX_SOURCE, /AgentCardShellProps/u);
 });
 
@@ -87,10 +87,10 @@ test("Teamwork Graph mark is shared with Knowledge", () => {
 
 test("TWG Agent Card keeps the grid-aligned card footprint and simplified background contract", () => {
 	assert.match(COMPONENT_SOURCE, /h-\[553px\] w-\[368px\] max-w-\[368px\]/u);
-	assert.match(COMPONENT_SOURCE, /rounded-\[24px\]/u);
+	assert.match(COMPONENT_SOURCE, /rounded-2xl/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /<TWGAgentCardGridStrip \/>/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /data-slot="twg-agent-card-grid-strip"/u);
-	assert.match(COMPONENT_SOURCE, /<TWGAppstack[\s\S]*animated=\{false\}/u);
+	assert.match(COMPONENT_SOURCE, /<TWGAppstack[\s\S]*direction="left-to-right"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /fadeDirection="vertical"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /\/gestural-line\/eyelash-3\.svg/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /bg-orange-300/u);
@@ -150,7 +150,7 @@ test("TWG Agent Card matches the expanded stats and recommendation layout", () =
 	assert.doesNotMatch(COMPONENT_SOURCE, /of some other data/u);
 	assert.match(COMPONENT_SOURCE, /data-slot="twg-agent-card-suggestions"/u);
 	assert.match(COMPONENT_SOURCE, /className="relative z-10 shrink-0 px-4 pt-4 pb-4"/u);
-	assert.match(COMPONENT_SOURCE, /className="relative z-10 flex min-h-0 flex-1 flex-col gap-3\.5 px-4 pt-4 pb-4"/u);
+	assert.match(COMPONENT_SOURCE, /className="relative z-10 flex min-h-0 flex-1 flex-col justify-center gap-4 px-4 pt-4 pb-4"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /px-7/u);
 	assert.match(COMPONENT_SOURCE, /className="flex min-w-0 items-center gap-2\.5"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /className="flex min-w-0 items-start gap-2\.5"/u);

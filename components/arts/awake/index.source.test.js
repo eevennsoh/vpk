@@ -290,11 +290,11 @@ test("CityRailEditor opens the city manager with Enter from the focused slider",
 	assert.match(CITY_POPOVER_SOURCE, /onOpenChange\?\.\(isOpen\);/);
 	assert.match(
 		CITY_POPOVER_SOURCE,
-		/if \(\s+openRequestKey <= 0 \|\|\s+openRequestKey === handledOpenRequestKeyRef\.current\s+\) \{\s+return;\s+\}/s,
+		/if \(openRequestKey > 0 && openRequestKey !== openState\.handledOpenRequestKey\) \{\s*resolvedOpenState = \{\s*\.\.\.openState,\s*handledOpenRequestKey: openRequestKey,\s*highlightedIndex: 0,\s*isOpen: true,\s*\};\s*setOpenState\(resolvedOpenState\);/s,
 	);
 	assert.match(
 		CITY_POPOVER_SOURCE,
-		/playSound\("\/sound\/click-001\.mp3"\);\s+setIsOpen\(true\);\s+setHighlightedIndex\(0\);/s,
+		/if \(openRequestKey <= 0 \|\| openRequestKey !== resolvedOpenState\.handledOpenRequestKey\) \{\s*return;\s*\}\s*playSound\("\/sound\/click-001\.mp3"\);/s,
 	);
 	assert.match(CITY_POPOVER_SOURCE, /onKeyDown=\{\(event\) => \{/);
 	assert.match(CITY_POPOVER_SOURCE, /if \(isOpen \|\| event\.key !== "Enter"\) return;/);
