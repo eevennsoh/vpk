@@ -180,10 +180,12 @@ export function BoardColumnCardList({
 	}, []);
 	const handlePointerLeave = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
 		if (event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-board-gap-create]")) return;
+		if (document.activeElement instanceof Element && document.activeElement.matches("[data-board-gap-create]")) return;
 		clearHoverInsertion();
 	}, [clearHoverInsertion]);
 	const handleControlLeave = useCallback((next: EventTarget | null) => {
 		if (next instanceof Node && cardListRef.current?.contains(next)) return;
+		if (document.activeElement instanceof Element && document.activeElement.matches("[data-board-gap-create]")) return;
 		clearHoverInsertion();
 	}, [clearHoverInsertion]);
 	const creatingInGap = Boolean(createDraft && createBeforeCardCode);
