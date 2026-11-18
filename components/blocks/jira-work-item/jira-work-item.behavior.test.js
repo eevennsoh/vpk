@@ -98,9 +98,10 @@ test("the standard work item's floating Rovo launcher swaps itself for the float
 	const props = { initialIssueOpen: true };
 	const view = await renderWorkItem(props);
 	assert.equal(textboxNames(view).includes("Chat message input"), false);
-	await view.click(view.getByRole("button", { name: "Open Rovo chat" }));
+	// The launcher floats outside the open modal dialog, which hides outside content from assistive technology.
+	await view.click(view.getByRole("button", { hidden: true, name: "Open Rovo chat" }));
 	await settle(view, props);
-	assert.equal(view.queryByRole("button", { name: "Open Rovo chat" }) === null, true, "the launcher hides while the chat is open");
+	assert.equal(view.queryByRole("button", { hidden: true, name: "Open Rovo chat" }) === null, true, "the launcher hides while the chat is open");
 	assert.equal(textboxNames(view).includes("Chat message input"), true);
 	await view.unmount();
 });
