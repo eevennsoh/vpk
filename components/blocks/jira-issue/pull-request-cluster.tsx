@@ -33,6 +33,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 	StatusIcon: typeof PullRequestIcon;
 	colorClass: string;
 	hoverColorClass: string;
+	selectedColorClass: string;
 	label: string;
 } {
 	switch (status) {
@@ -41,6 +42,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: MergeFailureIcon,
 				colorClass: "text-icon-danger",
 				hoverColorClass: "group-hover/jira-issue:text-icon-danger group-focus-within/jira-issue:text-icon-danger",
+				selectedColorClass: "aria-expanded:[&_[data-slot=icon]]:text-icon-danger aria-expanded:[&_svg]:text-icon-danger",
 				label: "Pull request failed",
 			};
 		case "merged":
@@ -48,6 +50,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: MergeSuccessIcon,
 				colorClass: "text-icon-accent-purple",
 				hoverColorClass: "group-hover/jira-issue:text-icon-accent-purple group-focus-within/jira-issue:text-icon-accent-purple",
+				selectedColorClass: "aria-expanded:[&_[data-slot=icon]]:text-icon-accent-purple aria-expanded:[&_svg]:text-icon-accent-purple",
 				label: "Pull request merged",
 			};
 		case "draft":
@@ -55,6 +58,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: PullRequestIcon,
 				colorClass: "text-icon-subtle",
 				hoverColorClass: "group-hover/jira-issue:text-icon-subtle group-focus-within/jira-issue:text-icon-subtle",
+				selectedColorClass: "aria-expanded:[&_[data-slot=icon]]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle",
 				label: "Draft pull request",
 			};
 		case "open":
@@ -63,6 +67,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: PullRequestIcon,
 				colorClass: "text-icon-accent-lime",
 				hoverColorClass: "group-hover/jira-issue:text-icon-accent-lime group-focus-within/jira-issue:text-icon-accent-lime",
+				selectedColorClass: "aria-expanded:[&_[data-slot=icon]]:text-icon-accent-lime aria-expanded:[&_svg]:text-icon-accent-lime",
 				label: "Pull request",
 			};
 		default: {
@@ -125,7 +130,7 @@ export function JiraIssuePullRequestCluster({
 	tone?: "status" | "subtle";
 }>) {
 	const hasMultiple = (pullRequests?.length ?? 0) > 1;
-	const { StatusIcon, colorClass, hoverColorClass, label } = getJiraIssuePullRequestPresentation(hasMultiple ? "draft" : pullRequestStatus);
+	const { StatusIcon, colorClass, hoverColorClass, selectedColorClass, label } = getJiraIssuePullRequestPresentation(hasMultiple ? "draft" : pullRequestStatus);
 	const [selected, setSelected] = useState<JiraIssuePullRequestItem | null>(null);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -169,11 +174,10 @@ export function JiraIssuePullRequestCluster({
 					<Button
 						aria-label={accessibleName}
 						aria-describedby={tooltipOpen && !popoverOpen ? tooltipId : undefined}
-						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
+						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-current", selectedColorClass, iconMetrics.compactIconClassName)}
 						onClick={stopNestedActivation}
 						onPointerDown={stopNestedActivation}
 						size="icon-compact"
-						selectedAppearance="icon-only"
 						type="button"
 						variant="ghost"
 					/>

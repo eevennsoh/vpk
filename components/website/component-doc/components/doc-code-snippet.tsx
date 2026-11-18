@@ -7,25 +7,26 @@ import {
 	CodeBlockActions,
 	CodeBlockCopyButton,
 	CodeBlockDownloadButton,
-} from "@/components/ui-custom/code-block";
-import type { BundledLanguage } from "shiki";
+} from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 
 interface DocCodeSnippetProps {
 	code: string;
-	language?: BundledLanguage;
+	language?: string;
 	title?: string;
 }
 
 export function DocCodeSnippet({ code, language = "tsx", title }: Readonly<DocCodeSnippetProps>) {
 	return (
-		<CodeBlock code={code} language={language}>
+		<CodeBlock>
 			<CodeBlockHeader>
 				<CodeBlockTitle>{title}</CodeBlockTitle>
 				<CodeBlockActions>
-					<CodeBlockDownloadButton />
-					<CodeBlockCopyButton />
+					<CodeBlockDownloadButton value={code} language={language} />
+					<CodeBlockCopyButton value={code} />
 				</CodeBlockActions>
 			</CodeBlockHeader>
+			<HighlightedCodeContent code={code} language={language} />
 		</CodeBlock>
 	);
 }

@@ -167,6 +167,23 @@ test("package-backed logo exports match the installed package entrypoints", asyn
  */
 const INTENTIONALLY_UNSURFACED_ENTRYPOINTS = new Set([
 	"types",
+	// Added upstream in 4.x; keep VPK's existing brand set and local fallbacks unchanged.
+	"adobe-acrobat-sign",
+	"basecamp",
+	"facebook",
+	"gitbook",
+	"github-copilot",
+	"google-admin",
+	"guru",
+	"helpjuice",
+	"instagram",
+	"meta",
+	"muse",
+	"openclaw",
+	"superhuman",
+	"visual-studio-code",
+	"wrike",
+	"x",
 	"confluent",
 	"coralogix",
 	"crowdstrike-falcon",

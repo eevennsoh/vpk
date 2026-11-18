@@ -301,6 +301,11 @@ repo's semantic Tailwind classes whenever a class exists.
   radius to both the row surface and its agent button. Give the whole row the
   dropdown item's 6px top and bottom padding; let its content determine the
   height. Why: agent selectors follow the dropdown menu row treatment.
+  This applies to every popover that lists rows, not only `DropdownMenu`: a
+  `Popover` row list takes `dropdownStyles.surface` and `dropdownStyles.padding`
+  from `components/ui/dropdown-menu.tsx` and marks each row `data-menu-row` so
+  `menu-row-spacing` adds the 2px gap (`SourcePreviewMenu` does this).
+  <!-- 2026-11-17: "sources preview menu needs to have the new dropdown menu padding style" -->
   <!-- 2026-11-14: "each row item separation will need to be 2px"; "corner radius of each individual row item should be 8px not 6px" -->
   <!-- 2026-11-14: "follow dropdown menu rows logic, it's based on top/bottom padding"; "why only part of it is done that way? But not the entire row?"; "corner radius needs to be 8px" -->
 - **Menu and picker subheadings:** Add a 6px top margin (`--ds-space-075`)
@@ -478,6 +483,15 @@ supplied reference copy and layout when reproducing a specific product state.
 
 ### Interaction states
 
+- **An underline is always the color of the text it sits under.** Never draw a
+  link-blue underline under neutral text. When a link wraps an element that sets
+  its own text color (a Trace line, an Item, a title span), remove the link's
+  underline (`no-underline`) and underline the text element itself, or give the
+  link the text's color; color underlines only with `decoration-current`.
+  Why: a mismatched underline reads as a broken, foreign link style.
+  `vpk-tokens/no-mismatched-underline-color` rejects other `decoration-<color>`
+  classes; `components/ui/trace.tsx` underlines `TraceTitle` itself.
+  <!-- 2026-11-17: "we should never do blue underline for black text"; "underline color should always match text color" -->
 - **Inline-create selector previews:** Priority and work item type triggers stay
   neutral while closed. While open, pointer hover and keyboard navigation preview
   both the candidate's icon and its semantic color, matching its menu row. Only
@@ -569,6 +583,13 @@ supplied reference copy and layout when reproducing a specific product state.
 - **Size:** Product UI icons default to 16px glyphs; compact buttons use 12px.
   For stronger emphasis, place the glyph in a larger tile or button rather than
   scaling the glyph.
+- **Trailing affordance icons are 12px.** Disclosure chevrons and external-link
+  arrows that follow a label use 12px (`size-3`) glyphs; leading content icons in
+  the same row stay 16px. Why: they are secondary hints and should not compete
+  with the leading icon or the label. `components/ui/trace.tsx` sizes every icon
+  after a `TraceTitle` and its collapsible chevron this way, so Task, Sources and
+  Queue inherit it.
+  <!-- 2026-11-17: "all the chevron, external link arrow size should be 12x12 not 16x16"; "Same for task, need to use 12x12 chevron" -->
 - **Color:** Standalone icons inherit `currentColor` from a semantic icon role.
   Pair `text-icon-subtle` with `text-text-subtle` and `text-icon-danger` with
   `text-text-danger`; matching roles can resolve to different colors. Chevrons,

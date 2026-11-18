@@ -8,7 +8,6 @@ import type {
 	ReactNode,
 } from "react";
 import { Children, cloneElement, Fragment, isValidElement, memo, use } from "react";
-import type { BundledLanguage } from "shiki";
 import type { ExtraProps, LinkSafetyConfig } from "streamdown";
 import { Streamdown, StreamdownContext } from "streamdown";
 import { cjk } from "@streamdown/cjk";
@@ -24,7 +23,8 @@ import {
 	CodeBlockFilename,
 	CodeBlockHeader,
 	CodeBlockTitle,
-} from "@/components/ui-custom/code-block";
+} from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { resolveImageRenderSrc } from "@/lib/image-proxy";
 import { cn } from "@/lib/utils";
 import { MarkdownAnchor, registerMessageMarkdownRuntime } from "./message-markdown";
@@ -157,7 +157,6 @@ const CODE_TITLE_PATTERN =
 	/(?:^|\s)(?:title|filename)=["']([^"']+)["']/u;
 const CODE_NO_LINE_NUMBERS_PATTERN = /(?:^|\s)noLineNumbers(?:\s|$)/u;
 const INLINE_CODE_BACKTICK_PATTERN = /`+/gu;
-type StreamdownCodeLanguage = Parameters<typeof safeCodePlugin.supportsLanguage>[0];
 
 const getCodeFenceLanguage = (className?: string) => {
 	const match = className?.match(CODE_LANGUAGE_PATTERN);
@@ -194,11 +193,6 @@ const getInlineCodeFence = (content: string) => {
 
 	return "`".repeat(longestBacktickRun + 1);
 };
-
-const toBundledLanguage = (language: string): BundledLanguage =>
-	safeCodePlugin.supportsLanguage(language as StreamdownCodeLanguage)
-		? (language as BundledLanguage)
-		: "markdown";
 
 function MarkdownInlineCode({
 	children,
@@ -246,6 +240,8 @@ function MarkdownCodeBlock({
 	children,
 	className,
 	node,
+	// The fence's `<code>` ref cannot point at the block's `<div>`.
+	ref: _codeRef,
 	...props
 }: Readonly<MarkdownCodeBlockProps>) {
 	const code = typeof children === "string" ? children : "";
@@ -273,16 +269,14 @@ function MarkdownCodeBlock({
 		);
 	}
 
-	const language = toBundledLanguage(rawLanguage);
 	const title = getCodeFenceTitle(meta) ?? rawLanguage;
 	const showLineNumbers = meta ? !CODE_NO_LINE_NUMBERS_PATTERN.test(meta) : true;
 
 	return (
 		<CodeBlock
 			className="not-typeset"
-			code={code}
-			language={language}
-			showLineNumbers={showLineNumbers}
+			// Long replies hold many blocks; skip laying out the ones off screen.
+			style={{ containIntrinsicSize: "auto 200px", contentVisibility: "auto" }}
 			{...props}
 		>
 			<CodeBlockHeader>
@@ -290,10 +284,11 @@ function MarkdownCodeBlock({
 					<CodeBlockFilename>{title}</CodeBlockFilename>
 				</CodeBlockTitle>
 				<CodeBlockActions>
-					<CodeBlockDownloadButton />
-					<CodeBlockCopyButton />
+					<CodeBlockDownloadButton value={code} language={rawLanguage} />
+					<CodeBlockCopyButton value={code} />
 				</CodeBlockActions>
 			</CodeBlockHeader>
+			<HighlightedCodeContent code={code} language={rawLanguage} lineNumbers={showLineNumbers} />
 		</CodeBlock>
 	);
 }

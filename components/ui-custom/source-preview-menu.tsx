@@ -24,6 +24,7 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -235,10 +236,11 @@ function SourcePreviewCard({
 		<article
 			className={cn(
 				"group/preview-card relative rich-text-command-menu-item",
-				"h-auto! items-start! py-2!",
+				"h-auto! items-start! py-1.5!",
 				"hover:bg-bg-neutral-subtle-hovered! has-[:focus-visible]:bg-bg-neutral-subtle-hovered!",
 			)}
 			data-has-trailing="true"
+			data-menu-row=""
 		>
 			<a
 				aria-label={source.title}
@@ -341,7 +343,7 @@ export function SourcePreviewMenu({
 				</PopoverTrigger>
 				<PopoverContent
 					align={align}
-					className="w-[min(26rem,var(--available-width,26rem))] max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 p-1 shadow-2xl"
+					className={cn("w-[min(26rem,var(--available-width,26rem))] max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 shadow-2xl", dropdownStyles.surface, dropdownStyles.padding)}
 					initialFocus={(openType) => openType === "keyboard"}
 				>
 					<PopoverTitle className="sr-only">Source previews</PopoverTitle>

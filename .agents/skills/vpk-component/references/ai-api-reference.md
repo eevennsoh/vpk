@@ -67,27 +67,29 @@ Key props: `className`, `children`
 
 Key props: `onSubmit`, `className`, `children`
 
-## Suggestion (`components/ui-custom/suggestion.tsx`)
+## Suggestion (`components/ui/suggestion.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `Suggestions` | Horizontally scrollable container for suggestion chips |
-| `Suggestion` | Individual clickable suggestion button |
+| `Suggestions` | Scroll-fade row, or a vertical stack with `orientation="vertical"` |
+| `Suggestion` | Subtle Button with a leading curved-arrow icon |
 
 Key props: `suggestion` (string, required), `onClick` (`(suggestion: string) => void`), `children` (optional, falls back to `suggestion` text)
 
-## CodeBlock (`components/ui-custom/code-block.tsx`)
+## CodeBlock (`components/ui/code-block.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `CodeBlock` | Root with syntax highlighting |
+| `CodeBlock` | Container (`variant`, `size`) |
 | `CodeBlockHeader` | Header bar |
 | `CodeBlockTitle` | Title area |
 | `CodeBlockFilename` | Filename display |
 | `CodeBlockActions` | Action buttons area |
-| `CodeBlockCopyButton` | Copy-to-clipboard button |
+| `CodeBlockCopyButton` | Copy-to-clipboard button (`value`) |
+| `CodeBlockContent` | Scrollable `<pre>` (`lineNumbers`, `wrap`) |
+| `CodeBlockLine` | One line of code |
 
-Key props: `code`, `language`, `className`
+Highlighted content: `HighlightedCodeContent` (`components/ui-custom/highlighted-code-content.tsx`, props `code`, `language`) or `useHighlightedCode` (`hooks/use-highlighted-code.ts`).
 
 ## Other Components
 

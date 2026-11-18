@@ -16,12 +16,12 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { resolveImageRenderSrc } from "@/lib/image-proxy";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
-import type { BundledLanguage } from "shiki";
 import { Avatar as AvatarRoot, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag as TagPrimitive, TagGroup } from "@/components/ui/tag";
 import { Spinner } from "@/components/ui/spinner";
-import { CodeBlock as CustomCodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { MessageResponse } from "@/components/ui-custom/message";
 import { Kbd } from "@/components/ui/kbd";
 import { Comment } from "@/components/ui/comment";
@@ -354,10 +354,9 @@ export const dataDisplayComponents = {
 		}
 
 		return (
-			<CustomCodeBlock
-				code={code}
-				language={(language ?? "text") as BundledLanguage}
-			/>
+			<CodeBlock>
+				<HighlightedCodeContent code={code} language={language ?? "text"} />
+			</CodeBlock>
 		);
 	},
 

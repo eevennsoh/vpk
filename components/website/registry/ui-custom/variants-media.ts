@@ -186,62 +186,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"checkpoint-demo-conversation": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoConversation,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-basic": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoBasic,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-with-tooltip": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoWithTooltip,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-custom-icon": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoCustomIcon,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-full": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoFull,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-with-files": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoWithFiles,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-minimal": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMinimal,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMultiple,
-			})),
-		{ ssr: false },
-	),
 	"confirmation-demo-request": dynamic(
 		() =>
 			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({

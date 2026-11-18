@@ -3,7 +3,8 @@
 import { useId, useMemo, useState } from "react";
 import type { BundledLanguage } from "shiki";
 
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { ChevronDownIcon, ChevronRightIcon, CodeIcon } from "@/components/ui/vpk-icons";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -127,13 +128,9 @@ function CodeListRow({
 					className="animate-in fade-in-0 slide-in-from-top-1 duration-fast motion-reduce:animate-none"
 					id={panelId}
 				>
-					<CodeBlock
-						className="border-0"
-						code={item.code}
-						language={language}
-						showLineNumbers
-						size="sm"
-					/>
+					<CodeBlock className="ring-0" size="sm">
+						<HighlightedCodeContent code={item.code} language={language} lineNumbers />
+					</CodeBlock>
 				</div>
 			) : null}
 		</div>

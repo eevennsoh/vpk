@@ -517,6 +517,37 @@ test("start ends with the URL to open: the Portless route when one exists, else 
 	}
 });
 
+test("start selects a port unclaimed by other worktrees before launching Portless", () => {
+	const fake = createFakeLauncherEnvironment();
+	const otherWorktree = path.join(fake.tempDir, "other-worktree");
+	const git = (...args) => execFileSync("git", ["-C", worktreeRoot, ...args], { stdio: "pipe" });
+	try {
+		git("init");
+		git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--allow-empty", "-m", "fixture");
+		git("worktree", "add", "--detach", otherWorktree);
+		fs.writeFileSync(path.join(otherWorktree, ".dev-frontend-port"), "49150");
+		withPortFiles(null, null, () => runLauncher({
+			PATH: `${fake.tempDir}:${process.env.PATH}`,
+			PORT: "49150",
+			PORTLESS_APP_PORT: "",
+			VPK_TMUX_BIN: fake.tmuxPath,
+			VPK_DEV_TMUX_SESSION: "vpk-dev-portless-claim",
+			VPK_DEV_TMUX_WAIT: "1",
+			FAKE_LISTEN_FILE: fake.listenPath,
+			FAKE_TMUX_STATE: fake.statePath,
+			FAKE_TMUX_LOG: fake.tmuxLogPath,
+			NODE_CLEANUP_LOG: fake.cleanupLogPath,
+		}));
+		const command = fs.readFileSync(fake.tmuxLogPath, "utf8");
+		const assigned = command.match(/portless run .*--app-port (\d+)/);
+		assert.ok(assigned, command);
+		assert.ok(Number(assigned[1]) > 49150 && Number(assigned[1]) < 49170, command);
+	} finally {
+		fs.rmSync(path.join(worktreeRoot, ".git"), { recursive: true, force: true });
+		fake.cleanup();
+	}
+});
+
 test("a launched session copies its pane output to the worktree's dev log and keeps one previous run", () => {
 	const fake = createFakeLauncherEnvironment();
 	const logDir = path.join(fake.tempDir, "logs");

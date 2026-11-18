@@ -8,7 +8,8 @@ import { JsonRenderView } from "@/lib/json-render/renderer";
 import { useProgressiveSpec } from "@/lib/json-render/use-progressive-spec";
 import { cn } from "@/lib/utils";
 import { MessageResponse } from "@/components/ui-custom/message";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import {
 	Transcription,
 	TranscriptionSegment,
@@ -286,12 +287,13 @@ function CodePreview({
 	}
 
 	return (
-		<CodeBlock
-			className={surface === "artifact-pane" ? "border-0" : undefined}
-			code={code}
-			language={resolveCodeLanguage(language, code)}
-			showLineNumbers
-		/>
+		<CodeBlock className={surface === "artifact-pane" ? "ring-0" : undefined}>
+			<HighlightedCodeContent
+				code={code}
+				language={resolveCodeLanguage(language, code)}
+				lineNumbers
+			/>
+		</CodeBlock>
 	);
 }
 

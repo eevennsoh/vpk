@@ -208,6 +208,7 @@ const vpkTokens = {
 		"no-tailwind-heading-type": builtinRules.get("no-restricted-syntax"),
 		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
 		"no-undefined-overlay-shadow": builtinRules.get("no-restricted-syntax"),
+		"no-mismatched-underline-color": builtinRules.get("no-restricted-syntax"),
 	},
 };
 // gotchas-ui.md: the root layout's MainLandmark is the page's only main landmark. Its own rule id
@@ -222,6 +223,9 @@ const rawWhiteBlackPattern = "(^|[\\s:])bg-(white|black)($|\\s)";
 // A Tailwind size from text-xl up combined with a bold weight in one class string is a hand-made heading.
 const tailwindHeadingPattern = "(?=.*\\btext-[2-9]?xl\\b)(?=.*\\bfont-(semibold|bold)\\b)";
 const tileRadiusPattern = "\\brounded-\\[25%\\]";
+// DESIGN.md: an underline is always the color of its text. Only decoration-current may color one; style,
+// thickness and box utilities (decoration-dotted, decoration-2, decoration-clone, ...) stay legal.
+const underlineColorPattern = "(^|[\\s:])decoration-(?!(current|solid|double|dotted|dashed|wavy|auto|from-font|clone|slice)($|\\s)|\\d|\\[length|\\(length)[a-z\\[(]";
 // No `shadow-overlay` utility exists, so the class is a silent no-op: inside an overlay *Content it leaves
 // the primitive's shadow-xl (ADS overlay + a second 1px perimeter, a doubled stroke); elsewhere, no shadow.
 const undefinedOverlayShadowPattern = "(^|[\\s:])shadow-overlay($|\\s)";
@@ -445,6 +449,10 @@ const eslintConfig = defineConfig([
 			"vpk-tokens/no-arbitrary-tile-radius": ["error", {
 				selector: classStringSelector(tileRadiusPattern),
 				message: "Use rounded-tile (--ds-radius-tile) instead of rounded-[25%] (token-priority.md).",
+			}],
+			"vpk-tokens/no-mismatched-underline-color": ["error", {
+				selector: classStringSelector(underlineColorPattern),
+				message: "An underline takes its text's color: use decoration-current (or color the element) instead of a decoration-<color> class (DESIGN.md).",
 			}],
 			"vpk-tokens/no-undefined-overlay-shadow": ["error", {
 				selector: undefinedOverlayShadowSelector,

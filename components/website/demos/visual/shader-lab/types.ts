@@ -23,10 +23,7 @@ export const SHADER_LAB_COMPOSITE_MODES = ["filter", "mask"] as const;
 export const SHADER_LAB_MASK_SOURCES = ["luminance", "alpha", "red", "green", "blue"] as const;
 export const SHADER_LAB_MASK_MODES = ["multiply", "stencil"] as const;
 
-export type ShaderLabRuntimeEffectType = Exclude<
-	ShaderLabEffectLayerType,
-	"ascii" | "dithering"
->;
+export type ShaderLabRuntimeEffectType = (typeof SHADER_LAB_RUNTIME_EFFECT_TYPES)[number];
 
 export type ShaderLabRuntimeSourceType = "fluid" | "pixel-trail" | "magnify-lens" | "mesh-gradient" | "custom-shader";
 export type ShaderLabRuntimeLayerType = ShaderLabRuntimeEffectType | ShaderLabRuntimeSourceType;
@@ -105,7 +102,7 @@ export const SHADER_LAB_RUNTIME_EFFECT_TYPES = [
 	"smear",
 	"threshold",
 	"voxel"
-] as const satisfies readonly ShaderLabRuntimeEffectType[];
+] as const satisfies readonly ShaderLabEffectLayerType[];
 
 export const SHADER_LAB_RUNTIME_SOURCE_TYPES = [
 	"fluid",
