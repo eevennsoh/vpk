@@ -13,7 +13,7 @@ import {
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { AssistantThinkingToolsSection } from "@/components/projects/shared/components/assistant-thinking-tools-section";
-import { getReasoningSectionTitle } from "@/components/ui-custom/lib/reasoning-labels";
+import { getReasoningSectionTitle } from "@/lib/reasoning-labels";
 import { cn } from "@/lib/utils";
 
 interface StreamingThinkingIndicatorProps {

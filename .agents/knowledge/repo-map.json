@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 452,
+			"manifestEntryCount": 455,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 446,
+				"live": 449,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 88,
+				"entryCount": 95,
 				"entries": [
 					{
 						"category": "ui",
@@ -5883,6 +5883,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "plan",
+						"name": "Plan",
+						"importPath": "@/components/ui/plan",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "popover",
 						"name": "Popover",
 						"importPath": "@/components/ui/popover",
@@ -5928,6 +5935,13 @@
 						"slug": "radio-group",
 						"name": "Radio Group",
 						"importPath": "@/components/ui/radio-group",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "reasoning",
+						"name": "Reasoning",
+						"importPath": "@/components/ui/reasoning",
 						"status": "live"
 					},
 					{
@@ -6016,6 +6030,20 @@
 					},
 					{
 						"category": "ui",
+						"slug": "stack-trace",
+						"name": "Stack Trace",
+						"importPath": "@/components/ui/stack-trace",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "subagent",
+						"name": "Subagent",
+						"importPath": "@/components/ui/subagent",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "suggestion",
 						"name": "Suggestion",
 						"importPath": "@/components/ui/suggestion",
@@ -6058,6 +6086,20 @@
 					},
 					{
 						"category": "ui",
+						"slug": "terminal",
+						"name": "Terminal",
+						"importPath": "@/components/ui/terminal",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "test-results",
+						"name": "Test Results",
+						"importPath": "@/components/ui/test-results",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "tile",
 						"name": "Tile",
 						"importPath": "@/components/ui/tile",
@@ -6082,6 +6124,13 @@
 						"slug": "toggle-group",
 						"name": "Toggle Group",
 						"importPath": "@/components/ui/toggle-group",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "tool",
+						"name": "Tool",
+						"importPath": "@/components/ui/tool",
 						"status": "live"
 					},
 					{
@@ -6276,7 +6325,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 72,
+				"entryCount": 68,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6609,13 +6658,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "reasoning",
-						"name": "Reasoning",
-						"importPath": "@/components/ui-custom/reasoning",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "rovo-cursor",
 						"name": "Rovo Cursor",
 						"importPath": "@/components/ui-custom/rovo-cursor",
@@ -6707,30 +6749,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "stack-trace",
-						"name": "Stack Trace",
-						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "terminal",
-						"name": "Terminal",
-						"importPath": "@/components/ui-custom/terminal",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "test-result",
-						"name": "Test Result",
-						"importPath": "@/components/ui-custom/test-result",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "tool",
-						"name": "Tool",
-						"importPath": "@/components/ui-custom/tool",
+						"slug": "terminal-window",
+						"name": "Terminal Window",
+						"importPath": "@/components/ui-custom/terminal-window",
 						"status": "live"
 					},
 					{

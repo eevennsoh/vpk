@@ -25,7 +25,7 @@ import { useStreamingIndicatorState } from "@/components/projects/shared/hooks/u
 import {
 	getAwaitingUserResponseLabel,
 	getDefaultThinkingLabel,
-} from "@/components/ui-custom/lib/reasoning-labels";
+} from "@/lib/reasoning-labels";
 import styles from "./chat-messages.module.css";
 
 export interface ChatMessagesProps {

@@ -2562,16 +2562,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/stack-trace.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/tool-output.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
   "components/ui-custom/twg-appstack.source.test.js": {
     "no-restricted-syntax": {
       "count": 88

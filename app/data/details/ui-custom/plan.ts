@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PLAN_DETAIL: ComponentDetail = {
 	description:
-		"A composable collapsible plan card with supported summary and tasks-only patterns. Includes shimmer-ready title/description rendering, markdown summary content, numbered task lists with overflow handling, and optional footer actions.",
+		"A composable collapsible plan card with supported summary and tasks-only patterns. Includes shimmer-ready title/description rendering, markdown summary content, numbered task lists with overflow handling, and optional footer actions. variant=\"inline\" delegates the same parts to the shadcn Plan on Trace (@/components/ui/plan).",
 	usage: `import {
   Plan,
   PlanHeader,
@@ -41,6 +41,18 @@ import { Button } from "@/components/ui/button";
 </Plan>`,
 	props: [
 		{
+			name: "variant",
+			type: '"card" | "inline"',
+			default: '"card"',
+			description: "Plan only. Card is the generative plan card; inline renders Header, Avatar, Title, Description, Content, TaskList, TaskItem, Action and Footer through @/components/ui/plan. Summary, agent bar and the legacy triggers are card-only.",
+		},
+		{
+			name: "status",
+			type: '"done" | "running" | "pending"',
+			default: '"pending"',
+			description: "PlanTaskItem, inline variant only. The step's progress icon and line status.",
+		},
+		{
 			name: "isStreaming",
 			type: "boolean",
 			default: "false",
@@ -71,5 +83,6 @@ import { Button } from "@/components/ui/button";
 	examples: [
 		{ title: "Summary", description: "Plan card variant with markdown summary content.", demoSlug: "plan-demo-summary-and-tasks" },
 		{ title: "Tasks only", description: "Classic plan card with task list content only.", demoSlug: "plan-demo-tasks-only" },
+		{ title: "Inline", description: "The same Plan parts with variant=\"inline\", delegated to the shadcn Plan on Trace.", demoSlug: "plan-demo-inline" },
 	],
 };

@@ -57,7 +57,7 @@ import {
 	TaskItemFile,
 	TaskTrigger,
 } from "@/components/ui/task"
-import { Terminal, TerminalContent } from "@/components/ui-custom/terminal"
+import { TerminalWindow } from "@/components/ui-custom/terminal-window"
 import { cn } from "@/lib/utils"
 import {
 	CheckCircle2Icon,
@@ -570,13 +570,11 @@ export default function CursorDemoBlock() {
 					/>
 				</CodeBlock>
 
-				<Terminal
+				<TerminalWindow
 					className="h-64 rounded-none border-0"
 					isStreaming={isTerminalStreaming}
 					output={terminalOutput}
-				>
-					<TerminalContent className="max-h-full" />
-				</Terminal>
+				/>
 			</div>
 
 			{/* Right Sidebar - AI Chat */}

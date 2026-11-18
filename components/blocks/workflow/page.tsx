@@ -29,7 +29,7 @@ import {
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool"
+} from "@/components/ui/tool"
 import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity"
 import {
 	Conversation,

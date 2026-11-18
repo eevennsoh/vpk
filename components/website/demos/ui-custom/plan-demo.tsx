@@ -16,7 +16,7 @@ import {
 	type PlanTask,
 } from "@/components/ui-custom/plan";
 import { formatPlanStepCount, resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 
 const PLAN_TASKS: PlanTask[] = [
 	{ id: "1", label: "Create Flexible Fridays Work-back Plan", blockedBy: [] },
@@ -142,6 +142,30 @@ export function PlanDemoSummaryAndTasks() {
 				/>
 
 				<PlanDemoFooter />
+			</PlanContent>
+		</Plan>
+	);
+}
+
+const INLINE_TASK_STATUSES: NonNullable<ComponentProps<typeof PlanTaskItem>["status"]>[] = ["done", "done", "running"];
+
+export function PlanDemoInline() {
+	const tasks = PLAN_TASKS.slice(0, 5);
+	const done = INLINE_TASK_STATUSES.filter((status) => status === "done").length;
+
+	return (
+		<Plan className="max-w-sm" defaultOpen isStreaming variant="inline">
+			<PlanHeader
+				leading={<PlanAvatar />}
+				title={<PlanTitle>Plan: launch Flexible Fridays</PlanTitle>}
+				description={<PlanDescription>{`${done} of ${tasks.length} done`}</PlanDescription>}
+			/>
+			<PlanContent>
+				<PlanTaskList>
+					{tasks.map((task, index) => (
+						<PlanTaskItem key={task.id} index={index + 1} label={task.label} status={INLINE_TASK_STATUSES[index] ?? "pending"} />
+					))}
+				</PlanTaskList>
 			</PlanContent>
 		</Plan>
 	);

@@ -21,6 +21,13 @@ export const UI_CUSTOM_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> =
 			})),
 		{ ssr: false },
 	),
+	"plan-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui-custom/plan-demo").then((mod) => ({
+				default: mod.PlanDemoInline,
+			})),
+		{ ssr: false },
+	),
 
 	// Migrated UI custom components
 	"footer-demo-default": dynamic(

@@ -23,6 +23,19 @@ import { GenerativeCardFooter, GenerativeCardHeader } from "@/components/blocks/
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import type { VisualIdentity } from "@/components/projects/shared/lib/visual-identity";
 import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity";
+import {
+	Plan as InlinePlan,
+	PlanAction as InlinePlanAction,
+	PlanContent as InlinePlanContent,
+	PlanDescription as InlinePlanDescription,
+	PlanFooter as InlinePlanFooter,
+	PlanHeader as InlinePlanHeader,
+	PlanIcon as InlinePlanIcon,
+	PlanStep as InlinePlanStep,
+	PlanSteps as InlinePlanSteps,
+	PlanTitle as InlinePlanTitle,
+	type PlanStepStatus,
+} from "@/components/ui/plan";
 import { MessageResponse } from "./message";
 import { Shimmer } from "./shimmer";
 
@@ -48,6 +61,16 @@ interface PlanContextValue {
 
 const PlanContext = createContext<PlanContextValue | null>(null);
 
+/**
+ * `card` (default) is VPK's generative plan card. `inline` delegates to the
+ * shadcn Plan on Trace in `@/components/ui/plan`.
+ */
+export type PlanVariant = "card" | "inline";
+
+const PlanVariantContext = createContext<PlanVariant>("card");
+
+const usePlanVariant = () => use(PlanVariantContext);
+
 const usePlan = () => {
 	const context = use(PlanContext);
 	if (!context) {
@@ -58,15 +81,17 @@ const usePlan = () => {
 
 /* ----- Plan (root) ----- */
 
-export type PlanProps = Omit<ComponentProps<typeof Collapsible>, "open" | "defaultOpen" | "onOpenChange"> & {
+export type PlanProps = Omit<ComponentProps<typeof Collapsible>, "className" | "open" | "defaultOpen" | "onOpenChange"> & {
+	className?: string;
 	isStreaming?: boolean;
 	open?: boolean;
 	defaultOpen?: boolean;
 	defaultContentExpanded?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	variant?: PlanVariant;
 };
 
-export const Plan = ({ className, isStreaming = false, open, defaultOpen = false, defaultContentExpanded = false, onOpenChange, children, ...props }: Readonly<PlanProps>) => {
+export const Plan = ({ className, isStreaming = false, open, defaultOpen = false, defaultContentExpanded = false, onOpenChange, variant = "card", children, ...props }: Readonly<PlanProps>) => {
 	const isControlled = open !== undefined;
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
 	const [isContentExpanded, setIsContentExpanded] = useState(defaultContentExpanded);
@@ -79,8 +104,22 @@ export const Plan = ({ className, isStreaming = false, open, defaultOpen = false
 		onOpenChange?.(next);
 	};
 
+	const contextValue = { isStreaming, isOpen, setIsOpen, isContentExpanded, setIsContentExpanded };
+
+	if (variant === "inline") {
+		return (
+			<PlanVariantContext value="inline">
+				<PlanContext value={contextValue}>
+					<InlinePlan className={className} isStreaming={isStreaming} open={isOpen} onOpenChange={setIsOpen} {...props}>
+						{children}
+					</InlinePlan>
+				</PlanContext>
+			</PlanVariantContext>
+		);
+	}
+
 	return (
-		<PlanContext value={{ isStreaming, isOpen, setIsOpen, isContentExpanded, setIsContentExpanded }}>
+		<PlanContext value={contextValue}>
 			<Collapsible data-slot="plan" open={isOpen} onOpenChange={setIsOpen} {...props} render={<Card className={cn("shadow-none", "data-closed:gap-0", "transition-[opacity,transform] duration-normal ease-out data-starting-style:opacity-0 data-starting-style:-translate-y-1", className)} />}>
 				{children}
 			</Collapsible>
@@ -94,6 +133,19 @@ export type PlanHeaderProps = Omit<ComponentProps<typeof GenerativeCardHeader>, 
 
 export const PlanHeader = ({ className, ...props }: Readonly<PlanHeaderProps>) => {
 	const { isOpen, setIsOpen } = usePlan();
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		const { leading, title, description, children } = props;
+		return (
+			<InlinePlanHeader className={className}>
+				{leading}
+				{title}
+				{description}
+				{children}
+			</InlinePlanHeader>
+		);
+	}
 
 	return (
 		<GenerativeCardHeader
@@ -112,11 +164,19 @@ export type PlanAvatarProps = ComponentProps<"div"> & {
 	visualIdentity?: VisualIdentity;
 };
 
-export const PlanAvatar = ({ visualIdentity = resolvePlanVisualIdentity("Untitled task run"), className, ...props }: Readonly<PlanAvatarProps>) => (
-	<div className={cn("shrink-0", className)} data-slot="plan-avatar" {...props}>
-		<VisualIdentityTile decorative label="Plan" visualIdentity={visualIdentity} />
-	</div>
-);
+export const PlanAvatar = ({ visualIdentity = resolvePlanVisualIdentity("Untitled task run"), className, ...props }: Readonly<PlanAvatarProps>) => {
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return <InlinePlanIcon className={className} />;
+	}
+
+	return (
+		<div className={cn("shrink-0", className)} data-slot="plan-avatar" {...props}>
+			<VisualIdentityTile decorative label="Plan" visualIdentity={visualIdentity} />
+		</div>
+	);
+};
 
 /* ----- PlanTitle ----- */
 
@@ -126,6 +186,11 @@ export type PlanTitleProps = Omit<ComponentProps<typeof CardTitle>, "children"> 
 
 export const PlanTitle = ({ children, ...props }: Readonly<PlanTitleProps>) => {
 	const { isStreaming } = usePlan();
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return <InlinePlanTitle className={props.className}>{children}</InlinePlanTitle>;
+	}
 
 	return (
 		<CardTitle data-slot="plan-title" {...props}>
@@ -142,6 +207,11 @@ export type PlanDescriptionProps = Omit<ComponentProps<typeof CardDescription>, 
 
 export const PlanDescription = ({ className, children, ...props }: Readonly<PlanDescriptionProps>) => {
 	const { isStreaming } = usePlan();
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return <InlinePlanDescription className={className}>{children}</InlinePlanDescription>;
+	}
 
 	return (
 		<CardDescription className={className} data-slot="plan-description" {...props}>
@@ -154,17 +224,33 @@ export const PlanDescription = ({ className, children, ...props }: Readonly<Plan
 
 export type PlanActionProps = ComponentProps<typeof CardAction>;
 
-export const PlanAction = (props: Readonly<PlanActionProps>) => <CardAction data-slot="plan-action" {...props} />;
+export const PlanAction = (props: Readonly<PlanActionProps>) => {
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return <InlinePlanAction className={props.className}>{props.children}</InlinePlanAction>;
+	}
+
+	return <CardAction data-slot="plan-action" {...props} />;
+};
 
 /* ----- PlanContent ----- */
 
 export type PlanContentProps = ComponentProps<typeof CardContent>;
 
-export const PlanContent = ({ className, ...props }: Readonly<PlanContentProps>) => (
-	<CollapsibleContent
-		render={<CardContent data-slot="plan-content" className={cn("data-closed:h-0 data-closed:overflow-hidden data-closed:py-0", className)} {...props} />}
-	/>
-);
+export const PlanContent = ({ className, ...props }: Readonly<PlanContentProps>) => {
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return <InlinePlanContent className={className}>{props.children}</InlinePlanContent>;
+	}
+
+	return (
+		<CollapsibleContent
+			render={<CardContent data-slot="plan-content" className={cn("data-closed:h-0 data-closed:overflow-hidden data-closed:py-0", className)} {...props} />}
+		/>
+	);
+};
 
 const COLLAPSED_CONTENT_MAX_HEIGHT_PX = 240;
 const COLLAPSED_CONTENT_HEIGHT_CLASS = "max-h-[240px]";
@@ -273,28 +359,48 @@ export const PlanSummary = ({ summary, className, emptyMessage = "No summary pro
 
 export type PlanFooterProps = ComponentProps<typeof GenerativeCardFooter>;
 
-export const PlanFooter = (props: Readonly<PlanFooterProps>) => <GenerativeCardFooter data-slot="plan-footer" {...props} />;
+export const PlanFooter = (props: Readonly<PlanFooterProps>) => {
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return (
+			<InlinePlanFooter className={props.className}>
+				{props.children}
+				{props.action}
+			</InlinePlanFooter>
+		);
+	}
+
+	return <GenerativeCardFooter data-slot="plan-footer" {...props} />;
+};
 
 /* ----- PlanTrigger ----- */
 
 export type PlanTriggerProps = ComponentProps<typeof CollapsibleTrigger>;
 
-export const PlanTrigger = ({ className, ...props }: Readonly<PlanTriggerProps>) => (
-	<CollapsibleTrigger
-		{...props}
-		render={
-			<Button
-				className={cn("size-8", className)}
-				data-slot="plan-trigger"
-				size="icon"
-				variant="ghost"
-			/>
-		}
-	>
-		<ChevronsUpDownIcon className="size-4" />
-		<span className="sr-only">Toggle plan</span>
-	</CollapsibleTrigger>
-);
+export const PlanTrigger = ({ className, ...props }: Readonly<PlanTriggerProps>) => {
+	const variant = usePlanVariant();
+
+	// Inline: the whole header line opens the plan, so there is no separate toggle.
+	if (variant === "inline") return null;
+
+	return (
+		<CollapsibleTrigger
+			{...props}
+			render={
+				<Button
+					className={cn("size-8", className)}
+					data-slot="plan-trigger"
+					size="icon"
+					variant="ghost"
+				/>
+			}
+		>
+			<ChevronsUpDownIcon className="size-4" />
+			<span className="sr-only">Toggle plan</span>
+		</CollapsibleTrigger>
+	);
+};
 
 /* ----- PlanAgentBar ----- */
 
@@ -324,6 +430,7 @@ export type PlanTaskListProps = ComponentProps<"ol"> & {
 
 export const PlanTaskList = ({ children, className, showMoreLabel = "Show more", ...props }: Readonly<PlanTaskListProps>) => {
 	const { isContentExpanded, setIsContentExpanded } = usePlan();
+	const variant = usePlanVariant();
 	const [hasOverflow, setHasOverflow] = useState(false);
 	const [hasMeasured, setHasMeasured] = useState(false);
 	const listRef = useRef<HTMLOListElement | null>(null);
@@ -358,6 +465,10 @@ export const PlanTaskList = ({ children, className, showMoreLabel = "Show more",
 		};
 		}, [children, isContentExpanded]);
 		// oxlint-enable react-doctor/no-adjust-state-on-prop-change
+
+	if (variant === "inline") {
+		return <InlinePlanSteps className={className}>{children}</InlinePlanSteps>;
+	}
 
 	const showCollapsedState = !isContentExpanded;
 	const showCollapsedControls = showCollapsedState && (hasMeasured ? hasOverflow : false);
@@ -394,37 +505,51 @@ export type PlanTaskItemProps = {
 	agent?: string;
 	agentAvatarSrc?: string;
 	className?: string;
+	/** Inline variant only: the step's progress. Defaults to pending. */
+	status?: PlanStepStatus;
 };
 
-export const PlanTaskItem = ({ index, label, blockedByLabels, blockedByText, agent, agentAvatarSrc, className }: Readonly<PlanTaskItemProps>) => (
-	<motion.li
-		initial={{ opacity: 0, y: 8 }}
-		animate={{ opacity: 1, y: 0 }}
-		transition={{ duration: 0.25, ease: "easeOut" }}
-		className={cn("flex min-h-8 shrink-0 items-center gap-4 rounded-lg px-2 py-1.5", className)}
-		data-slot="plan-task-item"
-	>
-		<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-surface text-sm leading-5 font-medium text-text">{index}.</span>
-		<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-			<span className="text-sm leading-5 font-medium text-text">{label}</span>
-			{blockedByText ? <span className="text-xs leading-4 text-text-subtlest">{blockedByText}</span> : null}
-			{!blockedByText && blockedByLabels && blockedByLabels.length > 0 ? <span className="text-xs leading-4 text-text-subtlest">Blocked by: Step {blockedByLabels.join(", ")}</span> : null}
-		</div>
-		{agent ? (
-			<Tag
-				type="agent"
-				elemBefore={
-					<Avatar size="xs" shape="hexagon">
-						{agentAvatarSrc ? <AvatarImage src={agentAvatarSrc} alt={agent} /> : null}
-						<AvatarFallback>{agent.slice(0, 2).toUpperCase()}</AvatarFallback>
-					</Avatar>
-				}
-			>
-				{agent}
-			</Tag>
-		) : null}
-	</motion.li>
-);
+export const PlanTaskItem = ({ index, label, blockedByLabels, blockedByText, agent, agentAvatarSrc, className, status = "pending" }: Readonly<PlanTaskItemProps>) => {
+	const variant = usePlanVariant();
+
+	if (variant === "inline") {
+		return (
+			<InlinePlanStep className={className} status={status}>
+				{label}
+			</InlinePlanStep>
+		);
+	}
+
+	return (
+		<motion.li
+			initial={{ opacity: 0, y: 8 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.25, ease: "easeOut" }}
+			className={cn("flex min-h-8 shrink-0 items-center gap-4 rounded-lg px-2 py-1.5", className)}
+			data-slot="plan-task-item"
+		>
+			<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-surface text-sm leading-5 font-medium text-text">{index}.</span>
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="text-sm leading-5 font-medium text-text">{label}</span>
+				{blockedByText ? <span className="text-xs leading-4 text-text-subtlest">{blockedByText}</span> : null}
+				{!blockedByText && blockedByLabels && blockedByLabels.length > 0 ? <span className="text-xs leading-4 text-text-subtlest">Blocked by: Step {blockedByLabels.join(", ")}</span> : null}
+			</div>
+			{agent ? (
+				<Tag
+					type="agent"
+					elemBefore={
+						<Avatar size="xs" shape="hexagon">
+							{agentAvatarSrc ? <AvatarImage src={agentAvatarSrc} alt={agent} /> : null}
+							<AvatarFallback>{agent.slice(0, 2).toUpperCase()}</AvatarFallback>
+						</Avatar>
+					}
+				>
+					{agent}
+				</Tag>
+			) : null}
+		</motion.li>
+	);
+};
 
 /* ----- PlanTabContent ----- */
 
