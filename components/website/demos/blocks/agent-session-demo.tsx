@@ -9,8 +9,20 @@ import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journ
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { agentSessionDemoProfiles, agentSessionDemoScenario } from "@/components/projects/shared/lib/agent-session-demo-chat";
 import { renderAgentSessionDemoArtifacts } from "@/components/projects/shared/components/agent-session-demo-artifacts";
+import { AgentSessionShowcase, ButterSessionPermissionControls, type ButterSessionPermission } from "@/components/projects/shared/components/agent-session-showcase";
 
 const TEAM_CHAT_PROFILES = agentSessionDemoProfiles(JGP_CHAT_AGENT_PROFILES, AGENT_SESSION_CLOUD_ITEMS);
+
+export function AgentSessionDemoComparison() {
+	const [permission, setPermission] = useState<ButterSessionPermission>("mine");
+	const [chatActive, setChatActive] = useState(false);
+	return (
+		<div className="flex w-full min-w-0 flex-col items-center gap-4 bg-surface p-4">
+			<ButterSessionPermissionControls onPermissionChange={setPermission} permission={permission} />
+			<AgentSessionShowcase active={chatActive} className="w-full" onSessionOpen={() => setChatActive(true)} permission={permission} profiles={JGP_CHAT_AGENT_PROFILES} />
+		</div>
+	);
+}
 
 function TeamSessionDemoContent() {
 	const [viewerOwner, setViewerOwner] = useState<NonNullable<AgentSessionItem["invokedBy"]> | null>(null);
