@@ -81,6 +81,9 @@ catalog:
   '@remotion/player': 4.0.542
 overrides:
   '@hono/node-server': ^1.19.15
+  # Keep the compatible flag clients that fit VPK's shared route budgets.
+  '@atlaskit/platform-feature-flags': 2.2.0
+  '@atlaskit/react-compiler-gating': 0.2.3
   '@pierre/trees>@pierre/theming': 1.0.1
   '@react-grab/cli>smol-toml': ^1.9.1
   '@tobilu/qmd>@modelcontextprotocol/server': 2.3.1

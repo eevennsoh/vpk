@@ -78,6 +78,8 @@ catalogs:
 
 overrides:
   '@hono/node-server': ^1.19.15
+  '@atlaskit/platform-feature-flags': 2.2.0
+  '@atlaskit/react-compiler-gating': 0.2.3
   '@pierre/trees>@pierre/theming': 1.0.1
   '@react-grab/cli>smol-toml': ^1.9.1
   '@tobilu/qmd>@modelcontextprotocol/server': 2.3.1
@@ -333,8 +335,8 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       dialkit:
-        specifier: ~2.2.0
-        version: 2.2.0(motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ~2.0.2
+        version: 2.0.2(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.3.1)
@@ -366,8 +368,8 @@ importers:
         specifier: ^0.18.15
         version: 0.18.15
       liquid-gooey:
-        specifier: 0.2.2
-        version: 0.2.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 0.2.1
+        version: 0.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       media-chrome:
         specifier: ^4.19.4
         version: 4.19.4(react@19.3.1)
@@ -375,11 +377,11 @@ importers:
         specifier: 1.0.2
         version: 1.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       motion:
-        specifier: ^14.12.0
-        version: 14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^13.5.1
+        version: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       motion-plus:
-        specifier: npm:@motionplus/core@^4.3.0
-        version: '@motionplus/core@4.3.0(motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)'
+        specifier: npm:@motionplus/core@^3.0.0
+        version: '@motionplus/core@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)'
       nanoid:
         specifier: ^6.0.2
         version: 6.0.2
@@ -614,8 +616,8 @@ packages:
       zod:
         optional: true
 
-  '@atlaskit/atlassian-context@2.0.0':
-    resolution: {integrity: sha512-RfdonD91GCqMo6a4nZlg3ZkKrHV4OcEkxVe/4J0aPkLk4R0rRZfcckvQxv0hou3JziNibIv4ou9naK6bt/Y09g==}
+  '@atlaskit/atlassian-context@1.2.0':
+    resolution: {integrity: sha512-xM3V7efLG7LTeG/acX8k7N7QJ4929TMXg3Pv5eBAhIrE2o5YrE7wBfnkCDgNTWRu1KY7IJOGbz4xmF+AZ0z7fw==}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
@@ -629,11 +631,8 @@ packages:
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
-  '@atlaskit/feature-gate-js-client@8.0.0':
-    resolution: {integrity: sha512-K6ib83R3AROC/Jmgpru9ku3S6CUwloO1yoOY915/gAcPnAI2bGcMetUwmZGVXdw+/Ravfy6lxgZQsN2GUHJraQ==}
-
-  '@atlaskit/flag-client@1.0.3':
-    resolution: {integrity: sha512-PRMNqm3glghC0tyPC85sEMhYYIOEmWlqFb6bzRQsRZIuT1K71bn5GkRIGaw+4hVg2MO/pzfZyJK1AIrWAhh4vQ==}
+  '@atlaskit/feature-gate-js-client@6.0.2':
+    resolution: {integrity: sha512-x4TKOAhM9Ejb6e2CA3OrIMv+T6+FdPSgEPH+yzB+k/A5OOHBaoKLzcG9Fs1mBGp/fISiD966xmdPdYb1RcMPDw==}
 
   '@atlaskit/icon-lab@7.11.0':
     resolution: {integrity: sha512-LU+233TJGANbDd7IsDGaxtMXUoQHgHO07w9t5/x9c9ADPUMBTt6ojf/26M5Ii9QN9xikZvMM2GlMKxbECLAAUg==}
@@ -655,11 +654,11 @@ packages:
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
-  '@atlaskit/platform-feature-flags@2.2.2':
-    resolution: {integrity: sha512-2vVqXpUH2qW2bAAetiT7eOT5gu3cvyg0RNRknTSASlN7hGD3zJc5lcc28GC7f9ayy2DdteRoG7teiSKrinU1jw==}
+  '@atlaskit/platform-feature-flags@2.2.0':
+    resolution: {integrity: sha512-wsdiOWuYPlcHmrsxqEfbzvwciDgTbCgfnaXwbkO9Tq/qTkWhWIRpyaQJ2qwoDu70woGd91jg6ZP2470vusyUgw==}
 
-  '@atlaskit/react-compiler-gating@0.2.7':
-    resolution: {integrity: sha512-aOcVwX7le2FX92NmSfvvyMEierigp9O/rYNy/M+1ablnRRq1osP/drquGBPuDRHjnq0dddNWYVR4VxhF54Dtqg==}
+  '@atlaskit/react-compiler-gating@0.2.3':
+    resolution: {integrity: sha512-hSWZ1DyJChQ9ZmpmrA7VbdRIO2/RtYwBP7KKJbEG8+8KJW2A82A0mTj0TaH9hoB7JKQB+b8/vDLYA6febqT3wA==}
 
   '@atlaskit/skeleton@4.4.4':
     resolution: {integrity: sha512-UGDE48LN0j14rIWuv/OJq5Q3gdPljrDm4NtUEfr8Lld6/x1MKB5OsXkmwT76L/w7tmdcVTJ/wXqTuPWdtwgYlw==}
@@ -1610,10 +1609,10 @@ packages:
     peerDependencies:
       three: '>= 0.159.0'
 
-  '@motionplus/core@4.3.0':
-    resolution: {integrity: sha512-qQF5BJN7nECAHjOIfeA23L/eQNHu3OcDSZKCjewvBhAcWoaIO93m0AniGBJNklzqrzkQz+Ep6skrj90XltFycQ==}
+  '@motionplus/core@3.0.0':
+    resolution: {integrity: sha512-3jop7fJ7JCar7VmjJuXwT2x0nSTGK5wL1wi2FLb21r9KWwB+Td6+7ex32h5M5piXRopwZWHNY68J70QEpKwu8g==}
     peerDependencies:
-      motion: ^14.1.0
+      motion: ^13.0.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
@@ -4960,8 +4959,8 @@ packages:
   dfa@1.2.0:
     resolution: {integrity: sha512-ED3jP8saaweFTjeGX8HQPjeC1YYyZs98jGNZx6IiBvxW7JG5v492kamAQB3m2wop07CvU/RQmzcKr6bgcC5D/Q==}
 
-  dialkit@2.2.0:
-    resolution: {integrity: sha512-WU7WmBWi+B0eDXHOImvW7rMPwTYORsgEr1Rb5Mw+ccZFfE3uWKaBW1e5Rmtv8P2yuWSRkcvqLA4usk33P2pVdg==}
+  dialkit@2.0.2:
+    resolution: {integrity: sha512-D5ZFLBhcB8WVxI6Q8e7HuPPA4SKQBPfLHpvgZQ5V0ZrqohHjYjTR5JoLfXSCeN8tKvUdemyGnVHy/3EtsaliUw==}
     peerDependencies:
       motion: '>=11.0.0'
       motion-v: '>=2.0.0'
@@ -5510,18 +5509,15 @@ packages:
     resolution: {integrity: sha512-PcOxmqwYCW7O2ovKRU8OoQQj2yqTfEB/yeTYk4gPid6dN5ODRfU1hXd9tTVZzax/0NkO7AxpHykvZnT1aYp/BQ==}
     engines: {node: ^14.13.1 || >=16.0.0}
 
-  framer-motion@14.12.0:
-    resolution: {integrity: sha512-4m+10xYan0ic8nFI8zyB5hJkW5F8F4Rer617UecOs8esw0he9unDgXaEZ0rUX7oztz1w4iuvyPWhk4jltMX5iw==}
+  framer-motion@13.5.1:
+    resolution: {integrity: sha512-HeWOaeHD3kyTSIEMT6+nw7fBn4saIfxxabZyAITbycAl4xr1kzGJKIvGt/OWghSlvIA9qTnZ1zTGelHAe6S8DA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
-      remix: ^3.1.0
     peerDependenciesMeta:
       react:
         optional: true
       react-dom:
-        optional: true
-      remix:
         optional: true
 
   fresh@2.0.0:
@@ -6411,8 +6407,8 @@ packages:
   linkifyjs@4.4.0:
     resolution: {integrity: sha512-InTexvtbai+2c+dEVGcc6O6P2DMVIiwD9a/i4zFroazOIYLOS6FSVmAJ7kFeumnCMx6/gQqNAkbUvgMubV4+MA==}
 
-  liquid-gooey@0.2.2:
-    resolution: {integrity: sha512-UnnNSYdZoNHXowmHKo2pOF6suI1+pLMKf7qBMj1wT6wG3u0gqXP7qiLVMpCjJM2ETkr/GqF8n4fcuIgWb1fHQQ==}
+  liquid-gooey@0.2.1:
+    resolution: {integrity: sha512-BRb0Rscie4JCHFmk4bkWxM+p03c34sidLgNE8XFJGRGEyWM/Wf0FYztJH3CfMWwOVajd4dVurAFe+BTSj8Eeeg==}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'
@@ -6793,24 +6789,26 @@ packages:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
     engines: {node: '>= 18'}
 
-  motion-dom@14.12.0:
-    resolution: {integrity: sha512-YnAY17g8mXRVoXGZbH+v/O2SkNBJqz2TMuqL9yek9Omfhsdjw7gJwNgI5nsGZFpbbm3vINyOo+VtGPryIslatw==}
+  motion-dom@13.5.1:
+    resolution: {integrity: sha512-/7CVCD20Mz1KobktorpdgvowV0V41J7UxqE+qWS3GkSJqrRr5ft+2RloOYtEKv+wvBp3JaSFBclhxt4ja8ovHg==}
 
-  motion-utils@14.7.0:
-    resolution: {integrity: sha512-woO0/Nb7ys75f94fjvQi/6leiHGvZUYkeHUPEZ3vxsV+9OpEVhkxp01x8MlRwX0zt31EqgXsKDAoBoJLC148Tw==}
+  motion-plus-dom@3.0.0:
+    resolution: {integrity: sha512-TsWZY6wXoVPOJ7wItmtAMAkCUL8HRXQJGzf7isMp58JoIObYMdzGUOnCMZ3EcRABmV9PxjMLijjzKL6MfvtNSQ==}
+    peerDependencies:
+      motion: ^13.0.0
 
-  motion@14.12.0:
-    resolution: {integrity: sha512-cxD0c0yGXo/mzPgveXMsXGl138UNsRit9XgInK8kThtDsrvIkhlAR9b6WYoAm7EmKWToMFx6v/G8i0Zjv+2uoA==}
+  motion-utils@13.5.0:
+    resolution: {integrity: sha512-Hqe/sqjIKliPZg8sVjWAkdySDPJNIeKH+euVkDOG8ri3DUUU7ZjndmHsGqEPz2iHpiyVaV5I22iguCMHU2he+Q==}
+
+  motion@13.5.1:
+    resolution: {integrity: sha512-eV9SUem6KnzEa9+eT+dVBeDlhy5TTdn09YWR1WhUsKoZCJPw/n4TcYhjbxq2Gy5PTwDr//4H3r5vxkcZnNnO1w==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
-      remix: ^3.1.0
     peerDependenciesMeta:
       react:
         optional: true
       react-dom:
-        optional: true
-      remix:
         optional: true
 
   ms@2.1.3:
@@ -8734,7 +8732,7 @@ snapshots:
     optionalDependencies:
       zod: 4.6.7
 
-  '@atlaskit/atlassian-context@2.0.0(react@19.3.1)':
+  '@atlaskit/atlassian-context@1.2.0(react@19.3.1)':
     dependencies:
       '@babel/runtime': 7.29.13
       react: 19.3.1
@@ -8755,10 +8753,9 @@ snapshots:
       react: 19.3.1
       tiny-invariant: 1.3.3
 
-  '@atlaskit/feature-gate-js-client@8.0.0(react@19.3.1)':
+  '@atlaskit/feature-gate-js-client@6.0.2(react@19.3.1)':
     dependencies:
-      '@atlaskit/atlassian-context': 2.0.0(react@19.3.1)
-      '@atlaskit/flag-client': 1.0.3
+      '@atlaskit/atlassian-context': 1.2.0(react@19.3.1)
       '@babel/runtime': 7.29.13
       '@statsig/client-core': 3.30.2
       '@statsig/js-client': 3.30.2
@@ -8766,14 +8763,10 @@ snapshots:
     transitivePeerDependencies:
       - react
 
-  '@atlaskit/flag-client@1.0.3':
-    dependencies:
-      '@babel/runtime': 7.29.13
-
   '@atlaskit/icon-lab@7.11.0(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
       '@atlaskit/icon': 38.0.2(react@19.3.1)(supports-color@10.2.2)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@babel/runtime': 7.29.13
       react: 19.3.1
     transitivePeerDependencies:
@@ -8781,7 +8774,7 @@ snapshots:
 
   '@atlaskit/icon@38.0.2(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/tile': 5.0.0(react@19.3.1)(supports-color@10.2.2)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
@@ -8799,8 +8792,8 @@ snapshots:
     dependencies:
       '@atlaskit/css': 1.1.8(react@19.3.1)(supports-color@10.2.2)
       '@atlaskit/ds-lib': 8.0.1(react@19.3.1)
-      '@atlaskit/platform-feature-flags': 2.2.2(react@19.3.1)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/platform-feature-flags': 2.2.0(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/theme': 28.2.5(react@19.3.1)(supports-color@10.2.2)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
@@ -8809,16 +8802,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@atlaskit/platform-feature-flags@2.2.2(react@19.3.1)':
+  '@atlaskit/platform-feature-flags@2.2.0(react@19.3.1)':
     dependencies:
-      '@atlaskit/feature-gate-js-client': 8.0.0(react@19.3.1)
+      '@atlaskit/feature-gate-js-client': 6.0.2(react@19.3.1)
       '@babel/runtime': 7.29.13
     transitivePeerDependencies:
       - react
 
-  '@atlaskit/react-compiler-gating@0.2.7(react@19.3.1)':
+  '@atlaskit/react-compiler-gating@0.2.3(react@19.3.1)':
     dependencies:
-      '@atlaskit/feature-gate-js-client': 8.0.0(react@19.3.1)
+      '@atlaskit/feature-gate-js-client': 6.0.2(react@19.3.1)
       '@babel/runtime': 7.29.13
     transitivePeerDependencies:
       - react
@@ -8826,8 +8819,8 @@ snapshots:
   '@atlaskit/skeleton@4.4.4(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
       '@atlaskit/interaction-context': 4.1.0(react@19.3.1)
-      '@atlaskit/platform-feature-flags': 2.2.2(react@19.3.1)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/platform-feature-flags': 2.2.0(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
       '@compiled/react': 1.0.2(react@19.3.1)
@@ -8838,7 +8831,7 @@ snapshots:
   '@atlaskit/theme@28.2.5(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
       '@atlaskit/ds-lib': 8.0.1(react@19.3.1)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
       react: 19.3.1
@@ -8847,7 +8840,7 @@ snapshots:
 
   '@atlaskit/tile@5.0.0(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/skeleton': 4.4.4(react@19.3.1)(supports-color@10.2.2)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
@@ -8860,8 +8853,8 @@ snapshots:
   '@atlaskit/tokens@20.13.0(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
       '@atlaskit/ds-lib': 8.0.1(react@19.3.1)
-      '@atlaskit/platform-feature-flags': 2.2.2(react@19.3.1)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/platform-feature-flags': 2.2.0(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@babel/runtime': 7.29.13
       '@babel/traverse': 7.29.13(supports-color@10.2.2)
       '@babel/types': 7.29.11
@@ -8873,7 +8866,7 @@ snapshots:
   '@atlassian/logo-third-party@4.4.0(react@19.3.1)(supports-color@10.2.2)':
     dependencies:
       '@atlaskit/css': 1.1.8(react@19.3.1)(supports-color@10.2.2)
-      '@atlaskit/react-compiler-gating': 0.2.7(react@19.3.1)
+      '@atlaskit/react-compiler-gating': 0.2.3(react@19.3.1)
       '@atlaskit/tile': 5.0.0(react@19.3.1)(supports-color@10.2.2)
       '@atlaskit/tokens': 20.13.0(react@19.3.1)(supports-color@10.2.2)
       '@babel/runtime': 7.29.13
@@ -9932,9 +9925,10 @@ snapshots:
       promise-worker-transferable: 1.0.4
       three: 0.187.0
 
-  '@motionplus/core@4.3.0(motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@motionplus/core@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      motion: 14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      motion: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      motion-plus-dom: 3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))
     optionalDependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
@@ -13033,9 +13027,9 @@ snapshots:
 
   dfa@1.2.0: {}
 
-  dialkit@2.2.0(motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  dialkit@2.0.2(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     optionalDependencies:
-      motion: 14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      motion: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
@@ -13780,10 +13774,10 @@ snapshots:
 
   fractional-indexing@3.2.0: {}
 
-  framer-motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  framer-motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
-      motion-dom: 14.12.0
-      motion-utils: 14.7.0
+      motion-dom: 13.5.1
+      motion-utils: 13.5.0
       tslib: 2.9.1
     optionalDependencies:
       react: 19.3.1
@@ -14722,7 +14716,7 @@ snapshots:
 
   linkifyjs@4.4.0: {}
 
-  liquid-gooey@0.2.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  liquid-gooey@0.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
@@ -15334,15 +15328,19 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
-  motion-dom@14.12.0:
+  motion-dom@13.5.1:
     dependencies:
-      motion-utils: 14.7.0
+      motion-utils: 13.5.0
 
-  motion-utils@14.7.0: {}
-
-  motion@14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  motion-plus-dom@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)):
     dependencies:
-      framer-motion: 14.12.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      motion: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+
+  motion-utils@13.5.0: {}
+
+  motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+    dependencies:
+      framer-motion: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tslib: 2.9.1
     optionalDependencies:
       react: 19.3.1
