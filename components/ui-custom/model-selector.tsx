@@ -2,78 +2,32 @@
 
 /* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
 
-import {
-	createContext,
-	use,
-	useCallback,
-	useMemo,
-	useRef,
-	type ComponentProps,
-	type ReactNode,
-	type RefObject,
-} from "react";
+import type { ComponentProps, ReactNode } from "react";
 
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-	CommandSeparator,
-	CommandShortcut,
-} from "@/components/ui/command";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-interface ModelSelectorContextValue {
-	close: () => void;
-}
-
-const ModelSelectorContext = createContext<ModelSelectorContextValue | null>(
-	null
-);
-
 export type ModelSelectorProps = ComponentProps<typeof DropdownMenu>;
 
-type ModelSelectorActions =
-	NonNullable<ModelSelectorProps["actionsRef"]> extends RefObject<
-		infer Actions
-	>
-		? Actions
-		: never;
-
-export const ModelSelector = ({
-	actionsRef,
-	children,
-	modal = false,
-	...props
-}: Readonly<ModelSelectorProps>) => {
-	const fallbackActionsRef = useRef<ModelSelectorActions>(null);
-	const resolvedActionsRef = actionsRef ?? fallbackActionsRef;
-	const close = useCallback(() => {
-		resolvedActionsRef.current?.close();
-	}, [resolvedActionsRef]);
-	const contextValue = useMemo(() => ({ close }), [close]);
-
-	return (
-		<ModelSelectorContext value={contextValue}>
-			<DropdownMenu actionsRef={resolvedActionsRef} modal={modal} {...props}>
-				{children}
-			</DropdownMenu>
-		</ModelSelectorContext>
-	);
-};
+export const ModelSelector = (props: Readonly<ModelSelectorProps>) => (
+	<DropdownMenu {...props} />
+);
 
 export type ModelSelectorTriggerProps = ComponentProps<
 	typeof DropdownMenuTrigger
 >;
 
-export const ModelSelectorTrigger = (props: ModelSelectorTriggerProps) => (
+export const ModelSelectorTrigger = (props: Readonly<ModelSelectorTriggerProps>) => (
 	<DropdownMenuTrigger {...props} />
 );
 
@@ -86,103 +40,88 @@ export type ModelSelectorContentProps = ComponentProps<
 export const ModelSelectorContent = ({
 	className,
 	children,
-	portalled = false,
 	title = "Model Selector",
 	...props
-}: ModelSelectorContentProps) => (
+}: Readonly<ModelSelectorContentProps>) => (
 	<DropdownMenuContent
 		aria-label={typeof title === "string" ? title : undefined}
-		className={cn("w-80 p-0", className)}
-		portalled={portalled}
+		className={cn("w-56", className)}
 		{...props}
 	>
-		{title ? <span className="sr-only">{title}</span> : null}
-		<Command
-			className="rounded-lg! **:data-[slot=command-input-wrapper]:h-auto"
-			label={typeof title === "string" ? title : undefined}
-		>
-			{children}
-		</Command>
+		{title && typeof title !== "string" ? (
+			<span className="sr-only">{title}</span>
+		) : null}
+		{children}
 	</DropdownMenuContent>
 );
 
-export type ModelSelectorDialogProps = ModelSelectorProps;
+export type ModelSelectorListProps = ComponentProps<
+	typeof DropdownMenuRadioGroup
+>;
 
-export const ModelSelectorDialog = (props: ModelSelectorDialogProps) => (
-	<ModelSelector {...props} />
+/** Radio group whose `value` is the selected model id. */
+export const ModelSelectorList = (props: Readonly<ModelSelectorListProps>) => (
+	<DropdownMenuRadioGroup {...props} />
 );
 
-export type ModelSelectorInputProps = ComponentProps<typeof CommandInput>;
+export type ModelSelectorGroupProps = ComponentProps<typeof DropdownMenuGroup> & {
+	heading?: ReactNode;
+};
 
-export const ModelSelectorInput = ({
-	className,
+export const ModelSelectorGroup = ({
+	children,
+	heading,
 	...props
-}: ModelSelectorInputProps) => (
-	<CommandInput className={cn(className)} {...props} />
+}: Readonly<ModelSelectorGroupProps>) => (
+	<DropdownMenuGroup {...props}>
+		{heading ? <DropdownMenuLabel>{heading}</DropdownMenuLabel> : null}
+		{children}
+	</DropdownMenuGroup>
 );
 
-export type ModelSelectorListProps = ComponentProps<typeof CommandList>;
-
-export const ModelSelectorList = (props: ModelSelectorListProps) => (
-	<CommandList {...props} />
-);
-
-export type ModelSelectorEmptyProps = ComponentProps<typeof CommandEmpty>;
-
-export const ModelSelectorEmpty = (props: ModelSelectorEmptyProps) => (
-	<CommandEmpty {...props} />
-);
-
-export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
-
-export const ModelSelectorGroup = (props: ModelSelectorGroupProps) => (
-	<CommandGroup {...props} />
-);
-
-export type ModelSelectorItemProps = ComponentProps<typeof CommandItem> & {
+export type ModelSelectorItemProps = Omit<
+	ComponentProps<typeof DropdownMenuRadioItem>,
+	"onSelect"
+> & {
+	/** Called with the item's model id when it is picked. */
+	onSelect?: (value: string) => void;
+	/** Close the menu after picking. Alias of `closeOnClick`; defaults to true. */
 	closeOnSelect?: boolean;
 };
 
 export const ModelSelectorItem = ({
-	className,
+	closeOnClick,
 	closeOnSelect = true,
+	onClick,
 	onSelect,
-	showCheckIcon = false,
+	value,
 	...props
-}: ModelSelectorItemProps) => {
-	const context = use(ModelSelectorContext);
+}: Readonly<ModelSelectorItemProps>) => (
+	<DropdownMenuRadioItem
+		closeOnClick={closeOnClick ?? closeOnSelect}
+		onClick={(event) => {
+			onClick?.(event);
+			onSelect?.(String(value));
+		}}
+		value={value}
+		{...props}
+	/>
+);
 
-	return (
-		<CommandItem
-			className={cn(
-				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
-				className
-			)}
-			showCheckIcon={showCheckIcon}
-			onSelect={(value) => {
-				onSelect?.(value);
+export type ModelSelectorShortcutProps = ComponentProps<
+	typeof DropdownMenuShortcut
+>;
 
-				if (closeOnSelect) {
-					context?.close();
-				}
-			}}
-			{...props}
-		/>
-	);
-};
-
-export type ModelSelectorShortcutProps = ComponentProps<typeof CommandShortcut>;
-
-export const ModelSelectorShortcut = (props: ModelSelectorShortcutProps) => (
-	<CommandShortcut {...props} />
+export const ModelSelectorShortcut = (props: Readonly<ModelSelectorShortcutProps>) => (
+	<DropdownMenuShortcut {...props} />
 );
 
 export type ModelSelectorSeparatorProps = ComponentProps<
-	typeof CommandSeparator
+	typeof DropdownMenuSeparator
 >;
 
-export const ModelSelectorSeparator = (props: ModelSelectorSeparatorProps) => (
-	<CommandSeparator {...props} />
+export const ModelSelectorSeparator = (props: Readonly<ModelSelectorSeparatorProps>) => (
+	<DropdownMenuSeparator {...props} />
 );
 
 export type ModelSelectorLogoProps = Omit<

@@ -151,13 +151,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"model-selector-demo-with-search": dynamic(
-		() =>
-			import("../../demos/ui-custom/model-selector-demo").then((mod) => ({
-				default: mod.ModelSelectorDemoWithSearch,
-			})),
-		{ ssr: false },
-	),
 	"model-selector-demo-with-logos": dynamic(
 		() =>
 			import("../../demos/ui-custom/model-selector-demo").then((mod) => ({
