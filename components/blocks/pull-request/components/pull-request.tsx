@@ -488,7 +488,7 @@ function PullRequestFlyoutBody({
 	return (
 		<>
 			{onToggleDetails ? <div className="min-w-0 px-1">
-				<div className={cn("relative flex min-w-0 items-start gap-3 px-2 py-2 transition-[height] duration-normal ease-in-out [interpolate-size:allow-keywords]", showDetails ? "h-auto" : "h-9")}>
+				<div className={cn("relative flex min-w-0 items-start gap-3 px-2 py-2 transition-[height] duration-normal ease-in-out", showDetails ? "h-auto" : "h-9")}>
 					<Button aria-expanded={showDetails} aria-label={`#${number} ${title} ${status}`} className="absolute inset-0 h-full w-full aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring" onClick={onToggleDetails} type="button" variant="ghost" />
 					<PullRequestInlineTitle className={cn("pointer-events-none relative flex-1 [&_a]:pointer-events-auto [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} href={showDetails ? href : undefined} number={number} title={title} />
 					<div className="pointer-events-none relative"><PullRequestStatusLozenge status={status} /></div>

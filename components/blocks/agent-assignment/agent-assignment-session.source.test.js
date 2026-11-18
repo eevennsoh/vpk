@@ -154,15 +154,22 @@ test("rapidly toggling the teammate disclosure leaves one settled avatar stack",
 });
 
 test("owner-only, viewer-only, expired and empty menus retain their separate semantics without an assignment footer", async () => {
+	let selected = 0;
+	const onSelectSession = () => { selected++; };
 	const view = await renderMenu(menuProps([session("mine", "owner")]));
 	try {
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
-		await view.rerender(menuProps([session("teammate", "viewer")]));
+		await view.rerender(menuProps([session("teammate", "viewer")], { onSelectSession }));
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
-		assert.equal(view.getByText("teammate work").closest("article").tabIndex, -1);
+		const viewer = view.getByText("teammate work").closest("article");
+		assert.equal(viewer.tabIndex, 0);
+		await view.focus(viewer);
+		assert.equal(view.getByText("You can see this session, but only its owner can act on it.").textContent, "You can see this session, but only its owner can act on it.");
+		await view.press(viewer, "Enter");
+		assert.equal(selected, 0);
 		assert.equal(view.getAllByRole("listitem").length, 1);
 		assert.equal(view.queryByRole("separator"), null);
 		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));

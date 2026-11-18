@@ -81,7 +81,7 @@ test("catalog compares session sizes and permissions", async ({ page }) => {
 	await example.getByRole("button", { name: "Medium", exact: true }).click();
 	await expect(row).toHaveCSS("width", "420px");
 	await example.getByRole("button", { name: "Small", exact: true }).click();
-	await expect(row).toHaveCSS("width", "320px");
+	await expect(row).toHaveCSS("width", "280px");
 	await example.getByRole("button", { name: "Private session" }).click();
 	await expect(local.getByRole("img", { name: /Private session by/ }).first()).toBeVisible();
 	await example.getByRole("button", { name: "Team session" }).click();
