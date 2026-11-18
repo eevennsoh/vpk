@@ -459,7 +459,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("tool-approval", "Tool Approval"),
 	{ name: "Chat Configuration", slug: "chat-configuration", importPath: "@/components/projects/shared/components/chat-configuration/customize-menu", category: "blocks" },
 	blockComponent("chat-gallery", "Chat Gallery"),
-	blockComponent("chatbot", "Chatbot"),
 	blockComponent("chatgpt", "ChatGPT"),
 	blockComponent("code-review", "Code Review"),
 	blockComponent("cursor", "Cursor"),
@@ -666,7 +665,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	},
 	blockComponent("top-navigation", "Top Navigation"),
 	blockComponent("terminal-switch", "Terminal Switch"),
-	blockComponent("workflow", "Workflow"),
 ]);
 
 export const PROJECT_COMPONENTS: ComponentManifestEntry[] = catalogEntries([

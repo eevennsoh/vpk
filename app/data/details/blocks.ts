@@ -35,7 +35,6 @@ import { ARTIFACT_PANE_DETAIL } from "./blocks/artifact-pane";
 import { CHAT_CONFIGURATION_DETAIL } from "./blocks/chat-configuration";
 import { CHAT_GALLERY_DETAIL } from "./blocks/chat-gallery";
 import { CHAT_TIMELINE_DETAIL } from "./blocks/chat-timeline";
-import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { CHATGPT_DETAIL } from "./blocks/chatgpt";
 import { CODE_REVIEW_DETAIL } from "./blocks/code-review";
 import { CONVERSATION_STARTER_DETAIL } from "./blocks/conversation-starter";
@@ -126,7 +125,6 @@ import { TRIGGER_CONFIG_DETAIL } from "./blocks/trigger-config";
 import { TWG_AGENT_CARD_DETAIL } from "./blocks/twg-agent-card";
 import { VIDEO_DETAIL } from "./blocks/video";
 import { VISUAL_WAVEFORM_DETAIL } from "./blocks/visual-waveform";
-import { WORKFLOW_DETAIL } from "./blocks/workflow";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"3d-lanyard": LANYARD_3D_DETAIL,
@@ -160,7 +158,6 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"chat-configuration": CHAT_CONFIGURATION_DETAIL,
 	"chat-gallery": CHAT_GALLERY_DETAIL,
 	"chat-timeline": CHAT_TIMELINE_DETAIL,
-	chatbot: CHATBOT_DETAIL,
 	chatgpt: CHATGPT_DETAIL,
 	"code-review": CODE_REVIEW_DETAIL,
 	"conversation-starter": CONVERSATION_STARTER_DETAIL,
@@ -251,5 +248,4 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"twg-agent-card": TWG_AGENT_CARD_DETAIL,
 	video: VIDEO_DETAIL,
 	"visual-waveform": VISUAL_WAVEFORM_DETAIL,
-	workflow: WORKFLOW_DETAIL,
 };

@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 452,
+			"manifestEntryCount": 450,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 446,
+				"live": 444,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4452,7 +4452,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 123,
+				"entryCount": 121,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4669,13 +4669,6 @@
 						"slug": "chat-timeline",
 						"name": "Chat Timeline",
 						"importPath": "@/components/blocks/chat-timeline",
-						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "chatbot",
-						"name": "Chatbot",
-						"importPath": "@/components/blocks/chatbot",
 						"status": "live"
 					},
 					{
@@ -5307,13 +5300,6 @@
 						"slug": "visual-waveform",
 						"name": "Visual Waveform",
 						"importPath": "@/components/blocks/visual-waveform",
-						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "workflow",
-						"name": "Workflow",
-						"importPath": "@/components/blocks/workflow",
 						"status": "live"
 					}
 				]

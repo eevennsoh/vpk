@@ -65,7 +65,7 @@ function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
  * wraps it (≈ same width — not the whole panel) and is a ROUNDED card (has a
  * corner radius). Requiring a radius — not merely a top border — is deliberate:
  * composers are wrapped in `border-t p-*` footer/divider containers (e.g.
- * components/blocks/cursor/page.tsx, components/blocks/workflow/page.tsx) whose
+ * components/blocks/cursor/page.tsx) whose
  * top border would otherwise be mistaken for the input's edge, climbing the
  * anchor PAST the real (already-rounded) composer into the footer. Returning at
  * the first rounded match means an already-rounded form (floating / blocks) stops
