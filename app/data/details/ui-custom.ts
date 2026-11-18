@@ -14,7 +14,6 @@ import { ATTACHMENT_DETAIL } from "./ui-custom/attachment";
 import { AUDIO_PLAYER_DETAIL } from "./ui-custom/audio-player";
 import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { CHAIN_OF_THOUGHT_DETAIL } from "./ui-custom/chain-of-thought";
-import { CHECKPOINT_DETAIL } from "./ui-custom/checkpoint";
 import { CODE_BLOCK_DETAIL } from "./ui-custom/code-block";
 import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
 import { COMMIT_DETAIL } from "./ui-custom/commit";
@@ -70,7 +69,6 @@ import { SNIPPET_DETAIL } from "./ui-custom/snippet";
 import { SOURCE_DETAIL } from "./ui-custom/source";
 import { SPEECH_INPUT_DETAIL } from "./ui-custom/speech-input";
 import { STACK_TRACE_DETAIL } from "./ui-custom/stack-trace";
-import { SUGGESTION_DETAIL } from "./ui-custom/suggestion";
 import { TASK_DETAIL } from "./ui-custom/task";
 import { TERMINAL_DETAIL } from "./ui-custom/terminal";
 import { TEST_RESULT_DETAIL } from "./ui-custom/test-result";
@@ -94,7 +92,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"audio-player": AUDIO_PLAYER_DETAIL,
 	canvas: CANVAS_DETAIL,
 	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
-	checkpoint: CHECKPOINT_DETAIL,
 	"code-block": CODE_BLOCK_DETAIL,
 	"code-list": CODE_LIST_DETAIL,
 	commit: COMMIT_DETAIL,
@@ -150,7 +147,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	source: SOURCE_DETAIL,
 	"speech-input": SPEECH_INPUT_DETAIL,
 	"stack-trace": STACK_TRACE_DETAIL,
-	suggestion: SUGGESTION_DETAIL,
 	task: TASK_DETAIL,
 	terminal: TERMINAL_DETAIL,
 	"test-result": TEST_RESULT_DETAIL,

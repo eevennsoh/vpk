@@ -5480,7 +5480,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 81,
+				"entryCount": 83,
 				"entries": [
 					{
 						"category": "ui",
@@ -5606,6 +5606,13 @@
 						"slug": "checkbox",
 						"name": "Checkbox",
 						"importPath": "@/components/ui/checkbox",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "checkpoint",
+						"name": "Checkpoint",
+						"importPath": "@/components/ui/checkpoint",
 						"status": "live"
 					},
 					{
@@ -5988,6 +5995,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "suggestion",
+						"name": "Suggestion",
+						"importPath": "@/components/ui/suggestion",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "switch",
 						"name": "Switch",
 						"importPath": "@/components/ui/switch",
@@ -6227,7 +6241,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 78,
+				"entryCount": 76,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6297,13 +6311,6 @@
 						"slug": "chain-of-thought",
 						"name": "Chain of Thought",
 						"importPath": "@/components/ui-custom/chain-of-thought",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "checkpoint",
-						"name": "Checkpoint",
-						"importPath": "@/components/ui-custom/checkpoint",
 						"status": "live"
 					},
 					{
@@ -6689,13 +6696,6 @@
 						"slug": "stack-trace",
 						"name": "Stack Trace",
 						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "suggestion",
-						"name": "Suggestion",
-						"importPath": "@/components/ui-custom/suggestion",
 						"status": "live"
 					},
 					{

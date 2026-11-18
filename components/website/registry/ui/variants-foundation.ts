@@ -171,6 +171,13 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"suggestion-demo-follow-up": dynamic(
+		() =>
+			import("../../demos/ui/suggestion-demo").then((mod) => ({
+				default: mod.SuggestionDemoFollowUp,
+			})),
+		{ ssr: false },
+	),
 	"marker-demo-markers": dynamic(
 		() =>
 			import("../../demos/ui/marker-demo").then((mod) => ({
