@@ -591,29 +591,32 @@ test("attachments can be added as links and removed through the reference confir
 	// The arrival runs on timers that a loaded machine can finish before the test reads it, so
 	// timers run on fake time from here; the arrival must end within the 1.8 s it always had.
 	t.mock.timers.enable({ apis: ["setTimeout"] });
-	await act(async () => input.form.requestSubmit());
-	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
-	assert.equal(document.querySelector("[data-attachment-arrival]") !== null, true, "the new card plays its arrival and stays inert meanwhile");
-	assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
-	for (let elapsed = 0; document.querySelector("[data-attachment-arrival]") && elapsed < 1_800; elapsed += 50) {
-		await act(async () => t.mock.timers.tick(50));
+	try {
+		await act(async () => input.form.requestSubmit());
+		await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
+		assert.equal(document.querySelector("[data-attachment-arrival]") !== null, true, "the new card plays its arrival and stays inert meanwhile");
+		assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
+		for (let elapsed = 0; document.querySelector("[data-attachment-arrival]") && elapsed < 1_800; elapsed += 50) {
+			await act(async () => t.mock.timers.tick(50));
+		}
+		assert.equal(document.querySelector("[data-attachment-arrival]") === null, true);
+		assert.equal(view.queryByRole("button", { name: /^Preview /u }) === null, true, "cards have no preview");
+		await view.click(view.getByRole("button", { name: "More actions for Design" }));
+		await view.click(view.getByRole("menuitem", { name: "Remove" }));
+		assert.equal(view.getByRole("dialog", { name: "Remove content?" }).textContent.includes("Once removed, it'll no longer appear in this work item."), true);
+		await view.click(view.getByRole("button", { name: "Remove" }));
+		assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
+		assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
+		assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
+	} finally {
+		// Run what is still queued, such as the editor teardown Tiptap schedules after unmount, before
+		// the harness cleanup goes back to real timers, even when an assertion above failed.
+		await view.unmount();
+		for (let elapsed = 0; elapsed < 3_000; elapsed += 50) {
+			await act(async () => t.mock.timers.tick(50));
+		}
+		t.mock.timers.reset();
 	}
-	assert.equal(document.querySelector("[data-attachment-arrival]") === null, true);
-	assert.equal(view.queryByRole("button", { name: /^Preview /u }) === null, true, "cards have no preview");
-	await view.click(view.getByRole("button", { name: "More actions for Design" }));
-	await view.click(view.getByRole("menuitem", { name: "Remove" }));
-	assert.equal(view.getByRole("dialog", { name: "Remove content?" }).textContent.includes("Once removed, it'll no longer appear in this work item."), true);
-	await view.click(view.getByRole("button", { name: "Remove" }));
-	assert.equal(view.queryByRole("button", { name: "More actions for Design" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
-	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
-	// Run what is still queued, such as the editor teardown Tiptap schedules after unmount, before
-	// the harness cleanup goes back to real timers.
-	await view.unmount();
-	for (let elapsed = 0; elapsed < 3_000; elapsed += 50) {
-		await act(async () => t.mock.timers.tick(50));
-	}
-	t.mock.timers.reset();
 });
 
 test("panel ordering changes only for valid panel drops and keeps source data immutable", () => {
