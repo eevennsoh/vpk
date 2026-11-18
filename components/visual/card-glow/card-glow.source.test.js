@@ -391,7 +391,7 @@ test("a row hands pointer tracking to its plane, and keeps its own when there is
 	assert.match(SESSION_CARD_SOURCE, /onPointerMove=\{tracksOwnPointer \? cardGlow\.onPointerMove : undefined\}/u);
 	assert.match(SESSION_CARD_SOURCE, /glowPlaneSurface\?\.\(node\)/u);
 	assert.match(SESSION_CARD_SOURCE, /const departureFocus = useAgentSessionDepartureFocus\(/u);
-	assert.match(SESSION_CARD_SOURCE, /ref=\{departureFocus\.setRowNode\}/u);
+	assert.match(SESSION_CARD_SOURCE, /ref=\{setRowNode\}/u);
 });
 
 test("a switched-off plane stops advertising itself so rows keep a driver", () => {

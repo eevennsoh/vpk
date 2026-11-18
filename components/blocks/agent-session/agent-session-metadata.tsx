@@ -5,6 +5,7 @@ import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import TeamsIcon from "@atlaskit/icon/core/teams";
+import { useState } from "react";
 
 import {
 	AgentListPrStatusIcon,
@@ -12,6 +13,7 @@ import {
 } from "@/components/blocks/agent-list/agent-list-card";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
+import { PullRequestList } from "@/components/blocks/jira-issue/pull-request-cluster";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -79,6 +81,7 @@ export function AgentSessionHostSegment({ compact = false, isLocal }: Readonly<{
 
 /** `#1306: Add guest checkout`, the identifier convention shared with Smart Links. */
 function toArtifactLabel(item: AgentSessionItem): string | undefined {
+	if ((item.pullRequests?.length ?? 0) > 1) return `${item.pullRequests?.length} pull requests`;
 	const number = item.sessionDetails?.pullRequestNumber;
 	if (number === undefined) {
 		return undefined;
@@ -90,6 +93,7 @@ function toArtifactLabel(item: AgentSessionItem): string | undefined {
 
 /** `#1306` — the compact short-byline form, without the pull-request title. */
 function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
+	if ((item.pullRequests?.length ?? 0) > 1) return `${item.pullRequests?.length} pull requests`;
 	const number = item.sessionDetails?.pullRequestNumber;
 	return number === undefined ? undefined : `#${number}`;
 }
@@ -107,20 +111,30 @@ function SessionTimestamp({ item }: Readonly<{ item: AgentSessionItem }>) {
 	);
 }
 
-function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
+function SingleSessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
 	const details = item.sessionDetails;
 	const number = details?.pullRequestNumber;
 	if (!details || number === undefined) return null;
 	const status = item.prStatus ?? "created";
+	return <PullRequest additions={details.additions ?? 0} author={details.pullRequestAuthor ? { name: details.pullRequestAuthor.name, avatarUrl: details.pullRequestAuthor.src } : undefined} branch={details.branch} checks={item.pullRequestChecks} checksExpandable={false} className="border-none bg-transparent shadow-none" deletions={details.deletions ?? 0} filesChanged={details.files} number={number} repository={details.repository} showFix={false} status={status === "merged" ? "Merged" : status === "failed" ? "Failed" : "Open"} targetBranch={details.targetBranch} title={details.pullRequestTitle ?? label} variant="flyout" />;
+}
+
+function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
+	const [open, setOpen] = useState(false);
+	const details = item.sessionDetails;
+	const number = details?.pullRequestNumber;
+	const multiple = (item.pullRequests?.length ?? 0) > 1;
+	if (!multiple && (!details || number === undefined)) return null;
+	const status = item.prStatus ?? "created";
 	const color = status === "merged" ? "group-hover/agent-row:text-icon-accent-purple group-focus-within/agent-row:text-icon-accent-purple" : status === "failed" ? "group-hover/agent-row:text-icon-danger group-focus-within/agent-row:text-icon-danger" : "group-hover/agent-row:text-icon-success group-focus-within/agent-row:text-icon-success";
 	return (
-		<HoverCard>
-			<HoverCardTrigger aria-label={`Pull request ${label}`} render={<span className="group/session-pr flex min-w-0 shrink items-center gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" data-session-drag-ignore="" role="group" tabIndex={0} />}>
-				<AgentListPrStatusIcon className={cn("size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!", color)} status={status} />
+		<HoverCard open={open} onOpenChange={setOpen}>
+			<HoverCardTrigger aria-label={multiple ? label : `Pull request ${label}`} onFocus={() => setOpen(true)} render={<span className="group/session-pr flex min-w-0 shrink items-center gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" data-session-drag-ignore="" role="group" tabIndex={0} />}>
+				<AgentListPrStatusIcon className={cn("size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!", !multiple && color)} status={multiple ? "created" : status} />
 				<span className="min-w-0 truncate text-text-subtle underline-offset-2 group-hover/session-pr:underline group-focus-visible/session-pr:underline" data-session-pr-title="">{label}</span>
 			</HoverCardTrigger>
-			<HoverCardContent align="start" aria-label={`Pull request #${number} details`} className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden p-0" positionerClassName="z-[650]" role="region" sideOffset={8}>
-				<PullRequest additions={details.additions ?? 0} author={details.pullRequestAuthor ? { name: details.pullRequestAuthor.name, avatarUrl: details.pullRequestAuthor.src } : undefined} branch={details.branch} checksExpandable={false} className="border-none bg-transparent shadow-none" deletions={details.deletions ?? 0} filesChanged={details.files} number={number} repository={details.repository} showFix={false} status={status === "merged" ? "Merged" : status === "failed" ? "Failed" : "Open"} targetBranch={details.targetBranch} title={details.pullRequestTitle ?? label} variant="flyout" />
+			<HoverCardContent align="start" aria-label={multiple ? "Pull requests" : `Pull request #${number} details`} className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden p-0" positionerClassName="z-[650]" role="region" sideOffset={8}>
+				{multiple ? <PullRequestList pullRequests={item.pullRequests ?? []} /> : <SingleSessionPullRequest item={item} label={label} />}
 			</HoverCardContent>
 		</HoverCard>
 	);
@@ -273,7 +287,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					</span>
 				)
 			) : (
-				<SessionPullRequest item={item} label={pullRequestTitle === undefined ? pullRequestLabel : `${pullRequestLabel} ${pullRequestTitle}`} />
+				<SessionPullRequest item={item} label={(item.pullRequests?.length ?? 0) > 1 || pullRequestTitle === undefined ? pullRequestLabel : `${pullRequestLabel} ${pullRequestTitle}`} />
 			)}
 			{pullRequestLabel === undefined && isActiveAgentSessionState(item.state) ? null : <MetadataDot />}
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
