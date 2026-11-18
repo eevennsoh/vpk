@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export function useBoardCreateCard(onActiveChange?: (active: boolean) => void) {
-	const [column, setColumn] = useState<string | null>(null);
+	const [target, setTarget] = useState<{ column: string; beforeCardCode?: string } | null>(null);
+	const column = target?.column ?? null;
 	const formRef = useRef<HTMLFormElement>(null);
 	const triggerRef = useRef<HTMLElement | null>(null);
+	const returnFocusRef = useRef<HTMLElement | null>(null);
 	const close = useCallback(() => {
-		setColumn(null);
+		setTarget(null);
 		onActiveChange?.(false);
-		requestAnimationFrame(() => triggerRef.current?.focus());
+		requestAnimationFrame(() => (triggerRef.current?.isConnected ? triggerRef.current : returnFocusRef.current)?.focus());
 	}, [onActiveChange]);
-	const start = useCallback((title: string, trigger: HTMLElement) => {
+	const start = useCallback((title: string, trigger: HTMLElement, beforeCardCode?: string, returnFocus?: HTMLElement | null) => {
 		triggerRef.current = trigger;
-		setColumn(title);
+		returnFocusRef.current = returnFocus ?? null;
+		setTarget({ column: title, beforeCardCode });
 		onActiveChange?.(true);
 	}, [onActiveChange]);
 
@@ -25,7 +28,15 @@ export function useBoardCreateCard(onActiveChange?: (active: boolean) => void) {
 			const strip = gallery?.querySelector<HTMLElement>('[data-gallery-strip]');
 			const overlap = strip ? Math.max(0, scrollport.getBoundingClientRect().bottom - strip.getBoundingClientRect().top) : 0;
 			scrollport.style.paddingBottom = overlap ? `${overlap + 8}px` : previousPadding ?? "";
-			scrollport.scrollTop = scrollport.scrollHeight;
+			if (target?.beforeCardCode) {
+				const cardBounds = card?.getBoundingClientRect();
+				const scrollBounds = scrollport.getBoundingClientRect();
+				const visibleBottom = strip ? Math.min(scrollBounds.bottom, strip.getBoundingClientRect().top) : scrollBounds.bottom;
+				if (cardBounds && cardBounds.bottom > visibleBottom) scrollport.scrollTop += cardBounds.bottom - visibleBottom + 8;
+				else if (cardBounds && cardBounds.top < scrollBounds.top) scrollport.scrollTop -= scrollBounds.top - cardBounds.top + 8;
+			} else {
+				scrollport.scrollTop = scrollport.scrollHeight;
+			}
 		};
 		const resize = new ResizeObserver(reveal);
 		if (card) resize.observe(card);
@@ -37,7 +48,7 @@ export function useBoardCreateCard(onActiveChange?: (active: boolean) => void) {
 			mutations.disconnect();
 			if (scrollport) scrollport.style.paddingBottom = previousPadding ?? "";
 		};
-	}, [column]);
+	}, [column, target?.beforeCardCode]);
 
 	useEffect(() => () => onActiveChange?.(false), [onActiveChange]);
 	useEffect(() => {
@@ -59,5 +70,5 @@ export function useBoardCreateCard(onActiveChange?: (active: boolean) => void) {
 		return () => document.removeEventListener("pointerdown", onOutsidePress, true);
 	}, [column, close]);
 
-	return { column, close, formRef, start };
+	return { column, beforeCardCode: target?.beforeCardCode, close, formRef, start };
 }

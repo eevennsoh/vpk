@@ -88,7 +88,9 @@ test("board activities and detached sessions retain work titles and agent names"
 				const detached = data.toButterDetachedAgentSession(activity, card);
 				assert.equal(detached.title, activity.sessionTitle, activity.id);
 				assert.equal(detached.agent.name, activity.name, activity.id);
+				assert.equal(detached.privateTo, activity.privateTo, activity.id);
 				assert.equal(data.toButterAgentActivityFromSession(detached).sessionTitle, activity.sessionTitle, activity.id);
+				assert.equal(data.toButterAgentActivityFromSession(detached).privateTo, activity.privateTo, activity.id);
 			}
 		}
 	}
@@ -100,8 +102,10 @@ test("board sessions show the requested ownership, status and menu defaults", as
 	const card = (code) => cards.find((item) => item.code === code);
 	assert.equal(card("PAY-107").teammateSessionsPresentation, "count");
 	assert.deepEqual(card("PAY-107").agentActivities.map(({ role, state }) => [role, state]), [["viewer", "working"], ["viewer", "awaiting-input"]]);
+	assert.deepEqual(card("PAY-107").agentActivities.map(({ privateTo }) => privateTo), ["Maya Ferreira", "Jordan Okafor"]);
 	assert.equal(card("PAY-123").teammateSessionsPresentation, "expanded");
 	assert.deepEqual(card("PAY-123").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["viewer", "awaiting-input", "Jordan Okafor"]]);
+	assert.deepEqual(card("PAY-123").agentActivities.map(({ privateTo }) => privateTo), [undefined, "Jordan Okafor"]);
 	assert.deepEqual(card("PAY-130").agentActivities.map(({ role, state, invokedBy }) => [role, state, invokedBy.name]), [["owner", "working", "Venn"], ["owner", "awaiting-input", "Venn"]]);
 });
 

@@ -143,6 +143,7 @@ export function toButterAgentActivityFromSession(
 		...(session.invokedBy ? { invokedBy: session.invokedBy } : {}),
 		...(session.host !== undefined ? { host: session.host } : {}),
 		...(session.role !== undefined ? { role: session.role } : {}),
+		...(session.privateTo ? { privateTo: session.privateTo } : {}),
 		...(session.timeLabel ? { timeLabel: session.timeLabel } : {}),
 	};
 }
@@ -176,6 +177,7 @@ export function toButterDetachedAgentSession(
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }
@@ -328,6 +330,7 @@ function createActivity({
 		timeLabel,
 		...(host !== undefined ? { host } : {}),
 		...(resolvedInvoker ? { invokedBy: resolvedInvoker } : {}),
+		...(role === "viewer" ? { privateTo: resolvedInvoker?.name ?? "its owner" } : {}),
 		...(question ? { question } : {}),
 		...(role !== undefined ? { role } : {}),
 	};

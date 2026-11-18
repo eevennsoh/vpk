@@ -6,7 +6,7 @@ import {
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 
-import { appendBoardCardFromDraft } from "./board-work-item-options";
+import { insertBoardCardFromDraft } from "./board-work-item-options";
 
 /**
  * Board mutations behind the session menu's Link work item submenu.
@@ -25,7 +25,7 @@ export function createBoardCardFromDraft(
 	session: AgentSessionItem,
 	draft: AgentSessionWorkItemDraft,
 ): readonly JiraKanbanColumnData[] {
-	const { columns: withCard, issueKey } = appendBoardCardFromDraft(columns, draft);
+	const { columns: withCard, issueKey } = insertBoardCardFromDraft(columns, draft);
 	if (issueKey === undefined) {
 		return columns;
 	}

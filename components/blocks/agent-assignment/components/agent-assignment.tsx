@@ -65,6 +65,7 @@ export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	 * Omit to keep the owner menu.
 	 */
 	role?: AgentSessionRole;
+	privateTo?: string;
 	/** Agent-specific tool-call narration. Avoid sharing one sequence across agents. */
 	statusSequence?: readonly string[];
 	/**

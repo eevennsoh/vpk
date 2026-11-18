@@ -349,7 +349,6 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 	"glimm-custom": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmCustomDemo), { ssr: false }),
 	"voice-glow-pill": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowPillExample })), { ssr: false }),
 	"voice-glow-mobile": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowMobileExample })), { ssr: false }),
-	"voice-glow-processing": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowProcessingExample })), { ssr: false }),
 	"gooey-morph-menu": dynamic(
 		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphMenuExample })),
 		{ ssr: false },

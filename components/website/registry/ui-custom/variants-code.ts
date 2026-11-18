@@ -2,41 +2,6 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_CODE_VARIANT_DEMOS: Record<string, ComponentType> = {
-	"code-block-demo-ads-basic": dynamic(
-		() =>
-			import("../../demos/ui-custom/code-block-demo").then((mod) => ({
-				default: mod.CodeBlockDemoAdsBasic,
-			})),
-		{ ssr: false },
-	),
-	"code-block-demo-ads-small": dynamic(
-		() =>
-			import("../../demos/ui-custom/code-block-demo").then((mod) => ({
-				default: mod.CodeBlockDemoAdsSmall,
-			})),
-		{ ssr: false },
-	),
-	"code-block-demo-ads-line-numbers": dynamic(
-		() =>
-			import("../../demos/ui-custom/code-block-demo").then((mod) => ({
-				default: mod.CodeBlockDemoAdsLineNumbers,
-			})),
-		{ ssr: false },
-	),
-	"code-block-demo-ads-shell": dynamic(
-		() =>
-			import("../../demos/ui-custom/code-block-demo").then((mod) => ({
-				default: mod.CodeBlockDemoAdsShell,
-			})),
-		{ ssr: false },
-	),
-	"code-block-demo-ads-language-selector": dynamic(
-		() =>
-			import("../../demos/ui-custom/code-block-demo").then((mod) => ({
-				default: mod.CodeBlockDemoAdsLanguageSelector,
-			})),
-		{ ssr: false },
-	),
 	"chain-of-thought-demo-preload": dynamic(
 		() =>
 			import("../../demos/ui-custom/chain-of-thought-demo").then((mod) => ({

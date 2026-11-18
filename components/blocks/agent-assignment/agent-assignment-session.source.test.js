@@ -20,6 +20,23 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("assignment activity keeps its private access mark in the session menu", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AssignedAgentsSessionMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
+			import { toAgentAssignmentAgent } from "@/components/blocks/jira-issue/agent-activity";
+			import { TooltipProvider } from "@/components/ui/tooltip";
+			export default function Menu({ activity }) { return <TooltipProvider><AssignedAgentsSessionMenu rows={[toAgentAssignmentAgent(activity)]} onSelectAgent={() => {}} /></TooltipProvider>; }
+		`,
+		props: { activity: { id: "private", name: "Cursor", label: "Reviewing", state: "working", role: "viewer", invokedBy: { name: "Jordan" }, privateTo: "Jordan" } },
+		mocks: themeMock,
+	});
+	try {
+		assert.ok(view.getByRole("img", { name: "Private session by Jordan" }));
+		assert.equal(view.container.querySelector('[data-access-mark="team"]'), null);
+	} finally { await view.unmount(); }
+});
+
 test("session menu can show a teammate count or expand a single teammate by default", async () => {
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
@@ -88,7 +105,7 @@ test("owner-only, viewer-only, expired and empty menus retain their separate sem
 		await view.rerender(menuProps([session("teammate", "viewer")]));
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
-		assert.equal(view.getByText("teammate work").closest("article").tabIndex, 0);
+		assert.equal(view.getByText("teammate work").closest("article").tabIndex, -1);
 		assert.equal(view.getAllByRole("listitem").length, 1);
 		assert.equal(view.queryByRole("separator"), null);
 		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));

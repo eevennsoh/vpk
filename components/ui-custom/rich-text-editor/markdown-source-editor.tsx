@@ -1,55 +1,16 @@
 "use client";
 
-import type { CSSProperties, Ref, TextareaHTMLAttributes } from "react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import type { Ref, TextareaHTMLAttributes } from "react";
+import { Fragment } from "react";
 
-import {
-	createRawTokens,
-	getTokensCacheKey,
-	highlightCode,
-	type TokenizedCode,
-} from "@/components/ui-custom/code-block";
+import { useHighlightedCode } from "@/hooks/use-highlighted-code";
 import { cn } from "@/lib/utils";
-
-// Highlight the source as Markdown using the same Shiki highlighter + cache the
-// CodeBlock uses, so we get GitHub's own colors (github-light / github-dark) and
-// never load Shiki twice.
-const LANGUAGE = "markdown";
 
 // The editable <textarea> and the highlighted overlay <pre> must share identical
 // text metrics (font, size, line-height, wrapping, tab-size). Any mismatch makes
 // the colored layer drift away from the caret. Keep this list authoritative.
 const SHARED_TEXT_CLASSES =
 	"m-0 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words [tab-size:2]";
-
-function useMarkdownTokens(code: string): TokenizedCode {
-	const rawTokens = useMemo(() => createRawTokens(code), [code]);
-	const cacheKey = useMemo(() => getTokensCacheKey(code, LANGUAGE), [code]);
-	const [highlighted, setHighlighted] = useState<{
-		key: string;
-		value: TokenizedCode;
-	} | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		// Returns cached tokens synchronously when available; otherwise resolves
-		// via the callback once Shiki finishes in the background.
-		const cached = highlightCode(code, LANGUAGE, (result) => {
-			if (!cancelled) {
-				setHighlighted({ key: cacheKey, value: result });
-			}
-		});
-		if (cached) {
-			setHighlighted({ key: cacheKey, value: cached });
-		}
-		return () => {
-			cancelled = true;
-		};
-	}, [cacheKey, code]);
-
-	// Fall back to uncolored tokens until the async highlight lands.
-	return highlighted?.key === cacheKey ? highlighted.value : rawTokens;
-}
 
 export interface MarkdownSourceEditorProps
 	extends Omit<
@@ -71,7 +32,8 @@ export function MarkdownSourceEditor({
 	ref,
 	...props
 }: MarkdownSourceEditorProps) {
-	const tokenized = useMarkdownTokens(value);
+	// Same Shiki highlighter and GitHub themes as Code Block, so Shiki loads once.
+	const lines = useHighlightedCode(value, "markdown");
 
 	return (
 		<div className={cn("relative w-full", className)}>
@@ -90,23 +52,11 @@ export function MarkdownSourceEditor({
 				)}
 			>
 				<code className={SHARED_TEXT_CLASSES}>
-					{tokenized.tokens.map((line, lineIndex) => (
-						<Fragment key={`line-${lineIndex}`}>
+					{lines.map((line, lineIndex) => (
+						// oxlint-disable-next-line react/no-array-index-key -- Lines have no identity beyond their position.
+						<Fragment key={lineIndex}>
 							{lineIndex > 0 ? "\n" : null}
-							{line.map((tokenItem, tokenIndex) => (
-								<span
-									key={`token-${lineIndex}-${tokenIndex}`}
-									className="dark:!text-[var(--shiki-dark)]"
-									style={
-										{
-											color: tokenItem.color,
-											...tokenItem.htmlStyle,
-										} as CSSProperties
-									}
-								>
-									{tokenItem.content}
-								</span>
-							))}
+							{line}
 						</Fragment>
 					))}
 				</code>

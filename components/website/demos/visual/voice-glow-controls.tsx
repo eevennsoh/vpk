@@ -21,7 +21,6 @@ export function VoiceGlowControls({ config, defaults, update, simulateVoice, onS
 				<GUI.Select id="voice-glow-palette" label="Palette" value={config.colorVariant} options={VOICE_GLOW_PALETTES.map((value) => ({ value, label: value }))} onChange={(value) => update("colorVariant", value)} valueKeys="colorVariant" />
 				<GUI.Select id="voice-glow-theme" label="Theme" value={config.theme} options={VOICE_GLOW_THEMES} onChange={(value) => update("theme", value)} valueKeys="theme" />
 				<GUI.Toggle id="voice-glow-active" label="Active" checked={config.active} onChange={(value) => update("active", value)} valueKeys="active" />
-				<GUI.Toggle id="voice-glow-processing" label="Processing" checked={config.processing} onChange={(value) => update("processing", value)} valueKeys="processing" />
 				<GUI.Toggle id="voice-glow-bands" label="Frequency bands" checked={config.bands} onChange={(value) => update("bands", value)} valueKeys="bands" />
 				<GUI.Toggle id="voice-glow-static" label="Static colors" checked={config.staticColors} onChange={(value) => update("staticColors", value)} valueKeys="staticColors" />
 				<GUI.Toggle id="voice-glow-radius-auto" label="Auto radius" checked={config.borderRadius === undefined} onChange={(value) => update("borderRadius", value ? undefined : 16)} />

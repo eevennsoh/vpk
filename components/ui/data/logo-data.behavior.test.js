@@ -20,8 +20,8 @@ const ROWS = Object.keys(LOGO_ICON_COMPONENTS).flatMap((name) => [
 export default function Probe() {
 	return ROWS.map(({ key, Lazy, Eager }) => (
 		<div data-row={key} key={key}>
-			<div data-side="lazy"><Lazy label="" shouldUseHexLogo shouldUseNewLogoDesign size="small" /></div>
-			<div data-side="eager">{Eager ? <Eager label="" shouldUseHexLogo shouldUseNewLogoDesign size="small" /> : null}</div>
+			<div data-side="lazy"><Lazy label="" size="small" /></div>
+			<div data-side="eager">{Eager ? <Eager label="" size="small" /> : null}</div>
 		</div>
 	));
 }

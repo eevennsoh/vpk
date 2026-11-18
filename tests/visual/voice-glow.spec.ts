@@ -76,7 +76,7 @@ test("all shapes align the effect boundary with the visible surface, including n
 	}
 });
 
-test("pause freezes the painted frame, processing travels, and reset restores the chat preset", async ({ page }) => {
+test("pause freezes the painted frame and reset restores the chat preset", async ({ page }) => {
 	await page.goto(`${BASE_URL}/preview/visual/voice-glow`);
 	const demo = page.locator("[data-voice-glow-demo]");
 	const beam = demo.locator("[data-voice-beam]");
@@ -87,14 +87,10 @@ test("pause freezes the painted frame, processing travels, and reset restores th
 	await page.waitForTimeout(300);
 	expect(await beam.getAttribute("style")).toBe(frozen);
 	await demo.getByRole("button", { name: "Resume glow", exact: true }).click();
-	await demo.getByRole("switch", { name: "Processing", exact: true }).click();
-	await expect(beam).toHaveAttribute("data-processing", "");
-	const center = () => beam.evaluate((element) => (element as HTMLElement).style.getPropertyValue(`--vb-cx-${element.getAttribute("data-voice-beam")}`));
-	const initial = await center();
-	await expect.poll(center).not.toBe(initial);
+	await demo.getByRole("button", { name: "Recording pill", exact: true }).click();
+	await expect(beam).toHaveAttribute("data-voice-type", "pill");
 	await demo.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(beam).toHaveAttribute("data-voice-type", "default");
-	await expect(beam).not.toHaveAttribute("data-processing", "");
 	await page.screenshot({ path: "output/agent-browser/voice-glow/preview-light.png" });
 });
 
@@ -104,7 +100,6 @@ test("reduced motion holds decorative travel and hue while retaining a visible g
 	await page.goto(`${BASE_URL}/preview/visual/voice-glow`);
 	const demo = page.locator("[data-voice-glow-demo]");
 	const beam = demo.locator("[data-voice-beam]");
-	await demo.getByRole("switch", { name: "Processing", exact: true }).click();
 	await expect.poll(() => beam.evaluate((element) => {
 		const host = element as HTMLElement;
 		const id = host.dataset.voiceBeam;

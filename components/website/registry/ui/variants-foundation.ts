@@ -171,6 +171,321 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"suggestion-demo-follow-up": dynamic(
+		() =>
+			import("../../demos/ui/suggestion-demo").then((mod) => ({
+				default: mod.SuggestionDemoFollowUp,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-trace-line": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceStatic,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-status": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceStatus,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-description": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceDescriptionDemo,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-collapsible": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceCollapsibleDemo,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-open-state": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceOpen,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-link": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceLink,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-dialog": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceDialog,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-sheet": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceSheet,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-group": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceGroupDemo,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-sources": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceSources,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-chain-of-thought": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceSteps,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-commit": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceCommit,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-whole-turn": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo").then((mod) => ({
+				default: mod.TraceTurn,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-reasoning": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo-chat").then((mod) => ({
+				default: mod.TraceThinking,
+			})),
+		{ ssr: false },
+	),
+	"trace-demo-tool": dynamic(
+		() =>
+			import("../../demos/ui/trace-demo-chat").then((mod) => ({
+				default: mod.TraceToolCalls,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-basic": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockBasic,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-header": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockHeaderExample,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-actions": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockActionsExample,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-floating-actions": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockFloatingActions,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-line-numbers": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockLineNumbers,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-start-line": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockStartLine,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-wrap": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockWrap,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-highlighted-lines": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockHighlightedLines,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-diff": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockDiff,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-height": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockHeight,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-show-more": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockShowMore,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-max-height": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockShowMoreScroll,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-size": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockSize,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-destructive": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo").then((mod) => ({
+				default: mod.CodeBlockDestructive,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-trace": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockTrace,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-tabs": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockTabs,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-message": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockChat,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-typeset": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockTypeset,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-rtl": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockRtl,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-syntax-highlighting": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockHighlighting,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-languages": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockLanguages,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-terminal-output": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockAnsi,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-streaming": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockStreaming,
+			})),
+		{ ssr: false },
+	),
+	"code-block-demo-markdown": dynamic(
+		() =>
+			import("../../demos/ui/code-block-demo-advanced").then((mod) => ({
+				default: mod.CodeBlockMarkdown,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoInline,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-prompt-queue": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoPromptQueue,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-with-actions": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoWithActions,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-with-attachments": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoWithAttachments,
+			})),
+		{ ssr: false },
+	),
+	"queue-demo-minimal": dynamic(
+		() =>
+			import("../../demos/ui/queue-demo").then((mod) => ({
+				default: mod.QueueDemoMinimal,
+			})),
+		{ ssr: false },
+	),
 	"marker-demo-markers": dynamic(
 		() =>
 			import("../../demos/ui/marker-demo").then((mod) => ({

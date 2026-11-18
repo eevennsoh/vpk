@@ -10,7 +10,8 @@ import {
 	ChainOfThoughtHeader,
 	ChainOfThoughtStep,
 } from "@/components/ui-custom/chain-of-thought";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { AssistantThinkingToolsSection } from "@/components/projects/shared/components/assistant-thinking-tools-section";
 import { getReasoningSectionTitle } from "@/components/ui-custom/lib/reasoning-labels";
 import { cn } from "@/lib/utils";
@@ -79,11 +80,12 @@ export function StreamingThinkingIndicator({
 									label={getReasoningSectionTitle("thinking")}
 									status={stepStatus}
 								>
-									<CodeBlock
-										code={trimmedReasoningContent}
-										language="markdown"
-										size="sm"
-									/>
+									<CodeBlock size="sm">
+										<HighlightedCodeContent
+											code={trimmedReasoningContent}
+											language="markdown"
+										/>
+									</CodeBlock>
 								</ChainOfThoughtStep>
 							) : null}
 							{hasThinkingToolCalls ? (

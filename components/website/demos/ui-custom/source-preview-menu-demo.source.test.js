@@ -3,7 +3,7 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const DEMO_SOURCE = readFileSync(join(__dirname, "source-demo-preview-menu.tsx"), "utf8");
+const DEMO_SOURCE = readFileSync(join(__dirname, "source-preview-menu-demo.tsx"), "utf8");
 
 test("preview-menu demo reuses the shared SourcePreviewMenu owner", () => {
 	assert.match(
