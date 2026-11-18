@@ -6,6 +6,7 @@ import { AGENT_SESSION_DEMO_CHECKS } from "@/components/blocks/agent-session/dat
 import { AgentSessionShowcase, type ButterSessionPermission } from "@/components/projects/shared/components/agent-session-showcase";
 import { BUTTER_CHAT_AGENT_PROFILES } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { cn } from "@/lib/utils";
+import type { ButterBoardCardState } from "./butter-board-card-controls";
 
 export { ButterSessionPermissionControls, type ButterSessionPermission } from "@/components/projects/shared/components/agent-session-showcase";
 
@@ -21,12 +22,12 @@ export function ButterGalleryAgentSessions({ active, permission }: Readonly<{ ac
 	return <AgentSessionShowcase active={active} className="pointer-events-none absolute inset-x-0 top-12 bottom-56 [&>div]:pointer-events-auto" localItems={LOCAL_SESSIONS} permission={permission} profiles={BUTTER_CHAT_AGENT_PROFILES} />;
 }
 
-export function ButterGalleryBoardCard({ galleryOpen }: Readonly<{ galleryOpen: boolean }>) {
+export function ButterGalleryBoardCard({ galleryOpen, state }: Readonly<{ galleryOpen: boolean; state: ButterBoardCardState }>) {
 	return (
 		<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex justify-center overflow-y-auto px-4", galleryOpen ? "bottom-56" : "bottom-0")}>
 			<div className="pointer-events-auto my-auto flex w-full max-w-3xl justify-center">
 				<h1 className="sr-only">Board card</h1>
-				<JiraIssuePage variant="project-butter" />
+				<JiraIssuePage boardCardState={state} variant="project-butter" />
 			</div>
 		</div>
 	);

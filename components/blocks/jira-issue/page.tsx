@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import { token } from "@/lib/tokens";
 import { ProjectButterPlayground, type ProjectButterDemoIssueProps } from "./project-butter-demo";
+import { BOARD_CARD_FINISHED_RUN, useBoardCardFinishedReplay } from "./project-butter-finished-demo";
 
 const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "Acmecorp", color: "discovery" },
@@ -323,6 +324,8 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 
 type JiraIssueAgentActivityDemoState =
 	| "default"
+	| "finished"
+	| "mixed-agents-working"
 	| "single-agent-working"
 	| "multiple-agents-working"
 	| "single-agent-working-viewer"
@@ -457,6 +460,8 @@ function getDemoAgentActivities(
 		case "multiple-agents-working-viewer":
 		case "multiple-agents-working":
 			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 2);
+		case "mixed-agents-working":
+			return [...JIRA_ISSUE_AGENT_ACTIVITIES, { ...JIRA_ISSUE_AGENT_ACTIVITIES[1], id: "third-agent" }];
 		case "awaiting-user-input":
 			return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;
 		default:
@@ -500,6 +505,8 @@ function getExperimentalDemoPullRequest(
 		case "multiple-agents-working":
 		case "single-agent-working-viewer":
 		case "multiple-agents-working-viewer":
+		case "mixed-agents-working":
+		case "finished":
 		case "agent-session-expired":
 		case "agent-session-unlink":
 		case "agent-session-running-unlink":
@@ -514,6 +521,7 @@ function getExperimentalDemoPullRequest(
 
 interface JiraIssuePageProps {
 	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental" | "agent-activity-states-experimental-v2" | "project-butter";
+	boardCardState?: JiraIssueAgentActivityDemoState;
 }
 
 function JiraIssueUncapturedWorkDemo() {
@@ -546,7 +554,7 @@ function JiraIssueUncapturedWorkDemo() {
 	);
 }
 
-export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
+export default function JiraIssuePage({ variant = "default", boardCardState }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
 	const [selectedEpicId, setSelectedEpicId] = useState("agentic-jira");
 	const isExperimentalVariant = variant === "experimental";
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
@@ -562,8 +570,8 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 
 	if (variant === "project-butter") {
 		return (
-			<ProjectButterPlayground participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}>
-				{(issueProps) => <JiraIssueExperimentalAgentActivityStatesPage iconScale="comfortable" issueProps={{ ...issueProps, subtasks: PROJECT_BUTTER_DEMO_SUBTASKS }} />}
+			<ProjectButterPlayground participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS} showControls={boardCardState === undefined}>
+				{(issueProps) => <JiraIssueExperimentalAgentActivityStatesPage key={boardCardState} boardCardState={boardCardState} iconScale="comfortable" issueProps={{ ...issueProps, subtasks: PROJECT_BUTTER_DEMO_SUBTASKS }} />}
 			</ProjectButterPlayground>
 		);
 	}
@@ -645,6 +653,7 @@ const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
 };
 
 interface JiraIssueAgentActivityStatesDemoProps {
+	boardCardState?: JiraIssueAgentActivityDemoState;
 	issueProps?: ProjectButterDemoIssueProps;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	chrome?: JiraIssueChrome;
@@ -658,11 +667,13 @@ interface JiraIssueAgentActivityStatesDemoProps {
 }
 
 function JiraIssueExperimentalAgentActivityStatesPage({
+	boardCardState,
 	iconScale,
 	issueProps,
 }: Readonly<{
 	iconScale?: JiraIssueIconScale;
 	issueProps?: ProjectButterDemoIssueProps;
+	boardCardState?: JiraIssueAgentActivityDemoState;
 }> = {}): React.ReactElement {
 	const isProjectButter = issueProps?.appearance === "project-butter";
 	const [chrome, setChrome] = useState<JiraIssueChrome>(isProjectButter ? "raised" : "stroke");
@@ -670,6 +681,7 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 	return (
 		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
 			<JiraIssueAgentActivityStatesDemo
+				boardCardState={boardCardState}
 				issueProps={issueProps}
 				agentActivityLayout="merged"
 				chrome={chrome}
@@ -685,6 +697,7 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 }
 
 function JiraIssueAgentActivityStatesDemo({
+	boardCardState,
 	issueProps,
 	agentActivityLayout = "merged",
 	chrome = "raised",
@@ -694,7 +707,11 @@ function JiraIssueAgentActivityStatesDemo({
 	showSessionTransferStates = false,
 	subtaskChrome,
 }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
-	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
+	const [internalActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
+	const finished = useBoardCardFinishedReplay(boardCardState === "finished");
+	const agentActivityState = boardCardState === "finished"
+		? finished ? "agent-completed-work" : "single-agent-working"
+		: boardCardState ?? internalActivityState;
 	// View chat / question submit / generative actions all drop into the shared
 	// Rovo floating chat with the activity's agent already selected — matching the
 	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
@@ -717,13 +734,14 @@ function JiraIssueAgentActivityStatesDemo({
 	const fixtureActivities = assignedDemoActivities ?? getDemoAgentActivities(agentActivityState)?.map<JiraIssueAgentActivity>((activity, index) => (
 		demoSessionRole && agentActivityState !== "agent-session-expired" ? {
 			...activity,
-			name: index === 0 ? "Claude" : "Cursor",
+			...(boardCardState === "finished" ? { stateTransition: "agent-session" as const } : {}),
+			name: index === 0 ? "Claude" : index === 1 ? "Cursor" : "Service impact agent",
 			avatarSrc: undefined,
-			agentBrandName: index === 0 ? "claude" : "cursor",
-			role: demoSessionRole,
+			agentBrandName: index === 0 ? "claude" : index === 1 ? "cursor" : undefined,
+			role: agentActivityState === "mixed-agents-working" && index > 0 ? "viewer" : demoSessionRole,
 			host: index === 0 ? "cloud" : "local",
 			timeLabel: "12m",
-			invokedBy: demoSessionRole === "owner"
+			invokedBy: demoSessionRole === "owner" && (agentActivityState !== "mixed-agents-working" || index === 0)
 				? { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" }
 				: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[index % JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.length],
 		} : activity
@@ -843,8 +861,8 @@ function JiraIssueAgentActivityStatesDemo({
 	}, []);
 
 	return (
-		<div className="relative flex h-full min-h-[480px] w-full flex-col bg-surface">
-			<div className="sticky top-0 z-10 w-full bg-surface pb-4 pt-6">
+		<div className={boardCardState === undefined ? "relative flex h-full min-h-[480px] w-full flex-col bg-surface" : "relative flex w-full flex-col bg-surface"}>
+			{boardCardState === undefined ? <div className="sticky top-0 z-10 w-full bg-surface pb-4 pt-6">
 				<div className="flex w-full flex-wrap items-center justify-center gap-2">
 					{demoStates.map((state) => (
 						<Button
@@ -883,7 +901,7 @@ function JiraIssueAgentActivityStatesDemo({
 						</Button>
 					</div>
 				) : null}
-			</div>
+			</div> : null}
 			<div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6">
 				<div className="flex w-[276px] flex-col gap-2">
 					<JiraIssue
@@ -914,7 +932,7 @@ function JiraIssueAgentActivityStatesDemo({
 						} : undefined}
 						agentActivityLayout={agentActivityLayout}
 						agentActivityMode={getDemoAgentActivityMode(agentActivityState, agentActivities)}
-						agentDoneRuns={agentActivityState === "agent-completed-work" ? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}
+						agentDoneRuns={agentActivityState === "agent-completed-work" ? boardCardState === "finished" ? BOARD_CARD_FINISHED_RUN : JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}
 						agentSessionTransfer={agentSessionTransfer}
 						assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 						chrome={chrome}
@@ -931,10 +949,10 @@ function JiraIssueAgentActivityStatesDemo({
 						onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
 						onAgentDoneRunView={handleAgentDoneRunView}
 						priority="major"
-						pullRequestNumber={experimentalPullRequest.pullRequestNumber}
-						pullRequestPreview={experimentalPullRequest.pullRequestNumber ? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined}
-						pullRequestStatus={experimentalPullRequest.pullRequestStatus}
-						pullRequestTitle={experimentalPullRequest.pullRequestNumber ? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined}
+						pullRequestNumber={boardCardState === "finished" ? undefined : experimentalPullRequest.pullRequestNumber}
+						pullRequestPreview={boardCardState !== "finished" && experimentalPullRequest.pullRequestNumber ? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined}
+						pullRequestStatus={boardCardState === "finished" ? undefined : experimentalPullRequest.pullRequestStatus}
+						pullRequestTitle={boardCardState !== "finished" && experimentalPullRequest.pullRequestNumber ? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined}
 						sessionTransferAfter={showDetachedSessions
 							? (sessionDrag) => (
 								<AgentSession
