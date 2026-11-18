@@ -215,7 +215,7 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 													}
 													type="default"
 													onRemove={editable ? () => removeListItem(entry.key, index) : undefined}
-													removeButtonLabel={`Remove ${item}`}
+													removeButtonLabel="Remove"
 													removeVariant="overlay"
 												>
 													{item}

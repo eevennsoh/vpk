@@ -1965,7 +1965,7 @@
   },
   "components/projects/shared/components/rovo-app-composer.source.test.js": {
     "no-restricted-syntax": {
-      "count": 365
+      "count": 364
     }
   },
   "components/projects/shared/components/rovo-composer-send-controls.tsx": {
