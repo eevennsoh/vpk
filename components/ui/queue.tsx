@@ -270,7 +270,11 @@ export const QueueSectionTrigger = ({ children, className, ...props }: QueueSect
 	const variant = useQueueVariant();
 
 	if (variant === "inline") {
-		return <TraceCollapsibleTrigger className={className}>{children}</TraceCollapsibleTrigger>;
+		return (
+			<TraceCollapsibleTrigger className={className} {...props}>
+				{children}
+			</TraceCollapsibleTrigger>
+		);
 	}
 
 	return (

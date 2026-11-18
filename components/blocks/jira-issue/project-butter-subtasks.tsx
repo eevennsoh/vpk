@@ -57,13 +57,18 @@ export function ProjectButterSubtasks({
 					<button
 						type="button"
 						aria-label={`${progress.completed} of ${progress.total} subtasks complete`}
-						className={cn("inline-flex items-center rounded-sm", FOCUS_RING_VISIBLE)}
+						className={cn("group/subtasks inline-flex items-center rounded-sm", FOCUS_RING_VISIBLE)}
 						onClick={(event) => event.stopPropagation()}
 						onPointerDown={(event) => event.stopPropagation()}
 					/>
 				}
 			>
 				<Tag
+					className={cn(
+						open
+							? "border-border-selected bg-bg-selected text-text-selected group-hover/subtasks:bg-bg-selected-hovered"
+							: "group-hover/subtasks:bg-bg-neutral-subtle-hovered group-active/subtasks:bg-bg-neutral-subtle-pressed",
+					)}
 					elemBefore={
 						<span className="flex items-center justify-center">
 							<ProgressCircle

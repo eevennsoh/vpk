@@ -106,6 +106,13 @@ function createRovoMarkerStreamAdapter({
 	];
 	const partialMarkerBufferLength =
 		Math.max(...markerPrefixes.map((prefix) => prefix.length)) - 1;
+	// Widget types this adapter acts on, the ones the marker protocol announced. A loading marker
+	// whose type is one of them in full is read at once rather than when its line ends; a type that
+	// another of them extends could still go on, so it waits like any other.
+	const knownWidgetTypes = ["plan", clarificationWidgetType, genuiWidgetType];
+	const wholeLoadingWidgetTypes = new Set(
+		knownWidgetTypes.filter((type) => !knownWidgetTypes.some((other) => other !== type && other.startsWith(type)))
+	);
 
 	const findNextMarkerIndex = (value) => {
 		let minIndex = -1;
@@ -207,6 +214,16 @@ function createRovoMarkerStreamAdapter({
 				emitTextDelta(textBuffer);
 				textBuffer = "";
 			}
+			return false;
+		}
+
+		// The type may go on in the next chunk until a character that cannot be part of it follows
+		// (producers end the marker's line) or the stream ends, unless it is a whole known type.
+		const typeComplete =
+			isFinalChunk ||
+			loadingMatch[0].length < textBuffer.length ||
+			wholeLoadingWidgetTypes.has(loadingMatch[1]);
+		if (!typeComplete) {
 			return false;
 		}
 

@@ -2,8 +2,10 @@
 
 import { ProjectButterAddAgent } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
-import { ProjectButterInvocationProvider, useProjectButterInvocationPhase } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { ProjectButterInvocationProvider, useProjectButterInvocationPhase, useProjectButterInvocationPreview } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
+import { sessionStatusPresentation } from "@/components/blocks/jira-work-item/project-butter/session-status-presentation";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraListProps, JiraListRowData } from "@/components/blocks/jira-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -27,6 +29,7 @@ export function ButterListAgentCell({ agentCatalog, onAgentAssigned, onAssignedA
 function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }: Parameters<typeof ButterListAgentCell>[0]) {
 	const sessions = row.agentSessions ?? [];
 	const phase = useProjectButterInvocationPhase();
+	const { agent: selectedAgent } = useProjectButterInvocationPreview();
 	const crewSessions: AgentSessionItem[] = sessions.map((session) => ({
 		id: session.id,
 		title: session.sessionTitle ?? row.summary,
@@ -37,6 +40,8 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 		role: session.role,
 		timeLabel: session.timeLabel,
 	}));
+	const { cohort, shouldCycle } = sessionStatusPresentation(crewSessions);
+	const allowPuzzle = shouldCycle && Boolean(selectedAgent && cohort.some(({ id, agent }) => matchesInvocationAgent({ id, name: agent.name }, selectedAgent)));
 	return (
 			<div className="group/jira-issue flex min-w-0 items-center gap-2" data-butter-agent-surface>
 				<ProjectButterAddAgent alwaysVisible side="left" issueKey={row.issueKey} assignment={{
@@ -49,7 +54,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 				}} />
 				{sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100">Add</span> : null}
 				<div className="min-w-0 flex-1 pt-1">
-					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} allowPuzzle flushPreview>
+					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} allowPuzzle={allowPuzzle} flushPreview>
 						{sessions.length > 0 ? <ProjectButterCrew
 							field
 							fieldSessionMenu

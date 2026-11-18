@@ -505,7 +505,7 @@ test("Floating chat keeps chrome and composer outside the scrollable message vie
 		/className=\{cn\("relative z-10 flex shrink-0 items-center justify-between px-3 py-3", className\)\}/,
 	);
 	assert.match(CHAT_PANEL_SOURCE, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/);
-	assert.match(CHAT_PANEL_SOURCE, /<div className="min-w-0 shrink-0">[\s\S]*<ChatComposer/);
+	assert.match(CHAT_PANEL_SOURCE, /<div className=\{readOnly && shouldShowQuestionCard \? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"\}>[\s\S]*<ChatComposer/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="shrink-0">[\s\S]*<ChatHeader/);
 });
 

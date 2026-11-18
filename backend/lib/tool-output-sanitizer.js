@@ -6,7 +6,10 @@ const MAX_INLINE_ASSISTANT_JSON_CHARS = 2000;
 const ASSISTANT_JSON_SUPPRESSION_TEXT =
 	"Tool results were large and are omitted for performance. Open Tools for details.";
 const COMPLETE_SPEC_FENCE_PATTERN = /```spec\s*\n[\s\S]*?```/giu;
-const PENDING_SPEC_FENCE_PATTERN = /```spec[\s\S]*$/iu;
+// Open from an opener whose whole language is `spec` (only whitespace after it on its line, as the
+// complete pattern and the post-stream extractor require), or one still undecided at the end of the
+// text. "```specs-not" or "```specification" opens an ordinary code fence.
+const PENDING_SPEC_FENCE_PATTERN = /```spec(?=[^\S\n]*(?:\n|$))[\s\S]*$/iu;
 
 /**
  * Matches a line that looks like an RFC 6902 JSON Patch targeting a spec tree.

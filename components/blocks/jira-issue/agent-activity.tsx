@@ -128,6 +128,7 @@ export interface JiraIssueAgentActivity {
 	 * Omit to keep the owner menu.
 	 */
 	role?: AgentSessionRole;
+	privateTo?: string;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	startupSequence?: "jira-work-item-start";
@@ -224,6 +225,7 @@ export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentA
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }
@@ -307,14 +309,18 @@ function resolveJiraIssueAgentRowPresentation(
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isCompletedRow
+	const rowLabel = isViewerRow
+		? `${summary.activityCount} other ${summary.activityCount === 1 ? "session" : "sessions"}`
+		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isSingleAgent
+	const rowAriaLabel = isViewerRow
+		? rowLabel
+		: isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
@@ -638,7 +644,7 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={
-				animateStateTransition ? <AgentSessionShortLifecycleIcon
+				isViewerRow ? undefined : animateStateTransition ? <AgentSessionShortLifecycleIcon
 					accessibleState={lifecycleState}
 					animateTransition
 					transitionEffect="fade"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useImperativeHandle, useMemo, useRef, type CSSProperties, type Ref } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type Ref } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import { useJiraActivityComposerDictation } from "@/components/blocks/jira-activity/use-jira-activity-composer-dictation";
@@ -12,6 +12,7 @@ import { PromptInputButton } from "@/components/ui-custom/prompt-input";
 import AddIcon from "@atlaskit/icon/core/add";
 import { createRichTextEditorExtensions, getMentionNodeAttrs, type RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+import { cn } from "@/lib/utils";
 
 const COMMENT_PLACEHOLDER = "Give an instruction, leave a comment or ask for an update";
 
@@ -27,21 +28,24 @@ export interface ProjectButterCommentEditorHandle {
  * mentions, dictation, and Enter-to-send keep working in one compact row.
  * Thread replies reuse it unchanged apart from their placeholder and label.
  */
-export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, instructionPlaceholderForAgent, onCancel, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	ariaLabel?: string;
 	/** `flat` drops the floating shadow for boxes that sit inline in the feed, such as thread replies. */
 	elevation?: "floating" | "flat";
 	focusRequest: number;
+	handoffMentionId?: string;
 	instructionPlaceholderForAgent?: string;
+	mentionHandoffPending?: boolean;
 	/** Escape closes the box when the host supports it. */
 	onCancel?: () => void;
+	onHandoffInterrupt?: () => void;
 	onMentionChange?: (agentNames: string[], hasMentions: boolean) => void;
 	placeholder?: string;
 	/** The textbox's own name, when it should differ from the form's (replies keep "Leave a reply..."). */
 	textboxLabel?: string;
 	/** Leads a fresh draft with a mention chip, e.g. the author being replied to. */
-	prefillMention?: Readonly<{ mention: RichTextMentionItem; textAfter: string }>;
+	prefillMention?: Readonly<{ mention: RichTextMentionItem; textAfter: string; preserveContent?: boolean }>;
 	onSave: (body: string, plainText: string, mentionedAgentIds: readonly string[]) => void;
 	onValueChange: (body: string) => void;
 	ref?: Ref<ProjectButterCommentEditorHandle>;
@@ -55,10 +59,16 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		editorProps: {
 			attributes: { role: "textbox", "aria-label": textboxLabel, "aria-multiline": "true", class: "tiptap-editor min-h-6! py-0! text-sm leading-6 outline-none" },
 			handleKeyDown: (_view, event) => {
+				if (mentionHandoffPending && !["Shift", "Control", "Alt", "Meta"].includes(event.key)) onHandoffInterrupt?.();
 				if (event.isComposing) return false;
 				if (onCancel && event.key === "Escape" && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); onCancel(); return true; }
 				if (event.key === "Enter" && !event.shiftKey && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); save(); return true; }
 				return false;
+			},
+			handleDOMEvents: {
+				beforeinput: () => { if (mentionHandoffPending) onHandoffInterrupt?.(); return false; },
+				paste: () => { if (mentionHandoffPending) onHandoffInterrupt?.(); return false; },
+				compositionstart: () => { if (mentionHandoffPending) onHandoffInterrupt?.(); return false; },
 			},
 		},
 		onCreate: ({ editor: activeEditor }) => reportMentions(activeEditor),
@@ -112,6 +122,22 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		const frame = requestAnimationFrame(() => editor.commands.focus("end", { scrollIntoView: false }));
 		return () => cancelAnimationFrame(frame);
 	}, [editor, focusRequest]);
+	useLayoutEffect(() => {
+		if (!editor || !mentionHandoffPending || !handoffMentionId) return;
+		let target: HTMLElement | undefined;
+		let opacity = "";
+		const hideTarget = () => {
+			target = [...editor.view.dom.querySelectorAll<HTMLElement>("[data-mention-id]")].find((node) => node.dataset.mentionId === handoffMentionId);
+			if (!target) return;
+			opacity = target.style.opacity;
+			target.style.opacity = "0";
+			observer.disconnect();
+		};
+		const observer = new MutationObserver(hideTarget);
+		observer.observe(editor.view.dom, { childList: true, subtree: true });
+		hideTarget();
+		return () => { observer.disconnect(); if (target) target.style.opacity = opacity; };
+	}, [editor, handoffMentionId, mentionHandoffPending]);
 	// Prefill once per editor. Hosts rebuild the mention object every render, so it is read
 	// from a ref; re-running on identity would re-insert it over the user's typing.
 	const prefillRef = useRef(prefillMention);
@@ -122,12 +148,14 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		// A frame later, like PromptInput: the mention's React node view can't flush mid-commit.
 		const frame = requestAnimationFrame(() => {
 			prefilled.current = true;
-			editor.chain().focus().selectAll().insertContent([{ type: "mention", attrs: getMentionNodeAttrs(request.mention) }, { type: "text", text: request.textAfter }]).run();
+			const insertion = [{ type: "mention", attrs: getMentionNodeAttrs(request.mention) }, { type: "text", text: request.textAfter }];
+			if (request.preserveContent) editor.chain().insertContentAt(1, insertion).run();
+			else editor.chain().selectAll().insertContent(insertion).run();
 			// Inserting over select-all leaves everything selected; park the caret after the mention so typing extends it.
-			editor.commands.focus("end");
+			if (focusRequest) editor.commands.focus("end", { scrollIntoView: false });
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [editor]);
+	}, [editor, focusRequest]);
 	const placeholderStyle = useMemo<CSSProperties & { "--rich-text-placeholder": string }>(() => ({ "--rich-text-placeholder": JSON.stringify(placeholder) }), [placeholder]);
 	const showInstructionPlaceholder = Boolean(editor && instructionPlaceholderForAgent && !editor.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim());
 	function save() {
@@ -147,8 +175,9 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 				</PromptInputButton>
 			}
 			aria-label={ariaLabel}
-			className={elevation === "flat" ? "shadow-none" : undefined}
+			className={cn(elevation === "flat" ? "shadow-none" : undefined, mentionHandoffPending && "[&_[contenteditable]]:caret-transparent")}
 			data-project-butter-comment-editor
+			data-mention-handoff={mentionHandoffPending ? "pending" : "settled"}
 			onSubmit={() => save()}
 		>
 			<EditorContent className="rich-text-editor-content max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.react-renderer.node-mention]:inline-flex [&_.react-renderer.node-mention]:h-lh [&_.react-renderer.node-mention]:items-center [&_.react-renderer.node-mention]:align-middle [&_.rich-text-mention-node]:h-lh [&_.rich-text-mention-node]:items-center [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />

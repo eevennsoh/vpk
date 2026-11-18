@@ -12,6 +12,8 @@ minimumReleaseAgeExclude:
   - react-grab
   - "@react-grab/*"
   - agent-browser
+  # Latest Portless requested ahead of the seven-day gate; remove after it matures.
+  - portless@0.18.0
   # ADS source-of-truth tokens; allow same-day design-system updates by request.
   - "@atlaskit/tokens"
   # Transitive runtime gate for current @atlaskit/tokens.
@@ -52,33 +54,36 @@ trustPolicyExclude:
 # and every member updates in lockstep.
 catalog:
   # tiptap - all @tiptap/* must share one version
-  '@tiptap/core': 3.32.0
-  '@tiptap/extension-code-block': 3.32.0
-  '@tiptap/extension-color': 3.32.0
-  '@tiptap/extension-highlight': 3.32.0
-  '@tiptap/extension-link': 3.32.0
-  '@tiptap/extension-list': 3.32.0
-  '@tiptap/extension-mention': 3.32.0
-  '@tiptap/extension-table': 3.32.0
-  '@tiptap/extension-text-align': 3.32.0
-  '@tiptap/extension-text-style': 3.32.0
-  '@tiptap/extension-underline': 3.32.0
-  '@tiptap/markdown': 3.32.0
-  '@tiptap/pm': 3.32.0
-  '@tiptap/react': 3.32.0
-  '@tiptap/starter-kit': 3.32.0
-  '@tiptap/suggestion': 3.32.0
+  '@tiptap/core': 3.33.1
+  '@tiptap/extension-code-block': 3.33.1
+  '@tiptap/extension-color': 3.33.1
+  '@tiptap/extension-highlight': 3.33.1
+  '@tiptap/extension-link': 3.33.1
+  '@tiptap/extension-list': 3.33.1
+  '@tiptap/extension-mention': 3.33.1
+  '@tiptap/extension-table': 3.33.1
+  '@tiptap/extension-text-align': 3.33.1
+  '@tiptap/extension-text-style': 3.33.1
+  '@tiptap/extension-underline': 3.33.1
+  '@tiptap/markdown': 3.33.1
+  '@tiptap/pm': 3.33.1
+  '@tiptap/react': 3.33.1
+  '@tiptap/starter-kit': 3.33.1
+  '@tiptap/suggestion': 3.33.1
   # json-render - published from one monorepo at a single version
-  '@json-render/codegen': 0.20.0
-  '@json-render/core': 0.20.0
-  '@json-render/image': 0.20.0
-  '@json-render/react': 0.20.0
-  '@json-render/react-pdf': 0.20.0
+  '@json-render/codegen': 0.22.0
+  '@json-render/core': 0.22.0
+  '@json-render/image': 0.22.0
+  '@json-render/react': 0.22.0
+  '@json-render/react-pdf': 0.22.0
   # remotion - remotion + every @remotion/* must match exactly
-  'remotion': 4.0.536
-  '@remotion/player': 4.0.536
+  'remotion': 4.0.542
+  '@remotion/player': 4.0.542
 overrides:
   '@hono/node-server': ^1.19.15
+  # Keep the compatible flag clients that fit VPK's shared route budgets.
+  '@atlaskit/platform-feature-flags': 2.2.0
+  '@atlaskit/react-compiler-gating': 0.2.3
   '@pierre/trees>@pierre/theming': 1.0.1
   '@react-grab/cli>smol-toml': ^1.9.1
   '@tobilu/qmd>@modelcontextprotocol/server': 2.3.1

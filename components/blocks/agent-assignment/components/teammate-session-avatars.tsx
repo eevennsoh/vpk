@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 
 const MAX_VISIBLE_TEAMMATES = 4;
 
-export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly AgentSessionItem[] }>) {
+export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[] }>) {
 	const people = new Map<string, { name: string; avatarSrc: string | undefined }>();
 	for (const { invokedBy } of items) {
 		const name = invokedBy?.name.trim().replace(/\s+/gu, " ") ?? "";

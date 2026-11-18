@@ -138,6 +138,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 	/** Renders Team EU26's focused Needs input and Group by controls. */
 	needsInputCount?: number;
+	showNeedsInputButton?: boolean;
 	/**
 	 * Reveals Column size, Hide done, and Show fields in View. The route owns
 	 * Simple views so this header does not read the design-variant store.
@@ -240,6 +241,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	agentFilterId,
 	onAgentFilterIdChange,
 	needsInputCount,
+	showNeedsInputButton = true,
 	simpleViews,
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
@@ -276,6 +278,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 					agentFilterId={agentFilterId}
 					onAgentFilterIdChange={onAgentFilterIdChange}
 					needsInputCount={needsInputCount}
+					showNeedsInputButton={showNeedsInputButton}
 					simpleViews={simpleViews}
 					surfaceLabel={surfaceLabel}
 					{...{ endSlot, facepile, filterControl, modeToggle }}
@@ -447,6 +450,7 @@ function BoardHeaderControlsRow({
 	moreControlsPlacement,
 	onAgentFilterIdChange,
 	needsInputCount,
+	showNeedsInputButton,
 	onSelectedAssigneeIdsChange,
 	onShowUntrackedChange,
 	onShownSessionStateIdsChange,
@@ -478,6 +482,7 @@ function BoardHeaderControlsRow({
 	moreControlsPlacement: "inline" | "end";
 	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 	needsInputCount?: number;
+	showNeedsInputButton: boolean;
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
@@ -493,7 +498,7 @@ function BoardHeaderControlsRow({
 	surfaceLabel: string;
 }>) {
 	const trailingIcons = headerControlsLayout === "trailing-icons";
-	const needsInputButton = needsInputCount !== undefined ? (
+	const needsInputButton = showNeedsInputButton && needsInputCount !== undefined ? (
 		<BoardNeedsInputButton
 			agentFilterId={agentFilterId}
 			count={needsInputCount}

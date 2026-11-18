@@ -112,6 +112,7 @@ export function RichTextMentionNodeView({ node, selected }: Readonly<ReactNodeVi
 			as="span"
 			className="rich-text-mention-node inline-flex"
 			data-mention-category={category}
+			data-mention-id={String(attrs.id ?? "")}
 			data-mention-has-visual={visual ? "true" : undefined}
 			>
 				{preview ? (

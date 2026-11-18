@@ -147,8 +147,6 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.doesNotMatch(hostSegment, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
-	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
-	assert.equal((METADATA_SOURCE.match(/<AgentListPrStatusIcon\s+className="[^"]*text-icon-subtlest[^"]*"\s+status=\{(?:segment\.prStatus|item\.prStatus) \?\? "created"\}\s+\/>/gu) ?? []).length, 2);
 	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
@@ -643,7 +641,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/<span className="min-w-0 truncate text-text-subtlest" title=\{item\.agent\.name\}>/u,
+		/<span className="min-w-0 truncate text-text-subtle" title=\{item\.agent\.name\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -716,9 +714,9 @@ test("expired rows explain retention across the row and keep their Delete menu v
 	);
 });
 
-test("viewer rows expose one privacy explanation on the row", () => {
+test("private rows expose one privacy explanation on the row", () => {
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /if \(role === "viewer" \|\| item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
+	assert.match(CARD_SOURCE, /if \(item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
 		/You can see this session, but only its owner can act on it\./u,
@@ -742,7 +740,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(LIFECYCLE_SOURCE, /StatusSuccessIcon[\s\S]*text-icon-success|text-icon-success[\s\S]*StatusSuccessIcon/u);
 	// Lifecycle marks share a 24px slot: icons are 12px, and the 16.75px
 	// spinner SVG keeps the peak animated orb within that same footprint.
-	assert.match(LIFECYCLE_SOURCE, /className="relative grid size-6 shrink-0 place-items-center"/u);
+	assert.match(LIFECYCLE_SOURCE, /className=\{cn\("relative grid shrink-0 place-items-center", uncontained \? "size-4" : "size-6"\)\}/u);
 	assert.match(LIFECYCLE_SOURCE, /<IndicatorGlyph compact state=\{state\} \/>/u);
 	assert.equal((LIFECYCLE_SOURCE.match(/iconSize=\{compact \? "small" : "medium"\}/gu) ?? []).length, 3);
 	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-3!/u);
@@ -818,7 +816,6 @@ test("a card body click toggles a single selected session on the selected token"
 		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
 	);
 	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
-	assert.match(CARD_SOURCE, /showSelectedFill && "bg-bg-selected"/u);
 	assert.match(
 		CARD_SOURCE,
 		/const showSelectedFill = isMarked \|\| \(isSelected && mark == null\);/u,

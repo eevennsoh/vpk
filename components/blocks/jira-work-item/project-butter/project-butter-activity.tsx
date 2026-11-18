@@ -7,11 +7,13 @@ import { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/m
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
 import { resolveJiraLinkingGlowColor } from "@/components/blocks/jira-linking/glow-motion";
 import { resolveJiraLinkingIdentityTint } from "@/components/blocks/jira-linking/use-jira-linking-atlas";
-import { agentSessionTintSeed } from "@/components/blocks/agent-session/agent-session-transfer-member";
+import { agentSessionAccentColor, agentSessionTintSeed } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { resolveAgentBrandTint, resolveAgentBrandTintVariable } from "@/components/blocks/agent-session/agent-brand-tint";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
+import { motionDuration } from "@/lib/motion";
 import { ProjectButterCommentEditor } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
 import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-mention-agents";
 import { cn } from "@/lib/utils";
@@ -81,9 +83,15 @@ function earlierRepliesLabel(hidden: readonly JiraActivityReply[], expanded: boo
 export function ProjectButterActivity({
 	content,
 	empty,
+	traceReplyId,
+	pendingReplyId,
+	replyFocusId,
 	sidePanel,
 	sessions,
 	onOpenSession,
+	onReplyHandoffInterrupt,
+	onReplyTraceComplete,
+	onReplySubmitted,
 	previewSessionId,
 	replyRequest,
 	startedSessionId,
@@ -92,11 +100,17 @@ export function ProjectButterActivity({
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
+	traceReplyId?: number | null;
+	pendingReplyId?: string | null;
+	replyFocusId?: string | null;
 	sidePanel: boolean;
 	sessions: readonly ProjectButterSessionItem[];
 	onOpenSession: (id: string) => void;
+	onReplyHandoffInterrupt?: () => void;
+	onReplyTraceComplete?: (id: number) => void;
+	onReplySubmitted?: () => void;
 	previewSessionId?: string | null;
-	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
+	replyRequest?: Readonly<{ entryId: string; id: number; prefill?: Readonly<{ agentName: string; text: string; preserveContent: boolean }> }> | null;
 	startedSessionId?: string | null;
 	onStartedSessionRevealed?: () => void;
 	singleView?: boolean;
@@ -122,7 +136,7 @@ export function ProjectButterActivity({
 	const startedEntryId = startedSessionId ? `invocation-${startedSessionId}` : null;
 	const previewLimit = rowIndex(previewEntryId) + 1;
 	if (previewLimit > limit) setLimit(previewLimit);
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, previewLimit, rowIndex(startedEntryId) + 1));
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, previewLimit, rowIndex(startedEntryId) + 1));
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId);
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -235,6 +249,7 @@ export function ProjectButterActivity({
 							return agent ? [agent.id] : [];
 						}))];
 						content.submitActivityReply(entry.id, body, actorIds);
+						onReplySubmitted?.();
 					}}
 					onViewSession={(session) => onOpenSession(session.id)}
 					renderCommentAction={(entry) => <><ProjectButterPinComment onToggle={() => content.toggleCommentPin(entry.id)} pinned={content.pinnedCommentIds.includes(entry.id)} /><ProjectButterCopyCommentLink id={entry.id} /></>}
@@ -245,7 +260,17 @@ export function ProjectButterActivity({
 					}}
 					renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
 					renderEarlierRepliesLabel={earlierRepliesLabel}
-					renderReplyComposer={(composer) => <ProjectButterCommentEditor agents={mentionAgents} ariaLabel="Reply editor" elevation="flat" focusRequest={composer.autoFocus ? 1 : 0} onSave={(body, _plainText, mentionedAgentIds) => composer.onSubmit(body, mentionedAgentIds)} onValueChange={composer.onValueChange} placeholder={composer.placeholder} prefillMention={composer.prefillMention} textboxLabel={composer.placeholder} value={composer.value} />}
+					renderReplyComposer={(composer) => {
+						const request = replyRequest?.entryId === composer.entryId && replyRequest.id === composer.requestId ? replyRequest : undefined;
+						const prefill = request?.prefill;
+						const agent = prefill ? mentionAgents.find((candidate) => candidate.name === prefill.agentName) : undefined;
+						const item = agent ? mapAgentToMentionItem(agent) : undefined;
+						const mention = item && prefill && !composer.value.includes(`@[${item.id}]`) ? { mention: item, textAfter: prefill.preserveContent ? " " : prefill.text ? ` ${prefill.text}` : " ", preserveContent: prefill.preserveContent } : composer.prefillMention;
+						const autoFocus = composer.autoFocus && (!request || replyFocusId === undefined || replyFocusId === composer.entryId);
+						const editor = <ProjectButterCommentEditor agents={mentionAgents} ariaLabel="Reply editor" elevation="flat" focusRequest={autoFocus ? 1 : 0} handoffMentionId={item?.id} mentionHandoffPending={pendingReplyId === composer.entryId} onHandoffInterrupt={onReplyHandoffInterrupt} onSave={(body, _plainText, mentionedAgentIds) => composer.onSubmit(body, mentionedAgentIds)} onValueChange={composer.onValueChange} placeholder={composer.placeholder} prefillMention={mention} textboxLabel={composer.placeholder} value={composer.value} />;
+						const session = request ? sessionFor(composer.entryId) : undefined;
+						return session ? <RovoGeneration.Highlight active={traceReplyId === replyRequest?.id} className="block w-full" color={agentSessionAccentColor(session)} delay={0} duration={motionDuration.slowest * 2} onHighlightComplete={() => { if (replyRequest) onReplyTraceComplete?.(replyRequest.id); }} origin="left-center">{editor}</RovoGeneration.Highlight> : editor;
+					}}
 					renderEntry={(entry) => {
 						if (entry.kind !== "event") return undefined;
 						const group = groups.get(entry.id);

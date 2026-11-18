@@ -359,3 +359,79 @@ test("flush still treats a held unfinished marker as final text at the normal en
 
 	assert.equal(textDeltas.join(""), 'Intro WIDGET_DATA:{"type":"plan"');
 });
+
+function loadingTypes(parts) {
+	return parts.filter((part) => part.type === "data-widget-loading").map((part) => part.data.type);
+}
+
+test("a loading marker's type split across chunks is read whole", () => {
+	// Producers end the marker's line after the type. Before: chunks "WIDGET_LOADING:pl", "an" read
+	// type "pl" and showed "an" as text.
+	for (const [chunks, expectedType, expectedText] of [
+		[["WIDGET_LOADING:pl", "an\nDone"], "plan", "Done"],
+		[["WIDGET_LOADING:q", "uestion-card\n"], "question-card", ""],
+		[["Intro WIDGET_LOADING:image-pr", "eview", " is ready"], "image-preview", "Intro is ready"],
+		// The start of a known type is not read early.
+		[["WIDGET_LOADING:genui", "-preview\n"], "genui-preview", ""],
+	]) {
+		const { adapter, events, parts, textDeltas } = createAdapter();
+		for (const chunk of chunks) {
+			adapter.push(chunk);
+		}
+		assert.deepEqual(loadingTypes(parts), [expectedType], JSON.stringify(chunks));
+		adapter.flush();
+
+		assert.deepEqual(loadingTypes(parts), [expectedType], JSON.stringify(chunks));
+		assert.equal(textDeltas.join(""), expectedText, JSON.stringify(chunks));
+		assert.deepEqual(events.map((event) => event.type), expectedType === "plan" ? ["plan-loading"] : [], JSON.stringify(chunks));
+	}
+});
+
+test("a whole loading marker with nothing after it is read at once when its type is a whole known type", () => {
+	for (const type of ["plan", "question-card", "genui-preview"]) {
+		const { adapter, parts, textDeltas } = createAdapter();
+		adapter.push(`WIDGET_LOADING:${type}`);
+
+		assert.deepEqual(loadingTypes(parts), [type], type);
+		adapter.flush();
+		assert.deepEqual(loadingTypes(parts), [type], type);
+		assert.equal(textDeltas.join(""), "", type);
+	}
+
+	// Any other type could still go on, so it waits for the character after it.
+	const other = createAdapter();
+	other.adapter.push("WIDGET_LOADING:image-preview");
+	assert.deepEqual(loadingTypes(other.parts), []);
+	other.adapter.push("\n");
+	assert.deepEqual(loadingTypes(other.parts), ["image-preview"]);
+});
+
+test("a loading marker at the end of a stream is read with the type it has", () => {
+	for (const [streamed, expectedType] of [
+		["Intro WIDGET_LOADING:pl", "pl"],
+		["WIDGET_LOADING:image-preview", "image-preview"],
+	]) {
+		const { adapter, parts, textDeltas } = createAdapter();
+		adapter.push(streamed);
+		assert.deepEqual(loadingTypes(parts), [], streamed);
+		adapter.flush();
+
+		assert.deepEqual(loadingTypes(parts), [expectedType], streamed);
+		assert.equal(textDeltas.join(""), streamed.startsWith("Intro") ? "Intro " : "", streamed);
+	}
+});
+
+test("a failure flush drops a loading marker whose type may still go on", () => {
+	for (const chunks of [["Intro WIDGET_LOADING:pl"], ["Intro WIDGET_LOADING:", "image-prev"]]) {
+		const { adapter, events, parts, textDeltas } = createAdapter();
+		for (const chunk of chunks) {
+			adapter.push(chunk);
+		}
+		adapter.flushVisibleText();
+		adapter.flush();
+
+		assert.deepEqual(parts, [], JSON.stringify(chunks));
+		assert.deepEqual(events, [], JSON.stringify(chunks));
+		assert.equal(textDeltas.join(""), "Intro ", JSON.stringify(chunks));
+	}
+});

@@ -40,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
+	disabled?: boolean;
 	prompt: string;
 	isStreaming: boolean;
 	hasInFlightTurn: boolean;
@@ -205,7 +206,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ disabled = false, prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -311,6 +312,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					) : null}
 					<PromptInputBody>
 						<PromptInputTextarea
+							disabled={disabled}
 							ref={textareaRef}
 							value={prompt}
 							autoFocus={autoFocus}

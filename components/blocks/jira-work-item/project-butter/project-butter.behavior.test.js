@@ -37,6 +37,29 @@ test("continuing an agent sends the selected session and draft to its reply", as
 	assert.deepEqual(opened[1], ["session-1", "follow up"]);
 });
 
+test("session reply keeps the bottom composer available while the reply is active", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-body.tsx",
+		exportName: "ProjectButterBody",
+		props: {
+			active: true, content: { activityEntries: [{ id: "invocation-session-1", kind: "comment" }], replyDrafts: {}, setReplyDrafts() {}, setActivityFilters() {}, setActivityFocusId() {} },
+			detailsSlotRef: null, empty: false, inlineSessionReplies: true, onOpenSession() {}, onPreviewSession() {}, onStartAgent() {}, onStartedSessionRevealed() {}, sessions: [], sidePanel: false,
+		},
+		mocks: {
+			"@/components/blocks/jira-work-item/project-butter/project-butter-description": "export function ProjectButterDescription() { return null; }",
+			"@/components/blocks/jira-work-item/project-butter/project-butter-related-work": "export function ProjectButterRelatedWork() { return null; }",
+			"@/components/blocks/jira-work-item/project-butter/project-butter-activity": `import React from "react"; export function ProjectButterActivity() { return <div data-jira-activity-entry-id="invocation-session-1"><div data-project-butter-comment-editor>Inline reply</div></div>; }`,
+			"@/components/blocks/jira-work-item/project-butter/project-butter-comment-bar": `import React from "react"; export function ProjectButterCommentBar({ keepVisible, onReplyToSession }) { return <><button type="button" data-keep-visible={keepVisible} onClick={() => onReplyToSession({ id: "session-1", agent: { name: "Claude" } }, "draft", null)}>Continue</button><button type="button">Outside</button></>; }`,
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Continue" }));
+	assert.equal(view.getByRole("button", { name: "Continue" }).dataset.keepVisible, "true");
+	await view.click(view.getByText("Inline reply"));
+	assert.equal(view.getByRole("button", { name: "Continue" }).dataset.keepVisible, "true");
+	await view.click(view.getByRole("button", { name: "Outside" }));
+	assert.equal(view.getByRole("button", { name: "Continue" }).dataset.keepVisible, "false");
+});
+
 test("Butter chat keeps the selected session's agent identity", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";

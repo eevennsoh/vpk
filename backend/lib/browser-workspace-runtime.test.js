@@ -350,10 +350,10 @@ test("browser workspace runtime never passes a request value that reads as an op
 	await runtime.keyEvent("keyDown", "-")
 	await runtime.insertText("-5")
 	await runtime.insertText("- 5 items")
-	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
+	assert.deepEqual(runtime.commands, [["press", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
 })
 
-test("a modified preview key goes out as one press with its modifiers, and an unmodified one as keydown/keyup", async () => {
+test("a modified preview key goes out as one press with its modifiers, and an unmodified named key as keydown/keyup", async () => {
 	const runtime = new TestAgentBrowserRuntime()
 	runtime._isBrowserReady = true
 	const shift = { shiftKey: true, ctrlKey: false, altKey: false, metaKey: false }
@@ -384,6 +384,16 @@ test("a modified preview key goes out as one press with its modifiers, and an un
 		["keydown", "Tab"],
 		["keyup", "Tab"],
 	])
+})
+
+test("an unmodified printable preview key inserts text through press", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	for (const [key, code] of [["a", "KeyA"], [" ", "Space"], ["+", "Equal"]]) {
+		assert.equal(await runtime.keyEvent("keyDown", key, code, key), true)
+		assert.equal(await runtime.keyEvent("keyUp", key, code), false)
+	}
+	assert.deepEqual(runtime.commands, [["press", "a"], ["press", "Space"], ["press", "+"]])
 })
 
 test("a modified preview key that is not a key name is refused before reaching agent-browser", async () => {

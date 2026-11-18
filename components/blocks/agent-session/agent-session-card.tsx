@@ -243,6 +243,7 @@ function useAgentSessionCardTransition({
 
 export function AgentSessionCard({
 	animateLayout = true,
+	allowViewerView = false,
 	arrivalDelaySeconds,
 	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
 	captured = false,
@@ -297,6 +298,7 @@ export function AgentSessionCard({
 	workItemOptions,
 }: Readonly<{
 	animateLayout?: boolean;
+	allowViewerView?: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset?: string;
 	captured?: boolean;
@@ -495,7 +497,7 @@ export function AgentSessionCard({
 	const canOpenLocalMenu = role === "owner" && !isCloudSession && localSessionAction === "continue" && (canResume || onContinueInAgent !== undefined);
 	const viewSession: typeof onView = role === "owner"
 		? isCloudSession || localSessionAction === "view" ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
-		: undefined;
+		: role === "viewer" && allowViewerView && isCloudSession && !item.privateTo ? onView : undefined;
 	function renderLocalContinuation(trigger?: ReactElement) {
 		return (
 			<AgentSessionContinueMenu
@@ -705,7 +707,7 @@ export function AgentSessionCard({
 						// fading the fill flashes transparent frames between nearby rows.
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						showSelectedFill && "bg-bg-selected",
+						showSelectedFill && (hoverTone === "menu" && !isMarked ? "bg-bg-neutral-subtle-hovered" : "bg-bg-selected"),
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
 						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
 						activateCard === undefined && role !== "viewer"
@@ -722,7 +724,7 @@ export function AgentSessionCard({
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
 							role={articleRole}
-							tabIndex={articleTabIndex ?? (role === "viewer" || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
+							tabIndex={articleTabIndex ?? ((role === "viewer" && (!allowViewerView || item.privateTo) && activateCard === undefined) || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
 						>
 							{/*
 								No resting ring: the session list is a flush stack of
@@ -759,7 +761,7 @@ export function AgentSessionCard({
 										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar} showAgentName={showAgentName} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
+								metadataOutsideViewTrigger
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								viewDescription={item.privateTo ? agentSessionPrivacyHint(item.privateTo) : undefined}
@@ -806,9 +808,11 @@ export function AgentSessionCard({
 					if (role === "expired") {
 						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
-					if (role === "viewer" || item.privateTo) {
-						return <AgentSessionViewerTooltip person={item.privateTo ?? item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (item.privateTo) {
+						return <AgentSessionViewerTooltip person={item.privateTo} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
+					if (role === "viewer" && !allowViewerView) return <AgentSessionViewerTooltip person={item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (role === "viewer") return card;
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {
 						return card;

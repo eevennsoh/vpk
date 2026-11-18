@@ -20,6 +20,23 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("assignment activity keeps its private access mark in the session menu", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AssignedAgentsSessionMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
+			import { toAgentAssignmentAgent } from "@/components/blocks/jira-issue/agent-activity";
+			import { TooltipProvider } from "@/components/ui/tooltip";
+			export default function Menu({ activity }) { return <TooltipProvider><AssignedAgentsSessionMenu rows={[toAgentAssignmentAgent(activity)]} onSelectAgent={() => {}} /></TooltipProvider>; }
+		`,
+		props: { activity: { id: "private", name: "Cursor", label: "Reviewing", state: "working", role: "viewer", invokedBy: { name: "Jordan" }, privateTo: "Jordan" } },
+		mocks: themeMock,
+	});
+	try {
+		assert.ok(view.getByRole("img", { name: "Private session by Jordan" }));
+		assert.equal(view.container.querySelector('[data-access-mark="team"]'), null);
+	} finally { await view.unmount(); }
+});
+
 test("session menu can show a teammate count or expand a single teammate by default", async () => {
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
@@ -140,9 +157,9 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 	} finally { await view.unmount(); }
 });
 
-test("viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
+test("private viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
 	let selected = 0;
-	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { privateTo: "Sample Alpha", invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		await view.press(trigger, "Enter");
@@ -291,7 +308,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/moreMenuOpenRef\.current[\s\S]*reason === "outside-press"[\s\S]*reason === "trigger-hover"/u,
 	);
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
-	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\)\}/u);
+	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col outline-none", dropdownStyles\.padding\)\}/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
 	assert.match(mapper, /const invokedBy = agent\.invokedBy;/u);
 	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);

@@ -90,13 +90,13 @@ test("a notice after a rerun drops the rerun's held whitespace", () => {
 	assert.equal(controller.getUnsuppressedAssistantText(), "N");
 });
 
-test("a notice keeps text that already went out after an open fence, and breaks after what was shown", () => {
-	// A fence after ordinary text is not held across deltas, so its later chunks go out. Before: the
-	// notice cut that shown text from the turn's text and took its break from the shortened text:
-	// wire 'Intro\n"card"\nN', turn's text "Intro\n\nN".
+test("a notice drops an open fence after text that its later chunks continued", () => {
+	// The fence's later chunks stay hidden with it, so the notice drops the whole fence. Before: they
+	// went out as text and the turn's text kept the open fence with the notice after it:
+	// wire 'Intro\n"card"\n\nN', turn's text 'Intro\n```spec\n{"root":"card"\n\nN'.
 	for (const [name, chunks, expectedWire, expectedText] of [
-		["spec", ['Intro\n```spec\n{"root":', '"card"'], 'Intro\n"card"\n\nN', 'Intro\n```spec\n{"root":"card"\n\nN'],
-		["media", ['Intro\n```image\n{"prompt":', '"A lighthouse"'], 'Intro\n"A lighthouse"\n\nN', 'Intro\n```image\n{"prompt":"A lighthouse"\n\nN'],
+		["spec", ['Intro\n```spec\n{"root":', '"card"'], "Intro\n\nN", "Intro\n\nN"],
+		["media", ['Intro\n```image\n{"prompt":', '"A lighthouse"'], "Intro\n\nN", "Intro\n\nN"],
 	]) {
 		const { controller, parts } = createTextOutputController();
 		for (const chunk of chunks) {
@@ -182,10 +182,9 @@ test("a notice drops an open fence from the turn's text even after the splitters
 	}
 });
 
-test("a notice drops what two forced flushes in a row each held back whole", () => {
-	// Each delta opens a fence at the start of the reply, so each forced flush lets nothing through:
-	// the second continues the first's held-back end. If it replaced it, the first fence would stay in
-	// the turn's text with the notice after it.
+test("a notice drops an open media fence and the open spec fence after it", () => {
+	// Neither delta lets anything through, so the held-back end runs from the first fence. If it began
+	// at the second, the first fence would stay in the turn's text with the notice after it.
 	const { controller, parts } = createTextOutputController({ isClassifierIntentLeakCandidate: () => false });
 	controller.emitTextDelta("```image\nA lighthouse");
 	controller.emitTextDelta('```spec\n{"root":"card"');
@@ -229,7 +228,7 @@ test("a notice on a card-first turn never replays a classifier payload, and the 
 	}
 });
 
-test("a notice cuts nothing from a turn's text replaced after a forced flush held back more than it", () => {
+test("a notice cuts nothing from a turn's text replaced after held text it holds back is longer than it", () => {
 	// The held fence is longer than the replacement text, so its start in the replaced text is negative.
 	// Before: the cut ran from the wrong end and dropped the shown text: wire "Shown\n\nN", text "N".
 	// The unreplaced text is the held fence alone, none of which reached the wire, so it is dropped.

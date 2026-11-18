@@ -9,16 +9,16 @@ import {
 
 export type VoiceGlowNumbers = VoiceGeometry & {
 	level: number; sensitivity: number; threshold: number; attack: number; release: number;
-	breatheDuration: number; processingEase: number; hueRange: number; hueDuration: number;
+	breatheDuration: number; hueRange: number; hueDuration: number;
 	brightness: number; saturation: number; strength: number; borderRadius: number;
 };
 export type VoiceGlowConfig = Required<Pick<VoiceBeamProps,
-	"type" | "theme" | "colorVariant" | "active" | "paused" | "processing" | "bands" | "staticColors"
+	"type" | "theme" | "colorVariant" | "active" | "paused" | "bands" | "staticColors"
 >> & Partial<VoiceGlowNumbers>;
 
 export const VOICE_GLOW_DEFAULTS: VoiceGlowConfig = {
 	type: "default", theme: "auto", colorVariant: "colorful",
-	active: true, paused: false, processing: false, bands: true, staticColors: false, level: 0.5,
+	active: true, paused: false, bands: true, staticColors: false, level: 0.5,
 };
 export const VOICE_GLOW_TYPES = [
 	{ value: "default", label: "Chat input" }, { value: "pill", label: "Recording pill" },
@@ -46,7 +46,7 @@ export function resolveVoiceGlowNumbers(config: VoiceGlowConfig, pageTheme: "dar
 	return {
 		...resolveVoiceDefaults(config.type, theme),
 		level: 0.5, sensitivity: 3.1, threshold: 0.015, attack: 0.325, release: 0.86,
-		breatheDuration: 5.2, processingEase: 0.6, borderRadius: 16,
+		breatheDuration: 5.2, borderRadius: 16,
 		hueRange: colors.hueRange ?? 24, hueDuration: colors.hueDuration ?? 12,
 		brightness: style.brightness ?? colors.brightness,
 		saturation: style.saturation ?? colors.saturation,
@@ -61,13 +61,6 @@ export const VOICE_GLOW_CONTROLS = [
 		["threshold", "Noise gate", 0, 1, 0.005], ["attack", "Attack", 0.01, 2, 0.01, "s"],
 		["release", "Release", 0.01, 3, 0.01, "s"], ["idle", "Idle presence", 0, 1, 0.01],
 		["breatheDuration", "Breathing period", 0.1, 20, 0.1, "s"],
-	] },
-	{ title: "Processing", controls: [
-		["processingDuration", "Pass duration", 0.05, 5, 0.05, "s"],
-		["processingLevel", "Processing intensity", 0, 1, 0.01],
-		["processingEase", "Morph duration", 0.05, 2, 0.05, "s"],
-		["processingTravel", "Travel", 0, 4, 0.05], ["processingCurve", "Turn easing", 1, 6, 0.1],
-		["cornerFollow", "Follow corners", 0, 1, 0.01],
 	] },
 	{ title: "Geometry", controls: [
 		["scale", "Scale", 0.1, 3, 0.05], ["reach", "Reach", 0, 5, 0.05],
