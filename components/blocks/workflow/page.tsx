@@ -36,11 +36,9 @@ import {
 	Conversation,
 	ConversationContent,
 } from "@/components/ui-custom/conversation"
-import {
-	Message,
-	MessageContent,
-	MessageResponse,
-} from "@/components/ui-custom/message"
+import { Message, MessageContent } from "@/components/ui/message"
+import { MessageResponse } from "@/components/ui-custom/message-markdown"
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble"
 import {
 	Confirmation,
 	ConfirmationAction,
@@ -109,61 +107,69 @@ export default function AIWorkflowBlock() {
 				<Conversation className="flex-1">
 					<ConversationContent className="gap-6">
 						{MOCK_WORKFLOW_MESSAGES.map((msg) => (
-							<Message key={msg.id} from={msg.role}>
-								<MessageContent>
-									{/* Plan rendering */}
-									{msg.plan ? <Plan defaultOpen className="mb-4">
-											<PlanHeader
-												leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} /></PlanAvatar>}
-												title={<PlanTitle>{msg.plan.title}</PlanTitle>}
-												description={<PlanDescription>{msg.plan.description}</PlanDescription>}
-											/>
-											<PlanContent>
-												<div className="space-y-2">
-													{MOCK_PLAN_STEPS.steps.map((step) => (
-														<div key={step.label} className="flex items-center gap-2 text-sm">
-															{stepIcons[step.status]}
-															<span className={step.status === "pending" ? "text-muted-foreground" : ""}>
-																{step.label}
-															</span>
-														</div>
-													))}
-												</div>
-											</PlanContent>
-										</Plan> : null}
+							<Message key={msg.id} align={msg.role === "user" ? "end" : "start"} className="cv-auto">
+								{msg.role === "user" ? (
+									<MessageContent>
+										<MessageUserBubble>
+											<MessageResponse>{msg.content}</MessageResponse>
+										</MessageUserBubble>
+									</MessageContent>
+								) : (
+									<MessageContent className="max-w-[80%] gap-2">
+										{/* Plan rendering */}
+										{msg.plan ? <Plan defaultOpen className="mb-4">
+												<PlanHeader
+													leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} /></PlanAvatar>}
+													title={<PlanTitle>{msg.plan.title}</PlanTitle>}
+													description={<PlanDescription>{msg.plan.description}</PlanDescription>}
+												/>
+												<PlanContent>
+													<div className="space-y-2">
+														{MOCK_PLAN_STEPS.steps.map((step) => (
+															<div key={step.label} className="flex items-center gap-2 text-sm">
+																{stepIcons[step.status]}
+																<span className={step.status === "pending" ? "text-muted-foreground" : ""}>
+																	{step.label}
+																</span>
+															</div>
+														))}
+													</div>
+												</PlanContent>
+											</Plan> : null}
 
-									{/* Tool call rendering */}
-									{msg.toolCalls ? msg.toolCalls.map((tc, i) => (
-										<Tool key={`${msg.id}-tool-${i}`} defaultOpen={false}>
-											<ToolHeader
-												title={tc.name}
-												type="tool-invocation"
-												state={tc.state}
-											/>
-											<ToolContent>
-												<ToolInput input={tc.input} />
-												<ToolOutput output={tc.output} errorText={undefined} />
-											</ToolContent>
-										</Tool>
-									)) : null}
+										{/* Tool call rendering */}
+										{msg.toolCalls ? msg.toolCalls.map((tc, i) => (
+											<Tool key={`${msg.id}-tool-${i}`} defaultOpen={false}>
+												<ToolHeader
+													title={tc.name}
+													type="tool-invocation"
+													state={tc.state}
+												/>
+												<ToolContent>
+													<ToolInput input={tc.input} />
+													<ToolOutput output={tc.output} errorText={undefined} />
+												</ToolContent>
+											</Tool>
+										)) : null}
 
-									{/* Message content */}
-									{msg.content ? <MessageResponse>{msg.content}</MessageResponse> : null}
+										{/* Message content */}
+										{msg.content ? <MessageResponse>{msg.content}</MessageResponse> : null}
 
-									{/* Confirmation rendering */}
-									{msg.confirmation ? <Confirmation
-											state={msg.confirmation.state}
-											approval={{ id: msg.confirmation.id }}
-										>
-											<ConfirmationTitle>{msg.confirmation.message}</ConfirmationTitle>
-											<ConfirmationRequest>
-												<ConfirmationActions>
-													<ConfirmationAction variant="outline">Deny</ConfirmationAction>
-													<ConfirmationAction>Approve</ConfirmationAction>
-												</ConfirmationActions>
-											</ConfirmationRequest>
-										</Confirmation> : null}
-								</MessageContent>
+										{/* Confirmation rendering */}
+										{msg.confirmation ? <Confirmation
+												state={msg.confirmation.state}
+												approval={{ id: msg.confirmation.id }}
+											>
+												<ConfirmationTitle>{msg.confirmation.message}</ConfirmationTitle>
+												<ConfirmationRequest>
+													<ConfirmationActions>
+														<ConfirmationAction variant="outline">Deny</ConfirmationAction>
+														<ConfirmationAction>Approve</ConfirmationAction>
+													</ConfirmationActions>
+												</ConfirmationRequest>
+											</Confirmation> : null}
+									</MessageContent>
+								)}
 							</Message>
 						))}
 					</ConversationContent>

@@ -96,5 +96,11 @@ export const ATTACHMENT_DETAIL: ComponentDetail = {
         description: "Horizontal and vertical attachment layouts.",
         demoSlug: "attachment-demo-orientation",
       },
+      {
+        title: "AI SDK parts",
+        description:
+          "FileUIPart and SourceDocumentUIPart values mapped onto Attachment with AttachmentPartMedia and the getAttachmentLabel helper from lib/attachment-media, plus the read-only thumbnails chat surfaces show above a user turn.",
+        demoSlug: "attachment-demo-ai-sdk-parts",
+      },
     ],
   };

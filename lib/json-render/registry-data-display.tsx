@@ -22,7 +22,7 @@ import { Tag as TagPrimitive, TagGroup } from "@/components/ui/tag";
 import { Spinner } from "@/components/ui/spinner";
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { Kbd } from "@/components/ui/kbd";
 import { Comment } from "@/components/ui/comment";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";

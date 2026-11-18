@@ -4,7 +4,8 @@ import {
 	ConversationDownload,
 	ConversationScrollButton,
 } from "@/components/ui-custom/conversation";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 const DEMO_MESSAGES: Array<{
 	id: string;
@@ -58,8 +59,14 @@ export default function ConversationDemo() {
 		<Conversation className="h-80 w-full overflow-hidden rounded-xl border border-border bg-background">
 			<ConversationContent className="min-h-full px-6 py-5 pr-20">
 				{DEMO_MESSAGES.map((message) => (
-					<Message from={message.role} key={message.id}>
-						<MessageContent>{message.content}</MessageContent>
+					<Message align={message.role === "user" ? "end" : "start"} key={message.id}>
+						{message.role === "user" ? (
+							<MessageContent>
+								<MessageUserBubble>{message.content}</MessageUserBubble>
+							</MessageContent>
+						) : (
+							<MessageContent className="max-w-[80%]">{message.content}</MessageContent>
+						)}
 					</Message>
 				))}
 			</ConversationContent>

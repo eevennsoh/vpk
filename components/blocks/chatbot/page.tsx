@@ -18,8 +18,9 @@ import {
 	MessageAction,
 	MessageActions,
 	MessageContent,
-	MessageResponse,
-} from "@/components/ui-custom/message"
+} from "@/components/ui/message"
+import { MessageResponse } from "@/components/ui-custom/message-markdown"
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble"
 import {
 	PromptInput,
 	PromptInputFooter,
@@ -125,28 +126,38 @@ export default function AIChatbotBlock() {
 			<Conversation className="flex-1">
 				<ConversationContent>
 					{messages.map((msg) => (
-						<Message key={msg.id} from={msg.role}>
-							<MessageContent>
-								{msg.reasoning ? <Reasoning defaultOpen={false} duration={12}>
-										<ReasoningTrigger />
-										<ReasoningContent>{msg.reasoning}</ReasoningContent>
-									</Reasoning> : null}
-								<MessageResponse>{msg.content}</MessageResponse>
-							</MessageContent>
-							{msg.role === "assistant" ? <MessageActions>
-									<MessageAction tooltip="Copy" label="Copy response">
-										<CopyIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Good response" label="Thumbs up">
-										<ThumbsUpIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Bad response" label="Thumbs down">
-										<ThumbsDownIcon className="size-4" />
-									</MessageAction>
-									<MessageAction tooltip="Regenerate" label="Regenerate response">
-										<RefreshCwIcon className="size-4" />
-									</MessageAction>
-								</MessageActions> : null}
+						<Message key={msg.id} align={msg.role === "user" ? "end" : "start"} className="cv-auto">
+							{msg.role === "user" ? (
+								<MessageContent>
+									<MessageUserBubble>
+										<MessageResponse>{msg.content}</MessageResponse>
+									</MessageUserBubble>
+								</MessageContent>
+							) : (
+								<MessageContent className="max-w-[80%] gap-2">
+									{msg.reasoning ? (
+										<Reasoning defaultOpen={false} duration={12}>
+											<ReasoningTrigger />
+											<ReasoningContent>{msg.reasoning}</ReasoningContent>
+										</Reasoning>
+									) : null}
+									<MessageResponse>{msg.content}</MessageResponse>
+									<MessageActions>
+										<MessageAction tooltip="Copy" label="Copy response">
+											<CopyIcon className="size-4" />
+										</MessageAction>
+										<MessageAction tooltip="Good response" label="Thumbs up">
+											<ThumbsUpIcon className="size-4" />
+										</MessageAction>
+										<MessageAction tooltip="Bad response" label="Thumbs down">
+											<ThumbsDownIcon className="size-4" />
+										</MessageAction>
+										<MessageAction tooltip="Regenerate" label="Regenerate response">
+											<RefreshCwIcon className="size-4" />
+										</MessageAction>
+									</MessageActions>
+								</MessageContent>
+							)}
 						</Message>
 					))}
 				</ConversationContent>

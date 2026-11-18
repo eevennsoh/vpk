@@ -1,13 +1,16 @@
 "use client";
 
 import {
-	AttachmentItem,
-	AttachmentInfo,
-	AttachmentPreview,
-	AttachmentRemove,
 	Attachment,
-} from "@/components/ui-custom/attachment";
+	AttachmentAction,
+	AttachmentContent,
+	AttachmentGroup,
+	AttachmentTitle,
+} from "@/components/ui/attachment";
 import { usePromptInputAttachments } from "@/components/ui-custom/prompt-input";
+import { XIcon } from "@/components/ui/vpk-icons";
+import { getAttachmentLabel } from "@/lib/attachment-media";
+import { AttachmentPartMedia } from "./attachment-part-media";
 
 export function PendingAttachments() {
 	const attachments = usePromptInputAttachments();
@@ -17,18 +20,31 @@ export function PendingAttachments() {
 	}
 
 	return (
-		<Attachment variant="inline" className="mb-3 justify-start">
-			{attachments.files.map((file) => (
-				<AttachmentItem
-					key={file.id}
-					data={file}
-					onRemove={() => attachments.remove(file.id)}
-				>
-					<AttachmentPreview />
-					<AttachmentInfo />
-					<AttachmentRemove className="opacity-100" />
-				</AttachmentItem>
-			))}
-		</Attachment>
+		<AttachmentGroup className="-mx-1 -mt-1 mb-2 snap-none flex-wrap justify-start gap-2 overflow-visible">
+			{attachments.files.map((file) => {
+				const label = getAttachmentLabel(file);
+				return (
+					<Attachment
+						key={file.id}
+						className="h-8 min-w-0 gap-1.5 rounded-md has-data-[slot=attachment-content]:px-1.5 has-data-[slot=attachment-content]:py-0 has-data-[slot=attachment-media]:px-1.5 has-data-[slot=attachment-media]:py-0"
+					>
+						<AttachmentPartMedia data={file} className="size-5 rounded bg-surface" iconClassName="size-3" />
+						<AttachmentContent>
+							<AttachmentTitle>{label}</AttachmentTitle>
+						</AttachmentContent>
+						<AttachmentAction
+							aria-label={`Remove ${label}`}
+							className="size-5 rounded"
+							onClick={(event) => {
+								event.stopPropagation();
+								attachments.remove(file.id);
+							}}
+						>
+							<XIcon className="size-3" label="" />
+						</AttachmentAction>
+					</Attachment>
+				);
+			})}
+		</AttachmentGroup>
 	);
 }

@@ -4,13 +4,11 @@ import {
 	MessageContent,
 	MessageCopyAction,
 	MessageEditAction,
-	MessageResponse,
-} from "@/components/ui-custom/message";
-import {
-	AttachmentItem,
-	AttachmentPreview,
-	Attachment,
-} from "@/components/ui-custom/attachment";
+} from "@/components/ui/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
+import { cn } from "@/lib/utils";
+import { UserMessageAttachments } from "./user-message-attachments";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
@@ -96,76 +94,59 @@ export function UserMessageBubble({
 					</Button>
 				</span>
 			) : null}
-			<UiMessage
-				from="user"
-				className={isEditing ? "w-full max-w-full" : undefined}
-				fitContent={!isEditing}
-				contain={!showClarificationSummary}
-			>
-				{attachments.length > 0 ? (
-					<Attachment className="justify-end" variant="grid">
-						{attachments.map((attachment) => (
-							<AttachmentItem
-								key={`${attachment.url}-${attachment.filename ?? "attachment"}`}
-								data={{
-									...attachment,
-									id: `${attachment.url}-${attachment.filename ?? "attachment"}`,
-								}}
-							>
-								<AttachmentPreview />
-							</AttachmentItem>
-						))}
-					</Attachment>
-				) : null}
-				{isEditing && onEdit ? (
-					<InlineEdit
-						value={messageText}
-						multiline
-						startWithEditViewOpen
-						keepEditViewOpenOnBlur
-						onConfirm={(nextValue) => void onEdit(nextValue)}
-						onCancel={() => onCancelEdit?.()}
-					/>
-				) : showClarificationSummary ? (
-					<>
-						<AnswerCard
-							label={isDismissed ? "Questions dismissed" : undefined}
-							rows={clarificationSummaryRows}
+			<UiMessage align="end" className={cn(!showClarificationSummary && "cv-auto")}>
+				<MessageContent className={isEditing ? undefined : "max-w-[80%] items-end gap-2"}>
+					<UserMessageAttachments attachments={attachments} />
+					{isEditing && onEdit ? (
+						<InlineEdit
+							value={messageText}
+							multiline
+							startWithEditViewOpen
+							keepEditViewOpenOnBlur
+							onConfirm={(nextValue) => void onEdit(nextValue)}
+							onCancel={() => onCancelEdit?.()}
 						/>
-						{canShowPromptActions && !isDismissed ? (
-							<MessageActions reveal="hover" className="justify-end text-text-subtle">
-								<MessageCopyAction text={messageText} />
-							</MessageActions>
-						) : null}
-					</>
-				) : (
-					<>
-						<MessageContent>
-							{skillInvocationLabel && skillTagProps ? (
-								<p className="font-medium leading-5">
-									{skillInvocation ? <>Use{" "}</> : null}
-									<SkillTag
-										color={skillTagProps.color}
-										icon={skillTagProps.icon}
-									>
-										{skillInvocationLabel}
-									</SkillTag>
-									{skillInvocation?.instruction ? <>{" "}{skillInvocation.instruction}</> : null}
-								</p>
-							) : (
-								<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">
-									{messageText}
-								</MessageResponse>
-							)}
-						</MessageContent>
-						{canShowPromptActions ? (
-							<MessageActions reveal="hover" className="justify-end text-text-subtle">
-								<MessageCopyAction text={messageText} />
-								{canEditPrompt ? <MessageEditAction onClick={onStartEdit} /> : null}
-							</MessageActions>
-						) : null}
-					</>
-				)}
+					) : showClarificationSummary ? (
+						<>
+							<AnswerCard
+								label={isDismissed ? "Questions dismissed" : undefined}
+								rows={clarificationSummaryRows}
+							/>
+							{canShowPromptActions && !isDismissed ? (
+								<MessageActions reveal="hover" className="text-text-subtle">
+									<MessageCopyAction text={messageText} />
+								</MessageActions>
+							) : null}
+						</>
+					) : (
+						<>
+							<MessageUserBubble className="max-w-full">
+								{skillInvocationLabel && skillTagProps ? (
+									<p className="font-medium leading-5">
+										{skillInvocation ? <>Use{" "}</> : null}
+										<SkillTag
+											color={skillTagProps.color}
+											icon={skillTagProps.icon}
+										>
+											{skillInvocationLabel}
+										</SkillTag>
+										{skillInvocation?.instruction ? <>{" "}{skillInvocation.instruction}</> : null}
+									</p>
+								) : (
+									<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">
+										{messageText}
+									</MessageResponse>
+								)}
+							</MessageUserBubble>
+							{canShowPromptActions ? (
+								<MessageActions reveal="hover" className="text-text-subtle">
+									<MessageCopyAction text={messageText} />
+									{canEditPrompt ? <MessageEditAction onClick={onStartEdit} /> : null}
+								</MessageActions>
+							) : null}
+						</>
+					)}
+				</MessageContent>
 			</UiMessage>
 		</div>
 	);

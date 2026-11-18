@@ -5,9 +5,7 @@
 import { useMemo, type ReactNode } from "react";
 import { type RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
 import { readAssistantMessage, presentAssistantMessageText } from "../lib/process-assistant-message";
-import {
-	Message as UiMessage,
-} from "@/components/ui-custom/message";
+import { Message as UiMessage, MessageContent } from "@/components/ui/message";
 import {
 	sanitizeQuestionCardMessageText,
 	shouldSuppressQuestionCardMessageText,
@@ -394,15 +392,13 @@ export function ThreadMessageRoot({
 	return (
 		<ThreadMessageContext value={contextValue}>
 			<UiMessage
-				from="assistant"
-				className="max-w-full"
 				// Widget cards (plan, agent-edit-summary) stream in and expand
 				// after mount. `cv-auto` containment clips overflow at the
 				// contain-intrinsic-size estimate, scissoring the card's rounded
 				// corners — opt these messages out of containment.
-				contain={!contextValue.hasRenderedWidget}
+				className={contextValue.hasRenderedWidget ? undefined : "cv-auto"}
 			>
-				{children}
+				<MessageContent className="gap-2">{children}</MessageContent>
 			</UiMessage>
 		</ThreadMessageContext>
 	);

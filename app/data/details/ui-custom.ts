@@ -10,7 +10,6 @@ import { ANIMATED_DOT_DETAIL } from "./ui-custom/animated-dot";
 import { ANIMATED_ICON_DETAIL } from "./ui-custom/animated-icon";
 import { ANIMATED_ROVO_DETAIL } from "./ui-custom/animated-rovo";
 import { ARTIFACT_LIST_DETAIL } from "./ui-custom/artifact-list";
-import { ATTACHMENT_DETAIL } from "./ui-custom/attachment";
 import { AUDIO_PLAYER_DETAIL } from "./ui-custom/audio-player";
 import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
@@ -35,7 +34,6 @@ import { JSX_PREVIEW_DETAIL } from "./ui-custom/jsx-preview";
 import { KNOWLEDGE_DETAIL } from "./ui-custom/knowledge";
 import { LIST_DETAIL } from "./ui-custom/list";
 import { LIVE_WAVEFORM_DETAIL } from "./ui-custom/live-waveform";
-import { MESSAGE_DETAIL } from "./ui-custom/message";
 import { MIC_SELECTOR_DETAIL } from "./ui-custom/mic-selector";
 import { MODEL_SELECTOR_DETAIL } from "./ui-custom/model-selector";
 import { NODE_DETAIL } from "./ui-custom/node";
@@ -76,7 +74,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"animated-icon": ANIMATED_ICON_DETAIL,
 	"animated-rovo": ANIMATED_ROVO_DETAIL,
 	"artifact-list": ARTIFACT_LIST_DETAIL,
-	attachment: ATTACHMENT_DETAIL,
 	"audio-player": AUDIO_PLAYER_DETAIL,
 	canvas: CANVAS_DETAIL,
 	"code-list": CODE_LIST_DETAIL,
@@ -101,7 +98,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	knowledge: KNOWLEDGE_DETAIL,
 	list: LIST_DETAIL,
 	"live-waveform": LIVE_WAVEFORM_DETAIL,
-	message: MESSAGE_DETAIL,
 	"mic-selector": MIC_SELECTOR_DETAIL,
 	"model-selector": MODEL_SELECTOR_DETAIL,
 	node: NODE_DETAIL,

@@ -6,7 +6,7 @@ import { useBoundProp } from "@json-render/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { Breadcrumb as BreadcrumbRoot, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { PageHeader } from "@/components/ui/page-header";
 import { ButtonGroup as ButtonGroupPrimitive } from "@/components/ui/button-group";

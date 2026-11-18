@@ -1,9 +1,10 @@
 "use client";
 
 import type { ErrorInfo, ReactNode } from "react";
-import { AttachmentItem, AttachmentPreview, Attachment } from "@/components/ui-custom/attachment";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode } from "@/components/ui-custom/conversation";
-import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
+import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageVoteActions } from "@/components/ui/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 import { ArtifactCard } from "@/components/blocks/artifact";
 import type { ArtifactKind } from "@/components/ui-custom/lib/artifact-kind";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ui/reasoning";
@@ -31,6 +32,7 @@ import { computeRovoAppAnchorScrollTop } from "@/components/projects/rovo-core/l
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
 import { AssistantSuggestionsSection } from "@/components/projects/shared/components/assistant-suggestions-section";
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
+import { UserMessageAttachments } from "@/components/projects/shared/components/user-message-attachments";
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AssistantThinkingTrace, useAssistantThinkingTraceState } from "@/components/projects/shared/components/assistant-thinking-trace";
 import { readAssistantMessage } from "@/components/projects/shared/lib/process-assistant-message";
@@ -210,61 +212,46 @@ function UserMessage({
 
 	return (
 		<Message
-			animate
-			className={isEditing ? "w-full max-w-full" : undefined}
-			contain={!(isDismissed || clarificationSummaryRows.length > 0)}
+			align="end"
+			className={cn("fade-in animate-in duration-medium", !(isDismissed || clarificationSummaryRows.length > 0) && "cv-auto")}
 			data-rovo-app-scroll-anchor={isScrollAnchor ? "true" : undefined}
 			data-message-id={message.id}
 			data-role="user"
 			data-testid="message-user"
-			fitContent={!isEditing}
-			from="user"
 		>
-			{attachments.length > 0 ? (
-				<Attachment className="justify-end" variant="grid">
-					{attachments.map((attachment) => (
-						<AttachmentItem
-							key={`${message.id}-${attachment.url}-${attachment.filename ?? "attachment"}`}
-							data={{
-								...attachment,
-								id: `${message.id}-${attachment.url}-${attachment.filename ?? "attachment"}`,
-							}}
-						>
-							<AttachmentPreview />
-						</AttachmentItem>
-					))}
-				</Attachment>
-			) : null}
+			<MessageContent className={isEditing ? undefined : "max-w-[80%] items-end gap-2"}>
+				<UserMessageAttachments attachments={attachments} keyScope={message.id} />
 
-			{isEditing ? (
-				<InlineEdit
-					value={getMessageText(message)}
-					multiline
-					startWithEditViewOpen
-					keepEditViewOpenOnBlur
-					onConfirm={(nextValue) => void onEditMessage(message.id, nextValue)}
-					onCancel={() => onSetEditingMessageId(null)}
-				/>
-			) : isDismissed ? (
-				<AnswerCard label="Questions dismissed" rows={[]} />
-			) : clarificationSummaryRows.length > 0 ? (
-				<>
-					<AnswerCard rows={clarificationSummaryRows} />
-					<MessageActions reveal="hover" className="justify-end text-text-subtle">
-						<MessageCopyAction text={getMessageText(message)} />
-					</MessageActions>
-				</>
-			) : (
-				<>
-					<MessageContent>
-						<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">{getMessageText(message)}</MessageResponse>
-					</MessageContent>
-					<MessageActions reveal="hover" className="justify-end text-text-subtle">
-						<MessageCopyAction text={getMessageText(message)} />
-						<MessageEditAction onClick={() => onSetEditingMessageId(message.id)} />
-					</MessageActions>
-				</>
-			)}
+				{isEditing ? (
+					<InlineEdit
+						value={getMessageText(message)}
+						multiline
+						startWithEditViewOpen
+						keepEditViewOpenOnBlur
+						onConfirm={(nextValue) => void onEditMessage(message.id, nextValue)}
+						onCancel={() => onSetEditingMessageId(null)}
+					/>
+				) : isDismissed ? (
+					<AnswerCard label="Questions dismissed" rows={[]} />
+				) : clarificationSummaryRows.length > 0 ? (
+					<>
+						<AnswerCard rows={clarificationSummaryRows} />
+						<MessageActions reveal="hover" className="text-text-subtle">
+							<MessageCopyAction text={getMessageText(message)} />
+						</MessageActions>
+					</>
+				) : (
+					<>
+						<MessageUserBubble className="max-w-full">
+							<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">{getMessageText(message)}</MessageResponse>
+						</MessageUserBubble>
+						<MessageActions reveal="hover" className="text-text-subtle">
+							<MessageCopyAction text={getMessageText(message)} />
+							<MessageEditAction onClick={() => onSetEditingMessageId(message.id)} />
+						</MessageActions>
+					</>
+				)}
+			</MessageContent>
 		</Message>
 	);
 }
@@ -481,7 +468,7 @@ function AssistantMessage({
 	);
 
 	return (
-		<Message animate className="max-w-full" data-role="assistant" data-testid="message-assistant" from="assistant">
+		<Message className="cv-auto fade-in animate-in duration-medium" data-role="assistant" data-testid="message-assistant">
 			<div className="flex w-full items-start gap-2 md:gap-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-3">
 					<AssistantMessageRenderBoundary fallback={assistantRenderFallback} messageId={message.id} resetKey={`${message.parts.length}:${isStreaming ? "streaming" : "done"}`}>

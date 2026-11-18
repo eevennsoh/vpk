@@ -20,11 +20,9 @@ import {
 	FileTreeFile,
 	FileTreeFolder,
 } from "@/components/ui-custom/file-tree"
-import {
-	Message,
-	MessageContent,
-	MessageResponse,
-} from "@/components/ui-custom/message"
+import { Message, MessageContent } from "@/components/ui/message"
+import { MessageResponse } from "@/components/ui-custom/message-markdown"
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble"
 import {
 	Plan,
 	PlanAvatar,
@@ -60,7 +58,6 @@ import {
 	TaskTrigger,
 } from "@/components/ui/task"
 import { TerminalWindow } from "@/components/ui-custom/terminal-window"
-import { cn } from "@/lib/utils"
 import {
 	CheckCircle2Icon,
 	ListTodoIcon,
@@ -656,20 +653,20 @@ export default function CursorDemoBlock() {
 					<Conversation className="flex-1">
 						<ConversationContent className="gap-4 p-3">
 							{messages.map((message) => (
-								<Message from={message.from} key={message.key}>
-									<MessageContent
-										className={cn(
-											message.from === "user"
-												? "rounded-lg bg-secondary px-3 py-2"
-												: ""
-										)}
-									>
-										{message.from === "assistant" ? (
+								<Message
+									align={message.from === "user" ? "end" : "start"}
+									className="cv-auto"
+									key={message.key}
+								>
+									{message.from === "user" ? (
+										<MessageContent>
+											<MessageUserBubble>{message.content}</MessageUserBubble>
+										</MessageContent>
+									) : (
+										<MessageContent className="max-w-[80%]">
 											<MessageResponse>{message.content}</MessageResponse>
-										) : (
-											message.content
-										)}
-									</MessageContent>
+										</MessageContent>
+									)}
 								</Message>
 							))}
 							{showCheckpoint ? (

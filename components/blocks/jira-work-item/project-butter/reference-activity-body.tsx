@@ -2,7 +2,7 @@
 
 import { useMemo, type ComponentProps } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import { MessageResponse, streamdownComponents } from "@/components/ui-custom/message";
+import { MessageResponse, streamdownComponents } from "@/components/ui-custom/message-markdown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
 import { toPullRequestSmartLink, type PullRequestSmartLinkStatus } from "@/components/blocks/smart-link/lib/pull-request-smart-link";

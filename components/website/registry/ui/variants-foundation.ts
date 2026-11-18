@@ -115,6 +115,13 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"attachment-demo-ai-sdk-parts": dynamic(
+		() =>
+			import("../../demos/ui/attachment-demo-ai-sdk").then((mod) => ({
+				default: mod.AttachmentDemoAiSdkParts,
+			})),
+		{ ssr: false },
+	),
 	"bubble-demo-sizes": dynamic(
 		() =>
 			import("../../demos/ui/bubble-demo").then((mod) => ({
@@ -259,6 +266,20 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui/message-demo").then((mod) => ({
 				default: mod.MessageDemoAttachmentGroup,
+			})),
+		{ ssr: false },
+	),
+	"message-demo-pattern": dynamic(
+		() =>
+			import("../../demos/ui/message-demo-ai-elements").then((mod) => ({
+				default: mod.MessageDemoPattern,
+			})),
+		{ ssr: false },
+	),
+	"message-demo-preset-actions": dynamic(
+		() =>
+			import("../../demos/ui/message-demo-ai-elements").then((mod) => ({
+				default: mod.MessageDemoPresetActions,
 			})),
 		{ ssr: false },
 	),
