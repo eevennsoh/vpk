@@ -18,7 +18,7 @@ import {
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool";
+} from "@/components/ui/tool";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -39,7 +39,7 @@ import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import {
 	getAwaitingUserResponseLabel,
 	getQuestionsAnsweredLabel,
-} from "@/components/ui-custom/lib/reasoning-labels";
+} from "@/lib/reasoning-labels";
 import { resolveThinkingLabelForSurface } from "@/components/projects/shared/lib/thinking-label-policy";
 import {
 	buildThinkingNarrationDetailMap,

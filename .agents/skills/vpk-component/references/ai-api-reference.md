@@ -95,7 +95,7 @@ Highlighted content: `HighlightedCodeContent` (`components/ui-custom/highlighted
 
 | Component File | Purpose |
 |---|---|
-| `components/ui-custom/reasoning.tsx` | Reasoning/thinking expandable display |
+| `components/ui/reasoning.tsx` | Reasoning/thinking expandable display |
 | `components/ui-custom/shimmer.tsx` | Loading shimmer/skeleton animation |
 | `components/ui-custom/model-selector.tsx` | AI model picker dropdown |
 

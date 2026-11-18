@@ -24,11 +24,11 @@ import {
 import { CodeBlock } from "@/components/ui/code-block";
 import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
-import { isTimelineOnlyContent } from "@/components/ui-custom/reasoning";
+import { isTimelineOnlyContent } from "@/components/ui/reasoning";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Spinner } from "@/components/ui/spinner";
-import { ToolInput, ToolOutput } from "@/components/ui-custom/tool";
+import { ToolInput, ToolOutput } from "@/components/ui/tool";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
@@ -39,7 +39,7 @@ import {
 	getDefaultThinkingLabel,
 	getQuestionsAnsweredLabel,
 	getReasoningSectionTitle,
-} from "@/components/ui-custom/lib/reasoning-labels";
+} from "@/lib/reasoning-labels";
 import {
 	areAllThinkingToolCallsSettled,
 	collectAssistantThinkingTraceData,
