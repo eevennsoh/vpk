@@ -84,3 +84,57 @@ test("an onClick Tag is a tabbable button that Enter and Space activate, and dis
 
 	assert.deepEqual(calls, ["key", "open", "key", "open"]);
 });
+
+/** The Tag's own action: the button named `name` that is not inside, and does not hold, another control. */
+function describeAction(view, name) {
+	const action = view.getByRole("button", { name });
+	return {
+		name: accessibleName(action),
+		holdsControl: action.querySelector(INTERACTIVE) !== null,
+		slot: action.getAttribute("data-slot"),
+	};
+}
+
+test("a caller's ref on a button Tag with a remove control points at the Tag's action, not its shell", async () => {
+	const refs = [];
+	await renderComponent({
+		source: `import React from "react";
+			import { Tag } from "@/components/ui/tag";
+			export default function TagRefProbe({ refs }) {
+				const ref = React.useRef(null);
+				React.useEffect(() => { refs.push([ref.current?.getAttribute("data-slot"), ref.current?.getAttribute("role"), ref.current?.querySelector("button") === null]); }, [refs]);
+				return <Tag ref={ref} onClick={() => {}} onRemove={() => {}}>Alpha</Tag>;
+			}`,
+		props: { refs },
+	});
+
+	assert.deepEqual(refs, [["tag-action", "button", true]]);
+});
+
+test("a split Tag action is named by the caller's aria-label, by aria-labelledby, or by its label text", async () => {
+	const { view } = await renderTag(`<>
+		<Tag aria-label="Open Alpha filter" onClick={() => {}} onRemove={() => {}}>Alpha</Tag>
+		<span id="beta-label">Beta from elsewhere</span>
+		<Tag aria-labelledby="beta-label" onClick={() => {}} onRemove={() => {}}>Beta</Tag>
+		<Tag onClick={() => {}} onRemove={() => {}}>Gamma</Tag>
+	</>`);
+
+	assert.deepEqual(describeAction(view, "Open Alpha filter"), { name: "Open Alpha filter", holdsControl: false, slot: "tag-action" });
+	assert.deepEqual(describeAction(view, "Beta from elsewhere"), { name: "Beta from elsewhere", holdsControl: false, slot: "tag-action" });
+	assert.deepEqual(describeAction(view, "Gamma"), { name: "Gamma", holdsControl: false, slot: "tag-action" });
+	assert.deepEqual(view.tabOrder(), ["Open Alpha filter", "Remove Alpha", "Beta from elsewhere", "Remove Beta", "Gamma", "Remove Gamma"]);
+});
+
+test("a disabled button Tag with a remove control is announced disabled, leaves the Tab order, and nests nothing", async () => {
+	const { calls, view } = await renderTag(`<Tag disabled onClick={() => calls.push("open")} onRemove={() => calls.push("remove")}>Alpha</Tag>`);
+	const action = view.getByRole("button", { name: "Alpha" });
+
+	assert.equal(action.getAttribute("aria-disabled"), "true");
+	assert.equal(action.getAttribute("tabindex"), "-1");
+	assert.equal(action.getAttribute("data-slot"), "tag-action");
+	assert.equal(view.getByRole("button", { name: "Remove Alpha" }).disabled, true);
+	assert.deepEqual(view.tabOrder(), []);
+	assert.deepEqual(nestedInteractive(view.container), []);
+	await view.press(action, "Enter");
+	assert.deepEqual(calls, []);
+});
