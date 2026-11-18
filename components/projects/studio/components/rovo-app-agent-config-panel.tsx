@@ -422,10 +422,12 @@ function AgentPublishDropdown({
 	// palette's nested "back" experience (no hard divider; the list top fades
 	// once it scrolls under the sticky header).
 	const historyOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: historyOverflowRef } = historyOverflow;
 	// Scroll-driven fades on the version detail body so content dissolves under
 	// the pinned back header and above the pinned action footer instead of
 	// hitting a hard edge.
 	const versionDetailOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: versionDetailOverflowRef } = versionDetailOverflow;
 	const selectedVersion = selectedVersionId
 		? entry.versionHistory.find((version) => version.id === selectedVersionId) ?? null
 		: null;
@@ -576,7 +578,7 @@ function AgentPublishDropdown({
 							<div className="text-sm font-semibold text-text">Version history</div>
 						</div>
 						<div
-							ref={historyOverflow.ref}
+							ref={historyOverflowRef}
 							className={cn(
 								"min-h-0 flex-1 overflow-y-auto p-2",
 								historyOverflow.showTopScrollMask && "scroll-mask-top",
@@ -617,7 +619,7 @@ function AgentPublishDropdown({
 							{previewVersionId === selectedVersion.id ? <Badge variant="neutral">Previewing</Badge> : null}
 						</div>
 						<div
-							ref={versionDetailOverflow.ref}
+							ref={versionDetailOverflowRef}
 							className={cn(
 								"min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-2",
 								versionDetailOverflow.showTopScrollMask && "scroll-mask-top",

@@ -15,6 +15,7 @@ type Input = {
 	showAgentName?: boolean;
 	branch?: string;
 	artifactLabel?: string;
+	showArtifact?: boolean;
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
 	state?: "running" | "needs-input" | "attention" | "complete";
@@ -126,6 +127,12 @@ test("an artifact chunk needs a real label and carries a glyph status", () => {
 	);
 });
 
+test("metadata can omit the pull request while preserving the other segments", () => {
+	const input = { agentName: "Claude", artifactLabel: "#124: Cargo retract", host: "cloud" as const };
+	assert.deepEqual(kinds(input), ["agent", "artifact", "time"]);
+	assert.deepEqual(kinds({ ...input, showArtifact: false }), ["agent", "time"]);
+});
+
 test("the builder is pure: same input, equal output, no shared mutation", () => {
 	const input: Input = { agentName: "Claude", host: "cloud" };
 	const first = build(input);
@@ -152,7 +159,7 @@ test("an explicit name stays visible in the large view for every state", () => {
 	}
 });
 
-test("the compact short line keeps only the agent mark, PR, and host-tagged time", () => {
+test("compact metadata can retain a pull request when enabled", () => {
 	const compact = (toAgentSessionMetadataSegments as (input: Input & { compact?: boolean }) => readonly Segment[])({
 		agentName: "Figma",
 		artifactLabel: "#124: Cargo retract",

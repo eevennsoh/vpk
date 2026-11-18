@@ -268,7 +268,7 @@ describe("findAcceptedPlanKey (Test Case 7 + 13 — plan acceptance)", () => {
 					planApprovalPlanKey: "Dashboard-task-1|task-2",
 				},
 			},
-			{ role: "assistant", id: "a2", parts: [] },
+			{ role: "assistant", id: "a2", parts: [{ type: "text", text: "Building the dashboard now." }] },
 		];
 
 		assert.equal(findAcceptedPlanKey(messages), "Dashboard-task-1|task-2");
@@ -323,6 +323,7 @@ describe("findAcceptedPlanKey (Test Case 7 + 13 — plan acceptance)", () => {
 					planApprovalPlanKey: "NewPlan-task-1|task-2",
 				},
 			},
+			{ role: "assistant", id: "a2", parts: [{ type: "text", text: "Starting the new plan." }] },
 		];
 
 		assert.equal(findAcceptedPlanKey(messages), "NewPlan-task-1|task-2");

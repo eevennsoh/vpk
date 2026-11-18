@@ -20,7 +20,7 @@ import {
 	JIRA_KANBAN_CARD_DEPART,
 	JIRA_KANBAN_CARD_MOVE,
 } from "../lib/card-motion";
-import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
+import { BoardCardGapCreateContext, BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardCardInsertionLine } from "./board-card-insertion-line";
 import type { BoardColumnWidth } from "../lib/board-column-collapse";
 import type { BoardSummaryEditStore } from "../lib/board-summary-edit";
@@ -115,6 +115,7 @@ export function CreatedCardArrivalMotion({
 	const arrival = moveArrival?.columnTitle === columnTitle && moveArrival.cardCodes.includes(cardCode)
 		? moveArrival : createdArrival;
 	const hoverInsertion = use(BoardCardHoverInsertionContext);
+	const gapCreate = use(BoardCardGapCreateContext);
 	const insertionPosition = resolveBoardCardInsertionPosition(cardInsertion ?? hoverInsertion, {
 		cardIndex,
 		columnTitle,
@@ -140,15 +141,21 @@ export function CreatedCardArrivalMotion({
 	// Only interior gaps arm a seam, so the rule always has a real gutter to
 	// centre itself in — no card owns a flush column-edge line.
 	const insertionLine = insertionPosition ? (
-		<BoardCardInsertionLine position={insertionPosition} seam="gap" />
+		<BoardCardInsertionLine position={insertionPosition} seam="gap"
+			onCreate={!cardInsertion && hoverInsertion && gapCreate?.onStartCreate
+				? (trigger, returnFocus) => gapCreate.onStartCreate?.(trigger, cardCode, returnFocus) : undefined}
+			onControlLeave={gapCreate?.onControlLeave}
+			createLabel={`Create work item before ${cardCode}`}
+		/>
 	) : null;
 
-	return (
+	return (<>
+		{gapCreate?.beforeCardCode === cardCode ? gapCreate.createDraft : null}
 		<motion.div
-			aria-hidden={waiting || removing || flightPending || undefined}
-			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, flightPending ? "invisible" : null)}
+			aria-hidden={waiting || removing || flightPending || gapCreate?.creating || undefined}
+			className={cn("w-full min-w-0 max-w-[280px] motion-reduce:transition-none!", joinsPrevious ? "-mt-1" : null, waiting ? "hidden" : null, flightPending ? "invisible" : null, gapCreate?.creating ? "opacity-20" : null)}
 			data-created-card-pending={waiting || undefined}
-			inert={waiting || removing || flightPending || interactionMuted || undefined}
+			inert={waiting || removing || flightPending || interactionMuted || gapCreate?.creating || undefined}
 			style={{
 				maxWidth: columnWidth === "fluid" ? "none" : undefined,
 				marginBottom: removing && removalSpacing
@@ -204,5 +211,5 @@ export function CreatedCardArrivalMotion({
 				</JiraCreateEntrance>
 			</motion.div>
 		</motion.div>
-	);
+	</>);
 }

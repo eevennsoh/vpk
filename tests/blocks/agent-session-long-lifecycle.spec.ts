@@ -4,6 +4,94 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("Butter session multiple PRs show an expandable preview", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions" }).click();
+	await expect(page.getByRole("button", { name: "Multiple PRs", exact: true })).toHaveCount(0);
+	const row = page.getByTestId("agent-session-row-lw-night-suite-session");
+	const trigger = row.getByRole("group", { name: "2 pull requests" });
+	await trigger.hover();
+	const preview = page.getByRole("region", { name: "Pull requests" });
+	await expect(preview).toBeVisible();
+	await expect(preview.getByRole("listitem")).toHaveCount(2);
+	await preview.getByRole("button", { name: /1853/ }).click();
+	const openCard = preview.getByRole("group", { name: /Pull request #1853/ });
+	await expect(openCard.getByText("acme/storefront")).toBeVisible();
+	await expect(openCard.getByText("0/3 builds passed")).toBeVisible();
+	await preview.getByRole("button", { name: /1852/ }).click();
+	await expect(preview.getByRole("group", { name: /Pull request #1852/ }).getByText("3/3 builds passed")).toBeVisible();
+	await page.mouse.move(0, 0);
+	await expect(preview).toBeHidden();
+	await trigger.focus();
+	await expect(preview).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(preview).toBeHidden();
+	await page.getByTestId("agent-session-row-lw-scope-thread").getByRole("group", { name: /Pull request #1306/ }).hover();
+	await expect(page.getByRole("region", { name: "Pull request #1306 details" }).getByText("0/3 builds passed")).toBeVisible();
+});
+
+test("multiple PR details animate open and closed, and respect reduced motion", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions" }).click();
+	await page.getByRole("group", { name: "2 pull requests" }).hover();
+	const card = page.getByRole("group", { name: /Pull request #1853/ });
+	const button = card.getByRole("button", { name: /1853/ });
+	const panel = card.locator('[data-slot="collapsible-content"]');
+	const opening = await button.evaluate(async (node) => {
+		if (node instanceof HTMLElement) node.click();
+		await new Promise<void>((resolve) => setTimeout(resolve, 70));
+		const content = node.closest('[data-pull-request]')?.querySelector('[data-slot="collapsible-content"]');
+		return { height: content?.getBoundingClientRect().height ?? 0, animations: content?.getAnimations().length ?? 0 };
+	});
+	await expect(panel).toBeVisible();
+	await expect.poll(() => panel.evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThan(60);
+	await expect.poll(() => panel.evaluate((node) => node.getAnimations().length)).toBe(0);
+	expect(opening.animations).toBeGreaterThan(0);
+	expect(opening.height).toBeGreaterThan(0);
+	expect(opening.height).toBeLessThan(await panel.evaluate((node) => node.getBoundingClientRect().height));
+	const closing = await panel.evaluate(async (node) => {
+		const before = node.getBoundingClientRect().height;
+		node.closest('[data-pull-request]')?.querySelector("button")?.click();
+		await new Promise<void>((resolve) => setTimeout(resolve, 70));
+		return { before, during: node.getBoundingClientRect().height, animations: node.getAnimations().length };
+	});
+	expect(closing.animations).toBeGreaterThan(0);
+	expect(closing.during).toBeGreaterThan(0);
+	expect(closing.during).toBeLessThan(closing.before);
+	await expect(panel).toBeHidden();
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await button.click();
+	await expect(panel).toBeVisible();
+	await expect.poll(() => panel.evaluate((node) => node.getAnimations().length)).toBe(0);
+	await page.getByRole("button", { name: /1852.*Merged/ }).click();
+	await expect(button).toHaveAttribute("aria-expanded", "false");
+	await expect(page.getByRole("button", { name: /1852.*Merged/ })).toHaveAttribute("aria-expanded", "true");
+});
+
+test("catalog compares session sizes and permissions", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(`${AGENT_SESSION_URL}#session-sizes-and-permissions`);
+	const example = page.locator("#session-sizes-and-permissions");
+	const local = example.getByRole("region", { name: "Local sessions" });
+	const cloud = example.getByRole("region", { name: "Cloud sessions" });
+	await expect(local.locator("article")).toHaveCount(3);
+	await expect(cloud.locator("article")).toHaveCount(3);
+	const row = cloud.locator("ul").first();
+	await expect.poll(async () => (await row.boundingBox())?.width).toBeGreaterThan(420);
+	await example.getByRole("button", { name: "Medium", exact: true }).click();
+	await expect(row).toHaveCSS("width", "420px");
+	await example.getByRole("button", { name: "Small", exact: true }).click();
+	await expect(row).toHaveCSS("width", "280px");
+	await example.getByRole("button", { name: "Private session" }).click();
+	await expect(local.getByRole("img", { name: /Private session by/ }).first()).toBeVisible();
+	await example.getByRole("button", { name: "Team session" }).click();
+	await expect(example.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article")).toHaveCount(3);
+	await expect(example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article")).toHaveCount(3);
+	await expect(example.getByRole("region", { name: "Local sessions" })).toHaveCount(0);
+	await example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().click();
+	await expect(page.getByRole("group", { name: "Session owner and status" })).toBeVisible();
+});
+
 test("team session examples open owner and viewer conversations", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(`${AGENT_SESSION_URL}#team-sessions`);

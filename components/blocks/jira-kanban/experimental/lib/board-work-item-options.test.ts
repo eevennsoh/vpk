@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 
-import { appendBoardCardFromDraft, boardHasWorkItem, nextBoardIssueKey, toAgentSessionWorkItemOptions } from "./board-work-item-options.ts";
+import { insertBoardCardFromDraft, boardHasWorkItem, nextBoardIssueKey, toAgentSessionWorkItemOptions } from "./board-work-item-options.ts";
 
 function column(
 	title: string,
@@ -78,7 +78,7 @@ test("a draft becomes a card in the first column, carrying the typed title and t
 		column("Done", [{ code: "RFP-102", title: "Two" }]),
 	];
 
-	const result = appendBoardCardFromDraft(columns, {
+	const result = insertBoardCardFromDraft(columns, {
 		issueType: "story",
 		summary: "Telemetry gap follow-up",
 	});
@@ -97,7 +97,7 @@ test("a draft becomes a card in the first column, carrying the typed title and t
 test("appending a draft does not mutate the columns it was given", () => {
 	const columns = [column("To do", [{ code: "RFP-101", title: "One" }])];
 
-	appendBoardCardFromDraft(columns, { issueType: "task", summary: "Second" });
+	insertBoardCardFromDraft(columns, { issueType: "task", summary: "Second" });
 
 	assert.equal(columns[0].cards.length, 1);
 	assert.equal(columns[0].count, 1);
@@ -105,7 +105,7 @@ test("appending a draft does not mutate the columns it was given", () => {
 
 test("column create appends an unlinked task to the named column", () => {
 	const columns = [column("To do", [{ code: "PAY-101", title: "One" }]), column("In review", [])];
-	const result = appendBoardCardFromDraft(columns, { issueType: "task", summary: "Review follow-up" }, "In review");
+	const result = insertBoardCardFromDraft(columns, { issueType: "task", summary: "Review follow-up" }, "In review");
 	assert.equal(result.columns[0], columns[0]);
 	assert.equal(result.columns[1].count, 1);
 	assert.equal(result.columns[1].cards[0].title, "Review follow-up");
@@ -113,15 +113,27 @@ test("column create appends an unlinked task to the named column", () => {
 	assert.equal(result.columns[1].cards[0].agentActivities, undefined);
 });
 
+test("a gap-created draft lands immediately before its anchor card", () => {
+	const columns = [column("To do", [
+		{ code: "PAY-101", title: "One" },
+		{ code: "PAY-102", title: "Two" },
+		{ code: "PAY-103", title: "Three" },
+	])];
+	const result = insertBoardCardFromDraft(columns, { issueType: "task", summary: "Between" }, "To do", "PAY-102");
+	assert.deepEqual(result.columns[0].cards.map((card) => card.code), ["PAY-101", "PAY-104", "PAY-102", "PAY-103"]);
+	assert.equal(result.columns[0].count, 4);
+	assert.equal(columns[0].cards.length, 3);
+});
+
 test("column create declines an unknown destination without changing the board", () => {
 	const columns = [column("To do", [])];
-	const result = appendBoardCardFromDraft(columns, { issueType: "task", summary: "No destination" }, "Missing");
+	const result = insertBoardCardFromDraft(columns, { issueType: "task", summary: "No destination" }, "Missing");
 	assert.equal(result.columns, columns);
 	assert.equal(result.issueKey, undefined);
 });
 
 test("a draft against an empty board reports no key rather than inventing a column", () => {
-	const result = appendBoardCardFromDraft([], { issueType: "task", summary: "Nowhere to land" });
+	const result = insertBoardCardFromDraft([], { issueType: "task", summary: "Nowhere to land" });
 
 	assert.equal(result.issueKey, undefined);
 	assert.deepEqual(result.columns, []);
@@ -131,7 +143,7 @@ test("a freshly created card is offered by the picker on the next open", () => {
 	// The picker reads the same columns the create wrote to, so a create is
 	// immediately linkable instead of appearing only after a reload.
 	const columns = [column("To do", [{ code: "RFP-101", title: "One" }])];
-	const { columns: next } = appendBoardCardFromDraft(columns, {
+	const { columns: next } = insertBoardCardFromDraft(columns, {
 		issueType: "bug",
 		summary: "Fresh",
 	});

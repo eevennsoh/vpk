@@ -206,7 +206,7 @@ test("the collapsed options menu uses Atlaskit show-more-horizontal, not a custo
 	assert.match(IN_FLOW_MENU_SOURCE, /data-agent-session-column-options=""/u);
 	assert.match(IN_FLOW_MENU_SOURCE, /useConeHoverIntent\(/u);
 	assert.match(IN_FLOW_MENU_SOURCE, /onOpenChange=\{coneIntent\.onOpenChange\}/u);
-	assert.match(IN_FLOW_MENU_SOURCE, /ref=\{coneIntent\.popupRef\}/u);
+	assert.match(IN_FLOW_MENU_SOURCE, /ref=\{popupRef\}/u);
 	assert.match(IN_FLOW_MENU_SOURCE, /inFlowCollapsedMenuPinLabel\(pinned\)/u);
 	assert.match(IN_FLOW_MENU_SOURCE, />\s*Expand\s*</u);
 	assert.match(IN_FLOW_MENU_SOURCE, /onSelect=\{onExpand\}/u);

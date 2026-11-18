@@ -52,6 +52,7 @@ const VIEWER_HINT_SOURCE = readFileSync(join(__dirname, "agent-session-viewer-hi
 const METADATA_SOURCE = readFileSync(join(__dirname, "agent-session-metadata.tsx"), "utf8");
 const MENU_HOOK_SOURCE = readFileSync(join(__dirname, "use-agent-session-menu.ts"), "utf8");
 const SESSION_MORE_MENU_SOURCE = readFileSync(join(__dirname, "agent-session-more-menu.tsx"), "utf8");
+const SESSION_MENU_TRIGGER_SOURCE = readFileSync(join(__dirname, "agent-session-menu-trigger.tsx"), "utf8");
 const CONTINUE_MENU_SOURCE = readFileSync(join(__dirname, "agent-session-continue-menu.tsx"), "utf8");
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -565,10 +566,10 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /disabled=\{isExpired && actions\.onDelete === undefined\}/u);
 	// The trigger must not start a card drag, and the card's click guard already
 	// exempts buttons and menu items from activating the row.
-	assert.match(SESSION_MORE_MENU_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
-	assert.match(SESSION_MORE_MENU_SOURCE, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
-	assert.match(SESSION_MORE_MENU_SOURCE, /data-session-drag-ignore=""/u);
-	assert.match(SESSION_MORE_MENU_SOURCE, /className="size-6 shadow-none focus-visible:ring-0"/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /data-session-drag-ignore=""/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /className="size-6 shadow-none focus-visible:ring-0"/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /aria-expanded:border-transparent/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /aria-expanded:bg-surface-hovered/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /aria-expanded:text-text-subtle/u);
@@ -613,8 +614,8 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 	assert.match(MENU_HOOK_SOURCE, /useEffect\(\(\) => \(\) => \{\s*window\.clearTimeout\(resetRef\.current\);[\s\S]*?\}, \[\]\)/u);
 
 	// Copy prompt keeps its confirmation visible in the separate continuation menu.
-	assert.match(SESSION_MORE_MENU_SOURCE, /render=\{<ShowMoreHorizontalIcon color="currentColor" label="" size="small" \/>\}/u);
-	assert.match(SESSION_MORE_MENU_SOURCE, /aria-label=\{`More actions for \$\{item\.title\}`\}/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /render=\{<ShowMoreHorizontalIcon color="currentColor" label="" size="small" \/>\}/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /aria-label=\{`More actions for \$\{item\.title\}`\}/u);
 	assert.match(CONTINUE_MENU_SOURCE, /selected=\{copied\}/u);
 	assert.match(CONTINUE_MENU_SOURCE, /event\.preventDefault\(\);\s*actions\.onCopyPrompt\?\.\(\)/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /CheckMarkIcon|Copied prompt|TooltipContent/u);
@@ -678,7 +679,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
 	assert.match(CARD_SOURCE, /case "viewer":\s*return undefined;/u);
-	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
 	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;/u);
@@ -851,7 +851,7 @@ test("a card body click toggles a single selected session on the selected token"
 	assert.match(LIST_CARD_ACTIONS_SOURCE, /data-session-drag-ignore=""/u);
 	assert.match(LIFECYCLE_SOURCE, /event\.stopPropagation\(\)/u);
 	assert.match(LIFECYCLE_SOURCE, /aria-pressed=\{pressed\}/u);
-	assert.match(SESSION_MORE_MENU_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(SESSION_MENU_TRIGGER_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
 	assert.match(
 		CARD_SOURCE,
 		/<AgentListRow[\s\S]*onView=\{mark == null && bind === undefined \? viewSession : undefined\}/u,

@@ -177,25 +177,27 @@ interface WorkItemModalProviderProps {
  * Usage:
  * ```tsx
  * <WorkItemModalProvider isOpen={isOpen} onClose={handleClose} workItem={workItem}>
- *   <WorkItemModal.Backdrop />
- *   <WorkItemModal.Container>
- *     <WorkItemModal.Header />
- *     <WorkItemModal.TwoColumnLayout>
- *       <WorkItemModal.LeftColumn>
- *         <WorkItemModal.Title />
- *         <WorkItemModal.Description />
- *         <WorkItemModal.ChildItems />
- *         <WorkItemModal.Attachments />
- *         <WorkItemModal.Activity />
- *       </WorkItemModal.LeftColumn>
- *       <WorkItemModal.RightColumn>
- *         <WorkItemModal.StatusHeader />
- *         <WorkItemModal.DetailsAccordion />
- *         <WorkItemModal.MoreFieldsAccordion />
- *         <WorkItemModal.AutomationAccordion />
- *       </WorkItemModal.RightColumn>
- *     </WorkItemModal.TwoColumnLayout>
- *   </WorkItemModal.Container>
+ *   <WorkItemModal.Root>
+ *     <WorkItemModal.Backdrop />
+ *     <WorkItemModal.Container>
+ *       <WorkItemModal.Header />
+ *       <WorkItemModal.TwoColumnLayout>
+ *         <WorkItemModal.LeftColumn>
+ *           <WorkItemModal.Title />
+ *           <WorkItemModal.Description />
+ *           <WorkItemModal.ChildItems />
+ *           <WorkItemModal.Attachments />
+ *           <WorkItemModal.Activity />
+ *         </WorkItemModal.LeftColumn>
+ *         <WorkItemModal.RightColumn>
+ *           <WorkItemModal.StatusHeader />
+ *           <WorkItemModal.DetailsAccordion />
+ *           <WorkItemModal.MoreFieldsAccordion />
+ *           <WorkItemModal.AutomationAccordion />
+ *         </WorkItemModal.RightColumn>
+ *       </WorkItemModal.TwoColumnLayout>
+ *     </WorkItemModal.Container>
+ *   </WorkItemModal.Root>
  * </WorkItemModalProvider>
  * ```
  */

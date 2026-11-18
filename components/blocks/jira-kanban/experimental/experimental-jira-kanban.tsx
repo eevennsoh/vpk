@@ -48,6 +48,7 @@ import { createBoardSummaryEditStore } from "./lib/board-summary-edit";
 import { CreatedCardInlineFlight } from "./components/created-card-inline-flight";
 import { useCreatedCardDropMotion } from "./hooks/use-created-card-drop-motion";
 import { useIssueCardDropArrival, type IssueCardMove } from "./hooks/use-issue-card-drop-arrival";
+import { useBoardCardReorder } from "./hooks/use-board-card-reorder";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR } from "./lib/in-flow-agent-session-column-geometry";
@@ -131,6 +132,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Host-requested cohort move, played like a drop; requires `onIssueMove` to commit it. */
 	issueMoveRequest?: JiraKanbanIssueMoveRequest;
 	onIssueMove?: (move: IssueCardMove) => void;
+	/** Commits a keyboard Move up / Move down from a card's menu; omit to hide those actions. */ onCardsReorder?: (move: IssueCardMove) => void;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
@@ -149,7 +151,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Expanded columns share available horizontal space; fixed remains the default. */
 	columnWidth?: BoardColumnWidth;
 	/** Creates a named work item without attaching or capturing an agent session. */
-	onCreateWorkItem?: (columnTitle: string, draft: JiraInlineCreateDraft) => void;
+	onCreateWorkItem?: (columnTitle: string, draft: JiraInlineCreateDraft, beforeCardCode?: string) => void;
 	inlineCreateComponent?: ComponentType<JiraInlineCreateProps>;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
@@ -436,7 +438,7 @@ function ExperimentalJiraKanbanView({
 	onCreateActiveChange,
 	cardGenerativeActionPresentation = "sparkle",
 	cardGenerativeActionPinnedAgentIds,
-	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
+	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove, onCardsReorder,
 	cardMoveAnimation,
 	iconScale = "compact", cardAppearance, onCardSummaryChange,
 	showPriorityIndicator,
@@ -506,6 +508,7 @@ function ExperimentalJiraKanbanView({
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const [summaryEditStore] = useState(createBoardSummaryEditStore);
 	const cardRemoval = useBoardCardRemoval(cardMoreMenuActions, shouldReduceMotion, onCardsRemove);
+	const cardReorder = useBoardCardReorder(onCardsReorder);
 	const receivingCreatedCards = useJiraDropzoneReceiving(createdCardArrival?.columnTitle);
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const autoArrangeScopeId = useId();
@@ -790,6 +793,7 @@ function ExperimentalJiraKanbanView({
 			data-board-agent-session-dragging={boardSessionDrag.transaction !== null || undefined}
 			data-board-agent-session-origin={boardSessionDrag.transaction?.origin.kind}
 		>
+			<span aria-live="polite" className="sr-only" role="status">{cardReorder.announcement}</span>
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					<InFlowAgentSessionColumn
@@ -871,7 +875,8 @@ function ExperimentalJiraKanbanView({
 								columnSizing={columnSizing}
 								count={column.cards.length}
 								creating={createCard.column !== null}
-								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft); createCard.close(); }} /> : undefined}
+								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft, createCard.beforeCardCode); createCard.close(); }} /> : undefined}
+								createBeforeCardCode={createCard.column === column.title && column.cards.some((card) => card.code === createCard.beforeCardCode) ? createCard.beforeCardCode : undefined}
 								createdCardArrival={presentedCardArrival?.columnTitle === column.title
 									? presentedCardArrival
 									: undefined}
@@ -879,7 +884,7 @@ function ExperimentalJiraKanbanView({
 								hideScrollbar={cardAppearance === "project-butter"}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
-								onStartCreate={onCreateWorkItem ? (trigger) => createCard.start(column.title, trigger) : undefined}
+								onStartCreate={onCreateWorkItem ? (trigger, beforeCardCode, returnFocus) => createCard.start(column.title, trigger, beforeCardCode, returnFocus) : undefined}
 								onToggleAgent={
 									onToggleColumnAgent
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
@@ -1014,7 +1019,7 @@ function ExperimentalJiraKanbanView({
 												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 												onSelectionToggle={onCardSelect && selectedColumnTitles.has(column.title) ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined}
-												moreMenuActions={cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined}
+												moreMenuActions={cardReorder.getMoreMenuActions(cardRemoval.actions ? { onArchive: cardRemoval.actions.onArchive?.bind(undefined, card), onDelete: cardRemoval.actions.onDelete?.bind(undefined, card), onSelect: onCardSelect ? () => onCardSelect(card.code, column.title, cardIndex, { shiftKey: false, metaOrCtrlKey: true, source: "selection-control" }) : undefined } : undefined, card, column)}
 												selectionBackdrop={selectionBackdrop}
 												subtaskChrome={subtaskChrome}
 														subtasks={childItems?.map((item) => item.subtask)}

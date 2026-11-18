@@ -54,7 +54,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		title: "SHIL-25: Integrate Pull Request Data and Actions into Dev Panel - (Jira Dev Panel)",
 		status: "Merged",
 		provider: "bitbucket",
-		author: { name: "Shilpa Airi" },
+		author: { name: "Shilpa Airi", avatarUrl: "/avatar-user/naz/color/asow-product-purple.png" },
 		repository: "atlassian/shilpas-test-repo",
 		branch: "SHIL-25-dev-panel-pull-request-data-integration-2e5f6",
 		targetBranch: "main",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ComponentProps, type MouseEvent, type PointerEvent } from "react";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
@@ -33,6 +33,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 	StatusIcon: typeof PullRequestIcon;
 	colorClass: string;
 	hoverColorClass: string;
+	selectedColor: ComponentProps<typeof PullRequestIcon>["color"];
 	label: string;
 } {
 	switch (status) {
@@ -41,6 +42,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: MergeFailureIcon,
 				colorClass: "text-icon-danger",
 				hoverColorClass: "group-hover/jira-issue:text-icon-danger group-focus-within/jira-issue:text-icon-danger",
+				selectedColor: token("color.icon.danger"),
 				label: "Pull request failed",
 			};
 		case "merged":
@@ -48,6 +50,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: MergeSuccessIcon,
 				colorClass: "text-icon-accent-purple",
 				hoverColorClass: "group-hover/jira-issue:text-icon-accent-purple group-focus-within/jira-issue:text-icon-accent-purple",
+				selectedColor: token("color.icon.accent.purple"),
 				label: "Pull request merged",
 			};
 		case "draft":
@@ -55,6 +58,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: PullRequestIcon,
 				colorClass: "text-icon-subtle",
 				hoverColorClass: "group-hover/jira-issue:text-icon-subtle group-focus-within/jira-issue:text-icon-subtle",
+				selectedColor: token("color.icon.subtle"),
 				label: "Draft pull request",
 			};
 		case "open":
@@ -63,6 +67,7 @@ function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus 
 				StatusIcon: PullRequestIcon,
 				colorClass: "text-icon-accent-lime",
 				hoverColorClass: "group-hover/jira-issue:text-icon-accent-lime group-focus-within/jira-issue:text-icon-accent-lime",
+				selectedColor: token("color.icon.accent.lime"),
 				label: "Pull request",
 			};
 		default: {
@@ -101,6 +106,19 @@ function stopNestedActivation(event: MouseEvent<HTMLElement> | PointerEvent<HTML
 	event.stopPropagation();
 }
 
+export function PullRequestList({ pullRequests }: Readonly<{ pullRequests: readonly JiraIssuePullRequestItem[] }>) {
+	const [selected, setSelected] = useState<JiraIssuePullRequestItem | null>(null);
+	return (
+		<ul aria-label="Pull requests" className="pt-1">
+			{pullRequests.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
+				<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", index > 0 && (selected?.number === item.number || selected?.number === items[index - 1]?.number) && "pt-1", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
+					<PullRequest {...item.preview} additions={item.preview.additions ?? 0} checksExpandable={false} className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none" deletions={item.preview.deletions ?? 0} number={item.number} onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)} showDetails={selected?.number === item.number} showFix={false} status={toPullRequestCardStatus(item.status)} variant="flyout" />
+				</li>
+			))}
+		</ul>
+	);
+}
+
 export function JiraIssuePullRequestCluster({
 	animateIcon = false,
 	iconScale = "compact",
@@ -125,8 +143,7 @@ export function JiraIssuePullRequestCluster({
 	tone?: "status" | "subtle";
 }>) {
 	const hasMultiple = (pullRequests?.length ?? 0) > 1;
-	const { StatusIcon, colorClass, hoverColorClass, label } = getJiraIssuePullRequestPresentation(hasMultiple ? "draft" : pullRequestStatus);
-	const [selected, setSelected] = useState<JiraIssuePullRequestItem | null>(null);
+	const { StatusIcon, colorClass, hoverColorClass, selectedColor, label } = getJiraIssuePullRequestPresentation(hasMultiple ? "draft" : pullRequestStatus);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const tooltipId = useId();
@@ -162,25 +179,24 @@ export function JiraIssuePullRequestCluster({
 	}
 
 	return (
-		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); else setSelected(null); }}>
+		<Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setTooltipOpen(false); }}>
 			<Tooltip open={tooltipOpen && !popoverOpen} onOpenChange={setTooltipOpen}>
 			<TooltipTrigger render={<PopoverTrigger
 				render={(
 					<Button
 						aria-label={accessibleName}
 						aria-describedby={tooltipOpen && !popoverOpen ? tooltipId : undefined}
-						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
+						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-inherit!", iconMetrics.compactIconClassName)}
 						onClick={stopNestedActivation}
 						onPointerDown={stopNestedActivation}
 						size="icon-compact"
-						selectedAppearance="icon-only"
 						type="button"
 						variant="ghost"
 					/>
 				)}
 			/>}>
 				<span className="inline-flex" ref={iconRef}>
-					<Icon render={<StatusIcon label="" size="small" color="currentColor" />} />
+					<Icon render={<StatusIcon label="" size="small" color={popoverOpen ? selectedColor : "currentColor"} />} />
 				</span>
 			</TooltipTrigger>
 			<TooltipContent id={tooltipId} positionerClassName="z-[576]" role="tooltip" side="top" sideOffset={8}>{tooltip}</TooltipContent>
@@ -198,25 +214,7 @@ export function JiraIssuePullRequestCluster({
 				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
 				{hasMultiple ? (
-					<ul aria-label="Pull requests" className="pt-1">
-						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
-							<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", index > 0 && (selected?.number === item.number || selected?.number === items[index - 1]?.number) && "pt-1", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
-								<PullRequest
-									{...item.preview}
-									additions={item.preview.additions ?? 0}
-									checksExpandable={false}
-									className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none"
-									deletions={item.preview.deletions ?? 0}
-									number={item.number}
-									onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)}
-									showDetails={selected?.number === item.number}
-									showFix={false}
-									status={toPullRequestCardStatus(item.status)}
-									variant="flyout"
-								/>
-							</li>
-						))}
-					</ul>
+					<PullRequestList pullRequests={pullRequests ?? []} />
 				) : (
 				<PullRequest
 					additions={preview?.additions ?? 0}

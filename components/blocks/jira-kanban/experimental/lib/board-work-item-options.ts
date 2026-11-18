@@ -101,15 +101,16 @@ export function boardHasWorkItem(
 }
 
 /**
- * Appends a card built from what the viewer typed, and reports its new key.
+ * Creates a card from what the viewer typed and reports its new key.
  *
  * The session menu defaults to the first column; column create controls name
  * their own destination.
  */
-export function appendBoardCardFromDraft(
+export function insertBoardCardFromDraft(
 	columns: readonly JiraKanbanColumnData[],
 	draft: JiraInlineCreateDraft,
 	columnTitle?: string,
+	beforeCardCode?: string,
 ): Readonly<{ columns: readonly JiraKanbanColumnData[]; issueKey: string | undefined }> {
 	const targetColumn = columnTitle === undefined ? columns[0] : columns.find((column) => column.title === columnTitle);
 	if (targetColumn === undefined) {
@@ -136,8 +137,10 @@ export function appendBoardCardFromDraft(
 			const cards = hasSelectedSubtask ? column.cards.map((existing) => draft.subtaskKeys?.includes(existing.code)
 				? { ...existing, parentIssueKey: issueKey }
 				: existing) : column.cards;
+			const beforeIndex = column === targetColumn && beforeCardCode !== undefined
+				? cards.findIndex((existing) => existing.code === beforeCardCode) : -1;
 			return column === targetColumn
-				? { ...column, cards: [...cards, card], count: column.count + 1 }
+				? { ...column, cards: beforeIndex < 0 ? [...cards, card] : [...cards.slice(0, beforeIndex), card, ...cards.slice(beforeIndex)], count: column.count + 1 }
 				: hasSelectedSubtask ? { ...column, cards } : column;
 		}),
 		issueKey,
