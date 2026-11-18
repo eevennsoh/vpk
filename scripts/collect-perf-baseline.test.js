@@ -191,6 +191,9 @@ test("manifest measurement rejects missing referenced assets instead of reportin
 
 for (const retainedChunk of [
 	"rovo/page-def456.js",
+	"(group)/page-def456.js",
+	"@modal/page-def456.js",
+	"_not-found/page-def456.js",
 	"layout-def456.js",
 	"not-found-def456.js",
 	"error-def456.js",
