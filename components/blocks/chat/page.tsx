@@ -34,6 +34,7 @@ import { Footer } from "@/components/ui-custom/footer";
 import { chatStyles } from "./data/styles";
 import { useChatSubmit } from "./hooks/use-chat-submit";
 import { turnEnterClassName } from "@/components/projects/shared/message-turns";
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 
@@ -94,9 +95,9 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 				<MessageScrollerViewport>
 					<MessageScrollerContent className="gap-0" style={messagesContainerStyle}>
 						{orderedMessageTurns.length === 0 ? (
-						<MessageScrollerItem style={chatStyles.emptyState} className="[content-visibility:visible]">
+						<ChatScrollerItem style={chatStyles.emptyState}>
 								<ChatGreeting />
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 						) : (
 							orderedMessageTurns.map((turn, turnIndex) => (
 								<MessageScrollerItem

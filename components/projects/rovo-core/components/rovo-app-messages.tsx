@@ -1,7 +1,8 @@
 "use client";
 
 import type { ErrorInfo, ReactNode } from "react";
-import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerViewport } from "@/components/ui/message-scroller";
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageVoteActions } from "@/components/ui/message";
 import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
@@ -749,14 +750,14 @@ export function RovoAppMessages({
 					{visibleMessages.map((message) => {
 						if (message.role === "user") {
 							return (
-								<MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor className="[content-visibility:visible]">
+								<ChatScrollerItem key={message.id} messageId={message.id} scrollAnchor>
 									<UserMessage
 										isEditing={editingMessageId === message.id}
 										message={message}
 										onEditMessage={onEditMessage}
 										onSetEditingMessageId={onSetEditingMessageId}
 									/>
-								</MessageScrollerItem>
+								</ChatScrollerItem>
 							);
 					}
 
@@ -778,7 +779,7 @@ export function RovoAppMessages({
 							shouldSuppressArtifactCard?.({ message }) ? null : renderModel.artifactDisplay;
 
 						return (
-							<MessageScrollerItem key={message.id} messageId={message.id} className="flex flex-col gap-4 md:gap-6 [content-visibility:visible]">
+							<ChatScrollerItem key={message.id} messageId={message.id} className="flex flex-col gap-4 md:gap-6">
 								<AssistantMessage
 									additionalToolDrivenWidgetTypes={additionalToolDrivenWidgetTypes}
 									artifactCard={
@@ -819,12 +820,12 @@ export function RovoAppMessages({
 								/>
 								{renderAfterAssistantMessage?.({ message })}
 								<AssistantSuggestionPills messageId={message.id} onSelectSuggestion={onSelectSuggestion} suggestions={renderModel.suggestions} />
-							</MessageScrollerItem>
+							</ChatScrollerItem>
 						);
 					})}
 
 					{shouldShowStreamingArtifactPreview && streamingArtifact?.documentId ? (
-						<MessageScrollerItem className="[content-visibility:visible]">
+						<ChatScrollerItem>
 							<StreamingArtifactMessage
 								documentId={streamingArtifact.documentId}
 								visualIdentity={latestPlanVisualIdentity}
@@ -835,9 +836,9 @@ export function RovoAppMessages({
 								title={streamingArtifact.title}
 								versionNumber={documents.find((document) => document.id === streamingArtifact.documentId)?.versions.length ?? 1}
 							/>
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : shouldShowPreloader ? (
-						<MessageScrollerItem className="[content-visibility:visible]"><RovoAppThinkingIndicator /></MessageScrollerItem>
+						<ChatScrollerItem><RovoAppThinkingIndicator /></ChatScrollerItem>
 					) : null}
 				</MessageScrollerContent>
 			</MessageScrollerViewport>
