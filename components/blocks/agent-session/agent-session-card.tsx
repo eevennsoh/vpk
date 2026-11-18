@@ -45,7 +45,8 @@ import {
 	AgentSessionLongMetadata,
 	AgentSessionShortMetadata,
 } from "./agent-session-metadata";
-import { AgentSessionMoreMenu, agentSessionMoreTrigger } from "./agent-session-more-menu";
+import { AgentSessionMoreMenu } from "./agent-session-more-menu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
@@ -564,7 +565,7 @@ export function AgentSessionCard({
 				return undefined;
 			case "expired":
 			case "owner":
-				if (role === "owner" && !isCloudSession) {
+				if (role === "owner" && !isCloudSession && visibilityLabel !== "Unarchive") {
 					return <AgentSessionContinueMenu
 						actions={menu.actions}
 						copied={menu.copied}

@@ -3,10 +3,8 @@
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinIcon from "@atlaskit/icon/core/pin";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusWorkflowStoppedIcon from "@atlaskit/icon-lab/core/status-workflow-stopped";
 
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -14,9 +12,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Icon } from "@/components/ui/icon";
 
 import { AgentSessionLinkWorkItemSubmenu } from "./agent-session-link-work-item-submenu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import type {
 	AgentSessionItem,
 	AgentSessionProps,
@@ -47,23 +45,6 @@ export interface AgentSessionMoreMenuActions {
 	onRename?: () => void;
 	/** Delete the session record. Cloud only. */
 	onDelete?: () => void;
-}
-
-export function agentSessionMoreTrigger(item: AgentSessionItem) {
-	return (
-		<Button
-			aria-label={`More actions for ${item.title}`}
-			className="size-6 shadow-none focus-visible:ring-0"
-			data-session-drag-ignore=""
-			onClick={(event) => event.stopPropagation()}
-			onPointerDown={(event) => event.stopPropagation()}
-			size="icon-compact"
-			type="button"
-			variant="ghost"
-		>
-			<Icon render={<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />} />
-		</Button>
-	);
 }
 
 export function AgentSessionMoreMenu({

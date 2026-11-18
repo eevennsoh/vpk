@@ -49,12 +49,15 @@ function loadHarness() {
 			`],
 			["agent-session-more-menu", `
 				import React from "react";
-				export function agentSessionMoreTrigger(item) { return React.createElement("button", { "data-more": "", "aria-label": "More actions for " + item.title }, "More"); }
 				export function AgentSessionMoreMenu({ open, onOpenChange, actions }) {
 					return React.createElement(React.Fragment, null,
 						React.createElement("button", { "data-more": "", onClick: (event) => { event.stopPropagation(); onOpenChange(!open); } }, "More"),
 						open ? React.createElement("div", { role: "menu", "data-menu": "more" }, React.createElement("button", { role: "menuitem", onClick: () => { actions.onDismiss?.(); onOpenChange(false); } }, "Dismiss")) : null);
 				}
+			`],
+			["agent-session-menu-trigger", `
+				import React from "react";
+				export function agentSessionMoreTrigger(item) { return React.createElement("button", { "data-more": "", "aria-label": "More actions for " + item.title }, "More"); }
 			`],
 			["agent-session-medium-drag", `
 				export function AgentSessionMediumDrag({ children, sessionDrag }) { return children(sessionDrag ? { "data-drag-bind": "" } : undefined); }
@@ -347,6 +350,16 @@ test("the local card ellipsis opens the continuation menu for every menu variant
 		assert.ok(menu);
 		await click(menu.querySelector('[role="menuitem"]'));
 		assert.deepEqual(copied, ["claude --resume local-readiness"]);
+	});
+});
+
+test("archived local sessions keep their restore action", async () => {
+	let restored = 0;
+	await withCard({ item: LOCAL_ITEM, visibilityLabel: "Unarchive", onToggleVisibility: () => { restored++; } }, async ({ document, click }) => {
+		await click(document.querySelector("[data-more]"));
+		assert.equal(document.querySelector('[data-menu="continue"]'), null);
+		await click(document.querySelector('[data-menu="more"] button'));
+		assert.equal(restored, 1);
 	});
 });
 
