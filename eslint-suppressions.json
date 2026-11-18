@@ -2271,27 +2271,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/code-block.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/ui-custom/code-block.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/code-list/code-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/ui-custom/commit.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    },
-    "react-hooks/purity": {
-      "count": 1
     }
   },
   "components/ui-custom/context-bar/context-bar-prompt-flyout.source.test.js": {
@@ -2457,7 +2439,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/queue.tsx": {
+  "components/ui/queue.tsx": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -2472,11 +2454,6 @@
       "count": 1
     },
     "react-hooks/refs": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/rich-text-editor/markdown-source-editor.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -3024,7 +3001,7 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
+  "components/website/demos/ui-custom/source-preview-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
