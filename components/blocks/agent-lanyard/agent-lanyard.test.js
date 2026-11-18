@@ -170,6 +170,15 @@ test("unverified agents omit verification and the server starts with a static gr
 	assert.equal(card.querySelector("article").getAttribute("data-perspective-tilt"), "false");
 });
 
+test("the default grid stays still when the card is hovered", async () => {
+	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props: { agent: AGENT_LANYARD_AGENTS[0] } });
+	try {
+		const card = view.container.querySelector('[data-slot="agent-lanyard"]');
+		await React.act(async () => { card.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
+	} finally { await view.unmount(); }
+});
+
 test("built-in menu requires at least one action and retains a single accessible trigger", () => {
 	const agent = AGENT_LANYARD_AGENTS[0];
 	const withoutActions = renderCard(agent, { menuActions: {} });
