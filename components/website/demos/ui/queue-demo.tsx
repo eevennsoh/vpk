@@ -1,4 +1,13 @@
+"use client";
+
 import { useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import type { UIDataTypes, UIMessage } from "ai";
+
+import { createChat, getMessageText } from "@/lib/ai";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import { Message, MessageContent } from "@/components/ui/message";
+import { CircleCheckIcon, CircleDotIcon, CircleIcon, ListChecksIcon, ListTodoIcon } from "@/components/ui/vpk-icons";
 import { Icon } from "@/components/ui/icon";
 import {
 	Queue,
@@ -16,7 +25,7 @@ import {
 	QueueSectionTrigger,
 	QueueSectionLabel,
 	QueueSectionContent,
-} from "@/components/ui-custom/queue";
+} from "@/components/ui/queue";
 import { Button } from "@/components/ui/button";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
@@ -288,6 +297,167 @@ export function QueueDemoPromptQueue() {
 					))}
 				</QueueList>
 			</Queue>
+		</div>
+	);
+}
+
+// — Inline: the agent's todo list inside its reply (shadcn Queue) —
+
+type TodoChatMessage = UIMessage<
+	unknown,
+	UIDataTypes,
+	{
+		writeTodos: {
+			input: {
+				todos: {
+					content: string;
+					status: "pending" | "in_progress" | "completed";
+				}[];
+			};
+			output: string;
+		};
+	}
+>;
+
+type Todo = Extract<TodoChatMessage["parts"][number], { type: "tool-writeTodos"; state: "input-available" }>["input"]["todos"][number];
+
+const INLINE_TODOS = [
+	"Add a dark variant to the theme tokens",
+	"Read the theme from a cookie",
+	"Add a toggle to the settings page",
+	"Check contrast on the charts",
+];
+
+function todosAt(current: number) {
+	return INLINE_TODOS.map(
+		(content, index) =>
+			({
+				content,
+				status: index < current ? "completed" : index === current ? "in_progress" : "pending",
+			}) satisfies Todo,
+	);
+}
+
+const todoChat = createChat<TodoChatMessage>()
+	.user("Add dark mode to the settings page.")
+	.assistant(({ writer }) => {
+		INLINE_TODOS.forEach((_, index) => {
+			writer.tool("writeTodos", { input: { todos: todosAt(index) } }).output("Updated the todo list.");
+			writer.sleep(1400);
+		});
+		writer.tool("writeTodos", { input: { todos: todosAt(INLINE_TODOS.length) } }).output("Updated the todo list.");
+		writer.text("Dark mode is in. The toggle is under Settings, Appearance.");
+	});
+
+const todoTranscript = todoChat.get();
+const [todoQuestion] = todoChat.get(1);
+const todoTransport = todoChat.transport({ delayMs: 20 });
+
+function TodoItem({ todo, streaming }: Readonly<{ todo: Todo; streaming: boolean }>) {
+	return (
+		<QueueItem status={streaming && todo.status === "in_progress" ? "running" : undefined}>
+			<QueueItemIndicator completed={todo.status === "completed"}>
+				{todo.status === "completed" ? (
+					<CircleCheckIcon label="" />
+				) : todo.status === "in_progress" ? (
+					<CircleDotIcon label="" />
+				) : (
+					<CircleIcon label="" />
+				)}
+			</QueueItemIndicator>
+			<QueueItemContent>{todo.content}</QueueItemContent>
+		</QueueItem>
+	);
+}
+
+function TodoQueue({ todos, streaming }: Readonly<{ todos: Todo[]; streaming: boolean }>) {
+	const pending = todos.filter((todo) => todo.status !== "completed");
+	const completed = todos.filter((todo) => todo.status === "completed");
+
+	return (
+		<Queue variant="inline">
+			{pending.length > 0 ? (
+				<QueueSection>
+					<QueueSectionTrigger>
+						<QueueSectionLabel count={pending.length} icon={<ListTodoIcon label="" />} label="to do" />
+					</QueueSectionTrigger>
+					<QueueSectionContent>
+						<QueueList>
+							{pending.map((todo) => (
+								<TodoItem key={todo.content} streaming={streaming} todo={todo} />
+							))}
+						</QueueList>
+					</QueueSectionContent>
+				</QueueSection>
+			) : null}
+			{completed.length > 0 ? (
+				<QueueSection>
+					<QueueSectionTrigger>
+						<QueueSectionLabel count={completed.length} icon={<ListChecksIcon label="" />} label="completed" />
+					</QueueSectionTrigger>
+					<QueueSectionContent>
+						<QueueList>
+							{completed.map((todo) => (
+								<TodoItem key={todo.content} streaming={streaming} todo={todo} />
+							))}
+						</QueueList>
+					</QueueSectionContent>
+				</QueueSection>
+			) : null}
+		</Queue>
+	);
+}
+
+export function QueueDemoInline() {
+	const { messages, sendMessage, setMessages, status } = useChat({
+		messages: todoTranscript,
+		transport: todoTransport,
+	});
+	const busy = status === "submitted" || status === "streaming";
+
+	return (
+		<div className="flex min-h-72 w-full max-w-sm flex-col gap-4 py-6 text-sm">
+			{messages.map((message) => {
+				if (message.role === "user") {
+					return (
+						<Message key={message.id} align="end">
+							<MessageContent>
+								<Bubble align="end" variant="muted">
+									<BubbleContent>{getMessageText(message)}</BubbleContent>
+								</Bubble>
+							</MessageContent>
+						</Message>
+					);
+				}
+
+				const streaming = busy && message === messages.at(-1);
+				const todos = message.parts
+					.filter((part) => part.type === "tool-writeTodos")
+					.filter((part) => part.state !== "input-streaming")
+					.at(-1)?.input?.todos;
+				const text = getMessageText(message);
+
+				return (
+					<Message key={message.id}>
+						<MessageContent className="gap-4">
+							{todos ? <TodoQueue streaming={streaming} todos={todos} /> : null}
+							{text ? <p>{text}</p> : null}
+						</MessageContent>
+					</Message>
+				);
+			})}
+			{busy ? null : (
+				<Button
+					className="mt-auto self-start"
+					onClick={() => {
+						setMessages([]);
+						void sendMessage(todoQuestion);
+					}}
+					variant="outline"
+				>
+					Replay
+				</Button>
+			)}
 		</div>
 	);
 }

@@ -24,7 +24,8 @@ import {
 	CodeBlockTitle,
 	CodeBlockFilename,
 	CodeBlockActions,
-} from "@/components/ui-custom/code-block"
+} from "@/components/ui/code-block"
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content"
 import {
 	PromptInput,
 	PromptInputFooter,
@@ -77,20 +78,16 @@ export default function AIGenerativeBlock() {
 									/>
 								</div>
 							) : (
-								<CodeBlock
-									code={MOCK_GENERATED_CODE}
-									language="tsx"
-									showLineNumbers
-									className="rounded-none border-0"
-								>
+								<CodeBlock className="rounded-none ring-0">
 									<CodeBlockHeader>
 										<CodeBlockTitle>
 											<CodeBlockFilename>todo-app.tsx</CodeBlockFilename>
 										</CodeBlockTitle>
 										<CodeBlockActions>
-											<CodeBlockCopyButton />
+											<CodeBlockCopyButton value={MOCK_GENERATED_CODE} />
 										</CodeBlockActions>
 									</CodeBlockHeader>
+									<HighlightedCodeContent code={MOCK_GENERATED_CODE} language="tsx" lineNumbers />
 								</CodeBlock>
 							)}
 						</ArtifactContent>

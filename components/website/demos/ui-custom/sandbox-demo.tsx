@@ -10,7 +10,8 @@ import {
 	SandboxTabsList,
 	SandboxTabsTrigger,
 } from "@/components/ui-custom/sandbox";
-import { CodeBlock } from "@/components/ui-custom/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 
 const SAMPLE_CODE = `import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
@@ -39,10 +40,14 @@ export default function SandboxDemo() {
 						</SandboxTabsList>
 					</SandboxTabsBar>
 					<SandboxTabContent value="code">
-						<CodeBlock code={SAMPLE_CODE} language="tsx" />
+						<CodeBlock>
+							<HighlightedCodeContent code={SAMPLE_CODE} language="tsx" />
+						</CodeBlock>
 					</SandboxTabContent>
 					<SandboxTabContent value="output">
-						<CodeBlock code={SAMPLE_OUTPUT} language="log" />
+						<CodeBlock>
+							<HighlightedCodeContent code={SAMPLE_OUTPUT} language="log" />
+						</CodeBlock>
 					</SandboxTabContent>
 				</SandboxTabs>
 			</SandboxContent>
@@ -63,13 +68,17 @@ export function SandboxDemoRunning() {
 						</SandboxTabsList>
 					</SandboxTabsBar>
 					<SandboxTabContent value="code">
-						<CodeBlock
-							code={`import pandas as pd\n\ndf = pd.read_csv("data.csv")\nprint(df.describe())`}
-							language="python"
-						/>
+						<CodeBlock>
+							<HighlightedCodeContent
+								code={`import pandas as pd\n\ndf = pd.read_csv("data.csv")\nprint(df.describe())`}
+								language="python"
+							/>
+						</CodeBlock>
 					</SandboxTabContent>
 					<SandboxTabContent value="output">
-						<CodeBlock code="> Running analysis.py..." language="log" />
+						<CodeBlock>
+							<HighlightedCodeContent code="> Running analysis.py..." language="log" />
+						</CodeBlock>
 					</SandboxTabContent>
 				</SandboxTabs>
 			</SandboxContent>
@@ -90,16 +99,20 @@ export function SandboxDemoError() {
 						</SandboxTabsList>
 					</SandboxTabsBar>
 					<SandboxTabContent value="code">
-						<CodeBlock
-							code={`const res = await fetch("https://api.example.com/data");\nconst data = await res.json();`}
-							language="typescript"
-						/>
+						<CodeBlock>
+							<HighlightedCodeContent
+								code={`const res = await fetch("https://api.example.com/data");\nconst data = await res.json();`}
+								language="typescript"
+							/>
+						</CodeBlock>
 					</SandboxTabContent>
 					<SandboxTabContent value="output">
-						<CodeBlock
-							code={`> Executing fetch.ts...\nError: TypeError: fetch failed\n  at Object.fetch (node:internal/deps/undici:12:28)\n  Caused by: ConnectTimeoutError: Connect Timeout Error`}
-							language="log"
-						/>
+						<CodeBlock>
+							<HighlightedCodeContent
+								code={`> Executing fetch.ts...\nError: TypeError: fetch failed\n  at Object.fetch (node:internal/deps/undici:12:28)\n  Caused by: ConnectTimeoutError: Connect Timeout Error`}
+								language="log"
+							/>
+						</CodeBlock>
 					</SandboxTabContent>
 				</SandboxTabs>
 			</SandboxContent>
@@ -120,10 +133,14 @@ export function SandboxDemoCollapsed() {
 						</SandboxTabsList>
 					</SandboxTabsBar>
 					<SandboxTabContent value="code">
-						<CodeBlock code={SAMPLE_CODE} language="javascript" />
+						<CodeBlock>
+							<HighlightedCodeContent code={SAMPLE_CODE} language="javascript" />
+						</CodeBlock>
 					</SandboxTabContent>
 					<SandboxTabContent value="output">
-						<CodeBlock code={SAMPLE_OUTPUT} language="log" />
+						<CodeBlock>
+							<HighlightedCodeContent code={SAMPLE_OUTPUT} language="log" />
+						</CodeBlock>
 					</SandboxTabContent>
 				</SandboxTabs>
 			</SandboxContent>
