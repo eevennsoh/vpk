@@ -78,6 +78,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 			name: agent.name,
 			...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
 			...(agent.brandName ? { brandName: agent.brandName } : {}),
+			...(agent.vpkLogo ? { vpkLogo: agent.vpkLogo } : {}),
 		},
 		id: agent.id,
 		...(invokedBy ? { invokedBy } : {}),
@@ -106,6 +107,7 @@ export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgen
 		state: assignmentActivityState(statusKind),
 		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
 		...(agent.brandName ? { agentBrandName: agent.brandName } : {}),
+		...(agent.vpkLogo ? { agentVpkLogo: agent.vpkLogo } : {}),
 		...(statusKind === "working" && agent.statusSequence
 			? { labels: agent.statusSequence }
 			: {}),

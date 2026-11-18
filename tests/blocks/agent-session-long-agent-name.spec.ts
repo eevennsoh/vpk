@@ -4,6 +4,16 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("medium detached identity is vertically centered in its card", async ({ page }) => {
+	await page.goto(`${AGENT_SESSION_URL}#medium-detached`);
+	const card = page.locator("#medium-detached [data-session-drag-identity]").locator("..");
+	const identity = card.locator('[data-slot="human-agent-avatar"]');
+	await expect(identity).toBeVisible();
+	const [cardBox, identityBox] = await Promise.all([card.boundingBox(), identity.boundingBox()]);
+	if (!cardBox || !identityBox) throw new Error("The detached card and identity must be visible");
+	expect(Math.abs((cardBox.y + cardBox.height / 2) - (identityBox.y + identityBox.height / 2))).toBeLessThanOrEqual(1);
+});
+
 test("teammate disclosure header does not jump when opening or closing", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
