@@ -12,7 +12,6 @@ type Segment = {
 
 type Input = {
 	agentName: string;
-	showAgentName?: boolean;
 	branch?: string;
 	artifactLabel?: string;
 	showArtifact?: boolean;
@@ -142,20 +141,10 @@ test("the builder is pure: same input, equal output, no shared mutation", () => 
 	assert.notEqual(first, second);
 });
 
-test("working and needs-input rows never print the agent name, but keep the agent mark", () => {
-	for (const state of ["running", "needs-input", "attention"] as const) {
-		const agent = build({ agentName: "Claude", state }).find((segment) => segment.kind === "agent");
-		assert.ok(agent, `${state} keeps the agent chunk for its mark`);
-		assert.equal(agent.label, undefined, `${state} hides the agent name`);
-	}
-	assert.equal(build({ agentName: "Claude", state: "complete" }).find((segment) => segment.kind === "agent")?.label, "Claude");
-});
-
-test("an explicit name stays visible in the large view for every state", () => {
+test("large rows show the agent name in every lifecycle state", () => {
 	for (const state of ["running", "needs-input", "attention", "complete"] as const) {
-		const segments = build({ agentName: "Claude", showAgentName: true, state });
-		assert.equal(segments.find((segment) => segment.kind === "agent")?.label, "Claude");
-		assert.deepEqual(segments.map((segment) => segment.kind), ["agent", "time"]);
+		const agent = build({ agentName: "Claude", state }).find((segment) => segment.kind === "agent");
+		assert.equal(agent?.label, "Claude", `${state} shows the agent name`);
 	}
 });
 

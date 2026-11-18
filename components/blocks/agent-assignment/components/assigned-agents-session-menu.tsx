@@ -101,7 +101,6 @@ export function AgentSessionsMenu({
 			onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
 			padding="compact"
 			showLifecycleLabel={false}
-			showAgentName={false}
 			trailingAlign="center"
 		/>
 	);

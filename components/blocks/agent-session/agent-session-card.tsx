@@ -289,7 +289,6 @@ export function AgentSessionCard({
 	showMoreMenu = true,
 	showLifecycleLabel = true,
 	lifecycleLabelPlacement = "trailing",
-	showAgentName,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showBranch = false,
@@ -385,7 +384,6 @@ export function AgentSessionCard({
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
 	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
-	showAgentName?: AgentSessionProps["showAgentName"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
@@ -772,7 +770,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showAgentName={showAgentName} showArtifact={density !== "short"} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger
