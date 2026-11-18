@@ -276,8 +276,6 @@ function createPay101StaticEvents(): StaticTimelineEvent[] {
 	];
 }
 
-export const PAY_101_SUBTASK_KEYS = ["PAY-102", "PAY-104"] as const;
-
 function createPay101ContextResources(): JiraWorkItemState["contextResources"] {
 	return {
 		title: BUTTER_PAY_101_WORK_ITEM.title,
@@ -310,26 +308,7 @@ function createPay101ContextResources(): JiraWorkItemState["contextResources"] {
 				sourceLabel: "Confluence page",
 			},
 		],
-		subtasks: [
-			{
-				type: "Task",
-				key: PAY_101_SUBTASK_KEYS[0],
-				summary: "Prove LegacyGatewayAdapter can be deleted outright",
-				priority: "high",
-				assignee: PAY_STORY_PEOPLE.maya.name,
-				assigneeAvatarUrl: PAY_STORY_PEOPLE.maya.avatarSrc,
-				status: "inprogress",
-			},
-			{
-				type: "Task",
-				key: PAY_101_SUBTASK_KEYS[1],
-				summary: "Port createPaymentIntent onto the v2 client",
-				priority: "high",
-				assignee: PAY_STORY_PEOPLE.jordan.name,
-				assigneeAvatarUrl: PAY_STORY_PEOPLE.jordan.avatarSrc,
-				status: "todo",
-			},
-		],
+		subtasks: [],
 		linkedItems: [
 			{
 				id: "pay-101-linked-rollout-flag",

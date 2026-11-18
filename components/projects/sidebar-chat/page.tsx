@@ -22,7 +22,6 @@ import { chatStyles } from "./data/styles";
 import { DEFAULT_AGENT_VERSION_OPTIONS } from "./data/chat-panel-defaults";
 import { cn } from "@/lib/utils";
 import { useChatSubmit } from "./hooks/use-chat-submit";
-import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { useAgentVersionSelection } from "./hooks/use-agent-version-selection";
 import { useArtifactDialogFloatingPin, useArtifactResultReporting } from "./hooks/use-chat-panel-artifacts";
@@ -301,12 +300,6 @@ export default function ChatPanel({ onClose, agentCreator,
 		submitPlanApproval,
 	});
 
-	const scrollAnchor = useScrollAnchor({
-		enableTargetFollow: chatSurface !== "floating",
-		isGenerationActive: isStreamingLifecycleActive,
-		uiMessages: messages,
-	});
-
 	const thinking = useThinkingStatus({
 		messages,
 		isRequestInFlight,
@@ -400,7 +393,7 @@ export default function ChatPanel({ onClose, agentCreator,
 			prompt={prompt}
 			renderWidget={renderWidget}
 			resolvedGreeting={resolvedGreeting}
-			scrollAnchor={scrollAnchor}
+			enableTurnAnchor={chatSurface !== "floating"}
 			shouldRenderGeneratedAgentFallbackCard={shouldRenderGeneratedAgentFallbackCard}
 			shouldUseWideDirectoryAutocompleteList={shouldUseWideDirectoryAutocompleteList}
 			showAgentTestControls={showAgentTestControls}

@@ -395,7 +395,7 @@ export function ThreadMessageRoot({
 		<ThreadMessageContext value={contextValue}>
 			<UiMessage
 				from="assistant"
-				className="max-w-full"
+				className={hasRenderableSuggestions ? "-mx-3 w-[calc(100%+1.5rem)] max-w-none px-3" : "max-w-full"}
 				// Widget cards (plan, agent-edit-summary) stream in and expand
 				// after mount. `cv-auto` containment clips overflow at the
 				// contain-intrinsic-size estimate, scissoring the card's rounded

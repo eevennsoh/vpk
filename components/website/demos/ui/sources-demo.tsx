@@ -78,7 +78,7 @@ export default function SourcesDemo() {
 					return (
 						<Message key={message.id} align="end">
 							<MessageContent>
-								<Bubble align="end" variant="muted">
+								<Bubble align="end">
 									<BubbleContent>{getMessageText(message)}</BubbleContent>
 								</Bubble>
 							</MessageContent>

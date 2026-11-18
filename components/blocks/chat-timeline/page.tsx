@@ -3,6 +3,7 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { Message, MessageContent } from "@/components/ui-custom/message";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { cn } from "@/lib/utils";
 import {
@@ -15,21 +16,19 @@ export interface ChatTimelineProps {
 	messages?: ReadonlyArray<ChatTimelineMessage>;
 }
 
-function buildJumpTarget(container: HTMLElement, element: HTMLElement): number {
-	const containerRect = container.getBoundingClientRect();
-	const elementRect = element.getBoundingClientRect();
-	const targetTop =
-		container.scrollTop +
-		(elementRect.top - containerRect.top) -
-		Math.max(40, container.clientHeight * 0.18);
-
-	return Math.max(0, Math.min(targetTop, container.scrollHeight - container.clientHeight));
-}
-
 export default function ChatTimeline({
 	className,
 	messages = CHAT_TIMELINE_DEMO_MESSAGES,
 }: Readonly<ChatTimelineProps>) {
+	return (
+		<MessageScroller defaultScrollPosition="start" className={cn("relative flex h-full flex-col overflow-hidden rounded-xl bg-background", className)}>
+			<ChatTimelineBody messages={messages} />
+		</MessageScroller>
+	);
+}
+
+function ChatTimelineBody({ messages }: Readonly<{ messages: ReadonlyArray<ChatTimelineMessage> }>) {
+	const { scrollToMessage } = useMessageScroller();
 	const userMessages = useMemo(
 		() => messages.filter((message) => message.role === "user"),
 		[messages],
@@ -107,30 +106,24 @@ export default function ChatTimeline({
 
 	function handleSelectMessage(messageId: string) {
 		const scrollContainer = scrollContainerRef.current;
-		const messageNode = messageNodesRef.current[messageId];
 
 		startTransition(() => {
 			setHighlightedMessageId(messageId);
 			setScrollActiveId(messageId);
 		});
 
-		if (!scrollContainer || !messageNode) {
+		if (!scrollContainer) {
 			return;
 		}
 
-		scrollContainer.scrollTo({
-			top: buildJumpTarget(scrollContainer, messageNode),
+		scrollToMessage(messageId, {
+			scrollMargin: Math.max(40, scrollContainer.clientHeight * 0.18),
 			behavior: shouldReduceMotion ? "auto" : "smooth",
 		});
 	}
 
 	return (
-		<div
-			className={cn(
-				"relative flex h-full flex-col overflow-hidden rounded-xl bg-background",
-				className,
-			)}
-		>
+		<>
 			{showTimeline ? (
 				<ChatTimelineNavigator
 					activeItemId={activeSelectionId}
@@ -140,16 +133,16 @@ export default function ChatTimeline({
 				/>
 			) : null}
 
-			<div
-				className="flex-1 overflow-y-auto p-4 pb-20 pr-16"
+			<MessageScrollerViewport
+				className="flex-1 p-4 pb-20 pr-16"
 				ref={scrollContainerRef}
 			>
-				<div className="mx-auto flex max-w-3xl flex-col gap-6">
+				<MessageScrollerContent className="mx-auto flex max-w-3xl flex-col gap-6">
 					{messages.map((message) => {
 						const isHighlighted = message.id === highlightedMessageId;
 
 						return (
-							<div
+							<MessageScrollerItem
 								className={cn(
 									"transition-all duration-normal ease-out",
 									isHighlighted
@@ -158,6 +151,8 @@ export default function ChatTimeline({
 								)}
 								data-chat-timeline-message-id={message.id}
 								key={message.id}
+								messageId={message.id}
+								scrollAnchor={message.role === "user"}
 								ref={(node) => {
 									messageNodesRef.current[message.id] = node;
 								}}
@@ -165,12 +160,13 @@ export default function ChatTimeline({
 								<Message from={message.role}>
 									<MessageContent>{message.text}</MessageContent>
 								</Message>
-							</div>
+							</MessageScrollerItem>
 						);
 					})}
-				</div>
-			</div>
-		</div>
+				</MessageScrollerContent>
+			</MessageScrollerViewport>
+			<MessageScrollerButton />
+		</>
 	);
 }
 

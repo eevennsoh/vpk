@@ -198,7 +198,7 @@ test("medium detached is a 276px stroked white chip with the 32px combo identity
 	);
 	assert.match(MEDIUM_CARD_SOURCE, /import ArrowUpIcon from "@atlaskit\/icon\/core\/arrow-up"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<IconTile[\s\S]*icon=\{\s*<ArrowUpIcon/u);
-	assert.match(MEDIUM_CARD_SOURCE, /iconSize="medium"/u);
+	assert.match(MEDIUM_CARD_SOURCE, /iconSize="small"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /variant="transparent"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /relative flex h-10 w-\[276px\] max-w-full items-center gap-2 rounded-lg border border-solid bg-surface px-2 text-left/u);
 	assert.match(MEDIUM_CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);

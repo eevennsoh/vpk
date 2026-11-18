@@ -165,8 +165,6 @@ export interface AgentSessionProps {
 	showLifecycleLabel?: boolean;
 	/** Title-led rows can show lifecycle text beside the avatar stack. */
 	lifecycleLabelPlacement?: "trailing" | "metadata";
-	/** Override agent-name visibility in title-led metadata. */
-	showAgentName?: boolean;
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.

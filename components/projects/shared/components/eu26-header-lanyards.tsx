@@ -29,8 +29,9 @@ const SESSION_APP_LANYARDS: readonly AgentLanyardAgent[] = [
 	{ id: "figma", name: "Figma", publisher: "Figma", description: "Design and collaborate with Figma.", brandName: "figma", action: "connect" },
 ];
 
-function SessionAvatarPreview({ agent, avatar, handle }: Readonly<{ agent: AgentLanyardAgent; avatar: ReactNode; handle: HoverCardHandle<HeaderAgent> }>) {
+function SessionAvatarPreview({ agent, avatar, handle, hoverOnly = false }: Readonly<{ agent: AgentLanyardAgent; avatar: ReactNode; handle: HoverCardHandle<HeaderAgent>; hoverOnly?: boolean }>) {
 	const id = useId();
+	if (hoverOnly) return <HoverCardTrigger closeDelay={150} delay={150} handle={handle} id={id} payload={agent} render={<span className="inline-flex shrink-0">{avatar}</span>} />;
 	return <HoverCardTrigger closeDelay={150} delay={150} handle={handle} id={id} payload={agent} render={<button aria-label={`Preview ${agent.name}`} className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" data-session-drag-ignore="" onClick={(event) => { event.stopPropagation(); handle.open(id); }} onKeyDown={(event) => { if (event.key === "Escape" && handle.isOpen) { event.stopPropagation(); handle.close(); } }} type="button">{avatar}</button>} />;
 }
 
@@ -47,12 +48,13 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 }>) {
 	const { openChat, selectAgent } = useRovoChatControls();
 	const [handle] = useState(() => createHoverCardHandle<HeaderAgent>());
-	const renderSessionAvatar = useCallback<AgentSessionAvatarPreview>((identity, avatar) => {
+	const renderSessionAvatar = useCallback<AgentSessionAvatarPreview>((identity, avatar, options) => {
 		const id = identity.brandName ? SESSION_AGENT_IDS.get(identity.brandName) : undefined;
 		const agent = identity.vpkLogo === "rovo" || identity.id === ROVO_AGENT_ID || identity.avatarSrc === ROVO_LOGO_DATA_URI
 			? ROVO_LANYARD_AGENT
-			: [...AGENT_LANYARD_AGENTS, ...SESSION_APP_LANYARDS].find((candidate) => candidate.id === id || candidate.brandName === identity.brandName && identity.brandName !== undefined || (identity.avatarSrc && candidate.avatarSrc === identity.avatarSrc));
-		return agent ? <SessionAvatarPreview key="agent" agent={agent} avatar={avatar} handle={handle} /> : avatar;
+			: [...AGENT_LANYARD_AGENTS, ...SESSION_APP_LANYARDS].find((candidate) => candidate.id === id || candidate.brandName === identity.brandName && identity.brandName !== undefined || (identity.avatarSrc && candidate.avatarSrc === identity.avatarSrc))
+				?? (identity.avatarSrc?.startsWith("/avatar-agent-new/") ? { id: identity.id ?? identity.name, name: identity.name, publisher: "Atlassian", description: "An agent that helps with your work.", avatarSrc: identity.avatarSrc, action: "chat" as const } : undefined);
+		return agent ? <SessionAvatarPreview key="agent" agent={agent} avatar={avatar} handle={handle} hoverOnly={options?.hoverOnly} /> : avatar;
 	}, [handle]);
 	const [menuAnnouncement, setMenuAnnouncement] = useState("");
 	const popupRef = useRef<HTMLDivElement>(null);

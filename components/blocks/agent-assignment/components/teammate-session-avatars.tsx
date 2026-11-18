@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 
 const MAX_VISIBLE_TEAMMATES = 4;
 
-export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[] }>) {
+export function getTeammateSessionPeople(items: readonly Pick<AgentSessionItem, "invokedBy">[]) {
 	const people = new Map<string, { name: string; avatarSrc: string | undefined }>();
 	for (const { invokedBy } of items) {
 		const name = invokedBy?.name.trim().replace(/\s+/gu, " ") ?? "";
@@ -17,18 +17,26 @@ export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Pic
 		const key = JSON.stringify([name, avatarSrc]);
 		if (!people.has(key)) people.set(key, { name, avatarSrc });
 	}
+	return people;
+}
+
+export function TeammateSessionAvatars({ items, sizePx = 16 }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[]; sizePx?: 16 | 20 | 24 }>) {
+	const people = getTeammateSessionPeople(items);
 	const visiblePeople = Array.from(people).slice(0, MAX_VISIBLE_TEAMMATES);
+	const overlap = sizePx === 24 ? 8 : 4;
+	const maskImage = `radial-gradient(circle at ${overlap - sizePx / 2}px 50%, transparent ${sizePx / 2 + 1.5}px, black ${sizePx / 2 + 2}px)`;
+	const cutout = { maskImage, WebkitMaskImage: maskImage };
 
 	return (
-		<AvatarGroup aria-hidden="true" as="span" size="xs">
-			{visiblePeople.map(([key, { name, avatarSrc }]) => (
-				<Avatar key={key} size="xs" animate={false} title={name || "Teammate"}>
+		<AvatarGroup aria-hidden="true" as="span" className="*:data-[slot=avatar]:ring-0!" size={sizePx === 24 ? "sm" : "xs"}>
+			{visiblePeople.map(([key, { name, avatarSrc }], index) => (
+				<Avatar key={key} size={sizePx === 24 ? "sm" : "xs"} className={sizePx === 20 ? "size-5" : undefined} style={index > 0 ? cutout : undefined} animate={false} title={name || "Teammate"}>
 					{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
 					<AvatarFallback>{name ? actorInitials(name) : <Icon render={<PersonIcon label="" size="small" />} />}</AvatarFallback>
 				</Avatar>
 			))}
 			{people.size > MAX_VISIBLE_TEAMMATES ? (
-				<AvatarGroupCount as="span">+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
+				<AvatarGroupCount as="span" className={sizePx === 20 ? "ring-0 group-has-data-[size=xs]/avatar-group:size-5" : "ring-0"} style={cutout}>+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
 			) : null}
 		</AvatarGroup>
 	);

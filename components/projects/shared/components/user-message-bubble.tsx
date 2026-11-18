@@ -100,7 +100,7 @@ export function UserMessageBubble({
 				from="user"
 				className={isEditing ? "w-full max-w-full" : undefined}
 				fitContent={!isEditing}
-				contain={!showClarificationSummary}
+				contain={!isEditing && !showClarificationSummary}
 			>
 				{attachments.length > 0 ? (
 					<Attachment className="justify-end" variant="grid">
@@ -119,6 +119,7 @@ export function UserMessageBubble({
 				) : null}
 				{isEditing && onEdit ? (
 					<InlineEdit
+						className="p-1 pb-11"
 						value={messageText}
 						multiline
 						startWithEditViewOpen
