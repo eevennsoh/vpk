@@ -14,7 +14,7 @@ export const ROVO_GRAPH_COLORS = {
 	surface: "var(--ds-surface)",
 } as const;
 
-export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphParams({
+export const ROVO_GRAPH_DECLARED_DEFAULT_PARAMS: NeuralGraphParams = {
 	...DEFAULT_NEURAL_GRAPH_PARAMS,
 	amplitude: 0.2,
 	colorConcept: ROVO_GRAPH_COLORS.orange,
@@ -49,7 +49,7 @@ export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphPara
 	originMarkerColor: ROVO_GRAPH_COLORS.default,
 	originMarkerSize: 12,
 	originOffset: 0,
-	originY: 0.52,
+	originY: 0.5,
 	perspective: 1000,
 	radiusMax: 92,
 	radiusMin: 20,
@@ -59,7 +59,7 @@ export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphPara
 	rayElasticStrength: 26,
 	rayElasticTension: 220,
 	rayOpacity: 0.02,
-	rayOriginY: 0.52,
+	rayOriginY: 0.5,
 	rayWidth: 2,
 	radialArcAngle: 360,
 	radialDepthCurve: 0.8,
@@ -79,4 +79,6 @@ export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphPara
 	spread: 560,
 	tiltX: -4,
 	tiltZ: -6,
-});
+};
+
+export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphParams(ROVO_GRAPH_DECLARED_DEFAULT_PARAMS);

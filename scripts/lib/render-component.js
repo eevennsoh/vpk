@@ -7,7 +7,7 @@
 //   node:assert inspects failing operands with custom inspectors disabled, and one happy-dom
 //   node expands into the whole window graph (minutes, then out of memory).
 const path = require("node:path");
-const { after, afterEach } = require("node:test");
+const { after, afterEach, beforeEach } = require("node:test");
 const { GlobalRegistrator } = require("@happy-dom/global-registrator");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require("./esbuild-cjs-loader.js");
@@ -33,6 +33,10 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const React = require("react");
 const { createRoot, hydrateRoot } = require("react-dom/client");
 const { renderToString } = require("react-dom/server");
+// react-dom adds a `selectionchange` listener to the document once, when the first root is
+// created, and marks the document so it never adds it again. Create a root now so that listener
+// predates every test and survives the per-test listener cleanup below.
+createRoot(document.createElement("div"));
 
 // Next.js runtime stand-ins. Override any of them via `mocks`.
 const DEFAULT_MOCKS = NEXT_RUNTIME_MOCKS;
@@ -355,7 +359,71 @@ async function hydrateInto(container, element, onRoot) {
 	}
 }
 
-/** Unmounts every rendered view and empties the document. Runs automatically after each test. */
+/**
+ * Listeners on window and document, which outlive every test. A rendered bundle's libraries
+ * register some when they load (visibility, resize, load) and never remove them, and each listener
+ * keeps that whole bundle alive. Elements are left alone: react-dom attaches its delegated listeners
+ * to a portal container such as <body> once and marks it, so removing them breaks later portals.
+ * happy-dom keeps each phase's listeners, and their options at the same index, under symbols
+ * described "listeners" and "listenerOptions". Its removeEventListener ignores `capture` and
+ * removes the bubbling registration first, so removal edits both stores in the listener's own phase.
+ */
+const PHASES = ["capturing", "bubbling"];
+const LISTENER_TARGETS = [globalThis, document];
+
+function listenerStore(target, description) {
+	const symbol = Object.getOwnPropertySymbols(target).find((candidate) => candidate.description === description);
+	const store = symbol === undefined ? undefined : target[symbol];
+	if (!PHASES.every((phase) => store?.[phase] instanceof Map)) {
+		throw new Error(`happy-dom no longer keeps listeners under a "${description}" symbol; update render-component.js.`);
+	}
+	return store;
+}
+
+// Fail the file at load, not inside a test's afterEach, if happy-dom moved either store.
+for (const target of LISTENER_TARGETS) {
+	listenerStore(target, "listeners");
+	listenerStore(target, "listenerOptions");
+}
+
+function documentListeners() {
+	return LISTENER_TARGETS.flatMap((target) => {
+		const store = listenerStore(target, "listeners");
+		return PHASES.flatMap((phase) => [...store[phase]]
+			.flatMap(([type, listeners]) => listeners.map((listener) => ({ listener, phase, target, type }))));
+	});
+}
+
+function removeRegistration({ listener, phase, target, type }) {
+	const listeners = listenerStore(target, "listeners")[phase].get(type);
+	const index = listeners?.indexOf(listener) ?? -1;
+	if (index !== -1) {
+		listeners.splice(index, 1);
+		listenerStore(target, "listenerOptions")[phase].get(type).splice(index, 1);
+	}
+}
+
+// One snapshot per running test, keyed by its context, so a subtest (`t.test`) neither replaces
+// its parent's snapshot nor removes what the parent added before it started.
+const listenersBeforeTest = new Map();
+
+function removeListenersAddedDuring(context) {
+	const kept = listenersBeforeTest.get(context);
+	listenersBeforeTest.delete(context);
+	if (!kept) return;
+	for (const registration of documentListeners()) {
+		if (!kept.some((entry) => entry.target === registration.target && entry.type === registration.type
+			&& entry.phase === registration.phase && entry.listener === registration.listener)) {
+			removeRegistration(registration);
+		}
+	}
+}
+
+/**
+ * Unmounts every rendered view and empties the document. Runs automatically after each test, which
+ * then removes the window and document listeners added during that test; a manual call leaves
+ * listeners alone, because only the end of a test knows which listeners that test added.
+ */
 async function cleanup() {
 	reportedErrors.length = 0;
 	try {
@@ -368,7 +436,27 @@ async function cleanup() {
 	}
 }
 
-afterEach(cleanup);
+beforeEach((context) => {
+	listenersBeforeTest.set(context, documentListeners());
+});
+afterEach(async (context) => {
+	let unmountFailed = false;
+	let unmountError;
+	try {
+		await cleanup();
+	} catch (error) {
+		unmountFailed = true;
+		unmountError = error;
+	}
+	try {
+		// Like leaving the page: what the test's components and bundles left on the document goes.
+		removeListenersAddedDuring(context);
+	} catch (removalError) {
+		// The unmount error came first and says more; a removal error only surfaces on its own.
+		if (!unmountFailed) throw removalError;
+	}
+	if (unmountFailed) throw unmountError;
+});
 after(() => GlobalRegistrator.unregister());
 
 module.exports = { accessibleName, cleanup, renderComponent };

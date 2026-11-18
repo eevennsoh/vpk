@@ -5,7 +5,9 @@ function loadCjsModuleFromText(sourceText, sourcefile = "esbuild-test-harness.cj
 	const filename = path.isAbsolute(sourcefile)
 		? sourcefile
 		: path.join(process.cwd(), sourcefile);
-	const compiledModule = new Module(filename, module);
+	// No parent: a parent keeps every compiled module in its `children`, so each bundle a test
+	// evaluates (a rendered suite evaluates one per render) would stay alive for the whole run.
+	const compiledModule = new Module(filename);
 	compiledModule.filename = filename;
 	compiledModule.paths = Module._nodeModulePaths(path.dirname(filename));
 	compiledModule._compile(sourceText, filename);
