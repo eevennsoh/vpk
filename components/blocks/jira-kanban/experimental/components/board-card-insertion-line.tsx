@@ -107,7 +107,7 @@ export function BoardCardInsertionLine({
 			>
 				{onCreate ? <Button
 					aria-label={createLabel}
-					className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 border-border bg-surface-overlay text-icon-subtle hover:bg-bg-neutral-hovered"
+					className="pointer-events-auto absolute left-0 top-1/2 isolate size-5 -translate-x-1/2 -translate-y-1/2 border-border bg-surface-overlay text-icon-subtle before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-full hover:bg-surface-overlay hover:before:bg-bg-neutral-subtle-hovered active:bg-surface-overlay active:before:bg-bg-neutral-subtle-pressed [&_[data-slot=icon]]:relative [&_[data-slot=icon]]:z-10"
 					data-board-gap-create=""
 					data-board-insertion-marker={position}
 					onClick={(event) => {
@@ -115,6 +115,7 @@ export function BoardCardInsertionLine({
 						onCreate(event.currentTarget, card?.querySelector<HTMLElement>("button") ?? null);
 					}}
 					onPointerLeave={(event) => onControlLeave?.(event.relatedTarget)}
+					onBlur={(event) => onControlLeave?.(event.relatedTarget)}
 					shape="circle"
 					size="icon-compact"
 					type="button"

@@ -127,7 +127,7 @@ test("board insertion rule and marker reveal without animation", () => {
 	assert.doesNotMatch(lineSource, /animate-in|transition-opacity|duration-fast/u);
 });
 
-test("card arrival suppresses the inline create seam until its entrance completes", () => {
+test("card arrival and an open editor suppress the inline create seam", () => {
 	assert.match(CARD_LIST, /const suppressCardInsertion = createdCardArrival !== undefined;/u);
 	assert.match(
 		CARD_LIST,
@@ -135,7 +135,7 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	);
 	assert.match(
 		CARD_LIST,
-		/<BoardCardHoverInsertionContext value=\{suppressCardInsertion \? null : hoverInsertion\}>/u,
+		/<BoardCardHoverInsertionContext value=\{suppressCardInsertion \|\| creating \? null : hoverInsertion\}>/u,
 	);
 });
 
