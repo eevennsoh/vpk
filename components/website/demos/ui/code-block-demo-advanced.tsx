@@ -531,7 +531,7 @@ export function CodeBlockStreaming() {
 			return;
 		}
 
-		const timeout = setTimeout(() => setLength(length + 3), 16);
+		const timeout = setTimeout(() => setLength((prev) => prev + 3), 16);
 		return () => clearTimeout(timeout);
 	}, [length]);
 
