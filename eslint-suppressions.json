@@ -1647,7 +1647,7 @@
   },
   "components/projects/jira-golden-journey-v1/session-gallery.test.js": {
     "no-restricted-syntax": {
-      "count": 175
+      "count": 174
     }
   },
   "components/projects/jira-golden-journey-v2/use-hotfix-story.ts": {
@@ -1858,7 +1858,7 @@
   },
   "components/projects/jira/rfp-context.test.js": {
     "no-restricted-syntax": {
-      "count": 65
+      "count": 64
     }
   },
   "components/projects/page.test.js": {

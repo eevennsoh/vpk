@@ -91,7 +91,7 @@ test("the detail panel resize width is owned by the stage so a dragged width per
 test("the Queue scroll viewport fills the available space while its content stays constrained", () => {
 	assert.match(CHAT_MESSAGES_SOURCE, /contentClassName\?: string;/u);
 	assert.match(CHAT_MESSAGES_SOURCE, /className=\{cn\("flex w-full shrink-0 flex-col gap-6 p-3", contentClassName\)\}/u);
-	assert.match(WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0 \}\}/u);
+	assert.match(WORKSPACE_SOURCE, /layout\s*style=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0,/u);
 	assert.match(WORKSPACE_SOURCE, /shouldReduceMotion \|\| detailPanelResize\.isResizing/u);
 	assert.match(WORKSPACE_SOURCE, /className="flex min-h-0 w-full flex-1 flex-col"/u);
 	assert.match(WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);

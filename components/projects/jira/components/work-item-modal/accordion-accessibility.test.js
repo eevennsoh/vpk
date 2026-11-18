@@ -118,7 +118,7 @@ test("work item modal exposes the agent panel under child work items", () => {
 	assert.match(panelSource, /className="flex size-6 items-center justify-center rounded-full text-text"/);
 	assert.match(panelSource, /const AGENT_ICON_ROTATION_VARIANTS = \{[\s\S]*hovered: \{[\s\S]*transform: "rotate\(45deg\)"/);
 	assert.match(panelSource, /const AGENT_ICON_ROTATION_REDUCED_VARIANTS = \{[\s\S]*hovered: \{[\s\S]*transform: "rotate\(0deg\)"/);
-	assert.match(panelSource, /const AGENT_ICON_ROTATION_TRANSITION = \{[\s\S]*duration: 0\.42,[\s\S]*ease: \[0, 0\.4, 0, 1\]/);
+	assert.match(panelSource, /const AGENT_ICON_ROTATION_TRANSITION = \{[\s\S]*duration: 0\.42,[\s\S]*ease: motionEase\.out/);
 	assert.match(panelSource, /<motion\.svg[\s\S]*animate=\{isSparkleVisible \? "hovered" : "rest"\}[\s\S]*transition=\{AGENT_ICON_ROTATION_TRANSITION\}[\s\S]*variants=\{shouldReduceMotion \? AGENT_ICON_ROTATION_REDUCED_VARIANTS : AGENT_ICON_ROTATION_VARIANTS\}/);
 	assert.match(panelSource, /<AgentPanelIllustration[\s\S]*isSparkleVisible=\{isAgentPanelHovered\}[\s\S]*\/>/);
 	assert.match(panelSource, /viewBox="0 0 15 15"/);
@@ -175,9 +175,9 @@ test("work item modal header keeps breadcrumbs shrinkable and actions fixed", ()
 	const source = readModalHeaderSource();
 
 	assert.match(source, /gridTemplateColumns: "minmax\(0, 1fr\) max-content"/);
-	assert.match(source, /<Breadcrumb className="min-w-0 overflow-visible" size="small">/);
+	assert.match(source, /<Breadcrumb\s+className=\{cn\(\s*"min-w-0 overflow-visible",[\s\S]*?size="small"\s*>/);
 	assert.match(source, /<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">/);
-	assert.match(source, /className="min-w-0 max-w-\[240px\] shrink"/);
+	assert.match(source, /className=\{cn\("min-w-0 max-w-\[240px\] shrink", breadcrumbTrailRevealClassName\)\}/);
 	assert.match(source, /className=\{cn\("flex shrink-0 items-center gap-2", actionsClassName\)\}/);
 	assert.match(source, /\[&_\[data-slot=breadcrumb-label-text\]\]:truncate/);
 	assert.doesNotMatch(source, /height: "32px"/);

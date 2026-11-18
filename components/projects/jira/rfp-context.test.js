@@ -341,7 +341,7 @@ test("agents attachment grid mixes simple file icons with source product logos",
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const \[isGenerationActive, setIsGenerationActive\] = useState\(isHighlighted\);/);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const showGenerationEffect = isGenerationActive;/);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const handleGenerationComplete = useCallback\(\(\) => \{[\s\S]*setIsGenerationActive\(false\);[\s\S]*\}, \[\]\);/);
-	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /setIsGenerationActive\(true\);[\s\S]*\}, \[highlightedKey, isHighlighted\]\);/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const resetKey = `\$\{props\.isHighlighted === true\}:\$\{props\.highlightedKey \?\? "default"\}`;[\s\S]*<AttachmentPreviewCardContent key=\{resetKey\}/);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /<RovoGeneration\.Root[\s\S]*border[\s\S]*glow/);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /duration=\{ATTACHMENT_GENERATION_DURATION_SECONDS\}/);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /generating=\{isGenerationActive\}/);
@@ -407,13 +407,38 @@ test("Rovo context merging preserves active work item context and suggestion con
 test("Rovo provider merges default context with per-prompt context", () => {
 	assert.match(
 		ROVO_CHAT_CONTEXT_SOURCE,
-		/import \{ mergeRovoContextDescriptions \} from "@\/lib\/rovo-context";/,
+		/import \{[^}]*\bmergeSendPromptOptions,[^}]*\} from "@\/app\/contexts\/rovo-chat-helpers";/,
 	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/contextDescription: mergeRovoContextDescriptions\(\s*defaultOptions\.contextDescription,\s*options\.contextDescription\s*\)/,
+	const { mergeSendPromptOptions } = loadRovoChatHelpers();
+	const merged = mergeSendPromptOptions(
+		{ contextDescription: "[Active Jira Work Item Context]\nKey: RFP-101\n[End Active Jira Work Item Context]", skillId: "default-skill" },
+		{ contextDescription: "  [Work Summary Scope]\nSearch Jira.\n[End Work Summary Scope]  " },
 	);
+	assert.equal(
+		merged.contextDescription,
+		"[Active Jira Work Item Context]\nKey: RFP-101\n[End Active Jira Work Item Context]\n\n[Work Summary Scope]\nSearch Jira.\n[End Work Summary Scope]",
+	);
+	assert.equal(merged.skillId, "default-skill");
 });
+
+function loadRovoChatHelpers() {
+	const result = esbuild.buildSync({
+		stdin: {
+			contents: 'export { mergeSendPromptOptions } from "@/app/contexts/rovo-chat-helpers";',
+			loader: "ts",
+			resolveDir: process.cwd(),
+			sourcefile: "rfp-context-rovo-chat-helpers-entry.ts",
+		},
+		bundle: true,
+		format: "cjs",
+		loader: { ".css": "empty" },
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+	return loadCjsModuleFromText(result.outputFiles[0].text, "rfp-context-rovo-chat-helpers.cjs");
+}
 
 test("Agents view opens the richer active work item through the presentation controller", () => {
 	assert.match(AGENTS_VIEW_SOURCE, /getAgentsWorkItemForCard\(card\)/);

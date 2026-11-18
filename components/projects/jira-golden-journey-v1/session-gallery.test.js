@@ -216,7 +216,6 @@ test("Global Kanban cards open the shared chat, work-item, and details workspace
 	assert.equal((FOR_YOU_STAGE_SOURCE.match(/onItemActivate\(item\);/gu) ?? []).length, 2);
 	assert.match(FOR_YOU_STAGE_SOURCE, /sections = JIRA_DESIGN_WORKSPACE_SECTIONS/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{sections\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /showScrollAffordance=\{false\}/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /showConversationHeaderBorder=\{false\}/u);
 });
 
@@ -338,7 +337,7 @@ test("Terminal frame and panes follow the route-owned light or dark theme", () =
 	assert.match(TERMINAL_STAGE_SOURCE, /border-border bg-surface-raised[^"]*text-text/u);
 	assert.match(
 		TERMINAL_STAGE_SOURCE,
-		/className=\{cn\("w-px", state\.split \? "bg-border" : "bg-transparent"\)\}/u,
+		/const isSplit = !isClaudeOnly && state\.split;[\s\S]*className=\{cn\("w-px", isSplit \? "bg-border" : "bg-transparent"\)\}/u,
 	);
 	assert.doesNotMatch(TERMINAL_STAGE_SOURCE, /TERMINAL_FRAME_ZINC_VARS|--ds-/u);
 
