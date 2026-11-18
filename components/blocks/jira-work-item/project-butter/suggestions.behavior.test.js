@@ -21,9 +21,62 @@ function renderWorkItem(props = {}) {
 	});
 }
 
-test("a suggested description reveals once, stays editable, and yields immediately to focus", async () => {
+/**
+ * The description reveal ends on timers (a settle after its animation and a safety stop), which
+ * on a loaded machine can fire before the test reads the reveal. From here they run on fake time.
+ */
+function holdRevealTimers(t) {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+}
+
+/** Advances fake time in animation-sized steps until `done()` or 10 s of fake time. */
+async function advanceUntil(t, done) {
+	for (let elapsed = 0; !done() && elapsed < 10_000; elapsed += 50) {
+		await act(async () => t.mock.timers.tick(50));
+	}
+}
+
+/**
+ * The payments profile opens with a border trace driven by animation frames; when it ends, the
+ * panel opens by itself unless the user already opened it. On a loaded machine the trace can end
+ * during the render, so frames queue from here until the returned release() runs them.
+ */
+function holdAnimationFrames(t) {
+	const request = globalThis.requestAnimationFrame;
+	const cancel = globalThis.cancelAnimationFrame;
+	const queued = new Map();
+	let held = true;
+	let nextId = -1;
+	t.mock.method(globalThis, "requestAnimationFrame", (callback) => {
+		if (!held) return request(callback);
+		queued.set(nextId, callback);
+		return nextId--;
+	});
+	t.mock.method(globalThis, "cancelAnimationFrame", (id) => (queued.delete(id) ? undefined : cancel(id)));
+	return () => {
+		held = false;
+		for (const callback of queued.values()) request(callback);
+		queued.clear();
+	};
+}
+
+/**
+ * The payments profile opens with a border trace, then opens its panel by itself. Waits for that
+ * instead of racing it with a click: on a loaded machine the trace can end during the render.
+ */
+async function openPaymentsSuggestions(props = {}) {
+	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments", ...props });
+	for (let waited = 0; document.querySelector("[data-suggestion-trigger]")?.getAttribute("aria-expanded") !== "true" && waited < 8_000; waited += 50) {
+		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+	}
+	assert.equal(document.querySelector("[data-suggestion-trigger]")?.getAttribute("aria-expanded"), "true", "the panel opens after the intro");
+	return view;
+}
+
+test("a suggested description reveals once, stays editable, and yields immediately to focus", async (t) => {
 	const view = await renderWorkItem({ initialSuggestion: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	holdRevealTimers(t);
 	await view.click(view.getByRole("button", { name: "Accept description" }));
 	const editor = view.getByRole("textbox", { name: "Work item description" });
 	const reveal = document.querySelector("[data-description-reveal]");
@@ -38,25 +91,24 @@ test("a suggested description reveals once, stays editable, and yields immediate
 	assert.equal(new Set(coloredWords.map((word) => word.style.backgroundImage)).size > 1, true);
 	assert.equal(editor.textContent.includes("Improve the onboarding experience"), true);
 	await view.focus(editor);
-	assert.equal(document.querySelector("[data-description-reveal]"), null);
+	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
 	await view.fill(editor, "My revised description");
 	assert.equal(editor.textContent.startsWith("My revised description"), true);
 	await view.unmount();
 });
 
-test("the description reveal finishes and does not replay when the item is reopened", async () => {
+test("the description reveal finishes and does not replay when the item is reopened", async (t) => {
 	const common = { initialPreset: "filled", initialSuggestion: true, onClose() {} };
 	const view = await renderWorkItem({ ...common, open: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	holdRevealTimers(t);
 	await view.click(view.getByRole("button", { name: "Accept description" }));
 	assert.notEqual(document.querySelector("[data-description-reveal]"), null);
-	for (let waited = 0; document.querySelector("[data-description-reveal]") && waited < 3_000; waited += 50) {
-		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
-	}
-	assert.equal(document.querySelector("[data-description-reveal]"), null);
+	await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null);
+	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
 	await view.rerender({ ...common, open: false });
 	await view.rerender({ ...common, open: true });
-	assert.equal(document.querySelector("[data-description-reveal]"), null);
+	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
 	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent.includes("Improve the onboarding experience"), true);
 	await view.unmount();
 });
@@ -75,19 +127,17 @@ test("multi-paragraph reveal groups words, lines, paragraphs, and the remainder"
 	await view.unmount();
 });
 
-test("a long description reveals a bounded prefix before showing the full editable text", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
-	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+test("a long description reveals a bounded prefix before showing the full editable text", async (t) => {
+	const view = await openPaymentsSuggestions();
+	holdRevealTimers(t);
 	await view.click(view.getByRole("button", { name: "Accept description" }));
 	const words = [...document.querySelectorAll("[data-description-reveal] [data-description-word]")];
 	assert.equal(words.length, 64);
 	assert.deepEqual(words.slice(0, 5).map((word) => word.getAttribute("data-reveal-phase")), ["word", "word", "word", "word", "word"]);
 	const editor = view.getByRole("textbox", { name: "Work item description" });
 	assert.equal(editor.textContent.length > 500, true);
-	for (let waited = 0; document.querySelector("[data-description-reveal]") && waited < 3_000; waited += 50) {
-		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
-	}
-	assert.equal(document.querySelector("[data-description-reveal]"), null);
+	await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null);
+	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
 	await view.focus(editor);
 	assert.equal(view.isFocused(editor), true);
 	await view.unmount();
@@ -103,8 +153,7 @@ test("accepting a due date fills its Details field", async () => {
 });
 
 test("the shared stack accepts and dismisses Butter fields and supports undo", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
-	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+	const view = await openPaymentsSuggestions();
 	assert.notEqual(view.queryByRole("button", { name: "Show as list" }), null);
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept due date" }));
@@ -121,8 +170,7 @@ test("the shared stack accepts and dismisses Butter fields and supports undo", a
 });
 
 test("accept all uses actual values and undo preserves later edits", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
-	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+	const view = await openPaymentsSuggestions();
 	await view.click(view.getByRole("button", { name: "Accept all" }));
 	for (let waited = 0; document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled") !== "true" && waited < 8_000; waited += 50) {
 		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
@@ -152,12 +200,11 @@ test("suggestions remain scoped to the work item", async () => {
 	const common = { initialPreset: "filled", onClose() {}, open: true };
 	const demo = { ...common, initialSuggestion: true, suggestionProfile: "payments", workItem: { code: "PAY-999", title: "Merchant onboarding" } };
 	const other = { ...common, initialSuggestion: false, workItem: { code: "PAY-118", title: "Card artwork" } };
-	const view = await renderWorkItem(demo);
-	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+	const view = await openPaymentsSuggestions(demo);
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept parent" }));
 	await view.rerender(other);
-	assert.equal(view.queryByRole("button", { name: /suggestions/iu }), null);
+	assert.equal(view.queryByRole("button", { name: /suggestions/iu }) === null, true);
 	await view.rerender(demo);
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "true");
@@ -187,12 +234,14 @@ test("undoing a dismissal restores it to the work item", async () => {
 });
 
 
-test("the source stack and grid appear together after the border trace", async () => {
+test("the source stack and grid appear together after the border trace", async (t) => {
+	const release = holdAnimationFrames(t);
 	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
 	const trigger = view.getByRole("button", { name: "Finding suggestions" });
 	const banner = trigger.parentElement;
-	assert.equal(banner.querySelector("[data-suggestion-grid]"), null);
-	assert.equal(banner.querySelector('[aria-label="Confluence"]'), null);
+	assert.equal(banner.querySelector("[data-suggestion-grid]") === null, true);
+	assert.equal(banner.querySelector('[aria-label="Confluence"]') === null, true);
+	release();
 	for (let waited = 0; !banner.querySelector("[data-suggestion-grid]") && waited < 8_000; waited += 50) {
 		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
 	}
