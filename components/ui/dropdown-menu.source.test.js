@@ -16,7 +16,7 @@ test("dropdown menu popup uses an 8px container radius and 6px padding", () => {
 
 test("dropdown menu front slot icons use a 24px subtle icon container", () => {
 	assert.match(source, /const dropdownMenuFrontSlotClassName =\s*"inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle/u);
-	assert.match(source, /<span className=\{dropdownMenuFrontSlotClassName\}>/u);
+	assert.equal(source.match(/<span className=\{cn\(dropdownMenuFrontSlotClassName, elemBeforeSize === 16 \? "size-4" : null\)\}>/gu)?.length, 2);
 	assert.doesNotMatch(source, /elemBefore \? \([\s\S]*?<span className=\{cn\("inline-flex h-5/u);
 });
 

@@ -3,6 +3,53 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("Board Card uses the board work item actions menu", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
+	const trigger = page.getByRole("button", { name: "More actions for PD-40", exact: true });
+	await trigger.focus();
+	await trigger.press("Enter");
+	const menu = page.getByRole("menu");
+	await expect(menu.getByRole("menuitem")).toHaveText([
+		"Edit summary", "Link", "Edit labels", "Add flag", "Move up", "Move down",
+		"Move work item", "Change status", "Copy link", "Copy key", "Delete",
+	]);
+	await expect(menu.getByRole("menuitem", { name: "Move up", exact: true })).toBeDisabled();
+	await menu.getByRole("menuitem", { name: "Link Open submenu", exact: true }).focus();
+	await page.keyboard.press("ArrowRight");
+	await expect(page.getByRole("menuitem", { name: "Confluence item", exact: true })).toBeVisible();
+});
+
+test("opening Link keeps the work item menu rows in place", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const boardButton = page.getByRole("button", { name: "Select Board", exact: true });
+	await boardButton.click();
+	await boardButton.evaluate(async (element) => {
+		await Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => {})));
+	});
+	const trigger = page.getByRole("button", { name: "More actions for PAY-105", exact: true });
+	await trigger.focus();
+	await trigger.press("Enter");
+	const link = page.getByRole("menuitem", { name: "Link Open submenu", exact: true });
+	const labels = page.getByRole("menuitem", { name: "Edit labels", exact: true });
+	const gap = async () => {
+		const [linkBox, labelsBox] = await Promise.all([link.boundingBox(), labels.boundingBox()]);
+		if (!linkBox || !labelsBox) throw new Error("Expected visible menu rows");
+		return labelsBox.y - (linkBox.y + linkBox.height);
+	};
+	const originalGap = await gap();
+	expect(originalGap).toBe(2);
+	await link.focus();
+	await link.press("ArrowRight");
+	await expect(page.getByRole("menuitem", { name: "Confluence item", exact: true })).toBeVisible();
+	await expect(link.locator('xpath=../span[@data-base-ui-focus-guard]')).toHaveCount(2);
+	expect(await gap()).toBe(originalGap);
+});
+
 test("selecting a gallery item animates its highlight", { tag: "@smoke" }, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));

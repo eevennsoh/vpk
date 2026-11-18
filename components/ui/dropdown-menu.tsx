@@ -500,6 +500,7 @@ interface DropdownMenuSubTriggerProps
   allowTextWrap?: boolean;
 	/** Leading content in the same icon slot as DropdownMenuItem. */
 	elemBefore?: ReactNode;
+	elemBeforeSize?: 16 | 24;
   /** Whether to render the shared trailing right chevron. */
   showChevron?: boolean;
 }
@@ -509,6 +510,7 @@ function DropdownMenuSubTrigger({
   inset,
   allowTextWrap = false,
 	elemBefore,
+	elemBeforeSize = 24,
   showChevron = true,
   children,
   ...props
@@ -527,7 +529,7 @@ function DropdownMenuSubTrigger({
     >
 			{elemBefore ? (
 				<>
-					<span className={dropdownMenuFrontSlotClassName}>
+					<span className={cn(dropdownMenuFrontSlotClassName, elemBeforeSize === 16 ? "size-4" : null)}>
 						{elemBefore}
 					</span>
 					<span className={cn("min-w-0 flex-1", allowTextWrap ? "whitespace-normal break-words" : "truncate")}>
