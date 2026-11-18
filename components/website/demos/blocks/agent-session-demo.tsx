@@ -10,6 +10,7 @@ import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v
 import { agentSessionDemoProfiles, agentSessionDemoScenario } from "@/components/projects/shared/lib/agent-session-demo-chat";
 import { renderAgentSessionDemoArtifacts } from "@/components/projects/shared/components/agent-session-demo-artifacts";
 import { AgentSessionShowcase, ButterSessionPermissionControls, type ButterSessionPermission } from "@/components/projects/shared/components/agent-session-showcase";
+import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
 
 const TEAM_CHAT_PROFILES = agentSessionDemoProfiles(JGP_CHAT_AGENT_PROFILES, AGENT_SESSION_CLOUD_ITEMS);
 
@@ -42,45 +43,49 @@ function TeamSessionDemoContent() {
 }
 
 export function AgentSessionDemoTeam() {
-	return <RovoChatProvider agentProfiles={TEAM_CHAT_PROFILES}><TeamSessionDemoContent /></RovoChatProvider>;
+	return <RovoChatProvider agentProfiles={TEAM_CHAT_PROFILES}><HeaderLanyards><TeamSessionDemoContent /></HeaderLanyards></RovoChatProvider>;
+}
+
+function DemoPage(props: React.ComponentProps<typeof Page>) {
+	return <RovoChatProvider agentProfiles={TEAM_CHAT_PROFILES}><HeaderLanyards><Page {...props} /></HeaderLanyards></RovoChatProvider>;
 }
 
 export default function AgentSessionDemo() {
-	return <Page />;
+	return <DemoPage />;
 }
 
 export function AgentSessionDemoMediumDetached() {
-	return <Page variant="medium-detached" />;
+	return <DemoPage variant="medium-detached" />;
 }
 
 export function AgentSessionDemoMediumAttached() {
-	return <Page variant="medium-attached" />;
+	return <DemoPage variant="medium-attached" />;
 }
 
 export function AgentSessionDemoSmall() {
-	return <Page variant="small" />;
+	return <DemoPage variant="small" />;
 }
 
 export function AgentSessionDemoDrag() {
-	return <Page drag />;
+	return <DemoPage drag />;
 }
 
 export function AgentSessionDemoUnlinked() {
-	return <Page density="unlinked" host="local" />;
+	return <DemoPage density="unlinked" host="local" />;
 }
 
 export function AgentSessionDemoLocalShort() {
-	return <Page density="short" host="local" />;
+	return <DemoPage density="short" host="local" />;
 }
 
 export function AgentSessionDemoLocalLong() {
-	return <Page density="long" host="local" />;
+	return <DemoPage density="long" host="local" />;
 }
 
 export function AgentSessionDemoCloudShort() {
-	return <Page density="short" host="cloud" />;
+	return <DemoPage density="short" host="cloud" />;
 }
 
 export function AgentSessionDemoCloudLong() {
-	return <Page density="long" host="cloud" />;
+	return <DemoPage density="long" host="cloud" />;
 }

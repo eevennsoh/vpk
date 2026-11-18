@@ -15,7 +15,7 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: /(?:\d+ )?other sessions?/iu };
+const disclosure = { name: /(?:\d+ )?using agents/iu };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
@@ -56,6 +56,32 @@ test("session cards use the shared agent avatar preview across densities", async
 		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
 		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "short" });
 		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "unlinked" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+	} finally { await view.unmount(); }
+});
+
+test("detached and selectable session avatars expose the host preview", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { AgentSessionMediumCard } from "@/components/blocks/agent-session/agent-session-medium-card";
+			import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+			export default function Example({ item, marked }) {
+				return <AgentSessionAvatarPreviewContext value={(agent, avatar, options) => options?.hoverOnly ? <span key="agent" data-testid="detached-preview">{avatar}</span> : <button key="agent" aria-label={"Preview " + agent.name}>{avatar}</button>}>
+					<AgentSessionMediumCard isArriving={false} isNew={false} item={item} />
+					<ul><AgentSessionCard density="unlinked" item={item} triageRow={{ approve: null, mark: { isMarked: marked, onActivate() {} } }} /></ul>
+				</AgentSessionAvatarPreviewContext>;
+			}
+		`,
+		props: { item: session("team", "owner", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" }, host: "local" }), marked: false },
+		mocks: themeMock,
+	});
+	try {
+		assert.equal(Boolean(view.container.querySelector('[data-testid="detached-preview"]')), true);
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "owner", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" }, host: "local" }), marked: true });
+		assert.equal(Boolean(view.queryByRole("button", { name: "Preview Cursor" })), false);
 	} finally { await view.unmount(); }
 });
 
@@ -74,6 +100,21 @@ test("Rovo session avatars open the Rovo agent lanyard", async () => {
 		assert.equal(view.getByRole("heading", { name: "Rovo" }).textContent, "Rovo");
 		assert.equal(view.getByText("Atlassian").textContent, "Atlassian");
 		assert.equal(Boolean(document.querySelector('[data-slot="agent-lanyard-avatar"] svg')), true);
+		assert.equal(document.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
+	} finally { await view.unmount(); }
+});
+
+test("session menu shows an agent name once and retains its Rovo avatar", async () => {
+	const view = await renderMenu(menuProps([
+		session("figma", "owner", { agent: { name: "Figma", brandName: "figma" } }),
+		session("rovo", "owner", { agent: { name: "Rovo", vpkLogo: "rovo" } }),
+	]));
+	try {
+		const figma = view.container.querySelector('[data-testid="agent-session-row-figma"]');
+		const rovo = view.container.querySelector('[data-testid="agent-session-row-rovo"]');
+		assert.equal(figma.querySelector('[data-agent-session-agent]').textContent, "");
+		assert.equal(figma.querySelector('[data-agent-list-title]').textContent, "figma work");
+		assert.equal(Boolean(rovo.querySelector('[data-agent-session-agent] svg')), true);
 	} finally { await view.unmount(); }
 });
 
@@ -98,9 +139,9 @@ test("session menu can show a teammate count or expand a single teammate by defa
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
 	try {
-		assert.equal(view.getByText("2 other sessions").textContent, "2 other sessions");
+		assert.equal(view.getByText("2 using agents").textContent, "2 using agents");
 		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
-		const trigger = view.getByRole("button", { name: "1 other session" });
+		const trigger = view.getByRole("button", { name: "1 using agents" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
 		await view.click(trigger);
@@ -114,7 +155,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 	const view = await renderMenu(menuProps(items));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.equal(trigger.getAttribute("aria-label"), "Other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "Using agents");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.deepEqual(view.getAllByRole("listitem").map((row) => row.getAttribute("data-testid")), ["agent-session-row-mine", "agent-session-row-legacy"]);
@@ -125,7 +166,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
-		assert.equal(trigger.getAttribute("aria-label"), "2 other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "2 using agents");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");

@@ -40,7 +40,7 @@ export function TeammateSessionsDisclosure({ children, defaultOpen = false, item
 			<CollapsibleTrigger
 				ref={trigger}
 				aria-describedby={hintId}
-				aria-label={open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
+				aria-label={open ? `${items.length} using agents` : "Using agents"}
 				className="group/teammate-disclosure relative flex w-full items-center rounded-lg px-3 py-1 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				<motion.span
@@ -52,7 +52,7 @@ export function TeammateSessionsDisclosure({ children, defaultOpen = false, item
 					<TeammateSessionAvatars items={items} />
 				</motion.span>
 				<motion.span className="inline-flex min-w-0 text-xs font-medium" data-teammate-disclosure-label="" layout={reducedMotion ? false : "position"} initial={false} animate={open ? "open" : "closed"} variants={{ open: { filter: labelBlur }, closed: { filter: labelBlur } }} transition={{ ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) }}>
-					{open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
+					{open ? `${items.length} using agents` : "Using agents"}
 				</motion.span>
 				<span aria-hidden="true" className="ml-auto grid size-6 shrink-0 place-items-center opacity-0 group-hover/teammate-disclosure:opacity-100 group-focus-visible/teammate-disclosure:opacity-100" data-teammate-disclosure-chevron="">
 					<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />

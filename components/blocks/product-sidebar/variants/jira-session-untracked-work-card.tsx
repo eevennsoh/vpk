@@ -17,7 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem } from "./jira";

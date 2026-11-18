@@ -25,7 +25,7 @@ import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
@@ -334,7 +334,7 @@ export function JiraIssueAgentRowContent({
 	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
 	if (isViewerRow) {
-		avatar = <TeammateSessionAvatars items={activities} />;
+		avatar = <TeammateSessionAvatars items={activities} sizePx={avatarSize} />;
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>

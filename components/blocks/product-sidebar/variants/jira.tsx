@@ -22,7 +22,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { IconTile } from "@/components/ui/icon-tile";
 import {
 	DropdownMenu,

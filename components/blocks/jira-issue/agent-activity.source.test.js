@@ -133,7 +133,8 @@ for (const host of ["local", "cloud"]) {
 					},
 				});
 				if (role === "viewer") {
-					assert.equal(Boolean(view.getByRole("button", { name: "1 other session" })), true);
+					const row = view.getByRole("button", { name: "1 using agents" });
+					assert.equal(row.querySelector('[data-slot="avatar"]')?.classList.contains("size-5"), true);
 					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
 				} else {
 					assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);

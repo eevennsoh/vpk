@@ -6,7 +6,7 @@ import { MessageScroller, MessageScrollerButton, MessageScrollerContent, Message
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
 import { ArtifactCard } from "@/components/blocks/artifact";
 import type { ArtifactKind } from "@/components/ui-custom/lib/artifact-kind";
-import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ui/reasoning";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { getRovoAppInterruptionLabel } from "@/lib/rovo-app-interruptions";
@@ -33,7 +33,7 @@ import { PlanWidgetInlineCard } from "@/components/projects/shared/components/pl
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { AssistantThinkingTrace, useAssistantThinkingTraceState } from "@/components/projects/shared/components/assistant-thinking-trace";
 import { readAssistantMessage } from "@/components/projects/shared/lib/process-assistant-message";
-import { getPreloadShimmerLabel } from "@/components/ui-custom/lib/reasoning-labels";
+import { getPreloadShimmerLabel } from "@/lib/reasoning-labels";
 import {
 	getMessageInterruption,
 	getMessageText,
@@ -485,7 +485,7 @@ function AssistantMessage({
 							<AssistantThinkingTrace state={thinkingTraceState} />
 						) : reasoning?.text ? (
 							<Reasoning defaultOpen={reasoning.isStreaming} isStreaming={isStreaming && reasoning.isStreaming}>
-								<AdsReasoningTrigger />
+								<ReasoningTrigger />
 								<ReasoningContent>{reasoning.text}</ReasoningContent>
 							</Reasoning>
 						) : null}

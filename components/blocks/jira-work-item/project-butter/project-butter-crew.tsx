@@ -130,7 +130,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. ${onStartAgent ? "Add agent" : "View agent sessions"}`;
 	const firstSession = agentSessions[0];
 	const fieldState = firstSession ? SESSION_STATE[firstSession.state] === "Completed" ? "Finished" : SESSION_STATE[firstSession.state] : "";
-	const fieldLabel = viewerOnly ? `${sessions.length} other ${sessions.length === 1 ? "session" : "sessions"}` : firstSession ? showSessionStatus ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents` : onStartAgent ? "Add agent" : "No agent sessions";
+	const fieldLabel = viewerOnly ? `${sessions.length} using agents` : firstSession ? showSessionStatus ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents` : onStartAgent ? "Add agent" : "No agent sessions";
 	const selectedAgent = phase === "handoff" || phase === "attached" ? preview.agent : null;
 	const selectedSession = selectedAgent ? agentSessions.find(({ id, agent }) => matchesInvocationAgent({ id, name: agent.name }, selectedAgent)) : undefined;
 	const loadingSessions = selectedSession ? [selectedSession, ...agentSessions.filter((session) => session !== selectedSession)] : agentSessions;

@@ -792,6 +792,7 @@ export function AgentSessionCard({
 											onAnimationComplete={handleAvatarComplete}
 										/>
 									);
+									const previewIdentity = (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity;
 
 									// The travelling drag chip measures this box on
 									// pointerdown and flies out of it. Marked outside the
@@ -799,11 +800,12 @@ export function AgentSessionCard({
 									return (
 										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? sessionIdentity
+												? previewIdentity
 												: (
 													<AgentSessionSelectMark
-														identity={sessionIdentity}
+														identity={previewIdentity}
 														isMarked={mark.isMarked}
+														previewable={previewIdentity !== sessionIdentity}
 														label={`Select "${item.title}"`}
 														onActivate={activateCard ?? mark.onActivate}
 													/>

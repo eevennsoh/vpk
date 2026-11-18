@@ -35,7 +35,7 @@ import {
 	Reasoning,
 	ReasoningContent,
 	ReasoningTrigger,
-} from "@/components/ui-custom/reasoning"
+} from "@/components/ui/reasoning"
 import { Suggestion, Suggestions } from "@/components/ui/suggestion"
 import {
 	ModelSelector,

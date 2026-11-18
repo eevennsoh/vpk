@@ -310,7 +310,7 @@ function resolveJiraIssueAgentRowPresentation(
 		? activities[summary.featuredActivityIndex]
 		: undefined;
 	const rowLabel = isViewerRow
-		? `${summary.activityCount} other ${summary.activityCount === 1 ? "session" : "sessions"}`
+		? `${summary.activityCount} using agents`
 		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;

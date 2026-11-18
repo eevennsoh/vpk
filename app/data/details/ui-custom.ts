@@ -47,28 +47,22 @@ import { OPEN_IN_CHAT_DETAIL } from "./ui-custom/open-in-chat";
 import { PACKAGE_INFO_DETAIL } from "./ui-custom/package-info";
 import { PERSONA_DETAIL } from "./ui-custom/persona";
 import { PIXEL_LOADER_DETAIL } from "./ui-custom/pixel-loader";
-import { PLAN_DETAIL } from "./ui-custom/plan";
 import { PROGRESS_CIRCLE_DETAIL } from "./ui-custom/progress-circle";
 import { PROGRESS_ROVO_DETAIL } from "./ui-custom/progress-rovo";
 import { PROMPT_INPUT_DETAIL } from "./ui-custom/prompt-input";
-import { REASONING_DETAIL } from "./ui-custom/reasoning";
 import { ROVO_CURSOR_DETAIL } from "./ui-custom/rovo-cursor";
 import { ROVO_GENERATION_DETAIL } from "./ui-custom/rovo-generation";
 import { ROVO_ILLUSTRATION_DETAIL } from "./ui-custom/rovo-illustration";
 import { ROVO_SPARKLE_DETAIL } from "./ui-custom/rovo-sparkle";
 import { SANDBOX_DETAIL } from "./ui-custom/sandbox";
 import { SCHEMA_DISPLAY_DETAIL } from "./ui-custom/schema-display";
-import { SHIMMER_DETAIL } from "./ui-custom/shimmer";
 import { SHIMMER_WAVE_DETAIL } from "./ui-custom/shimmer-wave";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
 import { SNIPPET_DETAIL } from "./ui-custom/snippet";
 import { SOURCE_PREVIEW_MENU_DETAIL } from "./ui-custom/source-preview-menu";
 import { SPEECH_INPUT_DETAIL } from "./ui-custom/speech-input";
-import { STACK_TRACE_DETAIL } from "./ui-custom/stack-trace";
-import { TERMINAL_DETAIL } from "./ui-custom/terminal";
-import { TEST_RESULT_DETAIL } from "./ui-custom/test-result";
-import { TOOL_DETAIL } from "./ui-custom/tool";
+import { TERMINAL_WINDOW_DETAIL } from "./ui-custom/terminal-window";
 import { TOOLBAR_DETAIL } from "./ui-custom/toolbar";
 import { TRANSCRIPTION_DETAIL } from "./ui-custom/transcription";
 import { TWG_APPSTACK_DETAIL } from "./ui-custom/twg-appstack";
@@ -121,28 +115,22 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"package-info": PACKAGE_INFO_DETAIL,
 	persona: PERSONA_DETAIL,
 	"pixel-loader": PIXEL_LOADER_DETAIL,
-	plan: PLAN_DETAIL,
 	"progress-circle": PROGRESS_CIRCLE_DETAIL,
 	"progress-rovo": PROGRESS_ROVO_DETAIL,
 	"prompt-input": PROMPT_INPUT_DETAIL,
-	reasoning: REASONING_DETAIL,
 	"rovo-cursor": ROVO_CURSOR_DETAIL,
 	"rovo-generation": ROVO_GENERATION_DETAIL,
 	"rovo-illustration": ROVO_ILLUSTRATION_DETAIL,
 	"rovo-sparkle": ROVO_SPARKLE_DETAIL,
 	sandbox: SANDBOX_DETAIL,
 	"schema-display": SCHEMA_DISPLAY_DETAIL,
-	shimmer: SHIMMER_DETAIL,
 	"shimmer-wave": SHIMMER_WAVE_DETAIL,
 	"sidebar-nav-item": SIDEBAR_NAV_ITEM_DETAIL,
 	"skill-tag": SKILL_TAG_DETAIL,
 	snippet: SNIPPET_DETAIL,
 	"source-preview-menu": SOURCE_PREVIEW_MENU_DETAIL,
 	"speech-input": SPEECH_INPUT_DETAIL,
-	"stack-trace": STACK_TRACE_DETAIL,
-	terminal: TERMINAL_DETAIL,
-	"test-result": TEST_RESULT_DETAIL,
-	tool: TOOL_DETAIL,
+	"terminal-window": TERMINAL_WINDOW_DETAIL,
 	toolbar: TOOLBAR_DETAIL,
 	transcription: TRANSCRIPTION_DETAIL,
 	"twg-appstack": TWG_APPSTACK_DETAIL,

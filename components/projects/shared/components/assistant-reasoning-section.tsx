@@ -1,10 +1,6 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
 import { getReasoningPropsForPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import {
-	Reasoning,
-	AdsReasoningTrigger,
-	ReasoningContent,
-} from "@/components/ui-custom/reasoning";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ui/reasoning";
 
 interface AssistantReasoningSectionProps {
 	reasoning: { text: string; isStreaming: boolean };
@@ -25,11 +21,8 @@ export function AssistantReasoningSection({
 			className="px-6 pt-2"
 			defaultOpen={phaseProps.defaultOpen ?? false}
 			isStreaming={phaseProps.isStreaming}
-			streamingWave={phaseProps.streamingWave}
-			streamingWaveGradientColor={phaseProps.streamingWaveGradientColor}
-			animatedDots={phaseProps.animatedDots}
 		>
-			<AdsReasoningTrigger showChevron={!!reasoning.text} streaming={phaseProps.triggerStreaming} />
+			<ReasoningTrigger showChevron={!!reasoning.text} />
 			<ReasoningContent>{reasoning.text}</ReasoningContent>
 		</Reasoning>
 	);

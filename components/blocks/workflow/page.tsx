@@ -22,14 +22,15 @@ import {
 	PlanDescription,
 	PlanHeader,
 	PlanTitle,
-} from "@/components/ui-custom/plan"
+} from "@/components/ui/plan"
 import {
 	Tool,
 	ToolContent,
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "@/components/ui-custom/tool"
+} from "@/components/ui/tool"
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile"
 import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity"
 import {
 	MessageScroller,
@@ -118,7 +119,7 @@ export default function AIWorkflowBlock() {
 											{/* Plan rendering */}
 											{msg.plan ? <Plan defaultOpen className="mb-4">
 													<PlanHeader
-														leading={<PlanAvatar visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} />}
+														leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity(msg.plan.title)} /></PlanAvatar>}
 														title={<PlanTitle>{msg.plan.title}</PlanTitle>}
 														description={<PlanDescription>{msg.plan.description}</PlanDescription>}
 													/>

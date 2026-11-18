@@ -241,7 +241,7 @@ test("untracked work shows lifecycle state in metadata and a matching corner ind
 		/JIRA_SESSION_FLYOUT_STATE_LABEL:[\s\S]*"needs-input": "Needs input"[\s\S]*working: "Working"[\s\S]*finished: "Finished"/u,
 	);
 	assert.match(cardSource, /const lifecycleState = JIRA_SESSION_FLYOUT_STATE\[session\.status\];/u);
-	assert.match(cardSource, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/u);
+	assert.match(cardSource, /import \{ Shimmer \} from "@\/components\/ui\/shimmer";/u);
 	assert.match(
 		cardSource,
 		/lifecycleState === "working" \? \([\s\S]*<Shimmer[\s\S]*duration=\{1\.4\}[\s\S]*spread=\{2\}[\s\S]*\{JIRA_SESSION_FLYOUT_STATE_LABEL\[lifecycleState\]\}[\s\S]*<\/Shimmer>[\s\S]*\) : \([\s\S]*<p[\s\S]*\{JIRA_SESSION_FLYOUT_STATE_LABEL\[lifecycleState\]\}[\s\S]*<\/p>[\s\S]*\)/u,

@@ -74,6 +74,7 @@ test("Jira activity preserves private expired session identity through the assig
 			id: "claude-expired-session",
 			kind: "agent",
 			name: "Claude",
+			vpkLogo: "rovo",
 		},
 		host: "cloud",
 		id: "claude-expired-session",
