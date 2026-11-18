@@ -223,6 +223,63 @@ const defaultStepDescriptions: Record<ChainOfThoughtStepStatus, string> = {
 	pending: "Queued",
 }
 
+/** The step icon column: status-coloured icon plus the connector to the next step. */
+function ChainOfThoughtStepRail({
+	children,
+	className,
+	connectorPastLast,
+	shimmer,
+	status,
+	style,
+}: Readonly<{
+	children: React.ReactNode
+	className?: string
+	/** Keeps the connector on the last step while its panel is open. */
+	connectorPastLast: boolean
+	shimmer: boolean
+	status: ChainOfThoughtStepStatus
+	style?: React.CSSProperties
+}>) {
+	return (
+		<div data-slot="chain-of-thought-step-rail" className={cn("relative mt-0.5 self-stretch", className)} style={style}>
+			<TraceIcon className={stepIconStyles[status]}>
+				<ChainOfThoughtIconSlot shimmer={shimmer}>{children}</ChainOfThoughtIconSlot>
+			</TraceIcon>
+			<div
+				data-slot="chain-of-thought-step-connector"
+				aria-hidden="true"
+				className={cn(
+					"absolute top-5 -bottom-3 left-1/2 -mx-px w-px bg-border",
+					connectorPastLast ? null : "group-last/cot-step:hidden"
+				)}
+			/>
+		</div>
+	)
+}
+
+/** Controlled or uncontrolled step open state; a new defaultOpen resets an uncontrolled step (data-driven steps open while active). */
+function useStepOpenState(open: boolean | undefined, defaultOpen: boolean, onOpenChange: ((open: boolean) => void) | undefined) {
+	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
+	const [previousDefaultOpen, setPreviousDefaultOpen] = React.useState(defaultOpen)
+	const isControlled = open !== undefined
+
+	if (previousDefaultOpen !== defaultOpen) {
+		setPreviousDefaultOpen(defaultOpen)
+		if (!isControlled) {
+			setUncontrolledOpen(defaultOpen)
+		}
+	}
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!isControlled) {
+			setUncontrolledOpen(nextOpen)
+		}
+		onOpenChange?.(nextOpen)
+	}
+
+	return [isControlled ? open : uncontrolledOpen, handleOpenChange] as const
+}
+
 function ChainOfThoughtStep({
 	className,
 	icon: IconComponent = NodeIcon,
@@ -246,9 +303,7 @@ function ChainOfThoughtStep({
 }: Readonly<ChainOfThoughtStepProps>) {
 	const shouldReduceMotion = useReducedMotion()
 	const shouldAnimateEntrance = animateOnMount && !shouldReduceMotion
-	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
-	const isControlled = open !== undefined
-	const isOpen = isControlled ? open : uncontrolledOpen
+	const [isOpen, handleOpenChange] = useStepOpenState(open, defaultOpen, onOpenChange)
 	const hasExpandableContent = collapsible && children != null
 	const shouldShowDescription = description !== null
 	const shouldShowHeaderDescription = shouldShowDescription && (!hasExpandableContent || !isOpen)
@@ -256,22 +311,6 @@ function ChainOfThoughtStep({
 	const iconNode = iconRender ?? (
 		<Icon render={<IconComponent label="" size="small" spacing="none" />} className="size-4" />
 	)
-
-	const handleOpenChange = (nextOpen: boolean) => {
-		if (!isControlled) {
-			setUncontrolledOpen(nextOpen)
-		}
-		onOpenChange?.(nextOpen)
-	}
-
-	// A new defaultOpen resets an uncontrolled step (data-driven steps open while active).
-	const [previousDefaultOpen, setPreviousDefaultOpen] = React.useState(defaultOpen)
-	if (previousDefaultOpen !== defaultOpen) {
-		setPreviousDefaultOpen(defaultOpen)
-		if (!isControlled) {
-			setUncontrolledOpen(defaultOpen)
-		}
-	}
 
 	const titleLine = (
 		<TraceLine status={status === "active" ? "running" : undefined} className="text-inherit">
@@ -305,23 +344,15 @@ function ChainOfThoughtStep({
 			}}
 			{...props}
 		>
-			<div
-				data-slot="chain-of-thought-step-rail"
-				className={cn("relative mt-0.5 self-stretch", iconContainerClassName)}
+			<ChainOfThoughtStepRail
+				className={iconContainerClassName}
+				connectorPastLast={hasExpandableContent && isOpen}
+				shimmer={iconShimmer ?? status === "active"}
+				status={status}
 				style={iconContainerStyle}
 			>
-				<TraceIcon className={stepIconStyles[status]}>
-					<ChainOfThoughtIconSlot shimmer={iconShimmer ?? status === "active"}>{iconNode}</ChainOfThoughtIconSlot>
-				</TraceIcon>
-				<div
-					data-slot="chain-of-thought-step-connector"
-					aria-hidden="true"
-					className={cn(
-						"absolute top-5 -bottom-3 left-1/2 -mx-px w-px bg-border",
-						hasExpandableContent && isOpen ? null : "group-last/cot-step:hidden"
-					)}
-				/>
-			</div>
+				{iconNode}
+			</ChainOfThoughtStepRail>
 			{hasExpandableContent ? (
 				<TraceCollapsible open={isOpen} onOpenChange={handleOpenChange} className="min-w-0 flex-1">
 					{customHeader ?? (

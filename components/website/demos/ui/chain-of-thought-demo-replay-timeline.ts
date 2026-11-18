@@ -276,6 +276,16 @@ function buildStudioReplayTimeline(
 	return entries;
 }
 
+/** Runs each entry at its offset; the returned function cancels every pending entry. */
+function scheduleTimeline<Entry extends { at: number }>(entries: readonly Entry[], run: (entry: Entry) => void): () => void {
+	const timeoutIds = entries.map((entry) => window.setTimeout(() => run(entry), entry.at));
+	return () => {
+		for (const timeoutId of timeoutIds) {
+			window.clearTimeout(timeoutId);
+		}
+	};
+}
+
 export function useStudioReplayMessage(mode: ReplayMode): {
 	duration: number | undefined;
 	message: RovoUIMessage;
@@ -290,20 +300,14 @@ export function useStudioReplayMessage(mode: ReplayMode): {
 		// Each replay mounts fresh (the demo re-keys it on Reset), so state starts empty.
 		const timeline = buildStudioReplayTimeline(mode, baseTimestampMs);
 
-		const timeoutIds = timeline.map((entry) => window.setTimeout(() => {
+		return scheduleTimeline(timeline, (entry) => {
 			if ("part" in entry) {
 				setParts((currentParts) => [...currentParts, entry.part]);
 				return;
 			}
 			setPhase(entry.phase);
 			setDuration(entry.duration);
-		}, entry.at));
-
-		return () => {
-			for (const timeoutId of timeoutIds) {
-				window.clearTimeout(timeoutId);
-			}
-		};
+		});
 	}, [mode]);
 
 	const message = useMemo<RovoUIMessage>(() => ({
