@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const { act } = require("react");
 
+const { motionDuration } = require("../../../../lib/motion.ts");
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 
 function renderWorkItem(props = {}) {
@@ -21,20 +22,32 @@ function renderWorkItem(props = {}) {
 	});
 }
 
+/** The reveal's safety stop, from the token the product reads; the reveal must end before it. */
+const REVEAL_SAFETY_STOP_MS = motionDuration.slowest * 5 * 1000;
+
 /**
+ * Runs `body` with timers on fake time, then, even when `body` throws, unmounts `view` and
+ * advances fake time so what is still queued runs, such as the editor teardown Tiptap schedules
+ * 1 ms after unmount, before the harness cleanup goes back to real timers, for as long as the longest
+ * timer the reveal sets (its safety stop). `runAll()` is not used: Node 24 advances it only
+ * to the most recently queued timer, not the latest one.
+ *
  * The description reveal ends when its word animations finish and a settle timer runs, or at a
- * safety stop timer; on a loaded machine these can fire before the test reads the reveal, so from
- * here they run on fake time. happy-dom finishes a Web Animation on a real timer it captured when
- * it loaded, which `t.mock.timers` cannot reach, so each animation's finish moves to fake time too.
+ * safety stop timer; on a loaded machine these can fire before the test reads the reveal, so here
+ * they run on fake time. happy-dom finishes a Web Animation on a real timer it captured when it
+ * loaded, which `t.mock.timers` cannot reach, so each animation that ends finishes on fake time
+ * instead; one that never ends stays paused and unfinished, as it would in a browser.
  */
-function holdRevealOnFakeTime(t) {
+async function onFakeTime(t, view, body) {
 	t.mock.timers.enable({ apis: ["setTimeout"] });
 	const animate = Element.prototype.animate;
-	t.mock.method(Element.prototype, "animate", function animateOnFakeTime(keyframes, options) {
+	const animateOnFakeTime = t.mock.method(Element.prototype, "animate", function animateOnFakeTime(keyframes, options) {
 		const animation = animate.call(this, keyframes, options);
 		// Pausing drops happy-dom's real-time finish timer.
 		animation.pause();
-		const timer = setTimeout(() => animation.finish(), animation.effect.getComputedTiming().endTime);
+		const { endTime } = animation.effect.getComputedTiming();
+		if (!Number.isFinite(endTime)) return animation;
+		const timer = setTimeout(() => animation.finish(), endTime);
 		const cancel = animation.cancel;
 		animation.cancel = function cancelOnFakeTime() {
 			clearTimeout(timer);
@@ -42,27 +55,25 @@ function holdRevealOnFakeTime(t) {
 		};
 		return animation;
 	});
+	try {
+		await body();
+	} finally {
+		animateOnFakeTime.mock.restore();
+		await view.unmount();
+		for (let elapsed = 0; elapsed < REVEAL_SAFETY_STOP_MS; elapsed += 50) {
+			await act(async () => t.mock.timers.tick(50));
+		}
+		t.mock.timers.reset();
+	}
 }
 
-/** Advances fake time in animation-sized steps until `done()` or `bound` ms of fake time. */
+/** Advances fake time in animation-sized steps until `done()` or `bound` ms of fake time, never past `bound`. */
 async function advanceUntil(t, done, bound) {
-	for (let elapsed = 0; !done() && elapsed < bound; elapsed += 50) {
-		await act(async () => t.mock.timers.tick(50));
+	for (let elapsed = 0; !done() && elapsed < bound;) {
+		const step = Math.min(50, bound - elapsed);
+		await act(async () => t.mock.timers.tick(step));
+		elapsed += step;
 	}
-}
-
-/**
- * Unmounts, then advances fake time so what is still queued runs, such as the editor teardown Tiptap
- * schedules 1 ms after unmount, before the rest of the test and its cleanup go back to real timers.
- * Three seconds covers the longest timer the reveal sets (its safety stop). `runAll()` is not used:
- * Node 24 advances it only to the most recently queued timer, not the latest one.
- */
-async function unmountOnFakeTime(t, view) {
-	await view.unmount();
-	for (let elapsed = 0; elapsed < 3_000; elapsed += 50) {
-		await act(async () => t.mock.timers.tick(50));
-	}
-	t.mock.timers.reset();
 }
 
 /**
@@ -112,41 +123,46 @@ async function openPaymentsSuggestions(props = {}) {
 test("a suggested description reveals once, stays editable, and yields immediately to focus", async (t) => {
 	const view = await renderWorkItem({ initialSuggestion: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
-	holdRevealOnFakeTime(t);
-	await view.click(view.getByRole("button", { name: "Accept description" }));
-	const editor = view.getByRole("textbox", { name: "Work item description" });
-	const reveal = document.querySelector("[data-description-reveal]");
-	assert.equal(reveal !== null, true);
-	assert.equal(reveal?.getAttribute("aria-hidden"), "true");
-	const animatedText = reveal?.querySelector("[data-suggestion-text-reveal]");
-	assert.equal(animatedText !== null, true);
-	assert.equal(animatedText?.querySelectorAll('[style*="transform"]').length, 0);
-	const coloredWords = [...animatedText.querySelectorAll("[data-description-color]")];
-	assert.equal(coloredWords.length > 0, true);
-	assert.equal(coloredWords.every((word) => word.textContent === word.previousElementSibling?.textContent && word.children.length === 0), true);
-	assert.equal(new Set(coloredWords.map((word) => word.style.backgroundImage)).size > 1, true);
-	assert.equal(editor.textContent.includes("Improve the onboarding experience"), true);
-	await view.focus(editor);
-	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
-	await view.fill(editor, "My revised description");
-	assert.equal(editor.textContent.startsWith("My revised description"), true);
-	await unmountOnFakeTime(t, view);
+	// Tiptap keeps its editor on the editable element; it schedules the editor's destruction after unmount.
+	let tiptap;
+	await onFakeTime(t, view, async () => {
+		await view.click(view.getByRole("button", { name: "Accept description" }));
+		const editor = view.getByRole("textbox", { name: "Work item description" });
+		tiptap = editor.editor;
+		assert.equal(tiptap?.isDestroyed, false, "the description editor is live");
+		const reveal = document.querySelector("[data-description-reveal]");
+		assert.equal(reveal !== null, true);
+		assert.equal(reveal?.getAttribute("aria-hidden"), "true");
+		const animatedText = reveal?.querySelector("[data-suggestion-text-reveal]");
+		assert.equal(animatedText !== null, true);
+		assert.equal(animatedText?.querySelectorAll('[style*="transform"]').length, 0);
+		const coloredWords = [...animatedText.querySelectorAll("[data-description-color]")];
+		assert.equal(coloredWords.length > 0, true);
+		assert.equal(coloredWords.every((word) => word.textContent === word.previousElementSibling?.textContent && word.children.length === 0), true);
+		assert.equal(new Set(coloredWords.map((word) => word.style.backgroundImage)).size > 1, true);
+		assert.equal(editor.textContent.includes("Improve the onboarding experience"), true);
+		await view.focus(editor);
+		assert.equal(document.querySelector("[data-description-reveal]") === null, true);
+		await view.fill(editor, "My revised description");
+		assert.equal(editor.textContent.startsWith("My revised description"), true);
+	});
+	assert.equal(tiptap.isDestroyed, true, "the editor teardown ran before timers went back to real time");
 });
 
 test("the description reveal finishes and does not replay when the item is reopened", async (t) => {
 	const common = { initialPreset: "filled", initialSuggestion: true, onClose() {} };
 	const view = await renderWorkItem({ ...common, open: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
-	holdRevealOnFakeTime(t);
-	await view.click(view.getByRole("button", { name: "Accept description" }));
-	assert.equal(document.querySelector("[data-description-reveal]") !== null, true);
-	await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, 3_000);
-	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
-	await view.rerender({ ...common, open: false });
-	await view.rerender({ ...common, open: true });
-	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
-	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent.includes("Improve the onboarding experience"), true);
-	await unmountOnFakeTime(t, view);
+	await onFakeTime(t, view, async () => {
+		await view.click(view.getByRole("button", { name: "Accept description" }));
+		assert.equal(document.querySelector("[data-description-reveal]") !== null, true);
+		await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, REVEAL_SAFETY_STOP_MS - 1);
+		assert.equal(document.querySelector("[data-description-reveal]") === null, true, "the reveal ends through its animations, before the safety stop");
+		await view.rerender({ ...common, open: false });
+		await view.rerender({ ...common, open: true });
+		assert.equal(document.querySelector("[data-description-reveal]") === null, true);
+		assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent.includes("Improve the onboarding experience"), true);
+	});
 });
 
 test("multi-paragraph reveal groups words, lines, paragraphs, and the remainder", async () => {
@@ -165,18 +181,18 @@ test("multi-paragraph reveal groups words, lines, paragraphs, and the remainder"
 
 test("a long description reveals a bounded prefix before showing the full editable text", async (t) => {
 	const view = await openPaymentsSuggestions();
-	holdRevealOnFakeTime(t);
-	await view.click(view.getByRole("button", { name: "Accept description" }));
-	const words = [...document.querySelectorAll("[data-description-reveal] [data-description-word]")];
-	assert.equal(words.length, 64);
-	assert.deepEqual(words.slice(0, 5).map((word) => word.getAttribute("data-reveal-phase")), ["word", "word", "word", "word", "word"]);
-	const editor = view.getByRole("textbox", { name: "Work item description" });
-	assert.equal(editor.textContent.length > 500, true);
-	await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, 3_000);
-	assert.equal(document.querySelector("[data-description-reveal]") === null, true);
-	await view.focus(editor);
-	assert.equal(view.isFocused(editor), true);
-	await unmountOnFakeTime(t, view);
+	await onFakeTime(t, view, async () => {
+		await view.click(view.getByRole("button", { name: "Accept description" }));
+		const words = [...document.querySelectorAll("[data-description-reveal] [data-description-word]")];
+		assert.equal(words.length, 64);
+		assert.deepEqual(words.slice(0, 5).map((word) => word.getAttribute("data-reveal-phase")), ["word", "word", "word", "word", "word"]);
+		const editor = view.getByRole("textbox", { name: "Work item description" });
+		assert.equal(editor.textContent.length > 500, true);
+		await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, REVEAL_SAFETY_STOP_MS - 1);
+		assert.equal(document.querySelector("[data-description-reveal]") === null, true, "the reveal ends through its animations, before the safety stop");
+		await view.focus(editor);
+		assert.equal(view.isFocused(editor), true);
+	});
 });
 
 test("accepting a due date fills its Details field", async () => {
