@@ -111,6 +111,14 @@ function SessionTimestamp({ item }: Readonly<{ item: AgentSessionItem }>) {
 	);
 }
 
+function SingleSessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
+	const details = item.sessionDetails;
+	const number = details?.pullRequestNumber;
+	if (!details || number === undefined) return null;
+	const status = item.prStatus ?? "created";
+	return <PullRequest additions={details.additions ?? 0} author={details.pullRequestAuthor ? { name: details.pullRequestAuthor.name, avatarUrl: details.pullRequestAuthor.src } : undefined} branch={details.branch} checks={item.pullRequestChecks} checksExpandable={false} className="border-none bg-transparent shadow-none" deletions={details.deletions ?? 0} filesChanged={details.files} number={number} repository={details.repository} showFix={false} status={status === "merged" ? "Merged" : status === "failed" ? "Failed" : "Open"} targetBranch={details.targetBranch} title={details.pullRequestTitle ?? label} variant="flyout" />;
+}
+
 function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
 	const [open, setOpen] = useState(false);
 	const details = item.sessionDetails;
@@ -126,7 +134,7 @@ function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; 
 				<span className="min-w-0 truncate text-text-subtle underline-offset-2 group-hover/session-pr:underline group-focus-visible/session-pr:underline" data-session-pr-title="">{label}</span>
 			</HoverCardTrigger>
 			<HoverCardContent align="start" aria-label={multiple ? "Pull requests" : `Pull request #${number} details`} className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden p-0" positionerClassName="z-[650]" role="region" sideOffset={8}>
-				{multiple ? <PullRequestList pullRequests={item.pullRequests ?? []} /> : details && number !== undefined ? <PullRequest additions={details.additions ?? 0} author={details.pullRequestAuthor ? { name: details.pullRequestAuthor.name, avatarUrl: details.pullRequestAuthor.src } : undefined} branch={details.branch} checks={item.pullRequestChecks} checksExpandable={false} className="border-none bg-transparent shadow-none" deletions={details.deletions ?? 0} filesChanged={details.files} number={number} repository={details.repository} showFix={false} status={status === "merged" ? "Merged" : status === "failed" ? "Failed" : "Open"} targetBranch={details.targetBranch} title={details.pullRequestTitle ?? label} variant="flyout" /> : null}
+				{multiple ? <PullRequestList pullRequests={item.pullRequests ?? []} /> : <SingleSessionPullRequest item={item} label={label} />}
 			</HoverCardContent>
 		</HoverCard>
 	);
