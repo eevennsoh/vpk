@@ -58,8 +58,8 @@ test("ContextBarPromptFlyout stacks extras straight up, left-aligned, with reduc
 	assert.match(ARC_SOURCE, /EXTRA_SLIDE_Y = 8/u);
 	assert.match(ARC_SOURCE, /STAGGER_INTERVAL = 0\.05/u);
 	assert.match(ARC_SOURCE, /const slideY = reduceMotion \? 0 : EXTRA_SLIDE_Y/u);
-	assert.match(ARC_SOURCE, /duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\]/u);
-	assert.match(ARC_SOURCE, /duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(ARC_SOURCE, /const ITEM_ENTER: Transition = \{ duration: 0\.15, ease: motionEase\.outPractical \};/u);
+	assert.match(ARC_SOURCE, /const ITEM_EXIT: Transition = \{ duration: 0\.1, ease: motionEase\.in \};/u);
 	assert.match(ARC_SOURCE, /REDUCED_MOTION: Transition = \{ duration: 0, delay: 0 \}/u);
 	assert.match(ARC_SOURCE, /const enterTransition = reduceMotion\n\t\t\? REDUCED_MOTION\n\t\t: \{ \.\.\.ITEM_ENTER, delay: enterDelay \}/u);
 	assert.match(ARC_SOURCE, /const exitTransition = reduceMotion \? REDUCED_MOTION : ITEM_EXIT/u);
