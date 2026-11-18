@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 449,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 444,
+				"live": 443,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5466,7 +5466,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 99,
+				"entryCount": 98,
 				"entries": [
 					{
 						"category": "ui",
@@ -5592,13 +5592,6 @@
 						"slug": "chart",
 						"name": "Chart",
 						"importPath": "@/components/ui/chart",
-						"status": "live"
-					},
-					{
-						"category": "ui",
-						"slug": "chat",
-						"name": "Chat",
-						"importPath": "@/components/ui/message-scroller",
 						"status": "live"
 					},
 					{

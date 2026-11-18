@@ -283,13 +283,7 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"message-scroller-demo-chat": dynamic(
-		() =>
-			import("../../demos/ui/message-scroller-demo").then((mod) => ({
-				default: mod.MessageScrollerDemoChat,
-			})),
-		{ ssr: false },
-	),
+	"message-scroller-demo-chat": dynamic(() => import("../../demos/ui/message-scroller-examples-chat"), { ssr: false }),
 	"message-scroller-anchoring": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleAnchoring })), { ssr: false }),
 	"message-scroller-group-chat": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleGroupChat })), { ssr: false }),
 	"message-scroller-context": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleContext })), { ssr: false }),

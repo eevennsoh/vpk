@@ -46,7 +46,7 @@ The source library's folder structure does not determine VPK ownership.
 | Need | Use |
 | --- | --- |
 | AI/chat message turn with actions | `ui/message` (+ `ui-custom/message-user-bubble`, `ui-custom/message-markdown`) |
-| Assistant chat thread container | `ui/message-scroller` composed per `/components/ui/chat` |
+| Assistant chat thread container | `ui/message-scroller` (see its Chat example) |
 | AI SDK speech playback in assistant widgets | `ui-custom/audio-player` |
 | Inline composer microphone | `PromptInputMicrophone` or `ui-custom/speech-input` |
 | Composer microphone selector | `ui-custom/mic-selector` |

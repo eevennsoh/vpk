@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { motionDuration, motionEase } from "@/lib/motion";
-import { ExampleFrame, ExampleMessageContent, ExampleRows, type ExampleMessage } from "@/components/website/demos/ui/message-scroller-examples-shared";
-
-const MotionMessageScrollerItem = motion.create(MessageScrollerItem);
+import { ExampleFrame, ExampleMessageContent, ExampleRows, MotionMessageScrollerItem, type ExampleMessage } from "@/components/website/demos/ui/message-scroller-examples-shared";
 
 const firstExchange: ExampleMessage[] = [
 	{ id: "first-user", role: "user", text: "How can we keep context visible in a long conversation?", anchor: true },

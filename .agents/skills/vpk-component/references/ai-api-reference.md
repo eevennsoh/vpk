@@ -16,7 +16,7 @@ Render the person's text with `MessageUserBubble` (`components/ui-custom/message
 
 Key props: `align`, `className`, `children`
 
-## Chat (docs: `/components/ui/chat`)
+## Chat (the Chat example on `/components/ui/message-scroller`)
 
 Chat is a composition, not a component: `MessageScroller` > `MessageScrollerViewport` > `MessageScrollerContent` > `MessageScrollerItem` (`components/ui/message-scroller.tsx`), one `Message` per turn.
 

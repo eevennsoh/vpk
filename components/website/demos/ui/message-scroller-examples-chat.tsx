@@ -3,10 +3,8 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIDataTypes, UIMessage } from "ai";
-import { motion } from "motion/react";
 
 import { createChat, getMessageText } from "@/lib/ai";
-import { motionDuration, motionEase } from "@/lib/motion";
 import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
@@ -28,6 +26,7 @@ import {
 	MessageScrollerItem,
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	Trace,
@@ -139,14 +138,7 @@ const transport = chat.transport({
 	fallback: "This demo only knows the scripted turns. Press reset to start over.",
 });
 
-const MotionMessageScrollerItem = motion.create(MessageScrollerItem);
-
-const slideUp = {
-	initial: { opacity: 0, y: 10 },
-	animate: { opacity: 1, y: 0, transition: { duration: motionDuration.medium, ease: motionEase.out } },
-};
-
-export default function ChatDemo() {
+export default function MessageScrollerExampleChat() {
 	const { messages, sendMessage, setMessages, status } = useChat({
 		messages: initialMessages,
 		transport,
@@ -225,8 +217,7 @@ export default function ChatDemo() {
 												key={message.id}
 												messageId={message.id}
 												scrollAnchor
-												initial={slideUp.initial}
-												animate={slideUp.animate}
+												{...slideUpEntrance}
 											>
 												<Message align="end">
 													<MessageContent>

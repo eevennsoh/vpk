@@ -52,7 +52,7 @@ function ChatScroll({ children }) {
   return <div ref={ref} className="overflow-y-auto h-full">{children}</div>;
 }
 
-// AFTER: Chat (see /components/ui/chat) — compose ui/message-scroller directly
+// AFTER: compose ui/message-scroller directly (Chat example on /components/ui/message-scroller)
 import {
   MessageScroller,
   MessageScrollerButton,

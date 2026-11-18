@@ -23,6 +23,7 @@ import {
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { Spinner } from "@/components/ui/spinner";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-shared";
 
 type ChatStatus = "ready" | "submitted" | "streaming";
 
@@ -142,15 +143,13 @@ export function MessageScrollerDemoChat() {
 				<MessageScroller autoScroll scrollPreviousItemPeek={0}>
 					<MessageScrollerViewport role="group" aria-label="Chat messages">
 						<MessageScrollerContent className="gap-6 px-4 py-6">
-							{messages.map((message) => (
-								<MessageScrollerItem
-									key={message.id}
-									messageId={message.id}
-									scrollAnchor={message.role === "user"}
-								>
-									{message.role === "user" ? (
+							{messages.map((message) =>
+								message.role === "user" ? (
+									<MotionMessageScrollerItem key={message.id} messageId={message.id} scrollAnchor {...slideUpEntrance}>
 										<UserMessageBubble messageText={message.text} />
-									) : (
+									</MotionMessageScrollerItem>
+								) : (
+									<MessageScrollerItem key={message.id} messageId={message.id}>
 										<Message align="start">
 											<MessageContent className="px-3">
 												<Bubble variant="ghost">
@@ -158,9 +157,9 @@ export function MessageScrollerDemoChat() {
 												</Bubble>
 											</MessageContent>
 										</Message>
-									)}
-								</MessageScrollerItem>
-							))}
+									</MessageScrollerItem>
+								),
+							)}
 							{status === "submitted" ? (
 								<MessageScrollerItem scrollAnchor={false}>
 									<Marker role="status">
