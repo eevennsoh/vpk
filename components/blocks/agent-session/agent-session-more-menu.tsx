@@ -3,10 +3,8 @@
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinIcon from "@atlaskit/icon/core/pin";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusWorkflowStoppedIcon from "@atlaskit/icon-lab/core/status-workflow-stopped";
 
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -14,9 +12,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Icon } from "@/components/ui/icon";
 
 import { AgentSessionLinkWorkItemSubmenu } from "./agent-session-link-work-item-submenu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import type {
 	AgentSessionItem,
 	AgentSessionProps,
@@ -93,11 +91,12 @@ export function AgentSessionMoreMenu({
 	const canPickWorkItem = actions.onLinkWorkItem !== undefined
 		|| actions.onCreateWorkItem !== undefined;
 	const isExpired = item.role === "expired";
+	const isOwnerMenu = variant === "owner" || variant === "session-picker";
 	const deleteItem = (
 		<DropdownMenuItem
 			disabled={isExpired && actions.onDelete === undefined}
-			elemBefore={variant === "owner" ? <DeleteIcon label="" size="medium" /> : <DeleteIcon label="" size="small" />}
-			elemBeforeSize={variant === "owner" ? 16 : 24}
+			elemBefore={isOwnerMenu ? <DeleteIcon label="" size="medium" /> : <DeleteIcon label="" size="small" />}
+			elemBeforeSize={isOwnerMenu ? 16 : 24}
 			onSelect={() => actions.onDelete?.()}
 			variant="destructive"
 		>
@@ -107,26 +106,7 @@ export function AgentSessionMoreMenu({
 
 	return (
 		<DropdownMenu onOpenChange={onOpenChange} open={open}>
-			<DropdownMenuTrigger
-				render={(
-					<Button
-						aria-label={`More actions for ${item.title}`}
-						className="size-6 shadow-none focus-visible:ring-0"
-						data-session-drag-ignore=""
-						// Nested in the row article: stop click so "..." opens the menu
-						// without activating onView, and pointerdown so it is not a drag handle.
-						onClick={(event) => event.stopPropagation()}
-						onPointerDown={(event) => event.stopPropagation()}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
-					/>
-				)}
-			>
-				<Icon
-					render={<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />}
-				/>
-			</DropdownMenuTrigger>
+			<DropdownMenuTrigger render={agentSessionMoreTrigger(item)} />
 			<DropdownMenuContent
 				align="end"
 				className="min-w-44"
@@ -138,7 +118,7 @@ export function AgentSessionMoreMenu({
 				portalled={portalled}
 				positionerClassName={positionerClassName}
 			>
-				{isExpired ? deleteItem : variant === "owner" ? (
+				{isExpired ? deleteItem : isOwnerMenu ? (
 					<>
 						<DropdownMenuItem elemBefore={<StatusWorkflowStoppedIcon label="" size="medium" />} elemBeforeSize={16} onSelect={() => actions.onStop?.()}>
 							Stop session

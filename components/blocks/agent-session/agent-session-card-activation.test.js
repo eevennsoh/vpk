@@ -55,6 +55,10 @@ function loadHarness() {
 						open ? React.createElement("div", { role: "menu", "data-menu": "more" }, React.createElement("button", { role: "menuitem", onClick: () => { actions.onDismiss?.(); onOpenChange(false); } }, "Dismiss")) : null);
 				}
 			`],
+			["agent-session-menu-trigger", `
+				import React from "react";
+				export function agentSessionMoreTrigger(item) { return React.createElement("button", { "data-more": "", "aria-label": "More actions for " + item.title }, "More"); }
+			`],
 			["agent-session-medium-drag", `
 				export function AgentSessionMediumDrag({ children, sessionDrag }) { return children(sessionDrag ? { "data-drag-bind": "" } : undefined); }
 			`],
@@ -338,14 +342,24 @@ test("a draggable local card opens Continue in instead of invoking View or copyi
 	});
 });
 
-test("the local card ellipsis opens only the record menu and can dismiss the card", async () => {
-	let dismissed = 0;
-	await withCard({ item: LOCAL_ITEM, sessionDrag: {}, onToggleVisibility: () => { dismissed++; } }, async ({ document, click }) => {
+test("the local card ellipsis opens the continuation menu for every menu variant", async () => {
+	for (const moreMenuVariant of [undefined, "default", "owner", "session-picker"]) await withCard({ item: LOCAL_ITEM, sessionDrag: {}, moreMenuVariant }, async ({ document, click, copied }) => {
 		await click(document.querySelector("[data-more]"));
-		assert.ok(document.querySelector('[data-menu="continue"]') === null);
-		await click(document.querySelector('[data-menu="more"] button'));
-		assert.equal(dismissed, 1);
+		assert.equal(document.querySelector('[data-menu="more"]'), null);
+		const menu = document.querySelector('[data-menu="continue"]');
+		assert.ok(menu);
+		await click(menu.querySelector('[role="menuitem"]'));
+		assert.deepEqual(copied, ["claude --resume local-readiness"]);
+	});
+});
+
+test("archived local sessions keep their restore action", async () => {
+	let restored = 0;
+	await withCard({ item: LOCAL_ITEM, visibilityLabel: "Unarchive", onToggleVisibility: () => { restored++; } }, async ({ document, click }) => {
+		await click(document.querySelector("[data-more]"));
 		assert.equal(document.querySelector('[data-menu="continue"]'), null);
+		await click(document.querySelector('[data-menu="more"] button'));
+		assert.equal(restored, 1);
 	});
 });
 
@@ -390,13 +404,14 @@ test("viewer and unresumable local cards do not advertise continuation", async (
 	}
 });
 
-test("local continuation and more actions never open together", async () => {
+test("the local row and ellipsis continuation menus never open together", async () => {
 	await withCard({ item: LOCAL_ITEM, sessionDrag: {} }, async ({ document, click }) => {
 		await click(document.querySelector("article"));
 		assert.ok(document.querySelector('[data-menu="continue"]'));
 		await click(document.querySelector("[data-more]"));
-		assert.ok(document.querySelector('[data-menu="more"]'));
-		assert.equal(document.querySelector('[data-menu="continue"]'), null);
+		assert.equal(document.querySelector('[data-menu="more"]'), null);
+		assert.equal(document.querySelectorAll('[data-menu="continue"]').length, 1);
+		assert.equal(document.querySelector('[data-menu="continue"]').getAttribute("data-anchor"), "BUTTON");
 	});
 });
 

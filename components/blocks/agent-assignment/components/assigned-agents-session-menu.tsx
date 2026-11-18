@@ -89,6 +89,7 @@ export function AgentSessionsMenu({
 			hoverTone="menu"
 			item={item}
 			localSessionAction={localSessionAction}
+			moreMenuVariant="session-picker"
 			moreMenuPortalled={true}
 			moreMenuPositionerClassName={overlayPositionerClassName}
 			tooltipPositionerClassName={overlayPositionerClassName}

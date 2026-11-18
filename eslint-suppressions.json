@@ -461,7 +461,7 @@
   },
   "components/blocks/agent-session/agent-session.source.test.js": {
     "no-restricted-syntax": {
-      "count": 502
+      "count": 501
     }
   },
   "components/blocks/agent-state/agent-state.test.js": {
