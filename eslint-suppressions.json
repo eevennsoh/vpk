@@ -1912,7 +1912,7 @@
   },
   "components/projects/rovo-floating-chat/components/rovo-floating-chat.source.test.js": {
     "no-restricted-syntax": {
-      "count": 102
+      "count": 100
     }
   },
   "components/projects/rovo/components/rovo-app-brand.test.js": {
@@ -1975,7 +1975,7 @@
   },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
-      "count": 31
+      "count": 30
     }
   },
   "components/projects/shared/lib/plan-card-utils.tsx": {
@@ -2060,7 +2060,7 @@
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
     "no-restricted-syntax": {
-      "count": 117
+      "count": 116
     }
   },
   "components/projects/studio/components/rovo-app-custom-agents-table.tsx": {
@@ -2207,16 +2207,6 @@
   "components/ui-custom/artifact-list/artifact-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/ui-custom/chain-of-thought.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 72
-    }
-  },
-  "components/ui-custom/chain-of-thought.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "components/ui-custom/code-list/code-list.source.test.js": {
@@ -2901,11 +2891,6 @@
   "components/website/demos/projects/use-project-demo-embedded.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
-    }
-  },
-  "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
     }
   },
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {

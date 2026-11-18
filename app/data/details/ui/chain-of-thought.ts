@@ -2,12 +2,12 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const CHAIN_OF_THOUGHT_DETAIL: ComponentDetail = {
 	description:
-		"A collapsible visible-progress timeline for AI work. Use it for status traces, tool summaries, and staged progress — not hidden chain-of-thought.",
+		"Displays a summary that expands into the steps an agent took. Built on Trace: the root is a TraceCollapsible, the header a TraceCollapsibleTrigger with a TraceLine whose title shimmers while thinking, and each step a TraceLine title with VPK's icon rail, connector and cycling byline. Use it for status traces, tool summaries, and staged progress, not hidden chain-of-thought.",
 	usage: `import {
   ChainOfThoughtScenario,
   ChainOfThoughtSearchResults,
   ChainOfThoughtSearchResult,
-} from "@/components/ui-custom/chain-of-thought";
+} from "@/components/ui/chain-of-thought";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 
 <ChainOfThoughtScenario
@@ -31,7 +31,7 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 />
 
 AI usage guidance:
-- Start staged AI workflows with a preload/thinking header so the morphing Rovo shape, shimmer label, and animated dots have time to read.
+- Start staged AI workflows with a preload/thinking header so the morphing Rovo shape and shimmering title have time to read.
 - Reveal specific step labels only when that work begins.
 - Match labels to the domain: automation flows should mention triggers, schedules, delivery, and saving; research flows should mention search, source evaluation, and synthesis.
 - Render Teamwork Graph calls with TwgTool, showing the connected Jira, Confluence, and Figma source stack alongside a concise delivery-context summary.
@@ -80,14 +80,16 @@ AI usage guidance:
 	],
 	subComponents: [
 		{ name: "ChainOfThoughtScenario", description: "Data-driven recipe helper for preload, thinking, and completed AI progress traces." },
-		{ name: "ChainOfThoughtHeader", description: "Collapsible trigger row with label and chevron." },
-		{ name: "ChainOfThoughtContent", description: "Animated content panel shown when open." },
-		{ name: "ChainOfThoughtStep", description: "Individual reasoning step with icon, label, description, and status." },
+		{ name: "ChainOfThoughtHeader", description: "TraceCollapsibleTrigger with a TraceLine: morphing Rovo icon (static Rovo once completed), a title that shimmers while preload/thinking, and Trace's chevron. showChevron={false} renders the line without a trigger." },
+		{ name: "ChainOfThoughtContent", description: "TraceCollapsibleContent holding a Trace of steps, with the Trace content rule turned off in favour of the step connector." },
+		{ name: "ChainOfThoughtStep", description: "Step with a 16px icon rail and icon-to-icon connector, a TraceLine title (status active runs the shimmer) and a CyclingByline description. collapsible adds a TraceCollapsible whose chevron shows on hover or focus; headerRender, iconRender and iconContainerStyle/ClassName replace the header, icon and rail offset." },
 		{ name: "ChainOfThoughtSearchResults", description: "Container for source/result chips attached to a step." },
 		{ name: "ChainOfThoughtSearchResult", description: "Single result chip rendered as an ADS-aligned badge." },
 		{ name: "ChainOfThoughtImage", description: "Image container with caption support for visual reasoning evidence." },
 	],
 	examples: [
+		{ title: "Usage", description: "A completed summary that expands into its steps.", demoSlug: "chain-of-thought-demo-usage" },
+		{ title: "Steps", description: "Write each title in the tense of its state: running (active, shimmering), done with detail, done linking out, and failed.", demoSlug: "chain-of-thought-demo-steps" },
 		{ title: "Preload", description: "Collapsed initial state before reasoning begins — header visible, content hidden.", demoSlug: "chain-of-thought-demo-preload" },
 		{ title: "Normal tool calling replay", description: "Resettable Studio-style replay that steps through running and completed tool calls for custom-agent creation.", demoSlug: "chain-of-thought-demo-normal-tool-calling-replay" },
 		{ title: "Awaiting user response replay", description: "Resettable custom-agent creation replay that pauses on an ask_user_questions tool call while awaiting input.", demoSlug: "chain-of-thought-demo-awaiting-user-response-replay" },

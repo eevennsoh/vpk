@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { PlanSummary, usePlan } from "@/components/ui/plan";
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
 import { cn } from "@/lib/utils";
 
 function stripLeadingMarkdownRule(value: string): string {

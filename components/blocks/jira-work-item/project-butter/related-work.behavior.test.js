@@ -397,11 +397,13 @@ test("project-butter crew opens its picker from the keyboard, continues existing
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }) === null, true);
 		assert.equal(view.queryByText("Local work") !== null, true);
 		assert.equal(view.queryByText("Finished work") !== null, true);
+		assert.equal(view.queryByText("Teammate work") !== null, true);
+		await view.click(view.getByRole("button", { name: /(?:\d+ )?using agents?/iu }));
 		assert.equal(view.queryByText("Teammate work") === null, true);
 		await view.click(view.getByRole("button", { name: /(?:\d+ )?using agents?/iu }));
 		assert.equal(view.queryByText("Teammate work") !== null, true);
-		await view.click(view.getByRole("button", { name: /(?:\d+ )?using agents?/iu }));
 		await view.press(view.getByRole("button", { name: /^Claude work/u }), "Escape");
+		assert.equal(view.queryByRole("dialog", { name: "Agent sessions" }) === null, true);
 		assert.equal(view.queryByRole("dialog", { name: "Add agent" }) === null, true);
 		assert.equal(view.isFocused(trigger), true);
 	} finally { await view.unmount(); }

@@ -2,7 +2,7 @@ import {
 	MessageActions,
 	MessageCopyAction,
 	MessageVoteActions,
-} from "@/components/ui-custom/message";
+} from "@/components/ui/message";
 
 interface AssistantFeedbackActionsProps {
 	messageText: string;
