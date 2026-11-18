@@ -203,7 +203,6 @@ export default function TaskProgress({
 		})
 	);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
-	const cardActionRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (runStatus !== "running" || !runCreatedAt) return;
@@ -293,16 +292,12 @@ export default function TaskProgress({
 							!isInteractive && "cursor-default",
 							className
 						)}
-						onClick={isInteractive ? () => {
-							cardActionRef.current?.focus({ preventScroll: true });
-							handleCardActivate();
-						} : undefined}
+						onClick={isInteractive ? handleCardActivate : undefined}
 						role="presentation"
 					>
 						{/* Delegate pointer clicks through the shell so the timeline keeps its scroll hit area. */}
 						{isInteractive ? (
 							<button
-								ref={cardActionRef}
 								type="button"
 								aria-label={cardAriaLabel}
 								aria-expanded={isCollapsible ? !collapsed : undefined}

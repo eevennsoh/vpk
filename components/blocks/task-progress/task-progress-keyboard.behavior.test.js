@@ -35,15 +35,30 @@ for (const runStatus of ["running", "failed", "completed"]) {
 		assert.equal(view.isFocused(card), true);
 		await view.press(card, "Tab");
 		assert.equal(view.isFocused(view.getByRole("button", { name: secondaryName })), true);
+		await view.focus(null);
+		const focusedBeforeClick = document.activeElement;
 		await view.click(view.getByText("Release plan"));
 		assert.deepEqual(calls, ["card"]);
 		assert.equal(card.getAttribute("aria-expanded"), "false");
-		assert.equal(view.isFocused(card), true);
+		assert.equal(document.activeElement === focusedBeforeClick, true);
+		await view.focus(card);
 		await view.press(card, "Enter");
 		assert.equal(card.getAttribute("aria-expanded"), "true");
 		assert.deepEqual(calls, ["card", "card"]);
 	});
 }
+
+test("clicking the task card's text toggles it without moving focus", async () => {
+	const { calls, card, view } = await renderCard({ runStatus: "failed" });
+	const focusedBeforeClick = document.activeElement;
+
+	await view.click(view.getByText("Release plan"));
+
+	assert.deepEqual(calls, ["card"]);
+	assert.equal(card.getAttribute("aria-expanded"), "false");
+	assert.equal(document.activeElement === focusedBeforeClick, true);
+	assert.equal(view.isFocused(card), false);
+});
 
 test("a non-collapsible task card keeps its callback and a passive card has only secondary controls", async () => {
 	const { calls, card, view } = await renderCard({ isCollapsible: false });

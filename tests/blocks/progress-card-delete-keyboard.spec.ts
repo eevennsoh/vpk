@@ -44,11 +44,12 @@ for (const { route, actionName } of ROUTES) {
 	});
 
 	test(`a mouse click on the card does not reveal Delete run once the pointer leaves on ${route}`, { tag: "@smoke" }, async ({ page }) => {
-		const { cardContent, deleteRun } = await openCard(page, route, actionName);
+		const { card, cardContent, deleteRun } = await openCard(page, route, actionName);
 		await cardContent.hover();
 		expect(await renderedWidth(deleteRun), "Delete run is shown on hover").toBeGreaterThan(16);
 
 		await cardContent.click();
+		await expect(card).not.toBeFocused();
 		await page.mouse.move(0, 0);
 
 		expect(await renderedWidth(deleteRun)).toBeLessThanOrEqual(1);

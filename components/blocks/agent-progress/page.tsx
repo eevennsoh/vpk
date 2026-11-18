@@ -294,7 +294,6 @@ export default function AgentsProgress({
 	const [retryingGroupKey, setRetryingGroupKey] =
 		useState<RetryableStatusGroupKey | null>(null);
 	const isInteractive = isCollapsible || typeof onCardClick === "function";
-	const cardActionRef = useRef<HTMLButtonElement>(null);
 	const resolvedPlanVisualIdentity = useMemo(
 		() => planVisualIdentity ?? resolvePlanVisualIdentity(planTitle),
 		[planTitle, planVisualIdentity]
@@ -398,16 +397,12 @@ export default function AgentsProgress({
 				!isInteractive && "cursor-default",
 				className
 			)}
-			onClick={isInteractive ? () => {
-				cardActionRef.current?.focus({ preventScroll: true });
-				handleCardActivate();
-			} : undefined}
+			onClick={isInteractive ? handleCardActivate : undefined}
 			role="presentation"
 		>
 			{/* The action shares the shell with content and controls; pointer clicks keep bubbling through the shell. */}
 			{isInteractive ? (
 				<button
-					ref={cardActionRef}
 					type="button"
 					aria-label={`${planTitle} agent progress`}
 					aria-expanded={isCollapsible ? !collapsed : undefined}

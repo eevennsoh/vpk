@@ -104,13 +104,16 @@ for (const runStatus of ["running", "failed", "completed"]) {
 		assert.equal(view.isFocused(card), true);
 		await view.press(card, "Tab");
 		assert.equal(view.isFocused(view.getByRole("button", { name: secondaryName })), true);
+		await view.focus(null);
+		const focusedBeforeClick = document.activeElement;
 		await view.click(view.getByText("Release plan"));
 		assert.deepEqual(calls, ["card"]);
 		assert.equal(card.getAttribute("aria-expanded"), "false");
 		assert.equal(accessibleName(card), "Release plan agent progress");
 		assert.equal(view.queryByText("Fix deployment") === null, true);
-		assert.equal(view.isFocused(card), true);
+		assert.equal(document.activeElement === focusedBeforeClick, true);
 		assert.deepEqual(view.tabOrder(), ["Release plan agent progress", secondaryName]);
+		await view.focus(card);
 		await view.press(card, "Enter");
 		assert.equal(card.getAttribute("aria-expanded"), "true");
 		assert.equal(accessibleName(card), "Release plan agent progress");
@@ -123,6 +126,18 @@ for (const runStatus of ["running", "failed", "completed"]) {
 		assert.deepEqual(calls, ["card", "card", "retry:failed"]);
 	});
 }
+
+test("clicking the agent card's text toggles it without moving focus", async () => {
+	const { calls, card, view } = await renderCard({ runStatus: "failed" });
+	const focusedBeforeClick = document.activeElement;
+
+	await view.click(view.getByText("Release plan"));
+
+	assert.deepEqual(calls, ["card"]);
+	assert.equal(card.getAttribute("aria-expanded"), "false");
+	assert.equal(document.activeElement === focusedBeforeClick, true);
+	assert.equal(view.isFocused(card), false);
+});
 
 test("a non-collapsible agent card keeps its callback and a passive card has only secondary controls", async () => {
 	const { calls, card, view } = await renderCard({ isCollapsible: false, taskStatusGroups: failedTasks });
