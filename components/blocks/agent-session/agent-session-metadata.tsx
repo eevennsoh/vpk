@@ -208,7 +208,7 @@ function LongMetadataSegment({
  * chunk list comes from the pure, unit-tested metadata builder.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showAgentName, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showAgentName?: boolean; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showAgentName, showArtifact = true, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showAgentName?: boolean; showArtifact?: boolean; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
@@ -219,6 +219,7 @@ export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabel
 		showAgentName: lifecycleLabelPlacement === "metadata" ? true : showAgentName,
 		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
+		showArtifact,
 		compact,
 		host: declaredHost,
 		prStatus: item.prStatus,
