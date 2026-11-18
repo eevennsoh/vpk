@@ -2,7 +2,7 @@
 
 import type { ErrorInfo, ReactNode } from "react";
 import { AttachmentItem, AttachmentPreview, Attachment } from "@/components/ui-custom/attachment";
-import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode } from "@/components/ui-custom/conversation";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
 import { ArtifactCard } from "@/components/blocks/artifact";
 import type { ArtifactKind } from "@/components/ui-custom/lib/artifact-kind";
@@ -27,7 +27,6 @@ import { resolveRovoAppPendingAssistantDisplayState, resolveRovoAppStreamingAssi
 import { RovoAppConversationEmptyState } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
 import { ROVO_APP_DEFAULT_EMPTY_STATE, type RovoAppEmptyStateConfig, type RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 import { RovoAppScrollActiveTracker, RovoAppScrollAnchorSync } from "@/components/projects/rovo-core/components/rovo-app-scroll-sync";
-import { computeRovoAppAnchorScrollTop } from "@/components/projects/rovo-core/lib/rovo-app-scroll-anchor-dom";
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
 import { AssistantSuggestionsSection } from "@/components/projects/shared/components/assistant-suggestions-section";
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
@@ -49,7 +48,7 @@ import { BrowserScreenshotPart } from "@/components/projects/rovo-core/component
 import type { RovoAppDocument } from "@/lib/rovo-app-types";
 import type { RovoAppStreamingArtifact } from "@/components/projects/rovo-core/lib/rovo-app-streaming-artifact";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
-import { Component, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
 
 export { ROVO_APP_DEFAULT_EMPTY_STATE } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
@@ -93,7 +92,6 @@ export interface RovoAppMessagesProps {
 	pendingPlanMetadataMessageIds: ReadonlySet<string>;
 	pendingArtifactResult: RovoAppPendingArtifactResult | null;
 	scrollAnchorMessageId: string | null;
-	scrollFollowMode: ConversationFollowMode;
 	selectedAgent?: RovoAgentProfile | null;
 	showEmptyState?: boolean;
 	shouldSuppressArtifactCard?: (context: RovoAppMessageRenderContext) => boolean;
@@ -184,13 +182,11 @@ function getAssistantMessageRenderBoundaryResetMarker({
 
 function UserMessage({
 	isEditing,
-	isScrollAnchor,
 	message,
 	onEditMessage,
 	onSetEditingMessageId,
 }: Readonly<{
 	isEditing: boolean;
-	isScrollAnchor: boolean;
 	message: RovoUIMessage;
 	onEditMessage: (messageId: string, nextText: string) => Promise<void>;
 	onSetEditingMessageId: (messageId: string | null) => void;
@@ -212,8 +208,7 @@ function UserMessage({
 		<Message
 			animate
 			className={isEditing ? "w-full max-w-full" : undefined}
-			contain={!(isDismissed || clarificationSummaryRows.length > 0)}
-			data-rovo-app-scroll-anchor={isScrollAnchor ? "true" : undefined}
+			contain={!(isEditing || isDismissed || clarificationSummaryRows.length > 0)}
 			data-message-id={message.id}
 			data-role="user"
 			data-testid="message-user"
@@ -238,6 +233,7 @@ function UserMessage({
 
 			{isEditing ? (
 				<InlineEdit
+					className="p-1 pb-11"
 					value={getMessageText(message)}
 					multiline
 					startWithEditViewOpen
@@ -680,7 +676,6 @@ export function RovoAppMessages({
 	pendingPlanMetadataMessageIds,
 	pendingArtifactResult,
 	scrollAnchorMessageId,
-	scrollFollowMode,
 	selectedAgent = null,
 	showEmptyState = true,
 	shouldSuppressArtifactCard,
@@ -694,7 +689,7 @@ export function RovoAppMessages({
 	unavailableProductName = "Rovo",
 	votes,
 }: Readonly<RovoAppMessagesProps>) {
-	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
+	const scrollRef = useRef<HTMLDivElement | null>(null);
 	const visibleMessages = useMemo(
 		() => getVisibleRovoAppMessages(messages),
 		[messages],
@@ -733,31 +728,16 @@ export function RovoAppMessages({
 	const shouldShowPreloader = shouldShowPendingAssistantSurface && !shouldShowStreamingArtifactPreview;
 	const shouldShowEmptyConversationState = showEmptyState && visibleMessages.length === 0;
 	const customAgent = selectedAgent !== null && !isRovoAgentProfile(selectedAgent) ? selectedAgent : null;
-	const handleTargetScrollTop = useCallback((defaultTargetTop: number, { scrollElement }: { scrollElement: HTMLElement }) => {
-		return computeRovoAppAnchorScrollTop(defaultTargetTop, scrollElement, scrollSpacerRef);
-	}, []);
-
-	useEffect(() => {
-		if (scrollFollowMode !== "bottom" || !scrollSpacerRef.current) {
-			return;
-		}
-
-		scrollSpacerRef.current.style.height = "0px";
-	}, [scrollFollowMode]);
-
 	return (
-		<Conversation
-			className={cn("relative bg-background", shouldShowEmptyConversationState && "!flex-none overflow-visible")}
-			followMode={scrollFollowMode}
-			resize={isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId ? "instant" : "smooth"}
-			resizeTarget={isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId ? "bottom" : "follow"}
-			targetScrollTop={handleTargetScrollTop}
+		<MessageScroller
+			autoScroll
+			scrollPreviousItemPeek={0}
+			className={cn("relative bg-background", shouldShowEmptyConversationState && "!h-auto !flex-none overflow-visible")}
 		>
 			<RovoAppScrollAnchorSync
-				scrollAnchorMessageId={scrollAnchorMessageId}
-				target={isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId ? "bottom" : "follow"}
+				scrollAnchorMessageId={isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId ? null : scrollAnchorMessageId}
 			/>
-			{onScrollActiveUserMessageChange ? <RovoAppScrollActiveTracker onActiveChange={onScrollActiveUserMessageChange} /> : null}
+			{onScrollActiveUserMessageChange ? <RovoAppScrollActiveTracker scrollRef={scrollRef} onActiveChange={onScrollActiveUserMessageChange} /> : null}
 			{shouldShowEmptyConversationState ? (
 				<RovoAppConversationEmptyState
 					customAgent={customAgent}
@@ -769,110 +749,112 @@ export function RovoAppMessages({
 				/>
 			) : null}
 
-			<ConversationContent
-				className={cn(
-					"mx-auto flex min-w-0 flex-col gap-4 md:gap-6",
-					contentSpacingClassName,
-					extraHorizontalPaddingWhenCompact && compact ? "px-9" : "px-4",
-					compact ? "max-w-none" : "max-w-[800px]",
-					shouldShowEmptyConversationState && "hidden",
-				)}
-			>
-				{visibleMessages.map((message) => {
-					if (message.role === "user") {
+			<MessageScrollerViewport ref={scrollRef} className={shouldShowEmptyConversationState ? "hidden" : undefined}>
+				<MessageScrollerContent
+					className={cn(
+						"mx-auto flex min-w-0 flex-col gap-4 md:gap-6",
+						contentSpacingClassName,
+						extraHorizontalPaddingWhenCompact && compact ? "px-9" : "px-4",
+						compact ? "max-w-none" : "max-w-[800px]",
+					)}
+				>
+					{visibleMessages.map((message) => {
+						if (message.role === "user") {
+							return (
+								<MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor className="[content-visibility:visible]">
+									<UserMessage
+										isEditing={editingMessageId === message.id}
+										message={message}
+										onEditMessage={onEditMessage}
+										onSetEditingMessageId={onSetEditingMessageId}
+									/>
+								</MessageScrollerItem>
+							);
+					}
+
+						const renderModel = resolveRovoAppAssistantMessageRenderModel({
+							documents,
+							fallbackPreviewSummary: latestPlanShortDescription,
+							fallbackTitle: latestPlanTitle,
+							lastAssistantMessageId,
+							message,
+							messages,
+							orphanArtifactDisplay,
+							pendingArtifactResult,
+							pendingPlanReview,
+							shouldSuppressLatestAssistantSuggestions,
+							streamingArtifact,
+							streamingArtifactMessageId,
+						});
+						const resolvedArtifactDisplayForMessage =
+							shouldSuppressArtifactCard?.({ message }) ? null : renderModel.artifactDisplay;
+
 						return (
-							<UserMessage
-								isEditing={editingMessageId === message.id}
-								isScrollAnchor={message.id === scrollAnchorMessageId}
-								key={message.id}
-								message={message}
-								onEditMessage={onEditMessage}
-								onSetEditingMessageId={onSetEditingMessageId}
-							/>
+							<MessageScrollerItem key={message.id} messageId={message.id} className="flex flex-col gap-4 md:gap-6 [content-visibility:visible]">
+								<AssistantMessage
+									additionalToolDrivenWidgetTypes={additionalToolDrivenWidgetTypes}
+									artifactCard={
+										resolvedArtifactDisplayForMessage ? (
+											<ArtifactCard
+												action={resolvedArtifactDisplayForMessage.action}
+												displayMode={resolvedArtifactDisplayForMessage.displayMode}
+												visualIdentity={latestPlanVisualIdentity}
+												isStreaming={resolvedArtifactDisplayForMessage.isStreaming}
+												kind={resolvedArtifactDisplayForMessage.kind}
+												onOpen={(element) => onOpenArtifactFromCard(resolvedArtifactDisplayForMessage.documentId, element)}
+												onRegister={(element) => onRegisterArtifactCard(resolvedArtifactDisplayForMessage.documentId, element)}
+												previewContent={resolvedArtifactDisplayForMessage.previewContent}
+												previewSummary={resolvedArtifactDisplayForMessage.previewSummary ?? undefined}
+												title={resolvedArtifactDisplayForMessage.title}
+												versionNumber={resolvedArtifactDisplayForMessage.document?.versions.length ?? 1}
+											/>
+										) : null
+									}
+									isLastAssistant={message.id === lastAssistantMessageId}
+									isPlanMetadataPending={pendingPlanMetadataMessageIds.has(message.id)}
+									isQuestionCardResolved={renderModel.isQuestionCardResolved}
+									isStreaming={isStreaming}
+									isThinkingLifecycleStreaming={isStreaming && message.id === streamingAssistantMessageId}
+									message={message}
+									onBuildPlan={onBuildPlan}
+									onOpenBrowserPreview={onOpenBrowserPreview}
+									onOpenPlanPreview={onOpenPlanPreview}
+									onRegenerate={onRegenerate}
+									onVote={onVote}
+									planBuildDisabled={renderModel.planBuildDisabled}
+									planBuildDisabledReason={renderModel.planBuildDisabledReason}
+									renderCustomWidget={renderCustomWidget}
+									shouldSuppressResolvedQuestionTrace={shouldSuppressResolvedQuestionTrace}
+									treatSettledToolsAsPostResultPending={treatSettledToolsAsPostResultPending}
+									unavailableProductName={unavailableProductName}
+									voteValue={votes[message.id]}
+								/>
+								{renderAfterAssistantMessage?.({ message })}
+								<AssistantSuggestionPills messageId={message.id} onSelectSuggestion={onSelectSuggestion} suggestions={renderModel.suggestions} />
+							</MessageScrollerItem>
 						);
-				}
+					})}
 
-					const renderModel = resolveRovoAppAssistantMessageRenderModel({
-						documents,
-						fallbackPreviewSummary: latestPlanShortDescription,
-						fallbackTitle: latestPlanTitle,
-						lastAssistantMessageId,
-						message,
-						messages,
-						orphanArtifactDisplay,
-						pendingArtifactResult,
-						pendingPlanReview,
-						shouldSuppressLatestAssistantSuggestions,
-						streamingArtifact,
-						streamingArtifactMessageId,
-					});
-					const resolvedArtifactDisplayForMessage =
-						shouldSuppressArtifactCard?.({ message }) ? null : renderModel.artifactDisplay;
-
-					return (
-						<Fragment key={message.id}>
-							<AssistantMessage
-								additionalToolDrivenWidgetTypes={additionalToolDrivenWidgetTypes}
-								artifactCard={
-									resolvedArtifactDisplayForMessage ? (
-										<ArtifactCard
-											action={resolvedArtifactDisplayForMessage.action}
-											displayMode={resolvedArtifactDisplayForMessage.displayMode}
-											visualIdentity={latestPlanVisualIdentity}
-											isStreaming={resolvedArtifactDisplayForMessage.isStreaming}
-											kind={resolvedArtifactDisplayForMessage.kind}
-											onOpen={(element) => onOpenArtifactFromCard(resolvedArtifactDisplayForMessage.documentId, element)}
-											onRegister={(element) => onRegisterArtifactCard(resolvedArtifactDisplayForMessage.documentId, element)}
-											previewContent={resolvedArtifactDisplayForMessage.previewContent}
-											previewSummary={resolvedArtifactDisplayForMessage.previewSummary ?? undefined}
-											title={resolvedArtifactDisplayForMessage.title}
-											versionNumber={resolvedArtifactDisplayForMessage.document?.versions.length ?? 1}
-										/>
-									) : null
-								}
-								isLastAssistant={message.id === lastAssistantMessageId}
-								isPlanMetadataPending={pendingPlanMetadataMessageIds.has(message.id)}
-								isQuestionCardResolved={renderModel.isQuestionCardResolved}
-								isStreaming={isStreaming}
-								isThinkingLifecycleStreaming={isStreaming && message.id === streamingAssistantMessageId}
-								message={message}
-								onBuildPlan={onBuildPlan}
-								onOpenBrowserPreview={onOpenBrowserPreview}
-								onOpenPlanPreview={onOpenPlanPreview}
-								onRegenerate={onRegenerate}
-								onVote={onVote}
-								planBuildDisabled={renderModel.planBuildDisabled}
-								planBuildDisabledReason={renderModel.planBuildDisabledReason}
-								renderCustomWidget={renderCustomWidget}
-								shouldSuppressResolvedQuestionTrace={shouldSuppressResolvedQuestionTrace}
-								treatSettledToolsAsPostResultPending={treatSettledToolsAsPostResultPending}
-								unavailableProductName={unavailableProductName}
-								voteValue={votes[message.id]}
+					{shouldShowStreamingArtifactPreview && streamingArtifact?.documentId ? (
+						<MessageScrollerItem className="[content-visibility:visible]">
+							<StreamingArtifactMessage
+								documentId={streamingArtifact.documentId}
+								visualIdentity={latestPlanVisualIdentity}
+								kind={streamingArtifact.kind}
+								onOpenArtifactFromCard={onOpenArtifactFromCard}
+								onRegisterArtifactCard={onRegisterArtifactCard}
+								streamingArtifact={streamingArtifact}
+								title={streamingArtifact.title}
+								versionNumber={documents.find((document) => document.id === streamingArtifact.documentId)?.versions.length ?? 1}
 							/>
-							{renderAfterAssistantMessage?.({ message })}
-							<AssistantSuggestionPills messageId={message.id} onSelectSuggestion={onSelectSuggestion} suggestions={renderModel.suggestions} />
-						</Fragment>
-					);
-				})}
+						</MessageScrollerItem>
+					) : shouldShowPreloader ? (
+						<MessageScrollerItem className="[content-visibility:visible]"><RovoAppThinkingIndicator /></MessageScrollerItem>
+					) : null}
+				</MessageScrollerContent>
+			</MessageScrollerViewport>
 
-				{shouldShowStreamingArtifactPreview && streamingArtifact?.documentId ? (
-					<StreamingArtifactMessage
-						documentId={streamingArtifact.documentId}
-						visualIdentity={latestPlanVisualIdentity}
-						kind={streamingArtifact.kind}
-						onOpenArtifactFromCard={onOpenArtifactFromCard}
-						onRegisterArtifactCard={onRegisterArtifactCard}
-						streamingArtifact={streamingArtifact}
-						title={streamingArtifact.title}
-						versionNumber={documents.find((document) => document.id === streamingArtifact.documentId)?.versions.length ?? 1}
-					/>
-				) : shouldShowPreloader ? (
-					<RovoAppThinkingIndicator />
-				) : null}
-				<div aria-hidden className="h-0 shrink-0" ref={scrollSpacerRef} />
-			</ConversationContent>
-
-			<ConversationScrollButton className="z-10 transition-all" />
-		</Conversation>
+			<MessageScrollerButton className="z-10" />
+		</MessageScroller>
 	);
 }

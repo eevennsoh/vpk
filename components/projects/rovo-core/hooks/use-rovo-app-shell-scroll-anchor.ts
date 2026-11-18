@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import type { ScrollActiveTimelineSelection, TypedScrollAnchorSource } from "@/components/projects/rovo-core/lib/rovo-app-shell-types";
 import { deriveRovoAppTimelineItems } from "@/components/projects/rovo-core/lib/rovo-app-timeline";
 import { getLatestUserMessageId, type RovoUIMessage } from "@/lib/rovo-ui-messages";
@@ -20,7 +19,6 @@ import { getLatestUserMessageId, type RovoUIMessage } from "@/lib/rovo-ui-messag
  */
 export function useRovoAppShellScrollAnchor() {
 	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
-	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
 	const pendingTypedScrollAnchorRef = useRef(false);
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
@@ -36,7 +34,6 @@ export function useRovoAppShellScrollAnchor() {
 	const activateTailFollowMode = useCallback(() => {
 		resetTypedScrollAnchorState();
 		setScrollAnchorMessageId(null);
-		setScrollFollowMode("bottom");
 	}, [resetTypedScrollAnchorState]);
 
 	const queueTypedScrollAnchor = useCallback((source: Exclude<TypedScrollAnchorSource, "none">, latestUserMessageId: string | null) => {
@@ -54,9 +51,7 @@ export function useRovoAppShellScrollAnchor() {
 		realtimeTypedResponseStartedRef,
 		resetTypedScrollAnchorState,
 		scrollAnchorMessageId,
-		scrollFollowMode,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		typedScrollAnchorSourceRef,
 	};
 }
@@ -93,7 +88,6 @@ export function useRovoAppShellScrollFollow({
 		previousTypedAnchorUserMessageIdRef,
 		realtimeTypedResponseStartedRef,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		typedScrollAnchorSourceRef,
 	} = anchor;
 
@@ -125,9 +119,8 @@ export function useRovoAppShellScrollFollow({
 			pendingTypedScrollAnchorRef.current = false;
 			previousTypedAnchorUserMessageIdRef.current = null;
 			setScrollAnchorMessageId(latestUserMessageId);
-			setScrollFollowMode("target");
 		}
-	}, [messages, pendingTypedScrollAnchorRef, previousTypedAnchorUserMessageIdRef, setScrollAnchorMessageId, setScrollFollowMode]);
+	}, [messages, pendingTypedScrollAnchorRef, previousTypedAnchorUserMessageIdRef, setScrollAnchorMessageId]);
 
 	useEffect(() => {
 		activateTailFollowMode();

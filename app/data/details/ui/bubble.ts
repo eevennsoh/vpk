@@ -5,13 +5,13 @@ export const BUBBLE_DETAIL: ComponentDetail = {
       "A chat bubble primitive with ADS-tokenized variants, polymorphic content, alignment, grouping, and reaction overlays.",
     usage: `import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
-<Bubble variant="secondary">
+<Bubble align="end">
   <BubbleContent>Can you review this change?</BubbleContent>
 </Bubble>`,
     props: [
       {
         name: "variant",
-        type: '"default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"',
+        type: '"default" | "primary" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"',
         default: '"default"',
         description: "Visual treatment for bubble content.",
       },

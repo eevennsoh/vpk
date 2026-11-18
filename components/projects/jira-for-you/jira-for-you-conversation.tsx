@@ -6,7 +6,7 @@ import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import type { FileUIPart } from "ai";
 import dynamic from "next/dynamic";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
 import type {
@@ -14,7 +14,6 @@ import type {
 	QuestionCardQuestion,
 } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import type { ConversationContextValue } from "@/components/ui-custom/conversation";
 import { Footer } from "@/components/ui-custom/footer";
 import { ChatMessages } from "@/components/projects/shared/components/chat-messages";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
@@ -84,8 +83,6 @@ export function JiraForYouConversation({
 	const [mainView, setMainView] = useState<JiraForYouMainView>("chat");
 	const [isQuestionAnswered, setIsQuestionAnswered] = useState(false);
 	const [isQuestionSubmitting, setIsQuestionSubmitting] = useState(false);
-	const conversationContextRef = useRef<ConversationContextValue | null>(null);
-	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const renderableMessages = [...uiMessages];
 	const realtime = useRealtimeVoice({
 		chatMessages: renderableMessages,
@@ -225,11 +222,8 @@ export function JiraForYouConversation({
 							contentBottomPadding="24px"
 							contentClassName="mx-auto flex min-w-0 w-full max-w-[800px] px-3 md:px-6"
 							contentTopPadding="16px"
-							conversationContextRef={conversationContextRef}
 							hideScrollbar={false}
 							messageMode="ask"
-							resizeTarget={shouldShowAwaitingQuestion ? "bottom" : "follow"}
-							scrollSpacerRef={scrollSpacerRef}
 							showAwaitingIndicator={shouldShowAwaitingQuestion}
 							showFeedbackActions={false}
 							showFollowUpSuggestions={false}

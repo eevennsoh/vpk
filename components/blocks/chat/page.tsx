@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
 
 import ChatHeader from "./components/chat-header";
 import ChatGreeting from "./components/chat-greeting";
@@ -45,11 +47,6 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.ReactElement {
-	const LATEST_TURN_TOP_INSET_PX = 12;
-	const scrollRef = useRef<HTMLDivElement>(null);
-	const scrollSpacerRef = useRef<HTMLDivElement>(null);
-	const hasInitializedScrollRef = useRef(false);
-	const previousLatestUserMessageIdRef = useRef<string | null>(null);
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -78,74 +75,9 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 		},
 		[messages]
 	);
-	const latestUserMessageId = useMemo(
-		() => {
-			for (let index = messages.length - 1; index >= 0; index--) {
-				if (messages[index].type === "user") {
-					return messages[index].id;
-				}
-			}
-
-			return null;
-		},
-		[messages]
-	);
-
 	useEffect(() => {
 		return () => abort();
 	}, [abort]);
-
-	useEffect(() => {
-		const scrollElement = scrollRef.current;
-		if (!scrollElement) {
-			return;
-		}
-
-		const hasNewUserTurn =
-			hasInitializedScrollRef.current &&
-			latestUserMessageId !== null &&
-			latestUserMessageId !== previousLatestUserMessageIdRef.current;
-		const shouldAnchorToLatestTurn = !hasInitializedScrollRef.current || hasNewUserTurn;
-
-		if (shouldAnchorToLatestTurn) {
-			const latestTurnElement = scrollElement.querySelector<HTMLElement>(
-				"[data-chat-latest-turn='true']"
-			);
-			const scrollRect = scrollElement.getBoundingClientRect();
-			const latestTurnRect = latestTurnElement?.getBoundingClientRect();
-			const rawTargetTop =
-				latestTurnRect !== undefined
-					? scrollElement.scrollTop + (latestTurnRect.top - scrollRect.top)
-					: 0;
-			const desiredTargetTop = Math.max(0, rawTargetTop - LATEST_TURN_TOP_INSET_PX);
-			const availableScrollRange = scrollElement.scrollHeight - scrollElement.clientHeight;
-			const currentSpacerHeight = scrollSpacerRef.current?.offsetHeight ?? 0;
-			const availableScrollRangeWithoutSpacer = Math.max(
-				0,
-				availableScrollRange - currentSpacerHeight
-			);
-			const requiredSpacer =
-				latestTurnRect !== undefined
-					? Math.max(0, desiredTargetTop - availableScrollRangeWithoutSpacer)
-					: 0;
-
-			if (scrollSpacerRef.current) {
-				scrollSpacerRef.current.style.height = `${requiredSpacer}px`;
-			}
-
-			const maxScrollTopWithPadding = Math.max(
-				0,
-				scrollElement.scrollHeight - scrollElement.clientHeight
-			);
-			const targetTop = Math.min(maxScrollTopWithPadding, desiredTargetTop);
-
-			// Deterministic positioning prevents momentum overshoot/bounce.
-			scrollElement.scrollTop = targetTop;
-		}
-
-		previousLatestUserMessageIdRef.current = latestUserMessageId;
-		hasInitializedScrollRef.current = true;
-	}, [latestUserMessageId, messages.length]);
 
 	const messagesContainerStyle = {
 		...chatStyles.messagesContainer,
@@ -158,40 +90,44 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 		<div style={{ ...chatStyles.chatPanel, maxWidth: "400px", maxHeight: "800px" }}>
 			<ChatHeader onClose={onClose} />
 
-			<div ref={scrollRef} style={chatStyles.scrollContainer}>
-				<div style={messagesContainerStyle}>
-					{orderedMessageTurns.length === 0 ? (
-						<div style={chatStyles.emptyState}>
-							<ChatGreeting />
-						</div>
-					) : (
-						orderedMessageTurns.map((turn, turnIndex) => (
-							<div
-								key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}
-								className={turnIndex === orderedMessageTurns.length - 1 ? styles.latestTurn : undefined}
-								data-chat-latest-turn={turnIndex === orderedMessageTurns.length - 1 ? "true" : undefined}
-							>
-								{turn.map((message, messageIndex) => (
-									<div
-										key={`turn-${turnIndex}-message-${messageIndex}-${message.id}`}
-										style={{
-											marginTop:
-												message.type === "assistant" &&
-												messageIndex > 0 &&
-												turn[messageIndex - 1]?.type === "user"
-													? "12px"
-													: "0",
-										}}
-									>
-										<MessageBubble message={message} />
-									</div>
-								))}
-							</div>
-						))
-					)}
-				</div>
-				<div ref={scrollSpacerRef} aria-hidden style={{ height: 0, flexShrink: 0 }} />
-			</div>
+			<MessageScroller autoScroll defaultScrollPosition="last-anchor" scrollPreviousItemPeek={0} className="flex-1">
+				<MessageScrollerViewport>
+					<MessageScrollerContent className="gap-0" style={messagesContainerStyle}>
+						{orderedMessageTurns.length === 0 ? (
+						<MessageScrollerItem style={chatStyles.emptyState} className="[content-visibility:visible]">
+								<ChatGreeting />
+						</MessageScrollerItem>
+						) : (
+							orderedMessageTurns.map((turn, turnIndex) => (
+								<MessageScrollerItem
+									key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}
+									messageId={turn[0]?.id}
+									scrollAnchor={turn[0]?.type === "user"}
+									className={turnIndex === orderedMessageTurns.length - 1 ? styles.latestTurn : undefined}
+									data-chat-latest-turn={turnIndex === orderedMessageTurns.length - 1 ? "true" : undefined}
+								>
+									{turn.map((message, messageIndex) => (
+										<div
+											key={`turn-${turnIndex}-message-${messageIndex}-${message.id}`}
+											style={{
+												marginTop:
+													message.type === "assistant" &&
+													messageIndex > 0 &&
+													turn[messageIndex - 1]?.type === "user"
+														? "12px"
+														: "0",
+											}}
+										>
+											<MessageBubble message={message} />
+										</div>
+									))}
+								</MessageScrollerItem>
+							))
+						)}
+					</MessageScrollerContent>
+				</MessageScrollerViewport>
+				<MessageScrollerButton />
+			</MessageScroller>
 
 			<div className="px-1">
 				<div
