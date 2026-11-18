@@ -268,7 +268,7 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 }
 
 function JiraIssueDefault({
-	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = "default",
+	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = appearance === "project-butter" ? "project-butter" : "default",
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
