@@ -184,9 +184,9 @@ node scripts/automation-merge-eligibility.mjs --pr <number> --repo <owner>/<repo
 `--policy` checks everything except the `automerge:allowed` label itself: the
 `automation` label, owner author, same-repo `automation/` head branch, default
 base, non-draft, the file allow/deny lists, and the 300-line cap. In short,
-only edits to existing test files, README changes, a shrinking
-`eslint-suppressions.json` and their regenerated files qualify; a new, deleted
-or renamed test, or anything under `.agents/` or a provider folder, does not. The policy lives as data at the
+only README docs (outside `public/` and `app/`), a shrinking
+`eslint-suppressions.json`, and the regenerated `repo-map.json` and skills
+`INDEX.md` beside them qualify; tests and all other code always need a human. The policy lives as data at the
 top of that script; do not restate or loosen it here. The separate
 `automation-merge` job decides whether to merge; labelling grants nothing more.
 
