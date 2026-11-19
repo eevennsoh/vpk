@@ -4779,7 +4779,7 @@
 					{
 						"category": "blocks",
 						"slug": "jira-at-mention",
-						"name": "Jira at-mention",
+						"name": "Jira At-mention",
 						"importPath": "@/components/blocks/jira-at-mention",
 						"status": "live"
 					},

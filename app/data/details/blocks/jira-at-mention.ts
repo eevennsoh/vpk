@@ -1,6 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_AT_MENTION_DETAIL: ComponentDetail = {
+	apiName: "Jira At-mention",
 	description: "A mention travels from a comment composer to an inline reply, followed by a highlight. Replay the handoff and tune its flight and highlight in the controls. Reduced motion reveals the reply immediately.",
 	importStatement: `import { useSessionMentionFlight } from "@/components/blocks/jira-at-mention";`,
 	usage: `const flight = useSessionMentionFlight(bodyRef, request, active, onTraceStart, onSettled);
