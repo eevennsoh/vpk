@@ -5,6 +5,17 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("related work buttons align with the description", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const description = page.getByRole("region", { name: "Description" }).getByRole("heading", { name: "Description" });
+	const firstButton = page.getByRole("group", { name: "Work item sections" }).getByRole("button").first();
+	await expect(firstButton).toBeVisible();
+	const [descriptionBox, buttonBox] = await Promise.all([description.boundingBox(), firstButton.boundingBox()]);
+	if (!descriptionBox || !buttonBox) throw new Error("Missing description or related work button geometry");
+	expect(Math.abs(buttonBox.x - descriptionBox.x)).toBeLessThan(1);
+});
+
 test("assignee options use compact palette sizing and highlight on hover while searching", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
