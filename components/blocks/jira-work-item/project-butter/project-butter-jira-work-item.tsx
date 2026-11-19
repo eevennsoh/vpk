@@ -22,7 +22,7 @@ import type { ProjectButterPresentation, ProjectButterShellContext } from "@/com
 import { useProjectButterSessions } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-sessions";
 import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
-import { activityScrollport } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
