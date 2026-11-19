@@ -14,8 +14,7 @@ const CARDS = [
 ];
 const ELAPSED = /^\d+m \d{2}s$/u;
 const DEFAULT_RUN_AGE_SECONDS = 651;
-
-const waitForTick = () => React.act(() => new Promise((resolve) => setTimeout(resolve, 1100)));
+const MOUNTED_AT_MS = Date.UTC(2026, 0, 1);
 
 function elapsedSeconds(view) {
 	const [minutes, seconds] = view.getByText(ELAPSED).textContent.match(/\d+/gu).map(Number);
@@ -23,23 +22,24 @@ function elapsedSeconds(view) {
 }
 
 for (const { entry, label } of CARDS) {
-	test(`${label} with no runCreatedAt reads zero at first, then counts up from ~10m 51s across re-renders`, async () => {
+	test(`${label} with no runCreatedAt reads zero at first, then counts up from ~10m 51s across re-renders`, async (t) => {
+		// The clock and the card's one-second interval run on fake time, so the readings are exact
+		// however slow the machine is.
+		t.mock.timers.enable({ apis: ["setInterval", "Date"], now: MOUNTED_AT_MS });
+		const secondPasses = () => React.act(async () => t.mock.timers.tick(1000));
 		const props = { planTitle: "Default run" };
 		const view = await renderComponent({ entry, props });
 		// The first render derives elapsed time from the start time alone, so it reads zero
 		// whatever the clock says, and prerendered HTML matches it.
 		assert.equal(view.queryByText(ELAPSED) === null, true);
 
-		await waitForTick();
-		await view.rerender(props);
-		const first = elapsedSeconds(view);
-		assert.equal(first >= DEFAULT_RUN_AGE_SECONDS && first <= DEFAULT_RUN_AGE_SECONDS + 2, true, `first reading ${first}s`);
+		await secondPasses();
+		assert.equal(elapsedSeconds(view), DEFAULT_RUN_AGE_SECONDS + 1);
 
 		await view.rerender({ ...props, planTitle: "Default run renamed" });
-		assert.equal(elapsedSeconds(view) >= first, true, "a re-render does not move the start time");
+		assert.equal(elapsedSeconds(view), DEFAULT_RUN_AGE_SECONDS + 1, "a re-render does not move the start time");
 
-		await waitForTick();
-		const second = elapsedSeconds(view);
-		assert.equal(second > first, true, `timer advanced from ${first}s to ${second}s`);
+		await secondPasses();
+		assert.equal(elapsedSeconds(view), DEFAULT_RUN_AGE_SECONDS + 2, "the timer counts up");
 	});
 }
