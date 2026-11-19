@@ -21,7 +21,6 @@
   },
   "menuAccent": "subtle",
   "registries": {
-    "@ai-elements": "https://elements.ai-sdk.dev/api/registry/{name}.json",
     "@animate-ui": "https://animate-ui.com/r/{name}.json",
     "@bklit": "https://ui.bklit.com/r/{name}.json"
   }
