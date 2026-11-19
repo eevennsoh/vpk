@@ -286,6 +286,7 @@ function getSidebarGroupItems(
 			label: tool.name,
 			avatarSrc: tool.avatarSrc,
 			logoName: tool.logoName,
+			brandName: tool.brandName,
 		}));
 }
 
