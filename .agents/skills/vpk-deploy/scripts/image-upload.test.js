@@ -30,6 +30,7 @@ function fixture(t) {
 		fs.chmodSync(file, 0o755);
 	};
 	executable("docker", `case "$*" in
+login*) cat > /dev/null ;;
 push*) if [ "\$FAIL_DOCKER" = yes ]; then echo 'Head registry blob: EOF' >&2; exit 1; fi ;;
 'image save'*)
   shift 2
@@ -108,7 +109,8 @@ function deployFixture(t) {
 	fs.writeFileSync(path.join(scripts, "deploy-check.sh"), "#!/bin/bash\nexit 0\n");
 	fs.writeFileSync(path.join(f.root, "scripts/prepare-static-export.mjs"), "process.exit(0);\n");
 	fs.writeFileSync(path.join(f.root, "service-descriptor.yml"), ["buildNumber: ${VERSION}", "image: docker.atl-paas.net/example-service", "tag: app-${VERSION}", ...names.map(name => `${name}: ((ssm:/example-service/${name}))`)].join("\n"));
-	fs.writeFileSync(path.join(f.root, ".deploy.local"), 'SERVICE_NAME=example-service\nENV=pdev-west2\nDOCKER_USERNAME=fixture-user\nDOCKER_PASSWORD=fixture-password\n');
+	// Longer than a pipe buffer, so a docker stub that ignores the --password-stdin payload fails every run instead of rarely.
+	fs.writeFileSync(path.join(f.root, ".deploy.local"), `SERVICE_NAME=example-service\nENV=pdev-west2\nDOCKER_USERNAME=fixture-user\nDOCKER_PASSWORD=${"fixture-password".repeat(10_000)}\n`);
 	f.executable("atlas", `case "$*" in
 'micros --help') echo 'service stash events' ;;
 *'stash list'*) printf '%s\\n' ${names.join(" ")} ;;
