@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { Message, MessageContent, MessageHeader } from "@/components/ui/message";
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-motion";
 
 export type ExampleMessage = {
 	id: string;
@@ -43,12 +44,19 @@ export function ExampleMessageContent({ message }: Readonly<{ message: ExampleMe
 	);
 }
 
+/** The person's turns rise in from the live edge; replies and markers render in place. */
 export function ExampleRows({ messages }: Readonly<{ messages: ReadonlyArray<ExampleMessage> }>) {
-	return messages.map((message) => (
-		<MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={message.anchor}>
-			<ExampleMessageContent message={message} />
-		</MessageScrollerItem>
-	));
+	return messages.map((message) =>
+		message.role === "user" ? (
+			<MotionMessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={message.anchor} {...slideUpEntrance}>
+				<ExampleMessageContent message={message} />
+			</MotionMessageScrollerItem>
+		) : (
+			<MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={message.anchor}>
+				<ExampleMessageContent message={message} />
+			</MessageScrollerItem>
+		),
+	);
 }
 
 export function ExampleFrame({

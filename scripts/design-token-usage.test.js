@@ -112,9 +112,6 @@ function findHardcodedCssDurations(source) {
 
 // Existing hits when the check landed. Shrink-only: fix one, then delete its entry.
 const HARDCODED_CSS_DURATION_BASELINE = [
-	"components/blocks/chat/chat.module.css 0.22s",
-	"components/projects/shared/components/chat-messages.module.css 0.22s",
-	"components/projects/sidebar-chat/chat.module.css 0.22s",
 	"components/ui-custom/rich-text-editor/rich-text-editor.css 80ms",
 ];
 

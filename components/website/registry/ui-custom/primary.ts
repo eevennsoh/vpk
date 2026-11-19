@@ -21,7 +21,6 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	context: dynamic(() => import("../../demos/ui-custom/context-demo"), { ssr: false }),
 	"context-bar": dynamic(() => import("../../demos/ui-custom/context-bar-demo"), { ssr: false }),
 	control: dynamic(() => import("../../demos/ui-custom/control-demo"), { ssr: false }),
-	conversation: dynamic(() => import("../../demos/ui-custom/conversation-demo"), { ssr: false }),
 	edge: dynamic(() => import("../../demos/ui-custom/edge-demo"), { ssr: false }),
 	"entity-card": dynamic(() => import("../../demos/ui-custom/entity-card-demo"), { ssr: false }),
 	"environment-variable": dynamic(() => import("../../demos/ui-custom/environment-variable-demo"), { ssr: false }),

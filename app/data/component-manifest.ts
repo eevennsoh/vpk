@@ -236,7 +236,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("context"),
 	customComponent("context-bar", "Context Bar"),
 	customComponent("control", "Control"),
-	customComponent("conversation"),
 	customComponent("edge"),
 	customComponent("environment-variable", "Environment Variable"),
 	customComponent("file-tree", "File Tree"),

@@ -49,7 +49,6 @@ async function renderSaveProbe(context) {
 	const view = await renderComponent({
 		mocks: {
 			"@/components/projects/shared/components/chat-messages.module.css": CSS_MODULE,
-			"@/components/projects/sidebar-chat/chat.module.css": CSS_MODULE,
 		},
 		source: PROBE,
 	});

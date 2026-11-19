@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 import { StreamingThinkingIndicator } from "@/components/projects/shared/components/streaming-thinking-indicator";
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
-import { MessageTurns } from "@/components/projects/shared/message-turns";
+import { MessageTurns, turnEnterClassName } from "@/components/projects/shared/message-turns";
 import type { RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
 import type { GenerativeWidgetPrimaryActionPayload } from "@/components/projects/shared/lib/generative-widget";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
@@ -23,7 +23,6 @@ import ChatGreeting from "./chat-greeting";
 import MessageBubble from "./message-bubble";
 import { ArtifactResultCard, type ArtifactResult } from "./artifact-result-card";
 import { AgentResultCard } from "./agent-result-card";
-import styles from "../chat.module.css";
 
 interface ChatPanelConversationProps
 	extends Pick<
@@ -166,7 +165,7 @@ export function ChatPanelConversation({
 									marginTop: message.role === "assistant" && messageIndex > 0 && (turn[messageIndex - 1]?.role === "user" || turn[messageIndex - 1]?.role === "assistant") ? "24px" : "0",
 								};
 							}}
-							latestTurnClassName={styles.latestTurn}
+							latestTurnClassName={turnEnterClassName}
 							latestTurnDataAttribute="data-chat-latest-turn"
 							messages={messages}
 							renderMessage={(message) => (

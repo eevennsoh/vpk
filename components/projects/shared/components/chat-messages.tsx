@@ -8,7 +8,7 @@ import {
 	ChainOfThoughtHeader,
 } from "@/components/ui/chain-of-thought";
 import { cn } from "@/lib/utils";
-import { MessageTurns } from "@/components/projects/shared/message-turns";
+import { MessageTurns, turnEnterClassName } from "@/components/projects/shared/message-turns";
 import { ThreadMessage } from "@/components/projects/shared/thread-message";
 import {
 	isRenderableRovoUIMessage,
@@ -175,7 +175,7 @@ export function ChatMessages({
 											: "0",
 								};
 							}}
-							latestTurnClassName={styles.latestTurn}
+							latestTurnClassName={turnEnterClassName}
 							latestTurnDataAttribute="data-rovo-latest-turn"
 							messages={renderableMessages}
 							renderMessage={(message) => {
