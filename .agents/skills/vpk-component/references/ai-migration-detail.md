@@ -15,11 +15,16 @@ source-specific hazards out of the skill interface.
 ## Source hierarchy
 
 1. Read the target file, folder, or component URL and classify it as local
-   custom code, ai-elements, ElevenLabs UI, or another third-party library.
+   custom code, AI SDK Elements (copies from Vercel's AI Elements library),
+   ElevenLabs UI, or another third-party library.
 2. Inspect `components/ui` and `components/ui-custom`
    for an existing VPK target.
-3. For ai-elements, read the matching global ai-elements reference when local
-   source is insufficient.
+3. For AI SDK Elements, port to shadcn's AI Elements instead
+   (https://ui.shadcn.com/docs/ai-elements): a shadcn component lands in
+   `components/ui` as a 1:1 mirror; a shadcn pattern (a composition of shadcn
+   components) is rebuilt in `components/ui-custom` per shadcn's "Migrating
+   from AI SDK Elements" prompt. Never install from the retired AI SDK Elements
+   registry.
 4. For ElevenLabs or another library, use official docs, source examples, or a
    registry payload only when the local VPK port is missing or incomplete.
 5. Trace providers, callbacks, schemas, playback state, transcript state, and
@@ -35,7 +40,8 @@ source-specific hazards out of the skill interface.
 | Chat thread, assistant messages, prompt composer, reasoning, suggestions, code blocks | `components/ui-custom/*` |
 | Audio player, waveform, transcript playback, voice picker, microphone selection, standalone speech capture | `components/ui-custom/*` |
 | General presentational component without AI/voice behavior | `components/ui/*` |
-| ai-elements component | Usually `components/ui-custom/*` |
+| shadcn AI Elements component (Trace, Code Block, Message, …) | `components/ui/*` |
+| shadcn AI Elements pattern, or an AI SDK Elements copy it replaces | Usually `components/ui-custom/*` |
 | ElevenLabs component | Usually `components/ui-custom/*` |
 | Unknown third-party component | Choose by behavior, then nearest VPK family |
 

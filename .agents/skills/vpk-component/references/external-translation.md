@@ -7,10 +7,11 @@ API and visual language.
 
 ## When to use
 
-Use this lane for local custom AI/chat UI, ai-elements, ElevenLabs UI, voice
-and audio libraries, or another third-party component that should become a VPK
-primitive or migrate to one ("migrate to ui-custom", "standardize AI
-components", "adopt ai-elements", "port ElevenLabs UI"). Use the ADS or shadcn
+Use this lane for local custom AI/chat UI, AI SDK Elements copies (port them to
+shadcn's AI Elements), ElevenLabs UI, voice and audio libraries, or another
+third-party component that should become a VPK primitive or migrate to one
+("migrate to ui-custom", "standardize AI components", "port AI SDK Elements",
+"port ElevenLabs UI"). Use the ADS or shadcn
 lane in [SKILL.md](../SKILL.md) instead when an explicit ADS, Atlaskit, shadcn,
 Base UI, or `@shadcn/react` component is the parity target. Use the normal
 component workflow for local layout, styling, motion, or bug fixes that do not
