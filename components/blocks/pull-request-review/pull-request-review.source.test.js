@@ -172,7 +172,7 @@ test("submit enables when the editor has non-empty content", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<PromptInputSubmit[\s\S]*className="hover:opacity-90 active:opacity-80"[\s\S]*disabled=\{!canSubmit\}/u,
+		/<PromptInputSubmit[\s\S]*className="rounded-md hover:opacity-90 active:opacity-80"[\s\S]*disabled=\{!canSubmit\}/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
