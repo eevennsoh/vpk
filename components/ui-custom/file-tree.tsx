@@ -275,7 +275,8 @@ export function FileTreeFolder({
 					<FileTreeName>{name}</FileTreeName>
 				</CollapsibleTrigger>
 				<CollapsibleContent id={groupId} role="group">
-					<div className="ml-4 flex flex-col">
+					{/* Chevron (12px) + row gap (6px): children line up under the folder icon. */}
+					<div className="ml-4.5 flex flex-col">
 						<FileTreeLevelContext value={level + 1}>{children}</FileTreeLevelContext>
 					</div>
 				</CollapsibleContent>
