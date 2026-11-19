@@ -221,6 +221,22 @@ export const name = "rich-text-decoration-mark";
 	assert.deepEqual(await ruleFindings('export const c = "decoration-link";\n', "components/demo/x.test.ts", rule), []);
 });
 
+test("off-grid 10px and 14px spacing classes are lint errors", async () => {
+	const rule = ["vpk-tokens/no-off-grid-spacing"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const row = <div className="flex gap-2.5 px-3 py-2.5" />;
+export const responsive = <div className={cn("p-2", "sm:px-3.5")} />;
+export const arbitrary = <div className={\`flex \${"mt-[10px]"}\`} />;
+export const negative = <div className="-mx-2.5" />;
+export const ok = <div className="gap-0.5 p-1.5 px-3 py-3 gap-2 m-6 size-2.5 w-3.5 h-2.5 top-2.5" />;
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", rule);
+	assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), [[3, 2], [4, 2], [5, 2], [6, 2]]);
+	assert.match(findings[0].message, /4px or 6px/u);
+	assert.deepEqual(await ruleFindings('export const c = "py-2.5";\n', "components/demo/x.test.ts", rule), []);
+});
+
 test("shadow-overlay is rejected as a class because no such utility exists", async () => {
 	const rule = ["vpk-tokens/no-undefined-overlay-shadow"];
 	const source = `

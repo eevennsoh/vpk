@@ -293,6 +293,15 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Spacing rhythm:** Start spacing, padding, margin, gap, and inset values on
   the ADS 8px rhythm through classes mapped from `--ds-space-*`. Use smaller
   steps for component interiors and larger steps for unrelated page regions.
+- **Spacing grid:** Padding, margin and gap are always multiples of 4px or 6px
+  (2, 4, 6, 8, 12, 16, 18, 20, 24…). Never 10px (`*-2.5`) or 14px (`*-3.5`).
+  When a component's side padding is 12px, its top and bottom padding is 12px
+  too unless the design specifies otherwise. Text inputs keep ADS's `4px 10px`
+  as the one exception. Lint: `vpk-tokens/no-off-grid-spacing`; existing uses
+  are baselined in `eslint-suppressions.json`.
+  Why: off-grid values like 10px break the 4px/6px rhythm and read as slightly
+  wrong next to 12px neighbours.
+  <!-- 2026-11-19: "right gap 12px is applied to top/bottom gap. Right now it's 10px (weird padding)… it should be increment of 4px or 6px when possible" -->
 - **Relationship by proximity:** Related controls sit closer together than
   unrelated groups. Avoid applying the same gap everywhere when hierarchy needs
   to stay scannable.
