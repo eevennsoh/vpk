@@ -18,7 +18,7 @@ test("teammate disclosure header does not jump when opening or closing", async (
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
 	for (const expanded of [false, true]) {
 		const heights = await trigger.evaluate(async (button) => {
 			if (!(button instanceof HTMLButtonElement)) throw new Error("Disclosure trigger must be a button");
@@ -37,7 +37,7 @@ test("teammate avatars move down on expansion and up on collapse", async ({ page
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
 	await trigger.click();
 	await expect(trigger).toHaveAttribute("aria-expanded", "false");
 	await expect(trigger.locator('[data-slot="avatar-group"]').locator("..")).toHaveCSS("opacity", "1");
@@ -57,8 +57,9 @@ test("teammate avatars move down on expansion and up on collapse", async ({ page
 					const group = document.querySelector('[aria-label="Agent assignment"] [data-slot="collapsible-trigger"] [data-slot="avatar-group"]');
 					const stack = group?.parentElement;
 					const label = document.querySelector('[aria-label="Agent assignment"] [data-teammate-disclosure-label]');
-					if (label && stack) {
-						labelPositions.push(label.getBoundingClientRect().x);
+					const disclosure = label?.closest('[data-slot="collapsible-trigger"]');
+					if (label && stack && disclosure) {
+						labelPositions.push(label.getBoundingClientRect().x - disclosure.getBoundingClientRect().x);
 						effects.push({ blur: getComputedStyle(label).filter, overflow: getComputedStyle(stack).overflow });
 					}
 					if (stack && group) {
@@ -109,7 +110,7 @@ test("teammate avatars settle without movement when reduced motion is enabled", 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
 	const avatars = trigger.locator('[data-slot="avatar-group"]');
 	await expect(avatars.locator("..")).toHaveCSS("opacity", "0");
 	await expect(trigger.locator('[data-teammate-disclosure-label]')).toHaveCSS("filter", "blur(0px)");
@@ -126,13 +127,13 @@ test("teammate avatars settle without movement when reduced motion is enabled", 
 	expect(avatarTranslations).toEqual([0, 0, 0, 0]);
 });
 
-test("teammate disclosure moves the counted label to the front when expanded", async ({ page }) => {
+test("teammate disclosure moves the label to the front when expanded", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
 	const menu = page.getByRole("dialog", { name: "Agent assignment" });
-	const trigger = menu.getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
-	await menu.getByRole("button", { name: /^\d+ other agents?$/u }).click();
+	const trigger = menu.getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
+	await menu.getByRole("button", { name: "Other agent activity" }).click();
 	await expect(trigger).toHaveAttribute("aria-expanded", "false");
 	const label = trigger.locator('[data-teammate-disclosure-label]');
 	const labelOffset = async () => {
@@ -157,7 +158,7 @@ test("teammate disclosure moves the counted label to the front when expanded", a
 	}
 	await trigger.click();
 	await expect(trigger).toHaveAttribute("aria-expanded", "true");
-	await expect(trigger).toHaveAccessibleName("4 other agents");
+	await expect(trigger).toHaveAccessibleName("Other agent activity");
 	expect(Math.abs(await labelOffset() - collapsedOffset)).toBeLessThanOrEqual(1);
 	const [expandedBounds, labelBounds] = await Promise.all([trigger.boundingBox(), label.boundingBox()]);
 	if (!expandedBounds || !labelBounds) throw new Error("Teammate disclosure must be visible");
