@@ -68,7 +68,7 @@ function getTreeItemLevel(item: HTMLElement): number {
  * blanket `[&_svg]` color.
  */
 const rowClassName =
-	"relative h-auto min-h-6 w-full min-w-0 justify-start gap-1 py-1 text-left text-[length:inherit] font-normal text-text [&_svg]:text-inherit";
+	"w-full min-w-0 justify-start px-2 text-left text-[length:inherit] font-normal text-text [&_svg]:text-inherit";
 
 const selectedRowClassName =
 	"bg-bg-selected text-text-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed";
@@ -76,11 +76,6 @@ const selectedRowClassName =
 /** An open folder is not a selection: undo the Button's shared `aria-expanded` selected state. */
 const expandedFolderRowClassName =
 	"aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-inherit aria-expanded:[&_[data-slot=icon]]:text-icon-subtle";
-
-function FileTreeSelectedIndicator() {
-	// 2px blue bar pinned to the highlight's left edge.
-	return <span aria-hidden="true" className="absolute inset-y-0 left-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />;
-}
 
 export type FileTreeProps = Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> & {
 	expanded?: Set<string>;
@@ -181,7 +176,7 @@ export function FileTree({
 	return (
 		<FileTreeContext value={contextValue}>
 			<div
-				className={cn("flex flex-col rounded-lg font-mono text-sm", className)}
+				className={cn("flex flex-col text-sm", className)}
 				role="tree"
 				{...props}
 			>
@@ -253,16 +248,14 @@ export function FileTreeFolder({
 						<Button
 							className={cn(
 								rowClassName,
-								"px-2",
 								isSelected ? selectedRowClassName : expandedFolderRowClassName
 							)}
-							size="compact"
+							size="default"
 							variant="ghost"
 						/>
 					}
 					role="treeitem"
 				>
-					{isSelected ? <FileTreeSelectedIndicator /> : null}
 					<ChevronRightIcon
 						className={cn("transition-transform", iconClassName, isExpanded && "rotate-90")}
 						size="small"
@@ -277,11 +270,7 @@ export function FileTreeFolder({
 					<FileTreeName>{name}</FileTreeName>
 				</CollapsibleTrigger>
 				<CollapsibleContent role="group">
-					{/* One level of indent = chevron(12) + gap(4) = 16px (ml-4), so a
-					    child's chevron aligns under the parent's folder icon. The guide
-					    line sits under the parent's chevron center (px-2 + 6px = 14px). */}
-					<div className="relative ml-4 flex flex-col">
-						<span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-0.5 w-px bg-icon-subtlest/20" />
+					<div className="ml-4 flex flex-col">
 						<FileTreeLevelContext value={level + 1}>{children}</FileTreeLevelContext>
 					</div>
 				</CollapsibleContent>
@@ -359,9 +348,9 @@ export function FileTreeFile({
 					aria-level={level}
 					aria-selected={isSelected}
 					className={cn(
-						buttonVariants({ size: "compact", variant: "ghost" }),
+						buttonVariants({ size: "default", variant: "ghost" }),
 						rowClassName,
-						"cursor-default px-2",
+						"cursor-default",
 						isSelected && selectedRowClassName,
 						className
 					)}
@@ -372,7 +361,6 @@ export function FileTreeFile({
 					tabIndex={0}
 					{...props}
 				>
-					{isSelected ? <FileTreeSelectedIndicator /> : null}
 					{content}
 					{actions}
 				</div>
@@ -388,20 +376,16 @@ export function FileTreeFile({
 					aria-selected={isSelected}
 					className={cn(
 						rowClassName,
-						// The default (icon + name) row starts its highlight at the icon
-						// column, indented past the chevron column (Figma 2556:28320);
-						// custom-content rows keep the full-row highlight.
-						hasCustomContent ? "flex-1 px-2" : "ml-5 w-auto flex-1 pr-2 pl-1",
+						"flex-1",
 						isSelected && selectedRowClassName
 					)}
 					data-path={path}
 					onClick={handleClick}
 					onKeyDown={onItemKeyDown}
 					role="treeitem"
-					size="compact"
+					size="default"
 					variant="ghost"
 				>
-					{isSelected ? <FileTreeSelectedIndicator /> : null}
 					{hasCustomContent ? content : (
 						<>
 							<FileTreeIcon>
@@ -432,11 +416,7 @@ export function FileTreeIcon({
 	return (
 		<span
 			className={cn(
-				// Front-slot icons are locked to 12×12 per the Figma spec; this clamps
-				// ADS glyphs (which render at small=16px) and any custom icon child.
-				// ADS sizes its icon span/svg via unlayered CSS, so `!` is required for
-				// these utilities to win from Tailwind's utilities layer.
-				"inline-flex size-3 shrink-0 items-center justify-center leading-none [&_img]:size-3! [&_span]:size-3! [&_svg]:size-3!",
+				"inline-flex size-4 shrink-0 items-center justify-center leading-none [&_img]:size-4 [&_svg]:size-4",
 				className
 			)}
 			{...props}

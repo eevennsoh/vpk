@@ -109,7 +109,7 @@ export function FileTreeDemoCustomIcons() {
 		<FileTree
 			aria-label="Project files"
 			defaultExpanded={new Set(["src", "public"])}
-			className="w-full max-w-xs text-xs"
+			className="w-full max-w-xs"
 		>
 			<FileTreeFolder path="src" name="src">
 				<FileTreeFile
@@ -152,20 +152,19 @@ export function FileTreeDemoCustomIcons() {
 function FileTreeDemoActionRow({ path, name }: Readonly<{ path: string; name: string }>) {
 	return (
 		<FileTreeFile path={path} name={name}>
-			<span className="w-3 shrink-0" />
 			<FileTreeIcon>
 				<CodeIcon className="text-icon-accent-blue" />
 			</FileTreeIcon>
 			<FileTreeName>{name}</FileTreeName>
 			<FileTreeActions>
-				<Button aria-label={`Copy ${name}`} variant="ghost" size="icon" className="size-5">
-					<CopyIcon className="size-3" />
+				<Button aria-label={`Copy ${name}`} variant="ghost" size="icon-compact">
+					<CopyIcon />
 				</Button>
-				<Button aria-label={`Download ${name}`} variant="ghost" size="icon" className="size-5">
-					<DownloadIcon className="size-3" />
+				<Button aria-label={`Download ${name}`} variant="ghost" size="icon-compact">
+					<DownloadIcon />
 				</Button>
-				<Button aria-label={`Delete ${name}`} variant="ghost" size="icon" className="size-5">
-					<TrashIcon className="size-3" />
+				<Button aria-label={`Delete ${name}`} variant="ghost" size="icon-compact">
+					<TrashIcon />
 				</Button>
 			</FileTreeActions>
 		</FileTreeFile>
@@ -177,7 +176,7 @@ export function FileTreeDemoWithActions() {
 		<FileTree
 			aria-label="Source files"
 			defaultExpanded={new Set(["src"])}
-			className="w-full max-w-xs text-xs"
+			className="w-full max-w-xs"
 		>
 			<FileTreeFolder path="src" name="src">
 				<FileTreeDemoActionRow path="src/index.ts" name="index.ts" />
