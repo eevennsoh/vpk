@@ -157,7 +157,6 @@ function FileTreeDemoActionRow({ path, name }: Readonly<{ path: string; name: st
 				<CodeIcon className="text-icon-accent-blue" />
 			</FileTreeIcon>
 			<FileTreeName>{name}</FileTreeName>
-			{/* Rendered beside the row's Button, not inside it. */}
 			<FileTreeActions>
 				<Button aria-label={`Copy ${name}`} variant="ghost" size="icon" className="size-5">
 					<CopyIcon className="size-3" />

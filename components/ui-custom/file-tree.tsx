@@ -13,7 +13,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -306,7 +306,7 @@ export type FileTreeFileProps = HTMLAttributes<HTMLDivElement> & {
 	icon?: ReactNode;
 };
 
-/** Split custom row content so FileTreeActions render beside the row Button, never inside it. */
+/** Split custom row content so a row with FileTreeActions renders as a treeitem holding them, not as a Button. */
 function splitFileTreeActions(children: ReactNode) {
 	const content: ReactNode[] = [];
 	const actions: ReactNode[] = [];
@@ -339,6 +339,46 @@ export function FileTreeFile({
 	}, [onSelect, path]);
 
 	const fileContextValue = useMemo(() => ({ name, path }), [name, path]);
+
+	if (actions.length > 0) {
+		// A tree may only own treeitems (axe treats role="group" as transparent),
+		// so a row with actions is itself the treeitem and holds its buttons.
+		const handleRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+			if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+				event.preventDefault();
+				onSelect?.(path);
+				return;
+			}
+			onItemKeyDown(event);
+		};
+
+		return (
+			<FileTreeFileContext value={fileContextValue}>
+				<div
+					aria-label={name}
+					aria-level={level}
+					aria-selected={isSelected}
+					className={cn(
+						buttonVariants({ size: "compact", variant: "ghost" }),
+						rowClassName,
+						"cursor-default px-2",
+						isSelected && selectedRowClassName,
+						className
+					)}
+					data-path={path}
+					onClick={handleClick}
+					onKeyDown={handleRowKeyDown}
+					role="treeitem"
+					tabIndex={0}
+					{...props}
+				>
+					{isSelected ? <FileTreeSelectedIndicator /> : null}
+					{content}
+					{actions}
+				</div>
+			</FileTreeFileContext>
+		);
+	}
 
 	return (
 		<FileTreeFileContext value={fileContextValue}>

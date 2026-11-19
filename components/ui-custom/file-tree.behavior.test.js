@@ -62,18 +62,25 @@ test("clicking a file selects it and clicking a folder toggles and selects it", 
 	assert.equal(view.getByRole("treeitem", { name: "utils.ts" }).getAttribute("aria-level"), "3");
 });
 
-test("file actions render next to the row button, not inside it", async () => {
+test("a row with actions is the treeitem that holds them, so the tree owns only treeitems", async () => {
 	let actionCount = 0;
 	const view = await renderComponent({ props: { onAction: () => { actionCount += 1; } }, source: TREE_SOURCE });
 	const row = view.getByRole("treeitem", { name: "index.ts" });
 	const action = view.getByRole("button", { name: "Delete index.ts" });
-	assert.equal(row.contains(action), false);
-	assert.equal(row.querySelector("button"), null);
+	assert.equal(row.contains(action), true);
+	assert.equal(row.tagName, "DIV");
+	assert.equal(row.getAttribute("aria-level"), "2");
 
 	await view.click(action);
 	assert.equal(actionCount, 1);
 	// The action's click does not select the row.
 	assert.equal(view.container.querySelector("output").textContent, "src/app.tsx");
+
+	// Enter on the row itself selects it; Enter on an action does not.
+	await view.press(action, "Enter");
+	assert.equal(view.container.querySelector("output").textContent, "src/app.tsx");
+	await view.press(row, "Enter");
+	assert.equal(view.container.querySelector("output").textContent, "src/index.ts");
 });
 
 test("arrow keys move between visible rows and open or close folders", async () => {
