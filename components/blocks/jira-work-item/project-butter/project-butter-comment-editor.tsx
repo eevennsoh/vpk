@@ -180,7 +180,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			data-mention-handoff={mentionHandoffPending ? "pending" : "settled"}
 			onSubmit={() => save()}
 		>
-			<EditorContent className="rich-text-editor-content max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.react-renderer.node-mention]:inline-flex [&_.react-renderer.node-mention]:h-lh [&_.react-renderer.node-mention]:items-center [&_.react-renderer.node-mention]:align-middle [&_.rich-text-mention-node]:h-lh [&_.rich-text-mention-node]:items-center [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
+			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
 		</FloatingComposer>
 	);
 }

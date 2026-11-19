@@ -50,6 +50,7 @@ import { GENERATIVE_CARD_DETAIL } from "./blocks/generative-card";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { HTML_SELECTOR_DETAIL } from "./blocks/html-selector";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
+import { JIRA_AT_MENTION_DETAIL } from "./blocks/jira-at-mention";
 import { JIRA_CREATE_DETAIL } from "./blocks/jira-creating";
 import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
@@ -173,6 +174,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	generative: GENERATIVE_DETAIL,
 	"html-selector": HTML_SELECTOR_DETAIL,
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
+	"jira-at-mention": JIRA_AT_MENTION_DETAIL,
 	"jira-creating": JIRA_CREATE_DETAIL,
 	"jira-dragging": JIRA_DRAGGING_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,

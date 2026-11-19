@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMotionValue } from "motion/react";
 import type { JiraActivityEntry } from "@/components/blocks/jira-activity";
+import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 
 // h-16: the header owns headroom for the timeline hover label above its dots.
 const HEADER_HEIGHT = 64;
@@ -10,12 +11,6 @@ const FEED_CLEARANCE = 12;
 
 /** A scroll position paired with the fractional row index it reads as. */
 type Knot = Readonly<{ scroll: number; index: number }>;
-
-export function activityScrollport(feed: HTMLElement | null): HTMLElement | null {
-	let parent = feed?.parentElement ?? null;
-	while (parent && !/(auto|scroll)/u.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
-	return parent;
-}
 
 function scrollActivityRow(feed: HTMLDivElement | null, id: string, offset: number) {
 	const row = [...(feed?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === id);

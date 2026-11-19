@@ -897,6 +897,22 @@
 	vertical-align: middle;
 }
 
+.rich-text-mention-caret :is(.react-renderer.node-mention, [data-mention-caret-anchor]) {
+	display: inline-flex;
+	height: 1.2em;
+	align-items: center;
+	vertical-align: -0.15em;
+}
+
+.rich-text-mention-caret .rich-text-mention-node {
+	height: 100%;
+	align-items: center;
+}
+
+.rich-text-mention-caret .rich-text-mention-chip {
+	align-self: center;
+}
+
 .prompt-input-composer .react-renderer.node-mention {
 	display: inline-flex;
 	height: 1.5rem;

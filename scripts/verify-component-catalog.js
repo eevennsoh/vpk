@@ -230,7 +230,7 @@ const TITLE_CASE_MINOR_WORDS = new Set([
 const TITLE_CASE_BRAND_WORDS = new Set(["p5"]);
 
 // Explicit product wording; keep this exception scoped to the named catalog entry.
-const COMPONENT_NAME_OVERRIDES = new Map([["utility/cone-safezone", "Cone safezone"]]);
+const COMPONENT_NAME_OVERRIDES = new Map([["blocks/jira-at-mention", "Jira at-mention"], ["utility/cone-safezone", "Cone safezone"]]);
 
 function isTitleCaseWord(word, index) {
 	// Capitalized word, acronym, brand, or numeric segment (e.g. "Chat", "SVG", "ChatGPT", "01").

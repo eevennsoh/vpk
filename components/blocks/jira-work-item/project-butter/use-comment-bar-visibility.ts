@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { activityScrollport } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 
 export function useCommentBarVisibility(active: boolean, empty: boolean, sidePanel: boolean) {
 	const barRef = useRef<HTMLDivElement>(null);
