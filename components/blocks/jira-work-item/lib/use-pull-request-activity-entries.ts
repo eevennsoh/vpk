@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type SetStateAction } from "react";
+import { useCallback, useMemo, useState, type SetStateAction } from "react";
 
 import type { JiraActivityEntry } from "@/components/blocks/jira-activity";
 
@@ -13,7 +13,7 @@ export function usePullRequestActivityEntries<Activity>({
 	adaptActivity: (activity: readonly Activity[]) => readonly JiraActivityEntry[];
 	getRevision: (activity: readonly Activity[]) => string;
 }>) {
-	const activityKey = getRevision(activity);
+	const activityKey = useMemo(() => getRevision(activity), [activity, getRevision]);
 	const [state, setState] = useState(() => ({
 		revision: activityKey,
 		entries: adaptActivity(activity),

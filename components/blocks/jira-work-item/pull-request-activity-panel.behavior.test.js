@@ -43,7 +43,10 @@ export default function Harness({ activity }) {
 	return (
 		<ActivityChatCommentsProvider>
 			${rail ? `<ActivityRailChromeProvider setChrome={setChrome}>
-				{chrome ? <JiraActivityViewControl {...chrome} /> : null}
+				{chrome ? <>
+					<JiraActivityViewControl {...chrome} />
+					<output aria-label="Rail activity count">{chrome.count}</output>
+				</> : null}
 				{panel}
 			</ActivityRailChromeProvider>` : `<SectionNavigationProvider active={false}>
 				{panel}
@@ -99,5 +102,20 @@ for (const variant of VARIANTS) {
 		const ordered = commentOrder(view);
 		assert.equal(ordered.includes("Later provider comment."), true);
 		assert.equal(ordered.indexOf("Later provider comment.") < ordered.indexOf("Updated provider thread."), true, "the latest-first sort survives a revision");
+
+		await view.click(view.getByRole("button", { name: "Reply" }));
+		await view.fill(view.getByRole("textbox", { name: "Leave a reply..." }), "Reply on the new revision.");
+		await view.press(view.getByRole("textbox", { name: "Leave a reply..." }), "Enter");
+		assert.equal(view.queryByText("Reply on the new revision.") !== null, true);
+		assert.equal(view.queryByText(/Updated provider thread\./u) !== null, true, "a reply after a revision change builds on the new entries");
+
+		if (variant === "experimental-v2") {
+			await selectView(view, "Show comments", "Latest");
+			assert.equal(
+				view.container.querySelector('output[aria-label="Rail activity count"]').textContent,
+				String(view.container.querySelectorAll("[data-jira-activity-entry-id]").length),
+				"rail chrome count matches the rendered entries with all activities shown",
+			);
+		}
 	});
 }
