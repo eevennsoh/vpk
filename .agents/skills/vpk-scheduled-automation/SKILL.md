@@ -78,7 +78,8 @@ gh pr list --state open --limit 100 --json number,title,headRefName,isDraft,url,
 - A clean detached automation worktree is valid. After selecting a candidate,
   attach it with a new `automation/<job-slug>-<summary>` branch at the current
   commit. From clean `main`, create the same kind of branch before editing.
-  Never commit a producer change directly to `main`.
+  Never commit a producer change directly to `main`. The `automation/` prefix
+  is required: merge eligibility (step 6) rejects any other head branch.
 - Recheck status immediately before branching, committing, and pushing. If a
   branch name already exists or belongs to another worktree/PR, choose a unique
   evidence-based suffix rather than taking it over.
@@ -181,8 +182,11 @@ node scripts/automation-merge-eligibility.mjs --pr <number> --repo <owner>/<repo
 - Exit 1 (could not decide): add `risk:needs-human` and report the error.
 
 `--policy` checks everything except the `automerge:allowed` label itself: the
-`automation` label, owner author, same-repo head, default base, non-draft, the
-file allow/deny lists, and the 300-line cap. The policy lives as data at the
+`automation` label, owner author, same-repo `automation/` head branch, default
+base, non-draft, the file allow/deny lists, and the 300-line cap. In short,
+only edits to existing test files, README changes, a shrinking
+`eslint-suppressions.json` and their regenerated files qualify; a new, deleted
+or renamed test, or anything under `.agents/` or a provider folder, does not. The policy lives as data at the
 top of that script; do not restate or loosen it here. The separate
 `automation-merge` job decides whether to merge; labelling grants nothing more.
 
