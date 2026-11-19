@@ -6469,16 +6469,16 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "file-tree",
-						"name": "File Tree",
-						"importPath": "@/components/ui-custom/file-tree",
+						"slug": "file-explorer",
+						"name": "File Explorer",
+						"importPath": "@/components/ui-custom/file-explorer",
 						"status": "live"
 					},
 					{
 						"category": "ui-custom",
-						"slug": "file-tree-2",
-						"name": "File Tree 2",
-						"importPath": "@/components/ui-custom/file-tree-2",
+						"slug": "file-tree",
+						"name": "File Tree",
+						"importPath": "@/components/ui-custom/file-tree",
 						"status": "live"
 					},
 					{

@@ -354,38 +354,38 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-path-first": dynamic(
+	"file-explorer-demo-path-first": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoPathFirst,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoPathFirst,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-flatten-empty-directories": dynamic(
+	"file-explorer-demo-flatten-empty-directories": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoFlattenEmptyDirectories,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoFlattenEmptyDirectories,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-git-status": dynamic(
+	"file-explorer-demo-git-status": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoGitStatus,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoGitStatus,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-drag-and-drop": dynamic(
+	"file-explorer-demo-drag-and-drop": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoDragAndDrop,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoDragAndDrop,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-icon-rules": dynamic(
+	"file-explorer-demo-icon-rules": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoIconRules,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoIconRules,
 			})),
 		{ ssr: false },
 	),

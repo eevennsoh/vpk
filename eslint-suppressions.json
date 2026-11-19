@@ -2261,7 +2261,7 @@
       "count": 2
     }
   },
-  "components/ui-custom/file-tree-2.tsx": {
+  "components/ui-custom/file-explorer.tsx": {
     "jsx-a11y/interactive-supports-focus": {
       "count": 1
     }

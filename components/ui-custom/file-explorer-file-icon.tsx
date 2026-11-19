@@ -4,46 +4,46 @@ import { createFileTreeIconResolver } from "@pierre/trees";
 import { useMemo, type HTMLAttributes } from "react";
 
 import {
-	fileTree2IconColorStyles,
-	getFileTree2IconSpriteSheet,
-	type FileTree2Icons,
-} from "@/components/ui-custom/file-tree-2-file-icon-helpers";
+	fileExplorerIconColorStyles,
+	getFileExplorerIconSpriteSheet,
+	type FileExplorerIcons,
+} from "@/components/ui-custom/file-explorer-file-icon-helpers";
 import { cn } from "@/lib/utils";
 
-export type { FileTree2Icons };
+export type { FileExplorerIcons };
 
-interface FileTree2IconSpriteProps {
-	icons?: FileTree2Icons;
+interface FileExplorerIconSpriteProps {
+	icons?: FileExplorerIcons;
 }
 
-export function FileTree2IconSprite({ icons = "complete" }: Readonly<FileTree2IconSpriteProps>) {
+export function FileExplorerIconSprite({ icons = "complete" }: Readonly<FileExplorerIconSpriteProps>) {
 	return (
 		<div
 			aria-hidden="true"
 			className="absolute size-0 overflow-hidden"
-			dangerouslySetInnerHTML={{ __html: getFileTree2IconSpriteSheet(icons) }}
+			dangerouslySetInnerHTML={{ __html: getFileExplorerIconSpriteSheet(icons) }}
 		/>
 	);
 }
 
-interface FileTree2FileIconProps extends Omit<HTMLAttributes<SVGSVGElement>, "children"> {
+interface FileExplorerFileIconProps extends Omit<HTMLAttributes<SVGSVGElement>, "children"> {
 	colored?: boolean;
-	icons?: FileTree2Icons;
+	icons?: FileExplorerIcons;
 	path: string;
 }
 
-export function FileTree2FileIcon({
+export function FileExplorerFileIcon({
 	className,
 	colored,
 	icons = "complete",
 	path,
 	...props
-}: Readonly<FileTree2FileIconProps>) {
+}: Readonly<FileExplorerFileIconProps>) {
 	const iconResolver = useMemo(() => createFileTreeIconResolver(icons), [icons]);
 	const coloredIcons = colored ?? (typeof icons === "object" ? (icons.colored ?? true) : true);
 	const resolvedIcon = iconResolver.resolveIcon("file-tree-icon-file", path);
 	const resolvedIconColor = resolvedIcon?.token && coloredIcons
-		? fileTree2IconColorStyles[resolvedIcon.token]
+		? fileExplorerIconColorStyles[resolvedIcon.token]
 		: "text-icon-subtle";
 
 	return (
