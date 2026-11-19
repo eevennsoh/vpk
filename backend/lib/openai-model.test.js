@@ -69,13 +69,13 @@ test("a .env.local override that repeats the default is flagged as removable", (
 
 test("the recorded startup origin is used by default", (t) => {
 	t.after(resetOpenAiModelEnvOrigin);
-	recordOpenAiModelEnvOrigin({ shellValue: " gpt-6.2-sol ", envFileValue: undefined });
-	const resolution = resolveOpenAiModel({ OPENAI_MODEL: "gpt-6.2-sol" });
+	recordOpenAiModelEnvOrigin({ shellValue: " gpt-6.3-sol ", envFileValue: undefined });
+	const resolution = resolveOpenAiModel({ OPENAI_MODEL: "gpt-6.3-sol" });
 	assert.equal(resolution.source, "process-env");
 	assert.equal(resolution.status, "override-newer-than-default");
 	assert.deepEqual(describeOpenAiModelWarnings(resolution), []);
 	resetOpenAiModelEnvOrigin();
-	assert.equal(resolveOpenAiModel({ OPENAI_MODEL: "gpt-6.2-sol" }).source, "unknown");
+	assert.equal(resolveOpenAiModel({ OPENAI_MODEL: "gpt-6.3-sol" }).source, "unknown");
 });
 
 // Regression: an empty export still keeps dotenv from loading .env.local's value, but resolved to
