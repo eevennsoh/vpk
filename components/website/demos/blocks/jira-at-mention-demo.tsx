@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { DEFAULT_MENTION_FLIGHT_OPTIONS, useSessionMentionFlight, type MentionFlightOptions, type MentionFlightRequest } from "@/components/blocks/jira-at-mention";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import { DEFAULT_MENTION_FLIGHT_OPTIONS, useSessionMentionFlight, type MentionFlightOptions, type MentionFlightRequest, type MentionFlightSettlement } from "@/components/blocks/jira-at-mention";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,31 @@ export default function JiraAtMentionDemo() {
 	const id = useId();
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const sourceRef = useRef<HTMLSpanElement>(null);
+	const replyRef = useRef<HTMLDivElement>(null);
+	const focusOriginRef = useRef<Element | null>(null);
 	const [options, setOptions] = useState<MentionFlightOptions>(DEFAULT_MENTION_FLIGHT_OPTIONS);
 	const [traceDuration, setTraceDuration] = useState(TRACE_DURATION);
 	const [traceColor, setTraceColor] = useState(TRACE_COLOR);
 	const [traceEnabled, setTraceEnabled] = useState(true);
 	const [request, setRequest] = useState<MentionFlightRequest | null>(null);
-	const [settledId, setSettledId] = useState<number | null>(null);
+	const [settled, setSettled] = useState<{ id: number; reason?: MentionFlightSettlement } | null>(null);
 	const [traceId, setTraceId] = useState<number | null>(null);
-	const flight = useSessionMentionFlight(bodyRef, request, true, (requestId) => setTraceId(requestId), (requestId) => setSettledId(requestId));
-	const landed = request !== null && settledId === request.id;
+	const flight = useSessionMentionFlight(bodyRef, request, true, (requestId) => setTraceId(requestId), (requestId, reason) => setSettled({ id: requestId, reason }));
+	const landed = request !== null && settled?.id === request.id;
 	const started = request !== null;
+	useLayoutEffect(() => {
+		const reply = replyRef.current;
+		if (!reply || settled?.id !== request?.id || settled?.reason !== "landed" || document.activeElement !== focusOriginRef.current) return;
+		reply.focus({ preventScroll: true });
+		const selection = reply.ownerDocument.getSelection();
+		const range = reply.ownerDocument.createRange();
+		const last = reply.lastChild;
+		if (last?.nodeType === Node.TEXT_NODE) range.setStart(last, last.textContent?.length ?? 0);
+		else { range.selectNodeContents(reply); range.collapse(false); }
+		range.collapse(true);
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	}, [request, settled]);
 	function replay() {
 		const chip = sourceRef.current?.querySelector<HTMLElement>(".rich-text-mention-chip");
 		if (!chip) return;
@@ -38,6 +53,7 @@ export default function JiraAtMentionDemo() {
 		if (!(clone instanceof HTMLElement)) return;
 		const appearance = getComputedStyle(chip);
 		Object.assign(clone.style, { fontFamily: appearance.fontFamily, fontSize: appearance.fontSize });
+		focusOriginRef.current = document.activeElement;
 		setTraceId(null);
 		setRequest((previous) => ({ id: (previous?.id ?? 0) + 1, entryId: "reply", source: { chip: clone, rect: chip.getBoundingClientRect() }, options }));
 	}
@@ -51,8 +67,8 @@ export default function JiraAtMentionDemo() {
 				<div data-jira-activity-entry-id="reply">
 					<p className="mb-2 text-sm font-medium text-text-subtle">Inline reply</p>
 					<RovoGeneration.Highlight active={traceEnabled && traceId === request?.id} className="block w-full" color={traceColor} delay={0} duration={traceDuration} origin="left-center" onHighlightComplete={() => setTraceId(null)}>
-						<div className="min-h-24 rounded-lg border border-border bg-surface p-3" data-project-butter-comment-editor>
-							<div aria-label="Inline reply" className="rich-text-mention-caret min-h-12" contentEditable suppressContentEditableWarning role="textbox">
+						<div className="min-h-24 rounded-lg border border-border bg-surface p-3 has-[:focus-visible]:border-ring has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/50" data-project-butter-comment-editor>
+							<div aria-label="Inline reply" className="rich-text-mention-caret min-h-12 outline-none" contentEditable ref={replyRef} suppressContentEditableWarning role="textbox">
 								<span aria-hidden={!landed} contentEditable={false} data-mention-caret-anchor style={{ opacity: landed ? 1 : 0 }}><MentionChip /></span>{"\u00a0"}
 							</div>
 						</div>

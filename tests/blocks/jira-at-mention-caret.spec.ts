@@ -27,11 +27,42 @@ test("the standalone mention preview keeps its caret aligned before and after ty
 	await page.getByRole("button", { name: "Replay animation" }).click();
 	const editor = page.getByRole("textbox", { name: "Inline reply" });
 	await expect(editor.locator("[data-mention-caret-anchor]")).toHaveCSS("opacity", "1");
-	await editor.click();
+	await expect(editor).toBeFocused();
+	const caret = await editor.evaluate(() => {
+		const selection = window.getSelection();
+		const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+		return { height: range?.getBoundingClientRect().height ?? 0, isText: range?.startContainer.nodeType === Node.TEXT_NODE, offset: range?.startOffset, length: range?.startContainer.textContent?.length };
+	});
+	expect(caret.height).toBeGreaterThan(0);
+	expect(caret.isText).toBe(true);
+	expect(caret.offset).toBe(caret.length);
 	await expectCaretAligned(editor, "[data-mention-caret-anchor]");
-	await editor.pressSequentially("asdf");
+	await page.keyboard.type("asdf");
 	await expect(editor).toContainText("asdf");
 	await expectCaretAligned(editor, "[data-mention-caret-anchor]");
+	await page.getByRole("button", { name: "Replay animation" }).click();
+	await expect(editor).toBeFocused();
+	await page.keyboard.type(" more");
+	await expect(editor).toContainText("asdf more");
+});
+
+test("reduced motion focuses the inline reply immediately", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/preview/blocks/jira-at-mention"));
+	await page.getByRole("button", { name: "Replay animation" }).click();
+	const editor = page.getByRole("textbox", { name: "Inline reply" });
+	await expect(editor).toBeFocused();
+	await page.keyboard.type("Ready");
+	await expect(editor).toContainText("Ready");
+});
+
+test("replay does not steal focus from another control", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/jira-at-mention"));
+	await page.getByRole("button", { name: "Replay animation" }).click();
+	const arc = page.getByRole("textbox", { name: "Arc" });
+	await arc.focus();
+	await expect(page.getByRole("textbox", { name: "Inline reply" }).locator("[data-mention-caret-anchor]")).toHaveCSS("opacity", "1");
+	await expect(arc).toBeFocused();
 });
 
 test("Butter inline replies keep their caret aligned beside an agent mention", async ({ page }) => {
