@@ -2,6 +2,9 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"context-chip-demo-reply": dynamic(() => import("../../demos/ui-custom/context-chip-demo").then((mod) => ({ default: mod.ContextChipDemoReply })), { ssr: false }),
+	"context-chip-demo-comments": dynamic(() => import("../../demos/ui-custom/context-chip-demo").then((mod) => ({ default: mod.ContextChipDemoComments })), { ssr: false }),
+	"context-chip-demo-checks": dynamic(() => import("../../demos/ui-custom/context-chip-demo").then((mod) => ({ default: mod.ContextChipDemoChecks })), { ssr: false }),
 
 	"animated-icon-demo-rainbow": dynamic(
 		() => import("../../demos/ui-custom/animated-icon-demo").then((mod) => ({ default: mod.AnimatedIconDemoRainbow })),

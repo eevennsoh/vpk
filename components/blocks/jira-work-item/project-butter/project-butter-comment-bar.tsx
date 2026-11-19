@@ -5,6 +5,10 @@ import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import ReplyLeftIcon from "@atlaskit/icon-lab/core/reply-left";
+import { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+import type { JiraActivityActor } from "@/components/blocks/jira-activity/jira-activity-types";
+import { ContextChip } from "@/components/ui-custom/context-chip";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
@@ -14,7 +18,6 @@ import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-ite
 import { useCommentBarVisibility } from "@/components/blocks/jira-work-item/project-butter/use-comment-bar-visibility";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
-import type { MentionFlightSource } from "@/components/blocks/jira-at-mention";
 import { RichTextSuggestionMenu, type RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor/menus";
 import { MenuBackButton } from "@/components/ui-custom/menu-back-button";
 import { motionDuration, referenceEase } from "@/lib/motion";
@@ -29,7 +32,7 @@ function createTimedComment(args: Parameters<typeof createCommentEntry>[0]) {
 	return { ...createCommentEntry(args), createdAtMs: Date.now() };
 }
 
-export function ProjectButterCommentBar({ active, activityRows, content, keepVisible = false, empty, onOpenSession, onReplyToSession, onPreviewSession, onStartAgent, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; keepVisible?: boolean; empty: boolean; onOpenSession?: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onReplyToSession?: (session: ProjectButterSessionItem, draft: string, source: MentionFlightSource | null) => boolean; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
+export function ProjectButterCommentBar({ active, activityRows, content, keepVisible = false, empty, onOpenSession, onReplyToSession, onPreviewSession, onStartAgent, replyFocusRequest = 0, replySession, replyTarget, onClearReply, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; keepVisible?: boolean; empty: boolean; onOpenSession?: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onReplyToSession?: (session: ProjectButterSessionItem, draft: string) => boolean; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; replyFocusRequest?: number; replySession?: ProjectButterSessionItem; replyTarget?: Readonly<{ entryId: string; targetId: string; actor: JiraActivityActor }> | null; onClearReply?: () => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
 	const [expanded, setExpanded] = useState(false);
 	const [mentions, setMentions] = useState<string[]>([]);
 	const [hasMentions, setHasMentions] = useState(false);
@@ -46,15 +49,15 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 	const mentionedAgent = mentions.length === 1 ? agents.find((agent) => agent.name === mentions[0]) : undefined;
 	const matchingSessions = mentionedAgent ? matchingAgentSessions(mentionedAgent, sessions, { includeCompleted: true }) : [];
 	const existingSession = matchingSessions[0];
-	const showTargetMenu = Boolean(existingSession && newSessionAgentName !== mentionedAgent?.name);
+	const showTargetMenu = Boolean(!replyTarget && existingSession && newSessionAgentName !== mentionedAgent?.name);
 	const menuLength = choosingSession ? matchingSessions.length : SESSION_TARGET_MENU_ITEMS.length;
 	const selectedIndex = Math.max(choosingSession ? -1 : 0, Math.min(selectedTargetIndex, menuLength - 1));
 	const reducedMotion = useReducedMotion();
 	const { barRef, elevated, inActivity, revealActivity } = useCommentBarVisibility(active, empty, sidePanel);
-	const visible = active && (keepVisible || empty || expanded || inActivity);
+	const visible = active && (keepVisible || Boolean(replyTarget) || empty || expanded || inActivity);
 	// The composer stays mounted, so tucking it away must also release focus; otherwise the next M would type into it.
 	function releaseFocus() { if (document.activeElement instanceof HTMLElement && barRef.current?.contains(document.activeElement)) document.activeElement.blur(); }
-	function cancel() { releaseFocus(); currentDraft.current = ""; setExpanded(false); content.setCommentDraft(""); setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); }
+	function cancel() { releaseFocus(); currentDraft.current = ""; setExpanded(false); content.setCommentDraft(""); setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); onClearReply?.(); }
 	useEffect(() => {
 		if (!active) return;
 		function onKeyDown(event: KeyboardEvent) {
@@ -77,8 +80,16 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 		document.addEventListener("pointerdown", onOutside);
 		return () => document.removeEventListener("pointerdown", onOutside);
 	}, [barRef, expanded, onPreviewSession]);
-	function submit(body: string, plainText: string) {
+	function submit(body: string, plainText: string, mentionedAgentIds: readonly string[]) {
 		if (showTargetMenu) return;
+		if (replyTarget) {
+			const actorIds = mentionedAgentIds.flatMap((id) => agents.filter((agent) => mapAgentToMentionItem(agent).id === id).map((agent) => agent.id));
+			if (replySession) actorIds.push(replySession.agent.id ?? replySession.id);
+			else if (replyTarget.actor.kind === "agent") actorIds.push(replyTarget.actor.id);
+			content.submitActivityReply(replyTarget.entryId, body, [...new Set(actorIds)], replySession?.id);
+			cancel();
+			return;
+		}
 		if (mentionedAgent) {
 			onStartAgent(mentionedAgent, plainText);
 			cancel();
@@ -99,13 +110,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 	async function openSelectedSession(session: ProjectButterSessionItem) {
 		const draft = mentionedAgent ? editorRef.current?.getDraftWithoutAgentMention(mentionedAgent.name) ?? "" : "";
 		if (onReplyToSession) {
-			const chip = barRef.current?.querySelector<HTMLElement>(".rich-text-mention-chip");
-			const source = chip ? { chip: chip.cloneNode(true) as HTMLElement, rect: chip.getBoundingClientRect() } : null;
-			if (chip && source) {
-				const appearance = getComputedStyle(chip);
-				Object.assign(source.chip.style, { fontFamily: appearance.fontFamily, fontSize: appearance.fontSize });
-			}
-			if (onReplyToSession(session, draft, source)) cancel();
+			if (onReplyToSession(session, draft)) { currentDraft.current = draft; setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setChoosingSession(false); setSelectedTargetIndex(0); onPreviewSession(null); }
 			return;
 		}
 		if (!onOpenSession || openingSession.current) return;
@@ -187,7 +192,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 				</div> : <RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={SESSION_TARGET_MENU_ITEMS} onHover={setSelectedTargetIndex} onSelect={(item) => chooseTarget(item.id === "new" ? "new" : "continue")} selectedIndex={selectedIndex} title="Choose agent session" />}
 			</div> : null}
 			<div onFocusCapture={() => setExpanded(true)}>
-				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest} instructionPlaceholderForAgent={mentionedAgent && ((!choosingSession && showTargetMenu && selectedIndex === 1) || newSessionAgentName === mentionedAgent.name) ? mentionedAgent.name : undefined} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} value={content.commentDraft} />
+				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest + replyFocusRequest} inputContext={replyTarget ? <ContextChip countLabel={`Replying to ${replySession?.title ?? replyTarget.actor.name}`} icon={<ReplyLeftIcon color="currentColor" label="" size="small" />} items={[{ id: replyTarget.entryId, title: replySession?.title ?? replyTarget.actor.name, subtitle: replySession ? replySession.agent.name : undefined, body: "Replying in this activity thread" }]} onRemoveAll={() => { onClearReply?.(); setFocusRequest((value) => value + 1); }} removeAllLabel="Remove reply target" testId="reply-target-chip" /> : undefined} instructionPlaceholderForAgent={mentionedAgent && ((!choosingSession && showTargetMenu && selectedIndex === 1) || newSessionAgentName === mentionedAgent.name) ? mentionedAgent.name : undefined} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} value={content.commentDraft} />
 			</div>
 		</motion.div>
 	);

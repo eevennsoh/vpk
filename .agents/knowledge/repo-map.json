@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 451,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 444,
+				"live": 445,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6339,7 +6339,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 61,
+				"entryCount": 62,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6430,6 +6430,13 @@
 						"slug": "context-bar",
 						"name": "Context Bar",
 						"importPath": "@/components/ui-custom/context-bar",
+						"status": "live"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "context-chip",
+						"name": "Context Chip",
+						"importPath": "@/components/ui-custom/context-chip",
 						"status": "live"
 					},
 					{
