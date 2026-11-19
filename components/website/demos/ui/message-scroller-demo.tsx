@@ -23,7 +23,7 @@ import {
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { Spinner } from "@/components/ui/spinner";
-import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-shared";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-motion";
 
 type ChatStatus = "ready" | "submitted" | "streaming";
 

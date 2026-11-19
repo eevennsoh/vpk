@@ -1,9 +1,9 @@
-import type { FileTree2GitStatus, FileTree2Item } from "@/components/ui-custom/file-tree-2";
+import type { FileExplorerGitStatus, FileExplorerItem } from "@/components/ui-custom/file-explorer";
 
 import { EXPLORER_TREE } from "../data/explorer-tree";
 import type { ChangedFile, ExplorerNode } from "../data/types";
 
-const DEMO_GIT_STATUSES: Readonly<Record<string, FileTree2GitStatus>> = {
+const DEMO_GIT_STATUSES: Readonly<Record<string, FileExplorerGitStatus>> = {
 	".browserslistrc": "ignored",
 	".gitignore": "deleted",
 	"CONTRIBUTING.md": "added",
@@ -14,18 +14,18 @@ const DEMO_GIT_STATUSES: Readonly<Record<string, FileTree2GitStatus>> = {
 
 export interface CodeReviewTreeData {
 	fileIdsByPath: ReadonlyMap<string, string>;
-	items: readonly FileTree2Item[];
+	items: readonly FileExplorerItem[];
 	pathsByFileId: ReadonlyMap<string, string>;
 }
 
 /**
- * Builds a Trees/FileTree2 path-first item list for code review.
+ * Builds a Trees/FileExplorer path-first item list for code review.
  *
  * By default only `files` (changed paths) are included; ancestor folders are
  * synthesized from those paths. Opt into `includeDemoTree` for the full VS Code
  * explorer fixture (unchanged folders, ignored paths, etc.).
  *
- * Search over the resulting FileTree2 items stays within this set.
+ * Search over the resulting FileExplorer items stays within this set.
  */
 export function createCodeReviewTreeData(
 	files: readonly ChangedFile[],
@@ -33,7 +33,7 @@ export function createCodeReviewTreeData(
 	includeDemoTree = false,
 ): CodeReviewTreeData {
 	const changedFilesRootPath = `${rootPath}/CHANGED FILES`;
-	const itemsByPath = new Map<string, FileTree2Item>([
+	const itemsByPath = new Map<string, FileExplorerItem>([
 		[rootPath, { path: rootPath, type: "folder" }],
 	]);
 	const fileIdsByPath = new Map<string, string>();

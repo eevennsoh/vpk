@@ -53,7 +53,6 @@ import { DEFAULT_APP_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/app-di
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { getThirdPartyLogoIconFromSrc } from "@/components/ui/data/logo-third-party-icons";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -1360,12 +1359,8 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	if (!item.avatarSrc) return null;
 
-	const ThirdPartyIcon = getThirdPartyLogoIconFromSrc(item.avatarSrc);
-	return ThirdPartyIcon ? (
-		<ThirdPartyIcon label={item.label} size="small" />
-	) : (
-		<BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} />
-	);
+	// BrandLogoMark renders the upstream package mark when the avatar is a third-party asset path.
+	return <BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} />;
 }
 
 interface ToolDetailViewProps {

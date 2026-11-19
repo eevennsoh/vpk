@@ -1,13 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion } from "motion/react";
-import { motionDuration, motionEase } from "@/lib/motion";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { Message, MessageContent, MessageHeader } from "@/components/ui/message";
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-motion";
 
 export type ExampleMessage = {
 	id: string;
@@ -44,15 +43,6 @@ export function ExampleMessageContent({ message }: Readonly<{ message: ExampleMe
 		</Message>
 	);
 }
-
-export const MotionMessageScrollerItem = motion.create(MessageScrollerItem);
-
-/** shadcn's default entrance (`MESSAGE_ANIMATIONS["slide-up"]`) on VPK motion tokens. */
-export const slideUpEntrance = {
-	initial: { opacity: 0, y: 10 },
-	animate: { opacity: 1, y: 0 },
-	transition: { duration: motionDuration.slow, ease: motionEase.out },
-} as const;
 
 /** The person's turns rise in from the live edge; replies and markers render in place. */
 export function ExampleRows({ messages }: Readonly<{ messages: ReadonlyArray<ExampleMessage> }>) {

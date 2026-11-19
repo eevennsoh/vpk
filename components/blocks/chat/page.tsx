@@ -155,7 +155,7 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 						<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
 							<PromptInputTools>
 								<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-									<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+									<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 										<AddIcon label="" />
 									</PromptInputActionMenuTrigger>
 									<PromptInputActionMenuContent className="w-auto min-w-[200px] p-1">
@@ -204,7 +204,7 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 
 							<div className="flex items-center gap-0.5">
 								<PromptInputMicrophone />
-								<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} size="icon-sm">
+								<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} className="rounded-md" size="icon-sm">
 									<ArrowUpIcon label="" />
 								</PromptInputSubmit>
 							</div>

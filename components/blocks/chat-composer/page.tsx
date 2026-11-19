@@ -147,7 +147,7 @@ export default function ChatComposer({
 						<PromptInputTools>
 							{features.addMenu ? (
 								<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-									<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+									<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 										<AddIcon label="" />
 									</PromptInputActionMenuTrigger>
 									<PromptInputActionMenuContent className="w-auto min-w-[200px]">
@@ -189,7 +189,7 @@ export default function ChatComposer({
 								</PromptInputButton>
 							) : null}
 
-							<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} size="icon-sm">
+							<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} className="rounded-md" size="icon-sm">
 								<ArrowUpIcon label="" />
 							</PromptInputSubmit>
 						</div>

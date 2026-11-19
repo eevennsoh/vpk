@@ -204,3 +204,63 @@ export default function SubmitHarness({ status, disabled, onStop, onSubmit }) {
 	await view.click(view.getByRole("button", { name: "Submit" }));
 	assert.deepEqual(submissions, ["ready"]);
 });
+
+test("header without children lists pending attachments as removable Attachment chips", async (t) => {
+	t.mock.method(URL, "createObjectURL", (file) => `blob:header-${file.name}`);
+	t.mock.method(URL, "revokeObjectURL", () => {});
+	const view = await renderComponent({
+		source: `
+import { PromptInput, PromptInputHeader, usePromptInputAttachments } from "@/components/ui-custom/prompt-input";
+function AddFile() {
+	const attachments = usePromptInputAttachments();
+	return <button type="button" onClick={() => attachments.add([new File(["abc"], "notes.txt", { type: "text/plain" })])}>Add file</button>;
+}
+export default function HeaderHarness() {
+	return <PromptInput onSubmit={() => {}}>
+		<PromptInputHeader><span>Context chip</span></PromptInputHeader>
+		<PromptInputHeader />
+		<AddFile />
+	</PromptInput>;
+}`,
+	});
+	t.after(() => view.unmount());
+	const addons = () => view.container.querySelectorAll('[data-slot="input-group-addon"]');
+	assert.equal(addons().length, 1, "an empty attachment header renders nothing");
+	assert.equal(addons()[0].dataset.align, "block-start");
+	assert.equal(addons()[0].textContent, "Context chip");
+	await view.click(view.getByRole("button", { name: "Add file" }));
+	const chip = view.container.querySelector('[data-slot="attachment"]');
+	assert.equal(chip?.dataset.size, "sm");
+	assert.equal(chip?.textContent, "notes.txt");
+	await view.click(view.getByRole("button", { name: "Remove notes.txt" }));
+	assert.equal(view.container.querySelector('[data-slot="attachment"]'), null);
+	assert.equal(addons().length, 1);
+});
+
+test("action menu trigger and submit default to shadcn's round icon buttons and accept a composer radius", async (t) => {
+	const view = await renderComponent({
+		source: `
+import { PromptInput, PromptInputActionMenu, PromptInputActionMenuTrigger, PromptInputSubmit } from "@/components/ui-custom/prompt-input";
+export default function ButtonsHarness({ className }) {
+	return <PromptInput onSubmit={() => {}}>
+		<PromptInputActionMenu><PromptInputActionMenuTrigger aria-label="Add" className={className} /></PromptInputActionMenu>
+		<PromptInputSubmit className={className} />
+	</PromptInput>;
+}`,
+		props: {},
+	});
+	t.after(() => view.unmount());
+	const classes = (name) => view.getByRole("button", { name }).className.split(/\s+/u);
+	for (const name of ["Add", "Submit"]) {
+		const button = view.getByRole("button", { name });
+		assert.equal(button.dataset.size, "icon-sm");
+		assert.equal(classes(name).includes("rounded-full"), true);
+		assert.notEqual(button.querySelector("svg"), null, "renders its default icon");
+	}
+	assert.equal(classes("Add").includes("bg-bg-neutral-subtle"), true, "trigger uses the outline variant");
+	assert.equal(view.getByRole("button", { name: "Submit" }).type, "submit");
+	await view.rerender({ className: "rounded-md" });
+	for (const name of ["Add", "Submit"]) {
+		assert.equal(classes(name).includes("rounded-full"), false);
+	}
+});

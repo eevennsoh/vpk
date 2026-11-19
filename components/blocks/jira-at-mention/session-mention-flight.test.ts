@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { planSessionMentionFlight } from "./session-mention-flight.ts";
+import { DEFAULT_MENTION_FLIGHT_OPTIONS, planSessionMentionFlight } from "./session-mention-flight.ts";
 
 const source = { left: 480, top: 650, width: 124, height: 24 };
 const destination = { left: 260, top: 250, width: 124, height: 24 };
@@ -71,4 +71,16 @@ test("unusable or clipped endpoints skip the flight instead of landing outside t
 		assert.equal(planSessionMentionFlight({ source: endpoint, destination, viewport }), null);
 		assert.equal(planSessionMentionFlight({ source, destination: endpoint, viewport }), null);
 	}
+});
+
+test("configured flight changes timing and movement while preserving the endpoints", () => {
+	const options = { ...DEFAULT_MENTION_FLIGHT_OPTIONS, durationMs: 1100, arc: 0, lift: 0, overshoot: 0, traceOffset: 0.7 };
+	const plan = planSessionMentionFlight({ source, destination, viewport }, options);
+	assert.ok(plan);
+	assert.equal(plan.durationMs, 1100);
+	assert.equal(plan.traceOffset, 0.7);
+	assert.ok(plan.frames.every((frame) => frame.scale === 1));
+	close(plan.frames[0].x, source.left);
+	close(plan.frames.at(-1)!.x, destination.left);
+	close(plan.frames.at(-1)!.y, destination.top);
 });

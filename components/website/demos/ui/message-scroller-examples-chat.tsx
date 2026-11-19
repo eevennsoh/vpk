@@ -26,7 +26,7 @@ import {
 	MessageScrollerItem,
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-shared";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	Trace,

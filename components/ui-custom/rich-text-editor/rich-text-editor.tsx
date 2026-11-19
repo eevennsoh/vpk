@@ -815,7 +815,6 @@ export function RichTextEditor({
 				)}
 				{placeholderSlot && isEmpty && viewMode === "rendered" ? (
 					<div
-						aria-hidden="true"
 						data-slot="rich-text-editor-placeholder"
 						className={cn("pointer-events-none absolute inset-0", contentClassName)}
 					>

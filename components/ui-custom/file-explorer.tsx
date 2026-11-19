@@ -17,62 +17,62 @@ import {
 	SearchIcon,
 } from "@/components/ui/vpk-icons";
 import {
-	FileTree2FileIcon,
-	FileTree2IconSprite,
-	type FileTree2Icons,
-} from "@/components/ui-custom/file-tree-2-file-icon";
+	FileExplorerFileIcon,
+	FileExplorerIconSprite,
+	type FileExplorerIcons,
+} from "@/components/ui-custom/file-explorer-file-icon";
 import {
-	createFileTree2Model,
-	getFileTree2MovePath,
-	getVisibleFileTree2Nodes,
-	normalizeFileTree2Path,
-	type FileTree2ItemType,
-	type FileTree2SearchMode,
-} from "@/components/ui-custom/file-tree-2-model";
+	createFileExplorerModel,
+	getFileExplorerMovePath,
+	getVisibleFileExplorerNodes,
+	normalizeFileExplorerPath,
+	type FileExplorerItemType,
+	type FileExplorerSearchMode,
+} from "@/components/ui-custom/file-explorer-model";
 import { cn } from "@/lib/utils";
 
-export type { FileTree2Icons };
+export type { FileExplorerIcons };
 
-export type FileTree2GitStatus = "added" | "deleted" | "ignored" | "modified" | "renamed" | "untracked";
+export type FileExplorerGitStatus = "added" | "deleted" | "ignored" | "modified" | "renamed" | "untracked";
 
-export interface FileTree2Item {
+export interface FileExplorerItem {
 	annotation?: ReactNode;
 	disabled?: boolean;
 	icon?: ReactNode;
 	path: string;
-	status?: FileTree2GitStatus;
-	type?: FileTree2ItemType;
+	status?: FileExplorerGitStatus;
+	type?: FileExplorerItemType;
 }
 
-export interface FileTree2MoveEvent {
+export interface FileExplorerMoveEvent {
 	destinationPath: string | null;
 	nextPath: string;
 	sourcePath: string;
 }
 
-export interface FileTree2Props extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
-	canDrag?: (path: string, item: FileTree2Item) => boolean;
+export interface FileExplorerProps extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
+	canDrag?: (path: string, item: FileExplorerItem) => boolean;
 	defaultExpandedPaths?: Iterable<string>;
 	defaultSelectedPath?: string;
 	dragAndDrop?: boolean;
 	emptyMessage?: string;
 	expandedPaths?: ReadonlySet<string>;
 	flattenEmptyDirectories?: boolean;
-	icons?: FileTree2Icons;
-	items: readonly FileTree2Item[];
+	icons?: FileExplorerIcons;
+	items: readonly FileExplorerItem[];
 	onExpandedPathsChange?: (paths: ReadonlySet<string>) => void;
-	onMove?: (event: FileTree2MoveEvent) => void;
-	onSelectedPathChange?: (path: string, item: FileTree2Item) => void;
+	onMove?: (event: FileExplorerMoveEvent) => void;
+	onSelectedPathChange?: (path: string, item: FileExplorerItem) => void;
 	openOnDropDelay?: number;
 	searchable?: boolean;
-	searchMode?: FileTree2SearchMode;
+	searchMode?: FileExplorerSearchMode;
 	searchPlaceholder?: string;
 	/** Controlled filter query. When set, drives filtering even if `searchable` is false. */
 	searchQuery?: string;
 	selectedPath?: string;
 }
 
-const statusStyles: Record<Exclude<FileTree2GitStatus, "ignored">, { className: string; label: string; shortLabel: string }> = {
+const statusStyles: Record<Exclude<FileExplorerGitStatus, "ignored">, { className: string; label: string; shortLabel: string }> = {
 	added: { className: "text-icon-success", label: "Added", shortLabel: "A" },
 	deleted: { className: "text-icon-danger", label: "Deleted", shortLabel: "D" },
 	modified: { className: "text-icon-information", label: "Modified", shortLabel: "M" },
@@ -80,14 +80,14 @@ const statusStyles: Record<Exclude<FileTree2GitStatus, "ignored">, { className: 
 	untracked: { className: "text-icon-success", label: "Untracked", shortLabel: "U" },
 };
 
-const FILE_TREE_2_DRAG_MIME_TYPE = "application/x-file-tree-2-path";
-const FILE_TREE_2_ROOT_DROP_TARGET = "__file-tree-2-root__";
+const FILE_EXPLORER_DRAG_MIME_TYPE = "application/x-file-explorer-path";
+const FILE_EXPLORER_ROOT_DROP_TARGET = "__file-explorer-root__";
 
 function normalizePathSet(paths: Iterable<string>): Set<string> {
-	return new Set([...paths].map(normalizeFileTree2Path).filter(Boolean));
+	return new Set([...paths].map(normalizeFileExplorerPath).filter(Boolean));
 }
 
-function getChangedAncestorPaths(items: readonly FileTree2Item[]): Set<string> {
+function getChangedAncestorPaths(items: readonly FileExplorerItem[]): Set<string> {
 	const ancestorPaths = new Set<string>();
 
 	for (const item of items) {
@@ -95,7 +95,7 @@ function getChangedAncestorPaths(items: readonly FileTree2Item[]): Set<string> {
 			continue;
 		}
 
-		let path = normalizeFileTree2Path(item.path);
+		let path = normalizeFileExplorerPath(item.path);
 		let separatorIndex = path.lastIndexOf("/");
 		while (separatorIndex !== -1) {
 			path = path.slice(0, separatorIndex);
@@ -107,7 +107,7 @@ function getChangedAncestorPaths(items: readonly FileTree2Item[]): Set<string> {
 	return ancestorPaths;
 }
 
-export function FileTree2({
+export function FileExplorer({
 	"aria-label": ariaLabel = "File tree",
 	canDrag,
 	className,
@@ -129,10 +129,10 @@ export function FileTree2({
 	searchQuery: controlledSearchQuery,
 	selectedPath: controlledSelectedPath,
 	...props
-}: Readonly<FileTree2Props>) {
-	const model = useMemo(() => createFileTree2Model(items), [items]);
+}: Readonly<FileExplorerProps>) {
+	const model = useMemo(() => createFileExplorerModel(items), [items]);
 	const itemsByPath = useMemo(
-		() => new Map(items.map((item) => [normalizeFileTree2Path(item.path), item])),
+		() => new Map(items.map((item) => [normalizeFileExplorerPath(item.path), item])),
 		[items],
 	);
 	const changedAncestorPaths = useMemo(() => getChangedAncestorPaths(items), [items]);
@@ -140,7 +140,7 @@ export function FileTree2({
 		normalizePathSet(defaultExpandedPaths),
 	);
 	const [internalSelectedPath, setInternalSelectedPath] = useState(() =>
-		defaultSelectedPath ? normalizeFileTree2Path(defaultSelectedPath) : undefined,
+		defaultSelectedPath ? normalizeFileExplorerPath(defaultSelectedPath) : undefined,
 	);
 	const [focusedPath, setFocusedPath] = useState<string>();
 	const [internalQuery, setInternalQuery] = useState("");
@@ -155,10 +155,10 @@ export function FileTree2({
 		[controlledExpandedPaths, internalExpandedPaths],
 	);
 	const selectedPath = controlledSelectedPath !== undefined
-		? normalizeFileTree2Path(controlledSelectedPath)
+		? normalizeFileExplorerPath(controlledSelectedPath)
 		: internalSelectedPath;
 	const visibleNodes = useMemo(
-		() => getVisibleFileTree2Nodes(model, expandedPaths, query, flattenEmptyDirectories, searchMode),
+		() => getVisibleFileExplorerNodes(model, expandedPaths, query, flattenEmptyDirectories, searchMode),
 		[expandedPaths, flattenEmptyDirectories, model, query, searchMode],
 	);
 	const activePath = focusedPath && visibleNodes.some((node) => node.path === focusedPath)
@@ -204,7 +204,7 @@ export function FileTree2({
 		onSelectedPathChange?.(path, item);
 	};
 
-	const getItem = (path: string): FileTree2Item =>
+	const getItem = (path: string): FileExplorerItem =>
 		itemsByPath.get(path) ?? { path, type: "folder" as const };
 
 	const isDraggablePath = (path: string): boolean => {
@@ -216,7 +216,7 @@ export function FileTree2({
 		if (!sourcePath || !isDraggablePath(sourcePath)) {
 			return false;
 		}
-		return getFileTree2MovePath(model, sourcePath, destinationPath) !== null;
+		return getFileExplorerMovePath(model, sourcePath, destinationPath) !== null;
 	};
 
 	const clearDragState = () => {
@@ -247,7 +247,7 @@ export function FileTree2({
 			clearDragState();
 			return;
 		}
-		const nextPath = getFileTree2MovePath(model, sourcePath, destinationPath);
+		const nextPath = getFileExplorerMovePath(model, sourcePath, destinationPath);
 		if (!nextPath) {
 			clearDragState();
 			return;
@@ -261,7 +261,7 @@ export function FileTree2({
 	};
 
 	const getDraggedPath = (event: ReactDragEvent): string | undefined =>
-		event.dataTransfer.getData(FILE_TREE_2_DRAG_MIME_TYPE) || draggedPathRef.current;
+		event.dataTransfer.getData(FILE_EXPLORER_DRAG_MIME_TYPE) || draggedPathRef.current;
 
 	const handleRowKeyDown = (event: KeyboardEvent<HTMLButtonElement>, path: string) => {
 		const currentIndex = visibleNodes.findIndex((node) => node.path === path);
@@ -313,11 +313,11 @@ export function FileTree2({
 
 	return (
 		<div
-			className={cn("group/file-tree-2 overflow-hidden rounded-lg border border-border bg-surface font-sans text-[13px]", className)}
-			data-slot="file-tree-2"
+			className={cn("group/file-explorer overflow-hidden rounded-lg border border-border bg-surface font-sans text-[13px]", className)}
+			data-slot="file-explorer"
 			{...props}
 		>
-			<FileTree2IconSprite icons={icons} />
+			<FileExplorerIconSprite icons={icons} />
 			{searchable ? (
 				<div className="relative border-b border-border px-2 py-2">
 					<SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-icon-subtle" />
@@ -335,15 +335,15 @@ export function FileTree2({
 				aria-label={ariaLabel}
 				className={cn(
 					"max-h-96 min-h-12 overflow-y-auto p-2 transition-colors duration-normal",
-					dropTargetPath === FILE_TREE_2_ROOT_DROP_TARGET && "bg-bg-selected",
+					dropTargetPath === FILE_EXPLORER_ROOT_DROP_TARGET && "bg-bg-selected",
 				)}
-				data-drop-target={dropTargetPath === FILE_TREE_2_ROOT_DROP_TARGET ? "root" : undefined}
+				data-drop-target={dropTargetPath === FILE_EXPLORER_ROOT_DROP_TARGET ? "root" : undefined}
 				onDragEnter={(event) => {
 					const sourcePath = getDraggedPath(event);
 					if (canDropOn(sourcePath, null)) {
 						event.preventDefault();
 						event.dataTransfer.dropEffect = "move";
-						setDropTargetPath(FILE_TREE_2_ROOT_DROP_TARGET);
+						setDropTargetPath(FILE_EXPLORER_ROOT_DROP_TARGET);
 					}
 				}}
 				onDragLeave={(event) => {
@@ -356,7 +356,7 @@ export function FileTree2({
 					if (canDropOn(sourcePath, null)) {
 						event.preventDefault();
 						event.dataTransfer.dropEffect = "move";
-						setDropTargetPath(FILE_TREE_2_ROOT_DROP_TARGET);
+						setDropTargetPath(FILE_EXPLORER_ROOT_DROP_TARGET);
 					}
 				}}
 				onDrop={(event) => {
@@ -437,7 +437,7 @@ export function FileTree2({
 									return;
 								}
 								event.dataTransfer.effectAllowed = "move";
-								event.dataTransfer.setData(FILE_TREE_2_DRAG_MIME_TYPE, node.path);
+								event.dataTransfer.setData(FILE_EXPLORER_DRAG_MIME_TYPE, node.path);
 								event.dataTransfer.setData("text/plain", node.path);
 								draggedPathRef.current = node.path;
 								setDraggedPath(node.path);
@@ -469,10 +469,10 @@ export function FileTree2({
 							tabIndex={activePath === node.path ? 0 : -1}
 							type="button"
 						>
-							<span className="flex h-full shrink-0" data-slot="file-tree-2-spacing">
+							<span className="flex h-full shrink-0" data-slot="file-explorer-spacing">
 								{Array.from({ length: node.depth }, (_, depth) => (
-									<span className="flex h-full w-4 shrink-0 justify-center" data-slot="file-tree-2-spacing-item" key={depth}>
-										<span className="h-full translate-x-1 border-l border-border opacity-0 transition-opacity duration-normal group-hover/file-tree-2:opacity-75" />
+									<span className="flex h-full w-4 shrink-0 justify-center" data-slot="file-explorer-spacing-item" key={depth}>
+										<span className="h-full translate-x-1 border-l border-border opacity-0 transition-opacity duration-normal group-hover/file-explorer:opacity-75" />
 									</span>
 								))}
 							</span>
@@ -480,7 +480,7 @@ export function FileTree2({
 								{node.type === "folder" ? (
 									<ChevronRightIcon className={cn("size-4 text-icon-subtle transition-transform duration-normal ease-out", isExpanded && "rotate-90")} size="small" />
 								) : (item?.icon ?? (
-									<FileTree2FileIcon
+									<FileExplorerFileIcon
 										className={cn(status?.className, isIgnored && "text-icon-disabled")}
 										icons={icons}
 										path={node.path}

@@ -168,7 +168,7 @@ test("submit requires a handler and non-empty editor content", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<PromptInputSubmit[\s\S]*className="hover:opacity-90 active:opacity-80"[\s\S]*disabled=\{!canSubmit\}/u,
+		/<PromptInputSubmit[\s\S]*className="rounded-md hover:opacity-90 active:opacity-80"[\s\S]*disabled=\{!canSubmit\}/u,
 	);
 });
 

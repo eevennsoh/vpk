@@ -21,6 +21,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import { MOCK_TASKS, type ProgressStatusGroups, type ProgressTask } from "./data/mock-tasks";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
+import { useTimestampAgo } from "@/hooks/use-timestamp-ago";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
 	"conic-gradient(from 220deg, transparent 0deg 252deg, #8d63ff 252deg 266deg, #7fbb44 266deg 280deg, #3b66e0 280deg 294deg, #e5a126 294deg 308deg, transparent 308deg 360deg)";
@@ -36,6 +37,7 @@ const CARD_ANIMATION_STYLES = `
 `;
 
 const CARD_ANIMATION_INNER_HTML = { __html: CARD_ANIMATION_STYLES };
+const DEFAULT_RUN_AGE_MS = 651_000;
 const CELEBRATORY_EMOJIS = ["🎉", "🥳", "🎊", "🪅", "🥂", "🎈", "🏆", "✨", "💪", "🙌"] as const;
 const EMOJI_ENTER_TRANSITION = { duration: 0.25, ease: [0.175, 0.885, 0.32, 1.275] as const };
 const ICON_TRANSITION = { duration: 0.2, ease: "easeOut" as const };
@@ -270,7 +272,7 @@ export default function AgentsProgress({
 	planVisualIdentity,
 	taskStatusGroups = MOCK_TASKS,
 	runStatus = "running",
-	runCreatedAt = new Date(Date.now() - 651_000).toISOString(),
+	runCreatedAt: runCreatedAtProp,
 	runCompletedAt = null,
 	initialNowMs,
 	showSummaryRainbow = false,
@@ -283,6 +285,9 @@ export default function AgentsProgress({
 	onRetryGroup,
 	className,
 }: Readonly<AgentsProgressProps>) {
+	// Without a start time the card shows a run that began ~10m 51s before it mounted.
+	const defaultRunCreatedAt = useTimestampAgo(DEFAULT_RUN_AGE_MS);
+	const runCreatedAt = runCreatedAtProp === undefined ? defaultRunCreatedAt : runCreatedAtProp;
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
 	const [nowMs, setNowMs] = useState(() =>
 		resolveInitialNowMs({
@@ -393,22 +398,28 @@ export default function AgentsProgress({
 	return (
 		<div
 			className={cn(
-				"group/card w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-medium hover:shadow-xl",
+				"group/card relative w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-medium hover:shadow-xl has-[[data-slot=progress-card-action]:focus-visible]:outline-2 has-[[data-slot=progress-card-action]:focus-visible]:outline-ring has-[[data-slot=progress-card-action]:focus-visible]:outline-offset-2",
 				!isInteractive && "cursor-default",
 				className
 			)}
 			onClick={isInteractive ? handleCardActivate : undefined}
-			onKeyDown={isInteractive ? (e: React.KeyboardEvent) => {
-				// Keys from the Stop/Delete/Retry buttons inside the card belong to them.
-				if (e.target !== e.currentTarget) return;
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					handleCardActivate();
-				}
-			} : undefined}
-			role={isInteractive ? "button" : undefined}
-			tabIndex={isInteractive ? 0 : undefined}
+			role="presentation"
 		>
+			{/* The action shares the shell with content and controls; pointer clicks keep bubbling through the shell. */}
+			{isInteractive ? (
+				<button
+					type="button"
+					aria-label={`${planTitle} agent progress`}
+					aria-expanded={isCollapsible ? !collapsed : undefined}
+					className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
+					data-slot="progress-card-action"
+					onClick={(event) => {
+						// Keyboard activation arrives as a click; the shell handles pointer clicks itself.
+						event.stopPropagation();
+						handleCardActivate();
+					}}
+				/>
+			) : null}
 			<style dangerouslySetInnerHTML={CARD_ANIMATION_INNER_HTML} />
 			<div className="flex flex-col gap-3 px-4 py-3">
 				<div className="flex items-center justify-between gap-3">
@@ -456,7 +467,7 @@ export default function AgentsProgress({
 							<VideoStopOverlayIcon label="" />
 						</Button>
 					) : onDelete ? (
-						<span className="block sr-only group-hover/card:not-sr-only group-focus-visible/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only" onClick={(e) => e.stopPropagation()} role="presentation">
+						<span className="block sr-only group-hover/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only" onClick={(e) => e.stopPropagation()} role="presentation">
 							<Button
 								aria-label="Delete run"
 								variant="ghost"

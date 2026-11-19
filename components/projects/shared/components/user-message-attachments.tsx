@@ -4,7 +4,7 @@ import type { FileUIPart } from "ai";
 
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { getFileAttachmentId } from "@/lib/attachment-media";
-import { AttachmentPartMedia } from "./attachment-part-media";
+import { AttachmentPartMedia } from "@/components/ui-custom/attachment-part-media";
 
 interface UserMessageAttachmentsProps {
 	attachments: ReadonlyArray<FileUIPart>;

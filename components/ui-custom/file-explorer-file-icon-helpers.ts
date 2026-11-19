@@ -4,9 +4,9 @@ import {
 	type FileTreeIcons,
 } from "@pierre/trees";
 
-export type FileTree2Icons = FileTreeIcons;
+export type FileExplorerIcons = FileTreeIcons;
 
-export const fileTree2IconColorStyles: Readonly<Record<string, string>> = {
+export const fileExplorerIconColorStyles: Readonly<Record<string, string>> = {
 	astro: "text-icon-accent-purple",
 	babel: "text-icon-accent-yellow",
 	bash: "text-icon-accent-green",
@@ -62,7 +62,7 @@ export const fileTree2IconColorStyles: Readonly<Record<string, string>> = {
 	zip: "text-icon-accent-orange",
 };
 
-export function getFileTree2IconSet(icons: FileTree2Icons | undefined): FileTreeBuiltInIconSet | "none" {
+export function getFileExplorerIconSet(icons: FileExplorerIcons | undefined): FileTreeBuiltInIconSet | "none" {
 	if (!icons) {
 		return "complete";
 	}
@@ -77,7 +77,7 @@ export function getFileTree2IconSet(icons: FileTree2Icons | undefined): FileTree
 		: "complete";
 }
 
-export function getFileTree2IconSpriteSheet(icons: FileTree2Icons = "complete"): string {
-	const iconSet = getFileTree2IconSet(icons);
+export function getFileExplorerIconSpriteSheet(icons: FileExplorerIcons = "complete"): string {
+	const iconSet = getFileExplorerIconSet(icons);
 	return `${getBuiltInSpriteSheet(iconSet)}${typeof icons === "object" ? (icons.spriteSheet ?? "") : ""}`;
 }

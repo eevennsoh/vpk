@@ -268,7 +268,7 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 }
 
 function JiraIssueDefault({
-	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = "default",
+	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = appearance === "project-butter" ? "project-butter" : "default",
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -883,6 +883,7 @@ function JiraIssueDefault({
 				    card height — and drop-zone geometry — stays put. */}
 				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale} retainCompletedContent={resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
+					revealTeammateLabelOnHover={appearance === "project-butter"}
 					avatarSize={agentActivityAvatarSize}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}

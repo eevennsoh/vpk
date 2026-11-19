@@ -616,7 +616,7 @@ test("Butter keeps overflow options enabled while unavailable actions remain no-
 		},
 	});
 	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
-	for (const name of ["Move work item", "Change status", "Copy link", "Copy key", "Add agent", "Link Confluence item", "Link work item", "Change parent", "Select cover", "Edit labels", "Add flag", "Select", "Archive", "Delete"]) {
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Delete"]) {
 		assert.notEqual(view.getByRole("menuitem", { name }).getAttribute("aria-disabled"), "true", name);
 	}
 	await view.click(view.getByRole("menuitem", { name: "Move work item" }));
@@ -709,6 +709,9 @@ test("the Butter playground commits labels and supports flagging and selection",
 	await view.press(activation, "Enter");
 	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Select", "Delete"]) {
+		assert.equal(view.queryByRole("menuitem", { name }) !== null, true, name);
+	}
 	await view.click(view.getByRole("menuitem", { name: "Edit labels" }));
 	await view.fill(view.getByRole("textbox", { name: "Labels" }), "keyboard, a11y");
 	await view.click(view.getByRole("button", { name: "Save labels" }));

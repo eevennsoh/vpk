@@ -35,13 +35,14 @@ deleted until their owning worktree is removed.
 Use porcelain with untracked files enabled:
 
 ```bash
-git -C <worktree> status --short --branch --untracked-files=all
-git -C <worktree> status --porcelain=v1 --untracked-files=all
+git --no-optional-locks -C <worktree> status --short --branch --untracked-files=all
+git --no-optional-locks -C <worktree> status --porcelain=v1 --untracked-files=all
 ```
 
-Any output from the second command is a hard stop. Capture the exact path,
-branch or detached state, and file list, then leave it alone. A merged PR proves
-only committed work; it says nothing about these local files.
+Any output from the second command is user work. Capture the exact path,
+branch or detached state, and file list. Retain it unless every changed file
+qualifies for the skill's verified, backed-up superseded tracked-edit exception.
+A merged PR proves only committed work; it says nothing about local files.
 
 ## Prove committed work landed
 
@@ -53,8 +54,9 @@ pnpm run clean-candidates -- --fetch --json
 ```
 
 `ship-status` shows where one branch is on its way to main; it does not apply
-the cleanup blockers, so its `main-synced` is not "removable". Only
-`clean-candidates` decides cleanup.
+the cleanup blockers, so its `main-synced` is not "removable". Use
+`clean-candidates` plus the skill's narrow stopped-stack and backed-up
+superseded tracked-edit exceptions.
 
 "Proven landed" is defined once, in `scripts/lib/branch-landing.js`
 (`provenLanded`): the head is an ancestor of `origin/<default>` (`ancestry`); or
@@ -103,9 +105,11 @@ Delete a local branch only when it is unused by every registered worktree, and
 only with the head the report saw as the expected value
 (`git update-ref -d refs/heads/<branch> <evidence.head>`), so a commit added
 since the report fails the delete instead of being lost. If it is still checked
-out, first remove its clean, landed, process-safe owning worktree with plain
-`git worktree remove`; then recheck branch ownership and delete the ref. A
-non-ancestor head needs the exact merged-PR proof above, or it stays.
+out, first remove its landed, process-safe owning worktree with plain
+`git worktree remove`, except for the skill's backed-up superseded tracked-edit
+case; then recheck branch ownership and delete the ref. A
+content-proven head needs an exact recovery tag first, as in the skill. A
+non-exact merged-PR proof and patch equivalence alone do not permit deletion.
 
 For an unmerged PR, do nothing from an ambiguous cleanup request. Confirm the
 user wants abandonment, then inspect unpushed commits, dependent PRs, active
