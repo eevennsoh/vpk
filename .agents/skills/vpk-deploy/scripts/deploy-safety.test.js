@@ -14,6 +14,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { PIPE_BUFFER_PASSWORD, writeFakeBin, writeFakeDocker } = require("./deploy-test-fakes");
+
 const REPO_ROOT = path.resolve(__dirname, "../../../..");
 const REQUIRED_STASHES = [
 	"AI_GATEWAY_URL",
@@ -123,11 +125,10 @@ function createFixture(options = {}) {
 	writeFileSync(stashPath, (options.stashes || REQUIRED_STASHES).join("\n") + "\n");
 	writeFileSync(logPath, "");
 
-	writeExecutable(
-		path.join(fakeBin, "atlas"),
+	writeFakeBin(
+		fakeBin,
+		"atlas",
 		[
-			"#!/bin/bash",
-			'printf \'atlas %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
 			'if [ "${1:-}" = "micros" ] && [ "${2:-}" = "--help" ]; then',
 			'  if [ "${FAKE_WRONG_ATLAS:-no}" = "yes" ]; then exit 1; fi',
 			'  if [ "${FAKE_HELP_STDERR:-no}" = "yes" ]; then',
@@ -148,33 +149,21 @@ function createFixture(options = {}) {
 			'  cat "$FAKE_STASH_FILE"',
 			"fi",
 			"exit 0",
-			"",
 		].join("\n"),
 	);
 
-	writeExecutable(
-		path.join(fakeBin, "docker"),
-		[
-			"#!/bin/bash",
-			'printf \'docker %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
-			'if [ "${1:-}" = "login" ]; then cat > /dev/null; fi',
-			"exit 0",
-			"",
-		].join("\n"),
-	);
+	writeFakeDocker(fakeBin);
 
-	writeExecutable(
-		path.join(fakeBin, "corepack"),
+	writeFakeBin(
+		fakeBin,
+		"corepack",
 		[
-			"#!/bin/bash",
-			'printf \'corepack %s\\n\' "$*" >> "$FAKE_CALL_LOG"',
 			"mkdir -p out",
 			": > out/index.html",
 			'if [ "${FAKE_UNSTYLED_EXPORT:-no}" = "yes" ]; then',
 			'  printf \'<html data-color-mode="light"><head><style data-theme="spacing">:root{--ds-space-200:1rem}</style></head></html>\' > out/index.html',
 			"fi",
 			"exit 0",
-			"",
 		].join("\n"),
 	);
 
@@ -611,7 +600,7 @@ test("hot-swap accepts omitted optional environment or version arguments", () =>
 test("successful Docker login accepts a full stdin payload", () => {
 	withFixture({}, (fixture) => {
 		const configPath = path.join(fixture.root, ".deploy.local");
-		writeFileSync(configPath, readFileSync(configPath, "utf8").replace("fixture-password", "fixture-password".repeat(10_000)));
+		writeFileSync(configPath, readFileSync(configPath, "utf8").replace("fixture-password", PIPE_BUFFER_PASSWORD));
 		const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["--hot-swap"]);
 		assert.equal(result.status, 0, result.stdout + result.stderr);
 		assert.match(callsFor(fixture), /docker login .*--password-stdin/u);
