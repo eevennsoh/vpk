@@ -16,6 +16,7 @@ import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
 import { CONNECTION_DETAIL } from "./ui-custom/connection";
 import { CONTEXT_DETAIL } from "./ui-custom/context";
 import { CONTEXT_BAR_DETAIL } from "./ui-custom/context-bar";
+import { CONTEXT_CHIP_DETAIL } from "./ui-custom/context-chip";
 import { CONTROL_DETAIL } from "./ui-custom/control";
 import { EDGE_DETAIL } from "./ui-custom/edge";
 import { ENTITY_CARD_DETAIL } from "./ui-custom/entity-card";
@@ -77,6 +78,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	connection: CONNECTION_DETAIL,
 	context: CONTEXT_DETAIL,
 	"context-bar": CONTEXT_BAR_DETAIL,
+	"context-chip": CONTEXT_CHIP_DETAIL,
 	control: CONTROL_DETAIL,
 	edge: EDGE_DETAIL,
 	"entity-card": ENTITY_CARD_DETAIL,

@@ -302,11 +302,11 @@ test("activity comments reuse the Code Review composer-pill path on the sticky a
 	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
 	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
 	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
-	assert.match(sharedChipSource, /ComposerContextChip/u);
+	assert.match(sharedChipSource, /ContextChip/u);
 	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
 	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
 	const composerContextChipSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../ui-custom/composer-context-chip.tsx"),
+		path.join(BLOCK_DIR, "../../ui-custom/context-chip.tsx"),
 		"utf8",
 	);
 	assert.match(composerContextChipSource, /dropdownStyles\.separator/u);

@@ -19,6 +19,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	connection: dynamic(() => import("../../demos/ui-custom/connection-demo"), { ssr: false }),
 	context: dynamic(() => import("../../demos/ui-custom/context-demo"), { ssr: false }),
 	"context-bar": dynamic(() => import("../../demos/ui-custom/context-bar-demo"), { ssr: false }),
+	"context-chip": dynamic(() => import("../../demos/ui-custom/context-chip-demo"), { ssr: false }),
 	control: dynamic(() => import("../../demos/ui-custom/control-demo"), { ssr: false }),
 	edge: dynamic(() => import("../../demos/ui-custom/edge-demo"), { ssr: false }),
 	"entity-card": dynamic(() => import("../../demos/ui-custom/entity-card-demo"), { ssr: false }),

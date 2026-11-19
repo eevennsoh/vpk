@@ -62,6 +62,9 @@ export interface JiraActivityProps {
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
 	replyDrafts?: Readonly<Record<string, string>>;
 	onReplyDraftChange?: (entryId: string, value: string) => void;
+	/** Routes reply selection to a host-owned composer. */
+	onSelectReply?: (entry: JiraActivityCommentEntry, targetId: string, actor: JiraActivityActor) => void;
+	selectedReply?: Readonly<{ entryId: string; targetId: string }> | null;
 	/** Opens a comment's reply composer in response to an external user action. */
 	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
 	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
@@ -158,6 +161,8 @@ export function JiraActivity({
 	renderReply,
 	replyDrafts,
 	onReplyDraftChange,
+	onSelectReply,
+	selectedReply,
 	replyRequest,
 	renderCommentBody,
 	renderEntry,
@@ -355,6 +360,8 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+								onSelectReply={onSelectReply ? (targetId, actor) => onSelectReply(entry, targetId, actor) : undefined}
+								selectedReplyId={selectedReply?.entryId === entry.id ? selectedReply.targetId : undefined}
 									replyRequestId={replyRequest?.entryId === entry.id ? replyRequest.id : undefined}
 								headerLayout={commentHeaderLayout}
 								threaded={connectorStyle === "thread"}

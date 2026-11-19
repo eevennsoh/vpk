@@ -226,7 +226,7 @@ test("code review sends committed comments as one-turn composer context", () => 
 	assert.match(chip, /Remove all inline comments/u);
 	assert.match(chip, /testId="inline-comments-chip"/u);
 	assert.match(sharedChip, /comments\.length === 1 \? "comment" : "comments"/u);
-	assert.match(sharedChip, /ComposerContextChip/u);
+	assert.match(sharedChip, /ContextChip/u);
 	assert.doesNotMatch(sharedChip, /PopoverTitle|Inline review comments/u);
 	assert.doesNotMatch(chip, /New|Old|side · line/u);
 });

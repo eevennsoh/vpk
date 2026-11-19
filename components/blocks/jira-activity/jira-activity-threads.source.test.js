@@ -212,7 +212,7 @@ test("parent comments keep Reply and reactions while resolved threads label the 
 	// Resolve is a subtle text control for active SCM review threads; resolved
 	// state belongs beside the latest reply timestamp, with Reopen owned by that reply.
 	assert.match(COMMENT_ACTIONS_SOURCE, /onResolve\?: \(\) => void;/u);
-	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /Reopen|Unresolve|aria-pressed/u);
+	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /Reopen|Unresolve/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /aria-label="Resolve"/u);
 	assert.match(
 		COMMENT_ACTIONS_SOURCE,

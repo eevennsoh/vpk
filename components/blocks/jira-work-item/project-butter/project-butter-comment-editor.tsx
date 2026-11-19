@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type Ref } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import { useJiraActivityComposerDictation } from "@/components/blocks/jira-activity/use-jira-activity-composer-dictation";
@@ -28,13 +28,14 @@ export interface ProjectButterCommentEditorHandle {
  * mentions, dictation, and Enter-to-send keep working in one compact row.
  * Thread replies reuse it unchanged apart from their placeholder and label.
  */
-export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, inputContext, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	ariaLabel?: string;
 	/** `flat` drops the floating shadow for boxes that sit inline in the feed, such as thread replies. */
 	elevation?: "floating" | "flat";
 	focusRequest: number;
 	handoffMentionId?: string;
+	inputContext?: ReactNode;
 	instructionPlaceholderForAgent?: string;
 	mentionHandoffPending?: boolean;
 	/** Escape closes the box when the host supports it. */
@@ -178,6 +179,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			className={cn(elevation === "flat" ? "shadow-none" : undefined, mentionHandoffPending && "[&_[contenteditable]]:caret-transparent")}
 			data-project-butter-comment-editor
 			data-mention-handoff={mentionHandoffPending ? "pending" : "settled"}
+			inputContext={inputContext}
 			onSubmit={() => save()}
 		>
 			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
