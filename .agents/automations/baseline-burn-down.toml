@@ -1,0 +1,10 @@
+version = 1
+id = "baseline-burn-down"
+kind = "cron"
+name = "Baseline burn-down"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nRemove one small, coherent batch of baselined debt so its count falls, without changing behavior. Pick one lane per run, rotating through the lanes recorded in Baseline Burn-down memory: React hooks lint suppressions (`refs`, `set-state-in-effect`, `immutability`), `no-restricted-syntax` source-regex assertions in `*.source.test.*` suites, jsx-a11y suppressions, and the backend `// @ts-check` ratchet. Current counts and how to re-measure them are in `.agents/docs/hardening-record.md`.\n\n## Evidence and judgment\nFix sites by changing the code, not by moving or renaming the suppression. Replace a source-regex assertion with rendered or behavioral proof (`renderComponent()`, see `.agents/rules/testing.md`), or delete it when an existing behavior test already covers it. Keep one batch to one owner area and at most about 15 sites. Regenerate `eslint-suppressions.json` with `pnpm run fix:generated -- --all`; it may only shrink.\n\n## Handoff\nUse title `[Automation] Baseline burn-down: <lane>: <owner area>` and existing labels `automation`, `codex` and `cleanup`. Include the lane, the count before and after, why each change preserves behavior, the tests run and reviewer focus.\n\n## Stop conditions\nReturn no PR when a site needs a behavior change, a product decision or a shared API change, or when the batch would cross owner areas. Record skipped sites in memory so the next run does not retry them."
+status = "PAUSED"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=14;BYMINUTE=0;BYDAY=TU,TH"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

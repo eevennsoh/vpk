@@ -1,0 +1,10 @@
+version = 1
+id = "worktree-sweep"
+kind = "cron"
+name = "Worktree sweep"
+prompt = "# Goal\nRemove only proven-landed, idle VPK worktrees and local branches by following `$vpk-git-clean`, and report everything retained.\n\n# Rules\nRun `pnpm run clean-candidates -- --fetch --json` with its default `--stale-days`. Act only on targets the report marks `cleanable: true`; never lower `--stale-days`, create rescue tags, back up or delete untracked files, force-remove a worktree, or stop a process. A target whose ignored env files differ from the persistent checkout is retained. Never touch the persistent main checkout, `artifacts/**`, Codex or Cursor worktrees outside `.claude/worktrees/`, or anything an open PR owns. Remove with plain `git worktree remove`, then delete the branch with `git update-ref -d refs/heads/<branch> <report head>`.\n\n# Report\nList what was removed (worktree, branch, landing PR) and every retained target with its blocker, grouped as dirty, active, open PR, not landed or other. Record the run in Worktree Sweep memory. Open no PR."
+status = "PAUSED"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=22;BYMINUTE=0;BYDAY=SU"
+model = "gpt-6-luna"
+reasoning_effort = "medium"
+execution_environment = "local"
