@@ -13,13 +13,22 @@ async function expectCaretAligned(editor: Locator, anchorSelector: string) {
 		const a = anchor.getBoundingClientRect();
 		const c = chip.getBoundingClientRect();
 		const r = selection.getRangeAt(0).getBoundingClientRect();
-		return { anchorHeight: a.height, anchorCenter: a.top + a.height / 2, chipCenter: c.top + c.height / 2, caretHeight: r.height, caretCenter: r.top + r.height / 2, editorFontSize: getComputedStyle(element).fontSize, chipFontSize: getComputedStyle(chip).fontSize };
+		const label = chip.querySelector("[data-tag-text]");
+		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+		let typed: Node | null = null;
+		while (walker.nextNode()) {
+			const node = walker.currentNode;
+			if (node.textContent?.trim() && !chip.contains(node)) { typed = node; break; }
+		}
+		const textRect = (node: Node) => { const range = document.createRange(); range.selectNodeContents(node); return range.getBoundingClientRect(); };
+		return { anchorHeight: a.height, anchorCenter: a.top + a.height / 2, chipCenter: c.top + c.height / 2, caretHeight: r.height, caretCenter: r.top + r.height / 2, editorFontSize: getComputedStyle(element).fontSize, chipFontSize: getComputedStyle(chip).fontSize, labelBottom: label ? textRect(label).bottom : null, typedBottom: typed ? textRect(typed).bottom : null };
 	}, anchorSelector);
 	expect(geometry.caretHeight).toBeGreaterThan(0);
 	expect(Math.abs(geometry.anchorHeight - geometry.caretHeight)).toBeLessThan(2);
 	expect(Math.abs(geometry.anchorCenter - geometry.chipCenter)).toBeLessThan(1);
 	expect(Math.abs(geometry.caretCenter - geometry.chipCenter)).toBeLessThan(2);
 	expect(geometry.chipFontSize).toBe(geometry.editorFontSize);
+	if (geometry.labelBottom !== null && geometry.typedBottom !== null) expect(Math.abs(geometry.labelBottom - geometry.typedBottom)).toBeLessThan(0.5);
 }
 
 test("the standalone mention preview keeps its caret aligned before and after typing", async ({ page }) => {
