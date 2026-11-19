@@ -208,10 +208,15 @@ for (const retainedChunk of [
 				mkdirSync(path.dirname(chunkPath), { recursive: true });
 				writeFileSync(chunkPath, "x".repeat(index === 0 ? 100 : 40));
 			}
+			// One stylesheet per route: the asset count off home drops the root page chunk only, not CSS.
+			const cssPath = path.join(cwd, ".next/static/css/app.css");
+			mkdirSync(path.dirname(cssPath), { recursive: true });
+			writeFileSync(cssPath, "c".repeat(10));
+			const entryCSSFiles = { "app/page": [{ inlined: false, path: "static/css/app.css" }] };
 			for (const route of ["page", "rovo/page"]) {
 				const manifestPath = path.join(cwd, ".next/server/app", path.dirname(route), "page_client-reference-manifest.js");
 				mkdirSync(path.dirname(manifestPath), { recursive: true });
-				writeFileSync(manifestPath, `globalThis.__RSC_MANIFEST["/${route}"]=${JSON.stringify({ clientModules: { page: { chunks } } })};`);
+				writeFileSync(manifestPath, `globalThis.__RSC_MANIFEST["/${route}"]=${JSON.stringify({ clientModules: { page: { chunks } }, entryCSSFiles })};`);
 			}
 
 			const routes = collectManifestRoutes({ cwd });
@@ -220,9 +225,10 @@ for (const retainedChunk of [
 				firstLoadJsBytes: route.firstLoadJs.bytes,
 				assetCount: route.assetCount,
 				routeJsBytes: route.size.bytes,
+				cssBytes: route.css.bytes,
 			})), [
-				{ path: "/", firstLoadJsBytes: 180, assetCount: 3, routeJsBytes: 140 },
-				{ path: "/rovo", firstLoadJsBytes: 80, assetCount: 2, routeJsBytes: 40 },
+				{ path: "/", firstLoadJsBytes: 180, assetCount: 4, routeJsBytes: 140, cssBytes: 10 },
+				{ path: "/rovo", firstLoadJsBytes: 80, assetCount: 3, routeJsBytes: 40, cssBytes: 10 },
 			]);
 		} finally {
 			rmSync(cwd, { recursive: true, force: true });
