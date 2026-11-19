@@ -2455,7 +2455,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/inline-citation.tsx": {
+  "components/ui/inline-citation.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }

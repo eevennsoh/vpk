@@ -74,7 +74,7 @@ export function MicSelectorDemoControlled() {
 					</MicSelectorList>
 				</MicSelectorContent>
 			</MicSelector>
-			<p className="text-xs text-muted-foreground">
+			<p className="text-xs text-text-subtle">
 				Selected: {deviceId ?? "none"}
 			</p>
 		</div>
@@ -96,19 +96,20 @@ export function MicSelectorDemoWithCheckmark() {
 						devices.length > 0 ? (
 							devices.map((device) => (
 								<MicSelectorItem
-									data-checked={deviceId === device.deviceId}
 									key={device.deviceId}
 									value={device.deviceId}
 								>
+									<MicSelectorLabel className="flex-1" device={device} />
 									<CheckIcon
 										className={cn(
-											"mr-2 size-4 shrink-0 text-icon-subtle! [&_svg]:text-icon-subtle!",
+											"shrink-0 text-icon-subtle",
 											deviceId === device.deviceId
 												? "opacity-100"
 												: "opacity-0",
 										)}
+										label=""
+										size="small"
 									/>
-									<MicSelectorLabel device={device} />
 								</MicSelectorItem>
 							))
 						) : (

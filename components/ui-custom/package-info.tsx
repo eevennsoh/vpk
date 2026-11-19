@@ -4,13 +4,13 @@
 
 import type { HTMLAttributes } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowRightIcon,
-  MinusIcon,
-  PackageIcon,
-  PlusIcon,
-} from "@/components/ui/vpk-icons";
+import AddIcon from "@atlaskit/icon/core/add";
+import ArrowRightGlyph from "@atlaskit/icon/core/arrow-right";
+import MinusGlyph from "@atlaskit/icon/core/minus";
+
+import { Icon } from "@/components/ui/icon";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { ArrowRightIcon, PackageIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 import { createContext, use } from "react";
 
@@ -93,23 +93,23 @@ export const PackageInfoName = ({
   );
 };
 
-const changeTypeStyles: Record<ChangeType, string> = {
-  added: "bg-blue-100 text-blue-700",
-  major: "bg-red-100 text-red-700",
-  minor: "bg-yellow-100 text-yellow-700",
-  patch: "bg-green-100 text-green-700",
-  removed: "bg-gray-100 text-gray-700",
+const changeTypeVariants: Record<ChangeType, NonNullable<LozengeProps["variant"]>> = {
+  added: "information",
+  major: "danger",
+  minor: "warning",
+  patch: "success",
+  removed: "neutral",
 };
 
 const changeTypeIcons: Record<ChangeType, React.ReactNode> = {
-  added: <PlusIcon className="size-3" />,
-  major: <ArrowRightIcon className="size-3" />,
-  minor: <ArrowRightIcon className="size-3" />,
-  patch: <ArrowRightIcon className="size-3" />,
-  removed: <MinusIcon className="size-3" />,
+  added: <Icon render={<AddIcon label="" />} label="" />,
+  major: <Icon render={<ArrowRightGlyph label="" />} label="" />,
+  minor: <Icon render={<ArrowRightGlyph label="" />} label="" />,
+  patch: <Icon render={<ArrowRightGlyph label="" />} label="" />,
+  removed: <Icon render={<MinusGlyph label="" />} label="" />,
 };
 
-export type PackageInfoChangeTypeProps = HTMLAttributes<HTMLDivElement>;
+export type PackageInfoChangeTypeProps = Omit<LozengeProps, "variant" | "elemBefore" | "icon">;
 
 export const PackageInfoChangeType = ({
   className,
@@ -123,18 +123,14 @@ export const PackageInfoChangeType = ({
   }
 
   return (
-    <Badge
-      className={cn(
-        "gap-1 text-xs capitalize",
-        changeTypeStyles[changeType],
-        className
-      )}
-      variant="neutral"
+    <Lozenge
+      className={cn("capitalize", className)}
+      elemBefore={changeTypeIcons[changeType]}
+      variant={changeTypeVariants[changeType]}
       {...props}
     >
-      {changeTypeIcons[changeType]}
       {children ?? changeType}
-    </Badge>
+    </Lozenge>
   );
 };
 

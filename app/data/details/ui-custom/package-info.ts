@@ -57,7 +57,7 @@ export const PACKAGE_INFO_DETAIL: ComponentDetail = {
 		{ name: "PackageInfo", description: "Root container with context provider for name, versions, and change type." },
 		{ name: "PackageInfoHeader", description: "Flex row for package name and change type badge." },
 		{ name: "PackageInfoName", description: "Package name with package icon. Defaults to name from context." },
-		{ name: "PackageInfoChangeType", description: "Color-coded badge showing the change category with icon." },
+		{ name: "PackageInfoChangeType", description: "Lozenge showing the change category (major, minor, patch, added, removed) with a tone and icon." },
 		{ name: "PackageInfoVersion", description: "Version transition display (e.g., 18.2.0 → 19.0.0)." },
 		{ name: "PackageInfoDescription", description: "Paragraph element for package description text." },
 		{ name: "PackageInfoContent", description: "Content area with top border separator." },

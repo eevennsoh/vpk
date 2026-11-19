@@ -3,11 +3,11 @@
 import CommentIcon from "@atlaskit/icon/core/comment";
 
 import {
-	ComposerContextChip,
-	type ComposerContextChipItem,
-} from "@/components/ui-custom/composer-context-chip";
+	ContextChip,
+	type ContextChipItem,
+} from "@/components/ui-custom/context-chip";
 
-export type CommentsComposerChipItem = ComposerContextChipItem;
+export type CommentsComposerChipItem = ContextChipItem;
 
 interface CommentsComposerChipProps {
 	comments: readonly CommentsComposerChipItem[];
@@ -32,7 +32,7 @@ export function CommentsComposerChip({
 	const countLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;
 
 	return (
-		<ComposerContextChip
+		<ContextChip
 			countLabel={countLabel}
 			icon={<CommentIcon label="" size="small" />}
 			items={comments}

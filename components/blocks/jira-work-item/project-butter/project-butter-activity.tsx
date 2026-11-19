@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
+import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
@@ -93,6 +94,8 @@ export function ProjectButterActivity({
 	onReplyHandoffInterrupt,
 	onReplyTraceComplete,
 	onReplySubmitted,
+	onSelectReply,
+	selectedReply,
 	previewSessionId,
 	replyRequest,
 	startedSessionId,
@@ -110,6 +113,8 @@ export function ProjectButterActivity({
 	onReplyHandoffInterrupt?: () => void;
 	onReplyTraceComplete?: (id: number) => void;
 	onReplySubmitted?: () => void;
+	onSelectReply?: (entry: JiraActivityCommentEntry, targetId: string, actor: JiraActivityActor) => void;
+	selectedReply?: Readonly<{ entryId: string; targetId: string }> | null;
 	previewSessionId?: string | null;
 	replyRequest?: Readonly<{ entryId: string; id: number; prefill?: Readonly<{ agentName: string; text: string; preserveContent: boolean }> }> | null;
 	startedSessionId?: string | null;
@@ -136,8 +141,9 @@ export function ProjectButterActivity({
 	const rowIndex = (id: string | null | undefined) => id ? allRows.findIndex((row) => row.id === id || groups.get(row.id)?.some((entry) => entry.id === id)) : -1;
 	const startedEntryId = startedSessionId ? `invocation-${startedSessionId}` : null;
 	const previewLimit = rowIndex(previewEntryId) + 1;
-	if (previewLimit > limit) setLimit(previewLimit);
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, previewLimit, rowIndex(startedEntryId) + 1));
+	const selectedLimit = rowIndex(selectedReply?.entryId) + 1;
+	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1));
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId);
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -220,11 +226,13 @@ export function ProjectButterActivity({
 	return (
 		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
 			{header}
-			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
+			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
 				<JiraActivity
 					actors={activityMentionAgents.map((agent) => ({ id: agent.id, name: agent.name, kind: "agent" as const, avatarSrc: agent.avatarSrc, brandName: agent.brandName }))}
 					replyRequest={replyRequest}
-					activeEntryId={previewEntryId ?? visibleId ?? undefined}
+					activeEntryId={selectedReply?.entryId ?? previewEntryId ?? visibleId ?? undefined}
+					onSelectReply={onSelectReply}
+					selectedReply={selectedReply}
 					commentActionsPlacement="hover"
 					commentHeaderLayout="inline"
 					composer={null}

@@ -41,7 +41,7 @@ test("the acknowledgment arrives after closing and reopening the work item", asy
 	await expect(item.getByText(/I.m looking into this issue now/)).toHaveCount(1, { timeout: 6_000 });
 });
 
-test("replying to Claude keeps the agent mention as a chip when reopening the draft", async ({ page }) => {
+test("replying to Claude keeps the draft in the sticky composer", async ({ page }) => {
 	const { item } = await startClaude(page);
 	const acknowledgment = item.locator('[data-jira-activity-entry-id^="invocation-"]');
 	await expect(acknowledgment.getByText(/I.m looking into this issue now/)).toBeVisible({ timeout: 6_000 });
@@ -51,21 +51,17 @@ test("replying to Claude keeps the agent mention as a chip when reopening the dr
 	await replies.hover();
 	const reply = replies.getByRole("button", { name: "Reply", exact: true });
 	await reply.click();
-	const editor = acknowledgment.getByRole("textbox", { name: "Leave a reply..." });
-	const mention = editor.locator('[data-mention-category="subagent"]');
-	await expect(mention).toHaveText("Claude");
-	const tag = mention.locator('[data-slot="tag"]');
-	await expect(tag.locator('[data-slot="avatar"][data-shape="hexagon"]')).toBeVisible();
-	await expect.poll(async () => tag.evaluate((element) => getComputedStyle(element).fontSize)).toBe(await editor.evaluate((element) => getComputedStyle(element).fontSize));
+	const editor = item.getByRole("textbox", { name: "Comment editor" });
+	await expect(editor).toBeFocused();
+	await expect(item.getByTestId("reply-target-chip")).toBeVisible();
 	await editor.pressSequentially("Please include the sandbox checklist");
-	await expect(mention).toHaveCount(1);
 	await reply.click();
 	await reply.click();
-	await expect(mention).toHaveText("Claude");
+	await expect(item.getByTestId("reply-target-chip")).toBeVisible();
 	await expect(editor).toContainText("Please include the sandbox checklist");
 	await editor.press("Enter");
 	await expect(acknowledgment).toContainText("Please include the sandbox checklist");
-	await expect(editor).toHaveCount(0);
+	await expect(item.getByTestId("reply-target-chip")).toHaveCount(0);
 });
 
 test("resetting the journey cancels a pending acknowledgment", async ({ page }) => {
