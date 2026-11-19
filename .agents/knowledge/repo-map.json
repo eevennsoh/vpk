@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 452,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 444,
+				"live": 446,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5473,7 +5473,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 98,
+				"entryCount": 100,
 				"entries": [
 					{
 						"category": "ui",
@@ -5652,6 +5652,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "confirmation",
+						"name": "Confirmation",
+						"importPath": "@/components/ui/confirmation",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "context-menu",
 						"name": "Context Menu",
 						"importPath": "@/components/ui/context-menu",
@@ -5753,6 +5760,13 @@
 						"slug": "icon-tile",
 						"name": "Icon Tile",
 						"importPath": "@/components/ui/icon-tile",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "inline-citation",
+						"name": "Inline Citation",
+						"importPath": "@/components/ui/inline-citation",
 						"status": "live"
 					},
 					{
@@ -6339,7 +6353,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 61,
+				"entryCount": 60,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6406,13 +6420,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "confirmation",
-						"name": "Confirmation",
-						"importPath": "@/components/ui-custom/confirmation",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "connection",
 						"name": "Connection",
 						"importPath": "@/components/ui-custom/connection",
@@ -6430,6 +6437,13 @@
 						"slug": "context-bar",
 						"name": "Context Bar",
 						"importPath": "@/components/ui-custom/context-bar",
+						"status": "live"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "context-chip",
+						"name": "Context Chip",
+						"importPath": "@/components/ui-custom/context-chip",
 						"status": "live"
 					},
 					{
@@ -6507,13 +6521,6 @@
 						"slug": "image",
 						"name": "Image",
 						"importPath": "@/components/ui-custom/image",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "inline-citation",
-						"name": "Inline Citation",
-						"importPath": "@/components/ui-custom/inline-citation",
 						"status": "live"
 					},
 					{
@@ -6700,9 +6707,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "source-preview-menu",
-						"name": "Source Preview Menu",
-						"importPath": "@/components/ui-custom/source-preview-menu",
+						"slug": "sources-menu",
+						"name": "Sources Menu",
+						"importPath": "@/components/ui-custom/sources-menu",
 						"status": "live"
 					},
 					{
@@ -6848,7 +6855,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 110,
+				"entryCount": 111,
 				"entries": [
 					{
 						"category": "visual",
@@ -6953,6 +6960,13 @@
 						"slug": "displacement-map",
 						"name": "Displacement Map",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "distortion-waves",
+						"name": "Distortion Waves",
+						"importPath": "@/components/visual/distortion-waves",
 						"status": "live"
 					},
 					{

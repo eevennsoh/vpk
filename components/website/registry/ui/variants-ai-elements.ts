@@ -625,4 +625,46 @@ export const UI_AI_ELEMENTS_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"confirmation-demo-request": dynamic(
+		() =>
+			import("../../demos/ui/confirmation-demo").then((mod) => ({
+				default: mod.ConfirmationDemoRequest,
+			})),
+		{ ssr: false },
+	),
+	"confirmation-demo-accepted": dynamic(
+		() =>
+			import("../../demos/ui/confirmation-demo").then((mod) => ({
+				default: mod.ConfirmationDemoAccepted,
+			})),
+		{ ssr: false },
+	),
+	"confirmation-demo-rejected": dynamic(
+		() =>
+			import("../../demos/ui/confirmation-demo").then((mod) => ({
+				default: mod.ConfirmationDemoRejected,
+			})),
+		{ ssr: false },
+	),
+	"inline-citation-demo-with-carousel": dynamic(
+		() =>
+			import("../../demos/ui/inline-citation-demo").then((mod) => ({
+				default: mod.InlineCitationDemoWithCarousel,
+			})),
+		{ ssr: false },
+	),
+	"inline-citation-demo-basic": dynamic(
+		() =>
+			import("../../demos/ui/inline-citation-demo").then((mod) => ({
+				default: mod.InlineCitationDemoBasic,
+			})),
+		{ ssr: false },
+	),
+	"inline-citation-demo-single-source": dynamic(
+		() =>
+			import("../../demos/ui/inline-citation-demo").then((mod) => ({
+				default: mod.InlineCitationDemoSingleSource,
+			})),
+		{ ssr: false },
+	),
 };

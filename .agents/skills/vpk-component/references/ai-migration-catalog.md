@@ -36,8 +36,8 @@ Quick-lookup catalog of the VPK AI components grouped by category. Each entry in
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
 | [suggestion](https://ui.shadcn.com/docs/ai-elements/base/suggestion) | `@/components/ui/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
-| [confirmation](https://ui.shadcn.com/docs/ai-elements/base/confirmation) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
-| [inline-citation](https://ui.shadcn.com/docs/ai-elements/base/inline-citation) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
+| [confirmation](https://ui.shadcn.com/docs/ai-elements/base/confirmation) | `@/components/ui/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
+| [inline-citation](https://ui.shadcn.com/docs/ai-elements/base/inline-citation) | `@/components/ui/inline-citation` | Inline source citation markers | `InlineCitation` |
 | [sources](https://ui.shadcn.com/docs/ai-elements/base/sources) | `@/components/ui/sources` | Source reference list display | `Source` |
 
 ## Input Controls

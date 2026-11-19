@@ -210,6 +210,7 @@ const vpkTokens = {
 		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
 		"no-undefined-overlay-shadow": builtinRules.get("no-restricted-syntax"),
 		"no-mismatched-underline-color": builtinRules.get("no-restricted-syntax"),
+		"no-off-grid-spacing": builtinRules.get("no-restricted-syntax"),
 	},
 };
 // gotchas-ui.md: the root layout's MainLandmark is the page's only main landmark. Its own rule id
@@ -232,6 +233,9 @@ const underlineColorPattern = "(^|[\\s:])decoration-(?!(current|solid|double|dot
 const undefinedOverlayShadowPattern = "(^|[\\s:])shadow-overlay($|\\s)";
 // The catalog's "shadow-overlay" slug (a registry key or id argument) is not a class string.
 const undefinedOverlayShadowSelector = `Literal[value=/${undefinedOverlayShadowPattern}/]:not(Property > Literal.key):not(CallExpression > Literal.arguments:first-child), TemplateElement[value.raw=/${undefinedOverlayShadowPattern}/]`;
+// DESIGN.md spacing: padding, margin and gap are multiples of 4px or 6px. 10px (*-2.5) and 14px (*-3.5)
+// are off that grid; responsive and state prefixes (sm:px-2.5, hover:p-2.5) count too.
+const offGridSpacingPattern = "(^|[\\s:])-?(p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y)-(2\\.5|3\\.5|\\[10px\\]|\\[14px\\])($|\\s)";
 function classStringSelector(pattern) {
 	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
 }
@@ -458,6 +462,10 @@ const eslintConfig = defineConfig([
 			"vpk-tokens/no-undefined-overlay-shadow": ["error", {
 				selector: undefinedOverlayShadowSelector,
 				message: "shadow-overlay is not a Tailwind utility (no-op; overlay *Content keeps shadow-xl's doubled 1px stroke). Use shadow-2xl for ADS overlay elevation (DESIGN.md).",
+			}],
+			"vpk-tokens/no-off-grid-spacing": ["error", {
+				selector: classStringSelector(offGridSpacingPattern),
+				message: "Spacing is a multiple of 4px or 6px: use 8px (*-2) or 12px (*-3) instead of 10px (*-2.5), 12px or 16px instead of 14px (*-3.5) (DESIGN.md › Spacing rhythm).",
 			}],
 		},
 	},

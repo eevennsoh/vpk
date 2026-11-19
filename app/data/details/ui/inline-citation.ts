@@ -8,7 +8,7 @@ export const INLINE_CITATION_DETAIL: ComponentDetail = {
   InlineCitationCardBody,
   InlineCitationCardTrigger,
   InlineCitationSource,
-} from "@/components/ui-custom/inline-citation";
+} from "@/components/ui/inline-citation";
 
 <InlineCitationCard>
   <InlineCitationCardTrigger sources={[url]} />

@@ -52,6 +52,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"displacement-map": dynamic(() => import("../demos/visual/displacement-map-demo"), {
 		ssr: false,
 	}),
+	"distortion-waves": dynamic(() => import("../demos/visual/distortion-waves-demo"), {
+		ssr: false,
+	}),
 	dithering: dynamic(() => import("../demos/visual/dithering-demo"), {
 		ssr: false,
 	}),
@@ -514,6 +517,41 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../demos/visual/border-beam-demo").then((mod) => ({
 				default: mod.BorderBeamDemoReflection,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-vertical": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoVertical,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-horizontal": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoHorizontal,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-center": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoCenter,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-sunset": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoSunset,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-single-view": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoSingleView,
 			})),
 		{ ssr: false },
 	),

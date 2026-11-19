@@ -61,6 +61,7 @@ import { HEATMAP_DETAIL } from "./visual/heatmap";
 import { GLIMM_DETAIL } from "./visual/glimm";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
+import { DISTORTION_WAVES_DETAIL } from "./visual/distortion-waves";
 import { PEEL_DETAIL } from "./visual/peel";
 import { NOISE_DETAIL } from "./visual/noise";
 import { GOOEY_DETAIL } from "./visual/gooey";
@@ -256,6 +257,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"ink-wash": INK_WASH_DETAIL,
 	glimm: GLIMM_DETAIL,
 	"liquid-metal": LIQUID_METAL_DETAIL,
+	"distortion-waves": DISTORTION_WAVES_DETAIL,
 	peel: PEEL_DETAIL,
 	noise: NOISE_DETAIL,
 	gooey: GOOEY_DETAIL,

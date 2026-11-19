@@ -144,27 +144,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"confirmation-demo-request": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoRequest,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-accepted": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoAccepted,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-rejected": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoRejected,
-			})),
-		{ ssr: false },
-	),
 	"context-demo-with-cost": dynamic(
 		() =>
 			import("../../demos/ui-custom/context-demo").then((mod) => ({

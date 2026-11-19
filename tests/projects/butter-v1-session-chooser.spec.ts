@@ -25,48 +25,6 @@ test("session choices use the shared dropdown hover color for pointer and keyboa
 	await expect.poll(() => sessions.locator('article[data-selected="true"]').evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
 });
 
-test("the landing trace uses the selected agent's accent", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("button", { name: "Close gallery" }).click();
-	await page.keyboard.press("m");
-	const editor = page.getByRole("textbox", { name: "Comment editor" });
-	await editor.pressSequentially("@Cursor");
-	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
-	await page.getByRole("option", { name: "Continue in existing session" }).click();
-	const sessions = page.getByRole("list", { name: "Choose a session" });
-	const session = sessions.getByRole("button", { name: /Compare the Q3 revenue forecast/ });
-	await session.focus();
-	const overlap = page.evaluate(() => new Promise<boolean>((resolve) => {
-		const start = performance.now();
-		let tracedDuringFlight = false;
-		function sample() {
-			const flight = document.querySelector("[data-project-butter-mention-flight]");
-			const traces = document.querySelectorAll('[data-rovo-generation="highlight"][data-rovo-generation-active="true"] > div[aria-hidden="true"] > svg > path');
-			if (flight && [...traces].some((path) => Number(path.getAttribute("opacity")) > 0.01)) tracedDuringFlight = true;
-			if (performance.now() - start < 1300) requestAnimationFrame(sample);
-			else resolve(tracedDuringFlight);
-		}
-		requestAnimationFrame(sample);
-	}));
-	await session.press("Enter");
-	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
-	const highlight = reply.locator('xpath=ancestor::*[@data-rovo-generation="highlight"]');
-	await expect(highlight).toHaveAttribute("data-rovo-generation-active", "true");
-	const trace = highlight.locator(':scope > div[aria-hidden="true"] > svg > path').first();
-	await expect(trace).toHaveAttribute("stroke", "var(--color-icon)");
-	await expect.poll(async () => trace.getAttribute("d")).toMatch(/A [1-9]/u);
-	const geometry = await highlight.evaluate((wrapper) => {
-		const form = wrapper.querySelector("form")!;
-		const path = wrapper.querySelector(':scope > div[aria-hidden="true"] > svg > path')!;
-		return { radius: Number.parseFloat(getComputedStyle(form).borderRadius), arc: Number(path.getAttribute("d")?.match(/A ([\d.]+)/u)?.[1]) };
-	});
-	expect(geometry.radius).toBeGreaterThan(0);
-	expect(geometry.arc).toBeCloseTo(geometry.radius - 0.5, 1);
-	expect(await overlap).toBe(true);
-});
-
 test("work item session cards show Venn as their owner", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
@@ -79,7 +37,7 @@ test("work item session cards show Venn as their owner", async ({ page }) => {
 	}
 });
 
-test("selecting a session opens its inline reply with the draft", async ({ page }) => {
+test("selecting a session keeps the draft in the sticky composer", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
@@ -92,14 +50,14 @@ test("selecting a session opens its inline reply with the draft", async ({ page 
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await editor.press("Enter");
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
-	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
-	await expect(reply).toBeFocused();
-	await expect(reply).toContainText("Claude");
-	await expect(reply).toContainText("Please check this");
+	await expect(editor).toBeFocused();
+	await expect(editor).toContainText("Please check this");
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Summarize onboarding feedback");
+	await expect(thread).toHaveAttribute("data-active", "");
 	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
-	await reply.press("Enter");
+	await editor.press("Enter");
 	await expect(thread).toContainText("Please check this");
-	await expect(reply).toHaveCount(0);
+	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
 });
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an acknowledged reply resumes only the selected session (${reducedMotion})`, async ({ page }) => {
@@ -118,7 +76,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an ackno
 	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).click();
-	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
+	const reply = editor;
 	await reply.pressSequentially(" Please check this");
 	const transition = page.evaluate(() => new Promise<{ state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[]>((resolve, reject) => {
 		const frames: { state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[] = [];
@@ -177,10 +135,10 @@ test("a submitted handoff does not prefill later manual replies", async ({ page 
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]');
-	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
+	const reply = editor;
 	await expect(reply).toContainText("Please check this instruction once");
 	await reply.press("Enter");
-	await expect(reply).toHaveCount(0);
+	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
 	const header = thread.locator('[data-slot="jira-activity-comment-header"]').first();
 	await header.hover();
 	await header.getByRole("button", { name: "Reply", exact: true }).click();
@@ -196,7 +154,7 @@ test("a submitted handoff does not prefill later manual replies", async ({ page 
 	await participant.hover();
 	await participant.getByRole("button", { name: "Reply", exact: true }).click();
 	await expect(reply).toBeFocused();
-	await expect(reply).toContainText("Sarah Lim");
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Rewrite the incident postmortem");
 	await expect(reply).not.toContainText("Please check this instruction once");
 });
 

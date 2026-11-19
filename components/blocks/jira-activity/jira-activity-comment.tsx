@@ -247,6 +247,7 @@ function ThreadReplyCard({
 	allowReply,
 	replyComposerId,
 	replySelected,
+	externalReply,
 	onAddToChat,
 	onViewSession,
 	resolved,
@@ -272,6 +273,7 @@ function ThreadReplyCard({
 	allowReply: boolean;
 	replyComposerId?: string;
 	replySelected: boolean;
+	externalReply?: boolean;
 	onAddToChat?: () => void;
 	onViewSession?: (item: AgentListItem) => void;
 	resolved: boolean;
@@ -317,8 +319,9 @@ function ThreadReplyCard({
 			}
 			onToggleReaction={toggleReaction}
 			reactions={hoverActions ? [] : reactionSummaries}
-			replyComposerId={replySelected ? replyComposerId : undefined}
-			replyExpanded={replySelected}
+			replyComposerId={!externalReply && replySelected ? replyComposerId : undefined}
+			replyExpanded={externalReply ? undefined : replySelected}
+			replyPressed={externalReply ? replySelected : undefined}
 			replyRef={replyButtonRef}
 			trailingActions={tools}
 		/>
@@ -380,6 +383,8 @@ export function JiraActivityComment({
 	renderReply,
 	replyDraft: controlledReplyDraft,
 	onReplyDraftChange,
+	onSelectReply,
+	selectedReplyId,
 	replyRequestId,
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
@@ -407,6 +412,8 @@ export function JiraActivityComment({
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
 	replyDraft?: string;
 	onReplyDraftChange?: (value: string) => void;
+	onSelectReply?: (targetId: string, actor: JiraActivityActor) => void;
+	selectedReplyId?: string;
 	replyRequestId?: number;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
 	commentActionsPlacement?: "footer" | "hover";
@@ -447,7 +454,7 @@ export function JiraActivityComment({
 	);
 	const composerId = useId();
 	const repliesId = useId();
-	const composerVisible = allowReply && (!collapsible || replyTarget !== null);
+	const composerVisible = !onSelectReply && allowReply && (!collapsible || replyTarget !== null);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
 	const activeReplyButtonRef = useRef<HTMLButtonElement | null>(null);
 	// Only move focus once the viewer has actually toggled Reply, so the initial
@@ -464,6 +471,7 @@ export function JiraActivityComment({
 	}));
 
 	function toggleReply(key: string, actor: JiraActivityActor, button: HTMLButtonElement | null) {
+		if (onSelectReply) { onSelectReply(key, actor); return; }
 		replyToggledRef.current = true;
 		activeReplyButtonRef.current = button;
 		if (replyTarget?.key === key) {
@@ -547,7 +555,8 @@ export function JiraActivityComment({
 			onToggleReaction={onToggleReaction}
 			reactions={hoverActions ? [] : reactionSummaries}
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
-			replyExpanded={replyTarget?.key === entry.id}
+			replyExpanded={onSelectReply ? undefined : replyTarget?.key === entry.id}
+			replyPressed={onSelectReply ? selectedReplyId === entry.id : undefined}
 			replyRef={replyButtonRef}
 			trailingActions={renderCommentTools?.(entry)}
 		/>
@@ -704,6 +713,7 @@ export function JiraActivityComment({
 								attributedBy={reply.actor.kind === "agent" && reply.actor.id === entry.actor.id ? entry.attributedBy : undefined}
 								headerLayout={headerLayout}
 								allowReply={allowReply}
+								externalReply={Boolean(onSelectReply)}
 								bodyContent={renderReplyBody?.(reply)}
 								content={renderReply?.(reply)}
 								commentActions={commentActions}
@@ -723,7 +733,7 @@ export function JiraActivityComment({
 								onViewSession={onViewSession}
 								reply={reply}
 								replyComposerId={composerId}
-								replySelected={replyTarget?.key === reply.id}
+								replySelected={(selectedReplyId ?? replyTarget?.key) === reply.id}
 								resolved={resolved}
 								indented={!nested && !threaded}
 								threaded={threaded}

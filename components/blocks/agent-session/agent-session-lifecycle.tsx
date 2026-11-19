@@ -196,7 +196,7 @@ export function AgentSessionLifecycle({
 		<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">
 			{shouldReduceMotion ? <div className="flex shrink-0 items-center gap-1" data-agent-session-lifecycle-state={state}>
 				{showLabel ? <span data-agent-session-lifecycle-label={state}><AgentSessionLifecycleLabel state={state} /></span> : null}
-				<div className="grid size-6 shrink-0 place-items-center" data-agent-session-lifecycle-glyph><IndicatorGlyph compact state={state} /></div>
+				<div className="grid size-6 shrink-0 place-items-center" data-agent-session-lifecycle-glyph data-slot="lifecycle-glyph"><IndicatorGlyph compact state={state} /></div>
 			</div> : <AnimatePresence initial={false} mode="wait">
 				<motion.div
 					className="flex shrink-0 items-center gap-1"
@@ -204,7 +204,7 @@ export function AgentSessionLifecycle({
 					key={state}
 				>
 					{showLabel ? <motion.span animate={{ filter: "blur(0px)", opacity: 1 }} data-agent-session-lifecycle-label={state} exit={{ filter: "blur(4px)", opacity: 0, transition: LABEL_EXIT }} initial={{ filter: "blur(4px)", opacity: 0 }} style={{ willChange: "filter, opacity" }} transition={LABEL_ENTER}><AgentSessionLifecycleLabel state={state} /></motion.span> : null}
-					<div className="grid size-6 shrink-0 place-items-center">
+					<div className="grid size-6 shrink-0 place-items-center" data-slot="lifecycle-glyph">
 						<motion.div animate={{ opacity: 1, scale: 1 }} data-agent-session-lifecycle-glyph exit={{ opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }} initial={{ opacity: 0, scale: 0.6 }} onAnimationComplete={state === accessibleState ? onTransitionComplete : undefined} style={{ willChange: "opacity, transform" }} transition={INDICATOR_ENTER}><IndicatorGlyph compact state={state} /></motion.div>
 					</div>
 				</motion.div>

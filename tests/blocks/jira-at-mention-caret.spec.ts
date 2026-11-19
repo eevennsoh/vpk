@@ -74,7 +74,7 @@ test("replay does not steal focus from another control", async ({ page }) => {
 	await expect(arc).toBeFocused();
 });
 
-test("Butter inline replies keep their caret aligned beside an agent mention", async ({ page }) => {
+test("Butter keeps the sticky composer focused when selecting a session", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
@@ -84,10 +84,9 @@ test("Butter inline replies keep their caret aligned beside an agent mention", a
 	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).click();
-	const reply = page.getByRole("textbox", { name: "Leave a reply..." });
-	await expect(reply).toBeFocused();
+	await expect(comment).toBeFocused();
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Summarize onboarding feedback");
 	await page.keyboard.press("End");
 	await page.keyboard.type(" text");
-	await expect(reply).toContainText("text");
-	await expectCaretAligned(reply, ".react-renderer.node-mention");
+	await expect(comment).toContainText("text");
 });

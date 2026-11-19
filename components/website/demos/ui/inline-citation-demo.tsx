@@ -14,7 +14,7 @@ import {
 	InlineCitationQuote,
 	InlineCitationSource,
 	InlineCitationText,
-} from "@/components/ui-custom/inline-citation";
+} from "@/components/ui/inline-citation";
 
 const SOURCES = [
 	{

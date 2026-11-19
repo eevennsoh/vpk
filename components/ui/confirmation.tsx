@@ -12,6 +12,7 @@ import {
 	ItemContent,
 	ItemTitle,
 } from "@/components/ui/item";
+import { cn } from "@/lib/utils";
 import { createContext, use } from "react";
 
 type ToolUIPartApproval =
@@ -61,6 +62,7 @@ export function Confirmation({
 	state,
 	variant = "outline",
 	size = "sm",
+	className,
 	...props
 }: Readonly<ConfirmationProps>) {
 	if (!approval || state === "input-streaming" || state === "input-available") {
@@ -69,7 +71,8 @@ export function Confirmation({
 
 	return (
 		<ConfirmationContext value={{ approval, state }}>
-			<Item size={size} variant={variant} {...props} />
+			{/* 12px on every side: match the row's side padding instead of Item's 10px block padding. */}
+			<Item className={cn("py-3", className)} size={size} variant={variant} {...props} />
 		</ConfirmationContext>
 	);
 }

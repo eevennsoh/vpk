@@ -573,8 +573,6 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen || menu.isContinueOpen;
-	// The trailing glyph shares its slot with hover actions. Long rows can move
-	// their state label into metadata while retaining the short row's glyph.
 	const trailingControl = (() => {
 		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
@@ -798,7 +796,7 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// The shared trailing slot lets hover actions replace the glyph in place.
+								keepLifecycleLabel={isLongDensity && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed

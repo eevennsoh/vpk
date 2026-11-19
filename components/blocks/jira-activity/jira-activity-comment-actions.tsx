@@ -17,6 +17,7 @@ export interface JiraActivityCommentActionsProps {
 	/** Omit to hide Reply — the entry opted out with `allowReply: false`. */
 	onReply?: () => void;
 	replyExpanded?: boolean;
+	replyPressed?: boolean;
 	replyComposerId?: string;
 	/** Lets the comment restore focus to the Reply button when the composer collapses. */
 	replyRef?: Ref<HTMLButtonElement>;
@@ -35,6 +36,7 @@ export function JiraActivityCommentActions({
 	onToggleReaction,
 	onReply,
 	replyExpanded,
+	replyPressed,
 	replyComposerId,
 	replyRef,
 	onResolve,
@@ -50,6 +52,7 @@ export function JiraActivityCommentActions({
 						// The shared Button base maps aria-expanded to the selected token
 						// set, so the open composer is reflected without extra styling.
 						aria-expanded={replyExpanded}
+						aria-pressed={replyPressed}
 						aria-label="Reply"
 						className="rounded-sm"
 						onClick={onReply}

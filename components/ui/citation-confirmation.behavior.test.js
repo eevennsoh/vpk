@@ -12,7 +12,7 @@ import {
 	InlineCitationCard,
 	InlineCitationCardTrigger,
 	InlineCitationSource,
-} from "@/components/ui-custom/inline-citation";
+} from "@/components/ui/inline-citation";
 
 export default function Probe() {
 	return (
@@ -35,7 +35,7 @@ import {
 	ConfirmationRejected,
 	ConfirmationRequest,
 	ConfirmationTitle,
-} from "@/components/ui-custom/confirmation";
+} from "@/components/ui/confirmation";
 
 export default function Probe({ approval, state }) {
 	return (

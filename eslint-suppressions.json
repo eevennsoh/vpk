@@ -240,6 +240,9 @@
   "components/arts/personal-graph/personal-graph-page.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
     }
   },
   "components/arts/personal-graph/personal-graph-source-picker.tsx": {
@@ -250,6 +253,11 @@
   "components/arts/personal-graph/personal-graph-summary-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 29
+    }
+  },
+  "components/arts/personal-graph/personal-graph-summary-panel.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/arts/personal-graph/personal-graph-surface.source.test.js": {
@@ -482,6 +490,11 @@
       "count": 1
     }
   },
+  "components/blocks/agent-session/agent-session-link-work-item-submenu.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/blocks/agent-session/agent-session-link-work-item.source.test.js": {
     "no-restricted-syntax": {
       "count": 66
@@ -534,6 +547,11 @@
   },
   "components/blocks/agent-user/components/agent-user.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-user/components/role-select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -620,6 +638,11 @@
       "count": 1
     }
   },
+  "components/blocks/dashboard/components/chart-area-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/blocks/dashboard/components/section-cards.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -633,6 +656,11 @@
   "components/blocks/editor-toolbar/editor-toolbar.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "components/blocks/emoji-picker/components/emoji-picker-panel.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/blocks/emoji-picker/emoji-picker.source.test.js": {
@@ -689,6 +717,11 @@
   "components/blocks/jira-activity/jira-activity-alignment.source.test.js": {
     "no-restricted-syntax": {
       "count": 36
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-changed-files.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-activity/jira-activity-event-row.source.test.js": {
@@ -966,9 +999,24 @@
       "count": 1
     }
   },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief-epic.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief-sprint.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-kanban/experimental/pulse/components/pulse-scrubber.tsx": {
     "jsx-a11y/interactive-supports-focus": {
       "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-story.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/blocks/jira-kanban/experimental/pulse/experimental-pulse.tsx": {
@@ -1046,7 +1094,45 @@
       "count": 325
     }
   },
+  "components/blocks/jira-suggestion/components/card-faces.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-suggestion/components/card-value.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/caught-up.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/ghost-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-suggestion/components/panel-body.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/stack-main.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-suggestion/components/why-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
   "components/blocks/jira-suggestion/components/work-item-preview-shell.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1081,6 +1167,16 @@
       "count": 1
     }
   },
+  "components/blocks/jira-work-item/experimental-v2/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/experimental-v2/components/detail-field-editor-data.ts": {
     "no-restricted-imports": {
       "count": 1
@@ -1104,16 +1200,16 @@
       "count": 3
     }
   },
+  "components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-work-item/experimental-v2/components/metadata-rail-toggle.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1123,6 +1219,11 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx": {
@@ -1140,6 +1241,16 @@
   },
   "components/blocks/jira-work-item/experimental-v3/components/activity-composer-context-pills.tsx": {
     "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1163,14 +1274,19 @@
       "count": 3
     }
   },
-  "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
+  "components/blocks/jira-work-item/experimental-v3/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v3/context-section-navigation.tsx": {
@@ -1189,6 +1305,11 @@
   "components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data.test.js": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/blocks/jira-work-item/experimental/components/detail-field-editor-data.ts": {
@@ -1212,6 +1333,16 @@
   "components/blocks/jira-work-item/experimental/components/inline-edit-treatment.ts": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
     }
   },
   "components/blocks/jira-work-item/experimental/experimental-jira-work-item.tsx": {
@@ -1239,6 +1370,11 @@
       "count": 1
     }
   },
+  "components/blocks/jira-work-item/project-butter/description-rainbow-text.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 40
@@ -1251,6 +1387,11 @@
   },
   "components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/project-butter-header.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1279,6 +1420,16 @@
       "count": 1
     }
   },
+  "components/blocks/jira-work-item/team-eu26/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/detail-field-editors.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -1294,18 +1445,28 @@
       "count": 3
     }
   },
+  "components/blocks/jira-work-item/team-eu26/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/panel-content-motion.ts": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-activity-panel.tsx": {
+  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
-    "react-hooks/set-state-in-effect": {
+  "components/blocks/jira-work-item/team-eu26/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/work-items-table.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1449,6 +1610,16 @@
       "count": 1
     }
   },
+  "components/blocks/sidebar/sidebar-06/components/sidebar-opt-in-form.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/sidebar/sidebar-09/components/app-sidebar.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/sidebar/sidebar-10/components/nav-actions.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -1494,6 +1665,11 @@
       "count": 1
     }
   },
+  "components/blocks/smart-link/components/smart-link.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/smart-link/smart-link-status.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 1
@@ -1526,6 +1702,11 @@
   },
   "components/blocks/terminal-switch/page.tsx": {
     "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/tool-approval/components/tool-approval.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1587,6 +1768,11 @@
       "count": 71
     }
   },
+  "components/blocks/twg-agent-card/components/twg-agent-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/twg-agent-card/twg-agent-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 128
@@ -1628,6 +1814,9 @@
     }
   },
   "components/charts/pie/chart-pie-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1938,6 +2127,9 @@
   "components/projects/jira/components/work-item-modal/child-item-row.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/jira/components/work-item-modal/comment-thread.source.test.js": {
@@ -1947,6 +2139,11 @@
   },
   "components/projects/jira/components/work-item-modal/description-section.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira/components/work-item-modal/sidebar-stack.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1988,6 +2185,9 @@
   "components/projects/rovo-core/components/clicky/clicky-response-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/rovo-core/components/clicky/clicky-speech-bubble.tsx": {
@@ -1998,6 +2198,11 @@
   "components/projects/rovo-core/components/rovo-app-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
+    }
+  },
+  "components/projects/rovo-core/components/rovo-app-messages.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/rovo-core/components/rovo-app-surface-shell.source.test.js": {
@@ -2115,6 +2320,9 @@
   },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
     "no-restricted-syntax": {
+      "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -2269,6 +2477,11 @@
       "count": 1
     }
   },
+  "components/screen-assistant/screen-assistant-transcript.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/screen-assistant/use-screen-assistant.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2294,6 +2507,11 @@
       "count": 1
     }
   },
+  "components/ui-charts/heatmap/heatmap-tooltip.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui-charts/legend/legend-progress.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -2316,6 +2534,11 @@
   },
   "components/ui-charts/stat-card-choropleth-01/lib/use-world-data.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/tooltip/tooltip-content.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
   },
@@ -2374,6 +2597,11 @@
       "count": 2
     }
   },
+  "components/ui-custom/context-bar/context-bar-create-pull-request.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui-custom/context-bar/context-bar-prompt-flyout.source.test.js": {
     "no-restricted-syntax": {
       "count": 72
@@ -2391,6 +2619,9 @@
   },
   "components/ui-custom/context-bar/context-bar-pull-request.tsx": {
     "no-restricted-imports": {
+      "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -2470,11 +2701,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/inline-citation.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/jsx-preview.tsx": {
     "react-hooks/refs": {
       "count": 3
@@ -2500,6 +2726,11 @@
       "count": 4
     },
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/pixel-loader/pixel-loader.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -2530,6 +2761,9 @@
     },
     "react-hooks/refs": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/ui-custom/rich-text-editor/extensions.ts": {
@@ -2627,9 +2861,12 @@
   "components/ui-custom/skill-tag.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
-  "components/ui-custom/source-preview-menu.source.test.js": {
+  "components/ui-custom/sources-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 31
     }
@@ -2675,6 +2912,16 @@
       "count": 2
     }
   },
+  "components/ui/accordion.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/ui/attachment.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/ui/avatar.source.test.js": {
     "no-restricted-syntax": {
       "count": 208
@@ -2695,14 +2942,29 @@
       "count": 8
     }
   },
+  "components/ui/button-group.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/carousel.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui/chart.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
   "components/ui/checkbox.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
+    }
+  },
+  "components/ui/combobox.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/date-label.source.test.js": {
@@ -2720,9 +2982,24 @@
       "count": 4
     }
   },
+  "components/ui/field.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/hover-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/icon-tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
+    }
+  },
+  "components/ui/inline-citation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
     }
   },
   "components/ui/input-group.tsx": {
@@ -2734,11 +3011,24 @@
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 6
     }
   },
   "components/ui/input-otp.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/ui/input.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/item.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/ui/logo-mark.source.test.js": {
@@ -2761,6 +3051,21 @@
       "count": 1
     }
   },
+  "components/ui/message.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/native-select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/navigation-menu.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/page-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
@@ -2771,9 +3076,19 @@
       "count": 22
     }
   },
+  "components/ui/popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/progress-tracker.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
+    }
+  },
+  "components/ui/questionnaire.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/queue.tsx": {
@@ -2791,9 +3106,19 @@
       "count": 43
     }
   },
+  "components/ui/select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/sidebar.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 2
+    }
+  },
+  "components/ui/sidebar.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/slider.source.test.js": {
@@ -2816,9 +3141,19 @@
       "count": 1
     }
   },
+  "components/ui/textarea.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
+    }
+  },
+  "components/ui/toggle.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/vpk-icons.source.test.js": {
@@ -2877,6 +3212,11 @@
   "components/visual/glass-tabs.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
+    }
+  },
+  "components/visual/glass-tabs.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/visual/gooey/tuning-model.ts": {
@@ -2952,14 +3292,25 @@
       "count": 3
     }
   },
+  "components/visual/text-continuity/examples/elastic.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/visual/text-continuity/examples/gestures.tsx": {
     "no-restricted-syntax": {
       "count": 4
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/visual/text-continuity/examples/inline.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -2968,6 +3319,16 @@
   "components/visual/text-continuity/examples/interface.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/visual/text-continuity/examples/lists.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/visual/text-continuity/examples/matter.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/visual/text-continuity/examples/numora.tsx": {
@@ -2979,12 +3340,23 @@
     }
   },
   "components/visual/text-continuity/examples/playful.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
+  "components/visual/text-continuity/examples/primitives.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/visual/text-continuity/examples/resize.tsx": {
     "no-restricted-syntax": {
+      "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -3071,9 +3443,19 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-preview-menu-demo.source.test.js": {
+  "components/website/demos/ui-custom/sources-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
+    }
+  },
+  "components/website/demos/ui/accordion-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui/calendar-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/website/demos/ui/carousel-demo.tsx": {
@@ -3094,6 +3476,16 @@
   "components/website/demos/ui/dropdown-menu-search-demo.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 1
+    }
+  },
+  "components/website/demos/ui/inline-citation-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/plan-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/website/demos/ui/table-demo.source.test.js": {
@@ -3330,6 +3722,11 @@
       "count": 1
     }
   },
+  "components/website/website-sidebar-nav.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
@@ -3347,6 +3744,11 @@
   },
   "lib/json-render/registry-data-display.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "lib/json-render/registry-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
