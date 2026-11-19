@@ -50,6 +50,17 @@ test("file tree rows are treeitems with level, selection and expansion state", a
 	assert.equal(view.getByRole("treeitem", { name: "package.json" }).getAttribute("aria-level"), "1");
 });
 
+test("an open folder owns its child group through aria-owns; a closed one owns nothing", async () => {
+	const view = await renderComponent({ source: TREE_SOURCE });
+	const src = view.getByRole("treeitem", { name: "src" });
+	const ownedId = src.getAttribute("aria-owns") ?? "";
+	assert.notEqual(ownedId, "");
+	const group = document.getElementById(ownedId);
+	assert.equal(group?.getAttribute("role"), "group");
+	assert.equal(group?.textContent?.includes("app.tsx"), true);
+	assert.equal(view.getByRole("treeitem", { name: "lib" }).hasAttribute("aria-owns"), false);
+});
+
 test("clicking a file selects it and clicking a folder toggles and selects it", async () => {
 	const view = await renderComponent({ source: TREE_SOURCE });
 	await view.click(view.getByRole("treeitem", { name: "package.json" }));

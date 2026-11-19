@@ -6,6 +6,7 @@ import {
 	isValidElement,
 	use,
 	useCallback,
+	useId,
 	useMemo,
 	useState,
 	type HTMLAttributes,
@@ -214,6 +215,9 @@ export function FileTreeFolder({
 		use(FileTreeContext);
 	const level = use(FileTreeLevelContext);
 	const isExpanded = expandedPaths.has(path);
+	// The child group renders beside the folder's treeitem (Collapsible owns
+	// both), so aria-owns ties it to its folder for assistive technology.
+	const groupId = useId();
 	const isSelected = selectedPath === path;
 	const iconClassName = isSelected ? "text-icon-selected" : "text-icon-subtle";
 
@@ -240,6 +244,7 @@ export function FileTreeFolder({
 			>
 				<CollapsibleTrigger
 					aria-level={level}
+					aria-owns={isExpanded ? groupId : undefined}
 					aria-selected={isSelected}
 					data-path={path}
 					onClick={handleSelect}
@@ -269,7 +274,7 @@ export function FileTreeFolder({
 					</FileTreeIcon>
 					<FileTreeName>{name}</FileTreeName>
 				</CollapsibleTrigger>
-				<CollapsibleContent role="group">
+				<CollapsibleContent id={groupId} role="group">
 					<div className="ml-4 flex flex-col">
 						<FileTreeLevelContext value={level + 1}>{children}</FileTreeLevelContext>
 					</div>
