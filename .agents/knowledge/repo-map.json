@@ -6707,9 +6707,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "source-preview-menu",
-						"name": "Source Preview Menu",
-						"importPath": "@/components/ui-custom/source-preview-menu",
+						"slug": "sources-menu",
+						"name": "Sources Menu",
+						"importPath": "@/components/ui-custom/sources-menu",
 						"status": "live"
 					},
 					{

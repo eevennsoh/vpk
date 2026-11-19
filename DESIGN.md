@@ -313,7 +313,7 @@ repo's semantic Tailwind classes whenever a class exists.
   This applies to every popover that lists rows, not only `DropdownMenu`: a
   `Popover` row list takes `dropdownStyles.surface` and `dropdownStyles.padding`
   from `components/ui/dropdown-menu.tsx` and marks each row `data-menu-row` so
-  `menu-row-spacing` adds the 2px gap (`SourcePreviewMenu` does this).
+  `menu-row-spacing` adds the 2px gap (`SourcesMenu` does this).
   <!-- 2026-11-17: "sources preview menu needs to have the new dropdown menu padding style" -->
   <!-- 2026-11-14: "each row item separation will need to be 2px"; "corner radius of each individual row item should be 8px not 6px" -->
   <!-- 2026-11-14: "follow dropdown menu rows logic, it's based on top/bottom padding"; "why only part of it is done that way? But not the entire row?"; "corner radius needs to be 8px" -->

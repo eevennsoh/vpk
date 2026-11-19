@@ -5,9 +5,9 @@ const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
-const MENU_SOURCE = readFileSync(join(__dirname, "source-preview-menu.tsx"), "utf8");
-const DATA_SOURCE = readFileSync(join(__dirname, "source-preview-menu-data.ts"), "utf8");
-const DATA_PATH = join(__dirname, "source-preview-menu-data.ts");
+const MENU_SOURCE = readFileSync(join(__dirname, "sources-menu.tsx"), "utf8");
+const DATA_SOURCE = readFileSync(join(__dirname, "sources-menu-data.ts"), "utf8");
+const DATA_PATH = join(__dirname, "sources-menu-data.ts");
 
 test("preview-menu data keeps a long owner so metadata must ellipsize beside hover actions", () => {
 	assert.match(DATA_SOURCE, /export const SOURCE_PREVIEW_LONG_OWNER = "Mike Cannon-Brookes";/u);
@@ -44,7 +44,7 @@ test("preview-menu metadata truncates the owner with CSS ellipsis, not a hard cl
 });
 
 test("preview-menu is a shared popover owner, not a docs-only demo", () => {
-	assert.match(MENU_SOURCE, /export function SourcePreviewMenu/u);
+	assert.match(MENU_SOURCE, /export function SourcesMenu/u);
 	assert.match(MENU_SOURCE, /<Popover onOpenChange=\{setMenuOpen\} open=\{menuOpen\}>/u);
 	assert.match(MENU_SOURCE, /<PopoverTrigger render=\{trigger\}>/u);
 	assert.match(MENU_SOURCE, /<PopoverTitle className="sr-only">Source previews<\/PopoverTitle>/u);

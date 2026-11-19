@@ -35,7 +35,7 @@ import {
 	getSourcePreviewIconTileVariant,
 	getSourcePreviewProduct,
 	type SourcePreviewPage,
-} from "@/components/ui-custom/source-preview-menu-data";
+} from "@/components/ui-custom/sources-menu-data";
 import { TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
@@ -49,9 +49,9 @@ export {
 	SOURCE_PREVIEW_PAGES,
 	type SourcePreviewPage,
 	type SourcePreviewProduct,
-} from "@/components/ui-custom/source-preview-menu-data";
+} from "@/components/ui-custom/sources-menu-data";
 
-export const SOURCE_PREVIEW_MENU_TOASTER_ID = "source-preview-menu";
+export const SOURCES_MENU_TOASTER_ID = "sources-menu";
 
 function showSourcesToast(
 	title: string,
@@ -312,7 +312,7 @@ function SourcePreviewDialog({
 	);
 }
 
-export function SourcePreviewMenu({
+export function SourcesMenu({
 	pages,
 	children,
 	trigger,

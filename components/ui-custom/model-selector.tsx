@@ -182,10 +182,14 @@ export const ModelSelectorEmpty = ({ className, ...props }: Readonly<ModelSelect
 
 export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
 
+/**
+ * Dropdown menu groups have no padding: a subheading takes a 6px top margin when content sits above it,
+ * and none after a separator, whose own 6px margins space it.
+ */
 export const ModelSelectorGroup = ({ className, ...props }: Readonly<ModelSelectorGroupProps>) => (
 	<CommandGroup
 		className={cn(
-			"!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest",
+			"!p-0 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest [&:not(:first-child):not([cmdk-separator]+*)]:**:[[cmdk-group-heading]]:mt-1.5",
 			className
 		)}
 		{...props}
@@ -216,7 +220,7 @@ export const ModelSelectorItem = ({
 		<CommandItem
 			aria-checked={isChecked}
 			className={cn(
-				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
+				"h-8 rounded-lg pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
 				className
 			)}
 			data-checked={isChecked ? true : undefined}
