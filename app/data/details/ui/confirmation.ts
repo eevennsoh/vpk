@@ -9,7 +9,7 @@ import {
   ConfirmationAction,
   ConfirmationActions,
   ConfirmationTitle,
-} from "@/components/ui-custom/confirmation";
+} from "@/components/ui/confirmation";
 
 <Confirmation approval={part.approval} state={part.state}>
   <ItemMedia variant="icon">

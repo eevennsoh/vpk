@@ -29,6 +29,7 @@ import { COLLAPSIBLE_DETAIL } from "./ui/collapsible";
 import { COMBOBOX_DETAIL } from "./ui/combobox";
 import { COMMAND_DETAIL } from "./ui/command";
 import { COMMENT_DETAIL } from "./ui/comment";
+import { CONFIRMATION_DETAIL } from "./ui/confirmation";
 import { CONTEXT_MENU_DETAIL } from "./ui/context-menu";
 import { DATE_LABEL_DETAIL } from "./ui/date-label";
 import { DATE_PICKER_DETAIL } from "./ui/date-picker";
@@ -44,6 +45,7 @@ import { HEADING_DETAIL } from "./ui/heading";
 import { HOVER_CARD_DETAIL } from "./ui/hover-card";
 import { ICON_DETAIL } from "./ui/icon-detail";
 import { ICON_TILE_DETAIL } from "./ui/icon-tile";
+import { INLINE_CITATION_DETAIL } from "./ui/inline-citation";
 import { INLINE_EDIT_DETAIL } from "./ui/inline-edit";
 import { INPUT_GROUP_DETAIL } from "./ui/input-group";
 import { INPUT_OTP_DETAIL } from "./ui/input-otp";
@@ -129,6 +131,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	combobox: COMBOBOX_DETAIL,
 	command: COMMAND_DETAIL,
 	comment: COMMENT_DETAIL,
+	confirmation: CONFIRMATION_DETAIL,
 	"context-menu": CONTEXT_MENU_DETAIL,
 	"date-label": DATE_LABEL_DETAIL,
 	"date-picker": DATE_PICKER_DETAIL,
@@ -144,6 +147,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	"hover-card": HOVER_CARD_DETAIL,
 	icon: ICON_DETAIL,
 	"icon-tile": ICON_TILE_DETAIL,
+	"inline-citation": INLINE_CITATION_DETAIL,
 	"inline-edit": INLINE_EDIT_DETAIL,
 	"input-group": INPUT_GROUP_DETAIL,
 	"input-otp": INPUT_OTP_DETAIL,

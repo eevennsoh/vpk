@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import {
 	CircleIcon,
@@ -119,11 +120,12 @@ export function VoiceSelectorContent({
 	return (
 		<DialogContent
 			aria-describedby={undefined}
-			className={cn("p-0", className)}
+			// Close sits 6px in, so it centres on the 32px search field that starts 6px from the top.
+			className={cn("p-0 [&>[data-slot=dialog-close]]:top-1.5 [&>[data-slot=dialog-close]]:right-1.5", className)}
 			{...props}
 		>
 			<DialogTitle className="sr-only">{title}</DialogTitle>
-			<Command className="**:data-[slot=command-input-wrapper]:h-auto">
+			<Command className={cn("rounded-xl bg-transparent", dropdownStyles.padding)}>
 				{children}
 			</Command>
 		</DialogContent>
@@ -138,11 +140,17 @@ export function VoiceSelectorDialog(props: Readonly<VoiceSelectorDialogProps>) {
 
 export type VoiceSelectorInputProps = ComponentProps<typeof CommandInput>;
 
+/** The shared menu search field, flush with the top edge; its end stays clear of the dialog's Close button. */
 export function VoiceSelectorInput({
-	className,
+	wrapperClassName,
 	...props
 }: Readonly<VoiceSelectorInputProps>) {
-	return <CommandInput className={cn(className)} {...props} />;
+	return (
+		<CommandInput
+			wrapperClassName={cn("-mx-(--menu-inset) -mt-(--menu-inset) mb-0.5 pr-9", wrapperClassName)}
+			{...props}
+		/>
+	);
 }
 
 export type VoiceSelectorListProps = ComponentProps<typeof CommandList>;
@@ -153,23 +161,47 @@ export function VoiceSelectorList(props: Readonly<VoiceSelectorListProps>) {
 
 export type VoiceSelectorEmptyProps = ComponentProps<typeof CommandEmpty>;
 
-export function VoiceSelectorEmpty(props: Readonly<VoiceSelectorEmptyProps>) {
-	return <CommandEmpty {...props} />;
+export function VoiceSelectorEmpty({
+	className,
+	...props
+}: Readonly<VoiceSelectorEmptyProps>) {
+	return <CommandEmpty className={cn("py-4 text-text-subtle", className)} {...props} />;
 }
 
 export type VoiceSelectorGroupProps = ComponentProps<typeof CommandGroup>;
 
-export function VoiceSelectorGroup(props: Readonly<VoiceSelectorGroupProps>) {
-	return <CommandGroup {...props} />;
+/** Rows run edge to edge of the menu padding; the heading is the dropdown menu's subheading. */
+export function VoiceSelectorGroup({
+	className,
+	...props
+}: Readonly<VoiceSelectorGroupProps>) {
+	return (
+		<CommandGroup
+			className={cn(
+				"!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest",
+				className
+			)}
+			{...props}
+		/>
+	);
 }
 
 export type VoiceSelectorItemProps = ComponentProps<typeof CommandItem>;
 
+/** A dropdown menu row: 8px leading, 12px trailing (the check column), 8px radius, hover fill. */
 export function VoiceSelectorItem({
 	className,
 	...props
 }: Readonly<VoiceSelectorItemProps>) {
-	return <CommandItem className={cn("px-4 py-2", className)} {...props} />;
+	return (
+		<CommandItem
+			className={cn(
+				"min-h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed!",
+				className
+			)}
+			{...props}
+		/>
+	);
 }
 
 export type VoiceSelectorShortcutProps = ComponentProps<typeof CommandShortcut>;
@@ -182,8 +214,11 @@ export type VoiceSelectorSeparatorProps = ComponentProps<
 	typeof CommandSeparator
 >;
 
-export function VoiceSelectorSeparator(props: Readonly<VoiceSelectorSeparatorProps>) {
-	return <CommandSeparator {...props} />;
+export function VoiceSelectorSeparator({
+	className,
+	...props
+}: Readonly<VoiceSelectorSeparatorProps>) {
+	return <CommandSeparator className={cn("-mx-(--menu-inset) my-(--menu-inset)", className)} {...props} />;
 }
 
 type GenderValue =

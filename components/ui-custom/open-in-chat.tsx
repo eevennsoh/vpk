@@ -100,7 +100,7 @@ export function OpenInTrigger({
 			{children ?? (
 				<>
 					Open in chat
-					<ChevronDownIcon className="size-4" />
+					<ChevronDownIcon className="text-icon-subtle" data-icon="inline-end" label="" size="small" />
 				</>
 			)}
 		</DropdownMenuTrigger>
@@ -113,29 +113,25 @@ interface OpenInProviderItemProps
 }
 
 function OpenInProviderItem({
+	className,
 	providerKey,
 	...props
 }: Readonly<OpenInProviderItemProps>) {
 	const { query } = useOpenInContext();
 	const provider = providers[providerKey];
 
+	// A link row keeps the menu row's text colour instead of the global link blue and underline.
 	return (
 		<DropdownMenuItem
-			{...props}
-			render={
-				<a
-					aria-label={`Open in ${provider.title}`}
-					className="flex items-center gap-2"
-					href={provider.createUrl(query)}
-					rel="noopener"
-					target="_blank"
-				/>
-			}
+			className={cn("text-text no-underline hover:no-underline active:text-text", className)}
+			elemAfter={<ExternalLinkIcon label="" size="small" />}
+			elemBefore={<span aria-hidden="true" className="contents">{provider.icon}</span>}
+			elemBeforeSize={16}
 			nativeButton={false}
+			render={<a href={provider.createUrl(query)} rel="noopener" target="_blank" />}
+			{...props}
 		>
-			<span className="shrink-0">{provider.icon}</span>
-			<span className="flex-1">{provider.title}</span>
-			<ExternalLinkIcon className="size-4 shrink-0" />
+			{provider.title}
 		</DropdownMenuItem>
 	);
 }
