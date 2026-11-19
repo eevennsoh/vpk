@@ -52,31 +52,33 @@ function cardLogo(page: Page, dialog: Locator, appName: string): Locator {
 		.first();
 }
 
-test("App Directory draws brand marks for package brands, asset paths and Atlassian", { tag: "@smoke" }, async ({ page }) => {
-	const { dialog, companies } = await openStandardDirectory(page);
+test("App Directory draws a logo for package brands, asset paths, Atlassian and every By companies entry", { tag: "@smoke" }, async ({ page }) => {
+	const { dialog, companies } = await test.step("open the standard directory", () => openStandardDirectory(page));
 
-	// Sidebar: the Atlassian entry renders AtlassianLogoMark.
-	const atlassian = companies.filter({ hasText: "Atlassian" }).locator('[data-slot="sidebar-nav-item-leading"]');
-	await expect.poll(() => logoState(atlassian), { message: "Atlassian sidebar entry logo" }).toBe("svg");
+	await test.step("Atlassian sidebar entry draws AtlassianLogoMark", async () => {
+		const atlassian = companies.filter({ hasText: "Atlassian" }).locator('[data-slot="sidebar-nav-item-leading"]');
+		await expect.poll(() => logoState(atlassian), { message: "Atlassian sidebar entry logo" }).toBe("svg");
+	});
 
-	// Cards: Slack is BrandLogoMark name="slack" (package svg); Focus Flow is a non-/3p/ src (<img>).
-	for (const [appName, expected] of [["Slack", "svg"], ["Focus Flow", "img"]] as const) {
-		const logo = cardLogo(page, dialog, appName);
-		await logo.scrollIntoViewIfNeeded();
-		await expect.poll(() => logoState(logo), { message: `${appName} card logo` }).toBe(expected);
-	}
-});
+	await test.step("every By companies sidebar entry shows a logo", async () => {
+		const emptyEntries = () => companies.evaluateAll((items) => items
+			.filter((item) => {
+				const leading = item.querySelector('[data-slot="sidebar-nav-item-leading"]');
+				const svg = leading?.querySelector("svg");
+				const img = leading?.querySelector("img");
+				const drawn = (svg && svg.getBoundingClientRect().width > 0) || (img?.complete && img.naturalWidth > 0);
+				return !drawn;
+			})
+			.map((item) => item.textContent?.trim() ?? ""));
+		await expect.poll(emptyEntries, { message: "By companies entries with an empty logo slot", timeout: 5_000 }).toEqual([]);
+	});
 
-test("every By companies sidebar entry shows a logo", { tag: "@smoke" }, async ({ page }) => {
-	const { companies } = await openStandardDirectory(page);
-	const emptyEntries = () => companies.evaluateAll((items) => items
-		.filter((item) => {
-			const leading = item.querySelector('[data-slot="sidebar-nav-item-leading"]');
-			const svg = leading?.querySelector("svg");
-			const img = leading?.querySelector("img");
-			const drawn = (svg && svg.getBoundingClientRect().width > 0) || (img?.complete && img.naturalWidth > 0);
-			return !drawn;
-		})
-		.map((item) => item.textContent?.trim() ?? ""));
-	await expect.poll(emptyEntries, { message: "By companies entries with an empty logo slot", timeout: 5_000 }).toEqual([]);
+	await test.step("Slack card draws the package svg; Focus Flow card draws its non-/3p/ src as an <img>", async () => {
+		// Slack is BrandLogoMark name="slack"; Focus Flow passes a src outside /3p/.
+		for (const [appName, expected] of [["Slack", "svg"], ["Focus Flow", "img"]] as const) {
+			const logo = cardLogo(page, dialog, appName);
+			await logo.scrollIntoViewIfNeeded();
+			await expect.poll(() => logoState(logo), { message: `${appName} card logo` }).toBe(expected);
+		}
+	});
 });
