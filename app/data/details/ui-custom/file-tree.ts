@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const FILE_TREE_DETAIL: ComponentDetail = {
 	description:
-		"A hierarchical file system explorer with expandable folders, file selection, custom icons, and inline action buttons. Supports both controlled and uncontrolled expand/select state.",
+		"The files the agent changed, as a folder tree. Each folder is a Collapsible whose trigger is a ghost Button, and each file is a ghost Button that selects its path. Rows are tree items with arrow-key navigation, and expand/select state can be controlled or uncontrolled.",
 	usage: `import {
   FileTree,
   FileTreeFolder,
@@ -57,16 +57,14 @@ export const FILE_TREE_DETAIL: ComponentDetail = {
 		},
 	],
 	subComponents: [
-		{ name: "FileTree", description: "Root container with tree role and expand/select context provider." },
-		{ name: "FileTreeFolder", description: "Collapsible folder node with chevron, folder icon, and nested children." },
-		{ name: "FileTreeFile", description: "Leaf file node with click/keyboard selection and optional custom icon." },
+		{ name: "FileTree", description: "Root container with the tree role, expand/select state, and arrow-key navigation (Up/Down/Home/End move, Right opens or enters a folder, Left closes it or returns to the parent)." },
+		{ name: "FileTreeFolder", description: "A Collapsible whose CollapsibleTrigger renders a ghost Button with chevron, folder icon, and name; clicking toggles and selects the folder. Children render in CollapsibleContent." },
+		{ name: "FileTreeFile", description: "A ghost Button that calls onSelect with its path, with an optional custom icon or custom row content. With FileTreeActions in its children, the row is a focusable treeitem styled as a ghost Button that holds the actions, since a tree may only contain treeitems; Enter or Space on the row selects it." },
 		{ name: "FileTreeIcon", description: "Inline icon wrapper for custom file or folder icons." },
 		{ name: "FileTreeName", description: "Truncated text display for file or folder names." },
-		{ name: "FileTreeActions", description: "Right-aligned action button container with click propagation isolation." },
+		{ name: "FileTreeActions", description: "Right-aligned action button container inside the file's row, with click and key propagation isolated so an action never selects the row." },
 	],
 	examples: [
-		{ title: "Project structure", description: "Nested folder hierarchy with multiple levels expanded.", demoSlug: "file-tree-demo-project" },
-		{ title: "With selection", description: "Interactive file tree with controlled selection state.", demoSlug: "file-tree-demo-with-selection" },
 		{ title: "Custom icons", description: "File-type-specific icons for code, image, JSON, and text files.", demoSlug: "file-tree-demo-custom-icons" },
 		{ title: "With actions", description: "File rows with inline copy, download, and delete action buttons.", demoSlug: "file-tree-demo-with-actions" },
 	],

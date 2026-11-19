@@ -326,20 +326,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"file-tree-demo-project": dynamic(
-		() =>
-			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
-				default: mod.FileTreeDemoProject,
-			})),
-		{ ssr: false },
-	),
-	"file-tree-demo-with-selection": dynamic(
-		() =>
-			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
-				default: mod.FileTreeDemoWithSelection,
-			})),
-		{ ssr: false },
-	),
 	"file-tree-demo-custom-icons": dynamic(
 		() =>
 			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
