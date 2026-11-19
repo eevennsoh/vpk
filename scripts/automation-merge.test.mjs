@@ -10,25 +10,28 @@ const PUSHED_AT = "2026-11-20T01:00:00Z";
 
 // --- Codex signal ---------------------------------------------------------------------
 
-const BRANCH = "automation/real";
+const PR = 5;
+const attached = (createdAt, extra = {}) => ({ created_at: createdAt, pull_requests: [{ number: PR }], ...extra });
 
-function codexGh({ reviews = [], comments = [], reactions = [], suites = [{ head_branch: BRANCH, created_at: PUSHED_AT }] } = {}) {
+function codexGh({ reviews = [], comments = [], reactions = [], suites = [attached(PUSHED_AT)], timeline = [] } = {}) {
 	return async (args) => {
 		const endpoint = args.find((part) => part.startsWith("repos/"));
 		if (endpoint.includes("/reviews")) return JSON.stringify([reviews]);
 		if (endpoint.includes("/comments")) return JSON.stringify([comments]);
 		if (endpoint.includes("/reactions")) return JSON.stringify([reactions]);
 		if (endpoint.includes("/check-suites")) return JSON.stringify([{ check_suites: suites }]);
+		if (endpoint.includes("/timeline")) return JSON.stringify([timeline]);
 		throw new Error(`unexpected ${endpoint}`);
 	};
 }
 
-const signal = (fixture) => codexSignal({ prNumber: 5, repository: REPO, sha: SHA, headRefName: BRANCH, runGh: codexGh(fixture) });
+const signal = (fixture) => codexSignal({ prNumber: PR, repository: REPO, sha: SHA, runGh: codexGh(fixture) });
 const review = (extra = {}) => ({ id: 11, user: { login: CODEX_LOGIN }, commit_id: SHA, state: "APPROVED", body: "", ...extra });
 const plusOne = (createdAt, extra = {}) => ({ user: { login: CODEX_LOGIN }, content: "+1", created_at: createdAt, ...extra });
+const forcePush = (createdAt) => ({ event: "head_ref_force_pushed", created_at: createdAt });
 
 describe("codexSignal", () => {
-	test("a +1 created after the head reached the PR branch is clean", async () => {
+	test("a +1 created after the head's suite attached to this PR is clean", async () => {
 		assert.deepEqual(await signal({ reactions: [plusOne("2026-11-20T01:05:00Z")] }), { state: "clean", reason: `codex-plus-one: ${SHA}` });
 	});
 
@@ -36,25 +39,35 @@ describe("codexSignal", () => {
 		const result = await signal({
 			reactions: [plusOne("2026-11-20T09:05:00Z")],
 			suites: [
-				{ head_branch: "automation/scratch", created_at: "2026-11-20T09:00:00Z" },
-				{ head_branch: BRANCH, created_at: "2026-11-20T09:09:50Z" },
+				{ created_at: "2026-11-20T09:00:00Z", pull_requests: [] },
+				attached("2026-11-20T09:09:50Z"),
 			],
 		});
 		assert.deepEqual(result, { state: "missing", reason: `codex-missing: ${SHA}` });
 	});
 
-	test("the latest suite on the PR branch dates the head", async () => {
-		const result = await signal({
-			reactions: [plusOne("2026-11-20T01:20:00Z")],
-			suites: [{ head_branch: BRANCH, created_at: PUSHED_AT }, { head_branch: BRANCH, created_at: "2026-11-20T01:30:00Z" }],
-		});
-		assert.equal(result.state, "missing");
+	test("probe: an old suite not attached to this PR plus a later force-push cannot date a replayed +1", async () => {
+		const suites = [{ created_at: "2026-11-20T09:00:00Z", head_branch: "automation/real", pull_requests: [] }];
+		const timeline = [forcePush("2026-11-20T09:09:50Z")];
+		const reactions = [plusOne("2026-11-20T09:05:00Z")];
+		assert.deepEqual(await signal({ reactions, suites, timeline }), { state: "missing", reason: `codex-head-push-unknown: ${SHA}` });
+		assert.deepEqual(await signal({ reactions, suites: [attached("2026-11-20T09:00:00Z")], timeline }), { state: "missing", reason: `codex-missing: ${SHA}` });
 	});
 
-	test("probe: without a suite on the PR branch the head cannot be dated and the signal is missing", async () => {
-		const result = await signal({ reactions: [plusOne("2026-11-20T09:05:00Z")], suites: [{ head_branch: "automation/scratch", created_at: PUSHED_AT }] });
-		assert.deepEqual(result, { state: "missing", reason: `codex-head-push-unknown: ${SHA}` });
-		assert.equal((await signal({ reactions: [plusOne("2026-11-20T09:05:00Z")], suites: [] })).state, "missing");
+	test("the newest attached suite or force-push dates the head", async () => {
+		const reactions = [plusOne("2026-11-20T01:20:00Z")];
+		assert.equal((await signal({ reactions, suites: [attached(PUSHED_AT), attached("2026-11-20T01:30:00Z")] })).state, "missing");
+		assert.equal((await signal({ reactions, timeline: [forcePush("2026-11-20T01:25:00Z")] })).state, "missing");
+		assert.equal((await signal({ reactions, timeline: [forcePush("2026-11-20T01:10:00Z"), { event: "committed", created_at: null }] })).state, "clean");
+	});
+
+	test("probe: without a suite attached to this PR the head cannot be dated and the signal is missing", async () => {
+		const reactions = [plusOne("2026-11-20T09:05:00Z")];
+		assert.deepEqual(
+			await signal({ reactions, suites: [{ created_at: PUSHED_AT, pull_requests: [{ number: 99 }] }] }),
+			{ state: "missing", reason: `codex-head-push-unknown: ${SHA}` },
+		);
+		assert.equal((await signal({ reactions, suites: [] })).state, "missing");
 	});
 
 	test("a +1 from another user, or an eyes reaction, is not a signal", async () => {
@@ -83,7 +96,7 @@ describe("codexSignal", () => {
 
 function deps(overrides = {}) {
 	const log = [];
-	const eligible = { eligible: true, headRefOid: SHA, headRefName: "automation/x-y", reasons: [] };
+	const eligible = { eligible: true, headRefOid: SHA, reasons: [] };
 	const base = {
 		log,
 		runGh: async (args) => {
@@ -96,7 +109,7 @@ function deps(overrides = {}) {
 			return eligible;
 		},
 		codexSignal: async (options) => {
-			log.push(["codex", options.prNumber, options.sha, options.headRefName]);
+			log.push(["codex", options.prNumber, options.sha]);
 			return { state: "clean", reason: `codex-plus-one: ${options.sha}` };
 		},
 		collectGate: async (options) => {
@@ -104,7 +117,7 @@ function deps(overrides = {}) {
 			return { headRefOid: SHA, checks: { state: "passing", failing: [] }, nonApprovingReviews: [], readyToMerge: true, unresolvedThreads: [] };
 		},
 		mergeRemote: async (options) => {
-			log.push(["merge", options.prNumber, options.expectedHead]);
+			log.push(["merge", options.prNumber, options.expectedHead, options.commitTitle]);
 			return { mergeCommit: "c".repeat(40), branchDeletion: { state: "deleted" } };
 		},
 		runGit: async (args) => {
@@ -125,8 +138,8 @@ describe("processCandidate", () => {
 		const result = await run(d);
 		assert.equal(result.outcome, "merged");
 		assert.equal(result.mergeCommit, "c".repeat(40));
-		const codex = ["codex", 3, SHA, "automation/x-y"];
-		assert.deepEqual(d.log, [["eligibility", 3, null], codex, ["gate", 3], ["eligibility", 3, SHA], codex, ["merge", 3, SHA]]);
+		const codex = ["codex", 3, SHA];
+		assert.deepEqual(d.log, [["eligibility", 3, null], codex, ["gate", 3], ["eligibility", 3, SHA], codex, ["merge", 3, SHA, "Merge #3 (aaaaaaa)"]]);
 	});
 
 	test("ineligible PRs stop before any other read", async () => {

@@ -61,30 +61,38 @@ async function ghJson(runGh, args) {
 	return JSON.parse(text);
 }
 
-// When this head reached the PR's branch: the LATEST check suite GitHub created for the SHA
-// on that branch. GitHub sets suite times on push, unlike commit dates, and taking the
-// latest on the PR branch means an earlier push of the same SHA elsewhere cannot backdate it.
-async function headSeenAt(runGh, repository, sha, headRefName) {
-	const pages = await ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/commits/${sha}/check-suites?per_page=100`]);
-	const times = flatten(pages.map((page) => page?.check_suites ?? []))
-		.filter((suite) => suite?.head_branch === headRefName)
+// When this head reached the PR: the newest of (a) the latest check suite GitHub created for
+// the SHA that is attached to this PR and (b) the latest force-push event on the PR. GitHub
+// sets both on push, unlike commit dates. Without an attached suite the head is undated.
+async function headSeenAt(runGh, repository, sha, prNumber) {
+	const [suitePages, timelinePages] = await Promise.all([
+		ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/commits/${sha}/check-suites?per_page=100`]),
+		ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/issues/${prNumber}/timeline?per_page=100`]),
+	]);
+	const suiteTimes = flatten(suitePages.map((page) => page?.check_suites ?? []))
+		.filter((suite) => Array.isArray(suite?.pull_requests) && suite.pull_requests.some((pr) => pr?.number === prNumber))
 		.map((suite) => Date.parse(suite?.created_at ?? ""))
 		.filter(Number.isFinite);
-	return times.length > 0 ? Math.max(...times) : null;
+	if (suiteTimes.length === 0) return null;
+	const forcePushTimes = flatten(timelinePages)
+		.filter((event) => event?.event === "head_ref_force_pushed")
+		.map((event) => Date.parse(event?.created_at ?? ""))
+		.filter(Number.isFinite);
+	return Math.max(...suiteTimes, ...forcePushTimes);
 }
 
 /**
  * Returns { state: "clean" | "findings" | "missing", reason }.
  * Clean means a Codex APPROVED review on `sha` with no comments, or a Codex +1 on the PR
- * created after `sha` last reached `headRefName`. Any other Codex review on `sha` counts as
+ * created after `sha` reached the PR (see headSeenAt). Any other Codex review on `sha` counts as
  * findings and blocks, even when its threads are resolved.
  */
-export async function codexSignal({ prNumber, repository, sha, headRefName, runGh = gh }) {
+export async function codexSignal({ prNumber, repository, sha, runGh = gh }) {
 	const [reviewPages, commentPages, reactionPages, seenAt] = await Promise.all([
 		ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/pulls/${prNumber}/reviews?per_page=100`]),
 		ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/pulls/${prNumber}/comments?per_page=100`]),
 		ghJson(runGh, ["api", "--paginate", "--slurp", `repos/${repository}/issues/${prNumber}/reactions?per_page=100`]),
-		headSeenAt(runGh, repository, sha, headRefName),
+		headSeenAt(runGh, repository, sha, prNumber),
 	]);
 	const comments = flatten(commentPages);
 	const headReviews = flatten(reviewPages).filter((review) => review?.user?.login === CODEX_LOGIN && review.commit_id === sha);
@@ -141,6 +149,9 @@ function defaultDeps() {
 	};
 }
 
+// Merge commits carry no PR title or body text.
+export const mergeTitle = (prNumber, sha) => `Merge #${prNumber} (${sha.slice(0, 7)})`;
+
 /** Runs the chain for one PR and returns { number, head?, outcome, reasons[], ... }. */
 export async function processCandidate({ prNumber, repository, deps }) {
 	const skip = (head, ...reasons) => ({ number: prNumber, head, outcome: "skipped", reasons });
@@ -148,8 +159,7 @@ export async function processCandidate({ prNumber, repository, deps }) {
 	const first = await deps.checkEligibility({ prNumber, repository });
 	const sha = first.headRefOid;
 	if (!first.eligible) return skip(sha, ...first.reasons);
-	// Eligible decisions carry a validated `automation/...` branch name.
-	const codexOptions = { prNumber, repository, sha, headRefName: first.headRefName, runGh: deps.runGh };
+	const codexOptions = { prNumber, repository, sha, runGh: deps.runGh };
 
 	const codex = await deps.codexSignal(codexOptions);
 	if (codex.state !== "clean") return skip(sha, codex.reason);
@@ -172,7 +182,7 @@ export async function processCandidate({ prNumber, repository, deps }) {
 	if (!second.eligible) return skip(sha, ...second.reasons.map((entry) => reason(MERGE_REASONS.beforeMerge, entry)));
 	if (codexAgain.state !== "clean") return skip(sha, reason(MERGE_REASONS.beforeMerge, codexAgain.reason));
 
-	const merged = await deps.mergeRemote({ prNumber, repository, expectedHead: sha });
+	const merged = await deps.mergeRemote({ prNumber, repository, expectedHead: sha, commitTitle: mergeTitle(prNumber, sha) });
 	return {
 		number: prNumber,
 		head: sha,

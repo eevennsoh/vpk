@@ -10,7 +10,8 @@
 //
 // Exit 0 eligible, 2 ineligible, 1 error. Output uses a fixed vocabulary of reason codes;
 // PR-controlled strings (paths, branch names) appear only when they match SAFE_TEXT,
-// otherwise as `path#<sha256 prefix>`. Titles and bodies are never read.
+// otherwise as `path#<sha256 prefix>`; branch names always as `branch#<sha256 prefix>`.
+// Titles and bodies are never read.
 
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
@@ -35,7 +36,8 @@ export const MERGE_POLICY = {
 	headBranch: /^automation\/[a-z0-9._/-]{1,110}$/u,
 	maxChangedLines: 300,
 	// The repo keeps no docs tree outside the agent folders, so READMEs are the only docs.
-	doc: { globs: ["**/readme.md"], statuses: ["added", "modified", "removed"] },
+	// Only existing READMEs may change; adding or deleting one needs a human.
+	doc: { globs: ["**/readme.md"], statuses: ["modified"] },
 	// Baseline that may only shrink; checked on parsed base and head contents.
 	pruneOnly: { paths: ["eslint-suppressions.json"], statuses: ["modified"] },
 	// Regenerated whole by `pnpm run fix:generated` and drift-checked by CI; eligible only
@@ -126,9 +128,16 @@ export const REASONS = {
 
 const SAFE_TEXT = /^[A-Za-z0-9._/-]{1,120}$/u;
 
+const shortHash = (text) => createHash("sha256").update(text).digest("hex").slice(0, 8);
+
 export function displayText(value) {
 	const text = String(value ?? "");
-	return SAFE_TEXT.test(text) ? text : `path#${createHash("sha256").update(text).digest("hex").slice(0, 8)}`;
+	return SAFE_TEXT.test(text) ? text : `path#${shortHash(text)}`;
+}
+
+// Branch names are producer text, so they are only ever shown hashed.
+export function displayBranch(value) {
+	return `branch#${shortHash(String(value ?? ""))}`;
 }
 
 const reason = (code, detail) => (detail === undefined ? code : `${code}: ${detail}`);
@@ -299,7 +308,7 @@ export function evaluateEligibility(pr, { repository, defaultBranch, requireGran
 	if (pr.baseRefName !== defaultBranch) reasons.push(REASONS.foreignBase);
 	if ((pr.headRepository ?? "").toLowerCase() !== repository.toLowerCase()) reasons.push(REASONS.foreignHead);
 	const branchOk = policy.headBranch.test(String(pr.headRefName ?? ""));
-	if (!branchOk) reasons.push(reason(REASONS.branch, displayText(pr.headRefName)));
+	if (!branchOk) reasons.push(reason(REASONS.branch, displayBranch(pr.headRefName)));
 	if ((pr.author ?? "").toLowerCase() !== owner) reasons.push(REASONS.author);
 	if (expectedHead && pr.headRefOid !== expectedHead) reasons.push(reason(REASONS.headMismatch, expectedHead));
 	if (pr.headAfterFiles !== undefined && pr.headAfterFiles !== pr.headRefOid) reasons.push(REASONS.headMoved);
@@ -327,8 +336,7 @@ export function evaluateEligibility(pr, { repository, defaultBranch, requireGran
 		eligible: reasons.length === 0,
 		number: pr.number,
 		headRefOid: pr.headRefOid,
-		// Shown raw only when it is a valid producer branch, which is already safe text.
-		headRefName: branchOk ? pr.headRefName : displayText(pr.headRefName),
+		headRefName: displayBranch(pr.headRefName),
 		mode: requireGrantLabel ? "merge" : "policy",
 		changedLines,
 		reasons,
