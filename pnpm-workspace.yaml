@@ -14,6 +14,9 @@ minimumReleaseAgeExclude:
   - agent-browser
   # Latest Portless requested ahead of the seven-day gate; remove after it matures.
   - portless@0.18.0
+  # distortion-waves (libraries.dev/waves) requested ahead of the seven-day gate; zero deps,
+  # no install scripts. Remove after it matures.
+  - distortion-waves@0.1.0
   # ADS source-of-truth tokens; allow same-day design-system updates by request.
   - "@atlaskit/tokens"
   # Transitive runtime gate for current @atlaskit/tokens.
