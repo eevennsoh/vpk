@@ -756,6 +756,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	visualComponent("ink-wash", "Ink Wash", "@/components/visual/ink-wash"),
 	visualComponent("glimm", "Glimm", "@/components/visual/glimm"),
 	visualComponent("liquid-metal", "Liquid Metal", "@/components/visual/liquid-metal"),
+	visualComponent("distortion-waves", "Distortion Waves", "@/components/visual/distortion-waves"),
 	visualComponent("peel", "Peel", "@/components/visual/peel"),
 	visualComponent("magnify-lens", "Magnify Lens", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("mesh-gradient", "Mesh Gradient", "@/components/website/demos/visual/shader-lab-effect-demo"),

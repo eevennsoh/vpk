@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 450,
+			"manifestEntryCount": 451,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 444,
+				"live": 445,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6848,7 +6848,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 110,
+				"entryCount": 111,
 				"entries": [
 					{
 						"category": "visual",
@@ -6953,6 +6953,13 @@
 						"slug": "displacement-map",
 						"name": "Displacement Map",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "distortion-waves",
+						"name": "Distortion Waves",
+						"importPath": "@/components/visual/distortion-waves",
 						"status": "live"
 					},
 					{
