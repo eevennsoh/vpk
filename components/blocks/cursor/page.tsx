@@ -15,9 +15,9 @@ import {
 	MessageScroller,
 	MessageScrollerButton,
 	MessageScrollerContent,
-	MessageScrollerItem,
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller"
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item"
 import {
 	FileTree,
 	FileTreeFile,
@@ -657,7 +657,7 @@ export default function CursorDemoBlock() {
 						<MessageScrollerViewport>
 							<MessageScrollerContent className="gap-4 p-3">
 								{messages.map((message) => (
-									<MessageScrollerItem key={message.key} messageId={message.key} scrollAnchor={message.from === "user"} className="[content-visibility:visible]">
+									<ChatScrollerItem key={message.key} messageId={message.key} scrollAnchor={message.from === "user"}>
 										<Message align={message.from === "user" ? "end" : "start"} className="cv-auto">
 											{message.from === "user" ? (
 												<MessageContent>
@@ -669,17 +669,17 @@ export default function CursorDemoBlock() {
 												</MessageContent>
 											)}
 										</Message>
-									</MessageScrollerItem>
+									</ChatScrollerItem>
 								))}
 								{showCheckpoint ? (
-									<MessageScrollerItem className="[content-visibility:visible]">
+									<ChatScrollerItem>
 										<Checkpoint>
 											<CheckpointIcon />
 											<CheckpointTrigger tooltip="Restore to this checkpoint">
 												Checkpoint saved
 											</CheckpointTrigger>
 										</Checkpoint>
-									</MessageScrollerItem>
+									</ChatScrollerItem>
 								) : null}
 							</MessageScrollerContent>
 						</MessageScrollerViewport>
