@@ -31,10 +31,11 @@ function resolvePausedRovoToolCallRecord({
 	now = Date.now,
 	pausedContinuationToolCallId,
 	takePausedRovoToolCall = () => null,
+	threadId = null,
 } = {}) {
 	const pausedToolCallRecord =
 		pausedContinuationToolCallId && currentToolFirstAttempt === 1
-			? takePausedRovoToolCall(pausedContinuationToolCallId)
+			? takePausedRovoToolCall(pausedContinuationToolCallId, { threadId })
 			: null;
 	if (pausedContinuationToolCallId) {
 		logger.info("[DEBUG-PLAN-APPROVAL] Paused tool call record", {
@@ -253,6 +254,7 @@ function createRovoStreamAttemptRunner({
 			now: options.now,
 			pausedContinuationToolCallId: options.pausedContinuationToolCallId,
 			takePausedRovoToolCall: options.takePausedRovoToolCall,
+			threadId: options.threadId,
 		});
 
 		let streamCommonOptions;

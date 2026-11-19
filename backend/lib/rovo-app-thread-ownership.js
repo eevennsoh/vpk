@@ -7,6 +7,8 @@ const { getRovoSessionOwnerIndex } = require("./rovo-session-owners");
 const { getRequestCaller } = require("../middleware/caller-identity");
 
 const THREAD_NOT_FOUND = Object.freeze({ error: "Thread not found" });
+// Looked up when there is no thread to check, so every ownership decision costs one lookup.
+const NO_THREAD_PROBE_ID = "deferred-tool-call-no-thread";
 
 function firstValue(value) {
 	const first = Array.isArray(value) ? value[0] : value;
@@ -59,16 +61,27 @@ function createRovoAppThreadOwnership({
 
 	/**
 	 * Whether the caller may cancel a paused or active deferred tool call (a clarification
-	 * or plan-approval card). The record's thread decides, like the chat routes that name
-	 * a thread: another caller's stored thread refuses, and a thread that is not stored
-	 * passes. A record with no thread has no owner, so only a local caller may cancel it.
+	 * or plan-approval card). The caller the record was registered for (`record.owner`,
+	 * chat/deferred-tool-state.js) decides first; its thread must not be someone else's
+	 * either. A record without an owner falls back to its thread, like the chat routes
+	 * that name a thread: another caller's stored thread refuses, and a thread that is not
+	 * stored passes. A record with neither has no owner, so only a local caller may cancel it.
+	 *
+	 * Every call, including `record = null` (no such record), does exactly one thread
+	 * lookup, so a missing id and another caller's id take the same time to refuse.
 	 * @param {{ owner: string, local: boolean } | null | undefined} caller
-	 * @param {{ threadId?: string | null } | null | undefined} record
+	 * @param {{ owner?: string | null, threadId?: string | null } | null | undefined} record
 	 */
 	async function ownsDeferredToolCall(caller, record) {
-		if (!caller) return false;
-		if (!record?.threadId) return Boolean(caller.local);
-		return !(await isForeignThread(caller, record.threadId));
+		const threadId = firstValue(record?.threadId);
+		const thread = await rovoAppThreadManager.getThread(threadId ?? NO_THREAD_PROBE_ID);
+		if (!caller || !record) return false;
+		const foreignThread = Boolean(threadId) && Boolean(thread) && !ownsThread(caller, thread);
+		if (typeof record.owner === "string" && record.owner) {
+			return isOwnedByCaller(record.owner, caller) && !foreignThread;
+		}
+		if (!threadId) return Boolean(caller.local);
+		return !foreignThread;
 	}
 
 	/** A `listThreads` filter that keeps the caller's threads (applied before its limit). */

@@ -1,5 +1,6 @@
 "use strict";
 
+const { currentGeneratedMediaScope } = require("../lib/generated-media-owners");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
 const DEFAULT_PAUSED_ROVO_TOOL_CALL_TTL_MS = 15 * 60_000;
@@ -19,6 +20,42 @@ function isAIGatewayDeferredToolCallId(toolCallId) {
 	return getNonEmptyString(toolCallId)?.startsWith("ai-gateway-") === true;
 }
 
+/**
+ * The signed-in caller the running chat turn belongs to, or null. The chat guard runs
+ * every /api/chat-sdk and /api/rovo/chat turn of an SLAuth caller in a scope that names
+ * them (lib/rovo-app-thread-ownership.js, registerChatThreadOwnershipGuards), and a
+ * queued Rovo app run re-enters it. A local caller's turn has no scope.
+ */
+function currentTurnOwner() {
+	return getNonEmptyString(currentGeneratedMediaScope()?.owner);
+}
+
+/**
+ * Whether the running turn may resume or clear this record. A turn without a signed-in
+ * caller (local development) may, as before. A signed-in caller's turn may only use a
+ * record it registered (`record.owner`) on the thread it is running for, which the chat
+ * guard has already checked is theirs.
+ * @param {{ owner?: string | null, threadId?: string | null }} record
+ * @param {unknown} threadId - the thread the running turn is for
+ */
+function isUsableByCurrentTurn(record, threadId) {
+	const owner = currentTurnOwner();
+	if (!owner) return true;
+	const turnThreadId = getNonEmptyString(threadId);
+	return record.owner === owner && Boolean(record.threadId) && record.threadId === turnThreadId;
+}
+
+/**
+ * Whether a lookup may act on `record`. `expected`: the exact record the caller checked
+ * (a different or new record under the same id is refused). `turn`: the running chat
+ * turn's thread (see isUsableByCurrentTurn).
+ */
+function mayActOnRecord(record, { expected, turn } = {}) {
+	if (expected !== undefined && record !== expected) return false;
+	if (turn && !isUsableByCurrentTurn(record, turn.threadId)) return false;
+	return true;
+}
+
 function createDeferredToolCallState({
 	cancelChat,
 	cancelPausedToolCallRecord,
@@ -33,14 +70,19 @@ function createDeferredToolCallState({
 			? ttlMs
 			: DEFAULT_PAUSED_ROVO_TOOL_CALL_TTL_MS;
 
-	function clearActiveDeferredToolCall(toolCallId) {
+	/**
+	 * Removes and returns the active record under `toolCallId`. With `options`, a record
+	 * the lookup may not act on (mayActOnRecord) stays in place and the result is null,
+	 * exactly as for an unknown id.
+	 */
+	function clearActiveDeferredToolCall(toolCallId, options) {
 		const normalizedToolCallId = getNonEmptyString(toolCallId);
 		if (!normalizedToolCallId) {
 			return null;
 		}
 
 		const record = activeDeferredToolCallStore.get(normalizedToolCallId) || null;
-		if (!record) {
+		if (!record || !mayActOnRecord(record, options)) {
 			return null;
 		}
 
@@ -71,6 +113,7 @@ function createDeferredToolCallState({
 			toolCallId: normalizedToolCallId,
 			port,
 			threadId: getNonEmptyString(threadId),
+			owner: currentTurnOwner(),
 			kind: kind === "plan-approval" ? "plan-approval" : "clarification",
 			createdAt: now,
 			expiresAt: now + normalizedTtlMs,
@@ -88,14 +131,15 @@ function createDeferredToolCallState({
 		return record;
 	}
 
-	function detachPausedRovoToolCall(toolCallId) {
+	/** Removes and returns the paused record; `options` as for clearActiveDeferredToolCall. */
+	function detachPausedRovoToolCall(toolCallId, options) {
 		const normalizedToolCallId = getNonEmptyString(toolCallId);
 		if (!normalizedToolCallId) {
 			return null;
 		}
 
 		const record = pausedRovoToolCallStore.get(normalizedToolCallId) || null;
-		if (!record) {
+		if (!record || !mayActOnRecord(record, options)) {
 			return null;
 		}
 
@@ -183,6 +227,7 @@ function createDeferredToolCallState({
 			handle,
 			threadId: getNonEmptyString(threadId),
 			sessionId: getNonEmptyString(sessionId),
+			owner: currentTurnOwner(),
 			sessionMode: sessionMode === "ephemeral" ? "ephemeral" : "persistent",
 			kind: kind === "plan-approval" ? "plan-approval" : "clarification",
 			createdAt: now,
@@ -222,8 +267,12 @@ function createDeferredToolCallState({
 		};
 	}
 
-	function takePausedRovoToolCall(toolCallId) {
-		return detachPausedRovoToolCall(toolCallId);
+	/**
+	 * Takes the paused record a chat turn resumes. Another caller's record, or one on a
+	 * different thread, is left in place and the turn sees none (isUsableByCurrentTurn).
+	 */
+	function takePausedRovoToolCall(toolCallId, { threadId = null } = {}) {
+		return detachPausedRovoToolCall(toolCallId, { turn: { threadId } });
 	}
 
 	return {
@@ -246,4 +295,5 @@ module.exports = {
 	createClarificationSessionId,
 	createDeferredToolCallState,
 	isAIGatewayDeferredToolCallId,
+	isUsableByCurrentTurn,
 };

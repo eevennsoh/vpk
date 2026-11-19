@@ -49,12 +49,16 @@ function createChatControlRouter({
 	const ownership = createRovoAppThreadOwnership({ rovoAppThreadManager });
 
 	/**
-	 * Whether the caller may cancel every record the toolCallId names. Checked before
-	 * anything is cleared, so a refused request leaves another caller's card in place.
+	 * Whether the caller may cancel every record in `checked` (a peek). An empty peek still
+	 * pays for one ownership lookup and answers false, so a missing id and another
+	 * caller's id are refused alike, in the same time.
 	 */
-	async function mayCancelDeferredToolCall(caller, toolCallId) {
-		const { active, paused } = peekDeferredToolCall(toolCallId);
-		const records = [active, paused].filter(Boolean);
+	async function mayCancelDeferredToolCall(caller, checked) {
+		const records = [checked.active, checked.paused].filter(Boolean);
+		if (records.length === 0) {
+			await ownership.ownsDeferredToolCall(caller, null);
+			return false;
+		}
 		const allowed = await Promise.all(records.map((record) => ownership.ownsDeferredToolCall(caller, record)));
 		return allowed.every(Boolean);
 	}
@@ -92,12 +96,23 @@ function createChatControlRouter({
 			if (!caller) {
 				return res.status(401).json({ error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
 			}
-			// Another caller's card answers exactly like a missing one.
-			if (!(await mayCancelDeferredToolCall(caller, toolCallId))) {
+			// Decide on the records as they are now, without clearing anything: another
+			// caller's card answers exactly like a missing one and stays in place.
+			const checked = peekDeferredToolCall(toolCallId);
+			if (!(await mayCancelDeferredToolCall(caller, checked))) {
+				return res.status(404).json(DEFERRED_TOOL_CALL_NOT_FOUND);
+			}
+			// The ownership lookup awaited, so a record may have been replaced, removed or
+			// added under this id meanwhile. Act only if the store still holds exactly the
+			// records that were checked; this re-check and the clear below run synchronously.
+			const current = peekDeferredToolCall(toolCallId);
+			if (current.active !== checked.active || current.paused !== checked.paused) {
 				return res.status(404).json(DEFERRED_TOOL_CALL_NOT_FOUND);
 			}
 
-			const activeDeferredToolCall = clearActiveDeferredToolCall(toolCallId);
+			const activeDeferredToolCall = checked.active
+				? clearActiveDeferredToolCall(toolCallId, { expected: checked.active })
+				: null;
 			if (activeDeferredToolCall) {
 				await cancelActiveDeferredToolCallRecord(activeDeferredToolCall, {
 					cancelChat,
@@ -113,13 +128,13 @@ function createChatControlRouter({
 				return res.status(200).json({
 					cancelled: true,
 					kind: activeDeferredToolCall.kind,
-					port: activeDeferredToolCall.port,
-					threadId: activeDeferredToolCall.threadId,
 					toolCallId,
 				});
 			}
 
-			const pausedToolCall = detachPausedRovoToolCall(toolCallId);
+			const pausedToolCall = checked.paused
+				? detachPausedRovoToolCall(toolCallId, { expected: checked.paused })
+				: null;
 			if (pausedToolCall) {
 				await cancelPausedDeferredToolCallRecord(pausedToolCall, {
 					cancelChat,
@@ -135,8 +150,6 @@ function createChatControlRouter({
 				return res.status(200).json({
 					cancelled: true,
 					kind: pausedToolCall.kind,
-					port: pausedToolCall.port,
-					threadId: pausedToolCall.threadId,
 					toolCallId,
 				});
 			}
