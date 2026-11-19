@@ -5,12 +5,15 @@ const http = require("node:http");
 const test = require("node:test");
 const express = require("express");
 
+const { createRuntimeAdminControls } = require("../middleware/runtime-admin");
 const {
 	buildOrchestratorLogFilter,
 	createOrchestratorRouter,
 	parsePositiveIntegerQuery,
 	registerOrchestratorRoutes,
 } = require("./orchestrator");
+
+const ADMIN = Object.freeze({ headers: { "x-runtime-admin": "allowed" } });
 
 async function withServer(overrides, run) {
 	const app = express();
@@ -104,7 +107,7 @@ test("buildOrchestratorLogFilter returns undefined when no positive limit is pre
 
 test("orchestrator log route returns entries and stats with positive limit filter", async () => {
 	await withServer({}, async (baseUrl, calls) => {
-		const response = await fetch(`${baseUrl}/api/orchestrator/log?limit=25&portIndex=2`);
+		const response = await fetch(`${baseUrl}/api/orchestrator/log?limit=25&portIndex=2`, ADMIN);
 
 		assert.equal(response.status, 200);
 		assert.deepEqual(await response.json(), {
@@ -118,7 +121,7 @@ test("orchestrator log route returns entries and stats with positive limit filte
 
 test("orchestrator timeline route returns timeline and stats with positive limit filter", async () => {
 	await withServer({}, async (baseUrl, calls) => {
-		const response = await fetch(`${baseUrl}/api/orchestrator/timeline?limit=10`);
+		const response = await fetch(`${baseUrl}/api/orchestrator/timeline?limit=10`, ADMIN);
 
 		assert.equal(response.status, 200);
 		assert.deepEqual(await response.json(), {
@@ -179,11 +182,11 @@ test("orchestrator routes preserve existing error responses", async () => {
 			return next();
 		},
 	}, async (baseUrl) => {
-		const logResponse = await fetch(`${baseUrl}/api/orchestrator/log`);
+		const logResponse = await fetch(`${baseUrl}/api/orchestrator/log`, ADMIN);
 		assert.equal(logResponse.status, 500);
 		assert.deepEqual(await logResponse.json(), { error: "Failed to retrieve orchestrator log" });
 
-		const timelineResponse = await fetch(`${baseUrl}/api/orchestrator/timeline`);
+		const timelineResponse = await fetch(`${baseUrl}/api/orchestrator/timeline`, ADMIN);
 		assert.equal(timelineResponse.status, 500);
 		assert.deepEqual(await timelineResponse.json(), { error: "Failed to retrieve orchestrator timeline" });
 
@@ -194,5 +197,49 @@ test("orchestrator routes preserve existing error responses", async () => {
 		assert.equal(deleteResponse.status, 500);
 		assert.deepEqual(await deleteResponse.json(), { error: "Failed to clear orchestrator log" });
 		assert.equal(loggerCalls.length, 3);
+	});
+});
+
+test("orchestrator log and timeline reads are runtime-admin protected", async () => {
+	await withServer({}, async (baseUrl, calls) => {
+		for (const route of ["/api/orchestrator/log", "/api/orchestrator/timeline"]) {
+			const blocked = await fetch(`${baseUrl}${route}`);
+			assert.equal(blocked.status, 403, route);
+			assert.deepEqual(await blocked.json(), { error: "runtime admin required" });
+		}
+		assert.deepEqual(calls.getEntries, []);
+		assert.deepEqual(calls.toTimeline, []);
+	});
+});
+
+test("with the real runtime admin gate, a signed-in caller cannot read the log but the admin and a dev caller can", async () => {
+	const silent = { error() {} };
+	const production = createRuntimeAdminControls({
+		allowedOrigins: [],
+		consoleImpl: silent,
+		env: { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "admin-secret" },
+		exit: () => {},
+	});
+	await withServer({ requireRuntimeAdmin: production.requireRuntimeAdmin }, async (baseUrl, calls) => {
+		for (const route of ["/api/orchestrator/log", "/api/orchestrator/timeline"]) {
+			const signedIn = await fetch(`${baseUrl}${route}`, { headers: { "x-slauth-subject": "bob" } });
+			assert.equal(signedIn.status, 403, route);
+			assert.deepEqual(await signedIn.json(), { error: "Runtime admin authorization required" });
+
+			const admin = await fetch(`${baseUrl}${route}`, {
+				headers: { "x-slauth-subject": "alice", "x-vpk-runtime-admin-token": "admin-secret" },
+			});
+			assert.equal(admin.status, 200, route);
+		}
+		assert.equal(calls.getEntries.length, 1);
+		assert.equal(calls.toTimeline.length, 1);
+	});
+
+	const development = createRuntimeAdminControls({ allowedOrigins: [], consoleImpl: silent, env: {}, exit: () => {} });
+	await withServer({ requireRuntimeAdmin: development.requireRuntimeAdmin }, async (baseUrl) => {
+		for (const route of ["/api/orchestrator/log", "/api/orchestrator/timeline"]) {
+			const local = await fetch(`${baseUrl}${route}`);
+			assert.equal(local.status, 200, route);
+		}
 	});
 });

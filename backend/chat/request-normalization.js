@@ -1,6 +1,7 @@
 "use strict";
 
 const { resolveChatSdkThreadId } = require("../lib/chat-sdk-thread-id");
+const { isUsableByCurrentTurn } = require("./deferred-tool-state");
 const { getNonEmptyString } = require("../lib/shared-utils");
 const {
 	buildCreationModeContextPrefix,
@@ -146,7 +147,8 @@ function resolveChatSdkRequestState({
 			? getNonEmptyString(rawDeferredToolResponse.tool_call_id)
 			: null;
 	if (deferredToolResponseToolCallId) {
-		clearActiveDeferredToolCall(deferredToolResponseToolCallId);
+		// Another caller's record, or one on another thread, stays in place.
+		clearActiveDeferredToolCall(deferredToolResponseToolCallId, { turn: { threadId: envelope.threadId } });
 	}
 
 	const clarificationToolCallId = getToolCallIdFromClarificationSubmission(
@@ -156,12 +158,14 @@ function resolveChatSdkRequestState({
 		envelope.approvalSubmission,
 		envelope.rawApproval
 	);
-	const hasPausedClarificationToolCall =
-		Boolean(clarificationToolCallId) &&
-		pausedRovoToolCallStore.has(clarificationToolCallId);
-	const hasPausedApprovalToolCall =
-		Boolean(approvalToolCallId) &&
-		pausedRovoToolCallStore.has(approvalToolCallId);
+	// A paused record this turn may not resume (another caller's, or another thread's)
+	// counts as absent, as the resume itself treats it (takePausedRovoToolCall).
+	const hasUsablePausedToolCall = (toolCallId) => {
+		const record = toolCallId ? pausedRovoToolCallStore.get(toolCallId) : null;
+		return Boolean(record) && isUsableByCurrentTurn(record, envelope.threadId);
+	};
+	const hasPausedClarificationToolCall = hasUsablePausedToolCall(clarificationToolCallId);
+	const hasPausedApprovalToolCall = hasUsablePausedToolCall(approvalToolCallId);
 
 	if (envelope.approvalSubmission) {
 		logger.info?.("[DEBUG-PLAN-APPROVAL] Approval store lookup", {

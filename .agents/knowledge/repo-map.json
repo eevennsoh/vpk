@@ -465,13 +465,13 @@
 						"method": "GET",
 						"path": "/api/orchestrator/log",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/timeline",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					}
 				]
 			},
@@ -609,7 +609,7 @@
 						"method": "GET",
 						"path": "/api/checkpoints",
 						"source": "backend/routes/rovo-app.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",

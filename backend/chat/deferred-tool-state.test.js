@@ -208,3 +208,25 @@ test("rejects invalid deferred tool records", () => {
 		null,
 	);
 });
+
+test("peeks active and paused deferred tool calls without clearing them", () => {
+	const state = createDeferredToolCallState({
+		logger: createSilentLogger(),
+		ttlMs: 1_000,
+	});
+	try {
+		assert.deepEqual(state.peekDeferredToolCall(""), { active: null, paused: null });
+		assert.deepEqual(state.peekDeferredToolCall("missing"), { active: null, paused: null });
+
+		const active = state.registerActiveDeferredToolCall({ toolCallId: "tool-1", port: 8123, threadId: "thread-1", kind: "plan-approval" });
+		const paused = state.registerPausedRovoToolCall({ toolCallId: "tool-2", port: 8124, handle: { settleLease() {} }, threadId: "thread-2" });
+
+		assert.equal(state.peekDeferredToolCall(" tool-1 ").active, active);
+		assert.equal(state.peekDeferredToolCall("tool-2").paused, paused);
+		assert.equal(state.activeDeferredToolCallStore.has("tool-1"), true);
+		assert.equal(state.pausedRovoToolCallStore.has("tool-2"), true);
+	} finally {
+		state.clearActiveDeferredToolCall("tool-1");
+		state.detachPausedRovoToolCall("tool-2");
+	}
+});
