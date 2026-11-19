@@ -37,7 +37,7 @@ import {
 	ConfirmationRejected,
 	ConfirmationRequest,
 	ConfirmationTitle,
-} from "@/components/ui-custom/confirmation";
+} from "@/components/ui/confirmation";
 
 type ChatMessage = UIMessage<
 	unknown,
@@ -132,7 +132,7 @@ export default function ConfirmationDemo() {
 											approval={part.approval}
 											state={part.state}
 										>
-											<ItemMedia variant="icon">
+											<ItemMedia variant="icon" className="text-icon-subtle">
 												<TerminalIcon label="" />
 											</ItemMedia>
 											<ConfirmationTitle>Run {part.input.command}?</ConfirmationTitle>
@@ -235,7 +235,7 @@ function ReasoningRow({ text, running }: Readonly<{ text: string; running: boole
 export function ConfirmationDemoRequest() {
 	return (
 		<Confirmation approval={{ id: "1" }} state="approval-requested" className="w-full max-w-sm">
-			<ItemMedia variant="icon">
+			<ItemMedia variant="icon" className="text-icon-subtle">
 				<TerminalIcon label="" />
 			</ItemMedia>
 			<ConfirmationTitle>

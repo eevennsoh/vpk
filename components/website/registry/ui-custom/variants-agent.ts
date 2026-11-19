@@ -109,27 +109,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"inline-citation-demo-with-carousel": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoWithCarousel,
-			})),
-		{ ssr: false },
-	),
-	"inline-citation-demo-basic": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoBasic,
-			})),
-		{ ssr: false },
-	),
-	"inline-citation-demo-single-source": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoSingleSource,
-			})),
-		{ ssr: false },
-	),
 	"mic-selector-demo-controlled": dynamic(
 		() =>
 			import("../../demos/ui-custom/mic-selector-demo").then((mod) => ({

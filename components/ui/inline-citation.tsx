@@ -90,7 +90,7 @@ export function InlineCitationCardTrigger({
 			delay={delay}
 			render={
 				<Button
-					className={cn("ml-1", className)}
+					className={cn("ml-1 rounded-full px-2", className)}
 					size="compact"
 					variant="secondary"
 					{...props}

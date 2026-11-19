@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 451,
+			"manifestEntryCount": 452,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 445,
+				"live": 446,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -5473,7 +5473,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 98,
+				"entryCount": 100,
 				"entries": [
 					{
 						"category": "ui",
@@ -5652,6 +5652,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "confirmation",
+						"name": "Confirmation",
+						"importPath": "@/components/ui/confirmation",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "context-menu",
 						"name": "Context Menu",
 						"importPath": "@/components/ui/context-menu",
@@ -5753,6 +5760,13 @@
 						"slug": "icon-tile",
 						"name": "Icon Tile",
 						"importPath": "@/components/ui/icon-tile",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "inline-citation",
+						"name": "Inline Citation",
+						"importPath": "@/components/ui/inline-citation",
 						"status": "live"
 					},
 					{
@@ -6339,7 +6353,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 62,
+				"entryCount": 60,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6402,13 +6416,6 @@
 						"slug": "code-list",
 						"name": "Code List",
 						"importPath": "@/components/ui-custom/code-list",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "confirmation",
-						"name": "Confirmation",
-						"importPath": "@/components/ui-custom/confirmation",
 						"status": "live"
 					},
 					{
@@ -6514,13 +6521,6 @@
 						"slug": "image",
 						"name": "Image",
 						"importPath": "@/components/ui-custom/image",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "inline-citation",
-						"name": "Inline Citation",
-						"importPath": "@/components/ui-custom/inline-citation",
 						"status": "live"
 					},
 					{

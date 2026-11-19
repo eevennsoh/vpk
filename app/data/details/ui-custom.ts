@@ -13,7 +13,6 @@ import { ARTIFACT_LIST_DETAIL } from "./ui-custom/artifact-list";
 import { AUDIO_PLAYER_DETAIL } from "./ui-custom/audio-player";
 import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
-import { CONFIRMATION_DETAIL } from "./ui-custom/confirmation";
 import { CONNECTION_DETAIL } from "./ui-custom/connection";
 import { CONTEXT_DETAIL } from "./ui-custom/context";
 import { CONTEXT_BAR_DETAIL } from "./ui-custom/context-bar";
@@ -29,7 +28,6 @@ import { FOOTER_DETAIL } from "./ui-custom/footer";
 import { HOVER_REVEAL_ROW_DETAIL } from "./ui-custom/hover-reveal-row";
 import { HUMAN_AGENT_AVATAR_DETAIL } from "./ui-custom/human-agent-avatar";
 import { IMAGE_DETAIL } from "./ui-custom/image";
-import { INLINE_CITATION_DETAIL } from "./ui-custom/inline-citation";
 import { JSX_PREVIEW_DETAIL } from "./ui-custom/jsx-preview";
 import { KNOWLEDGE_DETAIL } from "./ui-custom/knowledge";
 import { LIST_DETAIL } from "./ui-custom/list";
@@ -77,7 +75,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"audio-player": AUDIO_PLAYER_DETAIL,
 	canvas: CANVAS_DETAIL,
 	"code-list": CODE_LIST_DETAIL,
-	confirmation: CONFIRMATION_DETAIL,
 	connection: CONNECTION_DETAIL,
 	context: CONTEXT_DETAIL,
 	"context-bar": CONTEXT_BAR_DETAIL,
@@ -93,7 +90,6 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"hover-reveal-row": HOVER_REVEAL_ROW_DETAIL,
 	"human-agent-avatar": HUMAN_AGENT_AVATAR_DETAIL,
 	image: IMAGE_DETAIL,
-	"inline-citation": INLINE_CITATION_DETAIL,
 	"jsx-preview": JSX_PREVIEW_DETAIL,
 	knowledge: KNOWLEDGE_DETAIL,
 	list: LIST_DETAIL,
