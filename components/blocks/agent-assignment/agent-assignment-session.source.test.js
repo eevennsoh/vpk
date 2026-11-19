@@ -15,7 +15,7 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: /(?:\d+ )?using agents?/iu };
+const disclosure = { name: /^(?:using|\d+ other) agents?$/iu };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
@@ -47,11 +47,11 @@ test("session menu puts needs-input sessions first within each ownership group",
 });
 
 test("person attribution reveals their name on keyboard focus", async () => {
-	const view = await renderMenu(menuProps([session("mine", "owner", { invokedBy: { name: "Venn" } })]));
+	const view = await renderMenu(menuProps([session("mine", "owner", { invokedBy: { name: "Maya" } })]));
 	try {
-		const avatar = view.getByRole("img", { name: "Venn" });
+		const avatar = view.getByRole("img", { name: "Maya" });
 		await view.focus(avatar);
-		assert.equal(view.getByRole("tooltip").textContent, "Venn");
+		assert.equal(view.getByRole("tooltip").textContent, "Maya");
 	} finally { await view.unmount(); }
 });
 
@@ -150,15 +150,16 @@ test("assignment activity keeps its private access mark in the session menu", as
 	} finally { await view.unmount(); }
 });
 
-test("session menu can show a teammate count or expand a single teammate by default", async () => {
+test("teammate-only menus show the rows directly and mixed menus label their disclosure", async () => {
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
 	try {
-		assert.equal(view.getByText("2 using agents").textContent, "2 using agents");
+		assert.equal(view.queryByText(/using agents|other agents/iu) === null, true);
+		assert.equal(view.getAllByRole("listitem").length, 2);
 		await view.rerender(menuProps(team));
-		assert.equal(view.getByText("2 using agents").textContent, "2 using agents");
+		assert.equal(view.queryByText(/using agents|other agents/iu) === null, true);
 		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
-		const trigger = view.getByRole("button", { name: "1 using agent" });
+		const trigger = view.getByRole("button", { name: "1 other agent" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
 		await view.click(trigger);
@@ -166,19 +167,20 @@ test("session menu can show a teammate count or expand a single teammate by defa
 		assert.equal(trigger.getAttribute("aria-label"), "Using agent");
 		assert.equal(view.queryByText("first work"), null);
 		await view.rerender(menuProps([team[0]], { teammateSessionsPresentation: "count" }));
-		assert.equal(view.getByText("1 using agent").textContent, "1 using agent");
+		assert.equal(view.queryByText(/using agent|other agent/iu) === null, true);
+		assert.equal(view.getAllByRole("listitem").length, 1);
 		const onePerson = team.map((item) => ({ ...item, invokedBy: { name: "Jordan" } }));
 		await view.rerender(menuProps([session("mine", "owner"), ...onePerson], { teammateSessionsPresentation: "count" }));
-		const singlePersonTrigger = view.getByRole("button", { name: "Using agent" });
+		const singlePersonTrigger = view.getByRole("button", { name: "Using agents" });
 		await view.click(singlePersonTrigger);
-		assert.equal(singlePersonTrigger.getAttribute("aria-label"), "2 using agents");
+		assert.equal(singlePersonTrigger.getAttribute("aria-label"), "2 other agents");
 	} finally { await view.unmount(); }
 });
 
 test("mixed sessions show teammates expanded by default and can collapse", async () => {
 	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer")]));
 	try {
-		const trigger = view.getByRole("button", { name: "1 using agent" });
+		const trigger = view.getByRole("button", { name: "1 other agent" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(Boolean(view.getByText("team work")), true);
 		await view.click(trigger);
@@ -203,7 +205,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
-		assert.equal(trigger.getAttribute("aria-label"), "2 using agents");
+		assert.equal(trigger.getAttribute("aria-label"), "2 other agents");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");
@@ -241,7 +243,7 @@ test("owner-only, viewer-only, expired and empty menus retain their separate sem
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
 		await view.rerender(menuProps([session("teammate", "viewer")], { onSelectSession }));
 		assert.equal(view.queryByRole("button", disclosure), null);
-		assert.equal(view.getByText("1 using agent").tagName, "P");
+		assert.equal(view.queryByText(/using agent|other agent/iu) === null, true);
 		const viewer = view.getByText("teammate work").closest("article");
 		assert.equal(viewer.tabIndex, 0);
 		await view.focus(viewer);

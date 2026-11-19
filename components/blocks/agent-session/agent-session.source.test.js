@@ -115,13 +115,13 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
 });
 
-test("large uncaptured-work rows show the agent with its human invoker in a 32px identity", () => {
+test("large uncaptured-work rows use the shared session identity", () => {
 	assert.match(IDENTITY_SOURCE, /export function AgentListIdentity/u);
-	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*attributionOrder="agent-first"[\s\S]*sizePx=\{32\}/u);
+	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{attribution\}[\s\S]*attributionOrder="agent-first"/u);
 	assert.match(CARD_SOURCE, /renderIdentity=\{\(\) =>/u);
 	assert.match(TYPES_SOURCE, /export function toAgentSessionVisibleIdentity/u);
 	assert.match(TYPES_SOURCE, /kind: "person"/u);
-	assert.match(TYPES_SOURCE, /avatarSrc: item\.invokedBy\.avatarSrc/u);
+	assert.match(TYPES_SOURCE, /avatarSrc: invoker\.avatarSrc/u);
 	assert.match(TYPES_SOURCE, /return item\.agent;/u);
 	assert.doesNotMatch(DATA_SOURCE, /name: "person A"/u);
 });
@@ -194,7 +194,7 @@ test("large remains the default while every card receives the selected size vari
 test("medium detached is a 276px stroked white chip with the 32px combo identity and up-arrow", () => {
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{item\.invokedBy\}[\s\S]*attributionOrder="agent-first"[\s\S]*sizePx=\{32\}/u,
+		/<AgentListIdentity[\s\S]*agent=\{item\.agent\}[\s\S]*attributedBy=\{getAgentSessionAttribution\(item\)\}[\s\S]*attributionOrder="agent-first"[\s\S]*sizePx=\{32\}/u,
 	);
 	assert.match(MEDIUM_CARD_SOURCE, /import ArrowUpIcon from "@atlaskit\/icon\/core\/arrow-up"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<IconTile[\s\S]*icon=\{\s*<ArrowUpIcon/u);
@@ -652,7 +652,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{item\.invokedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
+		/<AgentListAttributionAvatarGroup\s+agent=\{item\.agent\}\s+attributedBy=\{attributedBy\}\s+attributionOrder="agent-first"\s+sizePx=\{16\}/u,
 	);
 	assert.match(
 		IDENTITY_SOURCE,

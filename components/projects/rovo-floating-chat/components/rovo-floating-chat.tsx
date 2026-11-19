@@ -25,7 +25,6 @@ interface RovoFloatingChatProps {
 	renderWidget?: ChatPanelProps["renderWidget"];
 	readOnly?: boolean;
 	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
-	readOnlySessionState?: import("@/components/blocks/agent-list").AgentListState;
 	agentCreator?: AgentResultCreator;
 	placement?: "embedded" | "floating";
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -64,7 +63,6 @@ export default function RovoFloatingChat({
 	renderWidget,
 	readOnly = false,
 	readOnlyOwner,
-	readOnlySessionState,
 	agentCreator,
 	placement = "floating",
 	onSurfaceSwitch,
@@ -117,6 +115,7 @@ export default function RovoFloatingChat({
 				: { boxShadow: token("elevation.shadow.overlay"), willChange: "transform, opacity" }}
 		>
 			<FloatingChatHeader
+				attributedBy={readOnly ? readOnlyOwner : undefined}
 				className={headerClassName}
 				compact={compactHeader}
 				isHistoryOpen={isHistoryOpen}
@@ -135,8 +134,6 @@ export default function RovoFloatingChat({
 					agentCreator={agentCreator}
 					readOnly={readOnly}
 					renderWidget={renderWidget}
-					readOnlyOwner={readOnlyOwner}
-					readOnlySessionState={readOnlySessionState}
 					onClose={closeChat}
 					autoFocusComposer={autoFocusComposer}
 					hideHeader

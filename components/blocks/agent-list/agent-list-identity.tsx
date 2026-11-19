@@ -82,6 +82,7 @@ export function AgentListAttributionAvatarGroup({
 	return (
 		<AvatarGroup
 			as={renderAgentAvatar ? "span" : "div"}
+			overlap="cutout"
 			className={cn("shrink-0", className)}
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}

@@ -21,6 +21,7 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
+import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
@@ -60,16 +61,20 @@ import {
 	type AgentSessionProps,
 	type AgentSessionSelectionGesture,
 	getAgentSessionRole,
+	getAgentSessionAttribution,
 	type AgentSessionTriageRow,
 	type AgentSessionWorkItemDraft,
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
 import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
-const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const STATUS_DEPARTURE_TRANSITION = { duration: 2 * motionDuration.normal, ease: motionEase.linear };
+const STATUS_DEPARTURE_TARGET = { opacity: 0, scale: 0.92, y: 0 };
+const SESSION_ENTRANCE = "sessionEntrance";
 const STATUS_REENTRY_AVATAR_MOTION = { repeat: 0, repeatDelayMs: 0 } as const;
+const SESSION_IDENTITY_FRAME_SIZE = 32;
 
 /** Keep row registration and focus restoration tied to the departing DOM owner. */
 function useAgentSessionDepartureFocus({
@@ -123,43 +128,49 @@ function resolveAgentSessionCardMotion({
 	animateLayout,
 	arrivalDelaySeconds,
 	arrivalStartOffset,
+	clipInteriorEntrance,
 	isDeparting,
 	isTransferSource,
 	shouldPlayArrival,
 	shouldPlayDeparture,
-	shouldPlayStatusReentry,
+	playingEntrance,
 	shouldReduceMotion,
 	waitingForArrival,
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset: string;
+	clipInteriorEntrance: boolean;
 	isDeparting: boolean;
 	isTransferSource: boolean;
 	shouldPlayArrival: boolean;
 	shouldPlayDeparture: boolean;
-	shouldPlayStatusReentry: boolean;
+	playingEntrance: boolean;
 	shouldReduceMotion: boolean | null;
 	waitingForArrival: boolean;
 }>) {
+	// Layout projection needs a numeric resting offset to measure and move existing rows.
 	return {
-		animate: waitingForArrival ? { opacity: 0, y: arrivalStartOffset }
-			: shouldPlayDeparture ? { opacity: 0 }
-			: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [arrivalStartOffset, "calc(0% - 0px)"] }
-				: { opacity: 1, y: "calc(0% - 0px)" },
+		animate: waitingForArrival ? { opacity: 0, scale: 1, y: arrivalStartOffset }
+			: shouldPlayDeparture ? STATUS_DEPARTURE_TARGET
+			: playingEntrance ? SESSION_ENTRANCE : { opacity: 1, scale: 1, y: 0 },
+		variants: { [SESSION_ENTRANCE]: {
+			opacity: [0, 1], scale: [1, 1], y: [arrivalStartOffset, "0%"],
+			...(clipInteriorEntrance ? {
+				clipPath: ["inset(100% -4px -4px)", "inset(0% -4px -4px)"],
+				transitionEnd: { clipPath: "none" },
+			} : {}),
+		} },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		// Arriving rows own their travel; layout projection moves the siblings making room.
-		layout: shouldReduceMotion || isDeparting || shouldPlayArrival ? false : "position" as const,
 		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
 			: {
 				...AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
-				delay: arrivalDelaySeconds ?? 0,
-				layout: animateLayout ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
+				delay: (arrivalDelaySeconds ?? 0) + (shouldPlayArrival ? motionDuration.xxshort / 2 : 0),
+				layout: animateLayout && !isDeparting && !shouldPlayArrival ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
 			},
-		willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
+		willChange: shouldPlayDeparture || shouldPlayArrival ? "opacity, transform" : undefined,
 	};
 }
 
@@ -168,6 +179,7 @@ function useAgentSessionCardTransition({
 	animateLayout,
 	arrivalDelaySeconds,
 	arrivalStartOffset,
+	clipInteriorEntrance,
 	hasAnimatedIdentity,
 	isArriving,
 	isDeparting,
@@ -180,6 +192,7 @@ function useAgentSessionCardTransition({
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset: string;
+	clipInteriorEntrance: boolean;
 	hasAnimatedIdentity: boolean;
 	isArriving: boolean;
 	isDeparting: boolean;
@@ -231,13 +244,14 @@ function useAgentSessionCardTransition({
 			animateLayout,
 			arrivalDelaySeconds,
 			arrivalStartOffset,
+			clipInteriorEntrance,
 			isDeparting,
 			isTransferSource,
 			shouldPlayArrival,
 			shouldPlayDeparture,
-			shouldPlayStatusReentry,
+			playingEntrance: shouldPlayArrival && phase === "arrival",
 			shouldReduceMotion,
-			waitingForArrival: phase === "pending-arrival",
+			waitingForArrival: shouldPlayArrival && phase === "pending-arrival",
 		}),
 	};
 }
@@ -247,6 +261,8 @@ export function AgentSessionCard({
 	allowViewerView = false,
 	arrivalDelaySeconds,
 	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
+	arrivalRowGapPx = 0,
+	clipInteriorEntrance = false,
 	captured = false,
 	density = "unlinked",
 	flyoutHandle,
@@ -301,6 +317,8 @@ export function AgentSessionCard({
 	allowViewerView?: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset?: string;
+	arrivalRowGapPx?: number;
+	clipInteriorEntrance?: boolean;
 	captured?: boolean;
 	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led unlinked row. */
 	density?: AgentSessionDensity;
@@ -465,6 +483,8 @@ export function AgentSessionCard({
 	const isMarked = mark?.isMarked ?? false;
 	const isLead = mark?.isLead ?? false;
 	const isTransferSource = Boolean(draggingIds?.has(item.id));
+	const attribution = getAgentSessionAttribution(item);
+	const showsAgentWithoutInvoker = item.invokedBy !== undefined && attribution === undefined && item.agent.kind !== "person";
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const {
 		handleArrivalComplete,
@@ -477,7 +497,8 @@ export function AgentSessionCard({
 		animateLayout,
 		arrivalDelaySeconds,
 		arrivalStartOffset,
-		hasAnimatedIdentity: (!isTitleLed || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
+		clipInteriorEntrance,
+		hasAnimatedIdentity: (!isTitleLed || mark != null) && attribution !== undefined && item.agent.kind !== "person",
 		isArriving,
 		isDeparting,
 		isStateChanged,
@@ -661,7 +682,13 @@ export function AgentSessionCard({
 			onBlurCapture={departureFocus.onBlurCapture}
 			onFocusCapture={departureFocus.onFocusCapture}
 			role={mark == null ? undefined : "row"}
-			onAnimationComplete={shouldPlayDeparture ? onDepartureComplete : handleArrivalComplete}
+			onAnimationComplete={(definition) => {
+				if (definition === STATUS_DEPARTURE_TARGET) {
+					if (shouldPlayDeparture) onDepartureComplete?.();
+				} else if (definition === SESSION_ENTRANCE && !shouldPlayDeparture) {
+					handleArrivalComplete();
+				}
+			}}
 			onPointerEnter={(event) => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
@@ -678,16 +705,21 @@ export function AgentSessionCard({
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
 			ref={setRowNode}
-			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
+			// The column owns the entrance so Activity can reconnect without replaying it.
 			initial={false}
-			// Track positions continuously; the layout transition decides whether
-			// this update makes room for an arrival or places filtered rows instantly.
-			layout={rowMotion.layout}
+			// Register layout on mount so each entrant can make room for later arrivals.
+			layout="position"
 			style={{
 				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
 				willChange: rowMotion.willChange,
 			}}
 			transition={rowMotion.transition}
+			transformTemplate={isArriving && arrivalRowGapPx ? ({ y }, transform) => {
+				// Keep percentage travel readable by Motion's layout projection; add the row gap at paint time.
+				const gap = typeof y === "string" && y.endsWith("%") ? Number.parseFloat(y) * arrivalRowGapPx / 100 : 0;
+				return gap ? `translateY(${gap}px) ${transform === "none" ? "" : transform}` : transform;
+			} : undefined}
+			variants={rowMotion.variants}
 		>
 			<AgentSessionMediumDrag
 				cohort={triageRow?.drag?.cohort}
@@ -782,9 +814,9 @@ export function AgentSessionCard({
 										<AgentListIdentity
 											appearance="coding"
 											agent={item.agent}
-											attributedBy={item.invokedBy}
+											attributedBy={attribution}
 											attributionOrder="agent-first"
-											sizePx={32}
+											sizePx={showsAgentWithoutInvoker ? humanAgentAvatarGeometry(SESSION_IDENTITY_FRAME_SIZE).agentSize : SESSION_IDENTITY_FRAME_SIZE}
 											animate={shouldRotateAvatar}
 											motion={STATUS_REENTRY_AVATAR_MOTION}
 											onAnimationComplete={handleAvatarComplete}
@@ -796,7 +828,7 @@ export function AgentSessionCard({
 									// pointerdown and flies out of it. Marked outside the
 									// select-mark branch so the origin exists in both.
 									return (
-										<span className="block" data-session-drag-identity="">
+										<span className={showsAgentWithoutInvoker ? "grid size-8 place-items-center" : "block"} data-session-drag-identity="">
 											{mark === undefined || mark === null
 												? previewIdentity
 												: (

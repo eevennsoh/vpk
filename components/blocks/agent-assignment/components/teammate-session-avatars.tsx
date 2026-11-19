@@ -8,6 +8,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const MAX_VISIBLE_TEAMMATES = 4;
 
+export function teammateSessionUsageLabel(count: number) {
+	return count === 1 ? "Using agent" : "Using agents";
+}
+
 export function getTeammateSessionPeople(items: readonly Pick<AgentSessionItem, "invokedBy">[]) {
 	const people = new Map<string, { name: string; avatarSrc: string | undefined }>();
 	for (const { invokedBy } of items) {

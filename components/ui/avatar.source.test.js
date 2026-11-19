@@ -89,6 +89,13 @@ test("human-first compact geometry swaps primary and badge footprints at both au
 		});
 	}
 });
+test("compact badge sizing is an explicit override", () => {
+	assert.equal(humanAgentAvatarGeometry(20).humanSize, 16);
+	assert.deepEqual(humanAgentAvatarGeometry(20, true, 12), {
+		frameSize: 20, agentSize: 20, humanSize: 12, agentInset: 0, humanInset: -2,
+	});
+});
+
 const ENTITY_CARD_AGENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "ui-custom", "entity-card", "agent.tsx"),
 	"utf8",
@@ -155,7 +162,7 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /React\.isValidElement\(child\) && isAvatarOverlayType\(child\.type\)/);
 	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(/);
 	assert.match(AVATAR_SOURCE, /text-border!/);
-	assert.match(AVATAR_SOURCE, /style=\{\{ clipPath: separator \? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP \}\}/);
+	assert.match(AVATAR_SOURCE, /style=\{\{ clipPath: HEXAGON_BORDER_CLIP \}\}/);
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder tone=\{borderTone\} \/>/);
 	assert.match(AVATAR_SOURCE, /const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip\(2\)/);
 	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder tone=\{borderTone\} \/>\s*<\/span>/);
@@ -491,14 +498,14 @@ test("avatar groups own descending face stacking without changing DOM order", ()
 	assert.match(AVATAR_SOURCE, /isInAvatarGroup \? \{\} : \{ zIndex: 10 \}/);
 });
 
-test("avatar groups give hexagon agents a shape-aware background separator", () => {
-	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext\(false\)/);
-	assert.match(AVATAR_SOURCE, /const isInAvatarGroup = React\.use\(AvatarGroupContext\)/);
+test("ring groups give hexagon agents a shape-aware background separator", () => {
+	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext<AvatarGroupOverlap \| null>\(null\)/);
+	assert.match(AVATAR_SOURCE, /const groupOverlap = React\.use\(AvatarGroupContext\)/);
 	assert.match(
 		AVATAR_SOURCE,
-		/isInAvatarGroup \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_SEPARATOR_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
+		/groupOverlap === "ring" \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_SEPARATOR_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
 	);
-	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value>/);
+	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value=\{overlap\}>/);
 	assert.match(
 		AVATAR_SOURCE,
 		/\[&>\[data-slot=avatar\]\[data-shape=hexagon\]\]:ring-0/,

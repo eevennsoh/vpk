@@ -66,21 +66,15 @@ export function humanAgentAvatarOrbit(
 		const x = motion.config.direction === "clockwise" ? opposite : bend;
 		const y = motion.config.direction === "clockwise" ? bend : opposite;
 		const offset = frameSize - size - topLeftInset - bottomRightInset;
-		return `translate(${topLeftInset + (topLeft ? x : 1 - x) * offset}px, ${topLeftInset + (topLeft ? y : 1 - y) * offset}px) scale(${size / baseSize})`;
+		return { x: topLeftInset + (topLeft ? x : 1 - x) * offset, y: topLeftInset + (topLeft ? y : 1 - y) * offset, scale: size / baseSize };
 	};
 	const initial = point(0, false);
 	const swapped = point(1, false);
+	const poses = [initial, ...motion.forward.map((progress) => point(progress, false)), swapped, ...motion.forward.map((progress) => point(progress, true)), initial];
+	const transform = (pose: typeof initial) => `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale})`;
 	return {
-		initial,
-		scales: motion.progress.map(
-			(progress) => (baseSize + (targetSize - baseSize) * progress) / baseSize,
-		),
-		transforms: [
-			initial,
-			...motion.forward.map((progress) => point(progress, false)),
-			swapped,
-			...motion.forward.map((progress) => point(progress, true)),
-			initial,
-		],
+		initial: transform(initial),
+		poses,
+		transforms: poses.map(transform),
 	};
 }

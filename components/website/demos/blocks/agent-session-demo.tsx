@@ -37,7 +37,7 @@ function TeamSessionDemoContent() {
 				setViewerOwner(session.role === "viewer" ? session.invokedBy ?? { name: "" } : null);
 				void openAgentChat(agentSessionDemoScenario(session, TEAM_CHAT_PROFILES, AGENT_SESSION_CLOUD_ITEMS.find((item) => item.id === session.id)?.state === "needs-input"));
 			}} team />
-			<JgpRovoOverlay chatContextBar={chatContextBar} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onQuestionAnswer={awaitingAnswer ? () => { if (activeSessionId) setAnsweredSessionIds((current) => new Set(current).add(activeSessionId)); } : undefined} readOnly={viewerOwner !== null} readOnlyOwner={viewerOwner ?? undefined} readOnlySessionState={activeSessionId && answeredSessionIds.has(activeSessionId) ? "running" : activeSession?.state} renderWidget={renderAgentSessionDemoArtifacts} />
+			<JgpRovoOverlay chatContextBar={chatContextBar} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onQuestionAnswer={awaitingAnswer ? () => { if (activeSessionId) setAnsweredSessionIds((current) => new Set(current).add(activeSessionId)); } : undefined} readOnly={viewerOwner !== null} readOnlyOwner={viewerOwner ?? undefined} renderWidget={renderAgentSessionDemoArtifacts} />
 		</>
 	);
 }

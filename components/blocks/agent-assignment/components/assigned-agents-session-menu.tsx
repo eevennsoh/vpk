@@ -119,10 +119,7 @@ export function AgentSessionsMenu({
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
-						<>
-							<p className={cn(dropdownStyles.label, "px-3 py-1")}>{`${teammateItems.length} using ${teammateItems.length === 1 ? "agent" : "agents"}`}</p>
-							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
-						</>
+						<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 					)}
 				</div>
 			) : null}

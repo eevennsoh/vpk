@@ -29,13 +29,14 @@ function GroupComposition({
 	agentFirst,
 	agentSize,
 	humanSize,
+	cutout,
 	positions,
 	label,
 	transition,
 }: Readonly<
 	Pick<
 		HumanAgentAvatarMotionProps,
-		"agent" | "human" | "agentFirst" | "agentSize" | "humanSize" | "label" | "positions"
+		"agent" | "human" | "agentFirst" | "agentSize" | "humanSize" | "cutout" | "label" | "positions"
 	> & { grouped: boolean; transition: Transition }
 >) {
 	const present = useIsPresent();
@@ -51,9 +52,9 @@ function GroupComposition({
 			key="human"
 			layoutId="human"
 			transition={{ layout: transition }}
-			style={{ ...slotPositions.human, willChange }}
+			style={{ ...slotPositions.human, ...(!grouped && !agentFirst ? cutout : undefined), willChange }}
 		>
-			{human(undefined, grouped ? groupSize : undefined)}
+			{human(grouped ? groupSize : undefined)}
 		</motion.span>
 	);
 	const agentAvatar = (
@@ -64,9 +65,9 @@ function GroupComposition({
 			key="agent"
 			layoutId="agent"
 			transition={{ layout: transition }}
-			style={{ ...slotPositions.agent, willChange }}
+			style={{ ...slotPositions.agent, ...(!grouped && agentFirst ? cutout : undefined), willChange }}
 		>
-			{agent(grouped ? groupSize : undefined, grouped ? false : agentSize < humanSize)}
+			{agent(grouped ? groupSize : undefined)}
 		</motion.span>
 	);
 	const avatars = agentFirst
@@ -83,7 +84,7 @@ function GroupComposition({
 			}}
 		>
 			{grouped ? (
-				<AvatarGroup label={label} size={PX_TO_GROUP_SIZE[groupSize]}>
+				<AvatarGroup overlap="cutout" label={label} size={PX_TO_GROUP_SIZE[groupSize]}>
 					{avatars}
 				</AvatarGroup>
 			) : (

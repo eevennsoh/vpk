@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
 	advanceAgentSessionStatusDeparture,
+	completeAgentSessionArrival,
 	completeAgentSessionStatusDeparture,
 } from "./use-agent-session-status-departure.ts";
 
@@ -108,4 +109,78 @@ test("a departure releases the latest data and waits for all changed rows", () =
 	const allFinished = completeAgentSessionStatusDeparture(latest, "other");
 	assert.deepEqual(allFinished.visualItems.map(({ id }) => id), ["session", "other", "third"]);
 	assert.equal(allFinished.visualItems[0]?.state, "finished");
+});
+
+test("a fresh batch waits for the rows already sliding in", () => {
+	const first = { id: "first", state: "working" };
+	const second = { id: "second", state: "working" };
+	const entering = advanceAgentSessionStatusDeparture(undefined, {
+		...baselineInput,
+		items: [first, other, working],
+		arrivingItemIds: new Set([first.id]),
+	});
+	const waiting = advanceAgentSessionStatusDeparture(entering, {
+		...entering.input,
+		items: [second, first, other, working],
+		arrivingItemIds: new Set([first.id, second.id]),
+	});
+	assert.deepEqual(waiting.visualItems, entering.visualItems);
+	assert.deepEqual([...waiting.visualArrivingItemIds ?? []], [first.id]);
+
+	const next = completeAgentSessionArrival(waiting, first.id);
+	assert.deepEqual(next.visualItems, [second, first, other, working]);
+	assert.deepEqual([...next.visualArrivingItemIds ?? []], [second.id]);
+});
+
+test("a status promotion and a fresh batch share the next entrance", () => {
+	const arriving = { id: "arriving", state: "working" };
+	const next = { id: "next", state: "working" };
+	const revised = { ...working, state: "needs-input" };
+	const entering = advanceAgentSessionStatusDeparture(undefined, {
+		...baselineInput,
+		items: [arriving, other, working],
+		arrivingItemIds: new Set([arriving.id]),
+	});
+	const waiting = advanceAgentSessionStatusDeparture(entering, {
+		...entering.input,
+		items: [revised, next, arriving, other],
+		arrivingItemIds: new Set([arriving.id, revised.id, next.id]),
+		stateChangedItemIds: new Set([revised.id]),
+		stateChangeVersions: new Map([[revised.id, 1]]),
+	});
+	assert.deepEqual(waiting.visualItems, entering.visualItems);
+	assert.deepEqual([...waiting.target.stateChangedItemIds ?? []], []);
+	assert.deepEqual([...waiting.exitingItemIds], []);
+
+	const departing = completeAgentSessionArrival(waiting, arriving.id);
+	assert.deepEqual(departing.visualItems, entering.visualItems);
+	assert.deepEqual([...departing.exitingItemIds], [revised.id]);
+	const reentered = completeAgentSessionStatusDeparture(departing, revised.id);
+	assert.deepEqual(reentered.visualItems, [revised, next, arriving, other]);
+	assert.deepEqual([...reentered.visualArrivingItemIds ?? []], [revised.id, next.id]);
+});
+
+test("new arrivals during a status exit wait until the revised row has returned", () => {
+	const fresh = { id: "fresh", state: "working" };
+	const revised = { ...working, state: "needs-input" };
+	const initial = advanceAgentSessionStatusDeparture(undefined, baselineInput);
+	const departing = advanceAgentSessionStatusDeparture(initial, {
+		...baselineInput,
+		items: [revised, other],
+		arrivingItemIds: new Set([revised.id]),
+		stateChangeVersions: new Map([[revised.id, 1]]),
+		stateChangedItemIds: new Set([revised.id]),
+	});
+	const queued = advanceAgentSessionStatusDeparture(departing, {
+		...departing.input,
+		items: [fresh, revised, other],
+		arrivingItemIds: new Set([fresh.id, revised.id]),
+	});
+
+	const returned = completeAgentSessionStatusDeparture(queued, revised.id);
+	assert.deepEqual(returned.visualItems, [revised, other]);
+	assert.deepEqual([...returned.visualArrivingItemIds ?? []], [revised.id]);
+	const incoming = completeAgentSessionArrival(returned, revised.id);
+	assert.deepEqual(incoming.visualItems, [fresh, revised, other]);
+	assert.deepEqual([...incoming.visualArrivingItemIds ?? []], [fresh.id]);
 });

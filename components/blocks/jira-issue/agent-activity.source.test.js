@@ -149,8 +149,8 @@ for (const host of ["local", "cloud"]) {
 					},
 				});
 				if (role === "viewer") {
-					const row = view.getByRole("button", { name: "Using agent" });
-					assert.equal(row.querySelector('[data-slot="avatar"]')?.classList.contains("size-5"), true);
+					const row = view.getByRole("button", { name: "Using agent", exact: true });
+					assert.equal(row.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Teammate");
 					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
 				} else {
 					assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
@@ -160,6 +160,27 @@ for (const host of ["local", "cloud"]) {
 		}
 	}
 }
+
+test("teammate rows cycle agent and human pairs with a persistent label", async () => {
+	const activities = [
+		{ id: "a", name: "Claude", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Maya" } },
+		{ id: "b", name: "Cursor", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Jordan" } },
+	];
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/agent-activity.tsx", exportName: "JiraIssueAgentActivityRows", props: { activities, iconScale: "comfortable", shouldReduceMotion: true } });
+	try {
+		const row = view.getByRole("button", { name: "Using agents" });
+		assert.equal(view.container.querySelector(`[id="${row.getAttribute("aria-describedby")}"]`)?.textContent, "Claude, used by Maya; Cursor, used by Jordan");
+		assert.deepEqual([...row.querySelectorAll('[data-slot="human-agent-avatar"]')].map((avatar) => avatar.getAttribute("aria-label")), ["Claude, used by Maya"]);
+		assert.equal(row.querySelector('[data-teammate-session-label]')?.textContent, "Using agents");
+		assert.equal(row.querySelector('[data-teammate-session-label]')?.className.includes("opacity-0"), false);
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+		assert.equal(Boolean(row.querySelector('[data-slot="human-agent-avatar"][aria-label="Cursor, used by Jordan"]')), true);
+		await view.rerender({ activities: activities.map((activity) => ({ ...activity, state: "completed", label: "Finished" })), iconScale: "comfortable", shouldReduceMotion: true });
+		assert.equal(Boolean(view.container.querySelector('[data-slot="human-agent-avatar"][aria-label="Claude, used by Maya"]')), true);
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+		assert.equal(Boolean(view.container.querySelector('[data-slot="human-agent-avatar"][aria-label="Cursor, used by Jordan"]')), true);
+	} finally { await view.unmount(); }
+});
 
 for (const { name, iconScale, workingSpinnerVariant, avatar } of [
 	{ name: "comfortable default", iconScale: "comfortable", avatar: true },

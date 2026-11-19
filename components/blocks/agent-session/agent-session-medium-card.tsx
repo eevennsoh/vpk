@@ -16,7 +16,7 @@ import {
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionAttribution, type AgentSessionItem } from "./agent-session-types";
 import { AgentSessionAvatarPreviewContext } from "./agent-session-avatar-preview";
 
 export function AgentSessionMediumCard({
@@ -49,7 +49,7 @@ export function AgentSessionMediumCard({
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const onItemHoverRef = useRef(onItemHover);
 	const isHoveredRef = useRef(false);
-	const identity = <AgentListIdentity appearance="coding" agent={item.agent} attributedBy={item.invokedBy} attributionOrder="agent-first" sizePx={32} />;
+	const identity = <AgentListIdentity appearance="coding" agent={item.agent} attributedBy={getAgentSessionAttribution(item)} attributionOrder="agent-first" sizePx={32} />;
 
 	useEffect(() => {
 		onItemHoverRef.current = onItemHover;

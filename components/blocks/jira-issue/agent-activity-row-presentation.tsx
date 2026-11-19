@@ -12,7 +12,7 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentProps,
 } from "@/components/blocks/agent-assignment";
-import { TeammateSessionAvatars } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
+import { TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -309,7 +309,6 @@ export function JiraIssueAgentRowContent({
 	rowLabel,
 	showUnlinkControl,
 	isViewerRow = false,
-	revealTeammateLabelOnHover = false,
 	statusIcon,
 	compactAvatarSlot = false,
 	animateStateTransition = false,
@@ -323,7 +322,6 @@ export function JiraIssueAgentRowContent({
 	rowLabel: string;
 	showUnlinkControl: boolean;
 	isViewerRow?: boolean;
-	revealTeammateLabelOnHover?: boolean;
 	statusIcon: ReactElement | null;
 	compactAvatarSlot?: boolean;
 	animateStateTransition?: boolean;
@@ -338,7 +336,7 @@ export function JiraIssueAgentRowContent({
 	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
 	if (isViewerRow) {
-		avatar = <TeammateSessionAvatars items={activities} sizePx={avatarSize} />;
+		avatar = <TeammateSessionAvatarCycle sessions={activities.map((activity) => ({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }))} />;
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
@@ -402,7 +400,7 @@ export function JiraIssueAgentRowContent({
 				>
 					{avatar}
 				</span>
-				{isViewerRow ? <span data-teammate-session-label className={revealTeammateLabelOnHover ? "[@media(hover:hover)]:opacity-0 group-hover/jira-issue:opacity-100 group-focus-within/jira-issue:opacity-100" : undefined}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking={false} rowLabel={rowLabel} /></span> : phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
+				{isViewerRow ? <span className="min-w-0 flex-1" data-teammate-session-label><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking={false} rowLabel={rowLabel} /></span> : phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}

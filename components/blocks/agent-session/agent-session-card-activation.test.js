@@ -129,7 +129,6 @@ function loadHarness() {
 			["agent-list", `export { isCodingAgentListItem } from "./components/blocks/agent-list/agent-list-session.ts";`],
 			["agent-session-glow", `export function resolveAgentSessionGlow() { return { bloom: false, stroke: false, style: {} }; }`],
 			["use-agent-session-scroll-preview", `export function useAgentSessionScrollPreview() { return { activeItemId: null, onOpenChange() {} }; }`],
-			["use-agent-session-status-departure", `export function useAgentSessionStatusDeparture({ items }) { return { items, exitingItemIds: new Set(), onDepartureComplete() {} }; }`],
 			["agent-session-compact-card", `export function AgentSessionAttachedCard() { return null; } export function AgentSessionCompactCard() { return null; }`],
 			["agent-session-long-metadata", `export const AGENT_SESSION_STATUS_LABEL = {}; export function toAgentSessionMetadataSegments() { return []; }`],
 			["agent-session-work-item", `

@@ -1,46 +1,39 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { Resvg } from "@resvg/resvg-js";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
-test("viewer session chins show a static stack of session owners", async ({ page }) => {
+test("viewer session chins show agent and human pairs with a persistent label", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const boardRow = card(page, "PAY-107").locator('[data-slot="jira-issue-agent-row"]');
 	await expect(boardRow.getByRole("button", { name: "Using agents", exact: true })).toBeVisible();
-	await expect(boardRow.locator('[data-slot="avatar"][title="Maya Ferreira"]')).toBeVisible();
-	await expect(boardRow.locator('[data-slot="avatar"][title="Jordan Okafor"]')).toBeVisible();
-	const stack = boardRow.locator('[data-slot="avatar-group"]');
-	await stack.evaluate((element) => { element.style.backgroundColor = "rgb(30, 180, 90)"; });
-	const screenshot = await stack.screenshot({ scale: "css" });
-	const png = `data:image/png;base64,${screenshot.toString("base64")}`;
-	const rendered = new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="20"><image href="${png}" width="36" height="20" /></svg>`).render();
-	const gapPixel = (10 * rendered.width + 20) * 4;
-	expect([...rendered.pixels.slice(gapPixel, gapPixel + 3)]).toEqual([30, 180, 90]);
+	await expect(boardRow.locator('[data-slot="human-agent-avatar"][aria-label="Claude, used by Maya Ferreira"]')).toBeVisible();
+	await expect(boardRow.locator('[data-slot="human-agent-avatar"]')).toHaveCount(1);
+	await expect(boardRow.locator('[data-avatar-role="agent"] [data-slot="avatar"]')).toHaveCSS("width", "20px");
+	await expect(boardRow.locator('[data-avatar-role="human"] [data-slot="avatar"]')).toHaveCSS("width", "12px");
+	await expect(boardRow.locator('[data-teammate-session-label]')).toHaveCSS("opacity", "1");
 	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
 	const playground = page.getByRole("region", { name: "Project butter playground" });
-	for (const [state, count] of [["1 agent, not owner", 1], ["1-n agents, not owner", 2]] as const) {
-		await playground.getByRole("button", { name: state, exact: true }).click();
-		const row = playground.locator('[data-slot="jira-issue-agent-row"]');
-		await expect(row).toBeVisible();
-		await expect(row.getByRole("button", { name: count === 1 ? "Using agent" : "Using agents", exact: true })).toBeVisible();
-		await expect(row.getByText(/Working|Needs input/)).toHaveCount(0);
-		await expect(row.locator('[data-slot="jira-issue-agent-status-icon"]')).toHaveCount(0);
-		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
-		await expect(chevron).toBeHidden();
-		await row.hover();
-		await expect(chevron).toBeVisible();
-		await expect(row.locator('[data-slot="avatar-group"] [data-slot="avatar"]')).toHaveCount(count);
-		await expect(row.locator('[data-slot="avatar-group"] [data-slot="avatar"]').first()).toHaveAttribute("title", /.+/);
-		await row.getByRole("button").first().click();
-		await expect(page.getByRole("dialog", { name: "Agent assignment" })).toBeVisible();
-		await page.keyboard.press("Escape");
-	}
-	await playground.getByRole("button", { name: "1 agent as owner", exact: true }).click();
+	await page.getByRole("button", { name: "1-n agent (Viewer)", exact: true }).click();
+	const row = playground.locator('[data-slot="jira-issue-agent-row"]');
+	await expect(row).toBeVisible();
+	await expect(row.getByRole("button", { name: "Using agents", exact: true })).toBeVisible();
+	await expect(row.locator('[data-teammate-session-label]')).toHaveCSS("opacity", "1");
+	await expect(row.getByText(/Working|Needs input/)).toHaveCount(0);
+	await expect(row.locator('[data-slot="jira-issue-agent-status-icon"]')).toHaveCount(0);
+	const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
+	await expect(chevron).toBeHidden();
+	await row.hover();
+	await expect(chevron).toBeVisible();
+	await expect(row.locator('[data-slot="human-agent-avatar"]')).toHaveCount(1);
+	await row.getByRole("button").first().click();
+	await expect(page.getByRole("dialog", { name: "Agent assignment" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: "1 agent (Owner)", exact: true }).click();
 	await expect(playground.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(1);
 	await expect(playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar-group"]')).toHaveCount(0);
 	await expect(playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]')).toHaveCount(1);
@@ -48,8 +41,18 @@ test("viewer session chins show a static stack of session owners", async ({ page
 	const original = page.getByRole("region", { name: "Project butter playground" });
 	await original.getByRole("button", { name: "1-n agents, not owner", exact: true }).click();
 	const originalRow = original.locator('[data-slot="jira-issue-agent-row"]');
-	await expect(originalRow.locator('[data-slot="avatar"][title="Andrea Wilson"]')).toBeVisible();
-	await expect(originalRow.locator('[data-slot="avatar"][title="Andrew Park"]')).toBeVisible();
+	await expect(originalRow.locator('[data-slot="human-agent-avatar"][aria-label$="used by Andrea Wilson"]')).toBeVisible();
+	await expect(originalRow.locator('[data-slot="human-agent-avatar"]')).toHaveCount(1);
+});
+
+test("teammate session identities cycle in one slot", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	const row = card(page, "PAY-107").locator('[data-slot="jira-issue-agent-row"]');
+	const avatar = row.locator('[data-slot="human-agent-avatar"]');
+	await expect(avatar.filter({ has: page.locator('[data-avatar-role="human"]') }).first()).toBeVisible();
+	await expect(row.locator('[data-slot="human-agent-avatar"][aria-label="Cursor, used by Jordan Okafor"]')).toBeVisible({ timeout: 8_000 });
+	await expect(row.locator('[data-teammate-session-label]')).toHaveCSS("opacity", "1");
 });
 
 test("agent avatars match between the Butter board and the original card playground", async ({ page }) => {
@@ -65,7 +68,7 @@ test("agent avatars match between the Butter board and the original card playgro
 	expect(Math.abs(boardAvatarBox.y + boardAvatarBox.height / 2 - boardRowBox.y - boardRowBox.height / 2)).toBeLessThan(1);
 	await page.getByRole("button", { name: "Select Board (Card)", exact: true }).click();
 	const playground = page.getByRole("region", { name: "Project butter playground" });
-	await playground.getByRole("button", { name: "1 agent as owner", exact: true }).click();
+	await page.getByRole("button", { name: "1 agent (Owner)", exact: true }).click();
 	const playgroundAvatar = playground.locator('[data-slot="jira-issue-agent-row"] [data-slot="avatar"]').first();
 	await expect(playgroundAvatar).toHaveCSS("width", "20px");
 	await expect(playgroundAvatar).toHaveCSS("height", "20px");

@@ -18,7 +18,6 @@ interface JgpRovoOverlayProps {
 	renderWidget?: ChatPanelProps["renderWidget"];
 	readOnly?: boolean;
 	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
-	readOnlySessionState?: import("@/components/blocks/agent-list").AgentListState;
 	portalContainer?: HTMLElement | null;
 	contained?: boolean;
 	agentCreator?: AgentResultCreator;
@@ -51,7 +50,6 @@ export function JgpRovoOverlay({
 	renderWidget,
 	readOnly = false,
 	readOnlyOwner,
-	readOnlySessionState,
 	portalContainer,
 	contained = false,
 	agentCreator,
@@ -151,7 +149,6 @@ export function JgpRovoOverlay({
 						renderWidget={renderWidget}
 						readOnly={readOnly}
 						readOnlyOwner={readOnlyOwner}
-						readOnlySessionState={readOnlySessionState}
 						key="floating-chat"
 						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}

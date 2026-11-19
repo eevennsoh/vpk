@@ -744,13 +744,6 @@
 			"type": "playwright-fixed-wait"
 		},
 		{
-			"filePath": "tests/blocks/agent-session-long-agent-name.spec.ts",
-			"occurrence": 1,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(250);",
-			"type": "playwright-fixed-wait"
-		},
-		{
 			"filePath": "tests/blocks/jira-deck-gathering.spec.ts",
 			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",

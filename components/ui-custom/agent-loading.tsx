@@ -65,6 +65,10 @@ export interface AgentLoadingProps {
 	variant?: "stack" | "vertical";
 	/** Avatar size within the default vertical canvas. */
 	verticalAvatarSize?: 20 | 24;
+	/** Render an attributed identity in the vertical avatar slot. */
+	renderVerticalAvatar?: (agent: AgentLoadingAgent, sizePx: 16 | 20 | 24) => ReactNode;
+	/** Continue cycling when every session has finished. */
+	cycleWhenFinished?: boolean;
 	/** Present a newly added front agent at its original size before it joins the group. */
 	intro?: { agentId: string; avatarSize: 20 | 24 };
 }
@@ -167,6 +171,8 @@ export function AgentLoading({
 	size = "default",
 	variant = "stack",
 	verticalAvatarSize = 24,
+	renderVerticalAvatar,
+	cycleWhenFinished = false,
 	intro,
 }: Readonly<AgentLoadingProps>) {
 	const [frontAgentId, setFrontAgentId] = useState<string | null>(
@@ -180,7 +186,7 @@ export function AgentLoading({
 	);
 	const shouldReduceMotion = useAgentLoadingReducedMotion(agentStateKey);
 	const finished = areAllAgentLoadingAgentsFinished(agents);
-	const canCycle = shouldCycleAgentLoading(agents) && !shouldReduceMotion;
+	const canCycle = (shouldCycleAgentLoading(agents) || (cycleWhenFinished && agents.length > 1)) && !shouldReduceMotion;
 	const resolvedFrontIndex = Math.max(
 		0,
 		agents.findIndex((agent) => agent.id === frontAgentId),
@@ -248,7 +254,7 @@ export function AgentLoading({
 			/>
 			{variant === "vertical" ? (
 				<span aria-hidden="true" className="agent-loading-vertical" data-size={size} data-reduced-motion={shouldReduceMotion ? "true" : undefined}>
-					<span className="agent-loading-vertical-mask">
+					<span className="agent-loading-vertical-mask" style={renderVerticalAvatar ? { left: -2, right: -2 } : undefined}>
 						<AnimatePresence initial={false}>
 							<motion.span
 								animate={{ opacity: 1, y: 0 }}
@@ -259,7 +265,7 @@ export function AgentLoading({
 								key={slots.front.id}
 								transition={shouldReduceMotion ? AGENT_LOADING_MOTION_REDUCED : AGENT_LOADING_MOTION_SWAP}
 							>
-								<AgentAvatarVisual {...slots.front.avatar} animate={false} label={undefined} loading={slots.front.avatar.loading ?? "eager"} sizePx={size === "small" ? 16 : verticalAvatarSize} />
+								{renderVerticalAvatar ? renderVerticalAvatar(slots.front, size === "small" ? 16 : verticalAvatarSize) : <AgentAvatarVisual {...slots.front.avatar} animate={false} label={undefined} loading={slots.front.avatar.loading ?? "eager"} sizePx={size === "small" ? 16 : verticalAvatarSize} />}
 							</motion.span>
 						</AnimatePresence>
 					</span>

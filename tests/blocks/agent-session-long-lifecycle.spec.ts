@@ -89,7 +89,7 @@ test("catalog compares session sizes and permissions", async ({ page }) => {
 	await expect(example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article")).toHaveCount(3);
 	await expect(example.getByRole("region", { name: "Local sessions" })).toHaveCount(0);
 	await example.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().click();
-	await expect(page.getByRole("group", { name: "Session owner and status" })).toBeVisible();
+	await expect(page.locator('[data-rovo-chat-placement="floating"]').getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
 });
 
 test("team session examples open owner and viewer conversations", async ({ page }) => {
@@ -107,20 +107,18 @@ test("team session examples open owner and viewer conversations", async ({ page 
 	await expect(page.getByText("Checking the related work", { exact: true })).toBeVisible();
 	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeEnabled();
 	await rows.nth(3).click();
-	const ownerBar = page.getByRole("group", { name: "Session owner and status" });
-	await expect(ownerBar.getByText("Session from Priya Raman")).toBeVisible();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat.getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
+	await expect(chat.getByRole("group", { name: "Session owner and status" })).toHaveCount(0);
 	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
 	await rows.nth(5).click();
-	await expect(ownerBar.getByText("Session from Austin Lee")).toBeVisible();
+	await expect(chat.getByRole("group", { name: "Figma, used by Austin Lee" })).toBeVisible();
 	await expect(page.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
 	await expect(page.getByRole("region", { name: "Generated artifacts" }).getByText("Off-road suspension controls", { exact: true })).toBeVisible();
-	await expect(ownerBar.getByRole("img", { name: "Finished" })).toBeVisible();
 	await rows.nth(4).click();
-	await expect(ownerBar.getByText("Session from Jordan Okafor")).toBeVisible();
-	await expect(ownerBar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect(chat.getByRole("group", { name: "Canva, used by Jordan Okafor" })).toBeVisible();
 	await page.getByRole("button", { name: /Prioritize off-road performance/ }).click();
 	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
-	await expect(ownerBar.getByRole("img", { name: "Working" })).toBeVisible();
 	await rows.nth(1).click();
 	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeEnabled();
 });

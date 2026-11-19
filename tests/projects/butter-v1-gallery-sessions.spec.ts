@@ -18,7 +18,7 @@ test("team session rows do not reveal an access tooltip on hover", async ({ page
 		}
 	}
 	await page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().click();
-	await expect(page.getByRole("group", { name: "Session owner and status" })).toBeVisible();
+	await expect(page.locator('[data-rovo-chat-placement="floating"]').getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
 });
 
 test("private and team access icons show who started the session", async ({ page }) => {
@@ -154,68 +154,32 @@ test("team viewers can answer questions while their composer remains disabled", 
 	await viewer.locator("article").first().click();
 	const input = page.getByRole("textbox", { name: "Chat message input" });
 	await expect(input).toHaveCount(0);
-	const bar = page.getByRole("group", { name: "Session owner and status" });
-	await expect(bar).toHaveCSS("height", "32px");
-	await expect(bar).toHaveCSS("border-top-width", "1px");
-	await expect(bar).toHaveCSS("cursor", "default");
-	await expect(bar.getByText("Session from Priya Raman", { exact: true })).toBeVisible();
-	await expect(bar.locator('img[src="/avatar-user/ting-chen/color/asow-teamwork-blue.png"]')).toBeVisible();
-	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
-	await expect(bar.getByRole("img", { name: "Working" })).toHaveCSS("width", "16px");
-	await expect(bar.getByRole("img", { name: "Working" })).toHaveCSS("height", "16px");
-	await expect(bar.locator('[data-slot="spinner"]')).toBeVisible();
-	await expect.poll(() => bar.evaluate((element) => {
-		const label = element.querySelector("span.truncate")?.getBoundingClientRect();
-		const cue = element.querySelector('[data-agent-session-lifecycle-current]')?.getBoundingClientRect();
-		const bounds = element.getBoundingClientRect();
-		return label && cue ? Math.max(Math.abs(label.top + label.height / 2 - cue.top - cue.height / 2), Math.abs(bounds.right - 13 - cue.right)) : Infinity;
-	})).toBeLessThanOrEqual(1);
-	await expect(page.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
-	await expect(bar.getByText("Skip all")).toHaveCount(0);
-	await bar.hover();
-	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
-	await bar.click();
-	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
-	await expect(input).toHaveCount(0);
-	await page.mouse.move(0, 0);
-	await page.keyboard.press("Tab");
-	await bar.focus();
-	await expect(page.getByRole("tooltip")).toHaveText("Only Priya Raman, the session owner, can steer this session. You can unblock it and review the outcome.");
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const oldBar = chat.getByRole("group", { name: "Session owner and status" });
+	await expect(chat.getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
+	await expect(oldBar).toHaveCount(0);
+	await expect(chat.getByText("Context:", { exact: true })).toBeVisible();
+	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
 	await viewer.locator("article").last().click();
 	await expect(input).toHaveCount(0);
-	await expect(bar.getByText("Session from Austin Lee", { exact: true })).toBeVisible();
-	await expect(bar).toHaveCSS("height", "32px");
-	await expect(bar.getByRole("img", { name: "Finished" })).toBeVisible();
-	const finishedChat = page.locator('[data-rovo-chat-placement="floating"]');
-	await expect(finishedChat.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
-	await expect(finishedChat.getByText("Checking the related work", { exact: true })).toHaveCount(0);
-	await expect(finishedChat.getByRole("button", { name: /^(Thinking|Working)/ })).toHaveCount(0);
-	await expect(bar.getByRole("img", { name: "Finished" })).toHaveCSS("width", "16px");
-	await bar.hover();
-	await expect(page.getByRole("tooltip")).toHaveText("Only Austin Lee, the session owner, can steer this session. You can unblock it and review the outcome.");
-	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	await expect(chat.getByRole("group", { name: "Figma, used by Austin Lee" })).toBeVisible();
+	await expect(chat.getByText("The work is complete. The relevant details are ready for the team to review.")).toBeVisible();
+	await expect(chat.getByText("Checking the related work", { exact: true })).toHaveCount(0);
+	await expect(chat.getByRole("button", { name: /^(Thinking|Working)/ })).toHaveCount(0);
+	const roadmap = viewer.locator("article").filter({ hasText: "Active air suspension roadmap" });
+	await roadmap.click();
 	const question = page.getByRole("region", { name: "Clarification questions — answer or skip to continue chatting" });
-	await expect(bar.getByText("Session from Jordan Okafor", { exact: true })).toBeVisible();
-	await expect(bar).toHaveCSS("height", "32px");
-	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
-	await expect(bar.getByRole("img", { name: "Needs input" })).toHaveCSS("width", "16px");
+	await expect(chat.getByRole("group", { name: "Canva, used by Jordan Okafor" })).toBeVisible();
+	await expect(roadmap.getByText("Needs input", { exact: true })).toBeVisible();
+	await expect(oldBar).toHaveCount(0);
 	const questionCard = question.getByRole("dialog");
 	await expect(questionCard).toHaveCSS("box-shadow", /^(?:none|(?:rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(?:, )?)+)$/);
-	await expect.poll(async () => {
-		const [questionBounds, barBounds] = await Promise.all([questionCard.boundingBox(), bar.boundingBox()]);
-		return questionBounds && barBounds ? barBounds.y - (questionBounds.y + questionBounds.height) : null;
-	}).toBe(12);
-	const chat = page.locator('[data-rovo-chat-placement="floating"]');
 	const shortcuts = chat.locator('[data-slot="footer"]');
 	await expect(shortcuts).toHaveCount(1);
 	await expect(shortcuts).toContainText("Enter to select");
 	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toHaveCount(0);
-	await expect.poll(async () => {
-		const [barBounds, footerBounds] = await Promise.all([bar.boundingBox(), shortcuts.boundingBox()]);
-		return barBounds && footerBounds ? footerBounds.y >= barBounds.y + barBounds.height : false;
-	}).toBe(true);
 	await expect(question.getByRole("button", { name: /Prioritize off-road performance/ })).toBeEnabled();
 	await expect(question.getByRole("button", { name: "Dismiss questions" })).toHaveCount(0);
 	await expect(question.getByRole("textbox", { name: /custom answer/ })).toBeEnabled();
@@ -225,14 +189,14 @@ test("team viewers can answer questions while their composer remains disabled", 
 	await questionCard.focus();
 	await page.keyboard.press("Escape");
 	await expect(questionCard).toBeVisible();
-	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect(roadmap.getByText("Needs input", { exact: true })).toBeVisible();
 	await expect.poll(() => chatRequests).toBe(0);
 	await question.getByRole("button", { name: /Prioritize off-road performance/ }).click();
 	await expect(page.getByText("Thanks — I’ll continue with that direction.")).toBeVisible();
 	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
 	await expect(chat.getByText("Enter to select", { exact: true })).toHaveCount(0);
 	await expect(input).toHaveCount(0);
-	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
+	await expect(roadmap.getByText("Working", { exact: true })).toBeVisible();
 	await expect(owner.getByText("Working", { exact: true })).toHaveCount(2);
 	await viewer.locator("article").first().click();
 	await expect(input).toHaveCount(0);
@@ -251,7 +215,7 @@ test("team owners retain the question dismiss control", async ({ page }) => {
 	await expect(question.getByRole("button", { name: "Dismiss questions" })).toBeEnabled();
 });
 
-test("viewer status stays visible with the question card at a compact viewport", async ({ page }) => {
+test("viewer attribution and question shortcuts fit at a compact viewport", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 720 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
@@ -259,16 +223,17 @@ test("viewer status stays visible with the question card at a compact viewport",
 	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
 	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
-	const bar = chat.getByRole("group", { name: "Session owner and status" });
+	const attribution = chat.getByRole("group", { name: "Canva, used by Jordan Okafor" });
 	await expect(chat.getByRole("heading", { name: "What should the suspension roadmap prioritize?" })).toBeVisible();
-	await expect(bar.getByRole("img", { name: "Needs input" })).toBeVisible();
+	await expect(attribution).toBeVisible();
+	await expect(chat.getByRole("group", { name: "Session owner and status" })).toHaveCount(0);
 	await expect.poll(() => chat.evaluate((element) => {
 		const bounds = element.getBoundingClientRect();
 		const footer = element.querySelector('[data-slot="footer"]')?.getBoundingClientRect();
 		return footer ? footer.bottom - bounds.bottom : Infinity;
 	})).toBeLessThanOrEqual(1);
 	await chat.getByRole("button", { name: /Balance both goals/ }).click();
-	await expect(bar.getByRole("img", { name: "Working" })).toBeVisible();
+	await expect(attribution).toBeVisible();
 });
 
 test("team viewers can submit a custom question answer", async ({ page }) => {
@@ -487,22 +452,15 @@ test("board and journey session menus show private marks for other people's sess
 	await page.goto(appUrl("/butter-v1"));
 	for (const view of ["Board", "e2e Journey"]) {
 		await page.getByRole("button", { name: `Select ${view}`, exact: true }).click();
-		let labelPadding: string[] | undefined;
 		for (const [key, button, owners] of [
 			["PAY-107", "Using agents", ["Maya Ferreira", "Jordan Okafor"]],
-			["PAY-123", "2 agents: Needs input", ["Jordan Okafor"]],
+			["PAY-123", "Claude: Working", ["Jordan Okafor"]],
 		] as const) {
 			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
 			await card.getByRole("button", { name: button }).click();
 			const menu = page.getByRole("dialog", { name: "Agent assignment" });
-			const heading = key === "PAY-107" ? menu.getByText("2 using agents", { exact: true }) : menu.getByRole("button", { name: "1 using agent", exact: true });
-			await expect(heading).toBeVisible();
-			const padding = await heading.evaluate((element) => {
-				const style = getComputedStyle(element);
-				return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
-			});
-			if (labelPadding) expect(padding).toEqual(labelPadding);
-			else labelPadding = padding;
+			if (key === "PAY-107") await expect(menu.getByText(/(?:using|other) agents?/iu)).toHaveCount(0);
+			else await expect(menu.getByRole("button", { name: "1 other agent", exact: true })).toBeVisible();
 			for (const owner of owners) await expect(menu.getByRole("img", { name: `Private session by ${owner}` })).toBeVisible();
 			await expect(menu.locator('[data-access-mark="team"]')).toHaveCount(0);
 			await page.keyboard.press("Escape");
@@ -515,7 +473,7 @@ test("session menu keeps the divider inset equal to the row side inset", async (
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
-	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
+	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "Claude: Working", exact: true }).click();
 	const menu = page.getByRole("dialog", { name: "Agent assignment" });
 	const row = menu.locator("article").first();
 	const separator = menu.locator('[data-slot="dropdown-menu-separator"]').first();
@@ -535,9 +493,9 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.setViewportSize({ width: 1398, height: 1236 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
-	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
+	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "Claude: Working", exact: true }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
-	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?using agents?/iu });
+	const disclosure = popup.getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
 	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
 	await disclosure.click();
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
@@ -562,16 +520,19 @@ test("Butter session menus name the work instead of the agent", async ({ page })
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const issue = board.locator('[data-issue-key="PAY-105"][data-board-column-title]');
-	await issue.getByRole("button", { name: "Cursor: Working" }).click();
+	await issue.getByRole("button", { name: /^(?:2 agents|Cursor): Working$/u }).click();
 	const assignment = page.getByRole("dialog", { name: "Agent assignment" });
 	await expect(assignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
-	// A working session shows the agent mark, never its name.
+	for (const agent of ["Cursor", "Claude"]) {
+		const identity = assignment.getByRole("group", { name: `${agent}, used by Venn`, exact: true });
+		await expect(identity.getByRole("img", { name: "Venn", exact: true })).toBeVisible();
+	}
 	await expect(assignment.getByText("Cursor", { exact: true })).toHaveCount(0);
 	await expect(assignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	const journeyCard = page.locator('[data-butter-board-surface] [data-issue-key="PAY-105"][data-board-column-title]');
-	await journeyCard.getByRole("button", { name: "Cursor: Working" }).click();
+	await journeyCard.getByRole("button", { name: /^(?:2 agents|Cursor): Working$/u }).click();
 	const journeyAssignment = page.getByRole("dialog", { name: "Agent assignment" });
 	await expect(journeyAssignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
 	await expect(journeyAssignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
@@ -655,6 +616,75 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.keyboard.press("Escape");
 	await expect(assignment).toBeHidden();
 	await expect(sessions).toBeFocused();
+});
+
+test("Venn's unlinked session matches the teammate agent avatar size with no human badge", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey", exact: true }).click();
+	const unlinked = page.getByRole("region", { name: /Unlink sessions/ });
+	await unlinked.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	const own = unlinked.locator("article").filter({ hasText: "Kill switch as port gate" });
+	const teammate = unlinked.locator("article").filter({ hasText: "Keep or delete the adapter" });
+	await expect(own.locator('[data-session-drag-identity] [data-slot="human-agent-avatar"]')).toHaveCount(0);
+	const ownAvatar = own.locator('[data-session-drag-identity] [data-slot="avatar"][aria-label="Cursor"]');
+	const teammateIdentity = teammate.locator('[data-session-drag-identity] [data-slot="human-agent-avatar"]');
+	await expect(ownAvatar).toBeVisible();
+	await expect(teammateIdentity).toHaveAttribute("aria-label", "Claude, used by Priya Raman");
+	for (const avatar of [ownAvatar, teammateIdentity.locator('[data-avatar-role="agent"] [data-slot="avatar"]')]) {
+		await expect(avatar).toHaveCSS("width", "30px");
+		await expect(avatar).toHaveCSS("height", "30px");
+	}
+});
+
+test("a revised unlinked session scales out before returning from the top", async ({ page }) => {
+	test.setTimeout(90_000);
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey", exact: true }).click();
+	const column = page.getByRole("region", { name: /Unlink sessions/ });
+	await column.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await page.getByRole("heading", { name: "Jira Design" }).click();
+	const trace = await page.evaluateHandle(() => {
+		const samples: { id: string; departing: boolean; index: number; scale: number; y: number; opacity: number }[] = [];
+		const departures = new Map<string, { index: number; reorderedOpacity?: number; maxTravel: number }>();
+		let stopped = false;
+		const sample = () => {
+			for (const row of document.querySelectorAll<HTMLElement>('[data-agent-session-column] [data-testid^="agent-session-row-"]')) {
+				const box = row.getBoundingClientRect();
+				if (box.bottom < 0 || box.top > innerHeight) continue;
+				const style = getComputedStyle(row);
+				const matrix = style.transform === "none" ? new DOMMatrixReadOnly() : new DOMMatrixReadOnly(style.transform);
+				const id = row.dataset.testid ?? "";
+				const index = Array.from(row.parentElement?.children ?? []).indexOf(row);
+				const departing = row.hasAttribute("data-departing");
+				if (departing && !departures.has(id)) departures.set(id, { index, maxTravel: 0 });
+				const departure = departures.get(id);
+				if (departure && departing) departure.maxTravel = Math.max(departure.maxTravel, Math.abs(matrix.m42));
+				if (departure && departure.reorderedOpacity === undefined && index !== departure.index) departure.reorderedOpacity = Number(style.opacity);
+				samples.push({ id, departing, index, scale: matrix.a, y: matrix.m42, opacity: Number(style.opacity) });
+			}
+			if (!stopped) requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+		return { samples, departures, stop: () => { stopped = true; } };
+	});
+	try {
+		await expect.poll(() => trace.evaluate(({ samples }) => samples.some((sample, index) => {
+			if (!sample.departing || sample.index <= 0 || sample.scale >= 0.98) return false;
+			return samples.slice(index + 1).some((later) => later.id === sample.id && !later.departing && later.index === 0 && later.y < -1 && later.opacity < 1 && Math.abs(later.scale - 1) < 0.01);
+		})), { timeout: 60_000 }).toBe(true);
+		const departures = await trace.evaluate(({ departures }) => [...departures.values()].filter((departure) => departure.reorderedOpacity !== undefined));
+		expect(departures.length).toBeGreaterThan(0);
+		for (const departure of departures) {
+			expect(departure.reorderedOpacity, "the row must finish fading before it moves to the top").toBeLessThan(0.02);
+			expect(departure.maxTravel, "the scale-out stays in its old slot").toBeLessThan(1);
+		}
+	} finally {
+		await trace.evaluate((value) => value.stop());
+		await trace.dispose();
+	}
 });
 
 test("a new board session uses the work-item summary as its title", async ({ page }) => {

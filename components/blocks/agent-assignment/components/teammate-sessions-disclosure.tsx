@@ -4,7 +4,7 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { motion, useReducedMotion } from "motion/react";
 
-import { getTeammateSessionPeople, TeammateSessionAvatars } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
+import { TeammateSessionAvatars, teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
 import { AGENT_SESSION_VIEWER_HINT } from "@/components/blocks/agent-session/agent-session-viewer-hint";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -23,8 +23,7 @@ export function TeammateSessionsDisclosure({ children, defaultOpen = false, item
 	const panel = useRef<HTMLDivElement>(null);
 	const hintId = useId();
 	const labelBlur = reducedMotion ? "blur(0px)" : ["blur(0px)", "blur(2px)", "blur(0px)"];
-	const singular = open ? items.length === 1 : getTeammateSessionPeople(items).size === 1;
-	const label = `${open ? `${items.length} using` : "Using"} ${singular ? "agent" : "agents"}`;
+	const label = open ? `${items.length} other ${items.length === 1 ? "agent" : "agents"}` : teammateSessionUsageLabel(items.length);
 
 	return (
 		<Collapsible open={open} onOpenChange={(nextOpen) => {

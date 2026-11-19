@@ -43,6 +43,10 @@ export function getAgentSessionRole(item: AgentSessionItem): AgentSessionRole {
 	return item.role ?? "owner";
 }
 
+export function getAgentSessionAttribution(item: Pick<AgentSessionItem, "invokedBy">) {
+	return item.invokedBy?.name.trim().toLowerCase() === "venn" ? undefined : item.invokedBy;
+}
+
 /**
  * A work item a session can be linked to, as the menu needs to render it.
  *
@@ -71,18 +75,18 @@ export interface AgentSessionWorkItemDraft {
  * Visible identity for an agent session.
  *
  * Session behavior still belongs to `item.agent`; the leading face belongs to
- * the person who invoked it. Returning the original object when no invoker is
- * known keeps agent-only payloads backward compatible.
+ * the invoker, except Venn's own sessions keep the agent identity.
  */
 export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentListAgent {
-	if (item.invokedBy === undefined) {
+	const invoker = getAgentSessionAttribution(item);
+	if (invoker === undefined) {
 		return item.agent;
 	}
 
 	return {
-		avatarSrc: item.invokedBy.avatarSrc,
+		avatarSrc: invoker.avatarSrc,
 		kind: "person",
-		name: item.invokedBy.name,
+		name: invoker.name,
 	};
 }
 
@@ -144,7 +148,6 @@ export interface AgentSessionProps {
 	style?: CSSProperties;
 	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
 	animateLayout?: boolean;
-	/** Gap between short rows, used to stage a whole prepended batch above the old first row. */
 	arrivalRowGapPx?: number;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;

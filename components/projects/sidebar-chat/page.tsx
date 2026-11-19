@@ -60,8 +60,6 @@ export type {
 
 export default function ChatPanel({ onClose, agentCreator,
 	readOnly = false,
-	readOnlyOwner,
-	readOnlySessionState,
 	onBackToRovo,
 	addMenuItemsBefore,
 	composerToolsAfterAdd,
@@ -404,8 +402,6 @@ export default function ChatPanel({ onClose, agentCreator,
 	const chatComposerBody = (
 		<ChatPanelComposerArea
 			readOnly={readOnly}
-			readOnlyOwner={readOnlyOwner}
-			readOnlySessionState={readOnlySessionState}
 			addMenuItemsBefore={addMenuItemsBefore}
 			autoFocusComposer={autoFocusComposer}
 			chatContextBar={chatContextBar}

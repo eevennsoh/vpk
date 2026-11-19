@@ -10,9 +10,25 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await gallery.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
 	await expect(list).toBeVisible();
+	const standaloneAvatar = list.getByRole("button", { name: "PAY-105", exact: true }).locator("xpath=ancestor::tr")
+		.locator('[data-slot="jira-issue-agent-avatar-handoff"] [data-slot="avatar"]');
+	await expect(standaloneAvatar).toHaveCSS("width", "24px");
+	const standaloneWidth = await standaloneAvatar.evaluate((avatar) => avatar.getBoundingClientRect().width);
 	for (const [key, label] of [["PAY-132", "Using agent"], ["PAY-104", "Using agents"]]) {
 		const row = list.getByRole("button", { name: key, exact: true }).locator("xpath=ancestor::tr");
-		await expect(row.getByText(label, { exact: true })).toBeVisible();
+		const teammateLabel = row.locator("[data-teammate-session-label]");
+		await expect(teammateLabel).toHaveText(label);
+		await expect(teammateLabel).toHaveCSS("opacity", "1");
+		const avatar = row.locator('[data-slot="human-agent-avatar"]');
+		await expect(avatar).toBeVisible();
+		const agentAvatar = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar"]');
+		await expect(agentAvatar).toHaveCSS("width", `${standaloneWidth}px`);
+		await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar"]')).toHaveCSS("width", "12px");
+		await row.getByRole("button", { name: label, exact: true }).press("Enter");
+		const menu = page.getByRole("dialog", { name: "Agent assignment" });
+		await expect(menu.getByRole("listitem")).toHaveCount(label === "Using agent" ? 1 : 2);
+		await expect(menu.getByText(/(?:using|other) agents?/iu)).toHaveCount(0);
+		await page.keyboard.press("Escape");
 	}
 	for (const edge of ["top", "right", "bottom", "left"]) {
 		await expect(list).toHaveCSS(`border-${edge}-width`, "0px");
@@ -24,7 +40,7 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await expect(headerCells.last()).toHaveCSS("border-bottom-right-radius", "12px");
 	await expect(list.getByTestId("jira-list-sticky-footer")).toHaveCSS("border-top-width", "1px");
 	await expect(list.getByRole("button", { name: "PAY-118", exact: true })).toBeVisible();
-	await list.getByRole("button", { name: "PAY-118", exact: true }).click();
+	await list.getByRole("button", { name: "PAY-118", exact: true }).press("Enter");
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
 	await expect(workItem).toBeVisible();
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();

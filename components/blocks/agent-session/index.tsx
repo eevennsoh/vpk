@@ -90,7 +90,7 @@ export function AgentSession({
 	arrivalRowGapPx = 0,
 	className,
 	items: itemsProp,
-	arrivingItemIds,
+	arrivingItemIds: arrivingItemIdsProp,
 	stateChangedItemIds,
 	stateChangeVersions,
 	assignment,
@@ -153,11 +153,12 @@ export function AgentSession({
 	const sourceItems = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	const departure = useAgentSessionStatusDeparture({
 		items: sourceItems,
+		arrivingItemIds: arrivingItemIdsProp,
 		stateChangeVersions,
 		stateChangedItemIds: variant === "large" ? stateChangedItemIds : undefined,
 		reduceMotion: shouldReduceMotion === true,
 	});
-	const items = departure.items;
+	const { items, arrivingItemIds } = departure;
 	const isDeparturePhase = departure.exitingItemIds.size > 0;
 	const isSelectionControlled = selectedItemIdProp !== undefined;
 	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
@@ -183,10 +184,10 @@ export function AgentSession({
 	const beatItemIds = arrivingItemIds ?? newItemIds;
 	const leadingBatchIds = new Set<string>();
 	for (const item of items) {
-		if (!beatItemIds?.has(item.id) || stateChangedItemIds?.has(item.id)) break;
+		if (!beatItemIds?.has(item.id)) break;
 		leadingBatchIds.add(item.id);
 	}
-	const leadingBatchOffset = toAgentSessionTopArrivalOffset(leadingBatchIds.size, arrivalRowGapPx);
+	const leadingBatchOffset = toAgentSessionTopArrivalOffset(leadingBatchIds.size);
 	// In-flow columns skip filter motion but still make room for real entries.
 	const moveRowsForArrival = !isDeparturePhase && (beatItemIds?.size ?? 0) > 0;
 	const arrivalDelays = useMemo(
@@ -271,6 +272,7 @@ export function AgentSession({
 							: handleView;
 
 					if (variant === "large") {
+						const isCurrentRevision = departure.seenVersions.get(item.id) === stateChangeVersions?.get(item.id);
 						const flyoutSession = hasNoFlyout
 							? undefined
 							: toAgentSessionUntrackedWorkFlyoutItem(
@@ -286,8 +288,10 @@ export function AgentSession({
 								allowViewerView={allowViewerView}
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
+								arrivalRowGapPx={arrivalRowGapPx}
 								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
+								clipInteriorEntrance={!leadingBatchIds.has(item.id)}
 								density={density}
 								flyoutHandle={hasNoFlyout ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
@@ -296,7 +300,7 @@ export function AgentSession({
 								glowStroke={cardGlow.stroke}
 								isArriving={!isDeparturePhase && (beatItemIds?.has(item.id) ?? false)}
 								isDeparting={departure.exitingItemIds.has(item.id)}
-								isStateChanged={!isDeparturePhase && (stateChangedItemIds?.has(item.id) ?? false)}
+								isStateChanged={!isDeparturePhase && (departure.stateChangedItemIds?.has(item.id) ?? false)}
 								isFlyoutActive={item.id === scrollPreview.activeItemId}
 								isHighlighted={item.id === highlightedItemId}
 								isNew={newItemIds?.has(item.id) ?? false}
@@ -310,11 +314,12 @@ export function AgentSession({
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}
 								onDeleteSession={onDeleteSession}
-								onArrivalComplete={onArrivalComplete === undefined
-									? undefined
-									: () => onArrivalComplete(item.id)}
+								onArrivalComplete={() => {
+									departure.onArrivalComplete(item.id);
+									if (isCurrentRevision) onArrivalComplete?.(item.id);
+								}}
 								onDepartureComplete={() => departure.onDepartureComplete(item.id)}
-								onStateChangeComplete={onStateChangeComplete === undefined
+								onStateChangeComplete={!isCurrentRevision || onStateChangeComplete === undefined
 									? undefined
 									: () => onStateChangeComplete(item.id)}
 								onItemHover={onItemHover}

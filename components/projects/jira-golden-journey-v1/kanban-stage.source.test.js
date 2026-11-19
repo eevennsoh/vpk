@@ -114,7 +114,7 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	// row keeps one AgentAvatarVisual for a featured agent. Multiple agents share
 	// the Agent Loading ferris instead of mapping a visual per agent.
 	//
-	// The second visual belongs to the `horizontal-group` avatar layout, which no
+	// Another visual belongs to the `horizontal-group` avatar layout, which no
 	// caller selects: both callsites and the default pass `animated`, so these
 	// surfaces still reach the featured avatar and the shared ferris. Wiring a
 	// caller up to `horizontal-group` must re-prove that contract here.

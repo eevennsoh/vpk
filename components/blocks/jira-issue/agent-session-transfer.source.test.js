@@ -627,7 +627,7 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 	);
 	// The horizontal identity holds its final pose inside the stable 32px frame.
 	assert.match(dragChipSource, /<HumanAgentAvatar[\s\S]*agent=\{\{ \.\.\.agent, appearance: "coding" \}\}[\s\S]*human=\{attributedBy\}[\s\S]*animate=\{false\}[\s\S]*composition="horizontal-group"[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity \? getAgentSessionAttribution\(featuredActivity\) : undefined\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });
 

@@ -99,8 +99,6 @@ export interface AgentAvatarVisualProps {
 	fallbackText?: string;
 	/** Agent status overlay. Use `needs-input` or `finished`. */
 	status?: AvatarStatus;
-	/** White separator outside the hexagon when used as a compact corner badge. */
-	separator?: boolean;
 	/** Avatar overlays such as company or project badges. */
 	children?: ReactNode;
 	avatarClassName?: string;
@@ -133,7 +131,6 @@ export function AgentAvatarVisual({
 	inset = false,
 	fallbackText,
 	status,
-	separator,
 	children,
 	avatarClassName,
 	className,
@@ -186,7 +183,6 @@ export function AgentAvatarVisual({
 			shape={shape}
 			size={avatarSizeFromPx(sizePx)}
 			status={status}
-			separator={separator}
 		>
 			{hasWhiteBackdrop ? (
 				<span

@@ -2,6 +2,7 @@
 
 import {
 	useEffect,
+	useId,
 	useMemo,
 	useRef,
 	useState,
@@ -28,10 +29,10 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentStatusKind,
 } from "@/components/blocks/agent-assignment";
-import { getTeammateSessionPeople } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
+import { teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
+import { getAgentSessionAttribution, type AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
@@ -313,7 +314,7 @@ function resolveJiraIssueAgentRowPresentation(
 		? visibleActivities[summary.featuredActivityIndex]
 		: undefined;
 	const rowLabel = isViewerRow
-		? getTeammateSessionPeople(activities).size === 1 ? "Using agent" : "Using agents"
+		? teammateSessionUsageLabel(visibleActivities.length)
 		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
@@ -524,7 +525,6 @@ function JiraIssueAgentActivityRow({
 	flushContent = false,
 	iconScale = "compact",
 	linkFlash,
-	revealTeammateLabelOnHover = false,
 	onOpenChange,
 	onSessionDragChange,
 	onViewChat,
@@ -545,7 +545,6 @@ function JiraIssueAgentActivityRow({
 	inheritChinSurface?: boolean;
 	/** Set on the row a session has just been linked into; other rows ignore it. */
 	linkFlash?: JiraIssueAgentLinkFlash;
-	revealTeammateLabelOnHover?: boolean;
 	onOpenChange?: (open: boolean) => void;
 	onSessionDragChange?: (
 		dragging: boolean,
@@ -560,6 +559,7 @@ function JiraIssueAgentActivityRow({
 	shouldReduceMotion: boolean | null;
 	workingSpinnerVariant?: "default" | "bloom-avatar";
 }>) {
+	const teammateDescriptionId = useId();
 	// Any row that gained one of the linked sessions sweeps, including a merged
 	// "N Working" row. Dropping onto a card that is already busy changes that
 	// row — its count just went up — so skipping it would leave the one place
@@ -638,7 +638,7 @@ function JiraIssueAgentActivityRow({
 					vpkLogo: featuredActivity?.agentVpkLogo,
 					name: featuredActivity?.name ?? "Agent",
 				}}
-				attributedBy={featuredActivity?.invokedBy}
+				attributedBy={featuredActivity ? getAgentSessionAttribution(featuredActivity) : undefined}
 				elevated
 				isFusionSource
 			/>
@@ -678,6 +678,7 @@ function JiraIssueAgentActivityRow({
 		<button
 			type="button"
 			aria-label={rowAriaLabel}
+			aria-describedby={isViewerRow ? teammateDescriptionId : undefined}
 			data-jira-issue-agent-row-handle=""
 			{...(sessionDragBind ?? {})}
 			{...(sessionDragBind
@@ -693,6 +694,7 @@ function JiraIssueAgentActivityRow({
 				sessionDragBind && "touch-none select-none",
 			)}
 		>
+			{isViewerRow ? <span className="sr-only" id={teammateDescriptionId}>{activities.map((activity) => `${activity.name}, used by ${activity.invokedBy?.name || "Teammate"}`).join("; ")}</span> : null}
 			<JiraIssueAgentRowContent
 				activities={activities}
 				animateStateTransition={animateStateTransition}
@@ -705,7 +707,6 @@ function JiraIssueAgentActivityRow({
 				showUnlinkControl={showUnlinkControl}
 				statusIcon={statusIcon}
 				isViewerRow={isViewerRow}
-				revealTeammateLabelOnHover={revealTeammateLabelOnHover}
 			/>
 		</button>
 	);
@@ -763,7 +764,6 @@ export function JiraIssueAgentActivityRows({
 	completedTransferKey,
 	retainCompletedGutter = false,
 	linkFlash,
-	revealTeammateLabelOnHover = false,
 	layout = "merged",
 	onOpenChange,
 	onViewChat,
@@ -798,7 +798,6 @@ export function JiraIssueAgentActivityRows({
 	retainCompletedGutter?: boolean;
 	/** One-shot brand sweep across the row a session was just linked into. */
 	linkFlash?: JiraIssueAgentLinkFlash;
-	revealTeammateLabelOnHover?: boolean;
 	/** `split` gives every active agent its own chin row instead of one merged row. */
 	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
@@ -879,7 +878,6 @@ export function JiraIssueAgentActivityRows({
 							workingSpinnerVariant={workingSpinnerVariant}
 							inheritChinSurface={inheritChinSurface}
 							linkFlash={linkFlash}
-							revealTeammateLabelOnHover={revealTeammateLabelOnHover}
 							onOpenChange={(open) => {
 								setAssignmentHoverOpen(open);
 								onOpenChange?.(open);

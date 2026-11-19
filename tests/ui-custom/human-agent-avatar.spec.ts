@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { Resvg } from "@resvg/resvg-js";
 
 import { resolveAppOrigin } from "@/tests/helpers/origin";
 
@@ -18,6 +19,23 @@ async function geometry(avatar: Locator) {
 	});
 }
 
+async function waitForOrbit(avatar: Locator) {
+	await expect.poll(() => avatar.evaluate((frame) => {
+		const slots = [...frame.querySelectorAll("[data-avatar-role]")];
+		return slots.length === 2 && slots.every((slot) =>
+			slot.getAnimations().some(({ effect }) =>
+				effect instanceof KeyframeEffect && effect.getKeyframes().some(({ transform }) => transform !== undefined),
+			),
+		);
+	})).toBe(true);
+}
+
+async function expectInsetPhotoBorder(human: Locator) {
+	await expect(human).toHaveCSS("box-shadow", "none");
+	await expect(human.locator('[data-slot="avatar-circle-border"], [data-slot="avatar-circle-ring"]')).toHaveCount(0);
+	expect(await human.evaluate((element) => getComputedStyle(element, "::after").borderTopWidth)).toBe("1px");
+}
+
 test("target size controls change the swapped pose and preserve resting sizes", async ({ page }) => {
 	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
 	const playground = page.locator('[data-human-agent-avatar-playground]');
@@ -35,7 +53,7 @@ test("target size controls change the swapped pose and preserve resting sizes", 
 		await agentTarget.fill(String(variant.agentTarget));
 		await humanTarget.fill(String(variant.humanTarget));
 		await avatar.scrollIntoViewIfNeeded();
-		await expect.poll(() => avatar.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(3);
+		await waitForOrbit(avatar);
 		for (const time of [0, 300, 650]) {
 			await avatar.evaluate(async (frame, time) => {
 				frame.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = time; });
@@ -77,7 +95,7 @@ for (const variant of [
 		await playground.getByRole('button', { name: `${variant.frame}×${variant.frame}`, exact: true }).click();
 		const avatar = playground.locator('[data-slot="human-agent-avatar"]');
 		await avatar.scrollIntoViewIfNeeded();
-		await expect.poll(() => avatar.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(3);
+		await waitForOrbit(avatar);
 		let previousHuman = variant.human as number;
 		let previousAgent = variant.agent as number;
 		for (const time of [0, 37.5, 75, 150, 225, 300, 425, 500, 650]) {
@@ -139,7 +157,7 @@ for (const variant of [
 			await expect(avatar.locator("clipPath")).toHaveCount(0);
 			await expect(avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]')).toHaveCount(1);
 			await expect(avatar.locator('[data-slot="avatar-hexagon-separator"]')).toHaveCount(0);
-			await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar-circle-border"] circle')).toHaveCSS("stroke-width", "2px");
+			await expectInsetPhotoBorder(avatar.locator('[data-avatar-role="human"] [data-slot="avatar"]'));
 			const border = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-border"]');
 			await expect(border).toHaveCSS("padding", "0px");
 			await expect(border.locator("..")).toHaveAttribute("data-slot", "avatar-hexagon-artwork");
@@ -159,8 +177,17 @@ test("24px horizontal group uses two 12px avatars and restores the compact footp
 	await playground.getByRole('button', { name: 'Replay avatar animation', exact: true }).click();
 	const group = playground.getByRole('group', { name: 'Cursor, used by Jordan Okafor', exact: true });
 	await expect(async () => {
-		expect(await geometry(group)).toEqual({ size: 20, human: { x: 0, y: 0, size: 12 }, agent: { x: 8, y: 0, size: 12 } });
+		expect(await geometry(group)).toEqual({ size: 20, agent: { x: 0, y: 0, size: 12 }, human: { x: 8, y: 0, size: 12 } });
 	}).toPass({ timeout: 10000 });
+	await expect(group.locator('[data-slot="avatar-hexagon-group-border"]')).toHaveCount(0);
+	await expect(group.locator('[data-slot="avatar-group-visual"]')).toHaveCSS("mask-image", /^url\(/);
+	await group.evaluate((element) => { element.style.backgroundColor = "rgb(30, 180, 90)"; });
+	const screenshot = await group.screenshot({ scale: "css" });
+	const png = "data:image/png;base64," + screenshot.toString("base64");
+	const rendered = new Resvg('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="12"><image href="' + png + '" width="20" height="12" /></svg>').render();
+	const separatorPixel = (6 * rendered.width + 12) * 4;
+	const pixel = [...rendered.pixels.slice(separatorPixel, separatorPixel + 3)];
+	for (const [index, expected] of [30, 180, 90].entries()) expect(Math.abs(pixel[index] - expected)).toBeLessThan(25);
 	await playground.getByRole('button', { name: 'Pause animation', exact: true }).click();
 	expect(await geometry(playground.locator('[data-slot="human-agent-avatar"]'))).toEqual({ size: 24, agent: { x: 0, y: 0, size: 24 }, human: { x: 14, y: 14, size: 12 } });
 });
@@ -172,16 +199,28 @@ test("human-first gives the human the main footprint and the agent the badge foo
 	for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
 		await page.setViewportSize(viewport);
 		await avatar.scrollIntoViewIfNeeded();
-		const separator = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-separator"]');
-		await expect(separator).toHaveCount(1);
-		await expect(separator).toHaveCSS("clip-path", /^polygon\(/);
-		await expect(separator).toHaveCSS("color", "rgb(255, 255, 255)");
+		await expect(avatar.locator('[data-avatar-role="agent"] [data-slot="avatar-hexagon-separator"]')).toHaveCount(0);
+		await expect(avatar.locator('[data-avatar-role="human"]')).toHaveCSS("mask-image", /^url\(/);
 		expect(await geometry(avatar)).toEqual({
 			size: 32,
 			human: { x: 1, y: 1, size: 30 },
 			agent: { x: 18, y: 18, size: 16 },
 		});
 		await avatar.screenshot({ path: `output/agent-browser/human-agent-avatar/human-first-${viewport.width}.png` });
+	}
+});
+
+test("the compact avatar reveals its actual background around the human badge", async ({ page }) => {
+	await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#sizes`);
+	const avatar = page.locator('[data-human-agent-avatar-sizes] [data-avatar-size="24"] [data-slot="human-agent-avatar"]');
+	await avatar.evaluate((element) => { element.style.backgroundColor = "rgb(30, 180, 90)"; });
+	const png = await avatar.screenshot({ scale: "css" });
+	const image = `data:image/png;base64,${png.toString("base64")}`;
+	const rendered = new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><image href="${image}" width="24" height="24" /></svg>`).render();
+	const pixel = (15 * rendered.width + 14) * 4;
+	const actual = [...rendered.pixels.slice(pixel, pixel + 3)];
+	for (const [index, expected] of [30, 180, 90].entries()) {
+		expect(Math.abs(actual[index] - expected)).toBeLessThan(12);
 	}
 });
 
@@ -294,11 +333,7 @@ test("both turns complete in 300ms with matching easing", async ({ page }) => {
 		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
-	await expect
-		.poll(() =>
-			avatar.evaluate((el) => el.getAnimations({ subtree: true }).length),
-		)
-		.toBe(3);
+	await waitForOrbit(avatar);
 
 	const profiles = await avatar.evaluate(async (frame) => {
 		const animations = frame.getAnimations({ subtree: true });
@@ -351,11 +386,7 @@ test("each turn keeps moving smoothly through its midpoint", async ({
 		'[data-human-agent-avatar-playground] [data-slot="human-agent-avatar"][data-animated="true"]',
 	);
 	await avatar.scrollIntoViewIfNeeded();
-	await expect
-		.poll(() =>
-			avatar.evaluate((el) => el.getAnimations({ subtree: true }).length),
-		)
-		.toBe(3);
+	await waitForOrbit(avatar);
 	const turns = await avatar.evaluate(async (frame) => {
 		const animations = frame.getAnimations({ subtree: true });
 		animations.forEach((animation) => animation.pause());
@@ -412,57 +443,21 @@ test("each turn keeps moving smoothly through its midpoint", async ({
 	}
 });
 
-for (const size of [24, 32] as const) {
-	test(`${size}px capped swap keeps the white stroke at 2px`, async ({ page }) => {
-		await page.goto(`${BASE_URL}/components/ui-custom/human-agent-avatar#animated`);
-		const playground = page.locator('[data-human-agent-avatar-playground]');
-		await playground.getByRole('button', { name: `${size}×${size}`, exact: true }).click();
-		const avatar = playground.locator('[data-slot="human-agent-avatar"]');
-		await avatar.scrollIntoViewIfNeeded();
-		await expect.poll(() => avatar.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(3);
-		for (const time of [0, 75, 150, 225, 300, 425, 500, 650]) {
-			const outline = await avatar.evaluate(async (frame, time) => {
-				frame.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = time; });
-				await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-				const human = frame.querySelector('[data-avatar-role="human"] [data-slot="avatar"]') as HTMLElement;
-				const scale = human.getBoundingClientRect().width / human.offsetWidth;
-				const stroke = (slot: string) => parseFloat(getComputedStyle(human.querySelector(`[data-slot="${slot}"] circle`)!).strokeWidth) * scale;
-				return { border: stroke("avatar-circle-border"), color: getComputedStyle(human.querySelector('[data-slot="avatar-circle-border"]')!).color, rings: human.querySelectorAll('[data-slot="avatar-circle-ring"]').length };
-			}, time);
-			expect(outline.border).toBeCloseTo(2, 2);
-			expect(outline.color).toBe("rgb(255, 255, 255)");
-			expect(outline.rings).toBe(0);
-		}
-		await playground.getByRole('button', { name: 'Pause animation', exact: true }).click();
-		const staticHuman = playground.locator('[data-avatar-role="human"] [data-slot="avatar"]');
-		const style = await staticHuman.evaluate(el => {
-			const frame = el.closest('[data-slot="human-agent-avatar"]')!.getBoundingClientRect();
-			const photo = el.getBoundingClientRect();
-			const circle = el.querySelector('[data-slot="avatar-circle-border"] circle');
-			const border = circle ? parseFloat(getComputedStyle(circle).strokeWidth) : parseFloat(getComputedStyle(el, "::after").borderTopWidth);
-			return {
-				border,
-				color: circle ? getComputedStyle(circle).stroke : getComputedStyle(el, "::after").borderTopColor,
-				// A centered stroke covers half its width inside the photo and half outside.
-				paintedDiameter: photo.width + (circle ? border : 0),
-				visiblePhotoDiameter: photo.width - (circle ? border : 2 * border),
-				overhangX: photo.right - frame.right,
-				overhangY: photo.bottom - frame.bottom,
-			};
-		});
-		const humanSize = size === 24 ? 12 : 16;
-		expect(style.border).toBe(2);
-		expect(style.color).toBe("rgb(255, 255, 255)");
-		expect(style.paintedDiameter).toBe(humanSize + 2);
-		expect(style.visiblePhotoDiameter).toBe(humanSize - 2);
-		expect(style.overhangX).toBe(2);
-		expect(style.overhangY).toBe(2);
-		await page.emulateMedia({ reducedMotion: "reduce" });
-		await playground.getByRole('button', { name: 'Animate avatar', exact: true }).click();
-		await expect(avatar).toHaveAttribute('data-animated', 'false');
-		await expect(staticHuman.locator('[data-slot="avatar-circle-border"] circle')).toHaveCSS('stroke-width', '2px');
-	});
-}
+test("the animated and resting human photo use only the inset border", async ({ page }) => {
+	await page.goto(BASE_URL + "/components/ui-custom/human-agent-avatar#animated");
+	const playground = page.locator("[data-human-agent-avatar-playground]");
+	const avatar = playground.locator('[data-slot="human-agent-avatar"]');
+	const human = avatar.locator('[data-avatar-role="human"] [data-slot="avatar"]');
+	await avatar.scrollIntoViewIfNeeded();
+	await waitForOrbit(avatar);
+	await expectInsetPhotoBorder(human);
+	await playground.getByRole("button", { name: "Pause animation", exact: true }).click();
+	await expectInsetPhotoBorder(human);
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await playground.getByRole("button", { name: "Animate avatar", exact: true }).click();
+	await expect(avatar).toHaveAttribute("data-animated", "false");
+	await expectInsetPhotoBorder(human);
+});
 
 test("the offscreen animated identity stops and restores its starting composition", async ({
 	page,
@@ -558,24 +553,21 @@ test("motion controls update the real timeline, orbit, and reusable JSON", async
 	await playground
 		.getByRole("textbox", { name: "Pause between turns", exact: true })
 		.fill("50");
-	await expect
-		.poll(() =>
-			avatar.evaluate((el) =>
-				el.getAnimations({ subtree: true }).map((animation) => ({
-					duration: animation.effect!.getTiming().duration,
-					delay: animation.effect!.getTiming().delay,
-				})),
-			),
-		)
-		.toEqual(Array.from({ length: 3 }, () => ({ duration: 2_250, delay: 0 })));
+	await waitForOrbit(avatar);
+	await expect.poll(() => avatar.evaluate((element) => {
+		const tracks = element.getAnimations({ subtree: true });
+		return tracks.length > 0 && tracks.every(({ effect }) => {
+			const timing = effect?.getTiming();
+			return timing?.duration === 2_250 && timing.delay === 0;
+		});
+	})).toBe(true);
 
-	await playground
-		.getByRole("combobox", { name: "Easing preset", exact: true })
-		.click();
-	await page.getByRole("option", { name: "Custom", exact: true }).click();
 	await playground
 		.getByRole("textbox", { name: "Bezier X1", exact: true })
 		.fill("0.2");
+	await playground
+		.getByRole("textbox", { name: "Bezier X2", exact: true })
+		.fill("0");
 	await playground
 		.getByRole("textbox", { name: "Size swap", exact: true })
 		.fill("80");
@@ -583,11 +575,7 @@ test("motion controls update the real timeline, orbit, and reusable JSON", async
 		.getByRole("button", { name: "Counter-clockwise", exact: true })
 		.click();
 	await avatar.scrollIntoViewIfNeeded();
-	await expect
-		.poll(() =>
-			avatar.evaluate((el) => el.getAnimations({ subtree: true }).length),
-		)
-		.toBe(3);
+	await waitForOrbit(avatar);
 	await avatar.evaluate(async (el) => {
 		el.getAnimations({ subtree: true }).forEach((animation) => {
 			animation.pause();
@@ -692,7 +680,7 @@ test("controls preserve edits across collapse and repeat modes, then reset and r
 	await expect(playground.locator('[data-animated="true"]')).toHaveCount(1);
 });
 
-test("horizontal-group variation morphs into the shared human-first 16px group", async ({
+test("horizontal-group variation morphs into the shared agent-first 16px group", async ({
 	page,
 }) => {
 	await page.goto(
@@ -729,8 +717,8 @@ test("horizontal-group variation morphs into the shared human-first 16px group",
 		const position = await geometry(group);
 		expect(position).toEqual({
 			size: 28,
-			human: { x: 0, y: 0, size: 16 },
-			agent: { x: 12, y: 0, size: 16 },
+			agent: { x: 0, y: 0, size: 16 },
+			human: { x: 12, y: 0, size: 16 },
 		});
 	}).toPass({ timeout: 10_000 });
 	const avatarSizes = await group
@@ -751,7 +739,7 @@ test("horizontal-group variation morphs into the shared human-first 16px group",
 			.evaluateAll((avatars) =>
 				avatars.map((el) => el.getAttribute("data-avatar-role")),
 			),
-	).toEqual(["human", "agent"]);
+	).toEqual(["agent", "human"]);
 	expect(await frame.evaluate((el) => el.getBoundingClientRect().width)).toBe(
 		32,
 	);

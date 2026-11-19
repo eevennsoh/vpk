@@ -29,8 +29,6 @@ interface ChatPanelComposerAreaProps
 		| "onComposerPrefillConsumed"
 		| "resolveComposerPlaceholder"
 		| "readOnly"
-		| "readOnlyOwner"
-		| "readOnlySessionState"
 	> {
 	autoFocusComposer: boolean;
 	clickyActive: boolean;
@@ -65,8 +63,6 @@ interface ChatPanelComposerAreaProps
 /** Bottom of the panel: a docked question card, a pending plan approval, or the composer. */
 export function ChatPanelComposerArea({
 	readOnly = false,
-	readOnlyOwner,
-	readOnlySessionState,
 	addMenuItemsBefore,
 	autoFocusComposer,
 	chatContextBar,
@@ -129,7 +125,7 @@ export function ChatPanelComposerArea({
 		<div className={readOnly && shouldShowQuestionCard ? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"}>
 			{shouldShowQuestionCard && activeQuestionCard ? (
 				<>
-					<div className={readOnly ? "mb-3 min-h-0 shrink overflow-y-auto px-3" : "px-3"} onKeyDownCapture={(event) => {
+					<div className={readOnly ? "min-h-0 shrink overflow-y-auto px-3" : "px-3"} onKeyDownCapture={(event) => {
 						if (readOnly && event.key === "Escape" && !(event.target instanceof HTMLInputElement)) {
 							event.preventDefault();
 							event.stopPropagation();
@@ -147,7 +143,6 @@ export function ChatPanelComposerArea({
 							onDismiss={dismissQuestionCard}
 						/>
 					</div>
-					{readOnly ? <ReadOnlySessionComposer hideAiDisclaimer owner={readOnlyOwner} state={readOnlySessionState} /> : null}
 					<QuestionCardShortcutsFooter showEscape={!readOnly} />
 				</>
 			) : shouldShowApprovalCard && activePendingPlan ? (
@@ -161,7 +156,7 @@ export function ChatPanelComposerArea({
 					<QuestionCardShortcutsFooter escLabel="cancel" />
 				</>
 			) : readOnly ? (
-				<ReadOnlySessionComposer context={chatContextBar} hideAiDisclaimer={hideAiDisclaimer} onContextBarOpenChange={setIsContextBarOpen} owner={readOnlyOwner} state={readOnlySessionState} />
+				<ReadOnlySessionComposer context={chatContextBar} hideAiDisclaimer={hideAiDisclaimer} onContextBarOpenChange={setIsContextBarOpen} />
 			) : (
 				<>
 					<ChatComposer

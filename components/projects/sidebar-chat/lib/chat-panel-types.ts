@@ -125,9 +125,6 @@ export interface ChatPanelProps {
 	onClose: () => void;
 	/** Allow conversation inspection without sending or answering. */
 	readOnly?: boolean;
-	/** Owner named in the explanation for a read-only session. */
-	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
-	readOnlySessionState?: import("@/components/blocks/agent-list").AgentListState;
 	onBackToRovo?: () => void;
 	addMenuItemsBefore?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the Add menu trigger. */

@@ -76,7 +76,6 @@ function AgentSessionShowcaseContent({ active, className, localItems, onSessionO
 	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const awaitingAnswer = activeSessionId !== null && !answeredSessions.has(activeSessionId)
 		&& CLOUD_SESSIONS.some((item) => item.id === activeSessionId && item.state === "needs-input");
-	const activeSessionState = answeredSessions.has(activeSessionId ?? "") ? "running" : CLOUD_SESSIONS.find((item) => item.id === activeSessionId)?.state;
 	const rows = permission === "team"
 		? [{ title: "Cloud (Owner)", items: CLOUD_SESSIONS, role: "owner" as const }, { title: "Cloud (Viewer)", items: CLOUD_SESSIONS, role: "viewer" as const }]
 		: [{ title: "Local", items: withLifecycleStates(localItems), role: permission === "mine" ? "owner" as const : "viewer" as const }, { title: "Cloud", items: CLOUD_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }];
@@ -102,7 +101,7 @@ function AgentSessionShowcaseContent({ active, className, localItems, onSessionO
 				))}
 			</div>
 		</div>
-		{active ? <JgpRovoOverlay chatContextBar={chatContextBar} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onQuestionAnswer={awaitingAnswer ? () => { if (activeSessionId) setAnsweredSessions((current) => new Set(current).add(activeSessionId)); } : undefined} readOnly={viewerChatOwner !== null} readOnlyOwner={viewerChatOwner ?? undefined} readOnlySessionState={activeSessionState} renderWidget={renderAgentSessionDemoArtifacts} /> : null}
+		{active ? <JgpRovoOverlay chatContextBar={chatContextBar} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onQuestionAnswer={awaitingAnswer ? () => { if (activeSessionId) setAnsweredSessions((current) => new Set(current).add(activeSessionId)); } : undefined} readOnly={viewerChatOwner !== null} readOnlyOwner={viewerChatOwner ?? undefined} renderWidget={renderAgentSessionDemoArtifacts} /> : null}
 		</>
 	);
 }

@@ -149,11 +149,12 @@ function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; 
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview }>) {
-	if (item.invokedBy) {
+	const attributedBy = item.invokedBy;
+	if (attributedBy) {
 		return (
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
-				attributedBy={item.invokedBy}
+				attributedBy={attributedBy}
 				attributionOrder="agent-first"
 				sizePx={16}
 				appearance="coding"
