@@ -68,10 +68,6 @@ test("App Directory draws brand marks for package brands, asset paths and Atlass
 });
 
 test("every By companies sidebar entry shows a logo", { tag: "@smoke" }, async ({ page }) => {
-	// Known gap, older than PR 2403: getSidebarGroupItems (components/blocks/app-directory/components/app-directory.tsx)
-	// copies avatarSrc and logoName but not brandName, so SidebarToolAvatar returns null for the 10
-	// package-brand apps and their leading slot stays empty. Remove this line once that mapping keeps brandName.
-	test.fail(true, "getSidebarGroupItems drops brandName, so package-brand sidebar entries have no logo");
 	const { companies } = await openStandardDirectory(page);
 	const emptyEntries = () => companies.evaluateAll((items) => items
 		.filter((item) => {
