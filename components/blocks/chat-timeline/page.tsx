@@ -1,11 +1,12 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
 import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
+import { useScrollActiveMessage } from "@/components/projects/shared/hooks/use-scroll-active-message";
 import { cn } from "@/lib/utils";
 import {
 	CHAT_TIMELINE_DEMO_MESSAGES,
@@ -49,47 +50,21 @@ function ChatTimelineBody({ messages }: Readonly<{ messages: ReadonlyArray<ChatT
 	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 	const activeSelectionId = scrollActiveId ?? latestUserMessageId;
 
-	useEffect(() => {
-		const container = scrollContainerRef.current;
-		if (!container) return;
+	const getUserMessageNodes = useCallback(
+		() => userMessages.flatMap((message) => {
+			const node = messageNodesRef.current[message.id];
+			return node ? [{ id: message.id, node }] : [];
+		}),
+		[userMessages],
+	);
 
-		function detectActiveMessage() {
-			// Snap to first message at scroll top
-			if (container!.scrollTop <= 10) {
-				const firstId = userMessages[0]?.id ?? null;
-				setScrollActiveId((prev) => (prev === firstId ? prev : firstId));
-				return;
-			}
-
-			// Snap to last message at scroll bottom
-			if (container!.scrollHeight - container!.scrollTop - container!.clientHeight <= 10) {
-				const lastId = userMessages.at(-1)?.id ?? null;
-				setScrollActiveId((prev) => (prev === lastId ? prev : lastId));
-				return;
-			}
-
-			const containerRect = container!.getBoundingClientRect();
-			const threshold = containerRect.top + containerRect.height * 0.3;
-
-			let activeId = userMessages[0]?.id ?? null;
-			for (const message of userMessages) {
-				const node = messageNodesRef.current[message.id];
-				if (!node) continue;
-
-				const nodeRect = node.getBoundingClientRect();
-				if (nodeRect.top <= threshold) {
-					activeId = message.id;
-				}
-			}
-
-			setScrollActiveId((prev) => (prev === activeId ? prev : activeId));
-		}
-
-		detectActiveMessage();
-
-		container.addEventListener("scroll", detectActiveMessage, { passive: true });
-		return () => container.removeEventListener("scroll", detectActiveMessage);
-	}, [userMessages]);
+	useScrollActiveMessage({
+		fallback: "first",
+		getMessages: getUserMessageNodes,
+		onActiveChange: setScrollActiveId,
+		scrollRef: scrollContainerRef,
+		snapToEnd: true,
+	});
 
 	useEffect(() => {
 		if (!highlightedMessageId) {

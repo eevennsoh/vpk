@@ -570,7 +570,7 @@ test("Floating chat compact empty greeting does not force a full-height message 
 	assert.match(CHAT_PANEL_SOURCE, /gridTemplateRows: "auto auto"/);
 	assert.match(CHAT_PANEL_SOURCE, /: hasMessages \|\| shouldUseNaturalEmptyGreeting\s*\? "flex-start"\s*: "flex-end"/u);
 	assert.match(CHAT_PANEL_SOURCE, /minHeight: isAgentTestEmptyState \? "100%" : shouldUseNaturalEmptyGreeting \? "auto" : "100%"/u);
-	assert.match(CHAT_PANEL_SOURCE, /<MessageScrollerItem className="w-full \[content-visibility:visible\]" style=\{chatStyles\.emptyState\}>/);
+	assert.match(CHAT_PANEL_SOURCE, /<ChatScrollerItem className="w-full" style=\{chatStyles\.emptyState\}>/);
 	assert.doesNotMatch(CHAT_PANEL_SOURCE, /<div className="w-\[90%\]" style=\{chatStyles\.emptyState\}>/);
 });
 
