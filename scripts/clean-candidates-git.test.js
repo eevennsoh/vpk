@@ -107,6 +107,34 @@ test("1: ignored content under artifacts/ (or anything not regenerable) retains 
 	assert.deepEqual(found.evidence.ignoredEnvFiles, [".env.local"]);
 });
 
+test("empty ignored directories do not hide work, but files, links, and artifacts still block removal", async (t) => {
+	const { landed, report, entry, write, repo } = setup(t);
+	write(repo, ".git/info/exclude", "backend/data/\n");
+	const dir = landed("feat");
+	fs.mkdirSync(path.join(dir, "backend/data/nested"), { recursive: true });
+	let found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, true, found.blockers.join("; "));
+
+	write(dir, "backend/data/nested/thread.json", "saved conversation");
+	found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.some((reason) => reason.includes("backend/data/")));
+	fs.rmSync(path.join(dir, "backend/data/nested/thread.json"));
+	fs.symlinkSync("missing", path.join(dir, "backend/data/nested/link"));
+	found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	fs.rmSync(path.join(dir, "backend/data/nested/link"));
+	fs.mkdirSync(path.join(dir, "artifacts/empty"), { recursive: true });
+	found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.some((reason) => reason.includes("artifacts/")));
+	fs.rmSync(path.join(dir, "artifacts"), { recursive: true });
+	fs.mkdirSync(path.join(dir, ".envs/empty"), { recursive: true });
+	found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.some((reason) => reason.includes(".envs/")));
+});
+
 test("1b: per-checkout Claude Code state (launch.json, settings.local.json, .cc-writes/) does not retain the worktree; other .claude content does", async (t) => {
 	const { landed, report, entry, write, sh, commit, repo } = setup(t);
 	// .claude/ holds tracked files, so git lists its ignored entries one by one. A user-level
@@ -151,19 +179,23 @@ test("3: commits only a reflog reaches retain the worktree or branch", async (t)
 	// A detached worktree that committed, then moved back to main.
 	const detached = landed("feat");
 	sh(detached, "checkout", "--quiet", "--detach", "origin/main");
-	commit(detached, "scratch.txt", "only in the reflog");
+	const detachedCommit = commit(detached, "scratch.txt", "only in the reflog");
 	sh(detached, "checkout", "--quiet", "--detach", "origin/main");
 	let found = entry(await report(), byWorktree(detached));
 	assert.equal(found.cleanable, false);
 	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog or its own refs reach"), found.blockers.join("; "));
+	sh(detached, "update-ref", `refs/tags/rescue/${detachedCommit}`, detachedCommit);
+	assert.equal(entry(await report(), byWorktree(detached)).cleanable, true, "an exact recovery tag preserves the old commit");
 
 	// A branch reset after committing.
 	const reset = landed("reset-me");
-	commit(reset, "lost.txt", "work");
+	const resetCommit = commit(reset, "lost.txt", "work");
 	sh(reset, "reset", "--quiet", "--hard", "HEAD~1");
 	found = entry(await report(), byWorktree(reset));
 	assert.equal(found.cleanable, false);
 	assert.ok(found.blockers.includes("1 commit(s) only the branch reflog reaches"), found.blockers.join("; "));
+	sh(reset, "update-ref", `refs/tags/rescue/${resetCommit}`, resetCommit);
+	assert.equal(entry(await report(), byWorktree(reset)).cleanable, true, "the branch's recovery tag keeps its old commit");
 });
 
 test("4: a whitespace-only difference is not landed (content proof, not patch-ids)", async (t) => {
