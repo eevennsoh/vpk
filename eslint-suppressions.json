@@ -943,11 +943,6 @@
       "count": 1
     }
   },
-  "components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.test.js": {
-    "vpk-tests/no-dom-node-assert": {
-      "count": 2
-    }
-  },
   "components/blocks/jira-kanban/experimental/lib/issue-solitaire-drop.ts": {
     "no-restricted-syntax": {
       "count": 4
@@ -2814,6 +2809,11 @@
   "components/ui/tag.source.test.js": {
     "no-restricted-syntax": {
       "count": 25
+    }
+  },
+  "components/ui/terminal.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/ui/tile.source.test.js": {
