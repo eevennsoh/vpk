@@ -5,7 +5,9 @@ import { Fragment, useRef, useState, type FormEvent } from "react";
 import {
 	ModelSelector,
 	ModelSelectorContent,
+	ModelSelectorEmpty,
 	ModelSelectorGroup,
+	ModelSelectorInput,
 	ModelSelectorItem,
 	ModelSelectorList,
 	ModelSelectorLogo,
@@ -198,15 +200,15 @@ export default function ModelSelectorDemo() {
 								<ChevronDownIcon />
 							</ModelSelectorTrigger>
 							<ModelSelectorContent align="start" className="w-36" title="Effort">
-								<ModelSelectorGroup heading="Effort">
-									<ModelSelectorList value={effort} onValueChange={setEffort}>
+								<ModelSelectorList value={effort} onValueChange={setEffort}>
+									<ModelSelectorGroup heading="Effort">
 										{EFFORTS.map((item) => (
 											<ModelSelectorItem key={item.id} value={item.id}>
 												{item.name}
 											</ModelSelectorItem>
 										))}
-									</ModelSelectorList>
-								</ModelSelectorGroup>
+									</ModelSelectorGroup>
+								</ModelSelectorList>
 							</ModelSelectorContent>
 						</ModelSelector>
 						<InputGroupButton
@@ -240,8 +242,10 @@ export function ModelSelectorDemoWithLogos() {
 				</ModelSelectorLogoGroup>
 				{current?.name ?? "Select model"}
 			</ModelSelectorTrigger>
-			<ModelSelectorContent>
+			<ModelSelectorContent className="w-64">
+				<ModelSelectorInput />
 				<ModelSelectorList value={selected} onValueChange={setSelected}>
+					<ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
 					{LOGO_PROVIDERS.map((group, index) => (
 						<Fragment key={group.provider}>
 							{index > 0 ? <ModelSelectorSeparator /> : null}
@@ -277,8 +281,10 @@ export function ModelSelectorDemoMultiProvider() {
 				</ModelSelectorLogoGroup>
 				{LOGO_MODELS.find((model) => model.id === selected)?.name ?? selected}
 			</ModelSelectorTrigger>
-			<ModelSelectorContent>
+			<ModelSelectorContent className="w-64">
+				<ModelSelectorInput />
 				<ModelSelectorList value={selected} onValueChange={setSelected}>
+					<ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
 					{providers.map((group) => (
 						<ModelSelectorGroup key={group.provider} heading={group.name}>
 							{group.models.map((model) => (

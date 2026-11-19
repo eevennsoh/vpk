@@ -2,38 +2,82 @@
 
 /* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
 
-import type { ComponentProps, ReactNode } from "react";
+import {
+	createContext,
+	use,
+	useCallback,
+	useMemo,
+	useRef,
+	useState,
+	type ComponentProps,
+	type ReactNode,
+	type RefObject,
+} from "react";
 
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandItem,
+	CommandList,
+	CommandPrimitiveInput,
+	CommandSeparator,
+	CommandShortcut,
+} from "@/components/ui/command";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuShortcut,
+	DropdownMenuSearchField,
 	DropdownMenuTrigger,
+	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
+import { SearchIcon } from "@/components/ui/vpk-icons";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
+
+// The menu shell is a Dropdown Menu; inside it, search, filtering and arrow-key
+// highlighting belong to cmdk, as in the agent selector.
+
+const ModelSelectorCloseContext = createContext<() => void>(() => {});
+
+interface ModelSelectorValueContextValue {
+	value?: string;
+	onValueChange?: (value: string) => void;
+}
+
+const ModelSelectorValueContext = createContext<ModelSelectorValueContextValue>({});
 
 export type ModelSelectorProps = ComponentProps<typeof DropdownMenu>;
 
-export const ModelSelector = (props: Readonly<ModelSelectorProps>) => (
-	<DropdownMenu {...props} />
-);
+type ModelSelectorActions =
+	NonNullable<ModelSelectorProps["actionsRef"]> extends RefObject<infer Actions> ? Actions : never;
 
-export type ModelSelectorTriggerProps = ComponentProps<
-	typeof DropdownMenuTrigger
->;
+export const ModelSelector = ({
+	actionsRef,
+	modal = false,
+	...props
+}: Readonly<ModelSelectorProps>) => {
+	const fallbackActionsRef = useRef<ModelSelectorActions>(null);
+	const resolvedActionsRef = actionsRef ?? fallbackActionsRef;
+	const close = useCallback(() => {
+		resolvedActionsRef.current?.close();
+	}, [resolvedActionsRef]);
+
+	return (
+		<ModelSelectorCloseContext value={close}>
+			<DropdownMenu actionsRef={resolvedActionsRef} modal={modal} {...props} />
+		</ModelSelectorCloseContext>
+	);
+};
+
+export type ModelSelectorTriggerProps = ComponentProps<typeof DropdownMenuTrigger>;
 
 export const ModelSelectorTrigger = (props: Readonly<ModelSelectorTriggerProps>) => (
 	<DropdownMenuTrigger {...props} />
 );
 
-export type ModelSelectorContentProps = ComponentProps<
-	typeof DropdownMenuContent
-> & {
+export type ModelSelectorContentProps = ComponentProps<typeof DropdownMenuContent> & {
 	title?: ReactNode;
 };
 
@@ -45,83 +89,160 @@ export const ModelSelectorContent = ({
 }: Readonly<ModelSelectorContentProps>) => (
 	<DropdownMenuContent
 		aria-label={typeof title === "string" ? title : undefined}
-		className={cn("w-56", className)}
+		className={cn("flex w-56 flex-col overflow-hidden p-0", className)}
 		{...props}
 	>
-		{title && typeof title !== "string" ? (
-			<span className="sr-only">{title}</span>
-		) : null}
-		{children}
+		{title && typeof title !== "string" ? <span className="sr-only">{title}</span> : null}
+		<Command
+			className={cn("min-h-0 flex-1 rounded-lg bg-transparent", dropdownStyles.padding)}
+			label={typeof title === "string" ? title : undefined}
+		>
+			{children}
+		</Command>
 	</DropdownMenuContent>
 );
 
-export type ModelSelectorListProps = ComponentProps<
-	typeof DropdownMenuRadioGroup
->;
-
-/** Radio group whose `value` is the selected model id. */
-export const ModelSelectorList = (props: Readonly<ModelSelectorListProps>) => (
-	<DropdownMenuRadioGroup {...props} />
-);
-
-export type ModelSelectorGroupProps = ComponentProps<typeof DropdownMenuGroup> & {
-	heading?: ReactNode;
+export type ModelSelectorInputProps = {
+	placeholder?: string;
+	/** Controlled query; omit to let the input own it. */
+	value?: string;
+	onValueChange?: (value: string) => void;
 };
 
-export const ModelSelectorGroup = ({
-	children,
-	heading,
-	...props
-}: Readonly<ModelSelectorGroupProps>) => (
-	<DropdownMenuGroup {...props}>
-		{heading ? <DropdownMenuLabel>{heading}</DropdownMenuLabel> : null}
-		{children}
-	</DropdownMenuGroup>
-);
+/** The shared menu search field, flush with the menu's top edge like the agent selector's. */
+export const ModelSelectorInput = ({
+	placeholder = "Search models",
+	value,
+	onValueChange,
+}: Readonly<ModelSelectorInputProps>) => {
+	const [internalValue, setInternalValue] = useState("");
+	const query = value ?? internalValue;
+	const setQuery = (next: string) => {
+		setInternalValue(next);
+		onValueChange?.(next);
+	};
 
-export type ModelSelectorItemProps = Omit<
-	ComponentProps<typeof DropdownMenuRadioItem>,
-	"onSelect"
-> & {
-	/** Called with the item's model id when it is picked. */
-	onSelect?: (value: string) => void;
-	/** Close the menu after picking. Alias of `closeOnClick`; defaults to true. */
-	closeOnSelect?: boolean;
+	return (
+		<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-0.5 shrink-0 overflow-hidden rounded-t-lg">
+			<DropdownMenuSearchField
+				autoFocus
+				hostOwnsKeyNavigation
+				icon={<SearchIcon className="size-4 text-icon-subtle" />}
+				label={placeholder}
+				onClear={() => setQuery("")}
+				onValueChange={setQuery}
+				placeholder={placeholder}
+				renderInput={(input) => <CommandPrimitiveInput asChild value={query}>{input}</CommandPrimitiveInput>}
+				value={query}
+			/>
+		</div>
+	);
 };
 
-export const ModelSelectorItem = ({
-	closeOnClick,
-	closeOnSelect = true,
-	onClick,
-	onSelect,
+export type ModelSelectorListProps = Omit<ComponentProps<typeof CommandList>, "onChange"> & {
+	/** The selected model id. */
+	value?: string;
+	onValueChange?: (value: string) => void;
+};
+
+/** Scrollable list of models; fades its top edge once it scrolls, like the agent selector. */
+export const ModelSelectorList = ({
+	className,
+	onValueChange,
+	style,
 	value,
 	...props
-}: Readonly<ModelSelectorItemProps>) => (
-	<DropdownMenuRadioItem
-		closeOnClick={closeOnClick ?? closeOnSelect}
-		onClick={(event) => {
-			onClick?.(event);
-			onSelect?.(String(value));
-		}}
-		value={value}
+}: Readonly<ModelSelectorListProps>) => {
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const maskStyle = {
+		...buildScrollMaskStyle({ fadeBottom: false, fadeSize: "3rem", fadeTop: showTopScrollMask }),
+		"--scroll-mask-top-fade-size": "3rem",
+	};
+	const valueContext = useMemo(() => ({ onValueChange, value }), [onValueChange, value]);
+
+	return (
+		<ModelSelectorValueContext value={valueContext}>
+			<CommandList
+				label="Models"
+				className={cn("max-h-72 min-h-0 flex-1 overscroll-contain p-0", className)}
+				ref={listRef}
+				showScrollbar
+				style={{ ...maskStyle, ...style }}
+				{...props}
+			/>
+		</ModelSelectorValueContext>
+	);
+};
+
+export type ModelSelectorEmptyProps = ComponentProps<typeof CommandEmpty>;
+
+export const ModelSelectorEmpty = ({ className, ...props }: Readonly<ModelSelectorEmptyProps>) => (
+	<CommandEmpty className={cn("py-4 text-text-subtle", className)} {...props} />
+);
+
+export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
+
+export const ModelSelectorGroup = ({ className, ...props }: Readonly<ModelSelectorGroupProps>) => (
+	<CommandGroup
+		className={cn(
+			"!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest",
+			className
+		)}
 		{...props}
 	/>
 );
 
-export type ModelSelectorShortcutProps = ComponentProps<
-	typeof DropdownMenuShortcut
->;
+export type ModelSelectorItemProps = Omit<ComponentProps<typeof CommandItem>, "onSelect" | "value"> & {
+	/** The model id this item selects. */
+	value: string;
+	/** Called with the item's model id when it is picked. */
+	onSelect?: (value: string) => void;
+	/** Close the menu after picking; defaults to true. */
+	closeOnSelect?: boolean;
+};
+
+export const ModelSelectorItem = ({
+	className,
+	closeOnSelect = true,
+	onSelect,
+	value,
+	...props
+}: Readonly<ModelSelectorItemProps>) => {
+	const close = use(ModelSelectorCloseContext);
+	const selection = use(ModelSelectorValueContext);
+	const isChecked = selection.value === value;
+
+	return (
+		<CommandItem
+			aria-checked={isChecked}
+			className={cn(
+				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
+				className
+			)}
+			data-checked={isChecked ? true : undefined}
+			onSelect={() => {
+				selection.onValueChange?.(value);
+				onSelect?.(value);
+				if (closeOnSelect) {
+					close();
+				}
+			}}
+			value={value}
+			{...props}
+		/>
+	);
+};
+
+export type ModelSelectorShortcutProps = ComponentProps<typeof CommandShortcut>;
 
 export const ModelSelectorShortcut = (props: Readonly<ModelSelectorShortcutProps>) => (
-	<DropdownMenuShortcut {...props} />
+	<CommandShortcut {...props} />
 );
 
-export type ModelSelectorSeparatorProps = ComponentProps<
-	typeof DropdownMenuSeparator
->;
+export type ModelSelectorSeparatorProps = ComponentProps<typeof CommandSeparator>;
 
-export const ModelSelectorSeparator = (props: Readonly<ModelSelectorSeparatorProps>) => (
-	<DropdownMenuSeparator {...props} />
+export const ModelSelectorSeparator = ({ className, ...props }: Readonly<ModelSelectorSeparatorProps>) => (
+	<CommandSeparator className={cn("-mx-(--menu-inset) my-(--menu-inset)", className)} {...props} />
 );
 
 export type ModelSelectorLogoProps = Omit<
