@@ -39,8 +39,78 @@ const SOURCES = [
 	},
 ];
 
+interface Source {
+	url: string;
+	title: string;
+	description: string;
+}
+
+const STREAMING_SOURCES = {
+	streaming: {
+		url: "https://nextjs.org/docs/app/getting-started/linking-and-navigating#streaming",
+		title: "Linking and Navigating",
+		description: "How the App Router streams a route to the browser.",
+	},
+	suspense: {
+		url: "https://react.dev/reference/react/Suspense",
+		title: "<Suspense>",
+		description: "Display a fallback until its children have finished loading.",
+	},
+	serverComponents: {
+		url: "https://react.dev/reference/rsc/server-components",
+		title: "Server Components",
+		description: "Components that render ahead of time, on the server.",
+	},
+	loading: {
+		url: "https://nextjs.org/docs/app/api-reference/file-conventions/loading",
+		title: "loading.js",
+		description: "Show an instant loading state for a route segment.",
+	},
+	chunked: {
+		url: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Transfer-Encoding",
+		title: "Transfer-Encoding",
+		description: "Send a response as a series of chunks.",
+	},
+} satisfies Record<string, Source>;
+
+function Citation({ source }: Readonly<{ source: Source }>) {
+	return (
+		<InlineCitationCard>
+			<InlineCitationCardTrigger className="ml-0" sources={[source.url]} />
+			<InlineCitationCardBody className="w-64 p-2.5">
+				<InlineCitationSource
+					title={source.title}
+					url={source.url}
+					description={source.description}
+				/>
+			</InlineCitationCardBody>
+		</InlineCitationCard>
+	);
+}
+
 export default function InlineCitationDemo() {
-	return <InlineCitationDemoWithCarousel />;
+	return (
+		<div className="mx-auto flex max-w-sm flex-col gap-3 py-6 text-sm leading-relaxed text-text">
+			<p>
+				Next.js streams a route in chunks, so the page shows up before every
+				request finishes. <Citation source={STREAMING_SOURCES.streaming} />
+			</p>
+			<p>
+				Wrap a slow part of the page in a Suspense boundary and React sends the
+				fallback first. When the data resolves, the finished HTML streams into
+				the same response and replaces the fallback, with no extra request from
+				the browser. <Citation source={STREAMING_SOURCES.suspense} /> Server
+				Components help here, because their code never ships to the browser.{" "}
+				<Citation source={STREAMING_SOURCES.serverComponents} />
+			</p>
+			<p>
+				A loading.tsx file does the same for a whole route segment.{" "}
+				<Citation source={STREAMING_SOURCES.loading} /> It all runs over chunked
+				transfer encoding, so there is nothing extra to set up.{" "}
+				<Citation source={STREAMING_SOURCES.chunked} />
+			</p>
+		</div>
+	);
 }
 
 export function InlineCitationDemoBasic() {
@@ -98,76 +168,6 @@ export function InlineCitationDemoWithCarousel() {
 				</InlineCitationCard>
 			</InlineCitation>{" "}
 			to efficiently update only the parts of the page that have changed.
-		</p>
-	);
-}
-
-export function InlineCitationDemoMultiple() {
-	return (
-		<p className="max-w-lg text-sm leading-relaxed text-text">
-			<InlineCitation>
-				<InlineCitationText>
-					Server Components run on the server
-				</InlineCitationText>
-				<InlineCitationCard>
-					<InlineCitationCardTrigger sources={["https://react.dev/reference/rsc/server-components"]} />
-					<InlineCitationCardBody>
-						<InlineCitationCarousel>
-							<InlineCitationCarouselContent>
-								<InlineCitationCarouselItem>
-									<InlineCitationSource
-										title="React Server Components"
-										url="https://react.dev/reference/rsc/server-components"
-										description="Server Components are a new type of Component that renders ahead of time, before bundling."
-									/>
-								</InlineCitationCarouselItem>
-							</InlineCitationCarouselContent>
-						</InlineCitationCarousel>
-					</InlineCitationCardBody>
-				</InlineCitationCard>
-			</InlineCitation>{" "}
-			and send pre-rendered HTML to the client, while{" "}
-			<InlineCitation>
-				<InlineCitationText>
-					Client Components hydrate on the browser
-				</InlineCitationText>
-				<InlineCitationCard>
-					<InlineCitationCardTrigger
-						sources={[
-							"https://react.dev/reference/rsc/use-client",
-							"https://nextjs.org/docs/app/building-your-application/rendering/client-components",
-						]}
-					/>
-					<InlineCitationCardBody>
-						<InlineCitationCarousel>
-							<InlineCitationCarouselHeader>
-								<InlineCitationCarouselButtons>
-									<InlineCitationCarouselPrev />
-									<InlineCitationCarouselNext />
-								</InlineCitationCarouselButtons>
-								<InlineCitationCarouselIndex />
-							</InlineCitationCarouselHeader>
-							<InlineCitationCarouselContent>
-								<InlineCitationCarouselItem>
-									<InlineCitationSource
-										title="'use client' Directive"
-										url="https://react.dev/reference/rsc/use-client"
-										description="Marks source files whose components execute on the client."
-									/>
-								</InlineCitationCarouselItem>
-								<InlineCitationCarouselItem>
-									<InlineCitationSource
-										title="Next.js Client Components"
-										url="https://nextjs.org/docs/app/building-your-application/rendering/client-components"
-										description="Client Components allow you to write interactive UI that is prerendered on the server."
-									/>
-								</InlineCitationCarouselItem>
-							</InlineCitationCarouselContent>
-						</InlineCitationCarousel>
-					</InlineCitationCardBody>
-				</InlineCitationCard>
-			</InlineCitation>{" "}
-			to add interactivity.
 		</p>
 	);
 }

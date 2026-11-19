@@ -116,13 +116,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"inline-citation-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoMultiple,
-			})),
-		{ ssr: false },
-	),
 	"inline-citation-demo-single-source": dynamic(
 		() =>
 			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
