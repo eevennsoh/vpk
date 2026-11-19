@@ -352,7 +352,8 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/checkpoints", async (_req, res) => {
+	// The checkpoint list is global runtime state, so reading it is admin-only like its writes.
+	router.get("/checkpoints", requireRuntimeAdmin, async (_req, res) => {
 		try {
 			const checkpoints = await checkpointManager.list();
 			return res.status(200).json({ checkpoints });

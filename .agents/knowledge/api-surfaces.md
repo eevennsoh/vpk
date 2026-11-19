@@ -42,7 +42,7 @@ Generated from `backend/routes/route-manifest.json`.
 | `POST` | `/api/chat-sdk` | no | `backend/routes/chat-sdk.js` |
 | `POST` | `/api/chat-sdk/skip-question` | no | `backend/routes/chat-skip-question.js` |
 | `POST` | `/api/chat-title` | no | `backend/routes/ai-utilities.js` |
-| `GET` | `/api/checkpoints` | no | `backend/routes/rovo-app.js` |
+| `GET` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js` |
 | `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js` |
 | `DELETE` | `/api/checkpoints/:id` | yes | `backend/routes/rovo-app.js` |
 | `POST` | `/api/checkpoints/:id/rollback` | yes | `backend/routes/rovo-app.js` |
@@ -77,8 +77,8 @@ Generated from `backend/routes/route-manifest.json`.
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js` |
 | `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js` |
-| `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js` |
-| `GET` | `/api/orchestrator/timeline` | no | `backend/routes/orchestrator.js` |
+| `GET` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js` |
+| `GET` | `/api/orchestrator/timeline` | yes | `backend/routes/orchestrator.js` |
 | `POST` | `/api/personal-graph/capture` | no | `backend/routes/personal-graph.js` |
 | `GET` | `/api/personal-graph/explorer` | no | `backend/routes/personal-graph.js` |
 | `POST` | `/api/personal-graph/ingest` | no | `backend/routes/personal-graph.js` |

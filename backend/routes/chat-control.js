@@ -3,7 +3,11 @@
 const express = require("express");
 
 const { handleChatCancelRequest } = require("../chat/chat-cancel");
+const { createRovoAppThreadOwnership } = require("../lib/rovo-app-thread-ownership");
+const { getRequestCaller } = require("../middleware/caller-identity");
 const { getNonEmptyString } = require("../lib/shared-utils");
+
+const DEFERRED_TOOL_CALL_NOT_FOUND = Object.freeze({ error: "Deferred tool call not found" });
 
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
@@ -22,6 +26,8 @@ function createChatControlRouter({
 	getString = getNonEmptyString,
 	handleChatCancel = handleChatCancelRequest,
 	logger = console,
+	peekDeferredToolCall,
+	rovoAppThreadManager,
 	waitForReady,
 } = {}) {
 	if (!activeRequests || typeof activeRequests.get !== "function") {
@@ -35,7 +41,23 @@ function createChatControlRouter({
 	requireFunction("detachPausedRovoToolCall", detachPausedRovoToolCall);
 	requireFunction("getString", getString);
 	requireFunction("handleChatCancel", handleChatCancel);
+	requireFunction("peekDeferredToolCall", peekDeferredToolCall);
 	requireFunction("waitForReady", waitForReady);
+	if (typeof rovoAppThreadManager?.getThread !== "function") {
+		throw new Error("createChatControlRouter requires rovoAppThreadManager.getThread");
+	}
+	const ownership = createRovoAppThreadOwnership({ rovoAppThreadManager });
+
+	/**
+	 * Whether the caller may cancel every record the toolCallId names. Checked before
+	 * anything is cleared, so a refused request leaves another caller's card in place.
+	 */
+	async function mayCancelDeferredToolCall(caller, toolCallId) {
+		const { active, paused } = peekDeferredToolCall(toolCallId);
+		const records = [active, paused].filter(Boolean);
+		const allowed = await Promise.all(records.map((record) => ownership.ownsDeferredToolCall(caller, record)));
+		return allowed.every(Boolean);
+	}
 
 	const router = express.Router();
 
@@ -64,6 +86,15 @@ function createChatControlRouter({
 					kind: "ai-gateway-clarification",
 					toolCallId,
 				});
+			}
+
+			const caller = getRequestCaller(req);
+			if (!caller) {
+				return res.status(401).json({ error: "Authentication required", code: "CALLER_IDENTITY_REQUIRED" });
+			}
+			// Another caller's card answers exactly like a missing one.
+			if (!(await mayCancelDeferredToolCall(caller, toolCallId))) {
+				return res.status(404).json(DEFERRED_TOOL_CALL_NOT_FOUND);
 			}
 
 			const activeDeferredToolCall = clearActiveDeferredToolCall(toolCallId);
@@ -110,7 +141,7 @@ function createChatControlRouter({
 				});
 			}
 
-			return res.status(404).json({ error: "Deferred tool call not found" });
+			return res.status(404).json(DEFERRED_TOOL_CALL_NOT_FOUND);
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to cancel deferred tool call:", error);
 			return res.status(500).json({

@@ -166,6 +166,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		logger = console,
 		maybeMigratePersistedThreadBrowserScreenshots,
 		orchestratorLog,
+		peekDeferredToolCall,
 		persistMessageFiles,
 		persistRunState,
 		proxyRovoAppChatRequest,
@@ -229,6 +230,8 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		clearPlanSession,
 		detachPausedRovoToolCall,
 		logger,
+		peekDeferredToolCall,
+		rovoAppThreadManager,
 		waitForReady,
 	});
 

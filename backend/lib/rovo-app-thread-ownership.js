@@ -57,6 +57,20 @@ function createRovoAppThreadOwnership({
 		return Boolean(thread) && !ownsThread(caller, thread);
 	}
 
+	/**
+	 * Whether the caller may cancel a paused or active deferred tool call (a clarification
+	 * or plan-approval card). The record's thread decides, like the chat routes that name
+	 * a thread: another caller's stored thread refuses, and a thread that is not stored
+	 * passes. A record with no thread has no owner, so only a local caller may cancel it.
+	 * @param {{ owner: string, local: boolean } | null | undefined} caller
+	 * @param {{ threadId?: string | null } | null | undefined} record
+	 */
+	async function ownsDeferredToolCall(caller, record) {
+		if (!caller) return false;
+		if (!record?.threadId) return Boolean(caller.local);
+		return !(await isForeignThread(caller, record.threadId));
+	}
+
 	/** A `listThreads` filter that keeps the caller's threads (applied before its limit). */
 	const ownedBy = (caller) => (thread) => ownsThread(caller, thread);
 
@@ -223,6 +237,7 @@ function createRovoAppThreadOwnership({
 		filterOwnedRuns,
 		isForeignThread,
 		ownedBy,
+		ownsDeferredToolCall,
 		ownsGeneratedMedia,
 		ownsSession,
 		ownsThread,

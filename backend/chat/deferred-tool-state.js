@@ -206,6 +206,22 @@ function createDeferredToolCallState({
 		return record;
 	}
 
+	/**
+	 * The records a toolCallId names, without clearing them, so a caller can be checked
+	 * before anything is cancelled.
+	 * @returns {{ active: object | null, paused: object | null }}
+	 */
+	function peekDeferredToolCall(toolCallId) {
+		const normalizedToolCallId = getNonEmptyString(toolCallId);
+		if (!normalizedToolCallId) {
+			return { active: null, paused: null };
+		}
+		return {
+			active: activeDeferredToolCallStore.get(normalizedToolCallId) || null,
+			paused: pausedRovoToolCallStore.get(normalizedToolCallId) || null,
+		};
+	}
+
 	function takePausedRovoToolCall(toolCallId) {
 		return detachPausedRovoToolCall(toolCallId);
 	}
@@ -216,6 +232,7 @@ function createDeferredToolCallState({
 		clearPausedRovoToolCall,
 		detachPausedRovoToolCall,
 		pausedRovoToolCallStore,
+		peekDeferredToolCall,
 		registerActiveDeferredToolCall,
 		registerPausedRovoToolCall,
 		releasePausedRovoToolCallHandle,
