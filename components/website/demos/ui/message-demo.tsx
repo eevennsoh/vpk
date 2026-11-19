@@ -524,7 +524,13 @@ export function MessageDemoAttachmentGroup() {
 		<div className="mx-auto flex w-full max-w-sm flex-col gap-8">
 			<Message align="end">
 				<MessageContent>
-					<AttachmentGroup className="w-[80%]">
+					{/* The images overflow and have no actions, so the scroll region itself takes focus. */}
+					<AttachmentGroup
+						role="group"
+						aria-label="Attached images"
+						tabIndex={0}
+						className="w-[80%] rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
 						{images.map((image) => (
 							<ImageAttachment key={image.title} {...image} />
 						))}
