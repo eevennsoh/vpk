@@ -39,7 +39,7 @@ export const MESSAGE_SCROLLER_DETAIL: ComponentDetail = {
       { name: "MessageScrollerButton", description: "Floating scroll button." },
     ],
     examples: [
-      { title: "Chat", demoSlug: "message-scroller-demo-chat" },
+      { title: "Chat", description: "An agent thread: the person's turn anchors, reasoning and tool calls stream in a Trace, and the reply renders as markdown.", demoSlug: "message-scroller-demo-chat" },
       { title: "Anchoring Turns", description: "Choose which role anchors the next turn.", demoSlug: "message-scroller-anchoring" },
       { title: "Group Chat", description: "Use a join marker as an anchor.", demoSlug: "message-scroller-group-chat" },
       { title: "Keeping Context Visible", description: "Adjust how much of the previous message remains in view.", demoSlug: "message-scroller-context" },

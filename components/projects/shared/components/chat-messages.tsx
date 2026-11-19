@@ -2,13 +2,14 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
-import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item";
 import {
 	ChainOfThought,
 	ChainOfThoughtHeader,
 } from "@/components/ui/chain-of-thought";
 import { cn } from "@/lib/utils";
-import { MessageTurns } from "@/components/projects/shared/message-turns";
+import { MessageTurns, turnEnterClassName } from "@/components/projects/shared/message-turns";
 import { ThreadMessage } from "@/components/projects/shared/thread-message";
 import {
 	isRenderableRovoUIMessage,
@@ -147,13 +148,13 @@ export function ChatMessages({
 					}}
 				>
 					{renderableMessages.length === 0 ? (
-						<MessageScrollerItem className="[content-visibility:visible]">{renderEmptyState?.() ?? null}</MessageScrollerItem>
+						<ChatScrollerItem>{renderEmptyState?.() ?? null}</ChatScrollerItem>
 					) : (
 						<MessageTurns
 							renderTurnContainer={(turn, children) => (
-								<MessageScrollerItem className="[content-visibility:visible]" messageId={turn[0]?.id} scrollAnchor={turn[0]?.role === "user"}>
+								<ChatScrollerItem messageId={turn[0]?.id} scrollAnchor={turn[0]?.role === "user"}>
 									{children}
-								</MessageScrollerItem>
+								</ChatScrollerItem>
 							)}
 							isUserMessage={(message) => message.role === "user"}
 							getTurnContainerClassName={() => "w-full"}
@@ -175,7 +176,7 @@ export function ChatMessages({
 											: "0",
 								};
 							}}
-							latestTurnClassName={styles.latestTurn}
+							latestTurnClassName={turnEnterClassName}
 							latestTurnDataAttribute="data-rovo-latest-turn"
 							messages={renderableMessages}
 							renderMessage={(message) => {
@@ -215,12 +216,12 @@ export function ChatMessages({
 						/>
 					)}
 					{indicator.shouldShowPreloader ? (
-						<MessageScrollerItem className="flex justify-start [content-visibility:visible]">
+						<ChatScrollerItem className="flex justify-start">
 							<PreloadThinkingIndicator />
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : null}
 					{indicator.shouldShowThinkingStatus ? (
-						<MessageScrollerItem className="[content-visibility:visible]">
+						<ChatScrollerItem>
 							<StreamingThinkingIndicator
 								reasoningKey={indicator.reasoningKey}
 								label={indicator.resolvedLabel}
@@ -234,10 +235,10 @@ export function ChatMessages({
 								containerClassName="flex justify-start"
 								phaseProps={indicator.reasoningPhaseProps}
 							/>
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : null}
 					{!indicator.shouldShowPreloader && !indicator.shouldShowThinkingStatus && showAwaitingIndicator ? (
-						<MessageScrollerItem className="[content-visibility:visible]"><AwaitingUserResponseIndicator label={awaitingIndicatorLabel} /></MessageScrollerItem>
+						<ChatScrollerItem><AwaitingUserResponseIndicator label={awaitingIndicatorLabel} /></ChatScrollerItem>
 					) : null}
 				</MessageScrollerContent>
 			</MessageScrollerViewport>

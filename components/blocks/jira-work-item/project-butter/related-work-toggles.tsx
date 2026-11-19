@@ -17,7 +17,7 @@ export function RelatedWorkToggles({ items, open, onOpenChange }: Readonly<{
 }>) {
 	if (items.length === 0) return null;
 	return (
-		<div aria-label="Work item sections" className="-ml-2 flex flex-wrap items-center gap-1" role="group">
+		<div aria-label="Work item sections" className="flex flex-wrap items-center gap-1" role="group">
 			{items.map(({ count, kind, label }) => {
 				const Icon = ICONS[kind];
 				return (

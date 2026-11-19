@@ -4,8 +4,9 @@
 
 import type { CSSProperties } from "react";
 import { StreamingThinkingIndicator } from "@/components/projects/shared/components/streaming-thinking-indicator";
-import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
-import { MessageTurns } from "@/components/projects/shared/message-turns";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerViewport } from "@/components/ui/message-scroller";
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item";
+import { MessageTurns, turnEnterClassName } from "@/components/projects/shared/message-turns";
 import type { RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
 import type { GenerativeWidgetPrimaryActionPayload } from "@/components/projects/shared/lib/generative-widget";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
@@ -23,7 +24,6 @@ import ChatGreeting from "./chat-greeting";
 import MessageBubble from "./message-bubble";
 import { ArtifactResultCard, type ArtifactResult } from "./artifact-result-card";
 import { AgentResultCard } from "./agent-result-card";
-import styles from "../chat.module.css";
 
 interface ChatPanelConversationProps
 	extends Pick<
@@ -130,7 +130,7 @@ export function ChatPanelConversation({
 					style={messagesContainerStyle}
 				>
 					{messages.length === 0 ? (
-						<MessageScrollerItem className="w-full [content-visibility:visible]" style={chatStyles.emptyState}>
+						<ChatScrollerItem className="w-full" style={chatStyles.emptyState}>
 							<ChatGreeting
 								heading={resolvedGreeting?.heading}
 								illustrationSrc={resolvedGreeting?.illustrationSrc}
@@ -149,13 +149,13 @@ export function ChatPanelConversation({
 								onSuggestionClick={handleGreetingSuggestionClick}
 								onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
 							/>
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : (
 						<MessageTurns
 							renderTurnContainer={(turn, children) => (
-								<MessageScrollerItem className="[content-visibility:visible]" messageId={turn[0]?.id} scrollAnchor={enableTurnAnchor && turn[0]?.role === "user"}>
+								<ChatScrollerItem messageId={turn[0]?.id} scrollAnchor={enableTurnAnchor && turn[0]?.role === "user"}>
 									{children}
-								</MessageScrollerItem>
+								</ChatScrollerItem>
 							)}
 							isUserMessage={(message) => message.role === "user"}
 							getMessageContainerClassName={(message) => (message.role === "assistant" ? "[&:empty]:hidden" : undefined)}
@@ -166,7 +166,7 @@ export function ChatPanelConversation({
 									marginTop: message.role === "assistant" && messageIndex > 0 && (turn[messageIndex - 1]?.role === "user" || turn[messageIndex - 1]?.role === "assistant") ? "24px" : "0",
 								};
 							}}
-							latestTurnClassName={styles.latestTurn}
+							latestTurnClassName={turnEnterClassName}
 							latestTurnDataAttribute="data-chat-latest-turn"
 							messages={messages}
 							renderMessage={(message) => (
@@ -218,20 +218,20 @@ export function ChatPanelConversation({
 						/>
 					)}
 					{shouldRenderGeneratedAgentFallbackCard && cards?.generatedAgentResult ? (
-						<MessageScrollerItem className="w-full px-3 [content-visibility:visible]" data-testid="rovo-generated-result-group">
+						<ChatScrollerItem className="w-full px-3" data-testid="rovo-generated-result-group">
 							<AgentResultCard creator={agentCreator}
 								agent={cards.generatedAgentResult}
 								onSelectAgent={handleAgentResultSelect}
 							/>
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : null}
 					{thinking.shouldShowPreloader ? (
-						<MessageScrollerItem style={chatStyles.thinkingContainer} className="[content-visibility:visible]">
+						<ChatScrollerItem style={chatStyles.thinkingContainer}>
 							<PreloadThinkingIndicator />
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : null}
 					{thinking.shouldShowThinkingStatus ? (
-						<MessageScrollerItem className="[content-visibility:visible]">
+						<ChatScrollerItem>
 							<StreamingThinkingIndicator
 								reasoningKey={thinking.streamingReasoningKey}
 								label={thinking.resolvedThinkingLabel}
@@ -245,13 +245,13 @@ export function ChatPanelConversation({
 								containerStyle={chatStyles.thinkingContainer}
 								phaseProps={thinking.reasoningPhaseProps}
 							/>
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 					) : null}
 					{!thinking.shouldShowPreloader &&
 					!thinking.shouldShowThinkingStatus &&
 					showAwaitingIndicator &&
 					shouldShowQuestionCard ? (
-						<MessageScrollerItem className="[content-visibility:visible]"><AwaitingUserResponseIndicator /></MessageScrollerItem>
+						<ChatScrollerItem><AwaitingUserResponseIndicator /></ChatScrollerItem>
 					) : null}
 				</MessageScrollerContent>
 			</MessageScrollerViewport>

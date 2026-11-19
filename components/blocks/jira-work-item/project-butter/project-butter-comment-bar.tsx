@@ -14,7 +14,7 @@ import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-ite
 import { useCommentBarVisibility } from "@/components/blocks/jira-work-item/project-butter/use-comment-bar-visibility";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
-import type { MentionFlightSource } from "@/components/blocks/jira-work-item/project-butter/use-session-mention-flight";
+import type { MentionFlightSource } from "@/components/blocks/jira-at-mention";
 import { RichTextSuggestionMenu, type RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor/menus";
 import { MenuBackButton } from "@/components/ui-custom/menu-back-button";
 import { motionDuration, referenceEase } from "@/lib/motion";

@@ -29,8 +29,48 @@ const SAMPLE_USAGE: LanguageModelUsage = {
 	},
 };
 
+const DEMO_USAGE = {
+	input: 8_420,
+	output: 1_260,
+	reasoning: 980,
+	limit: 128_000,
+};
+
+const DEMO_USED = DEMO_USAGE.input + DEMO_USAGE.output + DEMO_USAGE.reasoning;
+
+const DEMO_ROWS = [
+	{ label: "Input", value: DEMO_USAGE.input },
+	{ label: "Output", value: DEMO_USAGE.output },
+	{ label: "Reasoning", value: DEMO_USAGE.reasoning },
+];
+
+function formatTokens(value: number) {
+	if (value < 1000) {
+		return String(value);
+	}
+
+	return `${(value / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+}
+
 export default function ContextDemo() {
-	return <ContextDemoWithCost />;
+	return (
+		<div className="flex justify-center py-12">
+			<Context maxTokens={DEMO_USAGE.limit} usedTokens={DEMO_USED}>
+				<ContextTrigger />
+				<ContextContent className="w-64">
+					<ContextContentHeader />
+					<ContextContentBody className="flex flex-col gap-1 text-sm">
+						{DEMO_ROWS.map((row) => (
+							<div key={row.label} className="flex justify-between gap-3">
+								<span className="text-text-subtle">{row.label}</span>
+								<span>{formatTokens(row.value)}</span>
+							</div>
+						))}
+					</ContextContentBody>
+				</ContextContent>
+			</Context>
+		</div>
+	);
 }
 
 export function ContextDemoWithCost() {

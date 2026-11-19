@@ -93,7 +93,7 @@ export default function ChatGalleryDemo() {
 							<PromptInputFooter className="justify-between px-0 pb-0">
 								<PromptInputTools>
 									<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-										<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+										<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 											<AddIcon label="" />
 										</PromptInputActionMenuTrigger>
 										<PromptInputActionMenuContent>
@@ -135,7 +135,7 @@ export default function ChatGalleryDemo() {
 
 								<div className="flex items-center gap-1">
 									<SpeechInput aria-label="Voice" onTranscriptionChange={handleSpeechTranscription} size="icon" />
-									<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} size="icon-sm">
+									<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} className="rounded-md" size="icon-sm">
 										<ArrowUpIcon label="" />
 									</PromptInputSubmit>
 								</div>

@@ -52,19 +52,23 @@ function ChatScroll({ children }) {
   return <div ref={ref} className="overflow-y-auto h-full">{children}</div>;
 }
 
-// AFTER: ui-custom Conversation
+// AFTER: compose ui/message-scroller directly (Chat example on /components/ui/message-scroller)
 import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ui-custom/conversation";
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 
+// Wrap each turn in <MessageScrollerItem messageId={id} scrollAnchor={role === "user"}>.
 function ChatContainer({ children }) {
   return (
-    <Conversation>
-      <ConversationContent>{children}</ConversationContent>
-      <ConversationScrollButton />
-    </Conversation>
+    <MessageScroller autoScroll>
+      <MessageScrollerViewport>
+        <MessageScrollerContent>{children}</MessageScrollerContent>
+      </MessageScrollerViewport>
+      <MessageScrollerButton />
+    </MessageScroller>
   );
 }
 ```

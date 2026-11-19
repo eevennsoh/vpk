@@ -471,7 +471,7 @@ export function RovoComposerActionButton({
 									/>
 								) : null}
 								{idleAction === "submit" ? (
-									<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size={size} status={composerStatus}>
+									<PromptInputSubmit aria-label="Submit" className={cn("rounded-md hover:opacity-90 active:opacity-80", submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size={size} status={composerStatus}>
 										<ArrowUpIcon label="" size={glyphSize} />
 									</PromptInputSubmit>
 								) : null}
@@ -504,6 +504,7 @@ export function RovoComposerActionButton({
 							<PromptInputSubmit
 								aria-label="Stop background work"
 								onStop={() => void onStop()}
+								className="rounded-md"
 								size={size}
 								status="streaming"
 							>
@@ -524,7 +525,7 @@ export function RovoComposerActionButton({
 						style={{ willChange: "transform, opacity" }}
 					>
 						<ComposerActionFrame size={size}>
-							<PromptInputSubmit aria-label="Stop" onStop={() => void onStop()} size={size} status={composerStatus}>
+							<PromptInputSubmit aria-label="Stop" onStop={() => void onStop()} className="rounded-md" size={size} status={composerStatus}>
 								<ArrowUpIcon label="" size={glyphSize} />
 							</PromptInputSubmit>
 						</ComposerActionFrame>

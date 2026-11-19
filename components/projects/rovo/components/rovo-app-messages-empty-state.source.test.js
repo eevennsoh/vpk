@@ -257,7 +257,7 @@ test("Rovo app uses the scroller for user-turn anchors and timeline jumps", () =
 	);
 	assert.match(
 		CORE_MESSAGES_SOURCE,
-		/<MessageScrollerItem key=\{message\.id\} messageId=\{message\.id\} scrollAnchor/u,
+		/<ChatScrollerItem key=\{message\.id\} messageId=\{message\.id\} scrollAnchor/u,
 	);
 	assert.match(
 		SCROLL_SYNC_SOURCE,

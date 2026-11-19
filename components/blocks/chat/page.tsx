@@ -33,7 +33,8 @@ import {
 import { Footer } from "@/components/ui-custom/footer";
 import { chatStyles } from "./data/styles";
 import { useChatSubmit } from "./hooks/use-chat-submit";
-import styles from "./chat.module.css";
+import { turnEnterClassName } from "@/components/projects/shared/message-turns";
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 
@@ -94,16 +95,16 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 				<MessageScrollerViewport>
 					<MessageScrollerContent className="gap-0" style={messagesContainerStyle}>
 						{orderedMessageTurns.length === 0 ? (
-						<MessageScrollerItem style={chatStyles.emptyState} className="[content-visibility:visible]">
+						<ChatScrollerItem style={chatStyles.emptyState}>
 								<ChatGreeting />
-						</MessageScrollerItem>
+						</ChatScrollerItem>
 						) : (
 							orderedMessageTurns.map((turn, turnIndex) => (
 								<MessageScrollerItem
 									key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}
 									messageId={turn[0]?.id}
 									scrollAnchor={turn[0]?.type === "user"}
-									className={turnIndex === orderedMessageTurns.length - 1 ? styles.latestTurn : undefined}
+									className={turnIndex === orderedMessageTurns.length - 1 ? turnEnterClassName : undefined}
 									data-chat-latest-turn={turnIndex === orderedMessageTurns.length - 1 ? "true" : undefined}
 								>
 									{turn.map((message, messageIndex) => (
@@ -154,7 +155,7 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 						<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
 							<PromptInputTools>
 								<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-									<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+									<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 										<AddIcon label="" />
 									</PromptInputActionMenuTrigger>
 									<PromptInputActionMenuContent className="w-auto min-w-[200px] p-1">
@@ -203,7 +204,7 @@ export default function ChatPanel({ onClose }: Readonly<ChatPanelProps>): React.
 
 							<div className="flex items-center gap-0.5">
 								<PromptInputMicrophone />
-								<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} size="icon-sm">
+								<PromptInputSubmit aria-label="Submit" disabled={!prompt.trim()} className="rounded-md" size="icon-sm">
 									<ArrowUpIcon label="" />
 								</PromptInputSubmit>
 							</div>
