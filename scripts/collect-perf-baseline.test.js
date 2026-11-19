@@ -199,26 +199,37 @@ for (const retainedChunk of [
 	"error-def456.js",
 	"global-error-def456.js",
 ]) {
-	test(`route JS counts the root page only on home and retains app/${retainedChunk} on other routes`, () => {
+	test(`manifest metrics count the root page only on home and retain app/${retainedChunk} on other routes`, () => {
 		const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-root-page-"));
 		try {
-			const chunks = ["static/chunks/app/page-abc123.js", `static/chunks/app/${retainedChunk}`];
+			const chunks = ["static/chunks/app/page-abc123.js", `static/chunks/app/${retainedChunk}`, "static/chunks/shared.js"];
 			for (const [index, chunk] of chunks.entries()) {
 				const chunkPath = path.join(cwd, ".next", chunk);
 				mkdirSync(path.dirname(chunkPath), { recursive: true });
 				writeFileSync(chunkPath, "x".repeat(index === 0 ? 100 : 40));
 			}
+			// One stylesheet per route: the asset count off home drops the root page chunk only, not CSS.
+			const cssPath = path.join(cwd, ".next/static/css/app.css");
+			mkdirSync(path.dirname(cssPath), { recursive: true });
+			writeFileSync(cssPath, "c".repeat(10));
+			const entryCSSFiles = { "app/page": [{ inlined: false, path: "static/css/app.css" }] };
 			for (const route of ["page", "rovo/page"]) {
 				const manifestPath = path.join(cwd, ".next/server/app", path.dirname(route), "page_client-reference-manifest.js");
 				mkdirSync(path.dirname(manifestPath), { recursive: true });
-				writeFileSync(manifestPath, `globalThis.__RSC_MANIFEST["/${route}"]=${JSON.stringify({ clientModules: { page: { chunks } } })};`);
+				writeFileSync(manifestPath, `globalThis.__RSC_MANIFEST["/${route}"]=${JSON.stringify({ clientModules: { page: { chunks } }, entryCSSFiles })};`);
 			}
 
 			const routes = collectManifestRoutes({ cwd });
-			assert.equal(routes.find((route) => route.path === "/").size.bytes, 140);
-			assert.equal(routes.find((route) => route.path === "/rovo").size.bytes, 40);
-			assert.equal(routes.find((route) => route.path === "/rovo").firstLoadJs.bytes, 140);
-			assert.equal(routes.find((route) => route.path === "/rovo").assetCount, 2);
+			assert.deepEqual(routes.map((route) => ({
+				path: route.path,
+				firstLoadJsBytes: route.firstLoadJs.bytes,
+				assetCount: route.assetCount,
+				routeJsBytes: route.size.bytes,
+				cssBytes: route.css.bytes,
+			})), [
+				{ path: "/", firstLoadJsBytes: 180, assetCount: 4, routeJsBytes: 140, cssBytes: 10 },
+				{ path: "/rovo", firstLoadJsBytes: 80, assetCount: 3, routeJsBytes: 40, cssBytes: 10 },
+			]);
 		} finally {
 			rmSync(cwd, { recursive: true, force: true });
 		}
@@ -236,7 +247,12 @@ test("route JS does not reintroduce an excluded root page through the shared-JS 
 		mkdirSync(manifestDir, { recursive: true });
 		writeFileSync(path.join(manifestDir, "page_client-reference-manifest.js"),
 			`globalThis.__RSC_MANIFEST["/rovo/page"]=${JSON.stringify({ clientModules: { page: { chunks: [chunk] } } })};`);
-		assert.equal(collectManifestRoutes({ cwd })[0].size.bytes, 0);
+		const [route] = collectManifestRoutes({ cwd });
+		assert.deepEqual({
+			routeJsBytes: route.size.bytes,
+			firstLoadJsBytes: route.firstLoadJs.bytes,
+			assetCount: route.assetCount,
+		}, { routeJsBytes: 0, firstLoadJsBytes: 0, assetCount: 0 });
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

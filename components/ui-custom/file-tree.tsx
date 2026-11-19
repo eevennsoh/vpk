@@ -1,34 +1,39 @@
 "use client";
 
-// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
-
-import type { HTMLAttributes, ReactNode } from "react";
-
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  ChevronRightIcon,
-  FileIcon,
-  FolderIcon,
-  FolderOpenIcon,
-} from "@/components/ui/vpk-icons";
-import { cn } from "@/lib/utils";
-import {
-  createContext,
-  useCallback,
-  use,
-  useMemo,
-  useState,
+	Children,
+	createContext,
+	isValidElement,
+	use,
+	useCallback,
+	useId,
+	useMemo,
+	useState,
+	type HTMLAttributes,
+	type KeyboardEvent,
+	type ReactNode,
 } from "react";
 
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	ChevronRightIcon,
+	FileIcon,
+	FolderIcon,
+	FolderOpenIcon,
+} from "@/components/ui/vpk-icons";
+import { cn } from "@/lib/utils";
+
 interface FileTreeContextType {
-  expandedPaths: Set<string>;
-  togglePath: (path: string) => void;
-  selectedPath?: string;
-  onSelect?: (path: string) => void;
+	expandedPaths: Set<string>;
+	togglePath: (path: string) => void;
+	selectedPath?: string;
+	onSelect?: (path: string) => void;
+	onItemKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
 // Default noop for context default value
@@ -36,312 +41,408 @@ interface FileTreeContextType {
 const noop = () => {};
 
 const FileTreeContext = createContext<FileTreeContextType>({
-  // oxlint-disable-next-line eslint-plugin-unicorn(no-new-builtin)
-  expandedPaths: new Set(),
-  togglePath: noop,
+	// oxlint-disable-next-line eslint-plugin-unicorn(no-new-builtin)
+	expandedPaths: new Set(),
+	onItemKeyDown: noop,
+	togglePath: noop,
 });
 
+/** Nesting depth of the rows rendered here, exposed as `aria-level`. */
+const FileTreeLevelContext = createContext(1);
+
+const TREE_ITEM_SELECTOR = '[role="treeitem"]';
+
+/** Treeitems that are not inside a collapsed (hidden) folder, in document order. */
+function getVisibleTreeItems(tree: HTMLElement): HTMLElement[] {
+	return Array.from(tree.querySelectorAll<HTMLElement>(TREE_ITEM_SELECTOR)).filter(
+		(item) => item.closest("[hidden]") === null
+	);
+}
+
+function getTreeItemLevel(item: HTMLElement): number {
+	return Number(item.getAttribute("aria-level") ?? 1);
+}
+
+/**
+ * Rows are ghost Buttons. They inherit the tree's font size and default text
+ * color, and let each icon keep its own color instead of the ghost variant's
+ * blanket `[&_svg]` color.
+ */
+const rowClassName =
+	"w-full min-w-0 justify-start px-2 text-left text-[length:inherit] font-normal text-text [&_svg]:text-inherit";
+
+const selectedRowClassName =
+	"bg-bg-selected text-text-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed";
+
+/** An open folder is not a selection: undo the Button's shared `aria-expanded` selected state. */
+const expandedFolderRowClassName =
+	"aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-inherit aria-expanded:[&_[data-slot=icon]]:text-icon-subtle";
+
 export type FileTreeProps = Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> & {
-  expanded?: Set<string>;
-  defaultExpanded?: Set<string>;
-  selectedPath?: string;
-  onSelect?: (path: string) => void;
-  onExpandedChange?: (expanded: Set<string>) => void;
+	expanded?: Set<string>;
+	defaultExpanded?: Set<string>;
+	selectedPath?: string;
+	onSelect?: (path: string) => void;
+	onExpandedChange?: (expanded: Set<string>) => void;
 };
 
 export function FileTree({
-  expanded: controlledExpanded,
-  defaultExpanded = new Set(),
-  selectedPath,
-  onSelect,
-  onExpandedChange,
-  className,
-  children,
-  ...props
+	expanded: controlledExpanded,
+	defaultExpanded = new Set(),
+	selectedPath,
+	onSelect,
+	onExpandedChange,
+	className,
+	children,
+	...props
 }: Readonly<FileTreeProps>) {
-  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
-  const expandedPaths = controlledExpanded ?? internalExpanded;
+	const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+	const expandedPaths = controlledExpanded ?? internalExpanded;
 
-  const togglePath = useCallback(
-    (path: string) => {
-      const newExpanded = new Set(expandedPaths);
-      if (newExpanded.has(path)) {
-        newExpanded.delete(path);
-      } else {
-        newExpanded.add(path);
-      }
-      setInternalExpanded(newExpanded);
-      onExpandedChange?.(newExpanded);
-    },
-    [expandedPaths, onExpandedChange]
-  );
+	const togglePath = useCallback(
+		(path: string) => {
+			const newExpanded = new Set(expandedPaths);
+			if (newExpanded.has(path)) {
+				newExpanded.delete(path);
+			} else {
+				newExpanded.add(path);
+			}
+			setInternalExpanded(newExpanded);
+			onExpandedChange?.(newExpanded);
+		},
+		[expandedPaths, onExpandedChange]
+	);
 
-  const contextValue = useMemo(
-    () => ({ expandedPaths, onSelect, selectedPath, togglePath }),
-    [expandedPaths, onSelect, selectedPath, togglePath]
-  );
+	// Tree keyboard model: Up/Down/Home/End move between visible rows, Right
+	// opens a folder or enters it, Left closes a folder or returns to its parent.
+	// Enter/Space activate the focused row natively (it is a button). Each row
+	// handles its own keys so focus and handler stay on the same element.
+	const handleItemKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLElement>) => {
+			const item = event.currentTarget;
+			const tree = item.closest<HTMLElement>('[role="tree"]');
+			if (event.defaultPrevented || tree === null) {
+				return;
+			}
+			const items = getVisibleTreeItems(tree);
+			const index = items.indexOf(item);
+			const level = getTreeItemLevel(item);
+			const expandedState = item.getAttribute("aria-expanded");
+			const path = item.dataset.path;
+			let next: HTMLElement | undefined;
 
-  return (
-    <FileTreeContext value={contextValue}>
-      <div
-        className={cn(
-          "rounded-lg font-mono text-sm",
-          className
-        )}
-        role="tree"
-        {...props}
-      >
-        <div>{children}</div>
-      </div>
-    </FileTreeContext>
-  );
+			switch (event.key) {
+				case "ArrowDown":
+					next = items[index + 1];
+					break;
+				case "ArrowUp":
+					next = items[index - 1];
+					break;
+				case "Home":
+					next = items[0];
+					break;
+				case "End":
+					next = items.at(-1);
+					break;
+				case "ArrowRight":
+					if (expandedState === "false" && path) {
+						togglePath(path);
+					} else if (expandedState === "true") {
+						const child = items[index + 1];
+						next = child && getTreeItemLevel(child) > level ? child : undefined;
+					}
+					break;
+				case "ArrowLeft":
+					if (expandedState === "true" && path) {
+						togglePath(path);
+					} else {
+						next = items.slice(0, index).findLast((candidate) => getTreeItemLevel(candidate) < level);
+					}
+					break;
+				default:
+					return;
+			}
+
+			event.preventDefault();
+			next?.focus();
+		},
+		[togglePath]
+	);
+
+	const contextValue = useMemo(
+		() => ({ expandedPaths, onItemKeyDown: handleItemKeyDown, onSelect, selectedPath, togglePath }),
+		[expandedPaths, handleItemKeyDown, onSelect, selectedPath, togglePath]
+	);
+
+	return (
+		<FileTreeContext value={contextValue}>
+			<div
+				className={cn("flex flex-col text-sm", className)}
+				role="tree"
+				{...props}
+			>
+				{children}
+			</div>
+		</FileTreeContext>
+	);
 }
 
 interface FileTreeFolderContextType {
-  path: string;
-  name: string;
-  isExpanded: boolean;
+	path: string;
+	name: string;
+	isExpanded: boolean;
 }
 
 const FileTreeFolderContext = createContext<FileTreeFolderContextType>({
-  isExpanded: false,
-  name: "",
-  path: "",
+	isExpanded: false,
+	name: "",
+	path: "",
 });
 
 export type FileTreeFolderProps = HTMLAttributes<HTMLDivElement> & {
-  path: string;
-  name: string;
+	path: string;
+	name: string;
 };
 
 export function FileTreeFolder({
-  path,
-  name,
-  className,
-  children,
-  ...props
+	path,
+	name,
+	className,
+	children,
+	...props
 }: Readonly<FileTreeFolderProps>) {
-  const { expandedPaths, togglePath, selectedPath, onSelect } =
-    use(FileTreeContext);
-  const isExpanded = expandedPaths.has(path);
-  const isSelected = selectedPath === path;
+	const { expandedPaths, togglePath, selectedPath, onSelect, onItemKeyDown } =
+		use(FileTreeContext);
+	const level = use(FileTreeLevelContext);
+	const isExpanded = expandedPaths.has(path);
+	// The child group renders beside the folder's treeitem (Collapsible owns
+	// both), so aria-owns ties it to its folder for assistive technology.
+	const groupId = useId();
+	const isSelected = selectedPath === path;
+	const iconClassName = isSelected ? "text-icon-selected" : "text-icon-subtle";
 
-  const handleOpenChange = useCallback(() => {
-    togglePath(path);
-  }, [togglePath, path]);
+	const handleOpenChange = useCallback(() => {
+		togglePath(path);
+	}, [togglePath, path]);
 
-  const handleSelect = useCallback(() => {
-    onSelect?.(path);
-  }, [onSelect, path]);
+	const handleSelect = useCallback(() => {
+		onSelect?.(path);
+	}, [onSelect, path]);
 
-  const folderContextValue = useMemo(
-    () => ({ isExpanded, name, path }),
-    [isExpanded, name, path]
-  );
+	const folderContextValue = useMemo(
+		() => ({ isExpanded, name, path }),
+		[isExpanded, name, path]
+	);
 
-  return (
-    <FileTreeFolderContext value={folderContextValue}>
-      <Collapsible onOpenChange={handleOpenChange} open={isExpanded}>
-        <div
-          className={cn("relative", className)}
-          role="treeitem"
-          aria-selected={isSelected}
-          tabIndex={0}
-          {...props}
-        >
-          {/* Guide line: runs from below the header row to the bottom of children.
-              left-3.5 = 14px = px-2(8) + half-chevron(6) = chevron center
-              (Atlaskit small chevron is 12px wide).
-              top-7 skips the header row height. */}
-          {isExpanded ? <div className="absolute bottom-0 left-3.5 top-7 w-px bg-icon-subtlest/20" /> : null}
-          <div
-            className={cn(
-              "relative flex w-full items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/50",
-              isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"
-            )}
-          >
-            {/* Selected indicator: 2px blue bar pinned to the row's left edge. */}
-            {isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
-            <CollapsibleTrigger
-              render={
-                <button
-                  aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
-                  className="flex shrink-0 items-center border-none bg-transparent p-0"
-                  type="button"
-                />
-              }
-            >
-              <ChevronRightIcon
-                size="small"
-                className={cn(
-                  "size-3 shrink-0 leading-[0] text-icon-subtle transition-transform [&_span]:size-3! [&_svg]:size-3!",
-                  isSelected && "text-icon-selected",
-                  isExpanded && "rotate-90"
-                )}
-              />
-            </CollapsibleTrigger>
-            <button
-              className="flex min-w-0 flex-1 items-center gap-1 border-none bg-transparent p-0 text-left"
-              onClick={handleSelect}
-              type="button"
-            >
-              <FileTreeIcon>
-                {isExpanded ? (
-                  <FolderOpenIcon
-                    size="small"
-                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
-                  />
-                ) : (
-                  <FolderIcon
-                    size="small"
-                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
-                  />
-                )}
-              </FileTreeIcon>
-              <FileTreeName className={cn(isSelected && "text-text-selected")}>{name}</FileTreeName>
-            </button>
-          </div>
-          <CollapsibleContent>
-            {/* One level of indent = chevron(12) + gap(4) = 16px (pl-4),
-                so a child's chevron aligns under the parent's folder icon. */}
-            <div className="pl-4">{children}</div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-    </FileTreeFolderContext>
-  );
+	return (
+		<FileTreeFolderContext value={folderContextValue}>
+			<Collapsible
+				className={cn("flex flex-col", className)}
+				onOpenChange={handleOpenChange}
+				open={isExpanded}
+				{...props}
+			>
+				<CollapsibleTrigger
+					aria-level={level}
+					aria-owns={isExpanded ? groupId : undefined}
+					aria-selected={isSelected}
+					data-path={path}
+					onClick={handleSelect}
+					onKeyDown={onItemKeyDown}
+					render={
+						<Button
+							className={cn(
+								rowClassName,
+								isSelected ? selectedRowClassName : expandedFolderRowClassName
+							)}
+							size="default"
+							variant="ghost"
+						/>
+					}
+					role="treeitem"
+				>
+					<ChevronRightIcon
+						className={cn("transition-transform", iconClassName, isExpanded && "rotate-90")}
+						size="small"
+					/>
+					<FileTreeIcon>
+						{isExpanded ? (
+							<FolderOpenIcon className={iconClassName} size="small" />
+						) : (
+							<FolderIcon className={iconClassName} size="small" />
+						)}
+					</FileTreeIcon>
+					<FileTreeName>{name}</FileTreeName>
+				</CollapsibleTrigger>
+				<CollapsibleContent id={groupId} role="group">
+					<div className="ml-4 flex flex-col">
+						<FileTreeLevelContext value={level + 1}>{children}</FileTreeLevelContext>
+					</div>
+				</CollapsibleContent>
+			</Collapsible>
+		</FileTreeFolderContext>
+	);
 }
 
 interface FileTreeFileContextType {
-  path: string;
-  name: string;
+	path: string;
+	name: string;
 }
 
 const FileTreeFileContext = createContext<FileTreeFileContextType>({
-  name: "",
-  path: "",
+	name: "",
+	path: "",
 });
 
 export type FileTreeFileProps = HTMLAttributes<HTMLDivElement> & {
-  path: string;
-  name: string;
-  icon?: ReactNode;
+	path: string;
+	name: string;
+	icon?: ReactNode;
 };
 
+/** Split custom row content so a row with FileTreeActions renders as a treeitem holding them, not as a Button. */
+function splitFileTreeActions(children: ReactNode) {
+	const content: ReactNode[] = [];
+	const actions: ReactNode[] = [];
+	for (const child of Children.toArray(children)) {
+		if (isValidElement(child) && child.type === FileTreeActions) {
+			actions.push(child);
+		} else {
+			content.push(child);
+		}
+	}
+	return { actions, content };
+}
+
 export function FileTreeFile({
-  path,
-  name,
-  icon,
-  className,
-  children,
-  ...props
+	path,
+	name,
+	icon,
+	className,
+	children,
+	...props
 }: Readonly<FileTreeFileProps>) {
-  const { selectedPath, onSelect } = use(FileTreeContext);
-  const isSelected = selectedPath === path;
+	const { selectedPath, onSelect, onItemKeyDown } = use(FileTreeContext);
+	const level = use(FileTreeLevelContext);
+	const isSelected = selectedPath === path;
+	const hasCustomContent = children != null;
+	const { actions, content } = useMemo(() => splitFileTreeActions(children), [children]);
 
-  const handleClick = useCallback(() => {
-    onSelect?.(path);
-  }, [onSelect, path]);
+	const handleClick = useCallback(() => {
+		onSelect?.(path);
+	}, [onSelect, path]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        onSelect?.(path);
-      }
-    },
-    [onSelect, path]
-  );
+	const fileContextValue = useMemo(() => ({ name, path }), [name, path]);
 
-  const fileContextValue = useMemo(() => ({ name, path }), [name, path]);
+	if (actions.length > 0) {
+		// A tree may only own treeitems (axe treats role="group" as transparent),
+		// so a row with actions is itself the treeitem and holds its buttons.
+		const handleRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+			if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+				event.preventDefault();
+				onSelect?.(path);
+				return;
+			}
+			onItemKeyDown(event);
+		};
 
-  return (
-    <FileTreeFileContext value={fileContextValue}>
-      <div
-        className={cn(
-          "relative flex cursor-pointer items-center gap-1 rounded px-2 transition-colors",
-          // Custom-content rows keep the legacy full-row highlight. The default
-          // (icon + name) row highlights an inner block instead, so the selected
-          // state is indented to the icon column (Figma 2556:28320).
-          children != null && "py-1 hover:bg-muted/50",
-          children != null && isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
-          className
-        )}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        role="treeitem"
-        aria-selected={isSelected}
-        tabIndex={0}
-        {...props}
-      >
-        {/* Custom-content branch: 2px blue bar pinned to the row's left edge. */}
-        {children != null && isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
-        {children ?? (
-          <>
-            {/* Chevron-width spacer (Atlaskit small chevron = 12px) aligns file
-                icons under folder icons. It sits OUTSIDE the highlight below so the
-                selected state starts at the icon, indented from the tree edge. */}
-            <span className="w-3 shrink-0" />
-            <div
-              className={cn(
-                "relative -ml-1 flex min-w-0 flex-1 items-center gap-1 rounded py-1 pl-1 transition-colors hover:bg-muted/50",
-                isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"
-              )}
-            >
-              {/* Selected indicator: 2px blue bar pinned to the highlight's left edge. */}
-              {isSelected ? <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" /> : null}
-              <FileTreeIcon>
-                {icon ?? (
-                  <FileIcon
-                    size="small"
-                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
-                  />
-                )}
-              </FileTreeIcon>
-              <FileTreeName className={cn(isSelected && "text-text-selected")}>{name}</FileTreeName>
-            </div>
-          </>
-        )}
-      </div>
-    </FileTreeFileContext>
-  );
+		return (
+			<FileTreeFileContext value={fileContextValue}>
+				<div
+					aria-label={name}
+					aria-level={level}
+					aria-selected={isSelected}
+					className={cn(
+						buttonVariants({ size: "default", variant: "ghost" }),
+						rowClassName,
+						"cursor-default",
+						isSelected && selectedRowClassName,
+						className
+					)}
+					data-path={path}
+					onClick={handleClick}
+					onKeyDown={handleRowKeyDown}
+					role="treeitem"
+					tabIndex={0}
+					{...props}
+				>
+					{content}
+					{actions}
+				</div>
+			</FileTreeFileContext>
+		);
+	}
+
+	return (
+		<FileTreeFileContext value={fileContextValue}>
+			<div className={cn("flex min-w-0 items-center gap-1", className)} {...props}>
+				<Button
+					aria-level={level}
+					aria-selected={isSelected}
+					className={cn(
+						rowClassName,
+						"flex-1",
+						isSelected && selectedRowClassName
+					)}
+					data-path={path}
+					onClick={handleClick}
+					onKeyDown={onItemKeyDown}
+					role="treeitem"
+					size="default"
+					variant="ghost"
+				>
+					{hasCustomContent ? content : (
+						<>
+							<FileTreeIcon>
+								{icon ?? (
+									<FileIcon
+										className={isSelected ? "text-icon-selected" : "text-icon-subtle"}
+										size="small"
+									/>
+								)}
+							</FileTreeIcon>
+							<FileTreeName>{name}</FileTreeName>
+						</>
+					)}
+				</Button>
+				{actions}
+			</div>
+		</FileTreeFileContext>
+	);
 }
 
 export type FileTreeIconProps = HTMLAttributes<HTMLSpanElement>;
 
 export function FileTreeIcon({
-  className,
-  children,
-  ...props
+	className,
+	children,
+	...props
 }: Readonly<FileTreeIconProps>) {
-  return (
-    <span
-      className={cn(
-        // Front-slot icons are locked to 12×12 per the Figma spec; this clamps
-        // ADS glyphs (which render at small=16px) and any custom icon child.
-        // ADS sizes its icon span/svg via unlayered CSS, so `!` is required for
-        // these utilities to win from Tailwind's utilities layer.
-        "inline-flex size-3 shrink-0 items-center justify-center leading-none [&_img]:size-3! [&_span]:size-3! [&_svg]:size-3!",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </span>
-  );
+	return (
+		<span
+			className={cn(
+				"inline-flex size-4 shrink-0 items-center justify-center leading-none [&_img]:size-4 [&_svg]:size-4",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</span>
+	);
 }
 
 export type FileTreeNameProps = HTMLAttributes<HTMLSpanElement>;
 
 export function FileTreeName({
-  className,
-  children,
-  ...props
+	className,
+	children,
+	...props
 }: Readonly<FileTreeNameProps>) {
-  return (
-    <span className={cn("truncate", className)} {...props}>
-      {children}
-    </span>
-  );
+	return (
+		<span className={cn("truncate", className)} {...props}>
+			{children}
+		</span>
+	);
 }
 
 export type FileTreeActionsProps = HTMLAttributes<HTMLDivElement>;
@@ -349,19 +450,19 @@ export type FileTreeActionsProps = HTMLAttributes<HTMLDivElement>;
 const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
 export function FileTreeActions({
-  className,
-  children,
-  ...props
+	className,
+	children,
+	...props
 }: Readonly<FileTreeActionsProps>) {
-  return (
-    <div
-      className={cn("ml-auto flex items-center gap-1", className)}
-      onClick={stopPropagation}
-      onKeyDown={stopPropagation}
-      role="group"
-      {...props}
-    >
-      {children}
-    </div>
-  );
+	return (
+		<div
+			className={cn("ml-auto flex items-center gap-1", className)}
+			onClick={stopPropagation}
+			onKeyDown={stopPropagation}
+			role="group"
+			{...props}
+		>
+			{children}
+		</div>
+	);
 }

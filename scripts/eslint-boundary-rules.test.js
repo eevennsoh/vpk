@@ -650,3 +650,88 @@ test("feature code cannot render a second main landmark; only MainLandmark owns 
 	}
 	assert.deepEqual(await ruleFindings(source, "components/utils/main-landmark.tsx", ruleIds), []);
 });
+
+test("rendered tests assert on strings and booleans, never on DOM nodes", async () => {
+	const ruleIds = ["vpk-tests/no-dom-node-assert"];
+	const mustCatch = [
+		'assert.equal(view.queryByText("Saved"), null);',
+		'assert.notEqual(view.getByRole("button", { name: "Save" }), null);',
+		'assert.strictEqual(view.queryByRole("dialog"), null);',
+		'assert.notStrictEqual(document.querySelector("[data-slot=toast]"), null);',
+		'assert.deepEqual(view.getAllByRole("tab"), []);',
+		'assert.deepStrictEqual(view.container.querySelectorAll("li"), []);',
+		'assert.equal(view.getByRole("row").closest("table"), null);',
+		'assert.equal(document.getElementById("save"), null);',
+		"assert.equal(document.activeElement, saveButton);",
+		"assert.equal(saveButton, view.getByRole(\"button\").parentElement);",
+		'assert.equal(await view.findByText("Saved"), null);',
+		'assert.equal(view.getAllByRole("tab")[0], null);',
+		'assert.equal(view.getAllByRole("tab").find((tab) => tab.textContent === "A"), undefined);',
+		"assert.equal(saveButton, null);",
+		"assert.equal(firstTab, null);",
+		'assert.strict.equal(view.queryByText("Saved"), null);',
+		'equal(view.queryByText("Saved"), null);',
+		'strictEqual(view.queryByText("Saved"), null);',
+		"assert.equal(document.body.firstElementChild, null);",
+		"assert.notEqual(content(), null);",
+	];
+	const mustNotReport = [
+		'assert.equal(view.queryByText("Saved") === null, true);',
+		'assert.ok(view.queryByRole("dialog") !== null);',
+		'assert.equal(Boolean(view.queryByText("Saved")), false);',
+		'assert.equal(view.getByRole("button").textContent, "Save");',
+		'assert.equal(view.getByRole("button").getAttribute("aria-expanded"), "true");',
+		'assert.equal(view.getAllByRole("tab").length, 2);',
+		'assert.equal(view.container.querySelectorAll("li").length, 3);',
+		'assert.deepEqual(view.getAllByRole("tab").map((tab) => tab.textContent), ["A", "B"]);',
+		"assert.equal(document.activeElement === saveButton, true);",
+		"assert.equal(view.isFocused(saveButton), true);",
+		'assert.equal(saveButton?.textContent, "Save");',
+		"assert.equal(laterButton, null);",
+		'assert.deepEqual(registry.getById("save"), { id: "save" });',
+		'assert.equal(response.body, "ok");',
+		"assert.equal(element.props.children, \"Save\");",
+		'assert.ok(view.getByRole("button"));',
+		'assert.match(view.getByRole("button").textContent, /Save/u);',
+		"assert.equal(entry.node, h.issues[0].parentElement);",
+		"[{ body: null }].forEach((document) => assert.equal(document.body, null));",
+		"assert.equal(tree.parentNode, null);",
+		'assert.equal(...[view.queryByText("Saved"), null]);',
+		'assert.equal(contentText(), "Saved");',
+	];
+	const prelude = [
+		'const assert = require("node:assert/strict");',
+		'const { equal, strictEqual } = require("node:assert");',
+		"async function check(view, registry, response, element, h, entry) {",
+		'\tconst saveButton = view.getByRole("button", { name: "Save" });',
+		'\tconst [firstTab] = view.getAllByRole("tab");',
+		"\tlet laterButton = null;",
+		'\tlaterButton = view.getByRole("button");',
+		"\tconst tree = { parentNode: null };",
+		'\tconst content = () => view.container.querySelector("[data-slot=content]");',
+		'\tconst contentText = () => view.container.querySelector("[data-slot=content]").textContent;',
+	];
+	const source = [...prelude, ...[...mustCatch, ...mustNotReport].map((line) => `\t${line}`), "}", "module.exports = { check };", ""].join("\n");
+	const catchLines = mustCatch.map((_, index) => prelude.length + index + 1);
+	for (const filePath of [
+		"components/blocks/demo/lint-contract-fixture.behavior.test.js",
+		"app/demo/lint-contract-fixture.test.mjs",
+		"hooks/lint-contract-fixture.test.ts",
+		"lib/demo/lint-contract-fixture.test.js",
+		"scripts/lib/render-component.test.js",
+	]) {
+		const findings = await ruleFindings(source, filePath, ruleIds);
+		const reported = findings.map(({ line }) => source.split("\n")[line - 1].trim());
+		assert.deepEqual(reported, mustCatch, filePath);
+		assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), catchLines.map((line) => [line, 2]), filePath);
+		assert.match(findings[0].message, /assert\.equal on a DOM node: when it fails, node:assert prints the whole document/u);
+		assert.match(findings[0].message, /assert\.equal\(view\.queryByText\("x"\) === null, true\)/u);
+	}
+	const esmFindings = await ruleFindings(
+		'import { deepEqual as same } from "node:assert/strict";\nexport function check(view) {\n\tsame(view.getAllByRole("tab"), []);\n}\n',
+		"components/blocks/demo/lint-contract-fixture.behavior.test.js",
+		ruleIds,
+	);
+	assert.deepEqual(esmFindings.map(({ line }) => line), [3], "a renamed ESM import of an assert method is still caught");
+	assert.deepEqual(await ruleFindings(source, "backend/lint-contract-fixture.test.js", ruleIds), [], "suites that cannot render stay out of scope");
+});
