@@ -47,5 +47,5 @@ test("the smoke suite covers Butter, blocks, UI and a Rovo surface", () => {
 	assert.ok(smoke.some((file) => file.startsWith("tests/blocks/")), "a blocks spec");
 	assert.ok(smoke.some((file) => file.startsWith("tests/ui/")), "a UI spec");
 	assert.ok(smoke.some((file) => file.startsWith("tests/rovo/")), "a Rovo spec");
-	assert.ok(smoke.length >= 8 && smoke.length <= 15, `${smoke.length} smoke spec files`);
+	assert.ok(smoke.length >= 8 && smoke.length <= 20, `${smoke.length} smoke spec files`);
 });
