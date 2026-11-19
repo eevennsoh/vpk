@@ -199,10 +199,10 @@ for (const retainedChunk of [
 	"error-def456.js",
 	"global-error-def456.js",
 ]) {
-	test(`route JS counts the root page only on home and retains app/${retainedChunk} on other routes`, () => {
+	test(`manifest metrics count the root page only on home and retain app/${retainedChunk} on other routes`, () => {
 		const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-root-page-"));
 		try {
-			const chunks = ["static/chunks/app/page-abc123.js", `static/chunks/app/${retainedChunk}`];
+			const chunks = ["static/chunks/app/page-abc123.js", `static/chunks/app/${retainedChunk}`, "static/chunks/shared.js"];
 			for (const [index, chunk] of chunks.entries()) {
 				const chunkPath = path.join(cwd, ".next", chunk);
 				mkdirSync(path.dirname(chunkPath), { recursive: true });
@@ -215,10 +215,15 @@ for (const retainedChunk of [
 			}
 
 			const routes = collectManifestRoutes({ cwd });
-			assert.equal(routes.find((route) => route.path === "/").size.bytes, 140);
-			assert.equal(routes.find((route) => route.path === "/rovo").size.bytes, 40);
-			assert.equal(routes.find((route) => route.path === "/rovo").firstLoadJs.bytes, 140);
-			assert.equal(routes.find((route) => route.path === "/rovo").assetCount, 2);
+			assert.deepEqual(routes.map((route) => ({
+				path: route.path,
+				firstLoadJsBytes: route.firstLoadJs.bytes,
+				assetCount: route.assetCount,
+				routeJsBytes: route.size.bytes,
+			})), [
+				{ path: "/", firstLoadJsBytes: 180, assetCount: 3, routeJsBytes: 140 },
+				{ path: "/rovo", firstLoadJsBytes: 80, assetCount: 2, routeJsBytes: 40 },
+			]);
 		} finally {
 			rmSync(cwd, { recursive: true, force: true });
 		}
@@ -236,7 +241,12 @@ test("route JS does not reintroduce an excluded root page through the shared-JS 
 		mkdirSync(manifestDir, { recursive: true });
 		writeFileSync(path.join(manifestDir, "page_client-reference-manifest.js"),
 			`globalThis.__RSC_MANIFEST["/rovo/page"]=${JSON.stringify({ clientModules: { page: { chunks: [chunk] } } })};`);
-		assert.equal(collectManifestRoutes({ cwd })[0].size.bytes, 0);
+		const [route] = collectManifestRoutes({ cwd });
+		assert.deepEqual({
+			routeJsBytes: route.size.bytes,
+			firstLoadJsBytes: route.firstLoadJs.bytes,
+			assetCount: route.assetCount,
+		}, { routeJsBytes: 0, firstLoadJsBytes: 0, assetCount: 0 });
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
