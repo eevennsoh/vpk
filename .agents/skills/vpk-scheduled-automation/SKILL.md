@@ -2,8 +2,8 @@
 name: vpk-scheduled-automation
 description: >-
   Shared execution policy for VPK scheduled jobs that investigate one
-  maintenance candidate, make a review-ready change, and open or update a pull
-  request. Use when a Codex automation invokes vpk-scheduled-automation for bug,
+  maintenance candidate, make a review-ready change, open or update a pull
+  request, and label it for merge eligibility without merging. Use when a Codex automation invokes vpk-scheduled-automation for bug,
   test, deprecation, interface, simplification, main-health, baseline
   burn-down, skill-health, AGENTS.md,
   frontend-runtime, performance, UI-quality, or dependency work. Do not use for
@@ -78,7 +78,8 @@ gh pr list --state open --limit 100 --json number,title,headRefName,isDraft,url,
 - A clean detached automation worktree is valid. After selecting a candidate,
   attach it with a new `automation/<job-slug>-<summary>` branch at the current
   commit. From clean `main`, create the same kind of branch before editing.
-  Never commit a producer change directly to `main`.
+  Never commit a producer change directly to `main`. The `automation/` prefix
+  is required: merge eligibility (step 6) rejects any other head branch.
 - Recheck status immediately before branching, committing, and pushing. If a
   branch name already exists or belongs to another worktree/PR, choose a unique
   evidence-based suffix rather than taking it over.
@@ -166,9 +167,33 @@ updating the PR this branch already owns. Do not `apply_patch` files outside
 the worktree, such as `/tmp`: that write waits for a human approval, and
 unattended runs have stalled on it for hours.
 
-Report the PR URL, branch, commit, validation state, and reviewer focus. A
-producer job stops at review-ready PR handoff. Never merge, enable auto-merge,
-approve, or bypass review/check policy from this skill.
+## 6. Label merge eligibility
+
+After the PR is created or updated, check its current diff against the
+low-risk merge policy (decision D11):
+
+```bash
+node scripts/automation-merge-eligibility.mjs --pr <number> --repo <owner>/<repo> --policy
+```
+
+- Exit 0: add `automerge:allowed` and remove `risk:needs-human` if present.
+- Exit 2: add `risk:needs-human`, remove `automerge:allowed` if an earlier
+  push added it, and list the printed reasons in the report.
+- Exit 1 (could not decide): add `risk:needs-human` and report the error.
+
+`--policy` checks everything except the `automerge:allowed` label itself: the
+`automation` label, owner author, same-repo `automation/` head branch, default
+base, non-draft, the file allow/deny lists, and the 300-line cap. In short,
+only edits to existing READMEs (outside `public/` and `app/`), a shrinking
+`eslint-suppressions.json`, and the regenerated `repo-map.json` and skills
+`INDEX.md` beside them qualify; tests and all other code always need a human. The policy lives as data at the
+top of that script; do not restate or loosen it here. The separate
+`automation-merge` job decides whether to merge; labelling grants nothing more.
+
+Report the PR URL, branch, commit, validation state, eligibility label, and
+reviewer focus. A producer job stops at review-ready PR handoff. Never merge,
+enable GitHub auto-merge, approve, or bypass review/check policy from this
+skill.
 
 ## No-PR output
 

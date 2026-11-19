@@ -5,6 +5,7 @@ const { execFile } = require("node:child_process");
 const { collectReviewGateStatus, gateExitCode, runGhJson, splitRepository } = require("./review-gate-status");
 
 const SHA = /^[a-f0-9]{40}$/u;
+const COMMIT_TITLE = /^[\x20-\x7e]{1,200}$/u;
 
 function pushDeletion(args) {
 	return new Promise((resolve, reject) => {
@@ -23,10 +24,11 @@ function validatePullRequest(pr, repository, prNumber) {
 	return pr;
 }
 
-async function mergeRemote({ prNumber, repository, expectedHead, collectGate = collectReviewGateStatus,
+async function mergeRemote({ prNumber, repository, expectedHead, commitTitle, collectGate = collectReviewGateStatus,
 	runGh = runGhJson, mutateGh = (args) => runGhJson(args, { readOnly: false }), deleteRef = pushDeletion } = {}) {
 	splitRepository(repository ?? "");
 	if (!Number.isInteger(prNumber) || prNumber < 1 || !SHA.test(expectedHead ?? "")) throw new Error("A PR number and full expected head SHA are required");
+	if (commitTitle !== undefined && !COMMIT_TITLE.test(commitTitle)) throw new Error("--commit-title must be one line of 1-200 printable characters");
 	const endpoint = `repos/${repository}/pulls/${prNumber}`;
 	const readPr = async () => validatePullRequest(await runGh(["api", endpoint]), repository, prNumber);
 	const [pr, repo] = await Promise.all([readPr(), runGh(["api", `repos/${repository}`])]);
@@ -44,7 +46,9 @@ async function mergeRemote({ prNumber, repository, expectedHead, collectGate = c
 	let result;
 	try {
 		// Documented REST merge endpoint: sha rejects a concurrent head update (HTTP 409).
-		result = await mutateGh(["api", endpoint + "/merge", "--method", "PUT", "-f", `sha=${expectedHead}`, "-f", "merge_method=merge"]);
+		// An explicit title replaces GitHub's default, which embeds the PR title and body.
+		const message = commitTitle === undefined ? [] : ["-f", `commit_title=${commitTitle}`, "-f", "commit_message="];
+		result = await mutateGh(["api", endpoint + "/merge", "--method", "PUT", "-f", `sha=${expectedHead}`, "-f", "merge_method=merge", ...message]);
 	} catch (error) {
 		// Do not retry a mutation with an unknown outcome. Reconcile once instead.
 		const observed = await readPr();
@@ -86,8 +90,8 @@ async function mergeRemote({ prNumber, repository, expectedHead, collectGate = c
 async function main(argv) {
 	const options = {};
 	for (let index = 0; index < argv.length; index += 2) {
-		const key = { "--pr": "prNumber", "--repo": "repository", "--head": "expectedHead" }[argv[index]];
-		if (!key || !argv[index + 1] || key in options) throw new Error("Usage: merge-remote.js --pr <number> --repo <owner/name> --head <full-sha>");
+		const key = { "--pr": "prNumber", "--repo": "repository", "--head": "expectedHead", "--commit-title": "commitTitle" }[argv[index]];
+		if (!key || !argv[index + 1] || key in options) throw new Error("Usage: merge-remote.js --pr <number> --repo <owner/name> --head <full-sha> [--commit-title <text>]");
 		options[key] = key === "prNumber" ? Number(argv[index + 1]) : argv[index + 1];
 	}
 	process.stdout.write(`${JSON.stringify(await mergeRemote(options), null, "\t")}\n`);
