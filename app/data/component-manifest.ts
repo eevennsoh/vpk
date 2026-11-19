@@ -240,7 +240,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("edge"),
 	customComponent("environment-variable", "Environment Variable"),
 	customComponent("file-tree", "File Tree"),
-	customComponent("file-tree-2", "File Tree 2"),
+	customComponent("file-explorer", "File Explorer"),
 	customComponent("image"),
 	customComponent("inline-citation", "Inline Citation"),
 	customComponent("jsx-preview", "JSX Preview"),

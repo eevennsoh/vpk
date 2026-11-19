@@ -1,39 +1,39 @@
-export type FileTree2ItemType = "file" | "folder";
-export type FileTree2SearchMode = "collapse-non-matches" | "expand-matches" | "hide-non-matches";
+export type FileExplorerItemType = "file" | "folder";
+export type FileExplorerSearchMode = "collapse-non-matches" | "expand-matches" | "hide-non-matches";
 
-export interface FileTree2ModelItem {
+export interface FileExplorerModelItem {
 	path: string;
-	type?: FileTree2ItemType;
+	type?: FileExplorerItemType;
 }
 
-export interface FileTree2Node {
+export interface FileExplorerNode {
 	children: readonly string[];
 	depth: number;
 	name: string;
 	parentPath: string | null;
 	path: string;
-	type: FileTree2ItemType;
+	type: FileExplorerItemType;
 }
 
-export interface FileTree2VisibleNode extends FileTree2Node {
+export interface FileExplorerVisibleNode extends FileExplorerNode {
 	flattenedPaths: readonly string[];
 }
 
-export interface FileTree2Model {
-	nodes: ReadonlyMap<string, FileTree2Node>;
+export interface FileExplorerModel {
+	nodes: ReadonlyMap<string, FileExplorerNode>;
 	roots: readonly string[];
 }
 
-interface MutableFileTree2Node extends Omit<FileTree2Node, "children"> {
+interface MutableFileExplorerNode extends Omit<FileExplorerNode, "children"> {
 	children: string[];
 }
 
-const fileTree2Collator = new Intl.Collator("en-US", {
+const fileExplorerCollator = new Intl.Collator("en-US", {
 	numeric: true,
 	sensitivity: "base",
 });
 
-export function normalizeFileTree2Path(path: string): string {
+export function normalizeFileExplorerPath(path: string): string {
 	return path.trim().replaceAll("\\", "/").replace(/^\/+|\/+$/gu, "").replace(/\/{2,}/gu, "/");
 }
 
@@ -47,7 +47,7 @@ function getName(path: string): string {
 }
 
 function compareNodes(
-	nodes: ReadonlyMap<string, MutableFileTree2Node>,
+	nodes: ReadonlyMap<string, MutableFileExplorerNode>,
 	leftPath: string,
 	rightPath: string,
 ): number {
@@ -58,13 +58,13 @@ function compareNodes(
 		return left?.type === "folder" ? -1 : 1;
 	}
 
-	return fileTree2Collator.compare(left?.name ?? leftPath, right?.name ?? rightPath);
+	return fileExplorerCollator.compare(left?.name ?? leftPath, right?.name ?? rightPath);
 }
 
-export function createFileTree2Model(items: readonly FileTree2ModelItem[]): FileTree2Model {
-	const nodes = new Map<string, MutableFileTree2Node>();
+export function createFileExplorerModel(items: readonly FileExplorerModelItem[]): FileExplorerModel {
+	const nodes = new Map<string, MutableFileExplorerNode>();
 
-	const ensureNode = (path: string, type: FileTree2ItemType): MutableFileTree2Node => {
+	const ensureNode = (path: string, type: FileExplorerItemType): MutableFileExplorerNode => {
 		const existing = nodes.get(path);
 		if (existing) {
 			if (type === "folder") {
@@ -74,7 +74,7 @@ export function createFileTree2Model(items: readonly FileTree2ModelItem[]): File
 		}
 
 		const parentPath = getParentPath(path);
-		const node: MutableFileTree2Node = {
+		const node: MutableFileExplorerNode = {
 			children: [],
 			depth: path.split("/").length - 1,
 			name: getName(path),
@@ -87,7 +87,7 @@ export function createFileTree2Model(items: readonly FileTree2ModelItem[]): File
 	};
 
 	for (const item of items) {
-		const path = normalizeFileTree2Path(item.path);
+		const path = normalizeFileExplorerPath(item.path);
 		if (!path) {
 			continue;
 		}
@@ -123,13 +123,13 @@ export function createFileTree2Model(items: readonly FileTree2ModelItem[]): File
 	return { nodes, roots };
 }
 
-export function getFileTree2MovePath(
-	model: FileTree2Model,
+export function getFileExplorerMovePath(
+	model: FileExplorerModel,
 	sourcePath: string,
 	destinationPath: string | null,
 ): string | null {
-	const source = normalizeFileTree2Path(sourcePath);
-	const destination = destinationPath ? normalizeFileTree2Path(destinationPath) : null;
+	const source = normalizeFileExplorerPath(sourcePath);
+	const destination = destinationPath ? normalizeFileExplorerPath(destinationPath) : null;
 	if (!model.nodes.has(source)) {
 		return null;
 	}
@@ -149,13 +149,13 @@ export function getFileTree2MovePath(
 	return nextPath;
 }
 
-export function getVisibleFileTree2Nodes(
-	model: FileTree2Model,
+export function getVisibleFileExplorerNodes(
+	model: FileExplorerModel,
 	expandedPaths: ReadonlySet<string>,
 	query = "",
 	flattenEmptyDirectories = false,
-	searchMode: FileTree2SearchMode = "hide-non-matches",
-): readonly FileTree2VisibleNode[] {
+	searchMode: FileExplorerSearchMode = "hide-non-matches",
+): readonly FileExplorerVisibleNode[] {
 	const normalizedQuery = query.trim().toLocaleLowerCase("en-US");
 	const matches = new Map<string, boolean>();
 
@@ -193,7 +193,7 @@ export function getVisibleFileTree2Nodes(
 		return paths;
 	};
 
-	const visibleNodes: FileTree2VisibleNode[] = [];
+	const visibleNodes: FileExplorerVisibleNode[] = [];
 	const visit = (path: string, depth: number, parentPath: string | null) => {
 		const node = model.nodes.get(path);
 		if (!node || (normalizedQuery && searchMode === "hide-non-matches" && !matches.get(path))) {
