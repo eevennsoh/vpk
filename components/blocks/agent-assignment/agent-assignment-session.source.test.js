@@ -20,6 +20,18 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("session menu shows each session's lifecycle indicator", async () => {
+	const states = [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]];
+	const view = await renderMenu(menuProps(states.map(([state]) => session(state, "owner", { state }))));
+	try {
+		for (const [state, label] of states) {
+			const row = view.container.querySelector(`[data-testid="agent-session-row-${state}"]`);
+			assert.equal(row.querySelector(`[role="img"][aria-label="${label}"]`) !== null, true, `${label} indicator is visible`);
+			assert.equal(row.querySelector('[data-slot="spinner"]') !== null, state === "running");
+		}
+	} finally { await view.unmount(); }
+});
+
 test("session menu puts needs-input sessions first within each ownership group", async () => {
 	const items = [session("running", "owner", { state: "running" }), session("waiting", "owner", { state: "needs-input" }), session("complete", "owner"), session("team-running", "viewer", { state: "running" }), session("team-waiting", "viewer", { state: "needs-input" })];
 	const view = await renderMenu(menuProps(items, { teammateSessionsPresentation: "expanded" }));
@@ -333,7 +345,7 @@ test("header avatars deduplicate identities and count people beyond the first fo
 	const view = await renderMenu(menuProps([session("mine", "owner"), ...people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))], { teammateSessionsPresentation: "count" }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("title")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
+		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("aria-label")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
 		assert.deepEqual(sources, ["/sample-alpha.svg", "/different-alpha.svg"]);
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group-count"]')), false);
 		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 5 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));

@@ -10,7 +10,7 @@ import { ProjectButterDescription } from "@/components/blocks/jira-work-item/pro
 import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-import { useSessionMentionFlight, type MentionFlightSource } from "@/components/blocks/jira-work-item/project-butter/use-session-mention-flight";
+import { useSessionMentionFlight, type MentionFlightSource } from "@/components/blocks/jira-at-mention";
 
 export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;

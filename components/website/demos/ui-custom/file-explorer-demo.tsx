@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { LockIcon, RefreshCwIcon } from "@/components/ui/vpk-icons";
 import {
-	FileTree2,
-	type FileTree2Item,
-	type FileTree2MoveEvent,
-} from "@/components/ui-custom/file-tree-2";
+	FileExplorer,
+	type FileExplorerItem,
+	type FileExplorerMoveEvent,
+} from "@/components/ui-custom/file-explorer";
 
-const projectItems: readonly FileTree2Item[] = [
+const projectItems: readonly FileExplorerItem[] = [
 	{ path: "public", type: "folder" },
 	{ path: "src/components/Button.tsx", status: "added" },
 	{ path: "src/components/Card.tsx" },
@@ -25,7 +25,7 @@ const projectItems: readonly FileTree2Item[] = [
 	{ path: "README.md", status: "untracked" },
 ];
 
-const flatteningItems: readonly FileTree2Item[] = [
+const flatteningItems: readonly FileExplorerItem[] = [
 	{ path: ".github/workflows/ci.yml" },
 	{ path: "build/assets/images/social/logo.png" },
 	{ path: "build/index.mjs" },
@@ -42,10 +42,10 @@ const flatteningItems: readonly FileTree2Item[] = [
 	{ path: "stylelint.config.js" },
 ];
 
-function moveFileTree2Items(
-	items: readonly FileTree2Item[],
-	{ nextPath, sourcePath }: FileTree2MoveEvent,
-): FileTree2Item[] {
+function moveFileExplorerItems(
+	items: readonly FileExplorerItem[],
+	{ nextPath, sourcePath }: FileExplorerMoveEvent,
+): FileExplorerItem[] {
 	return items.map((item) => {
 		if (item.path === sourcePath) {
 			return { ...item, path: nextPath };
@@ -57,11 +57,11 @@ function moveFileTree2Items(
 	});
 }
 
-export default function FileTree2Demo() {
+export default function FileExplorerDemo() {
 	const [selectedPath, setSelectedPath] = useState("src/components/Card.tsx");
 
 	return (
-		<FileTree2
+		<FileExplorer
 			className="w-full max-w-sm"
 			defaultExpandedPaths={["src", "src/components"]}
 			items={projectItems}
@@ -72,9 +72,9 @@ export default function FileTree2Demo() {
 	);
 }
 
-export function FileTree2DemoPathFirst() {
+export function FileExplorerDemoPathFirst() {
 	return (
-		<FileTree2
+		<FileExplorer
 			className="w-full max-w-sm"
 			defaultExpandedPaths={["app", "app/api"]}
 			items={[
@@ -89,12 +89,12 @@ export function FileTree2DemoPathFirst() {
 	);
 }
 
-export function FileTree2DemoFlattenEmptyDirectories() {
+export function FileExplorerDemoFlattenEmptyDirectories() {
 	return (
 		<div className="grid w-full max-w-3xl gap-4 md:grid-cols-2">
 			<div className="space-y-2">
 				<p className="text-sm font-semibold text-text">Default expanded</p>
-				<FileTree2
+				<FileExplorer
 					defaultExpandedPaths={[
 						"build",
 						"build/assets",
@@ -106,7 +106,7 @@ export function FileTree2DemoFlattenEmptyDirectories() {
 			</div>
 			<div className="space-y-2">
 				<p className="text-sm font-semibold text-text">Flattened directories</p>
-				<FileTree2
+				<FileExplorer
 					defaultExpandedPaths={["build", "build/assets/images/social"]}
 					defaultSelectedPath="build/assets/images/social"
 					flattenEmptyDirectories
@@ -117,9 +117,9 @@ export function FileTree2DemoFlattenEmptyDirectories() {
 	);
 }
 
-export function FileTree2DemoGitStatus() {
+export function FileExplorerDemoGitStatus() {
 	return (
-		<FileTree2
+		<FileExplorer
 			className="w-full max-w-sm"
 			defaultExpandedPaths={["src", "src/components"]}
 			items={[
@@ -138,7 +138,7 @@ export function FileTree2DemoGitStatus() {
 	);
 }
 
-export function FileTree2DemoDragAndDrop() {
+export function FileExplorerDemoDragAndDrop() {
 	const [items, setItems] = useState(() => [...flatteningItems]);
 	const [isPackageLocked, setIsPackageLocked] = useState(true);
 
@@ -164,20 +164,20 @@ export function FileTree2DemoDragAndDrop() {
 					Reset
 				</Button>
 			</div>
-			<FileTree2
+			<FileExplorer
 				canDrag={(path) => !isPackageLocked || path !== "package.json"}
 				dragAndDrop
 				flattenEmptyDirectories
 				items={items}
-				onMove={(event) => setItems((currentItems) => moveFileTree2Items(currentItems, event))}
+				onMove={(event) => setItems((currentItems) => moveFileExplorerItems(currentItems, event))}
 			/>
 		</div>
 	);
 }
 
-export function FileTree2DemoIconRules() {
+export function FileExplorerDemoIconRules() {
 	return (
-		<FileTree2
+		<FileExplorer
 			className="w-full max-w-sm"
 			defaultExpandedPaths={["config", "src"]}
 			icons={{

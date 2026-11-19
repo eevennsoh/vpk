@@ -32,6 +32,13 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 		})),
 		{ ssr: false },
 	),
+	"prompt-input-demo-default": dynamic(
+		() =>
+			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
+				default: mod.PromptInputDemoDefault,
+			})),
+		{ ssr: false },
+	),
 	"prompt-input-demo-chat-composer": dynamic(
 		() =>
 			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
@@ -116,13 +123,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"inline-citation-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoMultiple,
-			})),
-		{ ssr: false },
-	),
 	"inline-citation-demo-single-source": dynamic(
 		() =>
 			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
@@ -148,13 +148,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui-custom/mic-selector-demo").then((mod) => ({
 				default: mod.MicSelectorDemoCompact,
-			})),
-		{ ssr: false },
-	),
-	"model-selector-demo-with-search": dynamic(
-		() =>
-			import("../../demos/ui-custom/model-selector-demo").then((mod) => ({
-				default: mod.ModelSelectorDemoWithSearch,
 			})),
 		{ ssr: false },
 	),

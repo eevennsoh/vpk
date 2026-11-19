@@ -3,7 +3,6 @@
 import type { CarouselApi } from "@/components/ui/carousel";
 import type { ComponentProps } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -60,33 +59,48 @@ export function InlineCitationText({
 export type InlineCitationCardProps = ComponentProps<typeof HoverCard>;
 
 export function InlineCitationCard(props: Readonly<InlineCitationCardProps>) {
-	return <HoverCard closeDelay={0} openDelay={0} {...props} />;
+	return <HoverCard {...props} />;
+}
+
+function getHostname(url: string) {
+	try {
+		return new URL(url).hostname.replace(/^www\./, "");
+	} catch {
+		return url;
+	}
 }
 
 export interface InlineCitationCardTriggerProps
-	extends ComponentProps<typeof Badge> {
+	extends ComponentProps<typeof Button> {
 	sources: string[];
+	delay?: number;
+	closeDelay?: number;
 }
 
 export function InlineCitationCardTrigger({
 	sources,
+	delay = 10,
+	closeDelay = 100,
 	className,
 	...props
 }: Readonly<InlineCitationCardTriggerProps>) {
 	return (
 		<HoverCardTrigger
+			closeDelay={closeDelay}
+			delay={delay}
 			render={
-				<Badge
-					className={cn("ml-1 rounded-full", className)}
-					variant="neutral"
+				<Button
+					className={cn("ml-1", className)}
+					size="compact"
+					variant="secondary"
 					{...props}
 				/>
 			}
 		>
 			{sources[0] ? (
 				<>
-					{new URL(sources[0]).hostname}{" "}
-					{sources.length > 1 ? `+${sources.length - 1}` : null}
+					{getHostname(sources[0])}
+					{sources.length > 1 ? ` +${sources.length - 1}` : null}
 				</>
 			) : (
 				"unknown"
@@ -95,7 +109,9 @@ export function InlineCitationCardTrigger({
 	);
 }
 
-export type InlineCitationCardBodyProps = ComponentProps<"div">;
+export type InlineCitationCardBodyProps = ComponentProps<
+	typeof HoverCardContent
+>;
 
 export function InlineCitationCardBody({
 	className,
@@ -292,21 +308,23 @@ export function InlineCitationSource({
 	...props
 }: Readonly<InlineCitationSourceProps>) {
 	return (
-		<div className={cn("space-y-1", className)} {...props}>
-			{title ? (
-				<h4 className="truncate font-medium text-sm leading-tight">
-					{title}
-				</h4>
-			) : null}
-			{url ? (
-				<p className="truncate break-all text-muted-foreground text-xs">
-					{url}
-				</p>
-			) : null}
+		<div className={cn("flex flex-col gap-1", className)} {...props}>
+			{title ? <div className="font-medium text-sm">{title}</div> : null}
 			{description ? (
-				<p className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
+				<p className="line-clamp-3 text-muted-foreground text-sm">
 					{description}
 				</p>
+			) : null}
+			{url ? (
+				<a
+					className="w-fit max-w-full truncate text-muted-foreground text-xs underline-offset-4 hover:underline"
+					href={url}
+					rel="noreferrer"
+					target="_blank"
+				>
+					{getHostname(url)}
+					<span className="sr-only"> (opens in a new tab)</span>
+				</a>
 			) : null}
 			{children}
 		</div>

@@ -97,12 +97,27 @@ export const PromptInputActionMenu = (props: Readonly<PromptInputActionMenuProps
 
 export type PromptInputActionMenuTriggerProps = PromptInputButtonProps;
 
+// shadcn Prompt Input: an outline, round, 32px icon button with a plus glyph.
+// Composers with their own look pass `variant`/`className` (e.g. ghost + rounded-md).
 export const PromptInputActionMenuTrigger = ({
   className,
   children,
+  size = "icon-sm",
+  variant = "outline",
   ...props
 }: Readonly<PromptInputActionMenuTriggerProps>) => (
-  <DropdownMenuTrigger render={<PromptInputButton className={className} {...props} />}>{children ?? <PlusIcon className="size-4" />}</DropdownMenuTrigger>
+  <DropdownMenuTrigger
+    render={
+      <PromptInputButton
+        className={cn("rounded-full", className)}
+        size={size}
+        variant={variant}
+        {...props}
+      />
+    }
+  >
+    {children ?? <PlusIcon label="" />}
+  </DropdownMenuTrigger>
 );
 
 export type PromptInputActionMenuContentProps = ComponentProps<

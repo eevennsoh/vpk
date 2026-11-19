@@ -341,7 +341,7 @@ export default function ChatComposer({ disabled = false, prompt, isStreaming, ha
 					<PromptInputFooter className="mt-3 justify-between px-0 pb-0 pt-0">
 						<PromptInputTools>
 							<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-								<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+								<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 									<AddIcon label="" />
 								</PromptInputActionMenuTrigger>
 								<PromptInputActionMenuContent

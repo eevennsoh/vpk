@@ -506,9 +506,9 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				title: "Record the three missing decline-code fixtures",
 				agentActivities: [
 					createActivity({
-						id: "PAY-123:codex-coverage",
-						agentName: "Codex",
-						agentBrandName: "openai-codex",
+						id: "PAY-123:claude-code",
+						agentName: "Claude",
+						agentBrandName: "claude",
 						cycleIntervalJitterMs: 1900,
 						cycleIntervalMs: 2700,
 						host: "cloud",

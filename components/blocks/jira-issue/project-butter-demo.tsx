@@ -149,7 +149,7 @@ export function ProjectButterPlayground({
 					void handleAction(action);
 				},
 				availableMoreActions: ["copy-key", "copy-link", "change-parent", "edit-labels", "add-flag"],
-				moreMenuActions: { onSelect: () => setSelected(true) },
+				moreMenuActions: showControls ? { onSelect: () => setSelected(true) } : { reorder: { onMoveDown: () => undefined } },
 				onSelectionToggle: selected ? () => setSelected(false) : undefined,
 				selected,
 				onClick: (event) => {

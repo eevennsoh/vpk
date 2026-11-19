@@ -524,6 +524,7 @@ function JiraIssueAgentActivityRow({
 	flushContent = false,
 	iconScale = "compact",
 	linkFlash,
+	revealTeammateLabelOnHover = false,
 	onOpenChange,
 	onSessionDragChange,
 	onViewChat,
@@ -544,6 +545,7 @@ function JiraIssueAgentActivityRow({
 	inheritChinSurface?: boolean;
 	/** Set on the row a session has just been linked into; other rows ignore it. */
 	linkFlash?: JiraIssueAgentLinkFlash;
+	revealTeammateLabelOnHover?: boolean;
 	onOpenChange?: (open: boolean) => void;
 	onSessionDragChange?: (
 		dragging: boolean,
@@ -703,6 +705,7 @@ function JiraIssueAgentActivityRow({
 				showUnlinkControl={showUnlinkControl}
 				statusIcon={statusIcon}
 				isViewerRow={isViewerRow}
+				revealTeammateLabelOnHover={revealTeammateLabelOnHover}
 			/>
 		</button>
 	);
@@ -760,6 +763,7 @@ export function JiraIssueAgentActivityRows({
 	completedTransferKey,
 	retainCompletedGutter = false,
 	linkFlash,
+	revealTeammateLabelOnHover = false,
 	layout = "merged",
 	onOpenChange,
 	onViewChat,
@@ -794,6 +798,7 @@ export function JiraIssueAgentActivityRows({
 	retainCompletedGutter?: boolean;
 	/** One-shot brand sweep across the row a session was just linked into. */
 	linkFlash?: JiraIssueAgentLinkFlash;
+	revealTeammateLabelOnHover?: boolean;
 	/** `split` gives every active agent its own chin row instead of one merged row. */
 	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
@@ -874,6 +879,7 @@ export function JiraIssueAgentActivityRows({
 							workingSpinnerVariant={workingSpinnerVariant}
 							inheritChinSurface={inheritChinSurface}
 							linkFlash={linkFlash}
+							revealTeammateLabelOnHover={revealTeammateLabelOnHover}
 							onOpenChange={(open) => {
 								setAssignmentHoverOpen(open);
 								onOpenChange?.(open);

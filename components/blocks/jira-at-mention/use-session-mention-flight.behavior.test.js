@@ -1,10 +1,10 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const { act } = require("react");
-const { renderComponent } = require("../../../../scripts/lib/render-component.js");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const HARNESS = `import { useMemo, useRef } from "react";
-import { useSessionMentionFlight } from "@/components/blocks/jira-work-item/project-butter/use-session-mention-flight";
+import { useSessionMentionFlight } from "@/components/blocks/jira-at-mention";
 export default function Harness({ active = true, composerVisible = true, composerHeight = 112, editorReady = true, requestId = 1, withSource = true, onScroll, onSettled, onTrace }) {
 	const body = useRef(null);
 	const scrollport = useRef(null);

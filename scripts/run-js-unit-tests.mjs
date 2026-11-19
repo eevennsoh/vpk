@@ -297,7 +297,7 @@ function gitOutput(args) {
 
 // Same base as the ESLint suppression ratchet: the PR base in CI, the pre-push tip on a
 // push to main, the merge base with origin/main locally.
-export function assertLegacyDriftDidNotGrow({ env = process.env, git = gitOutput, log = console.warn } = {}) {
+export function assertLegacyDriftDidNotGrow({ currentFiles = LEGACY_DRIFT_TEST_FILES, env = process.env, git = gitOutput, log = console.warn } = {}) {
 	const { isBaseRequired, resolveBaseRef } = createRequire(import.meta.url)("./verify-eslint-suppressions.js");
 	const baseRef = resolveBaseRef({ env, git: (args) => git(args)?.trim() ?? null });
 	if (!baseRef) {
@@ -308,7 +308,7 @@ export function assertLegacyDriftDidNotGrow({ env = process.env, git = gitOutput
 	}
 	const baseSource = git(["show", `${baseRef}:${LEGACY_DRIFT_PATH}`]);
 	if (baseSource === null) return;
-	const added = findLegacyDriftGrowth(parseLegacyDriftSource(baseSource));
+	const added = findLegacyDriftGrowth(parseLegacyDriftSource(baseSource), currentFiles);
 	if (added.length === 0) return;
 	throw new Error([
 		`js-unit-tests: ${LEGACY_DRIFT_PATH} may only shrink, but these suites were added since ${baseRef.slice(0, 9)}:`,

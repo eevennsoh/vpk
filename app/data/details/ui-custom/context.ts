@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const CONTEXT_DETAIL: ComponentDetail = {
 	description:
-		"A context window usage indicator that displays token consumption as a circular progress icon with a hover card breakdown of input, output, reasoning, and cache tokens with cost estimates powered by tokenlens.",
+		"How much of the model's context window the conversation has used: an outline button showing the percent used, opening a hover card with a Progress bar and a breakdown of input, output, reasoning, and cache tokens with cost estimates powered by tokenlens.",
 	usage: `import {
   Context,
   ContextTrigger,
@@ -60,9 +60,9 @@ export const CONTEXT_DETAIL: ComponentDetail = {
 	],
 	subComponents: [
 		{ name: "Context", description: "Root provider wrapping a HoverCard. Supplies token data to all children via React Context." },
-		{ name: "ContextTrigger", description: "Ghost button showing usage percentage and a circular progress icon. Activates the hover card." },
-		{ name: "ContextContent", description: "HoverCard content container with divided sections." },
-		{ name: "ContextContentHeader", description: "Percentage label, compact token counts, and progress bar." },
+		{ name: "ContextTrigger", description: "HoverCardTrigger rendered as an outline compact Button showing the percent used (e.g. \"17% context\"). Opens after 10ms and closes after 100ms. Children replace the label." },
+		{ name: "ContextContent", description: "HoverCardContent container with divided sections." },
+		{ name: "ContextContentHeader", description: "Used / max token counts and a Progress bar labelled \"Context used\"." },
 		{ name: "ContextContentBody", description: "Container for usage breakdown rows." },
 		{ name: "ContextContentFooter", description: "Total cost display computed from modelId via tokenlens." },
 		{ name: "ContextInputUsage", description: "Input token count and cost row. Hidden when zero." },

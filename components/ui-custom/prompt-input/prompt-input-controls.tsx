@@ -134,6 +134,8 @@ export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
   onStop?: () => void;
 };
 
+// shadcn Prompt Input: a filled, round, 32px icon button with an arrow-up glyph
+// while idle. VPK fills the idle "default" variant with the black Rovo brand.
 export const PromptInputSubmit = ({
   className,
   variant = "default",
@@ -184,7 +186,7 @@ export const PromptInputSubmit = ({
   return (
     <InputGroupButton
       aria-label={isGenerating ? "Stop" : "Submit"}
-      className={cn("rounded-md", stateClassName, className)}
+      className={cn("rounded-full", stateClassName, className)}
       disabled={canStopGeneration ? false : disabled}
       onClick={handleClick}
       size={size}

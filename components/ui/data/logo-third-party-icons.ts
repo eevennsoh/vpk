@@ -216,18 +216,10 @@ void SHARED_LOGO_WRAPPERS;
 export const THIRD_PARTY_LOGO_ICONS = buildThirdPartyLogoIconMap();
 
 /**
- * Look up a brand icon by raw id (e.g. `"figma"`). Returns `undefined` when the
- * brand has no upstream package asset.
+ * Extract the `/3p/<id>/...` brand id from an asset path. Returns the id only when it has an
+ * upstream package icon in {@link THIRD_PARTY_LOGO_ICONS}, and `undefined` for non-3p paths.
  */
-export function getThirdPartyLogoIconById(id: string): ThirdPartyLogoIcon | undefined {
-	return (THIRD_PARTY_LOGO_ICONS as Record<string, ThirdPartyLogoIcon | undefined>)[id];
-}
-
-/**
- * Extract the `/3p/<id>/...` brand id from an asset path and resolve its package
- * icon. Returns `undefined` for non-3p paths or brands without an upstream asset.
- */
-export function getThirdPartyLogoIconFromSrc(src: string): ThirdPartyLogoIcon | undefined {
-	const match = /^\/3p\/([^/]+)\//.exec(src);
-	return match ? getThirdPartyLogoIconById(match[1]) : undefined;
+export function getThirdPartyLogoNameFromSrc(src: string): ThirdPartyLogoName | undefined {
+	const id = /^\/3p\/([^/]+)\//.exec(src)?.[1];
+	return id !== undefined && Object.hasOwn(THIRD_PARTY_LOGO_ICONS, id) ? (id as ThirdPartyLogoName) : undefined;
 }

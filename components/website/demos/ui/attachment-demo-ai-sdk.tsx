@@ -1,6 +1,6 @@
 "use client";
 
-import { AttachmentPartMedia } from "@/components/projects/shared/components/attachment-part-media";
+import { AttachmentPartMedia } from "@/components/ui-custom/attachment-part-media";
 import { UserMessageAttachments } from "@/components/projects/shared/components/user-message-attachments";
 import {
 	Attachment,

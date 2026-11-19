@@ -327,9 +327,9 @@ test("code review renders expanded file changes with a collapsible navigation tr
 	assert.match(diffView, /group-hover\/file-header:opacity-100/u);
 	assert.match(diffView, /group-has-\[:focus-visible\]\/file-header:opacity-100/u);
 	assert.match(diffView, /collapsed: showFileHeader && isCollapsed/u);
-	assert.match(diffView, /FileTree2FileIcon/u);
-	assert.match(diffView, /FileTree2IconSprite/u);
-	assert.match(diffView, /<FileTree2FileIcon path=\{file\.path\} \/>/u);
+	assert.match(diffView, /FileExplorerFileIcon/u);
+	assert.match(diffView, /FileExplorerIconSprite/u);
+	assert.match(diffView, /<FileExplorerFileIcon path=\{file\.path\} \/>/u);
 });
 
 test("code review changes picker shows all-changes trigger with real totals and scope menu", () => {
@@ -609,8 +609,8 @@ test("code review editor retains interaction contracts", () => {
 		"components/blocks/code-review/lib/create-code-review-tree-data.ts",
 	);
 
-	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree-2";/u);
-	assert.match(explorer, /<FileTree2/u);
+	assert.match(explorer, /from "@\/components\/ui-custom\/file-explorer";/u);
+	assert.match(explorer, /<FileExplorer/u);
 	assert.match(treeData, /const changedFilesRootPath = `\$\{rootPath\}\/CHANGED FILES`;/u);
 	assert.match(explorer, /fileIdsByPath\.get\(path\)/u);
 	assert.doesNotMatch(explorer, /FileTreeFile|FileTreeFolder/u);
@@ -699,8 +699,8 @@ test("Code Review polish contracts show list headers and label the shared explor
 	);
 
 	assert.match(diffView, /renderCustomHeader=\{showFileHeader \? renderFileHeader : \(\) => null\}/u);
-	assert.match(diffView, /<FileTree2FileIcon path=\{file\.path\} \/>/u);
-	assert.match(diffView, /FileTree2IconSprite/u);
+	assert.match(diffView, /<FileExplorerFileIcon path=\{file\.path\} \/>/u);
+	assert.match(diffView, /FileExplorerIconSprite/u);
 	assert.match(
 		diffView,
 		/className=\{cn\(\s*"group\/file-header flex min-h-9 min-w-0 items-center gap-1 pl-1.5 pr-4 text-xs text-text",[\s\S]*?!isCollapsed \? "border-b border-border" : null,\s*\)\}/u,

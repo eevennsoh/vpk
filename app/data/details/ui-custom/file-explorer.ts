@@ -1,11 +1,11 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
-export const FILE_TREE_2_DETAIL: ComponentDetail = {
+export const FILE_EXPLORER_DETAIL: ComponentDetail = {
 	description:
 		"A path-first file explorer inspired by Trees. It includes optional flattened folder chains, the complete colored file-type icon set, hover-revealed indentation guides, keyboard navigation, search, Git status, and row annotations.",
-	usage: `import { FileTree2 } from "@/components/ui-custom/file-tree-2";
+	usage: `import { FileExplorer } from "@/components/ui-custom/file-explorer";
 
-<FileTree2
+<FileExplorer
   items={[
     { path: "src/components/Button.tsx", status: "modified" },
     { path: "src/index.ts" },
@@ -28,12 +28,12 @@ export const FILE_TREE_2_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "canDrag",
-			type: "(path: string, item: FileTree2Item) => boolean",
+			type: "(path: string, item: FileExplorerItem) => boolean",
 			description: "Optionally prevents specific paths from being dragged.",
 		},
 		{
 			name: "onMove",
-			type: "(event: FileTree2MoveEvent) => void",
+			type: "(event: FileExplorerMoveEvent) => void",
 			description: "Called with the source, destination folder, and next canonical path after a valid drop. Update items from this callback to persist the move.",
 		},
 		{
@@ -56,7 +56,7 @@ export const FILE_TREE_2_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "items",
-			type: "readonly FileTree2Item[]",
+			type: "readonly FileExplorerItem[]",
 			required: true,
 			description: "Canonical path items. Missing ancestor folders are created automatically.",
 		},
@@ -83,7 +83,7 @@ export const FILE_TREE_2_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "onSelectedPathChange",
-			type: "(path: string, item: FileTree2Item) => void",
+			type: "(path: string, item: FileExplorerItem) => void",
 			description: "Called when a selectable row is activated.",
 		},
 		{
@@ -106,7 +106,7 @@ export const FILE_TREE_2_DETAIL: ComponentDetail = {
 	],
 	subComponents: [
 		{
-			name: "FileTree2Item",
+			name: "FileExplorerItem",
 			description: "Path-first item data with optional type, icon, Git status, annotation, and disabled state. Status supports added, deleted, ignored, modified, renamed, and untracked files; changed ancestors receive a dot automatically.",
 		},
 	],
@@ -114,27 +114,27 @@ export const FILE_TREE_2_DETAIL: ComponentDetail = {
 		{
 			title: "Drag and drop",
 			description: "Moves files and folder subtrees onto directories or the root, with a configurable path lock and reset control.",
-			demoSlug: "file-tree-2-demo-drag-and-drop",
+			demoSlug: "file-explorer-demo-drag-and-drop",
 		},
 		{
 			title: "Flatten empty directories",
 			description: "Compares the expanded hierarchy with compact single-row folder chains.",
-			demoSlug: "file-tree-2-demo-flatten-empty-directories",
+			demoSlug: "file-explorer-demo-flatten-empty-directories",
 		},
 		{
 			title: "Path-first input",
 			description: "Creates the folder hierarchy directly from canonical file paths.",
-			demoSlug: "file-tree-2-demo-path-first",
+			demoSlug: "file-explorer-demo-path-first",
 		},
 		{
 			title: "Icon rules",
 			description: "Uses the complete built-in set and the documented file-name and extension resolution rules.",
-			demoSlug: "file-tree-2-demo-icon-rules",
+			demoSlug: "file-explorer-demo-icon-rules",
 		},
 		{
 			title: "Git status",
 			description: "Shows M/A/D/R/U indicators, muted ignored items, semantic file colors, and automatic change dots on ancestor folders.",
-			demoSlug: "file-tree-2-demo-git-status",
+			demoSlug: "file-explorer-demo-git-status",
 		},
 	],
 	adsLinks: [

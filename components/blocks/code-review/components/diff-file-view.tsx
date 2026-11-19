@@ -10,9 +10,9 @@ import { useMemo, useReducer, useRef, useState, type PointerEvent } from "react"
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import {
-	FileTree2FileIcon,
-	FileTree2IconSprite,
-} from "@/components/ui-custom/file-tree-2-file-icon";
+	FileExplorerFileIcon,
+	FileExplorerIconSprite,
+} from "@/components/ui-custom/file-explorer-file-icon";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
 
@@ -209,7 +209,7 @@ export function DiffFileView({
 	};
 	const renderFileHeader = () => (
 		<div className="relative w-full min-w-0 bg-surface-sunken">
-			<FileTree2IconSprite />
+			<FileExplorerIconSprite />
 			<div
 				className={cn(
 					"group/file-header flex min-h-9 min-w-0 items-center gap-1 pl-1.5 pr-4 text-xs text-text",
@@ -229,7 +229,7 @@ export function DiffFileView({
 				>
 					<span className="relative inline-flex size-4 items-center justify-center">
 						<span className="absolute inset-0 inline-flex items-center justify-center group-hover/file-header:opacity-0 group-has-[:focus-visible]/file-header:opacity-0">
-							<FileTree2FileIcon path={file.path} />
+							<FileExplorerFileIcon path={file.path} />
 						</span>
 						<span className="absolute inset-0 inline-flex items-center justify-center opacity-0 group-hover/file-header:opacity-100 group-has-[:focus-visible]/file-header:opacity-100">
 							<Icon

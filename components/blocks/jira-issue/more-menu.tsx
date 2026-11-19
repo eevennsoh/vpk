@@ -178,16 +178,16 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
 				{appearance === "project-butter" ? <>
 					<DropdownMenuGroup>
-						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} elemBeforeSize={16} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
 						<DropdownMenuSub>
-							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />}>Link</DropdownMenuSubTrigger>
+							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />} elemBeforeSize={16}>Link</DropdownMenuSubTrigger>
 							<DropdownMenuSubContent>
 								<DropdownMenuItem onSelect={select("link-work-item")}>Work item</DropdownMenuItem>
 								<DropdownMenuItem onSelect={select("link-confluence-item")}>Confluence item</DropdownMenuItem>
 							</DropdownMenuSubContent>
 						</DropdownMenuSub>
-						<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
-						{flagged ? null : <DropdownMenuItem elemBefore={<FlagIcon label="" size="small" />} onSelect={select("add-flag")}>Add flag</DropdownMenuItem>}
+						<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} elemBeforeSize={16} elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<FlagIcon label="" size="small" />} elemBeforeSize={16} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
 					<DropdownMenuGroup>
@@ -201,7 +201,8 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 						<DropdownMenuItem onSelect={() => copy(issueKey, "copy-key")}>Copy key</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem elemBefore={<DeleteIcon label="" size="small" />} onSelect={moreMenuActions?.onDelete}>Delete</DropdownMenuItem>
+					{moreMenuActions?.onSelect ? <><DropdownMenuItem elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem><DropdownMenuSeparator /></> : null}
+					<DropdownMenuItem elemBefore={<DeleteIcon label="" size="small" />} elemBeforeSize={16} onSelect={moreMenuActions?.onDelete}>Delete</DropdownMenuItem>
 				</> : <>
 				{butterAssignment && invocation ? <ProjectButterMenuAgentSubmenu assignment={butterAssignment} triggerRef={triggerRef} onRequestClose={() => handleOpenChange(false)} /> : null}
 				{generativeAction && generativeActionIssue ? (

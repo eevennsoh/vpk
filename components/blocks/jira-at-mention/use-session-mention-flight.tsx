@@ -2,13 +2,13 @@
 
 import { useEffectEvent, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { planSessionMentionFlight } from "@/components/blocks/jira-work-item/project-butter/session-mention-flight";
-import { activityScrollport } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { DEFAULT_MENTION_FLIGHT_OPTIONS, planSessionMentionFlight, type MentionFlightOptions } from "@/components/blocks/jira-at-mention/session-mention-flight";
+import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 import { motionDuration } from "@/lib/motion";
 
 export type MentionFlightSource = Readonly<{ chip: HTMLElement; rect: DOMRect }>;
-type FlightRequest = Readonly<{ entryId: string; id: number; source: MentionFlightSource | null }>;
-type Settlement = "landed" | "interrupted";
+export type MentionFlightRequest = Readonly<{ entryId: string; id: number; source: MentionFlightSource | null; options?: MentionFlightOptions }>;
+export type MentionFlightSettlement = "landed" | "interrupted";
 const reducedQuery = "(prefers-reduced-motion: reduce)";
 const subscribeMotion = (callback: () => void) => {
 	const query = window.matchMedia(reducedQuery);
@@ -19,7 +19,7 @@ const reducedSnapshot = () => window.matchMedia(reducedQuery).matches;
 const serverSnapshot = () => true;
 const sameRect = (a: DOMRect, b: DOMRect) => Math.abs(a.left - b.left) < 0.75 && Math.abs(a.top - b.top) < 0.75 && Math.abs(a.width - b.width) < 0.75 && Math.abs(a.height - b.height) < 0.75;
 
-export function useSessionMentionFlight(bodyRef: RefObject<HTMLDivElement | null>, request: FlightRequest | null, active: boolean, onTraceStart: (id: number) => void, onSettled: (id: number, reason?: Settlement) => void) {
+export function useSessionMentionFlight(bodyRef: RefObject<HTMLDivElement | null>, request: MentionFlightRequest | null, active: boolean, onTraceStart: (id: number) => void, onSettled: (id: number, reason?: MentionFlightSettlement) => void) {
 	const overlayRef = useRef<HTMLDivElement>(null);
 	const completed = useRef<number | null>(null);
 	const [completedId, setCompletedId] = useState<number | null>(null);
@@ -28,7 +28,7 @@ export function useSessionMentionFlight(bodyRef: RefObject<HTMLDivElement | null
 	const settled = useEffectEvent(onSettled);
 	useLayoutEffect(() => {
 		if (!request || completed.current === request.id) return;
-		const { id, entryId, source } = request;
+		const { id, entryId, source, options = DEFAULT_MENTION_FLIGHT_OPTIONS } = request;
 		let disposed = false;
 		let done = false;
 		let frame = 0;
@@ -52,7 +52,7 @@ export function useSessionMentionFlight(bodyRef: RefObject<HTMLDivElement | null
 		let planTrace = 0;
 		const started = performance.now();
 		const node = overlayRef.current;
-		function finish(reason: Settlement) {
+		function finish(reason: MentionFlightSettlement) {
 			if (disposed || done) return;
 			done = true;
 			completed.current = id;
@@ -135,12 +135,12 @@ export function useSessionMentionFlight(bodyRef: RefObject<HTMLDivElement | null
 			}
 			destination = measured;
 			resize.observe(target);
-			const plan = planSessionMentionFlight({ source: flightSource.rect, destination, viewport: { width: window.innerWidth, height: window.innerHeight } });
+			const plan = planSessionMentionFlight({ source: flightSource.rect, destination, viewport: { width: window.innerWidth, height: window.innerHeight } }, options);
 			if (!plan) { finish("landed"); return; }
 			planDuration = plan.durationMs; planSettle = plan.settleOffset; planTrace = plan.traceOffset;
 			overlay.dataset.flightPhase = "travel";
 			animation = overlay.animate(plan.frames.map(({ offset, transform }) => ({ offset, transform })), { duration: plan.durationMs, easing: "linear", fill: "forwards" });
-			shadow = overlay.querySelector("[data-project-butter-mention-flight-shadow]")?.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { duration: plan.durationMs, easing: "linear", fill: "forwards" }) ?? null;
+			shadow = options.shadow ? overlay.querySelector("[data-project-butter-mention-flight-shadow]")?.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { duration: plan.durationMs, easing: "linear", fill: "forwards" }) ?? null : null;
 			flying = true;
 			animation.onfinish = () => finish(validTarget() ? "landed" : "interrupted");
 			animation.oncancel = interrupted;

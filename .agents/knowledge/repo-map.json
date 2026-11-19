@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 449,
+			"manifestEntryCount": 450,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 443,
+				"live": 444,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4452,7 +4452,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 121,
+				"entryCount": 122,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4774,6 +4774,13 @@
 						"slug": "jira-activity",
 						"name": "Jira Activity",
 						"importPath": "@/components/blocks/jira-activity",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-at-mention",
+						"name": "Jira At-mention",
+						"importPath": "@/components/blocks/jira-at-mention",
 						"status": "live"
 					},
 					{
@@ -6455,16 +6462,16 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "file-tree",
-						"name": "File Tree",
-						"importPath": "@/components/ui-custom/file-tree",
+						"slug": "file-explorer",
+						"name": "File Explorer",
+						"importPath": "@/components/ui-custom/file-explorer",
 						"status": "live"
 					},
 					{
 						"category": "ui-custom",
-						"slug": "file-tree-2",
-						"name": "File Tree 2",
-						"importPath": "@/components/ui-custom/file-tree-2",
+						"slug": "file-tree",
+						"name": "File Tree",
+						"importPath": "@/components/ui-custom/file-tree",
 						"status": "live"
 					},
 					{

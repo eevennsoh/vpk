@@ -5,161 +5,158 @@
 import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+	Item,
+	ItemActions,
+	ItemContent,
+	ItemTitle,
+} from "@/components/ui/item";
 import { createContext, use } from "react";
 
 type ToolUIPartApproval =
-  | {
-      id: string;
-      approved?: never;
-      reason?: never;
-    }
-  | {
-      id: string;
-      approved: true;
-      reason?: string;
-    }
-  | {
-      id: string;
-      approved: false;
-      reason?: string;
-    }
-  | undefined;
+	| {
+			id: string;
+			approved?: never;
+			reason?: never;
+	  }
+	| {
+			id: string;
+			approved: true;
+			reason?: string;
+	  }
+	| {
+			id: string;
+			approved: false;
+			reason?: string;
+	  }
+	| undefined;
 
 interface ConfirmationContextValue {
-  approval: ToolUIPartApproval;
-  state: ToolUIPart["state"];
+	approval: ToolUIPartApproval;
+	state: ToolUIPart["state"];
 }
 
 const ConfirmationContext = createContext<ConfirmationContextValue | null>(
-  null
+	null,
 );
 
 function useConfirmation() {
-  const context = use(ConfirmationContext);
+	const context = use(ConfirmationContext);
 
-  if (!context) {
-    throw new Error("Confirmation components must be used within Confirmation");
-  }
+	if (!context) {
+		throw new Error("Confirmation components must be used within Confirmation");
+	}
 
-  return context;
+	return context;
 }
 
-export type ConfirmationProps = ComponentProps<typeof Alert> & {
-  approval?: ToolUIPartApproval;
-  state: ToolUIPart["state"];
+export type ConfirmationProps = ComponentProps<typeof Item> & {
+	approval?: ToolUIPartApproval;
+	state: ToolUIPart["state"];
 };
 
 export function Confirmation({
-  className,
-  approval,
-  state,
-  ...props
+	approval,
+	state,
+	variant = "outline",
+	size = "sm",
+	...props
 }: Readonly<ConfirmationProps>) {
-  if (!approval || state === "input-streaming" || state === "input-available") {
-    return null;
-  }
+	if (!approval || state === "input-streaming" || state === "input-available") {
+		return null;
+	}
 
-  return (
-    <ConfirmationContext value={{ approval, state }}>
-      <Alert className={cn("flex flex-col gap-2", className)} {...props} />
-    </ConfirmationContext>
-  );
+	return (
+		<ConfirmationContext value={{ approval, state }}>
+			<Item size={size} variant={variant} {...props} />
+		</ConfirmationContext>
+	);
 }
 
-export type ConfirmationTitleProps = ComponentProps<typeof AlertDescription>;
+export type ConfirmationTitleProps = ComponentProps<typeof ItemTitle>;
 
-export function ConfirmationTitle({
-  className,
-  ...props
-}: Readonly<ConfirmationTitleProps>) {
-  return <AlertDescription className={cn("inline", className)} {...props} />;
+export function ConfirmationTitle(props: Readonly<ConfirmationTitleProps>) {
+	return (
+		<ItemContent>
+			<ItemTitle {...props} />
+		</ItemContent>
+	);
 }
 
 export interface ConfirmationRequestProps {
-  children?: ReactNode;
+	children?: ReactNode;
 }
 
-export function ConfirmationRequest({ children }: Readonly<ConfirmationRequestProps>) {
-  const { state } = useConfirmation();
+export function ConfirmationRequest({
+	children,
+}: Readonly<ConfirmationRequestProps>) {
+	const { state } = useConfirmation();
 
-  // Only show when approval is requested
-  if (state !== "approval-requested") {
-    return null;
-  }
+	if (state !== "approval-requested") {
+		return null;
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
 
 export interface ConfirmationAcceptedProps {
-  children?: ReactNode;
+	children?: ReactNode;
 }
 
 export function ConfirmationAccepted({
-  children,
+	children,
 }: Readonly<ConfirmationAcceptedProps>) {
-  const { approval, state } = useConfirmation();
+	const { approval, state } = useConfirmation();
 
-  // Only show when approved and in response states
-  if (
-    !approval?.approved ||
-    (state !== "approval-responded" &&
-      state !== "output-denied" &&
-      state !== "output-available")
-  ) {
-    return null;
-  }
+	if (
+		!approval?.approved ||
+		(state !== "approval-responded" &&
+			state !== "output-denied" &&
+			state !== "output-available")
+	) {
+		return null;
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
 
 export interface ConfirmationRejectedProps {
-  children?: ReactNode;
+	children?: ReactNode;
 }
 
 export function ConfirmationRejected({
-  children,
+	children,
 }: Readonly<ConfirmationRejectedProps>) {
-  const { approval, state } = useConfirmation();
+	const { approval, state } = useConfirmation();
 
-  // Only show when rejected and in response states
-  if (
-    approval?.approved !== false ||
-    (state !== "approval-responded" &&
-      state !== "output-denied" &&
-      state !== "output-available")
-  ) {
-    return null;
-  }
+	if (
+		approval?.approved !== false ||
+		(state !== "approval-responded" &&
+			state !== "output-denied" &&
+			state !== "output-available")
+	) {
+		return null;
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
 
-export type ConfirmationActionsProps = ComponentProps<"div">;
+export type ConfirmationActionsProps = ComponentProps<typeof ItemActions>;
 
-export function ConfirmationActions({
-  className,
-  ...props
-}: Readonly<ConfirmationActionsProps>) {
-  const { state } = useConfirmation();
+export function ConfirmationActions(props: Readonly<ConfirmationActionsProps>) {
+	const { state } = useConfirmation();
 
-  // Only show when approval is requested
-  if (state !== "approval-requested") {
-    return null;
-  }
+	if (state !== "approval-requested") {
+		return null;
+	}
 
-  return (
-    <div
-      className={cn("flex items-center justify-end gap-2 self-end", className)}
-      {...props}
-    />
-  );
+	return <ItemActions {...props} />;
 }
 
 export type ConfirmationActionProps = ComponentProps<typeof Button>;
 
+// VPK's `default` button size (h-8) is shadcn's `sm`.
 export function ConfirmationAction(props: Readonly<ConfirmationActionProps>) {
-  return <Button className="h-8 px-3 text-sm" type="button" {...props} />;
+	return <Button size="default" type="button" {...props} />;
 }
