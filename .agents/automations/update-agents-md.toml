@@ -1,0 +1,10 @@
+version = 1
+id = "update-agents-md"
+kind = "cron"
+name = "Update AGENTS.md"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nReview VPK `AGENTS.md` against current scripts, commands, workflows, architecture, and conventions. Make only material, evidence-backed documentation corrections. Refresh the validation-freshness block only when its commands or referenced documents changed.\n\n## Evidence and judgment\nVerify every claim against package scripts, workflow docs, rules, routes, provider symlinks, recent commits, and source owners. Keep the document provider-neutral and minimal. Do not rewrite unrelated prose, document unused workflows, add facts readers can infer from code, or turn one historical failure into a universal rule.\n\n## Handoff\nFor a justified correction, use title `[Automation] Update AGENTS.md: <short summary>` and existing labels `automation`, `codex`, and `agents-md`. Include the stale claim, current source evidence, exact correction, doc validation, shared-policy result, and reviewer focus.\n\n## Stop conditions\nReturn no PR when current source evidence is incomplete, another branch owns the same guidance, the change is speculative, or the edit expands into unrelated documentation cleanup."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=9;BYMINUTE=15;BYDAY=TU"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"
