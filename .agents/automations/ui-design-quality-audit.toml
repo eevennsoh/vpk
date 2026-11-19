@@ -1,0 +1,10 @@
+version = 1
+id = "ui-design-quality-audit"
+kind = "cron"
+name = "UI design quality audit"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nAudit recent VPK UI/CSS changes for one high-confidence design-system drift, CSS contract issue, accessibility/focus defect, or reusable-component quality problem. Catch objective contract drift, not subjective taste.\n\n## Evidence and judgment\nUse AGENTS/design/token rules, recent diffs, source ownership, screenshots, browser geometry, focus/accessibility behavior, and exact token/component evidence. Use modern-web, motion, building-components, composition, shadcn, or vpk-tidy only when the selected issue needs that lens. CSS convention drift remains an issue/comment with no source patch; code changes are only for small obvious runtime, token, accessibility, or component-contract fixes. Do not redesign, reorganize CSS broadly, bypass primitives, or retune subjective motion.\n\n## Handoff\nFor a code fix, use title `[Automation] UI design quality audit: <short summary>` and existing labels `automation`, `codex`, and `ui`. For CSS-only drift, update the existing `css-drift` issue path with evidence. Include root cause, live proof, shared-policy validation, and reviewer focus. If no objective drift exists, report exactly `OK: no UI design, CSS, or component drift in last 7d`.\n\n## Stop conditions\nReturn no PR when evidence is aesthetic or weak, the change is intentional, CSS structure needs a human decision, overlap obscures the contract, or the fix becomes a redesign."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=10;BYMINUTE=30;BYDAY=MO,WE"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

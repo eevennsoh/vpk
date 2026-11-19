@@ -17,7 +17,7 @@ Each line is settled. Reopen one only with the owner.
 - **Repo Claude settings** (D4, #2253): agent shells get the OpenSSL workaround, sandboxed tests may bind loopback, and the two cascading commands (`tmux kill-server`, `portless prune`) are denied. `gh` stays sandboxed.
 - **`artifacts/` rule** (D9): unattended automation never writes there; interactive `vpk-html` sessions may write under `artifacts/vpk-html/`.
 - **Skill merges** (D7): `vpk-component-ext` folded into `vpk-component`; `vpk-council` became a `vpk-remote` mode; skill bodies capped at 300 lines with trigger eval kits.
-- **Codex automations** (D8, D11, D12): retire `engineering-improvement-map`, add the producing automations, auto-merge only labelled low-risk automation PRs, track definitions in the repo with no secrets. On 20 Nov 2026 `engineering-improvement-map` was retired (moved to `~/.codex/automations-retired/`) and `main-health`, `baseline-burn-down`, `skill-health` and `worktree-sweep` were installed `PAUSED` from the tracked drafts in `.agents/automations/`; the owner activates them after review. Each job uses the latest model of its family (`gpt-6.2-sol`, `gpt-6-luna`; terra and astra would be `gpt-6.1-terra` and `gpt-6.2-astra`). D11 is built: auto-merge covers only edits to existing READMEs, a shrink-only `eslint-suppressions.json` and the regenerated `repo-map.json` and skills `INDEX.md` beside them; tests and all other code always need a human. `scripts/automation-merge-eligibility.mjs` holds that policy, producers label each PR `automerge:allowed` or `risk:needs-human` from its `--policy` check, and the local `automation-merge` job runs `scripts/automation-merge.mjs`, which merges allowed PRs pinned to one head SHA with a clean Codex signal through the `vpk-git-ship` review gate and `merge-remote.js`. Still open: tracking the 15 older job definitions (D12).
+- **Codex automations** (D8, D11, D12): retire `engineering-improvement-map`, add the producing automations, auto-merge only labelled low-risk automation PRs, track definitions in the repo with no secrets. On 20 Nov 2026 `engineering-improvement-map` was retired (moved to `~/.codex/automations-retired/`) and `main-health`, `baseline-burn-down`, `skill-health` and `worktree-sweep` were installed from the tracked drafts in `.agents/automations/` and activated by the owner the same day, with `automation-merge`. All 20 job definitions are tracked there (D12 done). Each job uses the latest model of its family (`gpt-6.2-sol`, `gpt-6-luna`; terra and astra would be `gpt-6.1-terra` and `gpt-6.2-astra`). D11 is built: auto-merge covers only edits to existing READMEs, a shrink-only `eslint-suppressions.json` and the regenerated `repo-map.json` and skills `INDEX.md` beside them; tests and all other code always need a human. `scripts/automation-merge-eligibility.mjs` holds that policy, producers label each PR `automerge:allowed` or `risk:needs-human` from its `--policy` check, and the local `automation-merge` job runs `scripts/automation-merge.mjs`, which merges allowed PRs pinned to one head SHA with a clean Codex signal through the `vpk-git-ship` review gate and `merge-remote.js`.
 - **Dev output on stop** (R-7): `dev:tmux:stop` removes `.next/dev/static` and `.next/dev/server` and keeps the cache; starts outside `dev:tmux` prune output older than a day.
 - **One backend per data directory**: enforced with a lock file (#2320), not just documented.
 - **jsx-a11y options** (#2255, #2275): the interaction and role rules use the plugin's own `recommended` options instead of bare `"error"`; a boundary test fails if the copied options drift from the plugin.
@@ -46,6 +46,8 @@ Each line is settled. Reopen one only with the owner.
 - **Browser-workspace MCP thread binding**: deferred; it would change the owner's `pnpm run rovo` start path.
 - **Butter `/butter` page weight**: the work item stays static, so the route still fetches about 5.7 MB; pinned by a test.
 - **React Compiler**: blocked on the React hooks lint backlog.
+- **Deploy work** (owner decision, 20 Nov 2026): VPK is a prototype that feels real, not a production service, so deploying auth to pdev, a persistent `backend/data` volume, backfilling owners on existing threads (`backend/scripts/backfill-rovo-thread-owner.js`), SSH backup access and a pre-deploy cross-owner review are not planned. Revisit only if VPK is deployed for real use.
+- **Low auth gaps accepted for a prototype** (20 Nov 2026): the runtime admin token is still accepted in the query string (`?token=`, `?runtimeToken=`; `backend/middleware/runtime-admin.js`), and a deferred tool record registered outside a chat turn has no owner, so on an unstored thread any signed-in caller could cancel it (nothing registers one today).
 
 ## How things work now
 
@@ -130,12 +132,7 @@ Things an agent would otherwise get wrong. The linked file owns the detail.
 
 ## Owner actions
 
-- **Deploy auth to pdev** and run the checks in the #2311 PR body before anyone relies on per-owner data, starting with the identity checks.
-- **Persistent `backend/data`**: no volume is mounted, so a redeploy wipes threads. Decide volume, object storage or accept it, before anyone relies on stored threads.
-- **Existing threads after deploy**: decide whether to run `backend/scripts/backfill-rovo-thread-owner.js`; ownerless threads are invisible to every signed-in caller.
-- **Codex automations**: review the four `PAUSED` drafts in `.agents/automations/` and set `status = "ACTIVE"` in `~/.codex/automations/<id>/automation.toml` for the ones to run; install `automation-merge` from its tracked definition.
-- Optional: SSH access to the service for future data backups.
-- Optional: one adversarial review with experiments of cross-owner reads, writes and deletes before the deploy.
+None open as of 20 Nov 2026. The deploy items are deferred (see **Declined or deferred**).
 
 ## Not verified
 

@@ -1,0 +1,10 @@
+version = 1
+id = "bug-scan"
+kind = "cron"
+name = "Bug scan"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nScan commits since the successful cutoff recorded in Bug Scan memory for one clearly evidenced VPK regression. If no usable cutoff exists, inspect the last 72 hours. Produce one smallest root-cause fix and regression test only when the issue is reproducible and review-ready; otherwise return a concise no-PR report.\n\n## Evidence and selection\nUse current commit diffs, focused tests, PR checks, runtime logs, owner-source inspection, or browser reproduction. Browser work uses agent-browser first and Playwright CLI only when it is blocked. Treat analyzer warnings, stale source-shape assertions, environmental failures, and suspicious UI as candidates—not bugs—until user or system impact is proved.\n\n## Task-specific judgment\nRequire high confidence, narrow ownership, and a credible validation path. Do not invent a bug, mask a symptom, weaken validation or security, or mix unrelated cleanup into the fix. For CI regressions, start from current check logs/annotations and isolate one causal failure.\n\n## Handoff\nFor a successful change, use title `[Automation] Bug scan: <short summary>` and existing labels `automation`, `codex`, and `bugfix`. Include reproduction, root cause, focused regression proof, shared-policy validation result, freshness/overlap evidence, and reviewer focus.\n\n## Stop conditions\nReturn no PR when the bug is speculative, expected behavior is unclear, ownership overlaps another change, validation cannot support readiness, or the fix would require broad refactoring."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=9;BYMINUTE=15;BYDAY=MO,WE,FR"
+model = "gpt-6.2-sol"
+reasoning_effort = "high"
+execution_environment = "worktree"
