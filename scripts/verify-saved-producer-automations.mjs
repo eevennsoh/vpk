@@ -6,15 +6,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const EXPECTED_PRODUCER_AUTOMATION_IDS = [
+	"baseline-burn-down",
 	"bug-scan",
 	"code-simplification",
 	"correction-ladder",
 	"dependency-sweep",
 	"deprecation-audit",
-	"engineering-improvement-map",
 	"frontend-runtime-audit",
 	"interface-contract-audit",
+	"main-health",
 	"performance-audit",
+	"skill-health",
 	"test-coverage",
 	"ui-design-quality-audit",
 	"update-agents-md",
