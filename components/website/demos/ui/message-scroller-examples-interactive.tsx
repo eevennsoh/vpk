@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { motionDuration, motionEase } from "@/lib/motion";
-import { ExampleFrame, ExampleMessageContent, ExampleRows, MotionMessageScrollerItem, type ExampleMessage } from "@/components/website/demos/ui/message-scroller-examples-shared";
+import { ExampleFrame, ExampleMessageContent, ExampleRows, type ExampleMessage } from "@/components/website/demos/ui/message-scroller-examples-shared";
+import { MotionMessageScrollerItem } from "@/components/website/demos/ui/message-scroller-examples-motion";
 
 const firstExchange: ExampleMessage[] = [
 	{ id: "first-user", role: "user", text: "How can we keep context visible in a long conversation?", anchor: true },
