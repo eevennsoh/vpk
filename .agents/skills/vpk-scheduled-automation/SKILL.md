@@ -4,7 +4,8 @@ description: >-
   Shared execution policy for VPK scheduled jobs that investigate one
   maintenance candidate, make a review-ready change, and open or update a pull
   request. Use when a Codex automation invokes vpk-scheduled-automation for bug,
-  test, deprecation, interface, simplification, engineering-map, AGENTS.md,
+  test, deprecation, interface, simplification, main-health, baseline
+  burn-down, skill-health, AGENTS.md,
   frontend-runtime, performance, UI-quality, or dependency work. Do not use for
   read-only summaries or local cleanup jobs.
 ---
