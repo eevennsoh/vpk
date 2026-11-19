@@ -3,6 +3,51 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("large session cards keep the status label when More actions replaces the icon", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await expect(page.getByRole("button", { name: "Large", exact: true })).toHaveAttribute("aria-pressed", "true");
+	for (const section of ["Local sessions", "Cloud sessions"]) {
+		const rows = page.getByRole("region", { name: section }).locator("article");
+		for (const label of ["Working", "Needs input", "Finished"]) {
+			const row = rows.filter({ has: page.getByRole("button", { name: label, exact: true }) });
+			const status = row.getByText(label, { exact: true });
+			const glyph = row.locator("[data-agent-session-lifecycle-glyph]");
+			const more = row.getByRole("button", { name: /^More actions for/ });
+			await page.mouse.move(0, 0);
+			await expect(status).toBeVisible();
+			await expect(glyph).toBeVisible();
+			const restingStatus = await status.boundingBox();
+			const restingGlyph = await glyph.boundingBox();
+			await row.hover();
+			await expect(status).toBeVisible();
+			await expect(glyph).toBeHidden();
+			await expect(more.locator("..")).toHaveCSS("opacity", "1");
+			expect(await status.boundingBox()).toEqual(restingStatus);
+			const action = await more.boundingBox();
+			if (!restingGlyph || !action) throw new Error("Missing status icon or menu trigger");
+			expect(Math.abs(action.x - restingGlyph.x)).toBeLessThanOrEqual(1);
+			expect(action).toMatchObject({ y: restingGlyph.y, width: restingGlyph.width, height: restingGlyph.height });
+		}
+	}
+
+	await page.mouse.move(0, 0);
+	await page.keyboard.press("Tab");
+	const local = page.getByRole("region", { name: "Local sessions" }).locator("article").first();
+	const more = local.getByRole("button", { name: /^More actions for/ });
+	await more.focus();
+	await expect(more.locator("..")).toHaveCSS("opacity", "1");
+	await expect(local.locator("[data-agent-session-lifecycle-glyph]")).toBeHidden();
+	await more.press("Enter");
+	await expect(page.getByRole("menu")).toBeVisible();
+	await expect(local.getByText("Working", { exact: true })).toBeVisible();
+	await expect(local.locator("[data-agent-session-lifecycle-glyph]")).toBeHidden();
+	await page.keyboard.press("Escape");
+	await expect(more).toBeFocused();
+});
+
 test("team session rows do not reveal an access tooltip on hover", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
 	await page.clock.install();
@@ -583,12 +628,12 @@ test("board session flyout reveals more actions when hovering the status", async
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const issue = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-105"][data-board-column-title]');
-	await issue.getByRole("button", { name: "Cursor: Working" }).click();
+	await issue.getByRole("button", { name: "2 agents: Working" }).click();
 	const flyout = page.getByRole("dialog", { name: "Agent assignment" });
 	const row = flyout.locator("article").filter({ hasText: "Replaying 3-D Secure fixtures" });
 	await expect(row).toBeVisible();
 	await page.mouse.move(0, 0);
-	const status = row.getByRole("button", { name: "Working" });
+	const status = row.getByRole("img", { name: "Working" });
 	await expect(status).toBeVisible();
 	const statusBounds = await status.boundingBox();
 	if (!statusBounds) throw new Error("Session status is not rendered");
