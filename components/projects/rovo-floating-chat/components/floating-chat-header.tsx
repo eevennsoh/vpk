@@ -26,6 +26,7 @@ interface FloatingChatHeaderProps {
 	className?: string;
 	/** 24px row — matches Pulse's insight eyebrow (`min-h-6`) and icon-compact chevrons. */
 	compact?: boolean;
+	identityTooltip?: string;
 	onClose: () => void;
 	onNewChat?: () => void;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -44,6 +45,7 @@ export default function FloatingChatHeader({
 	attributedBy,
 	className,
 	compact = false,
+	identityTooltip,
 	onClose,
 	onNewChat,
 	onSurfaceSwitch,
@@ -69,6 +71,7 @@ export default function FloatingChatHeader({
 					attributedBy={attributedBy}
 					className={compact ? "h-6 px-1" : undefined}
 					enableAgentSelector={showAgentSelector}
+					identityTooltip={identityTooltip}
 				/>
 			</div>
 			<div className="flex items-center gap-1">

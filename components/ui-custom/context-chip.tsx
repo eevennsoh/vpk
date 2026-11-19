@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import CrossIcon from "@atlaskit/icon/core/cross";
 
@@ -21,6 +21,7 @@ export interface ContextChipProps {
 	items: readonly ContextChipItem[];
 	/** Leading icon inside the chip trigger. */
 	icon: ReactNode;
+	iconSize?: ComponentProps<typeof Button>["iconSize"];
 	/** Visible count label (e.g. "1 comment", "2 failing checks"). */
 	countLabel: string;
 	/** Accessible name for the popover trigger. Defaults to `Review ${countLabel}`. */
@@ -40,6 +41,7 @@ export interface ContextChipProps {
 export function ContextChip({
 	items,
 	icon,
+	iconSize,
 	countLabel,
 	triggerLabel,
 	onRemoveAll,
@@ -58,6 +60,7 @@ export function ContextChip({
 							aria-label={triggerLabel ?? `Review ${countLabel}`}
 							className="min-w-0 border-0 bg-transparent pl-2 pr-0 font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent aria-expanded:text-text-subtlest aria-expanded:[&_svg]:text-icon-subtlest"
 							size="compact"
+							iconSize={iconSize}
 							title={countLabel}
 							variant="ghost"
 						/>

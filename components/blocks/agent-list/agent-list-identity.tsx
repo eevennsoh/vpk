@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
@@ -70,13 +70,17 @@ export function AgentListAttributionAvatarGroup({
 		<AgentAvatarVisual
 			appearance={appearance}
 			animate={animate}
-			key="agent"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
 			label=""
 			sizePx={sizePx}
 			vpkLogo={agent.vpkLogo}
 		/>
+	);
+	const agentSlot = (
+		<Fragment key="agent">
+			{renderAgentAvatar?.(agent, agentAvatar) ?? agentAvatar}
+		</Fragment>
 	);
 
 	return (
@@ -87,7 +91,7 @@ export function AgentListAttributionAvatarGroup({
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
-			{orderAttributionAvatars(attributionOrder, renderAgentAvatar?.(agent, agentAvatar) ?? agentAvatar, personAvatar)}
+			{orderAttributionAvatars(attributionOrder, agentSlot, personAvatar)}
 		</AvatarGroup>
 	);
 }

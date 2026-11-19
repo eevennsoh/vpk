@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
 	isRovoAgentProfile,
@@ -81,15 +82,18 @@ export interface RovoAppBrandProps {
 	attributedBy?: AgentListInvoker;
 	className?: string;
 	enableAgentSelector?: boolean;
+	identityTooltip?: string;
 }
 
 export function RovoAppBrand({
 	attributedBy,
 	className,
 	enableAgentSelector = true,
+	identityTooltip,
 }: Readonly<RovoAppBrandProps>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const identityDescriptionId = useId();
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const {
 		selectedAgent,
@@ -188,6 +192,29 @@ export function RovoAppBrand({
 	);
 
 	if (!enableAgentSelector) {
+		if (identityTooltip) {
+			return (
+				<Tooltip>
+					<span hidden id={identityDescriptionId}>{identityTooltip}</span>
+					<TooltipTrigger
+						closeOnClick={false}
+						render={
+							<div
+								aria-describedby={identityDescriptionId}
+								aria-label={triggerLabel}
+								className={cn("flex h-8 min-w-0 shrink-0 items-center rounded-md px-2 text-sm font-medium text-text outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring", className)}
+								role="group"
+								tabIndex={0}
+							/>
+						}
+					>
+						{identity}
+					</TooltipTrigger>
+					<TooltipContent align="start" positionerClassName="z-[650]" role="tooltip">{identityTooltip}</TooltipContent>
+				</Tooltip>
+			);
+		}
+
 		return (
 			<div className={cn("flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text", className)}>
 				{identity}

@@ -77,8 +77,13 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
+	const estimatedPoints = page.getByRole("button", { name: "Edit story points for PAY-118, 3" });
+	await estimatedPoints.hover();
+	await expect(estimatedPoints).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect.poll(() => estimatedPoints.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+	await expect(page.getByRole("button", { name: "Increase story points for PAY-118" })).toBeVisible();
 	// The list seeds every work item with an estimate; clear PAY-118's so the cell starts empty.
-	await page.getByRole("button", { name: "Edit story points for PAY-118, 3" }).click();
+	await estimatedPoints.click();
 	await input.fill("");
 	await input.press("Enter");
 	const edit = page.getByRole("button", { name: "Edit story points for PAY-118, no estimate" });
@@ -93,15 +98,9 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 		return label?.getBoundingClientRect().x;
 	});
 	if (headerTextX === undefined) throw new Error("Points header is unavailable");
-	const originalBackground = await edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor);
 	await page.mouse.move(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
-	await expect.poll(() => edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).not.toBe(originalBackground);
-	const hoverBounds = await edit.evaluate((element) => {
-		const bounds = element.getBoundingClientRect();
-		const visual = getComputedStyle(element, "::before");
-		return { x: bounds.x + Number.parseFloat(visual.left), right: bounds.right - Number.parseFloat(visual.right) };
-	});
-	expect(hoverBounds.x).toBeCloseTo(headerTextX, 0);
+	await expect(edit).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect.poll(() => edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
 	await page.mouse.click(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
 	await expect(input).toBeFocused();
 	await expect(input).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -113,7 +112,7 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	expect(inputBounds.height).toBeLessThan(cellBounds.height);
 	expect(inputBounds.y + inputBounds.height / 2).toBeCloseTo(cellBounds.y + cellBounds.height / 2, 0);
 	expect(inputBounds.x).toBeCloseTo(headerTextX, 0);
-	expect(inputBounds.x + inputBounds.width).toBeCloseTo(hoverBounds.right, 0);
+	expect(inputBounds.x + inputBounds.width).toBeCloseTo(cellBounds.x + cellBounds.width - 12, 0);
 	const increase = page.getByRole("button", { name: "Increase story points for PAY-118" });
 	const decrease = page.getByRole("button", { name: "Decrease story points for PAY-118" });
 	await expect(decrease).toBeDisabled();

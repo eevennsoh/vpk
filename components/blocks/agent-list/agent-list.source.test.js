@@ -190,7 +190,7 @@ test("agent attribution groups share the same explicit order contract", () => {
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,
 	);
 	assert.doesNotMatch(IDENTITY_SOURCE, /gap-1 space-x-0/u);
-	assert.match(IDENTITY_SOURCE, /orderAttributionAvatars\(attributionOrder, renderAgentAvatar\?\.\(agent, agentAvatar\) \?\? agentAvatar, personAvatar\)/u);
+	assert.match(IDENTITY_SOURCE, /orderAttributionAvatars\(attributionOrder, agentSlot, personAvatar\)/u);
 });
 
 test("the attention state keeps the row's own title and warns instead of shimmering", () => {

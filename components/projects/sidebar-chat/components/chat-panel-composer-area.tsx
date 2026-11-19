@@ -4,10 +4,10 @@ import type { ComponentProps } from "react";
 import { ClarificationQuestionCard } from "@/components/projects/shared/components/clarification-question-card";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
+import { Footer } from "@/components/ui-custom/footer";
 import type { ChatPanelDecisions } from "../hooks/use-chat-panel-decisions";
 import type { ChatPanelProps } from "../lib/chat-panel-types";
 import ChatComposer from "./chat-composer";
-import { ReadOnlySessionComposer } from "./read-only-session-composer";
 
 type ChatComposerProps = ComponentProps<typeof ChatComposer>;
 
@@ -156,7 +156,7 @@ export function ChatPanelComposerArea({
 					<QuestionCardShortcutsFooter escLabel="cancel" />
 				</>
 			) : readOnly ? (
-				<ReadOnlySessionComposer context={chatContextBar} hideAiDisclaimer={hideAiDisclaimer} onContextBarOpenChange={setIsContextBarOpen} />
+				hideAiDisclaimer ? null : <Footer className="px-3" />
 			) : (
 				<>
 					<ChatComposer

@@ -21,7 +21,8 @@ const BACK_BUTTON_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
-test("the Codex chat header uses the compact coding-agent artwork", async () => {
+test("the Codex chat header renders compact artwork with and without attribution", async (t) => {
+	const consoleError = t.mock.method(console, "error", console.error);
 	const view = await renderComponent({
 		entry: "components/projects/rovo-core/components/rovo-app-brand.tsx",
 		exportName: "RovoAppBrand",
@@ -35,6 +36,11 @@ test("the Codex chat header uses the compact coding-agent artwork", async () => 
 	assert.equal(view.container.querySelector("img")?.getAttribute("src"), "/3p/openai-codex/glyph.svg");
 	assert.equal(view.container.querySelector('[data-slot="avatar"]')?.getAttribute("data-shape"), "hexagon");
 	assert.equal(view.container.querySelector('[data-slot="avatar"]')?.getAttribute("aria-label"), "Codex");
+
+	await view.rerender({ enableAgentSelector: false, attributedBy: { name: "Venn" } });
+	const attribution = view.getByRole("group", { name: "Codex, used by Venn" });
+	assert.equal(attribution.querySelector("img")?.getAttribute("src"), "/3p/openai-codex/glyph.svg");
+	assert.equal(consoleError.mock.calls.some(({ arguments: args }) => String(args[0]).includes('Each child in a list should have a unique "key" prop')), false);
 });
 
 test("RovoAppBrand agent selector keeps a single selected agent", () => {

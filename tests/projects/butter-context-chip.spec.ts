@@ -29,6 +29,14 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			await expect(page.locator("html")).not.toHaveAttribute("data-context-chip-transition");
 		}
 		await expect.poll(() => chip.evaluate((element) => element.getAnimations().length)).toBe(0);
+		const replyIcon = chip.getByRole("button", { name: /^Review Replying to/ }).locator("svg");
+		const addIcon = page.getByRole("button", { name: "Mention an agent or person" }).locator("svg");
+		await expect(replyIcon).toHaveCSS("width", "16px");
+		await expect(replyIcon).toHaveCSS("height", "16px");
+		await expect(addIcon).toHaveCSS("width", "16px");
+		const replyBox = await replyIcon.boundingBox();
+		const addBox = await addIcon.boundingBox();
+		expect(replyBox?.x).toBe(addBox?.x);
 		await expect(remove).toHaveCSS("opacity", "0");
 		await expect(remove).toHaveCSS("pointer-events", "none");
 		const restingWidth = (await chip.boundingBox())?.width;

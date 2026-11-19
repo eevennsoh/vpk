@@ -46,16 +46,26 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	const targetBounds = await trigger.boundingBox();
 	const cellBounds = await cell.boundingBox();
 	expect(targetBounds).toEqual(cellBounds);
-	const title = trigger.getByText("Port 3DS flow", { exact: true });
+	const title = trigger.getByText("Port 3DS flow", { exact: true }).first();
 	await title.hover();
 	await expect(title).toHaveCSS("text-decoration-line", "none");
+	await expect(title).toHaveCSS("cursor", "pointer");
 	await page.mouse.move(0, 0);
 	const preview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
 	await expect(preview).toBeHidden();
 	if (!cellBounds) throw new Error("PR cell geometry is unavailable");
 	await cell.hover({ position: { x: cellBounds.width - 2, y: 2 } });
 	await expect(preview).toBeVisible();
+	await expect(preview).toHaveCSS("transition-property", "none");
 	await expect(trigger.locator("a")).toHaveCount(0);
+	await page.mouse.move(0, 0);
+	const nextTrigger = page.getByRole("group", { name: "Pull request #1856: Extract retry policy", exact: true });
+	await nextTrigger.hover();
+	const nextPreview = page.getByRole("region", { name: "Pull request #1856 details", exact: true });
+	await expect(nextPreview).toBeVisible();
+	await trigger.hover();
+	await expect(preview).toBeVisible();
+	await expect(nextPreview).toBeHidden();
 });
 
 test("list rows cycle only agents with the same highest-priority active status", async ({ page }) => {

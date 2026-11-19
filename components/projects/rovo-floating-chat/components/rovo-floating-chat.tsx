@@ -95,6 +95,8 @@ export default function RovoFloatingChat({
 	const { closeChat, isHistoryOpen, resetChat, toggleHistory } = useRovoChat();
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const embedded = placement === "embedded";
+	const ownerName = readOnlyOwner?.name.trim();
+	const sessionOwner = ownerName ? `${ownerName}, the session owner,` : "the session owner";
 
 	return (
 		<motion.div
@@ -118,6 +120,7 @@ export default function RovoFloatingChat({
 				attributedBy={readOnly ? readOnlyOwner : undefined}
 				className={headerClassName}
 				compact={compactHeader}
+				identityTooltip={readOnly ? `Only ${sessionOwner} can steer this session. You can unblock it and review the outcome.` : undefined}
 				isHistoryOpen={isHistoryOpen}
 				onClose={closeChat}
 				onHistoryToggle={toggleHistory}

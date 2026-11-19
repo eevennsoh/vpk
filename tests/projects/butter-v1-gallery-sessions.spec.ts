@@ -203,7 +203,8 @@ test("team viewers can answer questions while their composer remains disabled", 
 	const oldBar = chat.getByRole("group", { name: "Session owner and status" });
 	await expect(chat.getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
 	await expect(oldBar).toHaveCount(0);
-	await expect(chat.getByText("Context:", { exact: true })).toBeVisible();
+	const contextBar = chat.locator("[data-chat-context-bar]");
+	await expect(contextBar).toHaveCount(0);
 	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
@@ -247,6 +248,33 @@ test("team viewers can answer questions while their composer remains disabled", 
 	await expect(input).toHaveCount(0);
 	await owner.locator("article").first().click();
 	await expect(input).toBeEnabled();
+	await expect(contextBar).toBeVisible();
+});
+
+test("viewer chat header explains why the prompt input is hidden", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
+	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const identity = chat.getByRole("group", { name: "Canva", exact: true });
+	const message = "Only Jordan Okafor, the session owner, can steer this session. You can unblock it and review the outcome.";
+	const explanation = page.getByRole("tooltip").filter({ hasText: message });
+	await expect(identity).toHaveAccessibleDescription(message);
+	await expect(explanation).toHaveCount(0);
+	await identity.getByText("Canva", { exact: true }).hover();
+	await expect(explanation).toBeVisible();
+	await page.mouse.move(0, 0);
+	await expect(explanation).toHaveCount(0);
+	await chat.getByRole("button", { name: "Close", exact: true }).focus();
+	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Shift+Tab");
+	await expect(identity).toBeFocused();
+	await expect(explanation).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(explanation).toHaveCount(0);
 });
 
 test("team owners retain the question dismiss control", async ({ page }) => {
