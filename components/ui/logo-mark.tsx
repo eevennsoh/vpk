@@ -2,7 +2,7 @@
 
 import { Tile, type TileProps } from "@/components/ui/tile";
 import {
-	getThirdPartyLogoIconFromSrc,
+	getThirdPartyLogoNameFromSrc,
 	THIRD_PARTY_LOGO_ICONS,
 } from "@/components/ui/data/logo-third-party-icons";
 import {
@@ -218,11 +218,8 @@ export function BrandLogoMark({
 	// white bordered `Tile`, so it maps cleanly onto the tile/chip frames but NOT
 	// the borderless `transparent` low-chrome treatment — that keeps the local
 	// `public/3p` asset below (asset path only; package brands have no such variant).
-	const ThirdPartyIcon = name
-		? THIRD_PARTY_LOGO_ICONS[name]
-		: transparent
-			? undefined
-			: getThirdPartyLogoIconFromSrc(src ?? "");
+	const thirdPartyName = name ?? (transparent ? undefined : getThirdPartyLogoNameFromSrc(src ?? ""));
+	const ThirdPartyIcon = thirdPartyName ? THIRD_PARTY_LOGO_ICONS[thirdPartyName] : undefined;
 	const packageGlyphContrastClassName = name === "github" ? "dark:[&_svg]:invert" : undefined;
 	if (ThirdPartyIcon) {
 		if (frame === "chip") {
