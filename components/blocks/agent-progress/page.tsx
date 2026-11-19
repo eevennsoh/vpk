@@ -21,6 +21,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import { MOCK_TASKS, type ProgressStatusGroups, type ProgressTask } from "./data/mock-tasks";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
+import { useTimestampAgo } from "@/hooks/use-timestamp-ago";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
 	"conic-gradient(from 220deg, transparent 0deg 252deg, #8d63ff 252deg 266deg, #7fbb44 266deg 280deg, #3b66e0 280deg 294deg, #e5a126 294deg 308deg, transparent 308deg 360deg)";
@@ -36,6 +37,7 @@ const CARD_ANIMATION_STYLES = `
 `;
 
 const CARD_ANIMATION_INNER_HTML = { __html: CARD_ANIMATION_STYLES };
+const DEFAULT_RUN_AGE_MS = 651_000;
 const CELEBRATORY_EMOJIS = ["🎉", "🥳", "🎊", "🪅", "🥂", "🎈", "🏆", "✨", "💪", "🙌"] as const;
 const EMOJI_ENTER_TRANSITION = { duration: 0.25, ease: [0.175, 0.885, 0.32, 1.275] as const };
 const ICON_TRANSITION = { duration: 0.2, ease: "easeOut" as const };
@@ -270,7 +272,7 @@ export default function AgentsProgress({
 	planVisualIdentity,
 	taskStatusGroups = MOCK_TASKS,
 	runStatus = "running",
-	runCreatedAt = new Date(Date.now() - 651_000).toISOString(),
+	runCreatedAt: runCreatedAtProp,
 	runCompletedAt = null,
 	initialNowMs,
 	showSummaryRainbow = false,
@@ -283,6 +285,9 @@ export default function AgentsProgress({
 	onRetryGroup,
 	className,
 }: Readonly<AgentsProgressProps>) {
+	// Without a start time the card shows a run that began ~10m 51s before it mounted.
+	const defaultRunCreatedAt = useTimestampAgo(DEFAULT_RUN_AGE_MS);
+	const runCreatedAt = runCreatedAtProp === undefined ? defaultRunCreatedAt : runCreatedAtProp;
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
 	const [nowMs, setNowMs] = useState(() =>
 		resolveInitialNowMs({

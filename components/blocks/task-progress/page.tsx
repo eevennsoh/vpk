@@ -16,6 +16,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import SuccessIcon from "@atlaskit/icon/core/success";
 import { MOCK_TASKS, flattenStatusGroups, type ProgressStatusGroups, type FlatTask } from "./data/mock-tasks";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
+import { useTimestampAgo } from "@/hooks/use-timestamp-ago";
 import { motionEase } from "@/lib/motion";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
@@ -32,6 +33,7 @@ const CARD_ANIMATION_STYLES = `
 `;
 
 const CARD_ANIMATION_INNER_HTML = { __html: CARD_ANIMATION_STYLES };
+const DEFAULT_RUN_AGE_MS = 651_000;
 
 type RunStatus = "running" | "completed" | "failed";
 type IconStatus = "done" | "in-progress" | "failed" | "todo";
@@ -182,7 +184,7 @@ export default function TaskProgress({
 	planVisualIdentity,
 	taskStatusGroups = MOCK_TASKS,
 	runStatus = "running",
-	runCreatedAt = new Date(Date.now() - 651_000).toISOString(),
+	runCreatedAt: runCreatedAtProp,
 	runCompletedAt = null,
 	initialNowMs,
 	showSummaryRainbow = false,
@@ -193,6 +195,9 @@ export default function TaskProgress({
 	showRunningStopButton = true,
 	className,
 }: Readonly<TaskProgressProps>) {
+	// Without a start time the card shows a run that began ~10m 51s before it mounted.
+	const defaultRunCreatedAt = useTimestampAgo(DEFAULT_RUN_AGE_MS);
+	const runCreatedAt = runCreatedAtProp === undefined ? defaultRunCreatedAt : runCreatedAtProp;
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
 	const [dismissed, setDismissed] = useState(false);
 	const [nowMs, setNowMs] = useState(() =>

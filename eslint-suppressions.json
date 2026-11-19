@@ -318,11 +318,6 @@
       "count": 1
     }
   },
-  "components/blocks/agent-progress/page.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-selector/agent-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 147
@@ -515,9 +510,6 @@
     }
   },
   "components/blocks/app-directory/components/app-directory.tsx": {
-    "react-hooks/static-components": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 3
     }
@@ -1372,9 +1364,6 @@
     }
   },
   "components/blocks/task-progress/page.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 3
     }
@@ -2446,11 +2435,6 @@
       "count": 70
     }
   },
-  "components/ui-custom/shimmer-wave.tsx": {
-    "react-hooks/static-components": {
-      "count": 2
-    }
-  },
   "components/ui-custom/skill-tag.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2566,11 +2550,6 @@
   "components/ui/logo-mark.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
-    }
-  },
-  "components/ui/logo-mark.tsx": {
-    "react-hooks/static-components": {
-      "count": 2
     }
   },
   "components/ui/logo-third-party.source.test.js": {
@@ -2853,11 +2832,6 @@
       "count": 1
     }
   },
-  "components/website/demos/blocks/agent-progress-demo.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    }
-  },
   "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2866,11 +2840,6 @@
   "components/website/demos/blocks/rovo-button/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 52
-    }
-  },
-  "components/website/demos/blocks/task-progress-demo.tsx": {
-    "react-hooks/purity": {
-      "count": 1
     }
   },
   "components/website/demos/blocks/trigger-config-demo.tsx": {
