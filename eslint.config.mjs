@@ -499,10 +499,10 @@ const eslintConfig = defineConfig([
 		// testing.md: a failed assert on a DOM node prints the whole document and can kill the run.
 		// Its own rule id keeps the baseline in eslint-suppressions.json counted separately.
 		files: [
-			"app/**/*.test.{js,mjs,cjs,ts}",
-			"components/**/*.test.{js,mjs,cjs,ts}",
-			"hooks/**/*.test.{js,mjs,cjs,ts}",
-			"lib/**/*.test.{js,mjs,cjs,ts}",
+			"app/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"components/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"hooks/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"lib/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
 			"scripts/lib/render-component.test.js",
 		],
 		plugins: { "vpk-tests": vpkTests },

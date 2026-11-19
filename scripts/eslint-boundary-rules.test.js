@@ -672,6 +672,8 @@ test("rendered tests assert on strings and booleans, never on DOM nodes", async 
 		'assert.strict.equal(view.queryByText("Saved"), null);',
 		'equal(view.queryByText("Saved"), null);',
 		'strictEqual(view.queryByText("Saved"), null);',
+		"assert.equal(document.body.firstElementChild, null);",
+		"assert.notEqual(content(), null);",
 	];
 	const mustNotReport = [
 		'assert.equal(view.queryByText("Saved") === null, true);',
@@ -691,15 +693,23 @@ test("rendered tests assert on strings and booleans, never on DOM nodes", async 
 		"assert.equal(element.props.children, \"Save\");",
 		'assert.ok(view.getByRole("button"));',
 		'assert.match(view.getByRole("button").textContent, /Save/u);',
+		"assert.equal(entry.node, h.issues[0].parentElement);",
+		"[{ body: null }].forEach((document) => assert.equal(document.body, null));",
+		"assert.equal(tree.parentNode, null);",
+		'assert.equal(...[view.queryByText("Saved"), null]);',
+		'assert.equal(contentText(), "Saved");',
 	];
 	const prelude = [
 		'const assert = require("node:assert/strict");',
 		'const { equal, strictEqual } = require("node:assert");',
-		"async function check(view, registry, response, element) {",
+		"async function check(view, registry, response, element, h, entry) {",
 		'\tconst saveButton = view.getByRole("button", { name: "Save" });',
 		'\tconst [firstTab] = view.getAllByRole("tab");',
 		"\tlet laterButton = null;",
 		'\tlaterButton = view.getByRole("button");',
+		"\tconst tree = { parentNode: null };",
+		'\tconst content = () => view.container.querySelector("[data-slot=content]");',
+		'\tconst contentText = () => view.container.querySelector("[data-slot=content]").textContent;',
 	];
 	const source = [...prelude, ...[...mustCatch, ...mustNotReport].map((line) => `\t${line}`), "}", "module.exports = { check };", ""].join("\n");
 	const catchLines = mustCatch.map((_, index) => prelude.length + index + 1);
