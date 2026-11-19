@@ -1,8 +1,6 @@
 # ui-custom Migration Catalog
 
-Quick-lookup catalog of all ui-custom components grouped by category. Each entry includes the import path, description, primary sub-components, and link to the ai-elements reference doc.
-
-Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
+Quick-lookup catalog of the VPK AI components grouped by category. Each entry includes the import path, description, and primary sub-components. A linked name has a shadcn AI Elements pattern or shadcn component page to mirror; an unlinked name is VPK-owned with no shadcn counterpart.
 
 ---
 
@@ -10,84 +8,84 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui/message` | Chat message turn with start/end alignment and actions; user text via `MessageUserBubble`, markdown via `MessageResponse` (`@/components/ui-custom/message-markdown`) | `Message`, `MessageContent`, `MessageActions`, `MessageAction`, `MessageCopyAction`, `MessageVoteActions` |
-| [conversation](~/.agents/skills/ai-elements/references/conversation.md) | `@/components/ui/message-scroller` (see its Chat example) | Chat thread: Message Scroller with person turns as scroll anchors, scroll button, `Empty` for no messages | `MessageScroller`, `MessageScrollerViewport`, `MessageScrollerContent`, `MessageScrollerItem`, `MessageScrollerButton` |
-| [prompt-input](~/.agents/skills/ai-elements/references/prompt-input.md) | `@/components/ui-custom/prompt-input` | Message input with textarea, submit, file attachments, model selector, and action menu | `PromptInput`, `Input`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputBody`, `PromptInputHeader`, `PromptInputFooter`, `PromptInputTools`, `PromptInputSelect`, `PromptInputActionAddAttachments`, `PromptInputActionMenu`, `PromptInputButton` |
-| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui/attachment` | File attachment display with previews and remove actions; AI SDK part helpers in `@/lib/attachment-media` | `AttachmentGroup`, `Attachment`, `AttachmentMedia`, `AttachmentContent`, `AttachmentAction` |
+| [message](https://ui.shadcn.com/docs/ai-elements/base/message) | `@/components/ui/message` | Chat message turn with start/end alignment and actions; user text via `MessageUserBubble`, markdown via `MessageResponse` (`@/components/ui-custom/message-markdown`) | `Message`, `MessageContent`, `MessageActions`, `MessageAction`, `MessageCopyAction`, `MessageVoteActions` |
+| [conversation](https://ui.shadcn.com/docs/ai-elements/base/chat) | `@/components/ui/message-scroller` (see its Chat example) | Chat thread: Message Scroller with person turns as scroll anchors, scroll button, `Empty` for no messages | `MessageScroller`, `MessageScrollerViewport`, `MessageScrollerContent`, `MessageScrollerItem`, `MessageScrollerButton` |
+| [prompt-input](https://ui.shadcn.com/docs/ai-elements/base/prompt-input) | `@/components/ui-custom/prompt-input` | Message input with textarea, submit, file attachments, model selector, and action menu | `PromptInput`, `Input`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputBody`, `PromptInputHeader`, `PromptInputFooter`, `PromptInputTools`, `PromptInputSelect`, `PromptInputActionAddAttachments`, `PromptInputActionMenu`, `PromptInputButton` |
+| [attachments](https://ui.shadcn.com/docs/components/base/attachment) | `@/components/ui/attachment` | File attachment display with previews and remove actions; AI SDK part helpers in `@/lib/attachment-media` | `AttachmentGroup`, `Attachment`, `AttachmentMedia`, `AttachmentContent`, `AttachmentAction` |
 
 ## Content Display
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [code-block](~/.agents/skills/ai-elements/references/code-block.md) | `@/components/ui/code-block` | Syntax-highlighted code with copy button, line numbers, and filename display | `CodeBlock`, `CodeBlockHeader`, `CodeBlockTitle`, `CodeBlockFilename`, `CodeBlockActions`, `CodeBlockCopyButton`, `CodeBlockContent` |
-| [image](~/.agents/skills/ai-elements/references/image.md) | `@/components/ui-custom/image` | AI-generated image display | `Image` |
-| [web-preview](~/.agents/skills/ai-elements/references/web-preview.md) | `@/components/ui-custom/web-preview` | Web page preview embed | `WebPreview` |
-| [canvas](~/.agents/skills/ai-elements/references/canvas.md) | `@/components/ui-custom/canvas` | Canvas area for visual content | `Canvas` |
+| [code-block](https://ui.shadcn.com/docs/components/base/code-block) | `@/components/ui/code-block` | Syntax-highlighted code with copy button, line numbers, and filename display | `CodeBlock`, `CodeBlockHeader`, `CodeBlockTitle`, `CodeBlockFilename`, `CodeBlockActions`, `CodeBlockCopyButton`, `CodeBlockContent` |
+| image | `@/components/ui-custom/image` | AI-generated image display | `Image` |
+| web-preview | `@/components/ui-custom/web-preview` | Web page preview embed | `WebPreview` |
+| canvas | `@/components/ui-custom/canvas` | Canvas area for visual content | `Canvas` |
 
 ## AI Features
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [reasoning](~/.agents/skills/ai-elements/references/reasoning.md) | `@/components/ui/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
-| [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui/chain-of-thought` | Step-by-step reasoning chain visualization, on Trace | `ChainOfThought` |
-| [tool](~/.agents/skills/ai-elements/references/tool.md) | `@/components/ui/tool` | Tool invocation and result display | `Tool` |
-| [terminal](~/.agents/skills/ai-elements/references/terminal.md) | `@/components/ui/terminal` | Shell command line with streamed output, on Trace (`TerminalPanel` for full-pane IDE/TUI output) | `Terminal` |
+| [reasoning](https://ui.shadcn.com/docs/ai-elements/base/reasoning) | `@/components/ui/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
+| [chain-of-thought](https://ui.shadcn.com/docs/ai-elements/base/chain-of-thought) | `@/components/ui/chain-of-thought` | Step-by-step reasoning chain visualization, on Trace | `ChainOfThought` |
+| [tool](https://ui.shadcn.com/docs/ai-elements/base/tool) | `@/components/ui/tool` | Tool invocation and result display | `Tool` |
+| [terminal](https://ui.shadcn.com/docs/ai-elements/base/terminal) | `@/components/ui/terminal` | Shell command line with streamed output, on Trace (`TerminalPanel` for full-pane IDE/TUI output) | `Terminal` |
 
 ## User Feedback
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [suggestion](~/.agents/skills/ai-elements/references/suggestion.md) | `@/components/ui/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
-| [confirmation](~/.agents/skills/ai-elements/references/confirmation.md) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
-| [inline-citation](~/.agents/skills/ai-elements/references/inline-citation.md) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
-| [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui/sources` | Source reference list display | `Source` |
+| [suggestion](https://ui.shadcn.com/docs/ai-elements/base/suggestion) | `@/components/ui/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
+| [confirmation](https://ui.shadcn.com/docs/ai-elements/base/confirmation) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
+| [inline-citation](https://ui.shadcn.com/docs/ai-elements/base/inline-citation) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
+| [sources](https://ui.shadcn.com/docs/ai-elements/base/sources) | `@/components/ui/sources` | Source reference list display | `Source` |
 
 ## Input Controls
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [mic-selector](~/.agents/skills/ai-elements/references/mic-selector.md) | `@/components/ui-custom/mic-selector` | Microphone device selector | `MicSelector` |
-| [voice-selector](~/.agents/skills/ai-elements/references/voice-selector.md) | `@/components/ui-custom/voice-selector` | Voice/TTS voice picker | `VoiceSelector` |
-| [model-selector](~/.agents/skills/ai-elements/references/model-selector.md) | `@/components/ui-custom/model-selector` | AI model picker dropdown | `ModelSelector` |
-| [audio-player](~/.agents/skills/ai-elements/references/audio-player.md) | `@/components/ui-custom/audio-player` | Audio playback controls | `AudioPlayer` |
-| [speech-input](~/.agents/skills/ai-elements/references/speech-input.md) | `@/components/ui-custom/speech-input` | Voice-to-text input | `SpeechInput` |
-| [open-in-chat](~/.agents/skills/ai-elements/references/open-in-chat.md) | `@/components/ui-custom/open-in-chat` | "Open in chat" action button | `OpenInChat` |
+| mic-selector | `@/components/ui-custom/mic-selector` | Microphone device selector | `MicSelector` |
+| voice-selector | `@/components/ui-custom/voice-selector` | Voice/TTS voice picker | `VoiceSelector` |
+| [model-selector](https://ui.shadcn.com/docs/ai-elements/base/model-selector) | `@/components/ui-custom/model-selector` | AI model picker dropdown | `ModelSelector` |
+| audio-player | `@/components/ui-custom/audio-player` | Audio playback controls | `AudioPlayer` |
+| speech-input | `@/components/ui-custom/speech-input` | Voice-to-text input | `SpeechInput` |
+| open-in-chat | `@/components/ui-custom/open-in-chat` | "Open in chat" action button | `OpenInChat` |
 
 ## Workflow
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [checkpoint](~/.agents/skills/ai-elements/references/checkpoint.md) | `@/components/ui/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
-| [commit](~/.agents/skills/ai-elements/references/commit.md) | `@/components/ui/trace` | Code commit display (a Trace example) | `Trace` |
-| [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui/stack-trace` | Failed tool call with its stack frames, on Trace | `StackTrace` |
-| [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui/test-results` | Test run summary, suites and failures, on Trace | `TestResult` |
-| [file-tree](~/.agents/skills/ai-elements/references/file-tree.md) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
-| [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui/task` | Task/step tracking display | `Task` |
-| [agent](~/.agents/skills/ai-elements/references/agent.md) | `@/components/ui/subagent` | Subagent run with its tool calls and result, on Trace | `Agent` |
-| [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui/plan` | Multi-step plan visualization (card, or `variant="inline"` Trace line) | `Plan` |
+| [checkpoint](https://ui.shadcn.com/docs/ai-elements/base/checkpoint) | `@/components/ui/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
+| [commit](https://ui.shadcn.com/docs/components/base/trace) | `@/components/ui/trace` | Code commit display (a Trace example) | `Trace` |
+| [stack-trace](https://ui.shadcn.com/docs/ai-elements/base/stack-trace) | `@/components/ui/stack-trace` | Failed tool call with its stack frames, on Trace | `StackTrace` |
+| [test-results](https://ui.shadcn.com/docs/ai-elements/base/test-results) | `@/components/ui/test-results` | Test run summary, suites and failures, on Trace | `TestResult` |
+| [file-tree](https://ui.shadcn.com/docs/ai-elements/base/file-tree) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
+| [task](https://ui.shadcn.com/docs/ai-elements/base/task) | `@/components/ui/task` | Task/step tracking display | `Task` |
+| [agent](https://ui.shadcn.com/docs/ai-elements/base/subagent) | `@/components/ui/subagent` | Subagent run with its tool calls and result, on Trace | `Agent` |
+| [plan](https://ui.shadcn.com/docs/ai-elements/base/plan) | `@/components/ui/plan` | Multi-step plan visualization (card, or `variant="inline"` Trace line) | `Plan` |
 
 ## Visual
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
-| [toolbar](~/.agents/skills/ai-elements/references/toolbar.md) | `@/components/ui-custom/toolbar` | Toolbar with action buttons | `Toolbar` |
-| [connection](~/.agents/skills/ai-elements/references/connection.md) | `@/components/ui-custom/connection` | Connection line between nodes | `Connection` |
-| [edge](~/.agents/skills/ai-elements/references/edge.md) | `@/components/ui-custom/edge` | Graph edge visualization | `Edge` |
-| [node](~/.agents/skills/ai-elements/references/node.md) | `@/components/ui-custom/node` | Graph node visualization | `Node` |
-| [persona](~/.agents/skills/ai-elements/references/persona.md) | `@/components/ui-custom/persona` | AI persona/avatar display | `Persona` |
+| shimmer | `@/components/ui/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
+| toolbar | `@/components/ui-custom/toolbar` | Toolbar with action buttons | `Toolbar` |
+| connection | `@/components/ui-custom/connection` | Connection line between nodes | `Connection` |
+| edge | `@/components/ui-custom/edge` | Graph edge visualization | `Edge` |
+| node | `@/components/ui-custom/node` | Graph node visualization | `Node` |
+| persona | `@/components/ui-custom/persona` | AI persona/avatar display | `Persona` |
 
 ## Advanced
 
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
-| [jsx-preview](~/.agents/skills/ai-elements/references/jsx-preview.md) | `@/components/ui-custom/jsx-preview` | Live JSX preview renderer | `JsxPreview` |
-| [sandbox](~/.agents/skills/ai-elements/references/sandbox.md) | `@/components/ui-custom/sandbox` | Sandboxed code execution environment | `Sandbox` |
-| [package-info](~/.agents/skills/ai-elements/references/package-info.md) | `@/components/ui-custom/package-info` | Package/dependency information display | `PackageInfo` |
-| [context](~/.agents/skills/ai-elements/references/context.md) | `@/components/ui-custom/context` | Context/memory display | `Context` |
-| [controls](~/.agents/skills/ai-elements/references/controls.md) | `@/components/ui-custom/control` | Interactive parameter controls | `Control` |
-| [environment-variables](~/.agents/skills/ai-elements/references/environment-variables.md) | `@/components/ui-custom/environment-variable` | Environment variable display/editor | `EnvironmentVariable` |
-| [queue](~/.agents/skills/ai-elements/references/queue.md) | `@/components/ui/queue` | Prompt queue (composer) or inline todo list (`variant="inline"`) | `Queue` |
-| [schema-display](~/.agents/skills/ai-elements/references/schema-display.md) | `@/components/ui-custom/schema-display` | Data schema visualization | `SchemaDisplay` |
-| [snippet](~/.agents/skills/ai-elements/references/snippet.md) | `@/components/ui-custom/snippet` | Code snippet display (lightweight) | `Snippet` |
-| [transcription](~/.agents/skills/ai-elements/references/transcription.md) | `@/components/ui-custom/transcription` | Audio/video transcription display | `Transcription` |
+| jsx-preview | `@/components/ui-custom/jsx-preview` | Live JSX preview renderer | `JsxPreview` |
+| sandbox | `@/components/ui-custom/sandbox` | Sandboxed code execution environment | `Sandbox` |
+| package-info | `@/components/ui-custom/package-info` | Package/dependency information display | `PackageInfo` |
+| [context](https://ui.shadcn.com/docs/ai-elements/base/context) | `@/components/ui-custom/context` | Context/memory display | `Context` |
+| controls | `@/components/ui-custom/control` | Interactive parameter controls | `Control` |
+| environment-variables | `@/components/ui-custom/environment-variable` | Environment variable display/editor | `EnvironmentVariable` |
+| [queue](https://ui.shadcn.com/docs/ai-elements/base/queue) | `@/components/ui/queue` | Prompt queue (composer) or inline todo list (`variant="inline"`) | `Queue` |
+| schema-display | `@/components/ui-custom/schema-display` | Data schema visualization | `SchemaDisplay` |
+| snippet | `@/components/ui-custom/snippet` | Code snippet display (lightweight) | `Snippet` |
+| transcription | `@/components/ui-custom/transcription` | Audio/video transcription display | `Transcription` |

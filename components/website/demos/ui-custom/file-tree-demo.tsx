@@ -7,6 +7,7 @@ import {
 	FileTreeFile,
 	FileTreeActions,
 	FileTreeIcon,
+	FileTreeName,
 } from "@/components/ui-custom/file-tree";
 import {
 	CodeIcon,
@@ -20,54 +21,85 @@ import {
 } from "@/components/ui/vpk-icons";
 import { Button } from "@/components/ui/button";
 
-export default function FileTreeDemo() {
-	return <FileTreeDemoProject />;
-}
+type FileNode =
+	| { type: "file"; name: string; path: string }
+	| { type: "folder"; name: string; path: string; children: FileNode[] };
 
-export function FileTreeDemoProject() {
-	return (
-		<FileTree
-			defaultExpanded={new Set(["src", "src/components"])}
-			className="w-full max-w-xs text-xs"
-		>
-			<FileTreeFolder path="src" name="src">
-				<FileTreeFolder path="src/components" name="components">
-					<FileTreeFile path="src/components/button.tsx" name="button.tsx" />
-					<FileTreeFile path="src/components/input.tsx" name="input.tsx" />
-					<FileTreeFile path="src/components/dialog.tsx" name="dialog.tsx" />
-				</FileTreeFolder>
-				<FileTreeFolder path="src/lib" name="lib">
-					<FileTreeFile path="src/lib/utils.ts" name="utils.ts" />
-					<FileTreeFile path="src/lib/api.ts" name="api.ts" />
-				</FileTreeFolder>
-				<FileTreeFile path="src/index.ts" name="index.ts" />
-				<FileTreeFile path="src/app.tsx" name="app.tsx" />
-			</FileTreeFolder>
-			<FileTreeFile path="package.json" name="package.json" />
-			<FileTreeFile path="tsconfig.json" name="tsconfig.json" />
-			<FileTreeFile path="README.md" name="README.md" />
-		</FileTree>
+const files: FileNode[] = [
+	{
+		type: "folder",
+		name: "app",
+		path: "app",
+		children: [
+			{ type: "file", name: "layout.tsx", path: "app/layout.tsx" },
+			{ type: "file", name: "page.tsx", path: "app/page.tsx" },
+		],
+	},
+	{
+		type: "folder",
+		name: "components",
+		path: "components",
+		children: [
+			{
+				type: "folder",
+				name: "ui",
+				path: "components/ui",
+				children: [
+					{
+						type: "file",
+						name: "button.tsx",
+						path: "components/ui/button.tsx",
+					},
+				],
+			},
+			{
+				type: "file",
+				name: "login-form.tsx",
+				path: "components/login-form.tsx",
+			},
+		],
+	},
+];
+
+function collectFolderPaths(nodes: readonly FileNode[]): string[] {
+	return nodes.flatMap((node) =>
+		node.type === "folder" ? [node.path, ...collectFolderPaths(node.children)] : [],
 	);
 }
 
-export function FileTreeDemoWithSelection() {
-	const [selected, setSelected] = useState("src/app.tsx");
-	const handleSelect = (path: string) => setSelected(path);
+function FileTreeNode({ node }: Readonly<{ node: FileNode }>) {
+	switch (node.type) {
+		case "folder":
+			return (
+				<FileTreeFolder path={node.path} name={node.name}>
+					{node.children.map((child) => (
+						<FileTreeNode key={child.path} node={child} />
+					))}
+				</FileTreeFolder>
+			);
+		case "file":
+			return <FileTreeFile path={node.path} name={node.name} />;
+		default: {
+			const unreachable: never = node;
+			return unreachable;
+		}
+	}
+}
+
+export default function FileTreeDemo() {
+	const [selected, setSelected] = useState("components/ui/button.tsx");
 
 	return (
 		<FileTree
-			defaultExpanded={new Set(["src"])}
+			aria-label="Changed files"
+			defaultExpanded={new Set(collectFolderPaths(files))}
 			selectedPath={selected}
-			{...{ onSelect: handleSelect } as Record<string, unknown>}
-			className="w-full max-w-xs text-xs"
+			onSelect={setSelected}
+			className="w-full max-w-xs py-6"
 		>
-			<FileTreeFolder path="src" name="src">
-				<FileTreeFile path="src/index.ts" name="index.ts" />
-				<FileTreeFile path="src/app.tsx" name="app.tsx" />
-				<FileTreeFile path="src/styles.css" name="styles.css" />
-			</FileTreeFolder>
-			<FileTreeFile path="package.json" name="package.json" />
-			<FileTreeFile path="tsconfig.json" name="tsconfig.json" />
+			{files.map((node) => (
+				<FileTreeNode key={node.path} node={node} />
+			))}
 		</FileTree>
 	);
 }
@@ -75,90 +107,80 @@ export function FileTreeDemoWithSelection() {
 export function FileTreeDemoCustomIcons() {
 	return (
 		<FileTree
+			aria-label="Project files"
 			defaultExpanded={new Set(["src", "public"])}
-			className="w-full max-w-xs text-xs"
+			className="w-full max-w-xs"
 		>
 			<FileTreeFolder path="src" name="src">
 				<FileTreeFile
 					path="src/app.tsx"
 					name="app.tsx"
-					icon={<CodeIcon className="size-4 text-blue-500" />}
+					icon={<CodeIcon className="text-icon-accent-blue" />}
 				/>
 				<FileTreeFile
 					path="src/utils.ts"
 					name="utils.ts"
-					icon={<SettingsIcon className="size-4 text-yellow-500" />}
+					icon={<SettingsIcon className="text-icon-accent-yellow" />}
 				/>
 			</FileTreeFolder>
 			<FileTreeFolder path="public" name="public">
 				<FileTreeFile
 					path="public/logo.svg"
 					name="logo.svg"
-					icon={<ImageIcon className="size-4 text-green-500" />}
+					icon={<ImageIcon className="text-icon-accent-green" />}
 				/>
 				<FileTreeFile
 					path="public/favicon.ico"
 					name="favicon.ico"
-					icon={<ImageIcon className="size-4 text-green-500" />}
+					icon={<ImageIcon className="text-icon-accent-green" />}
 				/>
 			</FileTreeFolder>
 			<FileTreeFile
 				path="package.json"
 				name="package.json"
-				icon={<FileJsonIcon className="size-4 text-orange-500" />}
+				icon={<FileJsonIcon className="text-icon-accent-orange" />}
 			/>
 			<FileTreeFile
 				path="README.md"
 				name="README.md"
-				icon={<FileTextIcon className="size-4 text-muted-foreground" />}
+				icon={<FileTextIcon className="text-icon-subtle" />}
 			/>
 		</FileTree>
+	);
+}
+
+function FileTreeDemoActionRow({ path, name }: Readonly<{ path: string; name: string }>) {
+	return (
+		<FileTreeFile path={path} name={name}>
+			<FileTreeIcon>
+				<CodeIcon className="text-icon-accent-blue" />
+			</FileTreeIcon>
+			<FileTreeName>{name}</FileTreeName>
+			<FileTreeActions>
+				<Button aria-label={`Copy ${name}`} variant="ghost" size="icon-compact">
+					<CopyIcon />
+				</Button>
+				<Button aria-label={`Download ${name}`} variant="ghost" size="icon-compact">
+					<DownloadIcon />
+				</Button>
+				<Button aria-label={`Delete ${name}`} variant="ghost" size="icon-compact">
+					<TrashIcon />
+				</Button>
+			</FileTreeActions>
+		</FileTreeFile>
 	);
 }
 
 export function FileTreeDemoWithActions() {
 	return (
 		<FileTree
+			aria-label="Source files"
 			defaultExpanded={new Set(["src"])}
-			className="w-full max-w-xs text-xs"
+			className="w-full max-w-xs"
 		>
 			<FileTreeFolder path="src" name="src">
-				<FileTreeFile path="src/index.ts" name="index.ts">
-					<span className="w-3 shrink-0" />
-					<FileTreeIcon>
-						<CodeIcon className="text-blue-500" />
-					</FileTreeIcon>
-					<span className="truncate">index.ts</span>
-					<FileTreeActions>
-						<Button variant="ghost" size="icon" className="size-5">
-							<CopyIcon className="size-3" />
-						</Button>
-						<Button variant="ghost" size="icon" className="size-5">
-							<DownloadIcon className="size-3" />
-						</Button>
-						<Button variant="ghost" size="icon" className="size-5">
-							<TrashIcon className="size-3" />
-						</Button>
-					</FileTreeActions>
-				</FileTreeFile>
-				<FileTreeFile path="src/utils.ts" name="utils.ts">
-					<span className="w-3 shrink-0" />
-					<FileTreeIcon>
-						<CodeIcon className="text-blue-500" />
-					</FileTreeIcon>
-					<span className="truncate">utils.ts</span>
-					<FileTreeActions>
-						<Button variant="ghost" size="icon" className="size-5">
-							<CopyIcon className="size-3" />
-						</Button>
-						<Button variant="ghost" size="icon" className="size-5">
-							<DownloadIcon className="size-3" />
-						</Button>
-						<Button variant="ghost" size="icon" className="size-5">
-							<TrashIcon className="size-3" />
-						</Button>
-					</FileTreeActions>
-				</FileTreeFile>
+				<FileTreeDemoActionRow path="src/index.ts" name="index.ts" />
+				<FileTreeDemoActionRow path="src/utils.ts" name="utils.ts" />
 			</FileTreeFolder>
 			<FileTreeFile path="package.json" name="package.json" />
 		</FileTree>

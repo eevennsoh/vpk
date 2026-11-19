@@ -1,6 +1,6 @@
 ---
 name: vpk-component
-description: Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (ai-elements, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to "migrate to ui-custom", "standardize AI components", "adopt ai-elements", or "port ElevenLabs UI". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.
+description: Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (shadcn AI Elements, AI SDK Elements copies, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to "migrate to ui-custom", "standardize AI components", "adopt shadcn AI Elements", or "port ElevenLabs UI". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.
 validation_command: pnpm run lint && pnpm run typecheck
 ---
 

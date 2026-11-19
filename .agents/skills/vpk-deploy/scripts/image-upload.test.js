@@ -6,6 +6,8 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const { PIPE_BUFFER_PASSWORD, writeFakeBin, writeFakeDocker } = require("./deploy-test-fakes");
+
 const repo = process.env.VPK_UPLOAD_TEST_ROOT ?? path.resolve(__dirname, "../../../..");
 const lib = path.join(repo, ".agents/skills/vpk-deploy/scripts/deploy-lib.sh");
 const digest = `sha256:${"a".repeat(64)}`;
@@ -24,12 +26,8 @@ function fixture(t) {
 	assert.equal(spawnSync("tar", ["-cf", archive, "config.json", "manifest.json"], { cwd: root }).status, 0);
 	const log = path.join(root, "calls.log");
 	fs.writeFileSync(log, "");
-	const executable = (name, body) => {
-		const file = path.join(bin, name);
-		fs.writeFileSync(file, `#!/bin/bash\nprintf '${name} %s\\n' "$*" >> "$CALL_LOG"\n${body}\n`);
-		fs.chmodSync(file, 0o755);
-	};
-	executable("docker", `case "$*" in
+	const executable = (name, body) => writeFakeBin(bin, name, body);
+	writeFakeDocker(bin, `case "$*" in
 push*) if [ "\$FAIL_DOCKER" = yes ]; then echo 'Head registry blob: EOF' >&2; exit 1; fi ;;
 'image save'*)
   shift 2
@@ -43,7 +41,7 @@ push) if [ "$FAIL_CRANE" = yes ]; then echo 'host upload failed' >&2; exit 1; fi
 manifest) touch "$TAG_SEEN"; printf '{"config":{"digest":"%s"},"layers":[{}]}' "$CONFIG_DIGEST" ;;
 digest) if [ "\${CHANGED_TAG:-no}" = yes ] && [ -f "$TAG_SEEN" ]; then printf 'sha256:${"c".repeat(64)}\\n'; else printf '%s\\n' '${digest}'; fi ;;
 esac`);
-	const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, VPK_CRANE_BIN: path.join(bin, "crane"), CALL_LOG: log, IMAGE_ARCHIVE: archive, CONFIG_DIGEST: configDigest, FAIL_DOCKER: "no", FAIL_CRANE: "no", TAG_SEEN: path.join(root, "tag-seen"), TMPDIR: path.join(root, "tmp") };
+	const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, VPK_CRANE_BIN: path.join(bin, "crane"), FAKE_CALL_LOG: log, IMAGE_ARCHIVE: archive, CONFIG_DIGEST: configDigest, FAIL_DOCKER: "no", FAIL_CRANE: "no", TAG_SEEN: path.join(root, "tag-seen"), TMPDIR: path.join(root, "tmp") };
 	const run = (via, overrides = {}) => spawnSync("/bin/bash", ["-c", 'source "$1"; vpk_push_image example-service 1.2.3 docker.atl-paas.net "$2"', "upload-test", lib, via], { cwd: root, encoding: "utf8", env: { ...env, ...overrides } });
 	return { root, log, env, run, executable };
 }
@@ -108,7 +106,7 @@ function deployFixture(t) {
 	fs.writeFileSync(path.join(scripts, "deploy-check.sh"), "#!/bin/bash\nexit 0\n");
 	fs.writeFileSync(path.join(f.root, "scripts/prepare-static-export.mjs"), "process.exit(0);\n");
 	fs.writeFileSync(path.join(f.root, "service-descriptor.yml"), ["buildNumber: ${VERSION}", "image: docker.atl-paas.net/example-service", "tag: app-${VERSION}", ...names.map(name => `${name}: ((ssm:/example-service/${name}))`)].join("\n"));
-	fs.writeFileSync(path.join(f.root, ".deploy.local"), 'SERVICE_NAME=example-service\nENV=pdev-west2\nDOCKER_USERNAME=fixture-user\nDOCKER_PASSWORD=fixture-password\n');
+	fs.writeFileSync(path.join(f.root, ".deploy.local"), `SERVICE_NAME=example-service\nENV=pdev-west2\nDOCKER_USERNAME=fixture-user\nDOCKER_PASSWORD=${PIPE_BUFFER_PASSWORD}\n`);
 	f.executable("atlas", `case "$*" in
 'micros --help') echo 'service stash events' ;;
 *'stash list'*) printf '%s\\n' ${names.join(" ")} ;;

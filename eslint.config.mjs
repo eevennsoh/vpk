@@ -4,6 +4,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import { plugin as shadcn } from "@shadcn/lint";
 import { builtinRules } from "eslint/use-at-your-own-risk";
+import vpkTests from "./scripts/lib/eslint-plugin-vpk-tests.mjs";
 
 const installedReactVersion = createRequire(import.meta.url)("react/package.json").version;
 
@@ -492,6 +493,21 @@ const eslintConfig = defineConfig([
 				selector: "CallExpression[callee.object.name='assert'][callee.property.name=/^(match|doesNotMatch)$/]:matches([arguments.0.name=/SOURCE$/], [arguments.0.callee.name=/^(readFileSync|readProjectFile)$/])",
 				message: "Prove behavior instead of matching source text: render and interact with renderComponent() (scripts/lib/render-component.js) or test the pure helper; enforce structure with lint.",
 			}],
+		},
+	},
+	{
+		// testing.md: a failed assert on a DOM node prints the whole document and can kill the run.
+		// Its own rule id keeps the baseline in eslint-suppressions.json counted separately.
+		files: [
+			"app/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"components/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"hooks/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"lib/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"scripts/lib/render-component.test.js",
+		],
+		plugins: { "vpk-tests": vpkTests },
+		rules: {
+			"vpk-tests/no-dom-node-assert": "error",
 		},
 	},
 	{

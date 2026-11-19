@@ -55,6 +55,11 @@
       "count": 5
     }
   },
+  "app/home-projects-section.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "app/layout.test.js": {
     "no-restricted-syntax": {
       "count": 28
@@ -71,6 +76,26 @@
     },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
+    }
+  },
+  "app/sandbox/agent-selector-canvas/destination-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
+    }
+  },
+  "app/sandbox/agent-selector-canvas/recommendation-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "app/sandbox/agent-selector-canvas/teammate-session-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 10
+    }
+  },
+  "app/sandbox/agent-selector-canvas/teammate-session-refinements.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
     }
   },
   "app/sandbox/screen-assistant/page.tsx": {
@@ -247,6 +272,11 @@
       "count": 2
     }
   },
+  "components/blocks/agent-assignment/agent-assignment-session.source.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 22
+    }
+  },
   "components/blocks/agent-assignment/components/agent-session-target-menu.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
@@ -267,6 +297,11 @@
   },
   "components/blocks/agent-browser/components/agent-browser.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-browser/components/template-build-flow.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
       "count": 1
     }
   },
@@ -308,6 +343,11 @@
       "count": 1
     }
   },
+  "components/blocks/agent-lanyard/agent-lanyard.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
+    }
+  },
   "components/blocks/agent-list/agent-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 326
@@ -321,6 +361,9 @@
   "components/blocks/agent-selector/agent-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 147
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
     }
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
@@ -404,6 +447,11 @@
   "components/blocks/agent-session/agent-session-attached.source.test.js": {
     "no-restricted-syntax": {
       "count": 61
+    }
+  },
+  "components/blocks/agent-session/agent-session-card-activation.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 19
     }
   },
   "components/blocks/agent-session/agent-session-card.tsx": {
@@ -651,6 +699,9 @@
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
       "count": 166
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 17
     }
   },
   "components/blocks/jira-activity/jira-activity.source.test.js": {
@@ -686,6 +737,11 @@
   "components/blocks/jira-epic/jira-epic.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
+    }
+  },
+  "components/blocks/jira-filter/jira-filter.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
     }
   },
   "components/blocks/jira-insight/components/jira-insight-timeline-rail.tsx": {
@@ -776,6 +832,21 @@
       "count": 3
     }
   },
+  "components/blocks/jira-issue/project-butter-agents.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 20
+    }
+  },
+  "components/blocks/jira-issue/project-butter-local-agent-menu.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/project-butter.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 22
+    }
+  },
   "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
@@ -833,6 +904,16 @@
   },
   "components/blocks/jira-kanban/experimental/components/session-column-placement.tsx": {
     "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-board-header.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
       "count": 1
     }
   },
@@ -955,6 +1036,11 @@
       "count": 1
     }
   },
+  "components/blocks/jira-list/jira-list-interactions.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
+    }
+  },
   "components/blocks/jira-list/jira-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 325
@@ -965,6 +1051,11 @@
       "count": 1
     }
   },
+  "components/blocks/jira-suggestion/jira-suggestion.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 12
+    }
+  },
   "components/blocks/jira-toolbar/jira-toolbar.source.test.js": {
     "no-restricted-syntax": {
       "count": 33
@@ -973,6 +1064,11 @@
   "components/blocks/jira-toolbar/page.tsx": {
     "no-restricted-imports": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-view-configuration/jira-view-configuration.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
     }
   },
   "components/blocks/jira-work-item/data/metadata-crew.ts": {
@@ -1013,11 +1109,6 @@
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1065,11 +1156,6 @@
   "components/blocks/jira-work-item/experimental-v3/components/floating-session-surface.tsx": {
     "no-restricted-imports": {
       "count": 3
-    }
-  },
-  "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx": {
@@ -1128,6 +1214,56 @@
       "count": 2
     }
   },
+  "components/blocks/jira-work-item/project-butter/activity-response.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 7
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/attachments.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 13
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/content-preview.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 40
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/development-journey.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/related-rows.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 9
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/related-work-section.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/shell-editors.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/use-project-butter-content.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 7
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/activity-composer-context-pills.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
@@ -1151,11 +1287,6 @@
   "components/blocks/jira-work-item/team-eu26/components/panel-content-motion.ts": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
@@ -1226,6 +1357,11 @@
   "components/blocks/pull-request-review/pull-request-review.source.test.js": {
     "no-restricted-syntax": {
       "count": 74
+    }
+  },
+  "components/blocks/pull-request/pull-request-flyout.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/blocks/pull-request/pull-request.source.test.js": {
@@ -1343,6 +1479,11 @@
       "count": 1
     }
   },
+  "components/blocks/smart-link/smart-link-status.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "components/blocks/smart-link/smart-link.source.test.js": {
     "no-restricted-syntax": {
       "count": 160
@@ -1388,6 +1529,11 @@
       "count": 100
     }
   },
+  "components/blocks/top-navigation/top-navigation-responsive.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
   "components/blocks/trigger-config/trigger-config.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
@@ -1414,6 +1560,11 @@
     },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 2
+    }
+  },
+  "components/blocks/trigger/provider-connection.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/blocks/trigger/trigger.source.test.js": {
@@ -1962,6 +2113,11 @@
       "count": 1
     }
   },
+  "components/projects/shared/components/user-message-bubble.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
       "count": 30
@@ -2254,6 +2410,9 @@
   "components/ui-custom/entity-card/entity-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 224
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/ui-custom/failing-checks-composer-chip.source.test.js": {
@@ -2311,6 +2470,11 @@
       "count": 1
     }
   },
+  "components/ui-custom/message-markdown.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 4
+    }
+  },
   "components/ui-custom/message-markdown.css-contract.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -2327,6 +2491,11 @@
   "components/ui-custom/progress-circle.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
+    }
+  },
+  "components/ui-custom/prompt-input-attachments.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
     }
   },
   "components/ui-custom/prompt-input-dictation.source.test.js": {
@@ -2435,6 +2604,11 @@
       "count": 70
     }
   },
+  "components/ui-custom/skill-tag-keyboard.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "components/ui-custom/skill-tag.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2471,6 +2645,11 @@
   "components/ui-custom/use-human-agent-avatar-group-cycle.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/ui-custom/web-preview-chromium.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
     }
   },
   "components/ui-custom/web-preview-chromium.tsx": {
@@ -2597,6 +2776,11 @@
       "count": 43
     }
   },
+  "components/ui/sidebar.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
   "components/ui/slider.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -2610,6 +2794,11 @@
   "components/ui/tag.source.test.js": {
     "no-restricted-syntax": {
       "count": 25
+    }
+  },
+  "components/ui/terminal.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/ui/tile.source.test.js": {
@@ -2887,6 +3076,11 @@
       "count": 12
     }
   },
+  "components/website/demos/ui/dropdown-menu-search-demo.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "components/website/demos/ui/table-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -3113,6 +3307,11 @@
   },
   "components/website/website-preview.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "components/website/website-sidebar-nav.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
       "count": 1
     }
   },

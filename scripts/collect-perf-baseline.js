@@ -349,20 +349,20 @@ function collectManifestRoutes({ cwd = process.cwd(), nextDir = DEFAULT_NEXT_DIR
 		const jsAssets = assetPaths.filter((assetPath) => assetPath.endsWith(".js"));
 		const routeJsAssets = jsAssets.filter((assetPath) => assetPath.startsWith("static/chunks/app/"));
 		const cssAssets = assetPaths.filter((assetPath) => assetPath.endsWith(".css"));
-		const firstLoadJsBytes = sumAssetBytes({ assetPaths: jsAssets, cwd, nextDir });
 		// Next merges the root app group into every manifest, but only / loads app/page-*.js.
-		// Exclude it from route JS only; first-load JS and asset count keep the full inventory.
+		const isLoadedAsset = (assetPath) => (
+			routePath === "/" || !/^static\/chunks\/app\/page-[^/]+\.js$/u.test(assetPath)
+		);
+		const firstLoadJsBytes = sumAssetBytes({ assetPaths: jsAssets.filter(isLoadedAsset), cwd, nextDir });
 		const routeJsBytes = sumAssetBytes({
-			assetPaths: (routeJsAssets.length > 0 ? routeJsAssets : jsAssets).filter((assetPath) => (
-				routePath === "/" || !/^static\/chunks\/app\/page-[^/]+\.js$/u.test(assetPath)
-			)),
+			assetPaths: (routeJsAssets.length > 0 ? routeJsAssets : jsAssets).filter(isLoadedAsset),
 			cwd,
 			nextDir,
 		});
 		const cssBytes = sumAssetBytes({ assetPaths: cssAssets, cwd, nextDir });
 
 		const routeMeasurement = {
-			assetCount: assetPaths.length,
+			assetCount: assetPaths.filter(isLoadedAsset).length,
 			css: {
 				bytes: cssBytes,
 				display: formatBytes(cssBytes),
