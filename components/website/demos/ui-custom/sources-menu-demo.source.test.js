@@ -3,14 +3,14 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const DEMO_SOURCE = readFileSync(join(__dirname, "source-preview-menu-demo.tsx"), "utf8");
+const DEMO_SOURCE = readFileSync(join(__dirname, "sources-menu-demo.tsx"), "utf8");
 
-test("preview-menu demo reuses the shared SourcePreviewMenu owner", () => {
+test("preview-menu demo reuses the shared SourcesMenu owner", () => {
 	assert.match(
 		DEMO_SOURCE,
-		/import \{\s*SOURCE_PREVIEW_PAGES,\s*SourcePreviewMenu,\s*\} from "@\/components\/ui-custom\/source-preview-menu";/u,
+		/import \{\s*SOURCE_PREVIEW_PAGES,\s*SourcesMenu,\s*\} from "@\/components\/ui-custom\/sources-menu";/u,
 	);
-	assert.match(DEMO_SOURCE, /<SourcePreviewMenu/u);
+	assert.match(DEMO_SOURCE, /<SourcesMenu/u);
 	assert.match(DEMO_SOURCE, /pages=\{SOURCE_PREVIEW_PAGES\}/u);
 	assert.match(
 		DEMO_SOURCE,

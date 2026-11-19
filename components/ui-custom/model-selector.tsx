@@ -182,10 +182,14 @@ export const ModelSelectorEmpty = ({ className, ...props }: Readonly<ModelSelect
 
 export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
 
+/**
+ * Dropdown menu groups have no padding: a subheading takes a 6px top margin when content sits above it,
+ * and none after a separator, whose own 6px margins space it.
+ */
 export const ModelSelectorGroup = ({ className, ...props }: Readonly<ModelSelectorGroupProps>) => (
 	<CommandGroup
 		className={cn(
-			"!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest",
+			"!p-0 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest not-first:**:[[cmdk-group-heading]]:mt-1.5 [[cmdk-separator]+&]:**:[[cmdk-group-heading]]:mt-0",
 			className
 		)}
 		{...props}

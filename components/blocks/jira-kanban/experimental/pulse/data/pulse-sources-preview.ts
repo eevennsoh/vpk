@@ -1,4 +1,4 @@
-import type { SourcePreviewPage } from "@/components/ui-custom/source-preview-menu-data";
+import type { SourcePreviewPage } from "@/components/ui-custom/sources-menu-data";
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 
 /**

@@ -2866,7 +2866,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/source-preview-menu.source.test.js": {
+  "components/ui-custom/sources-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 31
     }
@@ -3443,7 +3443,7 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-preview-menu-demo.source.test.js": {
+  "components/website/demos/ui-custom/sources-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }

@@ -54,7 +54,7 @@ import { SHIMMER_WAVE_DETAIL } from "./ui-custom/shimmer-wave";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
 import { SNIPPET_DETAIL } from "./ui-custom/snippet";
-import { SOURCE_PREVIEW_MENU_DETAIL } from "./ui-custom/source-preview-menu";
+import { SOURCES_MENU_DETAIL } from "./ui-custom/sources-menu";
 import { SPEECH_INPUT_DETAIL } from "./ui-custom/speech-input";
 import { TERMINAL_WINDOW_DETAIL } from "./ui-custom/terminal-window";
 import { TOOLBAR_DETAIL } from "./ui-custom/toolbar";
@@ -116,7 +116,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"sidebar-nav-item": SIDEBAR_NAV_ITEM_DETAIL,
 	"skill-tag": SKILL_TAG_DETAIL,
 	snippet: SNIPPET_DETAIL,
-	"source-preview-menu": SOURCE_PREVIEW_MENU_DETAIL,
+	"sources-menu": SOURCES_MENU_DETAIL,
 	"speech-input": SPEECH_INPUT_DETAIL,
 	"terminal-window": TERMINAL_WINDOW_DETAIL,
 	toolbar: TOOLBAR_DETAIL,

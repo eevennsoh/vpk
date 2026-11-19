@@ -261,7 +261,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("schema-display", "Schema Display"),
 	customComponent("shimmer-wave", "Shimmer Wave"),
 	customComponent("snippet"),
-	customComponent("source-preview-menu", "Source Preview Menu"),
+	customComponent("sources-menu", "Sources Menu"),
 	customComponent("terminal-window", "Terminal Window"),
 	customComponent("speech-input", "Speech Input"),
 	customComponent("twg-appstack", "TWG Appstack"),
