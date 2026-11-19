@@ -189,7 +189,7 @@ export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
 export const ModelSelectorGroup = ({ className, ...props }: Readonly<ModelSelectorGroupProps>) => (
 	<CommandGroup
 		className={cn(
-			"!p-0 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest not-first:**:[[cmdk-group-heading]]:mt-1.5 [[cmdk-separator]+&]:**:[[cmdk-group-heading]]:mt-0",
+			"!p-0 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest [&:not(:first-child):not([cmdk-separator]+*)]:**:[[cmdk-group-heading]]:mt-1.5",
 			className
 		)}
 		{...props}
@@ -220,7 +220,7 @@ export const ModelSelectorItem = ({
 		<CommandItem
 			aria-checked={isChecked}
 			className={cn(
-				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
+				"h-8 rounded-lg pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
 				className
 			)}
 			data-checked={isChecked ? true : undefined}
