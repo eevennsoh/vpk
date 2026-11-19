@@ -38,7 +38,7 @@ async function openRunningCard(page: Page, route: string, cardName: string) {
 }
 
 for (const { route, cardName } of ROUTES) {
-	test(`a running card without runCreatedAt counts up from 10m 51s on ${route}`, { tag: "@smoke" }, async ({ page }) => {
+	test(`a running card without runCreatedAt counts up from 10m 51s, with no hydration error reported, on ${route}`, { tag: "@smoke" }, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "no-preference" });
 		const errors = collectPageErrors(page);
 		const elapsed = await openRunningCard(page, route, cardName);
@@ -53,8 +53,11 @@ for (const { route, cardName } of ROUTES) {
 			timeout: 10_000,
 		}).toBeGreaterThanOrEqual(first + 2);
 		const second = parseElapsed(await elapsed.innerText());
-		expect(second - first, "the timer advances at wall-clock pace").toBeLessThanOrEqual(15);
+		expect(second - first, "the timer advanced, and not by an implausible jump").toBeLessThanOrEqual(15);
 
-		expect(hydrationErrors(errors), "no hydration error on a fresh load").toEqual([]);
+		// The progress demos load with ssr: false, so the card itself is never hydrated and this
+		// does not prove timer hydration. It proves only that the route reports no hydration
+		// error (console or uncaught) while the card mounts and counts.
+		expect(hydrationErrors(errors), "no hydration error reported on the route while the card mounts and counts").toEqual([]);
 	});
 }

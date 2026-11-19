@@ -13,9 +13,10 @@ export type PageErrorLog = Readonly<{
 }>;
 
 // React names hydration in development; the production build reports minified codes
-// 418 (server and client markup differ), 423 (hydration fell back to client render)
-// and 425 (text content mismatch).
-const HYDRATION_ERROR = /hydrat|Minified React error #(?:418|423|425)\b/iu;
+// 418 (server and client markup differ), 422 (a hydration error inside a Suspense
+// boundary forced a client render), 423 (hydration fell back to client render) and
+// 425 (text content mismatch).
+const HYDRATION_ERROR = /hydrat|Minified React error #(?:418|422|423|425)\b/iu;
 
 export function collectPageErrors(page: Page): PageErrorLog {
 	const log: PageErrorLog = { pageErrors: [], consoleErrors: [] };
