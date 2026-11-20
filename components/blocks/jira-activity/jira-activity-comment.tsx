@@ -25,6 +25,7 @@ import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityImagePreviewDialog } from "./jira-activity-image-preview-dialog";
 import { JiraActivitySegments } from "./jira-activity-segments";
+import { JiraActivityTimestamp } from "./jira-activity-timestamp";
 import { toggleReaction as toggleActivityReaction } from "./lib/jira-activity-reducer";
 import type {
 	JiraActivityActor,
@@ -172,7 +173,7 @@ function CollapsedThreadSummary({
 	const latestTimestamp = replies[replies.length - 1]?.timestamp;
 
 	return (
-		<div className="flex min-w-0 items-center gap-2">
+		<div className="group/activity-timestamp flex min-w-0 items-center gap-2">
 			{resolved ? <Lozenge variant="success">Resolved</Lozenge> : null}
 			<span aria-hidden className="text-text-subtlest">·</span>
 			<AvatarGroup
@@ -185,24 +186,14 @@ function CollapsedThreadSummary({
 			</AvatarGroup>
 			<Button
 				aria-label={`View all comments, ${replyCountLabel}`}
-				className="group/thread-summary h-auto min-w-0 gap-1.5 px-0 text-xs font-normal text-text hover:underline"
+				className="h-auto min-w-0 gap-1.5 px-0 text-xs font-normal text-text hover:underline"
 				onClick={onExpand}
 				type="button"
 				variant="link"
 			>
 				<span className="shrink-0 text-text-subtle">{replyCountLabel}</span>
-				{latestTimestamp ? (
-					<>
-						<span aria-hidden className="shrink-0 text-text-subtlest">·</span>
-						<span className="truncate text-text-subtlest group-hover/thread-summary:hidden group-focus-visible/thread-summary:hidden">
-							{latestTimestamp}
-						</span>
-						<span className="hidden truncate group-hover/thread-summary:inline group-focus-visible/thread-summary:inline">
-							View all comments
-						</span>
-					</>
-				) : null}
 			</Button>
+			<JiraActivityTimestamp timestamp={latestTimestamp} />
 		</div>
 	);
 }

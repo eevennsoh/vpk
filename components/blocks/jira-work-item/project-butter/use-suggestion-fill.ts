@@ -8,6 +8,7 @@ import { motionDuration } from "@/lib/motion";
 import {
 	applyProjectButterSuggestion,
 	listProjectButterSuggestions,
+	nextProjectButterDemoCheck,
 	projectButterSuggestionSnapshot,
 	revertMatchingProjectButterSuggestions,
 	type ProjectButterSuggestion,
@@ -49,6 +50,8 @@ export interface ProjectButterSuggestionFill {
 	finishing: boolean;
 	dismissAccepted: () => void;
 	dismissField: (field: ProjectButterSuggestionField) => void;
+	checkForSuggestions: (() => readonly ProjectButterSuggestionField[]) | undefined;
+	hasMoreSuggestions: boolean;
 	restoreDismissedField: (field: ProjectButterSuggestionField) => void;
 	undoField: (suggestion: ProjectButterSuggestion) => void;
 	running: boolean;
@@ -87,6 +90,7 @@ export function useProjectButterSuggestionFill(
 	const [activeField, setActiveField] = useState<ProjectButterSuggestionField | null>(null);
 	const [barAfter, setBarAfter] = useState<ProjectButterDetailFieldId | "top" | null>(null);
 	const [dismissed, setDismissed] = useState<ReadonlySet<ProjectButterSuggestionField>>(() => new Set());
+	const [demoChecks, setDemoChecks] = useState(0);
 	const [accepted, setAccepted] = useState<readonly ProjectButterSuggestion[] | null>(null);
 	const [shimmerText, setShimmerText] = useState<Readonly<Partial<Record<ProjectButterDetailFieldId, string>>>>({});
 
@@ -103,12 +107,28 @@ export function useProjectButterSuggestionFill(
 		if (batchHandoffTimer.current !== undefined) window.clearTimeout(batchHandoffTimer.current);
 	}, []);
 
-	const suggestions = enabled
-		? listProjectButterSuggestions(projectButterSuggestionSnapshot(content), profile)
+	const snapshot = enabled ? projectButterSuggestionSnapshot(content) : null;
+	const demo = enabled && profile === "jira-demo";
+	const hasMoreSuggestions = demo && snapshot !== null && nextProjectButterDemoCheck(snapshot, content.detailFields.hidden, demoChecks) !== null;
+	const suggestions = snapshot
+		? listProjectButterSuggestions(snapshot, profile, demoChecks)
 			.filter((suggestion) => !dismissed.has(suggestion.field) && (isMainSuggestionField(suggestion.field) || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))))
 		: [];
 	const railIndex = (field: ProjectButterSuggestionField) => isMainSuggestionField(field) ? -1 : content.detailFields.order.indexOf(field);
 	if (profile !== "jira-demo") suggestions.sort((a, b) => railIndex(a.field) - railIndex(b.field));
+
+	function checkForSuggestions(): readonly ProjectButterSuggestionField[] {
+		const live = contentRef.current;
+		const next = nextProjectButterDemoCheck(projectButterSuggestionSnapshot(live), live.detailFields.hidden, demoChecks);
+		if (!next) return [];
+
+		live.setDetailFields((current) => {
+			const added = next.fields.filter((field) => !current.order.includes(field));
+			return added.length ? { ...current, order: [...current.order, ...added] } : current;
+		});
+		setDemoChecks(next.completedChecks);
+		return next.fields;
+	}
 
 	function finishShimmer(field: ProjectButterDetailFieldId, text: string) {
 		const timer = shimmerTimers.current.get(field);
@@ -314,6 +334,8 @@ export function useProjectButterSuggestionFill(
 		finishing,
 		dismissAccepted,
 		dismissField,
+		checkForSuggestions: demo ? checkForSuggestions : undefined,
+		hasMoreSuggestions,
 		restoreDismissedField: (field) => setDismissed((current) => {
 			const next = new Set(current);
 			next.delete(field);

@@ -20,6 +20,7 @@ import { usePanelFocus } from "./use-panel-focus";
 export interface StackPanelProps {
 	id: string;
 	className?: string;
+	title?: string;
 	listStage?: "intro" | "list";
 	focusOnMount?: boolean;
 	feed: SuggestionFeed;
@@ -37,7 +38,7 @@ export interface StackPanelProps {
  * The suggestions popover: heading with view · re-run · close, a body that is the stack, the unpacked
  * list or the caught-up state, and the progress footer.
  */
-export function StackPanel({ id, className, listStage, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
+export function StackPanel({ id, className, title, listStage, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
 	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
 	const [grab, setGrab] = useState<{ id: SuggestionFieldId; progress: MotionValue<number> } | null>(null);
 	const checkRef = useRef<HTMLButtonElement>(null);
@@ -127,14 +128,16 @@ export function StackPanel({ id, className, listStage, focusOnMount = false, fee
 			id={id}
 			ref={panelRef}
 			role="dialog"
-			style={listStage === undefined ? undefined : { height: maxHeight }}
+			style={listStage !== undefined && mode !== "caught-up" ? { height: maxHeight } : undefined}
 			tabIndex={-1}
 		>
 			<PanelHeader
 				feed={feed}
+				floating={listStage !== undefined}
 				onClose={onClose}
 				onRerun={listStage === undefined ? feed.rerun : undefined}
 				onToggleView={listStage === undefined && feed.review.suggestions.length > 0 ? toggleView : undefined}
+				title={title}
 				titleId={titleId}
 				toggleRef={toggleRef}
 				view={headerView}

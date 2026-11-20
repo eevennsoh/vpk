@@ -69,7 +69,7 @@ test("top-level `/` search inserts a matching reference, and Escape closes the m
 	await option.click();
 
 	// The selected reference is inserted and the trigger/query text is consumed.
-	await expect(editor).toContainText("Design landing page");
+	await expect(editor.locator('[data-mention-category="skill"][data-mention-id$="design-landing-page"]')).toBeVisible();
 	await expect(editor).not.toContainText("/Design");
 });
 
@@ -106,7 +106,7 @@ test("Tab in the composer slash menu selects a reference instead of focusing Ask
 	await page.keyboard.press("Tab");
 
 	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
-	await expect(editor).toContainText("Design landing page");
+	await expect(editor.locator('[data-mention-category="skill"][data-mention-id$="design-landing-page"]')).toBeVisible();
 	await expect(editor).not.toContainText("/Design");
 });
 

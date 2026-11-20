@@ -244,7 +244,7 @@ export function SuggestionCard({
 					isPresent ? null : "pointer-events-none",
 				)}
 				data-top-card={top ? "" : undefined}
-				layout
+				layout={floating ? "position" : true}
 				layoutAnchor={floating ? false : undefined}
 				{...(top ? handlers : null)}
 				style={{ ...CARD_PAPER_STYLE, boxShadow: floatingSheetEdge, x, y: poseY, rotate, opacity }}

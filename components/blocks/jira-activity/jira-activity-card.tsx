@@ -12,6 +12,8 @@ import { Icon } from "@/components/ui/icon";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
+import { JiraActivityTimestamp } from "./jira-activity-timestamp";
+
 export interface JiraActivityCardProps {
 	/** Session summary shown as the rich activity-card header. */
 	item?: AgentListItem;
@@ -139,7 +141,7 @@ export function JiraActivityCard({
 		>
 			<div
 				className={cn(
-					"relative grid min-w-0",
+					"group/activity-timestamp relative grid min-w-0",
 					hasExpandedLayout ? "gap-3" : "gap-2",
 				)}
 			>
@@ -182,15 +184,15 @@ export function JiraActivityCard({
 										</span>
 									</div>
 									<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
-										{timestampContent === undefined ? <span className="shrink-0">{timestamp}</span> : <span className="shrink-0">{timestampContent}</span>}
+										<JiraActivityTimestamp content={timestampContent} timestamp={timestamp} />
 										{timestampMeta}
 										{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 									</div>
 								</div>
 							) : (
-								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
+								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm leading-5">
 									<span className="font-medium text-text">{agentName}</span>
-									<span className="inline-flex items-center text-text-subtle">{timestampContent === undefined ? timestamp : timestampContent}</span>
+									<JiraActivityTimestamp content={timestampContent} timestamp={timestamp} />
 									{timestampMeta}
 									{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 								</div>

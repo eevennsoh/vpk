@@ -17,6 +17,7 @@ export const JIRA_SUGGESTION_DETAIL: ComponentDetail = {
 			description: "The Floating variant. Render it inside a RovoChatProvider and pass the work item's suggestion feed.",
 			props: [
 				{ name: "feed", type: "SuggestionFeed", required: true, description: "Supply suggestions and handle review decisions for the current work item." },
+				{ name: "workItemKey", type: "string", required: true, description: "Show the current Jira work item key in the panel title." },
 				{ name: "portalContainer", type: "HTMLElement", description: "Anchor the launcher and review panel inside a positioned container. Omit it to float over the viewport." },
 				{ name: "ref", type: "Ref<{ reopen: () => true }>", description: "Call reopen() from a host action to return to the review and restore dismissed suggestions." },
 			],

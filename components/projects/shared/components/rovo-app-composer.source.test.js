@@ -162,7 +162,7 @@ test("FloatingComposer restores compact mode and expands from compact-width meas
 	assert.match(FLOATING_COMPOSER_SOURCE, /probe\.textContent = fieldText;/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /setIsMeasuredExpanded\(lineCount > 1\);/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className="flex w-full flex-wrap items-center gap-2"/u);
-	assert.match(FLOATING_COMPOSER_SOURCE, /isExpanded \? "order-1 basis-full" : "order-2 flex-1"/u);
+	assert.match(FLOATING_COMPOSER_SOURCE, /isExpanded \? "order-1 basis-full px-2" : "order-2 flex-1"/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className="order-3 ml-auto flex shrink-0 items-center gap-1"/u);
 	assert.doesNotMatch(FLOATING_COMPOSER_SOURCE, /isMultiline/u);
 });
@@ -602,7 +602,7 @@ test("RovoAppComposer threads dictation controls and text snapshots through both
 	}
 });
 
-test("the floating shell owns the horizontal gutter so text aligns with the leading control", () => {
+test("the floating shell keeps compact text aligned with the leading control", () => {
 	// `PromptInputTextarea` pads its control container and placeholder overlay
 	// with `px-2.5`. Inside a floating composer that stacks on the shell's own
 	// `p-2`, pushing text ~10px inboard of the "+" button. The shell zeroes both

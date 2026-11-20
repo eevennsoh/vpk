@@ -56,9 +56,12 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	if (!cellBounds) throw new Error("PR cell geometry is unavailable");
 	await cell.hover({ position: { x: cellBounds.width - 2, y: 2 } });
 	await expect(preview).toBeVisible();
+	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
+	const previewBounds = await preview.boundingBox();
+	if (!previewBounds) throw new Error("PR preview geometry is unavailable");
+	expect(previewBounds.x >= cellBounds.x + cellBounds.width || previewBounds.x + previewBounds.width <= cellBounds.x).toBe(true);
 	await expect(preview).toHaveCSS("transition-property", "none");
 	await expect(trigger.locator("a")).toHaveCount(0);
-	await page.mouse.move(0, 0);
 	const nextTrigger = page.getByRole("group", { name: "Pull request #1856: Extract retry policy", exact: true });
 	await nextTrigger.hover();
 	const nextPreview = page.getByRole("region", { name: "Pull request #1856 details", exact: true });
@@ -66,6 +69,26 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	await trigger.hover();
 	await expect(preview).toBeVisible();
 	await expect(nextPreview).toBeHidden();
+});
+
+test("a List work item can disclose multiple pull requests beside its cell", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	const list = await openList(page);
+	const trigger = list.getByRole("button", { name: "3 pull requests for PAY-113" });
+	await trigger.press("Enter");
+	const preview = page.getByRole("dialog", { name: "Pull requests for PAY-113" });
+	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
+	const pullRequests = preview.getByRole("list", { name: "Pull requests" });
+	await expect(pullRequests.getByRole("listitem")).toHaveCount(3);
+	const open = pullRequests.getByRole("button", { name: "#1853 Add 3-D Secure contract coverage Open" });
+	await open.press("Enter");
+	await expect(pullRequests.getByText("fix/pay-113-contract-coverage", { exact: true })).toBeVisible();
+	await expect(pullRequests.getByRole("button", { name: "#1863 Add 3DS contracts Merged" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(preview).toBeHidden();
+	await expect(trigger).toBeFocused();
 });
 
 test("list rows cycle only agents with the same highest-priority active status", async ({ page }) => {

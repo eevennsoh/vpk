@@ -50,7 +50,7 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 		export default function Harness() {
 			const content = useProjectButterContent("empty", { code: "PAY-999", title: "Merchant onboarding" }, undefined, undefined, venn, { currentUser: venn, showAuditInActivity: true });
 			const projected = projectMerchantJourney({ content, sessions: [], phase: "working", session, autoAssignTo: venn });
-			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} empty sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
+			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
 		}` });
 	const entries = document.querySelectorAll('[data-jira-activity-entry-id="invocation-journey-session"]');
 	assert.equal(entries.length, 1);

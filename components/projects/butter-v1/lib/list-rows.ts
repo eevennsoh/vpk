@@ -13,6 +13,7 @@ import type {
 	JiraListRowData,
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
+import { BUTTER_PAY_113_RELATED_PULL_REQUESTS } from "@/components/projects/butter-v1/data/presentation-pull-requests";
 
 /** Mirrors TopNavigation / `BUTTER_PAY_CURRENT_USER`; covered by the list-row contract tests. */
 const CURRENT_USER_ASSIGNEE = {
@@ -410,11 +411,11 @@ function createListRow(
 		statusVariant: STATUS_VARIANTS[card.status ?? columnTitle],
 		assignee: card.assignee,
 		agentSessions: assignedAgentsFromCard(card, catalog),
-		pullRequest: card.pullRequestNumber ? {
+		pullRequests: card.pullRequestNumber ? [{
 			number: card.pullRequestNumber,
 			status: card.pullRequestStatus ?? "open",
 			preview: card.pullRequestPreview ?? { title: card.title, additions: 0, deletions: 0 },
-		} : undefined,
+		}, ...(card.code === "PAY-113" ? BUTTER_PAY_113_RELATED_PULL_REQUESTS : [])] : undefined,
 		labels: card.tags,
 		dueDate: card.dueDate,
 		contributors: card.assignee ? [card.assignee] : [],

@@ -35,7 +35,7 @@ function AttachFilesButton() {
   <PromptInputHeader />
   <PromptInputBody>
     {/* Enter sends, Shift+Enter adds a line. Type "/" for skills or "@" to mention. */}
-    <PromptInputTextarea placeholder="Ask the agent to change your code..." />
+    <PromptInputTextarea placeholder="Ask, @mention, or / for skills" />
   </PromptInputBody>
   <PromptInputFooter>
     <AttachFilesButton />
@@ -120,7 +120,6 @@ function AttachFilesButton() {
 		{ name: "PromptInputSubmit", description: "Submit/stop button. Round, filled 32px button with an arrow-up icon while idle (VPK fills it with the black Rovo brand); a stop square while submitted or streaming and a cross on error. Pass `className=\"rounded-md\"` for a rounded-square button." },
 	],
 	examples: [
-		{ title: "Default", description: "shadcn's Prompt Input: attached files show as Attachment chips above the text, then the attach button, the model and effort menus, and a round send button that stays disabled until there is text. Enter sends; Shift+Enter adds a new line.", demoSlug: "prompt-input-demo-default" },
 		{ title: "Microphone + text send — default", description: "The default Rovo-style composer keeps dictation available and the send CTA visible. Send is disabled until text is ready; live chat is not enabled.", demoSlug: "prompt-input-demo-chat-composer" },
 		{ title: "Microphone + live chat — opt-in", description: "An explicit live-chat variant that retains dictation. With an empty prompt, the live chat CTA replaces the disabled send CTA; while live chat is active, the action rail also exposes the AI cursor control.", demoSlug: "prompt-input-demo-chat-composer-live-voice" },
 		{ title: "Microphone + live chat — compact", description: "A compact floating composer with dictation and the opt-in live chat CTA, using the default black Rovo button treatment.", demoSlug: "prompt-input-demo-floating-bar" },

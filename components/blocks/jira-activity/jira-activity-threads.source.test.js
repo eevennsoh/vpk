@@ -337,15 +337,7 @@ test("collapsed threads show a Slack-like participant, count, and timestamp summ
 	assert.match(COMMENT_SOURCE, /text-xs font-normal text-text hover:underline/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /font-medium text-link[\s\S]*replyCountLabel/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /hover:no-underline/u);
-	assert.match(COMMENT_SOURCE, /group\/thread-summary h-auto min-w-0 gap-1\.5/u);
 	assert.match(COMMENT_SOURCE, /shrink-0 text-text-subtle">\{replyCountLabel\}/u);
-	assert.match(
-		COMMENT_SOURCE,
-		/shrink-0 text-text-subtle">\{replyCountLabel\}<\/span>\s*\{latestTimestamp \? \(\s*<>\s*<span aria-hidden className="shrink-0 text-text-subtlest">·<\/span>/u,
-	);
-	assert.match(COMMENT_SOURCE, /truncate text-text-subtlest group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
-	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
-	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:inline[\s\S]*View all comments/u);
 	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
 	assert.match(
 		COMMENT_SOURCE,
@@ -808,7 +800,7 @@ test("comment and reply headers share the selected inline layout while retaining
 			const entries = [{ id: "thread", kind: "comment", actor, timestamp: "1h", body: [{ type: "text", text: "Discussion" }], replies: [{ id: "reply", actor: { ...actor, id: "reply-author", name: "Reply author" }, timestamp: "30m", body: "Reply body" }] }];
 			export default function HeaderTest(props) { return <JiraActivity entries={entries} composer={null} hideHeader {...props} />; }`,
 	});
-	const sameLineOwner = (author, timestamp) => view.getByText(author).parentElement === view.getByText(timestamp).parentElement;
+	const sameLineOwner = (author, timestamp) => view.getByText(author).parentElement === view.getByText(timestamp).closest('[data-slot="jira-activity-timestamp"]')?.parentElement;
 	assert.equal(sameLineOwner("Parent author", "1h"), false);
 	assert.equal(sameLineOwner("Reply author", "30m"), false);
 	await view.rerender({ commentHeaderLayout: "inline" });

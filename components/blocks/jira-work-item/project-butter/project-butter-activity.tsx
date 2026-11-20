@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import TimelineIcon from "@atlaskit/icon/core/timeline";
-import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
+import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
@@ -12,14 +12,12 @@ import { resolveJiraLinkingGlowColor } from "@/components/blocks/jira-linking/gl
 import { resolveJiraLinkingIdentityTint } from "@/components/blocks/jira-linking/use-jira-linking-atlas";
 import { agentSessionAccentColor, agentSessionTintSeed } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { resolveAgentBrandTint, resolveAgentBrandTintVariable } from "@/components/blocks/agent-session/agent-brand-tint";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ProjectButterActivitySessionThreads } from "./activity-session-threads";
+import { ProjectButterActivitySessionThreads, renderProjectButterEarlierRepliesLabel } from "./activity-session-threads";
 import { draftThreadInstruction, PINNED_THREAD_RAIL, summarizeReplies, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, useWorkItemThreadSummaries } from "./activity-thread-summary";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { motionDuration } from "@/lib/motion";
 import { ProjectButterCommentEditor } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
@@ -59,34 +57,10 @@ const ACTIVITY_EVENT_TEXT = "text-sm text-text [&_[data-jira-activity-agent-ment
 /** Soft hover plate behind each comment thread, on its own isolated layer. Literal strings so Tailwind's scanner sees every class. */
 const FEED_ROWS = [
 	"[&>div>ol>li]:relative [&>div>ol>li]:isolate",
-	"[&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:pointer-events-none [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:absolute [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-inset-x-2 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-top-2 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:bottom-3 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-z-10 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:rounded-lg [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:transition-colors [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:duration-xxshort [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:ease-out-practical [&>div>ol>li[data-jira-activity-entry-kind=comment]]:hover:after:bg-bg-neutral-subtle-hovered",
+	"[&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:pointer-events-none [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:absolute [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-inset-x-2 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-top-2 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:bottom-3 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:-z-10 [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:rounded-xl [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:transition-colors [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:duration-xxshort [&>div>ol>li[data-jira-activity-entry-kind=comment]]:after:ease-out-practical [&>div>ol>li[data-jira-activity-entry-kind=comment]]:hover:after:bg-bg-neutral-subtle-hovered",
 	"[&>div>ol>li[data-jira-activity-entry-kind=comment]:has(>div.pb-6)]:after:bottom-4 [&>div>ol>li[data-jira-activity-entry-kind=comment]:has(>div.pb-4)]:after:bottom-2",
 	"[&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered",
 ].join(" ");
-
-/**
- * Hidden-reply participants, side by side with a 2px gap. An overlapping AvatarGroup paints a
- * page-colored separator behind each face, which shows as a white rim on the thread's hover plate.
- */
-function ReplyFaces({ replies }: Readonly<{ replies: readonly JiraActivityReply[] }>) {
-	const actors = [...new Map(replies.map((reply) => [reply.actor.id, reply.actor])).values()].slice(-3).reverse();
-	return (
-		<span aria-label={`Reply participants: ${actors.map((actor) => actor.name).join(", ")}`} className="flex shrink-0 gap-0.5" role="group">
-			{actors.map((actor) => actor.kind === "person" ? (
-				<Avatar animate={false} aria-hidden key={actor.id} size="xs">
-					{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
-					<AvatarFallback>{actor.name.slice(0, 1)}</AvatarFallback>
-				</Avatar>
-			) : (
-				<AgentAvatarVisual animate={false} appearance={actor.appearance} avatarSrc={actor.avatarSrc} brandName={actor.brandName} fallbackText={actor.name.slice(0, 1)} key={actor.id} label={actor.name} sizePx={16} vpkLogo={actor.vpkLogo} />
-			))}
-		</span>
-	);
-}
-
-function earlierRepliesLabel(hidden: readonly JiraActivityReply[], expanded: boolean, pinned: boolean): ReactNode {
-	return expanded ? "Hide replies" : <><ReplyFaces replies={hidden} /><span>{pinned ? "" : "Show "}{hidden.length}{pinned ? "" : " more"} {hidden.length === 1 ? "reply" : "replies"}</span></>;
-}
 
 function ActivityTimelinePanel({ tabbed, children }: Readonly<{ tabbed: boolean; children: ReactNode }>) {
 	return tabbed ? <TabsContent value="timeline">{children}</TabsContent> : children;
@@ -94,7 +68,6 @@ function ActivityTimelinePanel({ tabbed, children }: Readonly<{ tabbed: boolean;
 
 export function ProjectButterActivity({
 	content,
-	empty,
 	traceReplyId,
 	pendingReplyId,
 	replyFocusId,
@@ -116,7 +89,6 @@ export function ProjectButterActivity({
 	latestReplyEntryIds,
 }: Readonly<{
 	content: ProjectButterContent;
-	empty: boolean;
 	traceReplyId?: number | null;
 	pendingReplyId?: string | null;
 	replyFocusId?: string | null;
@@ -228,19 +200,13 @@ export function ProjectButterActivity({
 	const renderEvent = (entry: JiraActivityEventEntry): ReactNode | undefined => {
 		const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 		if (item && item.changes.length) return <ProjectButterHistoryChange actor={entry.actor} defaultOpen={expandedAudit} item={item} key={`${item.id}-${expandedAudit}`} timestamp={entry.timestamp} />;
-		if (entry.id.startsWith("merchant-agent-added-")) return (
-			<div className="flex min-w-0 flex-wrap items-center">
-				<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={{ ...entry, showTimestamp: false }} />
-				<span className="ml-2 shrink-0 text-xs text-text-subtlest">{entry.timestamp}</span>
-			</div>
-		);
-		return entry.icon === "created" || entry.icon === "status" ? <JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} /> : undefined;
+		return entry.icon === "created" || entry.icon === "status" || entry.id.startsWith("merchant-agent-added-") ? <JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} /> : undefined;
 	};
 	const headerTime = visibleRow ? activityHeaderTimeLabel(visibleRow.timestamp || activityDayLabel(visibleRow)) : "";
 	const header = (
 		<JiraWorkItemTimeline
 			actions={<div className="ml-auto flex items-center gap-1">
-				<div className={cn("flex items-center", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" : null)}>
+				<div className="pointer-events-none flex items-center opacity-0 transition-opacity duration-normal ease-out group-hover/activity-header:pointer-events-auto group-hover/activity-header:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
 					<ProjectButterActivityFilterMenu
 						expandDetails={expandedAudit}
 						filters={filters}
@@ -263,6 +229,7 @@ export function ProjectButterActivity({
 					</TabsList>
 				) : null}
 			</div>}
+			className="group/activity-header"
 			data-project-butter-activity-header
 			getPreviewLabel={activityDateLabel}
 			headerTime={headerTime.charAt(0).toUpperCase() + headerTime.slice(1)}
@@ -335,7 +302,7 @@ export function ProjectButterActivity({
 						const canDraft = session && onDraftSessionInstruction && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
 						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined);
 					}}
-					renderEarlierRepliesLabel={(replies, expanded, entry) => earlierRepliesLabel(replies, expanded, content.pinnedCommentIds.includes(entry.id) && !latestReplyEntryIds?.has(entry.id))}
+					renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${entry.replies?.at(-1)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}
 					renderReplyComposer={(composer) => {
 						const request = replyRequest?.entryId === composer.entryId && replyRequest.id === composer.requestId ? replyRequest : undefined;
@@ -401,7 +368,7 @@ export function ProjectButterActivity({
 		</>
 	);
 	return (
-		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
+		<section aria-label="Activity" className="min-w-0" data-project-butter-activity ref={activityRef}>
 			{sessionView ? <Tabs onValueChange={(next) => {
 				if (next === "sessions") { setVisitedSessions(true); setSessionsActivatedAtMs(Date.now()); }
 				if (next === "timeline" || next === "sessions") setView(next);

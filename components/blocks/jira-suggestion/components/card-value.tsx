@@ -51,7 +51,7 @@ export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 		case "labels":
 			return (
 				<span className="flex flex-wrap gap-1">
-					{value.labels.map((label) => <Tag key={label}>{label}</Tag>)}
+					{value.labels.map((label) => <Tag color={value.colors?.[label]} key={label}>{label}</Tag>)}
 				</span>
 			);
 		case "checklist":

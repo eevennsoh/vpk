@@ -310,7 +310,7 @@ export function createJiraListBaseColumns({
 			id: "pullRequest",
 			label: "Pull request",
 			widthClassName: "w-[240px]",
-			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell pullRequest={row.pullRequest} />,
+			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell issueKey={row.issueKey} pullRequests={row.pullRequests} />,
 		}] : []),
 		{
 			id: "priority",

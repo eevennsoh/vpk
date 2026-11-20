@@ -149,7 +149,7 @@ test("a submitted handoff does not prefill later manual replies", async ({ page 
 	await expect(reply).toHaveText("");
 	await header.hover();
 	await header.getByRole("button", { name: "Reply", exact: true }).click();
-	await thread.getByRole("button", { name: /Show \d+ more replies/u }).click();
+	await thread.getByRole("button", { name: /Show \d+ replies/u }).click();
 	const participant = thread.locator('[data-slot="jira-activity-comment-header"]').filter({ hasText: "Sarah Lim" });
 	await participant.hover();
 	await participant.getByRole("button", { name: "Reply", exact: true }).click();

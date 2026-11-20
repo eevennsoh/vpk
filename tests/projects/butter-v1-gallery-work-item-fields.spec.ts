@@ -135,6 +135,36 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 5" })).toBeVisible();
 });
 
+test("collapsed Work item sections take up only the toggle row", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+
+	const summary = page.getByRole("group", { name: "Work item sections", exact: true });
+	const attachments = summary.getByRole("button", { name: "8 attachments" });
+	const linked = summary.getByRole("button", { name: "8 linked work items" });
+	const trailingSpace = () => summary.evaluate((row) => row.parentElement!.getBoundingClientRect().bottom - row.getBoundingClientRect().bottom);
+	await expect.poll(trailingSpace).toBeLessThanOrEqual(1);
+
+	await attachments.click();
+	await linked.click();
+	await attachments.click();
+	const linkedGroup = page.locator("#section-linked-items");
+	await expect(linkedGroup).toBeVisible();
+	const linkedGap = await summary.evaluate((row) => {
+		const section = row.parentElement!;
+		const linked = section.querySelector("#section-linked-items")!;
+		return linked.getBoundingClientRect().top - row.getBoundingClientRect().bottom - parseFloat(getComputedStyle(section).rowGap);
+	});
+	expect(Math.abs(linkedGap)).toBeLessThanOrEqual(1);
+
+	await linked.click();
+	await expect(linkedGroup).toBeHidden();
+	await expect.poll(trailingSpace).toBeLessThanOrEqual(1);
+});
+
 test("attachment piles stay settled as Related work opens in the Work item and remain interactive", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });

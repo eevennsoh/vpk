@@ -52,7 +52,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	const content = useRef<HTMLDivElement>(null);
 	const { height, settled, overflow, viewport } = useBodyHeight(content, mode, maxHeight);
 	const listed = mode === "list";
-	const registerDepth = useListDepth(scroller, deckRef, listed, floating ? undefined : viewport);
+	const registerDepth = useListDepth(scroller, deckRef, listed, { viewport: floating ? undefined : viewport, animateEntrance: !floating });
 	const top = deck.order.at(0);
 	const armed = useArmed(grab && top && grab.id === top.id ? grab : null);
 	const running = feed.status === "running";

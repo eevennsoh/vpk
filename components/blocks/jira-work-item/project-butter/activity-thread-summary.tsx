@@ -4,13 +4,13 @@ import { useCallback, useId, useRef, useState, type CSSProperties, type ReactNod
 import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-summary";
 import { JiraActivityEntryGlyph, type JiraActivityActor, type JiraActivityCommentEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { activityActorVpkLogo } from "@/components/blocks/jira-activity/jira-activity-actor-mention";
+import { JiraActivityTimestamp } from "@/components/blocks/jira-activity/jira-activity-timestamp";
 import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/ui/elapsed-time";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motionDuration } from "@/lib/motion";
-import { formatDetailedTimestamp } from "@/lib/format-detailed-timestamp";
 import { cn } from "@/lib/utils";
 
 export type ThreadSummary = Readonly<{ text: string; fixtureReplyCount: number }>;
@@ -229,10 +229,21 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 							<span aria-hidden className="pointer-events-none absolute -left-6 bottom-8 top-0 hidden w-px -translate-x-1/2 opacity-60 [background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" data-summary-thread-continuation />
 							<div className="min-h-0 overflow-clip">
 								<div className="mt-3 grid gap-2 rounded-lg bg-bg-neutral-subtle py-3 pr-3">
-									<div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+									<div className="group/activity-timestamp flex flex-wrap items-center gap-2 text-sm font-medium">
 										<AiGenerativeTextSummaryIcon label="" size="small" />
 										<span>Thread summary</span>
-										{sources && run && (!auto || (auto.active && visible)) ? <span className="text-xs font-normal text-text-subtle">Last run <Tooltip><TooltipTrigger render={<span className="rounded-sm underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0} />}><RelativeTime timestampMs={run.runAtMs} /></TooltipTrigger><TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">Last run on {formatDetailedTimestamp(run.runAtMs, true)}</TooltipContent></Tooltip></span> : null}
+										{sources && run && (!auto || (auto.active && visible)) ? (
+											<JiraActivityTimestamp content={
+												<Tooltip>
+													<TooltipTrigger render={<span className="rounded-sm underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0} />}>
+														<RelativeTime format="compact" timestampMs={run.runAtMs} />
+													</TooltipTrigger>
+													<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">
+														<RelativeTime format="long" timestampMs={run.runAtMs} />
+													</TooltipContent>
+												</Tooltip>
+											} />
+										) : null}
 									</div>
 									<p className="text-sm text-text">{sources ? run?.animate ? <SuggestionRainbowText key={sources.map((reply) => reply.id).join("|")} text={result.text} onComplete={() => setState((current) => {
 										const previous = current.runs.get(entryId);

@@ -82,7 +82,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 			) : null}
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
-			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryIds={latestReplyEntryIds} onDraftSessionInstruction={({ entry }, text) => {
+			<ProjectButterActivity content={content} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryIds={latestReplyEntryIds} onDraftSessionInstruction={({ entry }, text) => {
 				if (replyTarget?.entryId !== entry.id || instructionDraft === null) setInstructionDraft(text);
 				setReplyTarget({ entryId: entry.id, targetId: entry.id, actor: entry.actor });
 				setReplyFocusRequest((current) => current + 1);

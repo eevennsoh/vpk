@@ -75,7 +75,7 @@ export interface JiraListRowData {
 	isExpanded?: boolean;
 	assignee?: JiraListPerson;
 	agentSessions?: readonly JiraListAssignedAgent[];
-	pullRequest?: JiraIssuePullRequestItem;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
 	goals?: readonly JiraListGoal[];
 	labels?: readonly JiraListTag[];
 	dueDate?: string;

@@ -43,7 +43,7 @@ test("visible session replies use a continuous solid connector", async ({ page }
 	if (await restore.isVisible()) await restore.click();
 	const hide = thread.getByRole("button", { name: "Hide replies", exact: true });
 	if (await hide.isVisible()) await hide.click();
-	await expect(thread.getByRole("button", { name: /Show 5 more replies/u })).toHaveAttribute("aria-expanded", "false");
+	await expect(thread.getByRole("button", { name: /Show 5 replies/u })).toHaveAttribute("aria-expanded", "false");
 	await expect(thread.getByText("A local follow-up", { exact: true })).toBeVisible();
 	await expectSolidRail(thread);
 });

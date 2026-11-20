@@ -21,13 +21,13 @@ const maskFor = (top: number, bottom: number) => `linear-gradient(to bottom, tra
  * something resizes (ResizeObserver on the scrollport, the content and every card) and cached; a scroll frame only
  * does arithmetic on the cache and writes each slot's transform.
  *
- * It runs while `active` (list mode). Switching on ramps the tail in alongside the unpack's flight, laid out against
- * the height the scrollport is heading for (`viewport`), so each card flies straight into its scaled list pose in one
- * gesture instead of landing full size and then shrinking. Switching off clears every slot in a layout effect, after
+ * The menu ramps the tail in against its destination scrollport height (`viewport`). Floating cards start with
+ * the tail in place so the depth effect doesn't shift the targets during the layout animation.
+ * Switching off clears every slot in a layout effect, after
  * the stack ⇄ list snapshot was taken (so cards leave from where they visibly are) but before Motion measures where
  * they are going. Reduced motion keeps every card full size.
  */
-export function useListDepth(scroller: RefObject<HTMLElement | null>, content: RefObject<HTMLElement | null>, active: boolean, viewport?: () => number) {
+export function useListDepth(scroller: RefObject<HTMLElement | null>, content: RefObject<HTMLElement | null>, active: boolean, { viewport, animateEntrance }: Readonly<{ viewport?: () => number; animateEntrance: boolean }>) {
 	const slots = useRef(new Map<HTMLElement, Slot>());
 	const geometry = useRef({ viewport: 0, scrollHeight: 0, offset: 0 });
 	const observer = useRef<ResizeObserver | null>(null);
@@ -88,10 +88,12 @@ export function useListDepth(scroller: RefObject<HTMLElement | null>, content: R
 			paint();
 			return;
 		}
+		if (!animateEntrance) strength.jump(1);
 		measure();
+		if (!animateEntrance) return;
 		const controls = animate(strength, 1, reduced ? INSTANT : DEPTH_IN);
 		return () => controls.stop();
-	}, [active, measure, paint, reduced, strength]);
+	}, [active, animateEntrance, measure, paint, reduced, strength]);
 
 	const register = useCallback((slot: HTMLElement) => {
 		slots.current.set(slot, { top: slot.offsetTop, height: slot.offsetHeight });

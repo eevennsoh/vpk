@@ -8,19 +8,24 @@ async function openTeamSessionComparison(page: Page) {
 	await page.locator("#session-sizes-and-permissions").getByRole("button", { name: "Team session", exact: true }).click();
 }
 
-test("Butter v1 disables Team session while keeping the other permissions available", async ({ page }) => {
+test("Butter v1 can compare team sessions and switch back to the other permissions", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
 	const team = page.getByRole("button", { name: "Team session", exact: true });
 	const mine = page.getByRole("button", { name: "My session", exact: true });
 	const privateSession = page.getByRole("button", { name: "Private session", exact: true });
-	await expect(team).toBeDisabled();
+	await expect(team).toBeEnabled();
 	await expect(mine).toHaveAttribute("aria-pressed", "true");
-	await team.click({ force: true });
-	await expect(mine).toHaveAttribute("aria-pressed", "true");
+	await team.click();
+	await expect(team).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article")).toHaveCount(3);
+	await expect(page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article")).toHaveCount(3);
 	await privateSession.click();
 	await expect(privateSession).toHaveAttribute("aria-pressed", "true");
 	await expect(team).toHaveAttribute("aria-pressed", "false");
+	await expect(page.getByRole("region", { name: "Cloud sessions", exact: true })).toBeVisible();
+	await mine.click();
+	await expect(mine).toHaveAttribute("aria-pressed", "true");
 });
 
 test("large session cards keep the status label when More actions replaces the icon", async ({ page }) => {
@@ -130,7 +135,11 @@ test("session metadata previews its timestamp and pull request", async ({ page }
 	const timestamp = row.locator("[data-last-update]");
 	await timestamp.hover();
 	await expect(timestamp).toHaveCSS("text-decoration-line", "underline");
-	await expect(page.getByRole("tooltip")).toHaveText("Last run on Nov 10, 2026, 10:00 GMT+8");
+	await expect(page.getByRole("tooltip", { name: "Last week", exact: true })).toBeVisible();
+	const cursorTimestamp = page.getByRole("region", { name: "Local sessions" }).locator("article").filter({ hasText: "Kill switch as a prerequisite" }).locator("[data-last-update]");
+	await expect(cursorTimestamp).toHaveText("18m");
+	await cursorTimestamp.hover();
+	await expect(page.getByRole("tooltip", { name: "18 minutes ago", exact: true })).toBeVisible();
 	await page.mouse.move(0, 0);
 	const pr = row.getByRole("group", { name: /Pull request #1306/ });
 	const icon = pr.getByRole("img", { name: "PR created" });
@@ -146,7 +155,7 @@ test("session metadata previews its timestamp and pull request", async ({ page }
 	await page.mouse.move(0, 0);
 	await page.keyboard.press("Tab");
 	await timestamp.focus();
-	await expect(page.getByRole("tooltip")).toHaveText("Last run on Nov 10, 2026, 10:00 GMT+8");
+	await expect(page.getByRole("tooltip", { name: "Last week", exact: true })).toBeVisible();
 	await pr.focus();
 	await expect(page.getByRole("region", { name: "Pull request #1306 details" })).toBeVisible();
 });
@@ -644,6 +653,10 @@ test("board session flyout reveals more actions when hovering the status", async
 	const flyout = page.getByRole("dialog", { name: "Agent assignment" });
 	const row = flyout.locator("article").filter({ hasText: "Replaying 3-D Secure fixtures" });
 	await expect(row).toBeVisible();
+	const timestamp = row.locator("[data-last-update]");
+	await expect(timestamp).toHaveText("12m");
+	await timestamp.hover();
+	await expect(page.getByRole("tooltip", { name: "12 minutes ago", exact: true })).toBeVisible();
 	await page.mouse.move(0, 0);
 	const status = row.getByRole("img", { name: "Working" });
 	await expect(status).toBeVisible();

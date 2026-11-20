@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Fragment, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import {
@@ -17,18 +17,7 @@ import {
 	RovoComposerSendControls,
 } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { usePromptInputDemoVoice } from "@/components/website/demos/ui-custom/prompt-input-demo-voice";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDownIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import {
 	PromptInput,
 	PromptInputActionAddAttachments,
@@ -40,12 +29,9 @@ import {
 	PromptInputBody,
 	PromptInputButton,
 	PromptInputFooter,
-	PromptInputHeader,
 	PromptInputPreferencesButton,
-	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputTools,
-	usePromptInputAttachments,
 } from "@/components/ui-custom/prompt-input";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -74,141 +60,6 @@ function DemoVoiceStatus({ message }: Readonly<{ message: string | null }>) {
 			{message}
 		</p>
 	) : null;
-}
-
-export default function PromptInputDemo() {
-	return <PromptInputDemoDefault />;
-}
-
-// — shadcn Prompt Input: attachments, model and effort menus, round send —
-
-const PROVIDERS = [
-	{
-		name: "OpenAI",
-		models: [
-			{ id: "gpt-5", name: "GPT-5" },
-			{ id: "gpt-5-mini", name: "GPT-5 mini" },
-		],
-	},
-	{
-		name: "Anthropic",
-		models: [
-			{ id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
-			{ id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
-		],
-	},
-];
-
-const MODELS = PROVIDERS.flatMap((provider) => provider.models);
-
-const EFFORTS = [
-	{ id: "low", name: "Low" },
-	{ id: "medium", name: "Medium" },
-	{ id: "high", name: "High" },
-];
-
-function AttachFilesButton() {
-	const attachments = usePromptInputAttachments();
-	return (
-		<PromptInputButton
-			aria-label="Attach files"
-			className="rounded-full"
-			onClick={attachments.openFileDialog}
-			size="icon-sm"
-			variant="outline"
-		>
-			<PlusIcon label="" />
-		</PromptInputButton>
-	);
-}
-
-export function PromptInputDemoDefault() {
-	const [text, setText] = useState("");
-	const [model, setModel] = useState(MODELS[0].id);
-	const [effort, setEffort] = useState(EFFORTS[1].id);
-	const currentModel = MODELS.find((item) => item.id === model) ?? MODELS[0];
-	const currentEffort = EFFORTS.find((item) => item.id === effort) ?? EFFORTS[1];
-	const canSend = text.trim().length > 0;
-
-	return (
-		<div className="mx-auto w-full max-w-lg py-6">
-			<div className="rounded-lg border border-input p-3 transition-colors has-[[contenteditable]:focus-visible]:border-ring has-[[contenteditable]:focus-visible]:ring-3 has-[[contenteditable]:focus-visible]:ring-ring/50">
-				<PromptInput multiple onSubmit={() => setText("")}>
-					<PromptInputHeader className="px-0 pt-0 pb-3" />
-					<PromptInputBody>
-						<PromptInputTextarea
-							value={text}
-							onChange={(event) => setText(event.currentTarget.value)}
-							placeholder="Ask the agent to change your code..."
-						/>
-					</PromptInputBody>
-					<PromptInputFooter className="justify-start px-0 pt-3 pb-0">
-						<AttachFilesButton />
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<PromptInputButton
-										aria-label={`Model: ${currentModel.name}`}
-										className="ml-auto"
-										size="sm"
-										variant="outline"
-									/>
-								}
-							>
-								{currentModel.name}
-								<ChevronDownIcon label="" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="start" className="w-48">
-								<DropdownMenuRadioGroup value={model} onValueChange={setModel}>
-									{PROVIDERS.map((provider, index) => (
-										<Fragment key={provider.name}>
-											{index > 0 ? <DropdownMenuSeparator /> : null}
-											<DropdownMenuGroup>
-												<DropdownMenuLabel>{provider.name}</DropdownMenuLabel>
-												{provider.models.map((item) => (
-													<DropdownMenuRadioItem key={item.id} value={item.id} closeOnClick>
-														{item.name}
-													</DropdownMenuRadioItem>
-												))}
-											</DropdownMenuGroup>
-										</Fragment>
-									))}
-								</DropdownMenuRadioGroup>
-							</DropdownMenuContent>
-						</DropdownMenu>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<PromptInputButton
-										aria-label={`Effort: ${currentEffort.name}`}
-										size="sm"
-										variant="outline"
-									/>
-								}
-							>
-								<span className="text-text-subtlest">Effort</span>
-								{currentEffort.name}
-								<ChevronDownIcon label="" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="start" className="w-36">
-								<DropdownMenuGroup>
-									<DropdownMenuLabel>Effort</DropdownMenuLabel>
-									<DropdownMenuRadioGroup value={effort} onValueChange={setEffort}>
-										{EFFORTS.map((item) => (
-											<DropdownMenuRadioItem key={item.id} value={item.id} closeOnClick>
-												{item.name}
-											</DropdownMenuRadioItem>
-										))}
-									</DropdownMenuRadioGroup>
-								</DropdownMenuGroup>
-							</DropdownMenuContent>
-						</DropdownMenu>
-						<PromptInputSubmit aria-label="Send" disabled={!canSend} />
-					</PromptInputFooter>
-				</PromptInput>
-			</div>
-		</div>
-	);
 }
 
 interface ChatComposerDemoProps {
@@ -368,6 +219,8 @@ function ChatComposerDemo({
 export function PromptInputDemoChatComposer() {
 	return <ChatComposerDemo />;
 }
+
+export default PromptInputDemoChatComposer;
 
 export function PromptInputDemoChatComposerLiveVoice() {
 	return <ChatComposerDemo liveVoiceEnabled />;

@@ -18,6 +18,11 @@ export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
 export type ProjectButterSuggestionField = typeof PROJECT_BUTTER_SUGGESTION_FIELDS[number] | "assignee" | "acceptanceCriteria";
 export type ProjectButterSuggestionProfile = "default" | "payments" | "jira-demo";
 
+const JIRA_DEMO_FOLLOW_UP_FIELDS = [
+	["components", "fixVersion"],
+	["storyPoints", "costCenter"],
+] as const;
+
 export interface ProjectButterSuggestionSnapshot {
 	description: string;
 	descriptionDraft: string;
@@ -184,9 +189,25 @@ function fromDemoCard(card: (typeof WORK_ITEM_SUGGESTIONS)[number]): ProjectButt
 	}
 }
 
+export function nextProjectButterDemoCheck(snapshot: ProjectButterSuggestionSnapshot, hidden: readonly string[], completedChecks: number) {
+	for (const [index, batch] of JIRA_DEMO_FOLLOW_UP_FIELDS.entries()) {
+		if (index < completedChecks) continue;
+		const fields = batch.filter((field) => !hidden.includes(field) && isSuggestionFieldEmpty(field, snapshot));
+		if (fields.length) return { completedChecks: index + 1, fields };
+	}
+	return null;
+}
+
 /** Pending suggestions for fields that are still empty. */
-export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: ProjectButterSuggestionProfile = "default"): ProjectButterSuggestion[] {
-	if (profile === "jira-demo") return WORK_ITEM_SUGGESTIONS.filter((card) => isSuggestionFieldEmpty(card.id, snapshot)).map(fromDemoCard);
+export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: ProjectButterSuggestionProfile = "default", demoChecks = 0): ProjectButterSuggestion[] {
+	if (profile === "jira-demo") {
+		return [
+			...WORK_ITEM_SUGGESTIONS.filter((card) => isSuggestionFieldEmpty(card.id, snapshot)).map(fromDemoCard),
+			...JIRA_DEMO_FOLLOW_UP_FIELDS.slice(0, demoChecks).flat()
+				.filter((field) => isSuggestionFieldEmpty(field, snapshot))
+				.map((field) => createSuggestion(field, "payments")),
+		];
+	}
 	return PROJECT_BUTTER_SUGGESTION_FIELDS
 		.filter((field) => isSuggestionFieldEmpty(field, snapshot))
 		.map((field) => createSuggestion(field, profile));
@@ -204,7 +225,7 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 		setDetailFields: (update: (current: T) => T) => void;
 	},
 ): void {
-	target.beginSuggestionAudit?.(suggestion.label, "accept");
+	target.beginSuggestionAudit?.(LABELS[suggestion.field], "accept");
 	try {
 		switch (suggestion.field) {
 			case "description":

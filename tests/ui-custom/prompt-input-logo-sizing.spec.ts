@@ -1,6 +1,39 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+
+test("the default Prompt Input aligns the placeholder with typing in the microphone composer", async ({ page }) => {
+	await page.goto(appUrl("/components/ui-custom/prompt-input#preview"));
+	const preview = page.locator("#preview");
+	const composer = preview.locator("[data-prompt-input-root]");
+	const editor = composer.getByRole("textbox", { name: "Chat message input", exact: true });
+	const placeholder = composer.locator('[data-slot="prompt-input-placeholder"] > span');
+	const submit = composer.getByRole("button", { name: "Submit", exact: true });
+	await expect(editor).toBeEditable();
+	await expect(composer.locator("..")).toHaveCSS("border-radius", "12px");
+	await expect(composer.getByRole("button", { name: "Start dictation", exact: true })).toBeVisible();
+	await expect(submit).toBeDisabled();
+	await expect(placeholder).toHaveText("Ask, @mention, or / for skills");
+
+	const firstCharacterPosition = (locator: Locator) => locator.evaluate((element) => {
+		const range = document.createRange();
+		range.setStart(element, 0);
+		range.setEnd(element, 1);
+		const { left, top } = range.getBoundingClientRect();
+		const form = element.closest("form")!.getBoundingClientRect();
+		return { x: left - form.left, y: top - form.top };
+	});
+	const hint = await firstCharacterPosition(placeholder);
+	await editor.fill("A");
+	await expect(placeholder).toHaveCount(0);
+	const typed = await firstCharacterPosition(editor.locator("p"));
+	expect(Math.abs(typed.x - hint.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(typed.y - hint.y)).toBeLessThanOrEqual(1);
+	await expect(submit).toBeEnabled();
+
+	await expect(page.locator('[id="microphone-+-text-send-—-default"]')).toBeAttached();
+	await expect(page.locator("#default")).toHaveCount(0);
+});
 
 test("composer shows four app logos at 16px without outlining first-party marks", async ({ page }) => {
 	await page.goto(appUrl("/components/ui-custom/prompt-input"));

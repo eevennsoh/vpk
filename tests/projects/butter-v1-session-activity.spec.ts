@@ -11,6 +11,20 @@ test("activity icon tabs expose their labels above and switch views", async ({ p
 	const timeline = list.getByRole("tab", { name: "Timeline", exact: true });
 	const sessions = list.getByRole("tab", { name: "Agent sessions", exact: true });
 	const filter = activity.getByRole("button", { name: "Filter activity", exact: true });
+	const filterIsVisible = () => filter.evaluate((element) => element.checkVisibility({ checkOpacity: true }));
+	const activityEntry = activity.getByRole("list", { name: "Activity timeline" }).getByRole("listitem").first();
+	await activityEntry.hover();
+	await expect.poll(filterIsVisible).toBe(false);
+	await expect(filter).toHaveCSS("pointer-events", "none");
+	await timeline.focus();
+	await page.keyboard.press("Shift+Tab");
+	await expect(filter).toBeFocused();
+	await expect.poll(filterIsVisible).toBe(true);
+	await page.keyboard.press("Tab");
+	await expect(timeline).toBeFocused();
+	await expect.poll(filterIsVisible).toBe(false);
+	await activity.getByRole("heading", { name: "Activity", exact: true }).hover();
+	await expect.poll(filterIsVisible).toBe(true);
 	await expect(filter).toHaveCSS("width", "32px");
 	await expect(filter).toHaveCSS("height", "32px");
 	await expect(filter.locator("svg")).toHaveCSS("width", "12px");
@@ -28,6 +42,8 @@ test("activity icon tabs expose their labels above and switch views", async ({ p
 	await expect(page.getByRole("tooltip").filter({ hasText: "More filters" })).toHaveAttribute("data-side", "top");
 	await filter.click();
 	await expect(page.getByRole("menu")).toBeVisible();
+	await page.getByRole("menuitemcheckbox", { name: "Expand change details" }).hover();
+	await expect.poll(filterIsVisible).toBe(true);
 	await page.keyboard.press("Escape");
 	await expect(timeline).toHaveAttribute("aria-selected", "true");
 	await expect(timeline).toHaveText("");
@@ -66,6 +82,9 @@ test("other agent activity starts collapsed and can be expanded", async ({ page 
 	const toggle = activity.getByRole("button", { name: "Other agent activity", exact: true });
 	const teammateSession = activity.getByText("Implement onboarding step validation", { exact: true });
 	await expect(toggle).toHaveAttribute("aria-expanded", "false");
+	const avatar = toggle.locator('[data-slot="avatar"]').first();
+	await expect(avatar).toBeVisible();
+	expect(await avatar.evaluate((element) => element.getBoundingClientRect().left - element.closest("button")!.getBoundingClientRect().left)).toBeCloseTo(8, 1);
 	await expect(teammateSession).toBeHidden();
 	await toggle.click();
 	await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -160,15 +179,22 @@ test("summary last-run time uses the session relative-time format", async ({ pag
 	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();
 	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
 	const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Thread summary" });
-	const time = summary.locator("time");
-	await expect(summary).toContainText("Last run Just now");
+	const timestamp = summary.locator('[data-slot="jira-activity-timestamp"]');
+	const time = timestamp.locator("time");
+	await page.mouse.move(0, 0);
+	await expect(timestamp).toHaveCSS("opacity", "0");
+	await expect(time).toHaveText("Just now");
+	await summary.getByText("Thread summary", { exact: true }).hover();
+	await expect(timestamp).toHaveCSS("opacity", "1");
+	await expect(timestamp).toHaveCSS("font-size", "12px");
+	await expect(timestamp.locator(":scope > :first-child")).toHaveText("·");
 	const runAt = await time.getAttribute("datetime");
 	await page.clock.fastForward(3 * 24 * 60 * 60 * 1000);
-	await expect(time).toHaveText("3d ago");
+	await expect(time).toHaveText("3d");
 	await expect(time).toHaveAttribute("datetime", runAt!);
 	await time.hover();
 	await page.clock.fastForward(1000);
-	await expect(page.getByRole("tooltip").filter({ hasText: "Last run on" })).toBeVisible();
+	await expect(page.getByRole("tooltip", { name: "3 days ago", exact: true })).toBeVisible();
 });
 
 test("expanded replies align in Timeline and Agent sessions", async ({ page }) => {
@@ -234,7 +260,7 @@ test("expanded replies align in Timeline and Agent sessions", async ({ page }) =
 		expect(geometry.above).toBeCloseTo(4, 1);
 		expect(geometry.below).toBeCloseTo(4, 1);
 	}
-	await thread.getByRole("button", { name: /Show 4 more replies/u }).click();
+	await thread.getByRole("button", { name: /Show 4 replies/u }).click();
 	const timelineGap = await measure();
 	await assertAvatarSizes();
 	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();

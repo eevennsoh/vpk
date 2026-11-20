@@ -23,7 +23,7 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
-export function JiraFloatingSuggestions({ feed, portalContainer, ref }: Readonly<{ feed: SuggestionFeed; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }> }>) {
+export function JiraFloatingSuggestions({ feed, portalContainer, ref, workItemKey }: Readonly<{ feed: SuggestionFeed; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<"closed" | "reopening" | "expanding" | "list" | "caught-up">("closed");
 	const [showNudge, setShowNudge] = useState(true);
@@ -108,6 +108,7 @@ export function JiraFloatingSuggestions({ feed, portalContainer, ref }: Readonly
 							onClose={close}
 							overlay={null}
 							panelRef={panelRef}
+							title={`Suggestions for ${workItemKey}`}
 						/>
 					),
 				} : undefined}

@@ -29,7 +29,7 @@ export function updateProjectButterSuggestionAudit<T extends { activityEntries: 
 	return { ...state, activityEntries: [...entries, entry], auditChanges: { ...otherChanges, [item.id]: item } };
 }
 
-const AUDITED_DETAIL_FIELDS = ["parent", "labels", "components", "fixVersion", "storyPoints", "costCenter", "campaignGoal", "campaignBudget", "targetPlatforms", "estimatedReach", "audienceSegment", "campaignRegion", "assetObject"] as const satisfies readonly (keyof ProjectButterDetailFields)[];
+const AUDITED_DETAIL_FIELDS = ["parent", "labels", "components", "fixVersion", "storyPoints", "costCenter", "campaignGoal", "campaignBudget", "targetPlatforms", "estimatedReach", "audienceSegment", "campaignRegion", "assetObject", "acceptanceCriteria"] as const satisfies readonly (keyof ProjectButterDetailFields)[];
 
 function describeDetail(value: ProjectButterDetailFields[typeof AUDITED_DETAIL_FIELDS[number]]): string {
 	return typeof value === "string" ? value : Array.isArray(value) ? value.join(", ") : [value.region, value.market].filter(Boolean).join(", ");
@@ -39,6 +39,7 @@ export function projectButterDetailChanges(before: ProjectButterDetailFields, af
 	return AUDITED_DETAIL_FIELDS.flatMap((field) => {
 		const previous = describeDetail(before[field]);
 		const next = describeDetail(after[field]);
-		return previous === next ? [] : [{ label: PROJECT_BUTTER_DETAIL_FIELDS[field], before: previous, after: next }];
+		const label = field === "acceptanceCriteria" ? "Acceptance criteria" : PROJECT_BUTTER_DETAIL_FIELDS[field];
+		return previous === next ? [] : [{ label, before: previous, after: next }];
 	});
 }

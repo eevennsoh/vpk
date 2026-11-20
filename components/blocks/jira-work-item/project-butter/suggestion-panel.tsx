@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { JiraSuggestionControl } from "@/components/blocks/jira-suggestion";
 import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type SuggestionValue, type WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
-import type { SuggestionFeed, SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { SUGGESTION_RERUN_MS, type SuggestionFeed, type SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { useSuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import type { ProjectButterSuggestion, ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
@@ -77,6 +77,28 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 	const cards = [...fill.suggestions, ...suggestions.filter((item) => !fill.suggestions.some((current) => current.field === item.field))].map((suggestion) => toCard(suggestion, profile));
 	const review = useSuggestionReview(cards);
 	const [runs, setRuns] = useState<readonly SuggestionRun[]>([{ number: 1, ranAt: "Just now", ids: [] }]);
+	const [checking, setChecking] = useState(false);
+	const [newIds, setNewIds] = useState<ReadonlySet<SuggestionFieldId>>(() => new Set());
+	const checkTimer = useRef<number | undefined>(undefined);
+	useEffect(() => () => window.clearTimeout(checkTimer.current), []);
+	const finishCheck = (ids: readonly SuggestionFieldId[]) => {
+		setRuns((current) => [...current, { number: current.length + 1, ranAt: "Just now", ids }]);
+		setNewIds(new Set(ids));
+	};
+	const rerun = () => {
+		if (checkTimer.current !== undefined) return;
+		const check = fill.checkForSuggestions;
+		if (!check) {
+			finishCheck([]);
+			return;
+		}
+		setChecking(true);
+		checkTimer.current = window.setTimeout(() => {
+			finishCheck(check());
+			checkTimer.current = undefined;
+			setChecking(false);
+		}, SUGGESTION_RERUN_MS);
+	};
 	const available = new Set(fill.suggestions.map((suggestion) => suggestion.field));
 	const pending = review.pending.filter((suggestion) => fill.suggestions.some((item) => item.field === suggestion.id));
 	const find = (id: SuggestionFieldId) => suggestions.find((suggestion) => suggestion.field === id);
@@ -113,12 +135,12 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 			},
 			dismissAll: () => pending.forEach((suggestion) => dismiss(suggestion.id)),
 		},
-		status: "idle",
+		status: checking ? "running" : "idle",
 		runs,
-		newIds: new Set(),
-		acknowledgeNew: () => {},
-		rerun: () => setRuns((current) => [...current, { number: current.length + 1, ranAt: "Just now", ids: [] }]),
-		hasMore: false,
+		newIds: new Set(pending.filter(({ id }) => newIds.has(id)).map(({ id }) => id)),
+		acknowledgeNew: () => setNewIds(new Set()),
+		rerun,
+		hasMore: fill.hasMoreSuggestions,
 	};
 
 	if (!suggestions.length) return null;

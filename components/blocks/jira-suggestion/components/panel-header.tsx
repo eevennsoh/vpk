@@ -7,7 +7,7 @@ import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 import { LIST_HEADER_TOP_INSET } from "./constants";
@@ -29,15 +29,16 @@ export function headline(feed: SuggestionFeed): string {
 	return "Suggestions for you";
 }
 
-function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children }: Readonly<{ label: string; tip: string; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode }>) {
-	return (
+function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: string; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
+	const tooltip = (
 		<Tooltip>
 			<TooltipTrigger render={<button aria-disabled={disabled || undefined} aria-label={label} className={ICON_BUTTON} onClick={disabled ? undefined : onClick} ref={buttonRef} type="button" />}>
 				{children}
 			</TooltipTrigger>
-			<TooltipContent>{tip}</TooltipContent>
+			<TooltipContent positionerClassName={portalOutsidePanel ? "z-[650]" : undefined}>{tip}</TooltipContent>
 		</Tooltip>
 	);
+	return portalOutsidePanel ? <TooltipProvider>{tooltip}</TooltipProvider> : tooltip;
 }
 
 /** The refresh arrow turns while the agent re-runs, finishing its turn before settling upright. */
@@ -53,8 +54,10 @@ function RefreshGlyph({ running }: Readonly<{ running: boolean }>) {
 
 export interface PanelHeaderProps {
 	feed: SuggestionFeed;
+	title?: string;
 	titleId: string;
 	view: ViewMode;
+	floating: boolean;
 	/** Omitted when there is nothing to lay out (an empty stack). */
 	onToggleView?: () => void;
 	/** Re-run the suggestion check from the header. */
@@ -63,7 +66,7 @@ export interface PanelHeaderProps {
 	toggleRef: Ref<HTMLButtonElement>;
 }
 
-export function PanelHeader({ feed, titleId, view, onToggleView, onRerun, onClose, toggleRef }: Readonly<PanelHeaderProps>) {
+export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onClose, toggleRef }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
 	return (
 		<header
@@ -75,7 +78,7 @@ export function PanelHeader({ feed, titleId, view, onToggleView, onRerun, onClos
 				{running ? (
 					<Shimmer as="span" className="text-sm font-medium text-text-subtle">Checking for suggestions…</Shimmer>
 				) : (
-					<span aria-live="polite" className="font-medium text-text">{headline(feed)}</span>
+					<span aria-live="polite" className="font-medium text-text">{title ?? headline(feed)}</span>
 				)}
 			</h2>
 			<div className="flex items-center gap-0.5">
@@ -89,7 +92,7 @@ export function PanelHeader({ feed, titleId, view, onToggleView, onRerun, onClos
 						<RefreshGlyph running={running} />
 					</HeaderButton>
 				) : null}
-				<HeaderButton label="Close suggestions" onClick={onClose} tip="Close">
+				<HeaderButton label="Close suggestions" onClick={onClose} portalOutsidePanel={floating} tip="Close">
 					<CrossIcon color="currentColor" label="" size="small" />
 				</HeaderButton>
 			</div>

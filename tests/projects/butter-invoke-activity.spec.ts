@@ -19,14 +19,18 @@ test("jumping to Pull request shows the accepted suggestions in Activity", async
 	const accepted = activity.locator('[data-jira-activity-entry-id="butter-accepted-suggestions"]');
 	await expect(accepted).toHaveCount(1);
 	const summary = accepted.getByRole("button", { name: /Venn\s*updated description, due date, parent, labels, and story points/ });
+	const chevron = summary.locator("..").locator("[data-activity-chevron]");
 	await expect(summary).toBeVisible();
 	if (await summary.getAttribute("aria-expanded") !== "true") await summary.click();
+	await expect(chevron).toHaveCSS("rotate", "90deg");
 	await expect(accepted).toContainText("PAY-100 Payments SDK v2 migration");
 	await expect(accepted).toContainText("onboarding, sdk-v2");
+	await activity.locator("[data-project-butter-activity-header]").hover();
 	await activity.getByRole("button", { name: "Filter activity" }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Expand change details" }).click();
 	await expect(summary).toHaveAttribute("aria-expanded", "true");
 	if (await summary.getAttribute("aria-expanded") === "true") await summary.click();
+	await expect(chevron).toHaveCSS("rotate", "none");
 	await expect(accepted.locator("dd").first()).toBeHidden();
 	await expect(activity.locator("[data-project-butter-session-start]")).toBeVisible();
 });
@@ -37,7 +41,7 @@ test("Claude's PR and fix updates contain the pull request Smart Link", async ({
 	await page.getByRole("button", { name: "Fix checks", exact: true }).click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	const replies = item.locator('[data-jira-activity-entry-id^="invocation-"]').getByRole("group", { name: "Replies" });
-	await item.getByRole("button", { name: /Show \d+ more replies/ }).click();
+	await item.getByRole("button", { name: /Show \d+ replies/ }).click();
 	const links = replies.getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Open/ });
 	await expect(links).toHaveCount(2, { timeout: 12_000 });
 	await expect(links.first()).toHaveAttribute("href", "#pull-request-284");
@@ -97,7 +101,7 @@ test("Claude keeps progress in the acknowledgment thread and posts the merged PR
 	await card.click();
 	await expect(thread).toHaveCount(1);
 	const replies = thread.getByRole("group", { name: "Replies" });
-	await thread.getByRole("button", { name: /Show \d+ more replies/ }).click();
+	await thread.getByRole("button", { name: /Show \d+ replies/ }).click();
 	await expect(replies.getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Merged/ })).toHaveCount(2);
 	await expect(replies).toContainText("pushed a fix");
 	await expect(replies).toContainText("checks passed after the fix");

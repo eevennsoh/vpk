@@ -99,41 +99,41 @@ export function RelatedWorkGroup({ asSectionHeader = false, children, extra, hea
 	const animating = useRelatedPanelSettle(open);
 	const name = `${open ? "Collapse" : "Expand"} ${label}${titleMeta ? ` ${titleMeta}` : ""}${indicatorLabel ? ` ${indicatorLabel}` : ""}`;
 	return (
-		<Collapsible onOpenChange={setOpen} open={open}>
-			<div
-				className={cn(
-					"group/related-group flex flex-col transition-[gap,padding] duration-medium ease-in-out",
-					!open ? "hidden" : tabs ? "gap-3 pb-5.5" : headingGap === "wide" ? "gap-2 pb-5.5" : "gap-1 pb-5.5",
-				)}
-				data-collapsed={open ? undefined : true}
-				data-component="ContextTableGroup"
-				data-related-type={relatedType}
-				data-section-header={asSectionHeader || undefined}
-				id={id}
-				hidden={!open}
-			>
-				<div className="group/related-header flex h-8 min-w-0 items-center gap-2">
-					<h2 className="flex min-w-0 items-center">
-						<CollapsibleTrigger aria-controls={contentId} aria-label={name} className="flex min-w-0 items-center gap-1 rounded-sm bg-transparent text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-border-focused focus-visible:ring-offset-2">
-							<span className={cn("truncate", asSectionHeader ? "font-medium" : "font-normal")}>{label}</span>
-							{titleMeta ? <span className="truncate text-text-subtlest">{titleMeta}</span> : null}
-							{indicator ? <span className="flex shrink-0 items-center">{typeof indicator === "function" ? indicator(open) : indicator}</span> : null}
-							<span aria-hidden className={cn("flex shrink-0 items-center text-icon-subtlest transition-[opacity,rotate] duration-normal ease-in-out", open ? "opacity-0 group-hover/related-header:opacity-100 group-focus-within/related-header:opacity-100" : "-rotate-90 opacity-100")}>
-								<ChevronDownIcon label="" size="small" />
-							</span>
-						</CollapsibleTrigger>
-					</h2>
-					{open && (tabs || extra) ? (
-						<div className="pointer-events-none ml-auto flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/related-group:pointer-events-auto group-hover/related-group:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" data-related-group-actions>
-							{tabs}
-							{extra ? <div className="flex items-center gap-1">{extra}</div> : null}
-						</div>
-					) : null}
-				</div>
-				<RelatedCollapsiblePanel animating={animating} contentLabel={label} contentRole="group" id={contentId} open={open}>
-					{children}
-				</RelatedCollapsiblePanel>
+		<Collapsible
+			className={cn(
+				"group/related-group flex flex-col transition-[gap,padding] duration-medium ease-in-out",
+				!open ? "hidden" : tabs ? "gap-3 pb-5.5" : headingGap === "wide" ? "gap-2 pb-5.5" : "gap-1 pb-5.5",
+			)}
+			data-collapsed={open ? undefined : true}
+			data-component="ContextTableGroup"
+			data-related-type={relatedType}
+			data-section-header={asSectionHeader || undefined}
+			hidden={!open}
+			id={id}
+			onOpenChange={setOpen}
+			open={open}
+		>
+			<div className="group/related-header flex h-8 min-w-0 items-center gap-2">
+				<h2 className="flex min-w-0 items-center">
+					<CollapsibleTrigger aria-controls={contentId} aria-label={name} className="flex min-w-0 items-center gap-1 rounded-sm bg-transparent text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-border-focused focus-visible:ring-offset-2">
+						<span className={cn("truncate", asSectionHeader ? "font-medium" : "font-normal")}>{label}</span>
+						{titleMeta ? <span className="truncate text-text-subtlest">{titleMeta}</span> : null}
+						{indicator ? <span className="flex shrink-0 items-center">{typeof indicator === "function" ? indicator(open) : indicator}</span> : null}
+						<span aria-hidden className={cn("flex shrink-0 items-center text-icon-subtlest transition-[opacity,rotate] duration-normal ease-in-out", open ? "opacity-0 group-hover/related-header:opacity-100 group-focus-within/related-header:opacity-100" : "-rotate-90 opacity-100")}>
+							<ChevronDownIcon label="" size="small" />
+						</span>
+					</CollapsibleTrigger>
+				</h2>
+				{open && (tabs || extra) ? (
+					<div className="pointer-events-none ml-auto flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/related-group:pointer-events-auto group-hover/related-group:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" data-related-group-actions>
+						{tabs}
+						{extra ? <div className="flex items-center gap-1">{extra}</div> : null}
+					</div>
+				) : null}
 			</div>
+			<RelatedCollapsiblePanel animating={animating} contentLabel={label} contentRole="group" id={contentId} open={open}>
+				{children}
+			</RelatedCollapsiblePanel>
 		</Collapsible>
 	);
 }

@@ -14,10 +14,11 @@ import {
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
 import { PullRequestList } from "@/components/blocks/jira-issue/pull-request-cluster";
+import { RelativeTime } from "@/components/ui/elapsed-time";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { formatDetailedTimestamp } from "@/lib/format-detailed-timestamp";
+import { describeRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import {
@@ -100,13 +101,17 @@ function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
 
 function SessionTimestamp({ item }: Readonly<{ item: AgentSessionItem }>) {
 	const timestamp = item.updatedAtMs ?? item.completedAtMs ?? item.startedAtMs;
-	if (timestamp === undefined || !Number.isFinite(timestamp)) return <span data-last-update=""><AgentListTime item={item} /></span>;
+	const relativeLabel = describeRelativeTimeLabel(item.timeLabel ?? "", timestamp);
+	const relativeTime = relativeLabel ?? (Number.isFinite(timestamp) ? <RelativeTime format="long" timestampMs={timestamp} /> : undefined);
+	if (relativeTime === undefined) return <span data-last-update=""><AgentListTime item={item} /></span>;
 	return (
 		<Tooltip>
 			<TooltipTrigger render={<span className="rounded-sm text-text-subtle underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring" data-last-update="" data-session-drag-ignore="" tabIndex={0} />}>
 				<AgentListTime item={item} />
 			</TooltipTrigger>
-			<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">Last run on {formatDetailedTimestamp(timestamp, true)}</TooltipContent>
+			<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">
+				{relativeTime}
+			</TooltipContent>
 		</Tooltip>
 	);
 }

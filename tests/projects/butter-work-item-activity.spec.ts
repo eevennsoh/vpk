@@ -211,7 +211,76 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await firstPrompt.click();
 	await expect(chat).toHaveCount(0);
 	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	const checkAgain = panel.getByRole("button", { name: "Check again", exact: true });
+	await expect.poll(async () => {
+		const [surface, action] = await Promise.all([panel.boundingBox(), checkAgain.boundingBox()]);
+		return surface && action ? surface.y + surface.height - action.y - action.height : Infinity;
+	}).toBeLessThanOrEqual(32);
 	await expect(description).toContainText(descriptionSuggestion);
+});
+
+test("accepting suggestions adds fields to one Activity entry", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const activity = page.getByRole("region", { name: "Activity", exact: true });
+	const updates = activity.getByRole("button", { name: /Venn\s*updated/ });
+	for (const [field, summary] of [
+		["assignee", "updated assignee"],
+		["description", "updated assignee and description"],
+		["due date", "updated assignee, description, and due date"],
+		["acceptance criteria", "updated assignee, description, due date, and acceptance criteria"],
+	]) {
+		await panel.getByRole("button", { name: `Accept ${field}`, exact: true }).press("Enter");
+		await expect(updates).toHaveCount(1);
+		await expect(updates).toContainText(summary);
+	}
+	await panel.getByRole("button", { name: "Undo due date", exact: true }).press("Enter");
+	await expect(updates).toHaveCount(1);
+	await expect(updates).toContainText("updated assignee, description, and acceptance criteria");
+});
+
+test("Check again finds different suggestions for the remaining empty fields", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const list = panel.getByRole("list", { name: "Suggestions", exact: true });
+	const description = page.getByRole("textbox", { name: "Work item description" });
+	const openCaughtUp = async () => {
+		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+		await page.getByRole("button", { name: "Suggest work item fields", exact: true }).click();
+		await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	};
+	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
+	await expect(description).toContainText("Help merchants adopt Payments SDK v2");
+	await openCaughtUp();
+
+	await panel.getByRole("button", { name: "Check again", exact: true }).focus();
+	await page.keyboard.press("Enter");
+	await expect(panel.getByText("Checking for anything new…")).toBeVisible();
+	await expect(list.getByRole("button", { name: "Accept components", exact: true })).toBeVisible();
+	await expect(list.getByRole("button", { name: "Accept fix version", exact: true })).toBeVisible();
+	await expect(list.getByRole("button", { name: "Accept description", exact: true })).toHaveCount(0);
+	await expect(list.getByText("Payments SDK", { exact: true })).toBeVisible();
+	await expect(panel).toBeFocused();
+	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
+	await expect(panel).toHaveCount(0);
+	await expect(page.locator('[data-field-id="components"]')).toContainText("Payments SDK");
+	await openCaughtUp();
+
+	await panel.getByRole("button", { name: "Check again", exact: true }).click();
+	await expect(list.getByRole("button", { name: "Accept story points", exact: true })).toBeVisible();
+	await expect(list.getByRole("button", { name: "Accept cost center", exact: true })).toBeVisible();
+	await expect(list.getByRole("button", { name: "Accept components", exact: true })).toHaveCount(0);
+	await expect(description).toContainText("Help merchants adopt Payments SDK v2");
+	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
+	await openCaughtUp();
+	await panel.getByRole("button", { name: "Check again", exact: true }).click();
+	await expect(panel.getByText("Nothing new since you last checked")).toBeVisible();
 });
 
 test("Suggest work item fields brings dismissed suggestions back for review", async ({ page }) => {
@@ -295,22 +364,20 @@ test("starting an agent adds a long-form session card to its activity thread", a
 	await expect(reply).toBeVisible();
 });
 
-test("reply disclosure icon has no background on the hovered activity row", async ({ page }) => {
+test("reply disclosure blends into the hovered activity row", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter-v1?embedded=1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
-	const toggle = thread.getByRole("button", { name: /Show 4 more replies/ });
+	const toggle = thread.getByRole("button", { name: /Show 4 replies/ });
 	await toggle.hover();
-	const icon = thread.locator('button[aria-controls] > span[aria-hidden]');
-	// The icon keeps a surface fill that masks the timeline; on the hovered row it is painted with the row's hover color so no separate box shows.
-	const matchesHoveredRow = () => icon.evaluate((element) => {
-		const rowHover = getComputedStyle(element.closest("li")!, "::after").backgroundColor;
-		return rowHover !== "rgba(0, 0, 0, 0)" && getComputedStyle(element).backgroundImage === `linear-gradient(in oklab, ${rowHover} 0px, ${rowHover} 100%)`;
-	});
-	await expect.poll(matchesHoveredRow).toBe(true);
+	const transparent = "rgba(0, 0, 0, 0)";
+	await expect.poll(() => thread.evaluate((element) => getComputedStyle(element, "::after").backgroundColor)).not.toBe(transparent);
+	await expect(toggle).toHaveCSS("background-color", transparent);
+	await expect(thread.locator("[data-jira-activity-reply-toggle-icon]")).toHaveCount(0);
 	await toggle.click();
-	await expect(page.getByRole("button", { name: "Hide replies" })).toHaveAttribute("aria-expanded", "true");
-	await expect.poll(matchesHoveredRow).toBe(true);
+	const expanded = thread.getByRole("button", { name: "Hide replies" });
+	await expect(expanded).toHaveAttribute("aria-expanded", "true");
+	await expect(expanded).toHaveCSS("background-color", transparent);
 });
 
 test("activity timeline dots are centered on the dashed line", async ({ page }) => {

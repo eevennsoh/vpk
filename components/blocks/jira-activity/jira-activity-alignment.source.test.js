@@ -106,7 +106,7 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 	// The 32px track adds a 4px gap after a 32px avatar; a centered 24px avatar already has that clearance.
 	// No opaque spine covers —
 	// those stacked with the track clearance and left an 8px orphan gap above icons.
-	assert.match(INDEX_SOURCE, /li[\s\S]*className="group\/activity-event flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /li[\s\S]*className="flex min-w-0 gap-2"/u);
 	assert.match(NODE_SOURCE, /isCard \? "h-8" : "h-6"/u);
 	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", isCard && avatarSize === 32 \? "mt-1" : null, tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);

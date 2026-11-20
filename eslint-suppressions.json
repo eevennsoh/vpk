@@ -726,12 +726,12 @@
   },
   "components/blocks/jira-activity/jira-activity-event-row.source.test.js": {
     "no-restricted-syntax": {
-      "count": 16
+      "count": 7
     }
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
-      "count": 165
+      "count": 160
     },
     "vpk-tests/no-dom-node-assert": {
       "count": 17
@@ -739,7 +739,7 @@
   },
   "components/blocks/jira-activity/jira-activity.source.test.js": {
     "no-restricted-syntax": {
-      "count": 311
+      "count": 310
     }
   },
   "components/blocks/jira-creating/jira-creating-motion.test.js": {

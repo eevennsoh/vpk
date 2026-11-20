@@ -1,10 +1,12 @@
 "use client";
 
 import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
-import { JiraIssuePullRequestStatusIcon } from "@/components/blocks/jira-issue/pull-request-cluster";
+import { JiraIssuePullRequestStatusIcon, PullRequestList } from "@/components/blocks/jira-issue/pull-request-cluster";
 import { PullRequest, PullRequestInlineTitle } from "@/components/blocks/pull-request/components/pull-request";
 import type { PullRequestStatus } from "@/components/blocks/pull-request/components/pull-request-types";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const CARD_STATUS: Record<JiraIssuePullRequestItem["status"], PullRequestStatus> = {
 	open: "Open",
@@ -13,10 +15,42 @@ const CARD_STATUS: Record<JiraIssuePullRequestItem["status"], PullRequestStatus>
 	merged: "Merged",
 };
 
-export function JiraListPullRequestCell({ pullRequest }: Readonly<{
-	pullRequest?: JiraIssuePullRequestItem;
+const PR_OVERLAY_PLACEMENT = {
+	align: "start",
+	alignOffset: 0,
+	collisionAvoidance: { side: "flip", align: "shift", fallbackAxisSide: "none" },
+	positionerClassName: "z-[575]",
+	side: "right",
+	sideOffset: 8,
+} as const;
+
+export function JiraListPullRequestCell({ issueKey, pullRequests = [] }: Readonly<{
+	issueKey: string;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
 }>) {
+	const [pullRequest] = pullRequests;
 	if (!pullRequest) return null;
+	if (pullRequests.length > 1) {
+		const label = `${pullRequests.length} pull requests`;
+		return (
+			<Popover>
+				<PopoverTrigger
+					render={<Button aria-label={`${label} for ${issueKey}`} className="absolute inset-0 size-full justify-start gap-2 px-3 font-normal" type="button" variant="ghost" />}
+				>
+					<JiraIssuePullRequestStatusIcon status="draft" />
+					{label}
+				</PopoverTrigger>
+				<PopoverContent
+					{...PR_OVERLAY_PLACEMENT}
+					aria-label={`Pull requests for ${issueKey}`}
+					className="max-h-(--available-height) w-[320px] max-w-(--available-width) overflow-y-auto rounded-xl p-0"
+				>
+					<PullRequestList pullRequests={pullRequests} />
+				</PopoverContent>
+			</Popover>
+		);
+	}
+
 	const { number, preview, status } = pullRequest;
 
 	return (
@@ -30,12 +64,10 @@ export function JiraListPullRequestCell({ pullRequest }: Readonly<{
 				<PullRequestInlineTitle className="truncate whitespace-nowrap" number={number} title={preview.title} underlineOnHover={false} />
 			</HoverCardTrigger>
 			<HoverCardContent
-				align="start"
+				{...PR_OVERLAY_PLACEMENT}
 				aria-label={`Pull request #${number} details`}
-				className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl p-0 transition-none"
-				positionerClassName="z-[575]"
+				className="w-[320px] max-w-(--available-width) overflow-hidden rounded-xl p-0 transition-none"
 				role="region"
-				sideOffset={8}
 			>
 				<PullRequest
 					{...preview}

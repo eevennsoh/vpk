@@ -219,7 +219,7 @@ export default function ButterPage(): React.ReactElement {
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
 			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
-		: selectedId === "agent-sessions" ? <ButterSessionPermissionControls permission={sessionPermission} onPermissionChange={setSessionPermission} teamDisabled />
+		: selectedId === "agent-sessions" ? <ButterSessionPermissionControls permission={sessionPermission} onPermissionChange={setSessionPermission} />
 		: selectedId === "board-card" ? <ButterBoardCardControls value={boardCardState} onChange={setBoardCardState} /> : null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">

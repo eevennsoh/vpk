@@ -25,44 +25,26 @@ test("one-line activity events use 12px type without shrinking expanded agent ca
 	}
 	assert.equal(event.classList.contains("h-6"), false);
 	assert.equal(event.firstElementChild?.classList.contains("min-w-0"), true);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
+	assert.match(EVENT_SOURCE, /className="group\/activity-timestamp flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
 	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
 });
 
-test("one-line activity timestamps keep 6px spacing around the middot", () => {
-	assert.match(
-		EVENT_SOURCE,
-		/<span[\s\S]*className="ml-1\.5 hidden shrink-0 items-center gap-1\.5 text-text-subtlest group-hover\/activity-event:inline-flex[\s\S]*<span>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.match(
-		EVENT_SOURCE,
-		/<span>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
-});
-
-test("one-line activity timestamps stay hidden until the event row is hovered or focused", () => {
-	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
-	assert.match(
-		EVENT_SOURCE,
-		/className="ml-1\.5 hidden shrink-0 items-center gap-1\.5 text-text-subtlest group-hover\/activity-event:inline-flex group-focus-within\/activity-event:inline-flex group-has-\[:focus-visible\]\/activity-event:inline-flex"/u,
-	);
-	assert.match(EVENT_SOURCE, /<span className="sr-only">\{entry\.timestamp\}<\/span>/u);
-	assert.doesNotMatch(
-		EVENT_SOURCE,
-		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">/u,
-	);
-});
-
-// The hover-revealed timestamp is decorative only: it carries aria-hidden, and an
-// ungated sr-only twin keeps the timestamp in the accessibility tree at all times.
-test("the hover-revealed timestamp stays decorative with an always-present sr-only twin", () => {
-	assert.match(EVENT_SOURCE, /<span\s+aria-hidden\s+className="ml-1\.5 hidden shrink-0/u);
-	assert.match(
-		EVENT_SOURCE,
-		/\{isAutomated \? <span className="sr-only">Automation<\/span> : null\}\s*<span className="sr-only">\{entry\.timestamp\}<\/span>/u,
-	);
+test("event timestamps retain the full relative label for assistive technology", async () => {
+	await renderComponent({
+		entry: "components/blocks/jira-activity/jira-activity-event.tsx",
+		exportName: "JiraActivityEvent",
+		props: {
+			entry: { id: "event", kind: "event", actor: { id: "author", kind: "person", name: "Author" }, timestamp: "19 days ago", segments: [{ type: "text", text: "updated the status" }, { type: "tag", text: "Automation" }] },
+		},
+	});
+	const timestamp = document.querySelector('[data-slot="jira-activity-timestamp"]');
+	assert.equal(timestamp?.firstElementChild?.textContent, "·");
+	assert.equal(timestamp?.firstElementChild?.getAttribute("aria-hidden"), "true");
+	assert.equal(timestamp?.querySelector(".sr-only")?.textContent, "19 days ago");
+	assert.equal(timestamp?.lastElementChild?.lastElementChild?.textContent, "19d");
+	assert.equal(timestamp?.lastElementChild?.lastElementChild?.getAttribute("aria-hidden"), "true");
+	assert.equal(document.querySelector("p > span > .sr-only")?.textContent, "Automation");
 });
 
 test("event labels share the timeline node's 24px vertical alignment track", () => {

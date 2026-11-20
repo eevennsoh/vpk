@@ -1,3 +1,5 @@
+import type { TagColor } from "@/components/ui/tag";
+
 import { projectButterPersonAvatar } from "../../jira-work-item/project-butter/people.ts";
 
 /**
@@ -37,7 +39,7 @@ export type SuggestionValue =
 	| { kind: "date"; iso: string; display: string; relative: string }
 	| { kind: "person"; person: SuggestionPerson }
 	| { kind: "issue"; issue: SuggestionIssue }
-	| { kind: "labels"; labels: readonly string[] }
+	| { kind: "labels"; labels: readonly string[]; colors?: Readonly<Partial<Record<string, TagColor>>> }
 	| { kind: "checklist"; items: readonly string[] };
 
 export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria" | "components" | "fixVersion" | "storyPoints" | "reporter" | "costCenter";
@@ -150,7 +152,11 @@ export const WORK_ITEM_SUGGESTIONS = [
 		id: "labels",
 		label: "Labels",
 		currentDisplay: "Add label",
-		value: { kind: "labels", labels: ["onboarding", "sdk-v2", "merchant-experience", "q4-ga"] },
+		value: {
+			kind: "labels",
+			labels: ["onboarding", "sdk-v2", "merchant-experience", "q4-ga"],
+			colors: { onboarding: "blue", "sdk-v2": "purple", "merchant-experience": "teal", "q4-ga": "orange" },
+		},
 		valueText: "onboarding, sdk-v2, merchant-experience, q4-ga",
 		confidence: "medium",
 		reason: {

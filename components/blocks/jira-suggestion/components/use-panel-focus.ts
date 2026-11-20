@@ -45,7 +45,8 @@ export function usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, pe
 			checkRef.current?.focus({ preventScroll: true });
 			return;
 		}
-		if (!holdsFocus.current || (active != null && active !== document.body && active !== panelRef.current)) return;
+		const leavingCheck = mode !== "caught-up" && active === checkRef.current;
+		if (!holdsFocus.current || (!leavingCheck && active != null && active !== document.body && active !== panelRef.current)) return;
 		const target = mode === "caught-up" ? checkRef.current : mode === "stack" && pendingCount > 0 ? deckRef.current : toggleRef.current;
 		(target ?? panelRef.current)?.focus({ preventScroll: true });
 	}, [checkRef, deckRef, mode, panelRef, pendingCount, toggleRef]);

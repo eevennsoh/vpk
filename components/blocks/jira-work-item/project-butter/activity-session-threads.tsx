@@ -5,7 +5,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { TeammateSessionAvatars } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
-import { JiraActivity, JiraActivityEntryGlyph, type JiraActivityCommentEntry } from "@/components/blocks/jira-activity";
+import { JiraActivity, JiraActivityEntryGlyph, type JiraActivityCommentEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,19 @@ type SessionThread = Readonly<{ entry: JiraActivityCommentEntry; session: Projec
 type DraftInstruction = (thread: SessionThread, text: string) => void;
 type SummaryControl = ReturnType<ReturnType<typeof useWorkItemThreadSummaries>>;
 type ThreadProps = Pick<ComponentProps<typeof JiraActivity>, "actors" | "currentUser" | "onEntriesChange" | "onSelectReply" | "renderCommentTools" | "renderReplyBody" | "renderTimestamp" | "selectedReply">;
+
+export function renderProjectButterEarlierRepliesLabel(replies: readonly JiraActivityReply[], expanded: boolean) {
+	if (expanded) return "Hide replies";
+	const actors = [...new Map(replies.map(({ actor }) => [actor.id, actor])).values()].slice(-3).reverse();
+	return (
+		<>
+			<span>Show {replies.length} {replies.length === 1 ? "reply" : "replies"}</span>
+			<span aria-label={`Reply participants: ${actors.map(({ name }) => name).join(", ")}`} className="flex shrink-0 gap-0.5" role="group">
+				{actors.map((actor) => <JiraActivityEntryGlyph actor={actor} animate={false} key={actor.id} />)}
+			</span>
+		</>
+	);
+}
 
 function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePin, pinned, latestReplyEntryIds, ...activity }: ThreadProps & Readonly<{
 	thread: SessionThread;
@@ -61,16 +74,7 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 					</>
 				)}
 				renderCommentReplies={(_entry, replies, expand) => summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined)}
-				renderEarlierRepliesLabel={(replies, expanded) => expanded ? "Hide replies" : (
-					<>
-						<span aria-hidden className="flex gap-0.5">
-							{[...new Map(replies.map((reply) => [reply.actor.id, reply.actor])).values()].slice(-3).reverse().map((actor) => (
-								<JiraActivityEntryGlyph actor={actor} animate={false} key={actor.id} />
-							))}
-						</span>
-						<span>{previewLatest ? "Show " : ""}{replies.length}{previewLatest ? " more" : ""} {replies.length === 1 ? "reply" : "replies"}</span>
-					</>
-				)}
+				renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 			/>
 		</div>
 	);
@@ -113,12 +117,12 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 					<Button
 						aria-controls={id}
 						aria-expanded={expanded}
-						className="-ms-3 -me-1 gap-2 border-0"
+						className="-ms-1 -me-1 gap-2 border-0 ps-2"
 						onClick={() => setExpanded((open) => !open)}
 						selectedAppearance="icon-only"
 						variant="ghost"
 					>
-						<span className="flex min-w-8 shrink-0 justify-center"><TeammateSessionAvatars items={teammatesSessions} sizePx={24} /></span>
+						<span className="flex min-w-7 shrink-0"><TeammateSessionAvatars items={teammatesSessions} sizePx={24} /></span>
 						Other agent activity
 						<Icon className={expanded ? "rotate-90" : undefined} render={<ChevronRightIcon label="" size="small" />} />
 					</Button>

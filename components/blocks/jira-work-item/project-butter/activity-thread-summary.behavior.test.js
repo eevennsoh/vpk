@@ -47,7 +47,7 @@ test("timeline summaries can be opened independently and restored", async () => 
 	const view = await renderWorkItem();
 	const feed = document.querySelector("[data-project-butter-activity-feed]");
 	assert.equal(view.queryByRole("button", { name: "More comment actions" }) === null, true);
-	const disclosure = [...feed.querySelectorAll("button")].find((button) => /Show \d+ more repl/u.test(button.textContent));
+	const disclosure = [...feed.querySelectorAll("button")].find((button) => /Show \d+ repl/u.test(button.textContent));
 	assert.equal(Boolean(disclosure), true);
 	await view.focus(disclosure);
 	await view.press(disclosure, "Enter");
@@ -125,7 +125,8 @@ test("pinning a session thread is shared between Timeline and Agent sessions", a
 	assert.equal(thread.querySelector('button[aria-label="Unpin comment"]') !== null, true);
 	assert.equal(view.isFocused(thread.querySelector('button[aria-label="Unpin comment"]')), true);
 	assert.equal(visibleReplies(), 0);
-	assert.match(replyDisclosure().lastElementChild.textContent, /^\d+ replies$/u);
+	const participantAvatars = replyDisclosure().querySelector('[aria-label^="Reply participants:"]');
+	assert.match(participantAvatars?.previousElementSibling?.textContent ?? "", /^Show \d+ replies$/u);
 	await view.click(replyDisclosure());
 	assert.equal(visibleReplies() > 1, true);
 	await view.click(replyDisclosure());

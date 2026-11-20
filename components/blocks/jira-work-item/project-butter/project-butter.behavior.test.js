@@ -963,26 +963,24 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	await settle(() => root.dispatchEvent(new Event("scroll")));
 });
 
-test("Butter timestamps disclose an exact date, time, and timezone on focus and retain format toggling", async () => {
+test("Butter timestamps spell out relative time on focus and toggle to the exact date on click", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/jira-work-item/project-butter/activity-comment-tools.tsx",
 		exportName: "ProjectButterTimestamp",
 		props: { item: { id: "comment", kind: "comment", actor: { id: "annie", name: "Annie Cook", kind: "person" }, body: [], timestamp: "45 minutes ago", createdAtMs: Date.UTC(2026, 10, 1, 15) } },
 	});
 	const trigger = view.getByRole("button", { name: "45 minutes ago. Show full timestamp" });
+	assert.equal(trigger.querySelector("time").textContent, "45m");
 	assert.equal(trigger.querySelector("time").getAttribute("datetime"), "2026-11-01T15:00:00.000Z");
 	await view.focus(trigger);
 	const tooltip = view.getByRole("tooltip");
 	assert.equal(trigger.getAttribute("aria-describedby"), tooltip.id);
-	const details = tooltip.textContent;
-	assert.equal(details.includes("Sunday, November 1, 2026"), true);
-	assert.equal(details.includes("23:00:00"), true);
-	assert.equal(details.includes("GMT+8"), true);
+	assert.equal(tooltip.textContent, "45 minutes ago");
 	await view.click(trigger);
 	assert.equal(trigger.textContent.includes("Nov 1, 2026"), true);
 	assert.equal(trigger.getAttribute("aria-pressed"), "true");
 	await view.click(trigger);
-	assert.equal(trigger.textContent, "45 minutes ago");
+	assert.equal(trigger.textContent, "45m");
 });
 
 // Regression (PR review): continuing a session from the comment bar passes the typed draft;

@@ -304,12 +304,7 @@ export function FloatingComposer({
 			className={cn(
 				composerPromptInputClassName,
 				"p-2",
-				// Compact floating chrome uses space.100 (8px) so demo, Studio, and
-				// work-item composers share the same inset as the activity comment bar.
-				// The shell already owns the horizontal gutter, so drop the editor's
-				// own `px-2.5` from both the control container and the placeholder
-				// overlay. Without this the text sits ~10px inboard of the leading
-				// "+" button, and empty/typed states start at different offsets.
+				// The floating row owns the text inset for both the editor and its placeholder.
 				"[&_[data-slot=input-group-control-container]]:px-0 [&_[data-slot=prompt-input-placeholder]]:px-0",
 				className,
 			)}
@@ -341,7 +336,7 @@ export function FloatingComposer({
 						ref={textFieldRef}
 						className={cn(
 							"flex min-w-0",
-							isExpanded ? "order-1 basis-full" : "order-2 flex-1",
+							isExpanded ? "order-1 basis-full px-2" : "order-2 flex-1",
 						)}
 					>
 						{children}
