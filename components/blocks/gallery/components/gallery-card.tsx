@@ -13,7 +13,6 @@ import {
 
 import Squircle from "@/components/website/demos/visual/shaders/squircle";
 import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
 import { useDockScale } from "../hooks/use-dock-magnification";
@@ -182,10 +181,7 @@ export function GalleryCard({
 					onClick={handleClick}
 					onPointerDown={handlePointerDown}
 					onKeyDown={handleKeyDown}
-					className={cn(
-						"relative block rounded-3xl text-left outline-none",
-						"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-					)}
+					className="relative block rounded-3xl text-left outline-none"
 					style={{ width, height }}
 				>
 					<Squircle
