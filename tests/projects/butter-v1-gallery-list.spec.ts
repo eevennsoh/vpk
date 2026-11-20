@@ -14,7 +14,7 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 		.locator('[data-slot="jira-issue-agent-avatar-handoff"] [data-slot="avatar"]');
 	await expect(standaloneAvatar).toHaveCSS("width", "24px");
 	const standaloneWidth = await standaloneAvatar.evaluate((avatar) => avatar.getBoundingClientRect().width);
-	for (const [key, label] of [["PAY-132", "Using agent"], ["PAY-104", "Using agents"]]) {
+	for (const [key, label] of [["PAY-132", "Use an agent"], ["PAY-104", "Using agents"]]) {
 		const row = list.getByRole("button", { name: key, exact: true }).locator("xpath=ancestor::tr");
 		const teammateLabel = row.locator("[data-teammate-session-label]");
 		await expect(teammateLabel).toHaveText(label);
@@ -26,8 +26,8 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 		await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar"]')).toHaveCSS("width", "12px");
 		await row.getByRole("button", { name: label, exact: true }).press("Enter");
 		const menu = page.getByRole("dialog", { name: "Agent assignment" });
-		await expect(menu.getByRole("listitem")).toHaveCount(label === "Using agent" ? 1 : 2);
-		await expect(menu.getByText(/(?:using|other) agents?/iu)).toHaveCount(0);
+		await expect(menu.getByRole("listitem")).toHaveCount(label === "Use an agent" ? 1 : 2);
+		await expect(menu.getByText(/use an agent|using agents|other agent activity/iu)).toHaveCount(0);
 		await page.keyboard.press("Escape");
 	}
 	for (const edge of ["top", "right", "bottom", "left"]) {

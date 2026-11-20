@@ -532,8 +532,8 @@ test("board and journey session menus show private marks for other people's sess
 			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
 			await card.getByRole("button", { name: button }).click();
 			const menu = page.getByRole("dialog", { name: "Agent assignment" });
-			if (key === "PAY-107") await expect(menu.getByText(/(?:using|other) agents?/iu)).toHaveCount(0);
-			else await expect(menu.getByRole("button", { name: "1 other agent", exact: true })).toBeVisible();
+			if (key === "PAY-107") await expect(menu.getByText(/use an agent|using agents|other agent activity/iu)).toHaveCount(0);
+			else await expect(menu.getByRole("button", { name: "Other agent activity", exact: true })).toBeVisible();
 			for (const owner of owners) await expect(menu.getByRole("img", { name: `Private session by ${owner}` })).toBeVisible();
 			await expect(menu.locator('[data-access-mark="team"]')).toHaveCount(0);
 			await page.keyboard.press("Escape");
@@ -568,7 +568,7 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "Claude: Working", exact: true }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
-	const disclosure = popup.getByRole("button", { name: /^(?:using|\d+ other) agents?$/iu });
+	const disclosure = popup.getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
 	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
 	await disclosure.click();
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");

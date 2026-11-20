@@ -149,7 +149,8 @@ for (const host of ["local", "cloud"]) {
 					},
 				});
 				if (role === "viewer") {
-					const row = view.getByRole("button", { name: "Using agent", exact: true });
+					const row = view.getByRole("button", { name: "Use an agent", exact: true });
+					assert.equal(row.querySelector('[data-teammate-session-label]')?.textContent, "Use an agent");
 					assert.equal(row.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Teammate");
 					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
 				} else {
