@@ -23,6 +23,9 @@ test("activity icon tabs expose their labels above and switch views", async ({ p
 	expect(Math.abs(filterBox.y + filterBox.height / 2 - filterIconBox.y - filterIconBox.height / 2)).toBeLessThanOrEqual(1);
 	expect(tabsBox.x - (filterBox.x + filterBox.width)).toBeCloseTo(4, 1);
 	expect(await filter.evaluate((element) => Boolean(element.compareDocumentPosition(element.closest("[data-project-butter-activity-header]")!.querySelector('[role="tablist"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+	await filter.hover();
+	await expect(page.getByRole("tooltip").filter({ hasText: "More filters" })).toBeVisible();
+	await expect(page.getByRole("tooltip").filter({ hasText: "More filters" })).toHaveAttribute("data-side", "top");
 	await filter.click();
 	await expect(page.getByRole("menu")).toBeVisible();
 	await page.keyboard.press("Escape");
