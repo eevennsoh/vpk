@@ -94,6 +94,45 @@ test("pause freezes the painted frame and reset restores the chat preset", async
 	await page.screenshot({ path: "output/agent-browser/voice-glow/preview-light.png" });
 });
 
+test("the look picker renders the four canvas styles and resets to Glow", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
+	await page.goto(`${BASE_URL}/preview/visual/voice-glow`);
+	const demo = page.locator("[data-voice-glow-demo]");
+	const beam = demo.locator("[data-voice-beam]");
+	const picker = demo.getByRole("combobox", { name: "Look", exact: true });
+	await expect(beam).toHaveAttribute("data-voice-look", "glow");
+
+	const paintedCounts = new Set<number>();
+	for (const name of ["Dither", "Mosaic", "Dots", "Lines"]) {
+		await picker.press("Enter");
+		await page.getByRole("option", { name: new RegExp(`^${name}`) }).click();
+		await expect(beam).toHaveAttribute("data-voice-look", name.toLowerCase());
+		const canvas = beam.locator("canvas[data-voice-beam-surface]");
+		await expect(canvas).toHaveAttribute("aria-hidden", "true");
+		const paintedPixelCount = () => canvas.evaluate((element: HTMLCanvasElement) => {
+			const context = element.getContext("2d");
+			if (!context || !element.width || !element.height) return 0;
+			const pixels = context.getImageData(0, 0, element.width, element.height).data;
+			let count = 0;
+			for (let alpha = 3; alpha < pixels.length; alpha += 4) {
+				if (pixels[alpha] > 16) count++;
+			}
+			return count;
+		});
+		await expect.poll(paintedPixelCount).toBeGreaterThan(20);
+		paintedCounts.add(await paintedPixelCount());
+	}
+	expect(paintedCounts.size).toBe(4);
+	await expect(demo.getByRole("button", { name: "Grid", exact: true })).toBeVisible();
+	await expect(demo.getByRole("combobox", { name: "Palette", exact: true })).toHaveCount(0);
+	await demo.getByRole("button", { name: "Recording pill", exact: true }).click();
+	await expect(beam).toHaveAttribute("data-voice-type", "pill");
+	await expect(beam).toHaveAttribute("data-voice-look", "lines");
+	await demo.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(beam).toHaveAttribute("data-voice-look", "glow");
+	await expect(beam.locator("canvas[data-voice-beam-surface]")).toHaveCount(0);
+});
+
 test("reduced motion holds decorative travel and hue while retaining a visible glow", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
 	await page.addInitScript(() => localStorage.setItem("ui-theme", "dark"));

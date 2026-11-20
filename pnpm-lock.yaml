@@ -452,8 +452,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       voice-glow:
-        specifier: ~0.3.0
-        version: 0.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 0.4.0
+        version: 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       ws:
         specifier: ^8.22.0
         version: 8.22.2
@@ -8496,8 +8496,8 @@ packages:
   victory-vendor@37.4.1:
     resolution: {integrity: sha512-geV4p2GVfVM9lgm9ZRS3pvsbAPS+BUGhM9W9nPzPHTKi+/+KjNrFXdgP6KkG+XspNZuvcXmchcrtklfuQ4gniw==}
 
-  voice-glow@0.3.0:
-    resolution: {integrity: sha512-PLw6BMo9WCwniSGjlpX3gr5ReponCDFLis37Q8XLfHMyMfv2DNTNzYS0kkYZKS2ohzdaGq1T5jxCyqwA1jqbIQ==}
+  voice-glow@0.4.0:
+    resolution: {integrity: sha512-+IOMT5CWp/Ycv2LUZdQfHoZU8rc8axvBM73O1BQcJh8+05a1O2b8E/T6u0jceB9gRpsffeB7xRdWKvoQpjJBLg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
@@ -17436,7 +17436,7 @@ snapshots:
       d3-time: 3.1.1
       d3-timer: 3.0.2
 
-  voice-glow@0.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  voice-glow@0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
