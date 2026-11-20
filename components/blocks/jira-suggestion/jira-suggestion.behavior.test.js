@@ -33,20 +33,20 @@ const deckIsOpen = (view) => view.getByRole("button", { name: /^\d+ suggestions?
 test("a tap on scrollable suggestion text opens the list, while a vertical gesture does not", async () => {
 	const view = await renderComponent({ source: SOURCE });
 	const text = document.querySelector("[data-top-card] p");
-	assert.notEqual(text, null);
+	assert.equal(text !== null, true);
 	text.setAttribute("data-suggestion-value-scroll", "");
 	const pointer = (type, y) => text.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: 50, clientY: y }));
 	await act(() => { pointer("pointerdown", 50); pointer("pointermove", 90); pointer("pointerup", 90); });
-	assert.equal(view.queryByRole("list", { name: "Suggestions" }), null);
+	assert.equal(view.queryByRole("list", { name: "Suggestions" }) === null, true);
 	await act(() => { pointer("pointerdown", 50); pointer("pointerup", 50); });
-	assert.notEqual(view.queryByRole("list", { name: "Suggestions" }), null);
+	assert.equal(view.queryByRole("list", { name: "Suggestions" }) !== null, true);
 	await view.unmount();
 });
 
 test("the description fades only while more content remains below", async () => {
 	const view = await renderComponent({ source: SOURCE });
 	const text = document.querySelector("[data-top-card] p");
-	assert.notEqual(text, null);
+	assert.equal(text !== null, true);
 	Object.defineProperties(text, {
 		clientHeight: { configurable: true, value: 100 },
 		scrollHeight: { configurable: true, value: 200 },
@@ -85,6 +85,29 @@ test("Escape closes a keyboard-opened why card first, then the deck, returning f
 
 const undoButtons = () => [...document.querySelectorAll("button[aria-label^=Undo]")];
 const scrollport = () => document.querySelector("[data-scrollport]");
+
+test("accepting a description and a detail reveals their text in rainbow", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.click(view.getByRole("button", { name: "Accept description" }));
+	assert.equal(document.querySelectorAll("[data-description-word]").length > 0, true);
+	await view.click(view.getByRole("button", { name: "Accept assignee" }));
+	assert.equal(document.querySelector('[data-field-id="assignee"] [data-suggestion-text-reveal]') !== null, true);
+	await view.unmount();
+});
+
+test("accept all moves the filling control through the details and undo cancels it", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	assert.equal(document.querySelector("[data-project-butter-suggestion-cursor]") !== null, true);
+	assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
+	await act(() => new Promise((resolve) => setTimeout(resolve, 350)));
+	assert.equal(document.querySelector('[data-field-id="assignee"] [data-suggestion-text-reveal]') !== null, true);
+	await view.click(view.getByRole("button", { name: "Undo accepting 6 suggestions" }));
+	await act(() => new Promise((resolve) => setTimeout(resolve, 500)));
+	assert.equal(document.querySelector("[data-project-butter-suggestion-cursor]") === null, true);
+	assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
+	await view.unmount();
+});
 
 test("Undo only exists once there is a decision to undo, and leaves again when it is undone", async () => {
 	const view = await renderComponent({ source: SOURCE });
@@ -146,11 +169,11 @@ test("arrow keys and undo work while focus is on the suggestion controls", async
 	const view = await renderComponent({ source: SOURCE });
 	await view.focus(view.getByRole("button", { name: "Dismiss description" }));
 	await view.press(null, "ArrowRight");
-	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) !== null, true);
 	await view.press(null, "z", { metaKey: true });
-	assert.notEqual(view.queryByRole("button", { name: "Accept description" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept description" }) !== null, true);
 	await view.press(null, "ArrowLeft");
-	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) !== null, true);
 	await view.unmount();
 });
 
@@ -158,10 +181,10 @@ test("keyboard undo restores a completed batch from the caught-up controls", asy
 	const view = await renderComponent({ source: SOURCE });
 	await view.click(view.getByRole("button", { name: "Accept all" }));
 	await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
-	assert.equal(view.queryByRole("button", { name: "Accept description" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept description" }) === null, true);
 	await view.focus(view.getByRole("button", { name: "Check again" }));
 	await view.press(null, "z", { metaKey: true });
-	assert.notEqual(view.queryByRole("button", { name: "Accept description" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept description" }) !== null, true);
 	await view.unmount();
 });
 
@@ -171,14 +194,14 @@ test("keyboard undo works in list view without changing text input behavior", as
 	await view.click(view.getByRole("button", { name: "Accept assignee" }));
 	await view.focus(view.getByRole("button", { name: "Show as stack" }));
 	await view.press(null, "z", { ctrlKey: true });
-	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) !== null, true);
 	const input = document.createElement("input");
 	view.getByRole("dialog").append(input);
 	await view.focus(input);
 	const event = new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
 	await act(() => input.dispatchEvent(event));
 	assert.equal(event.defaultPrevented, false);
-	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) !== null, true);
 	input.remove();
 	await view.unmount();
 });
@@ -205,7 +228,7 @@ test("a check from the caught-up state runs in place and says when it found noth
 	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true, "the caught-up state holds while the check runs");
 	assert.equal(document.body.textContent.includes("reviewed"), false, "…with no footer or stack sliding in for it");
 	await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
-	assert.equal(view.queryByRole("button", { name: /^Undo/ }), null, "Undo steps aside while the check runs instead of sitting there disabled");
+	assert.equal(view.queryByRole("button", { name: /^Undo/ }) === null, true, "Undo steps aside while the check runs instead of sitting there disabled");
 	await waitForRun();
 	assert.equal(view.queryByRole("button", { name: /^Undo/ }) !== null, true, "…and comes back once the check is done");
 	assert.equal(view.queryByText("Nothing new since you last checked") !== null, true, "a quiet check is acknowledged in the body");

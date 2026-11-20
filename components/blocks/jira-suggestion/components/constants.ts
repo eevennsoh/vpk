@@ -63,8 +63,6 @@ export const WHY_CLOSE_DELAY = motionDuration.fast * 1000;
 
 /** How long a decision's receipt replaces the progress line in the footer: four of the slowest beats. */
 export const RECEIPT_MS = motionDuration.slowest * 4 * 1000;
-/** How long a Details row stays tinted after it is filled: two of the slowest beats plus a medium one to settle. */
-export const HIGHLIGHT_MS = (motionDuration.slowest * 2 + motionDuration.medium) * 1000;
 
 /** The stack ⇄ list morph, and every sheet that moves within the stack. */
 export const MORPH = { type: "spring", visualDuration: motionDuration.slower, bounce: 0.12 } as const;

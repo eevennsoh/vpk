@@ -1137,11 +1137,6 @@
       "count": 1
     }
   },
-  "components/blocks/jira-suggestion/jira-suggestion.behavior.test.js": {
-    "vpk-tests/no-dom-node-assert": {
-      "count": 12
-    }
-  },
   "components/blocks/jira-toolbar/jira-toolbar.source.test.js": {
     "no-restricted-syntax": {
       "count": 33
