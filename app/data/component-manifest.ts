@@ -424,6 +424,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("jira-local-agent", "Jira Local Agent"),
 	blockComponent("skill-selector", "Skill Selector"),
 	blockComponent("jira-work-item", "Jira Work Item"),
+	blockComponent("jira-work-item-timeline", "Jira Work Item Timeline"),
 	blockComponent("agent-session-flyout", "Agent Session Flyout"),
 	blockComponent("omnibar", "Omnibar"),
 	blockComponent("rovo-button", "Rovo Button"),

@@ -35,11 +35,10 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/activity-comment-tools";
 import { ProjectButterActivityFilterMenu } from "@/components/blocks/jira-work-item/project-butter/activity-filter-menu";
 import { ProjectButterSessionStart } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
-import { ProjectButterActivityTimeline } from "@/components/blocks/jira-work-item/project-butter/activity-timeline";
-import { activityDayLabel, activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+import { JiraWorkItemTimeline, useJiraWorkItemTimelineNavigation } from "@/components/blocks/jira-work-item-timeline";
+import { activityDateLabel, activityDayLabel, activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import { ProjectButterUpdateGroup } from "@/components/blocks/jira-work-item/project-butter/activity-update-group";
 import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
-import { useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_REFERENCE_HISTORY } from "@/components/blocks/jira-work-item/project-butter/reference-data";
@@ -145,7 +144,7 @@ export function ProjectButterActivity({
 	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
 	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1));
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
-	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId);
+	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useJiraWorkItemTimelineNavigation(rows, { layoutKey: sidePanel, focusId: content.activityFocusId });
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
 	const startedSession = sessions.find((session) => session.id === startedSessionId);
 	const tintSeed = startedSession ? agentSessionTintSeed(startedSession) : undefined;
@@ -203,15 +202,8 @@ export function ProjectButterActivity({
 	};
 	const headerTime = visibleRow ? activityHeaderTimeLabel(visibleRow.timestamp || activityDayLabel(visibleRow)) : "";
 	const header = (
-		<div className="sticky top-0 z-20 -mx-1 mb-3 flex shrink-0 items-center gap-4 bg-surface px-1 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header data-stuck={stuck || undefined} ref={headerRef}>
-			{/* Once the header sticks, the visible row's relative time stands in for the title; the h2 keeps its name for assistive tech. */}
-			<div className="shrink-0 text-sm font-medium text-text">
-				{/* Classes sit on the h2 itself: the base h2 heading font would otherwise win over the wrapper's inherited text-sm. */}
-				<h2 className={cn("text-sm font-medium text-text", stuck && visibleRow ? "sr-only" : undefined)}>Activity</h2>
-				{stuck && visibleRow ? <span aria-hidden data-project-butter-activity-header-time>{headerTime.charAt(0).toUpperCase() + headerTime.slice(1)}</span> : null}
-			</div>
-			<ProjectButterActivityTimeline onSeek={seekToProgress} onSelect={scrollToEntry} progress={progress} rows={rows} visibleId={visibleId} />
-			<div className={cn("ml-auto flex items-center gap-1", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" : null)}>
+		<JiraWorkItemTimeline
+			actions={<div className={cn("ml-auto flex items-center gap-1", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" : null)}>
 				<ProjectButterActivityFilterMenu
 					expandDetails={expandedAudit}
 					filters={filters}
@@ -220,8 +212,18 @@ export function ProjectButterActivity({
 					onSortChange={singleView ? undefined : content.setActivitySort}
 					sort={sort}
 				/>
-			</div>
-		</div>
+			</div>}
+			data-project-butter-activity-header
+			getPreviewLabel={activityDateLabel}
+			headerTime={headerTime.charAt(0).toUpperCase() + headerTime.slice(1)}
+			onSeek={seekToProgress}
+			onSelect={scrollToEntry}
+			progress={progress}
+			ref={headerRef}
+			rows={rows}
+			stuck={stuck}
+			visibleId={visibleId}
+		/>
 	);
 	return (
 		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
