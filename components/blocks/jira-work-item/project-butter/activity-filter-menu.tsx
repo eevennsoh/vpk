@@ -32,7 +32,7 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 }>) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}>
+			<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" iconSize="compact" size="icon" type="button" variant="ghost" />}>
 				<FilterIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" positionerClassName="z-[650]">

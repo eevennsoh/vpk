@@ -5,7 +5,6 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import type {
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
@@ -15,12 +14,6 @@ import { jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activi
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { formatDetailedTimestamp } from "@/lib/format-detailed-timestamp";
@@ -114,7 +107,6 @@ export function ProjectButterCommentTools({
 	const [draft, setDraft] = useState("");
 	const original = reply ? reply.body : jiraActivitySegmentsToPlainText(entry.body);
 	const editable = (reply?.actor ?? entry.actor).name === content.currentUser.name;
-	const id = reply?.id ?? entry.id;
 	function save() {
 		if (!draft.trim()) return;
 		content.setActivityEntries((entries) =>
@@ -134,21 +126,6 @@ export function ProjectButterCommentTools({
 		content.recordAudit("Comment", original, draft.trim());
 		setEditing(false);
 	}
-	function remove() {
-		content.setActivityEntries((entries) =>
-			reply
-				? entries.map((item) =>
-						item.id !== entry.id || item.kind !== "comment"
-							? item
-							: {
-									...item,
-									replies: item.replies?.filter((candidate) => candidate.id !== reply.id),
-								},
-					)
-				: entries.filter((item) => item.id !== entry.id),
-		);
-		content.recordAudit("Comment", original, "Removed");
-	}
 	return (
 		<>
 			{editable ? (
@@ -165,35 +142,6 @@ export function ProjectButterCommentTools({
 					<EditIcon label="" size="small" />
 				</Button>
 			) : null}
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							aria-label="More comment actions"
-							className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle"
-							size="icon-compact"
-							type="button"
-							variant="ghost"
-						/>
-					}
-				>
-					<ShowMoreHorizontalIcon label="" size="small" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent positionerClassName="z-[650]">
-					<DropdownMenuItem
-						onSelect={() => {
-							void navigator.clipboard.writeText(commentLink(id));
-						}}
-					>
-						Copy link to comment
-					</DropdownMenuItem>
-					{editable ? (
-						<DropdownMenuItem onSelect={remove} variant="destructive">
-							Delete comment
-						</DropdownMenuItem>
-					) : null}
-				</DropdownMenuContent>
-			</DropdownMenu>
 			<Dialog onOpenChange={setEditing} open={editing}>
 				<DialogContent
 					className="z-[701]"

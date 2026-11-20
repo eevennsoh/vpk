@@ -11,14 +11,23 @@ test("large session cards keep the status label when More actions replaces the i
 	await expect(page.getByRole("button", { name: "Large", exact: true })).toHaveAttribute("aria-pressed", "true");
 	for (const section of ["Local sessions", "Cloud sessions"]) {
 		const rows = page.getByRole("region", { name: section }).locator("article");
-		for (const label of ["Working", "Needs input", "Finished"]) {
-			const row = rows.filter({ has: page.getByRole("button", { name: label, exact: true }) });
+		for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]] as const) {
+			const row = rows.filter({ has: page.locator(`[data-agent-session-lifecycle-label="${state}"]`) });
 			const status = row.getByText(label, { exact: true });
 			const glyph = row.locator("[data-agent-session-lifecycle-glyph]");
 			const more = row.getByRole("button", { name: /^More actions for/ });
 			await page.mouse.move(0, 0);
 			await expect(status).toBeVisible();
 			await expect(glyph).toBeVisible();
+			const statusButton = row.getByRole("button", { name: label, exact: true });
+			await expect(statusButton).toHaveCSS("width", "24px");
+			expect(await status.evaluate((element) => element.closest("button") === null)).toBe(true);
+			if (section === "Cloud sessions" && state === "complete") {
+				await statusButton.focus();
+				await statusButton.press("Space");
+				await expect(statusButton).toHaveAttribute("aria-pressed", "true");
+				await expect(status).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+			}
 			const restingStatus = await status.boundingBox();
 			const restingGlyph = await glyph.boundingBox();
 			await row.hover();
@@ -30,6 +39,12 @@ test("large session cards keep the status label when More actions replaces the i
 			if (!restingGlyph || !action) throw new Error("Missing status icon or menu trigger");
 			expect(Math.abs(action.x - restingGlyph.x)).toBeLessThanOrEqual(1);
 			expect(action).toMatchObject({ y: restingGlyph.y, width: restingGlyph.width, height: restingGlyph.height });
+			if (section === "Cloud sessions" && state === "complete") {
+				await more.click();
+				await expect(page.getByRole("menu")).toBeVisible();
+				await expect(status).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+				await page.keyboard.press("Escape");
+			}
 		}
 	}
 

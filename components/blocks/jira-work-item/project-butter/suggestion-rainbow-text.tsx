@@ -9,7 +9,7 @@ import { motionDuration, motionEase } from "@/lib/motion";
 
 export const SUGGESTION_RAINBOW_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
 
-export function SuggestionRainbowText({ text }: Readonly<{ text: string }>) {
+export function SuggestionRainbowText({ text, onComplete }: Readonly<{ text: string; onComplete?: () => void }>) {
 	const reduced = useReducedMotion();
 	if (reduced) return <span>{text}</span>;
 
@@ -21,6 +21,7 @@ export function SuggestionRainbowText({ text }: Readonly<{ text: string }>) {
 		parts.push({ part, characters, start: offset });
 		offset += characters.length;
 	}
+	const lastWord = parts.findLastIndex(({ part }) => /\S/u.test(part));
 	return (
 		<span className="whitespace-pre-wrap" data-suggestion-text-reveal="">
 			<span className="sr-only">{text}</span>
@@ -30,7 +31,7 @@ export function SuggestionRainbowText({ text }: Readonly<{ text: string }>) {
 					const delay = getShimmerWaveCharacterDelay(start, count, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD);
 					return <motion.span animate={{ opacity: 1 }} className="relative inline-block whitespace-nowrap" initial={{ opacity: 0 }} key={partIndex} transition={{ delay, duration: motionDuration.medium, ease: motionEase.outPractical }}>
 						<span>{part}</span>
-						<motion.span animate={{ opacity: [0, 0.88, 0] }} className="pointer-events-none absolute inset-0" initial={{ opacity: 0 }} transition={{ delay, duration: SUGGESTION_REVEAL_DURATION, ease: motionEase.inOut }}>
+						<motion.span animate={{ opacity: [0, 0.88, 0] }} className="pointer-events-none absolute inset-0" initial={{ opacity: 0 }} onAnimationComplete={partIndex === lastWord ? onComplete : undefined} transition={{ delay, duration: SUGGESTION_REVEAL_DURATION, ease: motionEase.inOut }}>
 							{characters.map((character, index) => <span key={start + index} style={{ color: resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, start + index, count) }}>{character}</span>)}
 						</motion.span>
 					</motion.span>;

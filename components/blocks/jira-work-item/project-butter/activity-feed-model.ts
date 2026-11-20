@@ -80,7 +80,7 @@ export function pinProjectButterComments(entries: readonly JiraActivityEntry[], 
 	const byId = new Map(entries.map((entry) => [entry.id, entry]));
 	const pinned = pinnedIds.flatMap((id) => {
 		const entry = byId.get(id);
-		return entry?.kind === "comment" ? [{ ...entry, tag: PINNED_TAG }] : [];
+		return entry?.kind === "comment" ? [{ ...entry, tag: PINNED_TAG, replyPreviewCount: 0 }] : [];
 	});
 	const pinnedSet = new Set(pinned.map((entry) => entry.id));
 	return [...pinned, ...entries.filter((entry) => !pinnedSet.has(entry.id))];
@@ -92,8 +92,8 @@ export function unpinProjectButterEntries(entries: readonly JiraActivityEntry[],
 	return entries.map((entry) => {
 		if (entry.kind !== "comment" || entry.tag !== PINNED_TAG) return entry;
 		const original = byId.get(entry.id);
-		const { tag: _pinned, ...rest } = entry;
-		return original?.kind === "comment" && original.tag ? { ...rest, tag: original.tag } : rest;
+		const { tag: _pinned, replyPreviewCount: _preview, ...rest } = entry;
+		return original?.kind === "comment" ? { ...rest, tag: original.tag, replyPreviewCount: original.replyPreviewCount } : rest;
 	});
 }
 

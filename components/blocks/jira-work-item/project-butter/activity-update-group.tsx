@@ -18,10 +18,10 @@ export function ProjectButterUpdateGroup({ summary, timestamp, events, renderEve
 	const panelId = useId();
 	return (
 		<div className="min-w-0" data-project-butter-update-group>
-			<div className="flex min-h-6 min-w-0 items-center gap-2">
-				<button aria-controls={panelId} aria-expanded={open} className="flex min-w-0 items-center gap-1 rounded-sm text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-border-focused" onClick={() => setOpen((current) => !current)} type="button">
+			<div className="group/update flex min-h-6 min-w-0 items-center gap-2">
+				<button aria-controls={panelId} aria-expanded={open} className="group/update-action flex min-w-0 items-center gap-1 rounded-sm text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-border-focused" onClick={() => setOpen((current) => !current)} type="button">
 					<span className="min-w-0">{summary}</span>
-					<Icon aria-hidden className={cn("shrink-0 text-icon-subtle transition-transform duration-fast ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon color="currentColor" label="" size="small" />} />
+					<Icon aria-hidden className={cn("shrink-0 text-icon-subtlest opacity-0 transition-transform duration-fast ease-out-practical group-hover/update:opacity-100 group-focus-visible/update-action:opacity-100 [@media(hover:none)]:opacity-100", open ? "rotate-90" : null)} data-activity-chevron render={<ChevronRightIcon color="currentColor" label="" size="small" />} />
 				</button>
 				<span className="shrink-0 text-xs text-text-subtlest">{timestamp}</span>
 			</div>

@@ -388,6 +388,7 @@ export function AgentListActivityHeader({
 			{hideAvatar ? null : (
 				<AgentListIdentity
 					agent={item.agent}
+					animate={activityGroup !== "activity-reply"}
 					className="shrink-0"
 					sizePx={32}
 				/>

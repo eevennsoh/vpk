@@ -762,7 +762,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 	// Shimmer and the presence transition both retain reduced-motion treatments.
 	assert.match(LIFECYCLE_SOURCE, /initial=\{\{ opacity: 0, scale: 0\.6 \}\}/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /const glyph = shouldReduceMotion \?/u);
-	assert.match(LIFECYCLE_SOURCE, /<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">/u);
+	assert.match(LIFECYCLE_SOURCE, /<div className="relative flex shrink-0 items-center gap-1 text-xs text-text-subtle /u);
 	assert.match(LIFECYCLE_SOURCE, /<motion\.div/u);
 	assert.match(LIFECYCLE_SOURCE, /<motion\.span/u);
 	// The shared row consumes the card width while its trailing slot reserves the

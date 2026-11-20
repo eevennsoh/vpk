@@ -731,7 +731,7 @@
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
-      "count": 166
+      "count": 165
     },
     "vpk-tests/no-dom-node-assert": {
       "count": 17

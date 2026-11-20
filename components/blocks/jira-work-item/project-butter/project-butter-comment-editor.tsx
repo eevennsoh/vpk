@@ -178,6 +178,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	}
 	return (
 		<FloatingComposer
+			animateInputContext
 			actions={<RovoComposerActionButton canSubmit={contentState?.canSubmit ?? false} composerStatus="ready" dictationState={voice.dictationState} dictationTranscriptPreview={voice.dictationTranscriptPreview} micStream={voice.micStream} onStartDictation={voice.onStartDictation} onStop={voice.onStopDictation} onStopDictation={voice.onStopDictation} showSubmitWhenEmpty size="icon-sm" />}
 			addButton={
 				<PromptInputButton aria-label="Mention an agent or person" disabled={!editor} onClick={() => editor?.chain().focus().insertContent("@").run()} size="icon-sm" variant="ghost">

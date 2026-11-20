@@ -81,6 +81,7 @@ function FloatingRovoButtonInner({
 	onLogoPointerEnter,
 	ariaLabel,
 	logoAnimating,
+	logoAnimationRun,
 	shouldReduceMotion,
 	ref,
 }: Readonly<{
@@ -90,6 +91,7 @@ function FloatingRovoButtonInner({
 	onLogoPointerEnter: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	ariaLabel: string;
 	logoAnimating: boolean;
+	logoAnimationRun: number;
 	shouldReduceMotion: boolean;
 	ref?: Ref<HTMLButtonElement>;
 }>) {
@@ -123,7 +125,7 @@ function FloatingRovoButtonInner({
 		>
 			{logoAnimating ? (
 				<AnimatedRovo.Root
-					key="animated-rovo-logo"
+					key={`animated-rovo-logo-${logoAnimationRun}`}
 					size={24}
 					preset="full-cycle"
 					cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S}
@@ -150,6 +152,7 @@ export function FloatingRovoButtonSurface({
 	onButtonClick,
 	persistentBar,
 	shouldReduceMotion,
+	logoAnimationTrigger,
 }: Readonly<{
 	onboardingOpen: boolean;
 	onboarding: FloatingRovoButtonOnboardingConfig | null | undefined;
@@ -165,6 +168,7 @@ export function FloatingRovoButtonSurface({
 	onButtonClick: () => void;
 	persistentBar: FloatingRovoButtonPersistentBar | null | undefined;
 	shouldReduceMotion: boolean;
+	logoAnimationTrigger?: string;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 	// The two configs are mutually exclusive upstream, so exactly one of them can
@@ -220,6 +224,7 @@ export function FloatingRovoButtonSurface({
 	const collapsedButtonRef = useRef<HTMLButtonElement | null>(null);
 	const previousCardOpenRef = useRef<boolean>(cardOpen);
 	const [logoAnimating, setLogoAnimating] = useState(false);
+	const [logoAnimationRun, setLogoAnimationRun] = useState(0);
 	const [endInset, setEndInset] = useState("");
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
@@ -270,12 +275,9 @@ export function FloatingRovoButtonSurface({
 			logoAnimationTimeoutRef.current = null;
 		}
 	}, []);
-	const handleLogoPointerEnter = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
-		if (event.pointerType !== "mouse" || shouldReduceMotion || logoAnimationPlayedRef.current) {
-			return;
-		}
-
-		logoAnimationPlayedRef.current = true;
+	const startLogoAnimation = useCallback(() => {
+		if (shouldReduceMotion) return;
+		setLogoAnimationRun((run) => run + 1);
 		setLogoAnimating(true);
 		clearLogoAnimationTimeout();
 		logoAnimationTimeoutRef.current = window.setTimeout(() => {
@@ -283,6 +285,16 @@ export function FloatingRovoButtonSurface({
 			setLogoAnimating(false);
 		}, FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS);
 	}, [clearLogoAnimationTimeout, shouldReduceMotion]);
+	const handleLogoPointerEnter = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+		if (event.pointerType !== "mouse" || shouldReduceMotion || logoAnimationPlayedRef.current) return;
+		logoAnimationPlayedRef.current = true;
+		startLogoAnimation();
+	}, [shouldReduceMotion, startLogoAnimation]);
+	useEffect(() => {
+		if (!logoAnimationTrigger || shouldReduceMotion) return undefined;
+		const frame = window.requestAnimationFrame(startLogoAnimation);
+		return () => window.cancelAnimationFrame(frame);
+	}, [logoAnimationTrigger, shouldReduceMotion, startLogoAnimation]);
 	// Arm suppression when a drag actually moves the button.
 	const armDragClickSuppression = useCallback(() => {
 		suppressDragClickStateRef.current = armClickSuppression();
@@ -698,6 +710,7 @@ export function FloatingRovoButtonSurface({
 							onLogoPointerEnter={handleLogoPointerEnter}
 							ariaLabel={ariaLabel}
 							logoAnimating={logoAnimating}
+							logoAnimationRun={logoAnimationRun}
 							shouldReduceMotion={shouldReduceMotion}
 						/>
 					)}

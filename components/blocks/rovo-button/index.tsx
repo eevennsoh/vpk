@@ -165,6 +165,7 @@ export default function FloatingRovoButton({
 						placement={placement}
 						positioning={positioning}
 						ariaLabel={resolvedAriaLabel}
+						logoAnimationTrigger={suggestion?.animateLogoOnArrival ? suggestion.id : undefined}
 						onButtonClick={handleButtonClick}
 						persistentBar={persistentBar}
 						shouldReduceMotion={shouldReduceMotion}
