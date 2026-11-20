@@ -25,7 +25,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 		const frame = window.requestAnimationFrame(() => setMounted(true));
 		return () => window.cancelAnimationFrame(frame);
 	}, []);
-	return <ProjectButterJiraWorkItem {...props} inlineSessionReplies open={mounted && props.open} />;
+	return <ProjectButterJiraWorkItem {...props} inlineSessionReplies sessionActivityView open={mounted && props.open} />;
 }
 
 function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {

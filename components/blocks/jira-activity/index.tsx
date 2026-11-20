@@ -53,6 +53,10 @@ export interface JiraActivityProps {
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	/** Additional footer tools for comments and their nested replies. */
 	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	/** Wrap a comment's reply disclosure and replies with a host-owned presentation. */
+	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void) => ReactNode;
+	/** Wrap a root comment's avatar while keeping its position on the activity rail. */
+	renderCommentAvatar?: (entry: JiraActivityCommentEntry, avatar: ReactNode) => ReactNode;
 	/** Optional replacement for a plain comment or reply header's timestamp. */
 	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
 	/** Rich reply content. Return undefined to use the plain-text body. */
@@ -108,6 +112,7 @@ export interface JiraActivityProps {
 	commentActionsPlacement?: "footer" | "hover";
 	/** Replaces the threaded "Show more replies" label, e.g. with a count and participant faces. */
 	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	earlierRepliesSelectedAppearance?: "default" | "icon-only";
 	/** Replaces every thread's default reply composer, e.g. with the surface's own comment box. */
 	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	/** Handles a reaction toggle externally instead of applying it to local state. */
@@ -156,6 +161,8 @@ export function JiraActivity({
 	commentHeaderLayout,
 	renderCommentAction,
 	renderCommentTools,
+	renderCommentReplies,
+	renderCommentAvatar,
 	renderTimestamp,
 	renderReplyBody,
 	renderReply,
@@ -176,6 +183,7 @@ export function JiraActivity({
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
 	renderEarlierRepliesLabel,
+	earlierRepliesSelectedAppearance,
 	renderReplyComposer,
 	onToggleReaction,
 	className,
@@ -367,6 +375,7 @@ export function JiraActivity({
 								threaded={connectorStyle === "thread"}
 								bodyContent={renderCommentBody?.(entry)}
 								renderCommentTools={renderCommentTools}
+								renderCommentReplies={renderCommentReplies}
 								renderTimestamp={renderTimestamp}
 								renderReplyBody={renderReplyBody}
 								renderReply={renderReply}
@@ -376,6 +385,7 @@ export function JiraActivity({
 								commentActions={commentActions}
 								commentActionsPlacement={commentActionsPlacement}
 								renderEarlierRepliesLabel={renderEarlierRepliesLabel}
+								earlierRepliesSelectedAppearance={earlierRepliesSelectedAppearance}
 								renderReplyComposer={renderReplyComposer}
 								currentUser={currentUser}
 								entry={entry}
@@ -432,6 +442,7 @@ export function JiraActivity({
 									</div>
 								) : (
 									<JiraActivityNode
+										renderAvatar={entry.kind === "comment" && renderCommentAvatar ? (avatar) => renderCommentAvatar(entry, avatar) : undefined}
 										actor={entry.actor}
 										attributedBy={entry.kind === "comment" ? entry.attributedBy : undefined}
 										icon={

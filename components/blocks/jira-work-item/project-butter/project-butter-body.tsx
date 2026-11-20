@@ -12,7 +12,7 @@ import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 
-export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
+export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, sessionActivityView = false, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;
 	compact?: boolean;
 	sidePanel: boolean;
@@ -32,13 +32,17 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 	relatedScope?: ProjectButterRelatedScope;
 	sessions: readonly ProjectButterSessionItem[];
 	singleActivityView?: boolean;
+	sessionActivityView?: boolean;
 	workItemKey?: string;
 }>) {
 	// The bar keeps 24px below the Activity header with no rows, and 24px below the lone "created" row of a new item.
 	const activityRows = content.activityEntries.length === 0 ? "none" : content.activityEntries.every((entry) => entry.kind === "event" && entry.icon === "created") ? "origin" : "feed";
 	const [replyTarget, setReplyTarget] = useState<Readonly<{ entryId: string; targetId: string; actor: JiraActivityActor }> | null>(null);
 	const [replyFocusRequest, setReplyFocusRequest] = useState(0);
+	const [latestReplyEntryId, setLatestReplyEntryId] = useState<string | null>(null);
+	const [instructionDraft, setInstructionDraft] = useState<string | null>(null);
 	function selectReply(entry: JiraActivityCommentEntry, targetId: string, actor: JiraActivityActor) {
+		setInstructionDraft(null);
 		if (replyTarget?.entryId === entry.id && replyTarget.targetId === targetId) { setReplyTarget(null); return; }
 		setReplyTarget({ entryId: entry.id, targetId, actor });
 		setReplyFocusRequest((current) => current + 1);
@@ -56,13 +60,22 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 		return true;
 	}
 	const replySession = replyTarget ? sessions.find((session) => `invocation-${session.id}` === replyTarget.entryId) : undefined;
+	const composerContent: ProjectButterContent = instructionDraft === null ? content : {
+		...content,
+		commentDraft: instructionDraft,
+		setCommentDraft: (update) => setInstructionDraft((draft) => typeof update === "function" ? update(draft ?? "") : update),
+	};
 	return (
 		<div className={compact ? "flex min-w-0 flex-col gap-4" : "flex min-w-0 flex-col gap-6"}>
 			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
-			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} />
-			<ProjectButterCommentBar active={active} activityRows={activityRows} content={content} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => setReplyTarget(null)} sessions={sessions} sidePanel={sidePanel} />
+			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryId={latestReplyEntryId} onDraftSessionInstruction={({ entry }, text) => {
+				if (replyTarget?.entryId !== entry.id || instructionDraft === null) setInstructionDraft(text);
+				setReplyTarget({ entryId: entry.id, targetId: entry.id, actor: entry.actor });
+				setReplyFocusRequest((current) => current + 1);
+			}} />
+			<ProjectButterCommentBar active={active} activityRows={activityRows} content={composerContent} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => { setReplyTarget(null); setInstructionDraft(null); }} onActivityReplySubmitted={sessionActivityView ? setLatestReplyEntryId : undefined} sessions={sessions} sidePanel={sidePanel} />
 		</div>
 	);
 }

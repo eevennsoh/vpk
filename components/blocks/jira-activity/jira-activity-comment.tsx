@@ -378,6 +378,7 @@ export function JiraActivityComment({
 	onViewSession,
 	action,
 	renderCommentTools,
+	renderCommentReplies,
 	renderTimestamp,
 	renderReplyBody,
 	renderReply,
@@ -389,6 +390,7 @@ export function JiraActivityComment({
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
 	renderEarlierRepliesLabel,
+	earlierRepliesSelectedAppearance,
 	renderReplyComposer,
 	threaded = false,
 	headerLayout = "stacked",
@@ -407,6 +409,7 @@ export function JiraActivityComment({
 	onViewSession?: (item: AgentListItem) => void;
 	action?: ReactNode;
 	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void) => ReactNode;
 	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
 	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
@@ -418,6 +421,7 @@ export function JiraActivityComment({
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
 	commentActionsPlacement?: "footer" | "hover";
 	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	earlierRepliesSelectedAppearance?: "default" | "icon-only";
 	/** Replaces the default reply composer so a surface can reuse its own comment box. */
 	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	threaded?: boolean;
@@ -523,6 +527,7 @@ export function JiraActivityComment({
 		<Button
 			aria-controls={repliesId}
 			aria-expanded={repliesExpanded}
+			selectedAppearance={earlierRepliesSelectedAppearance}
 			// Threaded: trim the leading inset so faces and label start on the reply text column, while the hover plate stays clear of the connector curve.
 			className={cn("relative justify-self-start", threaded ? "-ml-1 pl-1 font-normal text-text-subtle" : null)}
 			onClick={() => setRepliesExpanded((expanded) => !expanded)}
@@ -693,10 +698,10 @@ export function JiraActivityComment({
 				) : undefined
 			}
 			replies={
-				hasReplies ? (
+				hasReplies ? (renderCommentReplies ?? ((_entry, replies) => replies))(entry, (
 					<>
 					{threaded && earlierRepliesToggle ? (
-						<div className="relative py-3">
+						<div className="relative py-3" data-jira-activity-replies-disclosure>
 							<ThreadContinuation />
 							<div className="relative flex">{earlierRepliesToggle}</div>
 						</div>
@@ -746,7 +751,7 @@ export function JiraActivityComment({
 						))}
 					</div>
 					</>
-				) : undefined
+				), () => setRepliesExpanded(true)) : undefined
 			}
 			tag={entry.tag}
 			timestamp={entry.timestamp}

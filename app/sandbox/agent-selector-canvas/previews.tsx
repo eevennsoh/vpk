@@ -10,6 +10,8 @@ import { DestinationAfterSelectPreview, GlobalDestinationPreview, InlineActionsP
 import { ActivityDigestPreview, PeopleFoldPreview, QuietDisclosurePreview } from "@/app/sandbox/agent-selector-canvas/teammate-session-previews";
 import { EvidenceLedgerPreview, MarginNotePreview, ScopeMapPreview, WorkPlanPreview } from "@/app/sandbox/agent-selector-canvas/recommendation-previews";
 import { FullWidthFooterLayoutPreview, InsetDividerLayoutPreview, InsetPanelLayoutPreview, PerforatedSeamLayoutPreview } from "@/app/sandbox/agent-selector-canvas/recommendation-layout-previews";
+import { WorkItemActivityPreview } from "@/app/sandbox/agent-selector-canvas/work-item-activity-preview";
+import { WorkItemPreviewShell } from "@/app/sandbox/agent-selector-canvas/work-item-preview-shell";
 
 const safeAgents = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "rovo-cli");
 const cursorSession: readonly AgentSessionItem[] = [{
@@ -37,6 +39,14 @@ function ButterPickerPreview() {
 
 function ButterPickerExistingSessionPreview() {
 	return <ButterPicker sessions={cursorSession} />;
+}
+
+function TimelineWorkItem() {
+	return <WorkItemPreviewShell><WorkItemActivityPreview initialView="timeline" /></WorkItemPreviewShell>;
+}
+
+function SessionsWorkItem() {
+	return <WorkItemPreviewShell><WorkItemActivityPreview initialView="sessions" /></WorkItemPreviewShell>;
 }
 
 export const previews = [{
@@ -153,4 +163,16 @@ export const previews = [{
 	component: PerforatedSeamLayoutPreview,
 	position: { x: 2040, y: 2100 },
 	width: 588,
+}, {
+	id: "vita-1-timeline",
+	name: "VITA-1 · Timeline",
+	component: TimelineWorkItem,
+	position: { x: 0, y: 2800 },
+	width: 1152,
+}, {
+	id: "vita-1-agent-sessions",
+	name: "VITA-1 · Agent sessions",
+	component: SessionsWorkItem,
+	position: { x: 1248, y: 2800 },
+	width: 1152,
 }] as const;

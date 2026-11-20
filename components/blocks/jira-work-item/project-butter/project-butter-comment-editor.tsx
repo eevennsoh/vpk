@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import { useJiraActivityComposerDictation } from "@/components/blocks/jira-activity/use-jira-activity-composer-dictation";
 import { EDITOR_PALETTE_MENTION_SOURCES, mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
@@ -79,6 +79,16 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			onValueChange(markdown);
 			reportMentions(activeEditor);
 		},
+	});
+	const contentState = useEditorState({
+		editor,
+		selector: ({ editor }) => ({
+			isEmpty: editor?.isEmpty ?? true,
+			canSubmit: Boolean(editor?.getText().trim()),
+			showInstructionPlaceholder: Boolean(editor && instructionPlaceholderForAgent && !editor.getText({
+				textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` },
+			}).trim()),
+		}),
 	});
 	function reportMentions(activeEditor: Editor) {
 		const names: string[] = [];
@@ -158,7 +168,6 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		return () => cancelAnimationFrame(frame);
 	}, [editor, focusRequest]);
 	const placeholderStyle = useMemo<CSSProperties & { "--rich-text-placeholder": string }>(() => ({ "--rich-text-placeholder": JSON.stringify(placeholder) }), [placeholder]);
-	const showInstructionPlaceholder = Boolean(editor && instructionPlaceholderForAgent && !editor.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim());
 	function save() {
 		if (!editor?.getText().trim()) return;
 		const mentionedAgentIds: string[] = [];
@@ -169,7 +178,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	}
 	return (
 		<FloatingComposer
-			actions={<RovoComposerActionButton canSubmit={Boolean(editor?.getText().trim())} composerStatus="ready" dictationState={voice.dictationState} dictationTranscriptPreview={voice.dictationTranscriptPreview} micStream={voice.micStream} onStartDictation={voice.onStartDictation} onStop={voice.onStopDictation} onStopDictation={voice.onStopDictation} showSubmitWhenEmpty size="icon-sm" />}
+			actions={<RovoComposerActionButton canSubmit={contentState?.canSubmit ?? false} composerStatus="ready" dictationState={voice.dictationState} dictationTranscriptPreview={voice.dictationTranscriptPreview} micStream={voice.micStream} onStartDictation={voice.onStartDictation} onStop={voice.onStopDictation} onStopDictation={voice.onStopDictation} showSubmitWhenEmpty size="icon-sm" />}
 			addButton={
 				<PromptInputButton aria-label="Mention an agent or person" disabled={!editor} onClick={() => editor?.chain().focus().insertContent("@").run()} size="icon-sm" variant="ghost">
 					<AddIcon label="" />
@@ -182,7 +191,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			inputContext={inputContext}
 			onSubmit={() => save()}
 		>
-			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
+			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={contentState?.isEmpty ? "true" : undefined} data-instruction-placeholder={contentState?.showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
 		</FloatingComposer>
 	);
 }

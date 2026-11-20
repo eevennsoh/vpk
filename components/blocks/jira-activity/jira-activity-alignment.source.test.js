@@ -44,7 +44,7 @@ test("spine nodes and comment avatars share one vertical center axis via the nod
 	assert.match(NODE_SOURCE, /className="flex w-8 shrink-0 flex-col items-center"/u);
 	assert.match(NODE_SOURCE, /size\?: "event" \| "card"/u);
 	assert.match(NODE_SOURCE, /sizePx=\{32\}/u);
-	assert.match(NODE_SOURCE, /sizePx=\{16\}/u);
+	assert.match(NODE_SOURCE, /function JiraActivityEntryGlyph\(\{[^}]*sizePx = 16/u);
 	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", isCard \? "mt-1" : null, tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 
 	// Cards opt into the card-sized node; content is never pull-left offset.

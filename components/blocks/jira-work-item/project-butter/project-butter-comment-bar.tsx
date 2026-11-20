@@ -32,7 +32,7 @@ function createTimedComment(args: Parameters<typeof createCommentEntry>[0]) {
 	return { ...createCommentEntry(args), createdAtMs: Date.now() };
 }
 
-export function ProjectButterCommentBar({ active, activityRows, content, keepVisible = false, empty, onOpenSession, onReplyToSession, onPreviewSession, onStartAgent, replyFocusRequest = 0, replySession, replyTarget, onClearReply, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; keepVisible?: boolean; empty: boolean; onOpenSession?: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onReplyToSession?: (session: ProjectButterSessionItem, draft: string) => boolean; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; replyFocusRequest?: number; replySession?: ProjectButterSessionItem; replyTarget?: Readonly<{ entryId: string; targetId: string; actor: JiraActivityActor }> | null; onClearReply?: () => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
+export function ProjectButterCommentBar({ active, activityRows, content, keepVisible = false, empty, onOpenSession, onReplyToSession, onPreviewSession, onStartAgent, replyFocusRequest = 0, replySession, replyTarget, onClearReply, onActivityReplySubmitted, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; keepVisible?: boolean; empty: boolean; onOpenSession?: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onReplyToSession?: (session: ProjectButterSessionItem, draft: string) => boolean; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; replyFocusRequest?: number; replySession?: ProjectButterSessionItem; replyTarget?: Readonly<{ entryId: string; targetId: string; actor: JiraActivityActor }> | null; onClearReply?: () => void; onActivityReplySubmitted?: (entryId: string) => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
 	const [expanded, setExpanded] = useState(false);
 	const [mentions, setMentions] = useState<string[]>([]);
 	const [hasMentions, setHasMentions] = useState(false);
@@ -87,6 +87,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 			if (replySession) actorIds.push(replySession.agent.id ?? replySession.id);
 			else if (replyTarget.actor.kind === "agent") actorIds.push(replyTarget.actor.id);
 			content.submitActivityReply(replyTarget.entryId, body, [...new Set(actorIds)], replySession?.id);
+			onActivityReplySubmitted?.(replyTarget.entryId);
 			cancel();
 			return;
 		}

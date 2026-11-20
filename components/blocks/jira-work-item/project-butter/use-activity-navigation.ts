@@ -55,7 +55,7 @@ function interpolate(knots: readonly Knot[], value: number, from: "scroll" | "in
 	return a[to] + ((value - a[from]) / (b[from] - a[from])) * (b[to] - a[to]);
 }
 
-export function useProjectButterActivityNavigation(entries: readonly JiraActivityEntry[], sidePanel: boolean, focusId: string | null, view: "Activity" | "Audit" = "Activity") {
+export function useProjectButterActivityNavigation(entries: readonly JiraActivityEntry[], sidePanel: boolean, focusId: string | null, view: "Activity" | "Audit" | "Sessions" = "Activity") {
 	const feedRef = useRef<HTMLDivElement>(null);
 	const headerRef = useRef<HTMLDivElement>(null);
 	const progress = useMotionValue(0);
@@ -102,7 +102,7 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 	}, [entries.length, view]);
 
 	const focusVisible = entries.some((entry) => entry.id === focusId);
-	useEffect(() => { if (focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [focusId, focusVisible, readingOffset]);
+	useEffect(() => { if (focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [focusId, focusVisible, readingOffset, view]);
 	useEffect(() => {
 		const feed = feedRef.current;
 		const root = activityScrollport(feed);
@@ -130,6 +130,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		}
 		schedule();
 		return () => { root.removeEventListener("scroll", schedule); resize?.disconnect(); if (frame) cancelAnimationFrame(frame); if (seekFrame.current) cancelAnimationFrame(seekFrame.current); seekFrame.current = 0; };
-	}, [entries, sidePanel, progress, readingOffset]);
+	}, [entries, sidePanel, progress, readingOffset, view]);
 	return { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId };
 }

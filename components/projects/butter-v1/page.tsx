@@ -276,7 +276,7 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
 				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
+					<ButterGalleryWorkItem sessionActivityView initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
@@ -295,7 +295,7 @@ export default function ButterPage(): React.ReactElement {
 	);
 }
 
-function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, onClose }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void }>) {
+function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean }>) {
 	const router = useRouter();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [added, setAdded] = useState<{ session: ProjectButterSessionItem; workItem: { code: string; summary: string } } | null>(null);
@@ -312,7 +312,7 @@ function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, on
 			<span className="sr-only" role="status">{open && added ? `${added.session.agent.name} added` : ""}</span>
 			<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex items-start justify-center overflow-hidden", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onAgentAdded={(session, workItem) => setAdded({ session, workItem })} onClose={() => { setAdded(null); onClose(); }} onOpenCloudSession={async (session, draft, workItem) => {
+					<ProjectButterJiraWorkItem inlineSessionReplies sessionActivityView={sessionActivityView} cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onAgentAdded={(session, workItem) => setAdded({ session, workItem })} onClose={() => { setAdded(null); onClose(); }} onOpenCloudSession={async (session, draft, workItem) => {
 						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) });
 						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
 						return opened;

@@ -12,6 +12,8 @@ import { agentSessionAccentColor, agentSessionTintSeed } from "@/components/bloc
 import { resolveAgentBrandTint, resolveAgentBrandTintVariable } from "@/components/blocks/agent-session/agent-brand-tint";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ProjectButterActivitySessionThreads } from "./activity-session-threads";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { motionDuration } from "@/lib/motion";
@@ -101,6 +103,9 @@ export function ProjectButterActivity({
 	startedSessionId,
 	onStartedSessionRevealed,
 	singleView = false,
+	sessionView = false,
+	onDraftSessionInstruction,
+	latestReplyEntryId,
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
@@ -120,10 +125,21 @@ export function ProjectButterActivity({
 	startedSessionId?: string | null;
 	onStartedSessionRevealed?: () => void;
 	singleView?: boolean;
+	sessionView?: boolean;
+	onDraftSessionInstruction?: (thread: Readonly<{ entry: JiraActivityCommentEntry; session: ProjectButterSessionItem }>, text: string) => void;
+	latestReplyEntryId?: string | null;
 }>) {
 	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
 	const [limit, setLimit] = useState(10);
+	const [view, setView] = useState<"timeline" | "sessions">("timeline");
+	const [visitedSessions, setVisitedSessions] = useState(false);
+	const [focusEntryId, setFocusEntryId] = useState(content.activityFocusId);
+	if (content.activityFocusId !== focusEntryId) {
+		setFocusEntryId(content.activityFocusId);
+		if (content.activityFocusId && !projectButterSessionIdFromEntry(content.activityFocusId)) setView("timeline");
+	}
+	const showSessions = sessionView && view === "sessions";
 	const filters = singleView ? PROJECT_BUTTER_ACTIVITY_FILTERS_ALL : content.activityFilters;
 	const sort = singleView ? "newest" : content.activitySort;
 	const mentionAgents = useProjectButterMentionAgents(sessions);
@@ -145,7 +161,7 @@ export function ProjectButterActivity({
 	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
 	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1));
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
-	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId);
+	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId, showSessions ? "Sessions" : "Activity");
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
 	const startedSession = sessions.find((session) => session.id === startedSessionId);
 	const tintSeed = startedSession ? agentSessionTintSeed(startedSession) : undefined;
@@ -171,7 +187,7 @@ export function ProjectButterActivity({
 		if (!previewEntryId) return;
 		const activity = activityRef.current;
 		const root = activityScrollport(activity);
-		const entry = [...(activity?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === previewEntryId);
+		const entry = [...(feedRef.current?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === previewEntryId);
 		if (!root || !entry) return;
 		const offset = (headerRef.current?.getBoundingClientRect().height ?? 0) + 12;
 		const target = root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset;
@@ -185,7 +201,7 @@ export function ProjectButterActivity({
 		root.addEventListener("touchstart", stop, { passive: true });
 		root.addEventListener("pointerdown", stop, { passive: true });
 		return () => { stop(); root.removeEventListener("wheel", stop); root.removeEventListener("touchstart", stop); root.removeEventListener("pointerdown", stop); };
-	}, [headerRef, previewEntryId, rows.length]);
+	}, [feedRef, headerRef, previewEntryId, rows.length, showSessions]);
 	const sessionFor = (entryId: string) => {
 		const id = projectButterSessionIdFromEntry(entryId);
 		return id ? sessions.find((session) => session.id === id) : undefined;
@@ -207,10 +223,19 @@ export function ProjectButterActivity({
 			{/* Once the header sticks, the visible row's relative time stands in for the title; the h2 keeps its name for assistive tech. */}
 			<div className="shrink-0 text-sm font-medium text-text">
 				{/* Classes sit on the h2 itself: the base h2 heading font would otherwise win over the wrapper's inherited text-sm. */}
-				<h2 className={cn("text-sm font-medium text-text", stuck && visibleRow ? "sr-only" : undefined)}>Activity</h2>
-				{stuck && visibleRow ? <span aria-hidden data-project-butter-activity-header-time>{headerTime.charAt(0).toUpperCase() + headerTime.slice(1)}</span> : null}
+				<h2 className={cn("text-sm font-medium text-text", !showSessions && stuck && visibleRow ? "sr-only" : undefined)}>Activity</h2>
+				{!showSessions && stuck && visibleRow ? <span aria-hidden data-project-butter-activity-header-time>{headerTime.charAt(0).toUpperCase() + headerTime.slice(1)}</span> : null}
 			</div>
-			<ProjectButterActivityTimeline onSeek={seekToProgress} onSelect={scrollToEntry} progress={progress} rows={rows} visibleId={visibleId} />
+			{showSessions ? <span className="flex-1" /> : <ProjectButterActivityTimeline onSeek={seekToProgress} onSelect={scrollToEntry} progress={progress} rows={rows} visibleId={visibleId} />}
+			{sessionView ? (
+				<ToggleGroup aria-label="Activity view" value={[view]} variant="outline" size="sm" onValueChange={([next]) => {
+					if (next === "sessions") setVisitedSessions(true);
+					if (next === "timeline" || next === "sessions") setView(next);
+				}}>
+					<ToggleGroupItem value="timeline">Timeline</ToggleGroupItem>
+					<ToggleGroupItem value="sessions">Agent sessions</ToggleGroupItem>
+				</ToggleGroup>
+			) : null}
 			<div className={cn("ml-auto flex items-center gap-1", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" : null)}>
 				<ProjectButterActivityFilterMenu
 					expandDetails={expandedAudit}
@@ -226,7 +251,7 @@ export function ProjectButterActivity({
 	return (
 		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
 			{header}
-			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
+			<div hidden={showSessions} className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={showSessions ? null : feedRef}>
 				<JiraActivity
 					actors={activityMentionAgents.map((agent) => ({ id: agent.id, name: agent.name, kind: "agent" as const, avatarSrc: agent.avatarSrc, brandName: agent.brandName }))}
 					replyRequest={replyRequest}
@@ -295,7 +320,32 @@ export function ProjectButterActivity({
 					sortOrder="ascending"
 				/>
 			</div>
-			{allRows.length > rows.length ? (
+			{sessionView && visitedSessions ? (
+				<div hidden={!showSessions} ref={showSessions ? feedRef : null}>
+					<ProjectButterActivitySessionThreads
+						entries={content.activityEntries.flatMap((entry) => {
+							const session = entry.kind === "comment" ? sessionFor(entry.id) : undefined;
+							return session && entry.kind === "comment" ? [{ entry, session }] : [];
+						}).sort((a, b) => (b.entry.createdAtMs ?? 0) - (a.entry.createdAtMs ?? 0))}
+						sessions={sessions}
+						currentUser={content.currentUser}
+						selectedReply={selectedReply}
+						onSelectReply={onSelectReply}
+						onDraft={onDraftSessionInstruction}
+						onOpenSession={onOpenSession}
+						latestReplyEntryId={latestReplyEntryId}
+						onEntriesChange={([updated]) => {
+							if (updated?.kind !== "comment") return;
+							const { replyPreviewCount: _preview, defaultRepliesExpanded: _expanded, ...changes } = updated;
+							content.setActivityEntries((entries) => entries.map((entry) => entry.id === updated.id ? { ...entry, ...changes } : entry));
+						}}
+						renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
+						renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} />}
+						renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
+					/>
+				</div>
+			) : null}
+			{!showSessions && allRows.length > rows.length ? (
 				<Button className="mt-3" onClick={() => setLimit(rows.length + 10)} type="button" variant="ghost">
 					Show more activity
 				</Button>

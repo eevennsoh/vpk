@@ -11,6 +11,7 @@ import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
 import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
+import type { ReactNode } from "react";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
@@ -58,7 +59,7 @@ function ActorGlyph({
 	actor: JiraActivityActor;
 	/** `false` skips the avatar's enter scale/fade for high-frequency surfaces such as a scrubber. */
 	animate?: boolean;
-	sizePx: 16 | 32;
+	sizePx: 16 | 24 | 32;
 }>) {
 	if (actor.kind === "person") {
 		// Card leads are named in the adjacent header copy; event glyphs keep an accessible label.
@@ -68,7 +69,7 @@ function ActorGlyph({
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
 		) : (
-			<Avatar animate={animate} label={actor.name} size="xs">
+			<Avatar animate={animate} label={actor.name} size={sizePx === 24 ? "sm" : "xs"}>
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
@@ -102,8 +103,8 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 }
 
 /** The 16px glyph an event row leads with: its semantic icon when set, else the actor avatar. */
-export function JiraActivityEntryGlyph({ actor, animate, icon }: Readonly<{ actor: JiraActivityActor; animate?: boolean; icon?: JiraActivityEventIcon }>) {
-	return icon !== undefined ? <EventGlyph icon={icon} /> : <ActorGlyph actor={actor} animate={animate} sizePx={16} />;
+export function JiraActivityEntryGlyph({ actor, animate, icon, sizePx = 16 }: Readonly<{ actor: JiraActivityActor; animate?: boolean; icon?: JiraActivityEventIcon; sizePx?: 16 | 24 }>) {
+	return icon !== undefined ? <EventGlyph icon={icon} /> : <ActorGlyph actor={actor} animate={animate} sizePx={sizePx} />;
 }
 
 /**
@@ -120,6 +121,7 @@ export function JiraActivityEntryGlyph({ actor, animate, icon }: Readonly<{ acto
  */
 export function JiraActivityNode({
 	actor,
+	renderAvatar,
 	attributedBy,
 	icon,
 	isLast,
@@ -127,6 +129,7 @@ export function JiraActivityNode({
 	tone = "timeline",
 }: Readonly<{
 	actor: JiraActivityActor;
+	renderAvatar?: (avatar: ReactNode) => ReactNode;
 	attributedBy?: { name: string; avatarSrc?: string };
 	icon?: JiraActivityEventIcon;
 	isLast: boolean;
@@ -136,6 +139,9 @@ export function JiraActivityNode({
 	size?: "event" | "card";
 }>) {
 	const isCard = size === "card";
+	const cardAvatar = actor.kind === "agent" && attributedBy
+		? <HumanAgentAvatar agent={{ name: actor.name, appearance: actor.appearance, avatarSrc: actor.avatarSrc, brandName: actor.brandName, vpkLogo: activityActorVpkLogo(actor), fallbackText: initialsOf(actor.name) }} human={attributedBy} sizePx={32} />
+		: <ActorGlyph actor={actor} sizePx={32} />;
 
 	return (
 		<div className="flex w-8 shrink-0 flex-col items-center">
@@ -152,7 +158,7 @@ export function JiraActivityNode({
 				 * Card rows always use the actor avatar in the larger track.
 				 */}
 				{isCard ? (
-					actor.kind === "agent" && attributedBy ? <HumanAgentAvatar agent={{ name: actor.name, appearance: actor.appearance, avatarSrc: actor.avatarSrc, brandName: actor.brandName, vpkLogo: activityActorVpkLogo(actor), fallbackText: initialsOf(actor.name) }} human={attributedBy} sizePx={32} /> : <ActorGlyph actor={actor} sizePx={32} />
+					renderAvatar ? renderAvatar(cardAvatar) : cardAvatar
 				) : (
 					<JiraActivityEntryGlyph actor={actor} icon={icon} />
 				)}
