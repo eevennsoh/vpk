@@ -20,13 +20,14 @@ const SESSION_PERMISSIONS: readonly Readonly<{ value: ButterSessionPermission; l
 	{ value: "team", label: "Team session" },
 ];
 
-export function ButterSessionPermissionControls({ permission, onPermissionChange }: Readonly<{
+export function ButterSessionPermissionControls({ permission, onPermissionChange, teamDisabled = false }: Readonly<{
 	permission: ButterSessionPermission;
 	onPermissionChange: (permission: ButterSessionPermission) => void;
+	teamDisabled?: boolean;
 }>) {
 	return (
 		<ToggleGroup aria-label="Session permission" onValueChange={(values) => { const next = SESSION_PERMISSIONS.find((option) => option.value === values[0]); if (next) onPermissionChange(next.value); }} size="sm" value={[permission]} variant="outline">
-			{SESSION_PERMISSIONS.map((option) => <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
+			{SESSION_PERMISSIONS.map((option) => <ToggleGroupItem disabled={teamDisabled && option.value === "team"} key={option.value} value={option.value}>{option.label}</ToggleGroupItem>)}
 		</ToggleGroup>
 	);
 }

@@ -10,6 +10,7 @@ import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/u
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
+import { LIST_HEADER_TOP_INSET } from "./constants";
 
 export type ViewMode = "stack" | "list";
 
@@ -21,14 +22,11 @@ const relative = (ranAt: string) => {
 	return minutes ? `${minutes[1]} min ago` : ranAt.toLowerCase();
 };
 
-/**
- * When the agent last looked: "Suggested 2 min ago" for the run that brought the latest finds, or "Checked just now"
- * when the latest check found nothing, so a quiet check is acknowledged rather than looking like nothing happened.
- */
+/** Acknowledge checks that found no new suggestions in the heading. */
 export function headline(feed: SuggestionFeed): string {
 	const last = feed.runs.at(-1);
 	if (last && feed.runs.length > 1 && last.ids.length === 0) return `Checked ${relative(last.ranAt)}`;
-	return `Suggested ${relative(feed.runs.findLast((run) => run.ids.length > 0)?.ranAt ?? last?.ranAt ?? "")}`;
+	return "Suggestions for you";
 }
 
 function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children }: Readonly<{ label: string; tip: string; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode }>) {
@@ -65,17 +63,19 @@ export interface PanelHeaderProps {
 	toggleRef: Ref<HTMLButtonElement>;
 }
 
-/** "Suggested 2 min ago" (or the running check), then view toggle · re-run · close. */
 export function PanelHeader({ feed, titleId, view, onToggleView, onRerun, onClose, toggleRef }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
 	return (
-		<header className="flex h-11 shrink-0 items-center gap-2 pr-2 pl-4">
+		<header
+			className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2")}
+			style={{ marginTop: view === "list" ? LIST_HEADER_TOP_INSET : undefined }}
+		>
 			<h2 className="min-w-0 flex-1 text-sm" id={titleId}>
 				<span className="sr-only">Work item suggestions. </span>
 				{running ? (
 					<Shimmer as="span" className="text-sm font-medium text-text-subtle">Checking for suggestions…</Shimmer>
 				) : (
-					<span aria-live="polite" className="font-medium text-text-subtle">{headline(feed)}</span>
+					<span aria-live="polite" className="font-medium text-text">{headline(feed)}</span>
 				)}
 			</h2>
 			<div className="flex items-center gap-0.5">

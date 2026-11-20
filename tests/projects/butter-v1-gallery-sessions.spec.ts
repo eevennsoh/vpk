@@ -1,7 +1,27 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
+
+async function openTeamSessionComparison(page: Page) {
+	await page.goto(appUrl("/components/blocks/agent-session#session-sizes-and-permissions"));
+	await page.locator("#session-sizes-and-permissions").getByRole("button", { name: "Team session", exact: true }).click();
+}
+
+test("Butter v1 disables Team session while keeping the other permissions available", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
+	const team = page.getByRole("button", { name: "Team session", exact: true });
+	const mine = page.getByRole("button", { name: "My session", exact: true });
+	const privateSession = page.getByRole("button", { name: "Private session", exact: true });
+	await expect(team).toBeDisabled();
+	await expect(mine).toHaveAttribute("aria-pressed", "true");
+	await team.click({ force: true });
+	await expect(mine).toHaveAttribute("aria-pressed", "true");
+	await privateSession.click();
+	await expect(privateSession).toHaveAttribute("aria-pressed", "true");
+	await expect(team).toHaveAttribute("aria-pressed", "false");
+});
 
 test("large session cards keep the status label when More actions replaces the icon", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 1000 });
@@ -51,9 +71,7 @@ test("large session cards keep the status label when More actions replaces the i
 test("team session rows do not reveal an access tooltip on hover", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
 	await page.clock.install();
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	for (const label of ["Cloud (Owner) sessions", "Cloud (Viewer) sessions"]) {
 		const rows = page.getByRole("region", { name: label }).locator("article");
 		for (const row of await rows.all()) {
@@ -74,7 +92,7 @@ test("private and team access icons show who started the session", async ({ page
 	const privateIcon = page.getByRole("region", { name: "Cloud sessions" }).locator("article").first().locator('[data-access-mark="private"]');
 	await privateIcon.hover();
 	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman");
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	const teamIcon = page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").first().locator('[data-access-mark="team"]');
 	await teamIcon.hover();
 	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
@@ -186,9 +204,7 @@ test("a cloud session needing input opens a question and resumes after an answer
 
 test("team viewers can answer questions while their composer remains disabled", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	const owner = page.getByRole("region", { name: "Cloud (Owner) sessions" });
 	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
 	await expect(owner.locator("article")).toHaveCount(3);
@@ -206,8 +222,8 @@ test("team viewers can answer questions while their composer remains disabled", 
 	const contextBar = chat.locator("[data-chat-context-bar]");
 	await expect(contextBar).toHaveCount(0);
 	await expect(chat.getByText("Uses AI. Verify results.", { exact: true })).toBeVisible();
-	await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
-	await expect(page.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
+	await expect(chat.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+	await expect(chat.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
 	await viewer.locator("article").last().click();
 	await expect(input).toHaveCount(0);
 	await expect(chat.getByRole("group", { name: "Figma, used by Austin Lee" })).toBeVisible();
@@ -253,9 +269,7 @@ test("team viewers can answer questions while their composer remains disabled", 
 
 test("viewer chat header explains why the prompt input is hidden", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
 	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
@@ -279,9 +293,7 @@ test("viewer chat header explains why the prompt input is hidden", async ({ page
 
 test("team owners retain the question dismiss control", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	await page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
 	const question = page.getByRole("region", { name: "Clarification questions — answer or skip to continue chatting" });
 	await expect(question.getByRole("dialog")).toHaveCSS("box-shadow", /^(?:none|(?:rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(?:, )?)+)$/);
@@ -290,9 +302,7 @@ test("team owners retain the question dismiss control", async ({ page }) => {
 
 test("viewer attribution and question shortcuts fit at a compact viewport", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 720 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	const viewer = page.getByRole("region", { name: "Cloud (Viewer) sessions" });
 	await viewer.locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
@@ -311,9 +321,7 @@ test("viewer attribution and question shortcuts fit at a compact viewport", asyn
 
 test("team viewers can submit a custom question answer", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
-	await page.getByRole("button", { name: "Team session", exact: true }).click();
+	await openTeamSessionComparison(page);
 	await page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").filter({ hasText: "Active air suspension roadmap" }).click();
 	const answer = page.getByRole("textbox", { name: /custom answer/ });
 	await answer.fill("Start with a pilot on rough terrain.");

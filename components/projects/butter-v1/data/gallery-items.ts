@@ -1,4 +1,23 @@
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
+
 import type { GalleryItem } from "@/components/blocks/gallery";
+import { SUGGESTION_WORK_ITEM } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
+
+export const BUTTER_AI_SUGGESTION_ITEM = { code: SUGGESTION_WORK_ITEM.key, title: SUGGESTION_WORK_ITEM.summary };
+export const BUTTER_AI_SUGGESTION_STARTER_ID = "suggest-work-item-fields";
+
+export const BUTTER_AI_SUGGESTION_GREETING = {
+	suggestions: [
+		{
+			id: BUTTER_AI_SUGGESTION_STARTER_ID,
+			label: "Suggest work item fields",
+			icon: LightbulbIcon,
+			type: "skill",
+		},
+		...defaultSuggestions.slice(1),
+	] satisfies readonly RovoSuggestion[],
+};
 
 export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
@@ -43,6 +62,12 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		id: "work-item",
 		title: "Work item",
 		description: "A Jira work item.",
+		size: "landscape",
+	},
+	{
+		id: "ai-suggestions",
+		title: "AI suggestions",
+		description: "Review Rovo suggestions for an empty work item.",
 		size: "landscape",
 	},
 	{

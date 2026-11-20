@@ -14,15 +14,15 @@ import type { Deck, SwipeDirection } from "./use-deck";
  * its order while open, decided cards gathering into the stack stay drawn (hidden behind the last sheet) until they
  * have landed, and every card that leaves is told how to go.
  */
-export function useDeckView(feed: SuggestionFeed, deck: Deck) {
-	const [listed, setListed] = useState(false);
-	const [listBase, setListBase] = useState<readonly SuggestionFieldId[]>([]);
+export function useDeckView(feed: SuggestionFeed, deck: Deck, showList = false) {
+	const [listBase, setListBase] = useState<readonly SuggestionFieldId[] | null>(null);
 	const [gathering, setGathering] = useState<readonly SuggestionFieldId[]>([]);
 	const [exitKind, setExitKind] = useState<CardExit | null>(null);
 	const [returning, setReturning] = useState<{ ids: readonly SuggestionFieldId[]; direction: SwipeDirection } | null>(null);
 
 	// A re-run's finds join the list at the top; everything else keeps its place, decided cards folding in place.
-	const listIds = [...feed.review.suggestions.filter((suggestion) => !listBase.includes(suggestion.id)).map((suggestion) => suggestion.id), ...listBase];
+	if (showList && listBase === null) setListBase(feed.review.suggestions.map((suggestion) => suggestion.id));
+	const listIds = [...feed.review.suggestions.filter((suggestion) => !listBase?.includes(suggestion.id)).map((suggestion) => suggestion.id), ...(listBase ?? [])];
 
 	/** A decided card has landed behind the last sheet and faded there: removing it now is invisible. */
 	const release = (id: SuggestionFieldId) => {
@@ -40,7 +40,6 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck) {
 	const unpack = () => {
 		setListBase([...deck.order, ...deck.reviewed].map((suggestion) => suggestion.id));
 		setGathering([]);
-		setListed(true);
 	};
 
 	const collapse = () => {
@@ -49,7 +48,7 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck) {
 		if (pending.length > 0) setGathering(listIds.filter((id) => feed.review.decisionOf(id) !== "pending"));
 		// Nothing left to stack: the decided rows dissolve as they gather, and the caught-up state takes their place.
 		else setExitKind("fade");
-		setListed(false);
+		setListBase(null);
 	};
 
 	/** Undo in the stack: the card (or a bulk decision's cards) comes back from the side it left by. */
@@ -61,5 +60,5 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck) {
 	};
 
 	const bulkAccept = deck.lastDecision?.bulk && deck.lastDecision.decision === "accept";
-	return { listed, listIds, gathering, exitKind: exitKind ?? (bulkAccept ? "silent" : deck.exitDirection), returning, unpack, collapse, undo, release };
+	return { listed: listBase !== null, listIds, gathering, exitKind: exitKind ?? (bulkAccept ? "silent" : deck.exitDirection), returning, unpack, collapse, undo, release };
 }

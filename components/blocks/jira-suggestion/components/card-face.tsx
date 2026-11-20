@@ -14,6 +14,7 @@ import { CardValue } from "./card-value";
  */
 export const CARD_PAPER = "bg-surface shadow-2xl dark:bg-surface-overlay-hovered dark:ring-1 dark:ring-border";
 export const CARD_PAPER_STYLE = { borderRadius: 8 } as const;
+export const CARD_ACTION_REVEAL = "opacity-0 group-hover/suggestion-card:opacity-100 group-has-[:focus-visible]/suggestion-card:opacity-100 [@media(hover:none)]:opacity-100";
 
 /** A quiet discovery mark for a suggestion the latest re-run found. */
 export function NewTag() {
@@ -45,7 +46,7 @@ export function CardFace({ suggestion, isNew, label, actions, footer, className 
 			<div className="flex min-h-6 items-center gap-2 text-xs font-medium">
 				<span className="grid min-w-0 items-center">{label ?? <span className="text-text-subtle">{suggestion.label}</span>}</span>
 				{isNew ? <NewTag /> : null}
-				{actions ? <span className="-my-1 -mr-1.5 ml-auto flex shrink-0 items-center gap-0.5">{actions}</span> : null}
+				{actions ? <span className={cn("-my-1 -mr-1.5 ml-auto flex shrink-0 items-center gap-0.5 has-[[data-popup-open]]:opacity-100", CARD_ACTION_REVEAL)}>{actions}</span> : null}
 			</div>
 			<CardValue value={suggestion.value} />
 			{footer}

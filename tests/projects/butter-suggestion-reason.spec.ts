@@ -10,8 +10,11 @@ test("PAY-999 explains suggested values in both stack and list views", async ({ 
 	await expect(page.getByText("Payments SDK v2 — Merchant onboarding PRD", { exact: true })).toBeVisible();
 	await page.mouse.move(0, 0);
 	await page.getByRole("button", { name: "Show as list" }).click();
+	const list = page.getByRole("list", { name: "Suggestions", exact: true });
 	for (const field of ["description", "due date", "parent", "labels", "story points"]) {
-		await expect(page.getByRole("button", { name: `Why ${field} was suggested` })).toBeVisible();
+		const trigger = list.getByRole("button", { name: `Why ${field} was suggested` });
+		await expect(trigger).toHaveCount(1);
+		await expect(trigger).toBeVisible();
 	}
 	await page.getByRole("button", { name: "Why due date was suggested" }).click();
 	await expect(page.getByText("Lands three days before the SDK v2.0 general-availability release.")).toBeVisible();

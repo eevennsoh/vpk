@@ -3,7 +3,7 @@ import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import { projectButterSessionInvocation } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
-import { applyProjectButterSuggestion, listProjectButterSuggestions, type ProjectButterSuggestion, type ProjectButterSuggestionField } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
+import { applyProjectButterSuggestion, listProjectButterSuggestions, projectButterSuggestionSnapshot, type ProjectButterSuggestion, type ProjectButterSuggestionField } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { appendProjectButterAudit, PROJECT_BUTTER_SUGGESTION_AUDIT_ID, updateProjectButterSuggestionAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
@@ -65,12 +65,12 @@ export function merchantJourneyAuthoredActivity(stored: readonly JiraActivityEnt
 
 function prepareContent(content: ProjectButterContent, authoredFields: ReadonlySet<ProjectButterJourneyAuthoredField>): ProjectButterContent {
 	const prepared = { ...content, detailFields: { ...content.detailFields } };
-	const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
-	for (const suggestion of listProjectButterSuggestions(snapshot, "payments")) {
+	for (const suggestion of listProjectButterSuggestions(projectButterSuggestionSnapshot(content), "payments")) {
 		if (authoredFields.has(suggestion.field)) continue;
 		applyProjectButterSuggestion<ProjectButterContent["detailFields"]>(suggestion, {
 			setDescription: (value) => { prepared.description = value; },
 			setDescriptionDraft: (value) => { prepared.descriptionDraft = value; },
+			setAssignee: (value) => { prepared.assignee = value; },
 			setDueDate: (value) => { prepared.dueDate = value; },
 			setReporter: (value) => { prepared.reporter = value; },
 			setDetailFields: (update) => { prepared.detailFields = update(prepared.detailFields); },
@@ -82,8 +82,10 @@ function prepareContent(content: ProjectButterContent, authoredFields: ReadonlyS
 function suggestedAuditValue(suggestion: ProjectButterSuggestion): string {
 	switch (suggestion.field) {
 		case "dueDate": return suggestion.date.toISOString().slice(0, 10);
-		case "reporter": return suggestion.person.name;
+		case "reporter":
+		case "assignee": return suggestion.person.name;
 		case "labels":
+		case "acceptanceCriteria":
 		case "components": return suggestion.values.join(", ");
 		default: return suggestion.text;
 	}
@@ -157,8 +159,7 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 	}
 	let presented = { ...prepared, status: active && phase !== "starting" && !authoredFields.has("status") ? phase === "merged" ? "Done" : "In progress" : prepared.status, activityEntries: entries };
 	if (phase) {
-		const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
-		const suggestions = listProjectButterSuggestions(snapshot, "payments").filter((suggestion) => !authoredFields.has(suggestion.field) && (suggestion.field === "description" || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))));
+		const suggestions = listProjectButterSuggestions(projectButterSuggestionSnapshot(content), "payments").filter(({ field }) => !authoredFields.has(field) && (field === "description" || (field !== "acceptanceCriteria" && content.detailFields.order.includes(field) && !content.detailFields.hidden.includes(field))));
 		for (const suggestion of suggestions) {
 			presented = updateProjectButterSuggestionAudit(presented, { id: PROJECT_BUTTER_SUGGESTION_AUDIT_ID, createdAtMs: acceptedAtMs ?? invokedAtMs - 1, label: suggestion.label, before: "", after: suggestedAuditValue(suggestion) }, content.currentUser, "accept");
 		}

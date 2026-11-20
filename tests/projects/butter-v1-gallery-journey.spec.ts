@@ -291,14 +291,17 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select e2e Journey",
 		"Select Agent & app selector",
 		"Select Duplicative sessions",
+		"Select Agent sessions",
 		"Select Board",
+		"Select Board (Card)",
 		"Select Work item",
+		"Select AI suggestions",
 		"Select List",
 		"Select Pull request",
 		"Select Development panel",
 	]);
 	for (const name of ["Board", "Agent & app selector", "Work item", "List", "Pull request", "e2e Journey"]) {
-		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
+		await expect(gallery.getByRole("button", { name: `Select ${name}`, exact: true })).toBeVisible();
 	}
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();

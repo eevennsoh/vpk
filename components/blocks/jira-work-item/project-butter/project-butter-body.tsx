@@ -4,9 +4,11 @@ import { useState, type Ref } from "react";
 import { toast } from "sonner";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { CardValue } from "@/components/blocks/jira-suggestion/components/card-value";
 import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
 import { ProjectButterCommentBar } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-bar";
 import { ProjectButterDescription } from "@/components/blocks/jira-work-item/project-butter/project-butter-description";
+import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
 import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -67,7 +69,16 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 	};
 	return (
 		<div className={compact ? "flex min-w-0 flex-col gap-4" : "flex min-w-0 flex-col gap-6"}>
-			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
+			<div className={empty ? "group/empty-actions -mb-4 flex flex-col" : undefined}>
+				<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
+				{empty && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null}
+			</div>
+			{content.detailFields.acceptanceCriteria.length > 0 ? (
+				<section className="flex flex-col gap-2" aria-label="Acceptance criteria">
+					<h2 className="text-sm font-medium text-text">Acceptance criteria</h2>
+					<CardValue value={{ kind: "checklist", items: content.detailFields.acceptanceCriteria }} />
+				</section>
+			) : null}
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
 			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryId={latestReplyEntryId} onDraftSessionInstruction={({ entry }, text) => {

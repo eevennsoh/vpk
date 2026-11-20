@@ -54,6 +54,7 @@ export const FADE_TOP = 20;
 /** Header and footer heights, so the list can take the rest of the popover's height inside the frame. */
 export const FOOTER_HEIGHT = 56;
 export const CHROME_HEIGHT = 44 + FOOTER_HEIGHT;
+export const LIST_HEADER_TOP_INSET = 8;
 /** Space between list cards. */
 export const LIST_GAP = 10;
 

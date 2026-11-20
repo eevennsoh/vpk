@@ -14,6 +14,7 @@ import { DevelopmentPanel } from "@/components/blocks/development-panel/developm
 import { ProjectButterDevelopmentJourney, type ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { ProjectButterSuggestionPanel } from "@/components/blocks/jira-work-item/project-butter/suggestion-panel";
+import type { ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { useProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { ProjectButterSortablePanel } from "@/components/blocks/jira-work-item/project-butter/project-butter-sortable-panel";
 import { ProjectButterExpandControl } from "@/components/blocks/jira-work-item/project-butter/project-butter-expand-control";
@@ -25,7 +26,7 @@ import { reorderProjectButterPanels, type ProjectButterPanelId } from "@/compone
 
 const TITLES: Record<ProjectButterPanelId, string> = { details: "Details", development: "Development", automation: "Automation", apps: "Apps" };
 
-export function ProjectButterDetails({ agentField, agentFieldHasSessions = false, code = "VITA-1", content, developmentJourney, empty, onDescriptionSuggested, onPanelOrderChange, panelOrder, sidePanel, suggestion = false, suggestionProfile = "default" }: Readonly<{
+export function ProjectButterDetails({ agentField, agentFieldHasSessions = false, code = "VITA-1", content, developmentJourney, empty, onDescriptionSuggested, onPanelOrderChange, panelOrder, renderSuggestions, sidePanel, suggestion = false, suggestionProfile = "default" }: Readonly<{
 	agentField?: ReactNode;
 	agentFieldHasSessions?: boolean;
 	code?: string;
@@ -35,9 +36,10 @@ export function ProjectButterDetails({ agentField, agentFieldHasSessions = false
 	onDescriptionSuggested?: (text: string) => void;
 	onPanelOrderChange: (order: ProjectButterPanelId[]) => void;
 	panelOrder: ProjectButterPanelId[];
+	renderSuggestions?: React.ComponentProps<typeof ProjectButterSuggestionPanel>["renderSuggestions"];
 	sidePanel: boolean;
 	suggestion?: boolean;
-	suggestionProfile?: "default" | "payments";
+	suggestionProfile?: ProjectButterSuggestionProfile;
 }>) {
 	const id = useId();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -54,8 +56,8 @@ export function ProjectButterDetails({ agentField, agentFieldHasSessions = false
 	}
 	return (
 		<aside aria-label="Work item details" className="min-w-0">
-			{suggestion ? <ProjectButterSuggestionPanel fill={fill} profile={suggestionProfile} showIntroLoading={suggestionProfile === "payments"} /> : null}
-			<div className={cn("relative", suggestion && "[&_[data-field-id]]:scroll-mt-20")} data-project-butter-suggestion-fields={fill.columnId}>
+			{suggestion ? <ProjectButterSuggestionPanel fill={fill} profile={suggestionProfile} renderSuggestions={renderSuggestions} showIntroLoading={suggestionProfile === "payments"} /> : null}
+			<div className={cn("relative", suggestion && !renderSuggestions && "[&_[data-field-id]]:scroll-mt-20")} data-project-butter-suggestion-fields={fill.columnId}>
 			<DndContext collisionDetection={closestCenter} id={id} onDragEnd={({ active, over }) => onPanelOrderChange(reorderProjectButterPanels(panelOrder, active.id, over?.id ?? null))} sensors={sensors}>
 				<SortableContext items={order} strategy={verticalListSortingStrategy}>
 					<div className={cn("flex min-w-0 flex-col", sidePanel ? "gap-6" : "gap-4")}>

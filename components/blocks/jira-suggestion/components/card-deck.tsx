@@ -21,6 +21,8 @@ export interface CardDeckProps {
 	deck: Deck;
 	/** "list" lays every card out in rows; otherwise the pending cards form the stack. */
 	listed: boolean;
+	stackInteractive: boolean;
+	floating: boolean;
 	/** The list's order (the stack's order when it unpacked, a re-run's finds on top). */
 	listIds: readonly SuggestionFieldId[];
 	/** Decided cards still drawn behind the last sheet while a list gathers back into the stack. */
@@ -54,7 +56,7 @@ function isFromControl(event: KeyboardEvent<HTMLDivElement>): boolean {
  * out from under the top card into rows 2, 3, … and gathering slides them back underneath it.
  */
 export function CardDeck({
-	feed, deck, listed, listIds, gathering, exitKind, morphing, returning, registerDepth, deckRef,
+	feed, deck, listed, stackInteractive, floating, listIds, gathering, exitKind, morphing, returning, registerDepth, deckRef,
 	whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUnpack, onRelease,
 }: Readonly<CardDeckProps>) {
 	const [hovered, setHovered] = useState(false);
@@ -65,7 +67,8 @@ export function CardDeck({
 	const orderIds = deck.order.map((suggestion) => suggestion.id);
 	const ids = listed ? listIds : [...orderIds, ...gathering.filter((id) => !orderIds.includes(id))];
 	const top = listed ? undefined : deck.order.at(0);
-	const fanned = (hovered || focused) && !grabbed && !listed && orderIds.length > 1;
+	const elevateRearCards = stackInteractive || (listed && !morphing);
+	const fanned = stackInteractive && (hovered || focused) && !grabbed && orderIds.length > 1;
 	const keepInside = useSheetRoom(deckRef, STACK_ROOM, !listed);
 	const commit = (direction: SwipeDirection) => {
 		setGrabbed(null);
@@ -137,11 +140,14 @@ export function CardDeck({
 					const poseTransition: Transition = morphing ? { ...MORPH, delay } : FAN;
 					return (
 						<SuggestionCard
+							blurFace={floating && index === 0}
 							decision={feed.review.decisionOf(id)}
 							delay={delay}
+							elevated={index === 0 || elevateRearCards}
 							entrance={entranceOf(id)}
 							isNew={feed.newIds.has(id)}
 							key={id}
+							floating={floating}
 							morphing={morphing}
 							onCommit={commit}
 							onDecide={(direction) => deck.decide(id, direction)}

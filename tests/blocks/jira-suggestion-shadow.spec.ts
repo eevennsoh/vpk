@@ -6,7 +6,8 @@ async function stackShadows(page: Page) {
 		const paper = slot.firstElementChild;
 		if (!(paper instanceof HTMLElement)) return null;
 		const style = getComputedStyle(paper);
-		return { opacity: Number(style.opacity), shadow: style.boxShadow };
+		const shadowAnimating = paper.getAnimations().some((animation) => animation instanceof CSSTransition && animation.transitionProperty === "box-shadow");
+		return { opacity: Number(style.opacity), shadow: style.boxShadow, shadowAnimating };
 	}));
 }
 
@@ -19,10 +20,12 @@ test("gathering extra suggestions does not deepen the visible stack shadow", asy
 	await expect(page.getByRole("list", { name: "Suggestions" })).toBeVisible();
 	await page.getByRole("button", { name: "Show as stack" }).click();
 	await expect.poll(async () => (await stackShadows(page)).map((card) => card?.opacity)).toEqual([1, 1, 1, 0, 0]);
+	await expect.poll(async () => (await stackShadows(page)).some((card) => card?.shadowAnimating)).toBe(false);
 	const five = await stackShadows(page);
 	await page.getByRole("button", { name: "Dismiss description" }).click();
 	await page.getByRole("button", { name: "Dismiss due date" }).click();
 	await expect.poll(async () => (await stackShadows(page)).map((card) => card?.opacity)).toEqual([1, 1, 1]);
+	await expect.poll(async () => (await stackShadows(page)).some((card) => card?.shadowAnimating)).toBe(false);
 	const three = await stackShadows(page);
 	expect(five.slice(0, 3).map((card) => card?.shadow)).toEqual(three.map((card) => card?.shadow));
 	for (const card of five.slice(3)) {

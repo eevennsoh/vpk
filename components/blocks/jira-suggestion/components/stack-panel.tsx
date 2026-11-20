@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useEffectEvent, useId, useRef, useState, type RefObject } from "react";
-import { AnimatePresence, LayoutGroup, type MotionValue } from "motion/react";
+import { AnimatePresence, cancelFrame, frame, LayoutGroup, type MotionValue } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
-import { CHROME_HEIGHT } from "./constants";
+import { CHROME_HEIGHT, LIST_HEADER_TOP_INSET } from "./constants";
 import { PanelBody } from "./panel-body";
 import { PanelHeader } from "./panel-header";
 import { StackFooter } from "./stack-footer";
@@ -19,6 +19,9 @@ import { usePanelFocus } from "./use-panel-focus";
 
 export interface StackPanelProps {
 	id: string;
+	className?: string;
+	listStage?: "intro" | "list";
+	focusOnMount?: boolean;
 	feed: SuggestionFeed;
 	deck: Deck;
 	panelRef: RefObject<HTMLDivElement | null>;
@@ -31,21 +34,23 @@ export interface StackPanelProps {
 }
 
 /**
- * The suggestions popover: "Suggested 2 min ago" with view · re-run · close, a body that is the stack, the unpacked
+ * The suggestions popover: heading with view · re-run · close, a body that is the stack, the unpacked
  * list or the caught-up state, and the progress footer.
  */
-export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
+export function StackPanel({ id, className, listStage, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
 	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
 	const [grab, setGrab] = useState<{ id: SuggestionFieldId; progress: MotionValue<number> } | null>(null);
 	const checkRef = useRef<HTMLButtonElement>(null);
 	const toggleRef = useRef<HTMLButtonElement>(null);
 	const layoutGroup = useId();
 	const titleId = `${id}-title`;
-	const view = useDeckView(feed, deck);
+	const view = useDeckView(feed, deck, listStage === "list");
+	const headerView = view.listed || listStage === "intro" ? "list" : "stack";
 	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
 	const mode: BodyMode = deck.order.length === 0 ? "caught-up" : view.listed ? "list" : "stack";
+	const stackInteractive = mode === "stack" && listStage === undefined;
 	const shortcuts = [
-		...(mode === "stack" ? ["ArrowLeft", "ArrowRight"] : []),
+		...(stackInteractive ? ["ArrowLeft", "ArrowRight"] : []),
 		...(deck.lastDecision && feed.status !== "running" ? ["Meta+Z", "Control+Z"] : []),
 	].join(" ") || undefined;
 
@@ -67,7 +72,18 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 		if (deck.undoDepth === 1 && panelRef.current?.contains(document.activeElement) && document.activeElement?.closest("[data-deck-controls]")) deckRef.current?.focus({ preventScroll: true });
 		view.undo();
 	};
-	usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, hasCards: deck.order.length > 0 });
+	usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, pendingCount: deck.order.length });
+	useEffect(() => {
+		if (!focusOnMount) return;
+		const focusWhenVisible = () => {
+			const panel = panelRef.current;
+			if (!panel || getComputedStyle(panel).visibility !== "visible") return;
+			panel.focus({ preventScroll: true });
+			cancelFrame(focusWhenVisible);
+		};
+		frame.postRender(focusWhenVisible, true);
+		return () => cancelFrame(focusWhenVisible);
+	}, [focusOnMount, panelRef]);
 
 	const onPanelKeyDown = useEffectEvent((event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
@@ -85,7 +101,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 			event.preventDefault();
 			event.stopPropagation();
 			undo();
-		} else if (!event.metaKey && !event.ctrlKey && mode === "stack" && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+		} else if (!event.metaKey && !event.ctrlKey && stackInteractive && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
 			event.preventDefault();
 			event.stopPropagation();
 			commit(event.key === "ArrowRight" ? "accept" : "dismiss");
@@ -103,21 +119,25 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 		<div
 			aria-keyshortcuts={shortcuts}
 			aria-labelledby={titleId}
-			className="flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay outline-none"
+			className={cn(
+				"flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay shadow-2xl outline-none",
+				listStage !== undefined ? "[&>header]:-mb-3 [&>header]:z-10" : null,
+				className,
+			)}
 			id={id}
 			ref={panelRef}
 			role="dialog"
-			style={{ boxShadow: token("elevation.shadow.overlay") }}
+			style={listStage === undefined ? undefined : { height: maxHeight }}
 			tabIndex={-1}
 		>
 			<PanelHeader
 				feed={feed}
 				onClose={onClose}
-				onRerun={feed.rerun}
-				onToggleView={feed.review.suggestions.length > 0 ? toggleView : undefined}
+				onRerun={listStage === undefined ? feed.rerun : undefined}
+				onToggleView={listStage === undefined && feed.review.suggestions.length > 0 ? toggleView : undefined}
 				titleId={titleId}
 				toggleRef={toggleRef}
-				view={view.listed ? "list" : "stack"}
+				view={headerView}
 			/>
 			<LayoutGroup id={layoutGroup}>
 				<PanelBody
@@ -125,9 +145,11 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 					deck={deck}
 					deckRef={deckRef}
 					feed={feed}
+					floating={listStage !== undefined}
 					grab={grab}
-					maxHeight={maxHeight - CHROME_HEIGHT}
+					maxHeight={maxHeight - CHROME_HEIGHT - (headerView === "list" ? LIST_HEADER_TOP_INSET : 0)}
 					mode={mode}
+					stackInteractive={stackInteractive}
 					onCommit={commit}
 					onGrab={setGrab}
 					onUndo={undo}

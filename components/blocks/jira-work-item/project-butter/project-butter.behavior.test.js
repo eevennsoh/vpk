@@ -42,7 +42,7 @@ test("reply selection stays in the sticky composer until cleared", async () => {
 		entry: "components/blocks/jira-work-item/project-butter/project-butter-body.tsx",
 		exportName: "ProjectButterBody",
 		props: {
-			active: true, content: { activityEntries: [{ id: "invocation-session-1", kind: "comment" }], setCommentDraft() {}, setActivityFilters() {}, setActivityFocusId() {} },
+			active: true, content: { activityEntries: [{ id: "invocation-session-1", kind: "comment" }], detailFields: { acceptanceCriteria: [] }, setCommentDraft() {}, setActivityFilters() {}, setActivityFocusId() {} },
 			detailsSlotRef: null, empty: false, inlineSessionReplies: true, onOpenSession() {}, onPreviewSession() {}, onStartAgent() {}, onStartedSessionRevealed() {}, sessions: [], sidePanel: false,
 		},
 		mocks: {
@@ -468,12 +468,12 @@ test("empty Project butter shows the reference empty layout without placeholder 
 	assert.equal(view.queryByRole("button", { name: "Mention an agent or person" }) !== null, true);
 });
 
-test("empty secondary actions stay reachable by Tab without a prior hover", async () => {
+test("empty quick actions follow the description in the tab order without a prior hover", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
 	const order = view.tabOrder();
 	const index = order.indexOf("Attachment");
 	assert.equal(index > 0, true, "the Attachment quick action must stay in the tab order while visually hidden");
-	assert.deepEqual(order.slice(index, index + 3), ["Attachment", "Subtask", "Linked work"]);
+	assert.deepEqual(order.slice(index - 1, index + 3), ["Work item description", "Attachment", "Subtask", "Linked work"]);
 	await view.focus(document.body);
 	for (let step = 0; step <= index; step += 1) await view.press(null, "Tab");
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Attachment" })), true);

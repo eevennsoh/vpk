@@ -41,6 +41,7 @@ export interface Deck {
 	undo: () => void;
 	/** Return one decided suggestion to pending, wherever it sits in the history. */
 	restore: (id: SuggestionFieldId) => void;
+	restoreDismissed: () => void;
 	/** Re-form the stack from the list: these pending suggestions first, in this order, with a freshly rolled fan. */
 	reform: (ids: readonly SuggestionFieldId[]) => void;
 	/** Bumps whenever the deck should re-form: a new top card, a re-run landing, the list gathering back. */
@@ -151,6 +152,16 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		bringBack({ ids: [id], decision: entry.decision });
 	};
 
+	const restoreDismissed = () => {
+		const ids = review.dismissed.map((suggestion) => suggestion.id);
+		if (ids.length === 0) return;
+		const restored = new Set(ids);
+		setHistory((current) => current
+			.map((entry) => entry.decision === "dismiss" ? { ...entry, ids: entry.ids.filter((id) => !restored.has(id)) } : entry)
+			.filter((entry) => entry.ids.length > 0));
+		bringBack({ ids, decision: "dismiss" });
+	};
+
 	return {
 		order,
 		reviewed,
@@ -163,6 +174,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		decideAll,
 		undo,
 		restore,
+		restoreDismissed,
 		reform: (ids) => {
 			setFront(ids);
 			setGathers((count) => count + 1);

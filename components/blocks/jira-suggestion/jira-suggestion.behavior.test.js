@@ -95,19 +95,34 @@ test("accepting a description and a detail reveals their text in rainbow", async
 	await view.unmount();
 });
 
-test("accept all moves the filling control through the details and undo cancels it", async () => {
+test("accept all moves the filling control through the details and undo cancels it", async (t) => {
 	const view = await renderComponent({ source: SOURCE });
-	await view.click(view.getByRole("button", { name: "Accept all" }));
-	assert.equal(document.querySelector("[data-project-butter-suggestion-cursor]") !== null, true);
-	assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
-	await act(() => new Promise((resolve) => setTimeout(resolve, 350)));
-	assert.equal(document.querySelector('[data-field-id="assignee"] [data-suggestion-text-reveal]') !== null, true);
-	await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
-	assert.equal(document.querySelector('[data-field-id="dueDate"]').textContent.includes("Add due date"), true, "the cursor gives the assignee's color time to appear before continuing");
-	await view.click(view.getByRole("button", { name: "Undo accepting 6 suggestions" }));
+	t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
+	const epoch = Date.now();
+	const origin = performance.now();
+	t.mock.method(performance, "now", () => origin + Date.now() - epoch);
+	t.mock.method(window, "requestAnimationFrame", (callback) => window.setTimeout(() => callback(performance.now()), 16));
+	t.mock.method(window, "cancelAnimationFrame", (timer) => window.clearTimeout(timer));
+	const tick = (ms) => act(async () => t.mock.timers.tick(ms));
+	const cursor = () => document.querySelector("[data-project-butter-suggestion-cursor]");
+	const assigneeRevealing = () => document.querySelector('[data-field-id="assignee"] [data-suggestion-text-reveal]');
+	try {
+		await view.click(view.getByRole("button", { name: "Accept all" }));
+		assert.equal(cursor() !== null, true);
+		assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
+		for (let elapsed = 0; elapsed < 800 && !assigneeRevealing(); elapsed += 16) await tick(16);
+		assert.equal(assigneeRevealing() !== null, true);
+		await tick(250);
+		assert.equal(document.querySelector('[data-field-id="dueDate"]').textContent.includes("Add due date"), true, "the cursor gives the assignee's color time to appear before continuing");
+		await view.click(view.getByRole("button", { name: "Undo accepting 6 suggestions" }));
+		await tick(500);
+		assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
+	} finally {
+		t.mock.restoreAll();
+		t.mock.timers.reset();
+	}
 	await act(() => new Promise((resolve) => setTimeout(resolve, 500)));
-	assert.equal(document.querySelector("[data-project-butter-suggestion-cursor]") === null, true);
-	assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
+	assert.equal(cursor() === null, true);
 	await view.unmount();
 });
 

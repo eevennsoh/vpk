@@ -11,7 +11,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
 function ParagraphValue({ text }: Readonly<{ text: string }>) {
 	const { ref, hasVerticalOverflow, showBottomScrollMask } = useHasVerticalOverflow<HTMLParagraphElement>();
-	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
+	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
 }
 
 /** Values wrap without truncation; longer paragraphs scroll within the card. */

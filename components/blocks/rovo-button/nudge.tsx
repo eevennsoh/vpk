@@ -16,11 +16,13 @@ import type {
 export function FloatingRovoButtonNudge({
 	suggestion,
 	placement,
+	opensDialog = false,
 	positioning = "viewport",
 	shouldReduceMotion = false,
 }: Readonly<{
 	suggestion: FloatingRovoButtonSuggestion;
 	placement?: FloatingRovoButtonPlacement;
+	opensDialog?: boolean;
 	positioning?: FloatingRovoButtonPositioning;
 	shouldReduceMotion?: boolean;
 }>) {
@@ -59,6 +61,7 @@ export function FloatingRovoButtonNudge({
 			}}
 		>
 			<button
+				aria-haspopup={opensDialog ? "dialog" : undefined}
 				aria-label={suggestion.ariaLabel ?? suggestion.label}
 				className="flex min-h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-left text-sm leading-5 font-medium text-text-inverse transition-colors duration-normal ease-out hover:bg-white/10 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none active:bg-white/15"
 				onClick={suggestion.onSelect}

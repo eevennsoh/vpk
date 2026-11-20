@@ -6,6 +6,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import { motion } from "motion/react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { FLOATING_ROVO_BUTTON_CARD_ENTER } from "./motion";
 import type { FloatingRovoButtonOnboardingConfig } from "./types";
 import { motionEase } from "@/lib/motion";
 
@@ -69,7 +70,7 @@ export function FloatingRovoButtonOnboardingPanelInner({
 			exit={{ opacity: 0, transition: { duration: 0 } }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
-				: { duration: 0.14, delay: 0.18, ease: motionEase.out }}
+				: FLOATING_ROVO_BUTTON_CARD_ENTER}
 			onKeyDown={(event) => {
 				if (event.key === "Escape") {
 					event.stopPropagation();

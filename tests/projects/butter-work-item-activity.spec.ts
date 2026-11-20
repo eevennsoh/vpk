@@ -1,6 +1,252 @@
 import { expect, test, type Page } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("AI suggestions starts with an empty work item and opens the Rovo review list", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const description = page.getByRole("textbox", { name: "Work item description" });
+	const launcher = page.getByRole("button", { name: "Review AI suggestions" });
+	const nudge = page.getByRole("button", { name: /^\d+ suggestions$/ });
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const descriptionSuggestion = "Help merchants adopt Payments SDK v2 with a clear onboarding path";
+	const animatedLogo = launcher.locator("svg linearGradient").first();
+	await expect(animatedLogo).toBeAttached();
+	await expect(description).toHaveText("");
+	await expect(page.getByRole("heading", { name: "Improve merchant onboarding for Payments SDK v2" })).toBeVisible();
+	await expect(nudge).toHaveText("6 suggestions");
+	await expect(panel).toHaveCount(0);
+	await expect(animatedLogo).not.toBeAttached();
+	await launcher.focus();
+	await expect(launcher).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	const opening = await launcher.evaluateHandle((button) => {
+		const surface = button.closest(".fixed");
+		if (!surface) throw new Error("The floating Rovo surface was not found");
+		const launcherColor = getComputedStyle(surface).backgroundColor;
+		const motion = {
+			sawHiddenStackDuringExpansion: false,
+			sawFannedStack: false,
+			showedStackEarly: false,
+			listRevealHeightRatio: 0,
+			listRevealDelay: 0,
+			visibleStackFrames: 0,
+			openingHeight: 0,
+			colorChangedDuringGrowth: false,
+			dialogPaintedBackground: false,
+			sampledListFrames: 0,
+			finalHorizontalOffset: 0,
+			minSecondRowGap: Number.MAX_VALUE,
+			maxSecondRowGap: 0,
+			overlappingShadowFrames: 0,
+			sawVisibleOverlap: false,
+			clippedAtTop: false,
+			visibleFaceTransform: false,
+			sawBlurReveal: false,
+			sawRearBlur: false,
+			sawBlankRearFace: false,
+			headShadowChanged: false,
+			done: false,
+		};
+		let firstPanelFrame: number | undefined;
+		let firstShadow: string | undefined;
+		const isBlurred = (style: CSSStyleDeclaration) => style.filter !== "none" && style.filter !== "blur(0px)";
+		const castsShadow = (card: Element) => [...getComputedStyle(card).boxShadow.matchAll(/rgba?\(([^)]+)\)\s+([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px/gu)]
+			.some(([, color, x, y, blur]) => Number(color.split(",")[3] ?? 1) > 0.02 && [x, y, blur].some((value) => Number(value) !== 0));
+		const measure = (now: number) => {
+			const list = surface.querySelector('[role="list"][aria-label="Suggestions"]');
+			const stack = surface.querySelector('[role="dialog"] [aria-roledescription="suggestion stack"]');
+			const dialog = (list ?? stack)?.closest<HTMLElement>('[role="dialog"]');
+			if (dialog?.offsetHeight) {
+				firstPanelFrame ??= now;
+				const heightRatio = dialog.getBoundingClientRect().height / dialog.offsetHeight;
+				motion.dialogPaintedBackground ||= getComputedStyle(dialog).backgroundColor !== "rgba(0, 0, 0, 0)";
+				if (stack && getComputedStyle(stack).visibility === "visible") motion.visibleStackFrames += 1;
+				if (list) {
+					if (motion.sampledListFrames === 0) {
+						motion.listRevealHeightRatio = heightRatio;
+						motion.listRevealDelay = now - firstPanelFrame;
+					}
+					const bounds = list.getBoundingClientRect();
+					const cards = Array.from(list.querySelectorAll(':scope > [role="listitem"] > div'));
+					const papers = cards.map((card) => card.getBoundingClientRect());
+					const scrollportTop = list.closest("[data-scrollport]")?.getBoundingClientRect().top ?? bounds.top;
+					motion.clippedAtTop ||= papers.slice(0, 3).some((paper) => paper.top < scrollportTop - 0.5);
+					const headShadow = getComputedStyle(cards[0]).boxShadow;
+					firstShadow ??= headShadow;
+					motion.headShadowChanged ||= headShadow !== firstShadow;
+					const faces = cards.flatMap((card) => {
+						const face = card.querySelector("[data-suggestion-card-face]");
+						return face ? [getComputedStyle(face)] : [];
+					});
+					const [faceStyle, ...rearFaces] = faces;
+					if (faceStyle?.visibility === "visible" && Number(faceStyle.opacity) > 0) {
+						motion.visibleFaceTransform ||= faceStyle.transform !== "none";
+						motion.sawBlurReveal ||= isBlurred(faceStyle);
+					}
+					motion.sawRearBlur ||= rearFaces.some(isBlurred);
+					motion.sawBlankRearFace ||= rearFaces.some((face) => face.visibility !== "visible" || Number(face.opacity) < 0.99);
+					motion.finalHorizontalOffset = Math.max(0, ...papers.map((paper) =>
+						Math.abs(paper.left + paper.right - bounds.left - bounds.right) / 2));
+					if (papers[0] && papers[1]) {
+						const rowGap = papers[1].top - papers[0].top;
+						motion.minSecondRowGap = Math.min(motion.minSecondRowGap, rowGap);
+						motion.maxSecondRowGap = Math.max(motion.maxSecondRowGap, rowGap);
+						if (papers[1].top < papers[0].bottom - 1) {
+							motion.sawVisibleOverlap ||= Number(getComputedStyle(cards[1]).opacity) > 0.1;
+							if (castsShadow(cards[0]) && castsShadow(cards[1])) motion.overlappingShadowFrames += 1;
+						}
+					}
+					motion.sampledListFrames += 1;
+					if (motion.sampledListFrames >= 36 && faces.length === cards.length && faces.every((face) => face.opacity === "1")) {
+						motion.done = true;
+						return;
+					}
+				}
+				if (stack && heightRatio < 0.94) {
+					motion.openingHeight = dialog.offsetHeight;
+					motion.colorChangedDuringGrowth ||= getComputedStyle(surface).backgroundColor !== launcherColor;
+					motion.sawFannedStack ||= [...stack.querySelectorAll(':scope > [aria-hidden="true"] > div')].some((paper) => {
+						const transform = getComputedStyle(paper).transform;
+						return transform !== "none" && Math.abs(new DOMMatrixReadOnly(transform).b) > 0.01;
+					});
+					if (getComputedStyle(stack).visibility === "hidden") motion.sawHiddenStackDuringExpansion = true;
+					else motion.showedStackEarly = true;
+				}
+			}
+			requestAnimationFrame(measure);
+		};
+		requestAnimationFrame(measure);
+		return motion;
+	});
+	await launcher.press("Enter");
+	await expect(panel).toBeFocused();
+	await expect(panel.getByRole("list", { name: "Suggestions", exact: true }).locator(':scope > [role="listitem"]')).toHaveCount(6);
+	await expect(panel.getByText("Robi Lopez", { exact: true })).toBeVisible();
+	await expect(panel.getByRole("button", { name: "Accept acceptance criteria", exact: true })).toBeVisible();
+	await expect.poll(() => opening.evaluate((motion) => motion.done)).toBe(true);
+	const entrance = await opening.jsonValue();
+	expect(entrance.sawHiddenStackDuringExpansion).toBe(true);
+	expect(entrance.sawFannedStack).toBe(true);
+	expect(entrance.showedStackEarly).toBe(false);
+	expect(entrance.listRevealHeightRatio).toBeGreaterThanOrEqual(0.998);
+	expect(entrance.listRevealDelay).toBeLessThan(500);
+	expect(entrance.visibleStackFrames).toBe(0);
+	expect(entrance.finalHorizontalOffset).toBeLessThan(1);
+	expect(entrance.maxSecondRowGap - entrance.minSecondRowGap).toBeGreaterThan(20);
+	expect(entrance.sawVisibleOverlap).toBe(true);
+	expect(entrance.overlappingShadowFrames).toBe(0);
+	expect(entrance.clippedAtTop).toBe(false);
+	expect(entrance.headShadowChanged).toBe(false);
+	expect(entrance.visibleFaceTransform).toBe(false);
+	expect(entrance.sawBlurReveal).toBe(true);
+	expect(entrance.sawRearBlur).toBe(false);
+	expect(entrance.sawBlankRearFace).toBe(false);
+	expect(entrance.openingHeight).toBe(await panel.evaluate((dialog: HTMLElement) => dialog.offsetHeight));
+	expect(entrance.colorChangedDuringGrowth).toBe(true);
+	expect(entrance.dialogPaintedBackground).toBe(false);
+	await expect.poll(() => panel.evaluate((dialog) => {
+		const surface = dialog.closest(".fixed");
+		if (!surface) throw new Error("The floating Rovo surface was not found");
+		const style = getComputedStyle(surface);
+		const reference = document.createElement("span");
+		reference.style.boxShadow = "var(--ds-shadow-overlay)";
+		surface.append(reference);
+		const overlayShadow = getComputedStyle(reference).boxShadow;
+		reference.remove();
+		return {
+			border: style.borderWidth,
+			outline: style.outlineStyle,
+			radius: style.borderRadius,
+			usesOverlayShadow: overlayShadow !== "none" && style.boxShadow === overlayShadow,
+		};
+	})).toEqual({ border: "0px", outline: "none", radius: "8px", usesOverlayShadow: true });
+	await expect(panel.getByRole("button", { name: /^Show as (stack|list)$/ })).toHaveCount(0);
+	await expect(panel.getByRole("button", { name: "Check for new suggestions" })).toHaveCount(0);
+	await expect(panel.getByRole("button", { name: /^Why .+ was suggested$/ })).toHaveCount(0);
+	const acceptDescription = panel.getByRole("button", { name: "Accept description", exact: true });
+	const descriptionActions = acceptDescription.locator("..");
+	const assigneeActions = panel.getByRole("button", { name: "Accept assignee", exact: true }).locator("..");
+	await expect(descriptionActions).toHaveCSS("opacity", "0");
+	await expect(assigneeActions).toHaveCSS("opacity", "0");
+	await panel.getByText(/^Help merchants adopt Payments SDK v2/).hover();
+	await expect(descriptionActions).toHaveCSS("opacity", "1");
+	await expect(assigneeActions).toHaveCSS("opacity", "0");
+	await page.mouse.move(0, 0);
+	await expect(descriptionActions).toHaveCSS("opacity", "0");
+	await panel.getByRole("button", { name: "Dismiss description", exact: true }).focus();
+	await page.keyboard.press("Tab");
+	await expect(acceptDescription).toBeFocused();
+	await expect(descriptionActions).toHaveCSS("opacity", "1");
+	await page.keyboard.press("Enter");
+	await expect(description).toContainText(descriptionSuggestion);
+	await page.keyboard.press("Escape");
+	await expect(panel).toHaveCount(0);
+	await expect(launcher).toBeFocused();
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await expect(launcher).toBeHidden();
+	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await expect(description).toContainText(descriptionSuggestion);
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(description).toHaveText("");
+	await expect(nudge).toBeVisible();
+	const viewport = page.viewportSize();
+	await nudge.click();
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await expect(panel.getByRole("list", { name: "Suggestions", exact: true })).toBeVisible();
+	if (viewport) await page.setViewportSize(viewport);
+	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
+	await expect(panel).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toBeFocused();
+	await expect(page.getByText("All caught up", { exact: true })).toHaveCount(0);
+	await expect(description).toContainText(descriptionSuggestion);
+	await expect(page.getByRole("button", { name: "Change assignee" })).toContainText("Robi Lopez");
+	await expect(page.getByRole("region", { name: "Acceptance criteria" }).getByRole("listitem")).toHaveCount(3);
+	await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const firstPrompt = chat.getByRole("button", { name: /^(Suggest work item fields|Find related RFPs)/ }).first();
+	await expect(firstPrompt).toHaveAccessibleName("Suggest work item fields");
+	await expect(firstPrompt.locator("svg")).toBeVisible();
+	await expect(chat.getByRole("button", { name: /Last 7 days of work/ })).toHaveCount(0);
+	await firstPrompt.click();
+	await expect(chat).toHaveCount(0);
+	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	await expect(description).toContainText(descriptionSuggestion);
+});
+
+test("Suggest work item fields brings dismissed suggestions back for review", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	await chat.getByRole("button", { name: "Suggest work item fields", exact: true }).click();
+	await expect(chat).toHaveCount(0);
+	await expect(panel).toBeFocused();
+	await expect(panel.getByRole("list", { name: "Suggestions", exact: true }).locator(':scope > [role="listitem"]')).toHaveCount(6);
+	await expect(panel.getByRole("button", { name: /^Accept (?!all)/ })).toHaveCount(6);
+	await expect(page.getByRole("textbox", { name: "Work item description" })).toHaveText("");
+});
+
+test("wheel input over a suggestion's text scrolls the review list", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review AI suggestions" }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const list = panel.getByRole("list", { name: "Suggestions", exact: true });
+	const scrollport = panel.locator("[data-scrollport]");
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0);
+	await list.getByText(/^Help merchants adopt Payments SDK v2/).hover();
+	await page.mouse.wheel(0, 900);
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await expect(list.getByRole("button", { name: "Accept acceptance criteria" })).toBeInViewport();
+});
+
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);

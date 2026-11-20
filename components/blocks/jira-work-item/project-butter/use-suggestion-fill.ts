@@ -8,10 +8,11 @@ import { motionDuration } from "@/lib/motion";
 import {
 	applyProjectButterSuggestion,
 	listProjectButterSuggestions,
+	projectButterSuggestionSnapshot,
 	revertMatchingProjectButterSuggestions,
 	type ProjectButterSuggestion,
 	type ProjectButterSuggestionField,
-	type ProjectButterSuggestionSnapshot,
+	type ProjectButterSuggestionProfile,
 } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { DETAILS_RAIL_GLIDE, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "@/components/blocks/jira-work-item/project-butter/details-rail";
@@ -33,19 +34,8 @@ function settleLayout(): Promise<void> {
 	});
 }
 
-function suggestionSnapshot(content: ProjectButterContent): ProjectButterSuggestionSnapshot {
-	return {
-		description: content.description,
-		descriptionDraft: content.descriptionDraft,
-		dueDate: content.dueDate,
-		reporter: content.reporter,
-		parent: content.detailFields.parent,
-		labels: content.detailFields.labels,
-		components: content.detailFields.components,
-		fixVersion: content.detailFields.fixVersion,
-		storyPoints: content.detailFields.storyPoints,
-		costCenter: content.detailFields.costCenter,
-	};
+function isMainSuggestionField(field: ProjectButterSuggestionField): field is "description" | "acceptanceCriteria" {
+	return field === "description" || field === "acceptanceCriteria";
 }
 
 export interface ProjectButterSuggestionFill {
@@ -76,7 +66,7 @@ export function useProjectButterSuggestionFill(
 	content: ProjectButterContent,
 	enabled: boolean,
 	onRevealMore: () => void,
-	profile: "default" | "payments" = "default",
+	profile: ProjectButterSuggestionProfile = "default",
 	onDescriptionSuggested?: (text: string) => void,
 ): ProjectButterSuggestionFill {
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -114,21 +104,11 @@ export function useProjectButterSuggestionFill(
 	}, []);
 
 	const suggestions = enabled
-		? listProjectButterSuggestions({
-			description: content.description,
-			descriptionDraft: content.descriptionDraft,
-			dueDate: content.dueDate,
-			reporter: content.reporter,
-			parent: content.detailFields.parent,
-			labels: content.detailFields.labels,
-			components: content.detailFields.components,
-			fixVersion: content.detailFields.fixVersion,
-			storyPoints: content.detailFields.storyPoints,
-			costCenter: content.detailFields.costCenter,
-		}, profile)
-			.filter((suggestion) => !dismissed.has(suggestion.field) && (suggestion.field === "description" || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))))
-			.sort((a, b) => (a.field === "description" ? -1 : content.detailFields.order.indexOf(a.field)) - (b.field === "description" ? -1 : content.detailFields.order.indexOf(b.field)))
+		? listProjectButterSuggestions(projectButterSuggestionSnapshot(content), profile)
+			.filter((suggestion) => !dismissed.has(suggestion.field) && (isMainSuggestionField(suggestion.field) || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))))
 		: [];
+	const railIndex = (field: ProjectButterSuggestionField) => isMainSuggestionField(field) ? -1 : content.detailFields.order.indexOf(field);
+	if (profile !== "jira-demo") suggestions.sort((a, b) => railIndex(a.field) - railIndex(b.field));
 
 	function finishShimmer(field: ProjectButterDetailFieldId, text: string) {
 		const timer = shimmerTimers.current.get(field);
@@ -168,19 +148,20 @@ export function useProjectButterSuggestionFill(
 	}
 
 	function shimmerField(suggestion: ProjectButterSuggestion, batch = false): number {
-		if (suggestion.field === "description") return 0;
-		const previous = shimmerTimers.current.get(suggestion.field);
+		const { field, preview } = suggestion;
+		if (isMainSuggestionField(field)) return 0;
+		const previous = shimmerTimers.current.get(field);
 		if (previous !== undefined) window.clearTimeout(previous);
-		shimmerTimers.current.delete(suggestion.field);
-		batchHandoffFields.current.delete(suggestion.field);
-		setShimmerText((current) => ({ ...current, [suggestion.field]: suggestion.preview }));
-		const holdMs = getShimmerWaveEndTime(suggestion.preview, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD) * 1000 + 40;
+		shimmerTimers.current.delete(field);
+		batchHandoffFields.current.delete(field);
+		setShimmerText((current) => ({ ...current, [field]: preview }));
+		const holdMs = getShimmerWaveEndTime(preview, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD) * 1000 + 40;
 		if (batch) {
-			batchHandoffFields.current.set(suggestion.field, suggestion.preview);
+			batchHandoffFields.current.set(field, preview);
 			return holdMs;
 		}
-		const timer = window.setTimeout(() => finishShimmer(suggestion.field, suggestion.preview), holdMs);
-		shimmerTimers.current.set(suggestion.field, timer);
+		const timer = window.setTimeout(() => finishShimmer(field, preview), holdMs);
+		shimmerTimers.current.set(field, timer);
 		return holdMs;
 	}
 
@@ -197,7 +178,7 @@ export function useProjectButterSuggestionFill(
 		if (suggestion.field === "description" && (contentRef.current.description.trim() || contentRef.current.descriptionDraft.trim())) return;
 		applyProjectButterSuggestion(suggestion, contentRef.current);
 		if (suggestion.field === "description" && !reducedRef.current) descriptionRevealRef.current?.(suggestion.text);
-		if (suggestion.field !== "description" && !reducedRef.current) shimmerField(suggestion);
+		if (!reducedRef.current) shimmerField(suggestion);
 	}
 
 	function dismissField(field: ProjectButterSuggestionField) {
@@ -221,7 +202,7 @@ export function useProjectButterSuggestionFill(
 		runId.current += 1;
 		const live = contentRef.current;
 		if (live.setDueDate === target.setDueDate) {
-			revertMatchingProjectButterSuggestions(batch, suggestionSnapshot(live), target);
+			revertMatchingProjectButterSuggestions(batch, projectButterSuggestionSnapshot(live), target);
 		}
 		acceptedTarget.current = null;
 		setAccepted(null);
@@ -278,7 +259,12 @@ export function useProjectButterSuggestionFill(
 			if (!reducedRef.current) descriptionRevealRef.current?.(description.text);
 			applied.push(description);
 		}
-		const detailSuggestions = batch.filter((suggestion) => suggestion.field !== "description");
+		const criteria = batch.find((suggestion) => suggestion.field === "acceptanceCriteria");
+		if (criteria && !undoneFields.current.has(criteria.field)) {
+			applyProjectButterSuggestion(criteria, target);
+			applied.push(criteria);
+		}
+		const detailSuggestions = batch.filter((suggestion) => !isMainSuggestionField(suggestion.field));
 		const rail = target.detailFields.order.filter((field): field is ProjectButterDetailFieldId => field !== "agents" && !target.detailFields.hidden.includes(field));
 		if (detailSuggestions.length && rail.length) {
 			setBarAfter("top");
@@ -339,7 +325,7 @@ export function useProjectButterSuggestionFill(
 		suggestions,
 		undoAccepted,
 		undoField: (suggestion) => {
-			if (suggestion.field !== "description") {
+			if (!isMainSuggestionField(suggestion.field)) {
 				settleField(suggestion.field);
 			}
 			if (activeBatch.current.some((item) => item.field === suggestion.field)) {
@@ -353,7 +339,7 @@ export function useProjectButterSuggestionFill(
 					setBarAfter(null);
 				}
 			}
-			revertMatchingProjectButterSuggestions([suggestion], suggestionSnapshot(contentRef.current), contentRef.current);
+			revertMatchingProjectButterSuggestions([suggestion], projectButterSuggestionSnapshot(contentRef.current), contentRef.current);
 		},
 	};
 }

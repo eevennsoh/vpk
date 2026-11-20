@@ -146,7 +146,9 @@ export function ChatPanelConversation({
 								suggestions={resolvedGreeting?.suggestions}
 								directoryAutocompleteState={directoryAutocompleteState}
 								useWideSuggestionLayout={shouldUseWideDirectoryAutocompleteList}
-								onSuggestionClick={handleGreetingSuggestionClick}
+								onSuggestionClick={(suggestion) => {
+									if (!resolvedGreeting?.onSuggestionSelect?.(suggestion)) handleGreetingSuggestionClick(suggestion);
+								}}
 								onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
 							/>
 						</ChatScrollerItem>

@@ -1,4 +1,6 @@
-import { projectButterPersonAvatar } from "./people.ts";
+import { WORK_ITEM_SUGGESTIONS, type WorkItemSuggestion } from "../../jira-suggestion/data/suggestions.ts";
+import { projectButterPersonAvatar, PROJECT_BUTTER_UNASSIGNED } from "./people.ts";
+import type { ProjectButterContent } from "./use-project-butter-content.ts";
 
 /** Empty work item fields the Suggestion state can fill, in review order. */
 export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
@@ -13,11 +15,14 @@ export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
 	"costCenter",
 ] as const;
 
-export type ProjectButterSuggestionField = typeof PROJECT_BUTTER_SUGGESTION_FIELDS[number];
+export type ProjectButterSuggestionField = typeof PROJECT_BUTTER_SUGGESTION_FIELDS[number] | "assignee" | "acceptanceCriteria";
+export type ProjectButterSuggestionProfile = "default" | "payments" | "jira-demo";
 
 export interface ProjectButterSuggestionSnapshot {
 	description: string;
 	descriptionDraft: string;
+	acceptanceCriteria: readonly string[];
+	assignee: { name: string };
 	dueDate: Date | undefined;
 	reporter: { name: string } | null;
 	parent: string;
@@ -28,20 +33,33 @@ export interface ProjectButterSuggestionSnapshot {
 	costCenter: string;
 }
 
+export function projectButterSuggestionSnapshot(content: ProjectButterContent): ProjectButterSuggestionSnapshot {
+	return {
+		...content.detailFields,
+		assignee: content.assignee,
+		description: content.description,
+		descriptionDraft: content.descriptionDraft,
+		dueDate: content.dueDate,
+		reporter: content.reporter,
+	};
+}
+
 interface ProjectButterSuggestionBase {
 	field: ProjectButterSuggestionField;
 	label: string;
 	preview: string;
+	card?: WorkItemSuggestion;
 }
 
 export type ProjectButterSuggestion =
 	| (ProjectButterSuggestionBase & { field: "dueDate"; date: Date })
-	| (ProjectButterSuggestionBase & { field: "reporter"; person: { name: string; avatarUrl: string } })
+	| (ProjectButterSuggestionBase & { field: "reporter" | "assignee"; person: { name: string; avatarUrl: string } })
 	| (ProjectButterSuggestionBase & { field: "description"; text: string })
 	| (ProjectButterSuggestionBase & { field: "parent" | "fixVersion" | "storyPoints" | "costCenter"; text: string })
-	| (ProjectButterSuggestionBase & { field: "labels" | "components"; values: readonly string[] });
+	| (ProjectButterSuggestionBase & { field: "labels" | "components" | "acceptanceCriteria"; values: readonly string[] });
 
 export interface ProjectButterSuggestionFieldPatch {
+	acceptanceCriteria: string[];
 	parent: string;
 	labels: string[];
 	components: string[];
@@ -69,6 +87,8 @@ const SUGGESTED_REPORTER = {
 
 const LABELS: Record<ProjectButterSuggestionField, string> = {
 	description: "Description",
+	assignee: "Assignee",
+	acceptanceCriteria: "Acceptance criteria",
 	dueDate: "Due Date",
 	parent: "Parent",
 	labels: "Labels",
@@ -87,6 +107,10 @@ function isSuggestionFieldEmpty(field: ProjectButterSuggestionField, snapshot: P
 	switch (field) {
 		case "description":
 			return !snapshot.description.trim() && !snapshot.descriptionDraft.trim();
+		case "assignee":
+			return snapshot.assignee.name === "Unassigned" || snapshot.assignee.name === "Automatic";
+		case "acceptanceCriteria":
+			return snapshot.acceptanceCriteria.length === 0;
 		case "dueDate":
 			return snapshot.dueDate == null;
 		case "reporter":
@@ -110,7 +134,7 @@ function isSuggestionFieldEmpty(field: ProjectButterSuggestionField, snapshot: P
 	}
 }
 
-function createSuggestion(field: ProjectButterSuggestionField, profile: "default" | "payments"): ProjectButterSuggestion {
+function createSuggestion(field: typeof PROJECT_BUTTER_SUGGESTION_FIELDS[number], profile: "default" | "payments"): ProjectButterSuggestion {
 	const label = LABELS[field];
 	if (profile === "payments") {
 		switch (field) {
@@ -148,8 +172,21 @@ function createSuggestion(field: ProjectButterSuggestionField, profile: "default
 	}
 }
 
+function fromDemoCard(card: (typeof WORK_ITEM_SUGGESTIONS)[number]): ProjectButterSuggestion {
+	const base = { card, label: card.label, preview: card.valueText };
+	switch (card.id) {
+		case "description": return { ...base, field: card.id, text: card.value.text };
+		case "assignee": return { ...base, field: card.id, person: card.value.person };
+		case "dueDate": return { ...base, field: card.id, date: new Date(card.value.iso) };
+		case "parent": return { ...base, field: card.id, text: card.valueText };
+		case "labels": return { ...base, field: card.id, values: card.value.labels };
+		case "acceptanceCriteria": return { ...base, field: card.id, values: card.value.items };
+	}
+}
+
 /** Pending suggestions for fields that are still empty. */
-export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: "default" | "payments" = "default"): ProjectButterSuggestion[] {
+export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: ProjectButterSuggestionProfile = "default"): ProjectButterSuggestion[] {
+	if (profile === "jira-demo") return WORK_ITEM_SUGGESTIONS.filter((card) => isSuggestionFieldEmpty(card.id, snapshot)).map(fromDemoCard);
 	return PROJECT_BUTTER_SUGGESTION_FIELDS
 		.filter((field) => isSuggestionFieldEmpty(field, snapshot))
 		.map((field) => createSuggestion(field, profile));
@@ -161,6 +198,7 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
+		setAssignee: (person: { name: string; avatarUrl?: string }) => void;
 		setDueDate: (date: Date) => void;
 		setReporter: (person: { name: string; avatarUrl: string }) => void;
 		setDetailFields: (update: (current: T) => T) => void;
@@ -179,6 +217,9 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 			case "reporter":
 				target.setReporter(suggestion.person);
 				return;
+			case "assignee":
+				target.setAssignee(suggestion.person);
+				return;
 			case "parent":
 			case "fixVersion":
 			case "storyPoints":
@@ -187,6 +228,7 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 				return;
 			case "labels":
 			case "components":
+			case "acceptanceCriteria":
 				target.setDetailFields((current) => ({ ...current, [suggestion.field]: [...suggestion.values] }));
 				return;
 			default: {
@@ -211,8 +253,11 @@ export function projectButterSuggestionMatches(
 			return snapshot.dueDate?.getTime() === suggestion.date.getTime();
 		case "reporter":
 			return snapshot.reporter?.name === suggestion.person.name;
+		case "assignee":
+			return snapshot.assignee.name === suggestion.person.name;
 		case "labels":
-		case "components": {
+		case "components":
+		case "acceptanceCriteria": {
 			const current = snapshot[suggestion.field];
 			return current.length === suggestion.values.length
 				&& current.every((value, index) => value === suggestion.values[index]);
@@ -236,6 +281,7 @@ export function revertMatchingProjectButterSuggestions<T extends ProjectButterSu
 	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
+		setAssignee: (person: { name: string; avatarUrl?: string }) => void;
 		setDueDate: (date: Date | undefined) => void;
 		setReporter: (person: { name: string; avatarUrl: string } | null) => void;
 		setDetailFields: (update: (current: T) => T) => void;
@@ -253,6 +299,7 @@ export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFi
 	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
+		setAssignee: (person: { name: string; avatarUrl?: string }) => void;
 		setDueDate: (date: Date | undefined) => void;
 		setReporter: (person: { name: string; avatarUrl: string } | null) => void;
 		setDetailFields: (update: (current: T) => T) => void;
@@ -271,6 +318,9 @@ export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFi
 			case "reporter":
 				target.setReporter(null);
 				return;
+			case "assignee":
+				target.setAssignee(PROJECT_BUTTER_UNASSIGNED);
+				return;
 			case "parent":
 			case "fixVersion":
 			case "storyPoints":
@@ -279,6 +329,7 @@ export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFi
 				return;
 			case "labels":
 			case "components":
+			case "acceptanceCriteria":
 				target.setDetailFields((current) => ({ ...current, [field]: [] }));
 				return;
 			default: {

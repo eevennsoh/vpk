@@ -78,7 +78,7 @@ export const SUGGESTION_WORK_ITEM: SuggestionWorkItem = {
 const ROBI = { name: "Robi Lopez", avatarUrl: projectButterPersonAvatar("Robi Lopez"), role: "Senior engineer · Payments Platform" };
 const AMIRA = "Amira Badran";
 
-export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
+export const WORK_ITEM_SUGGESTIONS = [
 	{
 		id: "description",
 		label: "Description",
@@ -184,7 +184,7 @@ export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
 			],
 		},
 	},
-];
+] as const satisfies readonly WorkItemSuggestion[];
 
 /**
  * Suggestions are ongoing: the agent re-runs as the work item changes. This batch only arrives on the next run,

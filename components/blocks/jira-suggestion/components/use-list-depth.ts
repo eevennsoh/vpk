@@ -27,7 +27,7 @@ const maskFor = (top: number, bottom: number) => `linear-gradient(to bottom, tra
  * the stack ⇄ list snapshot was taken (so cards leave from where they visibly are) but before Motion measures where
  * they are going. Reduced motion keeps every card full size.
  */
-export function useListDepth(scroller: RefObject<HTMLElement | null>, content: RefObject<HTMLElement | null>, active: boolean, viewport: () => number) {
+export function useListDepth(scroller: RefObject<HTMLElement | null>, content: RefObject<HTMLElement | null>, active: boolean, viewport?: () => number) {
 	const slots = useRef(new Map<HTMLElement, Slot>());
 	const geometry = useRef({ viewport: 0, scrollHeight: 0, offset: 0 });
 	const observer = useRef<ResizeObserver | null>(null);
@@ -59,7 +59,7 @@ export function useListDepth(scroller: RefObject<HTMLElement | null>, content: R
 	const measure = useCallback(() => {
 		const element = scroller.current;
 		if (!element) return;
-		const height = viewport() || element.clientHeight;
+		const height = viewport?.() || element.clientHeight;
 		// While the body eases, its scrollHeight is at least its own height; the content's is what the list will scroll.
 		const offset = content.current?.offsetTop ?? 0;
 		geometry.current = { viewport: height, scrollHeight: Math.max(height, offset + (content.current?.offsetHeight ?? 0)), offset };

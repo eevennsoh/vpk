@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { JiraSuggestionControl } from "@/components/blocks/jira-suggestion";
 import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type SuggestionValue, type WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed, SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { useSuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
-import type { ProjectButterSuggestion } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
+import type { ProjectButterSuggestion, ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
@@ -21,14 +21,16 @@ function suggestionValue(suggestion: ProjectButterSuggestion): SuggestionValue {
 	switch (suggestion.field) {
 		case "description": return { kind: "paragraph", text: suggestion.text };
 		case "dueDate": return { kind: "date", iso: suggestion.date.toISOString(), display: suggestion.preview, relative: "" };
+		case "assignee":
 		case "reporter": return { kind: "person", person: { ...suggestion.person, role: "" } };
+		case "acceptanceCriteria": return { kind: "checklist", items: suggestion.values };
 		case "labels":
 		case "components": return { kind: "labels", labels: suggestion.values };
 		default: return { kind: "paragraph", text: suggestion.text };
 	}
 }
 
-function suggestionReason(suggestion: ProjectButterSuggestion, profile: "default" | "payments"): Pick<WorkItemSuggestion, "confidence" | "reason"> {
+function suggestionReason(suggestion: ProjectButterSuggestion, profile: ProjectButterSuggestionProfile): Pick<WorkItemSuggestion, "confidence" | "reason"> {
 	const example = profile === "payments" ? [...WORK_ITEM_SUGGESTIONS, ...FOLLOW_UP_SUGGESTIONS].find((item) => item.id === suggestion.field) : undefined;
 	if (example) {
 		const detail = suggestion.field === "description"
@@ -50,8 +52,8 @@ function suggestionReason(suggestion: ProjectButterSuggestion, profile: "default
 	return { confidence: "medium", reason: { headline, detail, evidence: [{ id: `butter-${suggestion.field}`, kind: "history", title: source, meta: "Example project context" }] } };
 }
 
-function toCard(suggestion: ProjectButterSuggestion, profile: "default" | "payments"): WorkItemSuggestion {
-	return {
+function toCard(suggestion: ProjectButterSuggestion, profile: ProjectButterSuggestionProfile): WorkItemSuggestion {
+	return suggestion.card ?? {
 		id: suggestion.field,
 		label: suggestion.label,
 		currentDisplay: `Add ${suggestion.label.toLowerCase()}`,
@@ -62,7 +64,12 @@ function toCard(suggestion: ProjectButterSuggestion, profile: "default" | "payme
 }
 
 /** Connect the shared suggestion stack to Butter's editable fields. */
-export function ProjectButterSuggestionPanel({ fill, profile = "default", showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; profile?: "default" | "payments"; showIntroLoading?: boolean }>) {
+export function ProjectButterSuggestionPanel({ fill, profile = "default", showIntroLoading = false, renderSuggestions }: Readonly<{
+	fill: ProjectButterSuggestionFill;
+	profile?: ProjectButterSuggestionProfile;
+	showIntroLoading?: boolean;
+	renderSuggestions?: (feed: SuggestionFeed) => ReactNode;
+}>) {
 	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
 	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
 	const suggestions = additions.length ? [...saved, ...additions] : saved;
@@ -115,6 +122,7 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 	};
 
 	if (!suggestions.length) return null;
+	if (renderSuggestions) return renderSuggestions(feed);
 	return (
 		<div className="sticky top-0 z-40 -mx-6 w-[calc(100%+3rem)] bg-surface px-6 pb-3">
 			<JiraSuggestionControl feed={feed} showIntroLoading={showIntroLoading} sources={SOURCES} />

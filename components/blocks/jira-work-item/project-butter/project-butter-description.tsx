@@ -96,7 +96,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 		</div>
 	);
 	return empty ? (
-		<section aria-label="Description" className="-mx-1 -mb-4 px-1 pt-1">{editor}</section>
+		<section aria-label="Description" className="-mx-1 px-1 pt-1">{editor}</section>
 	) : (
 		<section aria-labelledby={`${id}-description`}>
 			<h2 className="text-sm font-medium text-text" id={`${id}-description`}>Description</h2>

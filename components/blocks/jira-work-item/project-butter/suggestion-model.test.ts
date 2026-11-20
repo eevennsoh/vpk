@@ -15,6 +15,8 @@ function emptySnapshot(): ProjectButterSuggestionSnapshot {
 	return {
 		description: "",
 		descriptionDraft: "",
+		assignee: { name: "Unassigned" },
+		acceptanceCriteria: [],
 		dueDate: undefined,
 		reporter: null,
 		parent: "",
@@ -89,6 +91,7 @@ test("payments demo suggests values relevant to merchant onboarding", () => {
 
 test("accepting one suggestion writes only that field", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -98,6 +101,7 @@ test("accepting one suggestion writes only that field", () => {
 	};
 	const written: { dueDate?: Date; reporter?: { name: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date) {
@@ -127,6 +131,7 @@ test("accepting one suggestion writes only that field", () => {
 
 test("clearing an accepted batch restores the empty fields", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -136,6 +141,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date | undefined) {
@@ -156,6 +162,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 	assert.equal(written.dueDate, undefined);
 	assert.equal(written.reporter, null);
 	assert.deepEqual(fields, {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -164,6 +171,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 		costCenter: "",
 	});
 	assert.equal(listProjectButterSuggestions({
+		...emptySnapshot(),
 		description: "",
 		descriptionDraft: "",
 		dueDate: written.dueDate,
@@ -174,6 +182,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 
 test("undo restores only fields that still match the accepted suggestion", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -183,6 +192,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date | undefined) {
@@ -199,6 +209,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 	for (const suggestion of suggestions) applyProjectButterSuggestion(suggestion, target);
 	fields.parent = "Edited after accept";
 	const snapshot: ProjectButterSuggestionSnapshot = {
+		...emptySnapshot(),
 		description: "",
 		descriptionDraft: "",
 		dueDate: written.dueDate,
@@ -214,6 +225,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 
 test("filled details produce no suggestions", () => {
 	const suggestions = listProjectButterSuggestions({
+		...emptySnapshot(),
 		description: "A description",
 		descriptionDraft: "A description",
 		dueDate: new Date(Date.UTC(2026, 11, 15)),

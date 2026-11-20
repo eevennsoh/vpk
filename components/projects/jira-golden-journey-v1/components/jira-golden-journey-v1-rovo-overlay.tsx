@@ -22,6 +22,7 @@ interface JgpRovoOverlayProps {
 	contained?: boolean;
 	agentCreator?: AgentResultCreator;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	greeting?: ChatPanelProps["greeting"];
 	composerPrefillRequest?: ChatComposerPrefillRequest;
 	onComposerPrefillConsumed?: (requestKey: number) => void;
 	externalThinkingMessageId?: string | null;
@@ -54,6 +55,7 @@ export function JgpRovoOverlay({
 	contained = false,
 	agentCreator,
 	chatContextBar,
+	greeting,
 	composerPrefillRequest,
 	onComposerPrefillConsumed,
 	externalThinkingMessageId,
@@ -156,6 +158,7 @@ export function JgpRovoOverlay({
 						composerPrefillRequest={composerPrefillRequest}
 						onComposerPrefillConsumed={onComposerPrefillConsumed}
 						externalThinkingMessageId={externalThinkingMessageId}
+						greeting={greeting}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}
 						markAnsweredQuestionTraces={Boolean(onInterceptSubmit || onQuestionAnswer)}

@@ -14,8 +14,7 @@ import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data
 
 import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
 import { MERCHANT_ACKNOWLEDGMENT_DELAY_MS, merchantJourneyAuthoredActivity, merchantJourneyAuthoredUpdate, projectMerchantJourney, type ProjectButterJourneyPhase, type ProjectButterJourneyAuthoredField } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
-import { PROJECT_BUTTER_SUGGESTION_FIELDS } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
-import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
+import { PROJECT_BUTTER_SUGGESTION_FIELDS, type ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { ProjectButterSessionChat } from "@/components/blocks/jira-work-item/project-butter/project-butter-session-chat";
 import { ProjectButterShell } from "@/components/blocks/jira-work-item/project-butter/project-butter-shell";
 import type { ProjectButterPresentation, ProjectButterShellContext } from "@/components/blocks/jira-work-item/project-butter/presentation";
@@ -51,7 +50,8 @@ export interface ProjectButterJiraWorkItemProps {
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: ReactNode;
 	developmentJourney?: ProjectButterDevelopmentJourneyProps;
-	suggestionProfile?: "default" | "payments";
+	suggestionProfile?: ProjectButterSuggestionProfile;
+	renderSuggestions?: React.ComponentProps<typeof ProjectButterDetails>["renderSuggestions"];
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
 	workItem?: WorkItemData;
@@ -92,6 +92,7 @@ export function ProjectButterJiraWorkItem({
 	journeyControls,
 	developmentJourney,
 	suggestionProfile = "default",
+	renderSuggestions,
 	initialPresentation = "full-screen",
 	shell = "standalone",
 	workItem,
@@ -370,6 +371,7 @@ export function ProjectButterJiraWorkItem({
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
 			panelOrder={panelOrder}
+			renderSuggestions={renderSuggestions}
 			sidePanel={sidePanel}
 			suggestion={suggestion}
 			suggestionProfile={suggestionProfile}
@@ -396,9 +398,6 @@ export function ProjectButterJiraWorkItem({
 				onClose={onClose}
 				onPresentationChange={setPresentation}
 				showFullScreenClose={shell === "project"}
-				secondaryActions={
-					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
-				}
 				presentation={presentation}
 				workItem={workItem}
 			/>
