@@ -465,13 +465,13 @@
 						"method": "GET",
 						"path": "/api/orchestrator/log",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/timeline",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					}
 				]
 			},
@@ -609,7 +609,7 @@
 						"method": "GET",
 						"path": "/api/checkpoints",
 						"source": "backend/routes/rovo-app.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
@@ -4400,10 +4400,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 452,
+			"manifestEntryCount": 453,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 446,
+				"live": 447,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4452,7 +4452,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 122,
+				"entryCount": 123,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4895,6 +4895,13 @@
 						"importPath": "@/components/blocks/jira-work-item",
 						"status": "live",
 						"note": "Variant dirs are independent forks with separate consumers, except experimental-v4 and experimental-v5: they render the experimental-v3 implementation and are reachable only from this block's own demos."
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-work-item-timeline",
+						"name": "Jira Work Item Timeline",
+						"importPath": "@/components/blocks/jira-work-item-timeline",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
@@ -7800,7 +7807,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-remote"
 			},
 			{
-				"description": "Shared execution policy for VPK scheduled jobs that investigate one maintenance candidate, make a review-ready change, and open or update a pull request. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, main-health, baseline burn-down, skill-health, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
+				"description": "Shared execution policy for VPK scheduled jobs that investigate one maintenance candidate, make a review-ready change, open or update a pull request, and label it for merge eligibility without merging. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, main-health, baseline burn-down, skill-health, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
 				"name": "vpk-scheduled-automation",
 				"path": ".agents/skills/vpk-scheduled-automation/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-scheduled-automation"

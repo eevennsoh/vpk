@@ -1,0 +1,10 @@
+version = 1
+id = "deprecation-audit"
+kind = "cron"
+name = "Deprecation audit"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nFind exactly one obsolete tracked VPK surface and remove it only when current usage evidence proves the cleanup is safe. Good candidates are unused compatibility aliases, retired wrappers, dead exports, superseded flags, stale config entries, or tests/docs whose owner no longer exists. Return no PR when compatibility or ownership remains ambiguous.\n\n## Evidence and judgment\nProve zero tracked imports/callers plus no runtime, dynamic, generated, config, documentation, or external contract consumer. Inspect history to understand why the surface exists and identify its replacement. Remove the complete obsolete contract and update focused absence/behavior tests; do not replace it with another alias or broaden into migration work.\n\n## Handoff\nFor a successful change, use title `[Automation] Deprecation audit: <short summary>` and existing labels `automation`, `codex`, and `refactor`. Include usage proof, replacement owner, removed surface, regression/absence proof, shared-policy validation, freshness/overlap evidence, and reviewer focus.\n\n## Stop conditions\nReturn no PR when usage evidence is incomplete, a live compatibility consumer may remain, the replacement is unclear, or removal requires a broad migration."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=4;BYMINUTE=40;BYDAY=SA"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

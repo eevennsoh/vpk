@@ -101,6 +101,7 @@ function createRovoRuntimeAvailabilityComposition({
 		getRovoPool: availabilityService.getRovoPool,
 		isRovoAvailable: availabilityService.isRovoAvailable,
 		pausedRovoToolCallStore: deferredToolCallState.pausedRovoToolCallStore,
+		peekDeferredToolCall: deferredToolCallState.peekDeferredToolCall,
 		refreshRovoAvailability: availabilityService.refreshRovoAvailability,
 		registerActiveDeferredToolCall: deferredToolCallState.registerActiveDeferredToolCall,
 		registerPausedRovoToolCall: deferredToolCallState.registerPausedRovoToolCall,

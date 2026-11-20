@@ -94,6 +94,7 @@ function createRuntimeRouteStackTestDependencies() {
 		deleteThreadBrowserWorkspace: noop,
 		destroyMirrorBrowser: noop,
 		detachPausedRovoToolCall: noop,
+		peekDeferredToolCall: () => ({ active: null, paused: null }),
 		ensureThreadBrowserWorkspace: noop,
 		generateAgentDataFlowText: noop,
 		generateAgentsRfpDemoReportPreview: noop,

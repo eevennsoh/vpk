@@ -11,6 +11,7 @@ const {
 	buildRovoAppThreadSummary,
 	createRovoAppRouter,
 } = require("./rovo-app");
+const { createRuntimeAdminControls } = require("../middleware/runtime-admin");
 const { createDependencies, withServer } = require("./rovo-app-test-dependencies");
 
 test("rovo app router validates required dependencies", () => {
@@ -218,9 +219,42 @@ test("checkpoint routes keep runtime admin protection", async () => {
 		const checkpoint = (await createResponse.json()).checkpoint;
 		assert.equal(checkpoint.name, "release");
 
-		const listResponse = await fetch(`${baseUrl}/api/checkpoints`);
+		const blockedList = await fetch(`${baseUrl}/api/checkpoints`);
+		assert.equal(blockedList.status, 403);
+
+		const listResponse = await fetch(`${baseUrl}/api/checkpoints`, { headers: { "x-runtime-admin": "ok" } });
 		assert.equal(listResponse.status, 200);
 		assert.deepEqual(await listResponse.json(), { checkpoints: [checkpoint] });
+	});
+});
+
+test("with the real runtime admin gate, a signed-in caller cannot list checkpoints but the admin and a dev caller can", async () => {
+	const silent = { error() {} };
+	const production = createRuntimeAdminControls({
+		allowedOrigins: [],
+		consoleImpl: silent,
+		env: { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "admin-secret" },
+		exit: () => {},
+	});
+	const dependencies = createDependencies({ requireRuntimeAdmin: production.requireRuntimeAdmin });
+	dependencies.state.checkpoints.set("checkpoint-1", { id: "checkpoint-1", name: "release" });
+	await withServer(dependencies, async (baseUrl) => {
+		const signedIn = await fetch(`${baseUrl}/api/checkpoints`, { headers: { "x-slauth-subject": "bob" } });
+		assert.equal(signedIn.status, 403);
+		assert.deepEqual(await signedIn.json(), { error: "Runtime admin authorization required" });
+
+		const admin = await fetch(`${baseUrl}/api/checkpoints`, {
+			headers: { "x-slauth-subject": "alice", "x-vpk-runtime-admin-token": "admin-secret" },
+		});
+		assert.equal(admin.status, 200);
+		assert.deepEqual((await admin.json()).checkpoints.map((checkpoint) => checkpoint.id), ["checkpoint-1"]);
+	}, { env: { NODE_ENV: "production" } });
+
+	const development = createRuntimeAdminControls({ allowedOrigins: [], consoleImpl: silent, env: {}, exit: () => {} });
+	const localDependencies = createDependencies({ requireRuntimeAdmin: development.requireRuntimeAdmin });
+	await withServer(localDependencies, async (baseUrl) => {
+		const local = await fetch(`${baseUrl}/api/checkpoints`);
+		assert.equal(local.status, 200);
 	});
 });
 

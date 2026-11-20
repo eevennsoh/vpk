@@ -27,8 +27,8 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 	onFiltersChange?: (filters: ProjectButterActivityFilters) => void;
 	sort: ProjectButterActivitySort;
 	onSortChange?: (sort: ProjectButterActivitySort) => void;
-	expandDetails: boolean;
-	onExpandDetailsChange: (open: boolean) => void;
+	expandDetails?: boolean;
+	onExpandDetailsChange?: (open: boolean) => void;
 }>) {
 	return (
 		<DropdownMenu>
@@ -45,7 +45,7 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
+					{onSortChange || onExpandDetailsChange ? <DropdownMenuSeparator /> : null}
 				</> : null}
 				{onSortChange ? <>
 					<DropdownMenuGroup>
@@ -55,11 +55,11 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 							<DropdownMenuRadioItem value="oldest">Oldest first</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
+					{onExpandDetailsChange ? <DropdownMenuSeparator /> : null}
 				</> : null}
-				<DropdownMenuCheckboxItem checked={expandDetails} onCheckedChange={onExpandDetailsChange}>
+				{onExpandDetailsChange ? <DropdownMenuCheckboxItem checked={expandDetails} onCheckedChange={onExpandDetailsChange}>
 					Expand change details
-				</DropdownMenuCheckboxItem>
+				</DropdownMenuCheckboxItem> : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

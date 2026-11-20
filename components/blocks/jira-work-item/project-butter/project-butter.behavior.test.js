@@ -909,12 +909,12 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	const view = await renderComponent({
 		source: `import React from "react";
 			import {useTransform} from "motion/react";
-			import {useProjectButterActivityNavigation} from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+			import {useJiraWorkItemTimelineNavigation} from "@/components/blocks/jira-work-item-timeline/use-activity-navigation";
 			import {ScrubberRail} from "@/components/blocks/scrubber/components/scrubber-rail";
 			const entries = Array.from({length:8}, (_, index) => ({id:String(index)}));
 			export default function Navigation({count=8,view="Activity"}) {
 				const items = React.useMemo(()=>entries.slice(0,count),[count]);
-				const navigation = useProjectButterActivityNavigation(items, false, null, view);
+				const navigation = useJiraWorkItemTimelineNavigation(items, {viewKey:view});
 				const offset = useTransform(navigation.progress, (value) => 0.02 + value * 0.96);
 				const marks = items.map((entry, index) => ({...entry, label:entry.id, heading:entry.id, kind:"minor", offset:0.02+(items.length < 2 ? 0 : index/(items.length-1))*0.96}));
 				return <div data-test-scroll-root style={{overflowY:"auto",height:600}}>
@@ -965,6 +965,9 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	await settle(() => root.dispatchEvent(new Event("scroll")));
 	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 48.0225) < 0.1, true, rail.querySelector('[data-slot="scrubber-playhead"]').style.left);
 	assert.equal([...rail.querySelectorAll('[role="option"]')].findIndex((mark) => mark.getAttribute("aria-selected") === "true"), 3, "the row at the reading line is the selected stop");
+	root.scrollTop = 1653.7;
+	await settle(() => root.dispatchEvent(new Event("scroll")));
+	assert.equal([...rail.querySelectorAll('[role="option"]')].findIndex((mark) => mark.getAttribute("aria-selected") === "true"), 4, "subpixel rounding at a stop must select that row");
 	feedHeight = 200;
 	root.scrollTop = 1000;
 	headerTop = 180;

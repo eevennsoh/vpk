@@ -1,0 +1,10 @@
+version = 1
+id = "performance-audit"
+kind = "cron"
+name = "Performance audit"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nFind one small VPK performance improvement with measured or defensible hot-path evidence and a safe review surface. Capture a baseline, preserve a named invariant, apply the smallest proven optimization, and return no PR when impact is speculative or immaterial.\n\n## Evidence and judgment\nUse the narrowest useful timing, trace, benchmark, bundle/source-size check, render count, repeated-work counter, logs, or browser performance evidence. Use performance, React/Next, modern-web, or motion guidance only after evidence identifies that layer. Reject speculative memoization/caching, blanket will-change, broad concurrency changes, and bundle rearrangements with no measured delta.\n\n## Handoff\nFor a successful change, use title `[Automation] Performance audit: <short summary>` and existing labels `automation`, `codex`, and `performance`. Include baseline/treatment, expected user impact, invariant, focused proof, shared-policy validation, freshness/overlap evidence, and reviewer focus.\n\n## Stop conditions\nReturn no PR when the baseline is blocked, impact is synthetic or too small, correctness/accessibility/security could change, or the fix becomes a broad refactor."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=15;BYMINUTE=0;BYDAY=TU,FR"
+model = "gpt-6.2-sol"
+reasoning_effort = "high"
+execution_environment = "worktree"

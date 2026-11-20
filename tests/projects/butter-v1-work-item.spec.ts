@@ -45,7 +45,7 @@ test("the sticky activity timeline uses min and hr for relative times", async ({
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const timeline = page.getByRole("listbox", { name: "Navigate activity" });
-	const headerTime = page.locator("[data-project-butter-activity-header-time]");
+	const headerTime = page.locator("[data-jira-work-item-timeline-header-time]");
 	await timeline.getByRole("option", { name: /Liam Estrada: removed 2 fields/ }).click();
 	await expect(headerTime).toHaveText("1 hr ago");
 	await timeline.getByRole("option", { name: /Venn added Cursor: Review the onboarding flow/ }).click();
@@ -77,7 +77,7 @@ for (const width of [700, 1600]) {
 			if (!header) throw new Error("Activity header is missing");
 			element.scrollTop += header.getBoundingClientRect().top - element.getBoundingClientRect().top + 100;
 		});
-		await expect(activityHeader.locator("[data-project-butter-activity-header-time]")).toBeVisible();
+		await expect(activityHeader.locator("[data-jira-work-item-timeline-header-time]")).toBeVisible();
 		await expect(scroller).toHaveCSS("mask-image", "none");
 		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toBeVisible();
 		await scroller.evaluate((element, top) => { element.scrollTop = top; }, beforeHeader);

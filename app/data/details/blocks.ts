@@ -67,6 +67,7 @@ import { JIRA_SUGGESTION_DETAIL } from "./blocks/jira-suggestion";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
 import { JIRA_VIEW_CONFIGURATION_DETAIL } from "./blocks/jira-view-configuration";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
+import { JIRA_WORK_ITEM_TIMELINE_DETAIL } from "./blocks/jira-work-item-timeline";
 import { KNOWLEDGE_DIRECTORY_DETAIL } from "./blocks/knowledge-directory";
 import { LOGIN_01_DETAIL } from "./blocks/login-01";
 import { LOGIN_02_DETAIL } from "./blocks/login-02";
@@ -191,6 +192,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
 	"jira-view-configuration": JIRA_VIEW_CONFIGURATION_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
+	"jira-work-item-timeline": JIRA_WORK_ITEM_TIMELINE_DETAIL,
 	"knowledge-directory": KNOWLEDGE_DIRECTORY_DETAIL,
 	"login-01": LOGIN_01_DETAIL,
 	"login-02": LOGIN_02_DETAIL,

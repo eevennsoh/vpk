@@ -1,0 +1,10 @@
+version = 1
+id = "dependency-sweep"
+kind = "cron"
+name = "Dependency hygiene"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy, then read `.agents/skills/vpk-scheduled-automation/references/dependency-hygiene.md` completely.\n\n## Task\nExecute exactly one current dependency-hygiene lane from the shared reference. Lane A owns install-graph dependency updates/removals under the live npmjs/lockfile/trust contract. Lane B owns third-party local-fallback SVG harvesting only after the current nested asset consumer shape is proved. Never combine the lanes.\n\n## Evidence and judgment\nUse live package metadata, official release or migration notes, peer ranges, advisories, source usage, the tracked npm configuration, and lockfile verification. An outdated row is not reachability proof. Keep one related change set, serialize lockfile work, and stop on registry, trust, maturity, auth, unexplained tarball churn, migration ambiguity, or incomplete removal evidence.\n\n## Handoff\nUse the lane-specific title and existing `automation`, `codex`, and `dependencies` labels from the reference. Include versions or asset diff, source evidence, risk, exact validation, freshness/overlap result, and reviewer focus.\n\n## Stop conditions\nReturn no PR when no narrow current candidate is reachable and safe, the live asset target is unresolved, unrelated packages would be bundled, or supply-chain/correctness confidence is insufficient."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=10;BYMINUTE=30;BYDAY=TU"
+model = "gpt-6-luna"
+reasoning_effort = "medium"
+execution_environment = "worktree"

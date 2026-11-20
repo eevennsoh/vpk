@@ -5,8 +5,7 @@ import type { MotionValue } from "motion/react";
 import { JiraActivityEntryGlyph, jiraActivitySegmentsToPlainText, type JiraActivityEntry } from "@/components/blocks/jira-activity";
 import { ScrubberRail } from "@/components/blocks/scrubber/components/scrubber-rail";
 import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
-import { activityDateLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
-import { activityStopOffset } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityStopOffset } from "@/components/blocks/jira-work-item-timeline/use-activity-navigation";
 import { cn } from "@/lib/utils";
 
 /** How far the hover label may overhang the rail ends: the 20px hover circle's radius plus the label's `px-1`. */
@@ -28,12 +27,13 @@ function RowGlyph({ entry }: Readonly<{ entry: JiraActivityEntry }>) {
  * "N updates" group is one stop. Hover or focus previews the row's glyph and
  * exact time above its dot; click or drag scrolls the feed there.
  */
-export function ProjectButterActivityTimeline({ rows, visibleId, progress, onSelect, onSeek }: Readonly<{
+export function ActivityTimelineRail({ rows, visibleId, progress, onSelect, onSeek, getPreviewLabel }: Readonly<{
 	rows: readonly JiraActivityEntry[];
 	visibleId: string | null;
 	progress: MotionValue<number>;
 	onSelect: (id: string) => void;
 	onSeek: (progress: number) => void;
+	getPreviewLabel: (entry: JiraActivityEntry) => string;
 }>) {
 	const [hoverId, setHoverId] = useState<string | null>(null);
 	const activeIndex = Math.max(0, rows.findIndex((entry) => entry.id === visibleId));
@@ -42,7 +42,7 @@ export function ProjectButterActivityTimeline({ rows, visibleId, progress, onSel
 		kind: "minor",
 		// The first and last stops sit exactly on the rail's ends.
 		offset: activityStopOffset(index, rows.length),
-		heading: activityDateLabel(entry),
+		heading: getPreviewLabel(entry),
 		label: `Go to step ${index + 1}: ${entry.kind === "comment" ? entry.headerLabel ?? entry.actor.name : entry.actor.name}: ${rowLabel(entry)}`,
 	}));
 	const previewIndex = entries.findIndex((entry) => entry.id === hoverId);
@@ -62,14 +62,14 @@ export function ProjectButterActivityTimeline({ rows, visibleId, progress, onSel
 	}, [previewId, previewOffset]);
 	if (rows.length === 0) return null;
 	return (
-		<div className="relative min-w-0 flex-1" data-project-butter-activity-timeline>
+		<div className="relative min-w-0 flex-1" data-jira-work-item-timeline-rail>
 			{/* Every row's label stays mounted (invisible) so its avatar image is already loaded;
 			    scrubbing only flips visibility, so the reveal is instant. The marks carry the spoken names. */}
 			{entries.map((entry, index) => (
 				<span
 					aria-hidden
 					className={cn("pointer-events-none absolute bottom-full left-0 z-10 mb-1.5 flex items-center gap-1 whitespace-nowrap rounded-sm bg-surface px-1 text-xs leading-4 text-text-subtle", entry.id === previewId ? "visible" : "invisible")}
-					data-project-butter-timeline-preview={entry.id === previewId ? "" : undefined}
+					data-jira-work-item-timeline-preview={entry.id === previewId ? "" : undefined}
 					key={entry.id}
 					ref={(node) => { if (node) labelRefs.current.set(entry.id, node); else labelRefs.current.delete(entry.id); }}
 				>

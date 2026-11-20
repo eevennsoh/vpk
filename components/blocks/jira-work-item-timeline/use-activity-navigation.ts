@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMotionValue } from "motion/react";
-import type { JiraActivityEntry } from "@/components/blocks/jira-activity";
 import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 
 // h-16: the header owns headroom for the timeline hover label above its dots.
@@ -55,7 +54,13 @@ function interpolate(knots: readonly Knot[], value: number, from: "scroll" | "in
 	return a[to] + ((value - a[from]) / (b[from] - a[from])) * (b[to] - a[to]);
 }
 
-export function useProjectButterActivityNavigation(entries: readonly JiraActivityEntry[], sidePanel: boolean, focusId: string | null, view: "Activity" | "Audit" | "Sessions" = "Activity") {
+export interface JiraWorkItemTimelineNavigationOptions {
+	layoutKey?: string | number | boolean;
+	focusId?: string | null;
+	viewKey?: string;
+}
+
+export function useJiraWorkItemTimelineNavigation(entries: readonly { id: string }[], { layoutKey = false, focusId = null, viewKey = "Activity" }: JiraWorkItemTimelineNavigationOptions = {}) {
 	const feedRef = useRef<HTMLDivElement>(null);
 	const headerRef = useRef<HTMLDivElement>(null);
 	const progress = useMotionValue(0);
@@ -64,7 +69,7 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 	const sticky = useRef(false);
 	// A clicked stop stays selected until the feed scrolls somewhere else.
 	const pinned = useRef<{ id: string; scroll: number } | null>(null);
-	const previousView = useRef(view);
+	const previousView = useRef(viewKey);
 	const [visibleId, setVisibleId] = useState<string | null>(null);
 	const [stuck, setStuck] = useState(false);
 	const readingOffset = useCallback(() => (headerRef.current?.getBoundingClientRect().height || HEADER_HEIGHT) + FEED_CLEARANCE, []);
@@ -92,17 +97,17 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 	}, [progress, readingOffset]);
 
 	useLayoutEffect(() => {
-		const changed = previousView.current !== view;
-		previousView.current = view;
+		const changed = previousView.current !== viewKey;
+		previousView.current = viewKey;
 		const feed = feedRef.current;
 		const root = activityScrollport(feed);
 		const header = headerRef.current;
 		if (!changed || !sticky.current || entries.length === 0 || !feed || !root || !header) return;
 		root.scrollTop += header.getBoundingClientRect().top - root.getBoundingClientRect().top;
-	}, [entries.length, view]);
+	}, [entries.length, viewKey]);
 
 	const focusVisible = entries.some((entry) => entry.id === focusId);
-	useEffect(() => { if (focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [focusId, focusVisible, readingOffset, view]);
+	useEffect(() => { if (focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [focusId, focusVisible, readingOffset, viewKey]);
 	useEffect(() => {
 		const feed = feedRef.current;
 		const root = activityScrollport(feed);
@@ -120,7 +125,8 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 			const { knots, ids } = measureKnots(feed, root, readingOffset());
 			const index = interpolate(knots, root.scrollTop, "scroll", "index");
 			progress.set(ids.length < 2 ? 0 : index / (ids.length - 1));
-			setVisibleId(ids[Math.floor(index + 1e-6)] || null);
+			const atStop = knots.find((knot) => Math.abs(knot.scroll - root.scrollTop) < 1);
+			setVisibleId(ids[atStop?.index ?? Math.floor(index + 1e-6)] || null);
 		};
 		function schedule() { if (!frame) frame = requestAnimationFrame(update); }
 		root.addEventListener("scroll", schedule, { passive: true });
@@ -130,6 +136,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		}
 		schedule();
 		return () => { root.removeEventListener("scroll", schedule); resize?.disconnect(); if (frame) cancelAnimationFrame(frame); if (seekFrame.current) cancelAnimationFrame(seekFrame.current); seekFrame.current = 0; };
-	}, [entries, sidePanel, progress, readingOffset, view]);
+	}, [entries, layoutKey, progress, readingOffset, viewKey]);
 	return { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId };
 }

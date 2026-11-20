@@ -23,7 +23,7 @@ export function TeammateSessionsDisclosure({ children, defaultOpen = false, item
 	const panel = useRef<HTMLDivElement>(null);
 	const hintId = useId();
 	const labelBlur = reducedMotion ? "blur(0px)" : ["blur(0px)", "blur(2px)", "blur(0px)"];
-	const label = open ? `${items.length} other ${items.length === 1 ? "agent" : "agents"}` : teammateSessionUsageLabel(items.length);
+	const label = open ? "Other agent activity" : teammateSessionUsageLabel(items.length);
 
 	return (
 		<Collapsible open={open} onOpenChange={(nextOpen) => {

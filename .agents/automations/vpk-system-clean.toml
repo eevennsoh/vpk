@@ -1,0 +1,10 @@
+version = 1
+id = "vpk-system-clean"
+kind = "cron"
+name = "System clean"
+prompt = "# Goal\nRun the installed VPK system-clean sweep and report only its actionable result.\n\n# Required action\nRead `$vpk-system-clean` first, then from `/Users/esoh/Labs/vpk` run exactly:\n\n```bash\n/bin/zsh /Users/esoh/.local/bin/vpk-system-clean.sh\n```\n\nSuccess means the command exits 0. The script's log is `/Users/esoh/Library/Logs/vpk-system-clean.log`.\n\n# Constraints\n- Never delete or modify `artifacts/**`. If the skill or installed script appears able to target it, stop before running.\n- This is local housekeeping only. Do not edit the repository, create Git state, change launchd/plist/schedules, or run additional cleanup or remediation commands.\n- Do not run lint, typecheck, browser, or Git validation.\n\n# Output\nOn success, reply tersely with success, the log path, and actionable warnings only. On failure, include the exit status and last relevant error output.\n\n# Stop rules\nStop without remediation if the repo, skill, or installed script is missing or the exact command cannot run."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=HOURLY;INTERVAL=6"
+model = "gpt-6-luna"
+reasoning_effort = "low"
+execution_environment = "local"

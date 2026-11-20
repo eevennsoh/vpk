@@ -683,11 +683,14 @@ const READ_ONLY_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 // Writes touch the local vault, run the TWG CLI with the owner's credentials,
 // or open a browser on a supplied URL, so they only accept local requests.
+// Reads expose the owner's vault, so in production every route is unavailable
+// (404); in development reads stay open.
 function createPersonalGraphRouter({ env = process.env } = {}) {
 	const requireLocalDevRequest = createRequireLocalDevRequest({ env });
+	const production = env.NODE_ENV === "production";
 	const guardedRouter = express.Router();
 	guardedRouter.use((req, res, next) => {
-		if (READ_ONLY_METHODS.has(req.method)) {
+		if (!production && READ_ONLY_METHODS.has(req.method)) {
 			return next();
 		}
 		return requireLocalDevRequest(req, res, next);
