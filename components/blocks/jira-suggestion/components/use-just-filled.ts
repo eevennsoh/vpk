@@ -42,16 +42,18 @@ export function useJustFilled() {
 		if (!details.length) return;
 		setBarAfter("top");
 		const step = DETAILS_RAIL_GLIDE.layout.duration * 1000;
-		RAIL_STEPS.forEach((id, index) => {
+		let elapsed = motionDuration.slow * 1000;
+		RAIL_STEPS.forEach((id) => {
 			timers.current.push(window.setTimeout(() => {
 				setBarAfter(id);
 				if (ids.includes(id)) {
 					setWaiting((current) => new Set([...current].filter((entry) => entry !== id)));
 					setFilled((current) => new Set([...current, id]));
 				}
-			}, motionDuration.slow * 1000 + index * step));
+			}, elapsed));
+			elapsed += step + (ids.includes(id) ? motionDuration.slowest * 1000 : 0);
 		});
-		timers.current.push(window.setTimeout(() => setBarAfter(null), motionDuration.slow * 1000 + RAIL_STEPS.length * step));
+		timers.current.push(window.setTimeout(() => setBarAfter(null), elapsed));
 	}, [cancel, reduced]);
 	return { filled, waiting, barAfter, flash, finish, cancel };
 }

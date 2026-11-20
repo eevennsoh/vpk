@@ -102,6 +102,8 @@ test("accept all moves the filling control through the details and undo cancels 
 	assert.equal(document.querySelector('[data-field-id="assignee"]').textContent.includes("Automatic"), true);
 	await act(() => new Promise((resolve) => setTimeout(resolve, 350)));
 	assert.equal(document.querySelector('[data-field-id="assignee"] [data-suggestion-text-reveal]') !== null, true);
+	await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
+	assert.equal(document.querySelector('[data-field-id="dueDate"]').textContent.includes("Add due date"), true, "the cursor gives the assignee's color time to appear before continuing");
 	await view.click(view.getByRole("button", { name: "Undo accepting 6 suggestions" }));
 	await act(() => new Promise((resolve) => setTimeout(resolve, 500)));
 	assert.equal(document.querySelector("[data-project-butter-suggestion-cursor]") === null, true);
