@@ -92,7 +92,7 @@ test("Butter v1 Accept all reveals values inline on the first batch and on reche
 	const assignee = page.locator('[data-field-id="assignee"]');
 	await expect(assignee.locator('[data-unassigned="person"]')).toBeVisible();
 	const handoff = await accept.evaluateHandle((button) => {
-		const fields = ["assignee", "dueDate", "parent", "labels"].map((id) => ({ id, rainbowStarted: false, rainbowEnd: 0, controlStart: 0, clipped: false, rising: false }));
+		const fields = ["assignee", "dueDate", "parent", "labels"].map((id) => ({ id, rainbowStarted: false, rainbowEnd: 0, controlStart: 0, clipped: false, rising: false, firstOpacity: 0, sweepRemovedAtStart: false }));
 		const result = { fields, earlyAvatar: false, avatarStart: 0, labelsStaggered: false };
 		button.addEventListener("click", () => {
 			const deadline = performance.now() + 5000;
@@ -131,9 +131,13 @@ test("Butter v1 Accept all reveals values inline on the first batch and on reche
 					if (firstTag && lastTag && finalOpacity > 0.99 && firstOpacity >= 0.25) {
 						result.labelsStaggered ||= Number(getComputedStyle(lastTag).opacity) === 0;
 					}
-					if (!field.controlStart && finalOpacity > 0.01 && firstOpacity > 0.01) field.controlStart = frame;
+					if (!field.controlStart && finalOpacity > 0.01 && firstOpacity > 0.01) {
+						field.controlStart = frame;
+						field.firstOpacity = finalOpacity;
+						field.sweepRemovedAtStart = !clip;
+					}
 				}
-				if (now < deadline && (!result.avatarStart || !result.labelsStaggered || fields.some((field) => !field.rainbowEnd || !field.controlStart || !field.rising))) requestAnimationFrame(sample);
+				if (now < deadline && (!result.avatarStart || !result.labelsStaggered || fields.some((field) => !field.rainbowEnd || !field.controlStart))) requestAnimationFrame(sample);
 			}
 			requestAnimationFrame(sample);
 		}, { once: true, capture: true });
@@ -159,17 +163,20 @@ test("Butter v1 Accept all reveals values inline on the first batch and on reche
 	}
 	await expect(labels).toHaveCount(0, { timeout: 8000 });
 	await expect.poll(() => handoff.evaluate(({ fields, labelsStaggered }) => ({
-		risingFields: fields.filter((field) => field.rainbowEnd > 0 && field.controlStart > 0 && field.rising).map((field) => field.id),
+		risingFields: fields.filter((field) => field.rising).map((field) => field.id),
 		labelsStaggered,
-	}))).toEqual({ risingFields: ["assignee", "dueDate", "parent", "labels"], labelsStaggered: true });
+	}))).toEqual({ risingFields: ["parent", "labels"], labelsStaggered: true });
 	const result = await handoff.jsonValue();
 	expect(result.earlyAvatar).toBe(false);
 	for (const field of result.fields) {
+		expect(field.rainbowEnd, field.id).toBeGreaterThan(0);
 		expect(field.controlStart, field.id).toBeGreaterThanOrEqual(field.rainbowEnd);
 		expect(field.controlStart - field.rainbowEnd, field.id).toBeLessThanOrEqual(3);
 	}
+	expect(result.fields.find((field) => field.id === "dueDate")).toMatchObject({ firstOpacity: 1, sweepRemovedAtStart: true });
 	expect(result.fields.find((field) => field.id === "parent")?.clipped).toBe(true);
 	const assigneeReveal = result.fields.find((field) => field.id === "assignee")!;
+	expect(assigneeReveal).toMatchObject({ firstOpacity: 1, sweepRemovedAtStart: true });
 	expect(assigneeReveal.clipped).toBe(true);
 	expect(result.avatarStart).toBeGreaterThanOrEqual(assigneeReveal.rainbowEnd);
 	expect(result.avatarStart - assigneeReveal.rainbowEnd).toBeLessThanOrEqual(3);

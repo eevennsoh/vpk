@@ -32,7 +32,7 @@ const REVEAL_SAFETY_STOP_MS = motionDuration.slowest * 5 * 1000;
  * timer the reveal sets (its safety stop). `runAll()` is not used: Node 24 advances it only
  * to the most recently queued timer, not the latest one.
  *
- * The description reveal ends when its word animations finish and a settle timer runs, or at a
+ * The description reveal ends when its word animations finish, or at a
  * safety stop timer; on a loaded machine these can fire before the test reads the reveal, so here
  * they run on fake time. happy-dom finishes a Web Animation on a real timer it captured when it
  * loaded, which `t.mock.timers` cannot reach, so each animation that ends finishes on fake time

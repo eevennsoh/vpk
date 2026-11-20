@@ -380,22 +380,21 @@ test("floating suggestions use neutral previews and reveal individual accepts in
 	await expect(unassignedAvatar).toBeVisible();
 	const revealingName = await reveal.getByText("Robi", { exact: true }).first().boundingBox();
 
-	const crossfadeFrames = await reveal.evaluate((text) => new Promise<number>((resolve, reject) => {
+	const labelAtSweepEnd = await reveal.evaluate((text) => new Promise<{ opacity: string; transform: string }>((resolve, reject) => {
 		const outgoing = text.parentElement!;
 		const incoming = outgoing.parentElement!.querySelector("[data-project-butter-field-control]")!;
 		const deadline = performance.now() + 4000;
-		let overlap = 0;
 		function sample(now: number) {
-			if (!outgoing.isConnected) return resolve(overlap);
+			if (!outgoing.isConnected) {
+				const { opacity, transform } = getComputedStyle(incoming);
+				return resolve({ opacity, transform });
+			}
 			if (now > deadline) return reject(new Error("The assignee reveal did not finish"));
-			const previous = Number(getComputedStyle(outgoing).opacity);
-			const next = Number(getComputedStyle(incoming).opacity);
-			if (previous > 0.02 && previous < 0.98 && next > 0.02 && next < 0.98) overlap += 1;
 			requestAnimationFrame(sample);
 		}
 		requestAnimationFrame(sample);
 	}));
-	expect(crossfadeFrames).toBeGreaterThan(0);
+	expect(labelAtSweepEnd).toEqual({ opacity: "1", transform: "none" });
 	await expect(reveal).toHaveCount(0, { timeout: 8000 });
 	const finalNameControl = assigneeControl.locator("[data-project-butter-field-control]");
 	await expect.poll(() => finalNameControl.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).m42)).toBe(0);

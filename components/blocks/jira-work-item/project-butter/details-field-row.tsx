@@ -53,6 +53,15 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	const usesInlineLabel = id === "assignee" || id === "dueDate" || (id === "reporter" && filled);
 	const rowReveal = usesInlineLabel ? undefined : reveal;
 	const isLabels = id === "labels";
+	const animateEntry = id === "parent" || id === "assetObject";
+	const sweep = rowReveal ? (
+		<SuggestionValueReveal
+			className={cn("flex text-sm leading-5", isLabels ? "items-start pt-1.5" : "items-center")}
+			key={rowReveal.key}
+			reveal={rowReveal}
+			truncate={id === "parent"}
+		/>
+	) : null;
 	const labelsRevealing = isLabels && Boolean(rowReveal);
 	const labelsWereRevealing = useRef(labelsRevealing);
 	const labelsControl = useRef<HTMLDivElement>(null);
@@ -95,30 +104,17 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 						{fieldIcon}
 						<div className="relative min-w-0 flex-1 has-[>[data-suggestion-preview]]:[&>[data-project-butter-field-control]:not(:focus-within)]:opacity-0!">
 							<motion.div
-								animate={isLabels ? undefined : { opacity: rowReveal ? 0 : 1, y: rowReveal ? DETAIL_VALUE_ENTRY_OFFSET : 0 }}
-								className="min-w-0 group-focus-within/butter-field:opacity-100!"
+								animate={animateEntry ? { opacity: rowReveal ? 0 : 1, y: rowReveal ? DETAIL_VALUE_ENTRY_OFFSET : 0 } : undefined}
+								className={cn("min-w-0 group-focus-within/butter-field:opacity-100!", !animateEntry && rowReveal && "opacity-0")}
 								data-project-butter-field-control={usesInlineLabel ? undefined : ""}
 								initial={false}
 								ref={isLabels ? labelsControl : undefined}
-								style={isLabels ? { opacity: labelsRevealing ? 0 : 1 } : undefined}
 								transition={rowReveal ? { duration: motionDuration.instant } : DETAIL_VALUE_HANDOFF}
 							>
 								<SuggestionLabelReveal value={usesInlineLabel ? reveal : undefined}>{children}</SuggestionLabelReveal>
 							</motion.div>
 							{!usesInlineLabel ? <SuggestionFieldFeedback field={id} inline /> : null}
-							<AnimatePresence initial={false}>
-								{rowReveal ? (
-									<SuggestionValueReveal
-										className={cn(
-											"flex text-sm leading-5",
-											isLabels ? "items-start pt-1.5" : "items-center",
-										)}
-										key={rowReveal.key}
-										reveal={rowReveal}
-										truncate={id === "parent"}
-									/>
-								) : null}
-							</AnimatePresence>
+							{animateEntry || isLabels ? <AnimatePresence initial={false}>{sweep}</AnimatePresence> : sweep}
 						</div>
 					</div>
 					<div className={cn("absolute right-1 top-1/2 flex -translate-y-1/2 shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)} onPointerDown={(event) => event.stopPropagation()}>
