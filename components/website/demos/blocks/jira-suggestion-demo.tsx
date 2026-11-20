@@ -5,8 +5,8 @@ import { useState } from "react";
 import Page from "@/components/blocks/jira-suggestion/page";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-const ButterGalleryAiSuggestions = dynamic(
-	() => import("@/components/projects/butter-v1/components/butter-gallery-work-item").then((module) => module.ButterGalleryAiSuggestions),
+const ButterGalleryWorkItem = dynamic(
+	() => import("@/components/projects/butter-v1/components/butter-gallery-work-item").then((module) => module.ButterGalleryWorkItem),
 	{ ssr: false },
 );
 
@@ -31,7 +31,7 @@ export default function JiraSuggestionDemo() {
 			<Page>
 				{variant === "floating" ? (
 					<div className="absolute inset-0 isolate transform-gpu" ref={setPortalContainer}>
-						{portalContainer ? <ButterGalleryAiSuggestions open onClose={() => setVariant("menu")} portalContainer={portalContainer} /> : null}
+						{portalContainer ? <ButterGalleryWorkItem showAiSuggestions open onClose={() => setVariant("menu")} portalContainer={portalContainer} /> : null}
 					</div>
 				) : null}
 			</Page>

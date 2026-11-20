@@ -21,15 +21,17 @@ import { agentAddedSuggestion } from "../lib/agent-added-suggestion";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
-export function ButterGalleryAiSuggestions({ open, onClose, portalContainer }: Readonly<{ open: boolean; onClose: () => void; portalContainer?: HTMLElement }>) {
+type ButterGalleryWorkItemProps = Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions?: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean; showAiSuggestions?: boolean; portalContainer?: HTMLElement }>;
+
+export function ButterGalleryWorkItem(props: ButterGalleryWorkItemProps) {
 	return (
 		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-			<ButterGalleryWorkItem sessionActivityView showAiSuggestions open={open} onClose={onClose} portalContainer={portalContainer} />
+			<ButterGalleryWorkItemContent {...props} />
 		</RovoChatProvider>
 	);
 }
 
-export function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView, showAiSuggestions = false, portalContainer }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions?: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean; showAiSuggestions?: boolean; portalContainer?: HTMLElement }>) {
+function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView = true, showAiSuggestions = false, portalContainer }: ButterGalleryWorkItemProps) {
 	const router = useRouter();
 	const suggestionPanelRef = useRef<ComponentRef<typeof JiraFloatingSuggestions>>(null);
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
@@ -42,22 +44,57 @@ export function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, o
 	const { chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const prefillKey = useRef(0);
 	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComponentProps<typeof JgpRovoOverlay>["composerPrefillRequest"]>();
+	const openAgentSession = (session: ProjectButterSessionItem, workItem: { code: string; summary: string }) => openAgentChat({
+		sessionId: session.id,
+		agentId: resolveButterChatAgentId(session.agent, session.id),
+		agentName: session.agent.name,
+		issueKey: workItem.code,
+		issueSummary: workItem.summary,
+		intro: session.message,
+		request: session.prompt,
+		recordedSession: workItemChatSnapshot(session, workItem.summary),
+	});
+	const openCloudSession: NonNullable<ComponentProps<typeof ProjectButterJiraWorkItem>["onOpenCloudSession"]> = async (session, draft, workItem) => {
+		const opened = await openAgentSession(session, workItem);
+		if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
+		return opened;
+	};
+	const notification = added ? agentAddedSuggestion(added.session, async () => {
+		if (await openAgentSession(added.session, added.workItem)) {
+			setAdded((current) => current?.session.id === added.session.id ? null : current);
+		}
+	}, () => setAdded(null)) : null;
 	return (
 		<>
 			<span className="sr-only" role="status">{open && added ? `${added.session.agent.name} added` : ""}</span>
 			<div className={cn("pointer-events-none absolute inset-x-0 flex items-start justify-center overflow-hidden", portalContainer ? "top-0" : "top-12", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem inlineSessionReplies sessionActivityView={sessionActivityView} cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset={showAiSuggestions ? "empty" : "filled"} initialSessions={initialSessions} initialSuggestion={showAiSuggestions} showAuditInActivity={showAiSuggestions} suggestionProfile={showAiSuggestions ? "jira-demo" : undefined} workItem={showAiSuggestions ? BUTTER_AI_SUGGESTION_ITEM : undefined} renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions feed={feed} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onAgentAdded={showAiSuggestions ? undefined : (session, workItem) => setAdded({ session, workItem })} onClose={() => { setAdded(null); onClose(); }} onOpenCloudSession={async (session, draft, workItem) => {
-						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) });
-						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
-						return opened;
-					}} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem
+						cloudAgentSelector
+						compact={compact}
+						currentUser={BUTTER_DEFAULT_REPORTER}
+						defaultAssignee={BUTTER_DEFAULT_REPORTER}
+						defaultReporter={BUTTER_DEFAULT_REPORTER}
+						initialPreset={showAiSuggestions ? "empty" : "filled"}
+						initialSessions={initialSessions}
+						initialSuggestion={showAiSuggestions}
+						inlineSessionReplies
+						onAgentAdded={(session, workItem) => setAdded({ session, workItem })}
+						onBrowseAgents={() => setAgentsDirectoryOpen(true)}
+						onClose={() => { setAdded(null); onClose(); }}
+						onCreateAgent={() => router.push("/studio")}
+						onOpenCloudSession={openCloudSession}
+						open={open}
+						renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
+						sessionActivityView={sessionActivityView}
+						shell="gallery"
+						showAuditInActivity={showAiSuggestions}
+						suggestionProfile={showAiSuggestions ? "jira-demo" : undefined}
+						workItem={showAiSuggestions ? BUTTER_AI_SUGGESTION_ITEM : undefined}
+					/>
 				</div>
 			</div>
-			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} contained={Boolean(portalContainer)} portalContainer={portalContainer} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} greeting={showAiSuggestions ? { ...BUTTER_AI_SUGGESTION_GREETING, onSuggestionSelect: ({ id }) => id === BUTTER_AI_SUGGESTION_STARTER_ID && suggestionPanelRef.current?.reopen() === true } : undefined} isSwitchingSession={isSwitchingSession} launcher={showAiSuggestions ? "hidden" : "auto"} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} suggestion={added ? agentAddedSuggestion(added.session, async () => {
-				const { session, workItem } = added;
-				if (await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) })) setAdded(null);
-			}, () => setAdded(null)) : null} /> : null}
+			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} contained={Boolean(portalContainer)} portalContainer={portalContainer} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} greeting={showAiSuggestions ? { ...BUTTER_AI_SUGGESTION_GREETING, onSuggestionSelect: ({ id }) => id === BUTTER_AI_SUGGESTION_STARTER_ID && suggestionPanelRef.current?.reopen() === true } : undefined} isSwitchingSession={isSwitchingSession} launcher={showAiSuggestions ? "hidden" : "auto"} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} suggestion={showAiSuggestions ? null : notification} /> : null}
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
 					<AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={() => router.push("/studio")} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />

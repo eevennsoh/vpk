@@ -28,15 +28,12 @@ export function getTeammateSessionPeople(items: readonly Pick<AgentSessionItem, 
 export function TeammateSessionAvatars({ items, onAvatarClick, sizePx = 16 }: Readonly<{ items: readonly Pick<AgentSessionItem, "invokedBy">[]; onAvatarClick?: () => void; sizePx?: 16 | 20 | 24 }>) {
 	const people = getTeammateSessionPeople(items);
 	const visiblePeople = Array.from(people).slice(0, MAX_VISIBLE_TEAMMATES);
-	const overlap = sizePx === 24 ? 8 : 4;
-	const maskImage = `radial-gradient(circle at ${overlap - sizePx / 2}px 50%, transparent ${sizePx / 2 + 1.5}px, black ${sizePx / 2 + 2}px)`;
-	const cutout = { maskImage, WebkitMaskImage: maskImage };
 
 	return (
-		<AvatarGroup aria-hidden="true" as="span" className="*:data-[slot=avatar]:ring-0!" size={sizePx === 24 ? "sm" : "xs"}>
-			{visiblePeople.map(([key, { name, avatarSrc }], index) => (
+		<AvatarGroup aria-hidden="true" as="span" size={sizePx === 24 ? "sm" : "xs"}>
+			{visiblePeople.map(([key, { name, avatarSrc }]) => (
 				<Tooltip key={key}>
-					<TooltipTrigger data-slot="avatar" render={<Avatar label={name || "Teammate"} size={sizePx === 24 ? "sm" : "xs"} className={sizePx === 20 ? "pointer-events-auto size-5" : "pointer-events-auto"} style={index > 0 ? cutout : undefined} animate={false} onClick={onAvatarClick} />}>
+					<TooltipTrigger data-slot="avatar" render={<Avatar label={name || "Teammate"} size={sizePx === 24 ? "sm" : "xs"} className={sizePx === 20 ? "pointer-events-auto size-5" : "pointer-events-auto"} animate={false} onClick={onAvatarClick} />}>
 						{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
 						<AvatarFallback>{name ? actorInitials(name) : <Icon render={<PersonIcon label="" size="small" />} />}</AvatarFallback>
 					</TooltipTrigger>
@@ -44,7 +41,7 @@ export function TeammateSessionAvatars({ items, onAvatarClick, sizePx = 16 }: Re
 				</Tooltip>
 			))}
 			{people.size > MAX_VISIBLE_TEAMMATES ? (
-				<AvatarGroupCount as="span" className={sizePx === 20 ? "ring-0 group-has-data-[size=xs]/avatar-group:size-5" : "ring-0"} style={cutout}>+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
+				<AvatarGroupCount as="span" className={sizePx === 20 ? "group-has-data-[size=xs]/avatar-group:size-5" : undefined}>+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
 			) : null}
 		</AvatarGroup>
 	);

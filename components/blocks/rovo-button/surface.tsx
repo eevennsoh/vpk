@@ -21,6 +21,7 @@ import {
 	AnimatePresence,
 	animate,
 	motion,
+	useIsPresent,
 	useMotionValue,
 	type MotionStyle,
 } from "motion/react";
@@ -99,6 +100,9 @@ function FloatingRovoButtonInner({
 	shouldReduceMotion: boolean;
 	ref?: Ref<HTMLButtonElement>;
 }>) {
+	const isPresent = useIsPresent();
+	if (opensDialog && !isPresent) return null;
+
 	return (
 		<motion.button
 			key="floating-rovo-button-icon"
@@ -189,6 +193,7 @@ export function FloatingRovoButtonSurface({
 	// Drives the persistent bar's exit/enter: it tucks away once a drag actually
 	// moves the button and springs back when the drag is released.
 	const [isDragging, setIsDragging] = useState(false);
+	if (cardOpen && isDragging) setIsDragging(false);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
 	const buttonX = useMotionValue(0);
 	const buttonY = useMotionValue(0);
@@ -296,8 +301,9 @@ export function FloatingRovoButtonSurface({
 	useEffect(() => {
 		if (!animateLogoOnMount || shouldReduceMotion) return;
 		logoAnimationPlayedRef.current = true;
-		startLogoAnimation();
+		const frame = window.requestAnimationFrame(startLogoAnimation);
 		return () => {
+			window.cancelAnimationFrame(frame);
 			clearLogoAnimationTimeout();
 			logoAnimationPlayedRef.current = false;
 		};
@@ -423,7 +429,6 @@ export function FloatingRovoButtonSurface({
 	useEffect(() => {
 		if (cardOpen) {
 			dragPointerStartRef.current = null;
-			setIsDragging(false);
 			suppressDragClickStateRef.current = createInitialClickSuppressionState();
 			clearDragClickSuppressionTimeout();
 		}
@@ -688,17 +693,18 @@ export function FloatingRovoButtonSurface({
 				whileHover={hoverScale}
 				whileTap={tapScale}
 			>
+				{panel?.open ? (
+					<motion.div
+						key={panel.id}
+						initial={shouldReduceMotion ? false : { opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={shouldReduceMotion ? { duration: 0 } : FLOATING_ROVO_BUTTON_CARD_ENTER}
+					>
+						{panel.content}
+					</motion.div>
+				) : null}
 				<AnimatePresence mode="popLayout" initial={false}>
-					{panel?.open ? (
-						<motion.div
-							key={panel.id}
-							initial={shouldReduceMotion ? false : { opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={shouldReduceMotion ? { duration: 0 } : FLOATING_ROVO_BUTTON_CARD_ENTER}
-						>
-							{panel.content}
-						</motion.div>
-					) : onboardingOpen && onboarding ? (
+					{panel?.open ? null : onboardingOpen && onboarding ? (
 						<FloatingRovoButtonOnboardingPanelInner
 							key="panel"
 							onboarding={onboarding}

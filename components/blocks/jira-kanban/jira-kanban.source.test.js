@@ -367,7 +367,7 @@ test("Kanban drag-over uses the chrome drop-shell recipe instead of a hardcoded 
 });
 
 test("Kanban agent stack removes the avatar-group overlap ring", () => {
-	assert.match(SOURCE, /<AvatarGroup className="-space-x-1\.5 \*:data-\[slot=avatar\]:ring-0!"/);
+	assert.match(SOURCE, /<AvatarGroup className="-space-x-1\.5"/);
 	assert.match(SOURCE, /label=\{agent\.name\} shape="hexagon" size="sm"/);
 	assert.doesNotMatch(SOURCE, /showHexagonBorder/);
 });

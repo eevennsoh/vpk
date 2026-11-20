@@ -357,7 +357,11 @@ test("the agent field shows an avatar stack without session state", async ({ pag
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const field = page.getByRole("group", { name: "Agents field" });
 	await expect(field.getByRole("button", { name: "2 agents" })).toBeVisible();
-	await expect(field.locator('[data-slot="avatar"]')).toHaveCount(2);
+	const avatars = field.locator('[data-slot="avatar"]');
+	await expect(avatars).toHaveCount(2);
+	const overlap = await avatars.evaluateAll(([front, back]) => front.getBoundingClientRect().right - back.getBoundingClientRect().left);
+	expect(overlap).toBeCloseTo(4, 0);
+	await expect(avatars.last().locator('[data-slot="avatar-hexagon-artwork"]')).not.toHaveCSS("mask-image", "none");
 	const triggerBounds = await field.getByRole("button", { name: "2 agents" }).boundingBox();
 	const avatarBounds = await field.locator('[data-agent-name] button').first().boundingBox();
 	if (!triggerBounds || !avatarBounds) throw new Error("Agent field geometry is unavailable");

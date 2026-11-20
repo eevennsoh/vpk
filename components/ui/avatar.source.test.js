@@ -164,7 +164,7 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /text-border!/);
 	assert.match(AVATAR_SOURCE, /style=\{\{ clipPath: HEXAGON_BORDER_CLIP \}\}/);
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder tone=\{borderTone\} \/>/);
-	assert.match(AVATAR_SOURCE, /const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip\(2\)/);
+	assert.doesNotMatch(AVATAR_SOURCE, /HEXAGON_SEPARATOR_CLIP/);
 	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder tone=\{borderTone\} \/>\s*<\/span>/);
 });
 
@@ -498,17 +498,17 @@ test("avatar groups own descending face stacking without changing DOM order", ()
 	assert.match(AVATAR_SOURCE, /isInAvatarGroup \? \{\} : \{ zIndex: 10 \}/);
 });
 
-test("ring groups give hexagon agents a shape-aware background separator", () => {
-	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext<AvatarGroupOverlap \| null>\(null\)/);
-	assert.match(AVATAR_SOURCE, /const groupOverlap = React\.use\(AvatarGroupContext\)/);
+test("avatar groups use the shared artwork cutout for humans, agents, and counts", () => {
+	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext\(false\)/);
+	assert.match(AVATAR_SOURCE, /const isInAvatarGroup = React\.use\(AvatarGroupContext\)/);
 	assert.match(
 		AVATAR_SOURCE,
-		/groupOverlap === "ring" \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_SEPARATOR_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
+		/useAvatarGroupCutouts\(groupRef, Group\)/,
 	);
-	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value=\{overlap\}>/);
+	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value=\{true\}>/);
 	assert.match(
 		AVATAR_SOURCE,
-		/\[&>\[data-slot=avatar\]\[data-shape=hexagon\]\]:ring-0/,
+		/data-slot="avatar-group-count"[\s\S]*data-avatar-group-item[\s\S]*data-slot="avatar-group-visual"/,
 	);
 	assert.match(AVATAR_SOURCE, /-space-x-2 has-data-\[size=xs\]:-space-x-1/);
 });

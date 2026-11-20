@@ -52,7 +52,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	const content = useRef<HTMLDivElement>(null);
 	const { height, settled, overflow, viewport } = useBodyHeight(content, mode, maxHeight);
 	const listed = mode === "list";
-	const registerDepth = useListDepth(scroller, deckRef, listed, { viewport: floating ? undefined : viewport, animateEntrance: !floating });
+	const registerDepth = useListDepth(scroller, deckRef, listed, floating ? undefined : viewport);
 	const top = deck.order.at(0);
 	const armed = useArmed(grab && top && grab.id === top.id ? grab : null);
 	const running = feed.status === "running";
@@ -70,7 +70,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	}, [listed]);
 
 	return (
-		<motion.div className={cn("relative overscroll-contain", floating ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
+		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
 			<div className={floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5"} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (

@@ -14,15 +14,17 @@ import type { Deck, SwipeDirection } from "./use-deck";
  * its order while open, decided cards gathering into the stack stay drawn (hidden behind the last sheet) until they
  * have landed, and every card that leaves is told how to go.
  */
-export function useDeckView(feed: SuggestionFeed, deck: Deck, showList = false) {
+export function useDeckView(feed: SuggestionFeed, deck: Deck, floatingView?: "stack" | "list") {
 	const [listBase, setListBase] = useState<readonly SuggestionFieldId[] | null>(null);
 	const [gathering, setGathering] = useState<readonly SuggestionFieldId[]>([]);
 	const [exitKind, setExitKind] = useState<CardExit | null>(null);
 	const [returning, setReturning] = useState<{ ids: readonly SuggestionFieldId[]; direction: SwipeDirection } | null>(null);
 
-	// A re-run's finds join the list at the top; everything else keeps its place, decided cards folding in place.
-	if (showList && listBase === null) setListBase(feed.review.suggestions.map((suggestion) => suggestion.id));
-	const listIds = [...feed.review.suggestions.filter((suggestion) => !listBase?.includes(suggestion.id)).map((suggestion) => suggestion.id), ...(listBase ?? [])];
+	// A re-run's finds join the list at the top. Pending cards and decisions from the current review keep their place.
+	const visibleIds = [...deck.order, ...deck.reviewed].map((suggestion) => suggestion.id);
+	if (floatingView === "list" && listBase === null) setListBase(visibleIds);
+	else if (floatingView === "stack" && listBase !== null) setListBase(null);
+	const listIds = [...visibleIds.filter((id) => !listBase?.includes(id)), ...(listBase ?? []).filter((id) => visibleIds.includes(id))];
 
 	/** A decided card has landed behind the last sheet and faded there: removing it now is invisible. */
 	const release = (id: SuggestionFieldId) => {
@@ -38,7 +40,7 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck, showList = false) 
 	}, [exitKind]);
 
 	const unpack = () => {
-		setListBase([...deck.order, ...deck.reviewed].map((suggestion) => suggestion.id));
+		setListBase(visibleIds);
 		setGathering([]);
 	};
 

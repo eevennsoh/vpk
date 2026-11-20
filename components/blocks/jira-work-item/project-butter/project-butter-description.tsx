@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -9,6 +9,8 @@ import { ProjectButterContentPreview } from "@/components/blocks/jira-work-item/
 import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
 import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { DETAIL_VALUE_ENTRY_OFFSET, DETAIL_VALUE_HANDOFF } from "./details-rail";
+import { SuggestionFieldFeedback } from "./suggestion-targets";
 import type { RichTextEditorExtensionOptions } from "@/components/ui-custom/rich-text-editor/types";
 
 // Clicking a contenteditable matches :focus-visible, so a pointer gesture marks
@@ -25,13 +27,14 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 	const reduced = useReducedMotion();
 	const revealText = reveal && reveal.text === content.descriptionDraft && !content.editingDescription ? reveal.text : null;
 	const settling = Boolean(revealText) && settlingReveal === reveal;
+	const hidingEditor = Boolean(revealText) && !settling;
 	const startSettling = useCallback(() => {
 		if (reduced) onRevealComplete?.();
 		else setSettlingReveal(reveal ?? null);
 	}, [onRevealComplete, reduced, reveal]);
 	useEffect(() => {
 		if (!settling) return;
-		const timer = window.setTimeout(() => onRevealComplete?.(), motionDuration.slow * 1000);
+		const timer = window.setTimeout(() => onRevealComplete?.(), DETAIL_VALUE_HANDOFF.duration * 1000);
 		return () => window.clearTimeout(timer);
 	}, [onRevealComplete, settling]);
 	useEffect(() => {
@@ -51,7 +54,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 	const editor = (
 		<div
 			aria-label="Description editor"
-			className={DESCRIPTION_EDITOR_CLASS}
+			className={cn(DESCRIPTION_EDITOR_CLASS, "grid")}
 			data-pointer-focused={pointerFocused ? "" : undefined}
 			onBlurCapture={(event) => {
 				if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -79,10 +82,11 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 			}}
 			role="group"
 		>
-			{revealText ? <div aria-hidden="true" className={cn("tiptap-editor agent-instructions-tiptap-editor context-description-tiptap-editor pointer-events-none absolute inset-0 transition-opacity duration-slow ease-out-practical", empty && "context-description-tiptap-editor-hug", settling ? "opacity-0" : "opacity-100")} data-description-reveal="">
+			<SuggestionFieldFeedback field="description" enabled={!content.editingDescription} />
+			{revealText ? <div aria-hidden="true" className={cn("tiptap-editor agent-instructions-tiptap-editor context-description-tiptap-editor pointer-events-none absolute inset-0 transition-opacity duration-slow ease-linear", empty && "context-description-tiptap-editor-hug", settling ? "opacity-0" : "opacity-100")} data-description-reveal="">
 				<DescriptionRainbowText key={reveal?.id} onComplete={startSettling} text={revealText} />
 			</div> : null}
-			<div className={cn(settling && "transition-opacity duration-slow ease-out-practical", revealText && !settling ? "opacity-0" : "opacity-100")}>
+			<motion.div animate={{ opacity: hidingEditor ? 0 : 1, y: hidingEditor && !reduced ? DETAIL_VALUE_ENTRY_OFFSET : 0 }} className="col-start-1 row-start-1 min-w-0" initial={false} transition={settling ? DETAIL_VALUE_HANDOFF : { duration: motionDuration.instant }}>
 			<ContextDescriptionEditor
 				aria-label="Work item description"
 				hugContent={empty}
@@ -92,7 +96,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 				trailingNode={DESCRIPTION_TRAILING_NODE}
 				value={content.descriptionDraft}
 			/>
-			</div>
+			</motion.div>
 		</div>
 	);
 	return empty ? (

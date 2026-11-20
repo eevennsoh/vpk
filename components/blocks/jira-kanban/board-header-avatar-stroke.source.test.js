@@ -8,17 +8,17 @@ const HEADER_SOURCE = read("board-header.tsx");
 const EXPERIMENTAL_HEADER_SOURCE = read("experimental/experimental-board-header.tsx");
 const EXPERIMENTAL_V2_HEADER_SOURCE = read("experimental-v2/experimental-v2-board-header.tsx");
 
-test("board facepile human avatars keep the white separator inside clickable wrappers", () => {
+test("board facepile human avatars keep the selection indicator", () => {
 	assert.match(
 		HEADER_SOURCE,
-		/className=\{cn\(\s*showGroupStroke && "ring-2 ring-background",[\s\S]*selected && "ring-2! ring-border-selected!"/u,
+		/className=\{cn\(\s*selected && "ring-2! ring-border-selected!"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/className=\{cn\(\s*showGroupStroke && !isAgent && "ring-2 ring-background",[\s\S]*selected && !isAgent/u,
+		/className=\{cn\(\s*selected && !isAgent && "ring-2! ring-border-selected!"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_V2_HEADER_SOURCE,
-		/className=\{cn\(\s*showGroupStroke && !isAgent && "ring-2 ring-background",[\s\S]*selected && !isAgent/u,
+		/className=\{cn\(\s*selected && !isAgent && "ring-2! ring-border-selected!"/u,
 	);
 });

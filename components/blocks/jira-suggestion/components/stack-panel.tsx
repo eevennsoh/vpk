@@ -21,7 +21,8 @@ export interface StackPanelProps {
 	id: string;
 	className?: string;
 	title?: string;
-	listStage?: "intro" | "list";
+	listStage?: "measuring" | "intro" | "list";
+	introHeight?: number;
 	focusOnMount?: boolean;
 	feed: SuggestionFeed;
 	deck: Deck;
@@ -38,15 +39,15 @@ export interface StackPanelProps {
  * The suggestions popover: heading with view · re-run · close, a body that is the stack, the unpacked
  * list or the caught-up state, and the progress footer.
  */
-export function StackPanel({ id, className, title, listStage, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
+export function StackPanel({ id, className, title, listStage, introHeight, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
 	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
 	const [grab, setGrab] = useState<{ id: SuggestionFieldId; progress: MotionValue<number> } | null>(null);
 	const checkRef = useRef<HTMLButtonElement>(null);
 	const toggleRef = useRef<HTMLButtonElement>(null);
 	const layoutGroup = useId();
 	const titleId = `${id}-title`;
-	const view = useDeckView(feed, deck, listStage === "list");
-	const headerView = view.listed || listStage === "intro" ? "list" : "stack";
+	const view = useDeckView(feed, deck, listStage === "intro" ? "stack" : listStage === undefined ? undefined : "list");
+	const headerView = view.listed || listStage !== undefined ? "list" : "stack";
 	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
 	const mode: BodyMode = deck.order.length === 0 ? "caught-up" : view.listed ? "list" : "stack";
 	const stackInteractive = mode === "stack" && listStage === undefined;
@@ -122,13 +123,15 @@ export function StackPanel({ id, className, title, listStage, focusOnMount = fal
 			aria-labelledby={titleId}
 			className={cn(
 				"flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay shadow-2xl outline-none",
-				listStage !== undefined ? "[&>header]:-mb-3 [&>header]:z-10" : null,
 				className,
 			)}
 			id={id}
 			ref={panelRef}
 			role="dialog"
-			style={listStage !== undefined && mode !== "caught-up" ? { height: maxHeight } : undefined}
+			style={listStage !== undefined ? {
+				height: mode === "caught-up" ? undefined : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
+				maxHeight: `min(${maxHeight}px, ${feed.onPreviewCard ? "56dvh" : "calc(100dvh - 3rem)"})`,
+			} : undefined}
 			tabIndex={-1}
 		>
 			<PanelHeader
@@ -144,6 +147,7 @@ export function StackPanel({ id, className, title, listStage, focusOnMount = fal
 			/>
 			<LayoutGroup id={layoutGroup}>
 				<PanelBody
+					key={listStage === "measuring" ? "measure" : "review"}
 					checkRef={checkRef}
 					deck={deck}
 					deckRef={deckRef}
@@ -165,7 +169,7 @@ export function StackPanel({ id, className, title, listStage, focusOnMount = fal
 				/>
 			</LayoutGroup>
 			<AnimatePresence initial={false}>
-				{mode === "caught-up" ? null : <StackFooter deck={deck} key="footer" />}
+				{mode === "caught-up" ? null : <StackFooter animateEntrance={listStage === undefined} deck={deck} key="footer" />}
 			</AnimatePresence>
 			<p aria-live="polite" className="sr-only">{deck.announcement}</p>
 		</div>

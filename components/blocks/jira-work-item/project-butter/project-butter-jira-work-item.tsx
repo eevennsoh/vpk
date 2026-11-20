@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
 import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
+import { ProjectButterSuggestionTargets } from "./suggestion-targets";
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -320,6 +321,7 @@ export function ProjectButterJiraWorkItem({
 	function startAgentFromComment(agent: AgentSessionItem["agent"], prompt: string) {
 		const session = model.startAgent(agent, content.summary, prompt);
 		addInvocation(session);
+		onAgentAdded?.(session, { code: workItem?.code ?? "VITA-1", summary: content.summary });
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
@@ -379,7 +381,7 @@ export function ProjectButterJiraWorkItem({
 	);
 	return (
 		<ProjectButterShell
-			toastSlot={<Toaster id={toasterId} position="bottom-left" />}
+			toastSlot={onAgentAdded ? undefined : <Toaster id={toasterId} position="bottom-left" />}
 			overlayContainerRef={overlayContainerRef}
 			empty={empty}
 			onClose={onClose}
@@ -392,6 +394,7 @@ export function ProjectButterJiraWorkItem({
 			chatPanel={chatPanel}
 			shell={shell}
 		>
+			<ProjectButterSuggestionTargets key={workItem?.code ?? "reference"}>
 			<ProjectButterHeader
 				key={workItem?.code ?? "reference"}
 				content={content}
@@ -452,6 +455,7 @@ export function ProjectButterJiraWorkItem({
 				)}
 			</div>
 			{detailsHost ? createPortal(details, detailsHost) : null}
+			</ProjectButterSuggestionTargets>
 			<ProjectButterSessionChat
 				onClose={() => setActiveSessionId(null)}
 				open={open && Boolean(activeSession && !isLocalAgentListItem(activeSession))}

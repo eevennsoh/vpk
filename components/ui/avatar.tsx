@@ -24,7 +24,6 @@ import { motionEase } from "@/lib/motion";
 
 const HEXAGON_CLIP = avatarHexagonClip()
 const HEXAGON_BORDER_CLIP = avatarHexagonBorderClip()
-const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip(2)
 
 // motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
 const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical } // duration-normal + ease-out-practical
@@ -61,8 +60,7 @@ type AvatarPresence = "online" | "busy" | "offline" | "focus"
 type AvatarUnassignedKind = "person" | "agent"
 type AvatarSize = NonNullable<VariantProps<typeof avatarVariants>["size"]>
 
-type AvatarGroupOverlap = "ring" | "cutout"
-const AvatarGroupContext = React.createContext<AvatarGroupOverlap | null>(null)
+const AvatarGroupContext = React.createContext(false)
 const AvatarGroupSizeContext = React.createContext<AvatarSize | undefined>(undefined)
 
 /** xs/sm (16/24) use the 12px small plus; 32px+ groups keep the default 16×16 medium plus. */
@@ -124,15 +122,14 @@ function Avatar({
 	style: styleProp,
 	...props
 }: Readonly<AvatarProps>) {
-	const groupOverlap = React.use(AvatarGroupContext)
-	const isInAvatarGroup = groupOverlap !== null
+	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const rootStyle = shape === "hexagon"
 		? avatarHexagonStyle<AvatarPrimitive.Root.State>(styleProp)
 		: styleProp
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
 		borderTone === "selected" && "after:border-border-selected",
-		groupOverlap === "cutout" && "after:border-0",
+		isInAvatarGroup && "after:border-0",
 		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
 		className
 	)
@@ -168,7 +165,7 @@ function Avatar({
 		return (
 			<AvatarPrimitive.Root
 				data-slot="avatar"
-				data-avatar-group-item={groupOverlap === "cutout" ? "" : undefined}
+				data-avatar-group-item={isInAvatarGroup ? "" : undefined}
 				data-avatar-enter={skipsEnter ? undefined : ""}
 				data-size={size}
 				data-shape={shape}
@@ -180,14 +177,6 @@ function Avatar({
 				style={rootStyle}
 				{...props}
 			>
-				{groupOverlap === "ring" ? (
-					<span
-						aria-hidden="true"
-						className="pointer-events-none absolute -inset-0.5 -z-10 bg-background"
-						style={{ clipPath: HEXAGON_SEPARATOR_CLIP }}
-						data-slot="avatar-hexagon-group-border"
-					/>
-				) : null}
 				<span
 					className="relative flex size-full items-center justify-center overflow-hidden"
 					style={{ clipPath: HEXAGON_CLIP }}
@@ -205,7 +194,7 @@ function Avatar({
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
-			data-avatar-group-item={groupOverlap === "cutout" ? "" : undefined}
+			data-avatar-group-item={isInAvatarGroup ? "" : undefined}
 			data-avatar-enter={skipsEnter ? undefined : ""}
 			data-size={size}
 			data-shape={shape}
@@ -217,7 +206,7 @@ function Avatar({
 			style={rootStyle}
 			{...props}
 		>
-			{groupOverlap === "cutout" ? (
+			{isInAvatarGroup ? (
 				<>
 					<span
 						data-slot="avatar-group-visual"
@@ -649,20 +638,19 @@ interface AvatarGroupProps extends React.ComponentProps<"div"> {
 	as?: "div" | "span"
 	label?: string
 	size?: AvatarSize
-	overlap?: AvatarGroupOverlap
 }
 
-function AvatarGroup({ as: Group = "div", children, className, label, overlap = "ring", ref, size, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ as: Group = "div", children, className, label, ref, size, ...props }: Readonly<AvatarGroupProps>) {
 	const resolvedSize = size ?? firstAvatarSize(children)
 	const groupRef = React.useRef<HTMLDivElement>(null)
-	useAvatarGroupCutouts(groupRef, Group, overlap === "cutout")
+	useAvatarGroupCutouts(groupRef, Group)
 	const setGroupRef = React.useCallback((node: HTMLDivElement | null) => {
 		groupRef.current = node
 		if (typeof ref === "function") return ref(node)
 		if (ref) ref.current = node
 	}, [ref])
 	return (
-		<AvatarGroupContext value={overlap}>
+		<AvatarGroupContext value={true}>
 			<AvatarGroupSizeContext value={resolvedSize}>
 				<Group
 					data-slot="avatar-group"
@@ -671,7 +659,6 @@ function AvatarGroup({ as: Group = "div", children, className, label, overlap = 
 					ref={setGroupRef}
 					className={cn(
 						"group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1",
-						overlap === "ring" && "*:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
 						// Keep DOM/tab order left-to-right while each following face sits behind.
 						"isolate [&>*]:relative [&>*]:[z-index:calc(sibling-count()-sibling-index()+1)]",
 						className
@@ -696,6 +683,7 @@ function AvatarGroupCount({
 	...props
 }: Readonly<AvatarGroupCountProps>) {
 	const groupSize = React.use(AvatarGroupSizeContext)
+	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const iconSize = avatarGroupCountIconSize(groupSize)
 	const content = React.Children.map(children, (child) => {
 		if (!React.isValidElement(child) || typeof child.type === "string") {
@@ -707,10 +695,13 @@ function AvatarGroupCount({
 	return (
 		<Count
 			data-slot="avatar-group-count"
-			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
+			data-avatar-group-item={isInAvatarGroup ? "" : undefined}
+			data-shape="circle"
+			className={cn("text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 relative flex shrink-0 items-center justify-center", className)}
 			{...props}
 		>
-			{content}
+			<span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] bg-muted" data-slot="avatar-group-visual" />
+			<span className="relative flex items-center">{content}</span>
 		</Count>
 	)
 }

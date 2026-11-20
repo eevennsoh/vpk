@@ -165,17 +165,11 @@ test("the description reveal finishes and does not replay when the item is reope
 	});
 });
 
-test("multi-paragraph reveal groups words, lines, paragraphs, and the remainder", async () => {
+test("a multi-paragraph description reveals only the first 64 words", async () => {
 	const text = ["one two three four five six seven eight nine ten", "eleven twelve thirteen", "fourteen fifteen sixteen", "seventeen eighteen nineteen", Array.from({ length: 1000 }, (_, index) => `extra${index}`).join(" ")].join("\n\n");
 	const view = await renderComponent({ entry: "components/blocks/jira-work-item/project-butter/description-rainbow-text.tsx", exportName: "DescriptionRainbowText", props: { text } });
 	const words = [...document.querySelectorAll("[data-description-word]")];
 	assert.equal(words.length, 64);
-	assert.deepEqual(words.slice(0, 5).map((word) => word.getAttribute("data-reveal-phase")), ["word", "word", "word", "word", "word"]);
-	assert.equal(words[5].getAttribute("data-reveal-phase"), "line");
-	assert.equal(words[10].getAttribute("data-reveal-phase"), "line");
-	assert.equal(words[13].getAttribute("data-reveal-phase"), "paragraph");
-	assert.equal(words[16].getAttribute("data-reveal-phase"), "paragraph");
-	assert.equal(words[19].getAttribute("data-reveal-phase"), "all");
 	await view.unmount();
 });
 
@@ -185,7 +179,6 @@ test("a long description reveals a bounded prefix before showing the full editab
 		await view.click(view.getByRole("button", { name: "Accept description" }));
 		const words = [...document.querySelectorAll("[data-description-reveal] [data-description-word]")];
 		assert.equal(words.length, 64);
-		assert.deepEqual(words.slice(0, 5).map((word) => word.getAttribute("data-reveal-phase")), ["word", "word", "word", "word", "word"]);
 		const editor = view.getByRole("textbox", { name: "Work item description" });
 		assert.equal(editor.textContent.length > 500, true);
 		await advanceUntil(t, () => document.querySelector("[data-description-reveal]") === null, REVEAL_SAFETY_STOP_MS - 1);

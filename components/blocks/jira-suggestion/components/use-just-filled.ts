@@ -5,16 +5,16 @@ import { useReducedMotion } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
-import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
-import { motionDuration } from "@/lib/motion";
+import { FILL_LANDING, type FillCursorPosition } from "@/components/blocks/jira-work-item/project-butter/details-rail";
+import { motionDuration, motionEase } from "@/lib/motion";
 
-const RAIL_STEPS: readonly SuggestionFieldId[] = ["assignee", "dueDate", "parent", "labels", "components", "fixVersion", "acceptanceCriteria"];
+const RAIL_STEPS: readonly Exclude<SuggestionFieldId, "description">[] = ["assignee", "dueDate", "parent", "labels", "components", "fixVersion", "acceptanceCriteria"];
 
 /** Coordinates the preview's text reveals and the batch cursor's journey through Details. */
 export function useJustFilled() {
 	const [filled, setFilled] = useState<ReadonlySet<SuggestionFieldId>>(new Set());
 	const [waiting, setWaiting] = useState<ReadonlySet<SuggestionFieldId>>(new Set());
-	const [barAfter, setBarAfter] = useState<string | null>(null);
+	const [cursor, setCursor] = useState<FillCursorPosition | null>(null);
 	const reduced = useReducedMotion();
 	const timers = useRef<number[]>([]);
 	useEffect(() => {
@@ -26,7 +26,7 @@ export function useJustFilled() {
 		timers.current.length = 0;
 		setWaiting(new Set());
 		setFilled(new Set());
-		setBarAfter(null);
+		setCursor(null);
 	}, []);
 	const finish = useCallback((id: SuggestionFieldId) => setFilled((current) => new Set([...current].filter((entry) => entry !== id))), []);
 	const flash = useCallback((ids: readonly SuggestionFieldId[], bulk: boolean) => {
@@ -40,20 +40,19 @@ export function useJustFilled() {
 		setFilled(new Set(ids.filter((id) => id === "description")));
 		setWaiting(new Set(details));
 		if (!details.length) return;
-		setBarAfter("top");
-		const step = DETAILS_RAIL_GLIDE.layout.duration * 1000;
+		setCursor({ field: details[0], phase: "lift" });
 		let elapsed = motionDuration.slow * 1000;
-		RAIL_STEPS.forEach((id) => {
+		details.forEach((id, index) => {
+			const phase = index === details.length - 1 ? "land" : "travel";
+			const duration = phase === "land" ? FILL_LANDING.duration : motionDuration.slow;
 			timers.current.push(window.setTimeout(() => {
-				setBarAfter(id);
-				if (ids.includes(id)) {
-					setWaiting((current) => new Set([...current].filter((entry) => entry !== id)));
-					setFilled((current) => new Set([...current, id]));
-				}
+				setCursor({ field: id, phase, travel: { duration, ease: phase === "land" ? FILL_LANDING.ease : motionEase.linear } });
+				setWaiting((current) => new Set([...current].filter((entry) => entry !== id)));
+				setFilled((current) => new Set([...current, id]));
 			}, elapsed));
-			elapsed += step + (ids.includes(id) ? motionDuration.slowest * 1000 : 0);
+			elapsed += (duration + motionDuration.slowest) * 1000;
 		});
-		timers.current.push(window.setTimeout(() => setBarAfter(null), elapsed));
+		timers.current.push(window.setTimeout(() => setCursor(null), elapsed));
 	}, [cancel, reduced]);
-	return { filled, waiting, barAfter, flash, finish, cancel };
+	return { filled, waiting, cursor, flash, finish, cancel };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
+import { useEffect, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
 import { AnimatePresence, type MotionValue, type Transition } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
@@ -61,6 +61,21 @@ export function CardDeck({
 }: Readonly<CardDeckProps>) {
 	const [hovered, setHovered] = useState(false);
 	const [focused, setFocused] = useState(false);
+	const [pointerField, setPointerField] = useState<string>();
+	const [focusField, setFocusField] = useState<string>();
+	const previewField = (morphing ? undefined : pointerField) ?? focusField;
+	const preview = listed && floating && feed.onPreviewCard
+		? feed.review.pending.find(({ id }) => id === previewField)
+		: undefined;
+	const previewId = preview?.id;
+	const previewText = preview?.valueText;
+	const onPreview = feed.onPreviewCard;
+	useEffect(() => {
+		if (!onPreview) return;
+		onPreview(previewId && previewText !== undefined ? { id: previewId, valueText: previewText } : null);
+	}, [onPreview, previewId, previewText]);
+	useEffect(() => () => onPreview?.(null), [onPreview]);
+	const fieldAt = (target: EventTarget) => target instanceof Element ? target.closest<HTMLElement>("[data-suggestion-field]")?.dataset.suggestionField : undefined;
 	const [grabbed, setGrabbed] = useState<MotionValue<number> | null>(null);
 	const layers = useDeckLayers(deck.formation);
 	const running = feed.status === "running";
@@ -68,7 +83,7 @@ export function CardDeck({
 	const ids = listed ? listIds : [...orderIds, ...gathering.filter((id) => !orderIds.includes(id))];
 	const top = listed ? undefined : deck.order.at(0);
 	const elevateRearCards = stackInteractive || (listed && !morphing);
-	const fanned = stackInteractive && (hovered || focused) && !grabbed && orderIds.length > 1;
+	const fanned = stackInteractive && ((!morphing && hovered) || focused) && !grabbed && orderIds.length > 1;
 	const keepInside = useSheetRoom(deckRef, STACK_ROOM, !listed);
 	const commit = (direction: SwipeDirection) => {
 		setGrabbed(null);
@@ -81,7 +96,7 @@ export function CardDeck({
 		// The kanban roll is tuned for narrow issue cards; a popover-wide card tilts less for the same corner reveal.
 		const spread = fanned ? 1 : 0;
 		return keepInside({
-			x: layer.xPx * (1 + spread * (FAN_SPREAD.x - 1)),
+			x: floating ? 0 : layer.xPx * (1 + spread * (FAN_SPREAD.x - 1)),
 			y: layer.yPx + spread * FAN_SPREAD.y * Math.min(depth, REAR_SHEETS),
 			rotate: layer.rotateDeg * WIDE_CARD_TILT * (1 + spread * (FAN_SPREAD.rotate - 1)),
 		});
@@ -103,7 +118,7 @@ export function CardDeck({
 
 	const entranceOf = (id: SuggestionFieldId): CardEntrance => {
 		if (returning?.ids.includes(id)) return returning.direction;
-		if (feed.newIds.has(id)) return "new";
+		if (!floating && feed.newIds.has(id)) return "new";
 		return listed && feed.review.decisionOf(id) !== "pending" ? "reveal" : "none";
 	};
 
@@ -119,13 +134,28 @@ export function CardDeck({
 			className={cn(
 				"relative isolate rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-surface-overlay",
 				listed ? "flex flex-col" : null,
+				morphing ? "pointer-events-none" : null,
 			)}
-			onBlur={() => setFocused(false)}
+			onBlur={(event) => {
+				setFocused(false);
+				if (!event.currentTarget.contains(event.relatedTarget)) setFocusField(undefined);
+			}}
 			onClick={onClick}
-			onFocus={onFocus}
+			onFocus={(event) => {
+				onFocus(event);
+				if (onPreview) {
+					setFocusField(fieldAt(event.target));
+					if (event.target.matches(":focus-visible")) setPointerField(undefined);
+				}
+			}}
 			onKeyDown={onKeyDown}
-			onPointerEnter={() => setHovered(true)}
-			onPointerLeave={() => setHovered(false)}
+			onPointerEnter={() => { if (!morphing) setHovered(true); }}
+			onPointerOver={(event) => {
+				if (!morphing && onPreview && event.pointerType !== "touch" && event.target instanceof Element && event.target.closest('[role="listitem"]')) {
+					setPointerField(fieldAt(event.target));
+				}
+			}}
+			onPointerLeave={() => { setHovered(false); setPointerField(undefined); }}
 			ref={deckRef}
 			role={listed ? "list" : "group"}
 			style={listed ? { gap: LIST_GAP } : undefined}
@@ -140,12 +170,10 @@ export function CardDeck({
 					const poseTransition: Transition = morphing ? { ...MORPH, delay } : FAN;
 					return (
 						<SuggestionCard
-							blurFace={floating && index === 0}
 							decision={feed.review.decisionOf(id)}
 							delay={delay}
 							elevated={index === 0 || elevateRearCards}
 							entrance={entranceOf(id)}
-							isNew={feed.newIds.has(id)}
 							key={id}
 							floating={floating}
 							morphing={morphing}
@@ -163,6 +191,7 @@ export function CardDeck({
 							peekProgress={role === "sheet" && index === 1 ? grabbed : null}
 							pose={role === "sheet" ? layerOf(index) : REST}
 							poseTransition={poseTransition}
+							previewing={id === previewId}
 							registerDepth={registerDepth}
 							role={role}
 							suggestion={suggestion}

@@ -187,7 +187,7 @@ test("24px horizontal group uses two 12px avatars and restores the compact footp
 	const rendered = new Resvg('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="12"><image href="' + png + '" width="20" height="12" /></svg>').render();
 	const separatorPixel = (6 * rendered.width + 12) * 4;
 	const pixel = [...rendered.pixels.slice(separatorPixel, separatorPixel + 3)];
-	for (const [index, expected] of [30, 180, 90].entries()) expect(Math.abs(pixel[index] - expected)).toBeLessThan(25);
+	expect(pixel[1] - Math.max(pixel[0], pixel[2])).toBeGreaterThan(60);
 	await playground.getByRole('button', { name: 'Pause animation', exact: true }).click();
 	expect(await geometry(playground.locator('[data-slot="human-agent-avatar"]'))).toEqual({ size: 24, agent: { x: 0, y: 0, size: 24 }, human: { x: 14, y: 14, size: 12 } });
 });
