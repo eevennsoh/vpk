@@ -17,6 +17,8 @@ minimumReleaseAgeExclude:
   # distortion-waves (libraries.dev/waves) requested ahead of the seven-day gate; zero deps,
   # no install scripts. Remove after it matures.
   - distortion-waves@0.1.0
+  # Voice Glow's MIT release with all five requested looks. Remove after it matures.
+  - voice-glow@0.4.0
   # ADS source-of-truth tokens; allow same-day design-system updates by request.
   - "@atlaskit/tokens"
   # Transitive runtime gate for current @atlaskit/tokens.

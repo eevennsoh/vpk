@@ -1,20 +1,22 @@
 # Voice Glow integration
 
-Imported runtime: `voice-glow@0.3.0` by Jakub Antalik, MIT.
-Source: https://github.com/Jakubantalik/Libraries.dev/tree/main/packages/voice-glow
+Imported runtime: `voice-glow@0.4.0` by Jakub Antalik, MIT.
+Source: https://github.com/Jakubantalik/Libraries.dev/tree/f14340a2ad05ad6e81d8d8f319a68ca8a907d480/packages/voice-glow
 Docs: https://libraries.dev/voice
-Published artifact: https://registry.npmjs.org/voice-glow/-/voice-glow-0.3.0.tgz
-SHA-1: `a2705843adf7bc07ea1b6c32763b6967cc1a4d53`.
+Published artifact: https://registry.npmjs.org/voice-glow/-/voice-glow-0.4.0.tgz
+SHA-1: `6e8641c1577a57c125e23440f1e8e7ad42a28a0c`.
 
 VPK exports `VoiceGlow` as a thin alias of `VoiceBeam`, preserving every
 upstream prop and export. Existing VPK border glows and audio waveforms do
 not supply this sound-reactive lobe/band geometry. No upstream source is
 vendored. The MIT notice is retained in `LICENSE.md` for bundled distribution.
 
-Version policy: Cautious (`~0.3.0`), since this is a pre-1.0 effect engine.
-The explicitly requested package first appeared on 2026-09-17, so its initial
-release has an exact `minimumReleaseAgeExclude` entry. Future releases remain
-subject to the seven-day maturity gate and pnpm trust checks.
+Version policy: exact `0.4.0`, the MIT release with all five built-in looks.
+Version `0.5.0` moves Mosaic, Dots, and Lines to Libraries Pro and removes their
+built-in string look names. The `0.4.0` update has a version-scoped release-age
+exception because the requested looks shipped on 2026-11-19. The npm integrity
+and pnpm trust checks still apply. Remove the exception after the seven-day
+window. Revisit the exact pin when a newer MIT release provides the five looks.
 
 ## API and demo coverage
 
@@ -26,10 +28,15 @@ subject to the seven-day maturity gate and pnpm trust checks.
 | `resolveVoiceDefaults`, `resolveVoiceStyle`, `themePresets` | Resolve GUI defaults from the selected preset/theme |
 | `voiceDefaults`, `voiceTypePresets`, `voiceTypeStyle`, `voicePalettes`, `voiceLobes`, `LOBE_SPACING`, `LOBE_SPAN`, `parseRgb`, remaining types | Re-exported advanced data/utilities; palettes also seed custom color controls |
 | `type`: default, pill, mobile | Main shape selector and dedicated pill/mobile examples |
+| `look`: glow, dither, mosaic, dots, lines | Look picker in the canonical demo, independent of the shape selector |
+| `pixelSize`, `pixelGlow`, `pixelDome`, `pixelMagnet` and pixel default helpers | Pixels section for Dither and Mosaic; upstream keeps pointer effects off under reduced motion |
+| `pixelDust`, `pixelExitTarget` | API and docs. Requires consumer-driven motion or a consumer-owned element to see the effect |
+| `dotSize`, `dotGap`, `dotShape`, `lineWidth`, `lineGap`, `linePattern`, `seeThrough` | Look-specific controls for Dots and Lines |
+| `texture`, `gravity`, `surface*`, `tint`, `tintAmount` | Surface geometry and optional ink tint for Dots and Lines |
 | `stream`, numeric/getter `level` | Live microphone and manual-intensity slider; getter API documented for frequent updates |
 | `active`, `paused`, `bands`, `staticColors`, theme/palette | Interactive main controls |
-| `motion` | Re-exported upstream prop for externally driven beam motion; the former built-in processing mode is no longer part of the free package |
-| `colors`, `bandColors` | Optional seven-lobe palette and four band-color editors |
+| `motion` | Re-exported upstream prop for externally driven beam motion. Upstream processing and emotion detection require Libraries Pro |
+| `colors`, `bandColors` | Optional seven-lobe palette and band-color editors for Glow, Dither, and Mosaic |
 | Every `VoiceGeometry` member, response/color/clock props | Grouped numeric controls; test checks full geometry coverage and every preset’s bounds |
 | `borderRadius` | Auto-detection by default; optional explicit-radius control |
 | `css`, HTML attributes, style/ref, level/fade callbacks | Preserved and documented; arbitrary CSS/code editing is outside the GUI |
@@ -80,8 +87,10 @@ Remove the demo guard once upstream cancels late requests itself.
 - `tests/visual/voice-glow.spec.ts`: rendered tests check simulated voice without
   microphone access, manual-mode/reset switching, and every
   shape at 1280px and 390px, pause/resume, reset, and dark
-  reduced motion. Surface and wrapper widths/positions must match; this guards
-  the original mobile overflow and narrow-screen pill mismatch.
+  reduced motion. The look picker test checks actual canvas pixels for each new
+  look, switching a look across host sizes, and restoring Glow. Surface and
+  wrapper widths/positions must match; this guards the original mobile overflow
+  and narrow-screen pill mismatch.
 - Next.js `get_compilation_issues` and `get_errors` returned no issues/errors.
 - Initial scoped axe audit: zero violations; color-contrast checks on some
   offscreen GUI controls were incomplete. ADS analysis MCP was unavailable.

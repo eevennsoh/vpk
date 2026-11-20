@@ -1,6 +1,6 @@
 "use client";
 
-// Imported runtime: https://libraries.dev/voice (voice-glow 0.3.0, MIT).
+// Imported runtime: https://libraries.dev/voice (voice-glow 0.4.0, MIT).
 // Keep the upstream API intact; VPK supplies the catalog name and demos.
 export { VoiceBeam as VoiceGlow, VoiceBeam as default } from "voice-glow";
 export * from "voice-glow";
