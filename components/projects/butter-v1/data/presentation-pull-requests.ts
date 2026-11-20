@@ -41,6 +41,35 @@ function createPreview({
 	};
 }
 
+export const BUTTER_PAY_109_RELATED_PULL_REQUESTS = [
+	{
+		number: 1911,
+		status: "open",
+		preview: createPreview({
+			additions: 82,
+			author: PAY_STORY_PEOPLE.maya,
+			branch: "pay-109-webhook-schema-compatibility",
+			deletions: 9,
+			filesChanged: 5,
+			relativeTime: "3h",
+			title: "Validate webhook schema compatibility",
+		}),
+	},
+	{
+		number: 1912,
+		status: "merged",
+		preview: createPreview({
+			additions: 46,
+			author: PAY_STORY_PEOPLE.jordan,
+			branch: "pay-109-webhook-schema-fixtures",
+			deletions: 12,
+			filesChanged: 3,
+			relativeTime: "2d",
+			title: "Update webhook contract fixtures",
+		}),
+	},
+] as const satisfies readonly JiraIssuePullRequestItem[];
+
 /** Dummy spacious overlay content, keyed by issue code (PR numbers repeat). */
 export const BUTTER_PULL_REQUEST_PREVIEWS = {
 	"PAY-101": createPreview({

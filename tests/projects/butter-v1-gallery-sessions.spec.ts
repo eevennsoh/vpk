@@ -551,18 +551,20 @@ test("session cards do not expose individual tool calls at any size", async ({ p
 	}
 });
 
-test("board and journey session menus show private marks for other people's sessions", async ({ page }) => {
+test("board, journey, and list session menus show private marks for other people's sessions", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	for (const view of ["Board", "e2e Journey"]) {
+	for (const view of ["Board", "e2e Journey", "List"]) {
 		await page.getByRole("button", { name: `Select ${view}`, exact: true }).click();
 		for (const [key, button, owners] of [
 			["PAY-107", "Using agents", ["Maya Ferreira", "Jordan Okafor"]],
 			["PAY-123", "Claude: Working", ["Jordan Okafor"]],
 		] as const) {
-			const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
-			await card.getByRole("button", { name: button }).click();
+			const workItem = view === "List"
+				? page.getByRole("row").filter({ has: page.getByRole("button", { name: key, exact: true }) })
+				: page.locator(`[data-issue-key="${key}"][data-board-column-title]`).filter({ visible: true });
+			await workItem.getByRole("button", { name: button }).click();
 			const menu = page.getByRole("dialog", { name: "Agent assignment" });
 			if (key === "PAY-107") await expect(menu.getByText(/use an agent|using agents|other agent activity/iu)).toHaveCount(0);
 			else await expect(menu.getByRole("button", { name: "Other agent activity", exact: true })).toBeVisible();

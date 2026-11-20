@@ -294,9 +294,9 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select Agent sessions",
 		"Select Board",
 		"Select Board (Card)",
+		"Select List",
 		"Select Work item",
 		"Select AI suggestions",
-		"Select List",
 		"Select Pull request",
 		"Select Development panel",
 	]);

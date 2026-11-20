@@ -59,6 +59,12 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		size: "1x1",
 	},
 	{
+		id: "list",
+		title: "List",
+		description: "The Jira list.",
+		size: "1x1",
+	},
+	{
 		id: "work-item",
 		title: "Work item",
 		description: "A Jira work item.",
@@ -69,12 +75,6 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		title: "AI suggestions",
 		description: "Review Rovo suggestions for an empty work item.",
 		size: "landscape",
-	},
-	{
-		id: "list",
-		title: "List",
-		description: "The Jira list.",
-		size: "1x1",
 	},
 	{
 		id: "pull-request",

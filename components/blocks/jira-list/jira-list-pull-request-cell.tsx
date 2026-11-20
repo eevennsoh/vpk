@@ -35,6 +35,12 @@ export function JiraListPullRequestCell({ issueKey, pullRequests = [] }: Readonl
 		return (
 			<Popover>
 				<PopoverTrigger
+					delay={0}
+					onClick={(event) => {
+						const isMouse = !("pointerType" in event.nativeEvent) || event.nativeEvent.pointerType === "mouse";
+						if (event.detail > 0 && isMouse) event.preventBaseUIHandler();
+					}}
+					openOnHover
 					render={<Button aria-label={`${label} for ${issueKey}`} className="absolute inset-0 size-full justify-start gap-2 px-3 font-normal" type="button" variant="ghost" />}
 				>
 					<JiraIssuePullRequestStatusIcon status="draft" />

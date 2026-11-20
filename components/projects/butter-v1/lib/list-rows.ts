@@ -13,7 +13,7 @@ import type {
 	JiraListRowData,
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
-import { BUTTER_PAY_113_RELATED_PULL_REQUESTS } from "@/components/projects/butter-v1/data/presentation-pull-requests";
+import { BUTTER_PAY_109_RELATED_PULL_REQUESTS } from "@/components/projects/butter-v1/data/presentation-pull-requests";
 
 /** Mirrors TopNavigation / `BUTTER_PAY_CURRENT_USER`; covered by the list-row contract tests. */
 const CURRENT_USER_ASSIGNEE = {
@@ -159,6 +159,7 @@ function toAssignedAgent(
 		idHint?: string;
 		invokedBy?: JiraListAssignedAgent["invokedBy"];
 		name: string;
+		privateTo?: JiraListAssignedAgent["privateTo"];
 		sessionTitle?: string;
 		role?: JiraListAssignedAgent["role"];
 		state?: string;
@@ -183,6 +184,7 @@ function toAssignedAgent(
 			: {}),
 		...(input.invokedBy ? { invokedBy: input.invokedBy } : {}),
 		...(input.host !== undefined ? { host: input.host } : {}),
+		...(input.privateTo ? { privateTo: input.privateTo } : {}),
 		...(input.role ? { role: input.role } : {}),
 		statusKind: status.statusKind,
 		statusLabel: status.statusLabel,
@@ -212,6 +214,7 @@ export function assignedAgentsFromCard(
 			idHint: activity.id,
 			invokedBy: activity.invokedBy,
 			name: activity.name,
+			privateTo: activity.privateTo,
 			sessionTitle: activity.sessionTitle,
 			role: activity.role,
 			state: activity.state,
@@ -415,7 +418,7 @@ function createListRow(
 			number: card.pullRequestNumber,
 			status: card.pullRequestStatus ?? "open",
 			preview: card.pullRequestPreview ?? { title: card.title, additions: 0, deletions: 0 },
-		}, ...(card.code === "PAY-113" ? BUTTER_PAY_113_RELATED_PULL_REQUESTS : [])] : undefined,
+		}, ...(card.code === "PAY-109" ? BUTTER_PAY_109_RELATED_PULL_REQUESTS : [])] : undefined,
 		labels: card.tags,
 		dueDate: card.dueDate,
 		contributors: card.assignee ? [card.assignee] : [],

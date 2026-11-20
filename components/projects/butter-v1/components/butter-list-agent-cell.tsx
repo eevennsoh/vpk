@@ -38,6 +38,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 		agent: { id: agentCatalog.find((agent) => agent.name === session.name)?.id ?? session.id, kind: "agent", name: session.name, avatarSrc: session.avatarSrc, brandName: session.brandName },
 		host: session.host,
 		invokedBy: session.invokedBy,
+		privateTo: session.privateTo,
 		role: session.role,
 		timeLabel: session.timeLabel,
 	}));
