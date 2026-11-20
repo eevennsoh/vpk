@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { motionRecipe } from "@/lib/motion";
@@ -65,8 +65,9 @@ export function JiraSuggestion() {
 	const deckRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const { overlayRef, overlay, anchorRef, style } = useOverlayPlacement(open);
-	const { filled, flash } = useJustFilled();
-	const deck = useDeck(feed, flash);
+	const { filled, waiting, barAfter, flash, finish, cancel } = useJustFilled();
+	const finishDescription = useCallback(() => finish("description"), [finish]);
+	const deck = useDeck(feed, flash, cancel);
 	const slide = useReducedMotion() ? 0 : 8;
 
 	const close = () => {
@@ -85,7 +86,7 @@ export function JiraSuggestion() {
 
 	return (
 		<WorkItemPreviewShell
-			main={<StackMain highlighted={filled.has("description")} review={feed.review} />}
+			main={<StackMain highlighted={filled.has("description")} onRevealComplete={finishDescription} review={feed.review} />}
 			overlay={(
 				<div className="pointer-events-none absolute inset-0 z-30" ref={overlayRef}>
 					<AnimatePresence initial={false}>
@@ -109,7 +110,7 @@ export function JiraSuggestion() {
 					<div ref={anchorRef}>
 						<StackTrigger feed={feed} onToggle={toggle} open={open} panelId={panelId} triggerRef={triggerRef} />
 					</div>
-					<MockDetailsRail highlighted={filled} review={feed.review} />
+					<MockDetailsRail barAfter={barAfter} highlighted={filled} review={feed.review} waiting={waiting} />
 				</>
 			)}
 		/>

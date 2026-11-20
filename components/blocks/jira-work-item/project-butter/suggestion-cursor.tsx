@@ -5,12 +5,11 @@ import { animate, motion, useReducedMotion } from "motion/react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
-import type { ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
 /** Filling status bar. It sits in the Details rail below the field about to receive a value, so each move slides one row past it. */
-export function ProjectButterSuggestionCursor({ after, finishing, rootRef }: Readonly<{ after: ProjectButterDetailFieldId | "top"; finishing: boolean; rootRef: RefObject<HTMLDivElement | null> }>) {
+export function ProjectButterSuggestionCursor({ after, finishing, rootRef }: Readonly<{ after: string; finishing: boolean; rootRef: RefObject<HTMLDivElement | null> }>) {
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const reduced = useReducedMotion();
 	const departure = reduced ? { duration: 0 } : {

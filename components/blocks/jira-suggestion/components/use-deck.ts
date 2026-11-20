@@ -61,7 +61,7 @@ const undoLabelOf = (entry: DeckDecision, labelOf: (id: SuggestionFieldId) => st
  * Deck order and decision history over the shared review. A re-run's finds go to the top of the deck, since the
  * reviewer just asked for them; undo returns cards to the top in the order they left.
  */
-export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly SuggestionFieldId[]) => void): Deck {
+export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly SuggestionFieldId[], bulk: boolean) => void, onRestore: () => void = () => {}): Deck {
 	const { review } = feed;
 	const [history, setHistory] = useState<readonly DeckDecision[]>([]);
 	const [front, setFront] = useState<readonly SuggestionFieldId[]>([]);
@@ -110,7 +110,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		setHistory((current) => [...current, entry]);
 		if (entry.decision === "accept") nextReceipt("accept", subjectOf(entry.ids.map(labelOf)));
 		else setReceipt(null);
-		if (entry.decision === "accept") onAccepted(entry.ids);
+		if (entry.decision === "accept") onAccepted(entry.ids, entry.bulk === true);
 	};
 
 	const decide = (id: SuggestionFieldId, decision: SwipeDirection) => {
@@ -130,6 +130,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 	};
 
 	const bringBack = (entry: DeckDecision) => {
+		onRestore();
 		for (const id of entry.ids) review.undo(id);
 		setFront(entry.ids);
 		setReceipt(null);
