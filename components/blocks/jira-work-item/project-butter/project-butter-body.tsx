@@ -13,6 +13,7 @@ import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/pro
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
+import { cn } from "@/lib/utils";
 
 export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, sessionActivityView = false, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;
@@ -41,7 +42,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 	const activityRows = content.activityEntries.length === 0 ? "none" : content.activityEntries.every((entry) => entry.kind === "event" && entry.icon === "created") ? "origin" : "feed";
 	const [replyTarget, setReplyTarget] = useState<Readonly<{ entryId: string; targetId: string; actor: JiraActivityActor }> | null>(null);
 	const [replyFocusRequest, setReplyFocusRequest] = useState(0);
-	const [latestReplyEntryId, setLatestReplyEntryId] = useState<string | null>(null);
+	const [latestReplyEntryIds, setLatestReplyEntryIds] = useState<ReadonlySet<string>>(() => new Set());
 	const [instructionDraft, setInstructionDraft] = useState<string | null>(null);
 	function selectReply(entry: JiraActivityCommentEntry, targetId: string, actor: JiraActivityActor) {
 		setInstructionDraft(null);
@@ -68,7 +69,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 		setCommentDraft: (update) => setInstructionDraft((draft) => typeof update === "function" ? update(draft ?? "") : update),
 	};
 	return (
-		<div className={compact ? "flex min-w-0 flex-col gap-4" : "flex min-w-0 flex-col gap-6"}>
+		<div className={cn("flex min-w-0 flex-col", compact ? "gap-4" : "gap-6", activityRows === "feed" && "min-h-full")}>
 			<div className={empty ? "group/empty-actions -mb-4 flex flex-col" : undefined}>
 				<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 				{empty && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null}
@@ -81,12 +82,14 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 			) : null}
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
-			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryId={latestReplyEntryId} onDraftSessionInstruction={({ entry }, text) => {
+			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryIds={latestReplyEntryIds} onDraftSessionInstruction={({ entry }, text) => {
 				if (replyTarget?.entryId !== entry.id || instructionDraft === null) setInstructionDraft(text);
 				setReplyTarget({ entryId: entry.id, targetId: entry.id, actor: entry.actor });
 				setReplyFocusRequest((current) => current + 1);
 			}} />
-			<ProjectButterCommentBar active={active} activityRows={activityRows} content={composerContent} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => { setReplyTarget(null); setInstructionDraft(null); }} onActivityReplySubmitted={sessionActivityView ? setLatestReplyEntryId : undefined} sessions={sessions} sidePanel={sidePanel} />
+			{/* Fill short feeds while canceling the extra flex gap introduced by the spacer. */}
+			{activityRows === "feed" ? <div aria-hidden className={cn("mt-auto", compact ? "-mb-4" : "-mb-6")} /> : null}
+			<ProjectButterCommentBar active={active} activityRows={activityRows} content={composerContent} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => { setReplyTarget(null); setInstructionDraft(null); }} onActivityReplySubmitted={(entryId) => setLatestReplyEntryIds((current) => new Set(current).add(entryId))} sessions={sessions} sidePanel={sidePanel} />
 		</div>
 	);
 }

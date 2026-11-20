@@ -170,6 +170,7 @@ export function JiraActivityCard({
 								hideLeadAvatar ? "min-h-8" : null,
 							)}
 							data-slot="jira-activity-comment-header"
+							data-jira-activity-reply-header={activityGroup === "activity-reply" ? "" : undefined}
 						>
 							{headerConnector}
 							{hideLeadAvatar ? null : headerAvatar}

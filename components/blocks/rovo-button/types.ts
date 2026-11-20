@@ -8,6 +8,8 @@ export interface FloatingRovoButtonSuggestion {
 	label: string;
 	icon?: ReactNode;
 	ariaLabel?: string;
+	/** Play the launcher's existing logo cycle when this suggestion arrives. */
+	animateLogoOnArrival?: boolean;
 	onSelect: () => void;
 	onDismiss?: () => void;
 }

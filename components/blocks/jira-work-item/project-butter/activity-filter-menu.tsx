@@ -3,6 +3,7 @@
 import FilterIcon from "@atlaskit/icon/core/filter";
 import type { ProjectButterActivityFilters, ProjectButterActivitySort } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -32,9 +33,12 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 }>) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}>
-				<FilterIcon label="" size="small" />
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger render={<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" iconSize="compact" size="icon" type="button" variant="ghost" />} />}>
+					<FilterIcon label="" size="small" />
+				</TooltipTrigger>
+				<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">More filters</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent align="end" positionerClassName="z-[650]">
 				{onFiltersChange ? <>
 					<DropdownMenuGroup>

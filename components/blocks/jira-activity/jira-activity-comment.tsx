@@ -119,11 +119,11 @@ function ActivityActorAvatar({
 }: Readonly<{
 	actor: JiraActivityActor;
 	attributedBy?: JiraActivityCommentEntry["attributedBy"];
-	sizePx?: 16 | 32;
+	sizePx?: 16 | 24 | 32;
 }>) {
 	if (actor.kind === "person") {
 		return (
-			<Avatar aria-hidden size={sizePx === 16 ? "xs" : "default"}>
+			<Avatar animate={false} aria-hidden size={sizePx === 16 ? "xs" : sizePx === 24 ? "sm" : "default"}>
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
@@ -136,6 +136,7 @@ function ActivityActorAvatar({
 
 	return (
 		<AgentAvatarVisual
+			animate={false}
 			appearance={actor.appearance}
 			avatarSrc={actor.avatarSrc}
 			brandName={actor.brandName}
@@ -248,6 +249,7 @@ function ThreadReplyCard({
 	replyComposerId,
 	replySelected,
 	externalReply,
+	showReplySelection,
 	onAddToChat,
 	onViewSession,
 	resolved,
@@ -263,6 +265,7 @@ function ThreadReplyCard({
 	threaded = false,
 	continued = false,
 	actionsPlacement = "footer",
+	actorAvatarSize = 32,
 }: Readonly<{
 	reply: JiraActivityReply;
 	attributedBy?: JiraActivityCommentEntry["attributedBy"];
@@ -274,6 +277,7 @@ function ThreadReplyCard({
 	replyComposerId?: string;
 	replySelected: boolean;
 	externalReply?: boolean;
+	showReplySelection: boolean;
 	onAddToChat?: () => void;
 	onViewSession?: (item: AgentListItem) => void;
 	resolved: boolean;
@@ -289,6 +293,7 @@ function ThreadReplyCard({
 	threaded?: boolean;
 	continued?: boolean;
 	actionsPlacement?: "footer" | "hover";
+	actorAvatarSize?: 24 | 32;
 }>) {
 	const [toggledReactions, setToggledReactions] = useState<readonly string[]>([]);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
@@ -321,7 +326,7 @@ function ThreadReplyCard({
 			reactions={hoverActions ? [] : reactionSummaries}
 			replyComposerId={!externalReply && replySelected ? replyComposerId : undefined}
 			replyExpanded={externalReply ? undefined : replySelected}
-			replyPressed={externalReply ? replySelected : undefined}
+			replyPressed={externalReply && showReplySelection ? replySelected : undefined}
 			replyRef={replyButtonRef}
 			trailingActions={tools}
 		/>
@@ -335,7 +340,7 @@ function ThreadReplyCard({
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
-				headerAvatar={<ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} />}
+				headerAvatar={(reply.actor.kind === "agent" || reply.actor.kind === "person") && actorAvatarSize === 24 ? <span className="flex size-8 shrink-0 items-center justify-center"><ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} sizePx={24} /></span> : <ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} />}
 				headerConnector={threaded ? <ThreadConnector centered continued={false} /> : undefined}
 				headerLayout={headerLayout}
 				item={reply.sessionItem}
@@ -386,18 +391,24 @@ export function JiraActivityComment({
 	onReplyDraftChange,
 	onSelectReply,
 	selectedReplyId,
+	showReplySelection = true,
 	replyRequestId,
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
 	renderEarlierRepliesLabel,
+	replyCollapseKey,
 	earlierRepliesSelectedAppearance,
+	earlierRepliesAppearance = "button",
+	showEarlierRepliesIcon = true,
 	renderReplyComposer,
 	threaded = false,
 	headerLayout = "stacked",
+	actorAvatarSize = 32,
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
 	bodyContent?: ReactNode;
 	headerLayout?: JiraActivityCardProps["headerLayout"];
+	actorAvatarSize?: 24 | 32;
 	currentUser: JiraActivityActor;
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string, mentionedAgentIds?: readonly string[]) => void;
@@ -417,11 +428,15 @@ export function JiraActivityComment({
 	onReplyDraftChange?: (value: string) => void;
 	onSelectReply?: (targetId: string, actor: JiraActivityActor) => void;
 	selectedReplyId?: string;
+	showReplySelection?: boolean;
 	replyRequestId?: number;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
 	commentActionsPlacement?: "footer" | "hover";
-	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean, entry: JiraActivityCommentEntry) => ReactNode;
+	replyCollapseKey?: string;
 	earlierRepliesSelectedAppearance?: "default" | "icon-only";
+	earlierRepliesAppearance?: "button" | "link";
+	showEarlierRepliesIcon?: boolean;
 	/** Replaces the default reply composer so a surface can reuse its own comment box. */
 	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	threaded?: boolean;
@@ -454,8 +469,13 @@ export function JiraActivityComment({
 	}
 	const [previewAttachment, setPreviewAttachment] = useState<JiraActivityImageAttachment | null>(null);
 	const [repliesExpanded, setRepliesExpanded] = useState(
-		entry.defaultRepliesExpanded ?? !nested,
+		replyCollapseKey === undefined ? entry.defaultRepliesExpanded ?? !nested : false,
 	);
+	const [previousReplyCollapseKey, setPreviousReplyCollapseKey] = useState(replyCollapseKey);
+	if (replyCollapseKey !== previousReplyCollapseKey) {
+		setPreviousReplyCollapseKey(replyCollapseKey);
+		if (replyCollapseKey !== undefined) setRepliesExpanded(false);
+	}
 	const composerId = useId();
 	const repliesId = useId();
 	const composerVisible = !onSelectReply && allowReply && (!collapsible || replyTarget !== null);
@@ -529,18 +549,18 @@ export function JiraActivityComment({
 			aria-expanded={repliesExpanded}
 			selectedAppearance={earlierRepliesSelectedAppearance}
 			// Threaded: trim the leading inset so faces and label start on the reply text column, while the hover plate stays clear of the connector curve.
-			className={cn("relative justify-self-start", threaded ? "-ml-1 pl-1 font-normal text-text-subtle" : null)}
+			className={cn("relative justify-self-start", threaded ? "-ml-1 font-normal text-text-subtle" : null, threaded ? (showEarlierRepliesIcon ? "pl-1" : "px-1") : null, earlierRepliesAppearance === "link" ? "text-text-subtle hover:bg-transparent hover:underline active:bg-transparent active:text-text-subtle aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent" : null)}
 			onClick={() => setRepliesExpanded((expanded) => !expanded)}
 			size="compact"
 			type="button"
-			variant={threaded ? "ghost" : "link"}
+			variant={earlierRepliesAppearance === "link" || !threaded ? "link" : "ghost"}
 		>
-			{threaded ? (
+			{threaded && showEarlierRepliesIcon ? (
 				<span aria-hidden className="absolute -left-[29px] flex h-5 w-4 items-center justify-center bg-surface text-icon-subtle [&>span]:inline-flex [&>span]:items-center [&>span]:justify-center" data-jira-activity-reply-toggle-icon>
 					{repliesExpanded ? <ShrinkVerticalIcon label="" size="small" /> : <GrowVerticalIcon label="" size="small" />}
 				</span>
 			) : null}
-			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded) : <>
+			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded, entry) : <>
 				{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
 			</>}
 		</Button>
@@ -561,7 +581,7 @@ export function JiraActivityComment({
 			reactions={hoverActions ? [] : reactionSummaries}
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
 			replyExpanded={onSelectReply ? undefined : replyTarget?.key === entry.id}
-			replyPressed={onSelectReply ? selectedReplyId === entry.id : undefined}
+			replyPressed={onSelectReply && showReplySelection ? selectedReplyId === entry.id : undefined}
 			replyRef={replyButtonRef}
 			trailingActions={renderCommentTools?.(entry)}
 		/>
@@ -715,10 +735,12 @@ export function JiraActivityComment({
 					>
 						{replies.map((reply, index) => (
 							<ThreadReplyCard
+								actorAvatarSize={actorAvatarSize}
 								attributedBy={reply.actor.kind === "agent" && reply.actor.id === entry.actor.id ? entry.attributedBy : undefined}
 								headerLayout={headerLayout}
 								allowReply={allowReply}
 								externalReply={Boolean(onSelectReply)}
+								showReplySelection={showReplySelection}
 								bodyContent={renderReplyBody?.(reply)}
 								content={renderReply?.(reply)}
 								commentActions={commentActions}

@@ -33,14 +33,15 @@ function GroupComposition({
 	positions,
 	label,
 	transition,
+	groupSizePx,
 }: Readonly<
 	Pick<
 		HumanAgentAvatarMotionProps,
 		"agent" | "human" | "agentFirst" | "agentSize" | "humanSize" | "cutout" | "label" | "positions"
-	> & { grouped: boolean; transition: Transition }
+	> & { grouped: boolean; transition: Transition; groupSizePx?: 12 | 16 | 24 }
 >) {
 	const present = useIsPresent();
-	const groupSize = Math.min(agentSize, humanSize);
+	const groupSize = groupSizePx ?? Math.min(agentSize, humanSize);
 	const positionClassName = grouped ? undefined : "absolute";
 	const slotPositions: Partial<HumanAgentAvatarMotionProps["positions"]> = grouped ? {} : positions;
 	const willChange = transition.duration === 0 ? undefined : "transform";

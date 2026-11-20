@@ -40,6 +40,8 @@ export interface HumanAgentAvatarProps {
 	sizePx?: number;
 	/** Override the smaller avatar's size for compact surfaces. */
 	badgeSizePx?: 12 | 16;
+	/** Avatar size in the horizontal group, independent of the compact badge size. */
+	groupSizePx?: 12 | 16 | 24;
 	className?: string;
 }
 
@@ -73,6 +75,7 @@ export function HumanAgentAvatar({
 	attributionOrder = "agent-first",
 	sizePx = 32,
 	badgeSizePx,
+	groupSizePx,
 	className,
 }: Readonly<HumanAgentAvatarProps>) {
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
@@ -117,6 +120,7 @@ export function HumanAgentAvatar({
 				options={motion}
 				animate={shouldAnimate}
 				composition={composition}
+				groupSizePx={groupSizePx}
 				onAnimationComplete={onAnimationComplete}
 				agent={agentAvatar}
 				human={humanAvatar}

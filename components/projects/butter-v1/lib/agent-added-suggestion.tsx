@@ -7,6 +7,7 @@ export function agentAddedSuggestion(session: Pick<AgentSessionItem, "id" | "age
 	const { agent } = session;
 	return {
 		id: session.id,
+		animateLogoOnArrival: true,
 		label: `${agent.name} added`,
 		icon: <span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>,
 		onDismiss,

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import TimelineIcon from "@atlaskit/icon/core/timeline";
 import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
@@ -12,8 +14,11 @@ import { agentSessionAccentColor, agentSessionTintSeed } from "@/components/bloc
 import { resolveAgentBrandTint, resolveAgentBrandTintVariable } from "@/components/blocks/agent-session/agent-brand-tint";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProjectButterActivitySessionThreads } from "./activity-session-threads";
+import { draftThreadInstruction, PINNED_THREAD_RAIL, summarizeReplies, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, useWorkItemThreadSummaries } from "./activity-thread-summary";
+import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { motionDuration } from "@/lib/motion";
@@ -79,8 +84,12 @@ function ReplyFaces({ replies }: Readonly<{ replies: readonly JiraActivityReply[
 	);
 }
 
-function earlierRepliesLabel(hidden: readonly JiraActivityReply[], expanded: boolean): ReactNode {
-	return expanded ? "Hide replies" : <><ReplyFaces replies={hidden} /><span>Show {hidden.length} more {hidden.length === 1 ? "reply" : "replies"}</span></>;
+function earlierRepliesLabel(hidden: readonly JiraActivityReply[], expanded: boolean, pinned: boolean): ReactNode {
+	return expanded ? "Hide replies" : <><ReplyFaces replies={hidden} /><span>{pinned ? "" : "Show "}{hidden.length}{pinned ? "" : " more"} {hidden.length === 1 ? "reply" : "replies"}</span></>;
+}
+
+function ActivityTimelinePanel({ tabbed, children }: Readonly<{ tabbed: boolean; children: ReactNode }>) {
+	return tabbed ? <TabsContent value="timeline">{children}</TabsContent> : children;
 }
 
 export function ProjectButterActivity({
@@ -104,7 +113,7 @@ export function ProjectButterActivity({
 	singleView = false,
 	sessionView = false,
 	onDraftSessionInstruction,
-	latestReplyEntryId,
+	latestReplyEntryIds,
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
@@ -126,13 +135,15 @@ export function ProjectButterActivity({
 	singleView?: boolean;
 	sessionView?: boolean;
 	onDraftSessionInstruction?: (thread: Readonly<{ entry: JiraActivityCommentEntry; session: ProjectButterSessionItem }>, text: string) => void;
-	latestReplyEntryId?: string | null;
+	latestReplyEntryIds?: ReadonlySet<string>;
 }>) {
 	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
 	const [limit, setLimit] = useState(10);
 	const [view, setView] = useState<"timeline" | "sessions">("timeline");
 	const [visitedSessions, setVisitedSessions] = useState(false);
+	const [sessionsActivatedAtMs, setSessionsActivatedAtMs] = useState(0);
+	const summaryFor = useWorkItemThreadSummaries();
 	const [focusEntryId, setFocusEntryId] = useState(content.activityFocusId);
 	if (content.activityFocusId !== focusEntryId) {
 		setFocusEntryId(content.activityFocusId);
@@ -158,7 +169,7 @@ export function ProjectButterActivity({
 	const previewLimit = rowIndex(previewEntryId) + 1;
 	const selectedLimit = rowIndex(selectedReply?.entryId) + 1;
 	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1));
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1)).map((row) => row.kind === "comment" && latestReplyEntryIds?.has(row.id) ? { ...row, replyPreviewCount: 1 } : row);
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useJiraWorkItemTimelineNavigation(rows, { layoutKey: sidePanel, focusId: content.activityFocusId, viewKey: view });
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -205,6 +216,15 @@ export function ProjectButterActivity({
 		const id = projectButterSessionIdFromEntry(entryId);
 		return id ? sessions.find((session) => session.id === id) : undefined;
 	};
+	const toggleTimelinePin = (entryId: string) => {
+		const focused = document.activeElement instanceof HTMLButtonElement && document.activeElement.closest("[data-jira-activity-entry-id]")?.getAttribute("data-jira-activity-entry-id") === entryId;
+		content.toggleCommentPin(entryId);
+		if (!focused) return;
+		requestAnimationFrame(() => {
+			const row = [...(activityRef.current?.querySelectorAll<HTMLElement>("[data-project-butter-activity-feed] [data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === entryId);
+			row?.querySelector<HTMLButtonElement>('button[aria-label="Pin comment"], button[aria-label="Unpin comment"]')?.focus({ preventScroll: true });
+		});
+	};
 	const renderEvent = (entry: JiraActivityEventEntry): ReactNode | undefined => {
 		const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 		if (item && item.changes.length) return <ProjectButterHistoryChange actor={entry.actor} defaultOpen={expandedAudit} item={item} key={`${item.id}-${expandedAudit}`} timestamp={entry.timestamp} />;
@@ -219,16 +239,7 @@ export function ProjectButterActivity({
 	const headerTime = visibleRow ? activityHeaderTimeLabel(visibleRow.timestamp || activityDayLabel(visibleRow)) : "";
 	const header = (
 		<JiraWorkItemTimeline
-			actions={<div className="ml-auto flex items-center gap-3">
-				{sessionView ? (
-					<ToggleGroup aria-label="Activity view" value={[view]} variant="outline" size="sm" onValueChange={([next]) => {
-						if (next === "sessions") setVisitedSessions(true);
-						if (next === "timeline" || next === "sessions") setView(next);
-					}}>
-						<ToggleGroupItem value="timeline">Timeline</ToggleGroupItem>
-						<ToggleGroupItem value="sessions">Agent sessions</ToggleGroupItem>
-					</ToggleGroup>
-				) : null}
+			actions={<div className="ml-auto flex items-center gap-1">
 				<div className={cn("flex items-center", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" : null)}>
 					<ProjectButterActivityFilterMenu
 						expandDetails={expandedAudit}
@@ -239,6 +250,18 @@ export function ProjectButterActivity({
 						sort={sort}
 					/>
 				</div>
+				{sessionView ? (
+					<TabsList aria-label="Activity view" size="default" variant="default">
+						<Tooltip>
+							<TooltipTrigger render={<TabsTrigger aria-label="Timeline" value="timeline" />}><TimelineIcon label="" size="small" /></TooltipTrigger>
+							<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Timeline</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger render={<TabsTrigger aria-label="Agent sessions" value="sessions" />}><AiAgentIcon label="" size="small" /></TooltipTrigger>
+							<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Agent sessions</TooltipContent>
+						</Tooltip>
+					</TabsList>
+				) : null}
 			</div>}
 			data-project-butter-activity-header
 			getPreviewLabel={activityDateLabel}
@@ -248,23 +271,29 @@ export function ProjectButterActivity({
 			progress={progress}
 			ref={headerRef}
 			rows={rows}
-			showRail={!showSessions}
+			showRail={false}
 			stuck={!showSessions && stuck}
 			visibleId={visibleId}
 		/>
 	);
-	return (
-		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
+	const views = (
+		<>
 			{header}
-			<div hidden={showSessions} className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={showSessions ? null : feedRef}>
+			<ActivityTimelinePanel tabbed={sessionView}>
+			<div hidden={showSessions} className={cn(FEED_ROWS, PINNED_THREAD_RAIL, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, "[&_[data-jira-activity-entry-id]]:scroll-mt-28 [&_li:has([data-summary-inset='8'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-2 [&_li:has([data-summary-inset='24'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-6 [&_li:has([data-summary-inset='40'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-10", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={showSessions ? null : feedRef}>
 				<JiraActivity
+					actorAvatarSize={24}
 					actors={activityMentionAgents.map((agent) => ({ id: agent.id, name: agent.name, kind: "agent" as const, avatarSrc: agent.avatarSrc, brandName: agent.brandName }))}
 					replyRequest={replyRequest}
 					activeEntryId={selectedReply?.entryId ?? previewEntryId ?? visibleId ?? undefined}
 					onSelectReply={onSelectReply}
 					selectedReply={selectedReply}
+					showReplySelection={false}
 					commentActionsPlacement="hover"
 					commentHeaderLayout="inline"
+					earlierRepliesAppearance="link"
+					earlierRepliesSelectedAppearance="icon-only"
+					showEarlierRepliesIcon={false}
 					composer={null}
 					connectorStyle="thread"
 					currentUser={content.currentUser}
@@ -293,14 +322,21 @@ export function ProjectButterActivity({
 						onReplySubmitted?.();
 					}}
 					onViewSession={(session) => onOpenSession(session.id)}
-					renderCommentAction={(entry) => <><ProjectButterPinComment onToggle={() => content.toggleCommentPin(entry.id)} pinned={content.pinnedCommentIds.includes(entry.id)} /><ProjectButterCopyCommentLink id={entry.id} /></>}
+					renderCommentAction={(entry) => <><ProjectButterPinComment onToggle={() => toggleTimelinePin(entry.id)} pinned={content.pinnedCommentIds.includes(entry.id)} /><ProjectButterCopyCommentLink id={entry.id} /></>}
 					renderCommentBody={(entry) => {
 						const session = sessionFor(entry.id);
 						if (session) return <ProjectButterSessionStart onOpen={onOpenSession} session={session} />;
 						return entry.body.every((segment) => segment.type === "text") ? <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={jiraActivitySegmentsToPlainText(entry.body)} pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined} /> : undefined;
 					}}
-					renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
-					renderEarlierRepliesLabel={earlierRepliesLabel}
+					renderCommentAvatar={(entry, avatar) => summaryFor(entry).renderAvatar(entry, avatar)}
+					renderCommentTools={(entry, reply) => <><ProjectButterCommentTools content={content} entry={entry} reply={reply} />{reply ? null : summaryFor(entry).renderAction(entry.replies ?? [])}</>}
+					renderCommentReplies={(entry, replies, expand) => {
+						const session = sessionFor(entry.id);
+						const canDraft = session && onDraftSessionInstruction && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
+						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined);
+					}}
+					renderEarlierRepliesLabel={(replies, expanded, entry) => earlierRepliesLabel(replies, expanded, content.pinnedCommentIds.includes(entry.id) && !latestReplyEntryIds?.has(entry.id))}
+					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${entry.replies?.at(-1)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}
 					renderReplyComposer={(composer) => {
 						const request = replyRequest?.entryId === composer.entryId && replyRequest.id === composer.requestId ? replyRequest : undefined;
 						const prefill = request?.prefill;
@@ -325,9 +361,19 @@ export function ProjectButterActivity({
 					sortOrder="ascending"
 				/>
 			</div>
-			{sessionView && visitedSessions ? (
+			{!showSessions && allRows.length > rows.length ? (
+				<Button className="mt-3" onClick={() => setLimit(rows.length + 10)} type="button" variant="ghost">
+					Show more activity
+				</Button>
+			) : null}
+			</ActivityTimelinePanel>
+			{sessionView ? <TabsContent value="sessions">{visitedSessions ? (
 				<div hidden={!showSessions} ref={showSessions ? feedRef : null}>
 					<ProjectButterActivitySessionThreads
+						active={showSessions}
+						activatedAtMs={sessionsActivatedAtMs}
+						pinnedIds={content.pinnedCommentIds}
+						onTogglePin={content.toggleCommentPin}
 						entries={content.activityEntries.flatMap((entry) => {
 							const session = entry.kind === "comment" ? sessionFor(entry.id) : undefined;
 							return session && entry.kind === "comment" ? [{ entry, session }] : [];
@@ -338,10 +384,12 @@ export function ProjectButterActivity({
 						onSelectReply={onSelectReply}
 						onDraft={onDraftSessionInstruction}
 						onOpenSession={onOpenSession}
-						latestReplyEntryId={latestReplyEntryId}
+						latestReplyEntryIds={latestReplyEntryIds}
 						onEntriesChange={([updated]) => {
 							if (updated?.kind !== "comment") return;
-							const { replyPreviewCount: _preview, defaultRepliesExpanded: _expanded, ...changes } = updated;
+							const [canonical] = unpinProjectButterEntries([updated], content.activityEntries);
+							if (canonical?.kind !== "comment") return;
+							const { replyPreviewCount: _preview, defaultRepliesExpanded: _expanded, ...changes } = canonical;
 							content.setActivityEntries((entries) => entries.map((entry) => entry.id === updated.id ? { ...entry, ...changes } : entry));
 						}}
 						renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
@@ -349,12 +397,15 @@ export function ProjectButterActivity({
 						renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					/>
 				</div>
-			) : null}
-			{!showSessions && allRows.length > rows.length ? (
-				<Button className="mt-3" onClick={() => setLimit(rows.length + 10)} type="button" variant="ghost">
-					Show more activity
-				</Button>
-			) : null}
+			) : null}</TabsContent> : null}
+		</>
+	);
+	return (
+		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
+			{sessionView ? <Tabs onValueChange={(next) => {
+				if (next === "sessions") { setVisitedSessions(true); setSessionsActivatedAtMs(Date.now()); }
+				if (next === "timeline" || next === "sessions") setView(next);
+			}} value={view}>{views}</Tabs> : views}
 		</section>
 	);
 }

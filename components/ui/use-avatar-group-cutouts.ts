@@ -34,6 +34,7 @@ export function useAvatarGroupCutouts(ref: RefObject<HTMLElement | null>, host: 
 		if (!enabled || !element) return undefined;
 		const group = element;
 		const masked = new Set<HTMLElement>();
+		const transforms = new WeakMap<HTMLElement, string>();
 		let frame: number | undefined;
 		const schedule = () => {
 			frame ??= requestAnimationFrame(paint);
@@ -66,9 +67,30 @@ export function useAvatarGroupCutouts(ref: RefObject<HTMLElement | null>, host: 
 		}
 
 		const resize = new ResizeObserver(schedule);
-		const mutation = new MutationObserver(schedule);
+		const mutation = new MutationObserver((records) => {
+			let geometryChanged = false;
+			let structureChanged = false;
+			for (const record of records) {
+				const target = record.target;
+				if (record.type === "childList" || record.attributeName === "data-shape") {
+					structureChanged = true;
+				} else if (record.attributeName === "style" && target instanceof HTMLElement && (target.matches(AVATAR) || target.querySelector(AVATAR))) {
+					const transform = `${target.style.transform}|${target.style.translate}|${target.style.scale}`;
+					if (transforms.get(target) !== transform) {
+						transforms.set(target, transform);
+						geometryChanged = true;
+					}
+				}
+			}
+			if (geometryChanged) {
+				if (frame !== undefined) cancelAnimationFrame(frame);
+				paint();
+			} else if (structureChanged) {
+				schedule();
+			}
+		});
 		resize.observe(group);
-		mutation.observe(group, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-shape"] });
+		mutation.observe(group, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-shape", "style"] });
 		group.addEventListener("pointerover", schedule);
 		group.addEventListener("pointerout", schedule);
 		schedule();

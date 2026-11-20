@@ -27,28 +27,37 @@ test("work item opens local agents from Development instead of the header", asyn
 });
 
 test("timeline labels normalize minute and hour variants", () => {
-	for (const label of ["1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
+	for (const label of ["1m", "1min", "1 minute", "1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
 		expect(activityHeaderTimeLabel(label)).toBe("1 min ago");
 	}
 	expect(activityHeaderTimeLabel("2 mins ago")).toBe("2 min ago");
-	for (const label of ["2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
+	for (const label of ["2h", "2hr", "2 hrs", "2 hours", "2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
 		expect(activityHeaderTimeLabel(label)).toBe("2 hr ago");
+	}
+	for (const [label, expected] of [["1d", "1 day ago"], ["2d", "2 days ago"], ["2w", "2 weeks ago"], ["3mo", "3 months ago"], ["1y", "1 year ago"]]) {
+		expect(activityHeaderTimeLabel(label)).toBe(expected);
 	}
 	for (const label of ["Just now", "Yesterday", "2 days ago", "19 May"]) {
 		expect(activityHeaderTimeLabel(label)).toBe(label);
 	}
 });
 
-test("the sticky activity timeline uses min and hr for relative times", async ({ page }) => {
+test("the sticky activity timeline includes ago for relative times", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1600, height: 800 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
-	const timeline = page.getByRole("listbox", { name: "Navigate activity" });
+	const scroller = page.locator("[data-project-butter-work-item] > div").first();
 	const headerTime = page.locator("[data-jira-work-item-timeline-header-time]");
-	await timeline.getByRole("option", { name: /Liam Estrada: removed 2 fields/ }).click();
+	const scrollToEntry = (id: string) => scroller.evaluate((root, entryId) => {
+		const row = root.querySelector<HTMLElement>(`[data-jira-activity-entry-id="${entryId}"]`);
+		const header = root.querySelector<HTMLElement>("[data-project-butter-activity-header]");
+		if (!row || !header) throw new Error("Missing activity row or header");
+		root.scrollTop += row.getBoundingClientRect().top - root.getBoundingClientRect().top - header.getBoundingClientRect().height - 12;
+	}, id);
+	await scrollToEntry("sensitive-data-inline-removed-description");
 	await expect(headerTime).toHaveText("1 hr ago");
-	await timeline.getByRole("option", { name: /Venn added Cursor: Review the onboarding flow/ }).click();
+	await scrollToEntry("invocation-butter-cursor-forecast");
 	await expect(headerTime).toHaveText("18 min ago");
 });
 
@@ -79,7 +88,7 @@ for (const width of [700, 1600]) {
 		});
 		await expect(activityHeader.locator("[data-jira-work-item-timeline-header-time]")).toBeVisible();
 		await expect(scroller).toHaveCSS("mask-image", "none");
-		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toBeVisible();
+		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toHaveCount(0);
 		await scroller.evaluate((element, top) => { element.scrollTop = top; }, beforeHeader);
 		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });

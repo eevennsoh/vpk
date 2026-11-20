@@ -124,7 +124,7 @@ test("plain comments share the stacked identity header and the flush composer ge
 	assert.doesNotMatch(COMMENT_SOURCE, />\s*Resolved\s*<\/p>/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/<Avatar aria-hidden size=\{sizePx === 16 \? "xs" : "default"\}>/u,
+		/<Avatar animate=\{false\} aria-hidden size=\{sizePx === 16 \? "xs" : sizePx === 24 \? "sm" : "default"\}>/u,
 	);
 	assert.match(COMMENT_SOURCE, /function ActivityActorAvatar/u);
 	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{actor\.avatarSrc\}/u);
@@ -286,13 +286,14 @@ test("comments with nested replies expose one shared header control to collapse 
 	assert.match(COMMENT_SOURCE, /import GrowVerticalIcon from "@atlaskit\/icon\/core\/grow-vertical"/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/const \[repliesExpanded, setRepliesExpanded\] = useState\(\s*entry\.defaultRepliesExpanded \?\? !nested,\s*\)/u,
+		/const \[repliesExpanded, setRepliesExpanded\] = useState\(\s*replyCollapseKey === undefined \? entry\.defaultRepliesExpanded \?\? !nested : false,\s*\)/u,
 	);
 	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
 	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Hide all replies" : "Show all replies"/u);
 	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"/u);
 	assert.match(COMMENT_SOURCE, /className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle/u);
-	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
+	const headerRepliesToggle = COMMENT_SOURCE.slice(COMMENT_SOURCE.indexOf("const repliesToggle ="), COMMENT_SOURCE.indexOf("const earlierRepliesToggle ="));
+	assert.doesNotMatch(headerRepliesToggle, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(
 		COMMENT_SOURCE,
@@ -716,12 +717,13 @@ test("opening a controlled reply preserves a saved draft and prefills a mention 
 	assert.equal(emptyEditor.querySelector('[data-mention-category="human"]') !== null, true);
 });
 
-function renderThreadConnectors(connectorStyle, fadeAfterLast = false) {
+function renderThreadConnectors(connectorStyle, fadeAfterLast = false, overrides = {}) {
 	const actor = { id: "thread-author", name: "Annie Cook", kind: "person" };
 	return renderComponent({
 		entry: "components/blocks/jira-activity/index.tsx",
 		exportName: "JiraActivity",
 		props: {
+			...overrides,
 			connectorStyle,
 			fadeAfterLast,
 			composer: null,
@@ -737,6 +739,19 @@ function renderThreadConnectors(connectorStyle, fadeAfterLast = false) {
 		},
 	});
 }
+
+test("a plain replies disclosure remains operable without a rail icon or selected styling", async () => {
+	const view = await renderThreadConnectors("thread", false, { showEarlierRepliesIcon: false, earlierRepliesSelectedAppearance: "icon-only" });
+	const button = view.getByRole("button", { name: "Show more replies" });
+	assert.equal(button.querySelector("[data-jira-activity-reply-toggle-icon]") === null, true);
+	assert.equal(button.classList.contains("px-1"), true);
+	await view.click(button);
+	assert.equal(button.getAttribute("aria-expanded"), "true");
+	assert.equal(button.textContent.trim(), "Hide earlier replies");
+	assert.equal(button.className.includes("aria-expanded:bg-transparent"), true);
+	await view.click(button);
+	assert.equal(button.getAttribute("aria-expanded"), "false");
+});
 
 test("thread connectors branch only inside discussions while the spine continues to the next row", async () => {
 	const view = await renderThreadConnectors("thread");

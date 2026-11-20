@@ -4,6 +4,7 @@ import { useMemo, type ComponentProps } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { MessageResponse, streamdownComponents } from "@/components/ui-custom/message-markdown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Icon } from "@/components/ui/icon";
 import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
 import { toPullRequestSmartLink, type PullRequestSmartLinkStatus } from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 import { mentionSegmentForActor } from "@/components/blocks/jira-activity/jira-activity-actor-mention";
@@ -43,7 +44,7 @@ function mentionMarkdown() {
 export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen = false }: Readonly<{ actor: JiraActivityActor; item: ProjectButterReferenceChange; timestamp: string; defaultOpen?: boolean }>) {
 	return (
 		<Collapsible className="min-w-0" defaultOpen={defaultOpen}>
-			<CollapsibleTrigger className="group flex min-h-6 w-full min-w-0 items-center gap-1 rounded-sm text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-ring"><JiraActivitySegments className="inline-flex shrink-0 items-center [&_[data-tag-text]]:[text-box:trim-both_cap_alphabetic]" segments={[mentionSegmentForActor(actor)]} /><span className="min-w-0 [text-box:trim-both_cap_alphabetic]">{item.action}</span><span className="ml-2 shrink-0 text-xs text-text-subtlest [text-box:trim-both_cap_alphabetic]">{timestamp}</span><ChevronRightIcon label="" size="small" /></CollapsibleTrigger>
+			<CollapsibleTrigger className="group/history flex min-h-6 w-full min-w-0 items-center gap-1 rounded-sm text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-ring"><JiraActivitySegments className="inline-flex shrink-0 items-center [&_[data-tag-text]]:[text-box:trim-both_cap_alphabetic]" segments={[mentionSegmentForActor(actor)]} /><span className="min-w-0 [text-box:trim-both_cap_alphabetic]">{item.action}</span><span className="ml-2 shrink-0 text-xs text-text-subtlest [text-box:trim-both_cap_alphabetic]">{timestamp}</span><Icon aria-hidden className="shrink-0 text-icon-subtlest opacity-0 group-hover/history:opacity-100 group-focus-visible/history:opacity-100 [@media(hover:none)]:opacity-100" data-activity-chevron render={<ChevronRightIcon color="currentColor" label="" size="small" />} /></CollapsibleTrigger>
 			<CollapsibleContent>
 				<div className="pt-2"><dl className="space-y-3 rounded-lg bg-surface-sunken p-3 text-sm text-text">{item.changes.map((change, index) => <div className="space-y-1" key={`${change.label}-${index}`}><dt className="font-medium text-text-subtle">{change.label}</dt><dd className="whitespace-pre-wrap">{change.before ? <span className="mr-2 line-through">{change.before}</span> : null}{change.after ? <span>{change.after}</span> : <span>Removed</span>}</dd></div>)}</dl></div>
 			</CollapsibleContent>

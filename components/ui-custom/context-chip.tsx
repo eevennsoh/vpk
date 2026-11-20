@@ -2,9 +2,8 @@
 
 import type { ComponentProps, ReactNode } from "react";
 
-import CrossIcon from "@atlaskit/icon/core/cross";
-
 import { Button } from "@/components/ui/button";
+import { Tag } from "@/components/ui/tag";
 import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -50,25 +49,26 @@ export function ContextChip({
 }: Readonly<ContextChipProps>) {
 	return (
 		<div
-			className="group/context-chip inline-flex min-w-0 max-w-full origin-left items-center rounded-md bg-transparent hover:bg-bg-neutral has-[:focus-visible]:bg-bg-neutral motion-safe:transition-[scale,opacity] motion-safe:duration-normal motion-safe:ease-out-practical motion-safe:starting:scale-95 motion-safe:starting:opacity-0"
+			className="inline-flex min-w-0 max-w-full origin-left items-center motion-safe:transition-[scale,opacity] motion-safe:duration-normal motion-safe:ease-out-practical motion-safe:starting:scale-95 motion-safe:starting:opacity-0"
 			data-testid={testId}
 		>
+			<span aria-hidden className={`flex h-6 w-9 shrink-0 items-center justify-center pr-1 text-icon-subtle ${iconSize === "default" ? "[&_svg]:size-4" : "[&>span]:size-3! [&_svg]:size-3!"}`}>{icon}</span>
 			<Popover>
 				<PopoverTrigger
+					nativeButton={false}
 					render={
-						<Button
+						<Tag
 							aria-label={triggerLabel ?? `Review ${countLabel}`}
-							className="min-w-0 border-0 bg-transparent pl-2 pr-0 font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent aria-expanded:text-text-subtlest aria-expanded:[&_svg]:text-icon-subtlest"
-							size="compact"
-							iconSize={iconSize}
+							className="h-6 max-w-full shrink border-transparent text-sm text-text-subtlest hover:border-border-accent-gray-subtle [&_[data-slot=tag-remove-overlay-button]]:end-0.75 [&_[data-tag-text]]:leading-6"
+							onRemove={onRemoveAll}
+							removeButtonLabel={removeAllLabel}
+							removeVariant="overlay"
 							title={countLabel}
-							variant="ghost"
-						/>
+						>
+							<span>{countLabel}</span>
+						</Tag>
 					}
-				>
-					{icon}
-					<span className="truncate">{countLabel}</span>
-				</PopoverTrigger>
+				/>
 				<PopoverContent
 					align="start"
 					className="max-h-72 w-[min(22rem,calc(100vw-2rem))] gap-0 overflow-y-auto p-1"
@@ -98,15 +98,6 @@ export function ContextChip({
 					</ul>
 				</PopoverContent>
 			</Popover>
-			<Button
-				aria-label={removeAllLabel}
-				className="pointer-events-none shrink-0 border-0 bg-transparent text-icon-subtlest opacity-0 [&_svg]:text-icon-subtlest group-hover/context-chip:pointer-events-auto group-hover/context-chip:opacity-100 group-has-[:focus-visible]/context-chip:pointer-events-auto group-has-[:focus-visible]/context-chip:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100"
-				onClick={onRemoveAll}
-				size="icon-compact"
-				variant="ghost"
-			>
-				<CrossIcon color="currentColor" label="" size="small" />
-			</Button>
 		</div>
 	);
 }

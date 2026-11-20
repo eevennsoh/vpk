@@ -708,26 +708,14 @@ test("activity order follows timestamps in both directions", async () => {
 	assert.match(text(oldest[0]), /First round of email nurture/u);
 	assert.match(text(oldest.at(-1)), /Visuals are looking strong/u);
 	assert.equal(oldest.length, newest.length);
-	const stops = [...document.querySelectorAll('[aria-label="Navigate activity"] [role="option"]')].map((item) => item.textContent);
-	assert.equal(stops.length, oldest.length, "one timeline stop per rendered row");
-	assert.match(stops[0], /First round of email nurture/u);
 });
 
-test("activity navigation scrolls its content owner without moving the work item shell", async (t) => {
+test("activity shows its feed and filter without a scrubber", async () => {
 	const view = await renderWorkItem();
-	const shell = document.querySelector("[data-project-butter-presentation] > section");
-	const scrollport = document.querySelector("[data-project-butter-work-item]").firstElementChild;
-	const row = document.querySelector("[data-project-butter-activity] [data-jira-activity-entry-id]");
-	scrollport.style.overflowY = "auto";
-	scrollport.scrollTop = 120;
-	t.mock.method(scrollport, "getBoundingClientRect", () => ({ top: 200 }));
-	t.mock.method(row, "getBoundingClientRect", () => ({ top: 500 }));
-	const calls = [];
-	t.mock.method(scrollport, "scrollTo", (options) => calls.push(options));
-	await view.click(view.getAllByRole("option")[0]);
-	// 120 + 500 - 200, less the reading line: the 64px header (timeline inline) plus 12px clearance.
-	assert.deepEqual(calls, [{ top: 344, behavior: "auto" }]);
-	assert.equal(shell.scrollTop, 0);
+	assert.equal(view.queryByRole("listbox", { name: "Navigate activity" }) === null, true);
+	assert.equal(feedIds().length > 0, true);
+	await view.click(view.getByRole("button", { name: "Filter activity" }));
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Updates" }) !== null, true);
 });
 
 test("typing M in the summary or its descendants keeps focus in the summary", async () => {
@@ -877,7 +865,7 @@ test("new audit records and comment replies survive changing activity filters", 
 	assert.equal(view.queryByText("Posted from the bar") !== null, true);
 });
 
-test("own comments can be edited and deleted with both actions recorded in Activity", async () => {
+test("own comments can be edited with the change recorded in Activity", async () => {
 	const view = await renderWorkItem();
 	const ownComment = '[data-jira-activity-entry-id="butter-source-comment-1"]';
 	await view.click(view.getAllByRole("button", { name: "Edit comment" }).find((button) => button.closest(ownComment)));
@@ -885,11 +873,8 @@ test("own comments can be edited and deleted with both actions recorded in Activ
 	await view.click(view.getByRole("button", { name: "Save comment" }));
 	// The edit's audit row also carries the new text in its collapsed change detail, so read the comment itself.
 	assert.equal(document.querySelector(ownComment).textContent.includes("Updated campaign review"), true);
-	await view.click(view.getAllByRole("button", { name: "More comment actions" }).find((button) => button.closest(ownComment)));
-	await view.click(view.getByRole("menuitem", { name: "Delete comment" }));
-	assert.equal(document.querySelector(ownComment) === null, true);
 	await expandUpdates(view);
-	assert.equal(view.getAllByRole("button", { name: /Annie Cook\s*updated comment\s*Just now/u }).length, 2);
+	assert.equal(view.getAllByRole("button", { name: /Annie Cook\s*updated comment\s*Just now/u }).length, 1);
 });
 
 test("pinned local sessions open the continuation menu in place", async () => {

@@ -226,6 +226,21 @@ test("only the unlinked density leads a local row with its avatar; short is titl
 	]);
 });
 
+test("long session status labels remain outside the selectable glyph", async () => {
+	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]]) {
+		const view = await renderComponent({ entry: "components/blocks/agent-session/agent-session-lifecycle.tsx", exportName: "AgentSessionLifecycle", props: { state } });
+		const status = view.container.querySelector(`[data-agent-session-lifecycle-label="${state}"]`);
+		const glyph = view.getByRole("button", { name: label });
+		assert.equal(status !== null, true);
+		assert.equal(glyph.contains(status), false);
+		assert.equal(glyph.getAttribute("aria-pressed"), "false");
+		await view.click(glyph);
+		assert.equal(glyph.getAttribute("aria-pressed"), "true");
+		assert.equal(status.textContent, label);
+		await view.unmount();
+	}
+});
+
 test("viewer lifecycle shows every state without an actionable status control", async () => {
 	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["attention", "Needs attention"], ["complete", "Finished"]]) {
 		for (const [exportName, props] of [

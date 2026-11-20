@@ -30,6 +30,7 @@ export type HumanAgentAvatarMotionProps = Readonly<{
 	options?: Partial<HumanAgentAvatarMotionOptions>;
 	animate?: boolean;
 	composition?: "compact" | "horizontal-group";
+	groupSizePx?: 12 | 16 | 24;
 	onAnimationComplete?: () => void;
 }>;
 
