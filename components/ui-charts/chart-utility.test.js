@@ -43,6 +43,8 @@ test("automatic projections retain short-cadence trends at modern epoch timestam
 	for (const interval of [1_000, 60_000]) {
 		const data = [100, 101, 102].map((value, index) => ({ date: new Date(Date.UTC(2026, 0, 1) + index * interval), value }));
 		const result = buildProjectionPath({ sourceData: data, seriesKey: "value", mode: "auto", autoMethod: "linearRegression", horizonPoints: 2 });
+		assert.equal(result.length, 2);
+		assert.equal(result[0].value, 102);
 		assert.equal(result.at(-1).value, 104);
 	}
 });
