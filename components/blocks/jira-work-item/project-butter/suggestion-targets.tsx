@@ -5,7 +5,8 @@ import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion } fr
 import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { getShimmerWaveEndTime } from "@/components/ui-custom/lib/shimmer-wave-timing";
 import { motionDuration, motionEase } from "@/lib/motion";
-import { DETAIL_VALUE_ENTRY_OFFSET, DETAIL_VALUE_HANDOFF, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "./details-rail";
+import { cn } from "@/lib/utils";
+import { SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "./details-rail";
 import type { DetailSuggestionReveal } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { SuggestionValueReveal } from "./suggestion-rainbow-text";
 
@@ -162,12 +163,10 @@ export function SuggestionPreviewLabel({ field, children }: Readonly<{ field: st
 	return (
 		<span className="relative min-w-0 flex-1 has-[[data-suggestion-preview]]:[&>span:first-child]:opacity-0 group-focus-within/butter-field:[&>span:first-child]:opacity-100!">
 			<span className={field === "reporter" ? "block truncate" : undefined}>
-				<motion.span animate={{ opacity: reveal ? 0 : 1, y: reveal ? DETAIL_VALUE_ENTRY_OFFSET : 0 }} className="inline-block max-w-full group-focus-within/butter-field:opacity-100!" data-project-butter-field-control initial={false} transition={reveal ? { duration: motionDuration.instant } : DETAIL_VALUE_HANDOFF}>{children}</motion.span>
+				<span className={cn("inline-block max-w-full group-focus-within/butter-field:opacity-100!", reveal && "opacity-0")} data-project-butter-field-control>{children}</span>
 			</span>
 			<SuggestionFieldFeedback enabled={!reveal} field={field} inline />
-			<AnimatePresence initial={false}>
-				{reveal ? <SuggestionValueReveal key={reveal.key} reveal={reveal} truncate /> : null}
-			</AnimatePresence>
+			{reveal ? <SuggestionValueReveal key={reveal.key} reveal={reveal} truncate /> : null}
 		</span>
 	);
 }

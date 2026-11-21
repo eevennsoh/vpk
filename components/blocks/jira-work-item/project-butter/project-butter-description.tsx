@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -9,7 +8,6 @@ import { ProjectButterContentPreview } from "@/components/blocks/jira-work-item/
 import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
 import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-import { DETAIL_VALUE_ENTRY_OFFSET, DETAIL_VALUE_HANDOFF } from "./details-rail";
 import { SuggestionFieldFeedback } from "./suggestion-targets";
 import type { RichTextEditorExtensionOptions } from "@/components/ui-custom/rich-text-editor/types";
 
@@ -23,20 +21,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 	const pointerIntent = useRef(false);
 	const [pointerFocused, setPointerFocused] = useState(false);
 	const [expanded, setExpanded] = useState(false);
-	const [settlingReveal, setSettlingReveal] = useState<typeof reveal>(null);
-	const reduced = useReducedMotion();
 	const revealText = reveal && reveal.text === content.descriptionDraft && !content.editingDescription ? reveal.text : null;
-	const settling = Boolean(revealText) && settlingReveal === reveal;
-	const hidingEditor = Boolean(revealText) && !settling;
-	const startSettling = useCallback(() => {
-		if (reduced) onRevealComplete?.();
-		else setSettlingReveal(reveal ?? null);
-	}, [onRevealComplete, reduced, reveal]);
-	useEffect(() => {
-		if (!settling) return;
-		const timer = window.setTimeout(() => onRevealComplete?.(), DETAIL_VALUE_HANDOFF.duration * 1000);
-		return () => window.clearTimeout(timer);
-	}, [onRevealComplete, settling]);
 	useEffect(() => {
 		if (!revealText) return;
 		const timer = window.setTimeout(() => onRevealComplete?.(), motionDuration.slowest * 5 * 1000);
@@ -83,10 +68,10 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 			role="group"
 		>
 			<SuggestionFieldFeedback field="description" enabled={!content.editingDescription} />
-			{revealText ? <div aria-hidden="true" className={cn("tiptap-editor agent-instructions-tiptap-editor context-description-tiptap-editor pointer-events-none absolute inset-0 transition-opacity duration-slow ease-linear", empty && "context-description-tiptap-editor-hug", settling ? "opacity-0" : "opacity-100")} data-description-reveal="">
-				<DescriptionRainbowText key={reveal?.id} onComplete={startSettling} text={revealText} />
+			{revealText ? <div aria-hidden="true" className={cn("tiptap-editor agent-instructions-tiptap-editor context-description-tiptap-editor pointer-events-none absolute inset-0", empty && "context-description-tiptap-editor-hug")} data-description-reveal="">
+				<DescriptionRainbowText key={reveal?.id} onComplete={onRevealComplete} text={revealText} />
 			</div> : null}
-			<motion.div animate={{ opacity: hidingEditor ? 0 : 1, y: hidingEditor && !reduced ? DETAIL_VALUE_ENTRY_OFFSET : 0 }} className="col-start-1 row-start-1 min-w-0" initial={false} transition={settling ? DETAIL_VALUE_HANDOFF : { duration: motionDuration.instant }}>
+			<div className={cn("col-start-1 row-start-1 min-w-0", revealText && "opacity-0")}>
 			<ContextDescriptionEditor
 				aria-label="Work item description"
 				hugContent={empty}
@@ -96,7 +81,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 				trailingNode={DESCRIPTION_TRAILING_NODE}
 				value={content.descriptionDraft}
 			/>
-			</motion.div>
+			</div>
 		</div>
 	);
 	return empty ? (
