@@ -36,6 +36,7 @@ const spinnerVariants = cva(
 
 interface SpinnerProps
 	extends VariantProps<typeof spinnerVariants> {
+	animated?: boolean
 	className?: string
 	label?: string
 	/** Deterministic offset into the animation loop, used to desynchronise nearby spinners. */
@@ -68,6 +69,7 @@ function normalizeSpinnerPhaseOffsetMs(phaseOffsetMs: number): number {
 }
 
 function Spinner({
+	animated = true,
 	className,
 	size = "default",
 	variant = "default",
@@ -84,7 +86,7 @@ function Spinner({
 	const negativePhaseOffset = normalizedPhaseOffsetMs > 0
 		? `-${normalizedPhaseOffsetMs}ms`
 		: undefined
-	const tailAnimations = shouldReduceMotion ? null : (
+	const tailAnimations = shouldReduceMotion || !animated ? null : (
 		<>
 			<animate
 				attributeName="stroke-dasharray"
@@ -112,6 +114,7 @@ function Spinner({
 	if (variant === "bloom" || variant === "bloom-avatar") {
 		return (
 			<BloomSpinner
+				animated={animated}
 				avatar={variant === "bloom-avatar"}
 				className={cn(spinnerVariants({ size, variant }), className)}
 				label={label}
@@ -131,12 +134,12 @@ function Spinner({
 			className={cn(spinnerVariants({ size, variant }), className)}
 			style={{
 				...style,
-				animation: shouldReduceMotion
+				animation: shouldReduceMotion || !animated
 					? undefined
 					: "spin calc(var(--duration-slowest) * 2) var(--ease-linear) infinite",
-				animationDelay: shouldReduceMotion ? undefined : negativePhaseOffset,
+				animationDelay: shouldReduceMotion || !animated ? undefined : negativePhaseOffset,
 				transformOrigin: "center",
-				willChange: shouldReduceMotion ? undefined : "transform",
+				willChange: shouldReduceMotion || !animated ? undefined : "transform",
 			}}
 		>
 			{isRainbow ? (

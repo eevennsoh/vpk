@@ -1,4 +1,5 @@
 import type { ReactNode, Ref, RefObject } from "react";
+import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { AgentSessionColumnProps } from "@/components/blocks/agent-session-column/agent-session-column-types";
@@ -177,6 +178,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	filterAssigneePeople?: readonly WorkItemPerson[];
+	filterStatusOptions?: readonly string[];
 	/** Keep filter selections independent when the route swaps board datasets. */
 	boardFilterScopeKey?: string;
 	/** Total avatar slots in the header, including Unassigned. */

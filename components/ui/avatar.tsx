@@ -211,7 +211,7 @@ function Avatar({
 					<span
 						data-slot="avatar-group-visual"
 						className={cn(
-							"relative flex size-full rounded-[inherit] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border after:mix-blend-darken dark:after:mix-blend-lighten",
+							"relative flex size-full items-center justify-center rounded-[inherit] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border after:mix-blend-darken dark:after:mix-blend-lighten",
 							borderTone === "selected" ? "after:border-border-selected" : "after:border-border"
 						)}
 					>

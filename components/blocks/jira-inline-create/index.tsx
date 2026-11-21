@@ -5,7 +5,7 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
 import { ProjectButterIssueKey } from "@/components/blocks/jira-issue/project-butter-summary";
-import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
+import { JIRA_CREATABLE_ISSUE_TYPES, type JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -13,8 +13,6 @@ import type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
 import { JiraInlineCreateFields } from "./components/jira-inline-create-fields";
 
 export type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
-
-const ISSUE_TYPES: readonly JiraListIssueType[] = ["story", "epic", "bug", "task"];
 
 export function JiraInlineCreate({ assignees, columns, issueKey, onCancel, onSave, ref }: Readonly<JiraInlineCreateProps>) {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -53,7 +51,7 @@ export function JiraInlineCreate({ assignees, columns, issueKey, onCancel, onSav
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" aria-label="Choose work item type" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[700]" role="dialog" sideOffset={8}>
 					<DropdownMenuGroup aria-label="Choose work item type" role="menu">
-						{ISSUE_TYPES.map((type) => <DropdownMenuItem aria-label={type.charAt(0).toUpperCase() + type.slice(1)} className="[&_[data-slot=work-item-type-icon]_svg]:size-3" key={type} onMouseEnter={() => setPreviewType(type)} onFocus={() => setPreviewType(type)} onSelect={() => setIssueType(type)} selected={type === issueType}>
+						{JIRA_CREATABLE_ISSUE_TYPES.map((type) => <DropdownMenuItem aria-label={type.charAt(0).toUpperCase() + type.slice(1)} className="[&_[data-slot=work-item-type-icon]_svg]:size-3" key={type} onMouseEnter={() => setPreviewType(type)} onFocus={() => setPreviewType(type)} onSelect={() => setIssueType(type)} selected={type === issueType}>
 							<span className="flex min-w-0 items-center gap-3">
 								<span className="inline-flex size-4 shrink-0 items-center justify-center" data-slot="work-item-type-icon"><IssueTypeGlyph issueType={type} /></span>
 								<span className="min-w-0 truncate" data-slot="work-item-type-label">{type.charAt(0).toUpperCase() + type.slice(1)}</span>

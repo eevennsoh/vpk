@@ -56,3 +56,36 @@ test("work-item assignee picker aligns its search and scrolling rows", async ({ 
 	await page.getByRole("button", { name: "Change assignee" }).click();
 	await expectAssigneePickerGeometry(page.getByRole("dialog", { name: "Change assignee" }));
 });
+
+test("board assignee filter uses the work-item people picker and filters cards", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Change assignee" }).click();
+	const picker = page.getByRole("dialog", { name: "Change assignee" });
+	const referenceNames = await picker.getByRole("option").allTextContents();
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Assignee Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Assignee filter options" });
+	const search = menu.getByRole("textbox", { name: "Search people" });
+	await expect(search).toBeVisible();
+	const names = await menu.getByRole("menuitemcheckbox").locator(".truncate").allTextContents();
+	expect(names.slice(0, referenceNames.length)).toEqual(referenceNames);
+	expect(names).not.toContain("Claude");
+	expect(names).not.toContain("Cursor");
+	const unassigned = menu.getByRole("menuitemcheckbox", { name: "Unassigned", exact: true });
+	await expect(unassigned.locator('[data-unassigned="person"]')).toHaveCSS("width", "24px");
+	await search.fill("no such person");
+	await expect(menu.getByText("No people found")).toBeVisible();
+	await expect(menu.getByText("Try a different search term.")).toBeVisible();
+	await search.fill("Diego Santos");
+	const diego = menu.getByRole("menuitemcheckbox", { name: "Diego Santos", exact: true });
+	await expect(diego).toBeVisible();
+	await expect(diego.locator("img")).toHaveCSS("width", "24px");
+	await search.press("Enter");
+	await expect(diego).toHaveAttribute("aria-checked", "true");
+	await search.press("Escape");
+	await expect(page.getByRole("group", { name: "Assignee is Diego Santos" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-115: Rewrite the customer ship note after the wallet cut" })).toHaveCount(0);
+});

@@ -488,18 +488,22 @@ supplied reference copy and layout when reproducing a specific product state.
   <!-- 2026-11-15: "remove the 24x24 sizing of the icon tile but instead use 16x16"; "for the epic/parent icon tile, we can just have the icon" -->
   <!-- 2026-11-15: "actually icon size should be 12x12 not 16x16" supersedes the earlier 16px work item glyph size; search stays 16px. -->
   <!-- 2026-11-15: "actually we need to have it with the 16x16 container, otherwise it doesn't align nicely with the search icon" supersedes the earlier 12px container request. -->
-- **Scrollable searchable dropdowns:** Keep the search field fixed above the
-  scrollable rows and use the shared scroll mask with a 3rem top fade when the
-  list has scrolled. Extend the scroll area to the menu’s bottom edge or fixed
-  footer separator, with no empty strip between them and the menu inset inside
-  the scroll area. For a scrolling list, its viewport must reach the menu's
-  inner bottom edge, within 1px; do not reserve an outer bottom-padding strip.
-  Why: the top fade shows rows moving beneath the fixed search
-  field, and an empty bottom gap should not cut off visible row pixels.
-  <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
+- **Dropdown scroll edges:** Keep the standard bottom inset inside the scroll
+  area (6px for the default menu inset), including in non-searchable submenus.
+  When the list fits without scrolling, retain that inset below its last row.
+  When the list overflows, extend the scroll viewport to the menu's inner
+  bottom edge or fixed footer separator within 1px, so rows can scroll to that
+  edge. Why: an empty strip outside the viewport cuts off visible row pixels.
+  <!-- 2026-11-21: "we don't remove all bottom gap, like this that's not scrollable, we shouldn't remove the gap" -->
+  <!-- 2026-11-21: "bottom gap problem. it shouldn't be a gap." -->
   <!-- 2026-11-14: "we shouldn't cut away pixels with the bottom gap like that." -->
   <!-- 2026-11-14: "we can't have this empty gap cut out UI problem." -->
   <!-- 2026-11-21: "the search icon is misaligned and there's this extra bottom gap. we shouldn't have that." -->
+- **Scrollable searchable dropdowns:** Keep the search field fixed above the
+  scrollable rows and use the shared scroll mask with a 3rem top fade when the
+  list has scrolled. Why: the top fade shows rows moving beneath the fixed
+  search field.
+  <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
 - **Menu and agent-selector scroll edges:** Do not apply a bottom gradient fade
   to scrollable menu or agent-selector lists. Clip rows cleanly at the container
   edge or fixed footer separator. Why: the straight container edge provides the

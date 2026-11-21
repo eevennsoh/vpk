@@ -23,6 +23,7 @@ import type {
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import { PROJECT_BUTTER_ASSIGNEES } from "@/components/blocks/jira-work-item/project-butter/assignee-people";
 import { nextProjectButterDevelopmentPhase, PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
@@ -113,6 +114,9 @@ const ButterGalleryPullRequest = dynamic(() => import("./components/butter-galle
 const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-development-journey").then((module) => module.ProjectButterDevelopmentGallery));
 
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
+const BUTTER_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, BUTTER_DEFAULT_REPORTER];
+const BUTTER_FILTER_STATUSES = ["To do", "In progress", "In review", "Done"] as const;
+const WAC_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, WAC_DEFAULT_REPORTER];
 const BUTTER_TABS = [
 	{ label: "Backlog", icon: BacklogIcon, hasContent: false, placeholder: "No backlog content here yet" },
 	...getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list"),
@@ -812,6 +816,8 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						defaultShowUntracked={false}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={wacContent ? WAC_HEADER_ASSIGNEES : BUTTER_PAY_HEADER_ASSIGNEES}
+						filterAssigneePeople={wacContent ? WAC_FILTER_ASSIGNEES : BUTTER_FILTER_ASSIGNEES}
+						filterStatusOptions={BUTTER_FILTER_STATUSES}
 						headerAvatarLimit={wacContent ? WAC_HEADER_ASSIGNEES.length + 1 : undefined}
 						renderHeaderAssignee={renderEu26HeaderAssignee}
 						insightsEnabled={false}

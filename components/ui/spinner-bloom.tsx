@@ -14,6 +14,7 @@ const ORB_DOTS = [
 ] as const;
 
 interface BloomSpinnerProps {
+	animated?: boolean;
 	avatar?: boolean;
 	className?: string;
 	label: string;
@@ -22,6 +23,7 @@ interface BloomSpinnerProps {
 }
 
 export function BloomSpinner({
+	animated = true,
 	avatar = false,
 	className,
 	label,
@@ -29,7 +31,7 @@ export function BloomSpinner({
 	style,
 }: Readonly<BloomSpinnerProps>): React.ReactElement {
 	const shouldReduceMotion = useReducedMotion();
-	const canAnimate = !shouldReduceMotion;
+	const canAnimate = animated && !shouldReduceMotion;
 
 	return (
 		<svg

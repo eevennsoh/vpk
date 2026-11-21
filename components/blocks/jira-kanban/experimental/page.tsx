@@ -215,7 +215,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee, filterAssigneePeople, filterStatusOptions,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -470,7 +470,7 @@ function ExperimentalJiraKanbanPageContent({
 			: assignees,
 		[assignees, isPulse],
 	);
-	const boardFilterFields = useBoardFilterFields(filterAssignees, boardColumns);
+	const boardFilterFields = useBoardFilterFields(filterAssignees, boardColumns, filterAssigneePeople, filterStatusOptions);
 	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
@@ -898,6 +898,7 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
+						assigneePeople={filterAssigneePeople} statusOptions={filterStatusOptions}
 						columns={boardColumns}
 						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}

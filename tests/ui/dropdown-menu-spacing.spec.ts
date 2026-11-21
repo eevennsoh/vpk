@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 test("menu rows use consistent padding and grow with their content", async ({ page }) => {
@@ -101,6 +101,53 @@ test("pinned filter action has a centered compact icon", async ({ page }) => {
 		return { button: [button.width, button.height], icon: [icon.width, icon.height], inset: [icon.left - button.left, icon.top - button.top] };
 	});
 	expect(geometry).toEqual({ button: [24, 24], icon: [12, 12], inset: [6, 6] });
+	const assertSubtle = async (action: Locator) => {
+		const colors = await action.locator("svg").evaluate((icon) => {
+			const probe = document.createElement("span");
+			probe.style.color = "var(--ds-icon-subtle)";
+			icon.parentElement!.appendChild(probe);
+			const result = { actual: getComputedStyle(icon).color, fill: getComputedStyle(icon.querySelector("path")!).fill, expected: getComputedStyle(probe).color };
+			probe.remove();
+			return result;
+		});
+		expect(colors.actual).toBe(colors.expected);
+		expect(colors.fill).toBe(colors.expected);
+	};
+	await assertSubtle(pin);
+	await pin.focus();
+	await assertSubtle(pin);
+	await pin.click();
+	await page.getByRole("menuitem", { name: "Agent status Open submenu" }).hover();
+	await page.getByRole("menuitemcheckbox", { name: "Needs input", exact: true }).hover();
+	const unpinned = page.getByRole("menuitem", { name: "Pin Needs input", exact: true });
+	await expect(unpinned).toBeVisible();
+	await assertSubtle(unpinned);
+});
+
+test("agent status filter uses the board's lifecycle indicators", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Agent status Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Agent status filter options" });
+	const working = menu.getByRole("menuitemcheckbox", { name: "Working", exact: true });
+	const spinner = working.locator('[data-slot="spinner"][data-iconic-orb-avatar]');
+	await expect(spinner).toBeVisible();
+	await expect(spinner).toHaveCSS("width", "16.75px");
+	await expect.poll(() => spinner.evaluate((element) => element.getAnimations({ subtree: true }).filter((animation) => animation.playState === "running").length)).toBe(0);
+	await expect(spinner.locator("circle")).toHaveCount(6);
+	const finished = menu.getByRole("menuitemcheckbox", { name: "Finished", exact: true });
+	const check = finished.locator('[data-slot="icon-tile"] svg');
+	await expect(check).toHaveCSS("width", "12px");
+	const color = await check.evaluate((element) => getComputedStyle(element).color);
+	const success = await check.evaluate((element) => getComputedStyle(element).getPropertyValue("--ds-icon-success").trim());
+	expect(color).toBe(await check.evaluate((element, token) => {
+		const probe = document.createElement("span");
+		probe.style.color = token;
+		element.appendChild(probe);
+		const result = getComputedStyle(probe).color;
+		probe.remove();
+		return result;
+	}, success));
 });
 
 test("board filter pills edit and remove the applied conditions", async ({ page }) => {
@@ -433,4 +480,175 @@ test("parent picker rows follow dropdown spacing and select a work item", async 
 	await rows.nth(1).click();
 	await expect(list).toBeHidden();
 	await expect(page.getByRole("button", { name: "Change parent" })).toContainText(selectedLabel);
+});
+
+test("board parent filter follows the searchable parent picker", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Parent Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Parent filter options" });
+	await expect(menu).toHaveCSS("width", "320px");
+	const search = menu.getByRole("textbox", { name: "Search parent" });
+	await expect(search).toHaveAttribute("placeholder", "Search parent");
+	await expect(search).toBeFocused();
+	const row = menu.getByRole("menuitemcheckbox", { name: "Retire LegacyGatewayAdapter (PAY-90)" });
+	await expect(row).toBeVisible();
+	await expect(row.locator(".truncate")).toHaveText("Retire LegacyGatewayAdapter");
+	const geometry = await row.evaluate((element) => {
+		const icon = element.querySelector("svg")!.getBoundingClientRect();
+		const searchIcon = element.closest('[role="menu"]')!.querySelector('[data-slot="dropdown-menu-search-icon"]')!.getBoundingClientRect();
+		return { size: icon.width, centerOffset: Math.abs((icon.left + icon.right - searchIcon.left - searchIcon.right) / 2), color: getComputedStyle(element.querySelector("svg")!).color };
+	});
+	expect(geometry.size).toBe(12);
+	expect(geometry.centerOffset).toBeLessThanOrEqual(1);
+	await search.fill("PAY-91");
+	await expect(menu.getByRole("menuitemcheckbox")).toHaveCount(1);
+	await search.press("Enter");
+	await expect(menu.getByRole("menuitemcheckbox", { name: "Webhooks and contract safety (PAY-91)" })).toHaveAttribute("aria-checked", "true");
+	await search.fill("not a parent");
+	await expect(menu.getByText("No work items found")).toBeVisible();
+	await search.press("Escape");
+	await expect(page.getByRole("group", { name: "Parent is Webhooks and contract safety (PAY-91)" })).toBeVisible();
+});
+
+test("board sprint filter uses the parent picker treatment", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	const trigger = page.getByRole("menuitem", { name: "Sprint Open submenu" });
+	const triggerPath = await trigger.locator("svg path").first().getAttribute("d");
+	await trigger.hover();
+	const menu = page.getByRole("menu", { name: "Sprint filter options" });
+	await expect(menu).toHaveCSS("width", "320px");
+	const search = menu.getByRole("textbox", { name: "Search sprint" });
+	await expect(search).toHaveAttribute("placeholder", "Search sprint");
+	await expect(search).toBeFocused();
+	const row = menu.getByRole("menuitemcheckbox", { name: "Cut over to the v2 client (Sprint 24)" });
+	await expect(row.locator(".truncate")).toHaveText("Cut over to the v2 client");
+	expect(await row.locator("svg path").first().getAttribute("d")).toBe(triggerPath);
+	const offset = await row.evaluate((element) => {
+		const icon = element.querySelector("svg")!.getBoundingClientRect();
+		const searchIcon = element.closest('[role="menu"]')!.querySelector('[data-slot="dropdown-menu-search-icon"]')!.getBoundingClientRect();
+		return Math.abs((icon.left + icon.right - searchIcon.left - searchIcon.right) / 2);
+	});
+	expect(offset).toBeLessThanOrEqual(1);
+	await search.fill("Sprint 23");
+	await expect(menu.getByRole("menuitemcheckbox")).toHaveCount(1);
+	await search.press("Enter");
+	await expect(menu.getByRole("menuitemcheckbox", { name: "Groundwork for the adapter retirement (Sprint 23)" })).toHaveAttribute("aria-checked", "true");
+	await search.fill("no such sprint");
+	await expect(menu.getByText("No sprints found")).toBeVisible();
+	await search.press("Escape");
+	await expect(page.getByRole("group", { name: "Sprint is Groundwork for the adapter retirement (Sprint 23)" })).toBeVisible();
+});
+
+test("filter labels truncate before their hover and focus actions", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	for (const [field, name, pinName] of [
+		["Sprint", "Groundwork for the adapter retirement (Sprint 23)", "Pin Groundwork for the adapter retirement (Sprint 23)"],
+		["Parent", "Retire LegacyGatewayAdapter (PAY-90)", "Pin Retire LegacyGatewayAdapter (PAY-90)"],
+		["Assignee", "Alexandra Constantinopoulos", "Pin Alexandra Constantinopoulos"],
+	] as const) {
+		await page.getByRole("menuitem", { name: `${field} Open submenu` }).hover();
+		const menu = page.getByRole("menu", { name: `${field} filter options` });
+		const row = menu.getByRole("menuitemcheckbox", { name, exact: true });
+		if (field === "Assignee") await menu.getByRole("textbox", { name: "Search people" }).fill("Alexandra");
+		await row.hover();
+		const pin = menu.getByRole("menuitem", { name: pinName, exact: true });
+		await expect(pin).toBeVisible();
+		const label = row.locator(".truncate");
+		await expect(label).toHaveCSS("text-overflow", "ellipsis");
+		if (field === "Sprint") await expect.poll(() => label.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+		const assertGap = async () => {
+			const labelBox = await label.boundingBox();
+			const pinBox = await pin.boundingBox();
+			if (!labelBox || !pinBox) throw new Error("Missing filter row geometry");
+			expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(pinBox.x);
+		};
+		await assertGap();
+		await page.mouse.move(0, 0);
+		await row.focus();
+		await expect(pin).toBeVisible();
+		await assertGap();
+	}
+});
+
+test("work type filter matches the inline work-item type picker", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	const header = page.locator('[data-slot="board-column-header"]').filter({ has: page.getByRole("button", { name: "Create work item in To do" }) });
+	await header.hover();
+	await header.getByRole("button", { name: "Create work item in To do" }).click();
+	await page.getByRole("button", { name: "Work item type: task" }).click();
+	const picker = page.getByRole("menu", { name: "Choose work item type" });
+	const expected = ["Story", "Epic", "Bug", "Task"];
+	await expect(picker.getByRole("menuitem")).toHaveText(expected);
+	const glyphs = await Promise.all(expected.map((name) => picker.getByRole("menuitem", { name, exact: true }).locator('[data-slot="work-item-type-icon"] svg').evaluate((svg) => ({ path: svg.querySelector("path")?.getAttribute("d"), color: getComputedStyle(svg).color, size: svg.getBoundingClientRect().width }))));
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Work type Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Work type filter options" });
+	const rows = menu.getByRole("menuitemcheckbox");
+	await expect(rows).toHaveText(expected);
+	const actual = await Promise.all(expected.map((name) => menu.getByRole("menuitemcheckbox", { name, exact: true }).locator("svg").evaluate((svg) => ({ path: svg.querySelector("path")?.getAttribute("d"), color: getComputedStyle(svg).color, size: svg.getBoundingClientRect().width }))));
+	expect(actual).toEqual(glyphs);
+	await menu.getByRole("menuitemcheckbox", { name: "Bug", exact: true }).click();
+	await expect(menu.getByRole("menuitemcheckbox", { name: "Bug", exact: true })).toHaveAttribute("aria-checked", "true");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("group", { name: "Work type is Bug" })).toBeVisible();
+});
+
+test("board status filter matches the work-item status icons", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Change status, In progress", exact: true }).click();
+	const statusGlyph = (element: Element) => {
+		const circle = element.querySelector('[data-slot="progress-circle"]')!;
+		return { value: circle.getAttribute("aria-valuenow"), shapes: [...circle.querySelectorAll("path, circle")].map((shape) => ({ tag: shape.tagName, path: shape.getAttribute("d"), dash: shape.getAttribute("stroke-dasharray"), stroke: getComputedStyle(shape).stroke, fill: getComputedStyle(shape).fill })) };
+	};
+	const reference = await Promise.all(["To do", "Done"].map((name) => page.getByRole("menuitem", { name, exact: true }).evaluate(statusGlyph)));
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Status Open submenu", exact: true }).hover();
+	const menu = page.getByRole("menu", { name: "Status filter options" });
+	const rows = menu.getByRole("menuitemcheckbox");
+	await expect(rows).toHaveText(["To do", "In progress", "In review", "Done"]);
+	for (const row of await rows.all()) {
+		const slot = row.locator('span[aria-hidden="true"]').first();
+		await expect(slot).toHaveCSS("width", "16px");
+		await expect(slot).toHaveCSS("height", "16px");
+		const glyph = slot.locator('[data-slot="progress-circle"]');
+		await expect(glyph).toHaveCSS("width", "12px");
+		await expect(glyph).toHaveCSS("height", "12px");
+		const inset = await glyph.evaluate((element) => { const box = element.getBoundingClientRect(); const slotBox = element.parentElement!.getBoundingClientRect(); return [box.left - slotBox.left, box.top - slotBox.top]; });
+		expect(inset).toEqual([2, 2]);
+	}
+	const actual = await Promise.all(["To do", "Done"].map((name) => menu.getByRole("menuitemcheckbox", { name, exact: true }).evaluate(statusGlyph)));
+	expect(actual).toEqual(reference);
+	await menu.getByRole("menuitemcheckbox", { name: "In review", exact: true }).click();
+	await expect(menu.getByRole("menuitemcheckbox", { name: "In review", exact: true })).toHaveAttribute("aria-checked", "true");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("group", { name: "Status is In review" })).toBeVisible();
+});
+
+test("saved filter names leave room for pin and delete actions", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Needs input", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Save filter Open submenu" }).hover();
+	const name = "A long saved filter name for the project and every team";
+	await page.getByRole("textbox", { name: "Filter name" }).fill(name);
+	await page.getByRole("button", { name: "Save", exact: true }).click();
+	const row = page.getByRole("menuitemcheckbox", { name, exact: true });
+	await row.hover();
+	const pin = page.getByRole("menuitem", { name: `Pin ${name}`, exact: true });
+	const remove = page.getByRole("menuitem", { name: `Delete ${name}`, exact: true });
+	await expect(pin).toBeVisible();
+	await expect(remove).toBeVisible();
+	const label = row.locator(".truncate");
+	await expect(label).toHaveCSS("text-overflow", "ellipsis");
+	await expect.poll(() => label.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+	const labelBox = await label.boundingBox();
+	const pinBox = await pin.boundingBox();
+	if (!labelBox || !pinBox) throw new Error("Missing saved filter geometry");
+	expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(pinBox.x);
 });

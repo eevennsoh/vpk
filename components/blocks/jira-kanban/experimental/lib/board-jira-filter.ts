@@ -1,6 +1,7 @@
 import type { JiraFilterCondition, JiraFilterField } from "@/components/blocks/jira-filter";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import { jiraFiltersEqual } from "@/components/blocks/jira-filter/model";
+import { JIRA_CREATABLE_ISSUE_TYPES } from "@/components/blocks/jira-list/jira-list-types";
 
 export type BoardFilterScopeEntryPolicy = "default-assignees" | "preserve-assignees";
 
@@ -17,7 +18,7 @@ const normalizeStatus = (status: string) => status.toLowerCase().replaceAll(" ",
 
 function cardValues(card: JiraKanbanCardData, column: JiraKanbanColumnData, field: string): readonly string[] | null {
 	switch (field) {
-		case "assignee": return card.assignee ? [card.assignee.id] : column.presenters?.map((presenter) => presenter.id) ?? ["unassigned"];
+		case "assignee": return card.assignee ? [card.assignee.id] : ["unassigned", ...(column.presenters?.map((presenter) => presenter.id) ?? [])];
 		case "status": return [normalizeStatus(card.status ?? column.title)];
 		case "type": return [card.issueType ?? "task"];
 		case "label": return card.tags.length ? card.tags.map((tag) => tag.text) : ["no-label"];
@@ -43,7 +44,7 @@ export function filterBoardByJiraConditions(columns: readonly JiraKanbanColumnDa
 	});
 }
 
-export function boardJiraFilterFields(columns: readonly JiraKanbanColumnData[]): JiraFilterField[] {
+export function boardJiraFilterFields(columns: readonly JiraKanbanColumnData[], statusOptions?: readonly string[]): JiraFilterField[] {
 	const cards = columns.flatMap((column) => column.cards);
 	const options = (values: readonly string[]) => [...new Set(values)].map((value) => ({ value, label: value }));
 	return [
@@ -51,12 +52,11 @@ export function boardJiraFilterFields(columns: readonly JiraKanbanColumnData[]):
 			{ value: "working", label: "Working" }, { value: "needsInput", label: "Needs input" }, { value: "finished", label: "Finished" },
 		] },
 		{ id: "prStatus", label: "Pull request", multiple: true, options: [
-			{ value: "open", label: "Open" }, { value: "draft", label: "Draft" }, { value: "failed", label: "Failed" },
-			{ value: "merged", label: "Merged" }, { value: "none", label: "No PR" },
+			{ value: "draft", label: "Draft" }, { value: "open", label: "Open" }, { value: "failed", label: "Failed" },
+			{ value: "merged", label: "Merged" },
 		] },
-		{ id: "status", label: "Status", multiple: true, options: columns.flatMap((column) =>
-			(column.statuses ?? [column.title]).map((label) => ({ value: normalizeStatus(label), label }))) },
-		{ id: "type", label: "Work type", multiple: true, options: options(cards.map((card) => card.issueType ?? "task")) },
+		{ id: "status", label: "Status", multiple: true, options: (statusOptions ?? columns.flatMap((column) => column.statuses ?? [column.title])).map((label) => ({ value: normalizeStatus(label), label })) },
+		{ id: "type", label: "Work type", multiple: true, options: JIRA_CREATABLE_ISSUE_TYPES.map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })) },
 		{ id: "label", label: "Labels", multiple: true, options: [{ value: "no-label", label: "No label" }, ...options(cards.flatMap((card) => card.tags.map((tag) => tag.text)))] },
 	];
 }

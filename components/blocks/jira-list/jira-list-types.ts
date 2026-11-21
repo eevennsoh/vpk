@@ -15,6 +15,7 @@ import type { JiraListVariant } from "@/components/blocks/jira-list/jira-list-ap
 export type JiraListPriority = JiraIssuePriority;
 export type JiraListTag = JiraIssueTag;
 export type JiraListIssueType = "epic" | "task" | "story" | "subtask" | "bug";
+export const JIRA_CREATABLE_ISSUE_TYPES = ["story", "epic", "bug", "task"] as const satisfies readonly JiraListIssueType[];
 export type JiraListBaseColumnId =
 	| "work"
 	| "status"

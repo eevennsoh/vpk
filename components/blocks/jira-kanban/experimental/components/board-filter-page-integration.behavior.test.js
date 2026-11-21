@@ -27,7 +27,7 @@ for (const variant of ["experimental", "experimental-v2"]) {
 		assert.equal(view.getByRole("menuitemcheckbox", { name: "To do" }).textContent.includes("To do"), true);
 		await view.press(view.getByRole("menuitemcheckbox", { name: "To do" }), "Escape");
 		await view.press(view.getByRole("menuitem", { name: "Work type" }), "ArrowRight");
-		await view.click(view.getByRole("menuitemcheckbox", { name: "bug" }));
+		await view.click(view.getByRole("menuitemcheckbox", { name: "Bug" }));
 		assert.equal(view.container.querySelector('[data-testid="visible-cards"]').textContent, "PAY-2");
 		if (variant === "experimental-v2") assert.equal(view.container.querySelector('[data-testid="selected-cards"]').textContent, "");
 		await view.unmount();

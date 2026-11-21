@@ -7,13 +7,11 @@ import CalendarIcon from "@atlaskit/icon/core/calendar";
 import WarningIcon from "@atlaskit/icon/core/warning";
 import DataFormulaIcon from "@atlaskit/icon-lab/core/data-formula";
 import { DateRowField, PersonLabelAvatar, PersonRowField, PriorityLabel, PriorityRowField } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
-import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
-import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import { DetailsOptionField } from "@/components/blocks/jira-work-item/project-butter/details-option-field";
 import { PROJECT_BUTTER_CAMPAIGN_MARKETS, PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_DETAIL_OPTIONS, projectButterCostPerReach, type ProjectButterDetailFieldId, type ProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { ProjectButterStatus } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
-import { PROJECT_BUTTER_UNASSIGNED, projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { PROJECT_BUTTER_ASSIGNEES, PROJECT_BUTTER_PEOPLE as PEOPLE } from "@/components/blocks/jira-work-item/project-butter/assignee-people";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { Calendar } from "@/components/ui/calendar";
 import { InlineEdit } from "@/components/ui/inline-edit";
@@ -24,9 +22,6 @@ import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { IconTile } from "@/components/ui/icon-tile";
 import { DETAIL_VALUE_HANDOFF } from "./details-rail";
 import { SuggestionLabelReveal, SuggestionPreviewLabel } from "./suggestion-targets";
-
-const BUTTER_PEOPLE = Object.values(TEAM_EU26_PEOPLE).filter((person) => person.name !== "Automatic").map((person) => ({ ...person, avatarUrl: projectButterPersonAvatar(person.name) }));
-const PEOPLE = [...BUTTER_PEOPLE, ...METADATA_PEOPLE.filter((person) => !BUTTER_PEOPLE.some((existing) => existing.name === person.name))];
 
 const DETAIL_DUE_DATE_ICON = <IconTile aria-hidden as="span" className="text-icon-subtle" icon={<CalendarIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />;
 const DETAIL_UNASSIGNED_AVATAR = <AvatarUnassigned animate={false} label="" size="xs" />;
@@ -55,7 +50,7 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 		content.setDetailFields((current) => ({ ...current, [key]: value }));
 	}
 	if (id === "status") return <ProjectButterStatus appearance="field" content={content} />;
-	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" compact onChange={content.setAssignee} people={[PROJECT_BUTTER_UNASSIGNED, ...PEOPLE, ...(content.defaultAssignee && !PEOPLE.some((person) => person.name === content.defaultAssignee?.name) ? [content.defaultAssignee] : [])]} placeholder="Unassigned" renderValue={(person) => <PersonValue field="assignee" person={person} />} value={content.assignee} />;
+	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" compact onChange={content.setAssignee} people={[...PROJECT_BUTTER_ASSIGNEES, ...(content.defaultAssignee && !PEOPLE.some((person) => person.name === content.defaultAssignee?.name) ? [content.defaultAssignee] : [])]} placeholder="Unassigned" renderValue={(person) => <PersonValue field="assignee" person={person} />} value={content.assignee} />;
 	if (id === "priority") return <PriorityRowField onChange={content.setPriority} renderValue={(value) => <span className="[&_[data-slot=icon-tile]]:size-4"><PriorityLabel iconSize="small" value={value} /></span>} value={content.priority} />;
 	if (id === "dueDate") {
 		const overdue = Boolean(content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28));

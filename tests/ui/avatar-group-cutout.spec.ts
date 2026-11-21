@@ -3,6 +3,40 @@ import { Resvg } from "@resvg/resvg-js";
 import { avatarHexagonPoints } from "@/components/ui/avatar-hexagon";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("board unassigned avatar centers its person icon", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const avatar = page.getByRole("img", { name: "Unassigned", exact: true });
+	await expect(avatar).toBeVisible();
+	const centers = await avatar.evaluate((element) => {
+		const avatarBounds = element.getBoundingClientRect();
+		const iconBounds = element.querySelector("svg")!.getBoundingClientRect();
+		return {
+			x: Math.abs((avatarBounds.left + avatarBounds.right - iconBounds.left - iconBounds.right) / 2),
+			y: Math.abs((avatarBounds.top + avatarBounds.bottom - iconBounds.top - iconBounds.bottom) / 2),
+		};
+	});
+	expect(centers.x).toBeLessThanOrEqual(1);
+	expect(centers.y).toBeLessThanOrEqual(1);
+});
+
+test("board facepile keeps its cutouts when the assignee filter changes", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const group = page.getByRole("group", { name: "Board assignees" });
+	const artwork = group.locator('[data-slot="avatar-group-visual"], [data-slot="avatar-hexagon-artwork"]');
+	const assertCutouts = async () => {
+		for (const item of (await artwork.all()).slice(1)) {
+			await expect(item).toHaveCSS("mask-image", /^(url|radial-gradient)\(/u);
+		}
+	};
+	await assertCutouts();
+	await page.getByRole("button", { name: "Filter board by Venn" }).click();
+	await assertCutouts();
+	await page.getByRole("button", { name: "Filter board by Venn" }).click();
+	await assertCutouts();
+});
+
 test("shared agent and human stacks show the surface through their overlap", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/components/ui/avatar#agent-group"));
