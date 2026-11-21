@@ -165,6 +165,8 @@ export interface FloatingRovoButtonProps {
 	onButtonClick?: () => void;
 	animateLogoOnMount?: boolean;
 	suggestion?: FloatingRovoButtonSuggestion | null;
+	/** Controlled suggestions in arrival order (oldest first). Takes precedence over `suggestion`. */
+	suggestions?: readonly FloatingRovoButtonSuggestion[];
 	/** Controlled dialog content using the launcher's expanding surface. */
 	panel?: FloatingRovoButtonPanel;
 	onboarding?: FloatingRovoButtonOnboardingConfig | null;

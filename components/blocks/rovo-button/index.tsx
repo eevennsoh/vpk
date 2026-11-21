@@ -32,6 +32,7 @@ export default function FloatingRovoButton({
 	onButtonClick,
 	animateLogoOnMount = false,
 	suggestion,
+	suggestions,
 	panel,
 	onboarding,
 	insights,
@@ -48,6 +49,8 @@ export default function FloatingRovoButton({
 		activeInsights?.defaultStage ?? "pill",
 	);
 	const shouldShowButton = forceVisible || opening || !isOpen;
+	const activeSuggestions = suggestions ?? (suggestion ? [suggestion] : []);
+	const latestAnimatedSuggestion = activeSuggestions.findLast((item) => item.animateLogoOnArrival);
 	const onboardingDefaultOpen = onboarding?.defaultOpen ?? false;
 	const onboardingId = onboarding?.id;
 	const onboardingOpen = Boolean(!panel && onboarding && (onboarding.open ?? internalOnboardingOpen));
@@ -139,17 +142,22 @@ export default function FloatingRovoButton({
 
 	return (
 		<>
+			<div aria-live="polite" className="sr-only">
+				{shouldShowButton && !onboardingOpen && !panel?.open && insightsStage === "hidden"
+					? activeSuggestions.at(-1)?.label ?? ""
+					: ""}
+			</div>
 			<AnimatePresence>
 				{/* The nudge sits beside the button and the insights pill grows out of
 				    it, both toward the same open space — they can never share it. */}
-				{suggestion && shouldShowButton && !onboardingOpen && !panel?.open && insightsStage === "hidden" ? (
+				{activeSuggestions.length > 0 && shouldShowButton && !onboardingOpen && !panel?.open && insightsStage === "hidden" ? (
 					<FloatingRovoButtonNudge
-						key={suggestion.id}
+						key="nudges"
 						placement={placement}
 						opensDialog={Boolean(panel)}
 						positioning={positioning}
 						shouldReduceMotion={shouldReduceMotion}
-						suggestion={suggestion}
+						suggestions={activeSuggestions}
 					/>
 				) : null}
 			</AnimatePresence>
@@ -170,7 +178,7 @@ export default function FloatingRovoButton({
 						placement={placement}
 						positioning={positioning}
 						ariaLabel={resolvedAriaLabel}
-						logoAnimationTrigger={suggestion?.animateLogoOnArrival ? suggestion.id : undefined}
+						logoAnimationTrigger={latestAnimatedSuggestion?.id}
 						onButtonClick={handleButtonClick}
 						persistentBar={persistentBar}
 						shouldReduceMotion={shouldReduceMotion}

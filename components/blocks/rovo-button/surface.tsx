@@ -10,6 +10,7 @@ import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
+	type ReactNode,
 	type Ref,
 	useCallback,
 	useEffect,
@@ -84,8 +85,7 @@ function FloatingRovoButtonInner({
 	onLogoPointerEnter,
 	ariaLabel,
 	opensDialog,
-	logoAnimating,
-	logoAnimationRun,
+	logo,
 	shouldReduceMotion,
 	ref,
 }: Readonly<{
@@ -95,8 +95,7 @@ function FloatingRovoButtonInner({
 	onLogoPointerEnter: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	ariaLabel: string;
 	opensDialog: boolean;
-	logoAnimating: boolean;
-	logoAnimationRun: number;
+	logo: ReactNode;
 	shouldReduceMotion: boolean;
 	ref?: Ref<HTMLButtonElement>;
 }>) {
@@ -132,16 +131,7 @@ function FloatingRovoButtonInner({
 				willChange: "opacity, filter",
 			}}
 		>
-			{logoAnimating ? (
-				<AnimatedRovo.Root
-					key={`animated-rovo-logo-${logoAnimationRun}`}
-					size={24}
-					preset="full-cycle"
-					cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S}
-				/>
-			) : (
-				<RovoColorIcon key="static-rovo-logo" size="small" />
-			)}
+			{logo}
 		</motion.button>
 	);
 }
@@ -185,7 +175,7 @@ export function FloatingRovoButtonSurface({
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
-	const surfaceOwnsElevation = Boolean(panel) || cardOpen || insightsStage === "pill";
+	const surfaceOwnsElevation = Boolean(panel) || cardOpen;
 	const configuredBarSide = persistentBar?.side ?? "auto";
 	const [barSide, setBarSide] = useState<"top" | "bottom">(
 		configuredBarSide === "bottom" ? "bottom" : "top",
@@ -650,6 +640,9 @@ export function FloatingRovoButtonSurface({
 
 		onButtonClick();
 	}, [handleSuppressibleClick, onButtonClick]);
+	const logo = logoAnimating && !shouldReduceMotion ? (
+		<AnimatedRovo.Root key={`animated-rovo-logo-${logoAnimationRun}`} size={24} preset="full-cycle" cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S} />
+	) : <RovoColorIcon key="static-rovo-logo" size="small" />;
 
 	return (
 		<motion.div
@@ -658,7 +651,7 @@ export function FloatingRovoButtonSurface({
 			layout
 			className={cn(
 				"z-[510]",
-				panel?.open ? "bg-surface-overlay" : "bg-bg-neutral-bold",
+				panel?.open ? "bg-surface-overlay" : insightsStage === "pill" && !cardOpen ? "bg-transparent" : "bg-bg-neutral-bold",
 				shouldReduceMotion ? null : "transition-[background-color] duration-slow ease-out",
 				positioning === "container" ? "absolute" : "fixed",
 				!cardOpen ? "cursor-grab active:cursor-grabbing" : null,
@@ -667,7 +660,7 @@ export function FloatingRovoButtonSurface({
 				cardOpen
 					? cn("overflow-hidden", panel?.open ? "w-fit" : "w-[295px] max-w-[calc(100vw-32px)]")
 					: insightsStage === "pill"
-						? "h-12 w-fit max-w-[calc(100vw-32px)] overflow-hidden"
+						? "h-12 w-fit max-w-[calc(100vw-32px)]"
 						: "size-12",
 			)}
 			initial={{ opacity: 0, borderRadius: cardOpen ? 8 : 16 }}
@@ -725,7 +718,9 @@ export function FloatingRovoButtonSurface({
 							key="insights-pill"
 							ref={insightsPillRef}
 							insights={insights}
+							logo={logo}
 							onClick={handleButtonClick}
+							onLogoPointerEnter={handleLogoPointerEnter}
 							onDragMouseDown={handleDragMouseDown}
 							onDragPointerDown={handleDragPointerDown}
 							shouldReduceMotion={shouldReduceMotion}
@@ -740,8 +735,7 @@ export function FloatingRovoButtonSurface({
 							onLogoPointerEnter={handleLogoPointerEnter}
 							ariaLabel={ariaLabel}
 							opensDialog={Boolean(panel)}
-							logoAnimating={logoAnimating && !shouldReduceMotion}
-							logoAnimationRun={logoAnimationRun}
+							logo={logo}
 							shouldReduceMotion={shouldReduceMotion}
 						/>
 					)}

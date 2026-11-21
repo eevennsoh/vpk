@@ -423,18 +423,18 @@ test("floating Rovo button can render a collapsed proactive suggestion nudge", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/\{suggestion && shouldShowButton && !onboardingOpen && insightsStage === "hidden" \? \([\s\S]*<FloatingRovoButtonNudge[\s\S]*key=\{suggestion\.id\}[\s\S]*placement=\{placement\}[\s\S]*positioning=\{positioning\}[\s\S]*suggestion=\{suggestion\}[\s\S]*\/>[\s\S]*\) : null\}/u,
+		/activeSuggestions\.length > 0 && shouldShowButton && !onboardingOpen && !panel\?\.open && insightsStage === "hidden"[\s\S]*<FloatingRovoButtonNudge[\s\S]*suggestions=\{activeSuggestions\}/u,
 	);
 });
 
-test("floating Rovo button persistent bar actions are 32px square", () => {
+test("floating Rovo button persistent bar sizes actions for single and multiple items", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/"pointer-events-auto absolute left-1\/2 z-\[505\] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-2"/u,
+		/"pointer-events-auto absolute left-1\/2 z-\[505\] flex cursor-default flex-col items-center gap-1 rounded-2xl"/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<motion\.button[\s\S]*aria-label=\{item\.ariaLabel\}[\s\S]*className="relative flex size-8 items-center justify-center rounded-xl/u,
+		/<motion\.button[\s\S]*aria-label=\{item\.ariaLabel\}[\s\S]*singleAction \? "size-12 rounded-2xl bg-surface-raised" : "size-8 rounded-xl"/u,
 	);
 	assert.doesNotMatch(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -450,7 +450,7 @@ test("floating Rovo button persistent bar can show item tooltips", () => {
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger render=\{actionButton\} \/>[\s\S]*<TooltipContent side=\{side\}>\{item\.tooltipLabel\}<\/TooltipContent>/u,
+		/<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger render=\{actionButton\} \/>[\s\S]*<TooltipContent side="left" positionerClassName="z-\[520\]">\{item\.tooltipLabel\}<\/TooltipContent>/u,
 	);
 });
 
