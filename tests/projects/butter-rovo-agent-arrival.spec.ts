@@ -62,3 +62,25 @@ test("agent arrival keeps the Rovo logo still with reduced motion", async ({ pag
 	await expect(launcher.locator("svg linearGradient")).toHaveCount(0);
 	await expect(launcher.locator("svg")).toBeVisible();
 });
+
+test("adding an agent in AI suggestions uses its Rovo button notification", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const item = page.getByRole("region", { name: "Work item full screen view" });
+	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
+	const suggestions = page.getByRole("button", { name: /^\d+ suggestions$/ });
+	await expect(suggestions).toBeVisible();
+	await item.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Cursor", exact: true }).click();
+
+	await expect(page.getByRole("button", { name: "Cursor added", exact: true })).toBeVisible();
+	await expect(launcher).toHaveCount(1);
+	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toHaveCount(0);
+	await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
+	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Venn added Cursor");
+
+	await page.getByRole("button", { name: "Dismiss Cursor added", exact: true }).click();
+	await suggestions.click();
+	await expect(page.getByRole("dialog", { name: /^Work item suggestions/ })).toBeVisible();
+});

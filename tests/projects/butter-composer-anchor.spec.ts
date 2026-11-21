@@ -54,7 +54,8 @@ for (const { height, reducedMotion, view } of [
 		const chip = form.getByTestId("reply-target-chip");
 		await expect(chip).toBeVisible();
 		await expect(form.locator('[data-align="block-start"] > div')).toHaveCSS("clip-path", "inset(-4px)");
-		await expect(editor).toHaveText("Keep this draft");
+		await expect(editor.locator('[data-mention-id^="subagent:"]')).toHaveText("Cursor");
+		await expect(editor).toContainText("Keep this draft");
 		await expect.poll(() => page.evaluate(() => {
 			const samples = Reflect.get(window, "__composerAnchorSamples");
 			return Array.isArray(samples) ? samples.filter((sample) => sample.action === "Reply").length : 0;

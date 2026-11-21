@@ -31,6 +31,39 @@ async function nextFrame() {
 	await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
 }
 
+test("the insights pill and launcher scale from the center", async () => {
+	const view = await renderLauncher();
+	const button = view.container.querySelector('[aria-label="Open Rovo chat"]');
+	assert.equal(button.parentElement.style.transformOrigin, "center");
+	await view.rerender({ ...baseProps, insightsStage: "pill", insights: { id: "digest", count: 7, rows: [] } });
+	const pill = view.container.querySelector('[aria-label="Open 7 new insights"]');
+	assert.equal(pill.parentElement.style.transformOrigin, "center");
+	await view.unmount();
+});
+
+test("the insights logo animates on its first mouse hover only", async () => {
+	const view = await renderLauncher({ insightsStage: "pill", insights: { id: "digest", count: 7, rows: [] } });
+	const pill = view.container.querySelector('[aria-label="Open 7 new insights"]');
+	await act(async () => { pill.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
+	assert.equal(view.container.querySelector("[data-animated-rovo]") !== null, true);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 2600)); });
+	assert.equal(view.container.querySelector("[data-animated-rovo]") === null, true);
+	await act(async () => {
+		pill.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse" }));
+		pill.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+	});
+	assert.equal(view.container.querySelector("[data-animated-rovo]") === null, true);
+	await view.unmount();
+});
+
+test("the insights logo remains static when reduced motion is enabled", async () => {
+	const view = await renderLauncher({ insightsStage: "pill", insights: { id: "digest", count: 7, rows: [] }, shouldReduceMotion: true });
+	const pill = view.container.querySelector('[aria-label="Open 7 new insights"]');
+	await act(async () => { pill.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
+	assert.equal(view.container.querySelector("[data-animated-rovo]") === null, true);
+	await view.unmount();
+});
+
 test("each agent arrival starts or restarts the existing logo cycle", async () => {
 	const view = await renderLauncher();
 	assert.equal(view.container.querySelector("[data-animated-rovo]") === null, true);

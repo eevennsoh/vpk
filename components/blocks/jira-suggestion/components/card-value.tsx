@@ -8,6 +8,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 
 function ParagraphValue({ text }: Readonly<{ text: string }>) {
 	const { ref, hasVerticalOverflow, showBottomScrollMask } = useHasVerticalOverflow<HTMLParagraphElement>();
@@ -15,7 +16,7 @@ function ParagraphValue({ text }: Readonly<{ text: string }>) {
 }
 
 /** Values wrap without truncation; longer paragraphs scroll within the card. */
-export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
+export function CardValue({ value, revealChecklist = false }: Readonly<{ value: SuggestionValue; revealChecklist?: boolean }>) {
 	switch (value.kind) {
 		case "paragraph":
 			return <ParagraphValue text={value.text} />;
@@ -60,7 +61,7 @@ export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 					{value.items.map((item) => (
 						<li className="flex gap-2 text-sm leading-5 text-pretty text-text" key={item}>
 							<span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-icon-subtlest" />
-							<span className="min-w-0">{item}</span>
+							<span className="min-w-0">{revealChecklist ? <SuggestionRainbowText text={item} /> : item}</span>
 						</li>
 					))}
 				</ul>

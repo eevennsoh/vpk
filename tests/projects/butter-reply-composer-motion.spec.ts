@@ -27,7 +27,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const chip = form.getByTestId("reply-target-chip");
 		await expect(chip).toBeVisible();
 		await expect(editor).toBeFocused();
-		await expect(editor).toHaveText("Keep this draft");
+		await expect(editor.locator('[data-mention-id^="subagent:"]')).toHaveText("Cursor");
+		await expect(editor).toContainText("Keep this draft");
 		await expect(header.locator(":scope > div")).toHaveCSS("clip-path", "inset(-4px)");
 		const openHeight = (await form.boundingBox())?.height;
 		if (openHeight === undefined) throw new Error("Missing expanded comment editor");
@@ -71,7 +72,8 @@ test("reply context can reopen while it is closing", async ({ page }) => {
 	await expect(chip).toHaveCount(1);
 	await expect(chip).toBeVisible();
 	await expect(editor).toBeFocused();
-	await expect(editor).toHaveText("Keep this draft");
+	await expect(editor.locator('[data-mention-id^="subagent:"]')).toHaveText("Cursor");
+	await expect(editor).toContainText("Keep this draft");
 	const header = form.locator('[data-slot="input-group-addon"][data-align="block-start"]');
 	await expect(header).not.toHaveAttribute("inert", "");
 	await expect(header.locator(":scope > div")).toHaveCSS("clip-path", "inset(-4px)");

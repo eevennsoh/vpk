@@ -9,6 +9,17 @@ export type ProjectButterActivitySort = "newest" | "oldest";
 export type ProjectButterActivityFilters = Readonly<{ updates: boolean; agents: boolean; comments: boolean }>;
 export const PROJECT_BUTTER_ACTIVITY_FILTERS_ALL: ProjectButterActivityFilters = { updates: true, agents: true, comments: true };
 
+const replySentences = new Intl.Segmenter("en", { granularity: "sentence" });
+const MAX_REPLY_EXCERPT_LENGTH = 72;
+
+export function getProjectButterReplyExcerpt(body: string): string {
+	const firstSentence = replySentences.segment(body.trim()).containing(0)?.segment.replace(/\s+/gu, " ").trim() ?? "";
+	const characters = Array.from(firstSentence);
+	return characters.length > MAX_REPLY_EXCERPT_LENGTH
+		? `${characters.slice(0, MAX_REPLY_EXCERPT_LENGTH).join("").trimEnd()}…`
+		: firstSentence;
+}
+
 const INVOCATION_PREFIX = "invocation-";
 const UPDATE_GROUP_PREFIX = "updates-";
 const MINUTE = 60_000;

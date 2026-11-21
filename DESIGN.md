@@ -632,12 +632,12 @@ supplied reference copy and layout when reproducing a specific product state.
 
 ### Status and data primitives
 
-- **Agent and human avatar overlaps:** Use a transparent cutout on the rear avatar
-  wherever an attributed pair overlaps. The human photo keeps its single
-  semi-opaque inset border. The shared attribution group and `HumanAgentAvatar`
-  own this treatment across their resting and animated states. A white separator
-  or a grey outer stroke doubles the visible edge.
-  <!-- 2026-11-19: "let's remove the border white stroke"; "we already have that semi opaque inner border. don't double up" -->
+- **Avatar stacks:** Use the shared `AvatarGroup` or `HumanAgentAvatar` for
+  overlapping human and agent avatars. Mask the rear artwork so the actual
+  surface shows through the gap in both resting and animated states. Never add
+  a painted separator ring. Keep the avatar's own inset border and any focus or
+  selection indicator.
+  <!-- 2026-11-21: "in all the latest avata stack, it should be a mask cut out" -->
 - **Section messages:** Use a semantic background, role icon, title, neutral
   body text, and optional link-style actions. Use them for page-level or
   request-level notices, not field validation.

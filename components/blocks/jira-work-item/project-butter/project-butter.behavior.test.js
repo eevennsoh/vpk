@@ -77,7 +77,7 @@ test("Butter chat keeps the selected session's agent identity", async () => {
 	assert.equal(view.queryByText("jira coding agent:jira coding agent") !== null, true);
 });
 
-test("the Agents field avatar stack matches the selector's artwork and brand canvases", async () => {
+test("the compact Agents field avatars retain the selector's brand artwork", async () => {
 	const names = ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"];
 	const view = await renderComponent({
 		source: `import React, { useState } from "react";
@@ -91,7 +91,7 @@ test("the Agents field avatar stack matches the selector's artwork and brand can
 		props: { name: names[0] },
 	});
 	const visual = (avatar) => ({
-		images: [...avatar.querySelectorAll("img")].map((image) => image.getAttribute("src")),
+		images: [...avatar.querySelectorAll("img")].map((image) => image.getAttribute("src")?.replace("/3p/openai-codex/24.svg", "/3p/openai-codex/glyph.svg")),
 		paths: [...avatar.querySelectorAll("svg path")].map((path) => path.getAttribute("d")),
 		canvases: [...avatar.querySelectorAll("[style]")].map((element) => element.style.backgroundColor).filter(Boolean),
 	});
@@ -708,6 +708,28 @@ test("activity order follows timestamps in both directions", async () => {
 	assert.match(text(oldest[0]), /First round of email nurture/u);
 	assert.match(text(oldest.at(-1)), /Visuals are looking strong/u);
 	assert.equal(oldest.length, newest.length);
+});
+
+test("the Butter v1 work item can filter and sort its Timeline", async () => {
+	const view = await renderWorkItem({ shell: "gallery", sessionActivityView: true });
+	await view.click(view.getByRole("button", { name: "Filter activity" }));
+	const checkbox = (name) => view.getByRole("menuitemcheckbox", { name });
+	const radio = (name) => view.getByRole("menuitemradio", { name });
+	for (const name of ["Updates", "Agent sessions", "Comments"]) {
+		assert.equal(checkbox(name).getAttribute("aria-checked"), "true");
+	}
+	assert.equal(checkbox("Expand change details").getAttribute("aria-checked"), "false");
+	assert.equal(radio("Newest first").getAttribute("aria-checked"), "true");
+	assert.equal(feedIds()[0], "invocation-butter-claude");
+	await view.click(checkbox("Updates"));
+	await view.click(checkbox("Agent sessions"));
+	assert.equal(document.querySelectorAll('[data-project-butter-activity-feed] [data-jira-activity-entry-kind="event"]').length, 0);
+	const newest = feedIds();
+	assert.ok(newest.length > 1);
+	assert.equal(newest.some((id) => id.startsWith("invocation-")), false);
+	await view.click(radio("Oldest first"));
+	assert.equal(feedIds()[0], newest.at(-1));
+	assert.equal(feedIds().at(-1), newest[0]);
 });
 
 test("activity shows its feed and filter without a scrubber", async () => {

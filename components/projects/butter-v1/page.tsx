@@ -69,7 +69,7 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
-import { ButterGalleryAiSuggestions, ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
+import { ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
 import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
 import { ButterBoardCardControls, type ButterBoardCardState } from "./components/butter-board-card-controls";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
@@ -263,9 +263,7 @@ export default function ButterPage(): React.ReactElement {
 				</div>
 			</RetainedView>
 			<RetainedView active={selectedId === "duplicative-sessions"} retain>
-				<RovoChatProvider key={duplicativeSessionsResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem compact galleryOpen={galleryOpen} initialSessions={BUTTER_GALLERY_SESSIONS} open={selectedId === "duplicative-sessions"} onClose={() => selectGalleryItem("board")} />
-				</RovoChatProvider>
+				<ButterGalleryWorkItem key={duplicativeSessionsResetKey} compact galleryOpen={galleryOpen} initialSessions={BUTTER_GALLERY_SESSIONS} open={selectedId === "duplicative-sessions"} onClose={() => selectGalleryItem("board")} sessionActivityView={false} />
 			</RetainedView>
 			<RetainedView active={selectedId === "agent-sessions"} retain>
 				<ButterGalleryAgentSessions key={agentSessionsResetKey} active={selectedId === "agent-sessions"} galleryOpen={galleryOpen} permission={sessionPermission} />
@@ -274,12 +272,10 @@ export default function ButterPage(): React.ReactElement {
 				<ButterGalleryBoardCard key={boardCardResetKey} galleryOpen={galleryOpen} state={boardCardState} />
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
-				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem sessionActivityView initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
-				</RovoChatProvider>
+				<ButterGalleryWorkItem key={workItemResetKey} initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
 			</RetainedView>
 			<RetainedView active={suggestionsActive} retain>
-				<ButterGalleryAiSuggestions key={suggestionsResetKey} open={suggestionsActive} onClose={() => selectGalleryItem("board")} />
+				<ButterGalleryWorkItem key={suggestionsResetKey} showAiSuggestions open={suggestionsActive} onClose={() => selectGalleryItem("board")} />
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
 				<div key={pullRequestResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">

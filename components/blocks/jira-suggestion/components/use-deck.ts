@@ -13,6 +13,7 @@ interface DeckDecision {
 	ids: readonly SuggestionFieldId[];
 	decision: SwipeDirection;
 	bulk?: boolean;
+	reviewRun: number;
 }
 
 /** A short confirmation of the latest change, shown where the progress line normally sits. */
@@ -26,9 +27,8 @@ export interface DeckReceipt {
 export interface Deck {
 	/** Pending suggestions in deck order; the first is the top card. */
 	order: readonly WorkItemSuggestion[];
-	/** Decided suggestions, most recent decision first. */
+	/** Suggestions decided since the latest check that found suggestions, most recent decision first. */
 	reviewed: readonly WorkItemSuggestion[];
-	total: number;
 	/** Which way the most recently decided card leaves. */
 	exitDirection: SwipeDirection;
 	lastDecision: DeckDecision | null;
@@ -89,6 +89,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 			nextReceipt("nothing-new", "");
 		} else {
 			setFront(ids);
+			setReceipt(null);
 			setAnnouncement(`${ids.length} new ${ids.length === 1 ? "suggestion" : "suggestions"} on top of the stack.`);
 		}
 	}
@@ -102,13 +103,14 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 	const emptiedAt = order.length === 0 ? (emptied ?? feed.runs.length) : null;
 	if (emptiedAt !== emptied) setEmptied(emptiedAt);
 	const quietCheck = emptiedAt != null && feed.runs.length > emptiedAt && feed.runs.at(-1)?.ids.length === 0;
-	const decidedIds = history.flatMap((entry) => entry.ids).toReversed();
+	const reviewRun = feed.runs.findLast((run) => run.ids.length > 0)?.number ?? 1;
+	const decidedIds = history.filter((entry) => entry.reviewRun === reviewRun).flatMap((entry) => entry.ids).toReversed();
 	const reviewed = [...new Set(decidedIds)].flatMap((id) => review.suggestions.filter((suggestion) => suggestion.id === id && review.decisionOf(id) !== "pending"));
 	const labelOf = (id: SuggestionFieldId) => review.suggestions.find((suggestion) => suggestion.id === id)?.label ?? id;
 
-	const record = (entry: DeckDecision) => {
+	const record = (entry: Omit<DeckDecision, "reviewRun">) => {
 		setExitDirection(entry.decision);
-		setHistory((current) => [...current, entry]);
+		setHistory((current) => [...current, { ...entry, reviewRun }]);
 		if (entry.decision === "accept") nextReceipt("accept", subjectOf(entry.ids.map(labelOf)));
 		else setReceipt(null);
 		if (entry.decision === "accept") onAccepted(entry.ids, entry.bulk === true);
@@ -130,7 +132,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		setAnnouncement(`${decision === "accept" ? "Accepted" : "Dismissed"} ${ids.length} suggestions.`);
 	};
 
-	const bringBack = (entry: DeckDecision) => {
+	const bringBack = (entry: Pick<DeckDecision, "ids" | "decision">) => {
 		onRestore();
 		for (const id of entry.ids) review.undo(id);
 		setFront(entry.ids);
@@ -165,7 +167,6 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 	return {
 		order,
 		reviewed,
-		total: review.suggestions.length,
 		exitDirection,
 		lastDecision: history.at(-1) ?? null,
 		undoDepth: history.length,

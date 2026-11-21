@@ -53,7 +53,6 @@ function Eu26HeaderAssigneeAvatar({ assignee, agent, muted, selected }: Readonly
 			shape={agent ? "hexagon" : "circle"}
 			size="sm"
 			className={cn(
-				!agent ? "ring-2 ring-background" : null,
 				selected && !agent ? "ring-2! ring-border-selected!" : null,
 				muted && !agent ? "opacity-(--opacity-disabled)" : null,
 			)}

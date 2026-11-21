@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
+import type { FillCursorPosition } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import type { SuggestionFieldId, WorkItemSuggestion } from "../data/suggestions";
 import { SuggestionValueView } from "./suggestion-value-view";
 import type { SuggestionReview } from "../hooks/use-suggestion-review";
@@ -25,7 +26,7 @@ export interface MockDetailsRailProps {
 	/** Fields whose accepted text is being revealed. */
 	highlighted?: ReadonlySet<SuggestionFieldId>;
 	waiting?: ReadonlySet<SuggestionFieldId>;
-	barAfter?: string | null;
+	cursor?: FillCursorPosition | null;
 	className?: string;
 }
 
@@ -58,12 +59,11 @@ function Placeholder({ children, icon }: Readonly<{ children: ReactNode; icon?: 
 	return <span className="flex items-center gap-2 text-text-subtlest">{icon}{children}</span>;
 }
 
-export function MockDetailsRail({ review, slot, highlighted, waiting, barAfter, className }: Readonly<MockDetailsRailProps>) {
+export function MockDetailsRail({ review, slot, highlighted, waiting, cursor, className }: Readonly<MockDetailsRailProps>) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
-		if (!barAfter || barAfter === "top") return;
-		rootRef.current?.querySelector<HTMLElement>(`[data-field-id="${barAfter}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-	}, [barAfter]);
+		if (cursor) rootRef.current?.querySelector<HTMLElement>(`[data-field-id="${cursor.field}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+	}, [cursor]);
 	const byId = new Map(review.suggestions.map((suggestion) => [suggestion.id, suggestion]));
 	const renderField = (id: SuggestionFieldId) => {
 		if (id === "description") return null;
@@ -99,7 +99,9 @@ export function MockDetailsRail({ review, slot, highlighted, waiting, barAfter, 
 					Venn
 				</span>
 			</FieldRow>
-			<AnimatePresence>{barAfter ? <ProjectButterSuggestionCursor after={barAfter} finishing={false} rootRef={rootRef} /> : null}</AnimatePresence>
+			<div className="pointer-events-none absolute -inset-x-2 -top-3 bottom-0">
+				<AnimatePresence>{cursor ? <ProjectButterSuggestionCursor position={cursor} rootRef={rootRef} /> : null}</AnimatePresence>
+			</div>
 			</div>
 		</div>
 	);

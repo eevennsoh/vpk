@@ -1570,11 +1570,6 @@
       "count": 1
     }
   },
-  "components/blocks/rovo-button/surface.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2

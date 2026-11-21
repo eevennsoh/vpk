@@ -43,7 +43,6 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 		const root = rootRef.current;
 		if (!root) return;
 		const words = [...root.querySelectorAll<HTMLElement>("[data-description-word]")];
-		const positions = words.map((word) => ({ line: Math.round(word.getBoundingClientRect().top), paragraph: Number(word.dataset.paragraph) }));
 		const colorOffsets = words.map((word) => {
 			const base = word.firstElementChild;
 			const color = word.querySelector<HTMLElement>("[data-description-color]");
@@ -56,17 +55,16 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 			const colorRect = colorRange.getBoundingClientRect();
 			return { color, x: baseRect.left - colorRect.left, y: baseRect.top - colorRect.top };
 		});
-		const steps = planDescriptionReveal(positions);
+		const steps = planDescriptionReveal(words.length);
 		const animations: { finished: Promise<unknown>; stop: () => void }[] = [];
 		let active = true;
 		for (const [index, word] of words.entries()) {
-			const step = steps[index];
-			word.dataset.revealPhase = step.phase;
-			animations.push(animate(word, { opacity: 1 }, { delay: step.delay, duration: motionDuration.medium, ease: motionEase.outPractical }));
+			const delay = steps[index];
+			animations.push(animate(word, { opacity: 1 }, { delay, duration: motionDuration.medium, ease: motionEase.outPractical }));
 			const offset = colorOffsets[index];
 			if (offset) {
 				offset.color.style.translate = `${offset.x}px ${offset.y}px`;
-				animations.push(animate(offset.color, { opacity: [0, 1, 1, 0] }, { delay: step.delay, duration: motionDuration.slowest, ease: motionEase.inOut, times: [0, 0.2, 0.65, 1] }));
+				animations.push(animate(offset.color, { opacity: [0, 1, 1, 0] }, { delay, duration: motionDuration.slowest, ease: motionEase.inOut, times: [0, 0.2, 0.65, 1] }));
 			}
 		}
 		const finish = () => { if (active) onComplete?.(); };
@@ -81,7 +79,7 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 
 	return <span className="whitespace-break-spaces" data-suggestion-text-reveal="" ref={rootRef}>
 		{paragraphs.map((parts, paragraph) => <span className="mb-2.5 block last:mb-0" key={paragraph}>
-			{parts.map((part, index) => part.word ? <span className="relative inline whitespace-nowrap" data-description-word="" data-paragraph={paragraph} key={index} style={{ opacity: 0 }}>
+			{parts.map((part, index) => part.word ? <span className="relative inline whitespace-nowrap" data-description-word="" key={index} style={{ opacity: 0 }}>
 				<span>{part.text}</span>
 				<span className="pointer-events-none absolute inset-0 bg-clip-text text-transparent" data-description-color="" style={{
 					backgroundImage: `linear-gradient(to right, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start, count)}, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start + Array.from(part.text).length - 1, count)})`,

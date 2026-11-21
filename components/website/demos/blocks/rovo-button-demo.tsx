@@ -17,7 +17,7 @@ export default function RovoButtonDemo() {
 function RovoButtonExample({ variant }: Readonly<{ variant: RovoButtonDemoVariantId }>) {
 	return (
 		<RovoChatProvider>
-			<div className="relative h-[400px] w-full">
+			<div className={variant === "onboarding" ? "relative h-[560px] w-full" : "relative h-[400px] w-full"}>
 				<RovoButtonPage embedded embeddedHeight="parent" variant={variant} />
 			</div>
 		</RovoChatProvider>

@@ -9,6 +9,7 @@ import { useSuggestionReview } from "@/components/blocks/jira-suggestion/hooks/u
 import type { ProjectButterSuggestion, ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { useSuggestionTargetActions } from "./suggestion-targets";
 
 const SOURCES = [
 	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
@@ -64,12 +65,14 @@ function toCard(suggestion: ProjectButterSuggestion, profile: ProjectButterSugge
 }
 
 /** Connect the shared suggestion stack to Butter's editable fields. */
-export function ProjectButterSuggestionPanel({ fill, profile = "default", showIntroLoading = false, renderSuggestions }: Readonly<{
+export function ProjectButterSuggestionPanel({ fill, profile = "default", showIntroLoading = false, renderSuggestions, onOpenReview }: Readonly<{
 	fill: ProjectButterSuggestionFill;
+	onOpenReview: () => void;
 	profile?: ProjectButterSuggestionProfile;
 	showIntroLoading?: boolean;
 	renderSuggestions?: (feed: SuggestionFeed) => ReactNode;
 }>) {
+	const targets = useSuggestionTargetActions();
 	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
 	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
 	const suggestions = additions.length ? [...saved, ...additions] : saved;
@@ -106,21 +109,31 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 		const suggestion = find(id);
 		if (!suggestion || !available.has(suggestion.field)) return;
 		fill.acceptField(suggestion);
+		targets?.clear(id);
+		if (suggestion.field === "acceptanceCriteria") targets?.revealCriteria(suggestion.values);
 		review.accept(id);
 	};
 	const dismiss = (id: SuggestionFieldId) => {
 		const suggestion = find(id);
 		if (!suggestion) return;
+		targets?.clear(id);
 		fill.dismissField(suggestion.field);
 		review.dismiss(id);
 	};
 	const undo = (id: SuggestionFieldId) => {
+		targets?.clear(id);
+		if (id === "acceptanceCriteria") targets?.revealCriteria(null);
 		const suggestion = find(id);
 		if (suggestion && review.decisionOf(id) === "accepted") fill.undoField(suggestion);
 		if (suggestion && review.decisionOf(id) === "dismissed") fill.restoreDismissedField(suggestion.field);
 		review.undo(id);
 	};
 	const feed: SuggestionFeed = {
+		onOpenReview: (panelId) => {
+			onOpenReview();
+			targets?.open(panelId);
+		},
+		onPreviewCard: renderSuggestions ? targets?.preview : undefined,
 		review: {
 			...review,
 			suggestions: cards.filter((suggestion) => review.decisionOf(suggestion.id) !== "pending" || fill.suggestions.some((item) => item.field === suggestion.id)),
@@ -130,7 +143,11 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 			undo,
 			acceptAll: () => {
 				if (!pending.length) return;
-				fill.acceptAll(fill.suggestions.filter((suggestion) => pending.some((item) => item.id === suggestion.field)));
+				targets?.clear();
+				const batch = fill.suggestions.filter((suggestion) => pending.some((item) => item.id === suggestion.field));
+				fill.acceptAll(batch);
+				const criteria = batch.find((suggestion) => suggestion.field === "acceptanceCriteria");
+				if (renderSuggestions && criteria?.field === "acceptanceCriteria") targets?.revealCriteria(criteria.values);
 				pending.forEach((suggestion) => review.accept(suggestion.id));
 			},
 			dismissAll: () => pending.forEach((suggestion) => dismiss(suggestion.id)),

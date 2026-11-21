@@ -25,7 +25,7 @@ function Launcher() {
 	examples: [
 		{ title: "Chat launcher", description: "The default button opens floating Rovo chat. Drag it to snap to a new position.", demoSlug: "rovo-button-demo-chat" },
 		{ title: "Persistent toolbar", description: "Pass persistentBar to attach quick actions to the launcher. This example opens live chat from the voice action.", demoSlug: "rovo-button-demo-toolbar" },
-		{ title: "Proactive suggestion", description: "Pass suggestion to show an actionable nudge. Select the launcher to replay the example.", demoSlug: "rovo-button-demo-proactive" },
+		{ title: "Proactive suggestion", description: "Select the launcher to add nudges. Hover or focus the stack to see and dismiss each suggestion.", demoSlug: "rovo-button-demo-proactive" },
 		{ title: "Daily insights", description: "Pass insights to show an unread count and open the digest card. Dismissing it does not mark insights as read.", demoSlug: "rovo-button-demo-insights" },
 		{ title: "Agent onboarding", description: "Pass onboarding to open an agent creation panel from the launcher.", demoSlug: "rovo-button-demo-onboarding" },
 	],
@@ -39,6 +39,7 @@ function Launcher() {
 		{ name: "onButtonClick", type: "() => void", description: "Overrides the default action of opening floating chat." },
 		{ name: "persistentBar", type: "FloatingRovoButtonPersistentBar | null", description: "Adds a toolbar of actions attached to the launcher." },
 		{ name: "suggestion", type: "FloatingRovoButtonSuggestion | null", description: "Shows an actionable nudge with selection and optional dismissal callbacks." },
+		{ name: "suggestions", type: "readonly FloatingRovoButtonSuggestion[]", description: "Shows a controlled stack in arrival order, oldest first. Takes precedence over suggestion; callers remove items when selected or dismissed." },
 		{ name: "insights", type: "FloatingRovoButtonInsightsConfig | null", description: "Shows an unread insights pill and digest. Onboarding takes precedence if both are supplied." },
 		{ name: "onboarding", type: "FloatingRovoButtonOnboardingConfig | null", description: "Configures an agent onboarding panel. It shares the morphing surface with insights." },
 	],

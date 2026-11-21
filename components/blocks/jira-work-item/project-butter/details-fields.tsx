@@ -5,12 +5,15 @@ import { animate, AnimatePresence, useReducedMotion } from "motion/react";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { FillCursorPosition } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import { DetailsFieldRow } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
 import { ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
 import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
+import { DetailsSuggestionHighlight } from "./suggestion-targets";
 import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, projectButterCostPerReach, reorderProjectButterDetailFields, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { PROJECT_BUTTER_UNASSIGNED } from "@/components/blocks/jira-work-item/project-butter/people";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { motionDuration, motionEase } from "@/lib/motion";
 
 function isProjectButterDetailFieldFilled(id: ProjectButterDetailFieldId, content: ProjectButterContent): boolean {
@@ -31,7 +34,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions = false, content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ agentField?: ReactNode; agentFieldHasSessions?: boolean; content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions = false, content, expanded, cursor = null, fieldReveals, reflow = false }: Readonly<{ agentField?: ReactNode; agentFieldHasSessions?: boolean; content: ProjectButterContent; empty: boolean; expanded: boolean; cursor?: FillCursorPosition | null; fieldReveals?: ProjectButterSuggestionFill["fieldReveals"]; reflow?: boolean }>) {
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
@@ -110,10 +113,11 @@ export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions =
 		return () => { animation.cancel(); };
 	}, [dragging, fields.order, reduced]);
 	return (
-		<div className="relative" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
-			<div className="pointer-events-none absolute -inset-x-2 top-0 -bottom-4 z-20 overflow-clip" data-project-butter-suggestion-clip>
+		<div className="relative isolate" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
+			<DetailsSuggestionHighlight rootRef={rootRef} />
+			<div className="pointer-events-none absolute -inset-x-2 -top-3 -bottom-4 z-20 overflow-clip" data-project-butter-suggestion-clip>
 				<AnimatePresence initial={false}>
-					{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} finishing={fillingFinishing} key="filling-cursor" rootRef={rootRef} /> : null}
+					{cursor ? <ProjectButterSuggestionCursor position={cursor} key="filling-cursor" rootRef={rootRef} /> : null}
 				</AnimatePresence>
 			</div>
 			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => { dropAnimationRef.current?.cancel(); setDragging(true); }} onDragEnd={({ active, over }) => {
@@ -128,7 +132,7 @@ export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions =
 						{visible.map((field, index) => {
 							const filled = field === "agents" ? agentFieldHasSessions : isProjectButterDetailFieldFilled(field, content);
 							const required = field === "agents" || PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);
-							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={field !== "agents" && filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={field === "agents" || required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} onRevealInteract={onRevealInteract} reflow={reflow && !dragging} shimmerText={field === "agents" ? undefined : shimmerText?.[field]} onMove={(direction) => {
+							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={field !== "agents" && filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={field === "agents" || required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} reflow={reflow && !dragging} reveal={field === "agents" ? undefined : fieldReveals?.[field]} onMove={(direction) => {
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
 							}}>{field === "agents" ? agentField : <ProjectButterDetailFieldValue content={content} id={field} />}</DetailsFieldRow>;
