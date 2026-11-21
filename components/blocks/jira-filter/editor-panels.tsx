@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import AddIcon from "@atlaskit/icon/core/add";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import SearchIcon from "@atlaskit/icon/core/search";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenuSearchField } from "@/components/ui/dropdown-menu";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
@@ -121,7 +120,6 @@ export function BasicPanel({
 			<div className="flex min-w-0 flex-col">
 				<div className="relative z-10 pb-2">
 					<DropdownMenuSearchField
-						icon={<SearchIcon label="" />}
 						label={`Search ${field?.label ?? "filter"} values`}
 						placeholder="Search values"
 						value={search}

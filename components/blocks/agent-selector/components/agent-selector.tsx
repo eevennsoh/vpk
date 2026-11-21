@@ -24,7 +24,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { CheckIcon } from "@/components/ui/vpk-icons";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
@@ -744,7 +744,6 @@ export function AgentSelector({
 							activeDescendantId={activeOptionId ?? null}
 							autoFocus
 							hostOwnsKeyNavigation
-							icon={<SearchIcon className="size-4 text-icon-subtle" />}
 							label={searchPlaceholder}
 							onClear={() => handleQueryChange("")}
 							onValueChange={handleQueryChange}

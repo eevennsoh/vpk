@@ -235,6 +235,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("context"),
 	customComponent("context-bar", "Context Bar"),
 	customComponent("context-chip", "Context Chip"),
+	customComponent("filter-chip", "Filter Chip"),
 	customComponent("control", "Control"),
 	customComponent("edge"),
 	customComponent("environment-variable", "Environment Variable"),

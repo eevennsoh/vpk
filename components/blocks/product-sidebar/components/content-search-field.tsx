@@ -22,8 +22,8 @@ export function ContentSearchField({
 			}}
 		>
 			<div className="relative">
-				<span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-icon">
-					<SearchIcon label="" size="small" color={token("color.icon.subtle")} />
+				<span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-icon-subtlest">
+					<SearchIcon label="" size="small" color="currentColor" />
 				</span>
 				<Input
 					type="search"

@@ -26,6 +26,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"environment-variable": dynamic(() => import("../../demos/ui-custom/environment-variable-demo"), { ssr: false }),
 	"file-explorer": dynamic(() => import("../../demos/ui-custom/file-explorer-demo"), { ssr: false }),
 	"file-tree": dynamic(() => import("../../demos/ui-custom/file-tree-demo"), { ssr: false }),
+	"filter-chip": dynamic(() => import("../../demos/ui-custom/filter-chip-demo"), { ssr: false }),
 	"flow-panel": dynamic(() => import("../../demos/ui-custom/flow-panel-demo"), { ssr: false }),
 	footer: dynamic(() => import("../../demos/ui-custom/footer-demo"), { ssr: false }),
 	"hover-reveal-row": dynamic(() => import("../../demos/ui-custom/hover-reveal-row-demo"), { ssr: false }),

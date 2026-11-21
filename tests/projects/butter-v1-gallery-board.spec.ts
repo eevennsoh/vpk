@@ -22,6 +22,43 @@ test("Board Card uses the board work item actions menu", async ({ page }) => {
 	await expect(page.getByRole("menuitem", { name: "Confluence item", exact: true })).toBeVisible();
 });
 
+for (const theme of ["light", "dark"] as const) {
+	test(`board work-item menu labels match the subtle icons (${theme})`, async ({ page }) => {
+		await page.goto(appUrl("/butter-v1"));
+		if (theme === "dark") await page.getByRole("button", { name: "Cycle theme, current theme: Light" }).click();
+		const trigger = page.getByRole("button", { name: "More actions for PAY-118", exact: true });
+		await trigger.focus();
+		await trigger.press("Enter");
+		const menu = page.getByRole("menu");
+		await expect(menu.getByRole("menuitem", { name: "Move up", exact: true })).toBeDisabled();
+		const colors = await menu.evaluate((element) => {
+			const context = document.createElement("canvas").getContext("2d");
+			if (!context) throw new Error("Cannot compare menu colors");
+			const normalize = (color: string) => { context.fillStyle = color; return context.fillStyle; };
+			const subtle = normalize(getComputedStyle(element).getPropertyValue("--ds-icon-subtle").trim());
+			return [...element.querySelectorAll<HTMLElement>('[role="menuitem"]:not([data-disabled])')].map((row) => ({
+				label: row.textContent?.trim(),
+				text: normalize(getComputedStyle(row).color),
+				icons: [...row.querySelectorAll("svg")].map((icon) => normalize(getComputedStyle(icon).color)),
+				subtle,
+			}));
+		});
+		expect(colors.length).toBeGreaterThan(5);
+		for (const row of colors) {
+			expect(row.text, row.label).toBe(row.subtle);
+			for (const icon of row.icons) expect(icon, row.label).toBe(row.subtle);
+		}
+		const edit = menu.getByRole("menuitem", { name: "Edit summary", exact: true });
+		await edit.hover();
+		const hovered = await edit.evaluate((row) => ({ text: getComputedStyle(row).color, icon: getComputedStyle(row.querySelector("svg")!).color }));
+		expect(hovered.text).toBe(hovered.icon);
+		const link = menu.getByRole("menuitem", { name: "Link Open submenu", exact: true });
+		await link.focus();
+		await link.press("ArrowRight");
+		await expect(page.getByRole("menuitem", { name: "Work item", exact: true })).toHaveCSS("color", hovered.text);
+	});
+}
+
 test("opening Link keeps the work item menu rows in place", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

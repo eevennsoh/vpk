@@ -46,7 +46,8 @@ import {
 	AgentSessionPanel,
 } from "./components/agent-session-panel";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
-import { BoardFilterPopover } from "./components/board-filter-popover";
+import { BoardFilterPopover, useBoardFilterFields } from "./components/board-filter-popover";
+import { BoardFilterPills } from "./components/board-filter-pills";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
 	type BoardAgentFilterId,
@@ -469,6 +470,7 @@ function ExperimentalJiraKanbanPageContent({
 			: assignees,
 		[assignees, isPulse],
 	);
+	const boardFilterFields = useBoardFilterFields(filterAssignees, boardColumns);
 	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
@@ -769,7 +771,7 @@ function ExperimentalJiraKanbanPageContent({
 	};
 
 	const handleCollapsedColumnsChange = (nextCollapsedColumns: CollapsedBoardColumns) => {
-		if (agentFilterId === null) {
+		if (agentFilterId === null && !boardFilter.model.conditions.some((condition) => condition.values.length > 0)) {
 			if (controlledCollapsedColumns === undefined) setLocalCollapsedColumns(nextCollapsedColumns);
 			onCollapsedColumnsChange?.(nextCollapsedColumns);
 			return;
@@ -902,6 +904,7 @@ function ExperimentalJiraKanbanPageContent({
 						surfaceLabel={activeView}
 					/>
 				}
+				filterSummary={!isListContent && !isPulse ? <BoardFilterPills conditions={boardFilter.model.conditions} fields={boardFilterFields} onChange={filterActions.setConditions} /> : null}
 				modeToggle={insightsEnabled ? (
 					<PulseModeToggle
 						active={isPulse}

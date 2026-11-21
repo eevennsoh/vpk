@@ -9,7 +9,7 @@ import {
 	type CSSProperties,
 	type ReactNode,
 } from "react";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -357,11 +357,11 @@ export default function TopNavigation({
 									: undefined
 							}
 						>
-							<InputGroupAddon align="inline-start">
-								<span className="size-4 shrink-0 text-icon-subtle">
+							<InputGroupSearchAddon align="inline-start">
+								<span className="size-4 shrink-0 text-icon-subtlest">
 									<SearchIcon label="" spacing="none" />
 								</span>
-							</InputGroupAddon>
+							</InputGroupSearchAddon>
 							<InputGroupInput
 								type="search"
 								aria-label="Search"
@@ -395,7 +395,7 @@ export default function TopNavigation({
 						variant="outline"
 						onClick={handleExpandSearchIcon}
 					>
-						<SearchIcon label="" color={token("color.icon.subtle")} />
+						<SearchIcon label="" color={token("color.icon.subtlest")} />
 					</Button>
 				)
 			) : null}

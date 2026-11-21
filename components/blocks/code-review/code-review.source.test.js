@@ -35,7 +35,7 @@ test("code review explorer-backed files stay selectable", () => {
 	assert.match(explorer, /searchQuery=\{showSearch \? searchQuery : undefined\}/u);
 	assert.match(explorer, /placeholder="Search"/u);
 	assert.match(explorer, /InputGroup/u);
-	assert.match(explorer, /InputGroupAddon/u);
+	assert.match(explorer, /InputGroupSearchAddon/u);
 	assert.match(explorer, /InputGroupInput/u);
 	assert.match(explorer, /SearchIcon/u);
 	assert.match(explorer, /className="px-2 pb-1"/u);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import { FileExplorer } from "@/components/ui-custom/file-explorer";
@@ -69,9 +69,9 @@ export function EditorExplorer({
 				{showSearch ? (
 					<div className="px-2 pb-1">
 						<InputGroup>
-							<InputGroupAddon align="inline-start">
+							<InputGroupSearchAddon align="inline-start">
 								<SearchIcon label="" />
-							</InputGroupAddon>
+							</InputGroupSearchAddon>
 							<InputGroupInput
 								aria-label="Search"
 								onChange={(event) => setSearchQuery(event.currentTarget.value)}

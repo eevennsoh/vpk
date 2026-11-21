@@ -8,6 +8,19 @@ import { BOARD_JIRA_FIELD_IDS, type BoardFilterActions, type BoardFilterModel } 
 import { BOARD_FILTER_VALUE_FIELD_IDS } from "../lib/board-filter";
 import { boardJiraFilterFields } from "../lib/board-jira-filter";
 
+export function useBoardFilterFields(assignees: readonly JiraKanbanAssigneeData[], columns: readonly JiraKanbanColumnData[]): JiraFilterField[] {
+	return useMemo(() => [...BOARD_FILTER_VALUE_FIELD_IDS.filter((field) => !["status", "work-type", "labels"].includes(field)).map((field) => ({
+		id: BOARD_JIRA_FIELD_IDS[field],
+		label: BOARD_FILTER_FIELD_LABELS[field],
+		multiple: true,
+		options: field === "assignee"
+			? assignees.map((assignee) => ({ value: assignee.id, label: assignee.name }))
+			: BOARD_FILTER_OPTIONS[field].map((option) => ({ value: option.id, label: option.description ? `${option.label} (${option.description})` : option.label })),
+	})), ...boardJiraFilterFields(columns), {
+		id: "days", label: "Filter by days", options: BOARD_FILTER_DAYS_OPTIONS.filter((option) => option.id !== "custom").map((option) => ({ value: option.id, label: option.label })),
+	}], [assignees, columns]);
+}
+
 export function BoardFilterPopover({
 	actions, assignees, columns, compact = false, model, surfaceLabel = "board",
 }: Readonly<{
@@ -29,16 +42,7 @@ export function BoardFilterPopover({
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [model.open, setOpen]);
-	const fields = useMemo((): JiraFilterField[] => [...BOARD_FILTER_VALUE_FIELD_IDS.filter((field) => !["status", "work-type", "labels"].includes(field)).map((field) => ({
-		id: BOARD_JIRA_FIELD_IDS[field],
-		label: BOARD_FILTER_FIELD_LABELS[field],
-		multiple: true,
-		options: field === "assignee"
-			? assignees.map((assignee) => ({ value: assignee.id, label: assignee.name }))
-			: BOARD_FILTER_OPTIONS[field].map((option) => ({ value: option.id, label: option.description ? `${option.label} (${option.description})` : option.label })),
-	})), ...boardJiraFilterFields(columns), {
-		id: "days", label: "Filter by days", options: BOARD_FILTER_DAYS_OPTIONS.filter((option) => option.id !== "custom").map((option) => ({ value: option.id, label: option.label })),
-	}], [assignees, columns]);
+	const fields = useBoardFilterFields(assignees, columns);
 
 	return <JiraFilter variant="project-butter" fields={fields} value={model.conditions}
 		onChange={actions.setConditions} open={model.open} onOpenChange={setOpen}

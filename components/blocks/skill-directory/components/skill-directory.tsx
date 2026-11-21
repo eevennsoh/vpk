@@ -53,7 +53,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Switch } from "@/components/ui/switch";
@@ -717,9 +717,9 @@ function SkillDirectoryView({
 				)}
 			>
 				<InputGroup>
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<SearchIcon label="" />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						type="search"
 						aria-label="Search skills"

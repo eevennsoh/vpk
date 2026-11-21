@@ -448,7 +448,9 @@ supplied reference copy and layout when reproducing a specific product state.
   input text, the 16px `SearchIcon` from `components/ui/vpk-icons.tsx`, and 6px
   top and side insets from the popup edge. Never use a compact 12px search glyph
   or count the popup's padding twice; using the shared field alone does not
-  guarantee the same rendered geometry. Match the search icon column to the rows with
+  guarantee the same rendered geometry. Measure the search icon and row visual
+  centers, and the search input text and row label starts: each pair must align
+  within 1px. Match the search icon column to the rows with
   `iconContainerSize`: use `16` for a standalone 16px search icon beside 16px
   row icons or icon tiles (Parent, Labels and Subtasks pickers); use `24` (the
   default) for a 16px search icon centered in a 24px container beside 24px avatars
@@ -464,14 +466,18 @@ supplied reference copy and layout when reproducing a specific product state.
   <!-- 2026-11-15: "why would you use a smaller search input design?? it should be the same as Labels or Parent" -->
   <!-- 2026-11-15: "We use 16x16 search icon when the individual rows are 16x16 icon or icon tile"; "We use 24x24 search icon container when the individual rows are 24x24 avatars or icon tile" -->
   <!-- 2026-11-15: "keep the same width like what we had before"; "we also dont need search input" (inline-create work item type menu); "the same should apply" (PriorityRowField menu). -->
+- **Menu row icons:** For plain icons, use `IconTile` with
+  `variant="transparent"`, `size="xxsmall"`, and `iconSize="small"`: a 12px
+  glyph in a 16px container. Why: consistent icon size keeps menu rows visually
+  balanced and aligned. This includes work item type, Priority, Parent and
+  Subtasks pickers.
+  <!-- 2026-11-21: "when we use pure icons for our menu, we should always follow this" — 12x12 glyph in a 16x16 transparent IconTile, superseding the earlier bare-icon instruction. -->
 - **Searchable dropdowns:** Use `DropdownMenuContent` and `DropdownMenuItem`
   with their shared container padding and row styling; do not substitute command
   list rows or override the dropdown's default inset. Center leading row icons,
   including work item status glyphs, in the matching 16px or 24px alignment
-  column on the same vertical centerline as the search icon. Work item type,
-  Priority, Parent and Subtasks pickers use bare 12px (`size-3`) glyphs centered
-  in 16px (`size-4`) containers, without icon
-  tiles. Keep alignment gutters outside the icon container; the column is layout
+  column on the same vertical centerline as the search icon. Keep alignment
+  gutters outside the icon container; the column is layout
   space, not the visual's size. Use a 12px gap (`gap-3`) between that
   slot and the row text so keys and titles start at the search text's left edge,
   matching `ArtifactParentField`. Why: the search header and rows must share
@@ -486,11 +492,14 @@ supplied reference copy and layout when reproducing a specific product state.
   scrollable rows and use the shared scroll mask with a 3rem top fade when the
   list has scrolled. Extend the scroll area to the menu’s bottom edge or fixed
   footer separator, with no empty strip between them and the menu inset inside
-  the scroll area. Why: the top fade shows rows moving beneath the fixed search
+  the scroll area. For a scrolling list, its viewport must reach the menu's
+  inner bottom edge, within 1px; do not reserve an outer bottom-padding strip.
+  Why: the top fade shows rows moving beneath the fixed search
   field, and an empty bottom gap should not cut off visible row pixels.
   <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
   <!-- 2026-11-14: "we shouldn't cut away pixels with the bottom gap like that." -->
   <!-- 2026-11-14: "we can't have this empty gap cut out UI problem." -->
+  <!-- 2026-11-21: "the search icon is misaligned and there's this extra bottom gap. we shouldn't have that." -->
 - **Menu and agent-selector scroll edges:** Do not apply a bottom gradient fade
   to scrollable menu or agent-selector lists. Clip rows cleanly at the container
   edge or fixed footer separator. Why: the straight container edge provides the
@@ -612,6 +621,12 @@ supplied reference copy and layout when reproducing a specific product state.
   bullets, sort arrows, and other secondary indicators use `text-icon-subtle`
   or `text-icon-subtlest`; do not use `text-icon-brand` as a general emphasis
   color.
+- **Search magnifiers:** Use `color.icon.subtlest` (`text-icon-subtlest`) in
+  search fields across navigation, menus, agent selectors, editor palettes, and
+  other surfaces. Use `DropdownMenuSearchField`'s default icon or
+  `InputGroupSearchAddon` when applicable. Why: search cues stay visually
+  secondary to the surrounding content.
+  <!-- 2026-11-21: "the icon color should be icon subtlest ... across all components and surfaces like search box, agent selector, editor palette ... and everywhere else" -->
 - **Accessibility:** Icon-only buttons need an accessible name. Decorative icons
   sitting beside visible text should be hidden from assistive technology.
 

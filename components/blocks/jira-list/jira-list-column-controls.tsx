@@ -125,7 +125,7 @@ export function JiraListColumnBoundary({
 				>
 					<div className="relative border-b border-border bg-surface p-3">
 						<Icon
-							className="pointer-events-none absolute top-1/2 left-5 z-10 -translate-y-1/2 text-icon-subtle"
+							className="pointer-events-none absolute top-1/2 left-5 z-10 -translate-y-1/2 text-icon-subtlest"
 							render={<SearchIcon label="" size="small" />}
 						/>
 						<Input

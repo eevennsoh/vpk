@@ -2,7 +2,6 @@
 
 import { useState, type ReactNode } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import CurlyBracketsIcon from "@atlaskit/icon/core/curly-brackets";
 import EpicIcon from "@atlaskit/icon/core/epic";
@@ -16,15 +15,9 @@ import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import ReleaseIcon from "@atlaskit/icon/core/release";
-import SearchIcon from "@atlaskit/icon/core/search";
-import SprintIcon from "@atlaskit/icon/core/sprint";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import StoryIcon from "@atlaskit/icon/core/story";
-import TagIcon from "@atlaskit/icon/core/tag";
 import TaskIcon from "@atlaskit/icon/core/task";
-import WorkItemIcon from "@atlaskit/icon/core/work-item";
-import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +46,7 @@ import {
 	type JiraSavedFilter,
 } from "@/components/blocks/jira-filter/model";
 import type { JiraFilterProps } from "@/components/blocks/jira-filter/jira-filter";
+import { getJiraFilterFieldIcon, jiraFilterMenuIcon } from "@/components/blocks/jira-filter/filter-field-icon";
 import {
 	ButterAdvancedPanel,
 	ButterJqlPanel,
@@ -73,17 +67,6 @@ const defaultFieldIds = [
 	"status",
 ];
 const quickFieldIds = ["agentStatus", "prStatus"];
-const fieldIcons: Record<string, ReactNode> = {
-	agentStatus: <AiAgentIcon label="" />,
-	prStatus: <PullRequestIcon label="" />,
-	assignee: <PersonAssigneeIcon label="" />,
-	fixVersion: <ReleaseIcon label="" />,
-	epic: <EpicIcon label="" />,
-	sprint: <SprintIcon label="" />,
-	type: <WorkItemIcon label="" />,
-	label: <TagIcon label="" />,
-	status: <CheckCircleIcon label="" />,
-};
 const statusTones: Record<string, NonNullable<LozengeProps["variant"]>> = {
 	done: "success",
 	"in-review": "discovery",
@@ -147,11 +130,11 @@ function PinButton({
 	return (
 		<DropdownMenuItem
 			closeOnClick={false}
-			className={`absolute ${saved ? "right-7" : "right-1"} size-6 p-0 opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center`}
+			className={`absolute ${saved ? "right-7" : "right-1"} size-6 p-0 leading-none opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center [&>span>span]:flex [&_svg]:size-3!`}
 			aria-label={`${pinned ? "Unpin" : "Pin"} ${name}`}
 			onClick={() => onToggle(pin)}
 		>
-			{pinned ? <PinFilledIcon label="" /> : <PinIcon label="" />}
+			{pinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
 		</DropdownMenuItem>
 	);
 }
@@ -189,9 +172,9 @@ function ValueLabel({
 			{icon ? (
 				<span
 					aria-hidden="true"
-					className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"
+					className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtle"
 				>
-					{icon}
+					{field.id === "assignee" || (field.id === "agentStatus" && option.value === "needsInput") ? icon : jiraFilterMenuIcon(icon)}
 				</span>
 			) : null}
 			<span className="truncate">{option.label}</span>
@@ -287,19 +270,20 @@ function ButterFilterTrigger({ compact, triggerLabel, activeCount, open, onClear
 	open: boolean;
 	onClear: () => void;
 }>) {
+	const selectedStyle = activeCount && compact ? "border-border-selected! bg-bg-selected! text-text-selected! hover:bg-bg-selected-hovered! focus-visible:border-ring! [&_svg]:text-icon-selected!" : undefined;
 	return (
 		<ButtonGroup aria-label="Filter controls" variant="split">
 			<DropdownMenuTrigger
 				aria-haspopup="dialog"
 				aria-label={activeCount ? `${triggerLabel} (${activeCount})` : triggerLabel}
 				aria-pressed={activeCount > 0 || open}
-				render={<Button size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
+				render={<Button className={selectedStyle} size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
 			>
 				<FilterIcon label="" />{compact ? null : " Filter"}
 				{activeCount && !compact ? <Badge>{activeCount}</Badge> : null}
 			</DropdownMenuTrigger>
 			{activeCount ? (
-				<Button variant="secondary" size="icon" aria-label="Clear all filters" onClick={onClear}>
+				<Button className={selectedStyle} variant={compact ? "outline" : "secondary"} size="icon" aria-label="Clear all filters" onClick={onClear}>
 					<CrossIcon label="" />
 				</Button>
 			) : null}
@@ -449,7 +433,6 @@ export function ProjectButterFilter({
 			>
 				<div className="relative z-10 shrink-0">
 					<DropdownMenuSearchField
-						icon={<SearchIcon label="" />}
 						label="Add filter"
 						value={search}
 						onValueChange={setSearch}
@@ -472,8 +455,9 @@ export function ProjectButterFilter({
 								<DropdownMenuItem
 									key={field.id}
 									closeOnClick={false}
+									elemBeforeSize={16}
 									elemBefore={
-										lookupOwn(fieldIcons, field.id) ?? <FieldIcon label="" />
+										getJiraFilterFieldIcon(field.id)
 									}
 									onClick={() => {
 										setVisibleIds((current) => [field.id, ...current]);
@@ -493,7 +477,7 @@ export function ProjectButterFilter({
 						<>
 							{pins.length ? (
 								<>
-									<DropdownMenuSubheading>Pinned</DropdownMenuSubheading>
+									<DropdownMenuSubheading className="px-2 py-1.5">Pinned</DropdownMenuSubheading>
 									{pins.map((pin) => {
 										if (pin.kind === "saved") {
 											const filter = filters.find((item) => item.id === pin.id);
@@ -539,7 +523,8 @@ export function ProjectButterFilter({
 							) : null}
 							<DropdownMenuSub open={savedOpen} onOpenChange={setSavedOpen}>
 								<DropdownMenuSubTrigger
-									elemBefore={<PersonAvatarIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<PersonAvatarIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									Saved
 								</DropdownMenuSubTrigger>
@@ -593,7 +578,8 @@ export function ProjectButterFilter({
 							>
 								<DropdownMenuSubTrigger
 									aria-haspopup="dialog"
-									elemBefore={<FieldIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<FieldIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									Advanced
 								</DropdownMenuSubTrigger>
@@ -621,7 +607,8 @@ export function ProjectButterFilter({
 							>
 								<DropdownMenuSubTrigger
 									aria-haspopup="dialog"
-									elemBefore={<CurlyBracketsIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<CurlyBracketsIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									JQL
 								</DropdownMenuSubTrigger>
@@ -656,10 +643,9 @@ export function ProjectButterFilter({
 									<DropdownMenuSub key={field.id}>
 										<DropdownMenuSubTrigger
 											elemBefore={
-												lookupOwn(fieldIcons, field.id) ?? (
-													<FieldIcon label="" />
-												)
+												getJiraFilterFieldIcon(field.id)
 											}
+											elemBeforeSize={16}
 										>
 											{field.label}
 											{selected.length ? ` (${selected.length})` : ""}

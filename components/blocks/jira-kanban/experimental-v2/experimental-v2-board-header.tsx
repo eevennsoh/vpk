@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
@@ -144,9 +144,9 @@ export function ExperimentalV2JiraKanbanBoardHeader({
 			{showBoardControls ? (
 				<div className="mt-6 flex flex-wrap items-center gap-2 px-6">
 					<InputGroup className="w-44">
-						<InputGroupAddon>
+						<InputGroupSearchAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />
-						</InputGroupAddon>
+						</InputGroupSearchAddon>
 						<InputGroupInput type="search" aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
 					</InputGroup>
 

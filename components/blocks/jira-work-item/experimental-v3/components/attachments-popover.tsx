@@ -153,7 +153,7 @@ export function AttachmentsPopover({
 							<PopoverSubmitField
 								ariaLabel="Search content or paste a link"
 								leading={
-									<span className="shrink-0 pl-1 text-icon-subtle">
+								<span className="shrink-0 pl-1 text-icon-subtlest">
 										<SearchIcon label="" color="currentColor" />
 									</span>
 								}

@@ -7,7 +7,6 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
-import SearchIcon from "@atlaskit/icon/core/search";
 import { DropdownMenuSearchField } from "@/components/ui/dropdown-menu";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
@@ -127,7 +126,6 @@ export function SavedPanel({
 			<div className="flex min-w-0 flex-col">
 				<div ref={searchRef} className="relative z-10 pb-2">
 					<DropdownMenuSearchField
-						icon={<SearchIcon label="" />}
 						label="Search saved filters"
 						placeholder="Search filters"
 						value={search}

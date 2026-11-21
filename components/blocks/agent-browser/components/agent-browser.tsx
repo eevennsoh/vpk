@@ -39,7 +39,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
@@ -571,9 +571,9 @@ function DefaultAgentBrowser({
 			>
 				{activeTemplateCategoryOption ? null : (
 					<InputGroup>
-						<InputGroupAddon>
+						<InputGroupSearchAddon>
 							<SearchIcon label="" />
-						</InputGroupAddon>
+						</InputGroupSearchAddon>
 						<InputGroupInput
 							type="search"
 							aria-label="Search agents"
@@ -835,9 +835,9 @@ function ExperimentalAgentBrowser({
 			    the experimental dialog height lock still fits — see AgentBrowserDialog). */}
 			<div className="flex shrink-0 items-center gap-3 px-6 pt-1 pb-4">
 				<InputGroup className="flex-1">
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<SearchIcon label="" />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						aria-label={searchInputLabel}
 						placeholder={searchInputLabel}
@@ -1038,9 +1038,9 @@ function ExperimentalFilterDropdown({
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
 				<InputGroup className="pl-[7px]">
-					<InputGroupAddon className="w-4 p-0">
+					<InputGroupSearchAddon className="w-4 p-0">
 						<SearchIcon label="" />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						aria-label={`Search ${label}`}
 						className="px-2"

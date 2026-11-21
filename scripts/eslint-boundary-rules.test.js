@@ -26,6 +26,22 @@ const importFindings = (source, filePath) => ruleFindings(source, filePath, ["no
 const syntaxFindings = (source, filePath = "components/projects/demo/lint-contract-fixture.tsx") =>
 	ruleFindings(source, filePath, ["no-restricted-syntax"]);
 
+test("search inputs use the shared subtlest magnifier paths", async () => {
+	const findings = await syntaxFindings([
+		"const a = <InputGroupAddon><SearchIcon /></InputGroupAddon>;",
+		"const b = <DropdownMenuSearchField icon={<SearchIcon />} />;",
+		"const c = <RichTextCommandMenuSearchField icon={<SearchIcon />} />;",
+		"const d = <InputGroupAddon><Icon render={<SearchIcon />} /></InputGroupAddon>;",
+		"const e = <InputGroupSearchAddon><SearchIcon /></InputGroupSearchAddon>;",
+		"const f = <DropdownMenuSearchField icon={<RovoColorIcon />} />;",
+		"const g = <InputGroupAddon><DropdownMenuItem><SearchIcon /></DropdownMenuItem></InputGroupAddon>;",
+		"const h = <InputGroupAddon><span><SearchIcon /></span></InputGroupAddon>;",
+	].join("\n"));
+	assert.deepEqual(findings.map(({ line }) => line), [1, 2, 3, 4, 8]);
+	assert.match(findings[0].message, /InputGroupSearchAddon/u);
+	assert.match(findings[1].message, /Omit the search icon prop/u);
+});
+
 test("Rovo and Studio route internals cannot import each other", async () => {
 	const [rovo] = await importFindings(
 		'import { X } from "@/components/projects/studio/x";\nexport const value = X;\n',

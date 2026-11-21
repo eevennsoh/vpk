@@ -130,7 +130,7 @@ function DropdownMenuSearchField({
 	autoFocus,
 	className,
 	hostOwnsKeyNavigation,
-	icon = <SearchIcon className="size-4 text-icon-subtlest" />,
+	icon,
 	iconContainerSize = 24,
 	id,
 	label,
@@ -195,8 +195,8 @@ function DropdownMenuSearchField({
 	/>;
 	return (
 		<div data-slot="dropdown-menu-search" data-icon-container-size={iconContainerSize} className={cn("rich-text-command-menu-search rich-text-command-menu-item-sticky group/search mx-1.5 mt-1.5 grid h-8 min-h-8 w-[calc(100%-12px)] shrink-0 cursor-text items-center gap-x-3 rounded-lg bg-surface-overlay py-0 pr-0.5 pl-2 hover:bg-bg-neutral-subtle-hovered [&>[data-slot=input]]:h-full [&>[data-slot=input]]:min-w-0 [&>[data-slot=input]]:border-transparent [&>[data-slot=input]]:px-0 [&>[data-slot=input]]:caret-text [&>[data-slot=input]:hover]:border-transparent [&>[data-slot=input]:hover]:bg-transparent [&>[data-slot=input]:active]:border-transparent [&>[data-slot=input]:active]:bg-transparent [&>[data-slot=input]:focus-visible]:border-transparent [&>[data-slot=input]:focus-visible]:bg-transparent [&>[data-slot=input]:focus-visible]:shadow-none", iconContainerSize === 16 ? "grid-cols-[16px_minmax(0,1fr)_auto]" : "grid-cols-[24px_minmax(0,1fr)_auto]")}>
-			<span data-slot="dropdown-menu-search-icon" className={cn("inline-flex items-center justify-center [&>svg]:size-4", iconContainerSize === 16 ? "size-4" : "size-6")} aria-hidden={true}>
-				{icon}
+			<span data-slot="dropdown-menu-search-icon" className={cn("inline-flex items-center justify-center [&>svg]:size-4", icon === undefined ? "text-icon-subtlest" : null, iconContainerSize === 16 ? "size-4" : "size-6")} aria-hidden={true}>
+				{icon === undefined ? <SearchIcon className="size-4 text-icon-subtlest" /> : icon}
 			</span>
 			{renderInput ? renderInput(input) : input}
 			{value ? (

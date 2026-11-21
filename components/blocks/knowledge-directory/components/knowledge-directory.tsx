@@ -14,7 +14,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { EntityCardKnowledgeCard } from "@/components/ui-custom/entity-card";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import { cn } from "@/lib/utils";
@@ -562,9 +562,9 @@ function SearchField({
 }: Readonly<SearchFieldProps>) {
 	return (
 		<InputGroup>
-			<InputGroupAddon>
+			<InputGroupSearchAddon>
 				<SearchIcon label="" />
-			</InputGroupAddon>
+			</InputGroupSearchAddon>
 			<InputGroupInput
 				aria-label={ariaLabel}
 				placeholder={placeholder}

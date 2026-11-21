@@ -24,7 +24,6 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -378,7 +377,6 @@ export function TriggerProviderSearchList({
 			<RichTextCommandMenuSearchField
 				autoFocus={autoFocus}
 				id={searchId}
-				icon={<SearchIcon className="size-4 text-icon-subtle" />}
 				label="Search triggers"
 				onClear={() => setQuery("")}
 				onKeyDown={(event) => event.stopPropagation()}

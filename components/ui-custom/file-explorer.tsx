@@ -320,7 +320,7 @@ export function FileExplorer({
 			<FileExplorerIconSprite icons={icons} />
 			{searchable ? (
 				<div className="relative border-b border-border px-2 py-2">
-					<SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-icon-subtle" />
+					<SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-icon-subtlest" />
 					<Input
 						aria-label="Search files"
 						className="pl-8"

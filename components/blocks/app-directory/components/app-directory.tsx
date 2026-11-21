@@ -60,7 +60,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
@@ -763,9 +763,9 @@ function AppDirectoryView({
 				)}
 			>
 				<InputGroup>
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<SearchIcon label="" />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						type="search"
 						aria-label="Search apps"
@@ -1719,9 +1719,9 @@ function DirectorySearchField({
 }: Readonly<DirectorySearchFieldProps>) {
 	return (
 		<InputGroup>
-			<InputGroupAddon>
+			<InputGroupSearchAddon>
 				<SearchIcon label="" />
-			</InputGroupAddon>
+			</InputGroupSearchAddon>
 			<InputGroupInput
 				aria-label={ariaLabel}
 				placeholder={placeholder}

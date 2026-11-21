@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { token } from "@/lib/tokens";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
@@ -75,9 +75,9 @@ export default function BoardToolbar({ avatars, onReset }: Readonly<BoardToolbar
 						}}
 					>
 						<InputGroup>
-							<InputGroupAddon>
+							<InputGroupSearchAddon>
 								<SearchIcon label="" />
-							</InputGroupAddon>
+							</InputGroupSearchAddon>
 							<InputGroupInput
 								aria-label="Search RFPs"
 								autoComplete="off"

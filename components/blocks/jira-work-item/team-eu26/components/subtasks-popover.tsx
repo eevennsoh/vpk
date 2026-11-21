@@ -167,7 +167,7 @@ export function SubtasksPopover({
 						<PopoverSubmitField
 							ariaLabel="Search existing work items"
 							leading={
-								<span className="shrink-0 pl-1 text-icon-subtle">
+								<span className="shrink-0 pl-1 text-icon-subtlest">
 									<SearchIcon label="" color="currentColor" />
 								</span>
 							}
