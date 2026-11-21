@@ -229,7 +229,7 @@ jobs:
 
       - name: Keep the report
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-smoke
           path: output/playwright
@@ -307,7 +307,7 @@ jobs:
         # Every measured value plus the scripts and stylesheets each route fetched, for diffing a
         # failing route against a local run.
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: perf-baseline
           path: output/perf-baseline.json
