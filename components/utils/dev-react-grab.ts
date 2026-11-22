@@ -40,7 +40,7 @@ export function shouldDisableReactGrab({
 // VPK runs the vpk-grab fork of React Grab (github.com/eevennsoh/vpk-grab).
 // `pnpm run update:vpk-grab` moves this, and the `react-grab` tarball in
 // package.json, to the latest vpk-grab release.
-export const VPK_GRAB_VERSION = "0.2.0-vpk.20";
+export const VPK_GRAB_VERSION = "0.2.0-vpk.21";
 
 export const DEFAULT_REACT_GRAB_SCRIPT_SRC = `https://cdn.jsdelivr.net/gh/eevennsoh/vpk-grab@v${VPK_GRAB_VERSION}/dist/vpk-grab.global.js`;
 
