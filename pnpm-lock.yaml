@@ -546,8 +546,8 @@ importers:
         specifier: ^8.5.30
         version: 8.5.32
       react-grab:
-        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.20/react-grab-0.2.0-vpk.20.tgz
-        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.20/react-grab-0.2.0-vpk.20.tgz(@types/react@19.3.0)(react@19.3.1)
+        specifier: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.21/react-grab-0.2.0-vpk.21.tgz
+        version: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.21/react-grab-0.2.0-vpk.21.tgz(@types/react@19.3.0)(react@19.3.1)
       shadcn:
         specifier: ^4.23.0
         version: 4.23.0(supports-color@10.2.2)
@@ -7463,9 +7463,9 @@ packages:
       react:
         optional: true
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.20/react-grab-0.2.0-vpk.20.tgz:
-    resolution: {integrity: sha512-OvYj2280IsA1j8Am6yLzrAwQj2NDUtgmdu1UHSf6gpiHoZFnrTI2Z/XhWk90hbr9IphAx8uOQyowIX8wxRcrhg==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.20/react-grab-0.2.0-vpk.20.tgz}
-    version: 0.2.0-vpk.20
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.21/react-grab-0.2.0-vpk.21.tgz:
+    resolution: {integrity: sha512-/hN8BlBOmTG9geN304x8If2kPCNQFqy4k2wD7iC1zTiw2QqrC7x9JN2DN4JJfub88D3nTGtntMGLys3DMEjDOA==, tarball: https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.21/react-grab-0.2.0-vpk.21.tgz}
+    version: 0.2.0-vpk.21
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -16179,7 +16179,7 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.20/react-grab-0.2.0-vpk.20.tgz(@types/react@19.3.0)(react@19.3.1):
+  react-grab@https://github.com/eevennsoh/vpk-grab/releases/download/v0.2.0-vpk.21/react-grab-0.2.0-vpk.21.tgz(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       '@react-grab/cli': 0.2.0
       '@zumer/snapdom': 3.7.6
