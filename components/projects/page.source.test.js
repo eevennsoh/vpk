@@ -324,7 +324,7 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<FloatingRovoButtonInner[\s\S]*onClick=\{handleButtonClick\}[\s\S]*onDragMouseDown=\{handleDragMouseDown\}[\s\S]*onDragPointerDown=\{handleDragPointerDown\}[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logoAnimating=\{logoAnimating\}/u,
+		/<FloatingRovoButtonInner[\s\S]*onClick=\{handleButtonClick\}[\s\S]*onDragMouseDown=\{handleDragMouseDown\}[\s\S]*onDragPointerDown=\{handleDragPointerDown\}[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logo=\{logo\}/u,
 	);
 });
 
@@ -349,11 +349,11 @@ test("floating Rovo button default right reads the untracked panel width var", (
 test("floating Rovo button applies collapsed elevation to the button surface", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<motion\.button[\s\S]*className="flex h-full w-full items-center justify-center bg-bg-neutral-bold[^"]*"[\s\S]*boxShadow: token\("elevation\.shadow\.overlay"\)/u,
+		/<motion\.button[\s\S]*opensDialog \? null : "bg-bg-neutral-bold"[\s\S]*boxShadow: opensDialog \? undefined : token\("elevation\.shadow\.overlay"\)/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const surfaceOwnsElevation = cardOpen \|\| insightsStage === "pill";/u,
+		/const surfaceOwnsElevation = Boolean\(panel\) \|\| cardOpen;/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -361,11 +361,11 @@ test("floating Rovo button applies collapsed elevation to the button surface", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const cardOpen = onboardingOpen \|\| insightsStage === "card";/u,
+		/const cardOpen = Boolean\(panel\?\.open \|\| onboardingOpen \|\| insightsStage === "card"\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/cardOpen\s*\?\s*"w-\[295px\] max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*insightsStage === "pill"\s*\?\s*"h-12 w-fit max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*"size-12"/u,
+		/cardOpen\s*\?\s*cn\("overflow-hidden", panel\?\.open \? "w-fit" : "w-\[295px\] max-w-\[calc\(100vw-32px\)\]"\)\s*:\s*insightsStage === "pill"\s*\?\s*"h-12 w-fit max-w-\[calc\(100vw-32px\)\]"\s*:\s*"size-12"/u,
 	);
 });
 
@@ -380,15 +380,15 @@ test("floating Rovo button animates the logo once on first hover", () => {
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const logoAnimationPlayedRef = useRef\(false\);[\s\S]*const \[logoAnimating, setLogoAnimating\] = useState\(false\);[\s\S]*const handleLogoPointerEnter = useCallback\(\(event: ReactPointerEvent<HTMLButtonElement>\) => \{[\s\S]*event\.pointerType !== "mouse" \|\| shouldReduceMotion \|\| logoAnimationPlayedRef\.current[\s\S]*logoAnimationPlayedRef\.current = true;[\s\S]*setLogoAnimating\(true\);[\s\S]*setLogoAnimating\(false\);[\s\S]*FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS/u,
+		/const logoAnimationPlayedRef = useRef\(false\);[\s\S]*const \[logoAnimating, setLogoAnimating\] = useState\(false\);[\s\S]*const startLogoAnimation = useCallback\(\(\) => \{[\s\S]*setLogoAnimating\(true\);[\s\S]*setLogoAnimating\(false\);[\s\S]*FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS[\s\S]*const handleLogoPointerEnter = useCallback\(\(event: ReactPointerEvent<HTMLButtonElement>\) => \{[\s\S]*event\.pointerType !== "mouse" \|\| shouldReduceMotion \|\| logoAnimationPlayedRef\.current[\s\S]*logoAnimationPlayedRef\.current = true;[\s\S]*startLogoAnimation\(\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/onPointerEnter=\{onLogoPointerEnter\}[\s\S]*logoAnimating \? \([\s\S]*<AnimatedRovo\.Root[\s\S]*preset="full-cycle"[\s\S]*cycleDurationS=\{FLOATING_ROVO_BUTTON_LOGO_CYCLE_S\}[\s\S]*<RovoColorIcon key="static-rovo-logo" size="small" \/>/u,
+		/onPointerEnter=\{onLogoPointerEnter\}[\s\S]*logoAnimating && !shouldReduceMotion \? \([\s\S]*<AnimatedRovo\.Root[\s\S]*preset="full-cycle"[\s\S]*cycleDurationS=\{FLOATING_ROVO_BUTTON_LOGO_CYCLE_S\}[\s\S]*<RovoColorIcon key="static-rovo-logo" size="small" \/>/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<FloatingRovoButtonInner[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logoAnimating=\{logoAnimating\}/u,
+		/<FloatingRovoButtonInner[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logo=\{logo\}/u,
 	);
 });
 
@@ -473,7 +473,7 @@ test("floating Rovo button supports demo initial placement while preserving defa
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const shouldSuppressSurface = embedded \|\| product === "rovo" \|\| product === "studio";[\s\S]*const insightsCardOpen = insightsStage === "card";[\s\S]*const shouldRenderSurface = \(shouldShowButton \|\| onboardingOpen \|\| insightsCardOpen\) && \(forceVisible \|\| !shouldSuppressSurface\);/u,
+		/const shouldSuppressSurface = embedded \|\| product === "rovo" \|\| product === "studio";[\s\S]*const insightsCardOpen = insightsStage === "card";[\s\S]*const shouldRenderSurface = \(shouldShowButton \|\| onboardingOpen \|\| panel\?\.open \|\| insightsCardOpen\) && \(forceVisible \|\| !shouldSuppressSurface\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -542,7 +542,7 @@ test("floating Rovo button can morph into an onboarding Spotlight panel", () => 
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const shouldOpenOnboardingFromButton = Boolean\(onboarding && \(onboarding\.openOnButtonClick \?\? true\)\);/u,
+		/const shouldOpenOnboardingFromButton = Boolean\(!panel && onboarding && \(onboarding\.openOnButtonClick \?\? true\)\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
