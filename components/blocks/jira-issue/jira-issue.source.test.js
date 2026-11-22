@@ -258,7 +258,7 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.match(MORE_MENU_SOURCE, /group-has-\[:focus-visible\]\/jira-issue:pointer-events-auto group-has-\[:focus-visible\]\/jira-issue:opacity-100/u);
 	assert.match(MORE_MENU_SOURCE, /data-popup-open:pointer-events-auto data-popup-open:opacity-100/u);
 	assert.match(MORE_MENU_SOURCE, /motion-reduce:transition-none/u);
-	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="start" className="max-h-none w-\[280px\]" side="right" sideOffset=\{8\}>/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="start" className=\{cn\("max-h-none w-\[280px\]"[^\n]*\}\s+side="right" sideOffset=\{8\}>/u);
 	for (const label of ["Move work item", "Change status", "Copy link", "Copy key", "Add agent", "Link Confluence item", "Link work item", "Change parent", "Select cover", "Edit labels"]) {
 		assert.match(MORE_MENU_SOURCE, new RegExp(`>\\s*${label}\\s*</DropdownMenuItem>`));
 	}

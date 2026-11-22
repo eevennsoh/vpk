@@ -85,6 +85,10 @@ function InputGroupAddon({
 	)
 }
 
+function InputGroupSearchAddon({ className, ...props }: React.ComponentProps<typeof InputGroupAddon>) {
+	return <InputGroupAddon className={cn(className, "text-icon-subtlest [&_svg]:text-icon-subtlest")} {...props} />
+}
+
 const inputGroupButtonVariants = cva(
   "text-sm shadow-none flex gap-2 items-center",
   {
@@ -194,6 +198,7 @@ function InputGroupTextarea({
 export {
   InputGroup,
   InputGroupAddon,
+  InputGroupSearchAddon,
   InputGroupButton,
   InputGroupText,
   InputGroupInput,

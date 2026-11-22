@@ -3,7 +3,7 @@
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import Heading from "@/components/ui/heading";
 import ExampleCard from "./example-card";
 import { CheckboxFilterDropdown } from "./checkbox-filter-dropdown";
@@ -70,9 +70,9 @@ function SearchBar({ searchTerm, onSearchChange }: Readonly<SearchBarProps>) {
 	return (
 		<div>
 			<InputGroup>
-				<InputGroupAddon align="inline-start">
+				<InputGroupSearchAddon align="inline-start">
 					<SearchIcon label="" size="small" />
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 				<InputGroupInput placeholder="Search" value={searchTerm} onChange={(event) => onSearchChange(event.currentTarget.value)} />
 			</InputGroup>
 		</div>

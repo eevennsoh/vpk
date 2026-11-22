@@ -7,6 +7,21 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("Epic grouping shows the epic tag and keeps its disclosure control", async () => {
+	const view = await renderComponent({ source: `
+		import { JiraListGroupHeader } from "@/components/blocks/jira-list/jira-list-table";
+		export default function Probe() {
+			return <table><tbody><JiraListGroupHeader columnCount={2} group={{ id: "PAY-1", label: "PAY-1 Payments", issueKeys: ["PAY-2", "PAY-3"], count: 2, collapsed: false, onToggle() {}, visual: { kind: "epic", key: "PAY-1", name: "Payments" } }} /></tbody></table>;
+		}
+	` });
+	const header = view.getByRole("button", { name: "Collapse PAY-1 Payments" });
+	const tag = header.closest("tr").querySelector('[data-slot="tag"]');
+	assert.equal(tag?.textContent, "Payments");
+	assert.ok(tag.querySelector("svg"));
+	assert.equal(header.getAttribute("aria-expanded"), "true");
+	await view.unmount();
+});
+
 test("Butter list PR titles stay non-navigating and reveal their card on keyboard focus", async () => {
 	const view = await renderComponent({ source: `
 		import { JiraList } from "@/components/blocks/jira-list";
@@ -23,7 +38,7 @@ test("Butter list PR titles stay non-navigating and reveal their card on keyboar
 			return <JiraList rows={createListRows(columns, [])} showPullRequests />;
 		}
 	` });
-	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull request" })), true);
+	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull requests" })), true);
 	const trigger = view.container.querySelector('[aria-label="Pull request #1851: Port 3DS flow"]');
 	assert.equal(trigger.textContent, "#1851 Port 3DS flow");
 	assert.equal(trigger.tagName, "SPAN");
@@ -252,7 +267,9 @@ test("due dates can be added and cleared with the calendar", async () => {
 for (const project of ["butter", "butter-v1"]) test(`${project} list uses the card agent picker to start a session by keyboard`, async () => {
 	const assigned = [];
 	const view = await renderComponent({
-		entry: `components/projects/${project}/components/butter-list-agent-cell.tsx`,
+		entry: project === "butter-v1"
+			? "components/blocks/jira-list/project-butter-agent-cell.tsx"
+			: "components/projects/butter/components/butter-list-agent-cell.tsx",
 		exportName: "ButterListAgentCell",
 		props: {
 			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
@@ -274,7 +291,7 @@ test("Butter v1 list hides finished sessions while showing active sessions", asy
 		onAssignedAgentIdsChange() {},
 		row: { ...rows[0], agentSessions: [finished] },
 	};
-	const view = await renderComponent({ entry: "components/projects/butter-v1/components/butter-list-agent-cell.tsx", exportName: "ButterListAgentCell", props });
+	const view = await renderComponent({ entry: "components/blocks/jira-list/project-butter-agent-cell.tsx", exportName: "ButterListAgentCell", props });
 	assert.equal(view.queryByRole("button", { name: "Claude: Finished" }), null);
 	assert.equal(view.getByRole("button", { name: "Add agent to PAY-1" }) !== null, true);
 	await view.rerender({ ...props, row: { ...rows[0], agentSessions: [finished, working] } });

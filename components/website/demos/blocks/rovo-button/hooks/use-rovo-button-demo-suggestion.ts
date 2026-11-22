@@ -1,48 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 
-type DemoSuggestionState = "hidden" | "visible" | "accepted";
+const LABELS = ["Summarize RFP requirements", "Review the project timeline", "Find outstanding decisions", "Draft a status update"];
 
-export interface RovoButtonDemoSuggestion {
-	suggestion: FloatingRovoButtonSuggestion | null;
-	/** Replays the nudge from the top, even if one is already on screen. */
-	show: () => void;
-	hide: () => void;
-}
-
-/**
- * Demo-only proactive nudge. Each `show()` bumps a run counter so the suggestion
- * gets a fresh key and re-plays its entrance animation.
- */
-export function useRovoButtonDemoSuggestion(): RovoButtonDemoSuggestion {
-	const [state, setState] = useState<DemoSuggestionState>("hidden");
-	const [run, setRun] = useState(0);
-
+export function useRovoButtonDemoSuggestion() {
+	const [items, setItems] = useState<{ id: string; label: string }[]>([]);
+	const nextId = useRef(0);
 	const show = useCallback(() => {
-		setRun((currentRun) => currentRun + 1);
-		setState("visible");
+		const id = nextId.current++;
+		setItems((current) => [...current, { id: String(id), label: LABELS[id % LABELS.length] }]);
 	}, []);
-
-	const hide = useCallback(() => setState("hidden"), []);
-	const accept = useCallback(() => setState("accepted"), []);
-
-	const suggestion = useMemo<FloatingRovoButtonSuggestion | null>(() => {
-		if (state === "hidden") {
-			return null;
-		}
-
-		return {
-			id: `rovo-button-proactive-suggestion-demo-${run}-${state}`,
-			label: state === "accepted" ? "Suggestion accepted" : "Summarize RFP requirements",
-			ariaLabel: state === "accepted"
-				? "Proactive suggestion accepted"
-				: "Accept proactive suggestion",
-			onSelect: accept,
-			onDismiss: hide,
-		};
-	}, [accept, hide, run, state]);
-
-	return useMemo(() => ({ suggestion, show, hide }), [hide, show, suggestion]);
+	const hide = useCallback(() => setItems([]), []);
+	const remove = useCallback((id: string) => setItems((current) => current.filter((item) => item.id !== id)), []);
+	const suggestions = useMemo<readonly FloatingRovoButtonSuggestion[]>(() => items.map((item) => ({
+		...item,
+		onSelect: () => remove(item.id),
+		onDismiss: () => remove(item.id),
+	})), [items, remove]);
+	return { suggestions, show, hide };
 }

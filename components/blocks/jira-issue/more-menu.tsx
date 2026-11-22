@@ -24,6 +24,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
 	JiraIssueAgentAndSkillSubmenus,
 	type JiraIssueGenerativeActionConfig,
@@ -79,6 +80,7 @@ interface JiraIssueMoreMenuProps {
 }
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
+const butterMenuColor = "[&_[data-slot=dropdown-menu-item]:not([data-disabled])]:text-icon-subtle [&_[data-slot=dropdown-menu-sub-trigger]:not([data-disabled])]:text-icon-subtle";
 
 function JiraIssueReorderItems({ reorder }: Readonly<{ reorder: JiraIssueReorderActions | undefined }>) {
 	return reorder ? (
@@ -175,13 +177,13 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 			>
 				<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
+			<DropdownMenuContent align="start" className={cn("max-h-none w-[280px]", appearance === "project-butter" ? butterMenuColor : null)} side="right" sideOffset={8}>
 				{appearance === "project-butter" ? <>
 					<DropdownMenuGroup>
 						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} elemBeforeSize={16} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
 						<DropdownMenuSub>
 							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />} elemBeforeSize={16}>Link</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
+							<DropdownMenuSubContent className={butterMenuColor}>
 								<DropdownMenuItem onSelect={select("link-work-item")}>Work item</DropdownMenuItem>
 								<DropdownMenuItem onSelect={select("link-confluence-item")}>Confluence item</DropdownMenuItem>
 							</DropdownMenuSubContent>

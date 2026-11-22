@@ -11,7 +11,7 @@ const GAP = 1.5;
 function cutoutMask(front: HTMLElement, back: HTMLElement, frontBox: DOMRect, backBox: DOMRect): string {
 	const width = back.offsetWidth;
 	const height = back.offsetHeight;
-	if (!width || !height || !backBox.width || !backBox.height || frontBox.right <= backBox.left || frontBox.bottom <= backBox.top || frontBox.top >= backBox.bottom) return "";
+	if (!width || !height || !backBox.width || !backBox.height || frontBox.right <= backBox.left || frontBox.left >= backBox.right || frontBox.bottom <= backBox.top || frontBox.top >= backBox.bottom) return "";
 	const scaleX = backBox.width / width;
 	const scaleY = backBox.height / height;
 	const x = (frontBox.left - backBox.left) / scaleX;
@@ -28,10 +28,10 @@ function cutoutMask(front: HTMLElement, back: HTMLElement, frontBox: DOMRect, ba
 	return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-export function useAvatarGroupCutouts(ref: RefObject<HTMLElement | null>, host: "div" | "span", enabled: boolean) {
+export function useAvatarGroupCutouts(ref: RefObject<HTMLElement | null>, host: "div" | "span") {
 	useLayoutEffect(() => {
 		const element = ref.current;
-		if (!enabled || !element) return undefined;
+		if (!element) return undefined;
 		const group = element;
 		const masked = new Set<HTMLElement>();
 		const transforms = new WeakMap<HTMLElement, string>();
@@ -102,5 +102,5 @@ export function useAvatarGroupCutouts(ref: RefObject<HTMLElement | null>, host: 
 			group.removeEventListener("pointerout", schedule);
 			for (const artwork of masked) artwork.style.removeProperty("mask-image");
 		};
-	}, [ref, host, enabled]);
+	}, [ref, host]);
 }

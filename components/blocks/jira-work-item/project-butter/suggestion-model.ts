@@ -202,7 +202,9 @@ export function nextProjectButterDemoCheck(snapshot: ProjectButterSuggestionSnap
 export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: ProjectButterSuggestionProfile = "default", demoChecks = 0): ProjectButterSuggestion[] {
 	if (profile === "jira-demo") {
 		return [
-			...WORK_ITEM_SUGGESTIONS.filter((card) => isSuggestionFieldEmpty(card.id, snapshot)).map(fromDemoCard),
+			...WORK_ITEM_SUGGESTIONS
+				.filter((card) => card.id !== "acceptanceCriteria" && isSuggestionFieldEmpty(card.id, snapshot))
+				.map(fromDemoCard),
 			...JIRA_DEMO_FOLLOW_UP_FIELDS.slice(0, demoChecks).flat()
 				.filter((field) => isSuggestionFieldEmpty(field, snapshot))
 				.map((field) => createSuggestion(field, "payments")),

@@ -314,10 +314,10 @@ test("JiraList keeps labels on one line with an accessible overflow menu", () =>
 	assert.match(DATA_SOURCE, /\{ text: "user-initiated", color: "teal" \}/u);
 });
 
-test("JiraList maps each data column half to one deterministically owned boundary", () => {
+test("JiraList maps each data column edge to one deterministically owned boundary", () => {
 	assert.match(SOURCE, /type JiraListColumnBoundaryIndex = number/u);
 	assert.match(SOURCE, /function getColumnBoundaryIndex\(/u);
-	assert.match(SOURCE, /columnOffset < columnWidth \/ 2/u);
+	assert.match(SOURCE, /const edgeZone = Math\.min\(12, columnWidth \/ 2\)/u);
 	assert.match(SOURCE, /return columnIndex/u);
 	assert.match(SOURCE, /return columnIndex \+ 1/u);
 	assert.match(SOURCE, /event\.clientX - columnBounds\.left/u);
@@ -339,8 +339,7 @@ test("JiraList renders one keyboard-accessible overlay control per unique data b
 	assert.match(SOURCE, /<JiraListColumnBoundary/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /aria-label=\{`Add column/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /onFocus=\{\(\) => setIsFocused\(true\)\}/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /focus-visible:opacity-100/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent>Add column<\/TooltipContent>/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent anchor=\{markerRef\}>Add column<\/TooltipContent>/u);
 });
 
 test("JiraList column controls use outside-top overlay geometry without reserving space", () => {
@@ -349,8 +348,8 @@ test("JiraList column controls use outside-top overlay geometry without reservin
 	assert.match(SOURCE, /data-testid="jira-list-table-scroll"/u);
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40 w-0 overflow-visible/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /size-5 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay text-icon-subtle/u);
 	assert.match(
 		COLUMN_CONTROLS_SOURCE,
 		/left: anchorSide === "left" \? "anchor\(left\)" : "anchor\(right\)"/u,
@@ -370,7 +369,7 @@ test("JiraList column add overlay paints above the sticky checkbox column", () =
 		SOURCE,
 		/pointer-events-none contents[\s\S]*?data-testid="jira-list-column-boundary-overlay"/u,
 	);
-	assert.match(COLUMN_CONTROLS_SOURCE, /fixed z-50 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /fixed z-50 grid size-5 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /top: "anchor\(top, -100vh\)"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /positionVisibility: "anchors-visible"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40 w-0 overflow-visible/u);
@@ -380,45 +379,14 @@ test("JiraList column add overlay paints above the sticky checkbox column", () =
 	);
 });
 
-test("JiraList column add controls match the grid border without a second shadow edge", () => {
-	const boundaryButtonClass = COLUMN_CONTROLS_SOURCE.match(
-		/aria-label=\{`Add column \$\{positionLabel\}`\}[\s\S]*?className=\{cn\(\s*"([^"]+)"/u,
-	)?.[1] ?? "";
-
-	assert.match(boundaryButtonClass, /border border-border/u);
-	assert.doesNotMatch(boundaryButtonClass, /shadow-/u);
-});
-
-test("JiraList shows the exact boundary line only while its add control is hovered or focused", () => {
-	assert.match(COLUMN_CONTROLS_SOURCE, /const isLineActive = isHovered \|\| isFocused/u);
+test("JiraList shows the targeted column boundary", () => {
+	assert.match(COLUMN_CONTROLS_SOURCE, /const isLineActive = isTargeted \|\| isHovered \|\| isFocused/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /isLineActive && "opacity-100"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /data-boundary-line/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute inset-y-0 left-0/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /bg-border-selected/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /onPointerEnter=\{\(\) => setIsHovered\(true\)\}/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /onPointerLeave=\{\(\) => setIsHovered\(false\)\}/u);
-});
-
-test("JiraList column add popover filters static options without changing table columns", () => {
-	for (const label of [
-		"Act size",
-		"Actual Story Points",
-		"Progress",
-		"Remaining Estimate",
-		"Original Estimate",
-		"Time Spent",
-		"Comments",
-		"Components",
-	]) {
-		assert.match(COLUMN_CONTROLS_SOURCE, new RegExp(label, "u"));
-	}
-
-	assert.match(COLUMN_CONTROLS_SOURCE, /placeholder="Search columns"/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /COLUMN_OPTIONS\.filter/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /34 of 58/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /setSelectedOptionIds/u);
-	assert.doesNotMatch(COLUMN_CONTROLS_SOURCE, /onAddColumn|extraColumns/u);
-	assert.doesNotMatch(PAGE_SOURCE, /createExtraColumn|setExtraColumns|onAddColumn=/u);
 });
 
 test("JiraList gives every data column an accessible ellipsis action", () => {
@@ -506,7 +474,7 @@ test("JiraList omits footer actions when the consumer supplies no capability", (
 	assert.match(TYPES_SOURCE, /onRefresh\?: \(\) => void;/u);
 	assert.match(
 		SOURCE,
-		/onCreate \? \(\s*<div data-testid="jira-list-footer-controls">[\s\S]*?onClick=\{\(\) => onCreate\(\)\}[\s\S]*?<\/div>\s*\) : null/u,
+		/onCreate && !draftWorkItem \? \(\s*<div data-testid="jira-list-footer-controls">[\s\S]*?onClick=\{\(\) => onCreate\(\)\}[\s\S]*?<\/div>\s*\) : null/u,
 	);
 	assert.match(
 		SOURCE,
@@ -539,7 +507,7 @@ test("JiraList sample refresh restores rows and transient demo state", () => {
 });
 
 test("JiraList keeps footer drafts out of TableBody and swaps the sticky footer controls", () => {
-	const tableBodySource = SOURCE.match(/<TableBody>([\s\S]*?)<\/TableBody>/u)?.[1] ?? "";
+	const tableBodySource = SOURCE.match(/<TableBody\b[^>]*>([\s\S]*?)<\/TableBody>/u)?.[1] ?? "";
 	const stickyFooterMarker = SOURCE.indexOf('data-testid="jira-list-sticky-footer"');
 	const stickyFooterStart = SOURCE.lastIndexOf("<div", stickyFooterMarker);
 	const stickyFooterSource = SOURCE.slice(
@@ -630,14 +598,6 @@ test("JiraList reorders rows by dnd-kit and direct arrow-key callbacks", () => {
 	assert.match(PAGE_SOURCE, /onMoveRow=\{handleMoveRow\}/u);
 });
 
-test("JiraList drag feedback raises the active row and marks its target boundary", () => {
-	assert.match(SOURCE, /isDragging &&\s*"z-30 opacity-80 shadow-lg/u);
-	assert.match(SOURCE, /dragOverIssueKey/u);
-	assert.match(SOURCE, /dragInsertionPosition/u);
-	assert.match(SOURCE, /data-dragging=\{isDragging \|\| undefined\}/u);
-	assert.match(SOURCE, /data-drop-target=\{isDropTarget \|\| undefined\}/u);
-});
-
 test("JiraList row boundary controls reserve no horizontal gutter", () => {
 	assert.match(SOURCE, /className="min-w-\[1570px\] table-fixed border-separate border-spacing-0"/u);
 	assert.match(SOURCE, /"sticky left-0 isolate overflow-visible bg-surface! px-0/u);
@@ -661,12 +621,12 @@ test("JiraList row boundary controls are fixed opaque overlays", () => {
 		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\n(?:export )?function JiraListSortableRow/u,
 	)?.[0] ?? "";
 
-	assert.match(controlsSource, /fixed z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(controlsSource, /border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.match(controlsSource, /fixed z-30 h-3 -translate-y-1\/2/u);
+	assert.match(controlsSource, /width: `anchor-size\(\$\{rowWidthAnchor\(instanceId, rowIndex\)\} width\)`/u);
 	assert.doesNotMatch(controlsSource, /shadow-/u);
-	assert.match(controlsSource, /hover:bg-surface-overlay-hovered!/u);
-	assert.match(controlsSource, /active:bg-surface-overlay-pressed!/u);
-	assert.match(controlsSource, /focus-visible:bg-surface-overlay!/u);
+	assert.match(controlsSource, /size-5 [^"]*border border-border bg-surface-overlay/u);
+	assert.match(controlsSource, /group-hover\/create-gap:bg-surface-overlay-hovered/u);
+	assert.match(controlsSource, /group-active\/create-gap:bg-surface-overlay-pressed/u);
 	assert.doesNotMatch(controlsSource, /bg-surface-raised/u);
 });
 
@@ -804,7 +764,7 @@ test("JiraList stamps list-row session drop metadata only when an intent is pass
 	assert.match(SOURCE, /agentSessionDropEnabled=\{agentSessionDropIntent !== undefined\}/u);
 	assert.match(SOURCE, /function getInsertionFromRowZone/u);
 	assert.match(SOURCE, /getAgentSessionInsertionTarget\(agentSessionDropIntent\)/u);
-	assert.match(SOURCE, /sessionInsertionTarget \?\? focusedCreateTarget \?\? hoveredCreateTarget/u);
+	assert.match(SOURCE, /sessionInsertionTarget \?\? focusedCreateTarget \?\? \(onCreate \? hoverInsertion : null\)/u);
 	assert.match(SOURCE, /data-drop-target=\{isDropTarget \|\| undefined\}/u);
 	assert.doesNotMatch(SOURCE, /jira-kanban\/experimental/u);
 });

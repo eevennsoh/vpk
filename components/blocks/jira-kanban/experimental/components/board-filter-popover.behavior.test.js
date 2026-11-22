@@ -62,7 +62,23 @@ test("board JQL applies exclusions and combines conditions against the actual ca
 test("scope options retain both the parent name and work item key", async () => {
 	const view = await renderComponent({ source });
 	await view.click(view.getByRole("button", { name: "Filter board" }));
-	await view.press(view.getByRole("menuitem", { name: "Parent" }), "ArrowRight");
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Retire LegacyGatewayAdapter (PAY-90)" }).textContent.includes("PAY-90"), true);
+	await view.press(view.getByRole("menuitem", { name: "Epic" }), "ArrowRight");
+	await view.fill(view.getByRole("textbox", { name: "Search epic" }), "PAY-90");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Retire LegacyGatewayAdapter (PAY-90)" }).textContent, "Retire LegacyGatewayAdapter");
+	await view.unmount();
+});
+
+test("unassigned filter includes cards without an assignee even in presented columns", async () => {
+	const view = await renderComponent({ source: `
+		import { filterBoardByJiraConditions } from "@/components/blocks/jira-kanban/experimental/lib/board-jira-filter";
+		export default function Probe() {
+			const columns = [{ title: "To do", presenters: [{ id: "venn", name: "Venn" }], cards: [
+				{ code: "unassigned", title: "Unassigned", tags: [] },
+				{ code: "assigned", title: "Assigned", tags: [], assignee: { id: "venn", name: "Venn" } },
+			] }];
+			return <output>{filterBoardByJiraConditions(columns, [{ field: "assignee", operator: "is", values: ["unassigned"] }])[0].cards.map((card) => card.code).join(",")}</output>;
+		}
+	` });
+	assert.equal(view.container.querySelector("output").textContent, "unassigned");
 	await view.unmount();
 });

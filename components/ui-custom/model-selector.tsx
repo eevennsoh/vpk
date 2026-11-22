@@ -31,7 +31,6 @@ import {
 	DropdownMenuTrigger,
 	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
@@ -127,7 +126,6 @@ export const ModelSelectorInput = ({
 			<DropdownMenuSearchField
 				autoFocus
 				hostOwnsKeyNavigation
-				icon={<SearchIcon className="size-4 text-icon-subtle" />}
 				label={placeholder}
 				onClear={() => setQuery("")}
 				onValueChange={setQuery}

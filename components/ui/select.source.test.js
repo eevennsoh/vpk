@@ -68,7 +68,7 @@ test("SelectTrigger radius and text tone match outline button with muted placeho
 	assert.doesNotMatch(SELECT_SOURCE, /\[&_svg\]:text-icon"/);
 	assert.match(
 		SELECT_SOURCE,
-		/className="text-icon-subtle size-4 pointer-events-none"/,
+		/className="text-icon-subtle size-4 pointer-events-none(?: [^"]+)?"/,
 	);
 });
 

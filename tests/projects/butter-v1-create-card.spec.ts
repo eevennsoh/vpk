@@ -3,6 +3,38 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("list row create marker matches the board gap control", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	const cards = page.getByRole("region", { name: "To do work items" }).locator('[data-board-agent-session-drop-zone="issue"]');
+	await expect(cards.nth(1)).toBeVisible({ timeout: 30_000 });
+	const before = await cards.nth(0).boundingBox();
+	const after = await cards.nth(1).boundingBox();
+	const afterKey = await cards.nth(1).getAttribute("data-issue-key");
+	if (!before || !after || !afterKey) throw new Error("Expected two measurable board cards");
+	await page.mouse.move(after.x + 20, (before.y + before.height + after.y) / 2);
+	const boardControl = page.getByRole("button", { name: `Create work item before ${afterKey}` });
+	await expect(boardControl).toBeVisible();
+	const boardSize = await boardControl.evaluate((element) => {
+		const { width, height } = element.getBoundingClientRect();
+		return { width, height };
+	});
+
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const listControl = page.getByRole("button", { name: "Create work item after PAY-125" });
+	await listControl.focus();
+	const marker = listControl.locator("span.rounded-full");
+	await expect(marker).toBeVisible();
+	const listSize = await marker.evaluate((element) => {
+		const { width, height } = element.getBoundingClientRect();
+		return { width, height };
+	});
+	expect(listSize).toEqual(boardSize);
+	expect(listSize).toEqual({ width: 20, height: 20 });
+	await listControl.press("Enter");
+	await expect(page.getByRole("textbox", { name: "New work item summary" })).toBeFocused();
+});
+
 test("hovering a board gap keeps its create button opaque and opens the editor in place", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));
@@ -88,7 +120,7 @@ test("subtask count shows hover and open states", async ({ page }) => {
 	await expect(tag).not.toHaveClass(/bg-bg-selected/);
 });
 
-test("inline picker search headers match Labels and Parent", async ({ page }) => {
+test("inline picker search headers match Labels and Epic", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 720 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -121,7 +153,7 @@ test("inline picker search headers match Labels and Parent", async ({ page }) =>
 	await expect(page.getByRole("textbox", { name: "Search labels" })).toBeFocused();
 	const reference = await measureSearch();
 	await page.keyboard.press("Escape");
-	for (const [trigger, search] of [["Add parent", "Search work items"], ["Add subtasks", "Search subtasks"]]) {
+	for (const [trigger, search] of [["Add epic", "Search work items"], ["Add subtasks", "Search subtasks"]]) {
 		await draft.getByRole("button", { name: trigger, exact: true }).click();
 		await expect(page.getByRole("textbox", { name: search })).toBeFocused();
 		await expect.poll(measureSearch).toEqual(reference);
@@ -141,9 +173,9 @@ test("inline picker search headers match Labels and Parent", async ({ page }) =>
 			const rowBox = rowIcon.getBoundingClientRect();
 			return rowBox.left + rowBox.width / 2 - searchBox.left - searchBox.width / 2;
 		})).toBe(0);
-		const row = page.getByRole(trigger === "Add parent" ? "option" : "menuitemcheckbox").first();
+		const row = page.getByRole(trigger === "Add epic" ? "option" : "menuitemcheckbox").first();
 		await expect(row.locator('[data-slot="icon-tile"]')).toHaveCount(0);
-		const visual = row.locator(trigger === "Add parent" ? '[data-slot="icon"]' : '[data-slot="progress-circle"]').first();
+		const visual = row.locator(trigger === "Add epic" ? '[data-slot="icon"]' : '[data-slot="progress-circle"]').first();
 		await expect.poll(() => visual.evaluate((element) => {
 			const box = element.getBoundingClientRect();
 			return { width: box.width, height: box.height };
@@ -479,7 +511,7 @@ test("column header creates an inline work item with editable fields", async ({ 
 	await draft.getByRole("button", { name: "Add subtasks" }).click();
 	await page.getByRole("textbox", { name: "Search subtasks" }).fill("PAY-201");
 	await page.getByRole("menuitemcheckbox", { name: /PAY-201/ }).click();
-	await draft.getByRole("button", { name: "Add parent" }).click();
+	await draft.getByRole("button", { name: "Add epic" }).click();
 	await page.getByRole("textbox", { name: "Search work items" }).fill("PAY-999");
 	await page.getByRole("option", { name: /Improve merchant onboarding/ }).click();
 	await draft.getByRole("button", { name: "Add labels" }).click();

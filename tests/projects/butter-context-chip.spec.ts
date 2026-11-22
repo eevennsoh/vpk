@@ -23,7 +23,11 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		const chip = page.getByTestId("reply-target-chip");
 		const tag = chip.locator('[data-slot="tag"]');
 		const remove = chip.getByRole("button", { name: "Remove reply target" });
-		await expect(chip).toContainText("Review the onboarding flow");
+		const form = page.getByRole("form", { name: "Comment editor" });
+		const mention = form.getByRole("textbox", { name: "Comment editor" }).locator('[data-mention-id^="subagent:"]');
+		await expect(chip.locator("[data-tag-text]")).toHaveText("Replying to Review the onboarding flow");
+		await expect(mention).toHaveText("Cursor");
+		await expect(form.getByRole("button", { name: "Submit", exact: true })).toBeDisabled();
 		if (reducedMotion === "no-preference") {
 			await expect.poll(() => page.locator("html").getAttribute("data-context-chip-transition")).toContain("scale");
 		} else {
@@ -46,7 +50,6 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await expect(remove).toHaveCSS("opacity", "0");
 		await expect(remove).toHaveCSS("width", "16px");
 		await expect(remove).toHaveCSS("height", "16px");
-		const form = page.getByRole("form", { name: "Comment editor" });
 		const formBox = await form.boundingBox();
 		const replyIconBox = await replyIcon.boundingBox();
 		const addIconBox = await addIcon.boundingBox();
@@ -67,6 +70,56 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 		await expect(remove).toHaveCSS("opacity", "1");
 		await page.keyboard.press("Enter");
 		await expect(chip).toHaveCount(0);
+		await expect(mention).toHaveCount(0);
+	});
+}
+
+for (const view of ["Timeline", "Agent sessions"] as const) {
+	test(`nested replies identify and quote the selected message in ${view}`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+		await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+		const activity = page.getByRole("region", { name: "Activity", exact: true });
+		await activity.getByRole("tab", { name: view, exact: true }).click();
+		const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+		await thread.getByRole("button", { name: view === "Timeline" ? /Show 4 replies/u : "Show replies" }).click();
+		const form = page.getByRole("form", { name: "Comment editor" });
+		const editor = form.getByRole("textbox", { name: "Comment editor" });
+		const chip = form.getByTestId("reply-target-chip");
+		const replies = thread.getByRole("group", { name: "Replies", exact: true });
+		await editor.fill("Keep this draft");
+		await thread.getByRole("button", { name: "Reply", exact: true }).first().press("Enter");
+		const mention = editor.locator('[data-mention-id^="subagent:"]');
+		await expect(mention).toHaveText("Cursor");
+		await expect(editor).toContainText("Keep this draft");
+		const longMessage = "The step controls are reachable by keyboard, but the error summary needs focus.";
+		const truncatedExcerpt = "The step controls are reachable by keyboard, but the error summary needs…";
+		for (const [message, excerpt] of [
+			["Did you check the account setup step?", "Did you check the account setup step?"],
+			["Yes. The validation messages need to explain how to recover from an error.", "Yes."],
+			[longMessage, truncatedExcerpt],
+		]) {
+			const row = replies.locator(":scope > div").filter({ hasText: message });
+			await row.hover();
+			await row.getByRole("button", { name: "Reply", exact: true }).click();
+			await expect(chip.locator("[data-tag-text]")).toHaveText(`Replying to ${excerpt}`);
+			await expect(mention).toHaveCount(0);
+			await expect(editor).toBeFocused();
+			await expect(editor).toHaveText("Keep this draft");
+		}
+		await chip.getByRole("button", { name: /^Review Replying to The step controls/ }).click();
+		const context = page.getByRole("dialog").filter({ hasText: longMessage });
+		await expect(context.getByText("Review the onboarding flow", { exact: true })).toBeVisible();
+		await expect(context.getByText(longMessage, { exact: true })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await form.getByRole("button", { name: "Submit", exact: true }).click();
+		await expect(thread.getByRole("button", { name: /Show 5 replies/u })).toHaveAttribute("aria-expanded", "false");
+		const sentReply = replies.locator(":scope > div").filter({ has: page.getByText("Keep this draft", { exact: true }) });
+		const quote = sentReply.locator("blockquote");
+		await expect(quote).toHaveText(truncatedExcerpt);
+		await expect(quote).toHaveCSS("border-inline-start-width", "2px");
+		await expect(sentReply.getByText("Keep this draft", { exact: true })).toBeVisible();
 	});
 }
 

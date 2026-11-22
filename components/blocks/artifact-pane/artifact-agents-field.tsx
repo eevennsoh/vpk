@@ -14,7 +14,7 @@ import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimen
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { CheckIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import {
 	RichTextCommandMenuSearchField,
@@ -47,7 +47,6 @@ function ArtifactAgentsSearchPicker({
 			header={(
 				<RichTextCommandMenuSearchField
 					autoFocus
-					icon={<SearchIcon className="size-4 text-icon-subtle" />}
 					label="Search agents"
 					onClear={() => setQuery("")}
 					onEscape={onEscape}

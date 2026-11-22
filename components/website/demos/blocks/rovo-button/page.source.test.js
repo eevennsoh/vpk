@@ -209,7 +209,7 @@ test("Rovo button project page maps one declarative variant list", () => {
 
 	const declaredCaptions = [
 		['"toolbar"', '"Toolbar"', '"persistent bar"', "TOOLBAR_BUTTON_PLACEMENT"],
-		['"proactive"', '"Proactive"', '"shows nudge"', "SUGGESTION_BUTTON_PLACEMENT"],
+		['"proactive"', '"Proactive"', '"add nudges"', "SUGGESTION_BUTTON_PLACEMENT"],
 		['"insights"', '"Insights"', '"daily digest"', "INSIGHTS_BUTTON_PLACEMENT"],
 		['"chat"', '"Chat"', '"opens chat"', "CHAT_BUTTON_PLACEMENT"],
 		['"onboarding"', '"Onboarding"', '"opens panel"', "ONBOARDING_BUTTON_PLACEMENT"],
@@ -240,7 +240,7 @@ test("Rovo button project page keeps per-variant state in hooks", () => {
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /const insights = useRovoButtonDemoInsights\(\);/u);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
-		/const \{ suggestion, show: showSuggestion, hide: hideSuggestion \} = useRovoButtonDemoSuggestion\(\);/u,
+		/const \{ suggestions, show: showSuggestion, hide: hideSuggestion \} = useRovoButtonDemoSuggestion\(\);/u,
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
@@ -268,7 +268,7 @@ test("Rovo button project page keeps per-variant state in hooks", () => {
 test("Rovo button variants keep their distinguishing props", () => {
 	const wiring = [
 		['ariaLabel="Open Rovo chat demo with persistent toolbar"', /persistentBar=\{liveChat\.persistentBar\}/u],
-		['ariaLabel="Show proactive suggestion demo"', /suggestion=\{suggestion\}/u],
+		['ariaLabel="Show proactive suggestion demo"', /suggestions=\{suggestions\}/u],
 		['ariaLabel="Open daily insights demo"', /insights=\{insights\}/u],
 		['ariaLabel="Open onboarding demo"', /onboarding=\{onboarding\}/u],
 	];

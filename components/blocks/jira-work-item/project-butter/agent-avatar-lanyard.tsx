@@ -42,5 +42,5 @@ export function AgentAvatarLanyards({ anchorRef, children }: Readonly<{ anchorRe
 export function AgentAvatarLanyard({ agent, children, onOpenPicker }: Readonly<{ agent: AgentSelectorAgent; children: ReactNode; onOpenPicker: () => void }>) {
 	const handle = use(LanyardContext);
 	if (!handle) throw new Error("Agent avatars require AgentAvatarLanyards");
-	return <HoverCardTrigger handle={handle} payload={agent} delay={150} closeDelay={150} render={<button aria-label={`${agent.name}, add agent`} className="pointer-events-auto inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { handle.close(); onOpenPicker(); }} type="button">{children}</button>} />;
+	return <HoverCardTrigger handle={handle} payload={agent} delay={150} closeDelay={150} render={<button aria-label={`${agent.name}, add agent`} className="pointer-events-auto inline-flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { handle.close(); onOpenPicker(); }} type="button">{children}</button>} />;
 }

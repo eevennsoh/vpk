@@ -36,7 +36,7 @@ export default function RovoButtonPage({
 	const { chatSurface } = useRovoChatControls();
 	const liveChat = useRovoButtonDemoLiveChat();
 	const insights = useRovoButtonDemoInsights();
-	const { suggestion, show: showSuggestion, hide: hideSuggestion } = useRovoButtonDemoSuggestion();
+	const { suggestions, show: showSuggestion, hide: hideSuggestion } = useRovoButtonDemoSuggestion();
 	const { config: onboarding, close: closeOnboarding } = useRovoButtonDemoOnboarding({
 		onOpened: hideSuggestion,
 	});
@@ -70,7 +70,7 @@ export default function RovoButtonPage({
 		{
 			id: "proactive",
 			title: "Proactive",
-			detail: "shows nudge",
+			detail: "add nudges",
 			placement: SUGGESTION_BUTTON_PLACEMENT,
 			render: (context) => (
 				<FloatingRovoButton
@@ -79,7 +79,7 @@ export default function RovoButtonPage({
 					forceVisible
 					onButtonClick={handleSuggestionButtonClick}
 					product="home"
-					suggestion={suggestion}
+					suggestions={suggestions}
 				/>
 			),
 		},
@@ -123,7 +123,7 @@ export default function RovoButtonPage({
 				/>
 			),
 		},
-	], [chatSurface, handleSuggestionButtonClick, insights, liveChat, onboarding, suggestion]);
+	], [chatSurface, handleSuggestionButtonClick, insights, liveChat, onboarding, suggestions]);
 
 	return (
 		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>

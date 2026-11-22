@@ -20,7 +20,7 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
 
-import { ButterListAgentCell } from "../components/butter-list-agent-cell";
+import { ButterListAgentCell } from "@/components/blocks/jira-list/project-butter-agent-cell";
 import { BUTTER_PAY_BOARD_AGENTS } from "../data/presentation-story";
 import {
 	applyAssignedAgentIdsToColumns,
@@ -42,10 +42,13 @@ import {
 
 interface ListDraftWorkItem {
 	anchorIssueKey: string | null;
+	afterIssueKey?: string;
+	createdIssueKeys?: readonly string[];
 	assignee?: JiraListPerson;
 	dueDate?: string;
 	insertAtIndex: number | null;
 	issueType: JiraListIssueType;
+	parentIssueKey?: string;
 	summary: string;
 }
 
@@ -201,23 +204,35 @@ export function useButterList({
 		}
 
 		const issueKey = getNextPayIssueKey(boardColumns);
+		const parentKey = draftWorkItem.parentIssueKey;
+		const parentColumn = parentKey ? boardColumns.find(({ cards }) => cards.some(({ code }) => code === parentKey)) : undefined;
 		const card = toKanbanCardFromDraft({
 			assignee: draftWorkItem.assignee,
 			dueDate: draftWorkItem.dueDate,
 			issueKey,
-			issueType: draftWorkItem.issueType,
+			issueType: parentColumn ? "subtask" : draftWorkItem.issueType,
+			parentIssueKey: parentColumn ? parentKey : undefined,
 			summary: draftWorkItem.summary.trim(),
 		});
-		setBoardColumns((columns) => insertWorkItemCard(columns, card, "To do"));
+		setBoardColumns((columns) => insertWorkItemCard(columns, card, parentColumn?.title ?? "To do"));
+		if (parentColumn && parentKey) setExpandedKeys((current) => new Set([...current, parentKey]));
+		const afterIndex = draftWorkItem.afterIssueKey ? visibleKeysRef.current.indexOf(draftWorkItem.afterIssueKey) : -1;
 		setListOrder((currentOrder) => insertListOrderKey(
 			currentOrder,
 			visibleKeysRef.current,
 			issueKey,
-			draftWorkItem.insertAtIndex,
+			afterIndex >= 0 ? afterIndex + 1 : draftWorkItem.insertAtIndex,
 		));
-		setSelectedIssueKeys(new Set([issueKey]));
-		setDraftWorkItem(null);
-	}, [boardColumns, draftWorkItem, setBoardColumns, setDraftWorkItem, setListOrder, setSelectedIssueKeys]);
+		if (draftWorkItem.insertAtIndex === null) setSelectedIssueKeys(new Set([issueKey]));
+		setDraftWorkItem(draftWorkItem.insertAtIndex === null ? null : {
+			...draftWorkItem,
+			afterIssueKey: issueKey,
+			createdIssueKeys: [...(draftWorkItem.createdIssueKeys ?? []), issueKey],
+			anchorIssueKey: issueKey,
+			insertAtIndex: draftWorkItem.insertAtIndex + 1,
+			summary: "",
+		});
+	}, [boardColumns, draftWorkItem, setBoardColumns, setDraftWorkItem, setExpandedKeys, setListOrder, setSelectedIssueKeys]);
 
 	const handleCopyLink = useCallback(async (row: JiraListRowData) => {
 		const currentUrl = new URL(window.location.href);
@@ -392,11 +407,14 @@ export function useButterList({
 			copiedIssueKey,
 			draftWorkItem: draftWorkItem
 				? {
+					afterIssueKey: draftWorkItem.afterIssueKey,
+					createdIssueKeys: draftWorkItem.createdIssueKeys,
 					assignee: draftWorkItem.assignee,
 					dueDate: draftWorkItem.dueDate,
 					insertAtIndex: draftWorkItem.insertAtIndex,
 					issueKeyLabel: nextIssueKey,
 					issueType: draftWorkItem.issueType,
+					parentIssueKey: draftWorkItem.parentIssueKey,
 					summary: draftWorkItem.summary,
 				} satisfies JiraListDraftWorkItem
 				: null,
@@ -422,6 +440,7 @@ export function useButterList({
 			onDraftWorkItemCancel: handleDraftWorkItemCancel,
 			onDraftWorkItemDueDateChange: handleDraftWorkItemDueDateChange,
 			onDraftWorkItemIssueTypeChange: handleDraftWorkItemIssueTypeChange,
+			onDraftWorkItemParentChange: (parentIssueKey) => setDraftWorkItem((draft) => draft ? { ...draft, parentIssueKey } : draft),
 			onDraftWorkItemSubmit: handleDraftWorkItemSubmit,
 			onDraftWorkItemSummaryChange: handleDraftWorkItemSummaryChange,
 			onIssueClick: onIssueOpen ? handleIssueOpen : undefined,
@@ -475,6 +494,7 @@ export function useButterList({
 		onBrowseAgents,
 		onCreateAgent,
 		selectedIssueKeys,
+		setDraftWorkItem,
 		setExpandedKeys,
 	]);
 

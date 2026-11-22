@@ -50,7 +50,6 @@ export const DEPTH_ZONE = 120;
 export const DEPTH_MIN_SCALE = 0.9;
 export const DEPTH_LIFT = 28;
 export const FADE_BOTTOM = 56;
-export const FADE_TOP = 20;
 /** Header and footer heights, so the list can take the rest of the popover's height inside the frame. */
 export const FOOTER_HEIGHT = 56;
 export const CHROME_HEIGHT = 44 + FOOTER_HEIGHT;

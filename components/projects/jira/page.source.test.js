@@ -313,7 +313,7 @@ test("AgentsView includes assigned agents in the board toolbar avatar cluster", 
 test("Agents column assignment removes the avatar-group overlap ring", () => {
 	assert.match(
 		COLUMN_AGENT_ASSIGNMENT_SOURCE,
-		/<AvatarGroup className="-space-x-1\.5 \*:data-\[slot=avatar\]:ring-0!"/u,
+		/<AvatarGroup className="-space-x-1\.5"/u,
 	);
 	assert.match(COLUMN_AGENT_ASSIGNMENT_SOURCE, /label=\{agent\.name\} shape="hexagon" size="sm"/u);
 	assert.doesNotMatch(COLUMN_AGENT_ASSIGNMENT_SOURCE, /showHexagonBorder/u);

@@ -30,41 +30,68 @@ test("the Jira Suggestion preview offers Menu and Floating reviews", async ({ pa
 	await expect(page.getByRole("button", { name: "Review AI suggestions", exact: true })).toHaveCount(0);
 });
 
-test("floating suggestion cards keep their proportions as the stack opens", async ({ page }) => {
+test("Butter's stacked suggestions settle into rows without jumping or stretching their content", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/components/blocks/jira-suggestion"));
-	const preview = page.locator("#preview");
-	await preview.getByRole("button", { name: "Floating", exact: true }).click();
-	const launcher = preview.getByRole("button", { name: "Review AI suggestions", exact: true });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
 	const opening = await launcher.evaluateHandle((button) => {
-		const samples: { maxStretch: number; tailTransform: string }[] = [];
-		function sampleList() {
-			const faces = [...document.querySelectorAll('[role="list"][aria-label="Suggestions"] [data-suggestion-card-face]')];
-			if (faces.length === 0) {
-				requestAnimationFrame(sampleList);
-				return;
+		const samples: { listed: boolean; secondHeight: number; secondOpacity: number; tailTop: number; maxStretch: number; pointerTarget: boolean }[] = [];
+		const matrixFor = (element: Element) => {
+			const transform = getComputedStyle(element).transform;
+			return new DOMMatrix(transform === "none" ? undefined : transform);
+		};
+		button.addEventListener("click", () => {
+			const end = performance.now() + 1400;
+			function sampleDeck(now: number) {
+				const deck = document.querySelector('[aria-roledescription="suggestion stack"], [role="list"][aria-label="Suggestions"]');
+				const faces = Array.from(deck?.querySelectorAll("[data-suggestion-card-face]") ?? []);
+				const second = faces[1];
+				const tail = faces.at(-1)?.parentElement;
+				if (second?.parentElement && tail) {
+					const maxStretch = Math.max(...faces.map((face) => {
+						const paper = face.parentElement;
+						if (!paper) return 0;
+						const matrix = matrixFor(paper).multiply(matrixFor(face));
+						return Math.abs(Math.hypot(matrix.a, matrix.b) - Math.hypot(matrix.c, matrix.d));
+					}));
+					samples.push({
+						listed: deck?.getAttribute("role") === "list",
+						secondHeight: second.parentElement.getBoundingClientRect().height,
+						secondOpacity: Number(getComputedStyle(second).opacity),
+						tailTop: tail.getBoundingClientRect().top,
+						maxStretch,
+						pointerTarget: faces.some((face) => getComputedStyle(face).pointerEvents !== "none"),
+					});
+				}
+				if (now < end) requestAnimationFrame(sampleDeck);
 			}
-			let maxStretch = 0;
-			for (const face of faces) {
-				if (!face.parentElement) continue;
-				const transform = getComputedStyle(face.parentElement).transform;
-				const matrix = new DOMMatrix(transform === "none" ? undefined : transform);
-				maxStretch = Math.max(maxStretch, Math.abs(Math.hypot(matrix.a, matrix.b) - Math.hypot(matrix.c, matrix.d)));
-			}
-			const tail = faces.at(-1)?.closest('[role="listitem"]');
-			samples.push({ maxStretch, tailTransform: tail ? getComputedStyle(tail).transform : "none" });
-			if (samples.length < 12) requestAnimationFrame(sampleList);
-		}
-		button.addEventListener("click", () => requestAnimationFrame(sampleList), { once: true, capture: true });
+			requestAnimationFrame(sampleDeck);
+		}, { once: true, capture: true });
 		return samples;
 	});
 	await launcher.click();
-	await expect.poll(() => opening.evaluate((samples) => samples.length)).toBe(12);
+	await expect.poll(() => opening.evaluate((samples) => {
+		const latest = samples.at(-1);
+		const firstList = samples.find((sample) => sample.listed);
+		return latest?.secondOpacity === 1 && !!firstList && latest.tailTop - firstList.tailTop > 120;
+	})).toBe(true);
 	const samples = await opening.jsonValue();
-	expect(Math.max(...samples.map((sample) => sample.maxStretch))).toBeLessThan(0.05);
-	expect(samples[0]?.tailTransform).not.toBe("none");
-	expect(new Set(samples.map((sample) => sample.tailTransform)).size).toBe(1);
+	const lastStack = samples.findLast((sample) => !sample.listed);
+	const firstList = samples.find((sample) => sample.listed);
+	const settled = samples.at(-1);
+	expect(lastStack && firstList && settled).toBeTruthy();
+	if (!lastStack || !firstList || !settled) return;
+	expect(Math.abs(firstList.secondHeight - lastStack.secondHeight)).toBeLessThan(24);
+	expect(Math.abs(firstList.tailTop - lastStack.tailTop)).toBeLessThan(24);
+	expect(firstList.secondOpacity).toBeLessThan(0.5);
+	expect(firstList.pointerTarget).toBe(false);
+	expect(firstList.secondHeight - settled.secondHeight).toBeGreaterThan(40);
+	expect(Math.max(...samples.filter((sample) => sample.listed).map((sample) => sample.maxStretch))).toBeLessThan(0.05);
+	const description = page.locator('[data-suggestion-field="description"]');
+	await description.hover();
+	await expect(page.locator('[data-suggestion-preview="description"]')).toBeVisible();
 });
 
 test("the floating suggestions Close tooltip appears above its button", async ({ page }) => {
@@ -80,6 +107,34 @@ test("the floating suggestions Close tooltip appears above its button", async ({
 		const [button, tip] = await Promise.all([close.boundingBox(), tooltip.boundingBox()]);
 		return button && tip ? tip.y + tip.height <= button.y : false;
 	}).toBe(true);
+});
+
+test("closing floating suggestions clears the title before the launcher shrinks", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
+	await launcher.click();
+	await expect(page.getByRole("list", { name: "Suggestions" })).toBeVisible();
+	const close = page.getByRole("button", { name: "Close suggestions", exact: true });
+	await close.hover();
+	const closing = await close.evaluateHandle((button) => {
+		const title = button.closest('[role="dialog"]')?.querySelector("h2");
+		if (!title) throw new Error("Missing suggestions title");
+		const frames: boolean[] = [];
+		button.addEventListener("click", () => {
+			const sample = () => {
+				frames.push(title.checkVisibility({ opacityProperty: true, visibilityProperty: true }));
+				if (frames.length < 12) requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		}, { capture: true, once: true });
+		return frames;
+	});
+	await close.click();
+	await expect.poll(() => closing.evaluate((frames) => frames.length)).toBe(12);
+	expect(await closing.jsonValue()).not.toContain(true);
+	await expect(launcher).toBeFocused();
 });
 
 async function openDescription(page: Page) {

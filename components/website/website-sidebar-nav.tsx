@@ -10,7 +10,7 @@ import MenuIcon from "@atlaskit/icon/core/menu";
 import SearchIcon from "@atlaskit/icon/core/search";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupSearchAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -271,9 +271,9 @@ export function WebsiteSidebarNav({
 				{/* Search */}
 				<div className="px-4 pt-4 pb-3">
 					<InputGroup>
-						<InputGroupAddon>
+						<InputGroupSearchAddon>
 							<SearchIcon label="Search" />
-						</InputGroupAddon>
+						</InputGroupSearchAddon>
 						<InputGroupInput
 							id="sidebar-search"
 							type="search"

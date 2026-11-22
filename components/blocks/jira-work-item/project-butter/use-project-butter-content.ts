@@ -4,7 +4,7 @@ import { useEffect, useMemo, type SetStateAction } from "react";
 
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { JiraActivityActor } from "@/components/blocks/jira-activity";
-import type { JiraActivityReaction } from "@/components/blocks/jira-activity/jira-activity-types";
+import type { JiraActivityReaction, JiraActivityReply } from "@/components/blocks/jira-activity/jira-activity-types";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { TEAM_EU26_DESCRIPTION } from "@/components/blocks/jira-work-item/team-eu26/data/high-confidence-work-item";
@@ -31,6 +31,7 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/data";
 import {
 	PROJECT_BUTTER_ACTIVITY_FILTERS_ALL,
+	getProjectButterReplyExcerpt,
 	projectButterSessionInvocation,
 	type ProjectButterActivityFilters,
 	type ProjectButterActivityView,
@@ -246,12 +247,17 @@ export function useProjectButterContent(
 			};
 		}
 		return {
-			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[], sessionId?: string) => {
+			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[], { sessionId, replyToId }: Readonly<{ sessionId?: string; replyToId?: string }> = {}) => {
 				const createdAtMs = Date.now();
-				const reply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body };
+				const reply: JiraActivityReply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body };
 				updateState((previous) => ({
 					...previous,
-					activityEntries: previous.activityEntries.map((entry) => entry.id === entryId && entry.kind === "comment" ? { ...entry, replies: [...(entry.replies ?? []), reply] } : entry),
+					activityEntries: previous.activityEntries.map((entry) => {
+						if (entry.id !== entryId || entry.kind !== "comment") return entry;
+						const target = entry.replies?.find(({ id }) => id === replyToId);
+						const sentReply = target ? { ...reply, replyTo: { id: target.id, excerpt: getProjectButterReplyExcerpt(target.body) } } : reply;
+						return { ...entry, replies: [...(entry.replies ?? []), sentReply] };
+					}),
 					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000, sessionId }] : previous.pendingAgentReactions,
 				}));
 			},

@@ -7,6 +7,7 @@ const BLOCK_SOURCE = fs.readFileSync(path.join(__dirname, "index.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-details-demo.tsx"), "utf8");
 const AGENTS_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-agents-field.tsx"), "utf8");
 const LABELS_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-labels-field.tsx"), "utf8");
+const LABEL_COLOR_SOURCE = fs.readFileSync(path.join(__dirname, "label-color.ts"), "utf8");
 const PARENT_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-parent-field.tsx"), "utf8");
 const PROJECT_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-project-field.tsx"), "utf8");
 const DATE_FIELD_SOURCE = fs.readFileSync(
@@ -269,7 +270,7 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*className="size-/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\([\s\S]*className="text-current"/u);
 	assert.match(PARENT_FIELD_SOURCE, /icon: null,[\s\S]*leadingVisual: <ArtifactEpicMenuIcon color=\{artifactEpicColor\(option\.key\)\} \/>/u);
-	assert.match(PARENT_FIELD_SOURCE, /<Tag[\s\S]*className="max-w-full self-center"[\s\S]*color=\{artifactEpicColor\(selected\.key\)\}[\s\S]*elemBefore=\{<ArtifactEpicIcon \/>\}[\s\S]*\{selected\.summary\}/u);
+	assert.match(PARENT_FIELD_SOURCE, /<ArtifactParentTag parent=\{selected\} \/>/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /\{selected\.key\} \{selected\.summary\}/u);
 	assert.match(PARENT_FIELD_SOURCE, /\[&_\.rich-text-command-menu-item:hover\]:bg-bg-neutral-subtle-hovered!/u);
 	assert.doesNotMatch(DEMO_SOURCE, /<ParentRowField/u);
@@ -294,8 +295,8 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 
 test("Artifact Pane labels use colored tags in the field and grouped picker", () => {
 	assert.match(LABELS_FIELD_SOURCE, /import DeleteIcon from "@atlaskit\/icon\/core\/delete"/u);
-	assert.match(LABELS_FIELD_SOURCE, /import \{ Tag, TagGroup, type TagColor \} from "@\/components\/ui\/tag"/u);
-	assert.match(LABELS_FIELD_SOURCE, /const LABEL_COLORS = \["blue", "green", "purple", "orange", "teal", "magenta", "yellow"\]/u);
+	assert.match(LABELS_FIELD_SOURCE, /import \{ Tag, TagGroup \} from "@\/components\/ui\/tag"/u);
+	assert.match(LABEL_COLOR_SOURCE, /const LABEL_COLORS = \["blue", "green", "purple", "orange", "teal", "magenta", "yellow"\]/u);
 	assert.match(LABELS_FIELD_SOURCE, /options = LABEL_OPTIONS[\s\S]*const allLabels = Array\.from\(new Set\(\[\.\.\.value, \.\.\.options\]\)\);/u);
 	assert.match(LABELS_FIELD_SOURCE, /const visibleLabels = allLabels\.filter/u);
 	assert.match(LABELS_FIELD_SOURCE, /<Tag className="self-center justify-self-start" color=\{labelColor\(label\)\}/u);

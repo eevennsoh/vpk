@@ -12,7 +12,6 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import { FavoriteButton } from "@/components/blocks/agent-selector/components/favorite-button";
 import { cn } from "@/lib/utils";
 
@@ -89,7 +88,7 @@ function DestinationPreview({ approach }: Readonly<{ approach: Approach }>) {
 			<DropdownMenuSeparator />
 			<div className="min-h-0 flex-1 overflow-y-auto pt-2"><p className="px-3 pb-2 text-xs font-semibold text-text-subtlest">Choose where to run</p>{actionButtons(active)}</div>
 		</> : <>
-			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div>
+			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div>
 			{approach === "global" ? <div className="flex shrink-0 items-center gap-1 px-2 pb-1 text-xs text-text-subtle"><span className="mr-auto">Run on</span>{(["cloud", "local"] as const).map((destination) => <Button key={destination} type="button" size="compact" variant={globalDestination === destination ? "secondary" : "ghost"} aria-pressed={globalDestination === destination} onClick={() => { setGlobalDestination(destination); setFeedback(`Default: ${destination === "cloud" ? "Cloud" : "Local"}`); }}>{destination === "cloud" ? "Cloud" : "Local"}</Button>)}</div> : null}
 			<div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" style={listMaskStyle}>{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 			<div className="shrink-0"><DropdownMenuSeparator className="mt-0" /><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Browse agents (preview)")}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Create agent (preview)")}><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button></div>

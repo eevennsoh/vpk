@@ -245,27 +245,28 @@ export function agentSessionColumnCollapsedForAgentFilter(
 }
 
 /**
- * Overlay the Agents focus on top of the viewer's collapse set. A focused
- * override records manual resize choices while the focus is active, including
- * expanding a column whose filtered card list is empty. The viewer set stays
- * untouched so a tab switch or Clear can restore it.
+ * Overlay filtered empty columns or the Agents focus on the viewer's collapse
+ * set. A temporary override records manual resize choices while a filter is
+ * active; clearing the filter restores the viewer's original set.
  *
  * `columns` should already be assignee-scoped.
  */
 export function displayedCollapsedColumnsForAgentFilter({
 	columns,
 	filterId,
+	filterActive = false,
 	focusedOverride,
 	viewerCollapsed,
 }: {
 	columns: readonly JiraKanbanColumnData[];
 	filterId: BoardAgentFilterId | null;
+	filterActive?: boolean;
 	focusedOverride?: CollapsedBoardColumns | null;
 	viewerCollapsed: CollapsedBoardColumns;
 }): CollapsedBoardColumns {
-	return filterId === null
-		? viewerCollapsed
-		: focusedOverride ?? collapsedColumnsForAgentFilter({ columns, filterId });
+	if (filterId !== null) return focusedOverride ?? collapsedColumnsForAgentFilter({ columns, filterId });
+	if (!filterActive) return viewerCollapsed;
+	return focusedOverride ?? new Set([...viewerCollapsed, ...columns.filter((column) => column.cards.length === 0).map((column) => column.title)]);
 }
 
 /** Empty focused pools share the status columns' automatic collapse; clearing restores the viewer. */

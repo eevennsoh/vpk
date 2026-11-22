@@ -126,7 +126,7 @@ import {
 	TOP_NAV_SEARCH_MAX_WIDTH_PX,
 	TOP_NAV_SEARCH_MIN_WIDTH_PX,
 } from "@/components/blocks/top-navigation/layout-constants";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@atlaskit/icon/core/search";
@@ -3166,11 +3166,11 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 											: undefined
 									}
 								>
-									<InputGroupAddon align="inline-start">
-										<span className="size-4 shrink-0 text-icon-subtle">
+									<InputGroupSearchAddon align="inline-start">
+										<span className="size-4 shrink-0 text-icon-subtlest">
 											<SearchIcon label="" spacing="none" />
 										</span>
-									</InputGroupAddon>
+									</InputGroupSearchAddon>
 									<InputGroupInput
 										type="search"
 										aria-label="Search"

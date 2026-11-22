@@ -8,7 +8,7 @@ export const JIRA_ISSUE_BACKDROP_STYLE: CSSProperties = {
 	transformOrigin: "top center",
 };
 
-export function resolveJiraIssueSelectionBackdrop(mode?: JiraIssueSelectionBackdrop) {
+export function resolveJiraIssueSelectionBackdrop(mode?: JiraIssueSelectionBackdrop, radius = "8px") {
 	const joinsBefore = mode === "middle" || mode === "end";
 	const joinsAfter = mode === "start" || mode === "middle";
 	return {
@@ -20,10 +20,10 @@ export function resolveJiraIssueSelectionBackdrop(mode?: JiraIssueSelectionBackd
 		top: 0,
 		style: {
 			...JIRA_ISSUE_BACKDROP_STYLE,
-			borderTopLeftRadius: joinsBefore ? 0 : "8px",
-			borderTopRightRadius: joinsBefore ? 0 : "8px",
-			borderBottomLeftRadius: joinsAfter ? 0 : "8px",
-			borderBottomRightRadius: joinsAfter ? 0 : "8px",
+			borderTopLeftRadius: joinsBefore ? 0 : radius,
+			borderTopRightRadius: joinsBefore ? 0 : radius,
+			borderBottomLeftRadius: joinsAfter ? 0 : radius,
+			borderBottomRightRadius: joinsAfter ? 0 : radius,
 		},
 	};
 }

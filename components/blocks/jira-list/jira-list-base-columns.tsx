@@ -6,6 +6,7 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
 
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { JIRA_LIST_AGENT_SESSIONS_COLUMN_WIDTH } from "@/components/blocks/jira-list/jira-list-appearance";
 import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
 import {
 	HierarchyConnector,
@@ -282,7 +283,7 @@ export function createJiraListBaseColumns({
 		{
 			id: "agentSessions",
 			label: "Agent sessions",
-			widthClassName: "w-[247px]",
+			widthClassName: JIRA_LIST_AGENT_SESSIONS_COLUMN_WIDTH,
 			renderCell: (row) => renderAgentSessions ? renderAgentSessions(row) : (
 				<JiraListAgentSessionsCell
 					addAgentLabel={addAgentLabel}
@@ -308,7 +309,7 @@ export function createJiraListBaseColumns({
 		},
 		...(showPullRequests ? [{
 			id: "pullRequest",
-			label: "Pull request",
+			label: "Pull requests",
 			widthClassName: "w-[240px]",
 			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell issueKey={row.issueKey} pullRequests={row.pullRequests} />,
 		}] : []),

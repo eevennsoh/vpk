@@ -85,7 +85,7 @@ function GroupComposition({
 			}}
 		>
 			{grouped ? (
-				<AvatarGroup overlap="cutout" label={label} size={PX_TO_GROUP_SIZE[groupSize]}>
+				<AvatarGroup label={label} size={PX_TO_GROUP_SIZE[groupSize]}>
 					{avatars}
 				</AvatarGroup>
 			) : (

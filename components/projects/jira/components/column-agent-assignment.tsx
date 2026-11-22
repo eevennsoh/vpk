@@ -58,7 +58,7 @@ function AgentStack({ agents }: Readonly<{ agents: readonly BoardAgentData[] }>)
 	}
 
 	return (
-		<AvatarGroup className="-space-x-1.5 *:data-[slot=avatar]:ring-0!" label={`Assigned agents: ${label}`}>
+		<AvatarGroup className="-space-x-1.5" label={`Assigned agents: ${label}`}>
 			{visibleAgents.map((agent) => (
 				<AgentAvatar agent={agent} key={agent.id} />
 			))}

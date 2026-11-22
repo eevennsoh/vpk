@@ -54,7 +54,16 @@ export function describeRelativeTimeLabel(label: string, timestampMs?: number): 
 		return longUnit && Number.isFinite(quantity) ? LONG_RELATIVE_TIME.format(-quantity, longUnit) : undefined;
 	}
 	if (/^(?:just now|now)$/iu.test(text)) return Number.isFinite(timestampMs) ? undefined : "Less than a minute ago";
-	if (/^(?:today|yesterday|last (?:week|month|year))$/iu.test(text)) return text[0].toUpperCase() + text.slice(1).toLowerCase();
+	if (/^(?:today|yesterday|last (?:week|month|year))$/iu.test(text)) {
+		if (/^yesterday$/iu.test(text)) return "1 day ago";
+		if (Number.isFinite(timestampMs)) return undefined;
+		switch (text.toLowerCase()) {
+			case "today": return "Less than a day ago";
+			case "last week": return "1 week ago";
+			case "last month": return "1 month ago";
+			case "last year": return "1 year ago";
+		}
+	}
 	return undefined;
 }
 

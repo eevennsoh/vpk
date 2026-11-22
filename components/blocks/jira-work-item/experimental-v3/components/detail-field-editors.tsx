@@ -41,7 +41,6 @@ import {
 import { IconTile } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -117,7 +116,6 @@ export function MetadataSearchPicker({
 			header={(
 				<RichTextCommandMenuSearchField
 					autoFocus
-					icon={<SearchIcon className="size-4 text-icon-subtle" />}
 					label={placeholder}
 					onClear={() => setQuery("")}
 					onEscape={onEscape}

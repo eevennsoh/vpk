@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
 import {
 	BoardGroupByMenu,
+	type BoardGroupingControl,
 	BoardNeedsInputButton,
 	BoardViewMenu,
 } from "./components/board-view-menu";
@@ -92,6 +93,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder?: string;
+	searchControl?: { value: string; onValueChange: (value: string) => void };
+	allowGroupingInList?: boolean;
 	selectedAssigneeIds?: ReadonlySet<string>;
 	/**
 	 * The control row (search, facepile, filter, group, right-hand icon
@@ -107,6 +110,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	facepile?: ReactNode;
 	/** Shared Jira filter control. */
 	filterControl?: ReactNode;
+	filterSummary?: ReactNode;
+	grouping?: BoardGroupingControl;
 	headerControlsLayout?: "inline" | "trailing-icons";
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
@@ -185,19 +190,16 @@ function AssigneeAvatar({
 	assignee,
 	muted,
 	selected,
-	showGroupStroke,
 }: Readonly<{
 	assignee: JiraKanbanAssigneeData;
 	muted?: boolean;
 	selected?: boolean;
-	showGroupStroke?: boolean;
 }>) {
 	const isAgent = assignee.avatarSrc?.match(/^\/avatar-agent(?:-new)?\//u) ?? false;
 
 	return (
 		<Avatar
 			className={cn(
-				showGroupStroke && !isAgent && "ring-2 ring-background",
 				selected && !isAgent && "ring-2! ring-border-selected!",
 				muted && "opacity-(--opacity-disabled)",
 			)}
@@ -227,6 +229,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	showBoardControls = true,
 	facepile,
 	filterControl,
+	filterSummary,
+	grouping,
 	headerControlsLayout = "inline",
 	modeToggle,
 	endSlot,
@@ -241,6 +245,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	agentFilterId,
 	onAgentFilterIdChange,
 	needsInputCount,
+	searchControl,
+	allowGroupingInList = false,
 	showNeedsInputButton = true,
 	simpleViews,
 	viewTabs,
@@ -263,12 +269,15 @@ export function ExperimentalJiraKanbanBoardHeader({
 					compact={compact}
 					controlsInsetEnd={controlsInsetEnd}
 					headerControlsLayout={headerControlsLayout}
+					grouping={grouping}
 					moreControlsPlacement={moreControlsPlacement}
 					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
 					onShowUntrackedChange={onShowUntrackedChange}
 					onShownSessionStateIdsChange={onShownSessionStateIdsChange}
 					onViewChange={onViewChange}
 					searchPlaceholder={searchPlaceholder}
+					searchControl={searchControl}
+					allowGroupingInList={allowGroupingInList}
 					selectedAssigneeIds={selectedAssigneeIds}
 					showCustomizeControl={showCustomizeControl}
 					viewConfigurationHostRef={viewConfigurationHostRef}
@@ -284,6 +293,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 					{...{ endSlot, facepile, filterControl, modeToggle }}
 				/>
 			) : null}
+			{showBoardControls && filterSummary ? <div inert={muted || undefined} className={muted ? "opacity-20" : undefined}>{filterSummary}</div> : null}
 			{showCustomizeControl ? (
 				<div
 					ref={viewConfigurationHostRef}
@@ -402,7 +412,7 @@ function BoardHeaderAssigneeFacepileItem({
 	}
 
 	const avatar = (
-		<AssigneeAvatar assignee={assignee} muted={muted} selected={selected} showGroupStroke />
+		<AssigneeAvatar assignee={assignee} muted={muted} selected={selected} />
 	);
 
 	if (!onSelectedAssigneeIdsChange) {
@@ -445,6 +455,7 @@ function BoardHeaderControlsRow({
 	endSlot,
 	facepile,
 	filterControl,
+	grouping,
 	headerControlsLayout,
 	modeToggle,
 	moreControlsPlacement,
@@ -456,6 +467,8 @@ function BoardHeaderControlsRow({
 	onShownSessionStateIdsChange,
 	onViewChange,
 	searchPlaceholder,
+	searchControl,
+	allowGroupingInList,
 	selectedAssigneeIds,
 	showCustomizeControl,
 	viewConfigurationHostRef,
@@ -477,6 +490,7 @@ function BoardHeaderControlsRow({
 	endSlot?: ReactNode;
 	facepile?: ReactNode;
 	filterControl?: ReactNode;
+	grouping?: BoardGroupingControl;
 	headerControlsLayout: "inline" | "trailing-icons";
 	modeToggle?: ReactNode;
 	moreControlsPlacement: "inline" | "end";
@@ -488,6 +502,8 @@ function BoardHeaderControlsRow({
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder: string;
+	searchControl?: ExperimentalJiraKanbanBoardHeaderProps["searchControl"];
+	allowGroupingInList: boolean;
 	selectedAssigneeIds: ReadonlySet<string>;
 	showCustomizeControl: boolean;
 	viewConfigurationHostRef: RefObject<HTMLDivElement | null>;
@@ -498,6 +514,9 @@ function BoardHeaderControlsRow({
 	surfaceLabel: string;
 }>) {
 	const trailingIcons = headerControlsLayout === "trailing-icons";
+	const canGroup = activeView === "board" || allowGroupingInList;
+	const boardGrouping = canGroup ? grouping : undefined;
+	const showGrouping = canGroup || !grouping;
 	const needsInputButton = showNeedsInputButton && needsInputCount !== undefined ? (
 		<BoardNeedsInputButton
 			agentFilterId={agentFilterId}
@@ -527,10 +546,17 @@ function BoardHeaderControlsRow({
 			}
 		>
 			<InputGroup className="w-44">
-				<InputGroupAddon>
+				<InputGroupSearchAddon>
 					<Icon render={<SearchIcon label="" size="small" />} />
-				</InputGroupAddon>
-				<InputGroupInput type="search" aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
+				</InputGroupSearchAddon>
+				<InputGroupInput
+					type="search"
+					aria-label={searchPlaceholder}
+					placeholder={searchPlaceholder}
+					readOnly={!searchControl}
+					value={searchControl?.value}
+					onChange={searchControl ? (event) => searchControl.onValueChange(event.target.value) : undefined}
+				/>
 			</InputGroup>
 
 			{facepile ?? (
@@ -549,12 +575,14 @@ function BoardHeaderControlsRow({
 
 			{needsInputCount !== undefined ? (
 				<>
-					{trailingIcons ? null : <BoardGroupByMenu />}
+					{!trailingIcons && showGrouping ? <BoardGroupByMenu grouping={boardGrouping} /> : null}
 					{trailingIcons ? null : needsInputButton}
 				</>
 			) : (
 				<BoardViewMenu
 					compact={compact}
+					grouping={boardGrouping}
+					showGrouping={showGrouping}
 					agentFilterId={agentFilterId}
 					onAgentFilterIdChange={onAgentFilterIdChange}
 					onShownSessionStateIdsChange={onShownSessionStateIdsChange}
@@ -594,7 +622,7 @@ function BoardHeaderControlsRow({
 				{endSlot ? endSlot : null}
 				{trailingIcons ? needsInputButton : null}
 				{trailingIcons ? filterControl : null}
-				{trailingIcons && needsInputCount !== undefined ? <BoardGroupByMenu compact /> : null}
+				{trailingIcons && needsInputCount !== undefined && showGrouping ? <BoardGroupByMenu compact grouping={boardGrouping} /> : null}
 				{customizeControl}
 				{moreControlsPlacement === "end" ? moreControls : null}
 			</div>

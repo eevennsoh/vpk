@@ -20,7 +20,6 @@ import { BitbucketLogo } from "@/components/ui/logo";
 import { GithubLogo } from "@/components/ui/logo-third-party";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import {
 	RichTextCommandMenuSearchField,
 	useCommandMenuScrollMask,
@@ -204,7 +203,6 @@ export function DevelopmentRepositoryPicker() {
 				<div className="rich-text-command-menu rich-text-command-menu-embedded" data-has-header="true" {...menuProps}>
 					<RichTextCommandMenuSearchField
 						autoFocus
-						icon={<SearchIcon className="size-4 text-icon-subtle" />}
 						label="Search repositories"
 						onClear={() => setQuery("")}
 						onEscape={() => setOpen(false)}

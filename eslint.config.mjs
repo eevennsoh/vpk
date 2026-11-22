@@ -191,7 +191,17 @@ const capabilitySyntax = [
 		message: "Give each <Toaster /> a unique id and pass the matching toasterId to toast.* (gotchas-ui.md).",
 	},
 ];
-const appRestrictedSyntax = [...react19Syntax, ...conditionalRenderSyntax, ...motionTokenSyntax, ...hydrationSafeSyntax, ...capabilitySyntax];
+const searchIconSyntax = [
+	{
+		selector: "JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='SearchIcon'], JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='span'] > JSXElement[openingElement.name.name='SearchIcon'], JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='Icon'] > JSXOpeningElement > JSXAttribute[name.name='render'] JSXElement[openingElement.name.name='SearchIcon']",
+		message: "Use InputGroupSearchAddon for search magnifiers so they use color.icon.subtlest.",
+	},
+	{
+		selector: "JSXOpeningElement[name.name=/^(DropdownMenuSearchField|RichTextCommandMenuSearchField)$/] JSXAttribute[name.name='icon'] JSXElement[openingElement.name.name='SearchIcon']",
+		message: "Omit the search icon prop; DropdownMenuSearchField supplies the shared color.icon.subtlest magnifier.",
+	},
+];
+const appRestrictedSyntax = [...react19Syntax, ...conditionalRenderSyntax, ...motionTokenSyntax, ...hydrationSafeSyntax, ...capabilitySyntax, ...searchIconSyntax];
 const apiRouteRestrictedSyntax = [
 	...appRestrictedSyntax,
 	{

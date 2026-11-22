@@ -34,12 +34,15 @@ export function getColumnBoundaryIndex(
 	columnOffset: number,
 	columnWidth: number,
 	columnIndex: number,
-): JiraListColumnBoundaryIndex {
-	if (columnOffset < columnWidth / 2) {
+): JiraListColumnBoundaryIndex | null {
+	const edgeZone = Math.min(12, columnWidth / 2);
+	if (columnOffset <= edgeZone) {
 		return columnIndex;
 	}
-
-	return columnIndex + 1;
+	if (columnOffset >= columnWidth - edgeZone) {
+		return columnIndex + 1;
+	}
+	return null;
 }
 
 export function getAgentSessionInsertionTarget(
@@ -146,6 +149,17 @@ export function isInsertionTarget(
 	position: JiraListInsertionPosition,
 ): boolean {
 	return target?.issueKey === issueKey && target.position === position;
+}
+
+export function getInsertionLineTarget(
+	target: JiraListInsertionTarget | null,
+	rows: readonly { issueKey: string }[],
+	draftIndex?: number | null,
+): JiraListInsertionTarget | null {
+	if (!target || target.position !== "after") return target;
+	const index = rows.findIndex((row) => row.issueKey === target.issueKey);
+	const next = index >= 0 ? rows[index + 1] : undefined;
+	return next && draftIndex !== index + 1 ? { issueKey: next.issueKey, position: "before" } : target;
 }
 
 export function getInsertionLineClassName(

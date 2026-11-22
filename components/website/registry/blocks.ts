@@ -56,6 +56,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"html-selector": dynamic(() => import("../demos/blocks/html-selector-demo"), { ssr: false }),
 	"jira-activity": dynamic(() => import("../demos/blocks/jira-activity-demo"), { ssr: false }),
 	"jira-at-mention": dynamic(() => import("../demos/blocks/jira-at-mention-demo"), { ssr: false }),
+	"jira-backlog": dynamic(() => import("../demos/blocks/jira-backlog-demo"), { ssr: false }),
 	"jira-creating": dynamic(() => import("../demos/blocks/jira-creating-demo"), { ssr: false }),
 	"jira-dragging": dynamic(() => import("../demos/blocks/jira-dragging-demo"), { ssr: false }),
 	"jira-dropzone": dynamic(() => import("../demos/blocks/jira-dropzone-demo"), { ssr: false }),

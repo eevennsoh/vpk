@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { CheckIcon } from "@/components/ui/vpk-icons";
 import { FavoriteButton } from "@/components/blocks/agent-selector/components/favorite-button";
 import { cn } from "@/lib/utils";
 
@@ -81,7 +81,7 @@ export function FavoritesPreview() {
 	};
 	return (
 		<div ref={root} className={cn("flex h-[26rem] w-80 max-w-full flex-col overflow-hidden bg-popover text-popover-foreground", dropdownStyles.surface, dropdownStyles.padding)}>
-			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={(value) => { setQuery(value); setSubmenu(null); }} onClear={() => setQuery("")} /></div>
+			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField label="Search agents" value={query} onValueChange={(value) => { setQuery(value); setSubmenu(null); }} onClear={() => setQuery("")} /></div>
 			<div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" style={listMaskStyle}>
 				{favoriteAgents.length ? <section aria-label="Favorites"><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">Favorites</h3>{favoriteAgents.map(renderRow)}</section> : null}
 				{shownSoftware.length ? <section aria-label="Software agents"><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">Software agents</h3>{shownSoftware.map(renderRow)}{!query && !expanded && availableSoftware.length > 3 ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null}

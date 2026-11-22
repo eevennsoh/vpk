@@ -23,6 +23,7 @@ import { ENTITY_CARD_DETAIL } from "./ui-custom/entity-card";
 import { ENVIRONMENT_VARIABLE_DETAIL } from "./ui-custom/environment-variable";
 import { FILE_EXPLORER_DETAIL } from "./ui-custom/file-explorer";
 import { FILE_TREE_DETAIL } from "./ui-custom/file-tree";
+import { FILTER_CHIP_DETAIL } from "./ui-custom/filter-chip";
 import { FLOW_PANEL_DETAIL } from "./ui-custom/flow-panel";
 import { FOOTER_DETAIL } from "./ui-custom/footer";
 import { HOVER_REVEAL_ROW_DETAIL } from "./ui-custom/hover-reveal-row";
@@ -85,6 +86,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"environment-variable": ENVIRONMENT_VARIABLE_DETAIL,
 	"file-explorer": FILE_EXPLORER_DETAIL,
 	"file-tree": FILE_TREE_DETAIL,
+	"filter-chip": FILTER_CHIP_DETAIL,
 	"flow-panel": FLOW_PANEL_DETAIL,
 	footer: FOOTER_DETAIL,
 	"hover-reveal-row": HOVER_REVEAL_ROW_DETAIL,

@@ -70,7 +70,7 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 	const running = feed.status === "running";
 	return (
 		<header
-			className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2")}
+			className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2", floating ? "relative z-10" : null)}
 			style={{ marginTop: view === "list" ? LIST_HEADER_TOP_INSET : undefined }}
 		>
 			<h2 className="min-w-0 flex-1 text-sm" id={titleId}>

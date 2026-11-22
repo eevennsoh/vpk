@@ -7,7 +7,6 @@ import { useRef, useState, type ReactNode } from "react";
 import { getSkillConfigLabel } from "@/components/blocks/agent/lib/agent-config-model";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
@@ -295,7 +294,6 @@ export function EditorPaletteSearchPicker({
 				header={(
 					<RichTextCommandMenuSearchField
 						autoFocus={autoFocus}
-						icon={<SearchIcon className="size-4 text-icon-subtle" />}
 						label={getSearchPlaceholder(category)}
 						onClear={() => setQuery("")}
 						onSubmit={selectFirstResult}

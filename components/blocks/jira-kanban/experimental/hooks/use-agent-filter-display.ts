@@ -20,8 +20,8 @@ import { filterJiraKanbanColumnsByAgentSessionState } from "../lib/board-agent-s
 import type { CollapsedBoardColumns } from "../lib/board-column-collapse";
 
 /**
- * Overlay View → Agents onto viewer collapse and session visibility so a
- * temporary control-row unmount cannot drop the focus or its restore path.
+ * Derive filtered columns and overlay their collapse and session visibility
+ * without overwriting the viewer's unfiltered layout.
  */
 export function useAgentFilterDisplay({
 	agentFilterId,
@@ -54,10 +54,11 @@ export function useAgentFilterDisplay({
 		() => displayedCollapsedColumnsForAgentFilter({
 			columns: assigneeScopedColumns,
 			filterId: agentFilterId,
+			filterActive: filterConditions.some((condition) => condition.values.length > 0),
 			focusedOverride: focusedCollapsedColumns,
 			viewerCollapsed: viewerCollapsedColumns,
 		}),
-		[agentFilterId, assigneeScopedColumns, focusedCollapsedColumns, viewerCollapsedColumns],
+		[agentFilterId, assigneeScopedColumns, filterConditions, focusedCollapsedColumns, viewerCollapsedColumns],
 	);
 	const displayedShownSessionStateIds = useMemo(
 		() => agentFilterId === null

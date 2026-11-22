@@ -50,14 +50,13 @@ export interface WhyProps {
  * The top card's face: its label turns into the decision a drag would make. Its "Why · N sources" line is not part of
  * the face: SuggestionCard pins it to the paper's bottom edge, so the face is never taller than the paper mid-morph.
  */
-export function TopFace({ suggestion, isNew, progress }: Readonly<{ suggestion: WorkItemSuggestion; isNew: boolean; progress: MotionValue<number> }>) {
+export function TopFace({ suggestion, progress }: Readonly<{ suggestion: WorkItemSuggestion; progress: MotionValue<number> }>) {
 	const acceptHint = useTransform(progress, [0, 1], [0, 1]);
 	const dismissHint = useTransform(progress, [-1, 0], [1, 0]);
 	const labelFade = useTransform(progress, [-0.6, 0, 0.6], [0, 1, 0]);
 	return (
 		<CardFace
 			className={FACE_PADDING}
-			isNew={isNew}
 			label={(
 				<>
 					<motion.span className="col-start-1 row-start-1 text-text-subtle" style={{ opacity: labelFade }}>{suggestion.label}</motion.span>
@@ -99,7 +98,7 @@ function RoundAction({ label, hint, className, onClick, children }: Readonly<{ l
  * face, so they fade in with it as the row lands rather than popping in afterwards. A sheet wears this face without
  * controls while it gathers under the top card, so its content never outgrows its paper mid-flight.
  */
-export function RowFace({ suggestion, isNew, controls, onDecide, why }: Readonly<{ suggestion: WorkItemSuggestion; isNew: boolean; controls: boolean; onDecide: (direction: SwipeDirection) => void; why?: WhyProps }>) {
+export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ suggestion: WorkItemSuggestion; controls: boolean; onDecide: (direction: SwipeDirection) => void; why?: WhyProps }>) {
 	const field = suggestion.label.toLowerCase();
 	return (
 		<CardFace
@@ -115,7 +114,6 @@ export function RowFace({ suggestion, isNew, controls, onDecide, why }: Readonly
 				</>
 			) : null}
 			className={FACE_PADDING}
-			isNew={isNew}
 			suggestion={suggestion}
 		/>
 	);

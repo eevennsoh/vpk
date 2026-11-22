@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DropdownMenuSearchField } from "@/components/ui/dropdown-menu"
-import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons"
+import { CheckIcon } from "@/components/ui/vpk-icons"
 
 type CommandPrimitiveInputProps = React.ComponentProps<typeof CommandPrimitive.Input> & {
   asChild?: boolean
@@ -96,7 +96,6 @@ function CommandInput({
       <DropdownMenuSearchField
         className={className}
         hostOwnsKeyNavigation
-        icon={<SearchIcon />}
         label={label}
         placeholder={placeholder}
         value={searchValue}

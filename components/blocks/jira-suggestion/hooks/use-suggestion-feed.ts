@@ -20,6 +20,8 @@ export interface SuggestionRun {
 export type SuggestionFeedStatus = "idle" | "running";
 
 export interface SuggestionFeed {
+	onOpenReview?: (panelId: string) => void;
+	onPreviewCard?: (card: Pick<WorkItemSuggestion, "id" | "valueText"> | null) => void;
 	review: SuggestionReview;
 	status: SuggestionFeedStatus;
 	/** Oldest first. */

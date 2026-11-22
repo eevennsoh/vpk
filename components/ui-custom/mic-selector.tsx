@@ -32,7 +32,7 @@ import {
 	DropdownMenuTrigger,
 	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDownIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { ChevronDownIcon } from "@/components/ui/vpk-icons";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
@@ -194,7 +194,6 @@ export function MicSelectorInput({
 			<DropdownMenuSearchField
 				autoFocus
 				hostOwnsKeyNavigation
-				icon={<SearchIcon className="size-4 text-icon-subtle" />}
 				label={placeholder}
 				onClear={() => setQuery("")}
 				onValueChange={setQuery}

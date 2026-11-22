@@ -46,7 +46,10 @@ import {
 	AgentSessionPanel,
 } from "./components/agent-session-panel";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
-import { BoardFilterPopover } from "./components/board-filter-popover";
+import { BoardFilterPopover, useBoardFilterFields } from "./components/board-filter-popover";
+import { BoardFilterPills } from "./components/board-filter-pills";
+import type { BoardSwimlaneOptionId } from "./data/board-group-options";
+import { groupBoardColumns, toJiraWorkItemGroups } from "./lib/board-swimlanes";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
 	type BoardAgentFilterId,
@@ -79,12 +82,13 @@ import { useBoardCreatedCardArrival } from "./hooks/use-created-card-arrival";
 import { useBoardMenuWorkItem } from "./hooks/use-board-menu-work-item";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
 import { useAgentFilterSessions } from "./hooks/use-agent-filter-sessions";
-import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
-import { boardFilterScopeEntryPolicy, type BoardFilterScopeEntryPolicy } from "./lib/board-jira-filter";
+import { useBoardFilter } from "./hooks/use-board-filter";
+import { searchBoardWorkItems, type BoardFilterScopeEntryPolicy } from "./lib/board-jira-filter";
 import {
 	isExperimentalJiraListContent,
 	useAgentSessionLooseWork,
 	useAgentSessionItems,
+	usePageFilterActions,
 } from "./hooks/use-page-content-model";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
@@ -214,7 +218,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee, filterAssigneePeople, filterStatusOptions, initialSavedFilters,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -256,6 +260,8 @@ function ExperimentalJiraKanbanPageContent({
 	showAgentSessionLinkWorkItemMenuItem = true,
 	showAgentSessionOverflow = true,
 	showBoardContent = true,
+	sharedWorkItemControls = false,
+	alternateContent,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
 	headerControlsLayout,
@@ -335,6 +341,11 @@ function ExperimentalJiraKanbanPageContent({
 		null,
 	);
 	const [agentFilterId, setAgentFilterId] = useState<BoardAgentFilterId | null>(null);
+	const [groupBy, setGroupBy] = useState<BoardSwimlaneOptionId | null>(null);
+	const [tableGroupBy, setTableGroupBy] = useState<BoardSwimlaneOptionId | null>(null);
+	const tableGrouping = sharedWorkItemControls && (activeView === "list" || Boolean(alternateContent));
+	const currentGroup = tableGrouping ? tableGroupBy : groupBy;
+	const [workItemSearch, setWorkItemSearch] = useState("");
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
 	const [shownSessionStateIds, setShownSessionStateIds] = useState(
@@ -409,30 +420,7 @@ function ExperimentalJiraKanbanPageContent({
 	useImperativeHandle(ref, () => ({
 		openTimeline: (snapshotId: string | null = null) => handleOpenTimeline(snapshotId),
 	}), [handleOpenTimeline]);
-	// Choosing an epic or a sprint is a request to read the brief, and the brief
-	// only exists in Insights. Without this, picking one from the board filter
-	// recomputes the scope and leaves the reader on the board looking at
-	// columns — the feature silently doing nothing.
-	//
-	// It hangs off the filter's own actions rather than an effect on `scope`:
-	// the mode change is caused by the reader's click, and deriving it from
-	// state afterwards would also fire when a scope is restored on mount.
-	// Parent and Sprint go through handleOpenTimeline so scoped entry gets the
-	// same Venn default as the Insights toggle.
-	const filterActions = useMemo((): BoardFilterActions => ({
-		...boardFilter.actions,
-		setConditions: (conditions) => {
-			boardFilter.actions.setConditions(conditions);
-			const entryPolicy = boardFilterScopeEntryPolicy(conditions, boardFilter.model.conditions);
-			if (insightsEnabled && entryPolicy) handleOpenTimeline(null, entryPolicy);
-		},
-		toggleValue: (fieldId, valueId) => {
-			boardFilter.actions.toggleValue(fieldId, valueId);
-			if (insightsEnabled && (fieldId === "parent" || fieldId === "sprint")) {
-				handleOpenTimeline();
-			}
-		},
-	}), [boardFilter.actions, boardFilter.model.conditions, handleOpenTimeline, insightsEnabled]);
+	const filterActions = usePageFilterActions(boardFilter.actions, boardFilter.model.conditions, insightsEnabled ? handleOpenTimeline : undefined);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -469,6 +457,7 @@ function ExperimentalJiraKanbanPageContent({
 			: assignees,
 		[assignees, isPulse],
 	);
+	const boardFilterFields = useBoardFilterFields(filterAssignees, boardColumns, filterAssigneePeople, filterStatusOptions);
 	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
@@ -516,7 +505,7 @@ function ExperimentalJiraKanbanPageContent({
 		displayedAgentSessionColumnCollapsed,
 		displayedCollapsedColumns,
 		displayedShowUntracked,
-		filteredBoardColumns,
+		filteredBoardColumns: scopedBoardColumns,
 	} = useAgentFilterDisplay({
 		agentFilterId,
 		boardColumns,
@@ -529,6 +518,9 @@ function ExperimentalJiraKanbanPageContent({
 		viewerShowUntracked: showUntracked,
 		viewerShownSessionStateIds: shownSessionStateIds,
 	});
+	const filteredBoardColumns = useMemo(() => searchBoardWorkItems(scopedBoardColumns, sharedWorkItemControls ? workItemSearch : ""), [scopedBoardColumns, sharedWorkItemControls, workItemSearch]);
+	const swimlanes = useMemo(() => currentGroup && (!boardOnly || tableGrouping) ? groupBoardColumns(filteredBoardColumns, currentGroup, boardColumns) : undefined, [currentGroup, boardOnly, tableGrouping, filteredBoardColumns, boardColumns]);
+	const workItemGroups = useMemo(() => tableGrouping ? toJiraWorkItemGroups(swimlanes, currentGroup) : undefined, [tableGrouping, swimlanes, currentGroup]);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
 			isLooseWorkResumable,
@@ -769,7 +761,7 @@ function ExperimentalJiraKanbanPageContent({
 	};
 
 	const handleCollapsedColumnsChange = (nextCollapsedColumns: CollapsedBoardColumns) => {
-		if (agentFilterId === null) {
+		if (agentFilterId === null && !boardFilter.model.conditions.some((condition) => condition.values.length > 0)) {
 			if (controlledCollapsedColumns === undefined) setLocalCollapsedColumns(nextCollapsedColumns);
 			onCollapsedColumnsChange?.(nextCollapsedColumns);
 			return;
@@ -855,10 +847,11 @@ function ExperimentalJiraKanbanPageContent({
 		acknowledgeAgentAssignment(agentAssignmentRequest.issueKey, agentAssignmentRequest.session);
 	}, [acknowledgeAgentAssignment, agentAssignmentRequest, filteredBoardColumns]);
 	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
-		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
-		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
+		rootRef: boardSessionDrag.boardRootRef, enabled: showBoardContent && issueSelectionAppearance === "fused-backdrop" && !isListContent,
+		filteredBoardColumns, swimlanes: isListContent ? undefined : swimlanes, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 	});
 
+	const workItemSurfaceLabel = alternateContent?.label ?? activeView;
 	return (
 		<div
 			className="relative flex h-full min-h-[640px] flex-col"
@@ -876,13 +869,16 @@ function ExperimentalJiraKanbanPageContent({
 				onShowUntrackedChange={setShowUntracked}
 				agentFilterId={agentFilterId}
 				onAgentFilterIdChange={handleAgentFilterChange}
+				grouping={{ table: tableGrouping, value: currentGroup, onChange: (next) => { if (next !== currentGroup) onClearSelection(); (tableGrouping ? setTableGroupBy : setGroupBy)(next); } }}
 				needsInputCount={needsInputCount}
 				showNeedsInputButton={showNeedsInputButton}
 				headerControlsLayout={headerControlsLayout}
-				onViewChange={renderListContent ? onViewChange : undefined}
-				searchPlaceholder={`Search ${activeView}`}
+				onViewChange={showBoardContent && renderListContent ? onViewChange : undefined}
+				searchPlaceholder={`Search ${workItemSurfaceLabel}`}
+				searchControl={sharedWorkItemControls ? { value: workItemSearch, onValueChange: setWorkItemSearch } : undefined}
+				allowGroupingInList={sharedWorkItemControls}
 				selectedAssigneeIds={selectedAssigneeIds}
-				showBoardControls={showBoardContent}
+				showBoardControls={showBoardContent || Boolean(alternateContent)}
 				shownSessionStateIds={shownSessionStateIds}
 				showUntracked={showUntracked}
 				facepile={isPulse ? (
@@ -896,12 +892,14 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
+						assigneePeople={filterAssigneePeople} statusOptions={filterStatusOptions} initialSavedFilters={initialSavedFilters}
 						columns={boardColumns}
 						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}
-						surfaceLabel={activeView}
+						surfaceLabel={workItemSurfaceLabel}
 					/>
 				}
+				filterSummary={(!isListContent || sharedWorkItemControls) && !isPulse ? <BoardFilterPills conditions={boardFilter.model.conditions} fields={boardFilterFields} onChange={filterActions.setConditions} /> : null}
 				modeToggle={insightsEnabled ? (
 					<PulseModeToggle
 						active={isPulse}
@@ -916,7 +914,7 @@ function ExperimentalJiraKanbanPageContent({
 						unreadCount={isPulse ? 0 : timelineUnreadCount}
 					/>
 				) : undefined}
-				surfaceLabel={activeView}
+				surfaceLabel={workItemSurfaceLabel}
 				viewTabs={viewTabs}
 				moreControlsPlacement={moreControlsPlacement}
 				showMoreControls={showMoreControls}
@@ -944,7 +942,7 @@ function ExperimentalJiraKanbanPageContent({
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					<SessionColumnPlacementProvider
-						enabled={advancedAgentSessionTimeline && !isListContent && showInFlowAgentSessionColumn && Boolean(agentSessionColumnConfig)}
+						enabled={advancedAgentSessionTimeline && !swimlanes && !isListContent && showInFlowAgentSessionColumn && Boolean(agentSessionColumnConfig)}
 						titles={filteredBoardColumns.map((column) => column.title)}
 					>
 						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
@@ -954,6 +952,7 @@ function ExperimentalJiraKanbanPageContent({
 								resizable={agentSessionColumnResizable}
 								agentSessionColumn={{
 									...agentSessionColumnConfig,
+									growUnderlapSurface: isListContent || !swimlanes?.length,
 									draggingIds: boardSessionDrag.draggingIds,
 									highlightedItemId: suggestSessionBoardLinkOnHover
 										? untrackedHoveredSessionId
@@ -971,6 +970,7 @@ function ExperimentalJiraKanbanPageContent({
 						<RetainedView active={isListContent} retain={retainWorkItemViews}>
 							{retainWorkItemViews || isListContent ? (
 								renderListContent?.(filteredBoardColumns, {
+									groups: workItemGroups,
 									agentSessionDropIntent: boardSessionDrag.listDropIntent,
 									onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
 									scrollEndInset: boardScrollEndInset,
@@ -1005,6 +1005,7 @@ function ExperimentalJiraKanbanPageContent({
 								ariaLabel={ariaLabel}
 								assignedAgentIdsByColumn={columnAgentAssignments}
 								boardColumns={filteredBoardColumns}
+								swimlanes={swimlanes}
 								onCardSummaryChange={controlledBoardColumns === undefined || onBoardColumnsChange ? (issueKey, summary) => updateBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, title: summary } : card) }))) : undefined}
 								createWorkItemColumns={boardColumns}
 								createWorkItemAssignees={assignees}
@@ -1078,7 +1079,7 @@ function ExperimentalJiraKanbanPageContent({
 						</RetainedView>
 					</SessionColumnPlacementProvider>
 				</div>
-			)) : null}
+			)) : alternateContent?.render(filteredBoardColumns, workItemGroups)}
 			{/* Docked rail: last child so it stacks above list column controls at the same z. */}
 			{showAgentSessionPanel && agentSessionColumnConfig ? (
 				<JiraSessionFlyoutSuspensionProvider

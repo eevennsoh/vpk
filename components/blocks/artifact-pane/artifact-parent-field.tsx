@@ -53,13 +53,25 @@ function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>)
 	);
 }
 
+export function ArtifactParentTag({ parent, placeholder = "Uncategorised" }: Readonly<{
+	parent: Pick<ParentOption, "key" | "summary"> | null;
+	placeholder?: string;
+}>) {
+	return (
+		<Tag className="max-w-full self-center" color={parent ? artifactEpicColor(parent.key) : "standard"} elemBefore={parent ? <ArtifactEpicIcon /> : undefined}>
+			{parent?.summary ?? placeholder}
+		</Tag>
+	);
+}
+
 export function ArtifactParentField({
 	value,
 	onChange,
 	onClear,
 	options = PARENT_OPTIONS,
 	trigger,
-}: Readonly<{ value: string | null; onChange: (key: string) => void; onClear?: () => void; options?: readonly Pick<ParentOption, "key" | "summary">[]; trigger?: ReactElement }>) {
+	fieldName = "parent",
+}: Readonly<{ value: string | null; onChange: (key: string) => void; onClear?: () => void; options?: readonly Pick<ParentOption, "key" | "summary">[]; trigger?: ReactElement; fieldName?: "parent" | "epic" }>) {
 	const [open, setOpen] = useState(false);
 	const selected = options.find((option) => option.key === value);
 	const items = options.map((option): RichTextSuggestionMenuItem => ({
@@ -70,26 +82,20 @@ export function ArtifactParentField({
 		leadingVisual: <ArtifactEpicMenuIcon color={artifactEpicColor(option.key)} />,
 		leadingVisualSize: "compact",
 	}));
-	if (selected && onClear) items.push({ id: "", label: "Remove parent", icon: null, leadingVisual: <span aria-hidden />, leadingVisualSize: "compact" });
+	if (selected && onClear) items.push({ id: "", label: `Remove ${fieldName}`, icon: null, leadingVisual: <span aria-hidden />, leadingVisualSize: "compact" });
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<DetailValueTrigger aria-label="Change parent" />}>
+			{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<DetailValueTrigger aria-label={`Change ${fieldName}`} />}>
 				{selected ? (
-					<Tag
-						className="max-w-full self-center"
-						color={artifactEpicColor(selected.key)}
-						elemBefore={<ArtifactEpicIcon />}
-					>
-						{selected.summary}
-					</Tag>
+					<ArtifactParentTag parent={selected} />
 				) : (
-					<span className="text-sm text-text-subtlest">Add parent</span>
+					<span className="text-sm text-text-subtlest">Add {fieldName}</span>
 				)}
 			</PopoverTrigger>}
 			<PopoverContent
 				align="start"
-				aria-label="Change parent"
+				aria-label={`Change ${fieldName}`}
 				className={METADATA_PICKER_POPOVER_CLASS}
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}

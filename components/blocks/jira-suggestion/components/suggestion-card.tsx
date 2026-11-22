@@ -33,10 +33,10 @@ export interface SuggestionCardProps extends WhyProps {
 	role: CardRole;
 	elevated: boolean;
 	floating: boolean;
-	blurFace: boolean;
 	pose: CardPose;
 	/** How the card travels to a new pose: the morph between modes, or the quicker fan within the stack. */
 	poseTransition: Transition;
+	previewing: boolean;
 	/** This card's place in the morph's stagger. */
 	delay: number;
 	/** The stack ⇄ list morph is in flight. */
@@ -55,7 +55,6 @@ export interface SuggestionCardProps extends WhyProps {
 	 */
 	peekProgress: MotionValue<number> | null;
 	zIndex: number;
-	isNew: boolean;
 	entrance: CardEntrance;
 	/** The list's depth tail scales and lifts this card's slot. Returns the cleanup. */
 	registerDepth: (element: HTMLElement) => () => void;
@@ -79,7 +78,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
  * for list rows while the content fades in for the top card and rows, and out for sheets.
  */
 export function SuggestionCard({
-	suggestion, decision, role, elevated, floating, blurFace, pose, poseTransition, delay, morphing, parked, onParked, peekProgress, zIndex, isNew, entrance, registerDepth,
+	suggestion, decision, role, elevated, floating, pose, poseTransition, previewing, delay, morphing, parked, onParked, peekProgress, zIndex, entrance, registerDepth,
 	onCommit, onGrab, onTap, onDecide, onRestore, whyOpen, onWhyOpenChange, whyAnchor, whyContainer, ref,
 }: Readonly<SuggestionCardProps>) {
 	const [isPresent, safeToRemove] = usePresence();
@@ -89,8 +88,6 @@ export function SuggestionCard({
 	const top = role === "top";
 	const sheet = role === "sheet";
 	const showTopReason = top && !floating;
-	const hideFloatingFace = floating && role !== "row";
-	const useBlur = blurFace && !reduced;
 	const floatingSheetEdge = floating && !parked && !elevated ? `inset 0px 0px 0px 1px ${token("color.border")}` : undefined;
 
 	const { dragX, progress, dragging, handlers } = useCardDrag({
@@ -174,10 +171,9 @@ export function SuggestionCard({
 		return animate(contentShown, 1, from > 0 ? FADE : { ...CONTENT_IN, delay: CONTENT_IN.delay + delay });
 	});
 	useLayoutEffect(() => {
-		if (floating) return;
 		const controls = reveal(sheet);
 		return () => controls?.stop();
-	}, [floating, sheet]);
+	}, [sheet]);
 
 	useEffect(() => {
 		if (peekProgress) return peekProgress.on("change", (value) => peek.set(clamp((Math.abs(value) - PEEK_FROM) / (1 - PEEK_FROM), 0, 1)));
@@ -216,14 +212,15 @@ export function SuggestionCard({
 	// A card keeps a face no taller than its paper in every role: the top card's Why line lives on the paper's edge (below),
 	// a sheet wears the row face without controls, and a decided card keeps its one-line receipt even as it gathers.
 	const face = top
-		? <TopFace isNew={isNew} progress={progress} suggestion={suggestion} />
+		? <TopFace progress={progress} suggestion={suggestion} />
 		: decision === "pending"
-			? <RowFace controls={role === "row"} isNew={isNew} onDecide={onDecide} suggestion={suggestion} why={floating ? undefined : why} />
+			? <RowFace controls={role === "row"} onDecide={onDecide} suggestion={suggestion} why={floating ? undefined : why} />
 			: <DecidedFace decision={decision} onRestore={onRestore} suggestion={suggestion} />;
 
 	return (
 		<div
 			aria-hidden={sheet || undefined}
+			data-suggestion-field={role === "row" && decision === "pending" ? suggestion.id : undefined}
 			className={cn("origin-bottom", sheet ? "absolute inset-0" : "relative")}
 			ref={slotRef}
 			role={role === "row" ? "listitem" : undefined}
@@ -233,8 +230,9 @@ export function SuggestionCard({
 				className={cn(
 					"relative",
 					CARD_PAPER,
-					floating ? "dark:ring-0" : "transition-shadow duration-slower ease-in-out",
+					floating ? "dark:bg-surface-overlay dark:ring-0" : "transition-shadow duration-slower ease-in-out",
 					role === "row" ? "group/suggestion-card" : null,
+					previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.
 					"overflow-hidden",
@@ -244,25 +242,18 @@ export function SuggestionCard({
 					isPresent ? null : "pointer-events-none",
 				)}
 				data-top-card={top ? "" : undefined}
-				layout={floating ? "position" : true}
+				layout
 				layoutAnchor={floating ? false : undefined}
 				{...(top ? handlers : null)}
 				style={{ ...CARD_PAPER_STYLE, boxShadow: floatingSheetEdge, x, y: poseY, rotate, opacity }}
 				transition={morph}
 			>
 				<motion.div
-					animate={useBlur ? { opacity: hideFloatingFace ? 0 : 1, filter: hideFloatingFace ? "blur(6px)" : "blur(0px)" } : undefined}
 					data-suggestion-card-face=""
-					initial={floating ? false : undefined}
-					inert={sheet || hideFloatingFace}
-					layout={floating ? undefined : "position"}
-					style={floating ? {
-						visibility: hideFloatingFace ? "hidden" : undefined,
-						opacity: useBlur ? undefined : 1,
-						filter: useBlur ? undefined : "none",
-						willChange: useBlur ? "opacity, filter" : undefined,
-					} : { opacity: contentOpacity }}
-					transition={floating ? (useBlur && !hideFloatingFace ? FADE : INSTANT) : morph}
+					inert={sheet}
+					layout="position"
+					style={{ opacity: contentOpacity }}
+					transition={morph}
 				>
 					{face}
 				</motion.div>

@@ -122,8 +122,9 @@ export function ProjectButterActivity({
 		if (content.activityFocusId && !projectButterSessionIdFromEntry(content.activityFocusId)) setView("timeline");
 	}
 	const showSessions = sessionView && view === "sessions";
-	const filters = singleView ? PROJECT_BUTTER_ACTIVITY_FILTERS_ALL : content.activityFilters;
-	const sort = singleView ? "newest" : content.activitySort;
+	const canFilterTimeline = sessionView || !singleView;
+	const filters = canFilterTimeline ? content.activityFilters : PROJECT_BUTTER_ACTIVITY_FILTERS_ALL;
+	const sort = canFilterTimeline ? content.activitySort : "newest";
 	const mentionAgents = useProjectButterMentionAgents(sessions);
 	const activityMentionAgents = useMemo(() => [...sessions.map((session) => ({ ...session.agent, id: session.agent.id ?? session.id, byline: "Agent on this work item" })), ...mentionAgents], [sessions, mentionAgents]);
 	const mentionAgentsById = useMemo(() => new Map(activityMentionAgents.map((agent) => [mapAgentToMentionItem(agent).id, agent])), [activityMentionAgents]);
@@ -211,8 +212,8 @@ export function ProjectButterActivity({
 						expandDetails={expandedAudit}
 						filters={filters}
 						onExpandDetailsChange={setExpandedAudit}
-						onFiltersChange={singleView ? undefined : content.setActivityFilters}
-						onSortChange={singleView ? undefined : content.setActivitySort}
+						onFiltersChange={canFilterTimeline ? content.setActivityFilters : undefined}
+						onSortChange={canFilterTimeline ? content.setActivitySort : undefined}
 						sort={sort}
 					/>
 				</div>
@@ -285,7 +286,7 @@ export function ProjectButterActivity({
 						}))];
 						const session = sessionFor(entry.id);
 						const mentionsSessionAgent = session && mentionedAgentIds.some((id) => mentionAgentsById.get(id)?.name.toLowerCase() === session.agent.name.toLowerCase());
-						content.submitActivityReply(entry.id, body, actorIds, mentionsSessionAgent ? session.id : undefined);
+						content.submitActivityReply(entry.id, body, actorIds, { sessionId: mentionsSessionAgent ? session.id : undefined });
 						onReplySubmitted?.();
 					}}
 					onViewSession={(session) => onOpenSession(session.id)}

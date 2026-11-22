@@ -1,0 +1,35 @@
+import { expect, test } from "@playwright/test";
+import { appUrl } from "@/tests/helpers/origin";
+
+test("board labels filter matches the inline labels picker", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	const header = page.locator('[data-slot="board-column-header"]').filter({ has: page.getByRole("button", { name: "Create work item in To do" }) });
+	await header.hover();
+	await header.getByRole("button", { name: "Create work item in To do" }).click();
+	await page.locator("[data-jira-inline-create]").getByRole("button", { name: "Add labels" }).click();
+	const picker = page.getByRole("dialog", { name: "Edit labels" });
+	const original = picker.getByRole("option", { name: "Add wallet", exact: true }).locator('[data-slot="tag"]');
+	await expect(original).toBeVisible();
+	const reference = await original.evaluate((element) => ({ border: getComputedStyle(element).borderColor, text: getComputedStyle(element).color }));
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Labels Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Labels filter options" });
+	await expect(menu).toHaveCSS("width", "320px");
+	const search = menu.getByRole("textbox", { name: "Search labels" });
+	await expect(search).toBeFocused();
+	await expect(menu.getByRole("menuitemcheckbox", { name: "No label", exact: true })).toBeVisible();
+	await search.fill("wallet");
+	const row = menu.getByRole("menuitemcheckbox", { name: "wallet", exact: true });
+	const tag = row.locator('[data-slot="tag"]');
+	await expect(tag).toBeVisible();
+	expect(await tag.evaluate((element) => ({ border: getComputedStyle(element).borderColor, text: getComputedStyle(element).color }))).toEqual(reference);
+	await search.press("Enter");
+	await expect(row).toHaveAttribute("aria-checked", "true");
+	await search.fill("a label that does not exist");
+	await expect(menu.getByText("No labels found")).toBeVisible();
+	await search.press("Escape");
+	await expect(page.getByRole("group", { name: "Labels is wallet" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-115: Rewrite the customer ship note after the wallet cut" })).toHaveCount(0);
+});

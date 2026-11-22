@@ -3,6 +3,8 @@
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import type { Transaction } from "@tiptap/pm/state";
 import { useJiraActivityComposerDictation } from "@/components/blocks/jira-activity/use-jira-activity-composer-dictation";
 import { EDITOR_PALETTE_MENTION_SOURCES, mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
@@ -16,6 +18,51 @@ import { cn } from "@/lib/utils";
 
 const COMMENT_PLACEHOLDER = "Give an instruction, leave a comment or ask for an update";
 
+type InsertedReplyMention = Readonly<{ node: ProseMirrorNode; standalone: boolean }>;
+
+function getTextWithoutAgentMention(editor: Editor, name: string): string {
+	return editor.getText({
+		textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === name ? "" : `@${node.attrs.label ?? node.attrs.id}` },
+	}).trim();
+}
+
+function removeReplyMention(tr: Transaction, previous: InsertedReplyMention) {
+	tr.doc.descendants((node, position) => {
+		if (node !== previous.node) return;
+		const end = tr.doc.resolve(position + node.nodeSize);
+		const separator = end.nodeAfter?.text?.startsWith(" ") ? 1 : 0;
+		if (previous.standalone && end.parent.content.size === node.nodeSize + separator) {
+			tr.delete(end.before(), end.after());
+		} else {
+			tr.delete(position, end.pos + separator);
+		}
+	});
+	return tr;
+}
+
+function updateReplyMention(editor: Editor, previous: InsertedReplyMention | undefined, agent: AgentBrowserAgent | undefined) {
+	const { tr, schema } = editor.state;
+	if (previous) removeReplyMention(tr, previous);
+
+	let inserted: InsertedReplyMention | undefined;
+	if (agent) {
+		const mention = mapAgentToMentionItem(agent);
+		let alreadyMentioned = false;
+		tr.doc.descendants((node) => {
+			if (node.type.name === "mention" && node.attrs.id === mention.id) alreadyMentioned = true;
+		});
+		if (!alreadyMentioned) {
+			const node = schema.nodes.mention.create(getMentionNodeAttrs(mention));
+			const trailingSpace = schema.text(" ");
+			const standalone = tr.doc.firstChild?.type.name !== "paragraph";
+			if (standalone) tr.insert(0, schema.nodes.paragraph.create(null, [node, trailingSpace]));
+			else tr.insert(1, [node, trailingSpace]);
+			inserted = { node, standalone };
+		}
+	}
+	return { tr, inserted };
+}
+
 export interface ProjectButterCommentEditorHandle {
 	getDraftWithoutAgentMention: (name: string) => string;
 	isAtAgentMentionBoundary: (name: string) => boolean;
@@ -28,7 +75,7 @@ export interface ProjectButterCommentEditorHandle {
  * mentions, dictation, and Enter-to-send keep working in one compact row.
  * Thread replies reuse it unchanged apart from their placeholder and label.
  */
-export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, inputContext, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, inputContext, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, replyMention, textboxLabel = ariaLabel, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	ariaLabel?: string;
 	/** `flat` drops the floating shadow for boxes that sit inline in the feed, such as thread replies. */
@@ -47,12 +94,17 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	textboxLabel?: string;
 	/** Leads a fresh draft with a mention chip, e.g. the author being replied to. */
 	prefillMention?: Readonly<{ mention: RichTextMentionItem; textAfter: string; preserveContent?: boolean }>;
+	replyMention?: Readonly<{ agent: AgentBrowserAgent; requestKey: number }>;
 	onSave: (body: string, plainText: string, mentionedAgentIds: readonly string[]) => void;
 	onValueChange: (body: string) => void;
 	ref?: Ref<ProjectButterCommentEditorHandle>;
 	value: string;
 }>) {
 	const lastEditorValue = useRef(value);
+	const replyMentionState = useRef<Readonly<{ requestKey: number; inserted?: InsertedReplyMention }> | null>(null);
+	const replyAgent = replyMention?.agent;
+	const replyMentionRequestKey = replyMention?.requestKey;
+	const placeholderAgent = replyAgent?.name ?? instructionPlaceholderForAgent;
 	const voice = useJiraActivityComposerDictation({ value, onValueChange });
 	const extensions = useMemo(() => createRichTextEditorExtensions({ getMentionSources: () => ({ ...EDITOR_PALETTE_MENTION_SOURCES, subagent: agents.map(mapAgentToMentionItem).filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index) }), suggestionVariant: { mention: "flat", command: "flat" }, mentionSectionLabels: { subagent: "Agents" }, anchorToInput: true }), [agents]);
 	const editor = useEditor({
@@ -74,7 +126,10 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		},
 		onCreate: ({ editor: activeEditor }) => reportMentions(activeEditor),
 		onUpdate: ({ editor: activeEditor }) => {
-			const markdown = activeEditor.getMarkdown();
+			const inserted = replyMentionState.current?.inserted;
+			const markdown = inserted && activeEditor.markdown
+				? activeEditor.markdown.serialize(removeReplyMention(activeEditor.state.tr, inserted).doc.toJSON())
+				: activeEditor.getMarkdown();
 			lastEditorValue.current = markdown;
 			onValueChange(markdown);
 			reportMentions(activeEditor);
@@ -84,10 +139,8 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		editor,
 		selector: ({ editor }) => ({
 			isEmpty: editor?.isEmpty ?? true,
-			canSubmit: Boolean(editor?.getText().trim()),
-			showInstructionPlaceholder: Boolean(editor && instructionPlaceholderForAgent && !editor.getText({
-				textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` },
-			}).trim()),
+			canSubmit: Boolean(editor && (replyAgent ? getTextWithoutAgentMention(editor, replyAgent.name) : editor.getText().trim())),
+			showInstructionPlaceholder: Boolean(editor && !editor.isEmpty && placeholderAgent && !getTextWithoutAgentMention(editor, placeholderAgent)),
 		}),
 	});
 	function reportMentions(activeEditor: Editor) {
@@ -102,7 +155,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	}
 	useImperativeHandle(ref, () => ({
 		getDraftWithoutAgentMention(name) {
-			return editor?.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === name ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim() ?? "";
+			return editor ? getTextWithoutAgentMention(editor, name) : "";
 		},
 		isAtAgentMentionBoundary(name) {
 			if (!editor || !editor.state.selection.empty) return false;
@@ -127,12 +180,26 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			editor.commands.focus(undefined, { scrollIntoView: false });
 		},
 	}), [editor]);
-	useEffect(() => { if (editor && lastEditorValue.current !== value) { editor.commands.setContent(value, { contentType: "markdown", emitUpdate: false }); lastEditorValue.current = value; } }, [editor, value]);
+	useEffect(() => {
+		if (!editor || lastEditorValue.current === value) return;
+		editor.commands.setContent(value, { contentType: "markdown", emitUpdate: false });
+		lastEditorValue.current = value;
+		replyMentionState.current = null;
+	}, [editor, value]);
 	useEffect(() => {
 		if (!editor || !focusRequest) return;
 		const frame = requestAnimationFrame(() => editor.commands.focus("end", { scrollIntoView: false }));
 		return () => cancelAnimationFrame(frame);
 	}, [editor, focusRequest]);
+	useEffect(() => {
+		if (!editor || replyMentionState.current?.requestKey === replyMentionRequestKey) return;
+		const frame = requestAnimationFrame(() => {
+			const { tr, inserted } = updateReplyMention(editor, replyMentionState.current?.inserted, replyAgent);
+			replyMentionState.current = replyMentionRequestKey === undefined ? null : { requestKey: replyMentionRequestKey, inserted };
+			if (tr.docChanged) editor.view.dispatch(tr.setMeta("addToHistory", false));
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [editor, replyAgent, replyMentionRequestKey, value]);
 	useLayoutEffect(() => {
 		if (!editor || !mentionHandoffPending || !handoffMentionId) return;
 		let target: HTMLElement | undefined;
@@ -169,7 +236,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	}, [editor, focusRequest]);
 	const placeholderStyle = useMemo<CSSProperties & { "--rich-text-placeholder": string }>(() => ({ "--rich-text-placeholder": JSON.stringify(placeholder) }), [placeholder]);
 	function save() {
-		if (!editor?.getText().trim()) return;
+		if (!editor || !(replyAgent ? getTextWithoutAgentMention(editor, replyAgent.name) : editor.getText().trim())) return;
 		const mentionedAgentIds: string[] = [];
 		editor.state.doc.descendants((node) => {
 			if (node.type.name === "mention" && node.attrs.category === "subagent" && typeof node.attrs.id === "string") mentionedAgentIds.push(node.attrs.id);

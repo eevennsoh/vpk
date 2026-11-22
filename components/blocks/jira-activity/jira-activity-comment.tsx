@@ -177,7 +177,7 @@ function CollapsedThreadSummary({
 			{resolved ? <Lozenge variant="success">Resolved</Lozenge> : null}
 			<span aria-hidden className="text-text-subtlest">·</span>
 			<AvatarGroup
-				className="shrink-0 -space-x-1 *:data-[slot=avatar]:ring-1!"
+				className="shrink-0 -space-x-1"
 				label={`Reply participants: ${actors.map((actor) => actor.name).join(", ")}`}
 			>
 				{actors.slice(0, 3).map((actor) => (
@@ -349,6 +349,11 @@ function ThreadReplyCard({
 					showResolvedStatus ? <Lozenge variant="success">Resolved</Lozenge> : undefined
 				}
 			>
+				{reply.replyTo?.excerpt ? (
+					<blockquote className="mb-2 min-w-0 truncate border-s-2 border-border ps-3 text-sm leading-5 text-text-subtle">
+						{reply.replyTo.excerpt}
+					</blockquote>
+				) : null}
 				{bodyContent === undefined ? <div className="text-sm leading-5 text-text">{reply.body}</div> : bodyContent}
 			</JiraActivityCard> : <div className="relative">{threaded ? <ThreadConnector centered continued={false} /> : null}{content}</div>}
 		</div>

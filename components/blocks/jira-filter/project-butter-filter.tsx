@@ -2,7 +2,6 @@
 
 import { useState, type ReactNode } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import CurlyBracketsIcon from "@atlaskit/icon/core/curly-brackets";
 import EpicIcon from "@atlaskit/icon/core/epic";
@@ -12,26 +11,29 @@ import LinkBrokenIcon from "@atlaskit/icon/core/link-broken";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
+import PersonIcon from "@atlaskit/icon/core/person";
 import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import ReleaseIcon from "@atlaskit/icon/core/release";
-import SearchIcon from "@atlaskit/icon/core/search";
-import SprintIcon from "@atlaskit/icon/core/sprint";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
-import StoryIcon from "@atlaskit/icon/core/story";
-import TagIcon from "@atlaskit/icon/core/tag";
-import TaskIcon from "@atlaskit/icon/core/task";
-import WorkItemIcon from "@atlaskit/icon/core/work-item";
-import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
+import SprintIcon from "@atlaskit/icon/core/sprint";
+import VideoWatchLaterSavedIcon from "@atlaskit/icon-lab/core/video-watch-later-saved";
+import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
+import { ProjectButterStatusGlyph } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { Avatar, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { RichTextSuggestionEmptyState } from "@/components/ui-custom/rich-text-editor/menus";
+import { labelColor } from "@/components/blocks/artifact-pane/label-color";
+import { Tag } from "@/components/ui/tag";
 import { useControllableState } from "@/hooks/use-controllable-state";
+import { cn } from "@/lib/utils";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -53,6 +55,7 @@ import {
 	type JiraSavedFilter,
 } from "@/components/blocks/jira-filter/model";
 import type { JiraFilterProps } from "@/components/blocks/jira-filter/jira-filter";
+import { getJiraFilterFieldIcon, jiraFilterMenuIcon } from "@/components/blocks/jira-filter/filter-field-icon";
 import {
 	ButterAdvancedPanel,
 	ButterJqlPanel,
@@ -73,39 +76,32 @@ const defaultFieldIds = [
 	"status",
 ];
 const quickFieldIds = ["agentStatus", "prStatus"];
-const fieldIcons: Record<string, ReactNode> = {
-	agentStatus: <AiAgentIcon label="" />,
-	prStatus: <PullRequestIcon label="" />,
-	assignee: <PersonAssigneeIcon label="" />,
-	fixVersion: <ReleaseIcon label="" />,
-	epic: <EpicIcon label="" />,
-	sprint: <SprintIcon label="" />,
-	type: <WorkItemIcon label="" />,
-	label: <TagIcon label="" />,
-	status: <CheckCircleIcon label="" />,
-};
-const statusTones: Record<string, NonNullable<LozengeProps["variant"]>> = {
-	done: "success",
-	"in-review": "discovery",
-	"in-progress": "information",
-	planning: "warning",
-};
 const optionIcons: Record<string, Record<string, ReactNode>> = {
 	agentStatus: {
+		working: <Spinner animated={false} className="size-[16.75px]" label="" size="xl" variant="bloom-avatar" />,
 		needsInput: <span className="size-1.5 rounded-full bg-icon-information" />,
-		finished: <StatusSuccessIcon label="" />,
+		finished: <IconTile aria-hidden as="span" className="text-icon-success" icon={<StatusSuccessIcon color="currentColor" label="" size="small" />} iconSize="small" label="" size="xxsmall" variant="transparent" />,
 	},
 	prStatus: {
-		merged: <MergeSuccessIcon label="" />,
+		draft: <span className="text-icon-subtle"><PullRequestIcon color="currentColor" label="" /></span>,
+		open: <span className="text-icon-accent-lime"><PullRequestIcon color="currentColor" label="" /></span>,
+		failed: <span className="text-icon-danger"><MergeFailureIcon color="currentColor" label="" /></span>,
+		merged: <span className="text-icon-accent-purple"><MergeSuccessIcon color="currentColor" label="" /></span>,
 		closed: <MergeFailureIcon label="" />,
 		none: <LinkBrokenIcon label="" />,
 	},
-	type: { story: <StoryIcon label="" />, epic: <EpicIcon label="" /> },
+	type: {
+		story: <IssueTypeGlyph issueType="story" />,
+		epic: <IssueTypeGlyph issueType="epic" />,
+		bug: <IssueTypeGlyph issueType="bug" />,
+		task: <IssueTypeGlyph issueType="task" />,
+		subtask: <IssueTypeGlyph issueType="subtask" />,
+	},
 };
 const defaultOptionIcons: Record<string, ReactNode> = {
 	agentStatus: <AiAgentIcon label="" />,
 	prStatus: <PullRequestIcon label="" />,
-	type: <TaskIcon label="" />,
+	type: <IssueTypeGlyph issueType="task" />,
 };
 
 function lookupOwn<T>(record: Record<string, T>, key: string): T | undefined {
@@ -147,11 +143,11 @@ function PinButton({
 	return (
 		<DropdownMenuItem
 			closeOnClick={false}
-			className={`absolute ${saved ? "right-7" : "right-1"} size-6 p-0 opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center`}
+			className={`absolute ${saved ? "right-7" : "right-1"} size-6 p-0 leading-none opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center [&>span>span]:flex [&_svg]:size-3! [&_svg]:text-icon-subtle!`}
 			aria-label={`${pinned ? "Unpin" : "Pin"} ${name}`}
 			onClick={() => onToggle(pin)}
 		>
-			{pinned ? <PinFilledIcon label="" /> : <PinIcon label="" />}
+			{pinned ? <PinFilledIcon color="currentColor" label="" size="small" /> : <PinIcon color="currentColor" label="" size="small" />}
 		</DropdownMenuItem>
 	);
 }
@@ -163,38 +159,32 @@ function ValueLabel({
 	field: JiraFilterField;
 	option: JiraFilterField["options"][number];
 }>) {
-	if (field.id === "status" || field.id === "sprint") {
-		return (
-			<Lozenge variant={lookupOwn(statusTones, option.value) ?? "neutral"}>
-				{option.label}
-			</Lozenge>
-		);
+	if (field.id === "label") {
+		return <Tag className="min-w-0 max-w-full shrink" color={option.value === "no-label" ? "standard" : labelColor(option.label)}>{option.label}</Tag>;
+	}
+	if (field.id === "status") {
+		return <span className="flex min-w-0 flex-1 items-center gap-3"><span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center"><ProjectButterStatusGlyph animated={false} size="xs" status={option.label} /></span><span className="min-w-0 truncate">{option.label}</span></span>;
+	}
+	if (field.id === "epic" || field.id === "sprint") {
+		return <span className="flex min-w-0 flex-1 items-center gap-3"><span aria-hidden="true" className={field.id === "epic" ? "inline-flex size-4 shrink-0 items-center justify-center text-icon-accent-purple" : "inline-flex size-4 shrink-0 items-center justify-center text-icon-subtle"}><Icon render={field.id === "epic" ? <EpicIcon color="currentColor" label="" size="small" spacing="none" /> : <SprintIcon color="currentColor" label="" size="small" spacing="none" />} /></span><span className="min-w-0 truncate">{option.displayLabel ?? option.label}</span></span>;
 	}
 	const icon =
 		field.id === "assignee" ? (
-			<Avatar size="xs" label={option.label}>
-				<AvatarFallback>
-					{option.label
-						.split(" ")
-						.map((part) => part[0])
-						.join("")
-						.slice(0, 2)}
-				</AvatarFallback>
-			</Avatar>
+			option.value === "unassigned" ? <AvatarUnassigned animate={false} size="sm" label="" /> : option.avatarUrl ? <Avatar animate={false} size="sm" label=""><AvatarImage alt="" src={option.avatarUrl} /></Avatar> : <IconTile aria-hidden as="span" icon={<PersonIcon label="" size="small" />} label="" size="small" variant="gray" />
 		) : (
 			getOptionIcon(field.id, option.value)
 		);
 	return (
-		<span className="flex min-w-0 items-center gap-3">
+		<span className="flex min-w-0 flex-1 items-center gap-3">
 			{icon ? (
 				<span
 					aria-hidden="true"
-					className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"
+					className={field.id === "assignee" ? "inline-flex size-6 shrink-0 items-center justify-center" : field.id === "type" ? "inline-flex size-4 shrink-0 items-center justify-center [&_svg]:size-3!" : "inline-flex size-4 shrink-0 items-center justify-center text-icon-subtle"}
 				>
-					{icon}
+					{field.id === "assignee" || field.id === "agentStatus" || field.id === "type" ? icon : jiraFilterMenuIcon(icon)}
 				</span>
 			) : null}
-			<span className="truncate">{option.label}</span>
+			<span className="min-w-0 truncate">{option.label}</span>
 		</span>
 	);
 }
@@ -214,10 +204,13 @@ function ValueRow({
 	onToggle: () => void;
 	onPin: (pin: Pin) => void;
 }>) {
+	const pin = { kind: "value", field: field.id, value: option.value } as const;
+	const canPin = pins.length < 3 || pins.some((item) => samePin(item, pin));
 	return (
 		<div className="group/filter-row relative flex items-center rounded-lg hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 			<DropdownMenuCheckboxItem
-				className="group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0"
+				aria-label={field.id === "epic" || field.id === "sprint" ? option.label : undefined}
+				className={cn("min-w-0 group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0", field.id === "assignee" && "h-10", canPin && "group-hover/filter-row:pr-9 group-focus-within/filter-row:pr-9")}
 				checked={selected}
 				closeOnClick={false}
 				indicatorPlacement="end"
@@ -226,7 +219,7 @@ function ValueRow({
 				<ValueLabel field={field} option={option} />
 			</DropdownMenuCheckboxItem>
 			<PinButton
-				pin={{ kind: "value", field: field.id, value: option.value }}
+				pin={pin}
 				name={option.label}
 				pins={pins}
 				onToggle={onPin}
@@ -250,31 +243,33 @@ function SavedRow({
 	onPin: (pin: Pin) => void;
 	onDelete: () => void;
 }>) {
+	const pin = { kind: "saved", id: filter.id } as const;
+	const canPin = pins.length < 3 || pins.some((item) => samePin(item, pin));
 	return (
 		<div className="group/filter-row relative flex items-center rounded-lg hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 			<DropdownMenuCheckboxItem
-				className="group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0"
+				className={cn("min-w-0 group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0", selected && "gap-2", canPin ? "group-hover/filter-row:pr-15 group-focus-within/filter-row:pr-15" : "group-hover/filter-row:pr-9 group-focus-within/filter-row:pr-9")}
 				checked={selected}
 				closeOnClick={false}
 				indicatorPlacement="end"
 				onCheckedChange={onSelect}
 			>
-				{filter.name}
+				<span className="flex min-w-0 flex-1 items-center gap-3"><span className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtle" aria-hidden="true">{jiraFilterMenuIcon(<VideoWatchLaterSavedIcon label="" />)}</span><span className="min-w-0 truncate">{filter.name}</span></span>
 			</DropdownMenuCheckboxItem>
 			<PinButton
 				saved
-				pin={{ kind: "saved", id: filter.id }}
+				pin={pin}
 				name={filter.name}
 				pins={pins}
 				onToggle={onPin}
 			/>
 			<DropdownMenuItem
 				closeOnClick={false}
-				className="absolute right-1 size-6 p-0 opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center"
+				className="absolute right-1 size-6 p-0 leading-none opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center [&>span>span]:flex [&_svg]:size-3!"
 				aria-label={`Delete ${filter.name}`}
 				onClick={onDelete}
 			>
-				<DeleteIcon label="" />
+				<DeleteIcon label="" size="small" />
 			</DropdownMenuItem>
 		</div>
 	);
@@ -287,19 +282,20 @@ function ButterFilterTrigger({ compact, triggerLabel, activeCount, open, onClear
 	open: boolean;
 	onClear: () => void;
 }>) {
+	const selectedStyle = activeCount && compact ? "border-border-selected! bg-bg-selected! text-text-selected! hover:bg-bg-selected-hovered! focus-visible:border-ring! [&_svg]:text-icon-selected!" : undefined;
 	return (
 		<ButtonGroup aria-label="Filter controls" variant="split">
 			<DropdownMenuTrigger
 				aria-haspopup="dialog"
 				aria-label={activeCount ? `${triggerLabel} (${activeCount})` : triggerLabel}
 				aria-pressed={activeCount > 0 || open}
-				render={<Button size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
+				render={<Button className={selectedStyle} size={compact ? "icon" : undefined} variant={compact ? "outline" : "secondary"} />}
 			>
 				<FilterIcon label="" />{compact ? null : " Filter"}
 				{activeCount && !compact ? <Badge>{activeCount}</Badge> : null}
 			</DropdownMenuTrigger>
 			{activeCount ? (
-				<Button variant="secondary" size="icon" aria-label="Clear all filters" onClick={onClear}>
+				<Button className={selectedStyle} variant={compact ? "outline" : "secondary"} size="icon" aria-label="Clear all filters" onClick={onClear}>
 					<CrossIcon label="" />
 				</Button>
 			) : null}
@@ -322,6 +318,7 @@ export function ProjectButterFilter({
 }: Readonly<JiraFilterProps>) {
 	const [open, setOpen] = useControllableState({ prop: controlledOpen, defaultProp: false, onChange: onOpenChange });
 	const [search, setSearch] = useState("");
+	const [optionSearch, setOptionSearch] = useState("");
 	const [scrolled, setScrolled] = useState(false);
 	const [visibleIds, setVisibleIds] = useState(() =>
 		defaultFieldIds.filter((id) => fields.some((field) => field.id === id)),
@@ -449,7 +446,6 @@ export function ProjectButterFilter({
 			>
 				<div className="relative z-10 shrink-0">
 					<DropdownMenuSearchField
-						icon={<SearchIcon label="" />}
 						label="Add filter"
 						value={search}
 						onValueChange={setSearch}
@@ -472,8 +468,9 @@ export function ProjectButterFilter({
 								<DropdownMenuItem
 									key={field.id}
 									closeOnClick={false}
+									elemBeforeSize={16}
 									elemBefore={
-										lookupOwn(fieldIcons, field.id) ?? <FieldIcon label="" />
+										getJiraFilterFieldIcon(field.id)
 									}
 									onClick={() => {
 										setVisibleIds((current) => [field.id, ...current]);
@@ -493,7 +490,7 @@ export function ProjectButterFilter({
 						<>
 							{pins.length ? (
 								<>
-									<DropdownMenuSubheading>Pinned</DropdownMenuSubheading>
+									<DropdownMenuSubheading className="px-2 py-1.5">Pinned</DropdownMenuSubheading>
 									{pins.map((pin) => {
 										if (pin.kind === "saved") {
 											const filter = filters.find((item) => item.id === pin.id);
@@ -539,7 +536,8 @@ export function ProjectButterFilter({
 							) : null}
 							<DropdownMenuSub open={savedOpen} onOpenChange={setSavedOpen}>
 								<DropdownMenuSubTrigger
-									elemBefore={<PersonAvatarIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<PersonAvatarIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									Saved
 								</DropdownMenuSubTrigger>
@@ -547,7 +545,7 @@ export function ProjectButterFilter({
 									aria-label="Saved filters"
 									className="flex w-56 flex-col overflow-hidden p-0"
 								>
-									<div className="min-h-0 overflow-y-auto px-1.5 pt-1.5">
+									<div className="min-h-0 overflow-y-auto p-1.5">
 										{filters.map((filter) => (
 											<SavedRow
 												key={filter.id}
@@ -576,7 +574,7 @@ export function ProjectButterFilter({
 										) : null}
 									</div>
 									<div className="shrink-0 p-1.5 pt-0">
-										<DropdownMenuSeparator />
+										<DropdownMenuSeparator className="mt-0" />
 										<DropdownMenuItem
 											closeOnClick={false}
 											onClick={() => onChange([])}
@@ -593,14 +591,15 @@ export function ProjectButterFilter({
 							>
 								<DropdownMenuSubTrigger
 									aria-haspopup="dialog"
-									elemBefore={<FieldIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<FieldIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									Advanced
 								</DropdownMenuSubTrigger>
 								<DropdownMenuSubContent
 									aria-label="Advanced filter"
 									role="dialog"
-									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
+									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
 								>
 									<ButterAdvancedPanel
 										fields={fields}
@@ -621,14 +620,15 @@ export function ProjectButterFilter({
 							>
 								<DropdownMenuSubTrigger
 									aria-haspopup="dialog"
-									elemBefore={<CurlyBracketsIcon label="" />}
+									elemBefore={jiraFilterMenuIcon(<CurlyBracketsIcon label="" />)}
+									elemBeforeSize={16}
 								>
 									JQL
 								</DropdownMenuSubTrigger>
 								<DropdownMenuSubContent
 									aria-label="JQL filter"
 									role="dialog"
-									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
+									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
 								>
 									<ButterJqlPanel
 										fields={fields}
@@ -645,6 +645,7 @@ export function ProjectButterFilter({
 											setJqlDirty(false);
 										}}
 										onError={setJqlError}
+										onClose={() => setOpen(false)}
 									/>
 								</DropdownMenuSubContent>
 							</DropdownMenuSub>
@@ -652,24 +653,26 @@ export function ProjectButterFilter({
 							{visibleFields.map((field) => {
 								const selected =
 									value.find((item) => item.field === field.id)?.values ?? [];
+								const searchable = field.id === "assignee" || field.id === "epic" || field.id === "sprint" || field.id === "label";
+								const options = searchable ? field.options.filter((option) => option.label.toLowerCase().includes(optionSearch.trim().toLowerCase())) : field.options;
 								return (
-									<DropdownMenuSub key={field.id}>
+									<DropdownMenuSub key={field.id} onOpenChange={(next) => { if (!next && searchable) setOptionSearch(""); }}>
 										<DropdownMenuSubTrigger
 											elemBefore={
-												lookupOwn(fieldIcons, field.id) ?? (
-													<FieldIcon label="" />
-												)
+												getJiraFilterFieldIcon(field.id)
 											}
+											elemBeforeSize={16}
 										>
 											{field.label}
 											{selected.length ? ` (${selected.length})` : ""}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent
 											aria-label={`${field.label} filter options`}
-											className="flex w-56 flex-col overflow-hidden p-0"
+											className={field.id === "epic" || field.id === "sprint" || field.id === "label" ? "flex w-80 max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0" : "flex w-56 flex-col overflow-hidden p-0"}
 										>
-											<div className="min-h-0 overflow-y-auto px-1.5 pt-1.5">
-												{field.options.map((option) => (
+										{searchable ? <DropdownMenuSearchField autoFocus hostOwnsKeyNavigation iconContainerSize={field.id === "assignee" ? 24 : 16} label={field.id === "epic" ? `Search ${field.label.toLowerCase()}` : field.id === "sprint" ? "Search sprint" : field.id === "label" ? "Search labels" : "Search people"} onClear={() => setOptionSearch("")} onValueChange={setOptionSearch} value={optionSearch} onKeyDown={(event) => { if (event.key !== "Enter") return; event.preventDefault(); if (options[0]) toggleValue(field, options[0].value); }} /> : null}
+											<div className={searchable ? "max-h-72 min-h-0 overflow-y-auto p-1.5" : "min-h-0 overflow-y-auto p-1.5"}>
+												{options.map((option) => (
 													<ValueRow
 														key={option.value}
 														field={field}
@@ -680,9 +683,10 @@ export function ProjectButterFilter({
 														onPin={togglePin}
 													/>
 												))}
+											{searchable && !options.length ? <RichTextSuggestionEmptyState label={field.id === "epic" ? "No work items found" : field.id === "sprint" ? "No sprints found" : field.id === "label" ? "No labels found" : "No people found"} /> : null}
 											</div>
 											<div className="shrink-0 p-1.5 pt-0">
-												<DropdownMenuSeparator />
+												<DropdownMenuSeparator className="mt-0" />
 												<DropdownMenuItem
 													closeOnClick={false}
 													onClick={() =>

@@ -12,23 +12,12 @@ import {
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
+import { Tag, TagGroup } from "@/components/ui/tag";
+import { labelColor } from "@/components/blocks/artifact-pane/label-color";
 
 import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor/menus";
 import { ARTIFACT_PICKER_DROPDOWN_CLASS } from "@/components/blocks/artifact-pane/artifact-picker-dropdown-styles";
 import { cn } from "@/lib/utils";
-
-const LABEL_COLORS = ["blue", "green", "purple", "orange", "teal", "magenta", "yellow"] as const satisfies readonly TagColor[];
-
-function labelColor(label: string): TagColor {
-	const optionIndex = LABEL_OPTIONS.indexOf(label);
-	if (optionIndex >= 0) {
-		return LABEL_COLORS[(optionIndex * 3 + 1) % LABEL_COLORS.length];
-	}
-
-	const hash = Array.from(label).reduce((total, character) => total + character.codePointAt(0)!, 0);
-	return LABEL_COLORS[hash % LABEL_COLORS.length];
-}
 
 function LabelOptionGroup({
 	heading,

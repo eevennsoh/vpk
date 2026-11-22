@@ -61,7 +61,7 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 	assert.match(SPINNER_SOURCE, /phaseOffsetMs\?: number/u);
 	assert.match(SPINNER_SOURCE, /const SPINNER_LOOP_DURATION_MS = 1200/u);
 	assert.match(SPINNER_SOURCE, /normalizeSpinnerPhaseOffsetMs\(phaseOffsetMs\)/u);
-	assert.match(SPINNER_SOURCE, /animationDelay: shouldReduceMotion \? undefined : negativePhaseOffset/u);
+	assert.match(SPINNER_SOURCE, /animationDelay: shouldReduceMotion \|\| !animated \? undefined : negativePhaseOffset/u);
 	assert.equal(SPINNER_SOURCE.match(/begin=\{negativePhaseOffset\}/gu)?.length, 2);
 	assert.doesNotMatch(SPINNER_SOURCE, /pathLength|pathOffset/u);
 	assert.doesNotMatch(SPINNER_SOURCE, /animateTransform/u);
@@ -74,7 +74,7 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 		SPINNER_SOURCE,
 		/<animate[\s\S]*attributeName="stroke-dashoffset"[\s\S]*dur="1\.2s"[\s\S]*keyTimes="0;0\.5;1"[\s\S]*repeatCount="indefinite"[\s\S]*values="0;-35;-124"/u,
 	);
-	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \? null : \(/u);
+	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \|\| !animated \? null : \(/u);
 });
 
 test("Spinner exposes the Jira prototype iconic orb as the Bloom variant", () => {

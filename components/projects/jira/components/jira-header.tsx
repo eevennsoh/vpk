@@ -14,6 +14,8 @@ import { resolveJiraTab } from "../lib/jira-tab-model";
 
 interface JiraViewTabsProps {
 	animateIndicator?: boolean;
+	/** Panels rendered separately by the project, keyed by tab label. */
+	externalPanelIds?: Readonly<Record<string, string>>;
 	/**
 	 * Selection is tracked by label, not index: the Simple views property
 	 * decides whether work items is one tab or two, so an index would silently
@@ -42,6 +44,7 @@ type JiraViewTabsContentProps = Omit<JiraViewTabsProps, "supportedWorkItemViews"
 
 function JiraViewTabsContent({
 	animateIndicator,
+	externalPanelIds,
 	selectedTabLabel,
 	onTabChange,
 	workItemView = DEFAULT_JIRA_WORK_ITEM_VIEW,
@@ -56,11 +59,13 @@ function JiraViewTabsContent({
 					const IconComponent = tab.icon;
 					const isFirst = index === 0;
 					const isSelected = activeTab?.label === tab.label;
+					const externalPanelId = externalPanelIds?.[tab.label];
 
 					return (
 						<TabsTrigger
 							key={tab.label}
 							value={tab.label}
+							{...(externalPanelId ? { id: `${externalPanelId}-tab`, "aria-controls": isSelected ? externalPanelId : undefined } : undefined)}
 							className={isFirst ? "ml-4 flex-none" : "flex-none"}
 						>
 							<div className="flex items-center gap-1.5">
@@ -76,7 +81,7 @@ function JiraViewTabsContent({
 					);
 				})}
 			</TabsList>
-			{tabs.map((tab) => (
+			{tabs.filter((tab) => !externalPanelIds?.[tab.label]).map((tab) => (
 				<TabsContent key={tab.label} value={tab.label}>
 					{tab.hasContent ? (
 						<div />

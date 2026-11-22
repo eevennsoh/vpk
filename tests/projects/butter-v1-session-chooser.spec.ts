@@ -154,7 +154,7 @@ test("a submitted handoff does not prefill later manual replies", async ({ page 
 	await participant.hover();
 	await participant.getByRole("button", { name: "Reply", exact: true }).click();
 	await expect(reply).toBeFocused();
-	await expect(page.getByTestId("reply-target-chip")).toContainText("Rewrite the incident postmortem");
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Replying to The onboarding guide still sends people to the old identity page.");
 	await expect(reply).not.toContainText("Please check this instruction once");
 });
 

@@ -16,6 +16,7 @@ export function FloatingRovoButtonPersistentBarRail({
 	side: "top" | "bottom";
 	shouldReduceMotion: boolean;
 }>) {
+	const singleAction = bar.items.length === 1;
 	// Tuck the bar slightly toward the button as it leaves/enters so the motion
 	// reads as "snapping out of / back into" the button rather than a flat fade.
 	const tuckOffset = side === "top" ? 10 : -10;
@@ -71,7 +72,8 @@ export function FloatingRovoButtonPersistentBarRail({
 			aria-orientation="vertical"
 			aria-label={bar.ariaLabel ?? "Rovo quick actions"}
 			className={cn(
-				"pointer-events-auto absolute left-1/2 z-[505] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-2",
+				"pointer-events-auto absolute left-1/2 z-[505] flex cursor-default flex-col items-center gap-1 rounded-2xl",
+				singleAction ? null : "bg-surface-raised p-2",
 				side === "top" ? "bottom-full mb-3" : "top-full mt-3",
 			)}
 			variants={railVariants}
@@ -79,7 +81,7 @@ export function FloatingRovoButtonPersistentBarRail({
 			animate="visible"
 			exit="exit"
 			style={{
-				boxShadow: token("elevation.shadow.overlay"),
+				boxShadow: singleAction ? undefined : token("elevation.shadow.overlay"),
 				transformOrigin: side === "top" ? "center bottom" : "center top",
 				willChange: "transform, opacity",
 			}}
@@ -90,12 +92,17 @@ export function FloatingRovoButtonPersistentBarRail({
 						<motion.button
 							key={item.id}
 							aria-label={item.ariaLabel}
-							className="relative flex size-8 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out enabled:hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none enabled:active:bg-bg-neutral-subtle-pressed disabled:cursor-default disabled:text-icon-disabled"
+							className={cn(
+								"relative flex items-center justify-center text-icon transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:cursor-default disabled:text-icon-disabled",
+								singleAction ? "size-12 rounded-2xl bg-surface-raised" : "size-8 rounded-xl",
+								singleAction ? "enabled:active:bg-surface-raised-pressed" : "enabled:hover:bg-bg-neutral-subtle-hovered enabled:active:bg-bg-neutral-subtle-pressed",
+							)}
 							variants={itemVariants}
 							onClick={item.onClick}
 							disabled={!item.onClick}
 							type="button"
-							style={{ willChange: "transform, opacity" }}
+							whileHover={singleAction && item.onClick && !shouldReduceMotion ? { scale: 1.1 } : undefined}
+							style={{ willChange: "transform, opacity", boxShadow: singleAction ? token("elevation.shadow.overlay") : undefined }}
 						>
 							{item.icon}
 							{item.indicator ? (
@@ -110,12 +117,7 @@ export function FloatingRovoButtonPersistentBarRail({
 					return item.tooltipLabel ? (
 						<Tooltip key={item.id}>
 							<TooltipTrigger render={actionButton} />
-							{/* Anchor vertically along the bar's own direction (away from the
-							    button) so the label centers on the button and never overflows a
-							    narrow preview card's left/right edge the way a fixed
-							    `side="left"` tooltip did. Base UI auto-flips if that side lacks
-							    room. */}
-							<TooltipContent side={side}>{item.tooltipLabel}</TooltipContent>
+							<TooltipContent side="left" positionerClassName="z-[520]">{item.tooltipLabel}</TooltipContent>
 						</Tooltip>
 					) : actionButton;
 				})}

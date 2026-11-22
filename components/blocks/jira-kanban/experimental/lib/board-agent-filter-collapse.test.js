@@ -198,6 +198,26 @@ test("clearing the overlay returns the viewer's collapse set by identity", () =>
 	assert.equal(displayed, viewer);
 });
 
+test("active board filters collapse empty columns without changing the viewer's layout", () => {
+	const viewer = new Set(["In review"]);
+	const columns = columnsFixture().map((column) => column.title === "To do" || column.title === "Done"
+		? { ...column, cards: [], count: 0 }
+		: column);
+	const collapsed = displayedCollapsedColumnsForAgentFilter({ columns, filterId: null, filterActive: true, viewerCollapsed: viewer });
+	assert.deepEqual([...collapsed].sort(), ["Done", "In review", "To do"]);
+	assert.deepEqual([...viewer], ["In review"]);
+	assert.equal(displayedCollapsedColumnsForAgentFilter({ columns, filterId: null, viewerCollapsed: viewer }), viewer);
+});
+
+test("filtered empty columns can be manually expanded without changing the saved layout", () => {
+	const viewer = new Set(["In review"]);
+	const override = new Set(["In review", "Done"]);
+	const columns = columnsFixture().map((column) => ({ ...column, cards: [], count: 0 }));
+	const collapsed = displayedCollapsedColumnsForAgentFilter({ columns, filterId: null, filterActive: true, focusedOverride: override, viewerCollapsed: viewer });
+	assert.equal(collapsed, override);
+	assert.deepEqual([...viewer], ["In review"]);
+});
+
 test("assignee scope changes which focused columns stay expanded", () => {
 	const columns = [
 		{

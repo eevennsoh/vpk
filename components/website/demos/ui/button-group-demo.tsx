@@ -4,7 +4,7 @@ import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -351,12 +351,11 @@ export function ButtonGroupDemoWithInputGroup() {
 		<div className="flex flex-col gap-4">
 			<InputGroup>
 				<InputGroupInput placeholder="Type to search..." />
-				<InputGroupAddon
+				<InputGroupSearchAddon
 					align="inline-start"
-					className="text-muted-foreground"
 				>
 					<SearchIcon />
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 			</InputGroup>
 		</div>
 	);

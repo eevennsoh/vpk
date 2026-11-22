@@ -272,7 +272,7 @@ test("Experimental kanban collapse control is not padded by column chrome", () =
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", lane \? "h-100 min-w-full" : columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -367,7 +367,7 @@ test("Kanban drag-over uses the chrome drop-shell recipe instead of a hardcoded 
 });
 
 test("Kanban agent stack removes the avatar-group overlap ring", () => {
-	assert.match(SOURCE, /<AvatarGroup className="-space-x-1\.5 \*:data-\[slot=avatar\]:ring-0!"/);
+	assert.match(SOURCE, /<AvatarGroup className="-space-x-1\.5"/);
 	assert.match(SOURCE, /label=\{agent\.name\} shape="hexagon" size="sm"/);
 	assert.doesNotMatch(SOURCE, /showHexagonBorder/);
 });
@@ -984,7 +984,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", lane \? "h-100 min-w-full" : columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" \? "100%" : undefined \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
