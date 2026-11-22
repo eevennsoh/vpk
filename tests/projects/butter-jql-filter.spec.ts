@@ -74,8 +74,22 @@ test("expanded JQL editor retains and applies the draft", async ({ page }) => {
 	await expect(expanded).toBeVisible();
 	const input = expanded.getByRole("textbox", { name: "JQL query" });
 	await expect(input).toHaveValue('status = "done"');
+	const alignment = await expanded.evaluate((dialog) => {
+		const title = dialog.querySelector('[data-slot="dialog-title"]')!.getBoundingClientRect();
+		const editor = dialog.querySelector("textarea")!.parentElement!.getBoundingClientRect();
+		const hints = dialog.querySelector('[data-slot="jql-shortcut-hints"]')!.getBoundingClientRect();
+		const clear = [...dialog.querySelectorAll("button")].find((button) => button.textContent === "Clear")!.getBoundingClientRect();
+		const box = dialog.getBoundingClientRect();
+		return { left: Math.abs(title.left - editor.left), right: Math.abs(editor.right - hints.right), top: clear.top - editor.bottom, bottom: box.bottom - clear.bottom };
+	});
+	expect(alignment.left).toBeLessThanOrEqual(1);
+	expect(alignment.right).toBeLessThanOrEqual(1);
+	expect(Math.abs(alignment.top - alignment.bottom)).toBeLessThanOrEqual(1);
+	await expect(expanded.getByRole("button", { name: "Collapse JQL editor" })).toHaveCount(0);
 	await input.press("Shift+Enter");
 	await expanded.getByRole("button", { name: "Close", exact: true }).click();
+	await expect(expanded).not.toBeVisible();
+	await expect(panel).not.toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Project butter filters" })).not.toBeVisible();
 	await expect(page.getByRole("group", { name: "Status is Done" })).toBeVisible();
-	await expect(panel.getByRole("textbox", { name: "JQL query" })).toHaveValue('status = "done"');
 });

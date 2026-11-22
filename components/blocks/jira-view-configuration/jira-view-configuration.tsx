@@ -6,8 +6,9 @@ import { useId, useState } from "react";
 
 import { DONE_OPTIONS, FIELDS, MUTE_OPTIONS, type JiraViewConfigurationValue } from "@/components/blocks/jira-view-configuration/model";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
-	Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxTrigger,
+	Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxTrigger, useComboboxAnchor,
 } from "@/components/ui/combobox";
 import {
 	Panel, PanelActionClose, PanelBody, PanelContent, PanelHeader, PanelTitle,
@@ -27,16 +28,17 @@ function TimingPicker<T extends Option>({
 	selected: T;
 	onChange: (option: T) => void;
 }>) {
+	const anchor = useComboboxAnchor();
 	return (
 		<div className="space-y-2">
 			<label htmlFor={id} className="block text-xs text-text">{label}</label>
 			<Combobox items={options} value={selected} onValueChange={(option) => {
 				if (option) onChange(option);
 			}}>
-				<ComboboxInput id={id} className="w-full" showTrigger={false}>
-					<ComboboxTrigger aria-label={`Show ${label} options`} className="mr-2 flex size-6 items-center justify-center" />
+				<ComboboxInput anchorRef={anchor} id={id} className="w-full" showTrigger={false}>
+					<ComboboxTrigger aria-label={`Show ${label} options`} className="mr-1.5 flex size-6 items-center justify-center" />
 				</ComboboxInput>
-				<ComboboxContent>
+				<ComboboxContent align="end" anchor={anchor}>
 					<ComboboxEmpty>No options found</ComboboxEmpty>
 					<ComboboxList>
 						{(option: T) => <ComboboxItem key={option.value} value={option}>{option.label}</ComboboxItem>}
@@ -56,6 +58,7 @@ export interface JiraViewConfigurationProps {
 
 export function JiraViewConfiguration({ value, onChange, onClose, className }: Readonly<JiraViewConfigurationProps>) {
 	const id = useId();
+	const fieldsAnchor = useComboboxAnchor();
 	const [previewWidth, setPreviewWidth] = useState<JiraViewConfigurationValue["columnWidth"] | null>(null);
 	const width = previewWidth ?? value.columnWidth;
 	const selectedDone = DONE_OPTIONS.find((option) => option.value === value.doneAfter) ?? DONE_OPTIONS[3];
@@ -117,10 +120,10 @@ export function JiraViewConfiguration({ value, onChange, onClose, className }: R
 								onChange({ ...value, visibleFieldIds: [...value.visibleFieldIds, field.value] });
 							}
 						}}>
-							<ComboboxInput id={`${id}-fields`} placeholder="Add fields" className="w-full" showTrigger={false}>
-								<ComboboxTrigger aria-label="Show field options" className="mr-2 flex size-6 items-center justify-center" />
+							<ComboboxInput anchorRef={fieldsAnchor} id={`${id}-fields`} placeholder="Add fields" className="w-full" showTrigger={false}>
+								<ComboboxTrigger aria-label="Show field options" className="mr-1.5 flex size-6 items-center justify-center" />
 							</ComboboxInput>
-							<ComboboxContent>
+							<ComboboxContent align="end" anchor={fieldsAnchor}>
 								<ComboboxEmpty>No fields found</ComboboxEmpty>
 								<ComboboxList>
 									{(field: (typeof FIELDS)[number]) => (
@@ -135,7 +138,7 @@ export function JiraViewConfiguration({ value, onChange, onClose, className }: R
 						<ul className="pt-3">
 							{FIELDS.filter((field) => value.visibleFieldIds.includes(field.value)).map((field) => (
 								<li key={field.value} className="group flex h-10 items-center gap-2 rounded-md px-2 hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-									<span className="flex shrink-0 text-icon-subtle"><field.icon label="" /></span>
+									<IconTile aria-hidden as="span" className="shrink-0 text-icon-subtle" icon={<field.icon label="" size="small" />} iconSize="small" label="" size="xxsmall" variant="transparent" />
 									<span className="min-w-0 flex-1 text-sm">{field.label}</span>
 									<Button variant="ghost" size="icon-compact" className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100" aria-label={`Remove ${field.label}`}
 										onClick={() => onChange({ ...value, visibleFieldIds: value.visibleFieldIds.filter((fieldId) => fieldId !== field.value) })}>

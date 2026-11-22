@@ -9,7 +9,7 @@ import {
 	type JiraFilterField,
 } from "@/components/blocks/jira-filter/model";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 export function ButterAdvancedPanel({
@@ -32,6 +32,7 @@ export function ButterJqlPanel({
 	onDraftChange,
 	onApply,
 	onError,
+	onClose,
 }: Readonly<{
 	fields: readonly JiraFilterField[];
 	value: readonly JiraFilterCondition[];
@@ -40,6 +41,7 @@ export function ButterJqlPanel({
 	onDraftChange: (next: string) => void;
 	onApply: (next: JiraFilterCondition[]) => void;
 	onError: (error: string | null) => void;
+	onClose: () => void;
 }>) {
 	const [expanded, setExpanded] = useState(false);
 	const apply = () => {
@@ -50,7 +52,7 @@ export function ButterJqlPanel({
 	const clear = () => { onDraftChange(""); onApply([]); onError(null); };
 	return <>
 		<JqlEditor fields={fields} value={jql} error={error} canClear={Boolean(value.length || jql)} onValueChange={onDraftChange} onApply={apply} onClear={clear} onExpand={() => setExpanded(true)} />
-		<Dialog open={expanded} onOpenChange={setExpanded}><DialogContent size="lg" className="z-[750] gap-2" overlayProps={{ className: "z-[740]" }}><DialogTitle>JQL query</DialogTitle><DialogDescription>Write and apply a filter for the board.</DialogDescription><JqlEditor expanded fields={fields} value={jql} error={error} canClear={Boolean(value.length || jql)} onValueChange={onDraftChange} onApply={apply} onClear={clear} /></DialogContent></Dialog>
+		<Dialog open={expanded} onOpenChange={(next) => { setExpanded(next); if (!next) onClose(); }}><DialogContent size="lg" className="z-[750] pb-1.5" overlayProps={{ className: "z-[740]" }}><DialogTitle>JQL query</DialogTitle><JqlEditor expanded fields={fields} value={jql} error={error} canClear={Boolean(value.length || jql)} onValueChange={onDraftChange} onApply={apply} onClear={clear} /></DialogContent></Dialog>
 	</>;
 }
 

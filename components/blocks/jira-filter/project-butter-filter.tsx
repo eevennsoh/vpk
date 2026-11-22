@@ -645,6 +645,7 @@ export function ProjectButterFilter({
 											setJqlDirty(false);
 										}}
 										onError={setJqlError}
+										onClose={() => setOpen(false)}
 									/>
 								</DropdownMenuSubContent>
 							</DropdownMenuSub>
