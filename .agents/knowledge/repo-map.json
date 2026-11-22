@@ -2586,11 +2586,11 @@
 	"appPages": {
 		"summary": {
 			"ownerImportCount": 73,
-			"pageCount": 59,
+			"pageCount": 60,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
-				"inline": 2,
+				"inline": 3,
 				"redirect": 3,
 				"shell": 26
 			}
@@ -3585,6 +3585,18 @@
 				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/preview/blocks/jira-backlog/page.tsx"
+				},
+				"routePath": "/preview/blocks/jira-backlog",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/preview/blocks/jira-backlog/page.tsx"
+			},
+			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -4400,10 +4412,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 454,
+			"manifestEntryCount": 455,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 448,
+				"live": 449,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4452,7 +4464,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 123,
+				"entryCount": 124,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4781,6 +4793,13 @@
 						"slug": "jira-at-mention",
 						"name": "Jira At-mention",
 						"importPath": "@/components/blocks/jira-at-mention",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-backlog",
+						"name": "Jira Backlog",
+						"importPath": "@/components/blocks/jira-backlog",
 						"status": "live"
 					},
 					{

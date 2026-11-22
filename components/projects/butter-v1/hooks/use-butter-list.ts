@@ -20,7 +20,7 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
 
-import { ButterListAgentCell } from "../components/butter-list-agent-cell";
+import { ButterListAgentCell } from "@/components/blocks/jira-list/project-butter-agent-cell";
 import { BUTTER_PAY_BOARD_AGENTS } from "../data/presentation-story";
 import {
 	applyAssignedAgentIdsToColumns,

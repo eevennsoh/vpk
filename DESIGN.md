@@ -354,11 +354,13 @@ repo's semantic Tailwind classes whenever a class exists.
   `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
-- **Documentation heading anchors:** Center icon-only anchor buttons beside
-  documentation headings with `inline-flex items-center`. Why: the icon should
-  read as vertically aligned with the heading; baseline spacing can make it
-  appear high.
+- **Icon and label alignment:** Always center a side-by-side icon and label,
+  including documentation heading anchors, on the same vertical centerline.
+  Use the icon as a direct child of a flex row with `items-center` or give its
+  wrapper `inline-flex items-center`. Why: a plain inline wrapper adds text
+  baseline spacing that can make the glyph sit high even in a centered row.
   <!-- 2026-11-13: "why do i keep getting this icon and label is misaligned vertically issue" -->
+  <!-- 2026-11-22: "it makes the icon an label alignment off all the time" -->
 - **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
   including on hover, while keeping the columns scrollable. Why: keep the board
   visually clean.
