@@ -80,6 +80,7 @@ import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourn
 import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
 import { BUTTER_DEFAULT_REPORTER } from "./data/current-user";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
+import { BUTTER_SAVED_FILTERS } from "./data/saved-filters";
 import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/gallery-work-item-sessions";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
@@ -817,7 +818,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={wacContent ? WAC_HEADER_ASSIGNEES : BUTTER_PAY_HEADER_ASSIGNEES}
 						filterAssigneePeople={wacContent ? WAC_FILTER_ASSIGNEES : BUTTER_FILTER_ASSIGNEES}
-						filterStatusOptions={BUTTER_FILTER_STATUSES}
+						filterStatusOptions={BUTTER_FILTER_STATUSES} initialSavedFilters={BUTTER_SAVED_FILTERS}
 						headerAvatarLimit={wacContent ? WAC_HEADER_ASSIGNEES.length + 1 : undefined}
 						renderHeaderAssignee={renderEu26HeaderAssignee}
 						insightsEnabled={false}

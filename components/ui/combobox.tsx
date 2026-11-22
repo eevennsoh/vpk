@@ -34,7 +34,7 @@ function ComboboxTrigger({
       {...props}
     >
       {children}
-      <span className="text-muted-foreground size-4 pointer-events-none"><ChevronDownIcon label="" spacing="none" /></span>
+			<span className="text-icon-subtle inline-flex size-4 shrink-0 items-center justify-center pointer-events-none [&_svg]:size-3!"><ChevronDownIcon label="" size="small" spacing="none" /></span>
     </ComboboxPrimitive.Trigger>
   )
 }
@@ -53,6 +53,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
 }
 
 function ComboboxInput({
+  anchorRef,
   className,
   children,
   disabled = false,
@@ -60,16 +61,17 @@ function ComboboxInput({
   showClear = false,
   ...props
 }: ComboboxPrimitive.Input.Props & {
+  anchorRef?: React.Ref<HTMLDivElement>
   showTrigger?: boolean
   showClear?: boolean
 }) {
   return (
-    <InputGroup className={cn("w-auto", className)}>
+    <InputGroup ref={anchorRef} className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input
         render={<InputGroupInput disabled={disabled} />}
         {...props}
       />
-      <InputGroupAddon align="inline-end">
+      {showTrigger || showClear ? <InputGroupAddon align="inline-end">
         {showTrigger ? <InputGroupButton
             size="icon-xs"
             variant="ghost"
@@ -79,7 +81,7 @@ function ComboboxInput({
             disabled={disabled}
           /> : null}
         {showClear ? <ComboboxClear disabled={disabled} /> : null}
-      </InputGroupAddon>
+      </InputGroupAddon> : null}
       {children}
     </InputGroup>
   )
@@ -106,7 +108,7 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-[200]"
+			className="pointer-events-auto isolate z-[200]"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"

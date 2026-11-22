@@ -612,13 +612,15 @@ supplied reference copy and layout when reproducing a specific product state.
 - **Size:** Product UI icons default to 16px glyphs; compact buttons use 12px.
   For stronger emphasis, place the glyph in a larger tile or button rather than
   scaling the glyph.
-- **Trailing affordance icons are 12px.** Disclosure chevrons and external-link
-  arrows that follow a label use 12px (`size-3`) glyphs; leading content icons in
+- **Trailing affordance icons are 12px.** Disclosure chevrons, including Select
+  and Combobox trigger chevrons, and external-link arrows that follow a label use
+  12×12px (`size-3`) glyphs centered in a 16×16px slot; leading content icons in
   the same row stay 16px. Why: they are secondary hints and should not compete
   with the leading icon or the label. `components/ui/trace.tsx` sizes every icon
   after a `TraceTitle` and its collapsible chevron this way, so Task, Sources and
   Queue inherit it.
   <!-- 2026-11-17: "all the chevron, external link arrow size should be 12x12 not 16x16"; "Same for task, need to use 12x12 chevron" -->
+  <!-- 2026-11-22: "chevron size is wrong here in the menu ... we want it to be 12x12 icon size" -->
 - **Color:** Standalone icons inherit `currentColor` from a semantic icon role.
   Pair `text-icon-subtle` with `text-text-subtle` and `text-icon-danger` with
   `text-text-danger`; matching roles can resolve to different colors. Chevrons,

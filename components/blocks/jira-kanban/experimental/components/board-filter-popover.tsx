@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
-import { JiraFilter, type JiraFilterField } from "@/components/blocks/jira-filter";
+import { JiraFilter, type JiraFilterField, type JiraSavedFilter } from "@/components/blocks/jira-filter";
 import type { JiraKanbanAssigneeData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
 import { BOARD_FILTER_DAYS_OPTIONS, BOARD_FILTER_FIELD_LABELS, BOARD_FILTER_OPTIONS } from "../data/board-filter-options";
 import { BOARD_JIRA_FIELD_IDS, type BoardFilterActions, type BoardFilterModel } from "../hooks/use-board-filter";
@@ -29,13 +29,14 @@ export function useBoardFilterFields(assignees: readonly JiraKanbanAssigneeData[
 }
 
 export function BoardFilterPopover({
-	actions, assignees, assigneePeople, columns, compact = false, model, statusOptions, surfaceLabel = "board",
+	actions, assignees, assigneePeople, columns, compact = false, initialSavedFilters, model, statusOptions, surfaceLabel = "board",
 }: Readonly<{
 	actions: BoardFilterActions;
 	assignees: readonly JiraKanbanAssigneeData[];
 	assigneePeople?: readonly WorkItemPerson[];
 	columns: readonly JiraKanbanColumnData[];
 	compact?: boolean;
+	initialSavedFilters?: readonly JiraSavedFilter[];
 	model: BoardFilterModel;
 	statusOptions?: readonly string[];
 	surfaceLabel?: string;
@@ -53,7 +54,7 @@ export function BoardFilterPopover({
 	}, [model.open, setOpen]);
 	const fields = useBoardFilterFields(assignees, columns, assigneePeople, statusOptions);
 
-	return <JiraFilter variant="project-butter" fields={fields} value={model.conditions}
+	return <JiraFilter variant="project-butter" fields={fields} initialSavedFilters={initialSavedFilters} value={model.conditions}
 		onChange={actions.setConditions} open={model.open} onOpenChange={setOpen}
 		compact={compact} triggerLabel={`Filter ${surfaceLabel}`} />;
 }

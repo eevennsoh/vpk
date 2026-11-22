@@ -218,7 +218,7 @@ function ExperimentalJiraKanbanPageContent({
 	boardFilterScopeKey,
 	columnChrome, columnSizing, columnWidth, boardAvatar, boardTitle,
 	compactHeader = false,
-	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee, filterAssigneePeople, filterStatusOptions,
+	headerAssignees, headerAvatarLimit, showUnassignedHeaderAvatar, renderHeaderAssignee, filterAssigneePeople, filterStatusOptions, initialSavedFilters,
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
@@ -881,7 +881,7 @@ function ExperimentalJiraKanbanPageContent({
 					<BoardFilterPopover
 						actions={filterActions}
 						assignees={filterAssignees}
-						assigneePeople={filterAssigneePeople} statusOptions={filterStatusOptions}
+						assigneePeople={filterAssigneePeople} statusOptions={filterStatusOptions} initialSavedFilters={initialSavedFilters}
 						columns={boardColumns}
 						compact={compactHeader || headerControlsLayout === "trailing-icons"}
 						model={boardFilter.model}

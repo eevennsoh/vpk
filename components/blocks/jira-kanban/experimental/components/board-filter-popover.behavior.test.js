@@ -62,8 +62,8 @@ test("board JQL applies exclusions and combines conditions against the actual ca
 test("scope options retain both the parent name and work item key", async () => {
 	const view = await renderComponent({ source });
 	await view.click(view.getByRole("button", { name: "Filter board" }));
-	await view.press(view.getByRole("menuitem", { name: "Parent" }), "ArrowRight");
-	await view.fill(view.getByRole("textbox", { name: "Search parent" }), "PAY-90");
+	await view.press(view.getByRole("menuitem", { name: "Epic" }), "ArrowRight");
+	await view.fill(view.getByRole("textbox", { name: "Search epic" }), "PAY-90");
 	assert.equal(view.getByRole("menuitemcheckbox", { name: "Retire LegacyGatewayAdapter (PAY-90)" }).textContent, "Retire LegacyGatewayAdapter");
 	await view.unmount();
 });
