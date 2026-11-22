@@ -2,6 +2,103 @@ import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 
+const ACTIVITY_TIMESTAMP = '[data-slot="jira-activity-timestamp"]';
+
+test("activity timestamp underlines when its detailed tooltip is shown", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const row = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	const header = row.locator('[data-slot="jira-activity-comment-header"]').first();
+	const metadata = header.locator(ACTIVITY_TIMESTAMP);
+	const timestamp = metadata.getByRole("button", { name: /18 mins? ago\. Show full timestamp/ });
+	await expect(metadata).toHaveCSS("opacity", "0");
+	await page.keyboard.press("Tab");
+	await timestamp.focus();
+	await expect(timestamp).toBeFocused();
+	await expect(metadata).toHaveCSS("opacity", "1");
+	await expect(timestamp).toHaveText("18m");
+	await expect(metadata).toHaveCSS("font-size", "12px");
+	await timestamp.hover();
+	await expect(timestamp).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("tooltip", { name: "18 minutes ago", exact: true })).toBeVisible();
+	await timestamp.click();
+	await expect(metadata.getByRole("button", { name: /Show relative timestamp/ })).toHaveText(/Nov 1, 2026/);
+	await expect(page.getByRole("tooltip", { name: "18 minutes ago", exact: true })).toHaveCount(0);
+	const sessionTimestamp = page.locator("article").filter({ hasText: "Review the onboarding flow" }).locator("[data-last-update]");
+	await sessionTimestamp.hover();
+	await expect(sessionTimestamp).toHaveCSS("text-decoration-line", "underline");
+	await expect(page.getByRole("tooltip", { name: "18 minutes ago", exact: true })).toBeVisible();
+});
+
+test("a new comment reveals elapsed seconds while its timestamp reads Just now", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.clock.install({ time: new Date("2026-11-20T10:00:00Z") });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const composer = page.getByRole("form", { name: "Comment editor" });
+	const comment = "Validate the signup flow.";
+	await composer.getByRole("textbox", { name: "Comment editor" }).fill(comment);
+	await composer.getByRole("button", { name: "Submit", exact: true }).click();
+	const row = page.locator('[data-jira-activity-entry-kind="comment"]').filter({ hasText: comment });
+	const timestamp = row.getByRole("button", { name: /Just now\. Show full timestamp/i });
+	await expect(timestamp).toHaveText("Just now", { ignoreCase: true });
+	const postedAt = await timestamp.locator("time").getAttribute("datetime");
+	await page.clock.setSystemTime(new Date(Date.parse(postedAt!) + 10_000));
+	await row.hover();
+	await timestamp.hover();
+	await page.clock.runFor(700);
+	await expect(page.getByRole("tooltip", { name: /^(?:10|11) seconds ago$/u })).toBeVisible();
+});
+
+test("event and grouped update timestamps reveal long-form tooltips on hover", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/components/blocks/jira-work-item"));
+	await page.getByRole("button", { name: "Open Project butter session" }).click();
+
+	const activity = page.getByRole("region", { name: "Activity" });
+	const filter = activity.getByRole("button", { name: "Filter activity" });
+	await activity.locator("[data-project-butter-activity-header]").hover();
+	await filter.click();
+	await page.getByRole("menuitemradio", { name: "Oldest first" }).click();
+	if (await filter.getAttribute("aria-expanded") !== "true") await filter.click();
+	await page.getByRole("menuitemcheckbox", { name: "Expand change details" }).click();
+	if (await filter.getAttribute("aria-expanded") === "true") await page.keyboard.press("Escape");
+
+	const rows = [
+		{ body: activity.locator('[data-jira-activity-entry-id="butter-source-created"] p'), label: "21d", expandable: false },
+		{ body: activity.getByRole("button", { name: /Dev Rana updated the status/ }).first().locator(".."), label: /^\d+d$/u, expandable: true },
+		{ body: activity.locator("[data-project-butter-update-group] > div").first(), label: /^\d+d$/u, expandable: true },
+	];
+	for (const { body, label, expandable } of rows) {
+		const timestamp = body.locator(ACTIVITY_TIMESTAMP);
+		await expect(timestamp).toHaveCSS("opacity", "0");
+		await body.hover();
+		await expect(timestamp).toHaveCSS("opacity", "1");
+		await expect(timestamp).toHaveCSS("font-size", "12px");
+		await expect(timestamp).toHaveCSS("column-gap", "6px");
+		await expect(timestamp.locator(":scope > :first-child")).toHaveText("·");
+		if (expandable) {
+			const chevron = body.locator("[data-activity-chevron]");
+			await expect(chevron).toHaveCSS("opacity", "1");
+			const stampBounds = await timestamp.boundingBox();
+			const chevronBounds = await chevron.boundingBox();
+			if (!stampBounds || !chevronBounds) throw new Error("Missing update timestamp or chevron");
+			expect(chevronBounds.x).toBeGreaterThan(stampBounds.x + stampBounds.width);
+		}
+		const trigger = timestamp.locator(":scope > :last-child");
+		const compactTime = trigger.getByText(label, { exact: true });
+		await expect(compactTime).toBeVisible();
+		await trigger.hover();
+		await expect(trigger).toHaveCSS("text-decoration-line", "underline");
+		await expect(page.getByRole("tooltip", { name: /^\d+ days? ago$/u })).toBeVisible();
+		await page.mouse.move(0, 0);
+		await expect(timestamp).toHaveCSS("opacity", "0");
+	}
+});
+
 test("work item opens local agents from Development instead of the header", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));
@@ -13,28 +110,37 @@ test("work item opens local agents from Development instead of the header", asyn
 });
 
 test("timeline labels normalize minute and hour variants", () => {
-	for (const label of ["1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
+	for (const label of ["1m", "1min", "1 minute", "1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
 		expect(activityHeaderTimeLabel(label)).toBe("1 min ago");
 	}
 	expect(activityHeaderTimeLabel("2 mins ago")).toBe("2 min ago");
-	for (const label of ["2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
+	for (const label of ["2h", "2hr", "2 hrs", "2 hours", "2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
 		expect(activityHeaderTimeLabel(label)).toBe("2 hr ago");
+	}
+	for (const [label, expected] of [["1d", "1 day ago"], ["2d", "2 days ago"], ["2w", "2 weeks ago"], ["3mo", "3 months ago"], ["1y", "1 year ago"]]) {
+		expect(activityHeaderTimeLabel(label)).toBe(expected);
 	}
 	for (const label of ["Just now", "Yesterday", "2 days ago", "19 May"]) {
 		expect(activityHeaderTimeLabel(label)).toBe(label);
 	}
 });
 
-test("the sticky activity timeline uses min and hr for relative times", async ({ page }) => {
+test("the sticky activity timeline includes ago for relative times", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1600, height: 800 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
-	const timeline = page.getByRole("listbox", { name: "Navigate activity" });
-	const headerTime = page.locator("[data-project-butter-activity-header-time]");
-	await timeline.getByRole("option", { name: /Liam Estrada: removed 2 fields/ }).click();
+	const scroller = page.locator("[data-project-butter-work-item] > div").first();
+	const headerTime = page.locator("[data-jira-work-item-timeline-header-time]");
+	const scrollToEntry = (id: string) => scroller.evaluate((root, entryId) => {
+		const row = root.querySelector<HTMLElement>(`[data-jira-activity-entry-id="${entryId}"]`);
+		const header = root.querySelector<HTMLElement>("[data-project-butter-activity-header]");
+		if (!row || !header) throw new Error("Missing activity row or header");
+		root.scrollTop += row.getBoundingClientRect().top - root.getBoundingClientRect().top - header.getBoundingClientRect().height - 12;
+	}, id);
+	await scrollToEntry("sensitive-data-inline-removed-description");
 	await expect(headerTime).toHaveText("1 hr ago");
-	await timeline.getByRole("option", { name: /Venn added Cursor: Review the onboarding flow/ }).click();
+	await scrollToEntry("invocation-butter-cursor-forecast");
 	await expect(headerTime).toHaveText("18 min ago");
 });
 
@@ -63,9 +169,9 @@ for (const width of [700, 1600]) {
 			if (!header) throw new Error("Activity header is missing");
 			element.scrollTop += header.getBoundingClientRect().top - element.getBoundingClientRect().top + 100;
 		});
-		await expect(activityHeader.locator("[data-project-butter-activity-header-time]")).toBeVisible();
+		await expect(activityHeader.locator("[data-jira-work-item-timeline-header-time]")).toBeVisible();
 		await expect(scroller).toHaveCSS("mask-image", "none");
-		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toBeVisible();
+		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toHaveCount(0);
 		await scroller.evaluate((element, top) => { element.scrollTop = top; }, beforeHeader);
 		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });
@@ -251,7 +357,11 @@ test("the agent field shows an avatar stack without session state", async ({ pag
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const field = page.getByRole("group", { name: "Agents field" });
 	await expect(field.getByRole("button", { name: "2 agents" })).toBeVisible();
-	await expect(field.locator('[data-slot="avatar"]')).toHaveCount(2);
+	const avatars = field.locator('[data-slot="avatar"]');
+	await expect(avatars).toHaveCount(2);
+	const overlap = await avatars.evaluateAll(([front, back]) => front.getBoundingClientRect().right - back.getBoundingClientRect().left);
+	expect(overlap).toBeCloseTo(4, 0);
+	await expect(avatars.last().locator('[data-slot="avatar-hexagon-artwork"]')).not.toHaveCSS("mask-image", "none");
 	const triggerBounds = await field.getByRole("button", { name: "2 agents" }).boundingBox();
 	const avatarBounds = await field.locator('[data-agent-name] button').first().boundingBox();
 	if (!triggerBounds || !avatarBounds) throw new Error("Agent field geometry is unavailable");
@@ -583,7 +693,7 @@ test("Butter v1 board and work item use the direct cloud agent selector", async 
 	await expect(workItem.getByText("Start a new session", { exact: true })).toHaveCount(0);
 	await expect(workItem.getByRole("list", { name: "Activity timeline" })).toContainText("Redesign onboarding flow for new users");
 
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await card.hover();
 	await card.getByRole("button", { name: "Add agent to PAY-118" }).click();
@@ -680,7 +790,7 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		await page.setViewportSize(viewport);
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Board" }).click();
+		await page.getByRole("button", { name: "Select Board", exact: true }).click();
 		const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 		const boardColumn = board.locator('[data-jira-kanban-column="To do"]');
 		await expect(boardColumn).toBeVisible();

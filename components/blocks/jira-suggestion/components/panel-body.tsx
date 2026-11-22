@@ -5,6 +5,7 @@ import { AnimatePresence, motion, type MotionValue } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { cn } from "@/lib/utils";
 
 import { CardDeck } from "./card-deck";
 import { CaughtUp } from "./caught-up";
@@ -22,6 +23,8 @@ export interface PanelBodyProps {
 	deck: Deck;
 	view: ReturnType<typeof useDeckView>;
 	mode: BodyMode;
+	floating: boolean;
+	stackInteractive: boolean;
 	/** The list's height budget: the popover's, less its header and footer. */
 	maxHeight: number;
 	grab: { id: SuggestionFieldId; progress: MotionValue<number> } | null;
@@ -44,12 +47,12 @@ const SWAP_OUT = { opacity: 0, transition: FADE_OUT };
  * The popover body, which is also the list's scrollport: the card deck (stack or list), and under the stack its
  * ✕ · ↶ · ✓ controls or the caught-up state. Its height eases with the morph; the list scrolls natively with depth.
  */
-export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack }: Readonly<PanelBodyProps>) {
+export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack }: Readonly<PanelBodyProps>) {
 	const scroller = useRef<HTMLDivElement>(null);
 	const content = useRef<HTMLDivElement>(null);
 	const { height, settled, overflow, viewport } = useBodyHeight(content, mode, maxHeight);
 	const listed = mode === "list";
-	const registerDepth = useListDepth(scroller, deckRef, listed, viewport);
+	const registerDepth = useListDepth(scroller, deckRef, listed, floating ? undefined : viewport);
 	const top = deck.order.at(0);
 	const armed = useArmed(grab && top && grab.id === top.id ? grab : null);
 	const running = feed.status === "running";
@@ -67,8 +70,8 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 	}, [listed]);
 
 	return (
-		<motion.div className="relative shrink-0 overscroll-contain" ref={scroller} data-scrollport="" style={{ height, ...overflow }}>
-			<div className={listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5"} ref={content}>
+		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
+			<div className={floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5"} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (
 						<motion.div animate={SWAP} className="pb-2.5" exit={SWAP_OUT} initial={{ opacity: 0 }} key="ghost"><GhostCard /></motion.div>
@@ -80,6 +83,7 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 					exitKind={view.exitKind}
 					feed={feed}
 					gathering={view.gathering}
+					floating={floating}
 					listIds={view.listIds}
 					listed={listed}
 					morphing={!settled}
@@ -90,13 +94,14 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 					onWhyIdChange={onWhyIdChange}
 					registerDepth={registerDepth}
 					returning={view.returning}
+					stackInteractive={stackInteractive}
 					whyAnchor={whyAnchor}
 					whyContainer={whyContainer}
 					whyId={whyId}
 				/>
 				<AnimatePresence initial={false} mode="popLayout">
 					{/* pt-11 is STACK_ROOM.below: the fanned sheets' tilt is capped to clear the discs within it. */}
-					{mode === "stack" && top ? (
+					{stackInteractive && top ? (
 						<motion.div animate={{ opacity: 1, transition: CONTROLS_IN }} className="box-content grid h-10 items-center pt-11" exit={SWAP_OUT} initial={{ opacity: 0 }} key="controls">
 							<DeckControls armed={armed} deck={deck} label={top.label} onCommit={onCommit} onUndo={onUndo} />
 						</motion.div>

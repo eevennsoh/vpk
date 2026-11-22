@@ -256,14 +256,14 @@ export const PAY_109: ButterWorkItemPlaceholder = {
 
 export const PAY_121: ButterWorkItemPlaceholder = {
 	description: [
-		"Per-account targeting and an armed kill switch are in review for the one-percent slice. GitHub Copilot is validating one-percent targeting, the account kill-switch rules, and the release telemetry gates on the cloud session.",
+		"Per-account targeting and an armed kill switch are in review for the one-percent slice. The targeting, kill-switch rules, and release telemetry gates need review.",
 		"",
 		"PR #1866, Add kill switch on pay-121-account-targeting-kill-switch, is open. One call returns an account to the v1 path, and the armed state has to be readable on the rollout dashboard.",
 		"",
 		"- Target the v2 rollout per account for the one-percent slice.",
 		"- Arm a kill switch that reverts an account to v1 in one call.",
 		"- Show the armed state on the rollout dashboard.",
-		"- Leave GitHub Copilot's targeting check running until it posts a result.",
+		"- Review targeting and release telemetry before approval.",
 	].join("\n"),
 	reporter: "Diego Santos",
 	parent: PAY_PARENT,
@@ -274,7 +274,7 @@ export const PAY_121: ButterWorkItemPlaceholder = {
 		"PR #1866 adds per-account targeting for the one-percent slice.",
 		"The kill switch returns an account to the v1 path in one call.",
 		"The armed state is readable on the rollout dashboard.",
-		"GitHub Copilot's targeting, kill-switch, and telemetry checks are attached before approval.",
+		"Targeting, kill-switch, and telemetry checks are attached before approval.",
 	].join("\n"),
 	costCenter: "RD-100-ENGINEERING",
 	children: [
@@ -373,7 +373,7 @@ export const PAY_121: ButterWorkItemPlaceholder = {
 		{
 			id: "pay-121-comment-copilot",
 			author: "Jordan Okafor",
-			markdown: "GitHub Copilot is still validating one-percent targeting, the account kill-switch rules, and the release telemetry gates. I am leaving those checks running on the cloud session.",
+			markdown: "The one-percent targeting, account kill-switch rules, and release telemetry gates are ready for review.",
 			timestamp: "17 Aug 2026 at 07:54",
 			ageMs: 1_080_000,
 		},

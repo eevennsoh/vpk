@@ -9,18 +9,109 @@ async function openList(page: Page) {
 	return list;
 }
 
-test("two additional list rows cycle between their agents", async ({ page }) => {
+function overlayPresentation(element: Element) {
+	const style = getComputedStyle(element);
+	return {
+		shadow: style.boxShadow.replaceAll("rgba(0, 0, 0, 0) 0px 0px 0px 0px, ", ""),
+		border: style.borderTopWidth,
+		radius: style.borderRadius,
+		background: style.backgroundColor,
+	};
+}
+
+test("list PR previews use the board card's single overlay perimeter", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	await page.getByRole("button", { name: "Pull request failed #1851: Port 3DS flow", exact: true }).click();
+	const boardPreview = page.locator('[aria-label="Pull request #1851 details"]');
+	await expect(boardPreview).toBeVisible();
+	const boardStyle = await boardPreview.evaluate(overlayPresentation);
+	await page.keyboard.press("Escape");
+	await openList(page);
+	await page.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true }).hover();
+	const listPreview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	await expect(listPreview).toBeVisible();
+	await expect.poll(() => listPreview.evaluate(overlayPresentation)).toEqual(boardStyle);
+});
+
+test("PR cells show the status icon and preview from the whole cell without underlining titles", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	const list = await openList(page);
+	const trigger = list.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true });
+	const cell = trigger.locator("xpath=ancestor::td");
+	const icon = trigger.getByRole("img", { name: "Pull request failed", exact: true });
+	await expect(icon).toBeVisible();
+	const targetBounds = await trigger.boundingBox();
+	const cellBounds = await cell.boundingBox();
+	expect(targetBounds).toEqual(cellBounds);
+	const title = trigger.getByText("Port 3DS flow", { exact: true }).first();
+	await title.hover();
+	await expect(title).toHaveCSS("text-decoration-line", "none");
+	await expect(title).toHaveCSS("cursor", "pointer");
+	await page.mouse.move(0, 0);
+	const preview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	await expect(preview).toBeHidden();
+	if (!cellBounds) throw new Error("PR cell geometry is unavailable");
+	await cell.hover({ position: { x: cellBounds.width - 2, y: 2 } });
+	await expect(preview).toBeVisible();
+	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
+	const previewBounds = await preview.boundingBox();
+	if (!previewBounds) throw new Error("PR preview geometry is unavailable");
+	expect(previewBounds.x >= cellBounds.x + cellBounds.width || previewBounds.x + previewBounds.width <= cellBounds.x).toBe(true);
+	await expect(preview).toHaveCSS("transition-property", "none");
+	await expect(trigger.locator("a")).toHaveCount(0);
+	const nextTrigger = list.getByRole("group", { name: "Pull request #1856: Extract retry policy", exact: true });
+	await nextTrigger.hover();
+	const nextPreview = page.getByRole("region", { name: "Pull request #1856 details", exact: true });
+	await expect(nextPreview).toBeVisible();
+	await trigger.hover();
+	await expect(preview).toBeVisible();
+	await expect(nextPreview).toBeHidden();
+});
+
+test("a List work item previews multiple pull requests beside its cell on hover", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	const list = await openList(page);
+	const trigger = list.getByRole("button", { name: "3 pull requests for PAY-109" });
+	const preview = page.getByRole("dialog", { name: "Pull requests for PAY-109" });
+	await expect(preview).toBeHidden();
+	await trigger.hover();
+	await expect(preview).toBeVisible();
+	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
+	const pullRequests = preview.getByRole("list", { name: "Pull requests" });
+	await expect(pullRequests.getByRole("listitem")).toHaveCount(3);
+	await trigger.click();
+	const open = pullRequests.getByRole("button", { name: "#1911 Validate webhook schema compatibility Open" });
+	await open.hover();
+	await open.click();
+	await expect(pullRequests.getByText("pay-109-webhook-schema-compatibility", { exact: true })).toBeVisible();
+	await expect(pullRequests.getByRole("button", { name: "#1912 Update webhook contract fixtures Merged" })).toBeVisible();
+	await page.mouse.move(0, 0);
+	await expect(preview).toBeHidden();
+	await trigger.press("Enter");
+	await expect(preview).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(preview).toBeHidden();
+	await expect(trigger).toBeFocused();
+});
+
+test("list rows cycle only agents with the same highest-priority active status", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	const list = await openList(page);
-	// PAY-130's Cursor session waits for input, so its pair reads as needing input.
-	const pairs = [["PAY-130", "2 agents: Needs input"], ["PAY-128", "2 agents: Working"]] as const;
-	const rows = pairs.map(([key]) => list.getByRole("row").filter({ hasText: key }));
-	for (const [index, [, label]] of pairs.entries()) await expect(rows[index].getByRole("button", { name: label })).toBeVisible();
-	const avatars = rows.map((row) => row.locator(".agent-loading-vertical [data-agent-id]").first());
-	const initial = await Promise.all(avatars.map((avatar) => avatar.getAttribute("data-agent-id")));
-	await Promise.all(avatars.map((avatar, index) => expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial[index])));
+	const mixed = list.getByRole("row").filter({ hasText: "PAY-130" });
+	await expect(mixed.getByRole("button", { name: "Cursor: Needs input" })).toBeVisible();
+	await expect(mixed.locator(".agent-loading-vertical")).toHaveCount(0);
+	const working = list.getByRole("row").filter({ hasText: "PAY-128" });
+	await expect(working.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	const avatar = working.locator(".agent-loading-vertical [data-agent-id]").first();
+	const initial = await avatar.getAttribute("data-agent-id");
+	await expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial);
 });
 
 for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into list sessions for ${key}`, async ({ page }) => {

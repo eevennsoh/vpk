@@ -92,12 +92,12 @@ export function ProjectButterAddAgent({
 			data-slot="jira-issue-add-agent"
 			data-open={open || undefined}
 			className={cn(
-				"group/butter-add-agent pointer-events-none size-6 shrink-0 opacity-0 transition-opacity duration-fast ease-out-practical motion-reduce:transition-none group-hover/jira-issue:pointer-events-auto group-hover/jira-issue:opacity-100 group-has-[:focus-visible]/jira-issue:pointer-events-auto group-has-[:focus-visible]/jira-issue:opacity-100 data-[open=true]:pointer-events-auto data-[open=true]:opacity-100",
+				"group/butter-add-agent pointer-events-none size-6 shrink-0 opacity-0 transition-opacity duration-normal ease-linear motion-reduce:transition-none group-hover/jira-issue:pointer-events-auto group-hover/jira-issue:opacity-100 group-has-[:focus-visible]/jira-issue:pointer-events-auto group-has-[:focus-visible]/jira-issue:opacity-100 data-[open=true]:pointer-events-auto data-[open=true]:opacity-100",
 				alwaysVisible && "pointer-events-auto opacity-100",
 				exiting && !alwaysVisible && "opacity-0! pointer-events-none!",
 			)}
 		>
-			<AgentAdd open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open("footer") : actions.close())} label={`Add agent to ${issueKey}`} disabled={exiting} triggerRef={triggerRef}>
+			<AgentAdd open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open("footer") : actions.close())} label={`Add agent to ${issueKey}`} disabled={exiting} triggerRef={triggerRef} visualClassName={alwaysVisible ? undefined : "scale-90 transition-transform duration-medium ease-out-practical motion-reduce:scale-100 motion-reduce:transition-none group-hover/jira-issue:scale-100 group-has-[:focus-visible]/jira-issue:scale-100 group-data-[open=true]/butter-add-agent:scale-100"}>
 				{inlinePicker ? <PopoverContent aria-label="Agents" side={side} align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
 					<ProjectButterCloudAgentPicker issueTriggerRef={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} />
 				</PopoverContent> : <ProjectButterAgentPicker

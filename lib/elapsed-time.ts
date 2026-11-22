@@ -15,20 +15,60 @@ export function formatElapsedTime(totalSeconds: number): string {
 }
 
 const RELATIVE_AGO_SUFFIX = / ago$/u;
+const NUMERIC_RELATIVE_TIME = /^(\d+)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|mo|years?|y)(?:\s+ago)?$/iu;
 /** Normalize authored compact hour units without changing words or other units. */
 const COMPACT_HOUR_UNIT = /(?<![A-Za-z])(\d+)hr(?![A-Za-z])/gu;
+const LONG_RELATIVE_TIME = new Intl.RelativeTimeFormat("en", { numeric: "always", style: "long" });
+const RELATIVE_TIME_UNITS: Partial<Record<string, Intl.RelativeTimeFormatUnit>> = {
+	s: "second",
+	m: "minute",
+	h: "hour",
+	d: "day",
+	w: "week",
+	mo: "month",
+	y: "year",
+};
 
 /**
- * Display form for authored or formatted relative stamps: drop a trailing
- * `" ago"` and shorten compact hours to `h`.
+ * Display form for authored or formatted relative stamps, e.g. `"19 days ago"` → `"19d"`.
  * Named periods (`Just now`, `Yesterday`, `Last week`) pass through.
  */
 export function toCompactRelativeTimeLabel(label: string): string {
+	const relative = NUMERIC_RELATIVE_TIME.exec(label.trim());
+	if (relative) {
+		const [, count, rawUnit] = relative;
+		const unit = rawUnit.toLowerCase();
+		return `${count}${unit.startsWith("mo") ? "mo" : unit[0]}`;
+	}
 	return label.replace(RELATIVE_AGO_SUFFIX, "").replace(COMPACT_HOUR_UNIT, "$1h");
 }
 
+export function describeRelativeTimeLabel(label: string, timestampMs?: number): string | undefined {
+	const text = label.trim();
+	const relative = NUMERIC_RELATIVE_TIME.exec(text);
+	if (relative) {
+		const [, count, rawUnit] = relative;
+		const quantity = Number(count);
+		const unit = rawUnit.toLowerCase();
+		const longUnit = RELATIVE_TIME_UNITS[unit.startsWith("mo") ? "mo" : unit[0]];
+		return longUnit && Number.isFinite(quantity) ? LONG_RELATIVE_TIME.format(-quantity, longUnit) : undefined;
+	}
+	if (/^(?:just now|now)$/iu.test(text)) return Number.isFinite(timestampMs) ? undefined : "Less than a minute ago";
+	if (/^(?:today|yesterday|last (?:week|month|year))$/iu.test(text)) {
+		if (/^yesterday$/iu.test(text)) return "1 day ago";
+		if (Number.isFinite(timestampMs)) return undefined;
+		switch (text.toLowerCase()) {
+			case "today": return "Less than a day ago";
+			case "last week": return "1 week ago";
+			case "last month": return "1 month ago";
+			case "last year": return "1 year ago";
+		}
+	}
+	return undefined;
+}
+
 /** Compact relative stamp: `"Just now"`, `"32m ago"`, `"1h ago"`, `"Yesterday"`, `"3d ago"`. */
-export function formatRelativeTime(totalSecondsAgo: number): string {
+export function formatRelativeTime(totalSecondsAgo: number, { showSeconds = false } = {}): string {
 	const normalizedSeconds = Number.isFinite(totalSecondsAgo)
 		? Math.max(0, Math.floor(totalSecondsAgo))
 		: 0;
@@ -36,7 +76,7 @@ export function formatRelativeTime(totalSecondsAgo: number): string {
 	const hours = Math.floor(minutes / 60);
 	const days = Math.floor(hours / 24);
 
-	if (minutes < 1) return "Just now";
+	if (minutes < 1) return showSeconds ? `${normalizedSeconds}s ago` : "Just now";
 	if (hours < 1) return `${minutes}m ago`;
 	if (days < 1) return `${hours}h ago`;
 	if (days === 1) return "Yesterday";

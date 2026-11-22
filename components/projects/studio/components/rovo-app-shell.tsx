@@ -126,7 +126,7 @@ import {
 	TOP_NAV_SEARCH_MAX_WIDTH_PX,
 	TOP_NAV_SEARCH_MIN_WIDTH_PX,
 } from "@/components/blocks/top-navigation/layout-constants";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@atlaskit/icon/core/search";
@@ -309,6 +309,7 @@ type StudioScreenAssistantTestWindow = Window & {
 
 export function RovoAppShell({ embedded = false, headingAs = "h1", initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const nav = useTopNavigation();
+	const { searchContainerRef, searchPanelRef } = nav;
 	const studioAgentRegistry = useRovoSelectedAgent() as StudioAgentRegistryContext;
 	const { selectedAgent } = studioAgentRegistry;
 	const selectedAgentContextDescription = getRovoAgentPromptContext(selectedAgent);
@@ -934,9 +935,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		realtimeTypedResponseStartedRef,
 		resetTypedScrollAnchorState,
 		scrollAnchorMessageId,
-		scrollFollowMode,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		typedScrollAnchorSourceRef,
 	} = scrollAnchor;
 	const [optimisticUserMessage, setOptimisticUserMessage] = useState<ReturnType<typeof createRovoAppUserMessage> | null>(null);
@@ -981,7 +980,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		dispatchDictation({ type: "stop" });
 		setScrollActiveTimelineSelection(null);
 		setScrollAnchorMessageId(null);
-		setScrollFollowMode("bottom");
 		setIsDefaultHomeSubmitTransition(false);
 		setDismissedBrowserArtifactKey(null);
 		studioAgentCreationThreadKeysRef.current.clear();
@@ -990,7 +988,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, [
 		dispatchMainSurface,
 		setScrollAnchorMessageId,
-		setScrollFollowMode,
 		studioAgentCreationThreadKeysRef,
 		studioAgentCreationThreadTouchedAtRef,
 	]);
@@ -1328,7 +1325,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 	const handleStop = useCallback(async () => {
 		realtimeConversation.interrupt();
-		await chat.interruptActiveTurn({ source: "user-stop" });
+		await chat.interruptActiveTurn({ explicitUserCancel: true, source: "user-stop" });
 	}, [chat, realtimeConversation]);
 
 	// --- Studio AI cursor companion ---
@@ -2789,7 +2786,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 					pendingPlanMetadataMessageIds={chat.pendingPlanMetadataMessageIds}
 					pendingArtifactResult={chat.pendingArtifactResult}
 					scrollAnchorMessageId={scrollAnchorMessageId}
-					scrollFollowMode={scrollFollowMode}
 					selectedAgent={selectedAgent}
 					showEmptyState={showHomeState && shouldShowDefaultLandingContent}
 					shouldSuppressLatestAssistantSuggestions={chat.shouldSuppressLatestAssistantSuggestions}
@@ -2959,7 +2955,6 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 					onSelectItem={(messageId) => {
 						handleScrollActiveTimelineChange(messageId);
 						setScrollAnchorMessageId(messageId);
-						setScrollFollowMode("target");
 					}}
 				/>
 			) : null}
@@ -3148,7 +3143,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 							)}
 						>
 							<div
-								ref={nav.searchContainerRef}
+								ref={searchContainerRef}
 								className="relative flex h-9 min-w-0 grow items-center"
 								style={{
 									flexBasis: `${TOP_NAV_SEARCH_MIN_WIDTH_PX}px`,
@@ -3171,11 +3166,11 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 											: undefined
 									}
 								>
-									<InputGroupAddon align="inline-start">
-										<span className="size-4 shrink-0 text-icon-subtle">
+									<InputGroupSearchAddon align="inline-start">
+										<span className="size-4 shrink-0 text-icon-subtlest">
 											<SearchIcon label="" spacing="none" />
 										</span>
-									</InputGroupAddon>
+									</InputGroupSearchAddon>
 									<InputGroupInput
 										type="search"
 										aria-label="Search"
@@ -3188,12 +3183,12 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 									/>
 								</InputGroup>
 								<SearchSuggestionsPanel
-									anchorRef={nav.searchContainerRef}
+									anchorRef={searchContainerRef}
 									isVisible={nav.isSearchFocused}
 									onSearchAllApps={nav.handleSearchAllApps}
 									onRecentItemClick={nav.handleRecentItemClick}
 									onRecentSearchClick={nav.handleRecentSearchClick}
-									panelRef={nav.searchPanelRef}
+									panelRef={searchPanelRef}
 								/>
 							</div>
 

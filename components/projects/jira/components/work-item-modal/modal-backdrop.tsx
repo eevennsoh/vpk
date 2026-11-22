@@ -1,14 +1,13 @@
 "use client";
 
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+
 import { token } from "@/lib/tokens";
-import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
 
+/** The blanket behind the modal; a press on it closes the modal through `ModalRoot`. */
 export function ModalBackdrop() {
-	const { meta } = useWorkItemModal();
-
 	return (
-		<div
-			onClick={meta.onClose}
+		<DialogPrimitive.Backdrop
 			style={{
 				position: "fixed",
 				top: 0,

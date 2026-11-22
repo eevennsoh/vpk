@@ -9,6 +9,17 @@ export type ProjectButterActivitySort = "newest" | "oldest";
 export type ProjectButterActivityFilters = Readonly<{ updates: boolean; agents: boolean; comments: boolean }>;
 export const PROJECT_BUTTER_ACTIVITY_FILTERS_ALL: ProjectButterActivityFilters = { updates: true, agents: true, comments: true };
 
+const replySentences = new Intl.Segmenter("en", { granularity: "sentence" });
+const MAX_REPLY_EXCERPT_LENGTH = 72;
+
+export function getProjectButterReplyExcerpt(body: string): string {
+	const firstSentence = replySentences.segment(body.trim()).containing(0)?.segment.replace(/\s+/gu, " ").trim() ?? "";
+	const characters = Array.from(firstSentence);
+	return characters.length > MAX_REPLY_EXCERPT_LENGTH
+		? `${characters.slice(0, MAX_REPLY_EXCERPT_LENGTH).join("").trimEnd()}…`
+		: firstSentence;
+}
+
 const INVOCATION_PREFIX = "invocation-";
 const UPDATE_GROUP_PREFIX = "updates-";
 const MINUTE = 60_000;
@@ -80,7 +91,7 @@ export function pinProjectButterComments(entries: readonly JiraActivityEntry[], 
 	const byId = new Map(entries.map((entry) => [entry.id, entry]));
 	const pinned = pinnedIds.flatMap((id) => {
 		const entry = byId.get(id);
-		return entry?.kind === "comment" ? [{ ...entry, tag: PINNED_TAG }] : [];
+		return entry?.kind === "comment" ? [{ ...entry, tag: PINNED_TAG, replyPreviewCount: 0 }] : [];
 	});
 	const pinnedSet = new Set(pinned.map((entry) => entry.id));
 	return [...pinned, ...entries.filter((entry) => !pinnedSet.has(entry.id))];
@@ -92,8 +103,8 @@ export function unpinProjectButterEntries(entries: readonly JiraActivityEntry[],
 	return entries.map((entry) => {
 		if (entry.kind !== "comment" || entry.tag !== PINNED_TAG) return entry;
 		const original = byId.get(entry.id);
-		const { tag: _pinned, ...rest } = entry;
-		return original?.kind === "comment" && original.tag ? { ...rest, tag: original.tag } : rest;
+		const { tag: _pinned, replyPreviewCount: _preview, ...rest } = entry;
+		return original?.kind === "comment" ? { ...rest, tag: original.tag, replyPreviewCount: original.replyPreviewCount } : rest;
 	});
 }
 

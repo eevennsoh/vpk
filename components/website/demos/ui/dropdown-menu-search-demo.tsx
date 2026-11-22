@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
-import SearchIcon from "@atlaskit/icon/core/search";
 
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,6 @@ export function DropdownMenuDemoSearch() {
 				<div className="-mx-(--menu-inset) -mt-(--menu-inset) shrink-0">
 					<DropdownMenuSearchField
 						autoFocus
-						icon={<SearchIcon label="" />}
 						label="Search actions"
 						value={query}
 						onValueChange={setQuery}

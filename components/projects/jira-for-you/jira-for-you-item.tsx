@@ -10,7 +10,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import { JiraIssueGenerativeActionMenu } from "@/components/blocks/jira-issue/generative-action-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RovoSparkleButton } from "@/components/ui-custom/rovo-sparkle";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime } from "@/components/ui/elapsed-time";

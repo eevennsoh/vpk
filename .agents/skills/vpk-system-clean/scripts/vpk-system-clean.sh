@@ -22,12 +22,14 @@
 #     bound. Stopped only when unattached, older than a grace window, and not
 #     the primary checkout. Occupancy is a running executable named exactly
 #     `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd
-#     is that worktree — worktree directory names are ignored. Uses the
-#     worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
-#     route). A Codex Desktop worktree is stopped only when the read-only
-#     thread-recency probe finds every Codex thread in that worktree idle
-#     past its threshold; no thread, no database, or an unknown schema keeps
-#     it. Never
+#     is that worktree — worktree directory names are ignored. Recent activity
+#     (its dev log, stack record or git index written in the last 30m) also
+#     keeps it: an agent working there often keeps its own cwd elsewhere
+#     (dev-stack-activity.js). Uses the worktree's own `dev-tmux-plain.sh
+#     stop` (SIGINT so Portless drops THIS route). A Codex Desktop worktree
+#     is stopped only when the read-only thread-recency probe finds every
+#     Codex thread in that worktree idle past its threshold; no thread, no
+#     database, or an unknown schema keeps it. Never
 #     `portless prune`. Legacy sessions on tmux's default socket get SIGINT
 #     and an exact kill-session; their worktree launcher owns a different socket.
 #  4. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
@@ -89,6 +91,12 @@ KILL_IDLE_STACKS=1       # 1 = stop idle unattached leftover stacks; 0 = report 
 # script. Its IDLE_HOURS (PRESSURE_IDLE_HOURS in pressure mode) is the Codex
 # idle threshold.
 CODEX_RECENCY_PROBE="${0:A:h}/codex-thread-recency.js"
+# Stack-activity check (scripts/lib/dev-stack-activity.js; install.sh copies it next to this
+# script). A leftover stack whose dev log, stack record or git index was written within this
+# window is in use: an agent working there often keeps its own cwd elsewhere. Resolved here at
+# top level: inside a function zsh's $0 is the function name, not this script.
+STACK_ACTIVITY_HELPER="${0:A:h}/dev-stack-activity.js"
+IDLE_STACK_ACTIVITY_SECS=1800
 
 # --pressure-check: exit quietly unless the machine is under memory pressure
 #   (run often from its own LaunchAgent; the full sweep keeps its schedule).
@@ -279,6 +287,29 @@ codex_thread_recency() {
 	print -r -- "$line"
 }
 
+# Prints `in-use|<evidence>`, `idle|<newest activity>`, or `unknown|<why>` (keep the stack).
+stack_activity() {
+	local root="$1" helper line node_bin
+	for helper in "${VPK_DEV_STACK_ACTIVITY:-}" "$STACK_ACTIVITY_HELPER" "$MAIN_WORKTREE/scripts/lib/dev-stack-activity.js"; do
+		[[ -n "$helper" && -f "$helper" ]] && break
+		helper=""
+	done
+	if [[ -z "$helper" ]]; then
+		print -r -- "unknown|stack-activity check not installed next to the sweep or in $MAIN_WORKTREE"
+		return
+	fi
+	node_bin=$(command -v node 2>/dev/null)
+	if [[ -z "$node_bin" ]]; then
+		print -r -- "unknown|node not found on PATH ($PATH)"
+		return
+	fi
+	line=$("$node_bin" "$helper" check --worktree "$root" --idle-secs "$IDLE_STACK_ACTIVITY_SECS" 2>/dev/null | head -1)
+	[[ "$line" == (in-use|idle)\|* ]] || line="unknown|stack-activity check failed under $node_bin"
+	print -r -- "$line"
+}
+
+# Exit 6 from the worktree's stop script: it refused because the stack is in use.
+STOP_REFUSED=6
 stop_idle_stack() {
 	local socket="$1" sname="$2" spath="$3"
 	local stop_script="$spath/scripts/dev-tmux-plain.sh"
@@ -291,9 +322,12 @@ stop_idle_stack() {
 		return $?
 	fi
 	if [[ -f "$stop_script" ]]; then
-		if (cd "$spath" && VPK_DEV_TMUX_SESSION="$sname" /bin/bash "$stop_script" stop) >/dev/null 2>&1; then
-			return 0
-		fi
+		# Names the sweep as the requester: the stop script refuses (exit 6) while the stack is in
+		# use and logs who stopped it to that worktree's dev-stops.log.
+		(cd "$spath" && VPK_DEV_TMUX_SESSION="$sname" VPK_DEV_STOP_BY="vpk-system-clean idle sweep (pid $$)" /bin/bash "$stop_script" stop) >/dev/null 2>&1
+		local stop_status=$?
+		(( stop_status == 0 )) && return 0
+		(( stop_status == STOP_REFUSED )) && return $STOP_REFUSED
 		return 1
 	fi
 	tmux_cmd "$socket" send-keys -t "=$sname:" C-c 2>/dev/null || true
@@ -369,6 +403,14 @@ live_task_in_worktree() {
 	fi
 	if worktree_has_operator "$root"; then
 		print -r -- "a tool process has its cwd in $root"
+		return
+	fi
+	# Recent activity (dev log, stack record, git index) also marks it in use: a subagent often
+	# keeps its own cwd in another checkout. Anything but a clear `idle` keeps the server.
+	local activity
+	activity=$(stack_activity "$root")
+	if [[ "$activity" != idle\|* ]]; then
+		print -r -- "${activity#*|}"
 		return
 	fi
 	if is_codex_desktop_worktree "$root"; then
@@ -503,14 +545,23 @@ if command -v tmux >/dev/null 2>&1; then
 				fi
 				codex_note="; Codex threads idle: $reason"
 			fi
+			activity=$(stack_activity "$spath")
+			if [[ "$activity" != idle\|* ]]; then
+				log "kept tmux session $sname on $socket socket (${activity%%|*}: ${activity#*|})"
+				continue
+			fi
 			if (( ! KILL_IDLE_STACKS )); then
 				log "idle tmux session $sname on $socket socket ('$spath', ${sage}s old${codex_note}) — KILL_IDLE_STACKS=0, left running"
 				continue
 			fi
-			if stop_idle_stack "$socket" "$sname" "$spath"; then
+			stop_idle_stack "$socket" "$sname" "$spath"
+			stop_status=$?
+			if (( stop_status == 0 )); then
 				idle_stopped=$(( idle_stopped + 1 ))
 				socket_idle=$(( socket_idle + 1 ))
-				log "stopped idle tmux session $sname on $socket socket (worktree '$spath', ${sage}s old${codex_note})"
+				log "stopped idle tmux session $sname on $socket socket (worktree '$spath', ${sage}s old, ${activity#*|}${codex_note})"
+			elif (( stop_status == STOP_REFUSED )); then
+				log "kept tmux session $sname on $socket socket (its stop script refused: the stack is in use)"
 			else
 				log "FAILED to stop idle tmux session $sname on $socket socket (worktree '$spath')"
 			fi

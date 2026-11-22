@@ -13,6 +13,7 @@ import type {
 	JiraListRowData,
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
+import { BUTTER_PAY_109_RELATED_PULL_REQUESTS } from "@/components/projects/butter-v1/data/presentation-pull-requests";
 
 /** Mirrors TopNavigation / `BUTTER_PAY_CURRENT_USER`; covered by the list-row contract tests. */
 const CURRENT_USER_ASSIGNEE = {
@@ -158,6 +159,7 @@ function toAssignedAgent(
 		idHint?: string;
 		invokedBy?: JiraListAssignedAgent["invokedBy"];
 		name: string;
+		privateTo?: JiraListAssignedAgent["privateTo"];
 		sessionTitle?: string;
 		role?: JiraListAssignedAgent["role"];
 		state?: string;
@@ -182,6 +184,7 @@ function toAssignedAgent(
 			: {}),
 		...(input.invokedBy ? { invokedBy: input.invokedBy } : {}),
 		...(input.host !== undefined ? { host: input.host } : {}),
+		...(input.privateTo ? { privateTo: input.privateTo } : {}),
 		...(input.role ? { role: input.role } : {}),
 		statusKind: status.statusKind,
 		statusLabel: status.statusLabel,
@@ -211,6 +214,7 @@ export function assignedAgentsFromCard(
 			idHint: activity.id,
 			invokedBy: activity.invokedBy,
 			name: activity.name,
+			privateTo: activity.privateTo,
 			sessionTitle: activity.sessionTitle,
 			role: activity.role,
 			state: activity.state,
@@ -410,6 +414,11 @@ function createListRow(
 		statusVariant: STATUS_VARIANTS[card.status ?? columnTitle],
 		assignee: card.assignee,
 		agentSessions: assignedAgentsFromCard(card, catalog),
+		pullRequests: card.pullRequestNumber ? [{
+			number: card.pullRequestNumber,
+			status: card.pullRequestStatus ?? "open",
+			preview: card.pullRequestPreview ?? { title: card.title, additions: 0, deletions: 0 },
+		}, ...(card.code === "PAY-109" ? BUTTER_PAY_109_RELATED_PULL_REQUESTS : [])] : undefined,
 		labels: card.tags,
 		dueDate: card.dueDate,
 		contributors: card.assignee ? [card.assignee] : [],
@@ -474,32 +483,7 @@ export function applyListOrder(
 	return next;
 }
 
-export function arrangeListHierarchy(
-	rows: readonly JiraListRowData[],
-	expandedKeys: ReadonlySet<string>,
-): JiraListRowData[] {
-	const keys = new Set(rows.map((row) => row.issueKey));
-	const children = new Map<string, JiraListRowData[]>();
-	for (const row of rows) {
-		if (row.parentIssueKey && keys.has(row.parentIssueKey)) {
-			const siblings = children.get(row.parentIssueKey) ?? [];
-			siblings.push(row);
-			children.set(row.parentIssueKey, siblings);
-		}
-	}
-	const result: JiraListRowData[] = [];
-	const visited = new Set<string>();
-	const visit = (row: JiraListRowData, depth: number) => {
-		if (visited.has(row.issueKey)) return;
-		visited.add(row.issueKey);
-		const descendants = children.get(row.issueKey) ?? [];
-		const expanded = expandedKeys.has(row.issueKey);
-		result.push({ ...row, indentLevel: depth, hasChildren: descendants.length > 0, isExpanded: expanded });
-		if (expanded) descendants.forEach((child) => visit(child, depth + 1));
-	};
-	rows.filter((row) => !row.parentIssueKey || !keys.has(row.parentIssueKey)).forEach((row) => visit(row, 0));
-	return result;
-}
+export { arrangeListHierarchy } from "@/components/blocks/jira-list/jira-list-grouping";
 
 export function moveListOrder(
 	order: readonly string[],
@@ -632,6 +616,7 @@ export function toKanbanCardFromDraft(input: Readonly<{
 	dueDate?: string;
 	issueKey: string;
 	issueType?: JiraKanbanCardData["issueType"];
+	parentIssueKey?: string;
 	summary: string;
 }>): JiraKanbanCardData {
 	const assignee = input.assignee
@@ -652,6 +637,7 @@ export function toKanbanCardFromDraft(input: Readonly<{
 		code: input.issueKey,
 		dueDate: input.dueDate,
 		issueType: input.issueType ?? "task",
+		parentIssueKey: input.parentIssueKey,
 		priority: "medium",
 		tags: [],
 		title: input.summary,

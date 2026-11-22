@@ -17,7 +17,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { agentDragIdentityLabel } from "./agent-session-identity-label";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionAttribution, type AgentSessionItem } from "./agent-session-types";
 import type { SessionCohort } from "./session-cohort";
 import { DECK_LAYERS, DECK_LAYER_FALLBACK, DECK_VISIBLE_MAX } from "./session-drag-deck";
 
@@ -157,7 +157,7 @@ export function AgentSessionDragChip({
 		return (
 			<AgentSessionDragPill
 				agent={lead.agent}
-				attributedBy={lead.invokedBy}
+				attributedBy={getAgentSessionAttribution(lead)}
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}
@@ -211,7 +211,7 @@ export function AgentSessionDragChip({
 			})}
 			<AgentSessionDragPill
 				agent={lead.agent}
-				attributedBy={lead.invokedBy}
+				attributedBy={getAgentSessionAttribution(lead)}
 				attributionOrder="agent-first"
 				elevated={elevated}
 				isFusionSource={isFusionSource}

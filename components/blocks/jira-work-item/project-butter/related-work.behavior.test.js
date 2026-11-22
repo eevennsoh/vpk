@@ -10,7 +10,7 @@ function renderRelated(props = {}) {
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 			export default function RelatedProbe({ shown = true, onUnhandledEscape }) {
-				const content = useProjectButterContent("filled");
+				const content = useProjectButterContent("filled", undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 				return <MotionConfig reducedMotion="always"><div onKeyDown={(event) => { if (event.key === "Escape") onUnhandledEscape?.(); }}>
 					<button type="button">Outside related work</button>
 					{shown ? <ProjectButterRelatedWork content={content} /> : null}
@@ -24,7 +24,7 @@ function renderRelated(props = {}) {
 }
 
 const summaryButtons = (key) => [...document.querySelectorAll(`[role="textbox"][aria-label="Edit summary for ${key}"]`)];
-const childRows = (view) => [...view.getByRole("list", { name: "Child work items" }).children]
+const childRows = (view) => [...view.getByRole("table", { name: "Child work items" }).querySelector("tbody").children]
 	.filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
 const rowSummary = (row) => row.querySelector('[aria-label^="Edit summary"]').textContent;
 
@@ -68,7 +68,7 @@ test("keyboard Save, Cancel and Escape on the summary actions return focus to th
 	await view.press(null, "Enter");
 	assert.equal(summary().textContent, "Keyboard saved copy");
 	assert.equal(view.isFocused(summary()), true, "focus must not drop to the body after keyboard Save");
-	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-5" }), null, "the settled summary does not re-enter editing");
+	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-5" }) === null, true, "the settled summary does not re-enter editing");
 	await view.press(summary(), "x");
 	await view.fill(summary(), "Discard via Escape on Cancel");
 	await view.focus(view.getByRole("button", { name: "Cancel summary for VITA-5" }));
@@ -210,7 +210,7 @@ test("the empty details agent field opens the searchable picker", async () => {
 	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
 	await view.click(view.getByRole("button", { name: "Figma" }));
 	assert.deepEqual(selected, ["figma"]);
-	assert.equal(view.queryByRole("textbox", { name: "Search agents" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Search agents" }) === null, true);
 	await view.rerender({ field: true, onStartAgent: (agent) => selected.push(agent.id), sessions: [crewSession("figma-new", "running", "Figma")] });
 	const avatar = view.getByRole("group", { name: "Agents field" }).querySelector('[data-slot="avatar"]');
 	assert.equal(Boolean(avatar), true);
@@ -239,7 +239,7 @@ test("the details agent field opens the searchable selector and continues sessio
 	assert.deepEqual(selected, ["figma"]);
 	await view.rerender({ field: true, sessions: [...sessions, crewSession("figma-new", "running", "Figma")], onStartAgent: (agent) => selected.push(agent.id), onOpenSession: (session) => opened.push(session.id) });
 	assert.deepEqual([...field.querySelectorAll('[data-agent-id]')].map((avatar) => avatar.getAttribute("data-agent-id")), ["existing", "cursor", "figma-new"]);
-	assert.equal(field.querySelector('[data-agent-loading-slot]'), null);
+	assert.equal(field.querySelector('[data-agent-loading-slot]') === null, true);
 	await view.unmount();
 });
 
@@ -277,16 +277,64 @@ test("the details agent stack stays unchanged as session states change", async (
 });
 
 test("the list session field shows the most urgent agent status and opens sessions", async () => {
-	const sessions = [crewSession("claude", "running", "Claude"), crewSession("cursor", "complete", "Cursor")];
-	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, sessions };
+	const claude = crewSession("claude", "running", "Claude");
+	const cursor = crewSession("cursor", "complete", "Cursor");
+	const opened = [];
+	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, sessions: [claude, cursor], onOpenSession: (session) => opened.push(session.id) };
 	const view = await renderCrew(props);
-	assert.equal(view.queryByRole("button", { name: "2 agents: Working" }) !== null, true);
-	assert.equal(Boolean(view.getByRole("group", { name: "Agents field" }).querySelector(".agent-loading-vertical")), true);
-	await view.rerender({ ...props, sessions: [sessions[0], { ...sessions[1], state: "needs-input" }] });
-	const trigger = view.getByRole("button", { name: "2 agents: Needs input" });
-	assert.equal(view.getByRole("group", { name: "Agents field" }).textContent.includes("Needs input"), true);
-	await view.click(trigger);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.rerender({ ...props, sessions: [claude, { ...cursor, state: "needs-input" }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Cursor: Needs input" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.click(view.getByRole("button", { name: "Cursor: Needs input" }));
 	assert.equal(view.queryByRole("dialog", { name: "Agent assignment" }) !== null, true);
+	assert.equal(Boolean(view.queryByText("Claude work")), true);
+	await view.click(view.getByText("Claude work"));
+	assert.deepEqual(opened, ["claude"]);
+	await view.rerender({ ...props, sessions: [claude, { ...cursor, state: "running" }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Working" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), true);
+	await view.rerender({ ...props, sessions: [{ ...claude, state: "needs-input" }, { ...crewSession("claude-two", "attention", "Claude"), role: "owner" }, cursor] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Needs input" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), true);
+	await view.rerender({ ...props, sessions: [{ ...claude, state: "complete" }, cursor] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Finished" })), true);
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), false);
+	await view.unmount();
+});
+
+test("the list session field distinguishes personal and teammate sessions", async () => {
+	const mine = { ...crewSession("mine", "running", "Claude"), role: "owner" };
+	const teammate = { ...crewSession("team", "needs-input", "Cursor"), role: "viewer", invokedBy: { name: "Maya Ferreira" } };
+	const secondTeammate = { ...crewSession("team-two", "running", "Figma"), role: "viewer", invokedBy: { name: "Jordan Okafor" } };
+	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, onOpenSession() {} };
+	const view = await renderCrew({ ...props, sessions: [mine] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	await view.rerender({ ...props, sessions: [teammate, secondTeammate] });
+	const field = view.getByRole("group", { name: "Agents field" });
+	const trigger = view.getByRole("button", { name: "Using agents", exact: true });
+	assert.equal(document.getElementById(trigger.getAttribute("aria-describedby")).textContent, "Maya Ferreira, Jordan Okafor");
+	assert.equal(field.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Cursor, used by Maya Ferreira");
+	assert.equal(Boolean(field.querySelector(".agent-loading-vertical")), true);
+	assert.equal(field.querySelector('[data-teammate-session-label]')?.textContent, "Using agents");
+	assert.equal(field.textContent.includes("Needs input"), false);
+	await view.click(trigger);
+	assert.doesNotMatch(view.getByRole("dialog", { name: "Agent assignment" }).textContent, /use an agent|using agents|other agent activity/iu);
+	assert.equal(Boolean(view.queryByText("Cursor work")), true);
+	assert.equal(Boolean(view.queryByText("Figma work")), true);
+	await view.click(view.getByRole("button", { name: "Using agents" }));
+	await view.rerender({ ...props, sessions: [teammate] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Use an agent", exact: true })), true);
+	await view.rerender({ ...props, sessions: [teammate, { ...secondTeammate, invokedBy: teammate.invokedBy }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Using agents", exact: true })), true);
+	await view.rerender({ ...props, sessions: [teammate, mine] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	assert.equal(field.textContent.includes("Needs input"), false);
+	await view.click(view.getByRole("button", { name: "Claude: Working" }));
+	assert.equal(view.getByRole("button", { name: "Other agent activity" }).getAttribute("aria-expanded"), "true");
+	assert.equal(Boolean(view.queryByText("Cursor work")), true);
 	await view.unmount();
 });
 
@@ -305,8 +353,8 @@ test("the details agent stack shows each agent once while retaining every sessio
 	await view.click(view.getByRole("button", { name: "2 agents" }));
 	await view.click(view.getByRole("button", { name: "Claude" }));
 	assert.equal(view.queryByRole("button", { name: "First Claude session" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Local Claude session" }), null);
-	assert.equal(view.queryByRole("button", { name: "Legacy local Claude session" }), null);
+	assert.equal(view.queryByRole("button", { name: "Local Claude session" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Legacy local Claude session" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Second Claude session" }));
 	assert.deepEqual(opened, ["claude-second"]);
 	await view.unmount();
@@ -345,19 +393,21 @@ test("project-butter crew opens its picker from the keyboard, continues existing
 		await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Figma");
 		await view.click(view.getByRole("option", { name: /^Figma/u }));
 		assert.deepEqual(selected, ["figma"]);
-		assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
+		assert.equal(view.queryByRole("combobox", { name: "Search agents" }) === null, true);
 		await view.press(trigger, " ");
 		await view.click(view.getByRole("button", { name: "View agent sessions" }));
 		assert.equal(view.queryByRole("dialog", { name: "Agent sessions" }) !== null, true);
-		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
+		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }) === null, true);
 		assert.equal(view.queryByText("Local work") !== null, true);
 		assert.equal(view.queryByText("Finished work") !== null, true);
-		assert.equal(view.queryByText("Teammate work"), null);
-		await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
 		assert.equal(view.queryByText("Teammate work") !== null, true);
-		await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
+		await view.click(view.getByRole("button", { name: "Other agent activity" }));
+		assert.equal(view.queryByText("Teammate work") === null, true);
+		await view.click(view.getByRole("button", { name: "Use an agent", exact: true }));
+		assert.equal(view.queryByText("Teammate work") !== null, true);
 		await view.press(view.getByRole("button", { name: /^Claude work/u }), "Escape");
-		assert.equal(view.queryByRole("dialog", { name: "Add agent" }), null);
+		assert.equal(view.queryByRole("dialog", { name: "Agent sessions" }) === null, true);
+		assert.equal(view.queryByRole("dialog", { name: "Add agent" }) === null, true);
 		assert.equal(view.isFocused(trigger), true);
 	} finally { await view.unmount(); }
 });
@@ -367,15 +417,15 @@ test("project-butter crew without add capability keeps ordered sessions and does
 	const sessions = [crewSession("done", "complete", "Finished"), crewSession("running", "running", "Working"), crewSession("input", "needs-input", "Blocked")];
 	const view = await renderCrew({ sessions, onOpenSession: (session) => opened.push(session.id) });
 	try {
-		assert.equal(view.queryByRole("img", { name: "Add agent" }), null);
-		assert.equal(view.queryByRole("button", { name: /Add agent/u }), null);
+		assert.equal(view.queryByRole("img", { name: "Add agent" }) === null, true);
+		assert.equal(view.queryByRole("button", { name: /Add agent/u }) === null, true);
 		await view.click(view.getByRole("button", { name: /View agent sessions$/u }));
 		assert.deepEqual([...view.getByRole("dialog", { name: "Agent sessions" }).querySelectorAll("li")].map((item) => item.querySelector("button")?.textContent.split(" work")[0]), ["Blocked", "Working", "Finished"]);
 		await view.click(view.getByRole("button", { name: /^Working work/u }));
 		assert.deepEqual(opened, ["running"]);
 		await view.rerender({ sessions: [], useReferenceCrew: false, onOpenSession() {} });
 		assert.equal(view.getByRole("button", { name: /View agent sessions$/u }).disabled, true);
-		assert.equal(view.queryByRole("img", { name: "Add agent" }), null);
+		assert.equal(view.queryByRole("img", { name: "Add agent" }) === null, true);
 	} finally { await view.unmount(); }
 });
 
@@ -436,57 +486,32 @@ const SECTIONS_HARNESS = `import React from "react";
 	import { ProjectButterDescription } from "@/components/blocks/jira-work-item/project-butter/project-butter-description";
 	import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 	export default function SectionsProbe() {
-		const content = useProjectButterContent("filled");
+		const content = useProjectButterContent("filled", undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 		return <ThemeWrapper><MotionConfig reducedMotion="always"><div className="flex flex-col gap-6">
 			<ProjectButterDescription content={content} empty={false} />
 			<ProjectButterRelatedWork content={content} />
 		</div></MotionConfig></ThemeWrapper>;
 	}`;
 
-test("Related work collapses to a summary and its groups collapse independently", async () => {
+test("section toggles hide each section independently", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
-	const childHeading = () => view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u });
-	const related = view.getByRole("button", { name: "Collapse Related work" });
-	assert.equal(related.getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("heading", { name: "Related work", level: 2 }) !== null, true);
-	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
-	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
+	assert.equal(view.queryByRole("heading", { name: "Related work" }) === null, true);
+	await view.click(view.getByRole("button", { name: "8 attachments" }));
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Add attachment" }) === null, true);
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) !== null, true);
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(childHeading().getAttribute("aria-label"), "Collapse Child work items 10 of 15 done, 5 in progress, 0 to do");
-	await view.click(childHeading());
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
-	assert.equal(childHeading().textContent.includes("10/15"), true);
-	assert.equal(view.queryByRole("button", { name: "Add child work item" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Collapse Linked work" }));
-	await view.click(view.getByRole("button", { name: "Description" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
-	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) === null, true);
-	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Expand Attachments" }), childHeading(), view.getByRole("button", { name: "Expand Linked work" })]) {
-		assert.equal(trigger.getAttribute("aria-expanded"), "false");
-	}
-	assert.equal(view.tabOrder().includes("Edit summary for VITA-9"), false);
-	assert.equal(view.tabOrder().includes("More actions for Hero Image - Summer Launch.png"), false);
-	await view.click(view.getByRole("button", { name: "Expand Linked work" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Collapse Related work" }));
-	assert.equal(view.getByRole("button", { name: "Expand Related work" }).getAttribute("aria-expanded"), "false");
-	assert.equal(view.getByRole("list", { name: "8 attachments, 15 subitems, 8 linked work items" }).textContent, "8158");
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
-	assert.equal(view.tabOrder().includes("Expand Attachments"), false);
-	await view.click(view.getByRole("button", { name: "Expand Related work" }));
-	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
-	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
+	assert.equal(view.queryByRole("table", { name: "Child work items" }) !== null, true);
+	assert.equal(view.queryByRole("table", { name: "Linked work" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
+	assert.equal(view.queryByRole("table", { name: "Child work items" }) === null, true);
+	assert.equal(view.tabOrder().includes("Add child work item"), false);
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
+	assert.equal(view.queryByRole("table", { name: "Child work items" }) !== null, true);
 });
 
 test("collapsing sections preserves attachment stacks", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(view.getByRole("button", { name: "Documents, 4 attachments" }));
 	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
-	await view.click(view.getByRole("button", { name: "Expand Attachments" }));
+	await view.click(view.getByRole("button", { name: "8 attachments" }));
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
 });
@@ -495,9 +520,9 @@ test("collapsing child work commits the live summary edit", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(summaryButtons("VITA-4")[0]);
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Keep this collapsed draft");
-	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
 	assert.equal(view.queryByRole("textbox", { name: "Edit summary for VITA-4" }) === null, true);
-	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
+	await view.click(view.getByRole("button", { name: "15 child work items" }));
 	// Leaving the row commits the live edit (reference InlineEditableTextCell), so collapsing keeps the text.
 	assert.equal(summaryButtons("VITA-4")[0].textContent, "Keep this collapsed draft");
 	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-4" }) === null, true);

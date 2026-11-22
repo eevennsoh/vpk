@@ -26,6 +26,22 @@ const importFindings = (source, filePath) => ruleFindings(source, filePath, ["no
 const syntaxFindings = (source, filePath = "components/projects/demo/lint-contract-fixture.tsx") =>
 	ruleFindings(source, filePath, ["no-restricted-syntax"]);
 
+test("search inputs use the shared subtlest magnifier paths", async () => {
+	const findings = await syntaxFindings([
+		"const a = <InputGroupAddon><SearchIcon /></InputGroupAddon>;",
+		"const b = <DropdownMenuSearchField icon={<SearchIcon />} />;",
+		"const c = <RichTextCommandMenuSearchField icon={<SearchIcon />} />;",
+		"const d = <InputGroupAddon><Icon render={<SearchIcon />} /></InputGroupAddon>;",
+		"const e = <InputGroupSearchAddon><SearchIcon /></InputGroupSearchAddon>;",
+		"const f = <DropdownMenuSearchField icon={<RovoColorIcon />} />;",
+		"const g = <InputGroupAddon><DropdownMenuItem><SearchIcon /></DropdownMenuItem></InputGroupAddon>;",
+		"const h = <InputGroupAddon><span><SearchIcon /></span></InputGroupAddon>;",
+	].join("\n"));
+	assert.deepEqual(findings.map(({ line }) => line), [1, 2, 3, 4, 8]);
+	assert.match(findings[0].message, /InputGroupSearchAddon/u);
+	assert.match(findings[1].message, /Omit the search icon prop/u);
+});
+
 test("Rovo and Studio route internals cannot import each other", async () => {
 	const [rovo] = await importFindings(
 		'import { X } from "@/components/projects/studio/x";\nexport const value = X;\n',
@@ -197,6 +213,46 @@ export const tileToken = <span className="rounded-tile text-2xl" />;
 	assert.deepEqual(await ruleFindings('export const c = "bg-black";\n', "components/demo/x.test.ts", tokenRules), []);
 });
 
+test("underline color classes other than decoration-current are lint errors", async () => {
+	const rule = ["vpk-tokens/no-mismatched-underline-color"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const blue = <a className="text-text hover:underline decoration-link" />;
+export const subtle = <a className={cn("no-underline", "hover:decoration-text-subtlest")} />;
+export const arbitrary = <a className={\`underline \${"decoration-[#0c66e4]"}\`} />;
+export const current = <a className="underline decoration-current decoration-dotted decoration-2" />;
+export const shape = <a className="underline decoration-wavy decoration-from-font decoration-clone decoration-[length:3px]" />;
+export const name = "rich-text-decoration-mark";
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", rule);
+	assert.deepEqual(
+		findings.map(({ line, ruleId, severity }) => [line, ruleId, severity]),
+		[
+			[3, "vpk-tokens/no-mismatched-underline-color", 2],
+			[4, "vpk-tokens/no-mismatched-underline-color", 2],
+			[5, "vpk-tokens/no-mismatched-underline-color", 2],
+		],
+	);
+	assert.match(findings[0].message, /decoration-current/u);
+	assert.deepEqual(await ruleFindings('export const c = "decoration-link";\n', "components/demo/x.test.ts", rule), []);
+});
+
+test("off-grid 10px and 14px spacing classes are lint errors", async () => {
+	const rule = ["vpk-tokens/no-off-grid-spacing"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const row = <div className="flex gap-2.5 px-3 py-2.5" />;
+export const responsive = <div className={cn("p-2", "sm:px-3.5")} />;
+export const arbitrary = <div className={\`flex \${"mt-[10px]"}\`} />;
+export const negative = <div className="-mx-2.5" />;
+export const ok = <div className="gap-0.5 p-1.5 px-3 py-3 gap-2 m-6 size-2.5 w-3.5 h-2.5 top-2.5" />;
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", rule);
+	assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), [[3, 2], [4, 2], [5, 2], [6, 2]]);
+	assert.match(findings[0].message, /4px or 6px/u);
+	assert.deepEqual(await ruleFindings('export const c = "py-2.5";\n', "components/demo/x.test.ts", rule), []);
+});
+
 test("shadow-overlay is rejected as a class because no such utility exists", async () => {
 	const rule = ["vpk-tokens/no-undefined-overlay-shadow"];
 	const source = `
@@ -255,16 +311,19 @@ test("overlay surfaces reject an added outer border or ring but allow removals a
 	const findings = await ruleFindings(`
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { PopoverContent } from "@/components/ui/popover";
+import { SheetContent } from "@/components/ui/sheet";
 export const Overlays = () => (
 	<>
 		<PopoverContent className="w-80 border border-border" />
 		<HoverCardContent className="ring-1 ring-border" />
 		<HoverCardContent className="border-0 p-0 [&_[data-slot=surface]]:border-0" />
 		<PopoverContent className="w-80"><div className="border-b border-border" /></PopoverContent>
+		<SheetContent className="border-l border-border" />
+		<SheetContent className="w-80 shadow-2xl"><div className="border-b border-border" /></SheetContent>
 	</>
 );
 `, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle"]);
-	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 7]);
+	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [7, 8, 11]);
 	assert.ok(findings.every(({ severity }) => severity === 2), "repo-wide overlay contract is an error");
 	assert.match(findings[0].message, /overlay elevation/u);
 });
@@ -622,4 +681,89 @@ test("feature code cannot render a second main landmark; only MainLandmark owns 
 		assert.match(findings[0].message, /only main landmark/u);
 	}
 	assert.deepEqual(await ruleFindings(source, "components/utils/main-landmark.tsx", ruleIds), []);
+});
+
+test("rendered tests assert on strings and booleans, never on DOM nodes", async () => {
+	const ruleIds = ["vpk-tests/no-dom-node-assert"];
+	const mustCatch = [
+		'assert.equal(view.queryByText("Saved"), null);',
+		'assert.notEqual(view.getByRole("button", { name: "Save" }), null);',
+		'assert.strictEqual(view.queryByRole("dialog"), null);',
+		'assert.notStrictEqual(document.querySelector("[data-slot=toast]"), null);',
+		'assert.deepEqual(view.getAllByRole("tab"), []);',
+		'assert.deepStrictEqual(view.container.querySelectorAll("li"), []);',
+		'assert.equal(view.getByRole("row").closest("table"), null);',
+		'assert.equal(document.getElementById("save"), null);',
+		"assert.equal(document.activeElement, saveButton);",
+		"assert.equal(saveButton, view.getByRole(\"button\").parentElement);",
+		'assert.equal(await view.findByText("Saved"), null);',
+		'assert.equal(view.getAllByRole("tab")[0], null);',
+		'assert.equal(view.getAllByRole("tab").find((tab) => tab.textContent === "A"), undefined);',
+		"assert.equal(saveButton, null);",
+		"assert.equal(firstTab, null);",
+		'assert.strict.equal(view.queryByText("Saved"), null);',
+		'equal(view.queryByText("Saved"), null);',
+		'strictEqual(view.queryByText("Saved"), null);',
+		"assert.equal(document.body.firstElementChild, null);",
+		"assert.notEqual(content(), null);",
+	];
+	const mustNotReport = [
+		'assert.equal(view.queryByText("Saved") === null, true);',
+		'assert.ok(view.queryByRole("dialog") !== null);',
+		'assert.equal(Boolean(view.queryByText("Saved")), false);',
+		'assert.equal(view.getByRole("button").textContent, "Save");',
+		'assert.equal(view.getByRole("button").getAttribute("aria-expanded"), "true");',
+		'assert.equal(view.getAllByRole("tab").length, 2);',
+		'assert.equal(view.container.querySelectorAll("li").length, 3);',
+		'assert.deepEqual(view.getAllByRole("tab").map((tab) => tab.textContent), ["A", "B"]);',
+		"assert.equal(document.activeElement === saveButton, true);",
+		"assert.equal(view.isFocused(saveButton), true);",
+		'assert.equal(saveButton?.textContent, "Save");',
+		"assert.equal(laterButton, null);",
+		'assert.deepEqual(registry.getById("save"), { id: "save" });',
+		'assert.equal(response.body, "ok");',
+		"assert.equal(element.props.children, \"Save\");",
+		'assert.ok(view.getByRole("button"));',
+		'assert.match(view.getByRole("button").textContent, /Save/u);',
+		"assert.equal(entry.node, h.issues[0].parentElement);",
+		"[{ body: null }].forEach((document) => assert.equal(document.body, null));",
+		"assert.equal(tree.parentNode, null);",
+		'assert.equal(...[view.queryByText("Saved"), null]);',
+		'assert.equal(contentText(), "Saved");',
+	];
+	const prelude = [
+		'const assert = require("node:assert/strict");',
+		'const { equal, strictEqual } = require("node:assert");',
+		"async function check(view, registry, response, element, h, entry) {",
+		'\tconst saveButton = view.getByRole("button", { name: "Save" });',
+		'\tconst [firstTab] = view.getAllByRole("tab");',
+		"\tlet laterButton = null;",
+		'\tlaterButton = view.getByRole("button");',
+		"\tconst tree = { parentNode: null };",
+		'\tconst content = () => view.container.querySelector("[data-slot=content]");',
+		'\tconst contentText = () => view.container.querySelector("[data-slot=content]").textContent;',
+	];
+	const source = [...prelude, ...[...mustCatch, ...mustNotReport].map((line) => `\t${line}`), "}", "module.exports = { check };", ""].join("\n");
+	const catchLines = mustCatch.map((_, index) => prelude.length + index + 1);
+	for (const filePath of [
+		"components/blocks/demo/lint-contract-fixture.behavior.test.js",
+		"app/demo/lint-contract-fixture.test.mjs",
+		"hooks/lint-contract-fixture.test.ts",
+		"lib/demo/lint-contract-fixture.test.js",
+		"scripts/lib/render-component.test.js",
+	]) {
+		const findings = await ruleFindings(source, filePath, ruleIds);
+		const reported = findings.map(({ line }) => source.split("\n")[line - 1].trim());
+		assert.deepEqual(reported, mustCatch, filePath);
+		assert.deepEqual(findings.map(({ line, severity }) => [line, severity]), catchLines.map((line) => [line, 2]), filePath);
+		assert.match(findings[0].message, /assert\.equal on a DOM node: when it fails, node:assert prints the whole document/u);
+		assert.match(findings[0].message, /assert\.equal\(view\.queryByText\("x"\) === null, true\)/u);
+	}
+	const esmFindings = await ruleFindings(
+		'import { deepEqual as same } from "node:assert/strict";\nexport function check(view) {\n\tsame(view.getAllByRole("tab"), []);\n}\n',
+		"components/blocks/demo/lint-contract-fixture.behavior.test.js",
+		ruleIds,
+	);
+	assert.deepEqual(esmFindings.map(({ line }) => line), [3], "a renamed ESM import of an assert method is still caught");
+	assert.deepEqual(await ruleFindings(source, "backend/lint-contract-fixture.test.js", ruleIds), [], "suites that cannot render stay out of scope");
 });

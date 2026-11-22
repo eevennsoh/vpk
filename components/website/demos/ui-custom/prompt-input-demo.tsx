@@ -62,10 +62,6 @@ function DemoVoiceStatus({ message }: Readonly<{ message: string | null }>) {
 	) : null;
 }
 
-export default function PromptInputDemo() {
-	return <PromptInputDemoChatComposer />;
-}
-
 interface ChatComposerDemoProps {
 	liveVoiceEnabled?: boolean;
 }
@@ -120,7 +116,7 @@ function ChatComposerDemo({
 						<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
 							<PromptInputTools>
 								<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-									<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+									<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 										<AddIcon label="" />
 									</PromptInputActionMenuTrigger>
 									<PromptInputActionMenuContent>
@@ -223,6 +219,8 @@ function ChatComposerDemo({
 export function PromptInputDemoChatComposer() {
 	return <ChatComposerDemo />;
 }
+
+export default PromptInputDemoChatComposer;
 
 export function PromptInputDemoChatComposerLiveVoice() {
 	return <ChatComposerDemo liveVoiceEnabled />;

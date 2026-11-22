@@ -14,7 +14,6 @@ function toIsoDate(value = Date.now()) {
 
 function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRACKED_RUN_THREADS } = {}) {
 	const runs = new Map();
-	const queuedThreadIds = [];
 	// threadId → id of the newest run created for it. It outlives the run, so a run that
 	// was cancelled and replaced is still known to be superseded after its successor ends.
 	const latestRunIdByThread = new Map();
@@ -50,7 +49,12 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 		return run && (!runId || run.id === runId) ? run : null;
 	}
 
-	function createRun({ backend = "ai-gateway", threadId, requestBody, requestedPortIndex = null }) {
+	/**
+	 * @param {{ backend?: string, threadId: string, requestBody?: object, requestedPortIndex?: number | null,
+	 *   mediaScope?: object | null }} input - `mediaScope`: the caller a video the run generates
+	 *   belongs to (lib/generated-media-owners.js), kept for a run that starts later.
+	 */
+	function createRun({ backend = "ai-gateway", threadId, requestBody, requestedPortIndex = null, mediaScope = null }) {
 		const existingRun = runs.get(threadId);
 		if (existingRun) {
 			return existingRun;
@@ -77,6 +81,7 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 			subscribers: new Map(),
 			abortController: new AbortController(),
 			error: null,
+			mediaScope,
 		};
 
 		runs.set(threadId, run);
@@ -105,32 +110,12 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 		}));
 	}
 
-	function listQueuedThreadIds() {
-		return [...queuedThreadIds];
-	}
-
-	function enqueueRun(threadId) {
-		if (!queuedThreadIds.includes(threadId)) {
-			queuedThreadIds.push(threadId);
-		}
-	}
-
-	function removeQueuedRun(threadId) {
-		const index = queuedThreadIds.indexOf(threadId);
-		if (index !== -1) {
-			queuedThreadIds.splice(index, 1);
-			return true;
-		}
-		return false;
-	}
-
 	function markRunStarted(threadId, { backend, portIndex = null, rovoPort = null, status } = {}) {
 		const run = runs.get(threadId);
 		if (!run) {
 			return null;
 		}
 
-		removeQueuedRun(threadId);
 		const now = toIsoDate();
 		run.assignedPortIndex =
 			typeof portIndex === "number" && Number.isInteger(portIndex) && portIndex >= 0
@@ -290,8 +275,7 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 
 	/**
 	 * The one way a run ends: makes it terminal (`completed`, `failed` or `cancelled`), aborts
-	 * it when cancelled, drops its queue entry, ends its subscribers and removes it from the
-	 * registry. With `runId`, only that run is settled, so a late settle of a run that was
+	 * it when cancelled, ends its subscribers and removes it from the registry. With `runId`, only that run is settled, so a late settle of a run that was
 	 * cancelled and replaced cannot end the thread's new run. Returns the settled run, or
 	 * null when there was nothing to settle.
 	 * @param {string} threadId
@@ -308,7 +292,6 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 			run.error = error instanceof Error ? error.message : String(error);
 		}
 		run.updatedAt = toIsoDate();
-		removeQueuedRun(threadId);
 		if (outcome === "cancelled") {
 			try {
 				run.abortController.abort();
@@ -324,16 +307,13 @@ function createRovoAppRunManager({ logger = console, maxTrackedThreads = MAX_TRA
 		attachSubscriber,
 		createRun,
 		detachSubscriber,
-		enqueueRun,
 		getRun,
 		hasRun,
 		hasSubscribers,
 		isCurrentRun,
 		isLatestRun,
-		listQueuedThreadIds,
 		listRuns,
 		markRunStarted,
-		removeQueuedRun,
 		setRunBackend,
 		setRunStatus,
 		settleRun,

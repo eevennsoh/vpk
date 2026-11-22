@@ -268,7 +268,7 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 }
 
 function JiraIssueDefault({
-	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = "default",
+	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = appearance === "project-butter" ? "project-butter" : "default",
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -452,7 +452,12 @@ function JiraIssueDefault({
 	const replaceDetachedTransfer = Boolean(attachChinCopy && sessionTransferAfter);
 	// Unlink keeps `working` with an empty chin so the grey backdrop stays
 	// around the issue. The shell keys off mode, not a mounted row.
-	const selectionBackdropState = resolveJiraIssueSelectionBackdrop(selectionBackdrop);
+	const selectionBackdropState = resolveJiraIssueSelectionBackdrop(
+		selectionBackdrop,
+		appearance === "project-butter" && (selectionBackdrop === undefined || selectionBackdrop === "rest")
+			? token("radius.xlarge")
+			: undefined,
+	);
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| isInvocationPreview
 		|| resolvedAgentActivityMode === "awaiting-input"

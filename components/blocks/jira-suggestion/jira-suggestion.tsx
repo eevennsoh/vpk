@@ -1,9 +1,14 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
+import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "motion/react";
 
+import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
+import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { motionRecipe } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 import { MockDetailsRail } from "./components/mock-details-rail";
 import { useSuggestionFeed } from "./hooks/use-suggestion-feed";
@@ -17,6 +22,136 @@ import { useOverlayPlacement } from "./components/use-overlay-placement";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
+
+const FLOATING_PANEL_MAX_HEIGHT = 500;
+
+type FloatingPanelStage =
+	| { phase: "closed" | "reopening" | "measuring" | "list" | "caught-up" }
+	| { phase: "expanding"; height: number };
+
+export function JiraFloatingSuggestions({ feed, notification, portalContainer, ref, workItemKey }: Readonly<{ feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
+	const { closeChat } = useRovoChatControls();
+	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
+	const [showNudge, setShowNudge] = useState(true);
+	const reduceMotion = useReducedMotion();
+	const panelId = useId();
+	const panelRef = useRef<HTMLDivElement>(null);
+	const deckRef = useRef<HTMLDivElement>(null);
+	const deck = useDeck(feed, () => {});
+	const count = feed.review.pending.length;
+	const label = `${count} ${count === 1 ? "suggestion" : "suggestions"}`;
+	const openingStage: FloatingPanelStage = reduceMotion ? { phase: "list" } : feed.runs.length === 1
+		? { phase: "expanding", height: FLOATING_PANEL_MAX_HEIGHT }
+		: { phase: "measuring" };
+	const { phase } = panelStage;
+	const isMeasuring = phase === "measuring" && !reduceMotion;
+	const isExpanding = phase === "expanding" && !reduceMotion;
+	const listStage = isMeasuring ? "measuring" : isExpanding ? "intro" : "list";
+	useEffect(() => {
+		if (!isMeasuring && !isExpanding) return;
+		let previous: DOMRect | undefined;
+		const revealWhenSettled = () => {
+			const panel = panelRef.current;
+			if (!panel?.offsetHeight) {
+				previous = undefined;
+				return;
+			}
+
+			// Measure the compact results at their natural list height before building the stack.
+			if (isMeasuring) {
+				const height = panel.offsetHeight;
+				cancelFrame(revealWhenSettled);
+				setPanelStage((stage) => stage.phase === "measuring" ? { phase: "expanding", height } : stage);
+				return;
+			}
+
+			const bounds = panel.getBoundingClientRect();
+			const settled = previous?.x === bounds.x && previous.y === bounds.y
+				&& previous.width === bounds.width && previous.height === bounds.height
+				&& Math.abs(bounds.width - panel.offsetWidth) <= 0.5
+				&& Math.abs(bounds.height - panel.offsetHeight) <= 0.5;
+			previous = bounds;
+			if (!settled) return;
+			cancelFrame(revealWhenSettled);
+			setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage);
+		};
+		frame.postRender(revealWhenSettled, true);
+		return () => cancelFrame(revealWhenSettled);
+	}, [isExpanding, isMeasuring]);
+
+	if (phase === "reopening") setPanelStage(count > 0 ? openingStage : { phase: "caught-up" });
+	else if (count === 0 && phase !== "closed" && phase !== "caught-up") setPanelStage({ phase: "closed" });
+	else if (count > 0 && phase === "caught-up") setPanelStage(openingStage);
+	const show = () => {
+		feed.onOpenReview?.(panelId);
+		setShowNudge(false);
+		setPanelStage(openingStage);
+	};
+	const close = () => {
+		setPanelStage({ phase: "closed" });
+		feed.acknowledgeNew();
+	};
+	useImperativeHandle(ref, () => ({
+		reopen: () => {
+			feed.onOpenReview?.(panelId);
+			deck.restoreDismissed();
+			closeChat();
+			setShowNudge(false);
+			setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
+			return true;
+		},
+	}));
+
+	if (typeof document === "undefined") return null;
+	return createPortal(
+		<>
+			<span className="sr-only" role="status">{count === 0 ? deck.announcement : showNudge ? label : ""}</span>
+			<FloatingRovoButton
+				animateLogoOnMount
+				ariaLabel={count > 0 ? "Review AI suggestions" : "Open Rovo chat"}
+				onButtonClick={count > 0 ? show : undefined}
+				panel={count > 0 || phase !== "closed" ? {
+					id: panelId,
+					open: phase !== "closed",
+					content: (
+						<StackPanel
+							className={cn(
+								"max-w-[calc(100vw-3rem)] rounded-none bg-transparent shadow-none",
+								listStage !== "list" ? "[&_[data-scrollport]]:invisible" : null,
+							)}
+							deck={deck}
+							deckRef={deckRef}
+							feed={feed}
+							focusOnMount
+							id={panelId}
+							introHeight={isExpanding && panelStage.phase === "expanding" ? panelStage.height : undefined}
+							listStage={listStage}
+							maxHeight={FLOATING_PANEL_MAX_HEIGHT}
+							onClose={close}
+							overlay={null}
+							panelRef={panelRef}
+							title={`Suggestions for ${workItemKey}`}
+						/>
+					),
+				} : undefined}
+				positioning={portalContainer ? "container" : "viewport"}
+				product="jira"
+				suggestion={notification ?? (showNudge && count > 0 ? {
+					id: panelId,
+					label,
+					icon: (
+						<span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center text-icon-inverse">
+							<LightbulbIcon color="currentColor" label="" size="small" />
+						</span>
+					),
+					onSelect: show,
+					onDismiss: () => setShowNudge(false),
+				} : null)}
+			/>
+		</>,
+		portalContainer ?? document.body,
+	);
+}
 
 /** The same review stack embedded beside a real work item's details. */
 export function JiraSuggestionControl({ feed, sources, showIntroLoading = false }: Readonly<{ feed: SuggestionFeed; sources?: readonly TwgToolSource[]; showIntroLoading?: boolean }>) {
@@ -65,8 +200,9 @@ export function JiraSuggestion() {
 	const deckRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const { overlayRef, overlay, anchorRef, style } = useOverlayPlacement(open);
-	const { filled, flash } = useJustFilled();
-	const deck = useDeck(feed, flash);
+	const { filled, waiting, cursor, flash, finish, cancel } = useJustFilled();
+	const finishDescription = useCallback(() => finish("description"), [finish]);
+	const deck = useDeck(feed, flash, cancel);
 	const slide = useReducedMotion() ? 0 : 8;
 
 	const close = () => {
@@ -85,7 +221,7 @@ export function JiraSuggestion() {
 
 	return (
 		<WorkItemPreviewShell
-			main={<StackMain highlighted={filled.has("description")} review={feed.review} />}
+			main={<StackMain highlighted={filled.has("description")} onRevealComplete={finishDescription} review={feed.review} />}
 			overlay={(
 				<div className="pointer-events-none absolute inset-0 z-30" ref={overlayRef}>
 					<AnimatePresence initial={false}>
@@ -109,7 +245,7 @@ export function JiraSuggestion() {
 					<div ref={anchorRef}>
 						<StackTrigger feed={feed} onToggle={toggle} open={open} panelId={panelId} triggerRef={triggerRef} />
 					</div>
-					<MockDetailsRail highlighted={filled} review={feed.review} />
+					<MockDetailsRail cursor={cursor} highlighted={filled} review={feed.review} waiting={waiting} />
 				</>
 			)}
 		/>

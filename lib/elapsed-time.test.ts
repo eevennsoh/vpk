@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { formatElapsedTime, formatRelativeTime, toCompactRelativeTimeLabel } from "./elapsed-time.ts";
+import { describeRelativeTimeLabel, formatElapsedTime, formatRelativeTime, toCompactRelativeTimeLabel } from "./elapsed-time.ts";
 
 test("formatElapsedTime omits zero seconds from exact-minute durations", () => {
 	assert.equal(formatElapsedTime(300), "5m");
@@ -24,13 +24,15 @@ test("formatElapsedTime hides empty and invalid durations", () => {
 
 test("formatRelativeTime uses contextual minute, hour, and day labels", () => {
 	assert.equal(formatRelativeTime(5), "Just now");
+	assert.equal(formatRelativeTime(10, { showSeconds: true }), "10s ago");
+	assert.equal(formatRelativeTime(60, { showSeconds: true }), "1m ago");
 	assert.equal(formatRelativeTime(5 * 60), "5m ago");
 	assert.equal(formatRelativeTime(60 * 60), "1h ago");
 	assert.equal(formatRelativeTime(24 * 60 * 60), "Yesterday");
 	assert.equal(formatRelativeTime(3 * 24 * 60 * 60), "3d ago");
 });
 
-test("toCompactRelativeTimeLabel drops ago and shortens compact hours to h", () => {
+test("toCompactRelativeTimeLabel shortens numeric relative timestamps", () => {
 	assert.equal(toCompactRelativeTimeLabel("18m ago"), "18m");
 	assert.equal(toCompactRelativeTimeLabel("7m ago"), "7m");
 	assert.equal(toCompactRelativeTimeLabel("5h ago"), "5h");
@@ -38,7 +40,33 @@ test("toCompactRelativeTimeLabel drops ago and shortens compact hours to h", () 
 	assert.equal(toCompactRelativeTimeLabel("1h"), "1h");
 	assert.equal(toCompactRelativeTimeLabel("3d ago"), "3d");
 	assert.equal(toCompactRelativeTimeLabel("5mo ago"), "5mo");
+	assert.equal(toCompactRelativeTimeLabel("18 mins ago"), "18m");
+	assert.equal(toCompactRelativeTimeLabel("1 hour ago"), "1h");
+	assert.equal(toCompactRelativeTimeLabel("19 days ago"), "19d");
+	assert.equal(toCompactRelativeTimeLabel("2 weeks ago"), "2w");
+	assert.equal(toCompactRelativeTimeLabel("3 months ago"), "3mo");
+	assert.equal(toCompactRelativeTimeLabel("1 year ago"), "1y");
+	assert.equal(toCompactRelativeTimeLabel("19 May"), "19 May");
 	assert.equal(toCompactRelativeTimeLabel("Last week"), "Last week");
 	assert.equal(toCompactRelativeTimeLabel("Yesterday"), "Yesterday");
 	assert.equal(toCompactRelativeTimeLabel("Just now"), "Just now");
+});
+
+test("describeRelativeTimeLabel spells out relative durations and recognizes named periods", () => {
+	assert.equal(describeRelativeTimeLabel("2m"), "2 minutes ago");
+	assert.equal(describeRelativeTimeLabel("18 mins ago"), "18 minutes ago");
+	assert.equal(describeRelativeTimeLabel("1h"), "1 hour ago");
+	assert.equal(describeRelativeTimeLabel("29d"), "29 days ago");
+	assert.equal(describeRelativeTimeLabel("1mo"), "1 month ago");
+	assert.equal(describeRelativeTimeLabel("last week"), "1 week ago");
+	assert.equal(describeRelativeTimeLabel("Yesterday"), "1 day ago");
+	assert.equal(describeRelativeTimeLabel("Today"), "Less than a day ago");
+	assert.equal(describeRelativeTimeLabel("Last month"), "1 month ago");
+	assert.equal(describeRelativeTimeLabel("Last year"), "1 year ago");
+	assert.equal(describeRelativeTimeLabel("Last week", Date.UTC(2026, 10, 10)), undefined);
+	assert.equal(describeRelativeTimeLabel("Yesterday", Date.UTC(2026, 10, 20)), "1 day ago");
+	assert.equal(describeRelativeTimeLabel("Just now"), "Less than a minute ago");
+	assert.equal(describeRelativeTimeLabel("Just now", Date.UTC(2026, 10, 20)), undefined);
+	assert.equal(describeRelativeTimeLabel("19 May"), undefined);
+	assert.equal(describeRelativeTimeLabel(""), undefined);
 });

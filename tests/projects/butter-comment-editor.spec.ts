@@ -20,6 +20,22 @@ async function mentionGalleryClaude(page: Page) {
 	return editor;
 }
 
+test("session replies render without uncached promise warnings", async ({ page }) => {
+	const errors: string[] = [];
+	page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	const reply = editor;
+	await expect(reply).toBeFocused();
+	await reply.pressSequentially(" Please review this reply");
+	await reply.press("Enter");
+	await expect(page.getByText("Please review this reply", { exact: false }).first()).toBeVisible();
+	expect(errors.filter((message) => message.includes("uncached promise"))).toEqual([]);
+});
+
 test("gallery Claude mentions offer the existing completed session", async ({ page }) => {
 	const editor = await openGalleryCommentEditor(page);
 	await mentionGalleryClaude(page);
@@ -30,7 +46,27 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	const sessions = page.getByRole("list", { name: "Choose a session" });
 	await expect(sessions.getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
 	await sessions.getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
-	await expect(page.getByRole("textbox", { name: "Leave a reply..." })).toContainText("Review the remaining action items");
+	await expect(editor).toContainText("Review the remaining action items");
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Rewrite the incident postmortem");
+});
+
+test("continuing a session retains the draft in the bottom composer", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	await editor.pressSequentially(" Review the action items");
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Enter");
+	await expect(editor).toBeFocused();
+	await expect(editor).toContainText("Review the action items");
+	await expect(page.getByTestId("reply-target-chip")).toBeVisible();
+	const bar = page.getByRole("region", { name: "Work item full screen view" }).locator("[data-project-butter-comment-bar]");
+	await expect(bar).toHaveAttribute("data-visible", "true");
+	await expect(bar).not.toHaveAttribute("inert", "");
+	await page.getByRole("button", { name: "Remove reply target" }).click();
+	await expect(editor).toBeFocused();
+	await expect(editor).toContainText("Review the action items");
 });
 
 test("session previews match comment hover and mask the timeline behind reply controls", async ({ page }) => {
@@ -145,7 +181,7 @@ test("gallery Claude session choices support multiple sessions and Back", async 
 	await expect(editor).toContainText("Claude");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await sessions.getByRole("button", { name: /A second Claude review/ }).click();
-	await expect(page.getByRole("textbox", { name: "Leave a reply..." })).toBeVisible();
+	await expect(page.getByTestId("reply-target-chip")).toContainText("A second Claude review");
 });
 
 test("keyboard navigation scrolls the selected session into view", async ({ page }) => {

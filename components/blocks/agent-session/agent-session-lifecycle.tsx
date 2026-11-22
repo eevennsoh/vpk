@@ -10,11 +10,12 @@ import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 
 import type { AgentSessionItem } from "./agent-session-types";
-import { motionEase } from "@/lib/motion";
+import { AGENT_SESSION_STATUS_LABEL as LIFECYCLE_LABELS } from "./agent-session-long-metadata";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 /**
  * Enter is the attention-getting beat, exit gets out of the way. Resolved token
@@ -25,20 +26,17 @@ import { motionEase } from "@/lib/motion";
  */
 const INDICATOR_ENTER = { duration: 0.15, ease: motionEase.outPractical } as const;
 const INDICATOR_EXIT = { duration: 0.1, ease: motionEase.in } as const;
-
-const LIFECYCLE_LABELS = {
-	running: "Working",
-	"needs-input": "Needs input",
-	attention: "Needs attention",
-	complete: "Finished",
-} as const satisfies Record<AgentSessionItem["state"], string>;
+const LABEL_ENTER = { duration: motionDuration.slowest, ease: motionEase.outPractical } as const;
+const LABEL_EXIT = { duration: motionDuration.slower, ease: motionEase.in } as const;
 
 function IndicatorGlyph({
 	compact = false,
+	uncontained = false,
 	state,
-}: Readonly<{ compact?: boolean; state: AgentSessionItem["state"] }>) {
+}: Readonly<{ compact?: boolean; uncontained?: boolean; state: AgentSessionItem["state"] }>) {
 	switch (state) {
 		case "running":
+			if (uncontained) return <Spinner className="group-aria-pressed/button:text-icon-selected!" label="" pulse size="default" variant="bloom-avatar" />;
 			// Pulse and rotation extend the orb beyond its still-ring bounds.
 			// A 16.75px SVG box caps the short row's animated orbit at 12px.
 			return (
@@ -51,6 +49,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "needs-input":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-information"><StrokeWeightLargeIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -64,6 +63,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "attention":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-warning"><StatusWarningIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -77,6 +77,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "complete":
+			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-success"><StatusSuccessIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
 					aria-hidden="true"
@@ -107,6 +108,7 @@ export function AgentSessionShortLifecycleIcon({
 	onTransitionComplete,
 	showWorkingSpinner = false,
 	showAllStates = false,
+	uncontained = false,
 	renderGlyph,
 	transitionEffect = "scale",
 }: Readonly<{
@@ -115,6 +117,8 @@ export function AgentSessionShortLifecycleIcon({
 	onTransitionComplete?: () => void;
 	showWorkingSpinner?: boolean;
 	showAllStates?: boolean;
+	/** Use a 16px glyph footprint when no action-swap slot is needed. */
+	uncontained?: boolean;
 	/** Preserve a consumer's glyph sizes while sharing the exact lifecycle swap. */
 	renderGlyph?: (state: AgentSessionItem["state"]) => ReactNode;
 	/** Fade preserves a consumer's glyph footprint throughout the state change. */
@@ -130,7 +134,7 @@ export function AgentSessionShortLifecycleIcon({
 	return (
 		<span
 			aria-label={LIFECYCLE_LABELS[accessibleState]}
-			className="relative grid size-6 shrink-0 place-items-center"
+			className={cn("relative grid shrink-0 place-items-center", uncontained ? "size-4" : "size-6")}
 			data-agent-session-lifecycle-current={accessibleState}
 			data-agent-session-lifecycle-shown={state}
 			role="img"
@@ -147,38 +151,18 @@ export function AgentSessionShortLifecycleIcon({
 					style={playMotion ? { willChange: scaleGlyph ? "opacity, transform" : "opacity" } : undefined}
 					transition={playMotion ? INDICATOR_ENTER : { duration: 0 }}
 				>
-					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} />}
+					{renderGlyph ? renderGlyph(state) : <IndicatorGlyph compact state={state} uncontained={uncontained} />}
 				</motion.span>
 			</AnimatePresence>
 		</span>
 	);
 }
 
-function LifecycleState({
-	showLabel,
-	state,
-}: Readonly<{
-	showLabel: boolean;
-	state: AgentSessionItem["state"];
-}>) {
+export function AgentSessionLifecycleLabel({ state }: Readonly<{ state: AgentSessionItem["state"] }>) {
 	const label = LIFECYCLE_LABELS[state];
-
-	return (
-		<div className="flex shrink-0 items-center gap-1 text-xs text-text-subtle">
-			{showLabel
-				? state === "running"
-					? (
-						<Shimmer as="span" className="text-xs text-text-subtle" duration={1.4} spread={2}>
-							{label}
-						</Shimmer>
-					)
-					: <span>{label}</span>
-				: null}
-			<div className="grid size-6 shrink-0 place-items-center">
-				<IndicatorGlyph compact state={state} />
-			</div>
-		</div>
-	);
+	return state === "running"
+		? <Shimmer as="span" className="text-xs text-text-subtle" duration={1.4} spread={2}>{label}</Shimmer>
+		: <span>{label}</span>;
 }
 
 /**
@@ -186,8 +170,7 @@ function LifecycleState({
  *
  * Unlike Agent List's built-in indicator this one covers `complete` too, with a
  * success check — a title-led row has no other place to say the work landed.
- * Each state grows in and out on the swap so a session moving from working to
- * finished reads as a transition rather than a substitution.
+ * The icon scales and the label blurs together as each state leaves and enters.
  *
  * The glyph is a ghost icon button so a click gets the shared selected chrome
  * (blue border, selected background, selected icon) instead of falling through
@@ -210,45 +193,42 @@ export function AgentSessionLifecycle({
 	const [pressed, setPressed] = useState(false);
 	const label = LIFECYCLE_LABELS[accessibleState];
 	const content = (
-		<AnimatePresence initial={false} mode="wait">
-			<motion.div
-				animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
-				className="grid place-items-center"
-				exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }}
-				initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.6 }}
-				key={state}
-				onAnimationComplete={shouldReduceMotion !== true && state === accessibleState ? onTransitionComplete : undefined}
-				style={shouldReduceMotion ? undefined : { willChange: "opacity, transform" }}
-				transition={shouldReduceMotion ? { duration: 0 } : INDICATOR_ENTER}
-			>
-				<LifecycleState showLabel={showLabel} state={state} />
-			</motion.div>
-		</AnimatePresence>
+		<div className="relative flex shrink-0 items-center gap-1 text-xs text-text-subtle [&_svg:not([class*='size-'])]:size-3! [&:has([aria-pressed=true])_[data-agent-session-lifecycle-glyph]_svg]:text-icon-selected!">
+			{shouldReduceMotion ? <div className="flex shrink-0 items-center gap-1" data-agent-session-lifecycle-state={state}>
+				{showLabel ? <span data-agent-session-lifecycle-label={state}><AgentSessionLifecycleLabel state={state} /></span> : null}
+				<div className="pointer-events-none relative z-10 grid size-6 shrink-0 place-items-center" data-agent-session-lifecycle-glyph data-slot="lifecycle-glyph"><IndicatorGlyph compact state={state} /></div>
+			</div> : <AnimatePresence initial={false} mode="wait">
+				<motion.div
+					className="flex shrink-0 items-center gap-1"
+					data-agent-session-lifecycle-state={state}
+					key={state}
+				>
+					{showLabel ? <motion.span animate={{ filter: "blur(0px)", opacity: 1 }} data-agent-session-lifecycle-label={state} exit={{ filter: "blur(4px)", opacity: 0, transition: LABEL_EXIT }} initial={{ filter: "blur(4px)", opacity: 0 }} style={{ willChange: "filter, opacity" }} transition={LABEL_ENTER}><AgentSessionLifecycleLabel state={state} /></motion.span> : null}
+					<div className="pointer-events-none relative z-10 grid size-6 shrink-0 place-items-center" data-slot="lifecycle-glyph">
+						<motion.div animate={{ opacity: 1, scale: 1 }} data-agent-session-lifecycle-glyph exit={{ opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }} initial={{ opacity: 0, scale: 0.6 }} onAnimationComplete={state === accessibleState ? onTransitionComplete : undefined} style={{ willChange: "opacity, transform" }} transition={INDICATOR_ENTER}><IndicatorGlyph compact state={state} /></motion.div>
+					</div>
+				</motion.div>
+			</AnimatePresence>}
+			{readOnly ? null : <Button
+				aria-label={label}
+				aria-pressed={pressed}
+				className="absolute right-0 top-0 size-6 p-0 text-xs shadow-none focus-visible:ring-0"
+				data-slot="lifecycle-glyph"
+				onClick={(event) => {
+					event.stopPropagation();
+					setPressed((current) => !current);
+				}}
+				onPointerDown={(event) => event.stopPropagation()}
+				size="icon-compact"
+				type="button"
+				variant="ghost"
+			/>}
+		</div>
 	);
 
 	if (readOnly) {
 		return <div aria-label={label} className="flex min-h-6 min-w-6 items-center justify-center" role="img">{content}</div>;
 	}
 
-	return (
-		<Button
-			aria-label={label}
-			aria-pressed={pressed}
-			className={cn(
-				"h-6 w-auto min-w-6 gap-1 py-0 pr-0 text-xs shadow-none focus-visible:ring-0 aria-pressed:[&_svg]:text-icon-selected",
-				"[&_svg:not([class*='size-'])]:size-3!",
-				showLabel ? "pl-1" : "pl-0",
-			)}
-			onClick={(event) => {
-				event.stopPropagation();
-				setPressed((current) => !current);
-			}}
-			onPointerDown={(event) => event.stopPropagation()}
-			size="icon-compact"
-			type="button"
-			variant="ghost"
-		>
-			{content}
-		</Button>
-	);
+	return content;
 }

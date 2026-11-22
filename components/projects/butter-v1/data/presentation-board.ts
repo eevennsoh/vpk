@@ -21,11 +21,11 @@ import {
 	BUTTER_PAY_101_PULL_REQUEST_NUMBER,
 	PAY_101_INVENTORY_COMMIT_ARTIFACT,
 	PAY_101_INVENTORY_PR_ARTIFACT,
-	PAY_101_SUBTASK_KEYS,
 } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
 import { BUTTER_TODO_PLACEHOLDERS } from "./work-item-placeholders/todo";
+import { BUTTER_DONE_PLACEHOLDERS } from "./work-item-placeholders/done";
 
 export { BUTTER_PAY_CURRENT_USER };
 export { BUTTER_BOARD_AGENTS, BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
@@ -143,6 +143,7 @@ export function toButterAgentActivityFromSession(
 		...(session.invokedBy ? { invokedBy: session.invokedBy } : {}),
 		...(session.host !== undefined ? { host: session.host } : {}),
 		...(session.role !== undefined ? { role: session.role } : {}),
+		...(session.privateTo ? { privateTo: session.privateTo } : {}),
 		...(session.timeLabel ? { timeLabel: session.timeLabel } : {}),
 	};
 }
@@ -176,6 +177,7 @@ export function toButterDetachedAgentSession(
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }
@@ -328,6 +330,7 @@ function createActivity({
 		timeLabel,
 		...(host !== undefined ? { host } : {}),
 		...(resolvedInvoker ? { invokedBy: resolvedInvoker } : {}),
+		...(role === "viewer" ? { privateTo: resolvedInvoker?.name ?? "its owner" } : {}),
 		...(question ? { question } : {}),
 		...(role !== undefined ? { role } : {}),
 	};
@@ -446,6 +449,15 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					role: "owner",
 					state: "working",
 					timeLabel: "12m",
+				}), createActivity({
+					id: "PAY-105:claude-code",
+					agentName: "Claude",
+					agentBrandName: "claude",
+					host: "cloud",
+					label: "Porting the 3-D Secure challenge flow",
+					role: "owner",
+					state: "working",
+					timeLabel: "8m",
 				})],
 			}),
 			createCard({
@@ -494,9 +506,9 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				title: "Record the three missing decline-code fixtures",
 				agentActivities: [
 					createActivity({
-						id: "PAY-123:codex-coverage",
-						agentName: "Codex",
-						agentBrandName: "openai-codex",
+						id: "PAY-123:claude-code",
+						agentName: "Claude",
+						agentBrandName: "claude",
 						cycleIntervalJitterMs: 1900,
 						cycleIntervalMs: 2700,
 						host: "cloud",
@@ -604,6 +616,17 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				priority: "minor",
 				tags: [{ text: "copy", color: "purple" }],
 				title: "Approve the final issuer-unavailable recovery message",
+				agentActivities: [createActivity({
+					id: "PAY-132:release-agent",
+					agentName: "GitHub Copilot",
+					agentBrandName: "github-copilot",
+					host: "cloud",
+					invokedBy: PAY_STORY_PEOPLE.diego,
+					label: "Reviewing the issuer-unavailable recovery message",
+					role: "viewer",
+					state: "working",
+					timeLabel: "18m",
+				})],
 			}),
 			createCard({
 				assignee: PAY_STORY_PEOPLE.jordan,
@@ -613,6 +636,27 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "checkout-web", color: "blue" }],
 				title: "Port createPaymentIntent onto the v2 client",
+				agentActivities: [createActivity({
+					id: "PAY-104:review-agent",
+					agentName: "Codex",
+					agentBrandName: "openai-codex",
+					host: "cloud",
+					invokedBy: PAY_STORY_PEOPLE.jordan,
+					label: "Reviewing the payment intent port",
+					role: "viewer",
+					state: "working",
+					timeLabel: "14m",
+				}), createActivity({
+					id: "PAY-104:claude-code",
+					agentName: "Claude",
+					agentBrandName: "claude",
+					host: "local",
+					invokedBy: PAY_STORY_PEOPLE.maya,
+					label: "Testing the v2 payment intent client",
+					role: "viewer",
+					state: "working",
+					timeLabel: "6m",
+				})],
 			}),
 			createCard({
 				assignee: PAY_STORY_PEOPLE.maya,
@@ -630,19 +674,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "release flag", color: "green" }],
 				title: "Add per-account targeting and an armed kill switch",
-				agentActivities: [createActivity({
-					id: "PAY-121:release-agent",
-					agentName: "GitHub Copilot",
-					agentBrandName: "github-copilot",
-					cycleIntervalJitterMs: 2400,
-					cycleIntervalMs: 3600,
-					host: "cloud",
-					label: "Validating one-percent targeting",
-					labels: ["Validating one-percent targeting", "Checking account kill-switch rules", "Reviewing release telemetry gates"],
-					role: "owner",
-					state: "working",
-					timeLabel: "18m",
-				})],
 			}),
 			createCard({
 				assignee: PAY_STORY_PEOPLE.maya,
@@ -652,30 +683,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "ledger-sync", color: "teal" }],
 				title: "Stamp SDK version at settlement for finance exports",
-				agentActivities: [
-					createActivity({
-						id: "PAY-128:review-agent",
-						agentName: "Codex",
-						agentBrandName: "openai-codex",
-						host: "cloud",
-						label: "Reviewing settlement exports",
-						labels: ["Reviewing settlement exports", "Checking SDK version fields", "Comparing finance records"],
-						role: "owner",
-						state: "working",
-						timeLabel: "14m",
-					}),
-					createActivity({
-						id: "PAY-128:claude-code",
-						agentName: "Claude",
-						agentBrandName: "claude",
-						host: "local",
-						label: "Verifying settlement version stamps",
-						labels: ["Verifying settlement version stamps", "Checking export mappings", "Running settlement tests"],
-						role: "owner",
-						state: "working",
-						timeLabel: "6m",
-					}),
-				],
 			}),
 		],
 	},
@@ -758,6 +765,11 @@ const PAY_WORK_ITEM_SCHEDULE: Readonly<Record<string, { storyPoints: number; due
 	"PAY-101": { storyPoints: 5, dueDate: "2026-11-06" },
 	"PAY-102": { storyPoints: 3, dueDate: "2026-11-09" },
 	"PAY-113": { storyPoints: 8, dueDate: "2026-11-10" },
+	"PAY-291": { storyPoints: 2, dueDate: "2026-08-13" },
+	"PAY-292": { storyPoints: 2, dueDate: "2026-08-13" },
+	"PAY-293": { storyPoints: 1, dueDate: "2026-08-13" },
+	"PAY-294": { storyPoints: 1, dueDate: "2026-08-13" },
+	"PAY-295": { storyPoints: 1, dueDate: "2026-08-13" },
 	"PAY-126": { storyPoints: 3, dueDate: "2026-11-11" },
 };
 
@@ -805,8 +817,9 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 		Low: "minor",
 		Lowest: "trivial",
 	} as const satisfies Readonly<Record<string, JiraKanbanCardData["priority"]>>;
-	const subtasks = (["PAY-118", "PAY-999", "PAY-127"] as const).flatMap((parentIssueKey) =>
-		BUTTER_TODO_PLACEHOLDERS[parentIssueKey].children.map((child) => ({
+	const parents = { ...BUTTER_TODO_PLACEHOLDERS, "PAY-113": BUTTER_DONE_PLACEHOLDERS["PAY-113"] };
+	const subtasks = (["PAY-118", "PAY-999", "PAY-127", "PAY-113"] as const).flatMap((parentIssueKey) =>
+		parents[parentIssueKey].children.map((child) => ({
 			status: child.status,
 			card: {
 				assignee: peopleByName[child.assignee],
@@ -814,7 +827,7 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 				dueDate: child.dueDate,
 				parentIssueKey,
 				priority: priorities[child.priority],
-				storyPoints: child.estimate ? Number(child.estimate) : undefined,
+				storyPoints: child.estimate && Number.isFinite(Number(child.estimate)) ? Number(child.estimate) : undefined,
 				tags: [],
 				title: child.summary,
 			} satisfies JiraKanbanCardData,
@@ -824,7 +837,6 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 		const cards = [...column.cards, ...subtasks.filter((item) => item.status === column.title).map((item) => item.card)].map((card) => ({
 			...cloneBoardCard(card),
 			...PAY_WORK_ITEM_SCHEDULE[card.code],
-			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : card.parentIssueKey,
 		}));
 		return { ...column, cards, count: cards.length };
 	});

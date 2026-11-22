@@ -4,16 +4,17 @@ import * as React from "react";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserMessageBubble } from "@/components/projects/shared/components/user-message-bubble";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/components/ui/input-group";
+import { Message, MessageContent } from "@/components/ui/message";
 import {
 	Marker,
 	MarkerContent,
 	MarkerIcon,
 } from "@/components/ui/marker";
-import { Message, MessageContent } from "@/components/ui/message";
 import {
 	MessageScroller,
 	MessageScrollerButton,
@@ -22,6 +23,7 @@ import {
 	MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { Spinner } from "@/components/ui/spinner";
+import { MotionMessageScrollerItem, slideUpEntrance } from "@/components/website/demos/ui/message-scroller-examples-motion";
 
 type ChatStatus = "ready" | "submitted" | "streaming";
 
@@ -101,25 +103,17 @@ export function MessageScrollerDemoChat() {
 	const hasNextMessage = messages.length === initialMessages.length;
 
 	React.useEffect(() => {
-		if (status !== "submitted") {
-			return;
+		if (status === "submitted") {
+			const timer = window.setTimeout(() => setStatus("streaming"), 500);
+			return () => window.clearTimeout(timer);
 		}
-
-		const streamingTimer = window.setTimeout(() => {
-			setStatus("streaming");
-		}, 500);
-		const responseTimer = window.setTimeout(() => {
-			setMessages((currentMessages) => [
-				...currentMessages,
-				scriptedAssistantMessage,
-			]);
-			setStatus("ready");
-		}, 1100);
-
-		return () => {
-			window.clearTimeout(streamingTimer);
-			window.clearTimeout(responseTimer);
-		};
+		if (status === "streaming") {
+			const timer = window.setTimeout(() => {
+				setMessages((currentMessages) => [...currentMessages, scriptedAssistantMessage]);
+				setStatus("ready");
+			}, 600);
+			return () => window.clearTimeout(timer);
+		}
 	}, [status]);
 
 	function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -141,35 +135,31 @@ export function MessageScrollerDemoChat() {
 	}
 
 	return (
-		<Card className="mx-auto h-[35rem] w-full max-w-xl">
-			<CardHeader>
-				<CardTitle>How can I help you today?</CardTitle>
-				<CardDescription>Status: {status}</CardDescription>
+		<Card className="mx-auto h-[35rem] w-full max-w-xl gap-0">
+			<CardHeader className="pb-4">
+				<CardTitle>Chat</CardTitle>
 			</CardHeader>
 			<CardContent className="min-h-0 flex-1 overflow-hidden p-0">
-				<MessageScroller autoScroll>
-					<MessageScrollerViewport>
-						<MessageScrollerContent className="gap-6 p-4">
-							{messages.map((message) => (
-								<MessageScrollerItem
-									key={message.id}
-									messageId={message.id}
-									scrollAnchor={message.role === "user"}
-								>
-									<Message align={message.role === "user" ? "end" : "start"}>
-										<MessageContent>
-											<Bubble
-												align={message.role === "user" ? "end" : "start"}
-												variant={message.role === "user" ? "default" : "muted"}
-											>
-												<BubbleContent className="whitespace-pre-wrap">
-													{message.text}
-												</BubbleContent>
-											</Bubble>
-										</MessageContent>
-									</Message>
-								</MessageScrollerItem>
-							))}
+				<MessageScroller autoScroll scrollPreviousItemPeek={0}>
+					<MessageScrollerViewport role="group" aria-label="Chat messages">
+						<MessageScrollerContent className="gap-6 px-4 py-6">
+							{messages.map((message) =>
+								message.role === "user" ? (
+									<MotionMessageScrollerItem key={message.id} messageId={message.id} scrollAnchor {...slideUpEntrance}>
+										<UserMessageBubble messageText={message.text} />
+									</MotionMessageScrollerItem>
+								) : (
+									<MessageScrollerItem key={message.id} messageId={message.id}>
+										<Message align="start">
+											<MessageContent className="px-3">
+												<Bubble variant="ghost">
+													<BubbleContent className="whitespace-pre-wrap break-words text-sm leading-6 text-text">{message.text}</BubbleContent>
+												</Bubble>
+											</MessageContent>
+										</Message>
+									</MessageScrollerItem>
+								),
+							)}
 							{status === "submitted" ? (
 								<MessageScrollerItem scrollAnchor={false}>
 									<Marker role="status">

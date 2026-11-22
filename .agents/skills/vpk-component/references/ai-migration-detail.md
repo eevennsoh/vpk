@@ -15,11 +15,16 @@ source-specific hazards out of the skill interface.
 ## Source hierarchy
 
 1. Read the target file, folder, or component URL and classify it as local
-   custom code, ai-elements, ElevenLabs UI, or another third-party library.
+   custom code, AI SDK Elements (copies from Vercel's AI Elements library),
+   ElevenLabs UI, or another third-party library.
 2. Inspect `components/ui` and `components/ui-custom`
    for an existing VPK target.
-3. For ai-elements, read the matching global ai-elements reference when local
-   source is insufficient.
+3. For AI SDK Elements, port to shadcn's AI Elements instead
+   (https://ui.shadcn.com/docs/ai-elements): a shadcn component lands in
+   `components/ui` as a 1:1 mirror; a shadcn pattern (a composition of shadcn
+   components) is rebuilt in `components/ui-custom` per shadcn's "Migrating
+   from AI SDK Elements" prompt. Never install from the retired AI SDK Elements
+   registry.
 4. For ElevenLabs or another library, use official docs, source examples, or a
    registry payload only when the local VPK port is missing or incomplete.
 5. Trace providers, callbacks, schemas, playback state, transcript state, and
@@ -35,7 +40,8 @@ source-specific hazards out of the skill interface.
 | Chat thread, assistant messages, prompt composer, reasoning, suggestions, code blocks | `components/ui-custom/*` |
 | Audio player, waveform, transcript playback, voice picker, microphone selection, standalone speech capture | `components/ui-custom/*` |
 | General presentational component without AI/voice behavior | `components/ui/*` |
-| ai-elements component | Usually `components/ui-custom/*` |
+| shadcn AI Elements component (Trace, Code Block, Message, …) | `components/ui/*` |
+| shadcn AI Elements pattern, or an AI SDK Elements copy it replaces | Usually `components/ui-custom/*` |
 | ElevenLabs component | Usually `components/ui-custom/*` |
 | Unknown third-party component | Choose by behavior, then nearest VPK family |
 
@@ -45,8 +51,8 @@ The source library's folder structure does not determine VPK ownership.
 
 | Need | Use |
 | --- | --- |
-| AI/chat message with rich response, actions, or branching | `ui-custom/message` |
-| Assistant chat thread container | `ui-custom/conversation` |
+| AI/chat message turn with actions | `ui/message` (+ `ui-custom/message-user-bubble`, `ui-custom/message-markdown`) |
+| Assistant chat thread container | `ui/message-scroller` (see its Chat example) |
 | AI SDK speech playback in assistant widgets | `ui-custom/audio-player` |
 | Inline composer microphone | `PromptInputMicrophone` or `ui-custom/speech-input` |
 | Composer microphone selector | `ui-custom/mic-selector` |
@@ -59,15 +65,15 @@ Alias imports whenever multiple families or a local type use the same name.
 
 | Source pattern | Likely target |
 | --- | --- |
-| Role-styled message bubble | `Message` + `MessageContent` |
+| Role-styled message bubble | `Message align` + `MessageContent` + `MessageUserBubble` |
 | Markdown/HTML response renderer | `MessageResponse` |
-| Copy, retry, like, dislike | `MessageActions` + `MessageAction` |
-| Response versions | `MessageBranch` |
+| Copy, retry, like, dislike | `MessageActions` + `MessageAction` or the `Message*Action` presets |
+| Response versions | No VPK owner; build on `Message` when needed |
 | Scroll-to-bottom thread | `Conversation` family |
 | Welcome or no-message view | `ConversationEmptyState` |
 | Message textarea and send button | `PromptInput` family |
 | Composer dictation | `PromptInputMicrophone` |
-| Uploads and attachment pills | `Attachments` + `Attachment` |
+| Uploads and attachment pills | `AttachmentGroup` + `Attachment` (`lib/attachment-media` for AI SDK parts) |
 | Prompt chips | `Suggestions` + `Suggestion` |
 | Syntax-highlighted code | `CodeBlock` family |
 | Expandable thinking | `Reasoning` |

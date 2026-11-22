@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { AnimatePresence } from "motion/react";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
@@ -8,6 +9,8 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
+import type { FillCursorPosition } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import type { SuggestionFieldId, WorkItemSuggestion } from "../data/suggestions";
 import { SuggestionValueView } from "./suggestion-value-view";
 import type { SuggestionReview } from "../hooks/use-suggestion-review";
@@ -20,8 +23,10 @@ export interface MockDetailsRailProps {
 	review: SuggestionReview;
 	/** Optional per-field override, e.g. an inline suggestion in place of the empty row. */
 	slot?: (suggestion: WorkItemSuggestion) => ReactNode | null;
-	/** Rows that should glow briefly because they just received a value. */
+	/** Fields whose accepted text is being revealed. */
 	highlighted?: ReadonlySet<SuggestionFieldId>;
+	waiting?: ReadonlySet<SuggestionFieldId>;
+	cursor?: FillCursorPosition | null;
 	className?: string;
 }
 
@@ -41,9 +46,9 @@ const EMPTY_FIELDS: Readonly<Record<Exclude<SuggestionFieldId, "description">, {
 	costCenter: { label: "Cost center", placeholder: "Add cost center" },
 };
 
-function FieldRow({ label, children, highlighted }: Readonly<{ label: string; children: ReactNode; highlighted?: boolean }>) {
+function FieldRow({ label, children, id }: Readonly<{ label: string; children: ReactNode; id?: string }>) {
 	return (
-		<div className={cn("flex flex-col gap-1 rounded-md px-1 py-1.5 transition-colors duration-slow ease-out", highlighted ? "bg-bg-success-subtler" : null)}>
+		<div className="flex flex-col gap-1 rounded-md px-1 py-1.5" data-field-id={id}>
 			<span className="text-xs text-text-subtle">{label}</span>
 			<div className="min-w-0 text-sm text-text">{children}</div>
 		</div>
@@ -54,7 +59,11 @@ function Placeholder({ children, icon }: Readonly<{ children: ReactNode; icon?: 
 	return <span className="flex items-center gap-2 text-text-subtlest">{icon}{children}</span>;
 }
 
-export function MockDetailsRail({ review, slot, highlighted, className }: Readonly<MockDetailsRailProps>) {
+export function MockDetailsRail({ review, slot, highlighted, waiting, cursor, className }: Readonly<MockDetailsRailProps>) {
+	const rootRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		if (cursor) rootRef.current?.querySelector<HTMLElement>(`[data-field-id="${cursor.field}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+	}, [cursor]);
 	const byId = new Map(review.suggestions.map((suggestion) => [suggestion.id, suggestion]));
 	const renderField = (id: SuggestionFieldId) => {
 		if (id === "description") return null;
@@ -62,10 +71,10 @@ export function MockDetailsRail({ review, slot, highlighted, className }: Readon
 		const suggestion = byId.get(id);
 		const custom = suggestion ? slot?.(suggestion) : null;
 		if (custom != null) return <div key={id}>{custom}</div>;
-		const accepted = suggestion != null && review.decisionOf(id) === "accepted";
+		const accepted = suggestion != null && review.decisionOf(id) === "accepted" && !waiting?.has(id);
 		return (
-			<FieldRow highlighted={highlighted?.has(id)} key={id} label={empty.label}>
-				{accepted ? <SuggestionValueView value={suggestion.value} /> : (
+			<FieldRow id={id} key={id} label={empty.label}>
+				{accepted ? <SuggestionValueView reveal={highlighted?.has(id)} value={suggestion.value} /> : (
 					<Placeholder icon={id === "dueDate" ? <CalendarIcon color="currentColor" label="" size="small" /> : undefined}>{empty.placeholder}</Placeholder>
 				)}
 			</FieldRow>
@@ -75,6 +84,7 @@ export function MockDetailsRail({ review, slot, highlighted, className }: Readon
 	return (
 		<div aria-label="Details" role="group" className={cn("flex flex-col gap-1 rounded-xl border border-border bg-surface p-4", className)}>
 			<h2 className="px-1 pb-1 text-sm font-semibold text-text">Details</h2>
+			<div className="relative flex flex-col gap-1" ref={rootRef}>
 			<FieldRow label="Status">
 				<span className="flex items-center gap-2"><span aria-hidden="true" className="size-4 rounded-full border-2 border-dashed border-border-bold" />To do</span>
 			</FieldRow>
@@ -89,6 +99,10 @@ export function MockDetailsRail({ review, slot, highlighted, className }: Readon
 					Venn
 				</span>
 			</FieldRow>
+			<div className="pointer-events-none absolute -inset-x-2 -top-3 bottom-0">
+				<AnimatePresence>{cursor ? <ProjectButterSuggestionCursor position={cursor} rootRef={rootRef} /> : null}</AnimatePresence>
+			</div>
+			</div>
 		</div>
 	);
 }

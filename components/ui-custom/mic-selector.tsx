@@ -2,24 +2,6 @@
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
-import type { ComponentProps, ReactNode } from "react";
-
-import { useControllableState } from "@/hooks/use-controllable-state";
-import { Button } from "@/components/ui/button";
-import {
-	Command,
-	CommandEmpty,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { ChevronsUpDownIcon } from "@/components/ui/vpk-icons";
-import { cn } from "@/lib/utils";
 import {
 	createContext,
 	use,
@@ -28,11 +10,38 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	type ComponentProps,
+	type ReactNode,
+	type RefObject,
 } from "react";
+
+import { useControllableState } from "@/hooks/use-controllable-state";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandItem,
+	CommandList,
+	CommandPrimitiveInput,
+} from "@/components/ui/command";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuSearchField,
+	DropdownMenuTrigger,
+	dropdownStyles,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDownIcon } from "@/components/ui/vpk-icons";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import { cn } from "@/lib/utils";
 
 import { useAudioDevices } from "@/components/ui-custom/hooks/use-audio-devices";
 
 export { useAudioDevices } from "@/components/ui-custom/hooks/use-audio-devices";
+
+// The menu shell is a Dropdown Menu; inside it, search, filtering and arrow-key
+// highlighting belong to cmdk, as in the model selector.
 
 const deviceIdRegex = /\(([\da-fA-F]{4}:[\da-fA-F]{4})\)$/;
 
@@ -40,23 +49,22 @@ interface MicSelectorContextType {
 	data: MediaDeviceInfo[];
 	value: string | undefined;
 	onValueChange?: (value: string) => void;
-	open: boolean;
-	onOpenChange?: (open: boolean) => void;
-	width: number;
-	setWidth?: (width: number) => void;
+	close: () => void;
 }
 
 const MicSelectorContext = createContext<MicSelectorContextType>({
+	close: () => {},
 	data: [],
-	onOpenChange: undefined,
 	onValueChange: undefined,
-	open: false,
-	setWidth: undefined,
 	value: undefined,
-	width: 200,
 });
 
-export interface MicSelectorProps extends ComponentProps<typeof Popover> {
+type DropdownMenuProps = ComponentProps<typeof DropdownMenu>;
+
+type MicSelectorActions =
+	NonNullable<DropdownMenuProps["actionsRef"]> extends RefObject<infer Actions> ? Actions : never;
+
+export interface MicSelectorProps extends Omit<DropdownMenuProps, "open" | "onOpenChange"> {
 	defaultValue?: string;
 	value?: string | undefined;
 	onValueChange?: (value: string | undefined) => void;
@@ -65,10 +73,12 @@ export interface MicSelectorProps extends ComponentProps<typeof Popover> {
 }
 
 export function MicSelector({
+	actionsRef,
 	defaultValue,
 	value: controlledValue,
 	onValueChange: controlledOnValueChange,
 	defaultOpen = false,
+	modal = false,
 	open: controlledOpen,
 	onOpenChange: controlledOnOpenChange,
 	...props
@@ -78,12 +88,16 @@ export function MicSelector({
 		onChange: controlledOnValueChange,
 		prop: controlledValue,
 	});
-	const [open, onOpenChange] = useControllableState({
+	const [open, setOpen] = useControllableState({
 		defaultProp: defaultOpen,
 		onChange: controlledOnOpenChange,
 		prop: controlledOpen,
 	});
-	const [width, setWidth] = useState(200);
+	const fallbackActionsRef = useRef<MicSelectorActions>(null);
+	const resolvedActionsRef = actionsRef ?? fallbackActionsRef;
+	const close = useCallback(() => {
+		resolvedActionsRef.current?.close();
+	}, [resolvedActionsRef]);
 	const { devices, loading, hasPermission, loadDevices } = useAudioDevices();
 
 	useEffect(() => {
@@ -93,98 +107,102 @@ export function MicSelector({
 	}, [open, hasPermission, loading, loadDevices]);
 
 	const contextValue = useMemo(
-		() => ({
-			data: devices,
-			onOpenChange,
-			onValueChange,
-			open,
-			setWidth,
-			value,
-			width,
-		}),
-		[devices, onOpenChange, onValueChange, open, setWidth, value, width],
+		() => ({ close, data: devices, onValueChange, value }),
+		[close, devices, onValueChange, value],
 	);
 
 	return (
 		<MicSelectorContext value={contextValue}>
-			<Popover {...props} onOpenChange={onOpenChange} open={open} />
+			<DropdownMenu
+				actionsRef={resolvedActionsRef}
+				modal={modal}
+				onOpenChange={(nextOpen) => setOpen(nextOpen)}
+				open={open}
+				{...props}
+			/>
 		</MicSelectorContext>
 	);
 }
 
 export type MicSelectorTriggerProps = ComponentProps<typeof Button>;
 
+/** Outline button with the dropdown menu's chevron down. */
 export function MicSelectorTrigger({
 	children,
+	className,
 	...props
 }: Readonly<MicSelectorTriggerProps>) {
-	const { setWidth } = use(MicSelectorContext);
-	const ref = useRef<HTMLButtonElement>(null);
-
-	useEffect(() => {
-		const resizeObserver = new ResizeObserver((entries) => {
-			for (const entry of entries) {
-				const newWidth = (entry.target as HTMLElement).offsetWidth;
-				if (newWidth) {
-					setWidth?.(newWidth);
-				}
-			}
-		});
-
-		if (ref.current) {
-			resizeObserver.observe(ref.current);
-		}
-
-		return () => {
-			resizeObserver.disconnect();
-		};
-	}, [setWidth]);
-
 	return (
-		<PopoverTrigger
-			render={<Button variant="outline" {...props} ref={ref} />}
+		<DropdownMenuTrigger
+			render={<Button className={cn("justify-between", className)} variant="outline" {...props} />}
 		>
 			{children}
-			<ChevronsUpDownIcon
-				className="shrink-0 text-muted-foreground"
-				size={16}
-			/>
-		</PopoverTrigger>
+			<ChevronDownIcon className="text-icon-subtle" data-icon="inline-end" label="" size="small" />
+		</DropdownMenuTrigger>
 	);
 }
 
-export interface MicSelectorContentProps
-	extends ComponentProps<typeof Command> {
-	popoverOptions?: ComponentProps<typeof PopoverContent>;
-}
+export type MicSelectorContentProps = ComponentProps<typeof DropdownMenuContent> & {
+	title?: string;
+};
 
+/** Menu as wide as its trigger (at least the menu's 224px minimum). */
 export function MicSelectorContent({
 	className,
-	popoverOptions,
+	children,
+	title = "Microphones",
 	...props
 }: Readonly<MicSelectorContentProps>) {
-	const { width, onValueChange, value } = use(MicSelectorContext);
-
 	return (
-		<PopoverContent
-			className={cn("p-0", className)}
-			style={{ width }}
-			{...popoverOptions}
+		<DropdownMenuContent
+			aria-label={title}
+			className={cn("flex w-(--anchor-width) flex-col overflow-hidden p-0", className)}
+			{...props}
 		>
-			<Command onValueChange={onValueChange} value={value} {...props} />
-		</PopoverContent>
+			<Command
+				className={cn("min-h-0 flex-1 rounded-lg bg-transparent", dropdownStyles.padding)}
+				label={title}
+			>
+				{children}
+			</Command>
+		</DropdownMenuContent>
 	);
 }
 
-export interface MicSelectorInputProps
-	extends ComponentProps<typeof CommandInput> {
+export interface MicSelectorInputProps {
+	placeholder?: string;
+	/** Controlled query; omit to let the input own it. */
 	value?: string;
-	defaultValue?: string;
 	onValueChange?: (value: string) => void;
 }
 
-export function MicSelectorInput(props: Readonly<MicSelectorInputProps>) {
-	return <CommandInput placeholder="Search microphones..." {...props} />;
+/** The shared menu search field, flush with the menu's top edge. */
+export function MicSelectorInput({
+	placeholder = "Search microphones",
+	value,
+	onValueChange,
+}: Readonly<MicSelectorInputProps>) {
+	const [internalValue, setInternalValue] = useState("");
+	const query = value ?? internalValue;
+	const setQuery = (next: string) => {
+		setInternalValue(next);
+		onValueChange?.(next);
+	};
+
+	return (
+		<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-0.5 shrink-0 overflow-hidden rounded-t-lg">
+			<DropdownMenuSearchField
+				autoFocus
+				hostOwnsKeyNavigation
+				label={placeholder}
+				onClear={() => setQuery("")}
+				onValueChange={setQuery}
+				placeholder={placeholder}
+				renderInput={(input) => <CommandPrimitiveInput asChild value={query}>{input}</CommandPrimitiveInput>}
+				value={query}
+			/>
+		</div>
+	);
 }
 
 export interface MicSelectorListProps
@@ -192,38 +210,84 @@ export interface MicSelectorListProps
 	children: (devices: MediaDeviceInfo[]) => ReactNode;
 }
 
+/** Scrollable device list; fades its top edge once it scrolls. */
 export function MicSelectorList({
 	children,
+	className,
+	style,
 	...props
 }: Readonly<MicSelectorListProps>) {
 	const { data } = use(MicSelectorContext);
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const maskStyle = {
+		...buildScrollMaskStyle({ fadeBottom: false, fadeSize: "3rem", fadeTop: showTopScrollMask }),
+		"--scroll-mask-top-fade-size": "3rem",
+	};
 
-	return <CommandList {...props}>{children(data)}</CommandList>;
+	return (
+		<CommandList
+			className={cn("max-h-72 min-h-0 flex-1 overscroll-contain p-0", className)}
+			label="Microphones"
+			ref={listRef}
+			showScrollbar
+			style={{ ...maskStyle, ...style }}
+			{...props}
+		>
+			{children(data)}
+		</CommandList>
+	);
 }
 
 export type MicSelectorEmptyProps = ComponentProps<typeof CommandEmpty>;
 
 export function MicSelectorEmpty({
 	children = "No microphone found.",
+	className,
 	...props
 }: Readonly<MicSelectorEmptyProps>) {
-	return <CommandEmpty {...props}>{children}</CommandEmpty>;
+	return (
+		<CommandEmpty className={cn("py-4 text-text-subtle", className)} {...props}>
+			{children}
+		</CommandEmpty>
+	);
 }
 
-export type MicSelectorItemProps = ComponentProps<typeof CommandItem>;
+export type MicSelectorItemProps = Omit<ComponentProps<typeof CommandItem>, "onSelect" | "value"> & {
+	/** The device id this item selects. */
+	value: string;
+	onSelect?: (value: string) => void;
+};
 
-export function MicSelectorItem(props: Readonly<MicSelectorItemProps>) {
-	const { onValueChange, onOpenChange } = use(MicSelectorContext);
+export function MicSelectorItem({
+	className,
+	keywords,
+	onSelect,
+	value,
+	...props
+}: Readonly<MicSelectorItemProps>) {
+	const { close, data, onValueChange, value: selectedValue } = use(MicSelectorContext);
+	const isChecked = selectedValue === value;
+	// The value is an opaque device id, so search matches the device label.
+	const label = data.find((device) => device.deviceId === value)?.label;
 
-	const handleSelect = useCallback(
-		(currentValue: string) => {
-			onValueChange?.(currentValue);
-			onOpenChange?.(false);
-		},
-		[onValueChange, onOpenChange],
+	return (
+		<CommandItem
+			aria-checked={isChecked}
+			className={cn(
+				"h-8 rounded-lg pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
+				className
+			)}
+			data-checked={isChecked ? true : undefined}
+			keywords={label ? [label, ...(keywords ?? [])] : keywords}
+			onSelect={() => {
+				onValueChange?.(value);
+				onSelect?.(value);
+				close();
+			}}
+			value={value}
+			{...props}
+		/>
 	);
-
-	return <CommandItem onSelect={handleSelect} {...props} />;
 }
 
 export interface MicSelectorLabelProps extends ComponentProps<"span"> {
@@ -239,7 +303,7 @@ export function MicSelectorLabel({
 
 	if (!matches) {
 		return (
-			<span className={className} {...props}>
+			<span className={cn("truncate", className)} {...props}>
 				{device.label}
 			</span>
 		);
@@ -249,9 +313,9 @@ export function MicSelectorLabel({
 	const name = device.label.replace(deviceIdRegex, "");
 
 	return (
-		<span className={className} {...props}>
+		<span className={cn("truncate", className)} {...props}>
 			<span>{name}</span>
-			<span className="text-muted-foreground"> ({deviceId})</span>
+			<span className="text-text-subtle"> ({deviceId})</span>
 		</span>
 	);
 }
@@ -267,8 +331,8 @@ export function MicSelectorValue({
 
 	if (!currentDevice) {
 		return (
-			<span className={cn("flex-1 text-left", className)} {...props}>
-				Select microphone...
+			<span className={cn("flex-1 truncate text-left", className)} {...props}>
+				Select microphone
 			</span>
 		);
 	}

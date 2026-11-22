@@ -7,7 +7,7 @@ const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { classifyBrowserRecord, findBrowserRecord, listBrowserRecords, noteBrowserUse, readProcess, removeBrowserRecord } = require("./browser-registry.js");
+const { classifyBrowserRecord, findBrowserRecord, listBrowserRecords, noteBrowserUse, readProcess, registryDir, removeBrowserRecord } = require("./browser-registry.js");
 const { EVIDENCE_DIR, REPO_ROOT } = require("./repo.js");
 
 const SESSION_PREFIX = "vpk-verify";
@@ -55,7 +55,20 @@ function runAgentBrowser(args, options = {}) {
 		timeoutMs = parseBrowserTimeoutMs(),
 		...spawnOptions
 	} = options;
-	return spawnSync(binPath, args, {
+	const forwarded = args[0] === "--session" ? args.slice(2) : args;
+	const headedSpecified = args.some((arg) => arg === "--headed" || arg.startsWith("--headed="));
+	const env = spawnOptions.env ?? process.env;
+	const session = args[0] === "--session" ? args[1] : env.AGENT_BROWSER_SESSION;
+	let headed = false;
+	if (session && !isBrowserSessionStarter(forwarded) && !headedSpecified) {
+		try {
+			headed = findBrowserRecord(session, { dir: registryDir({ env }), namespace: env.AGENT_BROWSER_NAMESPACE || null })?.headed === true;
+		} catch {
+			// An unrecorded session uses VPK's headless default.
+		}
+	}
+	const commandArgs = headedSpecified ? args : ["--headed", String(headed), ...args];
+	return spawnSync(binPath, commandArgs, {
 		cwd: REPO_ROOT,
 		killSignal: "SIGTERM",
 		timeout: timeoutMs,
@@ -124,8 +137,9 @@ function inspectBrowserSession(runCommand, runOptions, session) {
 	const active = info?.active === true
 		&& info?.runtime?.browserLaunched === true
 		&& Number(info?.runtime?.pageCount) > 0;
-	if (active) return { classification: null, result };
+	if (active) return { active: true, classification: null, result };
 	return {
+		active: info?.active,
 		classification: "stale_session",
 		result: {
 			...result,
@@ -201,6 +215,7 @@ function executeBrowserCommand(forwarded, {
 
 	return {
 		classification,
+		headed: forwarded.some((arg, index) => arg === "--headed=true" || (arg === "--headed" && forwarded[index + 1] !== "false")),
 		recoveredFromStaleSession,
 		result,
 		session,
@@ -284,9 +299,13 @@ function closeBrowserSessionBestEffort({
 		// No shared git directory: nothing was recorded.
 	}
 	let closed;
-	if (record) {
+	const inspection = inspectBrowserSession(runCommand, { encoding: "utf8" }, session);
+	if (inspection.active === false) {
+		closed = true;
+	} else if (record) {
 		closed = closeRecorded(record, { runCommand }).closed;
 	} else {
+		if (inspection.active !== true) return false;
 		let result;
 		try {
 			result = runCommand(["--session", session, "close"], { encoding: "utf8" });
@@ -327,12 +346,10 @@ function noteBrowserUseBestEffort(session, options = {}) {
 	}
 }
 
-const PARKED_URL = "data:text/html,%3Ctitle%3Eparked%20by%20control-vpk%3C%2Ftitle%3E";
-
-// Navigates the scoped page to a static document so an animated route stops using CPU between
-// checks. The session stays open; the next `open-target`, `capture` or `browser open` resumes.
+// Release the browser between checks. The session's restore key survives close, and parking
+// an absent session cannot launch Chrome or leave an idle window on the user's desktop.
 function parkBrowserSession(session, options = {}) {
-	return executeBrowserCommand(["open", PARKED_URL], { session, ...options });
+	return closeBrowserSessionBestEffort({ ...options, resolveSession: () => session });
 }
 
 const DAEMON_EXIT_WAIT_MS = 15_000; // a daemon shutting Chrome down under load took over 5 s
@@ -451,7 +468,6 @@ module.exports = {
 	executeBrowserCommand,
 	failureText,
 	noteBrowserUseBestEffort,
-	PARKED_URL,
 	parkBrowserSession,
 	readDaemon,
 	formatBrowserFailure,

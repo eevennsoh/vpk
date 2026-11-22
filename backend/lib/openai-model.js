@@ -10,7 +10,7 @@
 // never the override's value; the startup log prints the effective model id, which is not a secret
 // and is what an operator reading the log needs.
 
-const DEFAULT_OPENAI_MODEL = "gpt-6.1-sol";
+const DEFAULT_OPENAI_MODEL = "gpt-6.2-sol";
 
 const OPENAI_MODEL_SOURCES = Object.freeze({
 	DEFAULT: "default",

@@ -11,7 +11,7 @@ function renderAttachments(props = {}) {
 			import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
 			import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
 			export default function AttachmentsProbe({ preset = "filled" }) {
-				const content = useProjectButterContent(preset);
+				const content = useProjectButterContent(preset, undefined, undefined, undefined, undefined, { initialRelatedGroupsOpen: true });
 				const column = useRef(null);
 				return <MotionConfig reducedMotion="always">
 					<div className="relative" data-testid="column" ref={column}>

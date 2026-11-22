@@ -1,11 +1,11 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import FileIcon from "@atlaskit/icon/core/file";
+import EditIcon from "@atlaskit/icon/core/edit";
 import FilesIcon from "@atlaskit/icon/core/files";
-import RefreshIcon from "@atlaskit/icon/core/refresh";
 import ThumbsDownIcon from "@atlaskit/icon/core/thumbs-down";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 import Image from "next/image";
@@ -25,7 +25,7 @@ import {
 	AvatarFallback,
 	AvatarImage,
 } from "@/components/ui/avatar";
-import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "@/components/ui/bubble";
+import { Bubble, BubbleContent, BubbleReactions } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -42,6 +42,7 @@ import {
 	MessageHeader,
 } from "@/components/ui/message";
 import { Spinner } from "@/components/ui/spinner";
+import { UserMessageBubble } from "@/components/projects/shared/components/user-message-bubble";
 
 const avatars = {
 	olivia: "/avatar-human/olivia-yang.png",
@@ -153,42 +154,23 @@ export default function MessageDemo() {
 }
 
 export function MessageDemoMessage() {
+	const [prompt, setPrompt] = useState("Get Figma design context");
+	const [isEditing, setIsEditing] = useState(false);
 	return (
-		<div className="mx-auto flex w-full max-w-md min-w-0 flex-col gap-10">
-			<Message align="end">
+		<div className="mx-auto flex w-full max-w-md min-w-0 flex-col gap-6">
+			<UserMessageBubble
+				messageText={prompt}
+				isEditing={isEditing}
+				onStartEdit={() => setIsEditing(true)}
+				onCancelEdit={() => setIsEditing(false)}
+				onEdit={(text) => { setPrompt(text); setIsEditing(false); }}
+				showPromptActions
+			/>
+			<Message align="start">
 				<MessageContent>
-					<Bubble>
-						<BubbleContent>Deploying to prod real quick.</BubbleContent>
+					<Bubble variant="ghost">
+						<BubbleContent className="leading-6">Please share the Figma design-file URL and, if relevant, the specific frame or page link so I can retrieve its context.</BubbleContent>
 					</Bubble>
-				</MessageContent>
-			</Message>
-			<Message>
-				<MessageContent>
-					<Bubble variant="muted">
-						<BubbleContent>It&apos;s 4:55 PM. On a Friday.</BubbleContent>
-					</Bubble>
-				</MessageContent>
-			</Message>
-			<Message align="end">
-				<MessageContent>
-					<Bubble>
-						<BubbleContent>It&apos;s a one-line change.</BubbleContent>
-					</Bubble>
-				</MessageContent>
-			</Message>
-			<Message>
-				<MessageContent>
-					<BubbleGroup>
-						<Bubble variant="muted">
-							<BubbleContent>
-								It&apos;s always a one-line change. Make sure to run the tests
-								this time.
-							</BubbleContent>
-						</Bubble>
-						<Bubble variant="muted">
-							<BubbleContent>Alright, go for it.</BubbleContent>
-						</Bubble>
-					</BubbleGroup>
 				</MessageContent>
 			</Message>
 		</div>
@@ -226,7 +208,7 @@ export function MessageDemoAvatar() {
 					<PersonAvatar src={avatars.lana} alt="Lana Steiner" fallback="LS" />
 				</MessageAvatar>
 				<MessageContent>
-					<Bubble variant="muted">
+					<Bubble>
 						<BubbleContent>Something went wrong. Any idea?</BubbleContent>
 					</Bubble>
 				</MessageContent>
@@ -271,14 +253,14 @@ export function MessageDemoGroup() {
 			<MessageGroup>
 				<Message align="end">
 					<MessageContent>
-						<Bubble variant="muted">
+						<Bubble>
 							<BubbleContent>I checked the registry addresses.</BubbleContent>
 						</Bubble>
 					</MessageContent>
 				</Message>
 				<Message align="end">
 					<MessageContent>
-						<Bubble variant="muted">
+						<Bubble>
 							<BubbleContent>
 								The component and example JSON now live under the UI registry.
 							</BubbleContent>
@@ -453,8 +435,8 @@ export function MessageDemoActions() {
 						<Button variant="ghost" size="icon-compact" aria-label="Copy" title="Copy">
 							<Icon render={<CopyIcon label="" size="small" />} label="" />
 						</Button>
-						<Button variant="ghost" size="icon-compact" aria-label="Retry" title="Retry">
-							<Icon render={<RefreshIcon label="" size="small" />} label="" />
+						<Button variant="ghost" size="icon-compact" aria-label="Edit" title="Edit">
+							<Icon render={<EditIcon label="" size="small" />} label="" />
 						</Button>
 					</MessageFooter>
 				</MessageContent>
@@ -542,7 +524,13 @@ export function MessageDemoAttachmentGroup() {
 		<div className="mx-auto flex w-full max-w-sm flex-col gap-8">
 			<Message align="end">
 				<MessageContent>
-					<AttachmentGroup className="w-[80%]">
+					{/* The images overflow and have no actions, so the scroll region itself takes focus. */}
+					<AttachmentGroup
+						role="group"
+						aria-label="Attached images"
+						tabIndex={0}
+						className="w-[80%] rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
 						{images.map((image) => (
 							<ImageAttachment key={image.title} {...image} />
 						))}

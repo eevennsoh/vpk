@@ -1,3 +1,5 @@
+import type { TagColor } from "@/components/ui/tag";
+
 import { projectButterPersonAvatar } from "../../jira-work-item/project-butter/people.ts";
 
 /**
@@ -37,7 +39,7 @@ export type SuggestionValue =
 	| { kind: "date"; iso: string; display: string; relative: string }
 	| { kind: "person"; person: SuggestionPerson }
 	| { kind: "issue"; issue: SuggestionIssue }
-	| { kind: "labels"; labels: readonly string[] }
+	| { kind: "labels"; labels: readonly string[]; colors?: Readonly<Partial<Record<string, TagColor>>> }
 	| { kind: "checklist"; items: readonly string[] };
 
 export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria" | "components" | "fixVersion" | "storyPoints" | "reporter" | "costCenter";
@@ -78,7 +80,7 @@ export const SUGGESTION_WORK_ITEM: SuggestionWorkItem = {
 const ROBI = { name: "Robi Lopez", avatarUrl: projectButterPersonAvatar("Robi Lopez"), role: "Senior engineer · Payments Platform" };
 const AMIRA = "Amira Badran";
 
-export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
+export const WORK_ITEM_SUGGESTIONS = [
 	{
 		id: "description",
 		label: "Description",
@@ -150,7 +152,11 @@ export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
 		id: "labels",
 		label: "Labels",
 		currentDisplay: "Add label",
-		value: { kind: "labels", labels: ["onboarding", "sdk-v2", "merchant-experience", "q4-ga"] },
+		value: {
+			kind: "labels",
+			labels: ["onboarding", "sdk-v2", "merchant-experience", "q4-ga"],
+			colors: { onboarding: "blue", "sdk-v2": "purple", "merchant-experience": "teal", "q4-ga": "orange" },
+		},
 		valueText: "onboarding, sdk-v2, merchant-experience, q4-ga",
 		confidence: "medium",
 		reason: {
@@ -184,7 +190,7 @@ export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
 			],
 		},
 	},
-];
+] as const satisfies readonly WorkItemSuggestion[];
 
 /**
  * Suggestions are ongoing: the agent re-runs as the work item changes. This batch only arrives on the next run,

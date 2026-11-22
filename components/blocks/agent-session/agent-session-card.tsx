@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -21,6 +21,7 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
+import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
@@ -46,6 +47,7 @@ import {
 	AgentSessionShortMetadata,
 } from "./agent-session-metadata";
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
+import { agentSessionMoreTrigger } from "./agent-session-menu-trigger";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
 import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
@@ -59,16 +61,20 @@ import {
 	type AgentSessionProps,
 	type AgentSessionSelectionGesture,
 	getAgentSessionRole,
+	getAgentSessionAttribution,
 	type AgentSessionTriageRow,
 	type AgentSessionWorkItemDraft,
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
-import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
-import { motionEase } from "@/lib/motion";
+import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
+import { motionDuration, motionEase } from "@/lib/motion";
 
-const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const STATUS_DEPARTURE_TRANSITION = { duration: 2 * motionDuration.normal, ease: motionEase.linear };
+const STATUS_DEPARTURE_TARGET = { opacity: 0, scale: 0.92, y: 0 };
+const SESSION_ENTRANCE = "sessionEntrance";
 const STATUS_REENTRY_AVATAR_MOTION = { repeat: 0, repeatDelayMs: 0 } as const;
+const SESSION_IDENTITY_FRAME_SIZE = 32;
 
 /** Keep row registration and focus restoration tied to the departing DOM owner. */
 function useAgentSessionDepartureFocus({
@@ -122,43 +128,49 @@ function resolveAgentSessionCardMotion({
 	animateLayout,
 	arrivalDelaySeconds,
 	arrivalStartOffset,
+	clipInteriorEntrance,
 	isDeparting,
 	isTransferSource,
 	shouldPlayArrival,
 	shouldPlayDeparture,
-	shouldPlayStatusReentry,
+	playingEntrance,
 	shouldReduceMotion,
 	waitingForArrival,
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset: string;
+	clipInteriorEntrance: boolean;
 	isDeparting: boolean;
 	isTransferSource: boolean;
 	shouldPlayArrival: boolean;
 	shouldPlayDeparture: boolean;
-	shouldPlayStatusReentry: boolean;
+	playingEntrance: boolean;
 	shouldReduceMotion: boolean | null;
 	waitingForArrival: boolean;
 }>) {
+	// Layout projection needs a numeric resting offset to measure and move existing rows.
 	return {
-		animate: waitingForArrival ? { opacity: 0, y: arrivalStartOffset }
-			: shouldPlayDeparture ? { opacity: 0 }
-			: shouldPlayStatusReentry
-				? { opacity: [0, 1], y: [arrivalStartOffset, "calc(0% - 0px)"] }
-				: { opacity: 1, y: "calc(0% - 0px)" },
+		animate: waitingForArrival ? { opacity: 0, scale: 1, y: arrivalStartOffset }
+			: shouldPlayDeparture ? STATUS_DEPARTURE_TARGET
+			: playingEntrance ? SESSION_ENTRANCE : { opacity: 1, scale: 1, y: 0 },
+		variants: { [SESSION_ENTRANCE]: {
+			opacity: [0, 1], scale: [1, 1], y: [arrivalStartOffset, "0%"],
+			...(clipInteriorEntrance ? {
+				clipPath: ["inset(100% -4px -4px)", "inset(0% -4px -4px)"],
+				transitionEnd: { clipPath: "none" },
+			} : {}),
+		} },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		// Arriving rows own their travel; layout projection moves the siblings making room.
-		layout: shouldReduceMotion || isDeparting || shouldPlayArrival ? false : "position" as const,
 		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
 			? STATUS_DEPARTURE_TRANSITION
 			: {
 				...AGENT_SESSION_TOP_ARRIVAL_TRANSITION,
-				delay: arrivalDelaySeconds ?? 0,
-				layout: animateLayout ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
+				delay: (arrivalDelaySeconds ?? 0) + (shouldPlayArrival ? motionDuration.xxshort / 2 : 0),
+				layout: animateLayout && !isDeparting && !shouldPlayArrival ? AGENT_SESSION_TOP_ARRIVAL_TRANSITION : { duration: 0 },
 			},
-		willChange: shouldPlayDeparture ? "opacity" : shouldPlayArrival ? "opacity, transform" : undefined,
+		willChange: shouldPlayDeparture || shouldPlayArrival ? "opacity, transform" : undefined,
 	};
 }
 
@@ -167,6 +179,7 @@ function useAgentSessionCardTransition({
 	animateLayout,
 	arrivalDelaySeconds,
 	arrivalStartOffset,
+	clipInteriorEntrance,
 	hasAnimatedIdentity,
 	isArriving,
 	isDeparting,
@@ -179,6 +192,7 @@ function useAgentSessionCardTransition({
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset: string;
+	clipInteriorEntrance: boolean;
 	hasAnimatedIdentity: boolean;
 	isArriving: boolean;
 	isDeparting: boolean;
@@ -230,23 +244,27 @@ function useAgentSessionCardTransition({
 			animateLayout,
 			arrivalDelaySeconds,
 			arrivalStartOffset,
+			clipInteriorEntrance,
 			isDeparting,
 			isTransferSource,
 			shouldPlayArrival,
 			shouldPlayDeparture,
-			shouldPlayStatusReentry,
+			playingEntrance: shouldPlayArrival && phase === "arrival",
 			shouldReduceMotion,
-			waitingForArrival: phase === "pending-arrival",
+			waitingForArrival: shouldPlayArrival && phase === "pending-arrival",
 		}),
 	};
 }
 
 export function AgentSessionCard({
 	animateLayout = true,
+	allowViewerView = false,
 	arrivalDelaySeconds,
 	arrivalStartOffset = AGENT_SESSION_TOP_ARRIVAL_OFFSET,
+	arrivalRowGapPx = 0,
+	clipInteriorEntrance = false,
 	captured = false,
-	density = "short",
+	density = "unlinked",
 	flyoutHandle,
 	flyoutSession,
 	getResumeCommand,
@@ -265,6 +283,7 @@ export function AgentSessionCard({
 	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
+	moreMenuVariant,
 	tooltipPositionerClassName,
 	onArrivalComplete,
 	onDepartureComplete,
@@ -285,6 +304,7 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showBranch = false,
@@ -294,10 +314,13 @@ export function AgentSessionCard({
 	workItemOptions,
 }: Readonly<{
 	animateLayout?: boolean;
+	allowViewerView?: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartOffset?: string;
+	arrivalRowGapPx?: number;
+	clipInteriorEntrance?: boolean;
 	captured?: boolean;
-	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led short row. */
+	/** Row shape — see {@link AgentSessionDensity}. Defaults to the avatar-led unlinked row. */
 	density?: AgentSessionDensity;
 	/** Omit on long density — those rows have no hover flyout. */
 	flyoutHandle?: JiraSessionFlyoutHandle;
@@ -334,6 +357,7 @@ export function AgentSessionCard({
 	isSelected?: boolean;
 	item: AgentSessionItem;
 	localSessionAction?: AgentSessionProps["localSessionAction"];
+	moreMenuVariant?: AgentSessionProps["moreMenuVariant"];
 	onArrivalComplete?: () => void;
 	onDepartureComplete?: () => void;
 	onStateChangeComplete?: () => void;
@@ -377,6 +401,7 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
@@ -389,6 +414,7 @@ export function AgentSessionCard({
 	/** Work items the menu's Link work item submenu offers. */
 	workItemOptions?: readonly AgentSessionWorkItemOption[];
 }>) {
+	const avatarPreview = use(AgentSessionAvatarPreviewContext);
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	// The glow reads the pointer on the list item, not the article: the article
 	// spreads the drag binding, which owns `onPointerMove`. Custom properties
@@ -407,6 +433,7 @@ export function AgentSessionCard({
 	const cardGlow = useCardGlowPointer({ reduceMotion: shouldReduceMotion });
 	const tracksOwnPointer = glow && !isOnGlowPlane;
 	const departureFocus = useAgentSessionDepartureFocus({ glowPlaneSurface, isDeparting, isOnGlowPlane });
+	const { setRowNode } = departureFocus;
 	const onItemHoverRef = useRef(onItemHover);
 	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
 	// the hovered row" from "a sibling went away".
@@ -434,7 +461,7 @@ export function AgentSessionCard({
 	const cardAnchorRef = useRef<HTMLElement>(null);
 	const isCloudSession = !isLocalAgentListItem(item);
 	const isLongDensity = density === "long";
-	const isTitleLed = isLongDensity || (item.host ?? item.sessionDetails?.host) === "cloud";
+	const isTitleLed = density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud";
 	const menu = useAgentSessionMenu({
 		canResume,
 		isCloud: isCloudSession,
@@ -456,6 +483,8 @@ export function AgentSessionCard({
 	const isMarked = mark?.isMarked ?? false;
 	const isLead = mark?.isLead ?? false;
 	const isTransferSource = Boolean(draggingIds?.has(item.id));
+	const attribution = getAgentSessionAttribution(item);
+	const showsAgentWithoutInvoker = item.invokedBy !== undefined && attribution === undefined && item.agent.kind !== "person";
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const {
 		handleArrivalComplete,
@@ -468,7 +497,8 @@ export function AgentSessionCard({
 		animateLayout,
 		arrivalDelaySeconds,
 		arrivalStartOffset,
-		hasAnimatedIdentity: (!isTitleLed || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
+		clipInteriorEntrance,
+		hasAnimatedIdentity: (!isTitleLed || mark != null) && attribution !== undefined && item.agent.kind !== "person",
 		isArriving,
 		isDeparting,
 		isStateChanged,
@@ -489,7 +519,7 @@ export function AgentSessionCard({
 	const canOpenLocalMenu = role === "owner" && !isCloudSession && localSessionAction === "continue" && (canResume || onContinueInAgent !== undefined);
 	const viewSession: typeof onView = role === "owner"
 		? isCloudSession || localSessionAction === "view" ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
-		: undefined;
+		: role === "viewer" && allowViewerView && isCloudSession && !item.privateTo ? onView : undefined;
 	function renderLocalContinuation(trigger?: ReactElement) {
 		return (
 			<AgentSessionContinueMenu
@@ -543,9 +573,6 @@ export function AgentSessionCard({
 	// on the article. Keep the row's complete hover treatment tied to the
 	// controlled overlay state until that popup closes.
 	const isHoverStateActive = isFlyoutActive || menu.isOpen || menu.isContinueOpen;
-	// Every density keeps lifecycle state outside the authored title and byline.
-	// Short rows use a settled-state glyph in the same slot the hover/focus menu
-	// replaces; long rows keep their full trailing progression control.
 	const trailingControl = (() => {
 		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
@@ -556,6 +583,17 @@ export function AgentSessionCard({
 				return undefined;
 			case "expired":
 			case "owner":
+				if (role === "owner" && !isCloudSession && visibilityLabel !== "Unarchive") {
+					return <AgentSessionContinueMenu
+						actions={menu.actions}
+						copied={menu.copied}
+						item={item}
+						onOpenChange={menu.setIsOpen}
+						open={menu.isOpen}
+						positionerClassName={moreMenuPositionerClassName}
+						trigger={agentSessionMoreTrigger(item)}
+					/>;
+				}
 				return (
 					<AgentSessionMoreMenu
 						actions={menu.actions}
@@ -569,6 +607,7 @@ export function AgentSessionCard({
 						portalled={moreMenuPortalled}
 						positionerClassName={moreMenuPositionerClassName}
 						showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
+						variant={moreMenuVariant}
 						workItemOptions={workItemOptions}
 					/>
 				);
@@ -582,7 +621,7 @@ export function AgentSessionCard({
 	// and falls back to its own `STATE_META` indicator.
 	const lifecycleIndicator = role === "expired"
 		? null
-		: isLongDensity
+		: isLongDensity && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
@@ -641,7 +680,13 @@ export function AgentSessionCard({
 			onBlurCapture={departureFocus.onBlurCapture}
 			onFocusCapture={departureFocus.onFocusCapture}
 			role={mark == null ? undefined : "row"}
-			onAnimationComplete={shouldPlayDeparture ? onDepartureComplete : handleArrivalComplete}
+			onAnimationComplete={(definition) => {
+				if (definition === STATUS_DEPARTURE_TARGET) {
+					if (shouldPlayDeparture) onDepartureComplete?.();
+				} else if (definition === SESSION_ENTRANCE && !shouldPlayDeparture) {
+					handleArrivalComplete();
+				}
+			}}
 			onPointerEnter={(event) => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
@@ -657,17 +702,22 @@ export function AgentSessionCard({
 				}
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
-			ref={departureFocus.setRowNode}
-			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
+			ref={setRowNode}
+			// The column owns the entrance so Activity can reconnect without replaying it.
 			initial={false}
-			// Track positions continuously; the layout transition decides whether
-			// this update makes room for an arrival or places filtered rows instantly.
-			layout={rowMotion.layout}
+			// Register layout on mount so each entrant can make room for later arrivals.
+			layout="position"
 			style={{
 				...(glow ? cardGlowSurfaceStyle(agentSessionAccentColor(item)) : null),
 				willChange: rowMotion.willChange,
 			}}
 			transition={rowMotion.transition}
+			transformTemplate={isArriving && arrivalRowGapPx ? ({ y }, transform) => {
+				// Keep percentage travel readable by Motion's layout projection; add the row gap at paint time.
+				const gap = typeof y === "string" && y.endsWith("%") ? Number.parseFloat(y) * arrivalRowGapPx / 100 : 0;
+				return gap ? `translateY(${gap}px) ${transform === "none" ? "" : transform}` : transform;
+			} : undefined}
+			variants={rowMotion.variants}
 		>
 			<AgentSessionMediumDrag
 				cohort={triageRow?.drag?.cohort}
@@ -699,7 +749,7 @@ export function AgentSessionCard({
 						// fading the fill flashes transparent frames between nearby rows.
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						showSelectedFill && "bg-bg-selected",
+						showSelectedFill && (hoverTone === "menu" && !isMarked ? "bg-bg-neutral-subtle-hovered" : "bg-bg-selected"),
 						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
 						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
 						activateCard === undefined && role !== "viewer"
@@ -716,7 +766,7 @@ export function AgentSessionCard({
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
 							role={articleRole}
-							tabIndex={articleTabIndex ?? (role === "viewer" || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
+							tabIndex={articleTabIndex ?? ((role === "viewer" && (!allowViewerView || item.privateTo) && activateCard === undefined) || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
 						>
 							{/*
 								No resting ring: the session list is a flush stack of
@@ -746,15 +796,14 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								// Agent Session owns lifecycle outside the title and byline. The
-								// shared trailing slot lets hover actions replace it in place.
+								keepLifecycleLabel={isLongDensity && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isTitleLed
-										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
+										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
+								metadataOutsideViewTrigger
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								viewDescription={item.privateTo ? agentSessionPrivacyHint(item.privateTo) : undefined}
@@ -763,26 +812,28 @@ export function AgentSessionCard({
 										<AgentListIdentity
 											appearance="coding"
 											agent={item.agent}
-											attributedBy={item.invokedBy}
+											attributedBy={attribution}
 											attributionOrder="agent-first"
-											sizePx={32}
+											sizePx={showsAgentWithoutInvoker ? humanAgentAvatarGeometry(SESSION_IDENTITY_FRAME_SIZE).agentSize : SESSION_IDENTITY_FRAME_SIZE}
 											animate={shouldRotateAvatar}
 											motion={STATUS_REENTRY_AVATAR_MOTION}
 											onAnimationComplete={handleAvatarComplete}
 										/>
 									);
+									const previewIdentity = (renderAgentAvatar ?? avatarPreview)?.(item.agent, sessionIdentity) ?? sessionIdentity;
 
 									// The travelling drag chip measures this box on
 									// pointerdown and flies out of it. Marked outside the
 									// select-mark branch so the origin exists in both.
 									return (
-										<span className="block" data-session-drag-identity="">
+										<span className={showsAgentWithoutInvoker ? "grid size-8 place-items-center" : "block"} data-session-drag-identity="">
 											{mark === undefined || mark === null
-												? sessionIdentity
+												? previewIdentity
 												: (
 													<AgentSessionSelectMark
-														identity={sessionIdentity}
+														identity={previewIdentity}
 														isMarked={mark.isMarked}
+														previewable={previewIdentity !== sessionIdentity}
 														label={`Select "${item.title}"`}
 														onActivate={activateCard ?? mark.onActivate}
 													/>
@@ -801,9 +852,11 @@ export function AgentSessionCard({
 					if (role === "expired") {
 						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
-					if (role === "viewer" || item.privateTo) {
-						return <AgentSessionViewerTooltip person={item.privateTo ?? item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (item.privateTo) {
+						return <AgentSessionViewerTooltip person={item.privateTo} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
+					if (role === "viewer" && !allowViewerView) return <AgentSessionViewerTooltip person={item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (role === "viewer") return card;
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {
 						return card;

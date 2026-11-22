@@ -37,76 +37,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"shimmer-demo-custom-duration": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoCustomDuration,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-custom-spread": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoCustomSpread,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-color": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoColor,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-duration-utility": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoDurationUtility,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-spread-utility": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoSpreadUtility,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-angle": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoAngle,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-once": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoOnce,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-disabled": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoDisabled,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-rtl": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoRtl,
-			})),
-		{ ssr: false },
-	),
-	"shimmer-demo-marker": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoMarker,
-			})),
-		{ ssr: false },
-	),
 	"shimmer-wave-demo-basic": dynamic(
 		() =>
 			import("../../demos/ui-custom/shimmer-wave-demo").then((mod) => ({
@@ -149,13 +79,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"shimmer-demo-heading": dynamic(
-		() =>
-			import("../../demos/ui-custom/shimmer-demo").then((mod) => ({
-				default: mod.ShimmerDemoHeading,
-			})),
-		{ ssr: false },
-	),
 	"snippet-demo-plain": dynamic(
 		() =>
 			import("../../demos/ui-custom/snippet-demo").then((mod) => ({
@@ -177,17 +100,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"source-demo-custom-rendering": dynamic(
-		() =>
-			import("../../demos/ui-custom/source-demo").then((mod) => ({
-				default: mod.SourceDemoCustomRendering,
-			})),
-		{ ssr: false },
-	),
-	"source-demo-preview-menu": dynamic(
-		() => import("../../demos/ui-custom/source-demo-preview-menu"),
-		{ ssr: false },
-	),
 	"speech-input-demo-with-transcript": dynamic(
 		() =>
 			import("../../demos/ui-custom/speech-input-demo").then((mod) => ({
@@ -206,125 +118,6 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui-custom/speech-input-demo").then((mod) => ({
 				default: mod.SpeechInputDemoDisabled,
-			})),
-		{ ssr: false },
-	),
-	"terminal-demo-streaming": dynamic(
-		() =>
-			import("../../demos/ui-custom/terminal-demo").then((mod) => ({
-				default: mod.TerminalDemoStreaming,
-			})),
-		{ ssr: false },
-	),
-	"terminal-demo-clearable": dynamic(
-		() =>
-			import("../../demos/ui-custom/terminal-demo").then((mod) => ({
-				default: mod.TerminalDemoClearable,
-			})),
-		{ ssr: false },
-	),
-	"terminal-demo-composed": dynamic(
-		() =>
-			import("../../demos/ui-custom/terminal-demo").then((mod) => ({
-				default: mod.TerminalDemoComposed,
-			})),
-		{ ssr: false },
-	),
-	"terminal-demo-ansi": dynamic(
-		() =>
-			import("../../demos/ui-custom/terminal-demo").then((mod) => ({
-				default: mod.TerminalDemoAnsi,
-			})),
-		{ ssr: false },
-	),
-	"test-result-demo-with-progress": dynamic(
-		() =>
-			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
-				default: mod.TestResultDemoWithProgress,
-			})),
-		{ ssr: false },
-	),
-	"test-result-demo-with-errors": dynamic(
-		() =>
-			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
-				default: mod.TestResultDemoWithErrors,
-			})),
-		{ ssr: false },
-	),
-	"test-result-demo-running": dynamic(
-		() =>
-			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
-				default: mod.TestResultDemoRunning,
-			})),
-		{ ssr: false },
-	),
-	"stack-trace-demo-open": dynamic(
-		() =>
-			import("../../demos/ui-custom/stack-trace-demo").then((mod) => ({
-				default: mod.StackTraceDemoOpen,
-			})),
-		{ ssr: false },
-	),
-	"stack-trace-demo-filter-internals": dynamic(
-		() =>
-			import("../../demos/ui-custom/stack-trace-demo").then((mod) => ({
-				default: mod.StackTraceDemoFilterInternals,
-			})),
-		{ ssr: false },
-	),
-	"stack-trace-demo-clickable": dynamic(
-		() =>
-			import("../../demos/ui-custom/stack-trace-demo").then((mod) => ({
-				default: mod.StackTraceDemoClickable,
-			})),
-		{ ssr: false },
-	),
-	"suggestion-demo-vertical": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoVertical,
-			})),
-		{ ssr: false },
-	),
-	"suggestion-demo-with-icons": dynamic(
-		() =>
-			import("../../demos/ui-custom/suggestion-demo").then((mod) => ({
-				default: mod.SuggestionDemoWithIcons,
-			})),
-		{ ssr: false },
-	),
-	"tool-demo-running": dynamic(
-		() =>
-			import("../../demos/ui-custom/tool-demo").then((mod) => ({
-				default: mod.ToolDemoRunning,
-			})),
-		{ ssr: false },
-	),
-	"tool-demo-error": dynamic(
-		() =>
-			import("../../demos/ui-custom/tool-demo").then((mod) => ({
-				default: mod.ToolDemoError,
-			})),
-		{ ssr: false },
-	),
-	"tool-demo-collapsed": dynamic(
-		() =>
-			import("../../demos/ui-custom/tool-demo").then((mod) => ({
-				default: mod.ToolDemoCollapsed,
-			})),
-		{ ssr: false },
-	),
-	"tool-demo-pending": dynamic(
-		() =>
-			import("../../demos/ui-custom/tool-demo").then((mod) => ({
-				default: mod.ToolDemoPending,
-			})),
-		{ ssr: false },
-	),
-	"tool-demo-approval": dynamic(
-		() =>
-			import("../../demos/ui-custom/tool-demo").then((mod) => ({
-				default: mod.ToolDemoApproval,
 			})),
 		{ ssr: false },
 	),

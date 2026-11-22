@@ -37,7 +37,6 @@ export interface LogoProps extends Omit<AtlaskitLogoProps, "size"> {
 	size?: LogoSize;
 	themeAware?: boolean;
 	variant?: LogoVariant;
-	shouldUseHexLogo?: boolean;
 	/**
 	 * Draws a 1px hairline directly on the logo mark's edge (inset ring, no
 	 * added size) so adjacent same-color marks stay visually separated — e.g.
@@ -84,7 +83,6 @@ export function AtlassianLogo({
 	appearance,
 	size = "small",
 	variant = "icon",
-	shouldUseNewLogoDesign = true,
 	hasBorder,
 	withUsageBorder = false,
 	color,
@@ -132,7 +130,6 @@ export function AtlassianLogo({
 				{...props}
 				size={size}
 				appearance={resolvedAppearance}
-				shouldUseNewLogoDesign={shouldUseNewLogoDesign}
 			/>
 		</span>
 	);

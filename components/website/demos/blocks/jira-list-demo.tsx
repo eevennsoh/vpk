@@ -2,12 +2,12 @@
 
 import { useLayoutEffect, useMemo, useState } from "react";
 
-import { createButterPayBoardColumns } from "@/components/projects/butter/data/presentation-story";
-import { useButterList } from "@/components/projects/butter/hooks/use-butter-list";
+import { createButterPayBoardColumns } from "@/components/projects/butter-v1/data/presentation-story";
+import { useButterList } from "@/components/projects/butter-v1/hooks/use-butter-list";
 
-import { JiraList } from "@/components/blocks/jira-list";
+import { JiraList, type JiraListVariant } from "@/components/blocks/jira-list";
 
-export default function JiraListDemo() {
+function JiraListVariantDemo({ variant }: Readonly<{ variant: JiraListVariant }>) {
 	const [columns, setColumns] = useState(createButterPayBoardColumns);
 	const { getProps, onVisibleRowsChange } = useButterList({
 		boardColumns: columns,
@@ -20,9 +20,10 @@ export default function JiraListDemo() {
 	}, [listProps.rows, onVisibleRowsChange]);
 
 	return (
-		<div className="rounded-lg bg-surface p-4 md:p-5">
+		<div className="w-full min-w-0 rounded-lg bg-surface p-4 md:p-5">
 			<JiraList
 				{...listProps}
+				variant={variant}
 				onRefresh={() => {
 					setColumns(createButterPayBoardColumns());
 					listProps.onRefresh?.();
@@ -31,3 +32,13 @@ export default function JiraListDemo() {
 		</div>
 	);
 }
+
+export function JiraListDemoProjectButter() {
+	return <JiraListVariantDemo variant="project-butter" />;
+}
+
+export function JiraListDemoClassic() {
+	return <JiraListVariantDemo variant="classic" />;
+}
+
+export default JiraListDemoProjectButter;

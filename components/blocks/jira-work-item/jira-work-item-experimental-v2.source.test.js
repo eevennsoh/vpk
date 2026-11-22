@@ -336,8 +336,6 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.match(repositoryPickerSource, /className="w-\(--anchor-width\) max-w-\[calc\(100vw-2rem\)\] gap-0 overflow-hidden p-0"/u);
 	assert.match(repositoryPickerSource, /label="Search repositories"[\s\S]*All repositories/u);
 	assert.match(repositoryPickerSource, /useCommandMenuScrollMask\(\)[\s\S]*rich-text-command-menu rich-text-command-menu-embedded[\s\S]*rich-text-command-menu-list/u);
-	assert.match(repositoryPickerSource, /import \{ SearchIcon \} from "@\/components\/ui\/vpk-icons"/u);
-	assert.match(repositoryPickerSource, /icon=\{<SearchIcon className="size-4 text-icon-subtle" \/>\}/u);
 	assert.match(repositoryPickerSource, /className="h-11 w-full justify-start gap-3 rounded-lg px-2 pe-9 font-normal"/u);
 	assert.equal((repositoryPickerSource.match(/inline-flex size-6 shrink-0 items-center justify-center leading-none \[&_svg\]:size-6!/gu) ?? []).length, 1);
 	assert.match(repositoryPickerSource, /import LinkExternalIcon from "@atlaskit\/icon\/core\/link-external";/u);

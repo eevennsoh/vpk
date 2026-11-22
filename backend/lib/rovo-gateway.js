@@ -128,7 +128,6 @@ async function acquirePort({
  * @param {string} [params.sessionId] - Optional Serve session to restore before streaming
  * @param {AbortSignal} [params.signal] - Optional signal to abort the stream (e.g. on client disconnect)
  * @param {(port: number) => void} [params.onPortAcquired] - Called once with the resolved port after acquisition
- * @param {boolean} [params.cancelOnComplete] - Cancel lingering chat state before releasing the port after a successful stream
  * @param {boolean} [params.failOnError] - Reject on non-409 stream errors instead of writing inline warning text
  * @param {(stage: string, details?: object) => void} [params.onTimingStage] - Optional callback for low-level timing milestones
  * @param {number} [params.port] - Reuse an existing reserved port instead of acquiring one
@@ -158,7 +157,6 @@ async function streamViaRovo({
 	signal,
 	onPortAcquired,
 	onComplete,
-	cancelOnComplete = false,
 	failOnError = false,
 	onTimingStage,
 	port: providedPort,
@@ -250,7 +248,7 @@ async function streamViaRovo({
 
 				const streamHandle = sendMessageStreaming(message, {
 					onChunk: (chunk) => {
-						toolEventDispatcher.handleChunk(chunk);
+						return toolEventDispatcher.handleChunk(chunk);
 					},
 					onPauseToolCalls: async (rawEvent, control) => {
 						if (typeof onPausedToolCalls !== "function") {
@@ -458,26 +456,6 @@ async function streamViaRovo({
 				);
 			}
 		}
-		if (
-			lease.isHeld() &&
-			!abortedBySignal &&
-			!signal?.aborted &&
-			cancelOnComplete
-		) {
-			try {
-				await cancelChat(handle.port, { timeoutMs: 3_000 });
-			} catch (error) {
-				console.warn(
-					`[streamViaRovo] port ${handle.port} cancel failed during cleanup: ${
-						error instanceof Error ? error.message : String(error)
-					}`
-				);
-				lease.settle(
-					"unhealthy",
-					error instanceof Error ? error.message : String(error)
-				);
-			}
-		}
 		lease.settle("release");
 	}
 }
@@ -544,7 +522,7 @@ async function replayViaRovo({
 					return;
 				}
 
-				toolEventDispatcher.handleChunk(chunk);
+				return toolEventDispatcher.handleChunk(chunk);
 			},
 			onDone: () => {
 				if (signal && onAbort) {

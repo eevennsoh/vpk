@@ -378,6 +378,7 @@ export function AgentSessionColumn({
 	glowStroke = true,
 	hasScrollingEffect = false,
 	showTrailingShadow = false,
+	growUnderlapSurface = true,
 	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
@@ -608,7 +609,7 @@ export function AgentSessionColumn({
 		items: displayedItems,
 		newItemIds,
 		stateChangeVersions,
-		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "short"}`,
+		presentation: collapsed ? notchShape : `expanded:${sessionProps.variant ?? "large"}:${sessionProps.density ?? "unlinked"}`,
 		reduceMotion: shouldReduceMotion === true,
 	});
 	// A controlled host can flip `collapsed` from its own affordance, which never
@@ -694,7 +695,7 @@ export function AgentSessionColumn({
 	);
 	const planeBorderColor = paintWellStroke ? AGENT_SESSION_WELL_STROKE : "transparent";
 	const planeBoxShadow = elevatePlane ? AGENT_SESSION_UNDERLAP_DEPTH_SHADOW : "none";
-	const planeMarginBlock = elevatePlane && wearEnclosedWell
+	const planeMarginBlock = growUnderlapSurface && elevatePlane && wearEnclosedWell
 		? -AGENT_SESSION_UNDERLAP_GROW_PX
 		: 0;
 	const planeShadowTransition = shouldReduceMotion

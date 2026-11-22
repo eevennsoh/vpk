@@ -15,6 +15,7 @@ const {
 	defaultBrowserCommand,
 	moveSelectionIndex,
 	reconcileSelectionIndex,
+	externalStopHint,
 } = require("./show-worktree-ports");
 
 function execGit(args, cwd) {
@@ -51,6 +52,13 @@ function createGitWorktreeFixture() {
 		fs.rmSync(tempDir, { recursive: true, force: true });
 		throw error;
 	}
+}
+
+// Age a worktree's activity sources (git index) so the stop guard sees it idle.
+function ageWorktreeIndex(worktreePath) {
+	const gitdir = fs.readFileSync(path.join(worktreePath, ".git"), "utf8").match(/^gitdir:\s*(.+)$/mu)[1].trim();
+	const old = new Date(Date.now() - 3 * 3600 * 1000);
+	fs.utimesSync(path.join(path.resolve(worktreePath, gitdir), "index"), old, old);
 }
 
 function listenOnEphemeralPort() {
@@ -218,6 +226,38 @@ test("ports CLI shows a mix of alive and dead pool ports as only the alive ones"
 	}
 });
 
+// A fake dev server: a child process with its cwd in `cwd` that listens on a loopback port.
+function listenFromDirectory(cwd) {
+	return new Promise((resolve, reject) => {
+		const { spawn } = require("node:child_process");
+		const child = spawn(process.execPath, ["-e", 'const s = require("node:net").createServer().listen(0, "127.0.0.1", () => console.log(s.address().port)); setInterval(() => {}, 1000);'], { cwd, stdio: ["ignore", "pipe", "inherit"] });
+		child.once("error", reject);
+		child.stdout.once("data", (chunk) => resolve({ child, port: Number.parseInt(String(chunk), 10) }));
+	});
+}
+
+// Regression: a port file that names another worktree's listener (the slot shift gave this
+// stack a port that stack already held) was shown as this worktree's running backend.
+test("ports CLI shows only this worktree's listeners as its running ports, and names a port held elsewhere", async (t) => {
+	const fixture = createGitWorktreeFixture();
+	const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), "ports-elsewhere-"));
+	const own = await listenFromDirectory(fixture.worktreePath);
+	const foreign = await listenFromDirectory(elsewhere);
+	t.after(() => {
+		own.child.kill();
+		foreign.child.kill();
+		fs.rmSync(elsewhere, { recursive: true, force: true });
+		fixture.cleanup();
+	});
+	fs.writeFileSync(path.join(fixture.worktreePath, ".dev-frontend-port"), String(own.port));
+	fs.writeFileSync(path.join(fixture.worktreePath, ".dev-backend-port"), String(foreign.port));
+
+	const output = execFileSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT], { cwd: fixture.repoPath, encoding: "utf8" });
+
+	assert.match(output, new RegExp(`frontend=${own.port}\\s+backend=—`));
+	assert.match(output, new RegExp(`backend port file says ${foreign.port}, but another directory's process holds it \\(${fs.realpathSync(elsewhere).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`));
+});
+
 test("ports kill resolves a legacy private session and rejects an unsafe default-socket stop", () => {
 	const fixture = createGitWorktreeFixture();
 	const fakeTmuxPath = path.join(fixture.repoPath, "fake-tmux");
@@ -237,6 +277,7 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 			'#!/bin/bash\nprintf "%s|%s\\n" "$VPK_DEV_TMUX_SESSION" "$VPK_TMUX_SOCKET" > stop-result\n',
 			"utf8",
 		);
+		ageWorktreeIndex(fixture.worktreePath);
 
 		execFileSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
 			cwd: fixture.repoPath,
@@ -274,6 +315,52 @@ test("ports kill resolves a legacy private session and rejects an unsafe default
 		assert.equal(deniedResult.status, 2);
 		assert.match(deniedResult.stderr, /Could not inspect tmux/);
 		assert.equal(fs.existsSync(stopResultPath), false);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+// Regression: `pnpm ports kill` relied on the target's own launcher to refuse a stop of a stack in
+// use, so a worktree branched before that guard (most of the parallel stacks) stopped at once.
+test("ports kill refuses a stack in use even when the target's launcher has no guard, and --force overrides", () => {
+	const fixture = createGitWorktreeFixture();
+	const fakeTmuxPath = path.join(fixture.repoPath, "fake-tmux");
+	const stopScriptPath = path.join(fixture.worktreePath, "scripts", "dev-tmux-plain.sh");
+	const stopResultPath = path.join(fixture.worktreePath, "stop-result");
+	const logDir = path.join(fixture.worktreePath, "output", "logs", path.basename(fixture.worktreePath));
+
+	try {
+		fs.mkdirSync(path.dirname(stopScriptPath), { recursive: true });
+		fs.writeFileSync(
+			fakeTmuxPath,
+			`#!/usr/bin/env node\nif (process.argv[2] === "-L" && process.argv[3] === "vpk-dev") {\n\tprocess.stdout.write(${JSON.stringify(`vpk-dev-old-branch|${fixture.worktreePath}\n`)});\n\tprocess.exit(0);\n}\nprocess.exit(1);\n`,
+			"utf8",
+		);
+		fs.chmodSync(fakeTmuxPath, 0o755);
+		// A launcher from before the guard: it stops whatever asks.
+		fs.writeFileSync(stopScriptPath, '#!/bin/bash\nprintf "%s\\n" "$*" > stop-result\n', "utf8");
+		fs.mkdirSync(logDir, { recursive: true });
+		fs.writeFileSync(path.join(logDir, "dev.log"), "GET / 200 in 12ms\n");
+
+		const refused = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(refused.status, 6, refused.stdout + refused.stderr);
+		assert.match(refused.stderr, /Not stopping .*wt-pool: pnpm ports kill \(pid \d+\) from .* asked, and this stack is in use \(recent activity: dev log written/);
+		assert.equal(fs.existsSync(stopResultPath), false, "the target's launcher never ran");
+		const entry = JSON.parse(fs.readFileSync(path.join(logDir, "dev-stops.log"), "utf8").trim());
+		assert.equal(entry.outcome, "refused");
+		assert.equal(entry.session, "vpk-dev-old-branch");
+
+		const forced = spawnSync(process.execPath, [SHOW_WORKTREE_PORTS_SCRIPT, "kill", "feature-pool", "--force"], {
+			cwd: fixture.repoPath,
+			env: { ...process.env, VPK_TMUX_BIN: fakeTmuxPath },
+			encoding: "utf8",
+		});
+		assert.equal(forced.status, 0, forced.stdout + forced.stderr);
+		assert.equal(fs.readFileSync(stopResultPath, "utf8"), "stop --force\n");
 	} finally {
 		fixture.cleanup();
 	}
@@ -422,4 +509,59 @@ test("ports --json --sizes adds each worktree's .next split", async (t) => {
 	});
 	assert.deepEqual(measured, [root]);
 	assert.deepEqual(rows[0].nextDir, { totalBytes: 1 });
+});
+
+// Regression: the dev-stack budget suggested `pnpm ports kill '<path>'` for a sibling repo's
+// next-server, and that failed with "No worktree matches". The kill path now names the PID.
+test("externalStopHint names the PIDs of a next-server under a non-worktree path", () => {
+	const servers = [
+		{ pid: 41, cwd: "/Users/me/labs/vpk-grab/apps/website" },
+		{ pid: 42, cwd: "/Users/me/labs/vpk/.claude/worktrees/a" },
+	];
+	const hint = externalStopHint("/Users/me/labs/vpk-grab/apps/website", servers);
+	assert.ok(hint);
+	assert.match(hint.join("\n"), /is not a worktree of this repo/u);
+	assert.match(hint.join("\n"), /kill 41$/mu);
+	assert.equal(externalStopHint("/Users/me/labs/nothing-here", servers), null);
+	assert.equal(externalStopHint("vpk-dev-a", servers), null, "a non-path query keeps the normal not-found message");
+});
+
+// Regression: lsof reports realpaths (/private/tmp/...), so a query through a symlink (/tmp/...)
+// matched nothing and fell back to listing every worktree.
+test("externalStopHint matches a query given through a symlink", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "external-stop-hint-")));
+	try {
+		const real = path.join(tempDir, "other-repo", "apps", "website");
+		fs.mkdirSync(real, { recursive: true });
+		const link = path.join(tempDir, "link");
+		fs.symlinkSync(path.join(tempDir, "other-repo"), link);
+		const hint = externalStopHint(path.join(link, "apps", "website"), [{ pid: 51, cwd: real }]);
+		assert.ok(hint);
+		assert.match(hint.join("\n"), /kill 51$/mu);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+// A raw kill would skip the in-use refusal of `pnpm ports kill`, so servers inside one of this
+// repo's worktrees are never offered, even when the query names a folder above or below them or
+// reaches the worktree through a symlink git does not know about.
+test("externalStopHint never offers a raw kill for a server inside this repo's worktrees", () => {
+	const tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "external-stop-hint-")));
+	try {
+		const worktree = path.join(tempDir, "repo", ".claude", "worktrees", "a");
+		fs.mkdirSync(path.join(worktree, "apps"), { recursive: true });
+		const link = path.join(tempDir, "alias");
+		fs.symlinkSync(worktree, link);
+		const servers = [{ pid: 61, cwd: path.join(worktree, "apps") }];
+		const worktrees = [{ path: link }];
+		assert.equal(externalStopHint(path.join(worktree, "apps"), servers, worktrees), null);
+		assert.equal(externalStopHint(path.join(tempDir, "repo"), servers, worktrees), null);
+		assert.equal(externalStopHint(worktree, servers, worktrees), null);
+		const foreign = [...servers, { pid: 62, cwd: path.join(tempDir, "repo", "docs") }];
+		fs.mkdirSync(path.join(tempDir, "repo", "docs"));
+		assert.match(externalStopHint(path.join(tempDir, "repo"), foreign, worktrees).join("\n"), /kill 62$/mu);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
 });

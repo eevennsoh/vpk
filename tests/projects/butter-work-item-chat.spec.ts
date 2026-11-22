@@ -36,7 +36,7 @@ test("work item keeps the Rovo launcher and opens local session menus", async ({
 	await workItem.getByRole("list", { name: "Activity timeline" }).getByRole("button", { name: /^Replaying 3-D Secure fixtures Cursor/ }).click();
 	const continueMenu = page.getByRole("menu", { name: /^Replaying 3-D Secure fixtures Cursor/ });
 	await expect(continueMenu.getByRole("menuitem", { name: "Cursor" })).toBeVisible();
-	await expect(continueMenu.getByRole("menuitem", { name: /Terminal/ })).toBeVisible();
+	await expect(continueMenu.getByRole("menuitem", { name: "Copy prompt", exact: true })).toBeVisible();
 	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
 	await expect(chat).toHaveCount(0);
 	await page.keyboard.press("Escape");

@@ -110,7 +110,7 @@ function SelectTrigger({
 						<Icon
 							render={<ChevronDownIcon label="" size="small" spacing="none" />}
 							label=""
-							className="text-icon-subtle size-4 pointer-events-none"
+							className="text-icon-subtle size-4 pointer-events-none [&_svg]:size-3!"
 						/>
 					}
 				/>

@@ -93,11 +93,19 @@ function session(id, invoker) {
 		host: "local",
 		id,
 		invokedBy: invoker,
+		role: invoker ? "viewer" : "owner",
 		sessionDetails: { host: "local", issueSummary: `${id} work` },
 		state: "complete",
 		title: `${id} title`,
 	};
 }
+
+test("Venn's sessions drag with the agent avatar alone", async () => {
+	const harness = await loadDragChipHarness();
+	const markup = harness.renderChip({ cohort: cohort({ ...session("mine", { name: "Venn" }), role: "owner" }) });
+	assert.doesNotMatch(markup, /data-slot="human-agent-avatar"|data-shape="circle"/u);
+	assert.match(markup, /aria-label="Claude"/u);
+});
 
 const ANNIE = { name: "Annie Chen" };
 

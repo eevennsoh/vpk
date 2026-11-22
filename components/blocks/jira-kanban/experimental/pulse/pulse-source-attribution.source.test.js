@@ -41,7 +41,7 @@ test("Pulse opens the shared sources preview menu from the app stack button", ()
 		APPSTACK_SOURCE,
 		/import \{\s*PULSE_SOURCE_PREVIEW_PAGES,\s*PULSE_SOURCES,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/data\/pulse-sources-preview";/u,
 	);
-	assert.match(APPSTACK_SOURCE, /<SourcePreviewMenu/u);
+	assert.match(APPSTACK_SOURCE, /<SourcesMenu/u);
 	assert.match(APPSTACK_SOURCE, /pages=\{PULSE_SOURCE_PREVIEW_PAGES\}/u);
 	assert.match(
 		APPSTACK_SOURCE,

@@ -11,6 +11,8 @@ export const BUTTER_WORK_ITEM_SESSIONS: readonly ProjectButterSessionItem[] = BU
 	.filter((session) => session.id === "butter-coding" || session.id === "butter-cursor-forecast")
 	.map((session) => session.id === "butter-coding" ? {
 		...session,
+		invokedBy: PROJECT_BUTTER_SESSIONS.find(({ id }) => id === session.id)?.invokedBy,
+		role: "viewer",
 		title: "Implement onboarding step validation",
 		message: "I reviewed the onboarding requirements. Should I start with account setup validation or the progress indicator?",
 	} : {

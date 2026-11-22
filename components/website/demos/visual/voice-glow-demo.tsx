@@ -64,7 +64,7 @@ export default function VoiceGlowDemo() {
 				</VoiceGlow>
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button variant="secondary" onClick={() => update("paused", !config.paused)} aria-pressed={config.paused}>{config.paused ? "Resume glow" : "Pause glow"}</Button>
+				<Button variant="secondary" onClick={() => update("paused", !config.paused)}>{config.paused ? "Resume glow" : "Pause glow"}</Button>
 				<Button variant="secondary" disabled={!mic.supported || mic.state === "requesting"} onClick={mic.state === "live" ? mic.stop : () => { setSimulateVoice(false); void mic.start(); }}>{MICROPHONE_LABELS[mic.state]}</Button>
 				<Button variant="ghost" onClick={reset}>Reset</Button>
 			</div>
@@ -73,26 +73,25 @@ export default function VoiceGlowDemo() {
 			</p>
 			<GUI.Panel title="Voice Glow controls" values={{ ...defaults, ...config, colors, bandColors }}>
 				<VoiceGlowControls config={config} defaults={defaults} update={update} simulateVoice={simulateVoice} onSimulateVoiceChange={changeSimulation} />
-				<VoiceGlowColors colors={colors} setColors={setColors} bandColors={bandColors} setBandColors={setBandColors} palette={config.colorVariant} theme={theme} />
+				{config.look === "dots" || config.look === "lines" ? null : <VoiceGlowColors colors={colors} setColors={setColors} bandColors={bandColors} setBandColors={setBandColors} palette={config.colorVariant} theme={theme} />}
 			</GUI.Panel>
 		</div>
 	);
 }
 
-function VoiceGlowExample({ type, processing = false }: Readonly<{ type: VoiceBeamType; processing?: boolean }>) {
+function VoiceGlowExample({ type }: Readonly<{ type: VoiceBeamType }>) {
 	const { actualTheme } = useTheme();
 	const [paused, setPaused] = useState(false);
-	const simulation = useVoiceGlowSimulation(!processing);
+	const simulation = useVoiceGlowSimulation(true);
 	return (
 		<div className="flex w-full flex-col items-center gap-8 bg-surface p-8">
-			<VoiceGlow type={type} processing={processing} paused={paused} theme={actualTheme} level={simulation.level} className={WRAPPERS[type]}>
+			<VoiceGlow type={type} paused={paused} theme={actualTheme} level={simulation.level} className={WRAPPERS[type]}>
 				<VoiceGlowSurface type={type} theme={actualTheme} />
 			</VoiceGlow>
-			<Button variant="secondary" onClick={() => setPaused((current) => !current)} aria-pressed={paused}>{paused ? "Resume example" : "Pause example"}</Button>
+			<Button variant="secondary" onClick={() => setPaused((current) => !current)}>{paused ? "Resume example" : "Pause example"}</Button>
 		</div>
 	);
 }
 
 export function VoiceGlowPillExample() { return <VoiceGlowExample type="pill" />; }
 export function VoiceGlowMobileExample() { return <VoiceGlowExample type="mobile" />; }
-export function VoiceGlowProcessingExample() { return <VoiceGlowExample type="default" processing />; }

@@ -1,9 +1,15 @@
-import type { JiraIssuePullRequestPreview } from "@/components/blocks/jira-issue/types";
+import { AGENT_SESSION_DEMO_CHECKS } from "@/components/blocks/agent-session/data";
+import type { JiraIssuePullRequestItem, JiraIssuePullRequestPreview } from "@/components/blocks/jira-issue/types";
 
 import { PAY_101_INVENTORY_PR_ARTIFACT } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 
 const PAY_REPOSITORY = "payments-platform/payments";
+
+export const BUTTER_PAY_113_RELATED_PULL_REQUESTS = [
+	{ number: 1853, status: "open", preview: { title: "Add 3-D Secure contract coverage", repository: "acme/storefront", branch: "fix/pay-113-contract-coverage", targetBranch: "main", additions: 86, deletions: 12, filesChanged: 4, checks: AGENT_SESSION_DEMO_CHECKS.running } },
+	{ number: 1852, status: "merged", preview: { title: "Stabilize the 3-D Secure contract suite", repository: "acme/storefront", branch: "fix/pay-113-3ds-contract-suite", targetBranch: "main", additions: 214, deletions: 48, filesChanged: 9, checks: AGENT_SESSION_DEMO_CHECKS.passed } },
+] as const satisfies readonly JiraIssuePullRequestItem[];
 
 function createPreview({
 	additions,
@@ -34,6 +40,35 @@ function createPreview({
 		title,
 	};
 }
+
+export const BUTTER_PAY_109_RELATED_PULL_REQUESTS = [
+	{
+		number: 1911,
+		status: "open",
+		preview: createPreview({
+			additions: 82,
+			author: PAY_STORY_PEOPLE.maya,
+			branch: "pay-109-webhook-schema-compatibility",
+			deletions: 9,
+			filesChanged: 5,
+			relativeTime: "3h",
+			title: "Validate webhook schema compatibility",
+		}),
+	},
+	{
+		number: 1912,
+		status: "merged",
+		preview: createPreview({
+			additions: 46,
+			author: PAY_STORY_PEOPLE.jordan,
+			branch: "pay-109-webhook-schema-fixtures",
+			deletions: 12,
+			filesChanged: 3,
+			relativeTime: "2d",
+			title: "Update webhook contract fixtures",
+		}),
+	},
+] as const satisfies readonly JiraIssuePullRequestItem[];
 
 /** Dummy spacious overlay content, keyed by issue code (PR numbers repeat). */
 export const BUTTER_PULL_REQUEST_PREVIEWS = {

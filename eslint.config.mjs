@@ -4,6 +4,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import { plugin as shadcn } from "@shadcn/lint";
 import { builtinRules } from "eslint/use-at-your-own-risk";
+import vpkTests from "./scripts/lib/eslint-plugin-vpk-tests.mjs";
 
 const installedReactVersion = createRequire(import.meta.url)("react/package.json").version;
 
@@ -24,7 +25,7 @@ const badgeRestyleContract = {
 // gotchas-ui.md: overlay elevation already defines the surface, so an outer border or
 // ring draws a double outline. Separators on the surface's children stay allowed.
 const overlaySurfaceContract = {
-	pattern: "^(Popover|DropdownMenu|DropdownMenuSub|HoverCard|ContextMenu|ContextMenuSub|Menubar|MenubarSub|Select|Combobox|NavigationMenu|Tooltip)Content$",
+	pattern: "^(Popover|DropdownMenu|DropdownMenuSub|HoverCard|ContextMenu|ContextMenuSub|Menubar|MenubarSub|Select|Combobox|NavigationMenu|Tooltip|Sheet)Content$",
 	allow: ["*"],
 	// Width classes only: border-0 / ring-0 removals stay legal.
 	deny: [
@@ -190,7 +191,17 @@ const capabilitySyntax = [
 		message: "Give each <Toaster /> a unique id and pass the matching toasterId to toast.* (gotchas-ui.md).",
 	},
 ];
-const appRestrictedSyntax = [...react19Syntax, ...conditionalRenderSyntax, ...motionTokenSyntax, ...hydrationSafeSyntax, ...capabilitySyntax];
+const searchIconSyntax = [
+	{
+		selector: "JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='SearchIcon'], JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='span'] > JSXElement[openingElement.name.name='SearchIcon'], JSXElement[openingElement.name.name='InputGroupAddon'] > JSXElement[openingElement.name.name='Icon'] > JSXOpeningElement > JSXAttribute[name.name='render'] JSXElement[openingElement.name.name='SearchIcon']",
+		message: "Use InputGroupSearchAddon for search magnifiers so they use color.icon.subtlest.",
+	},
+	{
+		selector: "JSXOpeningElement[name.name=/^(DropdownMenuSearchField|RichTextCommandMenuSearchField)$/] JSXAttribute[name.name='icon'] JSXElement[openingElement.name.name='SearchIcon']",
+		message: "Omit the search icon prop; DropdownMenuSearchField supplies the shared color.icon.subtlest magnifier.",
+	},
+];
+const appRestrictedSyntax = [...react19Syntax, ...conditionalRenderSyntax, ...motionTokenSyntax, ...hydrationSafeSyntax, ...capabilitySyntax, ...searchIconSyntax];
 const apiRouteRestrictedSyntax = [
 	...appRestrictedSyntax,
 	{
@@ -208,6 +219,8 @@ const vpkTokens = {
 		"no-tailwind-heading-type": builtinRules.get("no-restricted-syntax"),
 		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
 		"no-undefined-overlay-shadow": builtinRules.get("no-restricted-syntax"),
+		"no-mismatched-underline-color": builtinRules.get("no-restricted-syntax"),
+		"no-off-grid-spacing": builtinRules.get("no-restricted-syntax"),
 	},
 };
 // gotchas-ui.md: the root layout's MainLandmark is the page's only main landmark. Its own rule id
@@ -222,11 +235,17 @@ const rawWhiteBlackPattern = "(^|[\\s:])bg-(white|black)($|\\s)";
 // A Tailwind size from text-xl up combined with a bold weight in one class string is a hand-made heading.
 const tailwindHeadingPattern = "(?=.*\\btext-[2-9]?xl\\b)(?=.*\\bfont-(semibold|bold)\\b)";
 const tileRadiusPattern = "\\brounded-\\[25%\\]";
+// DESIGN.md: an underline is always the color of its text. Only decoration-current may color one; style,
+// thickness and box utilities (decoration-dotted, decoration-2, decoration-clone, ...) stay legal.
+const underlineColorPattern = "(^|[\\s:])decoration-(?!(current|solid|double|dotted|dashed|wavy|auto|from-font|clone|slice)($|\\s)|\\d|\\[length|\\(length)[a-z\\[(]";
 // No `shadow-overlay` utility exists, so the class is a silent no-op: inside an overlay *Content it leaves
 // the primitive's shadow-xl (ADS overlay + a second 1px perimeter, a doubled stroke); elsewhere, no shadow.
 const undefinedOverlayShadowPattern = "(^|[\\s:])shadow-overlay($|\\s)";
 // The catalog's "shadow-overlay" slug (a registry key or id argument) is not a class string.
 const undefinedOverlayShadowSelector = `Literal[value=/${undefinedOverlayShadowPattern}/]:not(Property > Literal.key):not(CallExpression > Literal.arguments:first-child), TemplateElement[value.raw=/${undefinedOverlayShadowPattern}/]`;
+// DESIGN.md spacing: padding, margin and gap are multiples of 4px or 6px. 10px (*-2.5) and 14px (*-3.5)
+// are off that grid; responsive and state prefixes (sm:px-2.5, hover:p-2.5) count too.
+const offGridSpacingPattern = "(^|[\\s:])-?(p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y)-(2\\.5|3\\.5|\\[10px\\]|\\[14px\\])($|\\s)";
 function classStringSelector(pattern) {
 	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
 }
@@ -446,9 +465,17 @@ const eslintConfig = defineConfig([
 				selector: classStringSelector(tileRadiusPattern),
 				message: "Use rounded-tile (--ds-radius-tile) instead of rounded-[25%] (token-priority.md).",
 			}],
+			"vpk-tokens/no-mismatched-underline-color": ["error", {
+				selector: classStringSelector(underlineColorPattern),
+				message: "An underline takes its text's color: use decoration-current (or color the element) instead of a decoration-<color> class (DESIGN.md).",
+			}],
 			"vpk-tokens/no-undefined-overlay-shadow": ["error", {
 				selector: undefinedOverlayShadowSelector,
 				message: "shadow-overlay is not a Tailwind utility (no-op; overlay *Content keeps shadow-xl's doubled 1px stroke). Use shadow-2xl for ADS overlay elevation (DESIGN.md).",
+			}],
+			"vpk-tokens/no-off-grid-spacing": ["error", {
+				selector: classStringSelector(offGridSpacingPattern),
+				message: "Spacing is a multiple of 4px or 6px: use 8px (*-2) or 12px (*-3) instead of 10px (*-2.5), 12px or 16px instead of 14px (*-3.5) (DESIGN.md › Spacing rhythm).",
 			}],
 		},
 	},
@@ -484,6 +511,21 @@ const eslintConfig = defineConfig([
 				selector: "CallExpression[callee.object.name='assert'][callee.property.name=/^(match|doesNotMatch)$/]:matches([arguments.0.name=/SOURCE$/], [arguments.0.callee.name=/^(readFileSync|readProjectFile)$/])",
 				message: "Prove behavior instead of matching source text: render and interact with renderComponent() (scripts/lib/render-component.js) or test the pure helper; enforce structure with lint.",
 			}],
+		},
+	},
+	{
+		// testing.md: a failed assert on a DOM node prints the whole document and can kill the run.
+		// Its own rule id keeps the baseline in eslint-suppressions.json counted separately.
+		files: [
+			"app/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"components/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"hooks/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"lib/**/*.test.{js,mjs,cjs,ts,jsx,tsx}",
+			"scripts/lib/render-component.test.js",
+		],
+		plugins: { "vpk-tests": vpkTests },
+		rules: {
+			"vpk-tests/no-dom-node-assert": "error",
 		},
 	},
 	{

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 
-import { formatElapsedTime, formatRelativeTime } from "@/lib/elapsed-time";
+import { describeRelativeTimeLabel, formatElapsedTime, formatRelativeTime, toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 
 const ELAPSED_TIME_TICK_MS = 1000;
 
@@ -14,6 +14,7 @@ export interface ElapsedTimeProps extends Omit<ComponentProps<"time">, "children
 
 export interface RelativeTimeProps extends Omit<ComponentProps<"time">, "children" | "dateTime"> {
 	fallback?: string;
+	format?: "compact" | "long";
 	secondsAgo?: number;
 	timestampMs?: number;
 }
@@ -56,6 +57,7 @@ export function ElapsedTime({
 /** Relative timestamp that continues aging after mount. */
 export function RelativeTime({
 	fallback,
+	format,
 	secondsAgo,
 	timestampMs,
 	...props
@@ -84,10 +86,14 @@ export function RelativeTime({
 		0,
 		Math.floor((nowMs - resolvedTimestampMs) / ELAPSED_TIME_TICK_MS),
 	);
+	const label = formatRelativeTime(resolvedSecondsAgo, { showSeconds: format === "long" });
+	const visibleLabel = format === "long"
+		? describeRelativeTimeLabel(label) ?? label
+		: format === "compact" ? toCompactRelativeTimeLabel(label) : label;
 
 	return (
 		<time dateTime={new Date(resolvedTimestampMs).toISOString()} {...props}>
-			{formatRelativeTime(resolvedSecondsAgo)}
+			{visibleLabel}
 		</time>
 	);
 }

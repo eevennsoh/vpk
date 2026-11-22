@@ -1,0 +1,10 @@
+version = 1
+id = "code-simplification"
+kind = "cron"
+name = "Code simplification"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nBuild a shortlist from at least the five most recent relevant merged PRs, then simplify exactly one cohesive VPK code area when behavior preservation is obvious. Prefer deletion of duplicated JSX, unreachable branches, redundant abstractions, repeated conditionals, needless casts, or write-only state. Return a no-PR report when no candidate is clearly worthwhile.\n\n## Evidence and judgment\nInspect recent diffs, callers, adjacent tests, and open-PR overlap for two to four candidates before selecting one. Apply the AGENTS Architecture Quality Bar. Use the thermo-nuclear review only as a read-only lens, and consult vpk-tidy/composition/Next guidance only when the selected owner needs it. Inputs, outputs, errors, side effects, SSR, accessibility, and public contracts must remain unchanged. Do not mix a simplification with a fix, feature, dependency update, or broad formatting.\n\n## Handoff\nFor a successful change, use title `[Automation] Code simplification: <short summary>` and existing labels `automation`, `codex`, and `refactor`. Include the candidate shortlist, why one was selected, complexity removed, behavior proof, shared-policy validation, overlap/freshness evidence, and reviewer focus.\n\n## Stop conditions\nReturn no PR when behavior preservation is uncertain, the abstraction purpose is unclear, another change owns the area, the candidate merely moves complexity, or the patch expands beyond one cohesive simplification."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=15;BYMINUTE=0;BYDAY=MO,TH"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

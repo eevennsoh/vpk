@@ -5,6 +5,12 @@ import { Fragment, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Entrance for a chat turn as it mounts (sidebar, ChatMessages, Rovo and Studio): shadcn's default Message Scroller slide-up (fade and a 10px
+ * rise) on VPK motion tokens. The global reduced-motion reset removes it.
+ */
+export const turnEnterClassName = "animate-in fade-in slide-in-from-bottom-[10px] duration-slow ease-out";
+
 export interface ThreadMessage {
 	id: string;
 }
@@ -49,6 +55,7 @@ interface MessageTurnsProps<MESSAGE extends ThreadMessage> {
 		turnIndex: number,
 		turns: ReadonlyArray<ReadonlyArray<MESSAGE>>
 	) => ReactNode;
+	renderTurnContainer?: (turn: ReadonlyArray<MESSAGE>, children: ReactNode) => ReactNode;
 	getMessageContainerClassName?: (
 		message: MESSAGE,
 		messageIndex: number,
@@ -79,6 +86,7 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 	getTurnContainerClassName,
 	getTurnContainerStyle,
 	renderTurnAfter,
+	renderTurnContainer,
 	getMessageContainerClassName,
 	getMessageContainerStyle,
 	renderMessage,
@@ -104,8 +112,8 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 					renderedTurnAfter === false
 				);
 
-				return (
-					<Fragment key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}>
+				const children = (
+					<>
 						<div
 							className={cn(
 								isLatestTurn ? latestTurnClassName : undefined,
@@ -152,6 +160,12 @@ export function MessageTurns<MESSAGE extends ThreadMessage>({
 							})}
 						</div>
 						{hasRenderedTurnAfter ? renderedTurnAfter : null}
+					</>
+				);
+
+				return (
+					<Fragment key={`turn-${turnIndex}-${turn[0]?.id ?? "empty"}`}>
+						{renderTurnContainer ? renderTurnContainer(turn, children) : children}
 					</Fragment>
 				);
 			})}

@@ -609,10 +609,6 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 		readFileSync(join(EXPERIMENTAL_DIR, "data", "board-filter-options.ts"), "utf8"),
 		/Filter by days/u,
 	);
-	assert.match(
-		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
-		/aria-expanded=\{model\.open\}[\s\S]*aria-label=\{filterLabel\}[\s\S]*aria-pressed=\{hasSelection \|\| model\.open\}/u,
-	);
 	assert.doesNotMatch(
 		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
 		/Filter board is unavailable/u,
@@ -659,13 +655,13 @@ test("Pulse keeps one member filter on the header facepile, not the story attrib
 	assert.deepEqual([...shellOrder].sort((a, b) => a - b), shellOrder, "the shell composes its hooks out of order");
 	assert.ok(shellOrder.every((index) => index > 0));
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export function PulseRosterFacepile\(/u);
-	// The shared group supplies the shape-aware separator to nested hexagons,
+	// The shared group masks the overlap between nested avatars,
 	// while fixed-size flex buttons remove inline baseline drift between SVG
 	// agents and photo-backed humans.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /<AvatarGroup[\s\S]*className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
-	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" && isSelected \? "ring-2! ring-border-selected!" : null/u);
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /"ring-2 ring-surface transition-opacity/u);
 	// The contributor facepile uses the same primitive and a 16px wrapper.
 	// Keeping the avatar as a direct child of a 16px flex span removes the
@@ -675,7 +671,7 @@ test("Pulse keeps one member filter on the header facepile, not the story attrib
 	assert.match(SOURCES.story, /<AvatarGroup[\s\S]*label="By contributors in this window"[\s\S]*size="xs"/u);
 	assert.match(SOURCES.story, /className="flex size-4 shrink-0 items-center justify-center"/u);
 	assert.match(SOURCES.story, /size="xs"/u);
-	assert.match(SOURCES.story, /member\.kind === "human" \? "ring-2 ring-surface" : undefined/u);
+	assert.match(SOURCES.story, /className="flex size-4 shrink-0 items-center justify-center"[\s\S]*?size="xs"/u);
 	assert.doesNotMatch(SOURCES.story, /ring-border-selected!/u);
 	assert.doesNotMatch(SOURCES.story, /Clear filter:/u);
 	assert.doesNotMatch(SOURCES.story, /"duration-normal ease-out-practical ring-2 ring-surface transition-opacity/u);

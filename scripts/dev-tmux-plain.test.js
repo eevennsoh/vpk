@@ -101,6 +101,8 @@ function createFakeLauncherEnvironment() {
 		"#!/usr/bin/env bash",
 		// The dev-output clean is recorded, never run: the tests run in this worktree.
 		"case \"$1\" in *scripts/lib/next-dev-output.js) echo \"$*\" >> \"$NODE_CLEANUP_LOG\"; exit 0 ;; esac",
+		// FAKE_GUARD_EXIT: the stop guard fails with this status (a crash, not a refusal).
+		"case \"$1\" in *scripts/lib/dev-stack-activity.js) [ -n \"${FAKE_GUARD_EXIT:-}\" ] && exit \"$FAKE_GUARD_EXIT\" ;; esac",
 		"if [ \"$1\" = \"./scripts/cleanup-worktree-listeners.js\" ]; then",
 		"\techo \"$1\" >> \"$NODE_CLEANUP_LOG\"",
 		"\texit 0",
@@ -330,6 +332,80 @@ test("stop stops every session that belongs to this worktree", () => {
 	}
 });
 
+// Regression: automation (the idle sweep, or `pnpm ports kill` from another worktree) sent Ctrl-C to
+// a stack another worktree's agent was using. Such a stop is refused while the stack shows recent
+// activity, --force overrides it, and every stop is logged with who asked.
+test("a stop another worktree requests is refused while the stack is in use, logged, and --force overrides", () => {
+	const fake = createFakeLauncherEnvironment();
+	const logDir = path.join(fake.tempDir, "logs");
+	fs.mkdirSync(logDir, { recursive: true });
+	fs.writeFileSync(path.join(logDir, "dev.log"), "GET / 200 in 12ms\n");
+	const requester = { VPK_DEV_LOG_DIR: logDir, VPK_DEV_STOP_BY: "pnpm ports kill (pid 1)", VPK_DEV_STOP_FROM: fake.tempDir };
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-guarded|${worktreeRoot}\n`);
+		withPortFiles(null, null, () => {
+			const refused = startAs(fake, "vpk-dev-guarded", requester, ["stop"]);
+			assert.equal(refused.status, 6, refused.stdout + refused.stderr);
+			assert.match(refused.stderr, /Not stopping .*: pnpm ports kill \(pid 1\) from .* asked, and this stack is in use \(recent activity: dev log written/);
+			assert.deepEqual(fake.sessions(), [`vpk-dev-guarded|${worktreeRoot}`], "the session was not touched");
+			assert.equal(fs.existsSync(fake.tmuxLogPath) && fs.readFileSync(fake.tmuxLogPath, "utf8").includes("send-keys"), false, "no Ctrl-C was sent");
+
+			const forced = startAs(fake, "vpk-dev-guarded", requester, ["stop", "--", "--force"]);
+			assert.equal(forced.status, 0, forced.stderr);
+			assert.match(forced.stdout, /Stop requested by pnpm ports kill \(pid 1\) from .* \(forced; in use: recent activity/);
+			assert.deepEqual(fake.sessions(), []);
+		});
+		const outcomes = fs.readFileSync(path.join(logDir, "dev-stops.log"), "utf8").trim().split("\n").map((line) => JSON.parse(line).outcome);
+		assert.deepEqual(outcomes, ["refused", "stopping (forced)"]);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+// Regression: a stop trusted a session-name match alone, so a checkout whose name collides with
+// another's on the shared socket (branches `vpk/foo` and `vpk-foo`, or two clones' main checkouts)
+// sent Ctrl-C to the other checkout's stack.
+test("stop and start never touch a same-named session started in another checkout", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, "vpk-dev-same|/tmp/other-clone\n");
+		const stop = withPortFiles(null, null, () => startAs(fake, "vpk-dev-same", {}, ["stop"]));
+		assert.equal(stop.status, 0, stop.stderr);
+		assert.match(stop.stderr, /tmux session 'vpk-dev-same' \(socket: vpk-dev\) belongs to \/tmp\/other-clone, not this worktree; leaving it alone/);
+		assert.match(stop.stdout, /No tmux session 'vpk-dev-same'/);
+
+		const start = withPortFiles(null, null, () => startAs(fake, "vpk-dev-same"));
+		assert.equal(start.status, 1, start.stdout + start.stderr);
+		assert.match(start.stderr, /Cannot start: the session name 'vpk-dev-same' is taken by the stack in \/tmp\/other-clone/);
+
+		const tmuxLog = fs.existsSync(fake.tmuxLogPath) ? fs.readFileSync(fake.tmuxLogPath, "utf8") : "";
+		assert.doesNotMatch(tmuxLog, /send-keys|kill-session|new-session/);
+		assert.deepEqual(fake.sessions(), ["vpk-dev-same|/tmp/other-clone"]);
+		assert.deepEqual(fake.serversLaunched(), []);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("a stop guard that fails lets this worktree's own stop through but not a requested one", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-crash|${worktreeRoot}\n`);
+		withPortFiles(null, null, () => {
+			const requested = startAs(fake, "vpk-dev-crash", { FAKE_GUARD_EXIT: "1", VPK_DEV_STOP_BY: "test automation" }, ["stop"]);
+			assert.equal(requested.status, 1, requested.stdout + requested.stderr);
+			assert.deepEqual(fake.sessions(), [`vpk-dev-crash|${worktreeRoot}`]);
+
+			const direct = startAs(fake, "vpk-dev-crash", { FAKE_GUARD_EXIT: "1" }, ["stop"]);
+			assert.equal(direct.status, 0, direct.stderr);
+			assert.match(direct.stderr, /The stop guard failed \(exit 1\); stopping anyway/);
+			assert.deepEqual(fake.sessions(), []);
+		});
+	} finally {
+		fake.cleanup();
+	}
+});
+
 test("over the stack budget a start refuses, lists the live stacks, and --force overrides", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
@@ -345,9 +421,10 @@ test("over the stack budget a start refuses, lists the live stacks, and --force 
 			const refused = startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: inventory });
 			assert.equal(refused.status, 3);
 			assert.match(refused.stderr, /Not starting: 4 dev stacks already run; starting this one would make 5 > budget 4/);
-			assert.match(refused.stderr, /quiet {2}\/tmp\/wt-one {2}\(pid 901 2%\)/);
-			assert.match(refused.stderr, /busy {3}\/tmp\/wt-two/);
-			assert.match(refused.stderr, /no live task seen; stop: \(cd '\/(?:private\/)?tmp\/wt-three' && pnpm run dev:tmux:stop\)/);
+			assert.match(refused.stderr, /wt-one {2}\(quiet · pid 901 2%\)/);
+			assert.match(refused.stderr, /wt-two {2}\(busy · pid 902 150%\)/);
+			// The fake has no git worktree list, so no stack counts as external and each keeps `pnpm ports kill`.
+			assert.match(refused.stderr, /\/tmp\/wt-three\n {5}No live task seen\.\n {5}Stop it: pnpm ports kill '\/(?:private\/)?tmp\/wt-three'/);
 			assert.match(refused.stderr, /pnpm run dev:tmux:start -- --force/);
 			assert.deepEqual(fake.sessions(), []);
 
@@ -436,6 +513,37 @@ test("start ends with the URL to open: the Portless route when one exists, else 
 		const routed = withPortFiles("49127", "49128", () => runLauncher(env));
 		assert.equal(lastLine(routed), "https://plain-url-test.vpk.localhost");
 	} finally {
+		fake.cleanup();
+	}
+});
+
+test("start selects a port unclaimed by other worktrees before launching Portless", () => {
+	const fake = createFakeLauncherEnvironment();
+	const otherWorktree = path.join(fake.tempDir, "other-worktree");
+	const git = (...args) => execFileSync("git", ["-C", worktreeRoot, ...args], { stdio: "pipe" });
+	try {
+		git("init");
+		git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--allow-empty", "-m", "fixture");
+		git("worktree", "add", "--detach", otherWorktree);
+		fs.writeFileSync(path.join(otherWorktree, ".dev-frontend-port"), "49150");
+		withPortFiles(null, null, () => runLauncher({
+			PATH: `${fake.tempDir}:${process.env.PATH}`,
+			PORT: "49150",
+			PORTLESS_APP_PORT: "",
+			VPK_TMUX_BIN: fake.tmuxPath,
+			VPK_DEV_TMUX_SESSION: "vpk-dev-portless-claim",
+			VPK_DEV_TMUX_WAIT: "1",
+			FAKE_LISTEN_FILE: fake.listenPath,
+			FAKE_TMUX_STATE: fake.statePath,
+			FAKE_TMUX_LOG: fake.tmuxLogPath,
+			NODE_CLEANUP_LOG: fake.cleanupLogPath,
+		}));
+		const command = fs.readFileSync(fake.tmuxLogPath, "utf8");
+		const assigned = command.match(/portless run .*--app-port (\d+)/);
+		assert.ok(assigned, command);
+		assert.ok(Number(assigned[1]) > 49150 && Number(assigned[1]) < 49170, command);
+	} finally {
+		fs.rmSync(path.join(worktreeRoot, ".git"), { recursive: true, force: true });
 		fake.cleanup();
 	}
 });

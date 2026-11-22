@@ -144,139 +144,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"attachment-demo-grid": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoGrid,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-inline": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoInline,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-list": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoList,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-hover-card": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoHoverCard,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-read-only": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoReadOnly,
-			})),
-		{ ssr: false },
-	),
-	"attachment-demo-empty": dynamic(
-		() =>
-			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
-				default: mod.AttachmentDemoEmpty,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-conversation": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoConversation,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-basic": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoBasic,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-with-tooltip": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoWithTooltip,
-			})),
-		{ ssr: false },
-	),
-	"checkpoint-demo-custom-icon": dynamic(
-		() =>
-			import("../../demos/ui-custom/checkpoint-demo").then((mod) => ({
-				default: mod.CheckpointDemoCustomIcon,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-full": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoFull,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-with-files": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoWithFiles,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-minimal": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMinimal,
-			})),
-		{ ssr: false },
-	),
-	"commit-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/commit-demo").then((mod) => ({
-				default: mod.CommitDemoMultiple,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-request": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoRequest,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-accepted": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoAccepted,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-rejected": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoRejected,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-interactive": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoInteractive,
-			})),
-		{ ssr: false },
-	),
-	"confirmation-demo-variants": dynamic(
-		() =>
-			import("../../demos/ui-custom/confirmation-demo").then((mod) => ({
-				default: mod.ConfirmationDemoVariants,
-			})),
-		{ ssr: false },
-	),
 	"context-demo-with-cost": dynamic(
 		() =>
 			import("../../demos/ui-custom/context-demo").then((mod) => ({
@@ -438,20 +305,6 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"file-tree-demo-project": dynamic(
-		() =>
-			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
-				default: mod.FileTreeDemoProject,
-			})),
-		{ ssr: false },
-	),
-	"file-tree-demo-with-selection": dynamic(
-		() =>
-			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
-				default: mod.FileTreeDemoWithSelection,
-			})),
-		{ ssr: false },
-	),
 	"file-tree-demo-custom-icons": dynamic(
 		() =>
 			import("../../demos/ui-custom/file-tree-demo").then((mod) => ({
@@ -466,38 +319,38 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-path-first": dynamic(
+	"file-explorer-demo-path-first": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoPathFirst,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoPathFirst,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-flatten-empty-directories": dynamic(
+	"file-explorer-demo-flatten-empty-directories": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoFlattenEmptyDirectories,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoFlattenEmptyDirectories,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-git-status": dynamic(
+	"file-explorer-demo-git-status": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoGitStatus,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoGitStatus,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-drag-and-drop": dynamic(
+	"file-explorer-demo-drag-and-drop": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoDragAndDrop,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoDragAndDrop,
 			})),
 		{ ssr: false },
 	),
-	"file-tree-2-demo-icon-rules": dynamic(
+	"file-explorer-demo-icon-rules": dynamic(
 		() =>
-			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
-				default: mod.FileTree2DemoIconRules,
+			import("../../demos/ui-custom/file-explorer-demo").then((mod) => ({
+				default: mod.FileExplorerDemoIconRules,
 			})),
 		{ ssr: false },
 	),

@@ -4,12 +4,22 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("medium detached identity is vertically centered in its card", async ({ page }) => {
+	await page.goto(`${AGENT_SESSION_URL}#medium-detached`);
+	const card = page.locator("#medium-detached [data-session-drag-identity]").locator("..");
+	const identity = card.locator('[data-slot="human-agent-avatar"]');
+	await expect(identity).toBeVisible();
+	const [cardBox, identityBox] = await Promise.all([card.boundingBox(), identity.boundingBox()]);
+	if (!cardBox || !identityBox) throw new Error("The detached card and identity must be visible");
+	expect(Math.abs((cardBox.y + cardBox.height / 2) - (identityBox.y + identityBox.height / 2))).toBeLessThanOrEqual(1);
+});
+
 test("teammate disclosure header does not jump when opening or closing", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
-	for (const expanded of [true, false]) {
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
+	for (const expanded of [false, true]) {
 		const heights = await trigger.evaluate(async (button) => {
 			if (!(button instanceof HTMLButtonElement)) throw new Error("Disclosure trigger must be a button");
 			const before = button.getBoundingClientRect().height;
@@ -19,7 +29,7 @@ test("teammate disclosure header does not jump when opening or closing", async (
 		});
 		expect(Math.abs(heights[1] - heights[0]), `Header heights: ${heights}`).toBeLessThan(12);
 		await expect(trigger).toHaveAttribute("aria-expanded", String(expanded));
-		await page.waitForTimeout(250);
+		await expect(trigger.locator('[data-slot="avatar-group"]').locator("..")).toHaveCSS("opacity", expanded ? "0" : "1");
 	}
 });
 
@@ -27,7 +37,10 @@ test("teammate avatars move down on expansion and up on collapse", async ({ page
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
+	await trigger.click();
+	await expect(trigger).toHaveAttribute("aria-expanded", "false");
+	await expect(trigger.locator('[data-slot="avatar-group"]').locator("..")).toHaveCSS("opacity", "1");
 	const sampleMotion = async () => {
 		await page.evaluate(() => {
 			delete document.documentElement.dataset.motionTrace;
@@ -44,8 +57,9 @@ test("teammate avatars move down on expansion and up on collapse", async ({ page
 					const group = document.querySelector('[aria-label="Agent assignment"] [data-slot="collapsible-trigger"] [data-slot="avatar-group"]');
 					const stack = group?.parentElement;
 					const label = document.querySelector('[aria-label="Agent assignment"] [data-teammate-disclosure-label]');
-					if (label && stack) {
-						labelPositions.push(label.getBoundingClientRect().x);
+					const disclosure = label?.closest('[data-slot="collapsible-trigger"]');
+					if (label && stack && disclosure) {
+						labelPositions.push(label.getBoundingClientRect().x - disclosure.getBoundingClientRect().x);
 						effects.push({ blur: getComputedStyle(label).filter, overflow: getComputedStyle(stack).overflow });
 					}
 					if (stack && group) {
@@ -96,9 +110,8 @@ test("teammate avatars settle without movement when reduced motion is enabled", 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
-	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
 	const avatars = trigger.locator('[data-slot="avatar-group"]');
-	await trigger.click();
 	await expect(avatars.locator("..")).toHaveCSS("opacity", "0");
 	await expect(trigger.locator('[data-teammate-disclosure-label]')).toHaveCSS("filter", "blur(0px)");
 	await trigger.click();
@@ -114,12 +127,14 @@ test("teammate avatars settle without movement when reduced motion is enabled", 
 	expect(avatarTranslations).toEqual([0, 0, 0, 0]);
 });
 
-test("teammate disclosure moves the counted label to the front when expanded", async ({ page }) => {
+test("teammate disclosure moves the label to the front when expanded", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
 	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
 	const menu = page.getByRole("dialog", { name: "Agent assignment" });
-	const trigger = menu.getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
+	const trigger = menu.getByRole("button", { name: /^(?:Use an agent|Using agents|Other agent activity)$/u });
+	await menu.getByRole("button", { name: "Other agent activity" }).click();
+	await expect(trigger).toHaveAttribute("aria-expanded", "false");
 	const label = trigger.locator('[data-teammate-disclosure-label]');
 	const labelOffset = async () => {
 		const [buttonBounds, labelBounds] = await Promise.all([trigger.boundingBox(), label.boundingBox()]);
@@ -136,14 +151,14 @@ test("teammate disclosure moves the counted label to the front when expanded", a
 	if (!labelBoundsBefore) throw new Error("Teammate disclosure label must be visible");
 	expect(Math.abs(labelBoundsBefore.y + labelBoundsBefore.height / 2 - avatarBounds.y - avatarBounds.height / 2)).toBeLessThanOrEqual(1);
 	expect(labelBoundsBefore.x).toBeGreaterThan(avatarBounds.x + avatarBounds.width);
-	await expect(trigger).toHaveAccessibleName("Other sessions");
+	await expect(trigger).toHaveAccessibleName("Using agents");
 	for (const avatar of await trigger.locator('[data-slot="avatar"]').all()) {
 		await expect(avatar).toHaveCSS("width", "16px");
 		await expect(avatar).toHaveCSS("height", "16px");
 	}
 	await trigger.click();
 	await expect(trigger).toHaveAttribute("aria-expanded", "true");
-	await expect(trigger).toHaveAccessibleName("4 other sessions");
+	await expect(trigger).toHaveAccessibleName("Other agent activity");
 	expect(Math.abs(await labelOffset() - collapsedOffset)).toBeLessThanOrEqual(1);
 	const [expandedBounds, labelBounds] = await Promise.all([trigger.boundingBox(), label.boundingBox()]);
 	if (!expandedBounds || !labelBounds) throw new Error("Teammate disclosure must be visible");
@@ -152,7 +167,7 @@ test("teammate disclosure moves the counted label to the front when expanded", a
 	expect(Math.abs(collapsedOffset - (expandedBounds.y + expandedBounds.height - labelBounds.y - labelBounds.height))).toBeLessThanOrEqual(1);
 	await trigger.click();
 	await expect(trigger).toHaveAttribute("aria-expanded", "false");
-	await expect(trigger).toHaveAccessibleName("Other sessions");
+	await expect(trigger).toHaveAccessibleName("Using agents");
 	expect(Math.abs(await labelOffset() - collapsedOffset)).toBeLessThanOrEqual(1);
 });
 

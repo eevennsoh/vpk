@@ -42,7 +42,6 @@ import {
 import { IconTile, type IconTileIconSize } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -111,7 +110,6 @@ export function MetadataSearchPicker({
 			header={(
 				<RichTextCommandMenuSearchField
 					autoFocus
-					icon={<SearchIcon className="size-4 text-icon-subtle" />}
 					label={placeholder}
 					onClear={() => setQuery("")}
 					onEscape={onEscape}
@@ -142,6 +140,24 @@ const PERSON_LABEL_TEXT_CLASS = {
 	sm: "text-sm",
 } as const;
 
+export function PersonLabelAvatar({ person, size = "sm", animate = true }: Readonly<{ person: AgentPlannerAssignee; size?: keyof typeof PERSON_LABEL_AVATAR_PX; animate?: boolean }>) {
+	const fallbackText = person.name.slice(0, 2).toUpperCase();
+	return person.kind === "agent" ? (
+		<AgentAvatarVisual
+			avatarClassName="shrink-0"
+			avatarSrc={person.avatarUrl}
+			brandName={person.brandName}
+			fallbackText={fallbackText}
+			sizePx={PERSON_LABEL_AVATAR_PX[size]}
+		/>
+	) : (
+		<Avatar animate={animate} className="shrink-0" size={size}>
+			{person.avatarUrl ? <AvatarImage alt="" src={person.avatarUrl} /> : null}
+			<AvatarFallback>{fallbackText}</AvatarFallback>
+		</Avatar>
+	);
+}
+
 export function PersonLabel({
 	avatarSize,
 	person,
@@ -154,24 +170,9 @@ export function PersonLabel({
 	prefix?: string;
 	size?: keyof typeof PERSON_LABEL_AVATAR_PX;
 }>) {
-	const isAgent = person.kind === "agent";
-	const fallbackText = person.name.slice(0, 2).toUpperCase();
 	return (
 		<span className="flex min-w-0 items-center gap-2">
-			{isAgent ? (
-				<AgentAvatarVisual
-					avatarClassName="shrink-0"
-					avatarSrc={person.avatarUrl}
-					brandName={person.brandName}
-					fallbackText={fallbackText}
-					sizePx={PERSON_LABEL_AVATAR_PX[avatarSize ?? size]}
-				/>
-			) : (
-				<Avatar className="shrink-0" size={avatarSize ?? size}>
-					{person.avatarUrl ? <AvatarImage alt="" src={person.avatarUrl} /> : null}
-					<AvatarFallback>{fallbackText}</AvatarFallback>
-				</Avatar>
-			)}
+			<PersonLabelAvatar person={person} size={avatarSize ?? size} />
 			<span className={cn("min-w-0 truncate", PERSON_LABEL_TEXT_CLASS[size])}>
 				{prefix ? <span className="text-text-subtlest">{prefix}{" "}</span> : null}
 				<span className="text-text">{person.name}</span>
@@ -350,6 +351,7 @@ export function DateRowField({
 	leadingVisual,
 	trailingVisual,
 	placeholder,
+	renderLabel,
 	value,
 	onChange,
 	CalendarComponent,
@@ -359,6 +361,7 @@ export function DateRowField({
 	leadingVisual?: ReactNode;
 	trailingVisual?: ReactNode;
 	placeholder: string;
+	renderLabel?: (label: ReactNode) => ReactNode;
 	value?: Date;
 	onChange: (next: Date | undefined) => void;
 	// Injected to keep this module free of a direct calendar import at the top;
@@ -380,11 +383,12 @@ export function DateRowField({
 			: placeholder);
 	}, [dateValueMode, placeholder, value]);
 
+	const labelText = <span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>;
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				{leadingVisual}
-				<span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>
+				{renderLabel ? renderLabel(labelText) : labelText}
 				{trailingVisual}
 			</PopoverTrigger>
 			<PopoverContent

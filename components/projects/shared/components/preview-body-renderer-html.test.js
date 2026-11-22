@@ -109,11 +109,11 @@ test("artifact pane vpk-html preview removes the embedded document top gutter", 
 	assert.match(markup, /padding-top: 0 !important;/);
 });
 
-test("artifact pane code preview suppresses only the preview container border", async () => {
+test("artifact pane code preview suppresses only the preview container ring", async () => {
 	const harness = await loadHtmlPreviewHarness();
 	const markup = harness.renderArtifactPaneCodePreview();
 
 	assert.match(markup, /data-language="tsx"/);
-	assert.match(markup, /border-0/);
-	assert.doesNotMatch(markup, /rounded-md border border-border bg-surface-raised/);
+	assert.match(markup, /data-slot="code-block"[^>]*class="[^"]*\bring-0\b/);
+	assert.doesNotMatch(markup, /\bring-1\b/);
 });

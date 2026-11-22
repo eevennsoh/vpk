@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const MIC_SELECTOR_DETAIL: ComponentDetail = {
 	description:
-		"A composable microphone selector dropdown built on Command and Popover primitives. Provides permission-aware device enumeration, real-time device detection, searchable device list, and intelligent hardware ID label parsing.",
+		"A composable microphone selector dropdown built on Dropdown Menu and Command primitives. Provides permission-aware device enumeration, real-time device detection, searchable device list, and intelligent hardware ID label parsing.",
 	usage: `import {
   MicSelector,
   MicSelectorTrigger,
@@ -65,14 +65,14 @@ export const MIC_SELECTOR_DETAIL: ComponentDetail = {
 		},
 	],
 	subComponents: [
-		{ name: "MicSelector", description: "Root provider wrapping a Popover. Manages device enumeration, permission requests, and selection state." },
-		{ name: "MicSelectorTrigger", description: "Outline button trigger with chevron icon and ResizeObserver-synced width." },
+		{ name: "MicSelector", description: "Root provider wrapping a Dropdown Menu. Manages device enumeration, permission requests, and selection state." },
+		{ name: "MicSelectorTrigger", description: "Outline button trigger with the dropdown menu's chevron down." },
 		{ name: "MicSelectorValue", description: "Displays the selected device label or a placeholder." },
-		{ name: "MicSelectorContent", description: "Popover content wrapping a Command for searchable selection." },
-		{ name: "MicSelectorInput", description: "Search input for filtering the device list." },
-		{ name: "MicSelectorList", description: "Device list container with render-prop children receiving MediaDeviceInfo[]." },
+		{ name: "MicSelectorContent", description: "Dropdown menu content, as wide as the trigger, wrapping a Command for searchable selection." },
+		{ name: "MicSelectorInput", description: "The shared menu search field, flush with the menu's top edge; filters by device label." },
+		{ name: "MicSelectorList", description: "Scrollable device list with render-prop children receiving MediaDeviceInfo[]; fades its top edge once it scrolls." },
 		{ name: "MicSelectorEmpty", description: "Empty state shown when no devices match the search." },
-		{ name: "MicSelectorItem", description: "Individual selectable device item." },
+		{ name: "MicSelectorItem", description: "Selectable device row; marks the selected device with aria-checked and closes the menu on select." },
 		{ name: "MicSelectorLabel", description: "Device label with intelligent hardware ID parsing (extracts XXXX:XXXX format)." },
 	],
 	examples: [

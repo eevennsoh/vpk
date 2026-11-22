@@ -293,6 +293,15 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Spacing rhythm:** Start spacing, padding, margin, gap, and inset values on
   the ADS 8px rhythm through classes mapped from `--ds-space-*`. Use smaller
   steps for component interiors and larger steps for unrelated page regions.
+- **Spacing grid:** Padding, margin and gap are always multiples of 4px or 6px
+  (2, 4, 6, 8, 12, 16, 18, 20, 24…). Never 10px (`*-2.5`) or 14px (`*-3.5`).
+  When a component's side padding is 12px, its top and bottom padding is 12px
+  too unless the design specifies otherwise. Text inputs keep ADS's `4px 10px`
+  as the one exception. Lint: `vpk-tokens/no-off-grid-spacing`; existing uses
+  are baselined in `eslint-suppressions.json`.
+  Why: off-grid values like 10px break the 4px/6px rhythm and read as slightly
+  wrong next to 12px neighbours.
+  <!-- 2026-11-19: "right gap 12px is applied to top/bottom gap. Right now it's 10px (weird padding)… it should be increment of 4px or 6px when possible" -->
 - **Relationship by proximity:** Related controls sit closer together than
   unrelated groups. Avoid applying the same gap everywhere when hierarchy needs
   to stay scannable.
@@ -301,6 +310,11 @@ repo's semantic Tailwind classes whenever a class exists.
   radius to both the row surface and its agent button. Give the whole row the
   dropdown item's 6px top and bottom padding; let its content determine the
   height. Why: agent selectors follow the dropdown menu row treatment.
+  This applies to every popover that lists rows, not only `DropdownMenu`: a
+  `Popover` row list takes `dropdownStyles.surface` and `dropdownStyles.padding`
+  from `components/ui/dropdown-menu.tsx` and marks each row `data-menu-row` so
+  `menu-row-spacing` adds the 2px gap (`SourcesMenu` does this).
+  <!-- 2026-11-17: "sources preview menu needs to have the new dropdown menu padding style" -->
   <!-- 2026-11-14: "each row item separation will need to be 2px"; "corner radius of each individual row item should be 8px not 6px" -->
   <!-- 2026-11-14: "follow dropdown menu rows logic, it's based on top/bottom padding"; "why only part of it is done that way? But not the entire row?"; "corner radius needs to be 8px" -->
 - **Menu and picker subheadings:** Add a 6px top margin (`--ds-space-075`)
@@ -309,10 +323,17 @@ repo's semantic Tailwind classes whenever a class exists.
   <!-- 2026-11-14: "if there's content above the subheading and we are not using a separator, we should be adding a margin-top of 6px" -->
 - **Menu and picker separators:** Use `DropdownMenuSeparator` from
   `components/ui/dropdown-menu.tsx` between sections instead of a border on an
-  adjacent row or container. Its shared treatment uses `bg-border`, a 1px line,
-  and `--menu-inset` for full-width alignment and equal vertical margins; set
-  `--menu-inset` to the surrounding menu's inset.
+  adjacent row or container. Every separator extends from the menu surface's
+  left edge to its right edge, including separators inside scrollable lists.
+  Its shared treatment uses `bg-border`, a 1px line, and `--menu-inset` for
+  edge-to-edge alignment and equal vertical margins; set `--menu-inset` to the
+  surrounding menu's inset without introducing horizontal scrolling.
   <!-- 2026-11-14: "for any separators, rather than a border bottom, we should be using this treatment" -->
+  <!-- 2026-11-18: "it should be extending all the way left and right in the new styling guide" -->
+- **Dropdown menus scroll vertically only:** Fit menu content within the available
+  width; never require horizontal scrolling. Why: users cannot perform the
+  intended top-to-bottom menu interaction with a horizontal scrollbar.
+  <!-- 2026-11-18: "it's always top to bottom, there's never horizontal scrollbar, user can't perform that" -->
 - **Radius by component intent:** Use the established shared primitive radius
   first, then the step for the component's class in
   [Radius by component](#radius-by-component). Choose by what the component
@@ -333,11 +354,13 @@ repo's semantic Tailwind classes whenever a class exists.
   `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
-- **Documentation heading anchors:** Center icon-only anchor buttons beside
-  documentation headings with `inline-flex items-center`. Why: the icon should
-  read as vertically aligned with the heading; baseline spacing can make it
-  appear high.
+- **Icon and label alignment:** Always center a side-by-side icon and label,
+  including documentation heading anchors, on the same vertical centerline.
+  Use the icon as a direct child of a flex row with `items-center` or give its
+  wrapper `inline-flex items-center`. Why: a plain inline wrapper adds text
+  baseline spacing that can make the glyph sit high even in a centered row.
   <!-- 2026-11-13: "why do i keep getting this icon and label is misaligned vertically issue" -->
+  <!-- 2026-11-22: "it makes the icon an label alignment off all the time" -->
 - **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,
   including on hover, while keeping the columns scrollable. Why: keep the board
   visually clean.
@@ -385,11 +408,11 @@ or overlay affordance.
   separation.
 - **Overflow** (`shadow-lg`, `var(--ds-shadow-overflow)`): Use for content
   that scrolls or visually breaks out of its container.
-- **Overlay** (`shadow-xl`, `shadow-2xl`,
-  `var(--ds-shadow-overlay)`): Use for dialogs, popovers, command surfaces,
-  and floating controls. `shadow-2xl` is the ADS overlay alone; `shadow-xl`
-  adds a second 1px perimeter, so restyled overlay surfaces override it with
-  `shadow-2xl`. There is no `shadow-overlay` class.
+- **Overlay** (`shadow-2xl`, `var(--ds-shadow-overlay)`): Use for dialogs,
+  popovers, command surfaces, and floating controls. Shared primitive defaults
+  and consumer restyling must use `shadow-2xl` for overlay elevation. Never use
+  `shadow-xl` on overlay surfaces: it adds a second 1px perimeter to the ADS
+  overlay shadow. There is no `shadow-overlay` class.
 
 ### Named rules
 
@@ -404,11 +427,13 @@ remain unframed.
 need movement or lift, and pair overlay surfaces with overlay shadow. Do not
 mix overlay shadow into ordinary inline content.
 
-**The single-perimeter rule.** Raised cards using an elevation shadow must not
-add a visible decorative outer border or ring. The shadow already defines the
-edge, so an added border creates a double outline. Keep distinct focus or
-selection indicators when they communicate state.
+**The single-perimeter rule.** Raised cards and overlay surfaces using an
+elevation shadow, including shared primitive defaults, must never add a visible
+decorative outer border, ring, or additional perimeter shadow. The elevation
+shadow already defines the edge, so an added perimeter creates a double outline.
+Keep distinct focus or selection indicators when they communicate state.
 <!-- 2026-11-15: "this extra 1px border on the card" -->
+<!-- 2026-11-16: "we don't add this extra 1px border stroke on menu overlays because the overlay shadow already visually mimic that" -->
 
 ## 7. Components
 
@@ -425,7 +450,9 @@ supplied reference copy and layout when reproducing a specific product state.
   input text, the 16px `SearchIcon` from `components/ui/vpk-icons.tsx`, and 6px
   top and side insets from the popup edge. Never use a compact 12px search glyph
   or count the popup's padding twice; using the shared field alone does not
-  guarantee the same rendered geometry. Match the search icon column to the rows with
+  guarantee the same rendered geometry. Measure the search icon and row visual
+  centers, and the search input text and row label starts: each pair must align
+  within 1px. Match the search icon column to the rows with
   `iconContainerSize`: use `16` for a standalone 16px search icon beside 16px
   row icons or icon tiles (Parent, Labels and Subtasks pickers); use `24` (the
   default) for a 16px search icon centered in a 24px container beside 24px avatars
@@ -441,14 +468,18 @@ supplied reference copy and layout when reproducing a specific product state.
   <!-- 2026-11-15: "why would you use a smaller search input design?? it should be the same as Labels or Parent" -->
   <!-- 2026-11-15: "We use 16x16 search icon when the individual rows are 16x16 icon or icon tile"; "We use 24x24 search icon container when the individual rows are 24x24 avatars or icon tile" -->
   <!-- 2026-11-15: "keep the same width like what we had before"; "we also dont need search input" (inline-create work item type menu); "the same should apply" (PriorityRowField menu). -->
+- **Menu row icons:** For plain icons, use `IconTile` with
+  `variant="transparent"`, `size="xxsmall"`, and `iconSize="small"`: a 12px
+  glyph in a 16px container. Why: consistent icon size keeps menu rows visually
+  balanced and aligned. This includes work item type, Priority, Parent and
+  Subtasks pickers.
+  <!-- 2026-11-21: "when we use pure icons for our menu, we should always follow this" — 12x12 glyph in a 16x16 transparent IconTile, superseding the earlier bare-icon instruction. -->
 - **Searchable dropdowns:** Use `DropdownMenuContent` and `DropdownMenuItem`
   with their shared container padding and row styling; do not substitute command
   list rows or override the dropdown's default inset. Center leading row icons,
   including work item status glyphs, in the matching 16px or 24px alignment
-  column on the same vertical centerline as the search icon. Work item type,
-  Priority, Parent and Subtasks pickers use bare 12px (`size-3`) glyphs centered
-  in 16px (`size-4`) containers, without icon
-  tiles. Keep alignment gutters outside the icon container; the column is layout
+  column on the same vertical centerline as the search icon. Keep alignment
+  gutters outside the icon container; the column is layout
   space, not the visual's size. Use a 12px gap (`gap-3`) between that
   slot and the row text so keys and titles start at the search text's left edge,
   matching `ArtifactParentField`. Why: the search header and rows must share
@@ -459,15 +490,22 @@ supplied reference copy and layout when reproducing a specific product state.
   <!-- 2026-11-15: "remove the 24x24 sizing of the icon tile but instead use 16x16"; "for the epic/parent icon tile, we can just have the icon" -->
   <!-- 2026-11-15: "actually icon size should be 12x12 not 16x16" supersedes the earlier 16px work item glyph size; search stays 16px. -->
   <!-- 2026-11-15: "actually we need to have it with the 16x16 container, otherwise it doesn't align nicely with the search icon" supersedes the earlier 12px container request. -->
-- **Scrollable searchable dropdowns:** Keep the search field fixed above the
-  scrollable rows and use the shared scroll mask with a 3rem top fade when the
-  list has scrolled. Extend the scroll area to the menu’s bottom edge or fixed
-  footer separator, with no empty strip between them and the menu inset inside
-  the scroll area. Why: the top fade shows rows moving beneath the fixed search
-  field, and an empty bottom gap should not cut off visible row pixels.
-  <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
+- **Dropdown scroll edges:** Keep the standard bottom inset inside the scroll
+  area (6px for the default menu inset), including in non-searchable submenus.
+  When the list fits without scrolling, retain that inset below its last row.
+  When the list overflows, extend the scroll viewport to the menu's inner
+  bottom edge or fixed footer separator within 1px, so rows can scroll to that
+  edge. Why: an empty strip outside the viewport cuts off visible row pixels.
+  <!-- 2026-11-21: "we don't remove all bottom gap, like this that's not scrollable, we shouldn't remove the gap" -->
+  <!-- 2026-11-21: "bottom gap problem. it shouldn't be a gap." -->
   <!-- 2026-11-14: "we shouldn't cut away pixels with the bottom gap like that." -->
   <!-- 2026-11-14: "we can't have this empty gap cut out UI problem." -->
+  <!-- 2026-11-21: "the search icon is misaligned and there's this extra bottom gap. we shouldn't have that." -->
+- **Scrollable searchable dropdowns:** Keep the search field fixed above the
+  scrollable rows and use the shared scroll mask with a 3rem top fade when the
+  list has scrolled. Why: the top fade shows rows moving beneath the fixed
+  search field.
+  <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
 - **Menu and agent-selector scroll edges:** Do not apply a bottom gradient fade
   to scrollable menu or agent-selector lists. Clip rows cleanly at the container
   edge or fixed footer separator. Why: the straight container edge provides the
@@ -476,6 +514,15 @@ supplied reference copy and layout when reproducing a specific product state.
 
 ### Interaction states
 
+- **An underline is always the color of the text it sits under.** Never draw a
+  link-blue underline under neutral text. When a link wraps an element that sets
+  its own text color (a Trace line, an Item, a title span), remove the link's
+  underline (`no-underline`) and underline the text element itself, or give the
+  link the text's color; color underlines only with `decoration-current`.
+  Why: a mismatched underline reads as a broken, foreign link style.
+  `vpk-tokens/no-mismatched-underline-color` rejects other `decoration-<color>`
+  classes; `components/ui/trace.tsx` underlines `TraceTitle` itself.
+  <!-- 2026-11-17: "we should never do blue underline for black text"; "underline color should always match text color" -->
 - **Inline-create selector previews:** Priority and work item type triggers stay
   neutral while closed. While open, pointer hover and keyboard navigation preview
   both the candidate's icon and its semantic color, matching its menu row. Only
@@ -567,17 +614,38 @@ supplied reference copy and layout when reproducing a specific product state.
 - **Size:** Product UI icons default to 16px glyphs; compact buttons use 12px.
   For stronger emphasis, place the glyph in a larger tile or button rather than
   scaling the glyph.
+- **Trailing affordance icons are 12px.** Disclosure chevrons, including Select
+  and Combobox trigger chevrons, and external-link arrows that follow a label use
+  12×12px (`size-3`) glyphs centered in a 16×16px slot; leading content icons in
+  the same row stay 16px. Why: they are secondary hints and should not compete
+  with the leading icon or the label. `components/ui/trace.tsx` sizes every icon
+  after a `TraceTitle` and its collapsible chevron this way, so Task, Sources and
+  Queue inherit it.
+  <!-- 2026-11-17: "all the chevron, external link arrow size should be 12x12 not 16x16"; "Same for task, need to use 12x12 chevron" -->
+  <!-- 2026-11-22: "chevron size is wrong here in the menu ... we want it to be 12x12 icon size" -->
 - **Color:** Standalone icons inherit `currentColor` from a semantic icon role.
   Pair `text-icon-subtle` with `text-text-subtle` and `text-icon-danger` with
   `text-text-danger`; matching roles can resolve to different colors. Chevrons,
   bullets, sort arrows, and other secondary indicators use `text-icon-subtle`
   or `text-icon-subtlest`; do not use `text-icon-brand` as a general emphasis
   color.
+- **Search magnifiers:** Use `color.icon.subtlest` (`text-icon-subtlest`) in
+  search fields across navigation, menus, agent selectors, editor palettes, and
+  other surfaces. Use `DropdownMenuSearchField`'s default icon or
+  `InputGroupSearchAddon` when applicable. Why: search cues stay visually
+  secondary to the surrounding content.
+  <!-- 2026-11-21: "the icon color should be icon subtlest ... across all components and surfaces like search box, agent selector, editor palette ... and everywhere else" -->
 - **Accessibility:** Icon-only buttons need an accessible name. Decorative icons
   sitting beside visible text should be hidden from assistive technology.
 
 ### Status and data primitives
 
+- **Avatar stacks:** Use the shared `AvatarGroup` or `HumanAgentAvatar` for
+  overlapping human and agent avatars. Mask the rear artwork so the actual
+  surface shows through the gap in both resting and animated states. Never add
+  a painted separator ring. Keep the avatar's own inset border and any focus or
+  selection indicator.
+  <!-- 2026-11-21: "in all the latest avata stack, it should be a mask cut out" -->
 - **Section messages:** Use a semantic background, role icon, title, neutral
   body text, and optional link-style actions. Use them for page-level or
   request-level notices, not field validation.

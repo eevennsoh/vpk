@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EditIcon from "@atlaskit/icon/core/edit";
 
 import { useRovoSelectedAgent } from "@/app/contexts";
+import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
+import type { AgentListInvoker } from "@/components/blocks/agent-list";
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
 	isRovoAgentProfile,
@@ -76,16 +79,21 @@ const ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS = {
 } as const;
 
 export interface RovoAppBrandProps {
+	attributedBy?: AgentListInvoker;
 	className?: string;
 	enableAgentSelector?: boolean;
+	identityTooltip?: string;
 }
 
 export function RovoAppBrand({
+	attributedBy,
 	className,
 	enableAgentSelector = true,
+	identityTooltip,
 }: Readonly<RovoAppBrandProps>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const identityDescriptionId = useId();
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const {
 		selectedAgent,
@@ -138,6 +146,18 @@ export function RovoAppBrand({
 	}
 
 	const triggerLabel = isRovoAgentProfile(selectedAgent) ? "Rovo" : selectedAgent.name;
+	const attribution = !enableAgentSelector && attributedBy?.name.trim() ? attributedBy : undefined;
+	const agentAvatar = (
+		<AgentAvatarVisual
+			appearance={selectedAgent.brandName === "openai-codex" ? "coding" : undefined}
+			avatarSrc={selectedAgent.avatarSrc}
+			brandName={selectedAgent.brandName}
+			className="size-4 object-contain"
+			label={attribution ? "" : selectedAgent.name}
+			logoName={selectedAgent.logoName}
+			sizePx={16}
+		/>
+	);
 	const identityItemVariants = shouldReduceMotion ? ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS : ROVO_APP_BRAND_ITEM_VARIANTS;
 	const identity = (
 		<AnimatePresence initial={false} mode="wait">
@@ -150,20 +170,19 @@ export function RovoAppBrand({
 				variants={ROVO_APP_BRAND_CONTAINER_VARIANTS}
 			>
 				<motion.span
-					aria-hidden
-					className="flex size-4 shrink-0 items-center justify-center"
+					aria-hidden={attribution === undefined ? true : undefined}
+					className={cn("flex shrink-0 items-center justify-center", attribution === undefined ? "size-4" : undefined)}
 					data-icon="inline-start"
 					variants={identityItemVariants}
 				>
-					<AgentAvatarVisual
-						appearance={selectedAgent.brandName === "openai-codex" ? "coding" : undefined}
-						avatarSrc={selectedAgent.avatarSrc}
-						brandName={selectedAgent.brandName}
-						className="size-4 object-contain"
-						label={selectedAgent.name}
-						logoName={selectedAgent.logoName}
-						sizePx={16}
-					/>
+					{attribution ? (
+						<AgentListAttributionAvatarGroup
+							agent={selectedAgent}
+							attributedBy={attribution}
+							renderAgentAvatar={() => agentAvatar}
+							sizePx={16}
+						/>
+					) : agentAvatar}
 				</motion.span>
 				<motion.span className="min-w-0 truncate font-semibold" variants={identityItemVariants}>
 					{triggerLabel}
@@ -173,6 +192,29 @@ export function RovoAppBrand({
 	);
 
 	if (!enableAgentSelector) {
+		if (identityTooltip) {
+			return (
+				<Tooltip>
+					<span hidden id={identityDescriptionId}>{identityTooltip}</span>
+					<TooltipTrigger
+						closeOnClick={false}
+						render={
+							<div
+								aria-describedby={identityDescriptionId}
+								aria-label={triggerLabel}
+								className={cn("flex h-8 min-w-0 shrink-0 items-center rounded-md px-2 text-sm font-medium text-text outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring", className)}
+								role="group"
+								tabIndex={0}
+							/>
+						}
+					>
+						{identity}
+					</TooltipTrigger>
+					<TooltipContent align="start" positionerClassName="z-[650]" role="tooltip">{identityTooltip}</TooltipContent>
+				</Tooltip>
+			);
+		}
+
 		return (
 			<div className={cn("flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text", className)}>
 				{identity}

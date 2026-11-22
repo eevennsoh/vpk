@@ -184,7 +184,7 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 		assert.doesNotMatch(BASE_DEMO_STATES_BLOCK, new RegExp(`"${value}"`, "u"));
 	}
 	assert.match(PAGE_SOURCE, /agentActivityLayout="merged"/u);
-	assert.match(PAGE_SOURCE, /onChromeChange=\{setChrome\}/u);
+	assert.match(PAGE_SOURCE, /onChromeChange=\{isProjectButter \? undefined : setChrome\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}/u);
 });
 
@@ -627,7 +627,7 @@ test("Jira issue drag pill floats on overlay elevation, not a dead utility", () 
 	);
 	// The horizontal identity holds its final pose inside the stable 32px frame.
 	assert.match(dragChipSource, /<HumanAgentAvatar[\s\S]*agent=\{\{ \.\.\.agent, appearance: "coding" \}\}[\s\S]*human=\{attributedBy\}[\s\S]*animate=\{false\}[\s\S]*composition="horizontal-group"[\s\S]*attributionOrder=\{attributionOrder\}[\s\S]*sizePx=\{32\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity\?\.invokedBy\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /attributedBy=\{featuredActivity \? getAgentSessionAttribution\(featuredActivity\) : undefined\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });
 

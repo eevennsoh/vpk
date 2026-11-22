@@ -211,7 +211,6 @@ function PulseStoryContributors({
 								key={member.id}
 							>
 								<Avatar
-									className={member.kind === "human" ? "ring-2 ring-surface" : undefined}
 									label={member.name}
 									shape={member.kind === "agent" ? "hexagon" : "circle"}
 									size="xs"

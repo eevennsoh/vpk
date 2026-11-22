@@ -24,6 +24,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
 	JiraIssueAgentAndSkillSubmenus,
 	type JiraIssueGenerativeActionConfig,
@@ -47,10 +48,18 @@ export type JiraIssueMoreAction =
 	| "edit-labels"
 	| "add-flag";
 
+/** Present when the board can reorder the card; a missing direction means the card is already at that end. */
+export interface JiraIssueReorderActions {
+	readonly onMoveUp?: () => void;
+	readonly onMoveDown?: () => void;
+}
+
 export interface JiraIssueMoreMenuActions {
 	readonly onArchive?: () => void;
 	readonly onSelect?: () => void;
 	readonly onDelete?: () => void;
+	/** Keyboard alternative to dragging the card within its column. */
+	readonly reorder?: JiraIssueReorderActions;
 }
 
 interface JiraIssueMoreMenuProps {
@@ -71,6 +80,21 @@ interface JiraIssueMoreMenuProps {
 }
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
+const butterMenuColor = "[&_[data-slot=dropdown-menu-item]:not([data-disabled])]:text-icon-subtle [&_[data-slot=dropdown-menu-sub-trigger]:not([data-disabled])]:text-icon-subtle";
+
+function JiraIssueReorderItems({ reorder }: Readonly<{ reorder: JiraIssueReorderActions | undefined }>) {
+	return reorder ? (
+		<>
+			<DropdownMenuItem disabled={!reorder.onMoveUp} onSelect={reorder.onMoveUp}>Move up</DropdownMenuItem>
+			<DropdownMenuItem disabled={!reorder.onMoveDown} onSelect={reorder.onMoveDown}>Move down</DropdownMenuItem>
+		</>
+	) : null;
+}
+
+/** Any card-action set shows Select / Archive / Delete, except one that only reorders. */
+function hasCardActions(actions: JiraIssueMoreMenuActions | undefined): actions is JiraIssueMoreMenuActions {
+	return actions !== undefined && (actions.reorder === undefined || Object.keys(actions).some((key) => key !== "reorder"));
+}
 
 function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	return props.onSelectionToggle ? (
@@ -153,22 +177,23 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 			>
 				<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
+			<DropdownMenuContent align="start" className={cn("max-h-none w-[280px]", appearance === "project-butter" ? butterMenuColor : null)} side="right" sideOffset={8}>
 				{appearance === "project-butter" ? <>
 					<DropdownMenuGroup>
-						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} elemBeforeSize={16} onSelect={onEditSummary ?? select("edit-summary")}>Edit summary</DropdownMenuItem>
 						<DropdownMenuSub>
-							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />}>Link</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
+							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />} elemBeforeSize={16}>Link</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent className={butterMenuColor}>
 								<DropdownMenuItem onSelect={select("link-work-item")}>Work item</DropdownMenuItem>
 								<DropdownMenuItem onSelect={select("link-confluence-item")}>Confluence item</DropdownMenuItem>
 							</DropdownMenuSubContent>
 						</DropdownMenuSub>
-						<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
-						{flagged ? null : <DropdownMenuItem elemBefore={<FlagIcon label="" size="small" />} onSelect={select("add-flag")}>Add flag</DropdownMenuItem>}
+						<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} elemBeforeSize={16} elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<FlagIcon label="" size="small" />} elemBeforeSize={16} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
 					<DropdownMenuGroup>
+						<JiraIssueReorderItems reorder={moreMenuActions?.reorder} />
 						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 					</DropdownMenuGroup>
@@ -178,7 +203,8 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 						<DropdownMenuItem onSelect={() => copy(issueKey, "copy-key")}>Copy key</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem elemBefore={<DeleteIcon label="" size="small" />} onSelect={moreMenuActions?.onDelete}>Delete</DropdownMenuItem>
+					{moreMenuActions?.onSelect ? <><DropdownMenuItem elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem><DropdownMenuSeparator /></> : null}
+					<DropdownMenuItem elemBefore={<DeleteIcon label="" size="small" />} elemBeforeSize={16} onSelect={moreMenuActions?.onDelete}>Delete</DropdownMenuItem>
 				</> : <>
 				{butterAssignment && invocation ? <ProjectButterMenuAgentSubmenu assignment={butterAssignment} triggerRef={triggerRef} onRequestClose={() => handleOpenChange(false)} /> : null}
 				{generativeAction && generativeActionIssue ? (
@@ -194,6 +220,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 				) : null}
 				<DropdownMenuGroup>
 					{onEditSummary ? <DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={onEditSummary}>Edit summary</DropdownMenuItem> : null}
+					<JiraIssueReorderItems reorder={moreMenuActions?.reorder} />
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 				</DropdownMenuGroup>
@@ -212,7 +239,7 @@ function JiraIssueMoreDropdown({ appearance = "default", availableActions, butte
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("edit-labels")} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-flag")} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 				</DropdownMenuGroup>
-				{moreMenuActions ? (
+				{hasCardActions(moreMenuActions) ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>

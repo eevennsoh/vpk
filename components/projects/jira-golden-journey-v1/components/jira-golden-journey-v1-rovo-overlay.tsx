@@ -12,12 +12,17 @@ import type { AgentResultCreator } from "@/components/projects/sidebar-chat/comp
 import FloatingRovoButton from "@/components/blocks/rovo-button";
 import type { FloatingRovoButtonInsightsConfig, FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
+import type { ChatPanelProps } from "@/components/projects/sidebar-chat/lib/chat-panel-types";
 
 interface JgpRovoOverlayProps {
+	renderWidget?: ChatPanelProps["renderWidget"];
+	readOnly?: boolean;
+	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
 	portalContainer?: HTMLElement | null;
 	contained?: boolean;
 	agentCreator?: AgentResultCreator;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	greeting?: ChatPanelProps["greeting"];
 	composerPrefillRequest?: ChatComposerPrefillRequest;
 	onComposerPrefillConsumed?: (requestKey: number) => void;
 	externalThinkingMessageId?: string | null;
@@ -43,10 +48,14 @@ interface JgpRovoOverlayProps {
 
 /** Keeps JGP Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function JgpRovoOverlay({
+	renderWidget,
+	readOnly = false,
+	readOnlyOwner,
 	portalContainer,
 	contained = false,
 	agentCreator,
 	chatContextBar,
+	greeting,
 	composerPrefillRequest,
 	onComposerPrefillConsumed,
 	externalThinkingMessageId,
@@ -139,6 +148,9 @@ export function JgpRovoOverlay({
 				{showFloatingChat && RovoFloatingChat ? (
 					<RovoFloatingChat
 						agentCreator={agentCreator}
+						renderWidget={renderWidget}
+						readOnly={readOnly}
+						readOnlyOwner={readOnlyOwner}
 						key="floating-chat"
 						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}
@@ -146,6 +158,7 @@ export function JgpRovoOverlay({
 						composerPrefillRequest={composerPrefillRequest}
 						onComposerPrefillConsumed={onComposerPrefillConsumed}
 						externalThinkingMessageId={externalThinkingMessageId}
+						greeting={greeting}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}
 						markAnsweredQuestionTraces={Boolean(onInterceptSubmit || onQuestionAnswer)}

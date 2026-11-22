@@ -150,6 +150,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		generateAgentDataFlowText,
 		generateAgentsRfpDemoReportPreview,
 		generatedFilesManager,
+		generatedMediaOwnerStore,
 		generateSuggestedQuestions,
 		generateTextViaGateway,
 		getAiGatewayConfigReport,
@@ -165,6 +166,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		logger = console,
 		maybeMigratePersistedThreadBrowserScreenshots,
 		orchestratorLog,
+		peekDeferredToolCall,
 		persistMessageFiles,
 		persistRunState,
 		proxyRovoAppChatRequest,
@@ -213,7 +215,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 	});
 
 	// Before every chat route that names a thread: another caller's thread is 404.
-	registerChatThreadOwnershipGuards(app, { rovoAppThreadManager });
+	registerChatThreadOwnershipGuards(app, { generatedMediaOwnerStore, rovoAppThreadManager });
 
 	registerChatSdkRoutes(app, {
 		handleChatSdkRequest,
@@ -228,6 +230,8 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		clearPlanSession,
 		detachPausedRovoToolCall,
 		logger,
+		peekDeferredToolCall,
+		rovoAppThreadManager,
 		waitForReady,
 	});
 
@@ -281,6 +285,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		destroyMirrorBrowser,
 		ensureThreadBrowserWorkspace,
 		generatedFilesManager,
+		generatedMediaOwnerStore,
 		getThreadBrowserWorkspace,
 		maybeMigratePersistedThreadBrowserScreenshots,
 		persistMessageFiles,

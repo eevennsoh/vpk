@@ -115,8 +115,12 @@ test("the gallery title stays aligned throughout the ink reveal", async ({ page 
 });
 
 test("returning to the journey does not replay settled session arrivals", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey", exact: true }).click();
+	await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await page.getByRole("heading", { name: "Jira Design" }).click();
 	const row = page.getByTestId("agent-session-row-lw-sync-webhook-gap");
 	await expect(row).toBeVisible({ timeout: 15_000 });
 	await row.hover();
@@ -148,31 +152,64 @@ test("returning to the journey does not replay settled session arrivals", async 
 	expect(frames.every(({ opacity, y }) => opacity >= 0.99 && Math.abs(y) < 1), JSON.stringify(frames)).toBe(true);
 });
 
-for (const [kind, random] of [["single", 0], ["batched", 0.99]] as const) {
-	test(`new ${kind} sessions still animate into the journey column`, async ({ page }) => {
+for (const [kind, random, batchSize] of [["single", 0, 1], ["batched", 0.99, 3]] as const) {
+	test(`new ${kind} sessions push down the existing journey column rows`, async ({ page }) => {
+		test.setTimeout(45_000);
+		await page.setViewportSize({ width: 1800, height: 1100 });
 		await page.emulateMedia({ reducedMotion: "no-preference" });
-		await page.addInitScript((value) => { Math.random = () => value; }, random);
 		await page.goto(appUrl("/butter-v1"));
-		const frames = await page.evaluate(async () => {
-			const samples: { opacity: number; y: number }[] = [];
-			let appearedAt: number | undefined;
-			await new Promise<void>((resolve) => {
-				const sample = () => {
-					const row = document.querySelector('[data-testid="agent-session-row-lw-sync-webhook-gap"]');
-					if (row) {
-						appearedAt ??= performance.now();
-						const style = getComputedStyle(row);
-						samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 });
+		await page.getByRole("button", { name: "Select e2e Journey", exact: true }).click();
+		await page.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+		await expect(page.locator("[data-agent-session-column-scrollport]")).toBeVisible();
+		await page.getByRole("heading", { name: "Jira Design" }).click();
+		const frames = await page.evaluate(async ({ batchRandom, batchSize }) => {
+			Math.random = () => batchRandom;
+			const samples: { opacity: number; y: number; existingTop: number; gap: number; overlap: number }[] = [];
+			let previousRows: HTMLElement[] = [];
+			let existing: HTMLElement | undefined;
+			let arrival: HTMLElement | undefined;
+			let initialTop: number | undefined;
+			const start = performance.now();
+			let stopAt = start + 24_000;
+			while (performance.now() < stopAt) {
+				await new Promise(requestAnimationFrame);
+				if (!arrival) {
+					const rows = [...document.querySelectorAll<HTMLElement>('[data-agent-session-column-scrollport] [data-testid^="agent-session-row-"]')];
+					const first = rows[0];
+					existing = previousRows[0];
+					if (existing?.dataset.testid?.startsWith("agent-session-row-lw-sync-")
+						&& rows.indexOf(existing) === batchSize && !previousRows.includes(first)) {
+						arrival = rows[batchSize - 1];
+						stopAt = performance.now() + 900;
+					} else {
+						previousRows = rows;
+						initialTop = first?.getBoundingClientRect().top;
 					}
-					if (appearedAt === undefined || performance.now() - appearedAt < 900) requestAnimationFrame(sample);
-					else resolve();
-				};
-				requestAnimationFrame(sample);
-			});
-			return samples;
-		});
-		expect(frames.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1), JSON.stringify(frames)).toBe(true);
-		expect(frames.at(-1)).toEqual({ opacity: 1, y: 0 });
+				}
+				if (arrival && existing) {
+					const style = getComputedStyle(arrival);
+					const existingTop = existing.getBoundingClientRect().top;
+					const gap = existingTop - arrival.getBoundingClientRect().bottom;
+					const visibleRows = [...(existing.parentElement?.children ?? [])]
+						.filter((row) => Number(getComputedStyle(row).opacity) > 0.3)
+						.map((row) => row.getBoundingClientRect());
+					const overlap = Math.max(0, ...visibleRows.slice(1).map((rect, index) => visibleRows[index].bottom - rect.top));
+					samples.push({ opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42, existingTop, gap, overlap });
+				}
+			}
+			return { samples, initialTop };
+		}, { batchRandom: random, batchSize });
+		const { samples, initialTop } = frames;
+		const settled = samples.at(-1);
+		if (settled === undefined || initialTop === undefined) throw new Error("No session arrived above the existing rows");
+		expect(settled).toMatchObject({ opacity: 1, y: 0 });
+		expect(samples.some(({ opacity, y }) => opacity > 0.05 && opacity < 0.95 && y < -1)).toBe(true);
+		const moving = samples.filter(({ opacity }) => opacity > 0.05 && opacity < 0.95);
+		expect(moving.some(({ existingTop }) => existingTop > initialTop + 4 && existingTop < settled.existingTop - 4)).toBe(true);
+		const extraGap = Math.max(...moving.map(({ gap }) => gap - settled.gap));
+		// Allow a little sampling skew between animations, but never a gap the size of a card.
+		expect(extraGap).toBeLessThan((settled.existingTop - initialTop) / 4);
+		expect(Math.max(...moving.map(({ overlap }) => overlap))).toBeLessThan(3);
 	});
 }
 

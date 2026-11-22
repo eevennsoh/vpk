@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollMask } from "@/components/visual/scroll-mask";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
@@ -53,17 +53,14 @@ function AssigneeAvatar({
 	assignee,
 	muted,
 	selected,
-	showGroupStroke,
 }: Readonly<{
 	assignee: JiraKanbanAssigneeData;
 	muted?: boolean;
 	selected?: boolean;
-	showGroupStroke?: boolean;
 }>) {
 	return (
 		<Avatar
 			className={cn(
-				showGroupStroke && "ring-2 ring-background",
 				selected && "ring-2! ring-border-selected!",
 				muted && "opacity-(--opacity-disabled)",
 			)}
@@ -124,9 +121,9 @@ export function JiraKanbanBoardHeader({
 
 			<div className="mt-4 flex flex-wrap items-center gap-2 px-4">
 				<InputGroup className="w-44">
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<Icon render={<SearchIcon label="" size="small" />} />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput type="search" aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
 				</InputGroup>
 
@@ -148,7 +145,6 @@ export function JiraKanbanBoardHeader({
 								assignee={assignee}
 								muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
 								selected={selectedAssigneeIds.has(assignee.id)}
-								showGroupStroke
 							/>
 						</button>
 					))}
@@ -197,9 +193,9 @@ export function JiraKanbanBoardHeader({
 
 							<div className="flex min-h-0 min-w-0 flex-col p-3">
 								<InputGroup>
-									<InputGroupAddon>
+									<InputGroupSearchAddon>
 										<Icon render={<SearchIcon label="" size="small" />} />
-									</InputGroupAddon>
+									</InputGroupSearchAddon>
 									<InputGroupInput
 										aria-label="Search assignee"
 										onChange={(event) => setQuery(event.target.value)}

@@ -26,7 +26,7 @@ import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
-import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui-custom/queue";
+import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui/queue";
 import { Button } from "@/components/ui/button";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import { Footer } from "@/components/ui-custom/footer";
@@ -40,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
+	disabled?: boolean;
 	prompt: string;
 	isStreaming: boolean;
 	hasInFlightTurn: boolean;
@@ -205,7 +206,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ disabled = false, prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, onPrefillMentionConsumed, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -311,6 +312,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					) : null}
 					<PromptInputBody>
 						<PromptInputTextarea
+							disabled={disabled}
 							ref={textareaRef}
 							value={prompt}
 							autoFocus={autoFocus}
@@ -329,6 +331,8 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 							placeholder={placeholder}
 							aria-label="Chat message input"
+							// Stable hook for surfaces that move focus to a composer (multiport F6); lands on the editor's container.
+							data-chat-composer-input=""
 							rows={1}
 							className={composerTextareaClassName}
 						/>
@@ -337,7 +341,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					<PromptInputFooter className="mt-3 justify-between px-0 pb-0 pt-0">
 						<PromptInputTools>
 							<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
-								<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+								<PromptInputActionMenuTrigger aria-label="Add" className="rounded-md" size="icon-sm" variant="ghost">
 									<AddIcon label="" />
 								</PromptInputActionMenuTrigger>
 								<PromptInputActionMenuContent

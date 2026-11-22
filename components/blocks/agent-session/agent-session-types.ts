@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import type { AgentListAgent, AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentAssignment } from "@/components/blocks/jira-issue/agent-activity-row-presentation";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
 
 import type { ApproveTarget } from "./agent-session-approve";
@@ -24,20 +26,25 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  * Starts from the Agent List row rendered by the shared `AgentListRow`
  * presenter instead of forking a parallel model. Consumers that already build
  * `AgentListItem` values (Pulse maps loose-work fixtures into them) need no
- * conversion step. `role` and `toolCalls` are session-card vocabulary: Agent
- * List rows have neither the owner/viewer split nor the long-form tool cycle.
+ * conversion step. `role` adds the session card's owner/viewer split.
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
+	pullRequestChecks?: readonly PullRequestCheck[];
+	/** The session is shared with the team, including when viewed by its owner. */
+	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
 	privateTo?: string;
-	/** Human-readable tool calls cycled in the long-form metadata line. */
-	toolCalls?: readonly string[];
 };
 
 /** Defaults to `owner` so existing payloads keep the more menu. */
 export function getAgentSessionRole(item: AgentSessionItem): AgentSessionRole {
 	return item.role ?? "owner";
+}
+
+export function getAgentSessionAttribution(item: Pick<AgentSessionItem, "invokedBy">) {
+	return item.invokedBy?.name.trim().toLowerCase() === "venn" ? undefined : item.invokedBy;
 }
 
 /**
@@ -68,18 +75,18 @@ export interface AgentSessionWorkItemDraft {
  * Visible identity for an agent session.
  *
  * Session behavior still belongs to `item.agent`; the leading face belongs to
- * the person who invoked it. Returning the original object when no invoker is
- * known keeps agent-only payloads backward compatible.
+ * the invoker, except Venn's own sessions keep the agent identity.
  */
 export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentListAgent {
-	if (item.invokedBy === undefined) {
+	const invoker = getAgentSessionAttribution(item);
+	if (invoker === undefined) {
 		return item.agent;
 	}
 
 	return {
-		avatarSrc: item.invokedBy.avatarSrc,
+		avatarSrc: invoker.avatarSrc,
 		kind: "person",
-		name: item.invokedBy.name,
+		name: invoker.name,
 	};
 }
 
@@ -89,8 +96,11 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 /**
  * Row shape for the large footprint.
  *
- * `short` leads with a 32px identity and an agent · PR · host · time byline
- * (PR omitted when none is linked). `long`
+ * `unlinked` (the default) is the uncaptured-work row: a local session leads
+ * with a 32px agent+human identity and an agent · PR · host · time byline (PR
+ * omitted when none is linked); a cloud session stays title-led. `short` is
+ * title-led for every host — the title on its own line over the same compact
+ * byline without a pull request, with the agent and invoker as a horizontal avatar stack. `long`
  * drops the leading avatar, gives the title the full width, and spends the
  * reclaimed room on a fuller metadata line (agent mark, cycling tool call,
  * artifact, host, time) plus a trailing lifecycle label and icon. Progression
@@ -98,7 +108,7 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
-export type AgentSessionDensity = "short" | "long";
+export type AgentSessionDensity = "unlinked" | "short" | "long";
 
 /**
  * Finder-style modifiers for a selection gesture.
@@ -138,7 +148,6 @@ export interface AgentSessionProps {
 	style?: CSSProperties;
 	/** Animate sibling position changes; the in-flow session column keeps filter changes instant. */
 	animateLayout?: boolean;
-	/** Gap between short rows, used to stage a whole prepended batch above the old first row. */
 	arrivalRowGapPx?: number;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
@@ -155,6 +164,10 @@ export interface AgentSessionProps {
 	items?: readonly AgentSessionItem[];
 	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */
 	showWorkingSpinner?: boolean;
+	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
+	showLifecycleLabel?: boolean;
+	/** Title-led rows can show lifecycle text beside the avatar stack. */
+	lifecycleLabelPlacement?: "trailing" | "metadata";
 	/**
 	 * Wash each agent's accent behind its row on hover. `variant="large"` only.
 	 * Opt-in per host, and independent of {@link glowStroke}.
@@ -234,6 +247,8 @@ export interface AgentSessionProps {
 	 * This affects only that manual menu path; other linking capabilities remain wired.
 	 */
 	showLinkWorkItemMenuItem?: boolean;
+	/** Owner controls for the My session prototype, using the shared more menu. */
+	moreMenuVariant?: "default" | "owner" | "session-picker";
 	/**
 	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
 	 * the menu option as unavailable.
@@ -278,6 +293,8 @@ export interface AgentSessionProps {
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
+	/** Allow a team viewer to open the session in a read-only surface. */
+	allowViewerView?: boolean;
 	/**
 	 * Id of the session whose card is selected. Omit to let the list own a
 	 * single-select toggle; pass `null` to control an empty selection.

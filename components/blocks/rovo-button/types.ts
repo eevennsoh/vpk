@@ -8,6 +8,8 @@ export interface FloatingRovoButtonSuggestion {
 	label: string;
 	icon?: ReactNode;
 	ariaLabel?: string;
+	/** Play the launcher's existing logo cycle when this suggestion arrives. */
+	animateLogoOnArrival?: boolean;
 	onSelect: () => void;
 	onDismiss?: () => void;
 }
@@ -142,6 +144,12 @@ export interface FloatingRovoButtonPlacement {
 
 export type FloatingRovoButtonPositioning = "viewport" | "container";
 
+export interface FloatingRovoButtonPanel {
+	id: string;
+	open: boolean;
+	content: ReactNode;
+}
+
 export interface FloatingRovoButtonProps {
 	product: Product;
 	embedded?: boolean;
@@ -155,7 +163,12 @@ export interface FloatingRovoButtonProps {
 	placement?: FloatingRovoButtonPlacement;
 	positioning?: FloatingRovoButtonPositioning;
 	onButtonClick?: () => void;
+	animateLogoOnMount?: boolean;
 	suggestion?: FloatingRovoButtonSuggestion | null;
+	/** Controlled suggestions in arrival order (oldest first). Takes precedence over `suggestion`. */
+	suggestions?: readonly FloatingRovoButtonSuggestion[];
+	/** Controlled dialog content using the launcher's expanding surface. */
+	panel?: FloatingRovoButtonPanel;
 	onboarding?: FloatingRovoButtonOnboardingConfig | null;
 	/** Mutually exclusive with `onboarding`; both morph the same surface. */
 	insights?: FloatingRovoButtonInsightsConfig | null;

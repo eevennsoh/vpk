@@ -70,7 +70,7 @@ test("new Jira agent sessions show Working immediately", async () => {
 		},
 	});
 	assert.ok(Boolean(view.getByText("Working")));
-	assert.equal(view.getByRole("button", { name: "Claude: Working" }).querySelector('[data-slot="avatar"]')?.classList.contains("size-6"), true);
+	assert.equal(view.getByRole("button", { name: "Claude: Working" }).querySelector('[data-slot="avatar"]')?.classList.contains("size-5"), true);
 	assert.equal(Boolean(view.queryByText("Let's get started")), false);
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
@@ -94,6 +94,22 @@ test("adding an agent to an existing row shows Working immediately", async () =>
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
 
+test("mixed sessions show only the owner's agent and status in the chin", async () => {
+	const owner = { id: "mine", name: "Claude", agentBrandName: "claude", state: "working", label: "Working", role: "owner" };
+	const teammates = [
+		{ id: "team-a", name: "Cursor", agentBrandName: "cursor", state: "awaiting-input", label: "Needs input", role: "viewer", invokedBy: { name: "Andrew" } },
+		{ id: "team-b", name: "Other", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Priya" } },
+	];
+	const props = { activities: [owner, ...teammates], iconScale: "comfortable", shouldReduceMotion: true, usesStrokeChrome: true };
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/agent-activity.tsx", exportName: "JiraIssueAgentActivityRows", props });
+	try {
+		const row = view.getByRole("button", { name: "Claude: Working" });
+		assert.equal(Boolean(row.querySelector('.agent-loading-vertical')), false);
+		assert.equal(Boolean(view.getByRole("img", { name: "Claude" })), true);
+		assert.equal(Boolean(view.queryByText("Needs input")), false);
+	} finally { await view.unmount(); }
+});
+
 test("the compact assignment field shows session state and cycles multiple agents", async () => {
 	const working = { id: "claude", name: "Claude", byline: "", statusKind: "working", statusLabel: "Working" };
 	const other = { id: "cursor", name: "Cursor", byline: "", statusKind: "working", statusLabel: "Working" };
@@ -103,7 +119,7 @@ test("the compact assignment field shows session state and cycles multiple agent
 		props: { addAgentLabel: "Add agent", assignedAgents: [working, other], compactStatus: true },
 	});
 	assert.equal(Boolean(view.getByText("Working")), true);
-	assert.equal(view.container.querySelector('.agent-loading-vertical [data-slot="avatar"]')?.classList.contains("size-6"), true);
+	assert.equal(view.container.querySelector('.agent-loading-vertical [data-slot="avatar"]')?.classList.contains("size-5"), true);
 	const visibleAgentIds = () => [...view.container.querySelectorAll('.agent-loading-vertical [data-agent-id]')].map((agent) => agent.getAttribute("data-agent-id"));
 	assert.deepEqual(visibleAgentIds(), ["claude"]);
 	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
@@ -120,7 +136,7 @@ for (const host of ["local", "cloud"]) {
 			["awaiting-input", "Needs input", "awaiting-input"],
 			["completed", "Finished", "finished"],
 		]) {
-			test(`${host} ${role} sessions show ${label} and its indicator`, async () => {
+			test(`${host} ${role} sessions show ${role === "viewer" ? "the teammate label" : `${label} and its indicator`}`, async () => {
 				const view = await renderComponent({
 					entry: "components/blocks/jira-issue/agent-activity.tsx",
 					exportName: "JiraIssueAgentActivityRows",
@@ -132,12 +148,40 @@ for (const host of ["local", "cloud"]) {
 						renderAgentActivityIndicator: (kind) => React.createElement("span", null, `indicator: ${kind}`),
 					},
 				});
-				assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
-				assert.equal(Boolean(view.getByText(`indicator: ${indicator}`)), true);
+				if (role === "viewer") {
+					const row = view.getByRole("button", { name: "Use an agent", exact: true });
+					assert.equal(row.querySelector('[data-teammate-session-label]')?.textContent, "Use an agent");
+					assert.equal(row.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Teammate");
+					assert.equal(Boolean(view.queryByText(`indicator: ${indicator}`)), false);
+				} else {
+					assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
+					assert.equal(Boolean(view.getByText(`indicator: ${indicator}`)), true);
+				}
 			});
 		}
 	}
 }
+
+test("teammate rows cycle agent and human pairs with a persistent label", async () => {
+	const activities = [
+		{ id: "a", name: "Claude", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Maya" } },
+		{ id: "b", name: "Cursor", state: "working", label: "Working", role: "viewer", invokedBy: { name: "Jordan" } },
+	];
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/agent-activity.tsx", exportName: "JiraIssueAgentActivityRows", props: { activities, iconScale: "comfortable", shouldReduceMotion: true } });
+	try {
+		const row = view.getByRole("button", { name: "Using agents" });
+		assert.equal(view.container.querySelector(`[id="${row.getAttribute("aria-describedby")}"]`)?.textContent, "Claude, used by Maya; Cursor, used by Jordan");
+		assert.deepEqual([...row.querySelectorAll('[data-slot="human-agent-avatar"]')].map((avatar) => avatar.getAttribute("aria-label")), ["Claude, used by Maya"]);
+		assert.equal(row.querySelector('[data-teammate-session-label]')?.textContent, "Using agents");
+		assert.equal(row.querySelector('[data-teammate-session-label]')?.className.includes("opacity-0"), false);
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+		assert.equal(Boolean(row.querySelector('[data-slot="human-agent-avatar"][aria-label="Cursor, used by Jordan"]')), true);
+		await view.rerender({ activities: activities.map((activity) => ({ ...activity, state: "completed", label: "Finished" })), iconScale: "comfortable", shouldReduceMotion: true });
+		assert.equal(Boolean(view.container.querySelector('[data-slot="human-agent-avatar"][aria-label="Claude, used by Maya"]')), true);
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+		assert.equal(Boolean(view.container.querySelector('[data-slot="human-agent-avatar"][aria-label="Cursor, used by Jordan"]')), true);
+	} finally { await view.unmount(); }
+});
 
 for (const { name, iconScale, workingSpinnerVariant, avatar } of [
 	{ name: "comfortable default", iconScale: "comfortable", avatar: true },

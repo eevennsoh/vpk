@@ -8,16 +8,16 @@ type Segment = {
 	label?: string;
 	prStatus?: string;
 	host?: "cloud" | "local";
-	toolCalls?: readonly string[];
 };
 
 type Input = {
 	agentName: string;
 	branch?: string;
 	artifactLabel?: string;
+	showArtifact?: boolean;
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
-	toolCalls?: readonly string[];
+	state?: "running" | "needs-input" | "attention" | "complete";
 };
 
 const build = toAgentSessionMetadataSegments as (input: Input) => readonly Segment[];
@@ -37,20 +37,16 @@ function chunk(input: Input, kind: string): Segment | undefined {
 	return build(input).find((segment) => segment.kind === kind);
 }
 
-test("a fully described session reads agent, tool call, artifact, then host-tagged time", () => {
+test("a working session shows its agent, artifact, and timestamp", () => {
 	assert.deepEqual(
 		kinds({
 			agentName: "Claude",
 			artifactLabel: "#124: Cargo retract",
 			host: "local",
 			prStatus: "created",
-			toolCalls: ["Reading the relevant files.", "Editing the shared implementation."],
+			state: "running",
 		}),
-		["agent", "tool-call", "artifact", "time"],
-	);
-	assert.deepEqual(
-		chunk({ agentName: "Claude", toolCalls: ["Reading the relevant files.", "Editing the shared implementation."] }, "tool-call")?.toolCalls,
-		["Reading the relevant files.", "Editing the shared implementation."],
+		["agent", "artifact", "time"],
 	);
 	assert.equal(
 		chunk({
@@ -62,11 +58,9 @@ test("a fully described session reads agent, tool call, artifact, then host-tagg
 	);
 });
 
-test("empty tool-call labels are omitted instead of leaving a blank clause", () => {
-	assert.deepEqual(
-		kinds({ agentName: "Claude", toolCalls: ["", "  "] }),
-		["agent", "time"],
-	);
+test("metadata never exposes individual tool calls from a session payload", () => {
+	const session = { agentName: "Claude", state: "running", toolCalls: ["Editing the shared implementation."] } as const;
+	assert.deepEqual(toAgentSessionMetadataSegments(session).map((segment) => segment.kind), ["agent", "time"]);
 });
 
 test("agent and time are the only chunks a row always has", () => {
@@ -105,7 +99,7 @@ test("the time chunk carries the declared host so icon and clock stay one clause
 test("status copy stays available for trailing indicators", () => {
 	assert.deepEqual(AGENT_SESSION_STATUS_LABEL, {
 		attention: "Needs attention",
-		complete: "Complete",
+		complete: "Finished",
 		"needs-input": "Needs input",
 		running: "Working",
 	});
@@ -132,6 +126,12 @@ test("an artifact chunk needs a real label and carries a glyph status", () => {
 	);
 });
 
+test("metadata can omit the pull request while preserving the other segments", () => {
+	const input = { agentName: "Claude", artifactLabel: "#124: Cargo retract", host: "cloud" as const };
+	assert.deepEqual(kinds(input), ["agent", "artifact", "time"]);
+	assert.deepEqual(kinds({ ...input, showArtifact: false }), ["agent", "time"]);
+});
+
 test("the builder is pure: same input, equal output, no shared mutation", () => {
 	const input: Input = { agentName: "Claude", host: "cloud" };
 	const first = build(input);
@@ -139,4 +139,23 @@ test("the builder is pure: same input, equal output, no shared mutation", () => 
 
 	assert.deepEqual(first, second);
 	assert.notEqual(first, second);
+});
+
+test("large rows show the agent name in every lifecycle state", () => {
+	for (const state of ["running", "needs-input", "attention", "complete"] as const) {
+		const agent = build({ agentName: "Claude", state }).find((segment) => segment.kind === "agent");
+		assert.equal(agent?.label, "Claude", `${state} shows the agent name`);
+	}
+});
+
+test("compact metadata can retain a pull request when enabled", () => {
+	const compact = (toAgentSessionMetadataSegments as (input: Input & { compact?: boolean }) => readonly Segment[])({
+		agentName: "Figma",
+		artifactLabel: "#124: Cargo retract",
+		compact: true,
+		host: "cloud",
+		state: "complete",
+	});
+	assert.deepEqual(compact.map((segment) => segment.kind), ["agent", "artifact", "time"]);
+	assert.equal(compact.find((segment) => segment.kind === "agent")?.label, undefined);
 });

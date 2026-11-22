@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import {
 	type AgentAssignmentAgent,
@@ -8,7 +8,6 @@ import {
 import { toAssignmentSessionItem } from "@/components/blocks/agent-assignment/components/assignment-session";
 import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment/components/teammate-sessions-disclosure";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
-import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -71,9 +70,9 @@ export function AgentSessionsMenu({
 	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
-	const personalItems = items.filter((item) => item.role !== "viewer");
-	const teammateItems = items.filter((item) => item.role === "viewer");
+	const orderedItems = [...items].sort((left, right) => Number(right.state === "needs-input") - Number(left.state === "needs-input"));
+	const personalItems = orderedItems.filter((item) => item.role !== "viewer");
+	const teammateItems = orderedItems.filter((item) => item.role === "viewer");
 	const hasActionableSession = items.some((item) => item.role === undefined || item.role === "owner");
 
 	useEffect(() => {
@@ -86,10 +85,11 @@ export function AgentSessionsMenu({
 	const renderSession = (item: AgentSessionItem) => (
 		<AgentSessionCard
 			key={item.id}
-			density="long"
+			density="short"
 			hoverTone="menu"
 			item={item}
 			localSessionAction={localSessionAction}
+			moreMenuVariant="session-picker"
 			moreMenuPortalled={true}
 			moreMenuPositionerClassName={overlayPositionerClassName}
 			tooltipPositionerClassName={overlayPositionerClassName}
@@ -100,14 +100,14 @@ export function AgentSessionsMenu({
 			onToggleVisibility={onToggleVisibility}
 			onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
 			padding="compact"
-			renderAgentAvatar={renderAgentAvatar ?? undefined}
 			showLifecycleLabel={false}
+			showWorkingSpinner
 			trailingAlign="center"
 		/>
 	);
 
 	return (
-		<div className={cn("flex w-full flex-col gap-1 outline-none", dropdownStyles.padding)} ref={containerRef} tabIndex={-1}>
+		<div className={cn("flex w-full flex-col outline-none", dropdownStyles.padding)} ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}
@@ -115,14 +115,11 @@ export function AgentSessionsMenu({
 				<div>
 					{hasActionableSession ? <DropdownMenuSeparator /> : null}
 					{personalItems.length ? (
-						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
+						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation !== "count"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
-						<>
-							<p className={dropdownStyles.label}>{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
-							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
-						</>
+						<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 					)}
 				</div>
 			) : null}

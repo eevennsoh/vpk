@@ -13,6 +13,12 @@ export const FLOATING_ROVO_BUTTON_MORPH_SPRING = {
 	visualDuration: 0.28,
 } as const;
 
+export const FLOATING_ROVO_BUTTON_CARD_ENTER = {
+	duration: 0.14,
+	delay: 0.18,
+	ease: motionEase.out,
+} as const;
+
 // `duration-fast` + `ease-in`: the button and its insights pill leave the
 // shared morphing surface with the same practical exit signature.
 export const FLOATING_ROVO_BUTTON_CONTENT_EXIT = {

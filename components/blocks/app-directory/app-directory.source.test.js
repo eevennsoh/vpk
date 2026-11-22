@@ -186,7 +186,7 @@ test("App Directory supports controlled and uncontrolled added tool state", () =
 	assert.doesNotMatch(source, /<ToolDetailView[\s\S]*onRemoveTool=\{\(\) => handleRemoveTool\(selectedTool\)\}/u);
 	assert.doesNotMatch(source, /\{added \? null : \(/u);
 	assert.match(source, /tool\.brandName[\s\S]*<LogoThirdParty label=\{tool\.name\} name=\{tool\.brandName\} size="xlarge" \/>/u);
-	assert.match(source, /const ThirdPartyIcon = getThirdPartyLogoIconFromSrc\(item\.avatarSrc\);[\s\S]*<ThirdPartyIcon label=\{item\.label\} size="small" \/>/u);
+	assert.match(source, /<BrandLogoMark frame="tile" label=\{item\.label\} size="small" src=\{item\.avatarSrc\} \/>/u);
 	assert.match(source, /<BrandLogoMark frame="tile" label=\{tool\.name\} size="medium" src=\{src\} \/>/u);
 	assert.match(source, /<CustomLogo label=\{tool\.name\} size="xlarge" src=\{src\} \/>/u);
 	assert.doesNotMatch(source, /size="sm"/u);

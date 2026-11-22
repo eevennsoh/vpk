@@ -102,7 +102,7 @@ export function CollapsedBoardColumn({
 }>): ReactNode {
 	const countRow = (
 		<div className="group/collapsed-column w-full">
-			{headerAccessory ? <div className="mb-1 flex justify-center">{headerAccessory}</div> : null}
+			{headerAccessory ? <div className="mb-1 flex justify-center empty:hidden">{headerAccessory}</div> : null}
 			<div className="relative flex h-6 w-full items-center justify-center">
 				<span className={COLLAPSED_HEAD_COUNT_AT_REST}>
 					{count}

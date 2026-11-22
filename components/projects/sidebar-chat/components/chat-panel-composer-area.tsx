@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { ClarificationQuestionCard } from "@/components/projects/shared/components/clarification-question-card";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
+import { Footer } from "@/components/ui-custom/footer";
 import type { ChatPanelDecisions } from "../hooks/use-chat-panel-decisions";
 import type { ChatPanelProps } from "../lib/chat-panel-types";
 import ChatComposer from "./chat-composer";
@@ -27,6 +28,7 @@ interface ChatPanelComposerAreaProps
 		| "hideComposerSourceAndModelControls"
 		| "onComposerPrefillConsumed"
 		| "resolveComposerPlaceholder"
+		| "readOnly"
 	> {
 	autoFocusComposer: boolean;
 	clickyActive: boolean;
@@ -60,6 +62,7 @@ interface ChatPanelComposerAreaProps
 
 /** Bottom of the panel: a docked question card, a pending plan approval, or the composer. */
 export function ChatPanelComposerArea({
+	readOnly = false,
 	addMenuItemsBefore,
 	autoFocusComposer,
 	chatContextBar,
@@ -119,13 +122,20 @@ export function ChatPanelComposerArea({
 	} = decisions;
 
 	return (
-		<div className="min-w-0 shrink-0">
+		<div className={readOnly && shouldShowQuestionCard ? "flex min-h-0 min-w-0 shrink flex-col" : "min-w-0 shrink-0"}>
 			{shouldShowQuestionCard && activeQuestionCard ? (
 				<>
-					<div className="px-3">
+					<div className={readOnly ? "min-h-0 shrink overflow-y-auto px-3" : "px-3"} onKeyDownCapture={(event) => {
+						if (readOnly && event.key === "Escape" && !(event.target instanceof HTMLInputElement)) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+					}}>
 						<ClarificationQuestionCard
+							cardClassName="shadow-none"
 							key={activeQuestionCardKey ?? undefined}
 							questionCard={activeQuestionCard}
+							showDismissButton={!readOnly}
 							onSubmit={(answers) => {
 								handleClarificationSubmit(answers);
 								hideQuestionCard();
@@ -133,7 +143,7 @@ export function ChatPanelComposerArea({
 							onDismiss={dismissQuestionCard}
 						/>
 					</div>
-					<QuestionCardShortcutsFooter />
+					<QuestionCardShortcutsFooter showEscape={!readOnly} />
 				</>
 			) : shouldShowApprovalCard && activePendingPlan ? (
 				<>
@@ -145,6 +155,8 @@ export function ChatPanelComposerArea({
 					/>
 					<QuestionCardShortcutsFooter escLabel="cancel" />
 				</>
+			) : readOnly ? (
+				hideAiDisclaimer ? null : <Footer className="px-3" />
 			) : (
 				<>
 					<ChatComposer

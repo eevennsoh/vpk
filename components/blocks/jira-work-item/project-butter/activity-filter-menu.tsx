@@ -3,6 +3,7 @@
 import FilterIcon from "@atlaskit/icon/core/filter";
 import type { ProjectButterActivityFilters, ProjectButterActivitySort } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -27,14 +28,17 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 	onFiltersChange?: (filters: ProjectButterActivityFilters) => void;
 	sort: ProjectButterActivitySort;
 	onSortChange?: (sort: ProjectButterActivitySort) => void;
-	expandDetails: boolean;
-	onExpandDetailsChange: (open: boolean) => void;
+	expandDetails?: boolean;
+	onExpandDetailsChange?: (open: boolean) => void;
 }>) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}>
-				<FilterIcon label="" size="small" />
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger render={<DropdownMenuTrigger render={<Button aria-label="Filter activity" className="[&_svg]:text-icon-subtle" iconSize="compact" size="icon" type="button" variant="ghost" />} />}>
+					<FilterIcon label="" size="small" />
+				</TooltipTrigger>
+				<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">More filters</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent align="end" positionerClassName="z-[650]">
 				{onFiltersChange ? <>
 					<DropdownMenuGroup>
@@ -45,7 +49,7 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
+					{onSortChange || onExpandDetailsChange ? <DropdownMenuSeparator /> : null}
 				</> : null}
 				{onSortChange ? <>
 					<DropdownMenuGroup>
@@ -55,11 +59,11 @@ export function ProjectButterActivityFilterMenu({ filters, onFiltersChange, sort
 							<DropdownMenuRadioItem value="oldest">Oldest first</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
+					{onExpandDetailsChange ? <DropdownMenuSeparator /> : null}
 				</> : null}
-				<DropdownMenuCheckboxItem checked={expandDetails} onCheckedChange={onExpandDetailsChange}>
+				{onExpandDetailsChange ? <DropdownMenuCheckboxItem checked={expandDetails} onCheckedChange={onExpandDetailsChange}>
 					Expand change details
-				</DropdownMenuCheckboxItem>
+				</DropdownMenuCheckboxItem> : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

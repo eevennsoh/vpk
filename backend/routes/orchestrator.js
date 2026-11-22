@@ -43,7 +43,8 @@ function createOrchestratorRouter({
 
 	const router = express.Router();
 
-	router.get("/log", (req, res) => {
+	// The log and timeline cover every caller's turns, so reading them is admin-only too.
+	router.get("/log", requireRuntimeAdmin, (req, res) => {
 		try {
 			const filter = buildOrchestratorLogFilter(req.query);
 			const entries = orchestratorLog.getEntries(filter);
@@ -56,7 +57,7 @@ function createOrchestratorRouter({
 		}
 	});
 
-	router.get("/timeline", (req, res) => {
+	router.get("/timeline", requireRuntimeAdmin, (req, res) => {
 		try {
 			const filter = buildOrchestratorLogFilter(req.query);
 			const timeline = orchestratorLog.toTimeline(filter);

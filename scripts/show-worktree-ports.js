@@ -6,8 +6,10 @@
  *   node scripts/show-worktree-ports.js              one-shot snapshot
  *   node scripts/show-worktree-ports.js once         explicit one-shot snapshot alias
  *   node scripts/show-worktree-ports.js watch        interactive/live dashboard (1s refresh)
- *   node scripts/show-worktree-ports.js kill [id]    stop a worktree's dev session
- *                                                    (no id -> the worktree you're currently in; id -> that specific worktree)
+ *   node scripts/show-worktree-ports.js kill [id] [--force]
+ *                                                    stop a worktree's dev session
+ *                                                    (no id -> the worktree you're currently in; id -> that specific worktree;
+ *                                                    another worktree's stack in use is refused unless --force)
  *
  * Main is always shown. Linked worktrees appear once they have dev-port state;
  * the live dashboard discovers them automatically on its next refresh.
@@ -19,11 +21,14 @@ const readline = require("node:readline");
 const { spawnSync } = require("node:child_process");
 const { Worker } = require("node:worker_threads");
 const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
-const { probePortAlive } = require("./lib/port-liveness");
+const { listListenerCwds, listenerOwnership, probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("./lib/worktree-kill");
+const { collectInventory } = require("./lib/dev-stack-budget");
 const { collectStackFacts, deriveStackStatus, isSessionAlive, readStackRecord } = require("./lib/dev-stack-state");
 const { measureNextDir } = require("./lib/next-dev-output");
+const { EXIT_STOP_REFUSED } = require("./lib/dev-stack-activity");
+const { canonicalWorktreePath, describeWorktree, listDevSessions, sameWorktreePath, stopWorktree } = require("./lib/worktree-stop");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -92,20 +97,39 @@ async function probeOrNull(port) {
 	return alive ? port : null;
 }
 
-async function collectWorktreeRows(worktrees, routes) {
+// A frontend or backend port file can name a port whose listener runs in another worktree (a
+// stale file, or a port the other stack took since). Such a port is not this worktree's running
+// port: it is reported as held elsewhere, never as this stack's.
+function splitByOwner(port, wt, listenerCwds) {
+	if (!port) return { running: null, foreign: null };
+	if (listenerOwnership(listenerCwds, port, wt.path) === false) {
+		return { running: null, foreign: { port, owners: [...listenerCwds.get(Number(port))] } };
+	}
+	return { running: port, foreign: null };
+}
+
+async function collectWorktreeRows(worktrees, routes, { listenerCwds = listListenerCwds() } = {}) {
 	return Promise.all(
 		worktrees.map(async (wt) => {
 			const recordedFrontend = readPortFile(wt.path, ".dev-frontend-port");
 			const recordedBackend = readPortFile(wt.path, ".dev-backend-port");
 			const recordedRovo = readRovoPorts(wt.path);
 
-			const [runningFrontend, runningBackend, runningRovoPorts] = await Promise.all([
+			const [aliveFrontend, aliveBackend, runningRovoPorts] = await Promise.all([
 				probeOrNull(recordedFrontend),
 				probeOrNull(recordedBackend),
 				Promise.all(recordedRovo.map(probeOrNull)).then((results) =>
 					results.filter((value) => value !== null),
 				),
 			]);
+			const frontend = splitByOwner(aliveFrontend, wt, listenerCwds);
+			const backend = splitByOwner(aliveBackend, wt, listenerCwds);
+			const runningFrontend = frontend.running;
+			const runningBackend = backend.running;
+			const foreignPorts = [
+				...(frontend.foreign ? [{ service: "frontend", ...frontend.foreign }] : []),
+				...(backend.foreign ? [{ service: "backend", ...backend.foreign }] : []),
+			];
 
 			const runningRovo = runningRovoPorts.length > 0 ? runningRovoPorts.join(", ") : null;
 			const hasRecordedPorts = Boolean(
@@ -121,6 +145,7 @@ async function collectWorktreeRows(worktrees, routes) {
 				runningFrontend,
 				runningBackend,
 				runningRovo,
+				foreignPorts,
 				portlessUrl: findPortlessUrl(routes, runningFrontend),
 			};
 		}),
@@ -165,6 +190,9 @@ function renderRows(rows, { headerSuffix, footer, selectedIndex = null } = {}) {
 			);
 		} else {
 			console.log("   🔌 (no active ports)");
+		}
+		for (const foreign of row.foreignPorts ?? []) {
+			console.log(`   ⚠️  ${foreign.service} port file says ${foreign.port}, but another directory's process holds it (${foreign.owners.join(", ")})`);
 		}
 		if (portlessUrl) {
 			console.log(`   🌐 ${portlessUrl}`);
@@ -224,6 +252,7 @@ function dashboardRowsSignature(rows) {
 			runningFrontend: row.runningFrontend,
 			runningBackend: row.runningBackend,
 			runningRovo: row.runningRovo,
+			foreignPorts: row.foreignPorts,
 			portlessUrl: row.portlessUrl,
 		})),
 	);
@@ -257,6 +286,9 @@ async function runWatch({ interactive = false } = {}) {
 	let selectedPath = null;
 	let confirmingKill = false;
 	let statusMessage = null;
+	// A kill refused because the stack is in use arms a forced kill of that worktree: the next
+	// confirmed kill of the same worktree overrides the guard. Declining a confirm disarms it.
+	let forceArmedPath = null;
 	let stopped = false;
 
 	try {
@@ -326,7 +358,7 @@ async function runWatch({ interactive = false } = {}) {
 				selectedIndex: interactive ? selectedIndex - startIndex : null,
 				footer: interactive
 					? confirmingKill
-						? `Kill ${describeWorktree(lastRows[selectedIndex].wt)}?  y/N`
+						? `${forceArmedPath === lastRows[selectedIndex].wt.path ? "In use — kill anyway" : "Kill"} ${describeWorktree(lastRows[selectedIndex].wt)}?  y/N`
 						: `${statusMessage ? `${statusMessage}\n` : ""}↑/↓ select · Enter Open · k Kill · q Quit`
 					: "Ctrl+C to exit",
 			});
@@ -360,15 +392,24 @@ async function runWatch({ interactive = false } = {}) {
 				if (!selected) return;
 				if (process.stdin.isTTY) process.stdin.setRawMode(false);
 				process.stdout.write("\x1b[2J\x1b[H\x1b[?25h");
-				const status = stopWorktree(selected.wt);
+				// The first confirmed kill respects the in-use guard; a second one, after it refused, forces.
+				const force = forceArmedPath === selected.wt.path;
+				const status = stopWorktree(selected.wt, { force });
+				forceArmedPath = status === EXIT_STOP_REFUSED && !force ? selected.wt.path : null;
 				if (process.stdin.isTTY) process.stdin.setRawMode(true);
 				process.stdout.write("\x1b[?25l");
-				statusMessage = status === 0 ? `✓ Killed ${selected.name}` : `Could not kill ${selected.name} (exit ${status})`;
+				statusMessage =
+					status === 0
+						? `✓ Killed ${selected.name}`
+						: forceArmedPath
+							? `${selected.name} is in use; press k then y again to kill it anyway`
+							: `Could not kill ${selected.name} (exit ${status})`;
 				requestRefresh();
 				render();
 				return;
 			}
 			confirmingKill = false;
+			forceArmedPath = null;
 			render();
 			return;
 		}
@@ -419,12 +460,6 @@ async function runWatch({ interactive = false } = {}) {
 	});
 }
 
-function describeWorktree(worktree) {
-	const name = path.basename(worktree.path);
-	const branch = worktree.isMain ? "main" : worktree.branch || worktree.identifier;
-	return `${name} (${branch})  →  ${sessionNameForWorktree(worktree)}`;
-}
-
 function printKillCandidates(worktrees) {
 	for (const worktree of worktrees) {
 		console.error(`   • ${describeWorktree(worktree)}`);
@@ -432,118 +467,26 @@ function printKillCandidates(worktrees) {
 	}
 }
 
-function standaloneTmuxBinary() {
-	for (const candidate of [
-		process.env.VPK_TMUX_BIN,
-		"/opt/homebrew/bin/tmux",
-		"/usr/local/bin/tmux",
-		"/usr/bin/tmux",
-	]) {
-		if (!candidate) continue;
-		try {
-			fs.accessSync(candidate, fs.constants.X_OK);
-			return candidate;
-		} catch {
-			// Try the next standalone binary.
-		}
-	}
-	return "tmux";
-}
-
-function sameWorktreePath(left, right) {
-	try {
-		return fs.realpathSync(left) === fs.realpathSync(right);
-	} catch {
-		return path.resolve(left) === path.resolve(right);
-	}
-}
-
-// Dev sessions with their start directories: every session on the private vpk-dev socket
-// (only the launchers use it, and VPK_DEV_TMUX_SESSION / _PREFIX can rename a session), and the
-// vpk-dev-* sessions on the default socket (the Rovo stack's; other tmux use lives there too).
-function listDevSessions() {
-	const sessions = [];
-	const tmuxBinary = standaloneTmuxBinary();
-	for (const socket of ["vpk-dev", "default"]) {
-		const args = socket === "default" ? [] : ["-L", socket];
-		const result = spawnSync(tmuxBinary, [...args, "list-sessions", "-F", "#{session_name}|#{session_path}"], {
-			encoding: "utf8",
-		});
-		if (result.error) {
-			throw new Error(`Could not inspect tmux's ${socket} socket: ${result.error.message}`);
-		}
-		if (result.status !== 0) {
-			const message = String(result.stderr ?? "");
-			if (/operation not permitted|permission denied|broken pipe/i.test(message)) {
-				throw new Error(`Could not inspect tmux's ${socket} socket: ${message.trim()}`);
-			}
-			continue;
-		}
-		for (const line of result.stdout.split("\n")) {
-			const separator = line.indexOf("|");
-			if (separator < 0) continue;
-			const name = line.slice(0, separator);
-			const sessionPath = line.slice(separator + 1);
-			if (sessionPath && (socket === "vpk-dev" || name.startsWith("vpk-dev-"))) {
-				sessions.push({ name, socket, path: sessionPath });
-			}
-		}
-	}
-	return sessions;
-}
-
-// Older launchers can name a session from a Cursor worktree hash rather than
-// today's branch/display name. Match the live session by its exact worktree
-// path so the target stop script sends SIGINT to the right Portless owner.
-function runningSessionForWorktree(worktree, sessions = listDevSessions()) {
-	const matches = sessions
-		.filter((session) => sameWorktreePath(session.path, worktree.path))
-		.map(({ name, socket }) => ({ name, socket }));
-
-	if (matches.length === 1) return matches[0];
-	if (matches.length > 1) {
-		throw new Error(
-			`Multiple dev sessions belong to ${worktree.path}: ${matches.map((session) => session.name).join(", ")}. Inspect them before stopping this worktree.`,
-		);
-	}
-	return null;
-}
-
-// Stop one worktree's dev session. Delegate to the target worktree's OWN
-// launcher so its cwd-scoped cleanup (SIGINT so portless removes its route,
-// kill-session, listener backstop, port-file removal) runs against the right
-// worktree. Never a raw kill-session here — that would leave a stale portless
-// route behind.
-function stopWorktree(worktree) {
-	const scriptPath = path.join(worktree.path, "scripts", "dev-tmux-plain.sh");
-	console.log(`🔪 Stopping ${describeWorktree(worktree)}\n`);
-	let runningSession;
-	try {
-		runningSession = runningSessionForWorktree(worktree);
-	} catch (error) {
-		console.error(error.message);
-		return 2;
-	}
-	if (runningSession?.socket === "default") {
-		console.error(`The live session is on tmux's default socket. Use the vpk-system-clean sweep for this legacy stack.`);
-		return 2;
-	}
-	const { status, error } = spawnSync("bash", [scriptPath, "stop"], {
-		cwd: worktree.path,
-		env: runningSession
-			? {
-					...process.env,
-					VPK_DEV_TMUX_SESSION: runningSession.name,
-					VPK_TMUX_SOCKET: runningSession.socket,
-				}
-			: process.env,
-		stdio: "inherit",
+// `pnpm ports kill` only stops this repo's worktree stacks. The dev-stack budget can list another
+// project's next-server by its path, so when that path is passed here, say how to stop it instead
+// of listing unrelated worktrees. Paths are compared as realpaths (lsof reports /private/tmp, not
+// /tmp), and a server inside any of this repo's worktrees is never offered for a raw kill: that
+// would skip the in-use refusal `pnpm ports kill` gives.
+function externalStopHint(query, servers, worktrees = []) {
+	if (!query || !path.isAbsolute(query)) return null;
+	const root = canonicalWorktreePath(query);
+	const ours = worktrees.map((worktree) => ({ path: canonicalWorktreePath(worktree.path) }));
+	const inside = servers.filter((server) => {
+		if (!server.cwd) return false;
+		const cwd = canonicalWorktreePath(server.cwd);
+		if (cwd !== root && !cwd.startsWith(`${root}${path.sep}`)) return false;
+		return !findCurrentWorktree(cwd, ours);
 	});
-	if (error) {
-		console.error(`Failed to run ${scriptPath}: ${error.message}`);
-		return 1;
-	}
-	return status ?? 0;
+	if (inside.length === 0) return null;
+	return [
+		`${query} is not a worktree of this repo, so \`pnpm ports kill\` can't stop it.`,
+		`Its next-server: ${inside.map((server) => `pid ${server.pid}`).join(", ")}. Stop it with: kill ${inside.map((server) => server.pid).join(" ")}`,
+	];
 }
 
 // `pnpm ports --json`: one entry per worktree with a dev stack (and the main checkout), with the
@@ -605,7 +548,7 @@ async function collectStackRows({
 	return rows.filter((row) => row.isMain || row.status !== "absent" || row.rovoPorts.length > 0);
 }
 
-function runKill(query) {
+function runKill(query, { force = false } = {}) {
 	let worktrees;
 	try {
 		worktrees = getAllWorktreePortInfo();
@@ -625,7 +568,7 @@ function runKill(query) {
 			printKillCandidates(worktrees);
 			process.exit(1);
 		}
-		process.exit(stopWorktree(current));
+		process.exit(stopWorktree(current, { force }));
 		return;
 	}
 
@@ -635,13 +578,18 @@ function runKill(query) {
 			console.error(`"${query}" matches multiple worktrees — be more specific:\n`);
 			printKillCandidates(result.candidates);
 		} else {
+			const hint = externalStopHint(query, collectInventory().servers, worktrees);
+			if (hint) {
+				for (const line of hint) console.error(line);
+				process.exit(1);
+			}
 			console.error(`No worktree matches "${query}". Available worktrees:\n`);
 			printKillCandidates(worktrees);
 		}
 		process.exit(result.reason === "ambiguous" ? 2 : 1);
 	}
 
-	process.exit(stopWorktree(result.worktree));
+	process.exit(stopWorktree(result.worktree, { force }));
 }
 
 if (require.main === module) {
@@ -652,7 +600,8 @@ if (require.main === module) {
 			process.exit(1);
 		});
 	} else if (subcommand === "kill") {
-		runKill(process.argv[3]);
+		const killArgs = process.argv.slice(3);
+		runKill(killArgs.find((arg) => arg !== "--force"), { force: killArgs.includes("--force") });
 	} else if (subcommand === "--json" || subcommand === "json") {
 		collectStackRows({ sizes: process.argv.includes("--sizes") }).then(
 			(rows) => process.stdout.write(`${JSON.stringify(rows, null, "\t")}\n`),
@@ -663,7 +612,7 @@ if (require.main === module) {
 		);
 	} else if (subcommand && subcommand !== "once") {
 		console.error(
-			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports --json [--sizes]\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
+			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports --json [--sizes]\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier] [--force]\`.`
 		);
 		process.exit(2);
 	} else {
@@ -677,6 +626,7 @@ if (require.main === module) {
 module.exports = {
 	collectStackRows,
 	listDevSessions,
+	externalStopHint,
 	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,

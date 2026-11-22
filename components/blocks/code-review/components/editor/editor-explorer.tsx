@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchIcon } from "@/components/ui/vpk-icons";
-import { FileTree2 } from "@/components/ui-custom/file-tree-2";
+import { FileExplorer } from "@/components/ui-custom/file-explorer";
 import { cn } from "@/lib/utils";
 
 import type { ChangedFile } from "@/components/blocks/code-review/data/types";
@@ -69,9 +69,9 @@ export function EditorExplorer({
 				{showSearch ? (
 					<div className="px-2 pb-1">
 						<InputGroup>
-							<InputGroupAddon align="inline-start">
+							<InputGroupSearchAddon align="inline-start">
 								<SearchIcon label="" />
-							</InputGroupAddon>
+							</InputGroupSearchAddon>
 							<InputGroupInput
 								aria-label="Search"
 								onChange={(event) => setSearchQuery(event.currentTarget.value)}
@@ -82,7 +82,7 @@ export function EditorExplorer({
 					</div>
 				) : null}
 				{/* Search filters within the changed-files item set (Trees hide-non-matches). */}
-				<FileTree2
+				<FileExplorer
 					aria-label="Code review files"
 					className="rounded-none border-0 bg-transparent text-xs [&_[role=tree]]:max-h-none [&_[role=tree]]:overflow-visible"
 					defaultExpandedPaths={defaultExpandedPaths}

@@ -366,7 +366,7 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/ui-custom/attachment.tsx",
+			"filePath": "components/ui-custom/attachment-part-media.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */",
@@ -408,7 +408,7 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/ui-custom/queue.tsx",
+			"filePath": "components/ui/queue.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */",
@@ -739,13 +739,6 @@
 		{
 			"filePath": "tests/blocks/agent-directory-hover.spec.ts",
 			"occurrence": 3,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(250);",
-			"type": "playwright-fixed-wait"
-		},
-		{
-			"filePath": "tests/blocks/agent-session-long-agent-name.spec.ts",
-			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",
 			"text": "await page.waitForTimeout(250);",
 			"type": "playwright-fixed-wait"

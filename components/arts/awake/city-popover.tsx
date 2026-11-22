@@ -628,7 +628,7 @@ export function CityRailEditor({
 						/>
 						<div className="relative z-10 flex h-full flex-col px-3 py-3">
 							<div className="mb-3 flex items-center gap-2 px-3 py-2 text-text-subtle">
-								<SearchIcon className="size-3.5 shrink-0 opacity-40" />
+								<SearchIcon className="size-3.5 shrink-0 text-icon-subtlest" />
 									<input
 										aria-label="Search cities"
 										ref={searchInputRef}

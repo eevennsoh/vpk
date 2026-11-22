@@ -1,9 +1,12 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
+import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport, useMessageScroller } from "@/components/ui/message-scroller";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
+import { useScrollActiveMessage } from "@/components/projects/shared/hooks/use-scroll-active-message";
 import { cn } from "@/lib/utils";
 import {
 	CHAT_TIMELINE_DEMO_MESSAGES,
@@ -15,21 +18,19 @@ export interface ChatTimelineProps {
 	messages?: ReadonlyArray<ChatTimelineMessage>;
 }
 
-function buildJumpTarget(container: HTMLElement, element: HTMLElement): number {
-	const containerRect = container.getBoundingClientRect();
-	const elementRect = element.getBoundingClientRect();
-	const targetTop =
-		container.scrollTop +
-		(elementRect.top - containerRect.top) -
-		Math.max(40, container.clientHeight * 0.18);
-
-	return Math.max(0, Math.min(targetTop, container.scrollHeight - container.clientHeight));
-}
-
 export default function ChatTimeline({
 	className,
 	messages = CHAT_TIMELINE_DEMO_MESSAGES,
 }: Readonly<ChatTimelineProps>) {
+	return (
+		<MessageScroller defaultScrollPosition="start" className={cn("relative flex h-full flex-col overflow-hidden rounded-xl bg-background", className)}>
+			<ChatTimelineBody messages={messages} />
+		</MessageScroller>
+	);
+}
+
+function ChatTimelineBody({ messages }: Readonly<{ messages: ReadonlyArray<ChatTimelineMessage> }>) {
+	const { scrollToMessage } = useMessageScroller();
 	const userMessages = useMemo(
 		() => messages.filter((message) => message.role === "user"),
 		[messages],
@@ -49,47 +50,21 @@ export default function ChatTimeline({
 	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 	const activeSelectionId = scrollActiveId ?? latestUserMessageId;
 
-	useEffect(() => {
-		const container = scrollContainerRef.current;
-		if (!container) return;
+	const getUserMessageNodes = useCallback(
+		() => userMessages.flatMap((message) => {
+			const node = messageNodesRef.current[message.id];
+			return node ? [{ id: message.id, node }] : [];
+		}),
+		[userMessages],
+	);
 
-		function detectActiveMessage() {
-			// Snap to first message at scroll top
-			if (container!.scrollTop <= 10) {
-				const firstId = userMessages[0]?.id ?? null;
-				setScrollActiveId((prev) => (prev === firstId ? prev : firstId));
-				return;
-			}
-
-			// Snap to last message at scroll bottom
-			if (container!.scrollHeight - container!.scrollTop - container!.clientHeight <= 10) {
-				const lastId = userMessages.at(-1)?.id ?? null;
-				setScrollActiveId((prev) => (prev === lastId ? prev : lastId));
-				return;
-			}
-
-			const containerRect = container!.getBoundingClientRect();
-			const threshold = containerRect.top + containerRect.height * 0.3;
-
-			let activeId = userMessages[0]?.id ?? null;
-			for (const message of userMessages) {
-				const node = messageNodesRef.current[message.id];
-				if (!node) continue;
-
-				const nodeRect = node.getBoundingClientRect();
-				if (nodeRect.top <= threshold) {
-					activeId = message.id;
-				}
-			}
-
-			setScrollActiveId((prev) => (prev === activeId ? prev : activeId));
-		}
-
-		detectActiveMessage();
-
-		container.addEventListener("scroll", detectActiveMessage, { passive: true });
-		return () => container.removeEventListener("scroll", detectActiveMessage);
-	}, [userMessages]);
+	useScrollActiveMessage({
+		fallback: "first",
+		getMessages: getUserMessageNodes,
+		onActiveChange: setScrollActiveId,
+		scrollRef: scrollContainerRef,
+		snapToEnd: true,
+	});
 
 	useEffect(() => {
 		if (!highlightedMessageId) {
@@ -107,30 +82,24 @@ export default function ChatTimeline({
 
 	function handleSelectMessage(messageId: string) {
 		const scrollContainer = scrollContainerRef.current;
-		const messageNode = messageNodesRef.current[messageId];
 
 		startTransition(() => {
 			setHighlightedMessageId(messageId);
 			setScrollActiveId(messageId);
 		});
 
-		if (!scrollContainer || !messageNode) {
+		if (!scrollContainer) {
 			return;
 		}
 
-		scrollContainer.scrollTo({
-			top: buildJumpTarget(scrollContainer, messageNode),
+		scrollToMessage(messageId, {
+			scrollMargin: Math.max(40, scrollContainer.clientHeight * 0.18),
 			behavior: shouldReduceMotion ? "auto" : "smooth",
 		});
 	}
 
 	return (
-		<div
-			className={cn(
-				"relative flex h-full flex-col overflow-hidden rounded-xl bg-background",
-				className,
-			)}
-		>
+		<>
 			{showTimeline ? (
 				<ChatTimelineNavigator
 					activeItemId={activeSelectionId}
@@ -140,16 +109,16 @@ export default function ChatTimeline({
 				/>
 			) : null}
 
-			<div
-				className="flex-1 overflow-y-auto p-4 pb-20 pr-16"
+			<MessageScrollerViewport
+				className="flex-1 p-4 pb-20 pr-16"
 				ref={scrollContainerRef}
 			>
-				<div className="mx-auto flex max-w-3xl flex-col gap-6">
+				<MessageScrollerContent className="mx-auto flex max-w-3xl flex-col gap-6">
 					{messages.map((message) => {
 						const isHighlighted = message.id === highlightedMessageId;
 
 						return (
-							<div
+							<MessageScrollerItem
 								className={cn(
 									"transition-all duration-normal ease-out",
 									isHighlighted
@@ -158,19 +127,28 @@ export default function ChatTimeline({
 								)}
 								data-chat-timeline-message-id={message.id}
 								key={message.id}
+								messageId={message.id}
+								scrollAnchor={message.role === "user"}
 								ref={(node) => {
 									messageNodesRef.current[message.id] = node;
 								}}
 							>
-								<Message from={message.role}>
-									<MessageContent>{message.text}</MessageContent>
+								<Message align={message.role === "user" ? "end" : "start"} className="cv-auto">
+									{message.role === "user" ? (
+										<MessageContent>
+											<MessageUserBubble>{message.text}</MessageUserBubble>
+										</MessageContent>
+									) : (
+										<MessageContent className="max-w-[80%]">{message.text}</MessageContent>
+									)}
 								</Message>
-							</div>
+							</MessageScrollerItem>
 						);
 					})}
-				</div>
-			</div>
-		</div>
+				</MessageScrollerContent>
+			</MessageScrollerViewport>
+			<MessageScrollerButton />
+		</>
 	);
 }
 

@@ -27,6 +27,7 @@ export type ProjectButterDetailOrderId = ProjectButterDetailFieldId | "agents";
 export type ProjectButterDetailFields = {
 	order: ProjectButterDetailOrderId[];
 	hidden: ProjectButterDetailFieldId[];
+	acceptanceCriteria: string[];
 	parent: string;
 	labels: string[];
 	components: string[];
@@ -53,6 +54,7 @@ export function createProjectButterDetailFields(empty: boolean, workItem?: WorkI
 	return {
 		order: [...PROJECT_BUTTER_DEFAULT_DETAIL_ORDER],
 		hidden: [],
+		acceptanceCriteria: [],
 		parent: workItem?.parent ? `${workItem.parent.code}${workItem.parent.title ? ` ${workItem.parent.title}` : ""}` : reference ? "VITA-22 User Experience Overhaul" : "",
 		labels: workItem?.labels ?? (reference ? ["social-media", "website-traffic"] : []),
 		components: reference ? ["Frontend", "Design System"] : [],

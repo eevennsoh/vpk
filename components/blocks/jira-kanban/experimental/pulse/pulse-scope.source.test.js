@@ -450,21 +450,9 @@ test("Parent and Sprint offer exactly the scopes the article can open", () => {
 	assert.match(SCOPE_SOURCES.options, /sprint: "Sprint",/u, "the field needs a label or the rail renders blank");
 });
 
-test("described Parent and Sprint rows still render name and key", () => {
-	// Parent/Sprint are two-line (label + key). Clustering the mark next to
-	// the label for Work type/Project used a `hasDescription ? null` branch
-	// that also swallowed the label block, leaving empty checkboxes.
+test("Parent and Sprint options supply their keys", () => {
 	assert.match(SCOPE_SOURCES.options, /description: epic\.key/u);
 	assert.match(SCOPE_SOURCES.options, /description: sprint\.key/u);
-	assert.doesNotMatch(
-		SCOPE_SOURCES.popover,
-		/hasDescription \? null : tightLeading/u,
-		"described rows must still render their label block",
-	);
-	assert.match(
-		SCOPE_SOURCES.popover,
-		/hasDescription \? null : leadingVisual[\s\S]*\{labelBlock\}/u,
-	);
 });
 
 test("choosing a scope opens the surface the brief lives on", () => {

@@ -8,22 +8,24 @@ import {
 	Checkpoint,
 	CheckpointIcon,
 	CheckpointTrigger,
-} from "@/components/ui-custom/checkpoint"
-import { CodeBlock } from "@/components/ui-custom/code-block"
+} from "@/components/ui/checkpoint"
+import { CodeBlock } from "@/components/ui/code-block"
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content"
 import {
-	Conversation,
-	ConversationContent,
-} from "@/components/ui-custom/conversation"
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerViewport,
+} from "@/components/ui/message-scroller"
+import { ChatScrollerItem } from "@/components/projects/shared/components/chat-scroller-item"
 import {
 	FileTree,
 	FileTreeFile,
 	FileTreeFolder,
 } from "@/components/ui-custom/file-tree"
-import {
-	Message,
-	MessageContent,
-	MessageResponse,
-} from "@/components/ui-custom/message"
+import { Message, MessageContent } from "@/components/ui/message"
+import { MessageResponse } from "@/components/ui-custom/message-markdown"
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble"
 import {
 	Plan,
 	PlanAvatar,
@@ -31,7 +33,9 @@ import {
 	PlanDescription,
 	PlanHeader,
 	PlanTitle,
-} from "@/components/ui-custom/plan"
+} from "@/components/ui/plan"
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile"
+import { resolvePlanVisualIdentity } from "@/components/projects/shared/lib/plan-identity"
 import type { PromptInputMessage } from "@/components/ui-custom/prompt-input"
 import {
 	PromptInput,
@@ -49,15 +53,14 @@ import {
 	QueueSectionContent,
 	QueueSectionLabel,
 	QueueSectionTrigger,
-} from "@/components/ui-custom/queue"
+} from "@/components/ui/queue"
 import {
 	Task,
 	TaskContent,
 	TaskItemFile,
 	TaskTrigger,
-} from "@/components/ui-custom/task"
-import { Terminal, TerminalContent } from "@/components/ui-custom/terminal"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/task"
+import { TerminalWindow } from "@/components/ui-custom/terminal-window"
 import {
 	CheckCircle2Icon,
 	ListTodoIcon,
@@ -561,20 +564,19 @@ export default function CursorDemoBlock() {
 			{/* Center Panel - Code + Terminal */}
 			<div className="flex flex-1 flex-col overflow-hidden">
 				{/* Code Block */}
-				<CodeBlock
-					className="rounded-none border-0"
-					code={currentFile.content}
-					language={currentFile.language}
-					showLineNumbers
-				/>
+				<CodeBlock className="rounded-none ring-0">
+					<HighlightedCodeContent
+						code={currentFile.content}
+						language={currentFile.language}
+						lineNumbers
+					/>
+				</CodeBlock>
 
-				<Terminal
+				<TerminalWindow
 					className="h-64 rounded-none border-0"
 					isStreaming={isTerminalStreaming}
 					output={terminalOutput}
-				>
-					<TerminalContent className="max-h-full" />
-				</Terminal>
+				/>
 			</div>
 
 			{/* Right Sidebar - AI Chat */}
@@ -583,7 +585,7 @@ export default function CursorDemoBlock() {
 				<div className="border-b p-3">
 					<Plan defaultOpen>
 						<PlanHeader
-							leading={<PlanAvatar />}
+							leading={<PlanAvatar><VisualIdentityTile decorative label="Plan" visualIdentity={resolvePlanVisualIdentity("Untitled task run")} /></PlanAvatar>}
 							title={<PlanTitle>Implementation Plan</PlanTitle>}
 							description={<PlanDescription>Adding form validation</PlanDescription>}
 						/>
@@ -651,35 +653,38 @@ export default function CursorDemoBlock() {
 
 				{/* Chat Messages */}
 				<div className="flex flex-1 flex-col overflow-hidden">
-					<Conversation className="flex-1">
-						<ConversationContent className="gap-4 p-3">
-							{messages.map((message) => (
-								<Message from={message.from} key={message.key}>
-									<MessageContent
-										className={cn(
-											message.from === "user"
-												? "rounded-lg bg-secondary px-3 py-2"
-												: ""
-										)}
-									>
-										{message.from === "assistant" ? (
-											<MessageResponse>{message.content}</MessageResponse>
-										) : (
-											message.content
-										)}
-									</MessageContent>
-								</Message>
-							))}
-							{showCheckpoint ? (
-								<Checkpoint>
-									<CheckpointIcon />
-									<CheckpointTrigger tooltip="Restore to this checkpoint">
-										Checkpoint saved
-									</CheckpointTrigger>
-								</Checkpoint>
-							) : null}
-						</ConversationContent>
-					</Conversation>
+					<MessageScroller autoScroll className="flex-1">
+						<MessageScrollerViewport>
+							<MessageScrollerContent className="gap-4 p-3">
+								{messages.map((message) => (
+									<ChatScrollerItem key={message.key} messageId={message.key} scrollAnchor={message.from === "user"}>
+										<Message align={message.from === "user" ? "end" : "start"} className="cv-auto">
+											{message.from === "user" ? (
+												<MessageContent>
+													<MessageUserBubble>{message.content}</MessageUserBubble>
+												</MessageContent>
+											) : (
+												<MessageContent className="max-w-[80%]">
+													<MessageResponse>{message.content}</MessageResponse>
+												</MessageContent>
+											)}
+										</Message>
+									</ChatScrollerItem>
+								))}
+								{showCheckpoint ? (
+									<ChatScrollerItem>
+										<Checkpoint>
+											<CheckpointIcon />
+											<CheckpointTrigger tooltip="Restore to this checkpoint">
+												Checkpoint saved
+											</CheckpointTrigger>
+										</Checkpoint>
+									</ChatScrollerItem>
+								) : null}
+							</MessageScrollerContent>
+						</MessageScrollerViewport>
+						<MessageScrollerButton />
+					</MessageScroller>
 
 					{/* Chat Input */}
 					<div className="border-t p-3">

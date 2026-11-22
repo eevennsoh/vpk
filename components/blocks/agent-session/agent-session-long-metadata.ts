@@ -9,7 +9,7 @@ import type { AgentListHost, AgentListPrStatus, AgentListState } from "@/compone
  * than rendering an em-dash placeholder. Progression lives on the trailing
  * lifecycle icon, not in this line.
  */
-export type AgentSessionMetadataSegmentKind = "agent" | "branch" | "tool-call" | "artifact" | "time";
+export type AgentSessionMetadataSegmentKind = "agent" | "branch" | "artifact" | "time";
 
 export interface AgentSessionMetadataSegment {
 	readonly kind: AgentSessionMetadataSegmentKind;
@@ -17,8 +17,6 @@ export interface AgentSessionMetadataSegment {
 	readonly label?: string;
 	/** Pull-request lifecycle for the artifact chunk, selecting its glyph. */
 	readonly prStatus?: AgentListPrStatus;
-	/** Tool-call labels cycled by the long-form renderer. */
-	readonly toolCalls?: readonly string[];
 	/**
 	 * Declared session host, attached to the time chunk so the byline can
 	 * render icon + timestamp as one clause instead of `Cloud · 12s`.
@@ -40,15 +38,21 @@ export interface AgentSessionMetadataInput {
 	readonly host?: AgentListHost;
 	/** Pre-formatted artifact name, e.g. `#1306: Add guest checkout`. */
 	readonly artifactLabel?: string;
+	readonly showArtifact?: boolean;
 	readonly prStatus?: AgentListPrStatus;
-	/** Human-readable tool calls, in display order. */
-	readonly toolCalls?: readonly string[];
+	/** Short-density line: agent mark only, no agent name. */
+	readonly compact?: boolean;
+}
+
+/** Lifecycle states with ongoing work. */
+export function isActiveAgentSessionState(state: AgentListState | undefined): boolean {
+	return state === "running" || state === "needs-input" || state === "attention";
 }
 
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
 export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>> = {
 	attention: "Needs attention",
-	complete: "Complete",
+	complete: "Finished",
 	"needs-input": "Needs input",
 	running: "Working",
 };
@@ -64,20 +68,13 @@ export function toAgentSessionMetadataSegments(
 	input: AgentSessionMetadataInput,
 ): readonly AgentSessionMetadataSegment[] {
 	const segments: AgentSessionMetadataSegment[] = [
-		{ kind: "agent", label: input.agentName },
+		input.compact ? { kind: "agent" } : { kind: "agent", label: input.agentName },
 	];
-	const toolCalls = input.toolCalls
-		?.map((toolCall) => toolCall.trim())
-		.filter((toolCall) => toolCall.length > 0);
 	if (input.branch) {
 		segments.push({ kind: "branch", label: input.branch });
 	}
 
-	if (toolCalls !== undefined && toolCalls.length > 0) {
-		segments.push({ kind: "tool-call", toolCalls });
-	}
-
-	if (input.artifactLabel !== undefined && input.artifactLabel.length > 0) {
+	if (input.showArtifact !== false && input.artifactLabel !== undefined && input.artifactLabel.length > 0) {
 		segments.push({
 			kind: "artifact",
 			label: input.artifactLabel,

@@ -1,7 +1,7 @@
 export type JiraFilterField = {
 	id: string;
 	label: string;
-	options: readonly { value: string; label: string }[];
+	options: readonly { value: string; label: string; avatarUrl?: string; displayLabel?: string }[];
 	multiple?: boolean;
 };
 

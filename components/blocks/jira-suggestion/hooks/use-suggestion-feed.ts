@@ -6,7 +6,7 @@ import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, t
 import { useSuggestionReview, type SuggestionReview } from "./use-suggestion-review";
 
 /** Simulated agent latency for a re-run, long enough to show a working state. */
-const RERUN_MS = 1800;
+export const SUGGESTION_RERUN_MS = 1800;
 
 export interface SuggestionRun {
 	/** 1-based run number. */
@@ -20,6 +20,8 @@ export interface SuggestionRun {
 export type SuggestionFeedStatus = "idle" | "running";
 
 export interface SuggestionFeed {
+	onOpenReview?: (panelId: string) => void;
+	onPreviewCard?: (card: Pick<WorkItemSuggestion, "id" | "valueText"> | null) => void;
 	review: SuggestionReview;
 	status: SuggestionFeedStatus;
 	/** Oldest first. */
@@ -28,7 +30,7 @@ export interface SuggestionFeed {
 	newIds: ReadonlySet<SuggestionFieldId>;
 	/** Mark new suggestions as seen, e.g. once the user has looked at them. */
 	acknowledgeNew: () => void;
-	/** Re-run the agent. The first re-run adds the follow-up batch; later runs find nothing new. */
+	/** Re-run the agent and publish any suggestions it finds. */
 	rerun: () => void;
 	/** True while another re-run would still find suggestions. */
 	hasMore: boolean;
@@ -58,7 +60,7 @@ export function useSuggestionFeed(): SuggestionFeed {
 			setRuns((current) => [...current.map((run) => (run.ranAt === "Just now" ? { ...run, ranAt: "1m ago" } : run)), { number: current.length + 1, ranAt: "Just now", ids: added.map((suggestion) => suggestion.id) }]);
 			setNewIds(new Set(added.map((suggestion) => suggestion.id)));
 			setStatus("idle");
-		}, RERUN_MS);
+		}, SUGGESTION_RERUN_MS);
 	}, [status, suggestions]);
 
 	const acknowledgeNew = useCallback(() => setNewIds(new Set()), []);

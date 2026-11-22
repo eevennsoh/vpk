@@ -109,7 +109,7 @@ test("the session card follows live session state", async () => {
 	assert.deepEqual(opened, ["butter-scoping", "butter-scoping"]);
 });
 
-test("a seeded session thread shows its latest reply behind Show N more replies", async () => {
+test("a seeded session thread shows its latest reply behind Show N replies", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
@@ -128,7 +128,7 @@ test("a seeded session thread shows its latest reply behind Show N more replies"
 	assert.equal(replyIdentity?.getAttribute("aria-label"), "Cursor, used by Annie Cook");
 	assert.equal(replyIdentity?.querySelector('[data-avatar-role="human"]') !== null, true);
 	assert.equal(replyIdentity?.querySelector('[data-avatar-role="agent"]') !== null, true);
-	const toggle = view.getByRole("button", { name: /Show 4 more replies/u });
+	const toggle = view.getByRole("button", { name: /Show 4 replies/u });
 	assert.equal(toggle.getAttribute("aria-expanded"), "false");
 	const shown = () => [...thread.querySelectorAll('[aria-label="Replies"] > div')].filter((node) => !node.hidden).map((node) => node.textContent);
 	assert.equal(shown().length, 1);

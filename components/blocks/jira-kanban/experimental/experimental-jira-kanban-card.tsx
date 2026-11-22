@@ -87,6 +87,7 @@ function toAssignedAgentFromActivity(
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }
@@ -180,6 +181,7 @@ function resolveKanbanCardAssignment(
 				timeLabel: activity.timeLabel,
 				host: activity.host,
 				role: activity.role,
+				privateTo: activity.privateTo,
 				state: activity.state === "awaiting-input" ? "needs-input" as const : activity.state === "completed" ? "complete" as const : "running" as const,
 				agent: { id: activity.id, name: activity.name, kind: "agent" as const, avatarSrc: activity.avatarSrc, brandName: activity.agentBrandName },
 			})),
@@ -389,7 +391,6 @@ export function ExperimentalJiraKanbanCard({
 			selectionBackdrop={selectionBackdrop}
 			active={active}
 			agentActivities={card.agentActivities}
-			agentActivityAvatarSize={appearance === "project-butter" ? 20 : undefined}
 			agentActivityLayout={agentActivityLayout}
 			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign, onAgentActivityViewChat, onCreateCloudSession, columnTitle)}
 			agentLinkFlash={agentLinkFlash}

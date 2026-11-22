@@ -16,6 +16,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import SuccessIcon from "@atlaskit/icon/core/success";
 import { MOCK_TASKS, flattenStatusGroups, type ProgressStatusGroups, type FlatTask } from "./data/mock-tasks";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
+import { useTimestampAgo } from "@/hooks/use-timestamp-ago";
 import { motionEase } from "@/lib/motion";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
@@ -32,6 +33,7 @@ const CARD_ANIMATION_STYLES = `
 `;
 
 const CARD_ANIMATION_INNER_HTML = { __html: CARD_ANIMATION_STYLES };
+const DEFAULT_RUN_AGE_MS = 651_000;
 
 type RunStatus = "running" | "completed" | "failed";
 type IconStatus = "done" | "in-progress" | "failed" | "todo";
@@ -182,7 +184,7 @@ export default function TaskProgress({
 	planVisualIdentity,
 	taskStatusGroups = MOCK_TASKS,
 	runStatus = "running",
-	runCreatedAt = new Date(Date.now() - 651_000).toISOString(),
+	runCreatedAt: runCreatedAtProp,
 	runCompletedAt = null,
 	initialNowMs,
 	showSummaryRainbow = false,
@@ -193,6 +195,9 @@ export default function TaskProgress({
 	showRunningStopButton = true,
 	className,
 }: Readonly<TaskProgressProps>) {
+	// Without a start time the card shows a run that began ~10m 51s before it mounted.
+	const defaultRunCreatedAt = useTimestampAgo(DEFAULT_RUN_AGE_MS);
+	const runCreatedAt = runCreatedAtProp === undefined ? defaultRunCreatedAt : runCreatedAtProp;
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
 	const [dismissed, setDismissed] = useState(false);
 	const [nowMs, setNowMs] = useState(() =>
@@ -288,24 +293,28 @@ export default function TaskProgress({
 				>
 					<div
 						className={cn(
-							"group/card w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-medium hover:shadow-2xl",
+							"group/card relative w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-medium hover:shadow-2xl has-[[data-slot=progress-card-action]:focus-visible]:outline-2 has-[[data-slot=progress-card-action]:focus-visible]:outline-ring has-[[data-slot=progress-card-action]:focus-visible]:outline-offset-2",
 							!isInteractive && "cursor-default",
 							className
 						)}
 						onClick={isInteractive ? handleCardActivate : undefined}
-						onKeyDown={isInteractive ? (e: React.KeyboardEvent) => {
-							// Keys from the Stop/Done/Delete buttons inside the card belong to them.
-							if (e.target !== e.currentTarget) return;
-							if (e.key === "Enter" || e.key === " ") {
-								e.preventDefault();
-								handleCardActivate();
-							}
-						} : undefined}
-						aria-expanded={isCollapsible ? !collapsed : undefined}
-						aria-label={isInteractive ? cardAriaLabel : undefined}
-						role={isInteractive ? "button" : undefined}
-						tabIndex={isInteractive ? 0 : undefined}
+						role="presentation"
 					>
+						{/* Delegate pointer clicks through the shell so the timeline keeps its scroll hit area. */}
+						{isInteractive ? (
+							<button
+								type="button"
+								aria-label={cardAriaLabel}
+								aria-expanded={isCollapsible ? !collapsed : undefined}
+								className="pointer-events-none absolute inset-0 rounded-[inherit] outline-none"
+								data-slot="progress-card-action"
+								onClick={(event) => {
+									// Keyboard activation arrives as a click; the shell handles pointer clicks itself.
+									event.stopPropagation();
+									handleCardActivate();
+								}}
+							/>
+						) : null}
 						<style dangerouslySetInnerHTML={CARD_ANIMATION_INNER_HTML} />
 						<div className="flex flex-col gap-3 px-4 py-3">
 							<div className="flex items-center justify-between gap-3">
@@ -365,7 +374,7 @@ export default function TaskProgress({
 										<VideoStopOverlayIcon label="" size="small" />
 									</Button>
 								) : onDelete ? (
-									<span className={runStatus === "completed" ? "block" : "hidden group-hover/card:block"}>
+									<span className={runStatus === "completed" ? "block" : "block sr-only group-hover/card:not-sr-only group-has-[:focus-visible]/card:not-sr-only"}>
 										{runStatus === "completed" ? (
 											<Button
 												variant="ghost"

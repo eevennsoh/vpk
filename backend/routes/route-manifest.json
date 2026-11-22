@@ -148,7 +148,7 @@
 		{
 			"method": "GET",
 			"path": "/api/checkpoints",
-			"runtimeAdmin": false,
+			"runtimeAdmin": true,
 			"source": "backend/routes/rovo-app.js"
 		},
 		{
@@ -358,13 +358,13 @@
 		{
 			"method": "GET",
 			"path": "/api/orchestrator/log",
-			"runtimeAdmin": false,
+			"runtimeAdmin": true,
 			"source": "backend/routes/orchestrator.js"
 		},
 		{
 			"method": "GET",
 			"path": "/api/orchestrator/timeline",
-			"runtimeAdmin": false,
+			"runtimeAdmin": true,
 			"source": "backend/routes/orchestrator.js"
 		},
 		{
@@ -732,6 +732,12 @@
 			"path": "/api/vpk-html/publish-gist",
 			"runtimeAdmin": false,
 			"source": "backend/routes/vpk-html.js"
+		},
+		{
+			"method": "GET",
+			"path": "/api/whoami",
+			"runtimeAdmin": false,
+			"source": "backend/routes/status.js"
 		},
 		{
 			"method": "GET",

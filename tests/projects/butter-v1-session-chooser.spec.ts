@@ -1,6 +1,30 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("session choices use the shared dropdown hover color for pointer and keyboard selection", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Change status, In progress" }).click();
+	const status = page.getByRole("menuitem", { name: "To do", exact: true });
+	await status.hover();
+	const referenceColor = await status.evaluate((row) => getComputedStyle(row).backgroundColor);
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	const first = sessions.locator("article").first();
+	await first.hover();
+	await expect.poll(() => first.evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
+	await editor.focus();
+	await editor.press("ArrowDown");
+	await expect.poll(() => sessions.locator('article[data-selected="true"]').evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
+});
+
 test("work item session cards show Venn as their owner", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
@@ -13,7 +37,7 @@ test("work item session cards show Venn as their owner", async ({ page }) => {
 	}
 });
 
-test("selecting a session opens its inline reply with the draft", async ({ page }) => {
+test("selecting a session keeps the draft in the sticky composer", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
@@ -26,14 +50,112 @@ test("selecting a session opens its inline reply with the draft", async ({ page 
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await editor.press("Enter");
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
-	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
-	await expect(reply).toBeFocused();
-	await expect(reply).toContainText("Claude");
-	await expect(reply).toContainText("Please check this");
+	await expect(editor).toBeFocused();
+	await expect(editor).toContainText("Please check this");
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Summarize onboarding feedback");
+	await expect(thread).toHaveAttribute("data-active", "");
 	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
-	await reply.press("Enter");
+	await editor.press("Enter");
 	await expect(thread).toContainText("Please check this");
-	await expect(reply).toHaveCount(0);
+	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
+});
+
+for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an acknowledged reply resumes only the selected session (${reducedMotion})`, async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.emulateMedia({ reducedMotion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	const card = thread.getByTestId("agent-session-row-butter-claude-onboarding-feedback");
+	const other = page.getByTestId("agent-session-row-butter-claude-postmortem");
+	await expect(card).toContainText("Finished");
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).click();
+	const reply = editor;
+	await reply.pressSequentially(" Please check this");
+	const transition = page.evaluate(() => new Promise<{ state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[]>((resolve, reject) => {
+		const frames: { state: string; opacity: number; scale: number; count: number; label: string; blur: number; labelTransform: string }[] = [];
+		const started = performance.now();
+		let seenWorking = false;
+		function sample() {
+			const button = document.querySelector('[data-testid="agent-session-row-butter-claude-onboarding-feedback"] button[aria-label="Working"]');
+			const visuals = button?.querySelectorAll<HTMLElement>("[data-agent-session-lifecycle-state]");
+			const visual = visuals?.[0];
+			if (visual) {
+				const label = visual.querySelector<HTMLElement>("[data-agent-session-lifecycle-label]");
+				const glyph = visual.querySelector<HTMLElement>("[data-agent-session-lifecycle-glyph]");
+				const state = visual.dataset.agentSessionLifecycleState ?? "";
+				seenWorking ||= state === "running";
+				const glyphStyle = glyph ? getComputedStyle(glyph) : null;
+				const glyphTransform = glyphStyle?.transform ?? "none";
+				const scale = glyphTransform === "none" ? 1 : new DOMMatrixReadOnly(glyphTransform).a;
+				const labelStyle = label ? getComputedStyle(label) : null;
+				frames.push({ state, opacity: Number(glyphStyle?.opacity ?? 1), scale, count: visuals.length, label: label?.dataset.agentSessionLifecycleLabel ?? "", blur: Number(labelStyle?.filter.match(/blur\(([\d.]+)px\)/u)?.[1] ?? 0), labelTransform: labelStyle?.transform ?? "none" });
+				if (seenWorking && frames.length > 2 && frames.at(-1)!.label === "running" && frames.at(-1)!.opacity >= 0.999 && Math.abs(frames.at(-1)!.scale - 1) < 0.01 && frames.at(-1)!.blur < 0.01) { resolve(frames); return; }
+			}
+			if (performance.now() - started > 10000) reject(new Error(`Lifecycle transition did not settle (working: ${seenWorking})`));
+			else requestAnimationFrame(sample);
+		}
+		requestAnimationFrame(sample);
+	}));
+	await reply.press("Enter");
+	await expect(card).toContainText("Finished");
+	await expect(thread.getByRole("group", { name: "Reactions" }).getByText("👀")).toBeVisible({ timeout: 10_000 });
+	await expect(card).toContainText("Working");
+	const frames = await transition;
+	expect(frames.every((frame) => frame.count === 1)).toBe(true);
+	expect(frames.every((frame) => frame.label === frame.state && frame.labelTransform === "none"), JSON.stringify(frames)).toBe(true);
+	if (reducedMotion === "reduce") expect(frames.every((frame) => frame.state === "running" && frame.opacity === 1 && frame.scale === 1 && frame.blur === 0), JSON.stringify(frames)).toBe(true);
+	else {
+		expect(frames.some((frame) => frame.state === "complete" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.some((frame) => frame.state === "running" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.some((frame) => frame.state === "running" && frame.opacity >= 0.999 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
+		expect(frames.findIndex((frame) => frame.state === "running")).toBeGreaterThan(frames.findLastIndex((frame) => frame.state === "complete"));
+	}
+	await page.getByRole("button", { name: "Show more activity" }).click();
+	await expect(other).toContainText("Finished");
+});
+
+test("a submitted handoff does not prefill later manual replies", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await editor.pressSequentially(" Please check this instruction once");
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]');
+	const reply = editor;
+	await expect(reply).toContainText("Please check this instruction once");
+	await reply.press("Enter");
+	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
+	const header = thread.locator('[data-slot="jira-activity-comment-header"]').first();
+	await header.hover();
+	await header.getByRole("button", { name: "Reply", exact: true }).click();
+	await expect(reply).toBeFocused();
+	await expect(reply).not.toContainText("Please check this instruction once");
+	await reply.press("ControlOrMeta+A");
+	await reply.press("Backspace");
+	await expect(reply).toHaveText("");
+	await header.hover();
+	await header.getByRole("button", { name: "Reply", exact: true }).click();
+	await thread.getByRole("button", { name: /Show \d+ replies/u }).click();
+	const participant = thread.locator('[data-slot="jira-activity-comment-header"]').filter({ hasText: "Sarah Lim" });
+	await participant.hover();
+	await participant.getByRole("button", { name: "Reply", exact: true }).click();
+	await expect(reply).toBeFocused();
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Replying to The onboarding guide still sends people to the old identity page.");
+	await expect(reply).not.toContainText("Please check this instruction once");
 });
 
 test("Backspace returns to session choices at the agent mention", async ({ page }) => {

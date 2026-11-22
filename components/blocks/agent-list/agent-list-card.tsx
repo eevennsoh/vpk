@@ -18,7 +18,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import {
@@ -388,6 +388,7 @@ export function AgentListActivityHeader({
 			{hideAvatar ? null : (
 				<AgentListIdentity
 					agent={item.agent}
+					animate={activityGroup !== "activity-reply"}
 					className="shrink-0"
 					sizePx={32}
 				/>
@@ -547,6 +548,7 @@ export function AgentListRow({
 	isCompact,
 	isSelected,
 	item,
+	keepLifecycleLabel = false,
 	lifecycle,
 	metadata,
 	metadataOutsideViewTrigger = false,
@@ -570,6 +572,8 @@ export function AgentListRow({
 	isCompact: boolean;
 	isSelected: boolean;
 	item: AgentListItem;
+	/** Swap only the lifecycle's `lifecycle-glyph` slot for a hover menu. */
+	keepLifecycleLabel?: boolean;
 	/**
 	 * Caller-owned trailing lifecycle indicator, replacing the built-in one and
 	 * its `STATE_META` gate. Symmetric with {@link metadata}: a specialized row
@@ -622,9 +626,7 @@ export function AgentListRow({
 	);
 
 	const viewItem = onView === undefined ? undefined : () => onView(item);
-	// A menu-only reveal (session "..." / viewer hint) must occupy the same
-	// 24px trailing slot as the lifecycle glyph. Expanding a sibling `0fr`
-	// column would move the trigger when hover, focus, or open swaps them.
+	// A menu-only reveal uses a fixed trailing slot so the trigger stays put.
 	const overlayHoverActions = showHoverActions
 		&& hoverActions?.primary === undefined
 		&& hoverActions?.secondary === undefined
@@ -767,10 +769,16 @@ export function AgentListRow({
 								<div
 									className={cn(
 										"flex items-center leading-none",
-										overlayHoverActions
+										overlayHoverActions && !keepLifecycleLabel
 											? "group-hover/agent-row:pointer-events-none group-hover/agent-row:invisible group-has-[[data-agent-list-card-actions]:focus-within]/agent-row:pointer-events-none group-has-[[data-agent-list-card-actions]:focus-within]/agent-row:invisible group-has-[[aria-expanded=true]]/agent-row:pointer-events-none group-has-[[aria-expanded=true]]/agent-row:invisible"
-											: "pointer-events-none",
-										overlayHoverActions && hoverActions?.pinned && "pointer-events-none invisible",
+										: !overlayHoverActions && "pointer-events-none",
+										!keepLifecycleLabel && overlayHoverActions && hoverActions?.pinned && "pointer-events-none invisible",
+										keepLifecycleLabel && overlayHoverActions && [
+											"group-hover/agent-row:[&_[data-slot=lifecycle-glyph]]:invisible",
+											"group-has-[[data-agent-list-card-actions]_:focus-visible]/agent-row:[&_[data-slot=lifecycle-glyph]]:invisible",
+											"group-has-[[aria-expanded=true]]/agent-row:[&_[data-slot=lifecycle-glyph]]:invisible",
+											hoverActions?.pinned && "[&_[data-slot=lifecycle-glyph]]:invisible",
+										],
 									)}
 								>
 									{lifecycleNode}

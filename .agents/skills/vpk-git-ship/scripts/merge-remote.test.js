@@ -43,6 +43,27 @@ test("remote merge uses a fresh gate, expected SHA and atomic branch lease witho
 	assert.ok(fixture.calls.every((call) => !call.includes("checkout") && !call.includes("branch") && !call.includes("--delete-branch")));
 });
 
+test("remote merge keeps GitHub's default message unless a commit title is given", async () => {
+	const fixture = mergeFixture();
+	await mergeRemote(fixture.options);
+	const mutation = fixture.calls.find((call) => call.includes("PUT"));
+	assert.ok(mutation.every((part) => !part.startsWith("commit_title=") && !part.startsWith("commit_message=")));
+
+	const titled = mergeFixture();
+	await mergeRemote({ ...titled.options, commitTitle: "Merge #42 (aaaaaaa)" });
+	const titledMutation = titled.calls.find((call) => call.includes("PUT"));
+	assert.ok(titledMutation.includes("commit_title=Merge #42 (aaaaaaa)"));
+	assert.ok(titledMutation.includes("commit_message="));
+});
+
+test("remote merge rejects a multi-line or empty commit title before any request", async () => {
+	for (const commitTitle of ["", "a\nb", "x".repeat(201)]) {
+		const fixture = mergeFixture();
+		await assert.rejects(mergeRemote({ ...fixture.options, commitTitle }), /--commit-title/u);
+		assert.deepEqual(fixture.calls, []);
+	}
+});
+
 test("remote merge refuses stale heads, review/check blockers and billing without mutations", async () => {
 	for (const gate of [{ readyToMerge: false }, { readyToMerge: true, headRefOid: "c".repeat(40) }, { readyToMerge: false, clearExceptBillingBlockedChecks: true }]) {
 		const fixture = mergeFixture();

@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import CloseIcon from "@atlaskit/icon/core/close";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
@@ -18,12 +17,11 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, secondaryActions, showFullScreenClose = false, workItem }: Readonly<{
+export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, showFullScreenClose = false, workItem }: Readonly<{
 	content: ProjectButterContent;
 	onClose: () => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
 	presentation: ProjectButterPresentation;
-	secondaryActions?: ReactNode;
 	showFullScreenClose?: boolean;
 	workItem?: WorkItemData;
 }>) {
@@ -44,15 +42,11 @@ export function ProjectButterHeader({ content, onClose, onPresentationChange, pr
 					)}
 				</div>
 			)}
-			{/* group/empty-actions: hovering anywhere in the title block reveals the empty quick actions (reference #section-description reveal). */}
-			<div className={cn("group/empty-actions min-w-0 px-6 pb-6", sidePanel ? "pt-6" : "pt-4")}>
+			<div className={cn("min-w-0 px-6 pb-6", sidePanel ? "pt-6" : "pt-4")}>
 				{sidePanel ? <ProjectButterBreadcrumb code={code} parent={content.detailFields.parent} summary={content.summary} /> : null}
 				<div className={cn("flex min-w-0 items-start gap-2", sidePanel ? "flex-col gap-3" : null)}>
-					<div className="min-w-0 flex-1">
-						<div className="flex h-8 min-w-0 items-center gap-2.5">
-							<ProjectButterSummary content={content} key={workItem?.code ?? "reference"} />
-						</div>
-						{secondaryActions}
+					<div className="flex h-8 min-w-0 flex-1 items-center gap-2.5">
+						<ProjectButterSummary content={content} key={workItem?.code ?? "reference"} />
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<ProjectButterStatus appearance="lozenge" content={content} />

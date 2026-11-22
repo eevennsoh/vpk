@@ -15,6 +15,8 @@ function emptySnapshot(): ProjectButterSuggestionSnapshot {
 	return {
 		description: "",
 		descriptionDraft: "",
+		assignee: { name: "Unassigned" },
+		acceptanceCriteria: [],
 		dueDate: undefined,
 		reporter: null,
 		parent: "",
@@ -26,37 +28,21 @@ function emptySnapshot(): ProjectButterSuggestionSnapshot {
 	};
 }
 
-test("description reveal accelerates from words to lines, paragraphs, and the remainder", () => {
-	const words = [
-		...Array.from({ length: 8 }, () => ({ line: 0, paragraph: 0 })),
-		...Array.from({ length: 3 }, () => ({ line: 1, paragraph: 0 })),
-		...Array.from({ length: 3 }, () => ({ line: 2, paragraph: 0 })),
-		...Array.from({ length: 3 }, () => ({ line: 3, paragraph: 1 })),
-		...Array.from({ length: 2 }, () => ({ line: 4, paragraph: 2 })),
-		...Array.from({ length: 2 }, () => ({ line: 5, paragraph: 3 })),
-	];
-	const steps = planDescriptionReveal(words);
-	assert.deepEqual(steps.slice(0, 5).map((step) => step.phase), ["word", "word", "word", "word", "word"]);
-	assert.equal(steps[4].delay - steps[3].delay >= 0.09, true);
-	assert.equal(steps[5].phase, "line");
-	assert.equal(steps[5].delay, steps[7].delay);
-	assert.equal(steps[8].phase, "line");
-	assert.equal(steps[8].delay > steps[7].delay, true);
-	assert.equal(steps[11].phase, "paragraph");
-	assert.equal(steps[11].delay, steps[13].delay);
-	assert.equal(steps[14].phase, "paragraph");
-	assert.equal(steps[14].delay > steps[13].delay, true);
-	assert.equal(steps[17].phase, "all");
-	assert.equal(steps[17].delay, steps[20].delay);
-	assert.equal(steps[20].delay > 1 && steps[20].delay < 2, true);
+test("description words appear in order with overlapping fades and no jumps in cadence", () => {
+	const delays = planDescriptionReveal(24);
+	const gaps = delays.slice(1).map((delay, index) => delay - delays[index]);
+	assert.equal(delays[0], 0);
+	assert.equal(delays.length, 24);
+	assert.ok(gaps.every((gap) => gap > 0 && gap < 0.1));
+	assert.ok(gaps.every((gap, index) => index === 0 || Math.abs(gap - gaps[index - 1]) < 0.02));
+	assert.ok(gaps[0] > gaps.at(-1)!);
 });
 
-test("description reveal timing stays bounded for very long text", () => {
-	const words = Array.from({ length: 10_000 }, (_, index) => ({ line: Math.floor(index / 8), paragraph: Math.floor(index / 80) }));
-	const steps = planDescriptionReveal(words);
-	assert.equal(steps.length, words.length);
-	assert.equal(steps.at(-1)?.phase, "all");
-	assert.equal((steps.at(-1)?.delay ?? Infinity) < 2, true);
+test("long description reveals finish within the animation budget", () => {
+	const delays = planDescriptionReveal(10_000);
+	assert.equal(delays.length, 64);
+	assert.ok((delays.at(-1) ?? Infinity) < 1.8);
+	assert.deepEqual(planDescriptionReveal(0), []);
 });
 
 test("suggestion state offers every empty details field in rail order", () => {
@@ -89,6 +75,7 @@ test("payments demo suggests values relevant to merchant onboarding", () => {
 
 test("accepting one suggestion writes only that field", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -98,6 +85,7 @@ test("accepting one suggestion writes only that field", () => {
 	};
 	const written: { dueDate?: Date; reporter?: { name: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date) {
@@ -127,6 +115,7 @@ test("accepting one suggestion writes only that field", () => {
 
 test("clearing an accepted batch restores the empty fields", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -136,6 +125,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date | undefined) {
@@ -156,6 +146,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 	assert.equal(written.dueDate, undefined);
 	assert.equal(written.reporter, null);
 	assert.deepEqual(fields, {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -164,6 +155,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 		costCenter: "",
 	});
 	assert.equal(listProjectButterSuggestions({
+		...emptySnapshot(),
 		description: "",
 		descriptionDraft: "",
 		dueDate: written.dueDate,
@@ -174,6 +166,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 
 test("undo restores only fields that still match the accepted suggestion", () => {
 	const fields: ProjectButterSuggestionFieldPatch = {
+		acceptanceCriteria: [],
 		parent: "",
 		labels: [],
 		components: [],
@@ -183,6 +176,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
 	const target = {
+		setAssignee() {},
 		setDescription() {},
 		setDescriptionDraft() {},
 		setDueDate(date: Date | undefined) {
@@ -199,6 +193,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 	for (const suggestion of suggestions) applyProjectButterSuggestion(suggestion, target);
 	fields.parent = "Edited after accept";
 	const snapshot: ProjectButterSuggestionSnapshot = {
+		...emptySnapshot(),
 		description: "",
 		descriptionDraft: "",
 		dueDate: written.dueDate,
@@ -214,6 +209,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 
 test("filled details produce no suggestions", () => {
 	const suggestions = listProjectButterSuggestions({
+		...emptySnapshot(),
 		description: "A description",
 		descriptionDraft: "A description",
 		dueDate: new Date(Date.UTC(2026, 11, 15)),

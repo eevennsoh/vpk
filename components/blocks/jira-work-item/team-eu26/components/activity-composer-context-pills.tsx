@@ -12,7 +12,7 @@ import { NEEDS_INPUT_STATUS_LABEL, WorkingSessionActivityByline } from "@/compon
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,

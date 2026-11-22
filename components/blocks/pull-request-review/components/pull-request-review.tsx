@@ -181,7 +181,7 @@ export function PullRequestReview({
 						/>
 					) : null}
 					<PromptInputSubmit
-						className="hover:opacity-90 active:opacity-80"
+						className="rounded-md hover:opacity-90 active:opacity-80"
 						disabled={!canSubmit}
 						status="ready"
 					/>

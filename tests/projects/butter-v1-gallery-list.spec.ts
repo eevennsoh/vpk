@@ -10,6 +10,26 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await gallery.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
 	await expect(list).toBeVisible();
+	const standaloneAvatar = list.getByRole("button", { name: "PAY-105", exact: true }).locator("xpath=ancestor::tr")
+		.locator('[data-slot="jira-issue-agent-avatar-handoff"] [data-slot="avatar"]');
+	await expect(standaloneAvatar).toHaveCSS("width", "24px");
+	const standaloneWidth = await standaloneAvatar.evaluate((avatar) => avatar.getBoundingClientRect().width);
+	for (const [key, label] of [["PAY-132", "Use an agent"], ["PAY-104", "Using agents"]]) {
+		const row = list.getByRole("button", { name: key, exact: true }).locator("xpath=ancestor::tr");
+		const teammateLabel = row.locator("[data-teammate-session-label]");
+		await expect(teammateLabel).toHaveText(label);
+		await expect(teammateLabel).toHaveCSS("opacity", "1");
+		const avatar = row.locator('[data-slot="human-agent-avatar"]');
+		await expect(avatar).toBeVisible();
+		const agentAvatar = avatar.locator('[data-avatar-role="agent"] [data-slot="avatar"]');
+		await expect(agentAvatar).toHaveCSS("width", `${standaloneWidth}px`);
+		await expect(avatar.locator('[data-avatar-role="human"] [data-slot="avatar"]')).toHaveCSS("width", "12px");
+		await row.getByRole("button", { name: label, exact: true }).press("Enter");
+		const menu = page.getByRole("dialog", { name: "Agent assignment" });
+		await expect(menu.getByRole("listitem")).toHaveCount(label === "Use an agent" ? 1 : 2);
+		await expect(menu.getByText(/use an agent|using agents|other agent activity/iu)).toHaveCount(0);
+		await page.keyboard.press("Escape");
+	}
 	for (const edge of ["top", "right", "bottom", "left"]) {
 		await expect(list).toHaveCSS(`border-${edge}-width`, "0px");
 	}
@@ -18,13 +38,13 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await expect(headerCells.first()).toHaveCSS("border-bottom-left-radius", "12px");
 	await expect(headerCells.last()).toHaveCSS("border-top-right-radius", "12px");
 	await expect(headerCells.last()).toHaveCSS("border-bottom-right-radius", "12px");
-	await expect(list.getByTestId("jira-list-sticky-footer")).toHaveCSS("border-top-width", "1px");
+	await expect(list.getByTestId("jira-list-sticky-footer")).toHaveCount(0);
 	await expect(list.getByRole("button", { name: "PAY-118", exact: true })).toBeVisible();
-	await list.getByRole("button", { name: "PAY-118", exact: true }).click();
+	await list.getByRole("button", { name: "PAY-118", exact: true }).press("Enter");
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
 	await expect(workItem).toBeVisible();
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select List" }).click();
 	await expect(list).toBeVisible();
@@ -35,16 +55,17 @@ test("list work items align around the subtask expand control", async ({ page })
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await list.getByRole("button", { name: "Collapse PAY-113" }).click();
 	const leaf = list.getByRole("button", { name: "PAY-124", exact: true });
-	const parent = list.getByRole("button", { name: "PAY-101", exact: true });
-	const expand = list.getByRole("button", { name: "Expand PAY-101" });
+	const parent = list.getByRole("button", { name: "PAY-113", exact: true });
+	const expand = list.getByRole("button", { name: "Expand PAY-113" });
 	await expect(expand).toHaveAttribute("aria-expanded", "false");
 	await expect(list.getByRole("button", { name: "Expand PAY-124" })).toHaveCount(0);
 	const leafBounds = await leaf.boundingBox();
 	const parentBounds = await parent.boundingBox();
 	if (!leafBounds || !parentBounds) throw new Error("Work item bounds are unavailable");
 	expect(leafBounds.x).toBeCloseTo(parentBounds.x, 1);
-	const selectBounds = await list.getByRole("checkbox", { name: "Select PAY-101" }).boundingBox();
+	const selectBounds = await list.getByRole("checkbox", { name: "Select PAY-113" }).boundingBox();
 	const expandBounds = await expand.boundingBox();
 	const expandAllBounds = await list.getByRole("button", { name: "Expand all subtasks" }).boundingBox();
 	const selectAll = list.getByRole("checkbox", { name: "Select all work items" });
@@ -69,15 +90,15 @@ test("list work items align around the subtask expand control", async ({ page })
 	};
 	await expectCompactGap("Expand all subtasks");
 	await expand.click();
-	const collapse = list.getByRole("button", { name: "Collapse PAY-101" });
+	const collapse = list.getByRole("button", { name: "Collapse PAY-113" });
 	await expect(collapse).toHaveAttribute("aria-expanded", "true");
-	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toBeVisible();
-	// PAY-101 is one of several parents, so the header switches to Collapse all only once every parent is expanded.
+	await expect(list.getByRole("button", { name: "PAY-291", exact: true })).toBeVisible();
+	// PAY-113 is one of several parents, so the header switches to Collapse all only once every parent is expanded.
 	await list.getByRole("button", { name: "Expand all subtasks" }).click();
 	await expectCompactGap("Collapse all subtasks");
-	// With every parent expanded the PAY-101 row sits under the gallery strip, so use the keyboard.
+	// With every parent expanded the PAY-113 row sits under the gallery strip, so use the keyboard.
 	await collapse.press("Enter");
-	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "PAY-291", exact: true })).toHaveCount(0);
 });
 
 test("selection checkboxes leave issue icons visible without shifting work items", async ({ page }) => {
@@ -195,19 +216,21 @@ test("the Work header expands and collapses all subtasks", async ({ page }) => {
 	expect(await collapseAll.evaluate((button) => getComputedStyle(button).boxShadow)).not.toBe("none");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toBeVisible();
 	await expect(list.getByRole("button", { name: "PAY-104", exact: true })).toBeVisible();
-	const parentBounds = await list.getByRole("button", { name: "PAY-101", exact: true }).boundingBox();
-	const subtaskBounds = await list.getByRole("button", { name: "PAY-102", exact: true }).boundingBox();
+	const parentBounds = await list.getByRole("button", { name: "PAY-113", exact: true }).boundingBox();
+	const subtaskBounds = await list.getByRole("button", { name: "PAY-291", exact: true }).boundingBox();
 	if (!parentBounds || !subtaskBounds) throw new Error("Hierarchy bounds are unavailable");
 	expect(subtaskBounds.x).toBeGreaterThan(parentBounds.x);
 	await collapseAll.press("Space");
 	await expect(expandAll).toHaveAttribute("aria-expanded", "false");
-	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
-	await list.getByRole("button", { name: "Expand PAY-101" }).click();
+	await expect(list.getByRole("button", { name: "PAY-291", exact: true })).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "PAY-104", exact: true })).toBeVisible();
+	await list.getByRole("button", { name: "Expand PAY-113" }).click();
 	await expect(expandAll).toHaveAttribute("aria-expanded", "false");
 	for (const parent of ["PAY-118", "PAY-999", "PAY-127"]) await list.getByRole("button", { name: `Expand ${parent}` }).click();
 	await expect(collapseAll).toHaveAttribute("aria-expanded", "true");
 	await collapseAll.click();
-	await expect(list.getByRole("button", { name: "PAY-104", exact: true })).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "PAY-291", exact: true })).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "PAY-104", exact: true })).toBeVisible();
 });
 
 test("expanded hierarchy chevrons do not look selected", async ({ page }) => {
@@ -215,23 +238,24 @@ test("expanded hierarchy chevrons do not look selected", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await list.getByRole("button", { name: "Collapse PAY-113" }).click();
 	const styles = (element: Element) => {
 		const button = getComputedStyle(element);
 		const icon = element.querySelector("svg");
 		return { background: button.backgroundColor, border: button.borderColor, icon: icon ? getComputedStyle(icon).color : null };
 	};
 	const expandAll = list.getByRole("button", { name: "Expand all subtasks" });
-	const expandRow = list.getByRole("button", { name: "Expand PAY-101" });
+	const expandRow = list.getByRole("button", { name: "Expand PAY-113" });
 	const collapsedHeader = await expandAll.evaluate(styles);
 	const collapsedRow = await expandRow.evaluate(styles);
 	await expandAll.click();
 	await page.mouse.move(0, 0);
 	await expect(list.getByRole("button", { name: "Collapse all subtasks" })).toHaveAttribute("aria-expanded", "true");
 	expect(await list.getByRole("button", { name: "Collapse all subtasks" }).evaluate(styles)).toEqual(collapsedHeader);
-	expect(await list.getByRole("button", { name: "Collapse PAY-101" }).evaluate(styles)).toEqual(collapsedRow);
+	expect(await list.getByRole("button", { name: "Collapse PAY-113" }).evaluate(styles)).toEqual(collapsedRow);
 });
 
-test("the list create line appears only when its control is hovered or focused", async ({ page }) => {
+test("the list separator reveals one create line and accepts a click across the row", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
@@ -244,8 +268,6 @@ test("the list create line appears only when its control is hovered or focused",
 	await page.mouse.move(x, upperBox.y + upperBox.height - 3);
 	const createAfter = list.getByRole("button", { name: "Create work item after PAY-118" });
 	await expect(createAfter).toHaveCSS("opacity", "1");
-	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
-	await createAfter.hover();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
 	const line = await list.locator("[data-insertion-line]").first().elementHandle();
 	const lineTop = await line!.evaluate((cell) => {
@@ -253,11 +275,9 @@ test("the list create line appears only when its control is hovered or focused",
 		const style = getComputedStyle(cell, "::after");
 		return bounds.top + (style.top === "auto" ? bounds.height - parseFloat(style.bottom) - parseFloat(style.height) : parseFloat(style.top));
 	});
-	await page.mouse.move(x, lowerBox.y + 3);
-	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
+	await page.mouse.move(x, lowerBox.y + 9);
 	const createBefore = list.getByRole("button", { name: "Create work item before PAY-999" });
 	await expect(createBefore).toHaveCSS("opacity", "1");
-	await createBefore.hover();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
 	const newLine = list.locator("[data-insertion-line]").first();
 	expect(await newLine.evaluate((cell, previous) => cell === previous, line)).toBe(true);
@@ -266,7 +286,7 @@ test("the list create line appears only when its control is hovered or focused",
 	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
 	await createAfter.focus();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
-	await createAfter.press("Enter");
+	await page.mouse.click(x, upperBox.y + upperBox.height - 2);
 	await expect(upper.locator("xpath=following-sibling::tr[1]").getByRole("textbox", { name: "New work item summary" })).toBeVisible();
 });
 

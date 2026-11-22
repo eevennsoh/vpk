@@ -52,6 +52,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"displacement-map": dynamic(() => import("../demos/visual/displacement-map-demo"), {
 		ssr: false,
 	}),
+	"distortion-waves": dynamic(() => import("../demos/visual/distortion-waves-demo"), {
+		ssr: false,
+	}),
 	dithering: dynamic(() => import("../demos/visual/dithering-demo"), {
 		ssr: false,
 	}),
@@ -349,7 +352,6 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 	"glimm-custom": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmCustomDemo), { ssr: false }),
 	"voice-glow-pill": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowPillExample })), { ssr: false }),
 	"voice-glow-mobile": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowMobileExample })), { ssr: false }),
-	"voice-glow-processing": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowProcessingExample })), { ssr: false }),
 	"gooey-morph-menu": dynamic(
 		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphMenuExample })),
 		{ ssr: false },
@@ -515,6 +517,41 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../demos/visual/border-beam-demo").then((mod) => ({
 				default: mod.BorderBeamDemoReflection,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-vertical": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoVertical,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-horizontal": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoHorizontal,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-center": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoCenter,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-sunset": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoSunset,
+			})),
+		{ ssr: false },
+	),
+	"distortion-waves-demo-single-view": dynamic(
+		() =>
+			import("../demos/visual/distortion-waves-demo").then((mod) => ({
+				default: mod.DistortionWavesDemoSingleView,
 			})),
 		{ ssr: false },
 	),

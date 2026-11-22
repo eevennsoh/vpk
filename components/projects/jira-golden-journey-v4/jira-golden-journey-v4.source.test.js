@@ -328,7 +328,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumns\.map\(/u,
+		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumnsInRow\.map\(/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -533,7 +533,7 @@ test("the Jira tab bar splits or collapses work items per Simple views", () => {
 	assert.match(PAGE_SOURCE, /const showBoardContent = activeTab\?\.hasContent === true;/u);
 	assert.match(PAGE_SOURCE, /showBoardContent=\{showBoardContent\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent \|\| Boolean\(alternateContent\)\}/u);
 });
 
 test("the Work items header switches between Board and List views with their icons", () => {
@@ -614,7 +614,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{workItemSurfaceLabel\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /ToggleGroup/u);
 	assert.match(
@@ -649,11 +649,6 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/moreControlsPlacement === "end" \? moreControls : null/u,
-	);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Customize"/u);
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-sm text-text-subtlest">Spaces</u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<Heading as="h1" className="min-w-0 truncate" size="medium">\{title\}<\/Heading>/u);

@@ -6,14 +6,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const toggleVariants = cva(
-	"focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive user-invalid:ring-destructive/20 user-invalid:border-destructive gap-1.5 rounded-md border border-transparent bg-clip-padding text-sm font-medium transition-[background-color,border-color,box-shadow,color,opacity] [&_svg:not([class*='size-'])]:size-4 group/toggle inline-flex items-center justify-center whitespace-nowrap outline-none select-none shrink-0 focus-visible:ring-3 user-invalid:ring-3 disabled:pointer-events-none disabled:opacity-(--opacity-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-pressed:[&_svg]:text-icon-selected",
+	"focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive user-invalid:ring-destructive/20 user-invalid:border-destructive gap-1.5 rounded-md border border-transparent bg-clip-padding text-sm font-medium transition-[background-color,border-color,box-shadow,color,opacity] [&_svg:not([class*='size-'])]:size-4 group/toggle inline-flex items-center justify-center whitespace-nowrap outline-none select-none shrink-0 focus-visible:ring-3 user-invalid:ring-3 disabled:pointer-events-none disabled:opacity-(--opacity-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle",
 	{
 		variants: {
 			variant: {
 				default:
-					"bg-transparent text-foreground hover:bg-bg-neutral-subtle-hovered hover:text-foreground active:bg-bg-neutral-subtle-pressed data-pressed:bg-bg-selected data-pressed:text-text-selected data-pressed:hover:bg-bg-selected-hovered data-pressed:active:bg-bg-selected-pressed disabled:text-text-disabled",
+					"bg-transparent text-foreground hover:bg-bg-neutral-subtle-hovered hover:text-foreground active:bg-bg-neutral-subtle-pressed data-pressed:bg-bg-selected data-pressed:text-text-selected data-pressed:hover:bg-bg-selected-hovered data-pressed:active:bg-bg-selected-pressed data-pressed:[&_svg]:text-icon-selected disabled:text-text-disabled",
+				subtle:
+					"bg-transparent text-text-subtlest hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed data-pressed:text-foreground [&_svg]:text-icon-subtlest data-pressed:[&_svg]:text-icon disabled:text-text-disabled",
 				outline:
-					"border-border border bg-transparent text-foreground hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed data-pressed:border-border-selected data-pressed:bg-bg-selected data-pressed:text-text-selected data-pressed:hover:bg-bg-selected-hovered data-pressed:active:bg-bg-selected-pressed disabled:text-text-disabled",
+					"border-border border bg-transparent text-foreground hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed data-pressed:border-border-selected data-pressed:bg-bg-selected data-pressed:text-text-selected data-pressed:hover:bg-bg-selected-hovered data-pressed:active:bg-bg-selected-pressed data-pressed:[&_svg]:text-icon-selected disabled:text-text-disabled",
 			},
 			size: {
 				default: "h-8 min-w-8 px-2",

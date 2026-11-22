@@ -81,6 +81,40 @@ test("while the runtime loads, the message is a busy box with its text hidden", 
 	await view.unmount();
 });
 
+test("runtime registration during a suspended import keeps React's promise stable", async () => {
+	let finish = null;
+	const warnings = [];
+	const originalError = console.error;
+	globalThis.__markdownRuntime = { attempts: 0, settle: (resolve) => { finish = resolve; } };
+	console.error = (...args) => { warnings.push(args.map(String).join(" ")); };
+	try {
+		const view = await renderComponent({
+			mocks: RUNTIME_MOCKS,
+			props: { text: "Hello **pending**" },
+			source: `
+import { MessageResponse, preloadMessageMarkdown, registerMessageMarkdownRuntime } from "@/components/ui-custom/message-markdown";
+globalThis.__registerMarkdownDuringLoad = () => registerMessageMarkdownRuntime({ MessageResponse: ({ children }) => <p>{children}</p>, streamdownComponents: {} });
+globalThis.__preloadMarkdown = preloadMessageMarkdown;
+export default function Probe({ text }) { return <MessageResponse>{text}</MessageResponse>; }
+`,
+		});
+		view.lastProps = { text: "Hello **pending**" };
+		assert.equal(view.container.querySelector('[data-message-markdown="pending"]') !== null, true);
+		const pendingLoad = globalThis.__preloadMarkdown();
+		globalThis.__registerMarkdownDuringLoad();
+		assert.equal(globalThis.__preloadMarkdown(), pendingLoad, "registration must keep the promise used by suspended messages");
+		finish();
+		await settle(view);
+		assert.equal(warnings.some((warning) => warning.includes("uncached promise")), false, warnings.join("\n"));
+		assert.equal(view.container.querySelector("[data-runtime-message] strong")?.textContent, "Hello pending");
+		await view.unmount();
+	} finally {
+		console.error = originalError;
+		delete globalThis.__registerMarkdownDuringLoad;
+		delete globalThis.__preloadMarkdown;
+	}
+});
+
 test("a failed runtime load shows the text and is retried on the next render, not in a loop", async () => {
 	let failuresLeft = 1;
 	globalThis.__markdownRuntime = {
@@ -161,7 +195,7 @@ test("a fenced code block renders as a code block, not as inline code", async ()
 	const block = view.container.querySelector('[data-block="true"]');
 	assert.equal(block === null, false, "the fence reaches the code-block renderer");
 	assert.equal(block.textContent.includes("hello"), true);
-	assert.equal(view.getAllByRole("button", { name: "Download code" }).length, 1);
+	assert.equal(view.getAllByRole("button", { name: "Download" }).length, 1);
 	const inline = [...view.container.querySelectorAll("[data-inline-code-state]")].map((node) => node.textContent);
 	assert.deepEqual(inline, ["tick"], "only the backtick span is inline code");
 	await view.unmount();

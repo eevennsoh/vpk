@@ -87,7 +87,7 @@ export function JiraListPointsCell({ issueKey, onChange, points }: Readonly<{
 			) : (
 				<button
 					aria-label={`Edit story points for ${issueKey}${points === undefined ? ", no estimate" : `, ${points}`}`}
-					className="absolute inset-0 flex min-w-0 items-center px-3 text-sm text-text before:pointer-events-none before:absolute before:inset-x-3 before:inset-y-1 before:rounded-sm hover:before:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-border-focused"
+					className="absolute inset-0 flex min-w-0 items-center px-3 text-sm text-text focus-visible:outline-2 focus-visible:outline-border-focused"
 					onClick={() => { setDraft(points === undefined ? "" : String(points)); setEditing(true); }}
 					type="button"
 				>

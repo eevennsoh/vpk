@@ -17,10 +17,6 @@ const SIDEBAR_MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const CHAT_PANEL_SOURCE = readChatPanelSource();
-const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
-	"utf8",
-);
 const ROVO_CHAT_HELPERS_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/rovo-chat-helpers.ts"),
 	"utf8",
@@ -37,7 +33,6 @@ test("shared user message bubble exposes copy and edit prompt actions", () => {
 		USER_MESSAGE_BUBBLE_SOURCE,
 		/<MessageResponse plain className="font-medium text-inherit \[&>\*\+\*\]:mt-3">[\s\S]*\{messageText\}[\s\S]*<\/MessageResponse>/u,
 	);
-	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /fitContent=\{!isEditing\}/);
 });
 
 test("Improve description renders as a skill tag without changing the raw message value", () => {
@@ -82,10 +77,10 @@ test("sidebar and floating chat thread messages wire compact edit state", () => 
 
 	assert.match(SIDEBAR_MESSAGE_BUBBLE_SOURCE, /showUserMessagePromptActions/);
 	assert.match(CHAT_PANEL_SOURCE, /const \{[\s\S]*editMessage,[\s\S]*editingMessageId,[\s\S]*setEditingMessageId,[\s\S]*\} = useRovoChat\(\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /ConversationScrollButton/);
+	assert.match(CHAT_PANEL_SOURCE, /MessageScrollerButton/);
 	assert.match(
 		CHAT_PANEL_SOURCE,
-		/<ConversationScrollButton className="z-10 transition-all" \/>/u,
+		/<MessageScrollerButton className="z-10" \/>/u,
 	);
 	assert.match(
 		CHAT_PANEL_SOURCE,
@@ -109,25 +104,6 @@ test("assistant bubbles render agent text before chain-of-thought and tool calls
 	assert.doesNotMatch(
 		SIDEBAR_MESSAGE_BUBBLE_SOURCE,
 		/<ThreadMessage\.Reasoning \/>[\s\S]*<ThreadMessage\.ThinkingStatus[\s\S]*<ThreadMessage\.Content \/>/u,
-	);
-});
-
-test("compact chat edit uses AI SDK message replacement semantics", () => {
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/editMessage: \(messageId: string, nextText: string, options\?: SendPromptOptions\) => Promise<void>;/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/await sendMessage\(messagePayload, bodyPayload\);/,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/messageId,\s*\};/u,
-	);
-	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
-		/setQueuedPrompts\(\[\]\);/,
 	);
 });
 

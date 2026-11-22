@@ -81,55 +81,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"queue-demo-prompt-queue": dynamic(
-		() =>
-			import("../../demos/ui-custom/queue-demo").then((mod) => ({
-				default: mod.QueueDemoPromptQueue,
-			})),
-		{ ssr: false },
-	),
-	"queue-demo-with-actions": dynamic(
-		() =>
-			import("../../demos/ui-custom/queue-demo").then((mod) => ({
-				default: mod.QueueDemoWithActions,
-			})),
-		{ ssr: false },
-	),
-	"queue-demo-with-attachments": dynamic(
-		() =>
-			import("../../demos/ui-custom/queue-demo").then((mod) => ({
-				default: mod.QueueDemoWithAttachments,
-			})),
-		{ ssr: false },
-	),
-	"queue-demo-minimal": dynamic(
-		() =>
-			import("../../demos/ui-custom/queue-demo").then((mod) => ({
-				default: mod.QueueDemoMinimal,
-			})),
-		{ ssr: false },
-	),
-	"reasoning-demo-preload": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoPreload,
-			})),
-		{ ssr: false },
-	),
-	"reasoning-demo-thinking": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoThinking,
-			})),
-		{ ssr: false },
-	),
-	"reasoning-demo-completed": dynamic(
-		() =>
-			import("../../demos/ui-custom/reasoning-demo").then((mod) => ({
-				default: mod.ReasoningDemoCompleted,
-			})),
-		{ ssr: false },
-	),
 	"sandbox-demo-running": dynamic(
 		() =>
 			import("../../demos/ui-custom/sandbox-demo").then((mod) => ({
@@ -151,34 +102,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"inline-citation-demo-with-carousel": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoWithCarousel,
-			})),
-		{ ssr: false },
-	),
-	"inline-citation-demo-basic": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoBasic,
-			})),
-		{ ssr: false },
-	),
-	"inline-citation-demo-multiple": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoMultiple,
-			})),
-		{ ssr: false },
-	),
-	"inline-citation-demo-single-source": dynamic(
-		() =>
-			import("../../demos/ui-custom/inline-citation-demo").then((mod) => ({
-				default: mod.InlineCitationDemoSingleSource,
-			})),
-		{ ssr: false },
-	),
 	"mic-selector-demo-controlled": dynamic(
 		() =>
 			import("../../demos/ui-custom/mic-selector-demo").then((mod) => ({
@@ -197,13 +120,6 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../../demos/ui-custom/mic-selector-demo").then((mod) => ({
 				default: mod.MicSelectorDemoCompact,
-			})),
-		{ ssr: false },
-	),
-	"model-selector-demo-with-search": dynamic(
-		() =>
-			import("../../demos/ui-custom/model-selector-demo").then((mod) => ({
-				default: mod.ModelSelectorDemoWithSearch,
 			})),
 		{ ssr: false },
 	),

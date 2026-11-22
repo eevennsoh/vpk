@@ -29,17 +29,19 @@ function GroupComposition({
 	agentFirst,
 	agentSize,
 	humanSize,
+	cutout,
 	positions,
 	label,
 	transition,
+	groupSizePx,
 }: Readonly<
 	Pick<
 		HumanAgentAvatarMotionProps,
-		"agent" | "human" | "agentFirst" | "agentSize" | "humanSize" | "label" | "positions"
-	> & { grouped: boolean; transition: Transition }
+		"agent" | "human" | "agentFirst" | "agentSize" | "humanSize" | "cutout" | "label" | "positions"
+	> & { grouped: boolean; transition: Transition; groupSizePx?: 12 | 16 | 24 }
 >) {
 	const present = useIsPresent();
-	const groupSize = Math.min(agentSize, humanSize);
+	const groupSize = groupSizePx ?? Math.min(agentSize, humanSize);
 	const positionClassName = grouped ? undefined : "absolute";
 	const slotPositions: Partial<HumanAgentAvatarMotionProps["positions"]> = grouped ? {} : positions;
 	const willChange = transition.duration === 0 ? undefined : "transform";
@@ -51,9 +53,9 @@ function GroupComposition({
 			key="human"
 			layoutId="human"
 			transition={{ layout: transition }}
-			style={{ ...slotPositions.human, willChange }}
+			style={{ ...slotPositions.human, ...(!grouped && !agentFirst ? cutout : undefined), willChange }}
 		>
-			{human(undefined, grouped ? groupSize : undefined)}
+			{human(grouped ? groupSize : undefined)}
 		</motion.span>
 	);
 	const agentAvatar = (
@@ -64,9 +66,9 @@ function GroupComposition({
 			key="agent"
 			layoutId="agent"
 			transition={{ layout: transition }}
-			style={{ ...slotPositions.agent, willChange }}
+			style={{ ...slotPositions.agent, ...(!grouped && agentFirst ? cutout : undefined), willChange }}
 		>
-			{agent(grouped ? groupSize : undefined, grouped ? false : agentSize < humanSize)}
+			{agent(grouped ? groupSize : undefined)}
 		</motion.span>
 	);
 	const avatars = agentFirst

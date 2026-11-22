@@ -407,7 +407,6 @@ export function AgentCard({
 							iconColor="#FFFFFF"
 							label=""
 							name="atlassian"
-							shouldUseNewLogoDesign
 							size="xxsmall"
 							textColor="#FFFFFF"
 							themeAware={false}
@@ -751,7 +750,7 @@ export function AgentCard({
 						>
 							{showExperimentalCollaborators ? (
 								<AgentCardSection label="Trusted by teammates" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
-									<AvatarGroup className="items-center *:data-[slot=avatar]:ring-[var(--agent-card-detail-color)]" label="Collaborators">
+									<AvatarGroup className="items-center" label="Collaborators">
 										{visibleCollaborators.map((person) => (
 											<Avatar key={person.src} size="sm">
 												<AvatarImage alt={person.name} src={person.src} />
@@ -759,7 +758,7 @@ export function AgentCard({
 											</Avatar>
 										))}
 										{showHiddenCollaboratorCount ? (
-											<AvatarGroupCount className="ring-[var(--agent-card-detail-color)]">+{hiddenCollaboratorCount}</AvatarGroupCount>
+											<AvatarGroupCount>+{hiddenCollaboratorCount}</AvatarGroupCount>
 										) : null}
 									</AvatarGroup>
 								</AgentCardSection>

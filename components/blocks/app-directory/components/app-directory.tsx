@@ -53,7 +53,6 @@ import { DEFAULT_APP_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/app-di
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { getThirdPartyLogoIconFromSrc } from "@/components/ui/data/logo-third-party-icons";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -61,7 +60,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
@@ -287,6 +286,7 @@ function getSidebarGroupItems(
 			label: tool.name,
 			avatarSrc: tool.avatarSrc,
 			logoName: tool.logoName,
+			brandName: tool.brandName,
 		}));
 }
 
@@ -763,9 +763,9 @@ function AppDirectoryView({
 				)}
 			>
 				<InputGroup>
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<SearchIcon label="" />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						type="search"
 						aria-label="Search apps"
@@ -1360,12 +1360,8 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	if (!item.avatarSrc) return null;
 
-	const ThirdPartyIcon = getThirdPartyLogoIconFromSrc(item.avatarSrc);
-	return ThirdPartyIcon ? (
-		<ThirdPartyIcon label={item.label} size="small" />
-	) : (
-		<BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} />
-	);
+	// BrandLogoMark renders the upstream package mark when the avatar is a third-party asset path.
+	return <BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} />;
 }
 
 interface ToolDetailViewProps {
@@ -1723,9 +1719,9 @@ function DirectorySearchField({
 }: Readonly<DirectorySearchFieldProps>) {
 	return (
 		<InputGroup>
-			<InputGroupAddon>
+			<InputGroupSearchAddon>
 				<SearchIcon label="" />
-			</InputGroupAddon>
+			</InputGroupSearchAddon>
 			<InputGroupInput
 				aria-label={ariaLabel}
 				placeholder={placeholder}

@@ -1,5 +1,6 @@
 import { Image, type ImageProps } from "@/components/ui-custom/image";
-import { Message, MessageContent } from "@/components/ui-custom/message";
+import { Message, MessageContent } from "@/components/ui/message";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 function createSampleImage(
 	color: string,
@@ -64,13 +65,15 @@ export function ImageDemoGallery() {
 export function ImageDemoInMessage() {
 	return (
 		<div className="flex flex-col gap-4">
-			<Message from="user">
+			<Message align="end">
 				<MessageContent>
-					<p>Generate an image of a futuristic cityscape at sunset</p>
+					<MessageUserBubble>
+						<p>Generate an image of a futuristic cityscape at sunset</p>
+					</MessageUserBubble>
 				</MessageContent>
 			</Message>
-			<Message from="assistant">
-				<MessageContent>
+			<Message>
+				<MessageContent className="max-w-[80%]">
 					<div className="flex flex-col gap-2">
 						<p>Here is a futuristic cityscape at sunset:</p>
 						<Image

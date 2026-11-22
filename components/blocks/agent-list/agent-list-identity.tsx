@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
@@ -11,6 +11,7 @@ import {
 	AvatarImage,
 	type AvatarProps,
 } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { actorInitials } from "./agent-list-actor";
@@ -55,28 +56,31 @@ export function AgentListAttributionAvatarGroup({
 	sizePx: number;
 }>) {
 	const personAvatar = (
-		<Avatar
-			key="person"
-			label=""
-			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
-		>
-			{attributedBy.avatarSrc ? (
-				<AvatarImage alt="" src={attributedBy.avatarSrc} />
-			) : null}
-			<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
-		</Avatar>
+		<Tooltip key="person">
+			<TooltipTrigger render={<Avatar className="outline-none focus-visible:ring-2 focus-visible:ring-ring" label={attributedBy.name} size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"} tabIndex={0} />}>
+				{attributedBy.avatarSrc ? (
+					<AvatarImage alt="" src={attributedBy.avatarSrc} />
+				) : null}
+				<AvatarFallback>{actorInitials(attributedBy.name)}</AvatarFallback>
+			</TooltipTrigger>
+			<TooltipContent positionerClassName="z-[850]" role="tooltip">{attributedBy.name}</TooltipContent>
+		</Tooltip>
 	);
 	const agentAvatar = (
 		<AgentAvatarVisual
 			appearance={appearance}
 			animate={animate}
-			key="agent"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
 			label=""
 			sizePx={sizePx}
 			vpkLogo={agent.vpkLogo}
 		/>
+	);
+	const agentSlot = (
+		<Fragment key="agent">
+			{renderAgentAvatar?.(agent, agentAvatar) ?? agentAvatar}
+		</Fragment>
 	);
 
 	return (
@@ -86,7 +90,7 @@ export function AgentListAttributionAvatarGroup({
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
-			{orderAttributionAvatars(attributionOrder, renderAgentAvatar?.(agent, agentAvatar) ?? agentAvatar, personAvatar)}
+			{orderAttributionAvatars(attributionOrder, agentSlot, personAvatar)}
 		</AvatarGroup>
 	);
 }

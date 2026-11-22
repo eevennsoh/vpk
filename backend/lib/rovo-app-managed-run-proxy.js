@@ -3,9 +3,7 @@
 const {
 	resolveAgentsRfpDemoChatTurn: defaultResolveAgentsRfpDemoChatTurn,
 } = require("./agents-rfp-demo-chat");
-const {
-	shouldReplaceActiveRunForRequest: defaultShouldReplaceActiveRunForRequest,
-} = require("./rovo-app-run-continuation");
+const { currentGeneratedMediaScope } = require("./generated-media-owners");
 const { getNonEmptyString } = require("./shared-utils");
 
 function requireFunction(name, value) {
@@ -22,9 +20,6 @@ function createRovoAppManagedRunProxy({
 	persistRovoAppRunStateInBackground,
 	resolveAgentsRfpDemoChatTurn = defaultResolveAgentsRfpDemoChatTurn,
 	rovoAppRunManager,
-	rovoCancelChat,
-	shouldReplaceActiveRunForRequest = defaultShouldReplaceActiveRunForRequest,
-	settleRovoAppRun,
 	startManagedRovoAppRun,
 } = {}) {
 	requireFunction("agentsRfpDemoChatStreamOwner.streamAgentsRfpDemoChatTurn", agentsRfpDemoChatStreamOwner?.streamAgentsRfpDemoChatTurn);
@@ -35,9 +30,6 @@ function createRovoAppManagedRunProxy({
 	requireFunction("rovoAppRunManager.attachSubscriber", rovoAppRunManager?.attachSubscriber);
 	requireFunction("rovoAppRunManager.createRun", rovoAppRunManager?.createRun);
 	requireFunction("rovoAppRunManager.getRun", rovoAppRunManager?.getRun);
-	requireFunction("rovoCancelChat", rovoCancelChat);
-	requireFunction("shouldReplaceActiveRunForRequest", shouldReplaceActiveRunForRequest);
-	requireFunction("settleRovoAppRun", settleRovoAppRun);
 	requireFunction("startManagedRovoAppRun", startManagedRovoAppRun);
 
 	async function proxyRovoAppChatRequest(req, res) {
@@ -48,15 +40,7 @@ function createRovoAppManagedRunProxy({
 			return res.status(400).json({ error: "threadId is required" });
 		}
 
-		let existingRun = rovoAppRunManager.getRun(threadId);
-		if (shouldReplaceActiveRunForRequest({ existingRun, requestBody })) {
-			if (typeof existingRun?.rovoPort === "number" && existingRun.rovoPort > 0) {
-				await rovoCancelChat(existingRun.rovoPort, { timeoutMs: 3_000 }).catch(() => {});
-			}
-			// Only the run read above: one that took its place during the wait is kept.
-			await settleRovoAppRun(existingRun, "cancelled");
-			existingRun = rovoAppRunManager.getRun(threadId);
-		}
+		const existingRun = rovoAppRunManager.getRun(threadId);
 
 		const agentsRfpDemoTurn = !existingRun
 			? resolveAgentsRfpDemoChatTurn(requestBody)
@@ -73,6 +57,9 @@ function createRovoAppManagedRunProxy({
 				threadId,
 				requestBody,
 				requestedPortIndex: null,
+				// The chat guard runs this request as its caller's turn; the run keeps the
+				// caller with it.
+				mediaScope: currentGeneratedMediaScope(),
 			});
 
 		const subscriberId = rovoAppRunManager.attachSubscriber(threadId, res, {

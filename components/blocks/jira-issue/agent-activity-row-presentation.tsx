@@ -12,6 +12,7 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentProps,
 } from "@/components/blocks/agent-assignment";
+import { TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -20,11 +21,12 @@ import { useProjectButterInvocationPhase, useProjectButterInvocationPreview } fr
 import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
 import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
+import { getJiraIssueVisibleActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
-import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Shimmer } from "@/components/ui/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
@@ -225,9 +227,9 @@ export function JiraIssueAgentStatusAffordance({
 
 	return (
 		<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-slot="jira-issue-agent-status-affordance">
-			<span className="col-start-1 row-start-1 grid size-6 place-items-center group-hover/agent-chin-row:invisible group-has-[:focus-visible]/agent-chin-row:invisible" data-slot="jira-issue-agent-status-icon">
+			{statusIcon ? <span className="col-start-1 row-start-1 grid size-6 place-items-center group-hover/agent-chin-row:invisible group-has-[:focus-visible]/agent-chin-row:invisible" data-slot="jira-issue-agent-status-icon">
 				{statusIcon}
-			</span>
+			</span> : null}
 			<span className="invisible col-start-1 row-start-1 grid size-6 place-items-center text-icon-subtle group-hover/agent-chin-row:visible group-has-[:focus-visible]/agent-chin-row:visible" data-slot="jira-issue-agent-chevron">
 				<ChevronRightIcon color="currentColor" label="" size="small" />
 			</span>
@@ -300,7 +302,7 @@ function JiraIssueTransitioningAgentRowLabel({ isAwaitingInput, isWorking, rowLa
 export function JiraIssueAgentRowContent({
 	activities: incomingActivities,
 	avatarLayout,
-	avatarSize = 24,
+	avatarSize = 20,
 	featuredActivity,
 	isAwaitingInput,
 	isWorking,
@@ -320,7 +322,7 @@ export function JiraIssueAgentRowContent({
 	rowLabel: string;
 	showUnlinkControl: boolean;
 	isViewerRow?: boolean;
-	statusIcon: ReactElement;
+	statusIcon: ReactElement | null;
 	compactAvatarSlot?: boolean;
 	animateStateTransition?: boolean;
 }>): ReactElement {
@@ -328,11 +330,14 @@ export function JiraIssueAgentRowContent({
 	const preview = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const selectedAgent = phase === "handoff" || phase === "attached" ? preview.agent : null;
-	const selectedActivity = selectedAgent ? incomingActivities.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
-	const activities = selectedActivity ? [selectedActivity, ...incomingActivities.filter((activity) => activity !== selectedActivity)] : incomingActivities;
+	const visibleActivities = getJiraIssueVisibleActivities(incomingActivities);
+	const selectedActivity = selectedAgent ? visibleActivities.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
+	const activities = selectedActivity ? [selectedActivity, ...visibleActivities.filter((activity) => activity !== selectedActivity)] : visibleActivities;
 	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
-	if (featuredActivity !== undefined) {
+	if (isViewerRow) {
+		avatar = <TeammateSessionAvatarCycle sessions={activities.map((activity) => ({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }))} />;
+	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
 				<AgentAvatarVisual
@@ -351,7 +356,7 @@ export function JiraIssueAgentRowContent({
 	} else if (avatarLayout === "horizontal-group") {
 		avatar = (
 			<AvatarGroup
-				className={cn("shrink-0", isViewerRow ? null : "gap-1 space-x-0")}
+				className="shrink-0 gap-1 space-x-0"
 				label={`${activities.length} agents: ${rowLabel}`}
 				size="sm"
 			>
@@ -395,7 +400,7 @@ export function JiraIssueAgentRowContent({
 				>
 					{avatar}
 				</span>
-				{phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
+				{isViewerRow ? <span className="min-w-0 flex-1" data-teammate-session-label><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking={false} rowLabel={rowLabel} /></span> : phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}
@@ -499,7 +504,7 @@ export function JiraIssueAgentRowSurface({
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	showUnlinkControl: boolean;
 	startupSequenceKey: string | null;
-	statusIcon: ReactElement;
+	statusIcon: ReactElement | null;
 }>): ReactElement {
 	return (
 		<div
@@ -529,12 +534,12 @@ export function JiraIssueAgentRowSurface({
 							name: featuredActivity?.name ?? activities[0]?.name ?? "Agent",
 						})}
 					/>
-					<span
+					{statusIcon ? <span
 						className="flex size-6 shrink-0 items-center justify-center -mr-1"
 						data-slot="jira-issue-assignee-slot"
 					>
 						{statusIcon}
-					</span>
+					</span> : null}
 				</div>
 			) : null}
 		</div>

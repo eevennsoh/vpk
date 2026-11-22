@@ -10,6 +10,7 @@ import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
+	type ReactNode,
 	type Ref,
 	useCallback,
 	useEffect,
@@ -21,6 +22,7 @@ import {
 	AnimatePresence,
 	animate,
 	motion,
+	useIsPresent,
 	useMotionValue,
 	type MotionStyle,
 } from "motion/react";
@@ -55,6 +57,7 @@ import {
 } from "./daily-insights-panel";
 import { restoreFloatingRovoButtonFocus } from "./focus-restore";
 import {
+	FLOATING_ROVO_BUTTON_CARD_ENTER,
 	FLOATING_ROVO_BUTTON_CONTENT_EXIT,
 	FLOATING_ROVO_BUTTON_MORPH_SPRING,
 } from "./motion";
@@ -64,11 +67,12 @@ import type {
 	FloatingRovoButtonInsightsConfig,
 	FloatingRovoButtonInsightsStage,
 	FloatingRovoButtonOnboardingConfig,
+	FloatingRovoButtonPanel,
 	FloatingRovoButtonPersistentBar,
 	FloatingRovoButtonPlacement,
 	FloatingRovoButtonPositioning,
 } from "./types";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2.5;
@@ -80,7 +84,8 @@ function FloatingRovoButtonInner({
 	onDragPointerDown,
 	onLogoPointerEnter,
 	ariaLabel,
-	logoAnimating,
+	opensDialog,
+	logo,
 	shouldReduceMotion,
 	ref,
 }: Readonly<{
@@ -89,17 +94,22 @@ function FloatingRovoButtonInner({
 	onDragPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	onLogoPointerEnter: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	ariaLabel: string;
-	logoAnimating: boolean;
+	opensDialog: boolean;
+	logo: ReactNode;
 	shouldReduceMotion: boolean;
 	ref?: Ref<HTMLButtonElement>;
 }>) {
+	const isPresent = useIsPresent();
+	if (opensDialog && !isPresent) return null;
+
 	return (
 		<motion.button
 			key="floating-rovo-button-icon"
 			ref={ref}
+			aria-haspopup={opensDialog ? "dialog" : undefined}
 			aria-label={ariaLabel}
 			// Keep the native click target mounted when first-hover animation swaps logos.
-			className="flex h-full w-full items-center justify-center bg-bg-neutral-bold *:pointer-events-none"
+			className={cn("flex h-full w-full items-center justify-center *:pointer-events-none", opensDialog ? null : "bg-bg-neutral-bold")}
 			onClick={onClick}
 			onMouseDownCapture={onDragMouseDown}
 			onPointerEnter={onLogoPointerEnter}
@@ -117,25 +127,18 @@ function FloatingRovoButtonInner({
 				: { duration: 0.2, delay: 0.24, ease: motionEase.out }}
 			style={{
 				borderRadius: "inherit",
-				boxShadow: token("elevation.shadow.overlay"),
+				boxShadow: opensDialog ? undefined : token("elevation.shadow.overlay"),
 				willChange: "opacity, filter",
 			}}
 		>
-			{logoAnimating ? (
-				<AnimatedRovo.Root
-					key="animated-rovo-logo"
-					size={24}
-					preset="full-cycle"
-					cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S}
-				/>
-			) : (
-				<RovoColorIcon key="static-rovo-logo" size="small" />
-			)}
+			{logo}
 		</motion.button>
 	);
 }
 
 export function FloatingRovoButtonSurface({
+	animateLogoOnMount,
+	panel,
 	onboardingOpen,
 	onboarding,
 	onOpenChange,
@@ -150,7 +153,10 @@ export function FloatingRovoButtonSurface({
 	onButtonClick,
 	persistentBar,
 	shouldReduceMotion,
+	logoAnimationTrigger,
 }: Readonly<{
+	animateLogoOnMount: boolean;
+	panel?: FloatingRovoButtonPanel;
 	onboardingOpen: boolean;
 	onboarding: FloatingRovoButtonOnboardingConfig | null | undefined;
 	onOpenChange: (open: boolean) => void;
@@ -165,16 +171,11 @@ export function FloatingRovoButtonSurface({
 	onButtonClick: () => void;
 	persistentBar: FloatingRovoButtonPersistentBar | null | undefined;
 	shouldReduceMotion: boolean;
+	logoAnimationTrigger?: string;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
-	// The two configs are mutually exclusive upstream, so exactly one of them can
-	// be at its card geometry. Everything that cares about "the surface is a card
-	// now, not a draggable button" reads this instead of `onboardingOpen`.
-	const cardOpen = onboardingOpen || insightsStage === "card";
-	// The 48px button paints its own elevation, but the pill and both cards fill
-	// the surface edge to edge under `overflow-hidden`, which would clip an inner
-	// shadow — at those geometries the surface paints it instead.
-	const surfaceOwnsElevation = cardOpen || insightsStage === "pill";
+	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
+	const surfaceOwnsElevation = Boolean(panel) || cardOpen;
 	const configuredBarSide = persistentBar?.side ?? "auto";
 	const [barSide, setBarSide] = useState<"top" | "bottom">(
 		configuredBarSide === "bottom" ? "bottom" : "top",
@@ -182,6 +183,7 @@ export function FloatingRovoButtonSurface({
 	// Drives the persistent bar's exit/enter: it tucks away once a drag actually
 	// moves the button and springs back when the drag is released.
 	const [isDragging, setIsDragging] = useState(false);
+	if (cardOpen && isDragging) setIsDragging(false);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
 	const buttonX = useMotionValue(0);
 	const buttonY = useMotionValue(0);
@@ -220,6 +222,7 @@ export function FloatingRovoButtonSurface({
 	const collapsedButtonRef = useRef<HTMLButtonElement | null>(null);
 	const previousCardOpenRef = useRef<boolean>(cardOpen);
 	const [logoAnimating, setLogoAnimating] = useState(false);
+	const [logoAnimationRun, setLogoAnimationRun] = useState(0);
 	const [endInset, setEndInset] = useState("");
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
@@ -270,12 +273,9 @@ export function FloatingRovoButtonSurface({
 			logoAnimationTimeoutRef.current = null;
 		}
 	}, []);
-	const handleLogoPointerEnter = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
-		if (event.pointerType !== "mouse" || shouldReduceMotion || logoAnimationPlayedRef.current) {
-			return;
-		}
-
-		logoAnimationPlayedRef.current = true;
+	const startLogoAnimation = useCallback(() => {
+		if (shouldReduceMotion) return;
+		setLogoAnimationRun((run) => run + 1);
 		setLogoAnimating(true);
 		clearLogoAnimationTimeout();
 		logoAnimationTimeoutRef.current = window.setTimeout(() => {
@@ -283,6 +283,26 @@ export function FloatingRovoButtonSurface({
 			setLogoAnimating(false);
 		}, FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS);
 	}, [clearLogoAnimationTimeout, shouldReduceMotion]);
+	const handleLogoPointerEnter = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+		if (event.pointerType !== "mouse" || shouldReduceMotion || logoAnimationPlayedRef.current) return;
+		logoAnimationPlayedRef.current = true;
+		startLogoAnimation();
+	}, [shouldReduceMotion, startLogoAnimation]);
+	useEffect(() => {
+		if (!animateLogoOnMount || shouldReduceMotion) return;
+		logoAnimationPlayedRef.current = true;
+		const frame = window.requestAnimationFrame(startLogoAnimation);
+		return () => {
+			window.cancelAnimationFrame(frame);
+			clearLogoAnimationTimeout();
+			logoAnimationPlayedRef.current = false;
+		};
+	}, [animateLogoOnMount, clearLogoAnimationTimeout, shouldReduceMotion, startLogoAnimation]);
+	useEffect(() => {
+		if (!logoAnimationTrigger || shouldReduceMotion) return undefined;
+		const frame = window.requestAnimationFrame(startLogoAnimation);
+		return () => window.cancelAnimationFrame(frame);
+	}, [logoAnimationTrigger, shouldReduceMotion, startLogoAnimation]);
 	// Arm suppression when a drag actually moves the button.
 	const armDragClickSuppression = useCallback(() => {
 		suppressDragClickStateRef.current = armClickSuppression();
@@ -399,7 +419,6 @@ export function FloatingRovoButtonSurface({
 	useEffect(() => {
 		if (cardOpen) {
 			dragPointerStartRef.current = null;
-			setIsDragging(false);
 			suppressDragClickStateRef.current = createInitialClickSuppressionState();
 			clearDragClickSuppressionTimeout();
 		}
@@ -462,7 +481,7 @@ export function FloatingRovoButtonSurface({
 		} else {
 			anchorToDefaultTarget();
 		}
-	}, [anchorToDefaultTarget, dragOrigin, insightsStage, onboardingOpen, snapToNearestGridTarget]);
+	}, [anchorToDefaultTarget, cardOpen, dragOrigin, insightsStage, snapToNearestGridTarget]);
 
 	useEffect(() => {
 		if (!dragOrigin) {
@@ -621,6 +640,9 @@ export function FloatingRovoButtonSurface({
 
 		onButtonClick();
 	}, [handleSuppressibleClick, onButtonClick]);
+	const logo = logoAnimating && !shouldReduceMotion ? (
+		<AnimatedRovo.Root key={`animated-rovo-logo-${logoAnimationRun}`} size={24} preset="full-cycle" cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S} />
+	) : <RovoColorIcon key="static-rovo-logo" size="small" />;
 
 	return (
 		<motion.div
@@ -628,15 +650,17 @@ export function FloatingRovoButtonSurface({
 			key="floating-rovo-button-surface"
 			layout
 			className={cn(
-				"z-[510] bg-bg-neutral-bold",
+				"z-[510]",
+				panel?.open ? "bg-surface-overlay" : insightsStage === "pill" && !cardOpen ? "bg-transparent" : "bg-bg-neutral-bold",
+				shouldReduceMotion ? null : "transition-[background-color] duration-slow ease-out",
 				positioning === "container" ? "absolute" : "fixed",
 				!cardOpen ? "cursor-grab active:cursor-grabbing" : null,
 				// Three geometries, one `layout` element: the 48px button grows into
 				// the pill, and the pill grows into the card.
 				cardOpen
-					? "w-[295px] max-w-[calc(100vw-32px)] overflow-hidden"
+					? cn("overflow-hidden", panel?.open ? "w-fit" : "w-[295px] max-w-[calc(100vw-32px)]")
 					: insightsStage === "pill"
-						? "h-12 w-fit max-w-[calc(100vw-32px)] overflow-hidden"
+						? "h-12 w-fit max-w-[calc(100vw-32px)]"
 						: "size-12",
 			)}
 			initial={{ opacity: 0, borderRadius: cardOpen ? 8 : 16 }}
@@ -647,6 +671,7 @@ export function FloatingRovoButtonSurface({
 			exit={{ opacity: 0 }}
 			transition={{
 				default: surfaceTransition,
+				layout: panel?.open && !shouldReduceMotion ? { duration: motionDuration.slow, ease: motionEase.out } : undefined,
 				borderRadius: radiusTransition,
 			}}
 			style={surfaceStyle}
@@ -661,8 +686,18 @@ export function FloatingRovoButtonSurface({
 				whileHover={hoverScale}
 				whileTap={tapScale}
 			>
+				{panel?.open ? (
+					<motion.div
+						key={panel.id}
+						initial={shouldReduceMotion ? false : { opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={shouldReduceMotion ? { duration: 0 } : FLOATING_ROVO_BUTTON_CARD_ENTER}
+					>
+						{panel.content}
+					</motion.div>
+				) : null}
 				<AnimatePresence mode="popLayout" initial={false}>
-					{onboardingOpen && onboarding ? (
+					{panel?.open ? null : onboardingOpen && onboarding ? (
 						<FloatingRovoButtonOnboardingPanelInner
 							key="panel"
 							onboarding={onboarding}
@@ -683,7 +718,9 @@ export function FloatingRovoButtonSurface({
 							key="insights-pill"
 							ref={insightsPillRef}
 							insights={insights}
+							logo={logo}
 							onClick={handleButtonClick}
+							onLogoPointerEnter={handleLogoPointerEnter}
 							onDragMouseDown={handleDragMouseDown}
 							onDragPointerDown={handleDragPointerDown}
 							shouldReduceMotion={shouldReduceMotion}
@@ -697,7 +734,8 @@ export function FloatingRovoButtonSurface({
 							onDragPointerDown={handleDragPointerDown}
 							onLogoPointerEnter={handleLogoPointerEnter}
 							ariaLabel={ariaLabel}
-							logoAnimating={logoAnimating}
+							opensDialog={Boolean(panel)}
+							logo={logo}
 							shouldReduceMotion={shouldReduceMotion}
 						/>
 					)}

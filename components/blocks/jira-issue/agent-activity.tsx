@@ -2,6 +2,7 @@
 
 import {
 	useEffect,
+	useId,
 	useMemo,
 	useRef,
 	useState,
@@ -28,12 +29,14 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentStatusKind,
 } from "@/components/blocks/agent-assignment";
+import { teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
+import { getAgentSessionAttribution, type AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
+	getJiraIssueVisibleActivities,
 	groupJiraIssueAgentActivityRows,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
@@ -128,6 +131,7 @@ export interface JiraIssueAgentActivity {
 	 * Omit to keep the owner menu.
 	 */
 	role?: AgentSessionRole;
+	privateTo?: string;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	startupSequence?: "jira-work-item-start";
@@ -224,6 +228,7 @@ export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentA
 		...(activity.invokedBy ? { invokedBy: activity.invokedBy } : {}),
 		...(activity.host !== undefined ? { host: activity.host } : {}),
 		...(activity.role !== undefined ? { role: activity.role } : {}),
+		...(activity.privateTo ? { privateTo: activity.privateTo } : {}),
 		...(activity.timeLabel ? { timeLabel: activity.timeLabel } : {}),
 	};
 }
@@ -292,7 +297,8 @@ function resolveJiraIssueAgentRowPresentation(
 	activities: readonly JiraIssueAgentActivity[],
 	linkFlash: JiraIssueAgentLinkFlash | undefined,
 ) {
-	const summary = summarizeJiraIssueAgentActivities(activities);
+	const visibleActivities = getJiraIssueVisibleActivities(activities);
+	const summary = summarizeJiraIssueAgentActivities(visibleActivities);
 	const isCompletedRow = activities.length > 0
 		&& activities.every((activity) => activity.state === "completed");
 	const isFailedRow = isCompletedRow
@@ -305,17 +311,21 @@ function resolveJiraIssueAgentRowPresentation(
 		: null;
 	const isAwaitingInput = !isCompletedRow && summary.priorityState === "awaiting-input";
 	const featuredActivity = summary.featuredActivityIndex !== null
-		? activities[summary.featuredActivityIndex]
+		? visibleActivities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isCompletedRow
+	const rowLabel = isViewerRow
+		? teammateSessionUsageLabel(visibleActivities.length)
+		: isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isSingleAgent
-			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
+	const rowAriaLabel = isViewerRow
+		? rowLabel
+		: isSingleAgent
+			? `${visibleActivities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
 	return {
@@ -549,6 +559,7 @@ function JiraIssueAgentActivityRow({
 	shouldReduceMotion: boolean | null;
 	workingSpinnerVariant?: "default" | "bloom-avatar";
 }>) {
+	const teammateDescriptionId = useId();
 	// Any row that gained one of the linked sessions sweeps, including a merged
 	// "N Working" row. Dropping onto a card that is already busy changes that
 	// row — its count just went up — so skipping it would leave the one place
@@ -627,7 +638,7 @@ function JiraIssueAgentActivityRow({
 					vpkLogo: featuredActivity?.agentVpkLogo,
 					name: featuredActivity?.name ?? "Agent",
 				}}
-				attributedBy={featuredActivity?.invokedBy}
+				attributedBy={featuredActivity ? getAgentSessionAttribution(featuredActivity) : undefined}
 				elevated
 				isFusionSource
 			/>
@@ -638,7 +649,7 @@ function JiraIssueAgentActivityRow({
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
 			statusIcon={
-				animateStateTransition ? <AgentSessionShortLifecycleIcon
+				isViewerRow ? undefined : animateStateTransition ? <AgentSessionShortLifecycleIcon
 					accessibleState={lifecycleState}
 					animateTransition
 					transitionEffect="fade"
@@ -667,6 +678,7 @@ function JiraIssueAgentActivityRow({
 		<button
 			type="button"
 			aria-label={rowAriaLabel}
+			aria-describedby={isViewerRow ? teammateDescriptionId : undefined}
 			data-jira-issue-agent-row-handle=""
 			{...(sessionDragBind ?? {})}
 			{...(sessionDragBind
@@ -682,6 +694,7 @@ function JiraIssueAgentActivityRow({
 				sessionDragBind && "touch-none select-none",
 			)}
 		>
+			{isViewerRow ? <span className="sr-only" id={teammateDescriptionId}>{activities.map((activity) => `${activity.name}, used by ${activity.invokedBy?.name || "Teammate"}`).join("; ")}</span> : null}
 			<JiraIssueAgentRowContent
 				activities={activities}
 				animateStateTransition={animateStateTransition}

@@ -5,6 +5,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import EditIcon from "@atlaskit/icon/core/edit";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+import type { AgentListInvoker } from "@/components/blocks/agent-list";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -21,9 +22,11 @@ import { ChatHistoryButton } from "@/components/projects/sidebar-chat/components
 import { cn } from "@/lib/utils";
 
 interface FloatingChatHeaderProps {
+	attributedBy?: AgentListInvoker;
 	className?: string;
 	/** 24px row — matches Pulse's insight eyebrow (`min-h-6`) and icon-compact chevrons. */
 	compact?: boolean;
+	identityTooltip?: string;
 	onClose: () => void;
 	onNewChat?: () => void;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -39,8 +42,10 @@ interface FloatingChatHeaderProps {
 const noop = () => {};
 
 export default function FloatingChatHeader({
+	attributedBy,
 	className,
 	compact = false,
+	identityTooltip,
 	onClose,
 	onNewChat,
 	onSurfaceSwitch,
@@ -63,8 +68,10 @@ export default function FloatingChatHeader({
 					<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
 				) : null}
 				<RovoAppBrand
+					attributedBy={attributedBy}
 					className={compact ? "h-6 px-1" : undefined}
 					enableAgentSelector={showAgentSelector}
+					identityTooltip={identityTooltip}
 				/>
 			</div>
 			<div className="flex items-center gap-1">

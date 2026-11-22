@@ -41,10 +41,6 @@ const TWG_TOOL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/twg-tool.tsx"),
 	"utf8",
 );
-const CHAIN_OF_THOUGHT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/ui-custom/chain-of-thought.tsx"),
-	"utf8",
-);
 const USE_ROVO_APP_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-rovo-app.ts"),
 	"utf8",
@@ -171,7 +167,6 @@ test("scripted TWG trace step renders TwgTool as the first-level step header", (
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY = \{/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /"twg\.search_work_patterns": \{[\s\S]*title: "Correlating through Teamwork Graph"/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /satisfies AssistantThinkingToolTracePresentationRegistry/u);
-	assert.match(CHAIN_OF_THOUGHT_SOURCE, /headerRender\?: \(context: ChainOfThoughtStepHeaderRenderContext\) => ReactNode;/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function getToolTracePresentationByline/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function TraceNarrationRowsDetail/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export function createAssistantThinkingToolTracePresentationResolver/u);

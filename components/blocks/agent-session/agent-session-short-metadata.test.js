@@ -35,8 +35,8 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		}));
 		assert.equal(markup.replace(/<[^>]*>/gu, ""), "#1893 Log refund decisions·7m");
 		assert.doesNotMatch(markup, /Claude/u);
-		assert.match(markup, /title="#1893 Log refund decisions"/u);
-		assert.match(markup, /title="Last update"/u);
+		assert.match(markup, /aria-label="Pull request #1893 Log refund decisions"/u);
+		assert.match(markup, /data-last-update=""/u);
 	}
 
 	const numberOnlyMarkup = renderToStaticMarkup(createElement(AgentSessionShortMetadata, {
@@ -56,6 +56,28 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		item: { ...item, role: "viewer" },
 	}));
 	assert.equal(viewerMarkup.replace(/<[^>]*>/gu, ""), "Claude·7m·");
-	assert.match(viewerMarkup, /aria-hidden="true" class="inline-flex size-4[^>]*><span[^>]*><svg/u);
+	assert.match(viewerMarkup, /aria-label="Team session"[^>]*data-access-mark="team" role="img"/u);
 	assert.doesNotMatch(viewerMarkup, /<button/u);
+});
+
+test("metadata placement shows the session state in a long row", async () => {
+	const result = await esbuild.build({
+		entryPoints: [join(__dirname, "agent-session-metadata.tsx")],
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		write: false,
+		external: ["react", "react-dom", "react/jsx-runtime", "motion/react"],
+		loader: { ".css": "empty" },
+	});
+	const { AgentSessionLongMetadata } = loadCjsModuleFromText(result.outputFiles[0].text);
+	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]]) {
+		const item = { id: state, title: "Session", state, agent: { id: "claude", kind: "agent", name: "Claude" }, timeLabel: "7m" };
+		const markup = renderToStaticMarkup(createElement(AgentSessionLongMetadata, { item, lifecycleLabelPlacement: "metadata" }));
+		assert.match(markup, new RegExp(`title="${label}"`, "u"));
+		assert.ok(markup.replace(/<[^>]*>/gu, "").includes(label));
+		assert.doesNotMatch(markup, /title="Claude"/u);
+		const defaultMarkup = renderToStaticMarkup(createElement(AgentSessionLongMetadata, { item }));
+		assert.match(defaultMarkup, /title="Claude"/u);
+	}
 });

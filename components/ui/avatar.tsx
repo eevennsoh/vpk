@@ -7,8 +7,6 @@
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 import { motion, useReducedMotion, type MotionProps, type Transition } from "motion/react"
-import { useAnimate } from "motion/react-mini"
-import type { AnimationOptions } from "motion/react"
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new"
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent"
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
@@ -21,12 +19,11 @@ import { isAvatarOverlayType } from "@/components/ui/avatar-overlay"
 import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter"
 import { avatarHexagonBorderClip, avatarHexagonClip, avatarHexagonStyle } from "@/components/ui/avatar-hexagon"
 import { cn } from "@/lib/utils"
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { useAvatarGroupCutouts } from "@/components/ui/use-avatar-group-cutouts"
 import { motionEase } from "@/lib/motion";
 
 const HEXAGON_CLIP = avatarHexagonClip()
 const HEXAGON_BORDER_CLIP = avatarHexagonBorderClip()
-const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip(2)
 
 // motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
 const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical } // duration-normal + ease-out-practical
@@ -88,107 +85,26 @@ function firstAvatarSize(children: React.ReactNode): AvatarSize | undefined {
 	return resolved
 }
 
-interface AvatarOutlineMotion {
-	scale: number | readonly number[]
-	transition?: Pick<AnimationOptions, "duration" | "ease" | "times" | "repeat" | "delay">
-	ring?: boolean
-	color?: "default" | "inverse"
-	strokeWidth?: number
-}
-
 interface AvatarProps
 	extends AvatarPrimitive.Root.Props,
 		VariantProps<typeof avatarVariants> {
 	animate?: boolean
 	disabled?: boolean
 	label?: string
-	/** Match an ancestor scale animation while keeping circular outline strokes constant. */
-	outline?: AvatarOutlineMotion
-	/** Add a 2px inverse separator outside a hexagon badge's normal border. */
-	separator?: boolean
 	/** Use the selected border token for an avatar that controls an open surface. */
 	borderTone?: "default" | "selected"
 	/** Rendered as an unclipped sibling of hex artwork so the badge can hang past the tile. */
 	status?: AvatarStatus
 }
 
-function avatarScaleAnimation(element: Element | null): Animation | undefined {
-	for (let owner = element?.parentElement; owner; owner = owner.parentElement) {
-		const animation = owner.getAnimations().find((candidate) =>
-			candidate.effect instanceof KeyframeEffect && candidate.effect.getKeyframes().some((frame) =>
-				typeof frame.transform === "string" && frame.transform.includes("scale(")))
-		if (animation) return animation
-	}
-	return undefined
-}
-
-function AvatarCircleOutline({ scale, transition, ring = false, color = "default", strokeWidth = 1 }: Readonly<AvatarOutlineMotion>) {
-	const [scope, animateOutline] = useAnimate<HTMLSpanElement>()
-	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true)
-	React.useEffect(() => {
-		const values = typeof scale === "number" ? [scale] : scale
-		const scales = reducedMotion ? values.slice(0, 1) : values
-		const { duration, ease, times, repeat, delay } = transition ?? {}
-		const timing = reducedMotion ? { duration: 0 } : { duration, ease, times, repeat, delay }
-		const border = animateOutline('[data-slot="avatar-circle-border"] circle', { strokeWidth: scales.map((value) => strokeWidth / value) }, timing)
-		const separator = ring ? animateOutline('[data-slot="avatar-circle-ring"] circle', { strokeWidth: scales.map((value) => 4 / value) }, timing) : undefined
-		const currentTime = avatarScaleAnimation(scope.current)?.currentTime
-		if (typeof currentTime === "number") {
-			border.time = currentTime / 1000
-			if (separator) separator.time = currentTime / 1000
-		}
-		return () => {
-			border.stop()
-			separator?.stop()
-		}
-	}, [scope, animateOutline, scale, transition, ring, color, strokeWidth, reducedMotion])
-	return (
-		<span className="contents" ref={scope}>
-			{ring ? (
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute inset-0 -z-10 size-full overflow-visible text-background"
-					data-slot="avatar-circle-ring"
-					focusable="false"
-					viewBox="0 0 100 100"
-				>
-					<circle
-						cx="50" cy="50" r="50" fill="none"
-						stroke="currentColor" strokeWidth="4"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
-			) : null}
-			<svg
-				aria-hidden="true"
-				className={cn("pointer-events-none absolute inset-0 z-[1] size-full overflow-visible", color === "inverse" ? "text-border-inverse" : "text-border! mix-blend-darken dark:mix-blend-lighten")}
-				data-slot="avatar-circle-border"
-				focusable="false"
-				viewBox="0 0 100 100"
-			>
-				<circle
-					cx="50" cy="50" r="50" fill="none"
-					stroke="currentColor" strokeWidth={strokeWidth}
-					vectorEffect="non-scaling-stroke"
-				/>
-			</svg>
-		</span>
-	)
-}
-
-function avatarOutline(shape: AvatarProps["shape"], outline: AvatarProps["outline"]) {
-	const motion = shape === "circle" ? outline : undefined
-	return { motion, className: motion ? "isolate after:border-0" : undefined }
-}
-
-function AvatarHexagonBorder({ separator = false, tone = "default" }: Readonly<{ separator?: boolean; tone?: AvatarProps["borderTone"] }>) {
+function AvatarHexagonBorder({ tone = "default" }: Readonly<{ tone?: AvatarProps["borderTone"] }>) {
 	return (
 		<span
 			aria-hidden="true"
 			className={cn("pointer-events-none absolute bg-current",
-				separator ? "-inset-0.5 -z-10 text-border-inverse" : tone === "selected" ? "inset-0 z-[1] text-border-selected" : "inset-0 z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
-			data-slot={separator ? "avatar-hexagon-separator" : "avatar-hexagon-border"}
-			style={{ clipPath: separator ? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP }}
+				tone === "selected" ? "inset-0 z-[1] text-border-selected" : "inset-0 z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
+			data-slot="avatar-hexagon-border"
+			style={{ clipPath: HEXAGON_BORDER_CLIP }}
 		/>
 	)
 }
@@ -202,21 +118,18 @@ function Avatar({
 	disabled = false,
 	label,
 	status,
-	outline: outlineMotion,
-	separator = false,
 	borderTone = "default",
 	style: styleProp,
 	...props
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
-	const outline = avatarOutline(shape, outlineMotion)
 	const rootStyle = shape === "hexagon"
 		? avatarHexagonStyle<AvatarPrimitive.Root.State>(styleProp)
 		: styleProp
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
 		borderTone === "selected" && "after:border-border-selected",
-		outline.className,
+		isInAvatarGroup && "after:border-0",
 		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
 		className
 	)
@@ -244,14 +157,15 @@ function Avatar({
 	// every descendant, so corner overlays (badges, presence/status dots) would be
 	// sliced along the hexagon edge. Apply the clip to an inner frame that holds the
 	// content, and render overlays as unclipped siblings on the root.
-	if (shape === "hexagon") {
-		const childArray = React.Children.toArray(children)
-		const isOverlay = (child: React.ReactNode) =>
-			React.isValidElement(child) && isAvatarOverlayType(child.type)
+	const childArray = React.Children.toArray(children)
+	const isOverlay = (child: React.ReactNode) =>
+		React.isValidElement(child) && isAvatarOverlayType(child.type)
 
+	if (shape === "hexagon") {
 		return (
 			<AvatarPrimitive.Root
 				data-slot="avatar"
+				data-avatar-group-item={isInAvatarGroup ? "" : undefined}
 				data-avatar-enter={skipsEnter ? undefined : ""}
 				data-size={size}
 				data-shape={shape}
@@ -263,15 +177,6 @@ function Avatar({
 				style={rootStyle}
 				{...props}
 			>
-				{isInAvatarGroup ? (
-					<span
-						aria-hidden="true"
-						className="pointer-events-none absolute -inset-0.5 -z-10 bg-background"
-						style={{ clipPath: HEXAGON_SEPARATOR_CLIP }}
-						data-slot="avatar-hexagon-group-border"
-					/>
-				) : null}
-				{separator ? <AvatarHexagonBorder separator /> : null}
 				<span
 					className="relative flex size-full items-center justify-center overflow-hidden"
 					style={{ clipPath: HEXAGON_CLIP }}
@@ -289,6 +194,7 @@ function Avatar({
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
+			data-avatar-group-item={isInAvatarGroup ? "" : undefined}
 			data-avatar-enter={skipsEnter ? undefined : ""}
 			data-size={size}
 			data-shape={shape}
@@ -300,8 +206,20 @@ function Avatar({
 			style={rootStyle}
 			{...props}
 		>
-			{children}
-			{outline.motion ? <AvatarCircleOutline {...outline.motion} /> : null}
+			{isInAvatarGroup ? (
+				<>
+					<span
+						data-slot="avatar-group-visual"
+						className={cn(
+							"relative flex size-full items-center justify-center rounded-[inherit] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border after:mix-blend-darken dark:after:mix-blend-lighten",
+							borderTone === "selected" ? "after:border-border-selected" : "after:border-border"
+						)}
+					>
+						{childArray.filter((child) => !isOverlay(child))}
+					</span>
+					{childArray.filter(isOverlay)}
+				</>
+			) : children}
 			{status ? <AvatarStatusIndicator status={status} /> : null}
 		</AvatarPrimitive.Root>
 	)
@@ -722,17 +640,25 @@ interface AvatarGroupProps extends React.ComponentProps<"div"> {
 	size?: AvatarSize
 }
 
-function AvatarGroup({ as: Group = "div", children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ as: Group = "div", children, className, label, ref, size, ...props }: Readonly<AvatarGroupProps>) {
 	const resolvedSize = size ?? firstAvatarSize(children)
+	const groupRef = React.useRef<HTMLDivElement>(null)
+	useAvatarGroupCutouts(groupRef, Group)
+	const setGroupRef = React.useCallback((node: HTMLDivElement | null) => {
+		groupRef.current = node
+		if (typeof ref === "function") return ref(node)
+		if (ref) ref.current = node
+	}, [ref])
 	return (
-		<AvatarGroupContext value>
+		<AvatarGroupContext value={true}>
 			<AvatarGroupSizeContext value={resolvedSize}>
 				<Group
 					data-slot="avatar-group"
 					role="group"
 					aria-label={label}
+					ref={setGroupRef}
 					className={cn(
-						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+						"group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 has-data-[size=xxs]:-space-x-1",
 						// Keep DOM/tab order left-to-right while each following face sits behind.
 						"isolate [&>*]:relative [&>*]:[z-index:calc(sibling-count()-sibling-index()+1)]",
 						className
@@ -757,6 +683,7 @@ function AvatarGroupCount({
 	...props
 }: Readonly<AvatarGroupCountProps>) {
 	const groupSize = React.use(AvatarGroupSizeContext)
+	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const iconSize = avatarGroupCountIconSize(groupSize)
 	const content = React.Children.map(children, (child) => {
 		if (!React.isValidElement(child) || typeof child.type === "string") {
@@ -768,10 +695,13 @@ function AvatarGroupCount({
 	return (
 		<Count
 			data-slot="avatar-group-count"
-			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
+			data-avatar-group-item={isInAvatarGroup ? "" : undefined}
+			data-shape="circle"
+			className={cn("text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 relative flex shrink-0 items-center justify-center", className)}
 			{...props}
 		>
-			{content}
+			<span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] bg-muted" data-slot="avatar-group-visual" />
+			<span className="relative flex items-center">{content}</span>
 		</Count>
 	)
 }

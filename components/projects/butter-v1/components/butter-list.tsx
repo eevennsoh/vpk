@@ -3,12 +3,14 @@
 import { useLayoutEffect, useMemo } from "react";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { JiraList, type JiraListProps, type JiraListRowData } from "@/components/blocks/jira-list";
+import { useGroupedJiraRows, type JiraWorkItemGroup } from "@/components/blocks/jira-list/jira-list-grouping";
 import { cn } from "@/lib/utils";
 
 interface ButterListProps {
 	addAgentLabel: string;
 	columns: readonly JiraKanbanColumnData[];
 	centered?: boolean;
+	groups?: readonly JiraWorkItemGroup[];
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 	onVisibleRowsChange: (rows: readonly JiraListRowData[]) => void;
 	rowFlash: JiraListProps["rowFlash"];
@@ -24,15 +26,18 @@ export function ButterList({
 	addAgentLabel,
 	columns,
 	centered = false,
+	groups,
 	getProps,
 	onVisibleRowsChange,
 	scrollEndInset,
 	...layout
 }: Readonly<ButterListProps>) {
 	const listProps = useMemo(() => getProps(columns), [columns, getProps]);
+	const grouped = useGroupedJiraRows(listProps.rows, groups);
+	const rows = grouped?.items ?? listProps.rows;
 	useLayoutEffect(() => {
-		onVisibleRowsChange(listProps.rows);
-	}, [listProps.rows, onVisibleRowsChange]);
+		onVisibleRowsChange(rows);
+	}, [rows, onVisibleRowsChange]);
 
 	return (
 		<div className={cn(
@@ -44,9 +49,12 @@ export function ButterList({
 			<JiraList
 				{...listProps}
 				{...layout}
+				rows={rows}
+				groupHeaders={grouped?.before}
+				trailingGroupHeaders={grouped?.tail}
+				onMoveRow={groups ? undefined : listProps.onMoveRow}
 				addAgentLabel={addAgentLabel}
-				bordered={false}
-				footerCountAlignment="end"
+				hideStickyFooter
 				className={cn(listProps.className, "max-h-full", centered && "my-auto")}
 				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
 			/>

@@ -318,6 +318,7 @@ function Tag({
 	const childText = typeof children === "string" || typeof children === "number" ? String(children) : undefined;
 	const resolvedRemoveButtonLabel = childText ? `${removeButtonLabel} ${childText}` : removeButtonLabel;
 	const resolvedStyle = maxWidth !== undefined ? { ...style, maxWidth } : style;
+	const labelId = React.useId();
 
 	const handleRemoveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
@@ -361,15 +362,25 @@ function Tag({
 				onClick: () => onRemove?.(),
 			}
 			: null;
+	// A button tag cannot contain its remove or overlay button. When it has both, the tag's own
+	// action (with the caller's and any trigger's props and ref) moves to a sibling that covers
+	// the chip; the shell becomes a plain container. Explicit z-order keeps the action above the
+	// label (whose hover mask is its own stacking context) and the trailing control above both.
+	const hasSeparateAction = isInteractive && (hasRemoveButton || overlayControl !== null);
+	const hasCallerName = props["aria-label"] !== undefined || props["aria-labelledby"] !== undefined;
+	const actionProps = {
+		...props,
+		ref,
+		role: isInteractive ? "button" : role,
+		tabIndex: isInteractive ? (disabled ? -1 : 0) : undefined,
+		onClick,
+		onKeyDown: isInteractive ? handleKeyDown : onKeyDown,
+		"aria-disabled": disabled || undefined,
+	};
 
 	return (
 		<span
-			{...props}
-			ref={ref}
-			role={isInteractive ? "button" : role}
-			tabIndex={isInteractive ? (disabled ? -1 : 0) : undefined}
-			onClick={onClick}
-			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
+			{...(hasSeparateAction ? null : actionProps)}
 			style={resolvedStyle}
 			className={cn(
 				"group/tag relative inline-flex min-w-0 shrink-0 self-start items-center text-xs leading-4 font-normal text-text transition-colors box-border",
@@ -409,8 +420,18 @@ function Tag({
 			)}
 			data-slot="tag"
 			data-type={type}
-			aria-disabled={disabled || undefined}
 		>
+			{hasSeparateAction ? (
+				<span
+					{...actionProps}
+					aria-labelledby={hasCallerName ? props["aria-labelledby"] : labelId}
+					className={cn(
+						"absolute z-[1] rounded-[inherit] focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
+						isEditor ? "inset-0" : "-inset-px",
+					)}
+					data-slot="tag-action"
+				/>
+			) : null}
 			{elemBefore ? (
 				<span
 					className={cn(
@@ -451,6 +472,7 @@ function Tag({
 						"group-hover/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
 				)}
 				data-tag-text
+				id={hasSeparateAction ? labelId : undefined}
 			>
 				{children}
 			</span>
@@ -477,7 +499,7 @@ function Tag({
 				</span>
 			) : null}
 			{hasRemoveButton ? (
-				<span className="inline-flex shrink-0 items-center" data-slot="tag-after">
+				<span className={cn("inline-flex shrink-0 items-center", hasSeparateAction && "relative z-[2]")} data-slot="tag-after">
 					<button
 						type="button"
 						aria-label={resolvedRemoveButtonLabel}
@@ -512,6 +534,7 @@ function Tag({
 							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
 							isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 							removeButtonShapeClass,
+							hasSeparateAction && "z-[2]",
 							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-has-[:focus-visible]/tag:pointer-events-auto group-has-[:focus-visible]/tag:opacity-100",
 						)}
 					>

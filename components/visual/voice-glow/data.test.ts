@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveVoiceDefaults } from "voice-glow";
-import { getVoiceGlowStatus, resolveVoiceGlowNumbers, VOICE_GLOW_CONTROLS, VOICE_GLOW_DEFAULTS } from "./data.ts";
+import { getVoiceGlowStatus, resolveVoiceGlowNumbers, VOICE_GLOW_CONTROLS, VOICE_GLOW_DEFAULTS, VOICE_GLOW_LOOKS } from "./data.ts";
 import { requestVoiceGlowMicrophone } from "./microphone-request.ts";
 import { createVoiceGlowSimulation, sampleSimulatedVoice } from "./simulated-voice.ts";
 
@@ -69,13 +69,16 @@ test("every upstream geometry control is exposed once and its presets fit the GU
 	const keys = controls.map(([key]) => key);
 	assert.equal(new Set(keys).size, keys.length);
 	for (const key of Object.keys(resolveVoiceDefaults())) assert.ok(keys.includes(key as typeof keys[number]), key);
-	for (const type of ["default", "pill", "mobile"] as const) {
-		for (const theme of ["dark", "light"] as const) {
-			const defaults = resolveVoiceGlowNumbers({ ...VOICE_GLOW_DEFAULTS, type, theme }, theme);
-			for (const [key, , min, max, step] of controls) {
-				assert.ok(Number.isFinite(defaults[key]), key);
-				assert.ok(defaults[key] >= min && defaults[key] <= max, `${type}/${theme}/${key}`);
-				assert.ok(step > 0 && min < max, key);
+	for (const { value: look } of VOICE_GLOW_LOOKS) {
+		for (const type of ["default", "pill", "mobile"] as const) {
+			for (const theme of ["dark", "light"] as const) {
+				const defaults = resolveVoiceGlowNumbers({ ...VOICE_GLOW_DEFAULTS, type, theme, look }, theme);
+				assert.equal(defaults.pixelSize, resolveVoiceDefaults(type, theme, look).pixelSize);
+				for (const [key, , min, max, step] of controls) {
+					assert.ok(Number.isFinite(defaults[key]), key);
+					assert.ok(defaults[key] >= min && defaults[key] <= max, `${look}/${type}/${theme}/${key}`);
+					assert.ok(step > 0 && min < max, key);
+				}
 			}
 		}
 	}

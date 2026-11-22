@@ -14,6 +14,7 @@ export interface JiraInlineCreateDraft extends AgentSessionWorkItemDraft {
 export interface JiraInlineCreateProps {
 	assignees?: readonly JiraKanbanAssigneeData[];
 	columns: readonly JiraKanbanColumnData[];
+	defaults?: Omit<JiraInlineCreateDraft, "summary" | "issueType">;
 	issueKey: string;
 	onCancel: () => void;
 	onSave: (draft: JiraInlineCreateDraft) => void;

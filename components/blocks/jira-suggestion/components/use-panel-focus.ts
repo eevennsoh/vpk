@@ -10,7 +10,7 @@ interface PanelFocusOptions {
 	checkRef: RefObject<HTMLButtonElement | null>;
 	toggleRef: RefObject<HTMLButtonElement | null>;
 	mode: BodyMode;
-	hasCards: boolean;
+	pendingCount: number;
 }
 
 /**
@@ -18,7 +18,7 @@ interface PanelFocusOptions {
  * unpacking, Check again starting a run): it moves to whatever replaced it. Only when the popover held focus, so
  * opening it never draws a ring for someone who only pointed at it.
  */
-export function usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, hasCards }: Readonly<PanelFocusOptions>) {
+export function usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, pendingCount }: Readonly<PanelFocusOptions>) {
 	// Removing a focused element sends focus to <body> without a focusout naming a destination, so this stays true.
 	const holdsFocus = useRef(false);
 	useEffect(() => {
@@ -45,8 +45,9 @@ export function usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, ha
 			checkRef.current?.focus({ preventScroll: true });
 			return;
 		}
-		if (!holdsFocus.current || (active != null && active !== document.body && active !== panelRef.current)) return;
-		const target = mode === "caught-up" ? checkRef.current : mode === "stack" && hasCards ? deckRef.current : toggleRef.current;
+		const leavingCheck = mode !== "caught-up" && active === checkRef.current;
+		if (!holdsFocus.current || (!leavingCheck && active != null && active !== document.body && active !== panelRef.current)) return;
+		const target = mode === "caught-up" ? checkRef.current : mode === "stack" && pendingCount > 0 ? deckRef.current : toggleRef.current;
 		(target ?? panelRef.current)?.focus({ preventScroll: true });
-	}, [checkRef, deckRef, hasCards, mode, panelRef, toggleRef]);
+	}, [checkRef, deckRef, mode, panelRef, pendingCount, toggleRef]);
 }

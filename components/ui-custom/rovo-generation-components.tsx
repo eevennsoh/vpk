@@ -47,9 +47,16 @@ function highlightEaseInOut(value: number): number {
 	return clamped < 0.5 ? 4 * clamped * clamped * clamped : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
 }
 
-function highlightRoundedRectPath(width: number, height: number, radius: number): string {
+function highlightRoundedRectPath(width: number, height: number, radius: number, origin: "top-center" | "left-center" = "top-center"): string {
 	const rr = Math.max(0, Math.min(radius, width / 2, height / 2));
 	if (width <= 0 || height <= 0) return "";
+	if (origin === "left-center") return [
+		`M 0 ${height / 2}`, `L 0 ${rr}`, `A ${rr} ${rr} 0 0 1 ${rr} 0`,
+		`L ${width - rr} 0`, `A ${rr} ${rr} 0 0 1 ${width} ${rr}`,
+		`L ${width} ${height - rr}`, `A ${rr} ${rr} 0 0 1 ${width - rr} ${height}`,
+		`L ${rr} ${height}`, `A ${rr} ${rr} 0 0 1 0 ${height - rr}`,
+		`L 0 ${height / 2}`, "Z",
+	].join(" ");
 	return [
 		`M ${width / 2} 0`,
 		`L ${width - rr} 0`,
@@ -306,6 +313,10 @@ export interface RovoGenerationHighlightProps extends Omit<ComponentPropsWithout
 	duration?: number;
 	/** Delay before the perimeter lap, in seconds. @default 0.2 */
 	delay?: number;
+	/** Use a single accent colour instead of the default rainbow band. */
+	color?: string;
+	/** Where the perimeter band starts. */
+	origin?: "top-center" | "left-center";
 	/** Change this token to retrace without remounting the wrapped content. */
 	playToken?: number;
 	/** Called once the band finishes traveling and dissolves. */
@@ -323,7 +334,7 @@ function useAutoRadius(ref: RefObject<HTMLElement | null>, radiusProp: number | 
 			setAutoRadius(radiusProp);
 			return;
 		}
-		const firstChild = ref.current?.firstElementChild as HTMLElement | null;
+		const firstChild = [...(ref.current?.children ?? [])].find((child) => window.getComputedStyle(child).display !== "none");
 		if (!firstChild) return;
 		const parsed = Number.parseFloat(window.getComputedStyle(firstChild).borderRadius);
 		if (!Number.isNaN(parsed)) setAutoRadius(parsed);
@@ -336,6 +347,8 @@ export function RovoGenerationHighlight({
 	active = true,
 	radius,
 	strokeWidth = 1,
+	color,
+	origin = "top-center",
 	duration = HIGHLIGHT_DURATION_MS / 1000,
 	delay = HIGHLIGHT_DELAY_MS / 1000,
 	playToken,
@@ -382,7 +395,7 @@ export function RovoGenerationHighlight({
 			const width = Math.max(0, wrapper.offsetWidth - stroke);
 			const height = Math.max(0, wrapper.offsetHeight - stroke);
 			const cornerRadius = Math.max(0, Math.min(resolvedRadius - stroke / 2, width / 2, height / 2));
-			const pathData = highlightRoundedRectPath(width, height, cornerRadius);
+			const pathData = highlightRoundedRectPath(width, height, cornerRadius, origin);
 			const perimeter = highlightRoundedRectPerimeter(width, height, cornerRadius);
 
 			for (const path of paths) path?.setAttribute("d", pathData);
@@ -438,7 +451,7 @@ export function RovoGenerationHighlight({
 		return () => {
 			if (raf) cancelAnimationFrame(raf);
 		};
-	}, [active, normalizedDelayMs, normalizedDurationMs, normalizedStroke, onCompleteRef, pathRefs, playToken, resolvedRadius, shouldReduceMotion]);
+	}, [active, normalizedDelayMs, normalizedDurationMs, normalizedStroke, onCompleteRef, origin, pathRefs, playToken, resolvedRadius, shouldReduceMotion]);
 
 	return (
 		<div
@@ -477,7 +490,7 @@ export function RovoGenerationHighlight({
 									}}
 									fill="none"
 									opacity={0}
-									stroke={ROVO_GENERATION_HIGHLIGHT_STOPS[colorIndex]}
+									stroke={color ?? ROVO_GENERATION_HIGHLIGHT_STOPS[colorIndex]}
 									strokeLinecap="butt"
 									strokeLinejoin="round"
 									strokeWidth={normalizedStroke}

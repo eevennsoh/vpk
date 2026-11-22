@@ -68,6 +68,8 @@ async function flushWheel() {
 	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 60)); });
 }
 
+const unmodified = { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false };
+
 test("rendered preview dispatches pointer and key controls through the real delivery module", async () => {
 	const preview = await renderPreview();
 	try {
@@ -77,8 +79,8 @@ test("rendered preview dispatches pointer and key controls through the real deli
 		await preview.view.press(preview.viewport, "a", { code: "KeyA" });
 		assert.deepEqual(preview.preview, [
 			{ type: "preview-click", x: 100, y: 60 },
-			{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a" },
-			{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA" },
+			{ type: "preview-key", eventType: "keyDown", key: "a", code: "KeyA", text: "a", ...unmodified },
+			{ type: "preview-key", eventType: "keyUp", key: "a", code: "KeyA", ...unmodified },
 		]);
 		assert.deepEqual(preview.workspace, []);
 		assert.equal(preview.view.isFocused(preview.viewport), true);
@@ -153,6 +155,69 @@ test("Escape and modified Tab chords are still forwarded from the live viewport"
 			"keyDown:Escape", "keyUp:Escape", "keyDown:Tab", "keyUp:Tab",
 		]);
 		assert.equal(preview.view.isFocused(preview.viewport), true);
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("Capture keys forwards Tab and Shift+Tab to the remote page until Escape releases capture", async () => {
+	const preview = await renderPreview();
+	try {
+		const toggle = preview.view.getByRole("button", { name: "Capture keys" });
+		assert.equal(toggle.getAttribute("aria-pressed"), "false");
+		await preview.view.focus(toggle);
+		await preview.view.press(null, " ");
+		assert.equal(toggle.getAttribute("aria-pressed"), "true");
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		assert.equal(preview.view.getByRole("status").textContent, "Keyboard captured — press Escape to release");
+
+		await preview.view.press(null, "Tab", { code: "Tab" });
+		await preview.view.press(null, "Tab", { code: "Tab", shiftKey: true });
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		// Shift travels with the key, so the remote page sees Shift+Tab rather than plain Tab.
+		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.shiftKey ? "Shift+" : ""}${message.key}`), [
+			"keyDown:Tab", "keyUp:Tab", "keyDown:Shift+Tab", "keyUp:Shift+Tab",
+		]);
+
+		const forwarded = preview.preview.length;
+		await preview.view.press(null, "Escape", { code: "Escape" });
+		assert.equal(toggle.getAttribute("aria-pressed"), "false");
+		assert.equal(preview.preview.length, forwarded);
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		await preview.view.press(null, "Tab");
+		assert.equal(preview.view.isFocused(preview.view.getByRole("button", { name: "After preview" })), true);
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("Enter on a live viewport reached by keyboard starts capture instead of being forwarded", async () => {
+	const preview = await renderPreview();
+	try {
+		await preview.view.focus(preview.viewport);
+		await preview.view.press(null, "Enter", { code: "Enter" });
+		assert.deepEqual(preview.preview, []);
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "true");
+		await preview.view.press(null, "Enter", { code: "Enter" });
+		assert.deepEqual(preview.preview.map((message) => `${message.eventType}:${message.key}`), ["keyDown:Enter", "keyUp:Enter"]);
+	} finally {
+		await preview.dispose();
+	}
+});
+
+test("after a click on the live viewport, Enter is forwarded so remote forms still submit", async () => {
+	const preview = await renderPreview();
+	try {
+		await React.act(async () => {
+			preview.viewport.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 100, clientY: 60, button: 0 }));
+		});
+		assert.equal(preview.view.isFocused(preview.viewport), true);
+		await preview.view.press(null, "Enter", { code: "Enter" });
+		assert.deepEqual(
+			preview.preview.filter((message) => message.type !== "preview-click").map((message) => `${message.eventType}:${message.key}`),
+			["keyDown:Enter", "keyUp:Enter"],
+		);
+		assert.equal(preview.view.getByRole("button", { name: "Capture keys" }).getAttribute("aria-pressed"), "false");
 	} finally {
 		await preview.dispose();
 	}

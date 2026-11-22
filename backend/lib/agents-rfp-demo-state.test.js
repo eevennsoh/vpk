@@ -493,7 +493,7 @@ test("state manager serializes concurrent ticket move updates", async (t) => {
 	assert.deepEqual(files, ["state.json"]);
 });
 
-test("backend normalization drops an agent session thread id that is not a storage id", () => {
+test("backend normalization keeps only the ticket's own demo thread id", () => {
 	const workItem = (agentSessionThreadId) => ({ status: "RFP Intake", attachments: [], agentAssignmentIds: [], agentSessionThreadId });
 	const normalized = normalizeAgentsRfpDemoState({
 		...createDefaultAgentsRfpDemoState(),
@@ -502,10 +502,14 @@ test("backend normalization drops an agent session thread id that is not a stora
 			"RFP-102": workItem("../../outside"),
 			"RFP-103": workItem("a/b"),
 			"RFP-104": workItem(42),
+			// A storage id, but another caller's chat thread: a run would overwrite it and a
+			// reset would delete it.
+			"RFP-105": workItem("someone-elses-thread"),
+			"RFP-106": workItem("agents-rfp-demo-rfp-101"),
 		},
 	});
 	assert.equal(normalized.workItems["RFP-101"].agentSessionThreadId, "agents-rfp-demo-rfp-101");
-	for (const code of ["RFP-102", "RFP-103", "RFP-104"]) {
+	for (const code of ["RFP-102", "RFP-103", "RFP-104", "RFP-105", "RFP-106"]) {
 		assert.equal(normalized.workItems[code].agentSessionThreadId, null, code);
 	}
 });

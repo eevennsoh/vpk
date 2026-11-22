@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { humanAgentAvatarGeometry, humanAgentAvatarPositions } from "@/components/ui-custom/human-agent-avatar-geometry";
+import { humanAgentAvatarCutout, humanAgentAvatarGeometry, humanAgentAvatarPositions } from "@/components/ui-custom/human-agent-avatar-geometry";
 
 import type { HumanAgentAvatarMotionOptions } from "@/components/ui-custom/human-agent-avatar-motion-config";
 
@@ -38,6 +38,10 @@ export interface HumanAgentAvatarProps {
 	attributionOrder?: HumanAgentAvatarOrder;
 	/** Figma variants: 24px (24px agent / 12px human) and 32px (30px / 16px). */
 	sizePx?: number;
+	/** Override the smaller avatar's size for compact surfaces. */
+	badgeSizePx?: 12 | 16;
+	/** Avatar size in the horizontal group, independent of the compact badge size. */
+	groupSizePx?: 12 | 16 | 24;
 	className?: string;
 }
 
@@ -70,6 +74,8 @@ export function HumanAgentAvatar({
 	motion,
 	attributionOrder = "agent-first",
 	sizePx = 32,
+	badgeSizePx,
+	groupSizePx,
 	className,
 }: Readonly<HumanAgentAvatarProps>) {
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
@@ -80,18 +86,16 @@ export function HumanAgentAvatar({
 		}
 	}, [animate, reducedMotion, onAnimationComplete]);
 	const agentFirst = attributionOrder === "agent-first";
-	const geometry = humanAgentAvatarGeometry(sizePx, agentFirst);
+	const geometry = humanAgentAvatarGeometry(sizePx, agentFirst, badgeSizePx);
 	const { frameSize, agentSize: agentSizePx, humanSize } = geometry;
 	const frameClassName = PX_TO_IDENTITY_FRAME_CLASS_NAME[frameSize];
 	const positions = humanAgentAvatarPositions(geometry, agentFirst);
 	const label = `${agent.name}, used by ${human.name}`;
 	const frameClass = cn("relative block shrink-0", frameClassName, className);
-	const humanAvatar = (outline?: AvatarProps["outline"], sizePx: number = humanSize) => (
+	const humanAvatar = (sizePx: number = humanSize) => (
 		<Avatar
 			animate={false}
 			className={PX_TO_IDENTITY_FRAME_CLASS_NAME[sizePx]}
-			// Keep the same centered stroke when motion hands back to the resting pose.
-			outline={{ scale: 1, transition: { duration: 0 }, ...outline, color: "inverse", strokeWidth: 2 }}
 			label=""
 			size={PX_TO_HUMAN_AVATAR_SIZE[sizePx]}
 		>
@@ -106,8 +110,8 @@ export function HumanAgentAvatar({
 			</AvatarFallback>
 		</Avatar>
 	);
-	const agentAvatar = (sizePx: number = agentSizePx, separator = agentSizePx < humanSize) => (
-		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} separator={separator} />
+	const agentAvatar = (sizePx: number = agentSizePx) => (
+		<AgentAvatarVisual {...agent} animate={false} label="" sizePx={sizePx} />
 	);
 
 	if (shouldAnimate || composition === "horizontal-group") {
@@ -116,6 +120,7 @@ export function HumanAgentAvatar({
 				options={motion}
 				animate={shouldAnimate}
 				composition={composition}
+				groupSizePx={groupSizePx}
 				onAnimationComplete={onAnimationComplete}
 				agent={agentAvatar}
 				human={humanAvatar}
@@ -124,6 +129,7 @@ export function HumanAgentAvatar({
 				agentSize={agentSizePx}
 				humanSize={humanSize}
 				positions={positions}
+				cutout={humanAgentAvatarCutout(geometry, agentFirst)}
 				topLeftInset={agentFirst ? geometry.agentInset : geometry.humanInset}
 				bottomRightInset={agentFirst ? geometry.humanInset : geometry.agentInset}
 				className={frameClass}
@@ -136,7 +142,7 @@ export function HumanAgentAvatar({
 		<span
 			aria-hidden="true"
 			className="absolute"
-			style={positions.human}
+			style={{ ...positions.human, ...(!agentFirst ? humanAgentAvatarCutout(geometry, false) : {}) }}
 			data-avatar-role="human"
 			key="human"
 		>
@@ -147,7 +153,7 @@ export function HumanAgentAvatar({
 		<span
 			aria-hidden="true"
 			className="absolute"
-			style={positions.agent}
+			style={{ ...positions.agent, ...(agentFirst ? humanAgentAvatarCutout(geometry, true) : {}) }}
 			data-avatar-role="agent"
 			key="agent"
 		>

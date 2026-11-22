@@ -13,7 +13,6 @@ const { accessibleName, renderComponent } = require(path.join(process.cwd(), "sc
 const CSS_MODULE = "export default new Proxy({}, { get: (_, key) => String(key) });";
 const CHAT_MOCKS = {
 	"@/components/projects/shared/components/chat-messages.module.css": CSS_MODULE,
-	"@/components/projects/sidebar-chat/chat.module.css": CSS_MODULE,
 };
 
 const WORK_ITEM = `
@@ -94,13 +93,27 @@ test("the standard work item opens from its trigger and closes back, telling the
 	await closed.unmount();
 });
 
+test("a work item that mounts open returns focus to the Open work item launcher when it closes", async () => {
+	const view = await renderWorkItem({ initialIssueOpen: true });
+	assert.equal(buttonNames(view).includes("AI summary"), true, "the standard modal starts open");
+	assert.equal(view.getByRole("dialog").contains(document.activeElement), true, "focus moved into the modal");
+
+	await view.press(null, "Escape");
+	await settle(view, { initialIssueOpen: true });
+
+	assert.equal(globalThis.__issueClosed, 1, "the modal closed");
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Open work item" })), true, `focus landed on ${document.activeElement?.tagName}`);
+	await view.unmount();
+});
+
 test("the standard work item's floating Rovo launcher swaps itself for the floating chat", async () => {
 	const props = { initialIssueOpen: true };
 	const view = await renderWorkItem(props);
 	assert.equal(textboxNames(view).includes("Chat message input"), false);
-	await view.click(view.getByRole("button", { name: "Open Rovo chat" }));
+	// The launcher floats outside the open modal dialog, which hides outside content from assistive technology.
+	await view.click(view.getByRole("button", { hidden: true, name: "Open Rovo chat" }));
 	await settle(view, props);
-	assert.equal(view.queryByRole("button", { name: "Open Rovo chat" }) === null, true, "the launcher hides while the chat is open");
+	assert.equal(view.queryByRole("button", { hidden: true, name: "Open Rovo chat" }) === null, true, "the launcher hides while the chat is open");
 	assert.equal(textboxNames(view).includes("Chat message input"), true);
 	await view.unmount();
 });

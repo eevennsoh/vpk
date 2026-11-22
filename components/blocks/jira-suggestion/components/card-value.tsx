@@ -8,14 +8,15 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 
 function ParagraphValue({ text }: Readonly<{ text: string }>) {
 	const { ref, hasVerticalOverflow, showBottomScrollMask } = useHasVerticalOverflow<HTMLParagraphElement>();
-	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
+	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
 }
 
 /** Values wrap without truncation; longer paragraphs scroll within the card. */
-export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
+export function CardValue({ value, revealChecklist = false }: Readonly<{ value: SuggestionValue; revealChecklist?: boolean }>) {
 	switch (value.kind) {
 		case "paragraph":
 			return <ParagraphValue text={value.text} />;
@@ -51,7 +52,7 @@ export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 		case "labels":
 			return (
 				<span className="flex flex-wrap gap-1">
-					{value.labels.map((label) => <Tag key={label}>{label}</Tag>)}
+					{value.labels.map((label) => <Tag color={value.colors?.[label]} key={label}>{label}</Tag>)}
 				</span>
 			);
 		case "checklist":
@@ -60,7 +61,7 @@ export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 					{value.items.map((item) => (
 						<li className="flex gap-2 text-sm leading-5 text-pretty text-text" key={item}>
 							<span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-icon-subtlest" />
-							<span className="min-w-0">{item}</span>
+							<span className="min-w-0">{revealChecklist ? <SuggestionRainbowText text={item} /> : item}</span>
 						</li>
 					))}
 				</ul>

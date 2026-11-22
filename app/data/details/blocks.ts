@@ -35,7 +35,6 @@ import { ARTIFACT_PANE_DETAIL } from "./blocks/artifact-pane";
 import { CHAT_CONFIGURATION_DETAIL } from "./blocks/chat-configuration";
 import { CHAT_GALLERY_DETAIL } from "./blocks/chat-gallery";
 import { CHAT_TIMELINE_DETAIL } from "./blocks/chat-timeline";
-import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { CHATGPT_DETAIL } from "./blocks/chatgpt";
 import { CODE_REVIEW_DETAIL } from "./blocks/code-review";
 import { CONVERSATION_STARTER_DETAIL } from "./blocks/conversation-starter";
@@ -51,6 +50,8 @@ import { GENERATIVE_CARD_DETAIL } from "./blocks/generative-card";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { HTML_SELECTOR_DETAIL } from "./blocks/html-selector";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
+import { JIRA_AT_MENTION_DETAIL } from "./blocks/jira-at-mention";
+import { JIRA_BACKLOG_DETAIL } from "./blocks/jira-backlog";
 import { JIRA_CREATE_DETAIL } from "./blocks/jira-creating";
 import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
@@ -67,6 +68,7 @@ import { JIRA_SUGGESTION_DETAIL } from "./blocks/jira-suggestion";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
 import { JIRA_VIEW_CONFIGURATION_DETAIL } from "./blocks/jira-view-configuration";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
+import { JIRA_WORK_ITEM_TIMELINE_DETAIL } from "./blocks/jira-work-item-timeline";
 import { KNOWLEDGE_DIRECTORY_DETAIL } from "./blocks/knowledge-directory";
 import { LOGIN_01_DETAIL } from "./blocks/login-01";
 import { LOGIN_02_DETAIL } from "./blocks/login-02";
@@ -126,7 +128,6 @@ import { TRIGGER_CONFIG_DETAIL } from "./blocks/trigger-config";
 import { TWG_AGENT_CARD_DETAIL } from "./blocks/twg-agent-card";
 import { VIDEO_DETAIL } from "./blocks/video";
 import { VISUAL_WAVEFORM_DETAIL } from "./blocks/visual-waveform";
-import { WORKFLOW_DETAIL } from "./blocks/workflow";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"3d-lanyard": LANYARD_3D_DETAIL,
@@ -160,7 +161,6 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"chat-configuration": CHAT_CONFIGURATION_DETAIL,
 	"chat-gallery": CHAT_GALLERY_DETAIL,
 	"chat-timeline": CHAT_TIMELINE_DETAIL,
-	chatbot: CHATBOT_DETAIL,
 	chatgpt: CHATGPT_DETAIL,
 	"code-review": CODE_REVIEW_DETAIL,
 	"conversation-starter": CONVERSATION_STARTER_DETAIL,
@@ -176,6 +176,8 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	generative: GENERATIVE_DETAIL,
 	"html-selector": HTML_SELECTOR_DETAIL,
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
+	"jira-at-mention": JIRA_AT_MENTION_DETAIL,
+	"jira-backlog": JIRA_BACKLOG_DETAIL,
 	"jira-creating": JIRA_CREATE_DETAIL,
 	"jira-dragging": JIRA_DRAGGING_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
@@ -192,6 +194,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
 	"jira-view-configuration": JIRA_VIEW_CONFIGURATION_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
+	"jira-work-item-timeline": JIRA_WORK_ITEM_TIMELINE_DETAIL,
 	"knowledge-directory": KNOWLEDGE_DIRECTORY_DETAIL,
 	"login-01": LOGIN_01_DETAIL,
 	"login-02": LOGIN_02_DETAIL,
@@ -251,5 +254,4 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"twg-agent-card": TWG_AGENT_CARD_DETAIL,
 	video: VIDEO_DETAIL,
 	"visual-waveform": VISUAL_WAVEFORM_DETAIL,
-	workflow: WORKFLOW_DETAIL,
 };

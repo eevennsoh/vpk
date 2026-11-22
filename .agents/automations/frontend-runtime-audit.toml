@@ -1,0 +1,10 @@
+version = 1
+id = "frontend-runtime-audit"
+kind = "cron"
+name = "Frontend runtime audit"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nInspect one recently touched VPK frontend route or component for a browser-visible runtime regression. Reproduce it on the real worktree route before editing, fix only the narrow owner/root cause, and return no PR when browser evidence cannot support a review-ready correction.\n\n## Evidence and judgment\nUse source history, Next runtime diagnostics, console/network evidence, screenshots, accessibility/focus checks, and deterministic interaction reproduction. Use agent-browser first and Playwright CLI only when it is blocked. Good targets include route crashes, hydration errors, broken interactions, unusable loading/error states, focus failures, and browser-only regressions. Preserve reduced motion, accessible names, and existing route contracts; do not turn runtime work into design polish.\n\n## Handoff\nFor a successful change, use title `[Automation] Frontend runtime audit: <short summary>` and existing labels `automation`, `codex`, and `bugfix`. Include reproduction, runtime evidence, root cause, fix, regression proof, shared-policy validation, and reviewer focus.\n\n## Stop conditions\nReturn no PR when the issue is speculative, design-only, expected behavior is unclear, the browser boundary is environmental, or the patch becomes broad UI/CSS work."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=13;BYMINUTE=30;BYDAY=TU,WE,TH"
+model = "gpt-6.2-sol"
+reasoning_effort = "high"
+execution_environment = "worktree"

@@ -5,7 +5,6 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PinIcon from "@atlaskit/icon/core/pin";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import type {
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
@@ -13,16 +12,12 @@ import type {
 } from "@/components/blocks/jira-activity";
 import { jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity";
 import { Button } from "@/components/ui/button";
+import { RelativeTime } from "@/components/ui/elapsed-time";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+import { describeRelativeTimeLabel, toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 
 function commentLink(id: string) {
 	return `${location.origin}${location.pathname}#comment-${encodeURIComponent(id)}`;
@@ -35,50 +30,38 @@ export function ProjectButterTimestamp({
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const tooltipId = useId();
 	const parsed = item.createdAtMs ?? Date.parse(item.timestamp.replace(" at ", " "));
-	const formatted = Number.isFinite(parsed)
+	const hasExactTime = Number.isFinite(parsed);
+	const showFullTime = full && hasExactTime;
+	const formatted = showFullTime
 		? new Intl.DateTimeFormat("en-US", {
 				dateStyle: "medium",
 				timeStyle: "short",
 				timeZone: "Asia/Kuala_Lumpur",
 			}).format(new Date(parsed))
-		: item.timestamp;
-	const detailed = Number.isFinite(parsed)
-		? new Intl.DateTimeFormat("en-US", {
-				weekday: "long",
-				year: "numeric",
-				month: "long",
-				day: "numeric",
-				hour: "2-digit",
-				minute: "2-digit",
-				second: "2-digit",
-				hourCycle: "h23",
-				timeZone: "Asia/Kuala_Lumpur",
-				timeZoneName: "short",
-			}).format(new Date(parsed))
-		: item.timestamp;
-	const visibleTimestamp = full ? formatted : item.timestamp;
-	const showTooltip = tooltipOpen && !full && Number.isFinite(parsed);
+		: undefined;
 	if (!item.timestamp) return null;
+	const relativeLabel = describeRelativeTimeLabel(item.timestamp, parsed)
+		?? (hasExactTime ? <RelativeTime format="long" timestampMs={parsed} /> : item.timestamp);
+	const visibleTimestamp = formatted ?? toCompactRelativeTimeLabel(item.timestamp);
+	const showTooltip = tooltipOpen && !showFullTime;
+	const triggerClassName = "whitespace-nowrap rounded-sm underline-offset-2 outline-none hover:text-text hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring";
 	return (
-		<span className="inline-flex items-center gap-1">
-			<Tooltip disabled={full || !Number.isFinite(parsed)} onOpenChange={setTooltipOpen} open={showTooltip}>
-				<TooltipTrigger
-					render={<button
-						aria-describedby={showTooltip ? tooltipId : undefined}
-						aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
-						aria-pressed={full}
-						className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
-						onClick={() => setFull((value) => !value)}
-						type="button"
-					/>}
-				>
-					<time dateTime={Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
-				</TooltipTrigger>
-				<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{detailed}</TooltipContent>
-			</Tooltip>
-		</span>
+		<Tooltip disabled={showFullTime} onOpenChange={setTooltipOpen} open={showTooltip}>
+			<TooltipTrigger
+				render={hasExactTime ? <button
+					aria-describedby={showTooltip ? tooltipId : undefined}
+					aria-label={`${formatted ?? item.timestamp}. Show ${showFullTime ? "relative" : "full"} timestamp`}
+					aria-pressed={showFullTime}
+					className={triggerClassName}
+					onClick={() => setFull((value) => !value)}
+					type="button"
+				/> : <span className={triggerClassName} tabIndex={0} />}
+			>
+				<time dateTime={hasExactTime ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
+			</TooltipTrigger>
+			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{relativeLabel}</TooltipContent>
+		</Tooltip>
 	);
-
 }
 
 export function ProjectButterCopyCommentLink({ id }: Readonly<{ id: string }>) {
@@ -124,7 +107,6 @@ export function ProjectButterCommentTools({
 	const [draft, setDraft] = useState("");
 	const original = reply ? reply.body : jiraActivitySegmentsToPlainText(entry.body);
 	const editable = (reply?.actor ?? entry.actor).name === content.currentUser.name;
-	const id = reply?.id ?? entry.id;
 	function save() {
 		if (!draft.trim()) return;
 		content.setActivityEntries((entries) =>
@@ -144,21 +126,6 @@ export function ProjectButterCommentTools({
 		content.recordAudit("Comment", original, draft.trim());
 		setEditing(false);
 	}
-	function remove() {
-		content.setActivityEntries((entries) =>
-			reply
-				? entries.map((item) =>
-						item.id !== entry.id || item.kind !== "comment"
-							? item
-							: {
-									...item,
-									replies: item.replies?.filter((candidate) => candidate.id !== reply.id),
-								},
-					)
-				: entries.filter((item) => item.id !== entry.id),
-		);
-		content.recordAudit("Comment", original, "Removed");
-	}
 	return (
 		<>
 			{editable ? (
@@ -175,35 +142,6 @@ export function ProjectButterCommentTools({
 					<EditIcon label="" size="small" />
 				</Button>
 			) : null}
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							aria-label="More comment actions"
-							className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle"
-							size="icon-compact"
-							type="button"
-							variant="ghost"
-						/>
-					}
-				>
-					<ShowMoreHorizontalIcon label="" size="small" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent positionerClassName="z-[650]">
-					<DropdownMenuItem
-						onSelect={() => {
-							void navigator.clipboard.writeText(commentLink(id));
-						}}
-					>
-						Copy link to comment
-					</DropdownMenuItem>
-					{editable ? (
-						<DropdownMenuItem onSelect={remove} variant="destructive">
-							Delete comment
-						</DropdownMenuItem>
-					) : null}
-				</DropdownMenuContent>
-			</DropdownMenu>
 			<Dialog onOpenChange={setEditing} open={editing}>
 				<DialogContent
 					className="z-[701]"

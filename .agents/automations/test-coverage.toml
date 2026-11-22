@@ -1,0 +1,10 @@
+version = 1
+id = "test-coverage"
+kind = "cron"
+name = "Test coverage"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nInspect recent merged VPK code and add the minimum useful tests for exactly one meaningful business, contract, or regression risk. Return no PR when no material gap exists.\n\n## Evidence and judgment\nInspect recent merges, changed files, public contracts, and nearby tests. Prioritize production bug fixes, edge-case logic, parsing, concurrency, permissions/auth, data validation, shared utilities, APIs, and user-visible state. Assert observable behavior, stable output, or a true boundary contract. Avoid cosmetic snapshots, brittle formatting/source-shape assertions, skipped tests, flaky timing, and broad test sweeps. Production changes are limited to tiny testability seams.\n\n## Handoff\nFor a successful change, use title `[Automation] Test coverage: <short summary>` and existing labels `automation`, `codex`, and `tests`. Include the risk, why current coverage misses it, tests added, manifest/gate inclusion, shared-policy validation, limitations, and reviewer focus.\n\n## Stop conditions\nReturn no PR when behavior is ambiguous, the assertion would be low-signal or brittle, another change owns the contract, or production changes would exceed a tiny testability seam."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=11;BYMINUTE=45;BYDAY=TU,FR"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

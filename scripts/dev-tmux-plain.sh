@@ -65,13 +65,25 @@ resolve_session_name() {
 	node scripts/lib/dev-tmux-session.js plain
 }
 
-# Resolve the extra args for `portless run` for this worktree: empty on main or a
-# branched worktree (vanilla portless derives the URL), or `--name <dir>` when
-# HEAD is detached. Shared logic lives in scripts/lib/worktree-ports.js.
+# Select a worktree-safe port before Portless registers its route. Detached
+# worktrees also get an explicit name from scripts/lib/worktree-ports.js.
 resolve_portless_args() {
 	node - <<'NODE'
-const { getPortlessRunArgs } = require("./scripts/lib/worktree-ports");
-process.stdout.write(getPortlessRunArgs().join(" "));
+const { getPortlessRunArgs, getPortInfo } = require("./scripts/lib/worktree-ports");
+const { findAvailableWorktreePort } = require("./scripts/lib/dev-port-selection");
+async function main() {
+	const fixedPort = process.env.PORTLESS_APP_PORT;
+	const basePort = Number(fixedPort || process.env.PORT || getPortInfo().frontendBase);
+	if (!Number.isInteger(basePort) || basePort < 1 || basePort > 65535) {
+		throw new Error("Frontend port must be an integer from 1 to 65535.");
+	}
+	const port = await findAvailableWorktreePort(basePort, fixedPort ? { maxTries: 1 } : {});
+	process.stdout.write([...getPortlessRunArgs(), "--app-port", String(port)].join(" "));
+}
+main().catch((error) => {
+	console.error(error.message);
+	process.exitCode = 1;
+});
 NODE
 }
 
@@ -99,6 +111,9 @@ check_workspace_deps() {
 SESSION_NAME="$(resolve_session_name)"
 REPO_ROOT_PHYSICAL="$(pwd -P)"
 FORCE_START=0
+AUTO_STOP=1
+# `stop --force` only: VPK_DEV_FORCE (a start over budget) never forces a stop.
+FORCE_STOP=0
 JSON_OUTPUT=0
 
 # Waits are whole numbers, checked before anything starts: seconds for the start, ms for the
@@ -129,29 +144,68 @@ stack_state() {
 # by name. A name follows the branch (or the directory when HEAD is detached), so a renamed or
 # newly checked-out branch would otherwise start a second session and next-server beside the
 # first.
+# A session started through a symlink matches by its physical path.
+path_is_this_worktree() {
+	local spath="$1" physical
+	physical="$(cd "$spath" 2>/dev/null && pwd -P || true)"
+	[[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" || "$physical" == "$REPO_ROOT_PHYSICAL" ]]
+}
+
 sessions_for_worktree() {
-	local name spath physical
+	local name spath
 	tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null | while IFS='|' read -r name spath; do
 		[[ -n "$name" ]] || continue
-		# A session started through a symlink matches by its physical path.
-		physical="$(cd "$spath" 2>/dev/null && pwd -P || true)"
-		if [[ "$spath" == "$REPO_ROOT" || "$spath" == "$REPO_ROOT_PHYSICAL" || "$physical" == "$REPO_ROOT_PHYSICAL" ]]; then
+		if path_is_this_worktree "$spath"; then
 			printf '%s\n' "$name"
 		fi
 	done
 }
 
+# The start directory tmux reports for session $1, or nothing.
+session_path_of() {
+	local name spath
+	while IFS='|' read -r name spath; do
+		if [[ "$name" == "$1" ]]; then
+			printf '%s\n' "$spath"
+			return 0
+		fi
+	done < <(tm list-sessions -F '#{session_name}|#{session_path}' 2>/dev/null || true)
+	return 0
+}
+
+# Two checkouts can derive the same session name on the shared socket (branches `vpk/foo` and
+# `vpk-foo`, or the main checkouts of two clones). A session of this name started in another
+# directory belongs to that checkout's stack: nothing here may Ctrl-C, kill or adopt it.
+FOREIGN_SESSION=""
+FOREIGN_SESSION_PATH=""
+
 # Use an existing session for this worktree even when it carries another name.
 adopt_worktree_session() {
-	local name
-	tm has-session -t "=$SESSION_NAME" 2>/dev/null && return 0
+	local name spath
+	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		spath="$(session_path_of "$SESSION_NAME")"
+		if [[ -z "$spath" ]] || path_is_this_worktree "$spath"; then
+			return 0
+		fi
+		FOREIGN_SESSION="$SESSION_NAME"
+		FOREIGN_SESSION_PATH="$spath"
+	fi
 	while IFS= read -r name; do
 		[[ -n "$name" ]] || continue
 		echo "Adopting tmux session '$name' for this worktree (this checkout would name it '$SESSION_NAME')."
 		SESSION_NAME="$name"
+		FOREIGN_SESSION=""
 		return 0
 	done < <(sessions_for_worktree)
+	if [[ -n "$FOREIGN_SESSION" ]]; then
+		echo "tmux session '$FOREIGN_SESSION' (socket: $SOCKET) belongs to $FOREIGN_SESSION_PATH, not this worktree; leaving it alone." >&2
+	fi
 	return 0
+}
+
+# This worktree's session exists (never a same-named session of another checkout).
+own_session_exists() {
+	[[ -z "$FOREIGN_SESSION" ]] && tm has-session -t "=$SESSION_NAME" 2>/dev/null
 }
 
 stop_named_session() {
@@ -186,6 +240,9 @@ check_stack_budget() {
 	local args=(check --worktree "$REPO_ROOT")
 	if [[ "$FORCE_START" == "1" ]]; then
 		args+=(--force)
+	fi
+	if [[ "$AUTO_STOP" == "0" ]]; then
+		args+=(--no-auto-stop)
 	fi
 	VPK_TMUX_BIN="$TMUX_BIN" node scripts/lib/dev-stack-budget.js "${args[@]}"
 }
@@ -283,8 +340,8 @@ launch_session() {
 	tm pipe-pane -t "=$SESSION_NAME:" -o "'$node_bin' '$REPO_ROOT/scripts/lib/dev-log-filter.js' --out '$DEV_LOG_FILE' --max-bytes '$DEV_LOG_MAX_BYTES'"
 	# Launch the dev stack THROUGH portless so this worktree gets a stable
 	# .localhost URL. `portless run` with no command runs the package.json
-	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
-	# only when HEAD is detached.
+	# "dev" script (frontend + backend); ${portless_args} pins the selected port
+	# and adds `--name <dir>` only when HEAD is detached.
 	tm send-keys -t "=$SESSION_NAME:" "cd \"$REPO_ROOT\" && CI=true pnpm exec portless run ${portless_args}" C-m
 	stack_state phase starting
 	echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
@@ -292,8 +349,13 @@ launch_session() {
 
 start_session() {
 	adopt_worktree_session
+	if [[ -n "$FOREIGN_SESSION" ]]; then
+		echo "Cannot start: the session name '$FOREIGN_SESSION' is taken by the stack in $FOREIGN_SESSION_PATH." >&2
+		echo "Start this worktree under another name: VPK_DEV_TMUX_SESSION=<name> pnpm run dev:tmux:start" >&2
+		exit 1
+	fi
 	stop_duplicate_sessions
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		if session_frontend_is_listening; then
 			echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
 		else
@@ -333,7 +395,7 @@ start_session() {
 stop_session() {
 	adopt_worktree_session
 	stack_state phase stopping || true
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		stop_named_session "$SESSION_NAME" recorded
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
@@ -348,6 +410,28 @@ stop_session() {
 	stack_state phase stopped || true
 }
 
+# Before `stop` only (a restart inside `start` is this worktree's own): a stop another worktree or
+# automation requests names itself in VPK_DEV_STOP_BY (and VPK_DEV_STOP_FROM, where it runs), and is
+# refused while this stack is in use (an agent process here, or recent activity) unless forced.
+# Every stop is logged with who asked to $DEV_LOG_DIR/dev-stops.log
+# (scripts/lib/dev-stack-activity.js).
+# Only a refusal (exit 6) blocks a direct stop; if the guard itself fails, a stop this worktree's
+# own user runs goes ahead, and one another worktree or automation requested does not.
+EXIT_STOP_REFUSED=6
+guard_stop() {
+	local args=(stop-guard --worktree "$REPO_ROOT" --session "$SESSION_NAME" --log-dir "$DEV_LOG_DIR")
+	if [[ "$FORCE_STOP" == "1" ]]; then
+		args+=(--force)
+	fi
+	local status=0
+	node "$REPO_ROOT/scripts/lib/dev-stack-activity.js" "${args[@]}" || status=$?
+	if [[ "$status" -eq 0 || "$status" -eq "$EXIT_STOP_REFUSED" || -n "${VPK_DEV_STOP_BY:-}" ]]; then
+		return "$status"
+	fi
+	echo "[dev:tmux] The stop guard failed (exit $status); stopping anyway, since this is this worktree's own stop." >&2
+	return 0
+}
+
 # After `stop` only (a restart inside `start` keeps it): drop this worktree's next dev output (it
 # grows about a GiB an hour and Next prunes it only at a later start), keeping the Turbopack cache
 # so the next start stays warm. The clean refuses while any dev server could still be serving it.
@@ -359,7 +443,7 @@ clean_dev_output() {
 
 attach_session() {
 	adopt_worktree_session
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		exec "$TMUX_BIN" -L "$SOCKET" attach -t "=$SESSION_NAME"
 	fi
 	echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'. Start it with: pnpm run dev:tmux:start"
@@ -383,7 +467,7 @@ status_session() {
 	# State is derived from the stack record, the session and the listening ports, not from the
 	# session's existence alone.
 	stack_state status
-	if tm has-session -t "=$SESSION_NAME" 2>/dev/null; then
+	if own_session_exists; then
 		tm list-panes -t "=$SESSION_NAME:" -F "  pane #{pane_index}: #{pane_current_command}"
 	fi
 }
@@ -399,10 +483,16 @@ usage() {
 	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)."
 	echo "          One session per worktree path: a session started under another name is adopted,"
 	echo "          extra ones are stopped. A new stack checks the machine-wide budget first;"
-	echo "          start --force (or VPK_DEV_FORCE=1) starts over budget."
+	echo "          Over the stack count it first auto-stops the fewest idle linked worktree stacks of"
+	echo "          this repo that gets it under budget (never the main checkout, a Codex worktree,"
+	echo "          another repo's server, or a stack in use), printing one line per stop."
+	echo "          start --no-auto-stop (or VPK_DEV_NO_AUTO_STOP=1) refuses instead of stopping;"
+	echo "          start --force (or VPK_DEV_FORCE=1) starts over budget and stops nothing."
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "          Exits $EXIT_NOT_READY unless the frontend and backend both become ready (VPK_DEV_TMUX_WAIT seconds)."
 	echo "  stop    Ctrl-C the session, let the recorded service processes drain, then end what is left"
+	echo "          A stop requested from another worktree or by automation (VPK_DEV_STOP_BY) is refused"
+	echo "          while the stack is in use; stop --force overrides. Every stop is logged to dev-stops.log"
 	echo "          Then removes .next/dev/static and .next/dev/server and keeps the cache; stop --keep-dev-output skips that"
 	echo "  status  Show the derived stack state (status --json for the full record)"
 	echo ""
@@ -411,6 +501,7 @@ usage() {
 	echo "  VPK_TMUX_SOCKET            Private socket name (default: vpk-dev)"
 	echo "  VPK_DEV_TMUX_SESSION       Exact session name override"
 	echo "  VPK_DEV_TMUX_SESSION_PREFIX Prefix for the auto session name (default: vpk-dev)"
+	echo "  VPK_DEV_NO_AUTO_STOP=1     Never auto-stop idle stacks when over budget (same as --no-auto-stop)"
 }
 
 command="${1:-start}"
@@ -421,8 +512,12 @@ fi
 [[ $# -gt 0 ]] && shift
 for arg in "$@"; do
 	case "$arg" in
-		--force) FORCE_START=1 ;;
+		--force)
+			FORCE_START=1
+			FORCE_STOP=1
+			;;
 		--json) JSON_OUTPUT=1 ;;
+		--no-auto-stop) AUTO_STOP=0 ;;
 		--keep-dev-output) CLEAN_DEV_OUTPUT=0 ;;
 		--) ;;
 		*)
@@ -439,6 +534,7 @@ fi
 case "$command" in
 	start) start_session ;;
 	stop)
+		guard_stop || exit $?
 		stop_session
 		clean_dev_output
 		;;

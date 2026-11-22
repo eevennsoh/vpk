@@ -115,6 +115,13 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"attachment-demo-ai-sdk-parts": dynamic(
+		() =>
+			import("../../demos/ui/attachment-demo-ai-sdk").then((mod) => ({
+				default: mod.AttachmentDemoAiSdkParts,
+			})),
+		{ ssr: false },
+	),
 	"bubble-demo-sizes": dynamic(
 		() =>
 			import("../../demos/ui/bubble-demo").then((mod) => ({
@@ -262,13 +269,31 @@ export const UI_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"message-scroller-demo-chat": dynamic(
+	"message-demo-pattern": dynamic(
 		() =>
-			import("../../demos/ui/message-scroller-demo").then((mod) => ({
-				default: mod.MessageScrollerDemoChat,
+			import("../../demos/ui/message-demo-ai-elements").then((mod) => ({
+				default: mod.MessageDemoPattern,
 			})),
 		{ ssr: false },
 	),
+	"message-demo-preset-actions": dynamic(
+		() =>
+			import("../../demos/ui/message-demo-ai-elements").then((mod) => ({
+				default: mod.MessageDemoPresetActions,
+			})),
+		{ ssr: false },
+	),
+	"message-scroller-demo-chat": dynamic(() => import("../../demos/ui/message-scroller-examples-chat"), { ssr: false }),
+	"message-scroller-anchoring": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleAnchoring })), { ssr: false }),
+	"message-scroller-group-chat": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleGroupChat })), { ssr: false }),
+	"message-scroller-context": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleContext })), { ssr: false }),
+	"message-scroller-streaming": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleStreaming })), { ssr: false }),
+	"message-scroller-animation": dynamic(() => import("../../demos/ui/message-scroller-examples-interactive").then((mod) => ({ default: mod.MessageScrollerExampleAnimation })), { ssr: false }),
+	"message-scroller-opening": dynamic(() => import("../../demos/ui/message-scroller-examples-navigation").then((mod) => ({ default: mod.MessageScrollerExampleOpeningPosition })), { ssr: false }),
+	"message-scroller-history": dynamic(() => import("../../demos/ui/message-scroller-examples-navigation").then((mod) => ({ default: mod.MessageScrollerExampleHistory })), { ssr: false }),
+	"message-scroller-commands": dynamic(() => import("../../demos/ui/message-scroller-examples-navigation").then((mod) => ({ default: mod.MessageScrollerExampleCommands })), { ssr: false }),
+	"message-scroller-outline": dynamic(() => import("../../demos/ui/message-scroller-examples-navigation").then((mod) => ({ default: mod.MessageScrollerExampleOutline })), { ssr: false }),
+	"message-scroller-status": dynamic(() => import("../../demos/ui/message-scroller-examples-navigation").then((mod) => ({ default: mod.MessageScrollerExampleStatus })), { ssr: false }),
 	"questionnaire-demo-default": dynamic(
 		() =>
 			import("../../demos/ui/questionnaire-demo").then((mod) => ({

@@ -49,7 +49,7 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	} else {
 		await expect(development).toHaveAttribute("data-project-butter-development", name === "Done" ? "merged" : name === "Fix checks" ? "failed" : "pr");
 		// Journey updates are replies in Claude's thread, which previews only the latest reply.
-		if (name === "Done") await activity.getByRole("button", { name: /Show \d+ more replies/ }).click();
+		if (name === "Done") await activity.getByRole("button", { name: /Show \d+ replies/ }).click();
 		await expect(entries.getByText(/opened #284: Add merchant onboarding quickstart/)).toBeVisible();
 		await expect(card.getByRole("button", { name: name === "Done" ? /Pull request merged #284/ : /Pull request (?:failed )?#284/, includeHidden: true })).toHaveCount(1);
 	}

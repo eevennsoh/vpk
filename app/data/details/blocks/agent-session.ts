@@ -2,37 +2,53 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card, and it comes in two densities: `short` leads with a 32px identity and a `agent · PR · host · time` byline (PR is omitted when the session has none), while `long` drops the leading avatar, gives the title its own line, and spends the room on `agent · cycling tool call · artifact · session type/timestamp` plus a trailing lifecycle label and icon. Progression stays at the far right, not in the byline; tool calls shimmer and cycle, Working also shimmers, and Needs input and Finished remain still. Owner rows reveal a `…` menu; viewer rows show an outline information-circle tooltip instead; expired cloud-long rows show a 24×24 `…` menu with Delete and explain the 28-day retention window in a tooltip across the row. A local owner menu offers Continue in — the agent itself or Terminal — while a cloud owner menu offers Rename and Delete. Both end in a dismiss row. Medium detached is a 276px stroked white chip (Jira issue width, 10px corners): the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key, still with the untracked-work flyout. Medium attached is the Jira Issue activity row (24px identity, h-8 chin, trailing 24×24 status) already connected to work. Small becomes the collapsed Agent Session Column notch. Short, medium, and small detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; long density does not. Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume disable the Terminal row.',
+		'Agent sessions come in large, medium detached, medium attached, and small footprints. Large rows support unlinked, short, and long densities, with agent, pull request, host, time, and access metadata where available. Hover or focus a timestamp to see its full date, or a pull request to see its preview. The trailing status shows Working, Needs input, or Finished. Owners have a more-actions menu; team viewers can open a read-only chat when the host enables it, while private and expired sessions retain their access restrictions. Local owners can continue in the agent or Terminal; cloud owners can rename or delete. The Team sessions example demonstrates the Rovo conversation and question flow for owners and viewers.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
+			title: "Session sizes and permissions",
+			description: "Compare large, medium, and small session rows across personal, private, and team sessions, including working, needs input, and finished states.",
+			demoSlug: "agent-session-demo-comparison",
+		},
+		{
+			title: "Team sessions",
+			description: "Cloud sessions shown for both owners and viewers. Both can view the conversation and answer questions; only the owner can send chat messages. Viewers see an owner and status bar.",
+			demoSlug: "agent-session-demo-team",
+		},
+		{
+			title: "Unlinked sessions",
+			description:
+				"The default avatar-led row for an unlinked local session, shown as owner and viewer. The owner can continue in the agent or Terminal; the viewer sees the session's access information.",
+			demoSlug: "agent-session-demo-unlinked",
+		},
+		{
 			title: "Local — short",
 			description:
-				"The default avatar-led row for a session on the viewer's own machine, shown as owner and viewer. An owner byline reads agent · PR · host · time when a pull request is linked, and the more menu offers Continue in → the agent or Terminal. A viewer sees an information icon instead of that menu.",
+				"A compact title-led row for a linked local session, with the agent and invoker in the metadata line. The owner can continue in the agent or Terminal; a viewer sees the session's access information.",
 			demoSlug: "agent-session-demo-local-short",
 		},
 		{
 			title: "Local — long",
 			description:
-				"Title-led owner and viewer rows with the provenance metadata line (agent, cycling tool call, artifact, session type/time). Owners show the trailing lifecycle label and icon. Viewers show only a permanent information icon; hovering anywhere on their row explains private access. No hover flyout.",
+				"Title-led owner and viewer rows with agent, pull request, host, time, and access metadata. The lifecycle remains at the right.",
 			demoSlug: "agent-session-demo-local-long",
 		},
 		{
 			title: "Cloud — short",
 			description:
-				"The same compact owner and viewer rows for a hosted session. A cloud owner cannot resume in a terminal, so its menu swaps the Continue in group for Rename and Delete. A viewer shows only a permanent information icon, with the private-access tooltip available across the row.",
+				"Compact hosted-session rows. An owner can rename or delete a session, while a viewer sees its lifecycle and access information.",
 			demoSlug: "agent-session-demo-cloud-short",
 		},
 		{
 			title: "Cloud — long",
 			description:
-				"Hosted owner, viewer, and expired sessions in the title-led density — no hover flyout. Owners show Working, Needs input, or Finished. Tool calls cycle with shimmering text; the owner's Working label also shimmers beside the Avatar spinner, while settled lifecycle labels stay still. Viewers show only a permanent information icon and a private-access tooltip across the row. Expired rows show a 24×24 more-actions button offering Delete. Hovering the expired row explains the 28-day retention window and that the session cannot be resumed.",
+				"Hosted owner, viewer, and expired sessions in the title-led density. Both owner and viewer rows show the lifecycle; expired rows offer Delete and explain the 28-day retention window.",
 			demoSlug: "agent-session-demo-cloud-long",
 		},
 		{
 			title: "Medium detached",
 			description:
-				"A 276px stroked white chip — the Jira issue card width — with 10px corners, the same 32px agent+human identity as a short row, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
+				"A 276px stroked white chip — the Jira issue card width — with 10px corners, the same 32px agent+human identity as an unlinked row, the session title, and a trailing up-arrow key. Still detached from Jira work, with the untracked-work flyout.",
 			demoSlug: "agent-session-demo-medium-detached",
 		},
 		{
@@ -71,10 +87,10 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "density",
-			type: '"short" | "long"',
-			default: '"short"',
+			type: '"unlinked" | "short" | "long"',
+			default: '"unlinked"',
 			description:
-				"Row shape for the large footprint. `short` leads with a 32px identity and an agent · PR · host · time byline (PR omitted when none is linked). `long` drops the leading avatar, gives the title the full width, and adds agent, a cycling tool call, an artifact chip, session type/time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
+				"Row shape for the large footprint. `unlinked` leads a local session with a 32px identity; `short` and `long` are title-led and show identity, pull request, host, and time metadata. Ignored by the medium and small footprints, which have fixed geometry.",
 		},
 		{
 			name: "showBranch",
@@ -93,7 +109,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",
 			description:
-				"Sessions to render. `AgentSessionItem` is the Agent List row model, so a surface that already builds those rows needs no conversion. `toolCalls` supplies the long density's shimmering cycle immediately after the agent name. `host` (falling back to `sessionDetails.host`) decides both the metadata glyph and which menu the row opens; a payload that declares neither omits the host segment in the long density rather than assuming the cloud. `sessionDetails.pullRequestNumber` and `pullRequestTitle` supply the short-byline PR number and the long-density artifact chip, `sessionDetails.issueKey` seeds the untracked-work flyout suggestion, and `sessionDetails.worktreePath` the copied resume command.",
+				"Sessions to render. The host selects the metadata glyph and available menu; pull request details power the preview, and an absolute update time enables the timestamp tooltip. `sharedWithTeam` marks team access, while the invoker supplies the owner's identity.",
 		},
 		{
 			name: "capturedItemIds",
@@ -210,6 +226,12 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			type: "(item: AgentSessionItem) => void",
 			description:
 				"Called when a card body is activated. Coding-agent rows stay activatable regardless of `canViewItem`.",
+		},
+		{
+			name: "allowViewerView",
+			type: "boolean",
+			default: "false",
+			description: "Allow viewers of shared cloud sessions to open the host’s viewer session view. The host controls its chat and question permissions; private and expired sessions remain unavailable.",
 		},
 		{
 			name: "canViewItem",

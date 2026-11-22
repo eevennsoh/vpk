@@ -15,14 +15,14 @@ export const AGENT_SESSION_TOP_ARRIVAL_TRANSITION = {
 	ease: motionEase.inOut,
 };
 
-/** Keep both calc terms in every target so single and batched offsets interpolate. */
-export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "calc(-100% - 0px)";
+/** A simple percentage lets Motion measure a row while it is entering. */
+export const AGENT_SESSION_TOP_ARRIVAL_OFFSET = "-100%";
 
 /** Prepend a whole batch above the old first row before its siblings move down. */
-export function toAgentSessionTopArrivalOffset(batchSize: number, rowGapPx: number): string {
+export function toAgentSessionTopArrivalOffset(batchSize: number): string {
 	return batchSize <= 1
 		? AGENT_SESSION_TOP_ARRIVAL_OFFSET
-		: `calc(-${batchSize * 100}% - ${batchSize * rowGapPx}px)`;
+		: `-${batchSize * 100}%`;
 }
 
 /**

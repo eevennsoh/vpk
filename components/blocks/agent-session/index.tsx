@@ -74,9 +74,10 @@ function buildArrivalDelays(
  * the same hover/focus action pair Agent List rows use — Resume, plus
  * Archive / Unarchive where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
- * `components/blocks/agent-session-flyout` uses, so hovering a short card offers
- * Link / Create / Add as a subtask without a footer chin. Long density has no
- * flyout — hover only highlights the row and reveals trailing controls. Medium
+ * `components/blocks/agent-session-flyout` uses, so hovering an unlinked card
+ * offers Link / Create / Add as a subtask without a footer chin. Short and long
+ * densities are linked sessions and have no flyout — hover only highlights the
+ * row and reveals trailing controls. Medium
  * detached keeps that uncaptured relationship as a 276px stroked white chip:
  * 24px human+agent identity, the session title, and a trailing up-arrow key,
  * with the untracked-work flyout. Medium attached reuses the Jira Issue
@@ -89,13 +90,14 @@ export function AgentSession({
 	arrivalRowGapPx = 0,
 	className,
 	items: itemsProp,
-	arrivingItemIds,
+	arrivingItemIds: arrivingItemIdsProp,
 	stateChangedItemIds,
 	stateChangeVersions,
 	assignment,
+	allowViewerView = false,
 	canViewItem,
 	capturedItemIds,
-	density = "short",
+	density = "unlinked",
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
@@ -105,6 +107,7 @@ export function AgentSession({
 	issueKey,
 	isResumable,
 	localSessionAction = "continue",
+	moreMenuVariant,
 	newItemIds,
 	onContinueInAgent,
 	onCopyResume,
@@ -128,6 +131,8 @@ export function AgentSession({
 	showUntrackedWorkFooter,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showLifecycleLabel = true,
+	lifecycleLabelPlacement = "trailing",
 	showBranch = false,
 	style,
 	variant = "large",
@@ -136,19 +141,24 @@ export function AgentSession({
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const isLongDensity = variant === "large" && density === "long";
+	// The untracked-work flyout (PR card, Link / Create / Add as a subtask) is
+	// for unlinked sessions only. Large rows are unlinked only in the `unlinked`
+	// density; short and long large rows are linked sessions and get none.
+	const hasNoFlyout = variant === "large" && density !== "unlinked";
 	// Which accent layers this list paints, and the tuning vars that go with
 	// them. One declaration for the list rather than one per card.
 	const cardGlow = resolveAgentSessionGlow({ bloom: glowBloom, stroke: glowStroke, variant });
-	const showUntrackedWorkFlyout = !isAttached && !isLongDensity;
+	const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;
 	const shouldReduceMotion = useReducedMotion();
 	const sourceItems = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	const departure = useAgentSessionStatusDeparture({
 		items: sourceItems,
+		arrivingItemIds: arrivingItemIdsProp,
 		stateChangeVersions,
 		stateChangedItemIds: variant === "large" ? stateChangedItemIds : undefined,
 		reduceMotion: shouldReduceMotion === true,
 	});
-	const items = departure.items;
+	const { items, arrivingItemIds } = departure;
 	const isDeparturePhase = departure.exitingItemIds.size > 0;
 	const isSelectionControlled = selectedItemIdProp !== undefined;
 	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
@@ -174,10 +184,10 @@ export function AgentSession({
 	const beatItemIds = arrivingItemIds ?? newItemIds;
 	const leadingBatchIds = new Set<string>();
 	for (const item of items) {
-		if (!beatItemIds?.has(item.id) || stateChangedItemIds?.has(item.id)) break;
+		if (!beatItemIds?.has(item.id)) break;
 		leadingBatchIds.add(item.id);
 	}
-	const leadingBatchOffset = toAgentSessionTopArrivalOffset(leadingBatchIds.size, arrivalRowGapPx);
+	const leadingBatchOffset = toAgentSessionTopArrivalOffset(leadingBatchIds.size);
 	// In-flow columns skip filter motion but still make room for real entries.
 	const moveRowsForArrival = !isDeparturePhase && (beatItemIds?.size ?? 0) > 0;
 	const arrivalDelays = useMemo(
@@ -262,7 +272,8 @@ export function AgentSession({
 							: handleView;
 
 					if (variant === "large") {
-						const flyoutSession = isLongDensity
+						const isCurrentRevision = departure.seenVersions.get(item.id) === stateChangeVersions?.get(item.id);
+						const flyoutSession = hasNoFlyout
 							? undefined
 							: toAgentSessionUntrackedWorkFlyoutItem(
 								item,
@@ -274,19 +285,22 @@ export function AgentSession({
 							);
 						return (
 							<AgentSessionCard
+								allowViewerView={allowViewerView}
 								animateLayout={animateLayout || moveRowsForArrival}
 								arrivalDelaySeconds={leadingBatchIds.size > 1 && leadingBatchIds.has(item.id) ? 0 : arrivalDelays.get(item.id)}
-								arrivalStartOffset={density === "short" && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
+								arrivalRowGapPx={arrivalRowGapPx}
+								arrivalStartOffset={!isLongDensity && leadingBatchIds.has(item.id) ? leadingBatchOffset : undefined}
 								captured={capturedItemIds?.has(item.id) ?? false}
+								clipInteriorEntrance={!leadingBatchIds.has(item.id)}
 								density={density}
-								flyoutHandle={isLongDensity ? undefined : flyoutHandle}
+								flyoutHandle={hasNoFlyout ? undefined : flyoutHandle}
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
 								glowBloom={cardGlow.bloom}
 								glowStroke={cardGlow.stroke}
 								isArriving={!isDeparturePhase && (beatItemIds?.has(item.id) ?? false)}
 								isDeparting={departure.exitingItemIds.has(item.id)}
-								isStateChanged={!isDeparturePhase && (stateChangedItemIds?.has(item.id) ?? false)}
+								isStateChanged={!isDeparturePhase && (departure.stateChangedItemIds?.has(item.id) ?? false)}
 								isFlyoutActive={item.id === scrollPreview.activeItemId}
 								isHighlighted={item.id === highlightedItemId}
 								isNew={newItemIds?.has(item.id) ?? false}
@@ -295,15 +309,17 @@ export function AgentSession({
 								item={item}
 								key={item.id}
 								localSessionAction={localSessionAction}
+								moreMenuVariant={moreMenuVariant}
 								onContinueInAgent={onContinueInAgent}
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}
 								onDeleteSession={onDeleteSession}
-								onArrivalComplete={onArrivalComplete === undefined
-									? undefined
-									: () => onArrivalComplete(item.id)}
+								onArrivalComplete={() => {
+									departure.onArrivalComplete(item.id);
+									if (isCurrentRevision) onArrivalComplete?.(item.id);
+								}}
 								onDepartureComplete={() => departure.onDepartureComplete(item.id)}
-								onStateChangeComplete={onStateChangeComplete === undefined
+								onStateChangeComplete={!isCurrentRevision || onStateChangeComplete === undefined
 									? undefined
 									: () => onStateChangeComplete(item.id)}
 								onItemHover={onItemHover}
@@ -315,6 +331,8 @@ export function AgentSession({
 								sessionDrag={sessionDrag}
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
+								showLifecycleLabel={showLifecycleLabel}
+								lifecycleLabelPlacement={lifecycleLabelPlacement}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}

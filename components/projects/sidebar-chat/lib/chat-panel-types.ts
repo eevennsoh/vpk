@@ -36,6 +36,8 @@ export interface ChatPanelGreetingProps {
 	illustrationDarkSrc?: string;
 	showHero?: boolean;
 	suggestions?: ReadonlyArray<RovoSuggestion>;
+	/** Return true when the host handles a starter locally. */
+	onSuggestionSelect?: (suggestion: RovoSuggestion) => boolean;
 	/**
 	 * Opt-in (custom-agent greeting only): text for the optional group header
 	 * above the conversation-starter rows.
@@ -123,6 +125,8 @@ export interface ChatComposerPrefillRequest {
 
 export interface ChatPanelProps {
 	onClose: () => void;
+	/** Allow conversation inspection without sending or answering. */
+	readOnly?: boolean;
 	onBackToRovo?: () => void;
 	addMenuItemsBefore?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the Add menu trigger. */

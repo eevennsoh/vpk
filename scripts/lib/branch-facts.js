@@ -26,7 +26,8 @@ const REFLOG_LIMIT = 1000;
 // with its checkout: launch.json is rewritten at SessionStart, settings.local.json holds
 // only that checkout's local permission grants, and .cc-writes/ tracks session writes.
 // `.env*` files do not block: the worktree bootstrap seeds them from another checkout,
-// and they are listed, never opened.
+// and they are listed, never opened. Empty ignored directory trees carry no file data;
+// artifacts and env-named paths remain protected even when empty.
 const REGENERABLE_IGNORED = [
 	/(^|\/)node_modules\/?$/u,
 	/^\.next\/?$/u,
@@ -235,14 +236,29 @@ function isSeededEnvFile(entry, isRegularFile) {
 
 // `isRegularFile(relativePath)` says whether the path is a regular file (not followed
 // through a symlink).
-function classifyIgnored(paths, { isRegularFile }) {
+function classifyIgnored(paths, { isRegularFile, isEmptyDirectory = () => false }) {
 	const blocking = [];
 	const env = [];
 	for (const entry of paths) {
-		if (isSeededEnvFile(entry, isRegularFile)) env.push(entry);
-		else if (!REGENERABLE_IGNORED.some((pattern) => pattern.test(entry))) blocking.push(entry);
+		if (isSeededEnvFile(entry, isRegularFile)) {
+			env.push(entry);
+			continue;
+		}
+		if (REGENERABLE_IGNORED.some((pattern) => pattern.test(entry))) continue;
+		if (!(/^artifacts\//u.test(entry) || /(^|\/)\.env[^/]*\/?$/u.test(entry)) && isEmptyDirectory(entry)) continue;
+		blocking.push(entry);
 	}
 	return { blocking, env };
+}
+
+function emptyDirectory(directory) {
+	try {
+		const stat = fs.lstatSync(directory);
+		if (!stat.isDirectory() || stat.isSymbolicLink()) return false;
+		return fs.readdirSync(directory).every((entry) => emptyDirectory(path.join(directory, entry)));
+	} catch {
+		return false;
+	}
 }
 
 // { name, branch } of a half-done operation in this git directory, or false; null if unreadable.
@@ -302,6 +318,7 @@ async function collectWorktreeFacts(git, worktreePath, { keepRefs = DEFAULT_KEEP
 		dirty: statusOut === null ? null : statusOut.trim().length > 0,
 		hiddenEdits,
 		ignored: ignoredOut === null ? null : classifyIgnored(ignoredOut.split("\n").map((line) => line.trim()).filter(Boolean), {
+			isEmptyDirectory: (relative) => emptyDirectory(path.join(worktreePath, relative)),
 			isRegularFile: (relative) => {
 				try {
 					return fs.lstatSync(path.join(worktreePath, relative)).isFile();

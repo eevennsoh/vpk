@@ -11,10 +11,10 @@ const {
 	registerPersonalGraphRoutes,
 } = require("./personal-graph");
 
-function createPersonalGraphTestApp() {
+function createPersonalGraphTestApp({ env = { NODE_ENV: "development" } } = {}) {
 	const app = express();
 	app.use(express.json());
-	registerPersonalGraphRoutes(app, { env: { NODE_ENV: "development" } });
+	registerPersonalGraphRoutes(app, { env });
 	return app;
 }
 
@@ -113,5 +113,45 @@ test("POST /api/personal-graph/capture rejects loopback and link-local targets",
 		});
 		assert.equal(response.status, 400, url);
 		assert.equal((await response.json()).code, "INVALID_URL");
+	}
+});
+
+test("in production every Personal Graph route, reads included, is unavailable to any caller", async (t) => {
+	const vaultRoot = fs.mkdtempSync(path.join(os.tmpdir(), "personal-graph-production-"));
+	fs.mkdirSync(path.join(vaultRoot, "raw"), { recursive: true });
+	fs.mkdirSync(path.join(vaultRoot, "wiki"), { recursive: true });
+	fs.writeFileSync(path.join(vaultRoot, "wiki", "secret.md"), "# Secret\n");
+	configureSelectedVault(t, vaultRoot);
+	const baseUrl = await listen(createPersonalGraphTestApp({ env: { NODE_ENV: "production" } }), t);
+
+	for (const routePath of [
+		"/api/personal-graph/vault",
+		"/api/personal-graph/explorer",
+		"/api/personal-graph/source",
+		"/api/personal-graph/page/secret",
+		"/api/personal-graph/unprocessed-count",
+		"/api/personal-graph/search?q=secret",
+		"/api/personal-graph/log",
+	]) {
+		for (const headers of [{}, { "x-slauth-subject": "bob" }]) {
+			const response = await fetch(`${baseUrl}${routePath}`, { headers });
+			assert.equal(response.status, 404, `${routePath} ${JSON.stringify(headers)}`);
+			assert.deepEqual(await response.json(), { error: "Not available" });
+		}
+	}
+	const write = await postWithHeaders(baseUrl, "/api/personal-graph/source", {}, { body: JSON.stringify({ source: "twg" }) });
+	assert.equal(write.status, 404);
+});
+
+test("in development Personal Graph reads stay open to the local caller", async (t) => {
+	const vaultRoot = fs.mkdtempSync(path.join(os.tmpdir(), "personal-graph-development-"));
+	fs.mkdirSync(path.join(vaultRoot, "raw"), { recursive: true });
+	fs.mkdirSync(path.join(vaultRoot, "wiki"), { recursive: true });
+	configureSelectedVault(t, vaultRoot);
+	const baseUrl = await listen(createPersonalGraphTestApp(), t);
+
+	for (const routePath of ["/api/personal-graph/vault", "/api/personal-graph/source", "/api/personal-graph/log"]) {
+		const response = await fetch(`${baseUrl}${routePath}`);
+		assert.equal(response.status, 200, routePath);
 	}
 });

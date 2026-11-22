@@ -164,6 +164,35 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 });
 
 
+test("Local agent menu fits its rows and recent separator without horizontal scrolling", async ({ page }) => {
+	await page.addInitScript(() => window.localStorage.setItem("jira-local-agent-last-used", JSON.stringify("claude-code")));
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
+	const menu = page.getByRole("region", { name: "Jira Local Agent" });
+	await expect(menu.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	for (const width of [320, 240]) {
+		await menu.evaluate((element, value) => { element.style.maxWidth = `${value}px`; }, width);
+		const dimensions = await menu.evaluate((element) => {
+			const bounds = element.getBoundingClientRect();
+			const list = element.querySelector(".overflow-y-auto");
+			const separators = [...element.querySelectorAll('[data-slot="dropdown-menu-separator"]')];
+			if (!list || separators.length !== 2) throw new Error("Missing agent list or separators");
+			return {
+				overflow: list.scrollWidth - list.clientWidth,
+				edges: separators.map((separator) => {
+					const line = separator.getBoundingClientRect();
+					return { left: line.left - bounds.left, right: bounds.right - line.right };
+				}),
+			};
+		});
+		expect(dimensions.overflow).toBeLessThanOrEqual(1);
+		for (const edges of dimensions.edges) {
+			expect(Math.abs(edges.left)).toBeLessThanOrEqual(1);
+			expect(Math.abs(edges.right)).toBeLessThanOrEqual(1);
+		}
+	}
+});
+
 test("Agent selector shows the local menu beside the selector without a separate gallery tile", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });

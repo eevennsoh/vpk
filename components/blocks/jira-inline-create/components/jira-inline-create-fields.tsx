@@ -82,10 +82,11 @@ export function JiraInlineCreateFields({ assignees: availableAssignees = [], col
 		<div className="flex flex-wrap items-center gap-1 pt-3">
 			<div className={parent ? "w-full min-w-0" : undefined}>
 				<ArtifactParentField
+					fieldName="epic"
 					onChange={(parentIssueKey) => onChange({ parentIssueKey })}
 					onClear={() => onChange({ parentIssueKey: undefined })}
 					options={parentOptions}
-					trigger={<Chip label={parent ? `Parent, ${parent.code} ${parent.title}` : "Add parent"}>{parent ? <span className="max-w-48 truncate">{parent.title}</span> : <><Icon render={<AddIcon label="" size="small" />} /> Parent</>}</Chip>}
+					trigger={<Chip label={parent ? `Epic, ${parent.code} ${parent.title}` : "Add epic"}>{parent ? <span className="max-w-48 truncate">{parent.title}</span> : <><Icon render={<AddIcon label="" size="small" />} /> Epic</>}</Chip>}
 					value={value.parentIssueKey ?? null}
 				/>
 			</div>

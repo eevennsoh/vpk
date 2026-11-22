@@ -67,9 +67,11 @@ export function useButterAssignmentMove({
 			return ids.includes(agentId) ? current : applyAssignedAgentIdsToColumns(current, issueKey, [...ids, agentId], catalog);
 		}, columns));
 	}, [catalog, setBoardColumns]);
-	const startAgentSession = useCallback((issueKey: string, activity: JiraIssueAgentActivity) => {
-		queueUpdate(issueKey, (columns) => progressButterWorkItemOnStart(linkJiraKanbanAgentSession(columns, issueKey, activity), issueKey));
-	}, [queueUpdate]);
+	const startAgentSession = useCallback((issueKey: string, activity: JiraIssueAgentActivity, { animate = true } = {}) => {
+		const update = (columns: readonly JiraKanbanColumnData[]) => progressButterWorkItemOnStart(linkJiraKanbanAgentSession(columns, issueKey, activity), issueKey);
+		if (animate) queueUpdate(issueKey, update);
+		else setBoardColumns(update);
+	}, [queueUpdate, setBoardColumns]);
 	const onBoardColumnsChange = useCallback((columns: readonly JiraKanbanColumnData[]) => {
 		const assignment = pending.current;
 		const moved = assignment && columns.some((column) => column.title === assignment.columnTitle

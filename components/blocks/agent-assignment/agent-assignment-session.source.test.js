@@ -15,32 +15,188 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: /(?:\d+ )?other sessions?/iu };
+const disclosure = { name: /^(?:Use an agent|Using agents|Other agent activity)$/u };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
-test("session menu can show a teammate count or expand a single teammate by default", async () => {
+test("session menu shows each session's lifecycle indicator", async () => {
+	const states = [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]];
+	const view = await renderMenu(menuProps(states.map(([state]) => session(state, "owner", { state }))));
+	try {
+		for (const [state, label] of states) {
+			const row = view.container.querySelector(`[data-testid="agent-session-row-${state}"]`);
+			assert.equal(row.querySelector(`[role="img"][aria-label="${label}"]`) !== null, true, `${label} indicator is visible`);
+			assert.equal(row.querySelector('[data-slot="spinner"]') !== null, state === "running");
+		}
+	} finally { await view.unmount(); }
+});
+
+test("session menu puts needs-input sessions first within each ownership group", async () => {
+	const items = [session("running", "owner", { state: "running" }), session("waiting", "owner", { state: "needs-input" }), session("complete", "owner"), session("team-running", "viewer", { state: "running" }), session("team-waiting", "viewer", { state: "needs-input" })];
+	const view = await renderMenu(menuProps(items, { teammateSessionsPresentation: "expanded" }));
+	try {
+		const lists = view.getAllByRole("list");
+		assert.deepEqual([...lists[0].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-waiting", "agent-session-row-running", "agent-session-row-complete"]);
+		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-waiting", "agent-session-row-team-running"]);
+		for (const row of view.container.querySelectorAll("[data-agent-session-agent]")) {
+			assert.equal(row.textContent, "");
+		}
+		assert.deepEqual(items.map((item) => item.id), ["running", "waiting", "complete", "team-running", "team-waiting"]);
+	} finally { await view.unmount(); }
+});
+
+test("person attribution reveals their name on keyboard focus", async () => {
+	const view = await renderMenu(menuProps([session("mine", "owner", { invokedBy: { name: "Maya" } })]));
+	try {
+		const avatar = view.getByRole("img", { name: "Maya" });
+		await view.focus(avatar);
+		assert.equal(view.getByRole("tooltip").textContent, "Maya");
+	} finally { await view.unmount(); }
+});
+
+test("session cards use the shared agent avatar preview across densities", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+			export default function Example({ item, density }) {
+				return <AgentSessionAvatarPreviewContext value={(agent, avatar) => <button key="agent" aria-label={"Preview " + agent.name}>{avatar}</button>}><ul><AgentSessionCard density={density} item={item} /></ul></AgentSessionAvatarPreviewContext>;
+			}
+		`,
+		props: { item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "long" },
+		mocks: themeMock,
+	});
+	try {
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "short" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "viewer", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" } }), density: "unlinked" });
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+	} finally { await view.unmount(); }
+});
+
+test("detached and selectable session avatars expose the host preview", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { AgentSessionMediumCard } from "@/components/blocks/agent-session/agent-session-medium-card";
+			import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+			export default function Example({ item, marked }) {
+				return <AgentSessionAvatarPreviewContext value={(agent, avatar, options) => options?.hoverOnly ? <span key="agent" data-testid="detached-preview">{avatar}</span> : <button key="agent" aria-label={"Preview " + agent.name}>{avatar}</button>}>
+					<AgentSessionMediumCard isArriving={false} isNew={false} item={item} />
+					<ul><AgentSessionCard density="unlinked" item={item} triageRow={{ approve: null, mark: { isMarked: marked, onActivate() {} } }} /></ul>
+				</AgentSessionAvatarPreviewContext>;
+			}
+		`,
+		props: { item: session("team", "owner", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" }, host: "local" }), marked: false },
+		mocks: themeMock,
+	});
+	try {
+		assert.equal(Boolean(view.container.querySelector('[data-testid="detached-preview"]')), true);
+		assert.equal(Boolean(view.getByRole("button", { name: "Preview Cursor" })), true);
+		await view.rerender({ item: session("team", "owner", { agent: { name: "Cursor" }, invokedBy: { name: "Jordan" }, host: "local" }), marked: true });
+		assert.equal(Boolean(view.queryByRole("button", { name: "Preview Cursor" })), false);
+	} finally { await view.unmount(); }
+});
+
+test("Rovo session avatars open the Rovo agent lanyard", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+			import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
+			export default function Example({ item }) { return <HeaderLanyards><ul><AgentSessionCard density="long" item={item} /></ul></HeaderLanyards>; }
+		`,
+		props: { item: session("rovo", "owner", { agent: { id: "rovo-dev", name: "Rovo", vpkLogo: "rovo" }, invokedBy: { name: "Maya" } }) },
+		mocks: { ...themeMock, "@/app/contexts/context-rovo-chat-controls": "export const useRovoChatControls = () => ({ openChat() {}, selectAgent() {} });" },
+	});
+	try {
+		await view.click(view.getByRole("button", { name: "Preview Rovo" }));
+		assert.equal(view.getByRole("heading", { name: "Rovo" }).textContent, "Rovo");
+		assert.equal(view.getByText("Atlassian").textContent, "Atlassian");
+		assert.equal(Boolean(document.querySelector('[data-slot="agent-lanyard-avatar"] svg')), true);
+		assert.equal(document.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
+	} finally { await view.unmount(); }
+});
+
+test("session menu uses avatar-only agent metadata and retains its Rovo avatar", async () => {
+	const view = await renderMenu(menuProps([
+		session("figma", "owner", { agent: { name: "Figma", brandName: "figma" } }),
+		session("rovo", "owner", { agent: { name: "Rovo", vpkLogo: "rovo" } }),
+	]));
+	try {
+		const figma = view.container.querySelector('[data-testid="agent-session-row-figma"]');
+		const rovo = view.container.querySelector('[data-testid="agent-session-row-rovo"]');
+		assert.equal(figma.querySelector('[data-agent-session-agent]').textContent, "");
+		assert.equal(figma.querySelector('[data-agent-list-title]').textContent, "figma work");
+		assert.equal(Boolean(rovo.querySelector('[data-agent-session-agent] svg')), true);
+	} finally { await view.unmount(); }
+});
+
+test("assignment activity keeps its private access mark in the session menu", async () => {
+	const view = await renderComponent({
+		source: `
+			import { AssignedAgentsSessionMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
+			import { toAgentAssignmentAgent } from "@/components/blocks/jira-issue/agent-activity";
+			import { TooltipProvider } from "@/components/ui/tooltip";
+			export default function Menu({ activity }) { return <TooltipProvider><AssignedAgentsSessionMenu rows={[toAgentAssignmentAgent(activity)]} onSelectAgent={() => {}} /></TooltipProvider>; }
+		`,
+		props: { activity: { id: "private", name: "Cursor", label: "Reviewing", state: "working", role: "viewer", invokedBy: { name: "Jordan" }, privateTo: "Jordan" } },
+		mocks: themeMock,
+	});
+	try {
+		assert.ok(view.getByRole("img", { name: "Private session by Jordan" }));
+		assert.equal(view.container.querySelector('[data-access-mark="team"]'), null);
+	} finally { await view.unmount(); }
+});
+
+test("teammate-only menus show the rows directly and mixed menus label their disclosure", async () => {
 	const team = [session("first", "viewer"), session("second", "viewer")];
 	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
 	try {
-		assert.equal(view.getByText("2 other sessions").textContent, "2 other sessions");
+		assert.equal(view.queryByText(/use an agent|using agents|other agent activity/iu) === null, true);
+		assert.equal(view.getAllByRole("listitem").length, 2);
+		await view.rerender(menuProps(team));
+		assert.equal(view.queryByText(/use an agent|using agents|other agent activity/iu) === null, true);
 		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
-		const trigger = view.getByRole("button", { name: "1 other session" });
+		const trigger = view.getByRole("button", { name: "Other agent activity" });
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
+		assert.equal(trigger.textContent, "Other agent activity");
 		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
 		await view.click(trigger);
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(trigger.getAttribute("aria-label"), "Use an agent");
+		assert.equal(trigger.textContent, "Use an agent");
 		assert.equal(view.queryByText("first work"), null);
+		await view.rerender(menuProps([team[0]], { teammateSessionsPresentation: "count" }));
+		assert.equal(view.queryByText(/use an agent|using agents|other agent activity/iu) === null, true);
+		assert.equal(view.getAllByRole("listitem").length, 1);
+		const onePerson = team.map((item) => ({ ...item, invokedBy: { name: "Jordan" } }));
+		await view.rerender(menuProps([session("mine", "owner"), ...onePerson], { teammateSessionsPresentation: "count" }));
+		const singlePersonTrigger = view.getByRole("button", { name: "Using agents" });
+		await view.click(singlePersonTrigger);
+		assert.equal(singlePersonTrigger.getAttribute("aria-label"), "Other agent activity");
+	} finally { await view.unmount(); }
+});
+
+test("mixed sessions show teammates expanded by default and can collapse", async () => {
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer")]));
+	try {
+		const trigger = view.getByRole("button", { name: "Other agent activity" });
+		assert.equal(trigger.getAttribute("aria-expanded"), "true");
+		assert.equal(Boolean(view.getByText("team work")), true);
+		await view.click(trigger);
+		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(view.queryByText("team work"), null);
 	} finally { await view.unmount(); }
 });
 
 test("session menu folds teammate sessions into one flat list after own sessions without headings or counts", async () => {
 	const items = [session("team-first", "viewer", { invokedBy: { name: "Sample Alpha" } }), session("mine", "owner"), session("team-second", "viewer"), session("legacy", undefined)];
-	const view = await renderMenu(menuProps(items));
+	const view = await renderMenu(menuProps(items, { teammateSessionsPresentation: "count" }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.equal(trigger.getAttribute("aria-label"), "Other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "Using agents");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.deepEqual(view.getAllByRole("listitem").map((row) => row.getAttribute("data-testid")), ["agent-session-row-mine", "agent-session-row-legacy"]);
@@ -51,7 +207,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
-		assert.equal(trigger.getAttribute("aria-label"), "2 other sessions");
+		assert.equal(trigger.getAttribute("aria-label"), "Other agent activity");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");
@@ -68,7 +224,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 });
 
 test("rapidly toggling the teammate disclosure leaves one settled avatar stack", async () => {
-	const view = await renderMenu(menuProps([session("mine", "owner"), session("teammate", "viewer", { invokedBy: { name: "Sample Alpha" } })]));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("teammate", "viewer", { invokedBy: { name: "Sample Alpha" } })], { teammateSessionsPresentation: "count" }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		for (let index = 0; index < 4; index++) await view.click(trigger);
@@ -80,18 +236,25 @@ test("rapidly toggling the teammate disclosure leaves one settled avatar stack",
 });
 
 test("owner-only, viewer-only, expired and empty menus retain their separate semantics without an assignment footer", async () => {
+	let selected = 0;
+	const onSelectSession = () => { selected++; };
 	const view = await renderMenu(menuProps([session("mine", "owner")]));
 	try {
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
-		await view.rerender(menuProps([session("teammate", "viewer")]));
+		await view.rerender(menuProps([session("teammate", "viewer")], { onSelectSession }));
 		assert.equal(view.queryByRole("button", disclosure), null);
-		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
-		assert.equal(view.getByText("teammate work").closest("article").tabIndex, 0);
+		assert.equal(view.queryByText(/use an agent|using agents|other agent activity/iu) === null, true);
+		const viewer = view.getByText("teammate work").closest("article");
+		assert.equal(viewer.tabIndex, 0);
+		await view.focus(viewer);
+		assert.equal(view.getByText("You can see this session, but only its owner can act on it.").textContent, "You can see this session, but only its owner can act on it.");
+		await view.press(viewer, "Enter");
+		assert.equal(selected, 0);
 		assert.equal(view.getAllByRole("listitem").length, 1);
 		assert.equal(view.queryByRole("separator"), null);
-		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));
+		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")], { teammateSessionsPresentation: "count" }));
 		assert.equal(view.getByText("expired work").closest("article").querySelector("button")?.getAttribute("aria-label"), "More actions for expired work");
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^expired work/u }), null);
@@ -113,6 +276,7 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 	const menuChanges = [];
 	const items = [session("cloud", "owner"), session("local", "owner", { host: "local" }), session("old", "expired"), session("team", "viewer")];
 	const view = await renderMenu(menuProps(items, {
+		teammateSessionsPresentation: "count",
 		onSelectSession: (item) => calls.push(["view", item.id]),
 		onRenameSession: (item) => calls.push(["rename", item.id]),
 		onDeleteSession: (item) => calls.push(["delete", item.id]),
@@ -123,26 +287,31 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 	try {
 		await view.click(view.getByRole("button", disclosure));
 		await view.click(view.getByRole("button", { name: /^cloud work/u }));
-		for (const name of ["Rename", "Delete", "Dismiss"]) {
+		for (const name of ["Rename", "Delete"]) {
 			await view.click(view.getByRole("button", { name: "More actions for cloud work" }));
 			assert.equal(view.container.contains(view.getByRole("menu")), false);
+			assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent.trim()), ["Stop session", "Pin", "Rename", "Delete"]);
 			await view.click(view.getByRole("menuitem", { name }));
 			assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "true");
 		}
+		await view.click(view.getByRole("button", { name: "More actions for local work" }));
+		assert.equal(view.getAllByRole("menuitem").length, 2);
+		assert.ok(view.getByRole("menuitem", { name: "Copy prompt" }));
+		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
 		await view.click(view.getByRole("button", { name: /^local work/u }));
 		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
 		await view.click(view.getByRole("button", { name: "More actions for old work" }));
 		assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent.trim()), ["Delete"]);
 		await view.click(view.getByRole("menuitem", { name: "Delete" }));
-		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["archive", "cloud"], ["continue", "local"], ["delete", "old"]]);
+		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["continue", "local"], ["continue", "local"], ["delete", "old"]]);
 		assert.equal(menuChanges.includes(true), true);
 		assert.equal(menuChanges.at(-1), false);
 	} finally { await view.unmount(); }
 });
 
-test("viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
+test("private viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
 	let selected = 0;
-	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { privateTo: "Sample Alpha", invokedBy: { name: "Sample Alpha" } })], { teammateSessionsPresentation: "count", onSelectSession: () => { selected++; } }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		await view.press(trigger, "Enter");
@@ -177,10 +346,10 @@ test("header avatars deduplicate identities and count people beyond the first fo
 		{ name: "Sample Alpha", avatarSrc: "/different-alpha.svg" },
 		{ name: "Sample Beta" }, undefined, { name: " " },
 	];
-	const view = await renderMenu(menuProps([session("mine", "owner"), ...people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))]));
+	const view = await renderMenu(menuProps([session("mine", "owner"), ...people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))], { teammateSessionsPresentation: "count" }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
-		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("title")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
+		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("aria-label")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
 		assert.deepEqual(sources, ["/sample-alpha.svg", "/different-alpha.svg"]);
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group-count"]')), false);
 		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 5 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));
@@ -200,6 +369,7 @@ test("assignment stays open when its disclosure folds and when an owner menu por
 		entry: "components/blocks/agent-assignment/components/agent-assignment.tsx", exportName: "AgentAssignment", mocks: themeMock,
 		props: {
 			agents: [],
+			teammateSessionsPresentation: "count",
 			assignedAgents: [
 				{ id: "owner", name: "Sample owner", host: "cloud", role: "owner", statusKind: "finished" },
 				{ id: "viewer", name: "Sample viewer", host: "cloud", role: "viewer", statusKind: "finished" },
@@ -231,7 +401,7 @@ test("assignment stays open when its disclosure folds and when an owner menu por
 	} finally { await view.unmount(); }
 });
 
-test("Default uses the activity row and long session cards; Simple keeps the facepile", () => {
+test("Default uses the activity row and small session cards; Simple keeps the facepile", () => {
 	const source = readProjectFile("components/blocks/agent-assignment/components/agent-assignment.tsx");
 	const field = readProjectFile("components/blocks/agent-assignment/components/agent-assignment-default-field.tsx");
 	const sessionMenu = readProjectFile(
@@ -270,7 +440,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(mapper, /\.\.\.\(role !== undefined \? \{ role \} : \{\}\)/u);
 
 	assert.match(sessionMenu, /<AgentSessionCard/u);
-	assert.match(sessionMenu, /density="long"/u);
+	assert.match(sessionMenu, /density="short"/u);
 	assert.match(sessionMenu, /showLifecycleLabel=\{false\}/u);
 	assert.match(sessionMenu, /padding="compact"/u);
 	assert.doesNotMatch(sessionMenu, /showMoreMenu=\{false\}/u);
@@ -291,7 +461,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/moreMenuOpenRef\.current[\s\S]*reason === "outside-press"[\s\S]*reason === "trigger-hover"/u,
 	);
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
-	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\)\}/u);
+	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col outline-none", dropdownStyles\.padding\)\}/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
 	assert.match(mapper, /const invokedBy = agent\.invokedBy;/u);
 	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);
@@ -315,7 +485,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/const DEMO_INVOKERS: Readonly<Record<string, AgentListInvoker>> = \{\n\t"github-copilot"/u,
 	);
 	assert.match(sessionMenu, /rows\.map\(toAssignmentSessionItem\)/u);
-	assert.doesNotMatch(sessionMenu, /density="short"/u);
+	assert.doesNotMatch(sessionMenu, /density="long"/u);
 	assert.doesNotMatch(sessionMenu, /mx-1/u);
 	assert.doesNotMatch(mapper, /timeLabel: agent\.statusLabel/u);
 	assert.match(mapper, /\.\.\.\(agent\.timeLabel \? \{ timeLabel: agent\.timeLabel \} : \{\}\)/u);

@@ -8,14 +8,14 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 	await page.getByRole("button", { name: "Select Pull request" }).click();
 	const stage = page.locator("[data-butter-gallery-pull-request]");
 	const card = stage.locator('[data-slot="jira-issue-card"]');
-	const expectedColor = async (className: string) => page.evaluate((name) => {
+	const expectedColor = async (className: string, property: "color" | "backgroundColor" = "color") => page.evaluate(({ name, property }) => {
 		const probe = document.createElement("span");
 		probe.className = name;
 		document.body.append(probe);
-		const color = getComputedStyle(probe).color;
+		const color = getComputedStyle(probe)[property];
 		probe.remove();
 		return color;
-	}, className);
+	}, { name: className, property });
 	for (const [state, name, tokenClass, tooltip] of [
 		["Open PR", /Pull request #284/, "text-icon-accent-lime", "#284 Add merchant onboarding quickstart"],
 		["Merged PR", /Pull request merged #284/, "text-icon-accent-purple", "#284 Add merchant onboarding quickstart"],
@@ -32,9 +32,14 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 		await trigger.click();
 		await expect(page.getByRole("tooltip", { name: tooltip })).toBeHidden();
 		await expect(page.getByRole("dialog", { name: state === "Multiple PRs" ? "Pull requests for PAY-999" : "Pull request #284 details" })).toBeVisible();
+		await page.mouse.move(0, 0);
+		await expect(trigger).toHaveAttribute("aria-expanded", "true");
+		await expect(trigger).toHaveCSS("background-color", await expectedColor("bg-bg-selected", "backgroundColor"));
+		await expect(trigger.locator("svg")).toHaveCSS("color", color);
 		await page.keyboard.press("Escape");
+		await expect(trigger).toHaveAttribute("aria-expanded", "false");
 	}
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	const failedCard = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]');
 	await failedCard.hover({ position: { x: 30, y: 30 } });
 	const failedTrigger = failedCard.getByRole("button", { name: /Pull request failed #1851/ });
@@ -46,6 +51,13 @@ test("hovering a Jira card reveals the PR status color", async ({ page }) => {
 	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeHidden();
+	await failedTrigger.click();
+	await page.mouse.move(0, 0);
+	await expect(failedTrigger).toHaveAttribute("aria-expanded", "true");
+	await expect(failedTrigger).toHaveCSS("background-color", await expectedColor("bg-bg-selected", "backgroundColor"));
+	await expect(failedTrigger.locator("svg")).toHaveCSS("color", await expectedColor("text-icon-danger"));
+	await page.keyboard.press("Escape");
+	await expect(failedTrigger).toHaveAttribute("aria-expanded", "false");
 });
 
 test("multiple pull requests expand inline one at a time", async ({ page }) => {
@@ -163,7 +175,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	const boardCard = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-999"] [data-slot="jira-issue-card"]');
 	await expect(boardCard).toBeVisible();
 	const boardCardBounds = await boardCard.boundingBox();
@@ -215,7 +227,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	await card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true }).click();
 	await expect(workItem.getByRole("region", { name: "Pull request development" })).toContainText("Merged");
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
-	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await gallery.getByRole("button", { name: "Select Board", exact: true }).click();
 	await gallery.getByRole("button", { name: "Select Pull request" }).click();
 	await expect(statuses.getByRole("button", { name: "Merged PR" })).toHaveAttribute("aria-pressed", "true");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();

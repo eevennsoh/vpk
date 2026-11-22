@@ -250,22 +250,17 @@ test("Rovo app selected custom agent context is merged into fullscreen submissio
 	assert.match(SHELL_SOURCE, /onSelectSuggestion=\{handleRovoAppSuggestionSelect\}/u);
 });
 
-test("Rovo app streaming anchor follows the real bottom", () => {
-	assert.match(SCROLL_SYNC_SOURCE, /target\?: RovoAppScrollAnchorTarget;/u);
+test("Rovo app uses the scroller for user-turn anchors and timeline jumps", () => {
 	assert.match(
 		CORE_MESSAGES_SOURCE,
-		/target=\{isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId \? "bottom" : "follow"\}/u,
+		/<MessageScroller[\s\S]*autoScroll/u,
 	);
 	assert.match(
 		CORE_MESSAGES_SOURCE,
-		/resizeTarget=\{isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId \? "bottom" : "follow"\}/u,
-	);
-	assert.match(
-		CORE_MESSAGES_SOURCE,
-		/resize=\{isStreaming && scrollAnchorMessageId === latestVisibleUserMessageId \? "instant" : "smooth"\}/u,
+		/<ChatScrollerItem key=\{message\.id\} messageId=\{message\.id\} scrollAnchor/u,
 	);
 	assert.match(
 		SCROLL_SYNC_SOURCE,
-		/scrollToBottom\(\{\s+animation: target === "bottom" \|\| shouldReduceMotion \? "instant" : "smooth",\s+ignoreEscapes: true,\s+target,\s+\}\)/u,
+		/scrollToMessage\(scrollAnchorMessageId, \{ behavior, scrollMargin: 24 \}\)/u,
 	);
 });

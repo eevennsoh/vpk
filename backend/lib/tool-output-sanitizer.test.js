@@ -231,3 +231,16 @@ test("splitSpecFenceTextForStreaming buffers a trailing partial unfenced patch l
 		"Patch fragments must not leak into visible assistant text"
 	);
 });
+
+test("a spec fence opens only where spec is the whole language", () => {
+	// Before: every language starting with "spec" opened a pending spec fence and hid the rest.
+	for (const text of ["A ```specs-not\nX\n```", "A ```specification\nY", "A ```spec-like tail", "A ```spec foo\nZ"]) {
+		assert.deepEqual(splitSpecFenceTextForStreaming(text), { pendingText: "", visibleText: text }, text);
+		assert.equal(hasPendingSpecFence(text), false, text);
+		assert.equal(stripSpecFences(text), text, text);
+	}
+	// Whitespace after it, a newline, or the end of the text (still undecided) opens one.
+	for (const opener of ["```spec", "```spec  ", "```SPEC\t", "```spec\n", "```spec \r\n"]) {
+		assert.deepEqual(splitSpecFenceTextForStreaming(`A ${opener}`), { pendingText: opener, visibleText: "A " }, JSON.stringify(opener));
+	}
+});

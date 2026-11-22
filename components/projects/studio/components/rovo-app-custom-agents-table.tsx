@@ -15,7 +15,7 @@ import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMed
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Lozenge } from "@/components/ui/lozenge";
 import { EntityCardAgentCard } from "@/components/ui-custom/entity-card";
 import {
@@ -327,9 +327,9 @@ export function StudioAgentsSection({
 					))}
 				</ButtonGroup>
 				<InputGroup className="w-full max-w-[220px] sm:w-[220px]">
-					<InputGroupAddon>
+					<InputGroupSearchAddon>
 						<Icon aria-hidden render={<SearchIcon label="" size="small" />} />
-					</InputGroupAddon>
+					</InputGroupSearchAddon>
 					<InputGroupInput
 						aria-label="Search agents"
 						autoComplete="off"

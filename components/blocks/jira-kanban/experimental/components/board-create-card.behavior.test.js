@@ -2,9 +2,9 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
-for (const columnSizing of ["fill", "content"]) {
-	for (const dropZoneLabel of [undefined, "Create work item"]) {
-		test(`${columnSizing} column footer opens the same inline editor as its header (${dropZoneLabel ?? "no dropzone"})`, async () => {
+for (const [columnSizing, pinCreateAction] of [["fill", false], ["content", false], ["fill", true]]) {
+	for (const dropZoneLabel of pinCreateAction ? [undefined] : [undefined, "Create work item"]) {
+		test(`${pinCreateAction ? "pinned" : columnSizing} column footer opens the same inline editor as its header (${dropZoneLabel ?? "no dropzone"})`, async () => {
 			const view = await renderComponent({
 				source: `
 					import { useState } from "react";
@@ -18,6 +18,7 @@ for (const columnSizing of ["fill", "content"]) {
 						const [saved, setSaved] = useState("");
 						return <JiraDropzoneField><BoardColumn title="To do" count={0} assignedAgentIds={[]} cardInsertion={null}
 							chrome={resolveKanbanColumnChrome("default")} columnChrome="default" columnSizing="${columnSizing}"
+								pinCreateAction={${pinCreateAction}}
 							createWorkItemDropZoneLabel={${JSON.stringify(dropZoneLabel)}} sessionDragTransaction={null} onCollapse={() => {}}
 							onStartCreate={trigger => create.start("To do", trigger)} creating={create.column === "To do"}
 							createDraft={create.column === "To do" ? <JiraInlineCreate columns={[]} issueKey="PAY-1" onCancel={create.close} onSave={draft => { setSaved("To do: " + draft.summary); create.close(); }} /> : undefined}
@@ -28,6 +29,7 @@ for (const columnSizing of ["fill", "content"]) {
 			await view.click(view.getByRole("button", { name: "Create work item in To do" }));
 			await view.press(view.getByRole("textbox", { name: "Work item summary" }), "Escape");
 			assert.equal(view.queryByRole("textbox", { name: "Work item summary" }) === null, true);
+			assert.equal(view.container.querySelectorAll('button[aria-label="Create in To do"]').length, 1);
 			const footer = view.getByRole("button", { name: "Create in To do" });
 			await view.click(footer);
 			const summary = view.getByRole("textbox", { name: "Work item summary" });
@@ -44,13 +46,72 @@ for (const columnSizing of ["fill", "content"]) {
 	}
 }
 
+test("a hovered board gap stays visible and creates a work item at that position", async () => {
+	const { act } = require("react");
+	const view = await renderComponent({
+		source: `
+			import { useState } from "react";
+			import { BoardColumnCardList } from "@/components/blocks/jira-kanban/experimental/components/board-column-card-list";
+			import { CreatedCardArrivalMotion } from "@/components/blocks/jira-kanban/experimental/components/created-card-arrival-motion";
+			import { JiraInlineCreate } from "@/components/blocks/jira-inline-create";
+			import { useBoardCreateCard } from "@/components/blocks/jira-kanban/experimental/hooks/use-board-create-card";
+			import { insertBoardCardFromDraft } from "@/components/blocks/jira-kanban/experimental/lib/board-work-item-options";
+			export default function Fixture() {
+				const create = useBoardCreateCard();
+				const [columns, setColumns] = useState([{ title: "To do", count: 2, cards: [
+					{ code: "PAY-1", title: "First", tags: [] }, { code: "PAY-2", title: "Second", tags: [] },
+				] }]);
+				const cards = columns[0].cards;
+				return <BoardColumnCardList chrome={{ cardList: { gap: "4px" } }} columnTitle="To do" count={cards.length}
+					insertionArmed={false} isEmpty={false} creating={create.column !== null}
+					createBeforeCardCode={create.beforeCardCode}
+					onStartCreate={(trigger, before, focus) => create.start("To do", trigger, before, focus)}
+					createDraft={create.column ? <JiraInlineCreate columns={columns} issueKey="PAY-3" ref={create.formRef}
+						onCancel={create.close} onSave={draft => { setColumns(current => insertBoardCardFromDraft(current, draft, "To do", create.beforeCardCode).columns); create.close(); }} /> : undefined}>
+					{cards.map((card, index) => <CreatedCardArrivalMotion key={card.code} cardCode={card.code} cardCount={cards.length}
+						cardIndex={index} columnTitle="To do" cardInsertion={null} dropTarget={null} onArrivalComplete={() => {}}
+						shouldAnimateCardMoves={false}><button>{card.title}</button></CreatedCardArrivalMotion>)}
+				</BoardColumnCardList>;
+			}
+		`,
+	});
+	const viewport = view.getByRole("region", { name: "To do work items" });
+	viewport.getBoundingClientRect = () => new DOMRect(0, 0, 200, 300);
+	const cards = viewport.querySelectorAll('[data-board-agent-session-drop-zone="issue"]');
+	cards.forEach((card, index) => { card.getBoundingClientRect = () => new DOMRect(0, index * 104, 200, 100); });
+	await act(async () => { viewport.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", clientX: 100, clientY: 102 })); });
+	const marker = view.getByRole("button", { name: "Create work item before PAY-2" });
+	await act(async () => {
+		viewport.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: marker, pointerType: "mouse" }));
+		marker.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", clientX: 0, clientY: 102 }));
+	});
+	assert.equal(view.queryByRole("button", { name: "Create work item before PAY-2" }) !== null, true);
+	await view.focus(marker);
+	await act(async () => { marker.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse" })); });
+	assert.equal(view.isFocused(marker), true, "the control stays available while keyboard-focused");
+	await view.press(marker, "Enter");
+	const summary = view.getByRole("textbox", { name: "Work item summary" });
+	assert.equal(Boolean(view.getByRole("button", { name: "First", hidden: true }).compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(summary.compareDocumentPosition(view.getByRole("button", { name: "Second", hidden: true })) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	await view.press(summary, "Escape");
+	await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Second" })), true, "cancel restores focus to the adjacent card");
+	await act(async () => { viewport.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", clientX: 100, clientY: 102 })); });
+	await view.click(view.getByRole("button", { name: "Create work item before PAY-2" }));
+	const reopenedSummary = view.getByRole("textbox", { name: "Work item summary" });
+	await view.fill(reopenedSummary, "Inserted work");
+	await view.press(reopenedSummary, "Enter");
+	assert.deepEqual([...viewport.querySelectorAll('[data-board-agent-session-drop-zone="issue"]')].map((card) => card.dataset.issueKey), ["PAY-1", "PAY-3", "PAY-2"]);
+	await view.unmount();
+});
+
 test("creating a board item commits its metadata and reparents selected subtasks", () => {
-	const { appendBoardCardFromDraft, indexBoardSubtasks } = require("../lib/board-work-item-options.ts");
+	const { insertBoardCardFromDraft, indexBoardSubtasks } = require("../lib/board-work-item-options.ts");
 	const columns = [{ title: "To do", count: 2, cards: [
 		{ code: "PAY-1", title: "Parent", priority: "medium", tags: [] },
 		{ code: "PAY-2", title: "Child", priority: "medium", tags: [], parentIssueKey: "PAY-1" },
 	] }, { title: "Done", count: 0, cards: [] }];
-	const result = appendBoardCardFromDraft(columns, { summary: "New work", issueType: "story", tags: ["checkout"], parentIssueKey: "PAY-1", subtaskKeys: ["PAY-2"], priority: "major", dueDate: "2026-12-01", assignee: { id: "venn", name: "Venn" } }, "To do");
+	const result = insertBoardCardFromDraft(columns, { summary: "New work", issueType: "story", tags: ["checkout"], parentIssueKey: "PAY-1", subtaskKeys: ["PAY-2"], priority: "major", dueDate: "2026-12-01", assignee: { id: "venn", name: "Venn" } }, "To do");
 	assert.equal(result.issueKey, "PAY-3");
 	assert.equal(result.columns[1], columns[1]);
 	assert.equal(result.columns[0].cards[1].parentIssueKey, "PAY-3");
@@ -66,6 +127,6 @@ test("creating a board item commits its metadata and reparents selected subtasks
 	assert.deepEqual(children.map((item) => item.subtask.issueKey), ["PAY-2"]);
 	assert.equal(children[0].subtask.status, "To do");
 	const { butterRelatedCatalog } = require(process.cwd() + "/components/projects/butter-v1/data/related-scope.ts");
-	const lowest = appendBoardCardFromDraft(columns, { summary: "Lowest", issueType: "task", priority: "trivial" }, "To do");
+	const lowest = insertBoardCardFromDraft(columns, { summary: "Lowest", issueType: "task", priority: "trivial" }, "To do");
 	assert.equal(butterRelatedCatalog(lowest.columns).find((item) => item.summary === "Lowest").priority, "Lowest");
 });

@@ -18,8 +18,8 @@ const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "hea
 
 // Route budgets live in perf-route-budgets.json, a shrink-only baseline: a unit test fails when a
 // value rises above the merge base, unless a reviewed entry in the file's "raises" records exactly
-// that change, with a reason, within the file's "margin" of the value it was measured at. They were last lowered on 2026-11-14 (C-8e) to about 3% over a
-// production build of main, as a ceiling that stops further growth. The file's "targets" are the
+// that change, with a reason, within the file's "margin" of the value it was measured at. They were re-baselined on 2026-11-14 (C-8e) to about 3% over a
+// production build of main, as a ceiling that stops further growth; later changes are recorded in the file's notes and raises. The file's "targets" are the
 // limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57, July 2026).
 // The Rovo first-load target of 7,100,000 bytes was met by C-8d and removed.
 const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");

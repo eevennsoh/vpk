@@ -84,6 +84,8 @@ export interface AgentAvatarVisualProps {
 	logoName?: AtlassianLogoName;
 	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
 	brandName?: ThirdPartyLogoName;
+	/** Override the third-party logo footprint within the avatar frame. */
+	thirdPartyLogoSize?: LogoProps["size"];
 	/** Opt into coding-brand canvases and the local Codex/Cursor artwork. */
 	appearance?: "default" | "coding";
 	label?: string;
@@ -97,8 +99,6 @@ export interface AgentAvatarVisualProps {
 	fallbackText?: string;
 	/** Agent status overlay. Use `needs-input` or `finished`. */
 	status?: AvatarStatus;
-	/** White separator outside the hexagon when used as a compact corner badge. */
-	separator?: boolean;
 	/** Avatar overlays such as company or project badges. */
 	children?: ReactNode;
 	avatarClassName?: string;
@@ -123,6 +123,7 @@ export function AgentAvatarVisual({
 	vpkLogo,
 	logoName,
 	brandName,
+	thirdPartyLogoSize,
 	appearance = "default",
 	label,
 	sizePx,
@@ -130,7 +131,6 @@ export function AgentAvatarVisual({
 	inset = false,
 	fallbackText,
 	status,
-	separator,
 	children,
 	avatarClassName,
 	className,
@@ -150,7 +150,7 @@ export function AgentAvatarVisual({
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
 	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName, sizePx, shape) : undefined;
 	const codingLogoFrame = codingVisual ? getCodingAgentLogoFrame(sizePx) : undefined;
-	const externalLogoSize = codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
+	const externalLogoSize = thirdPartyLogoSize ?? codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
 	// Both explicit and data-backed Rovo identities keep the gem inset so the
 	// shared avatar hexagon, rather than the logo silhouette, owns the frame.
 	const visual = isRovoAvatar ? (
@@ -183,7 +183,6 @@ export function AgentAvatarVisual({
 			shape={shape}
 			size={avatarSizeFromPx(sizePx)}
 			status={status}
-			separator={separator}
 		>
 			{hasWhiteBackdrop ? (
 				<span

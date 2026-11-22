@@ -1,11 +1,81 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
-const { renderComponent } = require("../../../scripts/lib/render-component.js");
+const { accessibleName, renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const rows = [
 	{ issueKey: "PAY-1", summary: "First item", issueType: "task", status: "To do", priority: "medium" },
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
+
+test("Epic grouping shows the epic tag and keeps its disclosure control", async () => {
+	const view = await renderComponent({ source: `
+		import { JiraListGroupHeader } from "@/components/blocks/jira-list/jira-list-table";
+		export default function Probe() {
+			return <table><tbody><JiraListGroupHeader columnCount={2} group={{ id: "PAY-1", label: "PAY-1 Payments", issueKeys: ["PAY-2", "PAY-3"], count: 2, collapsed: false, onToggle() {}, visual: { kind: "epic", key: "PAY-1", name: "Payments" } }} /></tbody></table>;
+		}
+	` });
+	const header = view.getByRole("button", { name: "Collapse PAY-1 Payments" });
+	const tag = header.closest("tr").querySelector('[data-slot="tag"]');
+	assert.equal(tag?.textContent, "Payments");
+	assert.ok(tag.querySelector("svg"));
+	assert.equal(header.getAttribute("aria-expanded"), "true");
+	await view.unmount();
+});
+
+test("Butter list PR titles stay non-navigating and reveal their card on keyboard focus", async () => {
+	const view = await renderComponent({ source: `
+		import { JiraList } from "@/components/blocks/jira-list";
+		import { createListRows } from "@/components/projects/butter-v1/lib/list-rows";
+		const columns = [{ title: "In progress", cards: [
+			{ code: "PAY-105", title: "Port 3DS", priority: "major", tags: [],
+				pullRequestNumber: 1851, pullRequestStatus: "failed",
+				pullRequestPreview: { title: "Port 3DS flow", href: "https://github.com/payments-platform/payments/pull/1851",
+					repository: "payments-platform/payments", branch: "pay-105-confirm-3ds-challenge", targetBranch: "main",
+					additions: 274, deletions: 52, filesChanged: 13 } },
+			{ code: "PAY-118", title: "No PR yet", priority: "medium", tags: [] },
+		] }];
+		export default function Probe() {
+			return <JiraList rows={createListRows(columns, [])} showPullRequests />;
+		}
+	` });
+	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull requests" })), true);
+	const trigger = view.container.querySelector('[aria-label="Pull request #1851: Port 3DS flow"]');
+	assert.equal(trigger.textContent, "#1851 Port 3DS flow");
+	assert.equal(trigger.tagName, "SPAN");
+	assert.equal(trigger.hasAttribute("href"), false);
+	assert.equal(trigger.querySelectorAll("a, button").length, 0);
+	assert.equal(trigger.contains(view.getByRole("img", { name: "Pull request failed" })), true);
+	assert.equal(view.container.querySelectorAll("tbody a").length, 0);
+	assert.equal(view.container.querySelectorAll("tbody tr")[1].querySelectorAll("a").length, 0);
+	await view.click(trigger);
+	assert.equal(window.location.href, "http://localhost/");
+	await view.focus(trigger);
+	await require("react").act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 700));
+	});
+	const preview = document.querySelector('[aria-label="Pull request #1851 details"]');
+	assert.equal(Boolean(preview), true);
+	assert.equal(preview.textContent.includes("Failed"), true);
+	assert.equal(preview.textContent.includes("payments-platform/payments"), true);
+	assert.equal(preview.textContent.includes("pay-105-confirm-3ds-challenge"), true);
+	assert.equal(preview.textContent.includes("274"), true);
+	assert.equal(preview.textContent.includes("52"), true);
+	assert.equal(preview.querySelectorAll("a").length, 0);
+	await view.press(null, "Escape");
+	assert.equal(document.querySelector('[aria-label="Pull request #1851 details"]')?.hasAttribute("data-open") ?? false, false);
+	await view.unmount();
+});
+
+test("Project Butter is the default list and Classic remains an explicit variant", async () => {
+	const view = await renderComponent({ entry: "components/blocks/jira-list/index.tsx", exportName: "JiraList", props: { rows } });
+	assert.equal(document.querySelector('[data-testid="jira-list"]').getAttribute("data-variant"), "project-butter");
+	assert.equal(document.querySelector("table").getAttribute("data-jira-list-variant"), "project-butter");
+	await view.rerender({ rows, variant: "classic" });
+	assert.equal(document.querySelector('[data-testid="jira-list"]').getAttribute("data-variant"), "classic");
+	assert.equal(document.querySelector("table").getAttribute("data-jira-list-variant"), "classic");
+	assert.equal([...document.querySelectorAll("th[scope=col]")].some((header) => header.textContent.includes("Work")), true);
+	assert.equal(document.querySelectorAll("tbody tr").length, 2);
+});
 
 test("copying a work item link shows and clears feedback for that row", async () => {
 	const copied = [];
@@ -62,6 +132,25 @@ test("selection controls precede hierarchy controls and leave the issue type vis
 	assert.deepEqual(changes, [["PAY-1", true]]);
 	assert.equal(Boolean(view.getByRole("img", { name: "task" })), true);
 	await view.unmount();
+});
+
+test("Classic keeps hierarchy controls inside Work while checkboxes stay in the selection column", async () => {
+	const toggled = [];
+	let toggledAll = 0;
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx", exportName: "JiraList",
+		props: { rows: [{ ...rows[0], hasChildren: true }, rows[1]], variant: "classic", onToggleExpand: (key) => toggled.push(key), hierarchyExpansion: { allExpanded: false, disabled: false, onToggleAll: () => { toggledAll++; } } },
+	});
+	const checkboxCell = view.getByRole("checkbox", { name: "Select PAY-1" }).closest("td");
+	const expand = view.getByRole("button", { name: "Expand PAY-1" });
+	assert.equal(expand.closest("td") === checkboxCell.nextElementSibling, true);
+	assert.equal(expand.closest("td").textContent.includes("First item"), true);
+	assert.equal(view.getByRole("button", { name: "Expand all subtasks" }).closest("th").textContent.includes("Work"), true);
+	assert.equal(view.getByRole("checkbox", { name: "Select all work items" }).closest("th").textContent.includes("Work"), false);
+	await view.click(expand);
+	await view.click(view.getByRole("button", { name: "Expand all subtasks" }));
+	assert.deepEqual(toggled, ["PAY-1"]);
+	assert.equal(toggledAll, 1);
 });
 
 test("row selection is reachable and operable by keyboard without hovering", async () => {
@@ -178,7 +267,9 @@ test("due dates can be added and cleared with the calendar", async () => {
 for (const project of ["butter", "butter-v1"]) test(`${project} list uses the card agent picker to start a session by keyboard`, async () => {
 	const assigned = [];
 	const view = await renderComponent({
-		entry: `components/projects/${project}/components/butter-list-agent-cell.tsx`,
+		entry: project === "butter-v1"
+			? "components/blocks/jira-list/project-butter-agent-cell.tsx"
+			: "components/projects/butter/components/butter-list-agent-cell.tsx",
 		exportName: "ButterListAgentCell",
 		props: {
 			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
@@ -190,6 +281,23 @@ for (const project of ["butter", "butter-v1"]) test(`${project} list uses the ca
 	await view.press(null, " ");
 	await view.click(view.getByRole("option", { name: /Claude/u }));
 	assert.deepEqual(assigned, [["PAY-1", ["claude"]]]);
+});
+
+test("Butter v1 list hides finished sessions while showing active sessions", async () => {
+	const finished = { id: "claude", name: "Claude", statusKind: "finished", statusLabel: "Finished" };
+	const working = { id: "figma", name: "Figma", statusKind: "working", statusLabel: "Working" };
+	const props = {
+		agentCatalog: [{ id: "claude", name: "Claude", byline: "" }, { id: "figma", name: "Figma", byline: "" }],
+		onAssignedAgentIdsChange() {},
+		row: { ...rows[0], agentSessions: [finished] },
+	};
+	const view = await renderComponent({ entry: "components/blocks/jira-list/project-butter-agent-cell.tsx", exportName: "ButterListAgentCell", props });
+	assert.equal(view.queryByRole("button", { name: "Claude: Finished" }), null);
+	assert.equal(view.getByRole("button", { name: "Add agent to PAY-1" }) !== null, true);
+	await view.rerender({ ...props, row: { ...rows[0], agentSessions: [finished, working] } });
+	assert.equal(view.getByRole("button", { name: "Figma: Working" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Claude: Finished" }), null);
+	await view.unmount();
 });
 
 test("Butter list forwards agent directory actions to the picker", async () => {
@@ -245,7 +353,9 @@ test("assigned list sessions show the session without an assignment footer", asy
 	});
 	await view.click(view.getByRole("button", { name: "Edit agents" }));
 	assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
-	assert.notEqual(view.queryByRole("button", { name: /ClaudeClaude/u }), null);
+	// A working session names its agent only in the title; the byline shows the mark alone.
+	const sessionNames = view.getAllByRole("button", { name: /^Claude/u }).map(accessibleName);
+	assert.ok(sessionNames.some((name) => name !== "Claude: Working"), sessionNames.join(" | "));
 });
 
 test("starting a list session moves focus to its activity", async () => {
@@ -270,7 +380,7 @@ test("starting a list session moves focus to its activity", async () => {
 test("Jira List preview uses Butter data and restores edits on refresh", async () => {
 	const view = await renderComponent({ entry: "components/website/demos/blocks/jira-list-demo.tsx" });
 	assert.equal(Boolean(view.getByRole("button", { name: "Add agent to PAY-118" })), true);
-	assert.equal(Boolean(view.getByRole("button", { name: "Edit story points for PAY-118, no estimate" })), true);
+	assert.equal(Boolean(view.getByRole("button", { name: "Edit story points for PAY-118, 3" })), true);
 	await view.click(view.getByRole("button", { name: /Edit summary for PAY-118:/u }));
 	const summary = view.getByRole("textbox", { name: "Summary for PAY-118" });
 	await view.fill(summary, "Updated preview item");

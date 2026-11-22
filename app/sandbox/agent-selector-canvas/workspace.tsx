@@ -69,7 +69,7 @@ function Preview({ id, data }: NodeProps<PreviewNode>) {
 				}}>{data.name}</button>}
 				<span role="status" className="text-xs">{copied ? "Copied" : ""}</span>
 			</div>
-			<div className="nodrag" onWheelCapture={(event) => {
+			<div className="nodrag" role="region" aria-label={data.name} onWheelCapture={(event) => {
 				if (event.ctrlKey || event.metaKey || !(event.target instanceof HTMLElement)) return;
 				let element: HTMLElement | null = event.target;
 				while (element && element !== event.currentTarget) {
@@ -102,7 +102,16 @@ function CanvasContent() {
 		} catch { /* Storage is optional. */ }
 	}, [flow]);
 	useEffect(() => {
-		if (!nodesInitialized || !saved || revealed.current) return;
+		if (!nodesInitialized || revealed.current) return;
+		const targetId = new URLSearchParams(window.location.search).get("preview");
+		const target = previews.find((preview) => preview.id === targetId);
+		const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+		if (target && !(navigation?.type === "reload" && saved?.positions[target.id])) {
+			revealed.current = true;
+			void flow.fitView({ nodes: [{ id: target.id }], padding: 0.12, maxZoom: 1 });
+			return;
+		}
+		if (!saved) return;
 		const added = previews.find((preview) => !saved.positions[preview.id]);
 		if (!added) return;
 		const frame = requestAnimationFrame(() => {

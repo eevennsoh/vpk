@@ -1,4 +1,6 @@
 import type { ReactNode, Ref, RefObject } from "react";
+import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import type { JiraSavedFilter } from "@/components/blocks/jira-filter";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { AgentSessionColumnProps } from "@/components/blocks/agent-session-column/agent-session-column-types";
@@ -7,6 +9,7 @@ import type {
 	JiraListAgentSessionDropIntent,
 	JiraListInsertion,
 } from "@/components/blocks/jira-list";
+import type { JiraWorkItemGroup } from "@/components/blocks/jira-list/jira-list-grouping";
 import type {
 	JiraIssueAgentActivityLayout,
 	JiraIssueChrome,
@@ -33,6 +36,7 @@ export interface DraggedCardState {
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	groups?: readonly JiraWorkItemGroup[];
 	/**
 	 * True when Untracked is the in-flow column (Panel off). The list drops
 	 * its leading inset so it sits on the same rhythm as board statuses.
@@ -177,6 +181,9 @@ export interface ExperimentalJiraKanbanPageProps {
 	/** Route-owned avatar presentation and hover details; filtering stays in the board. */
 	renderHeaderAssignee?: HeaderAssigneeRenderer;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	filterAssigneePeople?: readonly WorkItemPerson[];
+	filterStatusOptions?: readonly string[];
+	initialSavedFilters?: readonly JiraSavedFilter[];
 	/** Keep filter selections independent when the route swaps board datasets. */
 	boardFilterScopeKey?: string;
 	/** Total avatar slots in the header, including Unassigned. */
@@ -255,6 +262,12 @@ export interface ExperimentalJiraKanbanPageProps {
 	) => ReactNode;
 	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
+	/** Share functional search and grouping with the project’s list and alternate work item views. */
+	sharedWorkItemControls?: boolean;
+	alternateContent?: {
+		label: string;
+		render: (columns: readonly JiraKanbanColumnData[], groups?: readonly JiraWorkItemGroup[]) => ReactNode;
+	};
 	showAgentSessionColumn?: boolean;
 	/** Shows confidence rationale, actions, and status in untracked-session flyouts. Defaults to true. */
 	showAgentSessionFlyoutFooter?: boolean;
@@ -315,4 +328,5 @@ export interface ExperimentalJiraKanbanPageProps {
 	showCustomizeControl?: boolean;
 	/** Focused Team EU26 header control count. Omit to keep the full View menu. */
 	needsInputCount?: number;
+	showNeedsInputButton?: boolean;
 }

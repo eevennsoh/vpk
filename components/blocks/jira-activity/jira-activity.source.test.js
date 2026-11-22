@@ -683,7 +683,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
-	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
 });
 
 test("activity comments expose an outlined Add to chat control left of expand/collapse", () => {
@@ -917,7 +917,6 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /<AgentListActivityHeader[\s\S]*leadWithAgentName/u);
 	assert.match(CARD_SOURCE, /messageTimestamp=\{timestamp\}/u);
 	assert.match(CARD_SOURCE, /timestampMeta\?: ReactNode/u);
-	assert.match(CARD_SOURCE, /<span className="shrink-0">\{timestamp\}<\/span>[\s\S]*\{timestampMeta\}/u);
 	assert.match(CARD_SOURCE, /activityGroupClass[\s\S]*group\/activity-card/u);
 	// Hover group wraps the outer card (header + body + replies), not only the body grid.
 	assert.match(

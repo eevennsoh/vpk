@@ -35,9 +35,11 @@ type DemoDialog =
 export function ProjectButterPlayground({
 	children,
 	participants,
+	showControls = true,
 }: Readonly<{
 	children: (issueProps: ProjectButterDemoIssueProps) => ReactNode;
 	participants: readonly JiraIssueParticipant[];
+	showControls?: boolean;
 }>) {
 	const [assignee, setAssignee] = useState<JiraIssueParticipant | undefined>(participants[0]);
 	const [parentId, setParentId] = useState<string | null>(JIRA_EPIC_DEMO_EPICS[0]?.id ?? null);
@@ -82,7 +84,7 @@ export function ProjectButterPlayground({
 
 	return (
 		<section className="w-full" aria-label="Project butter playground" data-project-butter-demo="">
-			<div className="flex flex-wrap justify-center gap-2 pt-4">
+			{showControls ? <div className="flex flex-wrap justify-center gap-2 pt-4">
 				<Button
 					size="compact"
 					variant="outline"
@@ -99,7 +101,7 @@ export function ProjectButterPlayground({
 				>
 					Flagged
 				</Button>
-			</div>
+			</div> : null}
 			{notice ? (
 				<p role="status" className="pt-2 text-center text-xs text-text-subtle">
 					{notice}
@@ -147,7 +149,7 @@ export function ProjectButterPlayground({
 					void handleAction(action);
 				},
 				availableMoreActions: ["copy-key", "copy-link", "change-parent", "edit-labels", "add-flag"],
-				moreMenuActions: { onSelect: () => setSelected(true) },
+				moreMenuActions: showControls ? { onSelect: () => setSelected(true) } : { reorder: { onMoveDown: () => undefined } },
 				onSelectionToggle: selected ? () => setSelected(false) : undefined,
 				selected,
 				onClick: (event) => {

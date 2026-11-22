@@ -26,15 +26,13 @@ Scenarios 3–5, 7–12 are conformance-only: `build.mjs --check-evals` proves e
 
 The vpk-html description says “Use only when”, so recall comes from `near-miss-positive` rows and false positives from `guard` and `sibling` rows; literal `invoke` rows are reported but leave the recall headline. Each row’s `note` says what it tests. Rows marked `"where": "repo"` name the VPK app and only mean something run from the repo root.
 
-Run the rows with the installed `skill-creator` skill’s trigger eval; `triggers.json` is already its `{query, should_trigger}` format:
+Run the rows with the installed `skill-creator` skill’s trigger eval; `triggers.json` is already its `{query, should_trigger}` format. The wrapper sets up an isolated project and Claude config and then calls `run_eval` unchanged; run from the repo or your own config, every row scores 0.0 ([skill trigger evals](../../../docs/skill-trigger-evals.md)):
 
 ```sh
-SC=$(dirname "$(find ~/.claude/plugins -path '*skill-creator/SKILL.md' | head -1)")
-(cd "$SC" && python3 -m scripts.run_eval --eval-set "$OLDPWD/.agents/skills/vpk-html/evals/triggers.json" \
-  --skill-path "$OLDPWD/.agents/skills/vpk-html" --runs-per-query 3 --timeout 60 --verbose) > "$ROUND/triggers.json"
+pnpm run eval:skill-triggers -- vpk-html --out "$ROUND/triggers.json"
 ```
 
-Ship on recall 0.85 or more on the near-miss rows and false positives 0.10 or less on the guard and sibling rows. For a failing description, use skill-creator’s `run_loop` (train/test split, held-out selection) rather than hand rewording; the fix goes to the description in `SKILL.md`, never to a reworded query, unless the row leans on content it does not carry.
+Ship on recall 0.85 or more on the near-miss rows and false positives 0.10 or less on the guard and sibling rows. For a failing description, use skill-creator’s `run_loop` (train/test split, held-out selection) rather than hand rewording, through the same wrapper (`pnpm run eval:skill-triggers -- vpk-html --loop --model <model> --report none`) so it does not score 0.0 as well; the fix goes to the description in `SKILL.md`, never to a reworded query, unless the row leans on content it does not carry.
 
 ## Brief a fresh critic with only the text block
 

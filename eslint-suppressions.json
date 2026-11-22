@@ -33,19 +33,11 @@
     "@next/next/no-location-assign-relative-destination": {
       "count": 1
     },
-    "react-hooks/purity": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 5
     },
     "react-hooks/set-state-in-effect": {
       "count": 3
-    }
-  },
-  "app/data/details/ui-custom/shimmer.ts": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "app/data/directory/agents.test.js": {
@@ -61,6 +53,11 @@
   "app/globals.test.js": {
     "no-restricted-syntax": {
       "count": 5
+    }
+  },
+  "app/home-projects-section.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "app/layout.test.js": {
@@ -81,6 +78,26 @@
       "count": 1
     }
   },
+  "app/sandbox/agent-selector-canvas/destination-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
+    }
+  },
+  "app/sandbox/agent-selector-canvas/recommendation-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "app/sandbox/agent-selector-canvas/teammate-session-previews.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 10
+    }
+  },
+  "app/sandbox/agent-selector-canvas/teammate-session-refinements.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
+    }
+  },
   "app/sandbox/screen-assistant/page.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -99,9 +116,9 @@
       "count": 1
     }
   },
-  "components/arts/awake/city-popover.test.js": {
+  "components/arts/awake/city-popover.source.test.js": {
     "no-restricted-syntax": {
-      "count": 23
+      "count": 13
     }
   },
   "components/arts/awake/city-popover.tsx": {
@@ -119,7 +136,7 @@
       "count": 1
     }
   },
-  "components/arts/awake/index.test.js": {
+  "components/arts/awake/index.source.test.js": {
     "no-restricted-syntax": {
       "count": 103
     }
@@ -199,9 +216,9 @@
       "count": 111
     }
   },
-  "components/arts/personal-graph/personal-graph-glass-panel.test.js": {
+  "components/arts/personal-graph/personal-graph-glass-panel.source.test.js": {
     "no-restricted-syntax": {
-      "count": 48
+      "count": 47
     }
   },
   "components/arts/personal-graph/personal-graph-glass-panel.tsx": {
@@ -223,6 +240,9 @@
   "components/arts/personal-graph/personal-graph-page.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
     }
   },
   "components/arts/personal-graph/personal-graph-source-picker.tsx": {
@@ -233,6 +253,11 @@
   "components/arts/personal-graph/personal-graph-summary-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 29
+    }
+  },
+  "components/arts/personal-graph/personal-graph-summary-panel.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/arts/personal-graph/personal-graph-surface.source.test.js": {
@@ -253,6 +278,11 @@
   "components/blocks/agent-access/agent-access.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "components/blocks/agent-assignment/agent-assignment-session.source.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 22
     }
   },
   "components/blocks/agent-assignment/components/agent-session-target-menu.tsx": {
@@ -278,9 +308,9 @@
       "count": 1
     }
   },
-  "components/blocks/agent-browser/components/template-build-flow.tsx": {
-    "react-hooks/refs": {
-      "count": 3
+  "components/blocks/agent-browser/components/template-build-flow.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/blocks/agent-card/components/agent-card.tsx": {
@@ -289,11 +319,6 @@
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
-    }
-  },
-  "components/blocks/agent-config-core/components/agent-compact-config-nav.tsx": {
-    "react-hooks/refs": {
-      "count": 5
     }
   },
   "components/blocks/agent-config-core/components/agent-compact-nav-menu.tsx": {
@@ -326,6 +351,11 @@
       "count": 1
     }
   },
+  "components/blocks/agent-lanyard/agent-lanyard.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
+    }
+  },
   "components/blocks/agent-list/agent-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 326
@@ -336,14 +366,12 @@
       "count": 1
     }
   },
-  "components/blocks/agent-progress/page.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    }
-  },
   "components/blocks/agent-selector/agent-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 147
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
     }
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
@@ -353,7 +381,7 @@
   },
   "components/blocks/agent-session-column/agent-session-column-arrival.source.test.js": {
     "no-restricted-syntax": {
-      "count": 95
+      "count": 94
     }
   },
   "components/blocks/agent-session-column/agent-session-column-capabilities.source.test.js": {
@@ -384,11 +412,6 @@
   "components/blocks/agent-session-column/agent-session-column-overflow.source.test.js": {
     "no-restricted-syntax": {
       "count": 20
-    }
-  },
-  "components/blocks/agent-session-column/agent-session-column-rail.tsx": {
-    "react-hooks/refs": {
-      "count": 6
     }
   },
   "components/blocks/agent-session-column/agent-session-column-scrolling-effect.test.js": {
@@ -434,12 +457,14 @@
       "count": 61
     }
   },
+  "components/blocks/agent-session/agent-session-card-activation.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 19
+    }
+  },
   "components/blocks/agent-session/agent-session-card.tsx": {
     "jsx-a11y/no-noninteractive-element-interactions": {
       "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 3
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -465,6 +490,11 @@
       "count": 1
     }
   },
+  "components/blocks/agent-session/agent-session-link-work-item-submenu.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/blocks/agent-session/agent-session-link-work-item.source.test.js": {
     "no-restricted-syntax": {
       "count": 66
@@ -482,7 +512,7 @@
   },
   "components/blocks/agent-session/agent-session.source.test.js": {
     "no-restricted-syntax": {
-      "count": 513
+      "count": 501
     }
   },
   "components/blocks/agent-state/agent-state.test.js": {
@@ -520,14 +550,14 @@
       "count": 1
     }
   },
+  "components/blocks/agent-user/components/role-select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/agent/agent.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
-    }
-  },
-  "components/blocks/agent/components/agent-compact-config-nav.tsx": {
-    "react-hooks/refs": {
-      "count": 5
     }
   },
   "components/blocks/agent/components/agent-compact-nav-menu.tsx": {
@@ -546,9 +576,6 @@
     }
   },
   "components/blocks/app-directory/components/app-directory.tsx": {
-    "react-hooks/static-components": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 3
     }
@@ -568,7 +595,7 @@
       "count": 196
     }
   },
-  "components/blocks/artifact-panel.test.js": {
+  "components/blocks/artifact-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
     }
@@ -601,7 +628,7 @@
       "count": 1
     }
   },
-  "components/blocks/conversation-starter/conversation-starter.test.js": {
+  "components/blocks/conversation-starter/conversation-starter.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -609,6 +636,11 @@
   "components/blocks/cursor/page.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
+    }
+  },
+  "components/blocks/dashboard/components/chart-area-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
     }
   },
   "components/blocks/dashboard/components/section-cards.tsx": {
@@ -621,9 +653,14 @@
       "count": 12
     }
   },
-  "components/blocks/editor-toolbar/editor-toolbar.test.js": {
+  "components/blocks/editor-toolbar/editor-toolbar.source.test.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 2
+    }
+  },
+  "components/blocks/emoji-picker/components/emoji-picker-panel.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/blocks/emoji-picker/emoji-picker.source.test.js": {
@@ -682,19 +719,27 @@
       "count": 36
     }
   },
+  "components/blocks/jira-activity/jira-activity-changed-files.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-activity/jira-activity-event-row.source.test.js": {
     "no-restricted-syntax": {
-      "count": 16
+      "count": 7
     }
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
-      "count": 166
+      "count": 160
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 17
     }
   },
   "components/blocks/jira-activity/jira-activity.source.test.js": {
     "no-restricted-syntax": {
-      "count": 311
+      "count": 310
     }
   },
   "components/blocks/jira-creating/jira-creating-motion.test.js": {
@@ -725,6 +770,11 @@
   "components/blocks/jira-epic/jira-epic.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
+    }
+  },
+  "components/blocks/jira-filter/jira-filter.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
     }
   },
   "components/blocks/jira-insight/components/jira-insight-timeline-rail.tsx": {
@@ -815,6 +865,21 @@
       "count": 3
     }
   },
+  "components/blocks/jira-issue/project-butter-agents.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 20
+    }
+  },
+  "components/blocks/jira-issue/project-butter-local-agent-menu.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-issue/project-butter.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 22
+    }
+  },
   "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
@@ -845,24 +910,9 @@
       "count": 169
     }
   },
-  "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
-    "react-hooks/refs": {
-      "count": 26
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/board-filter-popover.test.js": {
-    "no-restricted-syntax": {
-      "count": 7
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/board-filter-popover.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
-      "count": 49
+      "count": 48
     }
   },
   "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {
@@ -873,11 +923,6 @@
   "components/blocks/jira-kanban/experimental/components/created-card-inline-flight.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column-collapsed-menu.tsx": {
-    "react-hooks/refs": {
-      "count": 2
     }
   },
   "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx": {
@@ -892,6 +937,16 @@
   },
   "components/blocks/jira-kanban/experimental/components/session-column-placement.tsx": {
     "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-board-header.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
       "count": 1
     }
   },
@@ -944,9 +999,24 @@
       "count": 1
     }
   },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief-epic.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief-sprint.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-kanban/experimental/pulse/components/pulse-scrubber.tsx": {
     "jsx-a11y/interactive-supports-focus": {
       "count": 2
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-story.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/blocks/jira-kanban/experimental/pulse/experimental-pulse.tsx": {
@@ -971,7 +1041,7 @@
   },
   "components/blocks/jira-kanban/experimental/pulse/pulse-source-contracts.source.test.js": {
     "no-restricted-syntax": {
-      "count": 74
+      "count": 73
     }
   },
   "components/blocks/jira-kanban/experimental/use-board-agent-session-drag.ts": {
@@ -989,9 +1059,9 @@
       "count": 5
     }
   },
-  "components/blocks/jira-kanban/jira-kanban.test.js": {
+  "components/blocks/jira-kanban/jira-kanban.source.test.js": {
     "no-restricted-syntax": {
-      "count": 302
+      "count": 299
     }
   },
   "components/blocks/jira-kanban/page.tsx": {
@@ -1014,12 +1084,55 @@
       "count": 1
     }
   },
+  "components/blocks/jira-list/jira-list-interactions.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
+    }
+  },
   "components/blocks/jira-list/jira-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 325
     }
   },
+  "components/blocks/jira-suggestion/components/card-faces.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-suggestion/components/card-value.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/caught-up.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/ghost-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-suggestion/components/panel-body.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-suggestion/components/stack-main.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-suggestion/components/why-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
   "components/blocks/jira-suggestion/components/work-item-preview-shell.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1034,6 +1147,11 @@
       "count": 1
     }
   },
+  "components/blocks/jira-view-configuration/jira-view-configuration.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 3
+    }
+  },
   "components/blocks/jira-work-item/data/metadata-crew.ts": {
     "no-restricted-imports": {
       "count": 1
@@ -1041,6 +1159,16 @@
   },
   "components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills.tsx": {
     "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1067,16 +1195,16 @@
       "count": 3
     }
   },
+  "components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-work-item/experimental-v2/components/metadata-rail-toggle.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1086,6 +1214,11 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx": {
@@ -1103,6 +1236,16 @@
   },
   "components/blocks/jira-work-item/experimental-v3/components/activity-composer-context-pills.tsx": {
     "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1126,14 +1269,19 @@
       "count": 3
     }
   },
-  "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-activity-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
+  "components/blocks/jira-work-item/experimental-v3/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental-v3/context-section-navigation.tsx": {
@@ -1152,6 +1300,11 @@
   "components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data.test.js": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/blocks/jira-work-item/experimental/components/detail-field-editor-data.ts": {
@@ -1177,6 +1330,16 @@
       "count": 2
     }
   },
+  "components/blocks/jira-work-item/experimental/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/blocks/jira-work-item/experimental/experimental-jira-work-item.tsx": {
     "no-restricted-imports": {
       "count": 1
@@ -1187,8 +1350,78 @@
       "count": 2
     }
   },
+  "components/blocks/jira-work-item/project-butter/activity-response.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 7
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/attachments.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 13
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/content-preview.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/description-rainbow-text.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 40
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/development-journey.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 5
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/project-butter-header.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/related-rows.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 9
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/related-work-section.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/shell-editors.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 6
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/use-project-butter-content.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 7
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/activity-composer-context-pills.tsx": {
     "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/attachments-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/context-popover-parts.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1207,18 +1440,28 @@
       "count": 3
     }
   },
+  "components/blocks/jira-work-item/team-eu26/components/linked-work-items-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/panel-content-motion.ts": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-activity-panel.tsx": {
+  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/blocks/jira-work-item/team-eu26/components/pull-request-detail/pull-request-details-rail.tsx": {
-    "react-hooks/set-state-in-effect": {
+  "components/blocks/jira-work-item/team-eu26/components/subtasks-popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/work-items-table.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1242,7 +1485,7 @@
       "count": 1
     }
   },
-  "components/blocks/knowledge-directory/knowledge-directory.test.js": {
+  "components/blocks/knowledge-directory/knowledge-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -1262,17 +1505,17 @@
       "count": 97
     }
   },
-  "components/blocks/prompt-gallery/prompt-gallery.test.js": {
+  "components/blocks/prompt-gallery/prompt-gallery.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 4
     }
   },
-  "components/blocks/pull-request-fix/pull-request-fix.test.js": {
+  "components/blocks/pull-request-fix/pull-request-fix.source.test.js": {
     "no-restricted-syntax": {
-      "count": 109
+      "count": 105
     }
   },
-  "components/blocks/pull-request-header/pull-request-header.test.js": {
+  "components/blocks/pull-request-header/pull-request-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 217
     }
@@ -1282,14 +1525,19 @@
       "count": 1
     }
   },
-  "components/blocks/pull-request-review/pull-request-review.test.js": {
+  "components/blocks/pull-request-review/pull-request-review.source.test.js": {
     "no-restricted-syntax": {
-      "count": 78
+      "count": 74
+    }
+  },
+  "components/blocks/pull-request/pull-request-flyout.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/blocks/pull-request/pull-request.source.test.js": {
     "no-restricted-syntax": {
-      "count": 111
+      "count": 110
     }
   },
   "components/blocks/question-card/components/question-card.source.test.js": {
@@ -1322,11 +1570,6 @@
       "count": 1
     }
   },
-  "components/blocks/rovo-button/surface.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -1355,6 +1598,16 @@
   "components/blocks/scrubber/components/scrubber-rail.tsx": {
     "jsx-a11y/interactive-supports-focus": {
       "count": 1
+    }
+  },
+  "components/blocks/sidebar/sidebar-06/components/sidebar-opt-in-form.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/sidebar/sidebar-09/components/app-sidebar.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/blocks/sidebar/sidebar-10/components/nav-actions.tsx": {
@@ -1402,6 +1655,16 @@
       "count": 1
     }
   },
+  "components/blocks/smart-link/components/smart-link.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/smart-link/smart-link-status.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "components/blocks/smart-link/smart-link.source.test.js": {
     "no-restricted-syntax": {
       "count": 160
@@ -1417,15 +1680,12 @@
       "count": 1
     }
   },
-  "components/blocks/subagent/subagent.test.js": {
+  "components/blocks/subagent/subagent.source.test.js": {
     "no-restricted-syntax": {
       "count": 136
     }
   },
   "components/blocks/task-progress/page.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 3
     }
@@ -1435,12 +1695,17 @@
       "count": 1
     }
   },
+  "components/blocks/tool-approval/components/tool-approval.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/blocks/tool-directory/components/tool-directory.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 3
     }
   },
-  "components/blocks/tool-directory/tool-directory.test.js": {
+  "components/blocks/tool-directory/tool-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -1448,6 +1713,11 @@
   "components/blocks/top-navigation/top-navigation-chat-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 100
+    }
+  },
+  "components/blocks/top-navigation/top-navigation-responsive.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
     }
   },
   "components/blocks/trigger-config/trigger-config.source.test.js": {
@@ -1478,12 +1748,22 @@
       "count": 2
     }
   },
+  "components/blocks/trigger/provider-connection.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
   "components/blocks/trigger/trigger.source.test.js": {
     "no-restricted-syntax": {
       "count": 71
     }
   },
-  "components/blocks/twg-agent-card/twg-agent-card.test.js": {
+  "components/blocks/twg-agent-card/components/twg-agent-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/twg-agent-card/twg-agent-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 128
     }
@@ -1524,6 +1804,9 @@
     }
   },
   "components/charts/pie/chart-pie-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1558,14 +1841,14 @@
       "count": 35
     }
   },
-  "components/projects/jira-for-you/jira-for-you-work-item-integration.test.js": {
+  "components/projects/jira-for-you/jira-for-you-work-item-integration.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-for-you/jira-for-you-workspace.test.js": {
+  "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 235
+      "count": 234
     }
   },
   "components/projects/jira-for-you/jira-for-you.source.test.js": {
@@ -1653,14 +1936,14 @@
       "count": 11
     }
   },
-  "components/projects/jira-golden-journey-v1/queue-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/queue-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 206
     }
   },
-  "components/projects/jira-golden-journey-v1/session-gallery.test.js": {
+  "components/projects/jira-golden-journey-v1/session-gallery.source.test.js": {
     "no-restricted-syntax": {
-      "count": 175
+      "count": 174
     }
   },
   "components/projects/jira-golden-journey-v2/use-hotfix-story.ts": {
@@ -1710,7 +1993,7 @@
   },
   "components/projects/jira-golden-journey-v4/jira-golden-journey-v4.source.test.js": {
     "no-restricted-syntax": {
-      "count": 247
+      "count": 245
     }
   },
   "components/projects/jira-golden-journey-v4/terminal-story.test.js": {
@@ -1718,9 +2001,9 @@
       "count": 14
     }
   },
-  "components/projects/jira-queue/queue-conversation-workspace.test.js": {
+  "components/projects/jira-queue/queue-conversation-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 54
+      "count": 53
     }
   },
   "components/projects/jira-team-eu26-end/data/agent-session-sync.test.js": {
@@ -1773,7 +2056,7 @@
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end.source.test.js": {
     "no-restricted-syntax": {
-      "count": 331
+      "count": 329
     }
   },
   "components/projects/jira-team-eu26-end/terminal-story.test.js": {
@@ -1808,7 +2091,7 @@
   },
   "components/projects/jira-team-eu26/jira-team-eu26.source.test.js": {
     "no-restricted-syntax": {
-      "count": 328
+      "count": 326
     }
   },
   "components/projects/jira-team-eu26/terminal-story.test.js": {
@@ -1816,7 +2099,7 @@
       "count": 14
     }
   },
-  "components/projects/jira/components/rfp-agent-chat-details.test.js": {
+  "components/projects/jira/components/rfp-agent-chat-details.source.test.js": {
     "no-restricted-syntax": {
       "count": 77
     }
@@ -1834,6 +2117,9 @@
   "components/projects/jira/components/work-item-modal/child-item-row.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/jira/components/work-item-modal/comment-thread.source.test.js": {
@@ -1846,11 +2132,8 @@
       "count": 1
     }
   },
-  "components/projects/jira/components/work-item-modal/modal-backdrop.tsx": {
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/no-static-element-interactions": {
+  "components/projects/jira/components/work-item-modal/sidebar-stack.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -1869,12 +2152,12 @@
       "count": 135
     }
   },
-  "components/projects/jira/rfp-context.test.js": {
+  "components/projects/jira/rfp-context.source.test.js": {
     "no-restricted-syntax": {
-      "count": 65
+      "count": 64
     }
   },
-  "components/projects/page.test.js": {
+  "components/projects/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 148
     }
@@ -1892,6 +2175,9 @@
   "components/projects/rovo-core/components/clicky/clicky-response-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/rovo-core/components/clicky/clicky-speech-bubble.tsx": {
@@ -1902,6 +2188,11 @@
   "components/projects/rovo-core/components/rovo-app-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
+    }
+  },
+  "components/projects/rovo-core/components/rovo-app-messages.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/projects/rovo-core/components/rovo-app-surface-shell.source.test.js": {
@@ -1971,7 +2262,7 @@
   },
   "components/projects/rovo-floating-chat/components/rovo-floating-chat.source.test.js": {
     "no-restricted-syntax": {
-      "count": 106
+      "count": 100
     }
   },
   "components/projects/rovo/components/rovo-app-brand.test.js": {
@@ -1986,7 +2277,7 @@
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.source.test.js": {
     "no-restricted-syntax": {
-      "count": 91
+      "count": 89
     }
   },
   "components/projects/rovo/components/rovo-app-shell-approval-card.source.test.js": {
@@ -1995,9 +2286,6 @@
     }
   },
   "components/projects/rovo/components/rovo-app-shell.tsx": {
-    "react-hooks/refs": {
-      "count": 17
-    },
     "react-hooks/set-state-in-effect": {
       "count": 4
     }
@@ -2023,11 +2311,14 @@
   "components/projects/shared/components/greeting-prompt-row.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
-  "components/projects/shared/components/rovo-app-composer.test.js": {
+  "components/projects/shared/components/rovo-app-composer.source.test.js": {
     "no-restricted-syntax": {
-      "count": 365
+      "count": 364
     }
   },
   "components/projects/shared/components/rovo-composer-send-controls.tsx": {
@@ -2035,9 +2326,19 @@
       "count": 1
     }
   },
+  "components/projects/shared/components/user-message-bubble.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
-      "count": 35
+      "count": 30
+    }
+  },
+  "components/projects/shared/lib/plan-card-utils.tsx": {
+    "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
     }
   },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
@@ -2060,12 +2361,12 @@
       "count": 2
     }
   },
-  "components/projects/sidebar-chat/components/chat-composer.test.js": {
+  "components/projects/sidebar-chat/components/chat-composer.source.test.js": {
     "no-restricted-syntax": {
       "count": 65
     }
   },
-  "components/projects/sidebar-chat/components/chat-greeting.test.js": {
+  "components/projects/sidebar-chat/components/chat-greeting.source.test.js": {
     "no-restricted-syntax": {
       "count": 68
     }
@@ -2080,14 +2381,9 @@
       "count": 1
     }
   },
-  "components/projects/sidebar-chat/hooks/use-scroll-anchor.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 13
-    }
-  },
   "components/projects/sidebar-chat/page-plan-approval.source.test.js": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 14
     }
   },
   "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.source.test.js": {
@@ -2111,21 +2407,18 @@
     }
   },
   "components/projects/studio/components/rovo-app-agent-config-panel.tsx": {
-    "react-hooks/refs": {
-      "count": 8
-    },
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
   },
-  "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
+  "components/projects/studio/components/rovo-app-agent-creation-flow.source.test.js": {
     "no-restricted-syntax": {
-      "count": 812
+      "count": 785
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
     "no-restricted-syntax": {
-      "count": 117
+      "count": 116
     }
   },
   "components/projects/studio/components/rovo-app-custom-agents-table.tsx": {
@@ -2138,7 +2431,7 @@
       "count": 4
     },
     "react-hooks/refs": {
-      "count": 24
+      "count": 6
     },
     "react-hooks/set-state-in-effect": {
       "count": 5
@@ -2174,6 +2467,11 @@
       "count": 1
     }
   },
+  "components/screen-assistant/screen-assistant-transcript.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/screen-assistant/use-screen-assistant.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2199,6 +2497,11 @@
       "count": 1
     }
   },
+  "components/ui-charts/heatmap/heatmap-tooltip.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui-charts/legend/legend-progress.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -2221,6 +2524,11 @@
   },
   "components/ui-charts/stat-card-choropleth-01/lib/use-world-data.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/tooltip/tooltip-content.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
   },
@@ -2274,40 +2582,17 @@
       "count": 2
     }
   },
-  "components/ui-custom/chain-of-thought.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 72
-    }
-  },
-  "components/ui-custom/chain-of-thought.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/code-block.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 11
-    }
-  },
-  "components/ui-custom/code-block.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/code-list/code-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/ui-custom/commit.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    },
-    "react-hooks/purity": {
+  "components/ui-custom/context-bar/context-bar-create-pull-request.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
-  "components/ui-custom/context-bar/context-bar-prompt-flyout.test.js": {
+  "components/ui-custom/context-bar/context-bar-prompt-flyout.source.test.js": {
     "no-restricted-syntax": {
       "count": 72
     }
@@ -2325,6 +2610,9 @@
   "components/ui-custom/context-bar/context-bar-pull-request.tsx": {
     "no-restricted-imports": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui-custom/context-bar/context-bar.source.test.js": {
@@ -2335,11 +2623,6 @@
   "components/ui-custom/context.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
-    }
-  },
-  "components/ui-custom/conversation.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 37
     }
   },
   "components/ui-custom/entity-card/agent-expanded.tsx": {
@@ -2363,6 +2646,9 @@
   "components/ui-custom/entity-card/entity-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 224
+    },
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/ui-custom/failing-checks-composer-chip.source.test.js": {
@@ -2370,7 +2656,7 @@
       "count": 2
     }
   },
-  "components/ui-custom/file-tree-2.tsx": {
+  "components/ui-custom/file-explorer.tsx": {
     "jsx-a11y/interactive-supports-focus": {
       "count": 1
     }
@@ -2405,11 +2691,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/inline-citation.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/jsx-preview.tsx": {
     "react-hooks/refs": {
       "count": 3
@@ -2418,6 +2699,11 @@
   "components/ui-custom/live-waveform.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
       "count": 1
+    }
+  },
+  "components/ui-custom/message-markdown.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 4
     }
   },
   "components/ui-custom/message-markdown.css-contract.source.test.js": {
@@ -2433,22 +2719,19 @@
       "count": 1
     }
   },
-  "components/ui-custom/plan.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/ui-custom/plan.tsx": {
-    "no-restricted-imports": {
-      "count": 4
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
+  "components/ui-custom/pixel-loader/pixel-loader.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
   "components/ui-custom/progress-circle.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
+    }
+  },
+  "components/ui-custom/prompt-input-attachments.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
     }
   },
   "components/ui-custom/prompt-input-dictation.source.test.js": {
@@ -2468,10 +2751,8 @@
     },
     "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "components/ui-custom/queue.tsx": {
-    "no-restricted-syntax": {
+    },
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
   },
@@ -2488,19 +2769,9 @@
       "count": 1
     }
   },
-  "components/ui-custom/rich-text-editor/markdown-source-editor.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-custom/rich-text-editor/mention-node-view.tsx": {
     "no-restricted-imports": {
       "count": 1
-    }
-  },
-  "components/ui-custom/rich-text-editor/mention-visual.test.js": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/ui-custom/rich-text-editor/reference-preview.tsx": {
@@ -2572,17 +2843,20 @@
       "count": 70
     }
   },
-  "components/ui-custom/shimmer-wave.tsx": {
-    "react-hooks/static-components": {
-      "count": 2
+  "components/ui-custom/skill-tag-keyboard.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
     }
   },
   "components/ui-custom/skill-tag.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
-  "components/ui-custom/source-preview-menu.source.test.js": {
+  "components/ui-custom/sources-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 31
     }
@@ -2593,16 +2867,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "components/ui-custom/stack-trace.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/ui-custom/tool-output.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "components/ui-custom/twg-appstack.source.test.js": {
@@ -2625,12 +2889,27 @@
       "count": 1
     }
   },
+  "components/ui-custom/web-preview-chromium.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
   "components/ui-custom/web-preview-chromium.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
       "count": 2
+    }
+  },
+  "components/ui/accordion.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/ui/attachment.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
     }
   },
   "components/ui/avatar.source.test.js": {
@@ -2653,14 +2932,29 @@
       "count": 8
     }
   },
+  "components/ui/button-group.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/carousel.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui/chart.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
   "components/ui/checkbox.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
+    }
+  },
+  "components/ui/combobox.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/date-label.source.test.js": {
@@ -2678,9 +2972,24 @@
       "count": 4
     }
   },
+  "components/ui/field.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/hover-card.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/icon-tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
+    }
+  },
+  "components/ui/inline-citation.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
     }
   },
   "components/ui/input-group.tsx": {
@@ -2692,6 +3001,9 @@
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 6
     }
   },
   "components/ui/input-otp.tsx": {
@@ -2699,14 +3011,19 @@
       "count": 1
     }
   },
+  "components/ui/input.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/item.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
   "components/ui/logo-mark.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
-    }
-  },
-  "components/ui/logo-mark.tsx": {
-    "react-hooks/static-components": {
-      "count": 2
     }
   },
   "components/ui/logo-third-party.source.test.js": {
@@ -2724,19 +3041,49 @@
       "count": 1
     }
   },
+  "components/ui/message.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/native-select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/navigation-menu.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/page-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/ui/panel.test.js": {
+  "components/ui/panel.source.test.js": {
     "no-restricted-syntax": {
-      "count": 23
+      "count": 22
+    }
+  },
+  "components/ui/popover.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/progress-tracker.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
+    }
+  },
+  "components/ui/questionnaire.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/queue.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "components/ui/radio-group.source.test.js": {
@@ -2747,6 +3094,21 @@
   "components/ui/select.source.test.js": {
     "no-restricted-syntax": {
       "count": 43
+    }
+  },
+  "components/ui/select.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/sidebar.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 2
+    }
+  },
+  "components/ui/sidebar.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/ui/slider.source.test.js": {
@@ -2764,14 +3126,29 @@
       "count": 25
     }
   },
+  "components/ui/terminal.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/ui/textarea.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "components/ui/tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/ui/vpk-icons.test.js": {
+  "components/ui/toggle.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/vpk-icons.source.test.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 3
     }
   },
   "components/utils/cone-safezone.tsx": {
@@ -2825,6 +3202,11 @@
   "components/visual/glass-tabs.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
+    }
+  },
+  "components/visual/glass-tabs.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/visual/gooey/tuning-model.ts": {
@@ -2900,14 +3282,25 @@
       "count": 3
     }
   },
+  "components/visual/text-continuity/examples/elastic.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
   "components/visual/text-continuity/examples/gestures.tsx": {
     "no-restricted-syntax": {
       "count": 4
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
     }
   },
   "components/visual/text-continuity/examples/inline.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -2916,6 +3309,16 @@
   "components/visual/text-continuity/examples/interface.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/visual/text-continuity/examples/lists.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/visual/text-continuity/examples/matter.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
     }
   },
   "components/visual/text-continuity/examples/numora.tsx": {
@@ -2927,12 +3330,23 @@
     }
   },
   "components/visual/text-continuity/examples/playful.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
+  "components/visual/text-continuity/examples/primitives.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 3
+    }
+  },
   "components/visual/text-continuity/examples/resize.tsx": {
     "no-restricted-syntax": {
+      "count": 1
+    },
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },
@@ -2984,11 +3398,6 @@
       "count": 1
     }
   },
-  "components/website/demos/blocks/agent-progress-demo.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    }
-  },
   "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2997,11 +3406,6 @@
   "components/website/demos/blocks/rovo-button/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 52
-    }
-  },
-  "components/website/demos/blocks/task-progress-demo.tsx": {
-    "react-hooks/purity": {
-      "count": 1
     }
   },
   "components/website/demos/blocks/trigger-config-demo.tsx": {
@@ -3024,27 +3428,24 @@
       "count": 5
     }
   },
-  "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "components/website/demos/ui-custom/shimmer-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
-    },
-    "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
+  "components/website/demos/ui-custom/sources-menu-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
+    }
+  },
+  "components/website/demos/ui/accordion-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui/calendar-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/website/demos/ui/carousel-demo.tsx": {
@@ -3060,6 +3461,21 @@
   "components/website/demos/ui/checkbox-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
+    }
+  },
+  "components/website/demos/ui/dropdown-menu-search-demo.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/inline-citation-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/plan-demo.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 4
     }
   },
   "components/website/demos/ui/table-demo.source.test.js": {
@@ -3128,7 +3544,7 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/card-glow-demo.test.js": {
+  "components/website/demos/visual/card-glow-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 59
     }
@@ -3138,9 +3554,9 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/dithering-demo.test.js": {
+  "components/website/demos/visual/dithering-demo.source.test.js": {
     "no-restricted-syntax": {
-      "count": 38
+      "count": 35
     }
   },
   "components/website/demos/visual/dropzone-effect-demo.tsx": {
@@ -3158,7 +3574,7 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/graph-demo.test.js": {
+  "components/website/demos/visual/graph-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 188
     }
@@ -3221,9 +3637,9 @@
       "count": 35
     }
   },
-  "components/website/demos/visual/scribbles-demo.test.js": {
+  "components/website/demos/visual/scribbles-demo.source.test.js": {
     "no-restricted-syntax": {
-      "count": 33
+      "count": 30
     }
   },
   "components/website/demos/visual/scribbles.tsx": {
@@ -3246,9 +3662,9 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/shaders/liquid-glass.test.js": {
+  "components/website/demos/visual/shaders/liquid-glass.source.test.js": {
     "no-restricted-syntax": {
-      "count": 109
+      "count": 108
     }
   },
   "components/website/demos/visual/shaders/ripple.tsx": {
@@ -3291,6 +3707,16 @@
       "count": 1
     }
   },
+  "components/website/website-sidebar-nav.behavior.test.js": {
+    "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/website/website-sidebar-nav.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
   "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
@@ -3308,6 +3734,11 @@
   },
   "lib/json-render/registry-data-display.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "lib/json-render/registry-interactive.tsx": {
+    "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
   },

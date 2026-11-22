@@ -1,10 +1,9 @@
 "use client";
 
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, Ref } from "react";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, Ref } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import { motion, type Variants } from "motion/react";
-import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { DAILY_INSIGHTS_ROW_CLASSES } from "./daily-insights-row-classes";
@@ -292,14 +291,18 @@ export function FloatingRovoButtonDailyInsightsPanelInner({
  */
 export function FloatingRovoButtonDailyInsightsPill({
 	insights,
+	logo,
 	onClick,
+	onLogoPointerEnter,
 	onDragMouseDown,
 	onDragPointerDown,
 	shouldReduceMotion,
 	ref,
 }: Readonly<{
 	insights: FloatingRovoButtonInsightsConfig;
+	logo: ReactNode;
 	onClick: () => void;
+	onLogoPointerEnter: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	onDragMouseDown: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onDragPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	shouldReduceMotion: boolean;
@@ -316,6 +319,7 @@ export function FloatingRovoButtonDailyInsightsPill({
 			className="flex h-full w-full items-center justify-end bg-bg-neutral-bold pl-4 text-text-inverse"
 			onClick={onClick}
 			onMouseDownCapture={onDragMouseDown}
+			onPointerEnter={onLogoPointerEnter}
 			onPointerDownCapture={onDragPointerDown}
 			type="button"
 			initial={shouldReduceMotion
@@ -328,11 +332,11 @@ export function FloatingRovoButtonDailyInsightsPill({
 			transition={shouldReduceMotion
 				? { duration: 0 }
 				: { duration: 0.2, delay: 0.24, ease: motionEase.out }}
-			style={{ borderRadius: "inherit", willChange: "opacity, filter" }}
+			style={{ borderRadius: "inherit", boxShadow: token("elevation.shadow.overlay"), willChange: "opacity, filter" }}
 		>
 			<span className="min-w-0 truncate text-sm leading-5 font-medium">{countLabel}</span>
 			<span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center">
-				<RovoColorIcon size="small" />
+				{logo}
 			</span>
 		</motion.button>
 	);

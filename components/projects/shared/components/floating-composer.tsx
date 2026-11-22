@@ -4,6 +4,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
 	PromptInput,
 	PromptInputBody,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui-custom/prompt-input";
 import { composerPromptInputClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import AddIcon from "@atlaskit/icon/core/add";
 
 export type FloatingComposerProps = Omit<
@@ -31,6 +33,8 @@ export type FloatingComposerProps = Omit<
 	 * Renders above the editor row via PromptInputHeader, matching ChatComposer.
 	 */
 	inputContext?: ReactNode;
+	/** Animate the context row as it is added or removed. */
+	animateInputContext?: boolean;
 	/**
 	 * `auto` (default) measures the draft and only stacks once the text would wrap
 	 * at compact-row width. `stacked` pins the editor to its own row regardless of
@@ -60,6 +64,29 @@ function observeMutations(observer: MutationObserver, target: Node): void {
 	});
 }
 
+function AnimatedInputContext({ context }: Readonly<{ context?: ReactNode }>) {
+	const hasContext = context != null;
+	const reducedMotion = useReducedMotion();
+	return (
+		<PromptInputHeader aria-hidden={!hasContext} inert={!hasContext} className="px-0 py-0">
+			<AnimatePresence initial={false}>
+				{hasContext ? (
+					<motion.div
+						key="context"
+						className="w-full"
+						initial={{ height: 0, clipPath: "inset(0px 0px 100% 0px)" }}
+						animate={{ height: "auto", clipPath: "inset(-4px)" }}
+						exit={{ height: 0, clipPath: "inset(0px 0px 100% 0px)", transition: { duration: reducedMotion ? 0 : motionDuration.fast, ease: motionEase.in } }}
+						transition={{ duration: reducedMotion ? 0 : motionDuration.normal, ease: motionEase.outPractical }}
+					>
+						<div className="pb-2 pt-1.5">{context}</div>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
+		</PromptInputHeader>
+	);
+}
+
 /**
  * Shared floating prompt composer shell.
  *
@@ -78,6 +105,7 @@ export function FloatingComposer({
 	children,
 	className,
 	inputContext,
+	animateInputContext = false,
 	layout = "auto",
 	// The input group's edges sit flush with the leading "+" and trailing actions,
 	// so clipping it would cut their outward focus rings. The shell clips nothing else.
@@ -276,18 +304,15 @@ export function FloatingComposer({
 			className={cn(
 				composerPromptInputClassName,
 				"p-2",
-				// Compact floating chrome uses space.100 (8px) so demo, Studio, and
-				// work-item composers share the same inset as the activity comment bar.
-				// The shell already owns the horizontal gutter, so drop the editor's
-				// own `px-2.5` from both the control container and the placeholder
-				// overlay. Without this the text sits ~10px inboard of the leading
-				// "+" button, and empty/typed states start at different offsets.
+				// The floating row owns the text inset for both the editor and its placeholder.
 				"[&_[data-slot=input-group-control-container]]:px-0 [&_[data-slot=prompt-input-placeholder]]:px-0",
 				className,
 			)}
 			{...props}
 		>
-			{hasInputContext ? (
+			{animateInputContext ? (
+				<AnimatedInputContext context={inputContext} />
+			) : hasInputContext ? (
 				<PromptInputHeader className="px-0 pb-2 pt-0">
 					{inputContext}
 				</PromptInputHeader>
@@ -311,7 +336,7 @@ export function FloatingComposer({
 						ref={textFieldRef}
 						className={cn(
 							"flex min-w-0",
-							isExpanded ? "order-1 basis-full" : "order-2 flex-1",
+							isExpanded ? "order-1 basis-full px-2" : "order-2 flex-1",
 						)}
 					>
 						{children}

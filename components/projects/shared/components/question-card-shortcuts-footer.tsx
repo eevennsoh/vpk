@@ -11,9 +11,10 @@ const iconColor = token("color.icon.subtlest");
 
 interface QuestionCardShortcutsFooterProps {
 	escLabel?: string;
+	showEscape?: boolean;
 }
 
-export function QuestionCardShortcutsFooter({ escLabel = "skip" }: Readonly<QuestionCardShortcutsFooterProps>): React.ReactElement {
+export function QuestionCardShortcutsFooter({ escLabel = "skip", showEscape = true }: Readonly<QuestionCardShortcutsFooterProps>): React.ReactElement {
 	return (
 		<Footer hideIcon>
 			<span className="inline-flex items-center gap-1">
@@ -28,8 +29,7 @@ export function QuestionCardShortcutsFooter({ escLabel = "skip" }: Readonly<Ques
 				<ReturnIcon label="" color={iconColor} size="small" />
 				Enter to select
 			</span>
-			<span aria-hidden>•</span>
-			<span>Esc to {escLabel}</span>
+			{showEscape ? <><span aria-hidden>•</span><span>Esc to {escLabel}</span></> : null}
 		</Footer>
 	);
 }

@@ -2,36 +2,30 @@
 
 > Sub-component listings and key props for all ui-custom compound components.
 
-## Message (`components/ui-custom/message.tsx`)
+## Message (`components/ui/message.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `Message` | Root container, accepts `from` prop (`"user"` / `"assistant"`) |
-| `MessageContent` | Content wrapper |
-| `MessageResponse` | Markdown renderer (uses Streamdown) |
-| `MessageActions` | Action button container |
-| `MessageAction` | Individual action button with tooltip |
-| `MessageToolbar` | Toolbar wrapper for message-level actions |
-| `MessageBranch` | Response branch navigation root |
-| `MessageBranchContent` | Content area within a branch |
-| `MessageBranchSelector` | Branch selector controls |
-| `MessageBranchPrevious` | Previous branch button |
-| `MessageBranchNext` | Next branch button |
-| `MessageBranchPage` | Branch page indicator |
+| `Message` | Row for one turn; `align="end"` for the person's turn, `"start"` (default) for the agent |
+| `MessageContent` | Column holding bubbles, markdown, attachments, and the footer |
+| `MessageActions` | Footer row for action buttons; `reveal="hover"` hides it until hover/focus on md+ |
+| `MessageAction` | Ghost icon button with a tooltip; `label` is the accessible name |
+| `MessageCopyAction` / `MessageEditAction` / `MessageVoteActions` / `MessageRegenerateAction` | VPK preset actions |
 
-Key props: `from`, `className`, `children`
+Render the person's text with `MessageUserBubble` (`components/ui-custom/message-user-bubble.tsx`) and agent markdown with `MessageResponse` (`components/ui-custom/message-markdown.tsx`).
 
-## Conversation (`components/ui-custom/conversation.tsx`)
+Key props: `align`, `className`, `children`
 
-| Sub-component | Purpose |
+## Chat (the Chat example on `/components/ui/message-scroller`)
+
+Chat is a composition, not a component: `MessageScroller` > `MessageScrollerViewport` > `MessageScrollerContent` > `MessageScrollerItem` (`components/ui/message-scroller.tsx`), one `Message` per turn.
+
+| Part | Purpose |
 |---|---|
-| `Conversation` | Root scroll container with auto-scroll |
-| `ConversationContent` | Content area inside scroll |
-| `ConversationScrollButton` | Floating scroll-to-bottom button |
-| `ConversationEmptyState` | Placeholder when no messages |
-| `ConversationDownload` | Download conversation action |
-
-Key props: `className`, `children`
+| `MessageScroller` | Scroll owner; `autoScroll` follows the reply at the live edge |
+| `MessageScrollerItem` | One turn; `messageId`, and `scrollAnchor` on the person's turn |
+| `MessageScrollerButton` | Floating scroll-to-end button |
+| `Empty` (`components/ui/empty.tsx`) | Placeholder when there are no messages |
 
 ## PromptInput (`components/ui-custom/prompt-input/`)
 
@@ -67,34 +61,36 @@ Key props: `className`, `children`
 
 Key props: `onSubmit`, `className`, `children`
 
-## Suggestion (`components/ui-custom/suggestion.tsx`)
+## Suggestion (`components/ui/suggestion.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `Suggestions` | Horizontally scrollable container for suggestion chips |
-| `Suggestion` | Individual clickable suggestion button |
+| `Suggestions` | Scroll-fade row, or a vertical stack with `orientation="vertical"` |
+| `Suggestion` | Subtle Button with a leading curved-arrow icon |
 
 Key props: `suggestion` (string, required), `onClick` (`(suggestion: string) => void`), `children` (optional, falls back to `suggestion` text)
 
-## CodeBlock (`components/ui-custom/code-block.tsx`)
+## CodeBlock (`components/ui/code-block.tsx`)
 
 | Sub-component | Purpose |
 |---|---|
-| `CodeBlock` | Root with syntax highlighting |
+| `CodeBlock` | Container (`variant`, `size`) |
 | `CodeBlockHeader` | Header bar |
 | `CodeBlockTitle` | Title area |
 | `CodeBlockFilename` | Filename display |
 | `CodeBlockActions` | Action buttons area |
-| `CodeBlockCopyButton` | Copy-to-clipboard button |
+| `CodeBlockCopyButton` | Copy-to-clipboard button (`value`) |
+| `CodeBlockContent` | Scrollable `<pre>` (`lineNumbers`, `wrap`) |
+| `CodeBlockLine` | One line of code |
 
-Key props: `code`, `language`, `className`
+Highlighted content: `HighlightedCodeContent` (`components/ui-custom/highlighted-code-content.tsx`, props `code`, `language`) or `useHighlightedCode` (`hooks/use-highlighted-code.ts`).
 
 ## Other Components
 
 | Component File | Purpose |
 |---|---|
-| `components/ui-custom/reasoning.tsx` | Reasoning/thinking expandable display |
-| `components/ui-custom/shimmer.tsx` | Loading shimmer/skeleton animation |
+| `components/ui/reasoning.tsx` | Reasoning/thinking expandable display |
+| `components/ui/shimmer.tsx` | Loading shimmer/skeleton animation |
 | `components/ui-custom/model-selector.tsx` | AI model picker dropdown |
 
 For the full categorized list of all 47 ui-custom modules, see [ai-migration-catalog.md](ai-migration-catalog.md).

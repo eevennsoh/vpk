@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 import { mentionSegmentForActor } from "./jira-activity-actor-mention";
 import { JiraActivitySegments } from "./jira-activity-segments";
+import { JiraActivityTimestamp } from "./jira-activity-timestamp";
 import type { JiraActivityEventEntry, JiraActivitySegment } from "./jira-activity-types";
 
 const AUTOMATION_TAG_TEXT = "Automation";
@@ -63,7 +64,7 @@ export function JiraActivityEvent({
 		const titleLabel = `#${number}: ${title}`;
 
 		return (
-			<div className="flex min-h-6 min-w-0 items-center gap-2 py-0.5 text-xs leading-5">
+			<div className="group/activity-timestamp flex min-h-6 min-w-0 items-center gap-2 py-0.5 text-xs leading-5">
 				<Lozenge variant={pullRequestStatusLozengeVariant(status)}>{status}</Lozenge>
 				<span className="flex min-w-0 items-center gap-1">
 					{onOpenPullRequest ? (
@@ -89,6 +90,7 @@ export function JiraActivityEvent({
 						<span className="text-text-danger">-{deletions}</span>
 					</span>
 				</span>
+				{entry.showTimestamp === false ? null : <JiraActivityTimestamp timestamp={entry.timestamp} />}
 			</div>
 		);
 	}
@@ -96,7 +98,7 @@ export function JiraActivityEvent({
 	const isAutomated = entry.segments.some(isAutomationSegment);
 
 	return (
-		<p className={cn("flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtlest", className)}>
+		<p className={cn("group/activity-timestamp flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtlest", className)}>
 			<span className="min-w-0">
 				{entry.showActor === false ? null : (
 					<>
@@ -113,20 +115,17 @@ export function JiraActivityEvent({
 				{entry.showTimestamp === false ? null : (
 					<>
 						{isAutomated ? <span className="sr-only">Automation</span> : null}
-						<span className="sr-only">{entry.timestamp}</span>
-						<span
-							aria-hidden
-							className="ml-1.5 hidden shrink-0 items-center gap-1.5 text-text-subtlest group-hover/activity-event:inline-flex group-focus-within/activity-event:inline-flex group-has-[:focus-visible]/activity-event:inline-flex"
-						>
-							<span>·</span>
-							{isAutomated ? (
+						<JiraActivityTimestamp
+							className="ms-1.5"
+							icon={isAutomated ? (
 								<Icon
+									aria-hidden
 									className="size-3 shrink-0 text-text-subtlest [&_svg]:size-3!"
 									render={<AutomationIcon color="currentColor" label="" size="small" />}
 								/>
 							) : null}
-							<span>{entry.timestamp}</span>
-						</span>
+							timestamp={entry.timestamp}
+						/>
 					</>
 				)}
 			</span>

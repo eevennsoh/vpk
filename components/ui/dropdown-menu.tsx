@@ -130,7 +130,7 @@ function DropdownMenuSearchField({
 	autoFocus,
 	className,
 	hostOwnsKeyNavigation,
-	icon = <SearchIcon className="size-4 text-icon-subtlest" />,
+	icon,
 	iconContainerSize = 24,
 	id,
 	label,
@@ -195,8 +195,8 @@ function DropdownMenuSearchField({
 	/>;
 	return (
 		<div data-slot="dropdown-menu-search" data-icon-container-size={iconContainerSize} className={cn("rich-text-command-menu-search rich-text-command-menu-item-sticky group/search mx-1.5 mt-1.5 grid h-8 min-h-8 w-[calc(100%-12px)] shrink-0 cursor-text items-center gap-x-3 rounded-lg bg-surface-overlay py-0 pr-0.5 pl-2 hover:bg-bg-neutral-subtle-hovered [&>[data-slot=input]]:h-full [&>[data-slot=input]]:min-w-0 [&>[data-slot=input]]:border-transparent [&>[data-slot=input]]:px-0 [&>[data-slot=input]]:caret-text [&>[data-slot=input]:hover]:border-transparent [&>[data-slot=input]:hover]:bg-transparent [&>[data-slot=input]:active]:border-transparent [&>[data-slot=input]:active]:bg-transparent [&>[data-slot=input]:focus-visible]:border-transparent [&>[data-slot=input]:focus-visible]:bg-transparent [&>[data-slot=input]:focus-visible]:shadow-none", iconContainerSize === 16 ? "grid-cols-[16px_minmax(0,1fr)_auto]" : "grid-cols-[24px_minmax(0,1fr)_auto]")}>
-			<span data-slot="dropdown-menu-search-icon" className={cn("inline-flex items-center justify-center [&>svg]:size-4", iconContainerSize === 16 ? "size-4" : "size-6")} aria-hidden={true}>
-				{icon}
+			<span data-slot="dropdown-menu-search-icon" className={cn("inline-flex items-center justify-center [&>svg]:size-4", icon === undefined ? "text-icon-subtlest" : null, iconContainerSize === 16 ? "size-4" : "size-6")} aria-hidden={true}>
+				{icon === undefined ? <SearchIcon className="size-4 text-icon-subtlest" /> : icon}
 			</span>
 			{renderInput ? renderInput(input) : input}
 			{value ? (
@@ -390,6 +390,8 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
    */
   selected?: boolean;
   elemBefore?: ReactNode;
+	/** Match compact action glyphs without reserving an avatar-sized column. */
+	elemBeforeSize?: 16 | 24;
   elemAfter?: ReactNode;
   description?: string;
   onSelect?: DropdownMenuItemClickHandler;
@@ -402,6 +404,7 @@ function DropdownMenuItem({
   selected = false,
   allowTextWrap = false,
   elemBefore,
+	elemBeforeSize = 24,
   elemAfter,
   description,
   children,
@@ -441,7 +444,7 @@ function DropdownMenuItem({
       data-selected={isSelected || undefined}
       className={cn(
         dropdownStyles.itemBase,
-        "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg:not(:where([data-slot=avatar]_*))]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         // No selected-state styling on purpose. `data-selected` stays on the
         // element as a hook for consumers, but the trailing check mark is the
         // only thing that marks the active row — surface and label match every
@@ -452,7 +455,7 @@ function DropdownMenuItem({
       {...props}
     >
       {elemBefore ? (
-        <span className={dropdownMenuFrontSlotClassName}>
+        <span className={cn(dropdownMenuFrontSlotClassName, elemBeforeSize === 16 ? "size-4" : null)}>
           {elemBefore}
         </span>
       ) : null}
@@ -497,6 +500,7 @@ interface DropdownMenuSubTriggerProps
   allowTextWrap?: boolean;
 	/** Leading content in the same icon slot as DropdownMenuItem. */
 	elemBefore?: ReactNode;
+	elemBeforeSize?: 16 | 24;
   /** Whether to render the shared trailing right chevron. */
   showChevron?: boolean;
 }
@@ -506,6 +510,7 @@ function DropdownMenuSubTrigger({
   inset,
   allowTextWrap = false,
 	elemBefore,
+	elemBeforeSize = 24,
   showChevron = true,
   children,
   ...props
@@ -524,7 +529,7 @@ function DropdownMenuSubTrigger({
     >
 			{elemBefore ? (
 				<>
-					<span className={dropdownMenuFrontSlotClassName}>
+					<span className={cn(dropdownMenuFrontSlotClassName, elemBeforeSize === 16 ? "size-4" : null)}>
 						{elemBefore}
 					</span>
 					<span className={cn("min-w-0 flex-1", allowTextWrap ? "whitespace-normal break-words" : "truncate")}>

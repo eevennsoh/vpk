@@ -58,7 +58,7 @@ test("columns keep drag targets at the bottom and select one creation owner", ()
 	assert.ok(actionRender > cards);
 	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
 	assert.match(FOOTER, /renderControl=\{columnSizing === "content"[\s\S]*<BoardColumnAddButton[\s\S]*reveal="always"/u);
-	assert.match(CARD_LIST, /columnSizing === "fill" \? <div/u);
+	assert.match(CARD_LIST, /columnSizing === "fill" && !pinCreateAction \? <div/u);
 	assert.match(CARD_LIST, /\{children\}[\s\S]*data-board-work-item-create[\s\S]*<BoardColumnAddButton/u);
 	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
 	assert.doesNotMatch(CARD_LIST, /order: isEmpty/u);
@@ -127,7 +127,7 @@ test("board insertion rule and marker reveal without animation", () => {
 	assert.doesNotMatch(lineSource, /animate-in|transition-opacity|duration-fast/u);
 });
 
-test("card arrival suppresses the inline create seam until its entrance completes", () => {
+test("card arrival and an open editor suppress the inline create seam", () => {
 	assert.match(CARD_LIST, /const suppressCardInsertion = createdCardArrival !== undefined;/u);
 	assert.match(
 		CARD_LIST,
@@ -135,7 +135,7 @@ test("card arrival suppresses the inline create seam until its entrance complete
 	);
 	assert.match(
 		CARD_LIST,
-		/<BoardCardHoverInsertionContext value=\{suppressCardInsertion \? null : hoverInsertion\}>/u,
+		/<BoardCardHoverInsertionContext value=\{suppressCardInsertion \|\| creating \? null : hoverInsertion\}>/u,
 	);
 });
 

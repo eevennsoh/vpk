@@ -50,7 +50,12 @@ export function activityDayLabel(entry: JiraActivityEntry): string {
 }
 
 export function activityHeaderTimeLabel(label: string): string {
-	return label
-		.replace(/^(\d+)\s*(?:minutes?|mins?|m)(?=\s|$)/iu, "$1 min")
-		.replace(/^(\d+)\s*(?:hours?|hrs?|h)(?=\s|$)/iu, "$1 hr");
+	const relative = /^(\d+)\s*(minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|mo|years?|y)(?:\s+ago)?$/iu.exec(label.trim());
+	if (!relative) return label;
+	const [, count, rawUnit] = relative;
+	const unit = rawUnit.toLowerCase();
+	if (unit === "m" || unit.startsWith("min")) return `${count} min ago`;
+	if (unit.startsWith("h")) return `${count} hr ago`;
+	const fullUnit = unit.startsWith("d") ? "day" : unit.startsWith("w") ? "week" : unit.startsWith("mo") ? "month" : "year";
+	return `${count} ${fullUnit}${count === "1" ? "" : "s"} ago`;
 }

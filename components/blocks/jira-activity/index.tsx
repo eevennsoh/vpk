@@ -49,10 +49,16 @@ export interface JiraActivityProps {
 	fadeAfterLast?: boolean;
 	/** Plain comment and reply header layout. */
 	commentHeaderLayout?: JiraActivityCardProps["headerLayout"];
+	/** Person and agent identities in the activity feed; the avatar rail remains 32px wide. */
+	actorAvatarSize?: 24 | 32;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	/** Additional footer tools for comments and their nested replies. */
 	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	/** Wrap a comment's reply disclosure and replies with a host-owned presentation. */
+	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void) => ReactNode;
+	/** Wrap a root comment's avatar while keeping its position on the activity rail. */
+	renderCommentAvatar?: (entry: JiraActivityCommentEntry, avatar: ReactNode) => ReactNode;
 	/** Optional replacement for a plain comment or reply header's timestamp. */
 	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
 	/** Rich reply content. Return undefined to use the plain-text body. */
@@ -62,6 +68,10 @@ export interface JiraActivityProps {
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
 	replyDrafts?: Readonly<Record<string, string>>;
 	onReplyDraftChange?: (entryId: string, value: string) => void;
+	/** Routes reply selection to a host-owned composer. */
+	onSelectReply?: (entry: JiraActivityCommentEntry, targetId: string, actor: JiraActivityActor) => void;
+	selectedReply?: Readonly<{ entryId: string; targetId: string }> | null;
+	showReplySelection?: boolean;
 	/** Opens a comment's reply composer in response to an external user action. */
 	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
 	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
@@ -104,7 +114,12 @@ export interface JiraActivityProps {
 	 */
 	commentActionsPlacement?: "footer" | "hover";
 	/** Replaces the threaded "Show more replies" label, e.g. with a count and participant faces. */
-	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean, entry: JiraActivityCommentEntry) => ReactNode;
+	/** Changing a comment's key to a defined value collapses its replies. */
+	replyCollapseKey?: (entry: JiraActivityCommentEntry) => string | undefined;
+	earlierRepliesSelectedAppearance?: "default" | "icon-only";
+	earlierRepliesAppearance?: "button" | "link";
+	showEarlierRepliesIcon?: boolean;
 	/** Replaces every thread's default reply composer, e.g. with the surface's own comment box. */
 	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	/** Handles a reaction toggle externally instead of applying it to local state. */
@@ -151,13 +166,19 @@ export function JiraActivity({
 	connectorStyle = "timeline",
 	fadeAfterLast = false,
 	commentHeaderLayout,
+	actorAvatarSize,
 	renderCommentAction,
 	renderCommentTools,
+	renderCommentReplies,
+	renderCommentAvatar,
 	renderTimestamp,
 	renderReplyBody,
 	renderReply,
 	replyDrafts,
 	onReplyDraftChange,
+	onSelectReply,
+	selectedReply,
+	showReplySelection = true,
 	replyRequest,
 	renderCommentBody,
 	renderEntry,
@@ -171,6 +192,10 @@ export function JiraActivity({
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
 	renderEarlierRepliesLabel,
+	replyCollapseKey,
+	earlierRepliesSelectedAppearance,
+	earlierRepliesAppearance,
+	showEarlierRepliesIcon,
 	renderReplyComposer,
 	onToggleReaction,
 	className,
@@ -355,11 +380,16 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+								actorAvatarSize={actorAvatarSize}
+								onSelectReply={onSelectReply ? (targetId, actor) => onSelectReply(entry, targetId, actor) : undefined}
+								selectedReplyId={selectedReply?.entryId === entry.id ? selectedReply.targetId : undefined}
+								showReplySelection={showReplySelection}
 									replyRequestId={replyRequest?.entryId === entry.id ? replyRequest.id : undefined}
 								headerLayout={commentHeaderLayout}
 								threaded={connectorStyle === "thread"}
 								bodyContent={renderCommentBody?.(entry)}
 								renderCommentTools={renderCommentTools}
+								renderCommentReplies={renderCommentReplies}
 								renderTimestamp={renderTimestamp}
 								renderReplyBody={renderReplyBody}
 								renderReply={renderReply}
@@ -369,6 +399,10 @@ export function JiraActivity({
 								commentActions={commentActions}
 								commentActionsPlacement={commentActionsPlacement}
 								renderEarlierRepliesLabel={renderEarlierRepliesLabel}
+								replyCollapseKey={replyCollapseKey?.(entry)}
+								earlierRepliesSelectedAppearance={earlierRepliesSelectedAppearance}
+								earlierRepliesAppearance={earlierRepliesAppearance}
+								showEarlierRepliesIcon={showEarlierRepliesIcon}
 								renderReplyComposer={renderReplyComposer}
 								currentUser={currentUser}
 								entry={entry}
@@ -403,7 +437,7 @@ export function JiraActivity({
 						return (
 							<li
 								aria-current={entry.id === activeEntryId ? "step" : undefined}
-								className="group/activity-event flex min-w-0 gap-2"
+								className="flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-entry-kind={entry.kind}
@@ -425,6 +459,8 @@ export function JiraActivity({
 									</div>
 								) : (
 									<JiraActivityNode
+										actorAvatarSize={actorAvatarSize}
+										renderAvatar={entry.kind === "comment" && renderCommentAvatar ? (avatar) => renderCommentAvatar(entry, avatar) : undefined}
 										actor={entry.actor}
 										attributedBy={entry.kind === "comment" ? entry.attributedBy : undefined}
 										icon={

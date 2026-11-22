@@ -26,26 +26,28 @@ const {
 	buildCompactThreadPersistKey,
 	buildSendMessageBody,
 	deriveCompactThreadTitle,
-	didAssistantCompleteActivePrompt,
-	clearSkillInvocationForEdit,
-	hasTurnCompleteForPrompt,
+	getEditResendMetadata,
+	getPromptMessageMetadata,
 	isPayloadTooLargeError,
 	mergeSendPromptOptions,
 	sanitizeMessagesForTransport,
 } = loadHelpers();
 
-test("editing a structured skill invocation removes only its stale display metadata", () => {
-	assert.deepEqual(clearSkillInvocationForEdit({
+test("an edit resend drops only the stale skill invocation and the queued prompt id", () => {
+	assert.deepEqual(getEditResendMetadata({
 		source: "jira-issue-generative-action",
 		skillInvocation: {
 			id: "skill:design-landing-page",
 			label: "Design landing page",
 			instruction: "for Jira issue PAY-124.",
 		},
+		promptId: "queued-1",
 	}), {
 		source: "jira-issue-generative-action",
 	});
-	assert.equal(clearSkillInvocationForEdit(undefined), undefined);
+	const plain = { source: "plan-retry" };
+	assert.equal(getEditResendMetadata(plain), plain);
+	assert.equal(getEditResendMetadata(undefined), undefined);
 });
 
 test("buildSelectableAgents keeps static order while session profiles override matching ids", () => {
@@ -190,114 +192,14 @@ test("chat request body and payload errors stay normalized", () => {
 	assert.equal(isPayloadTooLargeError(JSON.stringify({ error: { message: "PayloadTooLargeError" } })), true);
 });
 
-test("turn-complete matching ignores stale timestamps before the active prompt", () => {
-	const prompt = {
-		id: "queued-1",
-		text: "Generate the report",
-		files: [],
-		createdAt: Date.parse("2026-07-07T00:00:02.000Z"),
-	};
-
-	assert.equal(
-		hasTurnCompleteForPrompt({
-			id: "assistant-current",
-			role: "assistant",
-			parts: [
-				{
-					type: "data-turn-complete",
-					data: { timestamp: "2026-07-07T00:00:01.000Z" },
-				},
-			],
-		}, prompt),
-		true,
-	);
-	assert.equal(
-		hasTurnCompleteForPrompt({
-			id: "assistant-stale",
-			role: "assistant",
-			parts: [
-				{
-					type: "data-turn-complete",
-					data: { timestamp: "2026-07-07T00:00:00.999Z" },
-				},
-			],
-		}, prompt),
-		false,
-	);
-	assert.equal(
-		hasTurnCompleteForPrompt({
-			id: "assistant-legacy",
-			role: "assistant",
-			parts: [{ type: "data-turn-complete", data: {} }],
-		}, prompt),
-		true,
+test("a queued prompt's user message carries its prompt id alongside the prompt's own metadata", () => {
+	const prompt = { id: "queued-1", text: "Hi", files: [], createdAt: 0 };
+	assert.deepEqual(getPromptMessageMetadata(prompt), { promptId: "queued-1" });
+	assert.deepEqual(
+		getPromptMessageMetadata({ ...prompt, options: { messageMetadata: { source: "plan-retry" } } }),
+		{ source: "plan-retry", promptId: "queued-1" },
 	);
 });
-
-test("assistant completion matches the active queued prompt by nearest user text or files", () => {
-	const filePart = {
-		type: "file",
-		url: "https://example.test/report.png",
-		filename: "report.png",
-		mediaType: "image/png",
-	};
-	const assistantMessage = {
-		id: "assistant",
-		role: "assistant",
-		parts: [{ type: "data-turn-complete", data: {} }],
-	};
-
-	assert.equal(
-		didAssistantCompleteActivePrompt([
-			{
-				id: "user-text",
-				role: "user",
-				parts: [{ type: "text", text: "Generate the report" }],
-			},
-			assistantMessage,
-		], 1, {
-			id: "queued-text",
-			text: "  Generate the report  ",
-			files: [],
-			createdAt: 0,
-		}),
-		true,
-	);
-	assert.equal(
-		didAssistantCompleteActivePrompt([
-			{
-				id: "user-file",
-				role: "user",
-				parts: [filePart],
-			},
-			assistantMessage,
-		], 1, {
-			id: "queued-file",
-			text: "",
-			files: [filePart],
-			createdAt: 0,
-		}),
-		true,
-	);
-	assert.equal(
-		didAssistantCompleteActivePrompt([
-			{
-				id: "user-previous",
-				role: "user",
-				parts: [{ type: "text", text: "Generate the report" }],
-			},
-			assistantMessage,
-			assistantMessage,
-		], 2, {
-			id: "queued-blocked",
-			text: "Generate the report",
-			files: [],
-			createdAt: 0,
-		}),
-		false,
-	);
-});
-
 
 test("chat transport discards retired context metadata supplied by older clients", () => {
 	const body = buildSendMessageBody({ hermesContext: { selectedSkillIds: ["old-skill"] } }, false);

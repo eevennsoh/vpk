@@ -17,19 +17,23 @@ function MessageBubble({ message }) {
   );
 }
 
-// AFTER: ui-custom Message
-import { Message, MessageContent, MessageResponse } from "@/components/ui-custom/message";
+// AFTER: ui Message + VPK user bubble and markdown
+import { Message, MessageContent } from "@/components/ui/message";
+import { MessageResponse } from "@/components/ui-custom/message-markdown";
+import { MessageUserBubble } from "@/components/ui-custom/message-user-bubble";
 
 function ChatMessage({ message }) {
-  return (
-    <Message from={message.role}>
+  const text = message.parts.filter((part) => part.type === "text").map((part) => part.text).join("");
+  return message.role === "user" ? (
+    <Message align="end">
       <MessageContent>
-        {message.parts.map((part, i) => {
-          if (part.type === "text") {
-            return <MessageResponse key={i}>{part.text}</MessageResponse>;
-          }
-          return null;
-        })}
+        <MessageUserBubble>{text}</MessageUserBubble>
+      </MessageContent>
+    </Message>
+  ) : (
+    <Message>
+      <MessageContent>
+        <MessageResponse>{text}</MessageResponse>
       </MessageContent>
     </Message>
   );
@@ -48,19 +52,23 @@ function ChatScroll({ children }) {
   return <div ref={ref} className="overflow-y-auto h-full">{children}</div>;
 }
 
-// AFTER: ui-custom Conversation
+// AFTER: compose ui/message-scroller directly (Chat example on /components/ui/message-scroller)
 import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ui-custom/conversation";
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 
+// Wrap each turn in <MessageScrollerItem messageId={id} scrollAnchor={role === "user"}>.
 function ChatContainer({ children }) {
   return (
-    <Conversation>
-      <ConversationContent>{children}</ConversationContent>
-      <ConversationScrollButton />
-    </Conversation>
+    <MessageScroller autoScroll>
+      <MessageScrollerViewport>
+        <MessageScrollerContent>{children}</MessageScrollerContent>
+      </MessageScrollerViewport>
+      <MessageScrollerButton />
+    </MessageScroller>
   );
 }
 ```
@@ -109,10 +117,10 @@ function ActionBar({ onCopy, onRetry }) {
   );
 }
 
-// AFTER: ui-custom MessageActions
-import { MessageActions, MessageAction } from "@/components/ui-custom/message";
+// AFTER: ui MessageActions
+import { MessageActions, MessageAction } from "@/components/ui/message";
 
-// Inside a <Message> compound:
+// Inside <MessageContent>:
 <MessageActions>
   <MessageAction onClick={onCopy} tooltip="Copy">
     <CopyIcon className="size-4" />
@@ -135,7 +143,7 @@ function CustomCode({ code, language }) {
   );
 }
 
-// AFTER: ui-custom CodeBlock
+// AFTER: ui CodeBlock
 import {
   CodeBlock,
   CodeBlockHeader,
@@ -143,19 +151,21 @@ import {
   CodeBlockActions,
   CodeBlockCopyButton,
   CodeBlockFilename,
-} from "@/components/ui-custom/code-block";
+} from "@/components/ui/code-block";
+import { HighlightedCodeContent } from "@/components/ui-custom/highlighted-code-content";
 
 function CodeDisplay({ code, language, filename }) {
   return (
-    <CodeBlock code={code} language={language}>
+    <CodeBlock>
       <CodeBlockHeader>
         <CodeBlockTitle>
           <CodeBlockFilename>{filename}</CodeBlockFilename>
         </CodeBlockTitle>
         <CodeBlockActions>
-          <CodeBlockCopyButton />
+          <CodeBlockCopyButton value={code} />
         </CodeBlockActions>
       </CodeBlockHeader>
+      <HighlightedCodeContent code={code} language={language} />
     </CodeBlock>
   );
 }

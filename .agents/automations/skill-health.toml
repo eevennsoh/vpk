@@ -1,0 +1,10 @@
+version = 1
+id = "skill-health"
+kind = "cron"
+name = "Skill health"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nCheck the repository skills under `.agents/skills/` and fix exactly one skill whose instructions no longer match the repo. Return no PR when every skill is current.\n\n## Evidence and judgment\nRun `pnpm run validate:skills` and `pnpm run validate:agents`. Then look for drift the validators cannot see: a script, command, file path, `pnpm run` name or flag that a `SKILL.md` or its `references/` names but the repo no longer has; a `SKILL.md` within 20 lines of the 300-line cap; a trigger eval kit (`evals/triggers.json`) whose rows name removed behavior. Verify every claim against the current tree before changing it. Edit at a literal path; regenerate `.agents/skills/INDEX.md` with `node scripts/validate-skills.js --update-index` when a description changes.\n\n## Handoff\nUse title `[Automation] Skill health: <skill>: <short summary>` and existing labels `automation`, `codex` and `agents-md`. Include each stale reference with the evidence that it is stale, the change, the validators run and reviewer focus.\n\n## Stop conditions\nReturn no PR when the fix would change what a skill decides or when it triggers (a policy change), or when the stale reference belongs to work in an open PR. Do not run paid trigger evals."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=16;BYMINUTE=0;BYDAY=MO"
+model = "gpt-6-luna"
+reasoning_effort = "high"
+execution_environment = "worktree"

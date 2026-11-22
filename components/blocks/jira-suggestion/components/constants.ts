@@ -50,10 +50,10 @@ export const DEPTH_ZONE = 120;
 export const DEPTH_MIN_SCALE = 0.9;
 export const DEPTH_LIFT = 28;
 export const FADE_BOTTOM = 56;
-export const FADE_TOP = 20;
 /** Header and footer heights, so the list can take the rest of the popover's height inside the frame. */
 export const FOOTER_HEIGHT = 56;
 export const CHROME_HEIGHT = 44 + FOOTER_HEIGHT;
+export const LIST_HEADER_TOP_INSET = 8;
 /** Space between list cards. */
 export const LIST_GAP = 10;
 
@@ -63,8 +63,6 @@ export const WHY_CLOSE_DELAY = motionDuration.fast * 1000;
 
 /** How long a decision's receipt replaces the progress line in the footer: four of the slowest beats. */
 export const RECEIPT_MS = motionDuration.slowest * 4 * 1000;
-/** How long a Details row stays tinted after it is filled: two of the slowest beats plus a medium one to settle. */
-export const HIGHLIGHT_MS = (motionDuration.slowest * 2 + motionDuration.medium) * 1000;
 
 /** The stack ⇄ list morph, and every sheet that moves within the stack. */
 export const MORPH = { type: "spring", visualDuration: motionDuration.slower, bounce: 0.12 } as const;

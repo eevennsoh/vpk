@@ -1,30 +1,13 @@
 "use client";
 
-import type { MotionProps, Transition } from "motion/react";
-import type { CSSProperties, ElementType, JSX } from "react";
+import type { Transition } from "motion/react";
+import type { CSSProperties, ElementType } from "react";
 
 import { resolveWaveHighlightColor } from "@/components/ui-custom/lib/shimmer-colors";
 import { getShimmerWaveCharacterDelay } from "@/components/ui-custom/lib/shimmer-wave-timing";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "motion/react";
 import { memo, useMemo } from "react";
-
-type MotionHTMLProps = MotionProps & Record<string, unknown>;
-
-// Cache motion components at module level to avoid creating during render
-const motionComponentCache = new Map<
-	keyof JSX.IntrinsicElements,
-	React.ComponentType<MotionHTMLProps>
->();
-
-const getMotionComponent = (element: keyof JSX.IntrinsicElements) => {
-	let component = motionComponentCache.get(element);
-	if (!component) {
-		component = motion.create(element);
-		motionComponentCache.set(element, component);
-	}
-	return component;
-};
 
 const WAVE_REPEAT_DELAY_FACTOR = 0.05;
 const DEFAULT_WAVE_DURATION = 1;
@@ -77,9 +60,6 @@ const ShimmerWaveComponent = ({
 	baseColor,
 	baseGradientColor,
 }: ShimmerWaveProps) => {
-	const MotionComponent = getMotionComponent(
-		Component as keyof JSX.IntrinsicElements
-	);
 	const shouldReduceMotion = useReducedMotion();
 	const isWaveEnabled = !shouldReduceMotion && children.length > 0;
 	const resolvedDuration = duration ?? DEFAULT_WAVE_DURATION;
@@ -105,19 +85,19 @@ const ShimmerWaveComponent = ({
 
 	if (!isWaveEnabled) {
 		return (
-			<MotionComponent
+			<Component
 				className={cn(
 					"relative inline-block [color:var(--color-muted-foreground)]",
 					className
 				)}
 			>
 				{children}
-			</MotionComponent>
+			</Component>
 		);
 	}
 
 	return (
-		<MotionComponent
+		<Component
 			className={cn(
 				"relative inline-block overflow-visible [perspective:500px]",
 				className,
@@ -200,7 +180,7 @@ const ShimmerWaveComponent = ({
 					);
 				})}
 			</span>
-		</MotionComponent>
+		</Component>
 	);
 };
 

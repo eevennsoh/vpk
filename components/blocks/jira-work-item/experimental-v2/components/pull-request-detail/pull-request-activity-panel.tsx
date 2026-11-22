@@ -1,10 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import {
 	JiraActivity,
-	type JiraActivityEntry,
 	type JiraActivityFilter,
 	type JiraActivitySortOrder,
 } from "@/components/blocks/jira-activity";
@@ -18,6 +17,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-activity-adapter";
 import type { PullRequestActivity } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { GUIDED_REVIEW_CURRENT_REVIEWER } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit";
+import { usePullRequestActivityEntries } from "@/components/blocks/jira-work-item/lib/use-pull-request-activity-entries";
 
 /**
  * SCM Activity timeline for the pull-request rail. Reuses Jira Activity's
@@ -33,16 +33,11 @@ export function PullRequestActivityPanel({
 	const { addComment: addActivityChatComment } = useActivityChatComments();
 	const [sortOrder, setSortOrder] = useState<JiraActivitySortOrder>("ascending");
 	const [filter, setFilter] = useState<JiraActivityFilter>("all");
-	const adaptedEntries = useMemo(() => adaptPullRequestActivity(activity), [activity]);
-	const activityKey = useMemo(
-		() => getPullRequestActivityRevision(activity),
-		[activity],
-	);
-	const [entries, setEntries] = useState<readonly JiraActivityEntry[]>(adaptedEntries);
-
-	useLayoutEffect(() => {
-		setEntries(adaptedEntries);
-	}, [activityKey, adaptedEntries]);
+	const { activityKey, entries, setEntries } = usePullRequestActivityEntries({
+		activity,
+		adaptActivity: adaptPullRequestActivity,
+		getRevision: getPullRequestActivityRevision,
+	});
 
 	useLayoutEffect(() => {
 		if (!setActivityRailChrome) return undefined;

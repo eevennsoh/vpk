@@ -22,7 +22,7 @@ test("work item activity text aligns with its icon and timestamp", async ({ page
 	});
 	for (const offset of offsets) expect(offset).toBeLessThanOrEqual(1);
 	const gap = await button.evaluate((element) => element.children[2].getBoundingClientRect().left - element.children[1].getBoundingClientRect().right);
-	expect(gap).toBeGreaterThanOrEqual(12);
+	expect(gap).toBeCloseTo(6, 0);
 	await button.click();
 	const details = page.locator('[data-jira-activity-entry-id="butter-accepted-suggestions"] dd');
 	await expect(details.first()).toBeVisible();

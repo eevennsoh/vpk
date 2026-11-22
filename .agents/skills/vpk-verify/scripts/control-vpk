@@ -88,11 +88,12 @@ Commands:
   cleanup --orphaned-browsers [--dry-run]
                       Close every browser control-vpk recorded (any worktree) whose owner
                       agent session is gone or that sat unused for 2 hours.
-  park                Point this chat’s browser at a static page between checks, so an
-                      animated route stops using CPU. The next open resumes.
+  park                Release this chat’s browser between checks without opening a blank
+                      window. The next open starts it again with saved session state.
   session             Print the worktree-scoped agent-browser session id.
   evidence-dir        Print the proof artifact directory.
-  browser [--] <args> Run agent-browser with the vpk-verify session injected.
+  browser [--] <args> Run agent-browser with the vpk-verify session injected. Headless by
+                      default; pass --headed only when a visible window is requested.
   open-target <route> [--headed] [--entry-point]
                       First open an exact mapped object route on this worktree.
                       --entry-point allows a catalog landing page (/, /components,
@@ -202,13 +203,10 @@ async function main() {
 
 	if (command === "park") {
 		const session = browserSessionId();
-		const outcome = parkBrowserSession(session);
-		if (outcome.classification !== null) {
-			process.stderr.write(`${formatBrowserFailure(outcome, ["open", "<parked page>"])}\n`);
-			process.exit(outcome.result?.status ?? 1);
+		if (!parkBrowserSession(session)) {
+			throw new Error(`Could not release browser session ${session}; its cleanup record was retained.`);
 		}
-		noteBrowserUseBestEffort(session, { started: false });
-		process.stdout.write(`Parked browser session ${session} on a static page.\n`);
+		process.stdout.write(`Released browser session ${session}.\n`);
 		return;
 	}
 
@@ -233,7 +231,7 @@ async function main() {
 			process.exit(1);
 		}
 		const outcome = executeBrowserCommand(forwarded, { session });
-		if (outcome.classification === null) noteBrowserUseBestEffort(session, { started: outcome.sessionStarter });
+		if (outcome.classification === null) noteBrowserUseBestEffort(session, { headed: outcome.headed, started: outcome.sessionStarter });
 		writeCapturedOutput(outcome.result);
 		if (outcome.recoveredFromStaleSession) {
 			process.stderr.write(`Recovered stale agent-browser session ${session}; command succeeded on one bounded retry.\n`);

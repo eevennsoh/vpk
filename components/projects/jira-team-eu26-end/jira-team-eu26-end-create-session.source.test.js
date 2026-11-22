@@ -63,7 +63,7 @@ test("the created-card arrival scrolls its column to the last card's bottom and 
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<CreatedCardArrivalMotion[\s\S]*arrival=\{presentedCardArrival\?\.columnTitle === column\.title[\s\S]*cardCode=\{card\.code\}/u,
+		/<CreatedCardArrivalMotion[\s\S]*arrival=\{createdArrival\}[\s\S]*cardCode=\{card\.code\}/u,
 	);
 	// Arrivals no longer slide: the create entrance owns the whole landing, so
 	// the wrapper must not re-add a y-offset or a competing arrive transition.

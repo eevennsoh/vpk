@@ -13,6 +13,20 @@ const THEME_MOCK = {
 	"@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false, actualTheme: "light" }; }`,
 };
 
+test("inline PR titles keep the number and name in one non-navigating text run", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequestInlineTitle",
+		props: { number: 7, title: "Example PR", underlineOnHover: false },
+	});
+	const title = view.container.firstElementChild;
+	assert.equal(title.tagName, "SPAN");
+	assert.equal(title.textContent, "#7 Example PR");
+	assert.deepEqual([...title.children].map((part) => part.tagName), ["SPAN", "SPAN"]);
+	assert.equal(title.querySelectorAll("a").length, 0);
+	await view.unmount();
+});
+
 const PROPS = {
 	variant: "flyout",
 	number: 7,

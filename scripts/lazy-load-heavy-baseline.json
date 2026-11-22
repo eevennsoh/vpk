@@ -22,27 +22,21 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/butter-v1/page.tsx -> components/website/demos/projects/butter-v1-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
-		],
-		"app/components/[category]/[slug]/page.tsx": [
-			"shiki"
+			"@tiptap/"
 		],
 		"app/confluence/page.tsx -> components/website/demos/projects/confluence-demo.tsx": [
 			"./agent-templates.json",
@@ -61,8 +55,7 @@
 			"./tools.json",
 			"@/app/data/directory/skills.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/jira-golden-journey-v1/page.tsx -> components/website/demos/projects/jira-golden-journey-v1-demo.tsx": [
 			"./agent-templates.json",
@@ -70,8 +63,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/jira-golden-journey-v2/page.tsx -> components/website/demos/projects/jira-golden-journey-v2-demo.tsx": [
 			"./agent-templates.json",
@@ -79,8 +71,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/jira-golden-journey-v3/page.tsx -> components/website/demos/projects/jira-golden-journey-v3-demo.tsx": [
 			"./agent-templates.json",
@@ -88,8 +79,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/jira-golden-journey-v4/page.tsx -> components/website/demos/projects/jira-golden-journey-v4-demo.tsx": [
 			"./agent-templates.json",
@@ -102,8 +92,7 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/jira-team-eu26-end/page.tsx -> components/website/demos/projects/jira-team-eu26-end-demo.tsx": [
 			"./agent-templates.json",
@@ -124,24 +113,21 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/blocks/agent-bento/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/preview/blocks/agent-profile-card/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/preview/blocks/agent/page.tsx": [
 			"./agent-templates.json",
@@ -149,8 +135,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/blocks/code-review/page.tsx": [
 			"./agent-templates.json",
@@ -158,8 +143,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/blocks/jira-kanban-experimental-v2/page.tsx": [
 			"./agent-templates.json",
@@ -167,8 +151,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/blocks/jira-kanban-experimental/page.tsx": [
 			"./agent-templates.json",
@@ -194,8 +177,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/blocks/trigger-config/page.tsx": [
 			"./agent-templates.json",
@@ -203,16 +185,14 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/preview/projects/jira-for-you/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"app/rovo-button/layout.tsx": [
 			"./agent-templates.json",
@@ -228,7 +208,6 @@
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
 			"streamdown"
 		],
 		"app/rovo/layout.tsx": [
@@ -261,8 +240,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/skills/layout.tsx": [
 			"./agent-templates.json",
@@ -276,8 +254,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"app/studio/[[...id]]/page.tsx": [
 			"./agent-templates.json",
@@ -287,7 +264,6 @@
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
 			"streamdown"
 		],
 		"app/studio/layout.tsx": [
@@ -295,9 +271,6 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json"
-		],
-		"app/visual/[slug]/page.tsx": [
-			"shiki"
 		],
 		"components/projects/admin/page.tsx": [
 			"./agent-templates.json",
@@ -311,16 +284,14 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"components/projects/butter/page.tsx": [
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"components/projects/confluence/page.tsx": [
 			"./agent-templates.json",
@@ -333,8 +304,7 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"components/projects/jira-golden-journey-v0/page.tsx": [
 			"./agent-templates.json",
@@ -343,8 +313,7 @@
 			"./tools.json",
 			"@/app/data/directory/skills.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/jira-golden-journey-v1/page.tsx": [
 			"./agent-templates.json",
@@ -352,8 +321,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/jira-golden-journey-v2/page.tsx": [
 			"./agent-templates.json",
@@ -361,8 +329,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/jira-golden-journey-v3/page.tsx": [
 			"./agent-templates.json",
@@ -370,8 +337,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/jira-golden-journey-v4/page.tsx": [
 			"./agent-templates.json",
@@ -384,8 +350,7 @@
 			"./knowledge.json",
 			"./skills.json",
 			"./tools.json",
-			"@tiptap/",
-			"shiki"
+			"@tiptap/"
 		],
 		"components/projects/jira-team-eu26-end/page.tsx": [
 			"./agent-templates.json",
@@ -406,8 +371,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/rovo/page.tsx": [
 			"./agent-templates.json",
@@ -417,7 +381,6 @@
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
 			"streamdown"
 		],
 		"components/projects/sidebar-chat/page.tsx": [
@@ -426,8 +389,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/skills/page.tsx": [
 			"./agent-templates.json",
@@ -435,8 +397,7 @@
 			"./skills.json",
 			"./tools.json",
 			"@tiptap/",
-			"recharts",
-			"shiki"
+			"recharts"
 		],
 		"components/projects/studio/page.tsx": [
 			"./agent-templates.json",
@@ -446,7 +407,6 @@
 			"@streamdown/",
 			"@tiptap/",
 			"recharts",
-			"shiki",
 			"streamdown"
 		]
 	}

@@ -7,7 +7,7 @@ test("board chin avatars fit a 24px slot without shrinking list avatars", async 
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	for (const label of ["Cursor: Working", "2 agents: Working"]) {
 		const row = page.getByRole("button", { name: label, exact: true });
 		const avatar = row.locator('[data-slot="avatar"]').first();
@@ -77,8 +77,13 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
+	const estimatedPoints = page.getByRole("button", { name: "Edit story points for PAY-118, 3" });
+	await estimatedPoints.hover();
+	await expect(estimatedPoints).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect.poll(() => estimatedPoints.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+	await expect(page.getByRole("button", { name: "Increase story points for PAY-118" })).toBeVisible();
 	// The list seeds every work item with an estimate; clear PAY-118's so the cell starts empty.
-	await page.getByRole("button", { name: "Edit story points for PAY-118, 3" }).click();
+	await estimatedPoints.click();
 	await input.fill("");
 	await input.press("Enter");
 	const edit = page.getByRole("button", { name: "Edit story points for PAY-118, no estimate" });
@@ -93,15 +98,9 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 		return label?.getBoundingClientRect().x;
 	});
 	if (headerTextX === undefined) throw new Error("Points header is unavailable");
-	const originalBackground = await edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor);
 	await page.mouse.move(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
-	await expect.poll(() => edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).not.toBe(originalBackground);
-	const hoverBounds = await edit.evaluate((element) => {
-		const bounds = element.getBoundingClientRect();
-		const visual = getComputedStyle(element, "::before");
-		return { x: bounds.x + Number.parseFloat(visual.left), right: bounds.right - Number.parseFloat(visual.right) };
-	});
-	expect(hoverBounds.x).toBeCloseTo(headerTextX, 0);
+	await expect(edit).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect.poll(() => edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
 	await page.mouse.click(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
 	await expect(input).toBeFocused();
 	await expect(input).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -113,7 +112,7 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	expect(inputBounds.height).toBeLessThan(cellBounds.height);
 	expect(inputBounds.y + inputBounds.height / 2).toBeCloseTo(cellBounds.y + cellBounds.height / 2, 0);
 	expect(inputBounds.x).toBeCloseTo(headerTextX, 0);
-	expect(inputBounds.x + inputBounds.width).toBeCloseTo(hoverBounds.right, 0);
+	expect(inputBounds.x + inputBounds.width).toBeCloseTo(cellBounds.x + cellBounds.width - 12, 0);
 	const increase = page.getByRole("button", { name: "Increase story points for PAY-118" });
 	const decrease = page.getByRole("button", { name: "Decrease story points for PAY-118" });
 	await expect(decrease).toBeDisabled();
@@ -134,6 +133,36 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await expect(input).toHaveValue("5");
 	await decrease.press("Tab");
 	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 5" })).toBeVisible();
+});
+
+test("collapsed Work item sections take up only the toggle row", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+
+	const summary = page.getByRole("group", { name: "Work item sections", exact: true });
+	const attachments = summary.getByRole("button", { name: "8 attachments" });
+	const linked = summary.getByRole("button", { name: "8 linked work items" });
+	const trailingSpace = () => summary.evaluate((row) => row.parentElement!.getBoundingClientRect().bottom - row.getBoundingClientRect().bottom);
+	await expect.poll(trailingSpace).toBeLessThanOrEqual(1);
+
+	await attachments.click();
+	await linked.click();
+	await attachments.click();
+	const linkedGroup = page.locator("#section-linked-items");
+	await expect(linkedGroup).toBeVisible();
+	const linkedGap = await summary.evaluate((row) => {
+		const section = row.parentElement!;
+		const linked = section.querySelector("#section-linked-items")!;
+		return linked.getBoundingClientRect().top - row.getBoundingClientRect().bottom - parseFloat(getComputedStyle(section).rowGap);
+	});
+	expect(Math.abs(linkedGap)).toBeLessThanOrEqual(1);
+
+	await linked.click();
+	await expect(linkedGroup).toBeHidden();
+	await expect.poll(trailingSpace).toBeLessThanOrEqual(1);
 });
 
 test("attachment piles stay settled as Related work opens in the Work item and remain interactive", async ({ page }) => {
@@ -306,7 +335,7 @@ test("start coding opens the development dropdown in a work item", async ({ page
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
@@ -327,7 +356,7 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });

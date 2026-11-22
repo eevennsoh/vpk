@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { use, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -16,7 +16,8 @@ import {
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionAttribution, type AgentSessionItem } from "./agent-session-types";
+import { AgentSessionAvatarPreviewContext } from "./agent-session-avatar-preview";
 
 export function AgentSessionMediumCard({
 	captured = false,
@@ -44,9 +45,11 @@ export function AgentSessionMediumCard({
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
 	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
+	const avatarPreview = use(AgentSessionAvatarPreviewContext);
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const onItemHoverRef = useRef(onItemHover);
 	const isHoveredRef = useRef(false);
+	const identity = <AgentListIdentity appearance="coding" agent={item.agent} attributedBy={getAgentSessionAttribution(item)} attributionOrder="agent-first" sizePx={32} />;
 
 	useEffect(() => {
 		onItemHoverRef.current = onItemHover;
@@ -107,14 +110,8 @@ export function AgentSessionMediumCard({
 								<span aria-hidden="true" className="absolute left-1 top-1/2 size-1 -translate-y-1/2 rounded-full bg-icon-information" />
 							</>
 						) : null}
-						<span className="block" data-session-drag-identity="">
-							<AgentListIdentity
-								appearance="coding"
-								agent={item.agent}
-								attributedBy={item.invokedBy}
-								attributionOrder="agent-first"
-								sizePx={32}
-							/>
+						<span className="flex shrink-0" data-session-drag-identity="">
+							{avatarPreview?.(item.agent, identity, { hoverOnly: true }) ?? identity}
 						</span>
 						<span className="min-w-0 truncate text-sm font-medium leading-5 text-text">
 							{item.title}
@@ -122,7 +119,7 @@ export function AgentSessionMediumCard({
 						<IconTile
 							className="text-icon"
 							icon={<ArrowUpIcon color="currentColor" label="" size="small" />}
-							iconSize="medium"
+							iconSize="small"
 							label="Up"
 							size="small"
 							variant="transparent"

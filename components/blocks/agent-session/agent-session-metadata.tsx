@@ -1,32 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useInView } from "motion/react";
-
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
+import TeamsIcon from "@atlaskit/icon/core/teams";
+import { useState } from "react";
 
 import {
 	AgentListPrStatusIcon,
 	AgentListTime,
 } from "@/components/blocks/agent-list/agent-list-card";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
+import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
+import { PullRequestList } from "@/components/blocks/jira-issue/pull-request-cluster";
+import { RelativeTime } from "@/components/ui/elapsed-time";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
-import { Shimmer } from "@/components/ui-custom/shimmer";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { describeRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import {
+	AGENT_SESSION_STATUS_LABEL,
+	isActiveAgentSessionState,
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
-import { getAgentSessionRole, type AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionRole, type AgentSessionItem, type AgentSessionProps } from "./agent-session-types";
 import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
-
-const TOOL_CALL_CYCLE_MS = 2_200;
+import { AgentSessionLifecycleLabel } from "./agent-session-lifecycle";
 
 /** The `·` between metadata chunks. Decorative — the chunks read fine without it. */
 function MetadataDot() {
@@ -37,12 +40,18 @@ function MetadataDot() {
 	);
 }
 
-function ViewerLock() {
-	return (
-		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
-			<LockLockedIcon color="currentColor" label="" size="small" />
+/**
+ * Trailing access mark. A team session — one the viewer can see but someone
+ * else owns — shows the team glyph; a private session keeps the lock.
+ */
+function AccessMark({ access, person }: Readonly<{ access: "team" | "private"; person?: string }>) {
+	const Glyph = access === "team" ? TeamsIcon : LockLockedIcon;
+	const mark = (
+		<span aria-label={`${access === "team" ? "Team" : "Private"} session${person ? ` by ${person}` : ""}`} className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-icon-subtlest outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3!" data-access-mark={access} role="img" tabIndex={person ? 0 : undefined}>
+			<Glyph color="currentColor" label="" size="small" />
 		</span>
 	);
+	return person ? <Tooltip><TooltipTrigger render={mark} /><TooltipContent positionerClassName="z-[650]" role="tooltip">Session by {person}{access === "team" ? " for the team" : null}</TooltipContent></Tooltip> : mark;
 }
 
 /**
@@ -73,6 +82,7 @@ export function AgentSessionHostSegment({ compact = false, isLocal }: Readonly<{
 
 /** `#1306: Add guest checkout`, the identifier convention shared with Smart Links. */
 function toArtifactLabel(item: AgentSessionItem): string | undefined {
+	if ((item.pullRequests?.length ?? 0) > 1) return `${item.pullRequests?.length} pull requests`;
 	const number = item.sessionDetails?.pullRequestNumber;
 	if (number === undefined) {
 		return undefined;
@@ -84,8 +94,55 @@ function toArtifactLabel(item: AgentSessionItem): string | undefined {
 
 /** `#1306` — the compact short-byline form, without the pull-request title. */
 function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
+	if ((item.pullRequests?.length ?? 0) > 1) return `${item.pullRequests?.length} pull requests`;
 	const number = item.sessionDetails?.pullRequestNumber;
 	return number === undefined ? undefined : `#${number}`;
+}
+
+function SessionTimestamp({ item }: Readonly<{ item: AgentSessionItem }>) {
+	const timestamp = item.updatedAtMs ?? item.completedAtMs ?? item.startedAtMs;
+	const relativeLabel = describeRelativeTimeLabel(item.timeLabel ?? "", timestamp);
+	const relativeTime = relativeLabel ?? (Number.isFinite(timestamp) ? <RelativeTime format="long" timestampMs={timestamp} /> : undefined);
+	if (relativeTime === undefined) return <span data-last-update=""><AgentListTime item={item} /></span>;
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<span className="rounded-sm text-text-subtle underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring" data-last-update="" data-session-drag-ignore="" tabIndex={0} />}>
+				<AgentListTime item={item} />
+			</TooltipTrigger>
+			<TooltipContent positionerClassName="z-[650]" role="tooltip" side="bottom">
+				{relativeTime}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
+function SingleSessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
+	const details = item.sessionDetails;
+	const number = details?.pullRequestNumber;
+	if (!details || number === undefined) return null;
+	const status = item.prStatus ?? "created";
+	return <PullRequest additions={details.additions ?? 0} author={details.pullRequestAuthor ? { name: details.pullRequestAuthor.name, avatarUrl: details.pullRequestAuthor.src } : undefined} branch={details.branch} checks={item.pullRequestChecks} checksExpandable={false} className="border-none bg-transparent shadow-none" deletions={details.deletions ?? 0} filesChanged={details.files} number={number} repository={details.repository} showFix={false} status={status === "merged" ? "Merged" : status === "failed" ? "Failed" : "Open"} targetBranch={details.targetBranch} title={details.pullRequestTitle ?? label} variant="flyout" />;
+}
+
+function SessionPullRequest({ item, label }: Readonly<{ item: AgentSessionItem; label: string }>) {
+	const [open, setOpen] = useState(false);
+	const details = item.sessionDetails;
+	const number = details?.pullRequestNumber;
+	const multiple = (item.pullRequests?.length ?? 0) > 1;
+	if (!multiple && (!details || number === undefined)) return null;
+	const status = item.prStatus ?? "created";
+	const color = status === "merged" ? "group-hover/agent-row:text-icon-accent-purple group-focus-within/agent-row:text-icon-accent-purple" : status === "failed" ? "group-hover/agent-row:text-icon-danger group-focus-within/agent-row:text-icon-danger" : "group-hover/agent-row:text-icon-success group-focus-within/agent-row:text-icon-success";
+	return (
+		<HoverCard open={open} onOpenChange={setOpen}>
+			<HoverCardTrigger aria-label={multiple ? label : `Pull request ${label}`} onFocus={() => setOpen(true)} render={<span className="group/session-pr flex min-w-0 shrink items-center gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" data-session-drag-ignore="" role="group" tabIndex={0} />}>
+				<AgentListPrStatusIcon className={cn("size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!", !multiple && color)} status={multiple ? "created" : status} />
+				<span className="min-w-0 truncate text-text-subtle underline-offset-2 group-hover/session-pr:underline group-focus-visible/session-pr:underline" data-session-pr-title="">{label}</span>
+			</HoverCardTrigger>
+			<HoverCardContent align="start" aria-label={multiple ? "Pull requests" : `Pull request #${number} details`} className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden p-0" positionerClassName="z-[650]" role="region" sideOffset={8}>
+				{multiple ? <PullRequestList pullRequests={item.pullRequests ?? []} /> : <SingleSessionPullRequest item={item} label={label} />}
+			</HoverCardContent>
+		</HoverCard>
+	);
 }
 
 /**
@@ -97,11 +154,12 @@ function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview }>) {
-	if (item.invokedBy) {
+	const attributedBy = item.invokedBy;
+	if (attributedBy) {
 		return (
 			<AgentListAttributionAvatarGroup
 				agent={item.agent}
-				attributedBy={item.invokedBy}
+				attributedBy={attributedBy}
 				attributionOrder="agent-first"
 				sizePx={16}
 				appearance="coding"
@@ -124,94 +182,36 @@ function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: Agen
 	return <span className="flex size-4 shrink-0 items-center justify-center">{renderAgentAvatar?.(item.agent, avatar) ?? avatar}</span>;
 }
 
-/** Cycles only while visible; reduced motion holds the first tool call still. */
-// react-doctor-disable-next-line react-doctor/no-multi-component-file -- The tool call is one metadata segment and stays beside the segment renderer it serves.
-function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly string[] }>) {
-	const [cycleIndex, setCycleIndex] = useState(0);
-	const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
-	const wrapperRef = useRef<HTMLSpanElement>(null);
-	const isInView = useInView(wrapperRef);
-
-	useEffect(() => {
-		if (!isInView || shouldReduceMotion || toolCalls.length < 2) {
-			return undefined;
-		}
-
-		const intervalId = window.setInterval(() => {
-			setCycleIndex((index) => index + 1);
-		}, TOOL_CALL_CYCLE_MS);
-		return () => window.clearInterval(intervalId);
-	}, [isInView, shouldReduceMotion, toolCalls.length]);
-
-	const toolCall = toolCalls[cycleIndex % toolCalls.length];
-	if (toolCall === undefined) {
-		return null;
-	}
-
-	return (
-		<span className="min-w-0 max-w-28 truncate" ref={wrapperRef}>
-			<span className="sr-only">Tool call: </span>
-			<CyclingByline
-				className="text-xs leading-4 text-text-subtle"
-				contentKey={toolCall}
-				slide={false}
-			>
-				<Shimmer
-					as="span"
-					className="max-w-full truncate align-top text-text-subtle"
-					data-agent-session-tool-call=""
-					duration={1.4}
-					spread={2}
-					title={toolCall}
-				>
-					{toolCall}
-				</Shimmer>
-			</CyclingByline>
-		</span>
-	);
-}
-
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
 	item,
+	lifecycleLabelPlacement,
 	renderAgentAvatar,
 	segment,
-}: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
+}: Readonly<{ item: AgentSessionItem; lifecycleLabelPlacement: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
 	switch (segment.kind) {
 		case "agent":
 			return (
-				<span className="flex min-w-0 items-center gap-1">
+				<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">
 					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
-					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
-						{segment.label}
-					</span>
+					{segment.label === undefined ? null : (
+						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
+							{lifecycleLabelPlacement === "metadata" ? <AgentSessionLifecycleLabel state={item.state} /> : segment.label}
+						</span>
+					)}
 				</span>
 			);
-		case "tool-call":
-			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "branch":
 			return <span className="flex min-w-0 items-center gap-1"><span className="grid size-3 shrink-0 place-items-center [&_span]:size-3! [&_svg]:size-3!"><BranchIcon label="" size="small" /></span><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
-			return (
-				<span className="flex min-w-0 shrink items-center gap-1">
-					<AgentListPrStatusIcon
-						className="size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!"
-						status={segment.prStatus ?? "created"}
-					/>
-					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
-						{segment.label}
-					</span>
-				</span>
-			);
+			return segment.label ? <SessionPullRequest item={item} label={segment.label} /> : null;
 		case "time":
 			return (
 				<span className="flex shrink-0 items-center gap-1 text-nowrap">
 					{segment.host === undefined ? null : (
 						<AgentSessionHostSegment compact isLocal={segment.host === "local"} />
 					)}
-					<span title="Last update">
-						<AgentListTime item={item} />
-					</span>
+					<SessionTimestamp item={item} />
 				</span>
 			);
 		default: {
@@ -222,48 +222,49 @@ function LongMetadataSegment({
 }
 
 /**
- * Long-form metadata: `<mark> Claude · ☁ 2m` or `Claude · #1306: … · ☁ 2m`.
+ * Long-form metadata: `<mark> Claude · #1306: … · ☁ 2m`.
  *
- * Progression is the trailing lifecycle icon, not a byline clause. The chunk
- * list comes from {@link toAgentSessionMetadataSegments}, which is pure and
- * unit-tested; this component only decides how each chunk looks.
+ * The state label can replace the agent name; its glyph stays trailing. The
+ * chunk list comes from the pure, unit-tested metadata builder.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch = false }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showArtifact = true, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showArtifact?: boolean; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
+	const access = item.privateTo ? "private" : item.sharedWithTeam || getAgentSessionRole(item) === "viewer" ? "team" : undefined;
+	const showLifecycleInMetadata = lifecycleLabelPlacement === "metadata";
 	const segments = toAgentSessionMetadataSegments({
-		agentName: item.agent.name,
+		agentName: showLifecycleInMetadata ? AGENT_SESSION_STATUS_LABEL[item.state] : item.agent.name,
 		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
+		showArtifact,
+		compact: compact && !showLifecycleInMetadata,
 		host: declaredHost,
 		prStatus: item.prStatus,
-		toolCalls: item.toolCalls,
 	});
 
 	return (
-		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+		<span className="@container/session-metadata flex w-full min-w-0 items-center gap-1 text-xs text-text-subtle">
 			{segments.map((segment, index) => (
-				// Keep clauses content-sized, with text yielding to the fixed
-				// host/time and lifecycle control when the row is narrow.
 				<span
 					className={cn(
 						"flex items-center gap-1",
 						segment.kind === "agent"
-							? "min-w-0 shrink"
+							? segment.label === undefined ? "shrink-0" : "min-w-0 shrink"
 							: segment.kind === "time"
 								? "shrink-0"
-								: "min-w-0 max-w-28 flex-initial",
+								: "min-w-0 max-w-28 flex-initial @[32rem]/session-metadata:max-w-72",
 					)}
 					key={segment.kind}
 				>
-					{index > 0 ? <MetadataDot /> : null}
-					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
+					{/* An unnamed avatar stack joins its first metadata clause directly. */}
+					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
+					<LongMetadataSegment item={item} lifecycleLabelPlacement={showLifecycleInMetadata ? "metadata" : "trailing"} renderAgentAvatar={renderAgentAvatar} segment={segment} />
+					{segment.kind === "time" && access !== undefined ? <><MetadataDot /><AccessMark access={access} person={item.privateTo ?? item.invokedBy?.name} /></> : null}
 				</span>
 			))}
-			{getAgentSessionRole(item) === "viewer" || item.privateTo ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }
@@ -283,40 +284,24 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 	const pullRequestTitle = item.sessionDetails?.pullRequestTitle;
 
 	return (
-		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtle">
 			{pullRequestLabel === undefined ? (
-				<span className="min-w-0 truncate text-text-subtlest" title={item.agent.name}>
-					{item.agent.name}
-				</span>
-			) : (
-				<span className="flex min-w-0 shrink items-center gap-1">
-					<AgentListPrStatusIcon
-						className="size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!"
-						status={item.prStatus ?? "created"}
-					/>
-					<span
-						className="flex min-w-0 items-center gap-1 text-text-subtlest underline-offset-2 hover:underline"
-						title={pullRequestTitle === undefined ? pullRequestLabel : `${pullRequestLabel} ${pullRequestTitle}`}
-					>
-						<span className="shrink-0 text-nowrap">
-							{pullRequestLabel}{pullRequestTitle === undefined ? null : " "}
-						</span>
-						{pullRequestTitle === undefined ? null : (
-							<span className="min-w-0 truncate text-nowrap">{pullRequestTitle}</span>
-						)}
+				isActiveAgentSessionState(item.state) ? null : (
+					<span className="min-w-0 truncate text-text-subtle" title={item.agent.name}>
+						{item.agent.name}
 					</span>
-				</span>
+				)
+			) : (
+				<SessionPullRequest item={item} label={(item.pullRequests?.length ?? 0) > 1 || pullRequestTitle === undefined ? pullRequestLabel : `${pullRequestLabel} ${pullRequestTitle}`} />
 			)}
-			<MetadataDot />
+			{pullRequestLabel === undefined && isActiveAgentSessionState(item.state) ? null : <MetadataDot />}
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (
 					<AgentSessionHostSegment compact isLocal={declaredHost === "local"} />
 				)}
-				<span title="Last update">
-					<AgentListTime item={item} />
-				</span>
+				<SessionTimestamp item={item} />
 			</span>
-			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
+			{item.privateTo ? <><MetadataDot /><AccessMark access="private" person={item.privateTo} /></> : item.sharedWithTeam || getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" person={item.invokedBy?.name} /></> : null}
 		</span>
 	);
 }

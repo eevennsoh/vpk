@@ -6,18 +6,22 @@ import type {
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraIssuePriority, JiraIssueTag } from "@/components/blocks/jira-issue";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { Lozenge } from "@/components/ui/lozenge";
+import type { JiraListVariant } from "@/components/blocks/jira-list/jira-list-appearance";
 
 export type JiraListPriority = JiraIssuePriority;
 export type JiraListTag = JiraIssueTag;
 export type JiraListIssueType = "epic" | "task" | "story" | "subtask" | "bug";
+export const JIRA_CREATABLE_ISSUE_TYPES = ["story", "epic", "bug", "task"] as const satisfies readonly JiraListIssueType[];
 export type JiraListBaseColumnId =
 	| "work"
 	| "status"
 	| "assignee"
 	| "agentSessions"
+	| "pullRequest"
 	| "goals"
 	| "priority"
 	| "storyPoints"
@@ -46,7 +50,7 @@ export interface JiraListGoal {
 	emphasis?: "default" | "warning";
 }
 
-export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "role"> {
+export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "privateTo" | "role"> {
 	id: string;
 	sessionTitle?: string;
 	timeLabel?: string;
@@ -72,6 +76,7 @@ export interface JiraListRowData {
 	isExpanded?: boolean;
 	assignee?: JiraListPerson;
 	agentSessions?: readonly JiraListAssignedAgent[];
+	pullRequests?: readonly JiraIssuePullRequestItem[];
 	goals?: readonly JiraListGoal[];
 	labels?: readonly JiraListTag[];
 	dueDate?: string;
@@ -92,11 +97,14 @@ export interface JiraListExtraColumn {
 }
 
 export interface JiraListDraftWorkItem {
+	afterIssueKey?: string;
+	createdIssueKeys?: readonly string[];
 	assignee?: JiraListPerson;
 	dueDate?: string;
 	insertAtIndex: number | null;
 	issueKeyLabel?: string;
 	issueType?: JiraListIssueType;
+	parentIssueKey?: string;
 	summary: string;
 }
 
@@ -120,13 +128,17 @@ export interface JiraListRowFlash {
 
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
+	groupHeaders?: ReadonlyMap<string, readonly import("./jira-list-grouping").JiraListGroupHeading[]>;
+	trailingGroupHeaders?: readonly import("./jira-list-grouping").JiraListGroupHeading[];
+	showPullRequests?: boolean;
 	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
-	bordered?: boolean;
+	variant?: JiraListVariant;
 	className?: string;
 	createLabel?: string;
 	footerCountAlignment?: "center" | "end";
+	hideStickyFooter?: boolean;
 	totalCountLabel?: string;
 	visibleCount?: number;
 	selectedIssueKeys?: ReadonlySet<string>;
@@ -140,7 +152,6 @@ export interface JiraListProps {
 	onAgentAssign?: (issueKey: string, agent: AgentSelectorAgent) => void;
 	/** Creates a work item. Omit to remove Create controls from the list. */
 	onCreate?: (insertion?: JiraListInsertion) => void;
-	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
 	/** Updates a work item's due date as a local calendar date (YYYY-MM-DD). */
 	onDueDateChange?: (issueKey: string, dueDate: string | undefined) => void;
@@ -148,6 +159,7 @@ export interface JiraListProps {
 	onDraftWorkItemAssigneeChange?: (assignee: JiraListPerson | undefined) => void;
 	onDraftWorkItemDueDateChange?: (dueDate: string | undefined) => void;
 	onDraftWorkItemIssueTypeChange?: (issueType: JiraListIssueType) => void;
+	onDraftWorkItemParentChange?: (parentIssueKey: string | undefined) => void;
 	onDraftWorkItemSubmit?: () => void;
 	onDraftWorkItemSummaryChange?: (summary: string) => void;
 	onIssueClick?: (row: JiraListRowData) => void;

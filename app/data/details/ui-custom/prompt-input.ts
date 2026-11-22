@@ -6,34 +6,40 @@ export const PROMPT_INPUT_DETAIL: ComponentDetail = {
 	usage: `import {
   PromptInput,
   PromptInputBody,
-  PromptInputTextarea,
+  PromptInputButton,
   PromptInputFooter,
-  PromptInputTools,
-  PromptInputActionMenu,
-  PromptInputActionMenuTrigger,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuItem,
+  PromptInputHeader,
   PromptInputSubmit,
+  PromptInputTextarea,
+  usePromptInputAttachments,
 } from "@/components/ui-custom/prompt-input";
-import AddIcon from "@atlaskit/icon/core/add";
+import { PlusIcon } from "@/components/ui/vpk-icons";
 
-<PromptInput onSubmit={({ text, files }) => sendMessage({ text, files })}>
+function AttachFilesButton() {
+  const attachments = usePromptInputAttachments();
+  return (
+    <PromptInputButton
+      aria-label="Attach files"
+      className="rounded-full"
+      onClick={attachments.openFileDialog}
+      size="icon-sm"
+      variant="outline"
+    >
+      <PlusIcon label="" />
+    </PromptInputButton>
+  );
+}
+
+<PromptInput multiple onSubmit={({ text, files }) => sendMessage({ text, files })}>
+  {/* With no children, the header shows each attached file as an Attachment. */}
+  <PromptInputHeader />
   <PromptInputBody>
-    {/* Type "/" for skills or "@" to mention. Pass mentionSources to scope the palette. */}
-    <PromptInputTextarea placeholder="Ask, @mention, or / for skills" rows={1} />
+    {/* Enter sends, Shift+Enter adds a line. Type "/" for skills or "@" to mention. */}
+    <PromptInputTextarea placeholder="Ask, @mention, or / for skills" />
   </PromptInputBody>
-  <PromptInputFooter className="justify-between px-1">
-    <PromptInputTools>
-      <PromptInputActionMenu>
-        <PromptInputActionMenuTrigger aria-label="Add">
-          <AddIcon label="" />
-        </PromptInputActionMenuTrigger>
-        <PromptInputActionMenuContent>
-          <PromptInputActionMenuItem>Add context</PromptInputActionMenuItem>
-        </PromptInputActionMenuContent>
-      </PromptInputActionMenu>
-    </PromptInputTools>
-    <PromptInputSubmit />
+  <PromptInputFooter>
+    <AttachFilesButton />
+    <PromptInputSubmit className="ml-auto" disabled={!canSend} />
   </PromptInputFooter>
 </PromptInput>`,
 	props: [
@@ -101,17 +107,17 @@ import AddIcon from "@atlaskit/icon/core/add";
 		{ name: "PromptInputProvider", description: "Optional provider for externally controlled text input and attachments." },
 		{ name: "PromptInputBody", description: "Body slot that wraps the main textarea input region." },
 		{ name: "PromptInputTextarea", description: "Rich-text composer (tiptap) with Enter-to-submit, an inline `/` (skills) + `@` (mentions) palette, inline reference pills, and a configurable `mentionSources` catalog. Serializes to a plain string for `value`/`onChange`/`onSubmit`." },
-		{ name: "PromptInputHeader", description: "Top aligned addon row for tabs, modes, or context chips." },
+		{ name: "PromptInputHeader", description: "Top addon row. Renders its children (tabs, modes, context chips); with no children it shows each pending attachment as a small `Attachment` with a remove button, and renders nothing while there are none." },
 		{ name: "PromptInputFooter", description: "Bottom aligned addon row for tools and submit actions." },
 		{ name: "PromptInputTools", description: "Inline tools container commonly used inside PromptInputFooter." },
 		{ name: "PromptInputButton", description: "Action button primitive with optional tooltip support." },
 		{ name: "PromptInputActionMenu", description: "Dropdown menu container for add/context actions." },
-		{ name: "PromptInputActionMenuTrigger", description: "Menu trigger button specialized for PromptInput actions." },
+		{ name: "PromptInputActionMenuTrigger", description: "Menu trigger for PromptInput actions. Defaults to shadcn's round outline 32px button with a plus icon; pass `variant`/`className` for a composer's own look." },
 		{ name: "PromptInputActionMenuContent", description: "Menu content panel aligned for prompt actions." },
 		{ name: "PromptInputActionMenuItem", description: "Individual menu item for quick prompt actions." },
 		{ name: "PromptInputActionAddAttachments", description: "Prebuilt menu item that opens the file picker." },
 		{ name: "PromptInputSelect", description: "Select wrapper for model/reasoning/verbosity controls." },
-		{ name: "PromptInputSubmit", description: "Submit/stop button with chat status-aware icon states." },
+		{ name: "PromptInputSubmit", description: "Submit/stop button. Round, filled 32px button with an arrow-up icon while idle (VPK fills it with the black Rovo brand); a stop square while submitted or streaming and a cross on error. Pass `className=\"rounded-md\"` for a rounded-square button." },
 	],
 	examples: [
 		{ title: "Microphone + text send — default", description: "The default Rovo-style composer keeps dictation available and the send CTA visible. Send is disabled until text is ready; live chat is not enabled.", demoSlug: "prompt-input-demo-chat-composer" },

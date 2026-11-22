@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageResponse } from "@/components/ui-custom/message"
+import { MessageResponse } from "@/components/ui-custom/message-markdown"
 
 const DEFAULT_MERMAID = `\`\`\`mermaid
 flowchart TD

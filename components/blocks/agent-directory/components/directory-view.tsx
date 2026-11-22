@@ -22,7 +22,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupSearchAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -410,7 +410,7 @@ export function AgentDirectoryView({
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<InputGroup className="w-38">
-						<InputGroupAddon><Icon render={<SearchIcon label="" />} /></InputGroupAddon>
+						<InputGroupSearchAddon><Icon render={<SearchIcon label="" />} /></InputGroupSearchAddon>
 						<InputGroupInput type="search" aria-label="Search agents" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
 					</InputGroup>
 					<DirectoryFiltersPopover filters={filters} onChange={setFilters} />

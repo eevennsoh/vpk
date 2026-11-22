@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/empty"
 import {
 	InputGroup,
-	InputGroupAddon,
+	InputGroupSearchAddon,
 	InputGroupInput,
 } from "@/components/ui/input-group"
 import { PlusIcon, SearchIcon } from "@/components/ui/vpk-icons"
@@ -46,9 +46,9 @@ export function MemoriesTab() {
 	return (
 		<div className="flex flex-col gap-4 pt-4">
 			<InputGroup>
-				<InputGroupAddon>
+				<InputGroupSearchAddon>
 					<SearchIcon />
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 				<InputGroupInput
 					placeholder="Search memories"
 					value={query}

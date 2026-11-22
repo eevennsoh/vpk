@@ -1,0 +1,10 @@
+version = 1
+id = "interface-contract-audit"
+kind = "cron"
+name = "Interface contract audit"
+prompt = "Invoke `$vpk-scheduled-automation` and apply its shared producer policy together with this task.\n\n## Task\nAudit one recently touched VPK boundary for a concrete producer/consumer contract mismatch or fragility. Patch only a narrow, review-ready contract whose observable behavior and owner can be proved; otherwise return a no-PR report.\n\n## Evidence and judgment\nInspect callers/callees, route handlers, schemas, UI message/data parts, storage/config formats, component props, script CLI behavior, and adjacent tests. Use API/interface guidance for observable behavior and composition/vpk-tidy guidance for component boundaries without inventing redesigns. Prefer validation at the boundary, explicit errors, additive compatibility, and focused contract tests.\n\n## Handoff\nFor a successful change, use title `[Automation] Interface contract audit: <short summary>` and existing labels `automation`, `codex`, and `bugfix`. Include producer/consumer evidence, mismatch, observable fix, contract proof, shared-policy validation, and reviewer focus.\n\n## Stop conditions\nReturn no PR when callers intentionally disagree, the public contract is ambiguous, overlap obscures ownership, or the change requires a broad migration."
+status = "ACTIVE"
+rrule = "RRULE:FREQ=WEEKLY;BYHOUR=11;BYMINUTE=45;BYDAY=MO,TH"
+model = "gpt-6.2-sol"
+reasoning_effort = "high"
+execution_environment = "worktree"

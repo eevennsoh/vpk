@@ -18,9 +18,13 @@ import type {
 import { ChatHistoryDrawer } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import FloatingChatHeader from "./floating-chat-header";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
+import type { ChatPanelProps } from "@/components/projects/sidebar-chat/lib/chat-panel-types";
 import { motionEase } from "@/lib/motion";
 
 interface RovoFloatingChatProps {
+	renderWidget?: ChatPanelProps["renderWidget"];
+	readOnly?: boolean;
+	readOnlyOwner?: import("@/components/blocks/agent-list").AgentListInvoker;
 	agentCreator?: AgentResultCreator;
 	placement?: "embedded" | "floating";
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -56,6 +60,9 @@ interface RovoFloatingChatProps {
 }
 
 export default function RovoFloatingChat({
+	renderWidget,
+	readOnly = false,
+	readOnlyOwner,
 	agentCreator,
 	placement = "floating",
 	onSurfaceSwitch,
@@ -88,6 +95,8 @@ export default function RovoFloatingChat({
 	const { closeChat, isHistoryOpen, resetChat, toggleHistory } = useRovoChat();
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const embedded = placement === "embedded";
+	const ownerName = readOnlyOwner?.name.trim();
+	const sessionOwner = ownerName ? `${ownerName}, the session owner,` : "the session owner";
 
 	return (
 		<motion.div
@@ -108,8 +117,10 @@ export default function RovoFloatingChat({
 				: { boxShadow: token("elevation.shadow.overlay"), willChange: "transform, opacity" }}
 		>
 			<FloatingChatHeader
+				attributedBy={readOnly ? readOnlyOwner : undefined}
 				className={headerClassName}
 				compact={compactHeader}
+				identityTooltip={readOnly ? `Only ${sessionOwner} can steer this session. You can unblock it and review the outcome.` : undefined}
 				isHistoryOpen={isHistoryOpen}
 				onClose={closeChat}
 				onHistoryToggle={toggleHistory}
@@ -118,12 +129,14 @@ export default function RovoFloatingChat({
 				showAgentBackButton={showAgentBackButton}
 				showAgentSelector={showAgentSelector}
 				showChatHistory={showChatHistory}
-				showMoreButton={!embedded}
+				showMoreButton={!embedded && !readOnly}
 				showNewChatButton={showNewChatButton}
 			/>
 			<div className={embedded ? "min-h-0 min-w-0 flex-1 overflow-visible" : "min-h-0 min-w-0 overflow-hidden"}>
 				<ChatPanel
 					agentCreator={agentCreator}
+					readOnly={readOnly}
+					renderWidget={renderWidget}
 					onClose={closeChat}
 					autoFocusComposer={autoFocusComposer}
 					hideHeader

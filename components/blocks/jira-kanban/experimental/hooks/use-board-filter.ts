@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import type { JiraFilterCondition } from "@/components/blocks/jira-filter";
 
 import {
-	clearBoardFilterField,
 	countBoardFilterSelections,
+	BOARD_FILTER_VALUE_FIELD_IDS,
+	BOARD_FILTER_DAYS_PRESETS,
 	EMPTY_BOARD_FILTER_DAYS,
 	EMPTY_BOARD_FILTER_VALUE_SELECTIONS,
 	toggleBoardFilterValue,
@@ -15,6 +17,7 @@ import {
 } from "../lib/board-filter";
 
 export interface BoardFilterModel {
+	conditions: readonly JiraFilterCondition[];
 	days: BoardFilterDaysSelection;
 	open: boolean;
 	selectedCount: number;
@@ -23,6 +26,7 @@ export interface BoardFilterModel {
 }
 
 export interface BoardFilterActions {
+	setConditions: (conditions: JiraFilterCondition[]) => void;
 	clearAll: () => void;
 	clearField: (fieldId: BoardFilterFieldId) => void;
 	setAssigneeIds: (assigneeIds: Set<string>) => void;
@@ -33,12 +37,24 @@ export interface BoardFilterActions {
 }
 
 interface BoardFilterSelection {
-	values: BoardFilterValueSelections;
 	days: BoardFilterDaysSelection;
+	conditions: readonly JiraFilterCondition[];
+}
+
+export const BOARD_JIRA_FIELD_IDS: Record<BoardFilterValueFieldId, string> = {
+	assignee: "assignee", parent: "epic", sprint: "sprint", project: "project",
+	status: "status", "work-type": "type", labels: "label",
+};
+
+function toValueSelections(conditions: readonly JiraFilterCondition[]): BoardFilterValueSelections {
+	return BOARD_FILTER_VALUE_FIELD_IDS.reduce((values, field) => ({
+		...values,
+		[field]: conditions.find((condition) => condition.field === BOARD_JIRA_FIELD_IDS[field] && condition.operator === "is")?.values ?? [],
+	}), EMPTY_BOARD_FILTER_VALUE_SELECTIONS);
 }
 
 const EMPTY_BOARD_FILTER_SELECTION: BoardFilterSelection = {
-	values: EMPTY_BOARD_FILTER_VALUE_SELECTIONS,
+	conditions: [],
 	days: EMPTY_BOARD_FILTER_DAYS,
 };
 
@@ -57,7 +73,8 @@ export function useBoardFilter({
 	const [open, setOpen] = useState(false);
 	const [selectedFieldId, setSelectedFieldId] = useState<BoardFilterFieldId>("assignee");
 	const [selectionsByScope, setSelectionsByScope] = useState<Record<string, BoardFilterSelection>>({});
-	const { values: selectedValueIdsByField, days } = selectionsByScope[scopeKey] ?? EMPTY_BOARD_FILTER_SELECTION;
+	const { days, conditions } = selectionsByScope[scopeKey] ?? EMPTY_BOARD_FILTER_SELECTION;
+	const selectedValueIdsByField = useMemo(() => toValueSelections(conditions), [conditions]);
 	const updateSelection = useCallback((update: (current: BoardFilterSelection) => BoardFilterSelection) => {
 		setSelectionsByScope((current) => ({
 			...current,
@@ -68,7 +85,7 @@ export function useBoardFilter({
 		updateSelection((current) => ({ ...current, days: nextDays }));
 	}, [updateSelection]);
 
-	const selectedCount = countBoardFilterSelections(selectedValueIdsByField, days);
+	const selectedCount = Math.max(countBoardFilterSelections(selectedValueIdsByField, days), conditions.reduce((count, condition) => count + condition.values.length, 0));
 	const selectedAssigneeIds = useMemo(
 		() => new Set(selectedValueIdsByField.assignee),
 		[selectedValueIdsByField.assignee],
@@ -76,14 +93,23 @@ export function useBoardFilter({
 
 	const toggleValue = useCallback((fieldId: BoardFilterValueFieldId, valueId: string) => {
 		if (fieldId === "assignee") onAssigneeChange?.();
-		updateSelection((current) => ({ ...current, values: toggleBoardFilterValue(current.values, fieldId, valueId) }));
+		updateSelection((current) => ({
+			...current,
+			conditions: [
+				...current.conditions.filter((condition) => condition.field !== BOARD_JIRA_FIELD_IDS[fieldId]),
+				{ field: BOARD_JIRA_FIELD_IDS[fieldId], operator: "is", values: toggleBoardFilterValue(toValueSelections(current.conditions), fieldId, valueId)[fieldId] },
+			],
+		}));
 	}, [onAssigneeChange, updateSelection]);
 
 	const setAssigneeIds = useCallback((assigneeIds: Set<string>) => {
 		onAssigneeChange?.();
 		updateSelection((current) => ({
 			...current,
-			values: { ...current.values, assignee: [...assigneeIds] },
+			conditions: [
+				...current.conditions.filter((condition) => condition.field !== "assignee"),
+				...(assigneeIds.size ? [{ field: "assignee", operator: "is" as const, values: [...assigneeIds] }] : []),
+			],
 		}));
 	}, [onAssigneeChange, updateSelection]);
 
@@ -95,7 +121,7 @@ export function useBoardFilter({
 		if (fieldId === "assignee") onAssigneeChange?.();
 		updateSelection((current) => ({
 			...current,
-			values: clearBoardFilterField(current.values, EMPTY_BOARD_FILTER_DAYS, fieldId).values,
+			conditions: current.conditions.filter((condition) => condition.field !== BOARD_JIRA_FIELD_IDS[fieldId]),
 		}));
 	}, [onAssigneeChange, setDays, updateSelection]);
 
@@ -103,9 +129,18 @@ export function useBoardFilter({
 		onAssigneeChange?.();
 		updateSelection(() => EMPTY_BOARD_FILTER_SELECTION);
 	}, [onAssigneeChange, updateSelection]);
+	const setConditions = useCallback((next: JiraFilterCondition[]) => {
+		onAssigneeChange?.();
+		updateSelection((current) => ({
+			...current,
+			conditions: next,
+			days: { preset: BOARD_FILTER_DAYS_PRESETS.find((preset) => next.some((condition) => condition.field === "days" && condition.operator === "is" && condition.values.includes(preset))) ?? null },
+		}));
+	}, [onAssigneeChange, updateSelection]);
 
 	return {
 		actions: {
+			setConditions,
 			clearAll,
 			clearField,
 			setAssigneeIds,
@@ -115,6 +150,7 @@ export function useBoardFilter({
 			toggleValue,
 		},
 		model: {
+			conditions,
 			days,
 			open,
 			selectedCount,

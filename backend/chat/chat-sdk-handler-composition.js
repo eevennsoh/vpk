@@ -221,12 +221,14 @@ const {
 	createRovoMarkerStreamAdapter,
 } = require("./rovo-marker-stream-adapter");
 const {
+	createRovoTextOutputController,
+} = require("./rovo-text-output");
+const {
 	createRovoRouteWidgetPayloadDecorator,
 	resolveRovoRouteToolsDetected,
 } = require("./rovo-post-stream-routing-helpers");
 const {
 	buildRovoPreprocessingTraceData,
-	createRovoTextOutputController,
 	emitRovoMissingStudioAgentResultFailure,
 	emitRovoToolFirstRouteSummary,
 	finalizeRovoClassifierLeakRepair,

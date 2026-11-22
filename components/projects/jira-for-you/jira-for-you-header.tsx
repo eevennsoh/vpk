@@ -5,7 +5,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import { Badge } from "@/components/ui/badge";
 import {
 	InputGroup,
-	InputGroupAddon,
+	InputGroupSearchAddon,
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,9 +65,9 @@ export function JiraForYouHeader({
 				</Tabs>
 			</div>
 			<InputGroup className="min-w-0">
-				<InputGroupAddon>
+				<InputGroupSearchAddon>
 					<SearchIcon label="" />
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 				<InputGroupInput
 					type="search"
 					aria-label="Search work items"

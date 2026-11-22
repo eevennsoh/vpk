@@ -22,7 +22,7 @@ class MessageMarkdownLoadError extends Error {}
 
 export function registerMessageMarkdownRuntime(runtime: MarkdownRuntime) {
 	loadedRuntime = runtime;
-	runtimeLoad = Promise.resolve(runtime);
+	runtimeLoad ??= Promise.resolve(runtime);
 	runtimeLoadFailed = false;
 }
 

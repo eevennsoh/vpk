@@ -1,0 +1,71 @@
+import type { JiraFilterCondition, JiraFilterField } from "@/components/blocks/jira-filter";
+import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban/index";
+import { jiraFiltersEqual } from "@/components/blocks/jira-filter/model";
+import { JIRA_CREATABLE_ISSUE_TYPES } from "@/components/blocks/jira-list/jira-list-types";
+
+export type BoardFilterScopeEntryPolicy = "default-assignees" | "preserve-assignees";
+
+export function boardFilterScopeEntryPolicy(next: readonly JiraFilterCondition[], current: readonly JiraFilterCondition[]): BoardFilterScopeEntryPolicy | null {
+	const scopeChanged = next.some((condition) =>
+		(condition.field === "epic" || condition.field === "sprint")
+		&& condition.operator === "is" && condition.values.length > 0
+		&& !jiraFiltersEqual([condition], current.filter((previous) => previous.field === condition.field)),
+	);
+	if (!scopeChanged) return null;
+	return next.some((condition) => condition.field === "assignee") ? "preserve-assignees" : "default-assignees";
+}
+const normalizeStatus = (status: string) => status.toLowerCase().replaceAll(" ", "-");
+
+function cardValues(card: JiraKanbanCardData, column: JiraKanbanColumnData, field: string): readonly string[] | null {
+	switch (field) {
+		case "assignee": return card.assignee ? [card.assignee.id] : ["unassigned", ...(column.presenters?.map((presenter) => presenter.id) ?? [])];
+		case "status": return [normalizeStatus(card.status ?? column.title)];
+		case "type": return [card.issueType ?? "task"];
+		case "label": return card.tags.length ? card.tags.map((tag) => tag.text) : ["no-label"];
+		case "prStatus": return [card.pullRequestStatus ?? (card.pullRequestNumber ? "open" : "none")];
+		case "agentStatus": return [
+			...(card.agentActivities ?? []).map((activity) => activity.state === "awaiting-input" ? "needsInput" : activity.state === "completed" ? "finished" : "working"),
+			...(card.agentDoneRuns?.length ? ["finished"] : []),
+		];
+		default: return null;
+	}
+}
+
+export function filterBoardByJiraConditions(columns: readonly JiraKanbanColumnData[], conditions: readonly JiraFilterCondition[]) {
+	if (!conditions.length) return columns;
+	return columns.map((column) => {
+		const cards = column.cards.filter((card) => conditions.every((condition) => {
+			const values = cardValues(card, column, condition.field);
+			if (values === null || !condition.values.length) return true;
+			const matches = condition.values.some((value) => values.includes(value));
+			return condition.operator === "is not" ? !matches : matches;
+		}));
+		return { ...column, cards, count: cards.length };
+	});
+}
+
+export function searchBoardWorkItems(columns: readonly JiraKanbanColumnData[], query: string): readonly JiraKanbanColumnData[] {
+	const search = query.trim().toLowerCase();
+	if (!search) return columns;
+	return columns.map((column) => {
+		const cards = column.cards.filter(({ code, title }) => `${code} ${title}`.toLowerCase().includes(search));
+		return cards.length === column.cards.length ? column : { ...column, cards, count: cards.length };
+	});
+}
+
+export function boardJiraFilterFields(columns: readonly JiraKanbanColumnData[], statusOptions?: readonly string[]): JiraFilterField[] {
+	const cards = columns.flatMap((column) => column.cards);
+	const options = (values: readonly string[]) => [...new Set(values)].map((value) => ({ value, label: value }));
+	return [
+		{ id: "agentStatus", label: "Agent status", multiple: true, options: [
+			{ value: "working", label: "Working" }, { value: "needsInput", label: "Needs input" }, { value: "finished", label: "Finished" },
+		] },
+		{ id: "prStatus", label: "Pull request", multiple: true, options: [
+			{ value: "draft", label: "Draft" }, { value: "open", label: "Open" }, { value: "failed", label: "Failed" },
+			{ value: "merged", label: "Merged" },
+		] },
+		{ id: "status", label: "Status", multiple: true, options: (statusOptions ?? columns.flatMap((column) => column.statuses ?? [column.title])).map((label) => ({ value: normalizeStatus(label), label })) },
+		{ id: "type", label: "Work type", multiple: true, options: JIRA_CREATABLE_ISSUE_TYPES.map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })) },
+		{ id: "label", label: "Labels", multiple: true, options: [{ value: "no-label", label: "No label" }, ...options(cards.flatMap((card) => card.tags.map((tag) => tag.text)))] },
+	];
+}

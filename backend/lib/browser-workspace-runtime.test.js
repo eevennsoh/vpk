@@ -350,5 +350,58 @@ test("browser workspace runtime never passes a request value that reads as an op
 	await runtime.keyEvent("keyDown", "-")
 	await runtime.insertText("-5")
 	await runtime.insertText("- 5 items")
-	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
+	assert.deepEqual(runtime.commands, [["press", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
+})
+
+test("a modified preview key goes out as one press with its modifiers, and an unmodified named key as keydown/keyup", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	const shift = { shiftKey: true, ctrlKey: false, altKey: false, metaKey: false }
+	await runtime.keyEvent("keyDown", "Tab", "Tab", undefined, shift)
+	await runtime.keyEvent("keyUp", "Tab", "Tab", undefined, shift)
+	await runtime.keyEvent("keyDown", "Tab", "Tab", undefined, { shiftKey: true, ctrlKey: true, altKey: true, metaKey: true })
+	await runtime.keyEvent("keyDown", "A", "KeyA", "A", shift)
+	await runtime.keyEvent("keyDown", " ", "Space", " ", shift)
+	await runtime.keyEvent("keyDown", "+", "Equal", "+", shift)
+	// A modifier key reports its own flag; a lone Shift stays a plain Shift.
+	await runtime.keyEvent("keyDown", "Shift", "ShiftLeft", undefined, shift)
+	await runtime.keyEvent("keyUp", "Shift", "ShiftLeft", undefined, shift)
+	// A modifier pressed while another is held is one press of both, and its keyUp sends nothing.
+	await runtime.keyEvent("keyDown", "Shift", "ShiftLeft", undefined, { ...shift, ctrlKey: true })
+	assert.equal(await runtime.keyEvent("keyUp", "Shift", "ShiftLeft", undefined, { ...shift, ctrlKey: true }), false)
+	// Older messages carry no modifiers.
+	assert.equal(await runtime.keyEvent("keyDown", "Tab", "Tab"), true)
+	await runtime.keyEvent("keyUp", "Tab", "Tab", undefined, { shiftKey: false, ctrlKey: false, altKey: false, metaKey: false })
+	assert.deepEqual(runtime.commands, [
+		["press", "Shift+Tab"],
+		["press", "Control+Meta+Alt+Shift+Tab"],
+		["press", "Shift+A"],
+		["press", "Shift+Space"],
+		["press", "Shift++"],
+		["keydown", "Shift"],
+		["keyup", "Shift"],
+		["press", "Control+Shift"],
+		["keydown", "Tab"],
+		["keyup", "Tab"],
+	])
+})
+
+test("an unmodified printable preview key inserts text through press", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	for (const [key, code] of [["a", "KeyA"], [" ", "Space"], ["+", "Equal"]]) {
+		assert.equal(await runtime.keyEvent("keyDown", key, code, key), true)
+		assert.equal(await runtime.keyEvent("keyUp", key, code), false)
+	}
+	assert.deepEqual(runtime.commands, [["press", "a"], ["press", "Space"], ["press", "+"]])
+})
+
+test("a modified preview key that is not a key name is refused before reaching agent-browser", async () => {
+	const runtime = new TestAgentBrowserRuntime()
+	runtime._isBrowserReady = true
+	await assert.rejects(
+		runtime.keyEvent("keyDown", "--headed", undefined, undefined, { shiftKey: true }),
+		(error) => error?.status === 400 && error?.code === "INVALID_INPUT",
+	)
+	assert.deepEqual(runtime.commands, [])
 })

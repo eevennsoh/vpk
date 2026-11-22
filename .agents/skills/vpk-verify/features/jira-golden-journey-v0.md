@@ -22,7 +22,7 @@ Preconditions:
 - `pnpm control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `pnpm control-vpk url`.
 - Set `EVIDENCE="$(pnpm control-vpk evidence-dir)/jira-golden-journey-v0"` and create it before capture.
 
-- **Open and identify.** Run `pnpm control-vpk browser open --headed "$ORIGIN/jira-golden-journey-v0"`, then `pnpm control-vpk browser wait --text "Jira Golden Journey v0"` and `pnpm control-vpk browser snapshot -i --compact --depth 8`. The heading and `Select Terminal` tile are present; keep the fresh `@eN` ref for `Select Work item`.
+- **Open and identify.** Run `pnpm control-vpk browser open "$ORIGIN/jira-golden-journey-v0"`, then `pnpm control-vpk browser wait --text "Jira Golden Journey v0"` and `pnpm control-vpk browser snapshot -i --compact --depth 8`. The heading and `Select Terminal` tile are present; keep the fresh `@eN` ref for `Select Work item`.
 - **Prove keyboard selection.** Run `pnpm control-vpk browser focus @eN` with that fresh Work item ref, `pnpm control-vpk browser press Enter`, `pnpm control-vpk browser wait --fn "document.querySelector('[aria-label=\"Select Work item\"]')?.getAttribute('aria-pressed') === 'true'"`, then take a new snapshot. Do not reuse the pre-activation ref.
 - **Cover terminal theme through the UI.** Reselect Terminal, wait for the current `Cycle theme, current theme: …` button, then capture this route-local proof with `pnpm control-vpk browser eval --stdin`:
 

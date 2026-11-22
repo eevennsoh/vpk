@@ -20,7 +20,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import {
 	InputGroup,
-	InputGroupAddon,
+	InputGroupAddon, InputGroupSearchAddon,
 	InputGroupButton,
 	InputGroupInput,
 } from "@/components/ui/input-group";
@@ -269,9 +269,9 @@ export function AgentSessionLinkWorkItemSubmenu({
 
 					<TabsContent className="flex flex-col gap-2.5 p-2.5" value="existing">
 						<InputGroup className="h-8">
-							<InputGroupAddon>
+							<InputGroupSearchAddon>
 								<SearchIcon />
-							</InputGroupAddon>
+							</InputGroupSearchAddon>
 							<InputGroupInput
 								aria-label="Search work items"
 								autoComplete="off"

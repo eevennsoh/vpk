@@ -4,6 +4,7 @@ const test = require("node:test");
 
 // Assertions compare strings and booleans only; see the note atop render-component.js.
 const { accessibleName, cleanup, renderComponent } = require(path.join(__dirname, "render-component.js"));
+const { act } = require("react");
 
 const COUNTER_SOURCE = `
 	import { useState } from "react";
@@ -36,6 +37,16 @@ test("renders an inline component with props", async () => {
 	assert.equal(view.getByRole("button", { name: "Increment" }).type, "button");
 	assert.ok(!view.queryByRole("button", { name: "Missing" }));
 	assert.throws(() => view.getByRole("link"), /Found no element for role link[\s\S]*button "Increment"/u);
+});
+
+test("native tables expose headers, rows and cells without overriding their roles", async () => {
+	const view = await renderComponent({ source: `export default function TableProbe() { return <table aria-label="Work"><thead><tr><th scope="col">Summary</th></tr></thead><tbody><tr><th scope="row">PAY-1</th><td>First item</td></tr></tbody></table>; }` });
+	assert.equal(view.getByRole("table", { name: "Work" }).tagName, "TABLE");
+	assert.equal(view.getByRole("columnheader", { name: "Summary" }).tagName, "TH");
+	assert.equal(view.getByRole("rowheader", { name: "PAY-1" }).tagName, "TH");
+	assert.equal(view.getByRole("cell", { name: "First item" }).tagName, "TD");
+	assert.equal(view.getAllByRole("row").length, 2);
+	assert.equal(view.getAllByRole("rowgroup").length, 2);
 });
 
 test("click updates state and focuses the clicked button", async () => {
@@ -286,4 +297,149 @@ export function Probe({ log }) {
 test("the document starts empty for every test", () => {
 	assert.equal(document.body.childNodes.length, 0);
 	assert.ok(document.activeElement === document.body);
+});
+
+// A listener registered before the tests (here, at file load) belongs to the file and stays.
+const fileListenerCalls = [];
+window.addEventListener("resize", () => fileListenerCalls.push("file"));
+const leftoverCalls = [];
+globalThis.__renderComponentLeftoverCalls = leftoverCalls;
+const LEFTOVER_LISTENER_SOURCE = `
+	globalThis.__renderComponentLeftoverCalls.push("loaded");
+	window.addEventListener("resize", () => globalThis.__renderComponentLeftoverCalls.push("window"));
+	document.addEventListener("visibilitychange", () => globalThis.__renderComponentLeftoverCalls.push("document"));
+	export default function Probe() { return <p>Probe</p>; }
+`;
+
+test("a bundle's load-time window and document listeners work during its test", async () => {
+	await renderComponent({ source: LEFTOVER_LISTENER_SOURCE });
+	window.dispatchEvent(new Event("resize"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(leftoverCalls, ["loaded", "window", "document"]);
+});
+
+test("listeners a bundle leaves on window and document are removed after its test, so they cannot keep it alive", () => {
+	leftoverCalls.length = 0;
+	fileListenerCalls.length = 0;
+	window.dispatchEvent(new Event("resize"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(leftoverCalls, []);
+	assert.deepEqual(fileListenerCalls, ["file"]);
+});
+
+test("React events still reach body portals and onSelect after earlier tests rendered", async () => {
+	const selected = [];
+	const view = await renderComponent({
+		props: { onSelect: (value) => selected.push(value) },
+		source: `
+			import { useState } from "react";
+			import { createPortal } from "react-dom";
+			export default function Portal({ onSelect }) {
+				const [count, setCount] = useState(0);
+				return <>
+					<input aria-label="Field" defaultValue="selected text" onSelect={(event) => onSelect(event.currentTarget.value.slice(event.currentTarget.selectionStart, event.currentTarget.selectionEnd))} />
+					{createPortal(<button type="button" onClick={() => setCount((value) => value + 1)}>Portal clicks: {count}</button>, document.body)}
+				</>;
+			}
+		`,
+	});
+	await view.click(view.getByRole("button", { name: "Portal clicks: 0" }));
+	assert.equal(view.queryByRole("button", { name: "Portal clicks: 1" }) !== null, true);
+	const field = view.getByRole("textbox", { name: "Field" });
+	await view.focus(field);
+	field.setSelectionRange(0, 8);
+	await act(async () => {
+		document.dispatchEvent(new Event("selectionchange"));
+	});
+	assert.deepEqual(selected.slice(-1), ["selected"]);
+});
+
+test("the CommonJS loader does not keep the bundles it evaluates reachable from its own module", async () => {
+	const loader = require.cache[require.resolve("./esbuild-cjs-loader.js")];
+	const before = loader.children.length;
+	await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
+	await renderComponent({ exportName: "Counter", source: COUNTER_SOURCE });
+	assert.equal(loader.children.length, before);
+});
+
+// One callback registered on the same target and type in both phases: removing the registration a
+// test added must leave the one that predates the tests, whichever phase each is in. Dispatching on
+// <body> tells the phases apart: document hears the capture registration first, then the bubbling one.
+const phaseCalls = { bubblingKept: [], capturingKept: [] };
+const recordPhase = (calls) => (event) => calls.push(event.eventPhase === Event.CAPTURING_PHASE ? "capture" : "bubble");
+const bubblingKept = recordPhase(phaseCalls.bubblingKept);
+const capturingKept = recordPhase(phaseCalls.capturingKept);
+document.addEventListener("harness-phase-bubbling-kept", bubblingKept);
+document.addEventListener("harness-phase-capturing-kept", capturingKept, { capture: true });
+
+test("a test adds the same callback in the other phase", () => {
+	document.addEventListener("harness-phase-bubbling-kept", bubblingKept, { capture: true });
+	document.addEventListener("harness-phase-capturing-kept", capturingKept);
+	document.body.dispatchEvent(new Event("harness-phase-bubbling-kept", { bubbles: true }));
+	document.body.dispatchEvent(new Event("harness-phase-capturing-kept", { bubbles: true }));
+	assert.deepEqual(phaseCalls, { bubblingKept: ["capture", "bubble"], capturingKept: ["capture", "bubble"] });
+});
+
+test("only the registration added during the test is removed, in its own phase", () => {
+	phaseCalls.bubblingKept.length = 0;
+	phaseCalls.capturingKept.length = 0;
+	document.body.dispatchEvent(new Event("harness-phase-bubbling-kept", { bubbles: true }));
+	document.body.dispatchEvent(new Event("harness-phase-capturing-kept", { bubbles: true }));
+	assert.deepEqual(phaseCalls, { bubblingKept: ["bubble"], capturingKept: ["capture"] });
+});
+
+const nestedCalls = [];
+document.addEventListener("harness-nested", () => nestedCalls.push("file"));
+
+test("a parent test keeps the listener it added before a subtest while it runs", async (t) => {
+	document.addEventListener("harness-nested", () => nestedCalls.push("parent"));
+	await t.test("a subtest adds its own listener", () => {
+		document.addEventListener("harness-nested", () => nestedCalls.push("child"));
+	});
+	document.dispatchEvent(new Event("harness-nested"));
+	assert.deepEqual(nestedCalls, ["file", "parent"]);
+});
+
+test("the listener a parent test added before its subtest is removed when the parent ends", () => {
+	nestedCalls.length = 0;
+	document.dispatchEvent(new Event("harness-nested"));
+	assert.deepEqual(nestedCalls, ["file"]);
+});
+
+const manualCleanupCalls = [];
+document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("file"));
+
+test("a manual cleanup in the middle of a test leaves listeners to the end of the test", async (t) => {
+	document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("before cleanup"));
+	await renderComponent({ source: LEFTOVER_LISTENER_SOURCE });
+	await cleanup();
+	assert.equal(document.body.childNodes.length, 0);
+	document.addEventListener("harness-manual-cleanup", () => manualCleanupCalls.push("after cleanup"));
+	document.dispatchEvent(new Event("harness-manual-cleanup"));
+	assert.deepEqual(manualCleanupCalls, ["file", "before cleanup", "after cleanup"]);
+	// The rendering suites also call cleanup from t.after, which runs after the harness afterEach.
+	t.after(cleanup);
+});
+
+test("listeners added before and after a manual cleanup are removed at the end of that test; the file's stay", () => {
+	manualCleanupCalls.length = 0;
+	leftoverCalls.length = 0;
+	document.dispatchEvent(new Event("harness-manual-cleanup"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	assert.deepEqual(manualCleanupCalls, ["file"]);
+	assert.deepEqual(leftoverCalls, []);
+});
+
+// Removal keeps each listener's options at its index, so a later `once` registration still fires once.
+const onceCalls = [];
+
+test("a test leaves a plain listener behind", () => {
+	document.addEventListener("harness-options", () => onceCalls.push("plain"));
+});
+
+test("a once listener added after that removal fires once", () => {
+	document.addEventListener("harness-options", () => onceCalls.push("once"), { once: true });
+	document.dispatchEvent(new Event("harness-options"));
+	document.dispatchEvent(new Event("harness-options"));
+	assert.deepEqual(onceCalls, ["once"]);
 });

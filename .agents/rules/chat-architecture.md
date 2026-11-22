@@ -42,7 +42,7 @@ Custom data parts sent by the backend (`data-` prefix in SSE, stripped in fronte
 - `title` — thread/artifact title update
 - `route-decision` — routing metadata
 - `tool-approval` — tool approval request (file/bash permissions)
-- `turn-complete` — turn boundary signal
+- `turn-complete` — turn boundary signal. Every backend route must end a successful turn with it: `RovoChatProvider` treats a stream that closes without it as cut short and shows an error on that turn once media generation settles (a widget still loading when the stream closed settles only through the short `CUT_SHORT_MEDIA_WAIT_MS` wait, not the full media timeout; Stop drops the notice). The reply is matched to its prompt by the user message's `metadata.promptId`, never by timestamp. Each route's stream test asserts it (for example `backend/chat/chat-sdk-handler.contract.test.js`).
 
 Backend streaming (`backend/chat/*`, mounted by route handlers):
 
@@ -59,6 +59,7 @@ Rovo Serve integration (`backend/lib/rovo-gateway.js`):
 Key files:
 
 - `app/contexts/context-rovo-chat.tsx` — `useChat` integration, data part handling, message transformation
+- `app/contexts/rovo-chat-turn-machine.ts` — pure chat turn lifecycle the provider dispatches into: prompt queue, active prompt, finalize and dispatch guards, retry classification (held by `use-rovo-chat-turn-machine.ts`; media tracking in `use-rovo-chat-media-generation.ts`, its pure loading-widget scan in `rovo-chat-media-state.ts`)
 - `rovo/config.js` — system prompt builder, model config, payload construction
 - `backend/routes/chat-sdk.js` — Express route owner for `/api/chat-sdk`
 - `backend/routes/rovo-chat-proxy.js` — Express route owner for Rovo chat proxy traffic

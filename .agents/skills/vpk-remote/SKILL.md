@@ -1,6 +1,6 @@
 ---
 name: vpk-remote
-description: "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via Codex CLI or Claude (Opus/Sonnet) via claude -p. Workers report back here for verification and advisor review. Can also move this conversation onto API, on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, asks for a council review or vpk-council, wants plan-big-execute-small delegation, or asks to build/fix something via the gateway. Never activate from skill names in file paths, stack traces, pasted or quoted text, or prior turns."
+description: "Use this skill when the user wants another model to do the work while this session supervises: handing a coding task to a named model (Opus, Sonnet, GPT, Sol, Terra, Luna), 'a cheaper model', 'a worker', or 'in the background', then checking its result. Covers farm out, offload, hand off, delegate, 'have X do it', 'you plan, it codes', 'route this through proximity'. Workers run headless through the local Proximity AI Gateway (Codex CLI or claude -p) and report back here for diff verification and advisor review. Also use for second opinions or council reviews from other models (vpk-council), task status checks, and moving this chat onto API or another model when credits or subscription limits run out. Trigger on /vpk-remote. Skip when a model name is just task text (e.g. 'luna theme'), for general questions about gateway code or pricing, plain reviews or shipping, or when the skill name appears in a path, stack trace, or quoted text."
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ---
 
@@ -43,11 +43,11 @@ always takes the worker flow above, so its result comes back here.
 
 **Extract model and effort from prose.** Short names resolve through the
 `ALIAS_*` entries in `~/.config/litellm-proximity/defaults.env` (`opus`,
-`sonnet`, `haiku`, `sol`, `terra`, `luna`, …), and a full model ID is
+`sonnet`, `haiku`, `sol`, `astra`, `terra`, `luna`, …), and a full model ID is
 accepted as-is. Effort words map directly: "medium", "high", "xhigh" /
-"extra high", "max" / "maximum" / "think as hard as you can". Unstated model
-or effort takes the defaults in that same file — read it each run, never
-hardcode values here.
+"extra high", "max" / "maximum" / "think as hard as you can". Unstated effort
+takes the defaults in that file. Before choosing an unstated task model, read
+[model selection](references/invocation-flags-and-effort.md#choosing-the-model); resolve aliases afresh.
 
 Only treat a word as a model or effort when the sentence uses it **as a
 setting** ("on sol", "with opus", "at high effort", "use terra"). In "fix
@@ -58,7 +58,7 @@ question rather than guess.
 Examples:
 
 ```text
-/vpk-remote fix the sidebar flicker                               → worker, defaults, verified here
+/vpk-remote fix the sidebar flicker                               → worker, choose model by uncertainty, verified here
 /vpk-remote rename useFoo to useBar with terra                   → worker, terra
 /vpk-remote second opinion from opus on this plan               → advisor consult
 /vpk-remote council review this PR                               → council mode (see *Mode: council*)
@@ -67,8 +67,7 @@ Examples:
 /vpk-remote what's the status of my tasks                        → status table (see *Status*)
 ```
 
-Always echo the parsed plan in one line before acting (app, billing, model, effort),
-so a misread costs one glance instead of a wrong run.
+Before acting, echo app, billing, resolved model, effort, and a short selection reason in one line.
 
 Flags (`--model`, `--effort`, `--advisor` / `--no-advisor`, `--fanout` /
 `--single`, `--worktree` / `--no-worktree`, `--status`) override prose and are
@@ -137,7 +136,10 @@ before naming a task or creating its worktree, and when deciding whether
    constraints, and the proof command. The planner judges; it keeps its
    context for decisions rather than mechanical coverage. Tiny read-only
    questions it can answer directly; any non-trivial mutation goes to a
-   worker.
+   worker. GPT-lane limits: `.agents/` edits go to the Claude lane; a
+   Playwright proof needs a browser server, which gives a sandboxed worker
+   host capabilities, so use it only for briefs you would trust unsandboxed
+   in a browser ([gpt-executor.md § Browser tests](references/gpt-executor.md#browser-tests-playwright)).
 2. **Isolate.** If the brief writes files, create and warm the task worktree
    per [naming-and-worktrees.md](references/naming-and-worktrees.md#worktree-isolation),
    and confirm warmup finished before dispatch. Skip for read-only briefs and under `--no-worktree`.
@@ -174,8 +176,10 @@ before naming a task or creating its worktree, and when deciding whether
    run the brief's proof command if cheap (targeted `node --test`, a single
    grep). Delegate heavy verification (full `pnpm run lint &&
    pnpm run typecheck`, suites) as its own follow-up brief. A worker never
-   self-certifies.
-7. **Correct at most twice.** Send focused follow-ups to the same worker
+   self-certifies. A worker that could not commit left its proposed subject
+   in the report; commit with it once the diff is verified
+   ([Landing](references/naming-and-worktrees.md#landing)).
+7. **Correct at most twice.** Reuse the worker unless model-selection guidance calls for escalation
    (GPT lane: `resume`; Claude lane: re-brief with the prior report + diff
    summary). After two failed correction cycles, stop and report the
    blocker — the planner does not silently take over implementation.
@@ -203,9 +207,9 @@ consult the entire task.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT-lane worker output (`sol` / `terra` / `luna`) | `opus` alias at xhigh |
-| Claude-lane worker output (`opus` / `sonnet`) | `sol` alias at xhigh |
-| A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` alias at xhigh |
+| GPT-lane worker output (`sol` / `astra` / `terra` / `luna`) | `opus` alias at xhigh |
+| Claude-lane worker output (`opus` / `sonnet`) | `sol` or `astra` by task uncertainty, at xhigh |
+| A plan a Claude planner wrote, or nothing dispatched yet (`app=claude`) | `sol` or `astra` by task uncertainty, at xhigh |
 | A plan a GPT planner wrote, or nothing dispatched yet (`app=codex`, or a Claude Code session running a GPT model) | `opus` alias at xhigh |
 
 Explicit flags always win. Read
@@ -217,7 +221,7 @@ returns, state in a sentence what you adopt or reject, then continue.
 ## Mode: council
 
 `/vpk-remote council <subject>`, or a request for a council review, runs
-independent parallel read-only reviews (default `sol` and `opus` at xhigh) of
+independent parallel read-only reviews (`sol` or `astra` by task uncertainty, plus `opus`, at xhigh) of
 the same subject, reconciles them with scores, and repeats after accepted
 fixes. A complete round replaces the pre-completion advisor verify. Follow
 [references/council.md](references/council.md).
@@ -277,7 +281,9 @@ layout.
   verify, where the worker's diff is uncommitted and a post-consult
   `git status` could not distinguish an advisor's edit from the worker's.
 - Workspace-write sandboxing is the GPT-lane default; do not escalate to
-  bypass mode. The Claude lane runs with permissions skipped, so the brief's
+  bypass mode, not even for browser tests or commits. The commit grant, which
+  only a task worktree gets, trusts the worker with the shared object store ([gpt-executor.md § Commits](references/gpt-executor.md#commits)).
+  The Claude lane runs with permissions skipped, so the brief's
   scope boundaries are its only guardrail — write them explicitly.
 - Never copy, link, or read `~/.codex/auth.json` or any OAuth credential
   into a worker home.

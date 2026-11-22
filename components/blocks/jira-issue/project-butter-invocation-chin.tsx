@@ -18,18 +18,18 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreviewAvatar({ agent, defaultIcon }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode }>) {
+function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode; sizePx: 16 | 24 }>) {
 	if (!agent && defaultIcon) return defaultIcon;
 	return (
-		<span className="flex size-6 shrink-0 items-center justify-center">
+		<span className={cn("flex shrink-0 items-center justify-center", sizePx === 16 ? "size-4" : "size-6")}>
 			{agent ? agent.visual ?? (
-				<AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={24} animate={false} />
+				<AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={sizePx} animate={false} />
 			) : <AiAgentIcon label="" size="small" color="currentColor" />}
 		</span>
 	);
 }
 
-export function ProjectButterInvocationPreview({ className, defaultIcon, flush = false, iconScale }: Readonly<{ className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, defaultIcon, flush = false, iconScale }: Readonly<{ avatarSizePx?: 16 | 24; className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -42,7 +42,7 @@ export function ProjectButterInvocationPreview({ className, defaultIcon, flush =
 			data-direction={direction === 1 ? "forward" : "backward"}
 			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", !flush && (iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale))), className)}
 		>
-			<InvocationPreviewAvatar agent={agent} defaultIcon={defaultIcon} />
+			<InvocationPreviewAvatar agent={agent} defaultIcon={defaultIcon} sizePx={avatarSizePx} />
 			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && !flush && "-ml-0.5 pr-2")}>
 				Add&nbsp;
 				<span className="relative h-5 min-w-0 flex-1 overflow-hidden text-left">

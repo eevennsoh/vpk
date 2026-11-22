@@ -5,6 +5,49 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("replies use the sticky composer and highlight the selected thread", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await thread.scrollIntoViewIfNeeded();
+	await thread.hover();
+	await thread.getByRole("button", { name: "Reply", exact: true }).first().click();
+	await expect(editor).toBeFocused();
+	await expect(page.getByTestId("reply-target-chip")).toContainText("Review the onboarding flow");
+	await expect(thread).toHaveAttribute("data-active", "");
+	await expect(thread.getByRole("button", { name: "Reply", exact: true }).first()).toHaveAttribute("aria-pressed", "true");
+	await expect(page.locator('[data-project-butter-comment-editor]')).toHaveCount(1);
+	await editor.fill("Please follow up");
+	const otherThread = page.locator('[data-jira-activity-entry-kind="comment"]').nth(1);
+	await otherThread.scrollIntoViewIfNeeded();
+	await otherThread.hover();
+	await otherThread.getByRole("button", { name: "Reply", exact: true }).first().click();
+	await expect(otherThread).toHaveAttribute("data-active", "");
+	await expect(editor).toContainText("Please follow up");
+	await page.getByTestId("reply-target-chip").hover();
+	await page.getByRole("button", { name: "Remove reply target" }).click();
+	await expect(editor).toContainText("Please follow up");
+	await thread.hover();
+	await thread.getByRole("button", { name: "Reply", exact: true }).first().click();
+	await editor.press("Enter");
+	await expect(thread).toContainText("Please follow up");
+	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
+	await expect(editor).toBeEmpty();
+});
+
+test("related work buttons align with the description", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const description = page.getByRole("region", { name: "Description" }).getByRole("heading", { name: "Description" });
+	const firstButton = page.getByRole("group", { name: "Work item sections" }).getByRole("button").first();
+	await expect(firstButton).toBeVisible();
+	const [descriptionBox, buttonBox] = await Promise.all([description.boundingBox(), firstButton.boundingBox()]);
+	if (!descriptionBox || !buttonBox) throw new Error("Missing description or related work button geometry");
+	expect(Math.abs(buttonBox.x - descriptionBox.x)).toBeLessThan(1);
+});
+
 test("assignee options use compact palette sizing and highlight on hover while searching", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
@@ -252,13 +295,15 @@ test("child work item actions appear on hover and keyboard focus", async ({ page
 	test.setTimeout(90_000);
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
-	const row = page.getByRole("list", { name: "Child work items" }).getByRole("listitem").first();
+	const toggle = page.getByRole("group", { name: "Work item sections" }).getByRole("button", { name: /child work items?$/u });
+	if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+	const row = page.getByRole("table", { name: "Child work items" }).locator("tbody").getByRole("row").first();
 	const action = row.getByRole("button", { name: /^More actions for / });
 	const actions = row.locator('[data-component="SubItemActionsMenu"]');
 	await page.mouse.move(0, 0);
 	await expect(actions).toHaveCSS("opacity", "0");
 	await row.getByRole("button", { name: /^Edit priority for / }).focus();
-	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Tab");
 	await expect(action).toBeFocused();
 	await expect(actions).toHaveCSS("opacity", "1");
 	await page.getByRole("button", { name: /^Collapse Child work items/ }).focus();

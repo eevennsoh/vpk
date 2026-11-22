@@ -49,11 +49,6 @@ export const AVATAR_DETAIL: ComponentDetail = {
 			default: '"default"',
 			description: "Uses the selected border token when the avatar controls an open surface.",
 		},
-		{
-			name: "outline",
-			type: "{ scale: number | readonly number[]; transition?: Pick<AnimationOptions, 'duration' | 'ease' | 'times' | 'repeat' | 'delay'>; ring?: boolean }",
-			description: "For circular avatars, supply an ancestor's scale and transition to keep the border at 1px and the optional separation ring at 2px during motion.",
-		},
     ],
     subComponents: [
       { name: "AvatarImage", description: "Profile image element." },
@@ -107,7 +102,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         title: "Agent group",
-        description: "Overlapping 16, 24, 32, and 40px hexagon avatars with shape-aware separators.",
+        description: "Overlapping 16, 24, 32, and 40px hexagon avatars with transparent cutouts.",
         demoSlug: "avatar-demo-agent-group",
       },
 		{

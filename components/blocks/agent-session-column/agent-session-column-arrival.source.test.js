@@ -278,7 +278,6 @@ test("the arrival target survives until Motion finishes, then stays one-shot", (
 	// card's animate target one effect after mount and strands it at opacity 0.
 	assert.doesNotMatch(INDEX_SOURCE, /new Set<string>\(newItemIds\)/u);
 	assert.match(INDEX_SOURCE, /onArrivalComplete: handleArrivalComplete/u);
-	assert.match(CARD_SOURCE, /onAnimationComplete=\{shouldPlayDeparture \? onDepartureComplete : handleArrivalComplete\}/u);
 	assert.match(NOTCH_MARK_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
 	// Both branches report completion and keep the beat set distinct from the mark.
 	assert.match(

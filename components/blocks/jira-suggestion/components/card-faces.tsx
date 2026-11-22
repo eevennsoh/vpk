@@ -8,10 +8,11 @@ import UndoIcon from "@atlaskit/icon/core/undo";
 
 import type { SuggestionValue, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { CardFace } from "./card-face";
+import { CARD_ACTION_REVEAL, CardFace } from "./card-face";
 import { CardWhy } from "./card-why";
 import type { SwipeDirection } from "./use-deck";
 
@@ -49,14 +50,13 @@ export interface WhyProps {
  * The top card's face: its label turns into the decision a drag would make. Its "Why · N sources" line is not part of
  * the face: SuggestionCard pins it to the paper's bottom edge, so the face is never taller than the paper mid-morph.
  */
-export function TopFace({ suggestion, isNew, progress }: Readonly<{ suggestion: WorkItemSuggestion; isNew: boolean; progress: MotionValue<number> }>) {
+export function TopFace({ suggestion, progress }: Readonly<{ suggestion: WorkItemSuggestion; progress: MotionValue<number> }>) {
 	const acceptHint = useTransform(progress, [0, 1], [0, 1]);
 	const dismissHint = useTransform(progress, [-1, 0], [1, 0]);
 	const labelFade = useTransform(progress, [-0.6, 0, 0.6], [0, 1, 0]);
 	return (
 		<CardFace
 			className={FACE_PADDING}
-			isNew={isNew}
 			label={(
 				<>
 					<motion.span className="col-start-1 row-start-1 text-text-subtle" style={{ opacity: labelFade }}>{suggestion.label}</motion.span>
@@ -84,39 +84,36 @@ export function TopWhy({ suggestion, whyOpen, onWhyOpenChange, whyAnchor, whyCon
 /** Every face shares one padding, so a card changing face (row, sheet, top) never shifts its label or value. */
 const FACE_PADDING = "px-4 pt-2.5 pb-3";
 
-const ROUND = "flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-full outline-none transition-colors duration-xxshort ease-out-practical focus-visible:ring-2 focus-visible:ring-ring";
-
-function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className: string; onClick: () => void; children: ReactNode }>) {
+function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className?: string; onClick: () => void; children: ReactNode }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<button aria-label={label} className={cn(ROUND, className)} onClick={onClick} type="button" />}>{children}</TooltipTrigger>
+			<TooltipTrigger render={<Button aria-label={label} className={cn("any-pointer-coarse:size-8", className)} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>{children}</TooltipTrigger>
 			<TooltipContent>{hint}</TooltipContent>
 		</Tooltip>
 	);
 }
 
 /**
- * A pending list row: label with the lightbulb, ✕ and ✓ on the right, then the full value. The controls are part of the
+ * A pending list row: label with review controls on the right, then the full value. The controls are part of the
  * face, so they fade in with it as the row lands rather than popping in afterwards. A sheet wears this face without
  * controls while it gathers under the top card, so its content never outgrows its paper mid-flight.
  */
-export function RowFace({ suggestion, isNew, controls, onDecide, whyOpen, onWhyOpenChange, whyAnchor, whyContainer }: Readonly<WhyProps & { suggestion: WorkItemSuggestion; isNew: boolean; controls: boolean; onDecide: (direction: SwipeDirection) => void }>) {
+export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ suggestion: WorkItemSuggestion; controls: boolean; onDecide: (direction: SwipeDirection) => void; why?: WhyProps }>) {
 	const field = suggestion.label.toLowerCase();
 	return (
 		<CardFace
 			actions={controls ? (
 				<>
-					{suggestion.reason.evidence.length ? <CardWhy anchor={whyAnchor} appearance="icon" container={whyContainer} onOpenChange={onWhyOpenChange} open={whyOpen} suggestion={suggestion} /> : null}
-					<RoundAction className="text-icon-subtle hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed" hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onDecide("dismiss")}>
+					{why && suggestion.reason.evidence.length ? <CardWhy anchor={why.whyAnchor} appearance="icon" container={why.whyContainer} onOpenChange={why.onWhyOpenChange} open={why.whyOpen} suggestion={suggestion} /> : null}
+					<RoundAction className="size-7 hover:[&_svg]:text-icon" hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onDecide("dismiss")}>
 						<CrossIcon color="currentColor" label="" size="small" />
 					</RoundAction>
-					<RoundAction className="text-icon-subtle hover:bg-bg-success-subtler hover:text-icon-success active:bg-bg-success-subtler-pressed" hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
+					<RoundAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
 						<CheckMarkIcon color="currentColor" label="" size="small" />
 					</RoundAction>
 				</>
 			) : null}
 			className={FACE_PADDING}
-			isNew={isNew}
 			suggestion={suggestion}
 		/>
 	);
@@ -136,7 +133,7 @@ export function DecidedFace({ suggestion, decision, onRestore }: Readonly<{ sugg
 			</span>
 			<button
 				aria-label={`Undo ${suggestion.label.toLowerCase()}`}
-				className="-mr-2 inline-flex h-7 any-pointer-coarse:min-h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs text-text-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+				className={cn("-mr-2 inline-flex h-7 any-pointer-coarse:min-h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs text-text-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-2 focus-visible:ring-ring", CARD_ACTION_REVEAL)}
 				onClick={onRestore}
 				type="button"
 			>

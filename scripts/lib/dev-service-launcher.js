@@ -2,10 +2,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { getNextDevEnv, getNextDevHostname } = require("./next-dev-env");
-const { getFrontendBasePort, getBackendBasePort } = require("./worktree-ports");
+const { getFrontendBasePort, getBackendBasePort, getPortsClaimedByOtherWorktrees } = require("./worktree-ports");
+const { findAvailableWorktreePort } = require("./dev-port-selection");
 const { isPortAvailable: probePortAvailable } = require("./rovo-utils");
 const { subscribeProcessSignals } = require("./rovo-supervisor");
-const { clearService, readProcessIdentity, recordService } = require("./dev-stack-state");
+const { clearService, listenerInWorktree, readProcessIdentity, recordService } = require("./dev-stack-state");
 
 // One launch operation owns port records and child lifetime. The backend's health
 // reuse policy and Next's lock/retry policy deliberately remain distinct.
@@ -14,24 +15,37 @@ async function launchDevService(service) {
 		throw new Error(`Unknown dev service: ${service}`);
 	}
 	const basePort = service === "frontend" ? getFrontendBasePort() : getBackendBasePort();
+	const portlessFrontend = service === "frontend" && Boolean(process.env.PORTLESS_URL);
 	const maxTries = Number.parseInt(process.env.PORT_SEARCH_MAX ?? "20", 10);
 	const portFile = path.join(process.cwd(), `.dev-${service}-port`);
 	const lockFile = path.join(process.cwd(), ".next", "dev", "lock");
 	const sessionOwned = process.env.VPK_TMUX_OWNED === "1";
 	const healthProbeTimeoutMs = Number.parseInt(process.env.BACKEND_HEALTH_PROBE_TIMEOUT_MS ?? "1500", 10);
-	const isPortAvailable = (port) => probePortAvailable(port, { includeLoopback: service === "frontend" });
+	// Both services probe loopback too: the dev backend binds 127.0.0.1 only
+	// (backend/middleware/local-only.js), and on macOS 0.0.0.0 and :: still bind while another
+	// process holds 127.0.0.1 on the same port, so a wildcard-only probe calls another
+	// worktree's backend port free.
+	const isPortAvailable = (port) => probePortAvailable(port);
+	// Ports another worktree's stack has recorded. Its window can overlap this one (slots follow
+	// the sorted worktree list), and it may have recorded a port it has not bound yet.
+	let claimedPorts = null;
 	const findAvailablePort = async (minPort = basePort) => {
-		const start = Math.max(basePort, minPort);
-		const end = basePort + maxTries;
-		for (let port = start; port < end; port += 1) {
-			if (await isPortAvailable(port)) {
-				return port;
+		if (claimedPorts === null) {
+			try {
+				claimedPorts = getPortsClaimedByOtherWorktrees(process.cwd());
+			} catch {
+				claimedPorts = new Map();
 			}
 		}
-
-		throw new Error(
-			`No available port found from ${start} to ${end - 1}.`
-		);
+		return findAvailableWorktreePort(basePort, {
+			minPort,
+			maxTries: portlessFrontend ? 1 : maxTries,
+			claimedPorts,
+			isPortAvailable,
+			onClaimed: (port, owner) => {
+				console.log(`[dev-${service}] Port ${port} is recorded by another worktree's stack (${owner}); skipping it.`);
+			},
+		});
 	};
 
 	const isPortInWorktreeRange = (port) =>
@@ -191,6 +205,9 @@ async function launchDevService(service) {
 	};
 
 	const resolveRunningFrontendPort = async (existingPortHint, attemptedPort) => {
+		if (portlessFrontend) {
+			return !(await isPortAvailable(basePort)) && listenerInWorktree(basePort, process.cwd()) === true ? basePort : null;
+		}
 		const candidates = [existingPortHint, attemptedPort, basePort]
 			.filter((port) => typeof port === "number")
 			.filter((port, index, array) => array.indexOf(port) === index);
@@ -264,7 +281,7 @@ async function launchDevService(service) {
 				code === 1 &&
 				stderr.includes("Unable to acquire lock");
 
-			if (isEaddrInUse && attempt < MAX_PORT_RETRIES - 1) {
+			if (isEaddrInUse && !portlessFrontend && attempt < MAX_PORT_RETRIES - 1) {
 				cleanupPortFile();
 				try {
 					const nextPort = await findAvailablePort(port + 1);
@@ -382,7 +399,9 @@ async function launchDevService(service) {
 		if (recordedPort !== null) {
 			const inUse = !(await isPortAvailable(recordedPort));
 			if (inUse) {
-				const isOurBackend = await probeBackendHealth(recordedPort);
+				// Any VPK backend answers /api/health, so health alone does not make it this
+				// worktree's: one started by another worktree may hold the port this file names.
+				const isOurBackend = listenerInWorktree(recordedPort, process.cwd()) !== false && (await probeBackendHealth(recordedPort));
 				if (isOurBackend) {
 					if (sessionOwned) {
 						throw new Error(
@@ -399,7 +418,7 @@ async function launchDevService(service) {
 					return;
 				}
 				console.warn(
-					`Port ${recordedPort} is in use but did not respond to /api/health as our backend. ` +
+					`Port ${recordedPort} is in use but is not this worktree's backend (another worktree's process, or no answer to /api/health). ` +
 						"Assuming the port is held by an unrelated process and picking the next available port."
 				);
 			}

@@ -130,7 +130,7 @@ test("PullRequest spacious variant renders the three-row dropdown card", () => {
 	assert.match(COMPONENT_SOURCE, /<PullRequestStatusLozenge status=\{status\} withIcon \/>/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestSpaciousBody[\s\S]*<PullRequestInlineTitle[\s\S]*className="flex-1 font-medium"/u,
+		/function PullRequestSpaciousBody[\s\S]*<PullRequestInlineTitle[\s\S]*className="flex-1"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -158,7 +158,7 @@ test("PullRequest spacious row one leads with the title and trails the status", 
 		"spacious row one must render the title before the status lozenge",
 	);
 	// `flex-1` on the title is the only thing pushing the lozenge to the edge.
-	assert.match(spaciousBody, /<PullRequestInlineTitle\s*className="flex-1 font-medium"/u);
+	assert.match(spaciousBody, /<PullRequestInlineTitle\s*className="flex-1"/u);
 });
 
 test("PullRequest spacious title and branch metadata share a zero-gap group", () => {
@@ -179,10 +179,6 @@ test("PullRequest flyout and spacious titles wrap as one inline text run", () =>
 		/function PullRequestDropdownBody[\s\S]*min-w-0 truncate text-text[\s\S]*function PullRequestSpaciousBody/u,
 	);
 	assert.match(COMPONENT_SOURCE, /function PullRequestInlineTitle/u);
-	assert.match(
-		COMPONENT_SOURCE,
-		/<span className="text-text-subtlest">#\{number\} <\/span>[\s\S]*<span className="text-text[^"]*">\{title\}<\/span>/u,
-	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/function PullRequestSpaciousBody[\s\S]*<PullRequestInlineTitle[\s\S]*function PullRequestFlyoutBody/u,

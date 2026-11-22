@@ -30,7 +30,10 @@ export default function FloatingRovoButton({
 	placement,
 	positioning = "viewport",
 	onButtonClick,
+	animateLogoOnMount = false,
 	suggestion,
+	suggestions,
+	panel,
 	onboarding,
 	insights,
 	persistentBar,
@@ -41,15 +44,17 @@ export default function FloatingRovoButton({
 	// `onboarding` and `insights` morph the same surface, so a consumer that
 	// supplies both gets onboarding and the insights config is ignored rather
 	// than fighting it for the geometry.
-	const activeInsights = onboarding ? null : insights ?? null;
+	const activeInsights = onboarding || panel ? null : insights ?? null;
 	const [internalInsightsStage, setInternalInsightsStage] = useState<FloatingRovoButtonInsightsStage>(
 		activeInsights?.defaultStage ?? "pill",
 	);
 	const shouldShowButton = forceVisible || opening || !isOpen;
+	const activeSuggestions = suggestions ?? (suggestion ? [suggestion] : []);
+	const latestAnimatedSuggestion = activeSuggestions.findLast((item) => item.animateLogoOnArrival);
 	const onboardingDefaultOpen = onboarding?.defaultOpen ?? false;
 	const onboardingId = onboarding?.id;
-	const onboardingOpen = Boolean(onboarding && (onboarding.open ?? internalOnboardingOpen));
-	const shouldOpenOnboardingFromButton = Boolean(onboarding && (onboarding.openOnButtonClick ?? true));
+	const onboardingOpen = Boolean(!panel && onboarding && (onboarding.open ?? internalOnboardingOpen));
+	const shouldOpenOnboardingFromButton = Boolean(!panel && onboarding && (onboarding.openOnButtonClick ?? true));
 	const insightsId = activeInsights?.id;
 	const insightsDefaultStage = activeInsights?.defaultStage ?? "pill";
 	// Nothing unread means nothing to announce: the affordance collapses and the
@@ -63,7 +68,7 @@ export default function FloatingRovoButton({
 	// onboarding panel does: the card is the surface, so letting `isOpen` unmount
 	// it would tear the card away mid-read.
 	const insightsCardOpen = insightsStage === "card";
-	const shouldRenderSurface = (shouldShowButton || onboardingOpen || insightsCardOpen) && (forceVisible || !shouldSuppressSurface);
+	const shouldRenderSurface = (shouldShowButton || onboardingOpen || panel?.open || insightsCardOpen) && (forceVisible || !shouldSuppressSurface);
 
 	useEffect(() => {
 		if (onboardingId) {
@@ -137,16 +142,22 @@ export default function FloatingRovoButton({
 
 	return (
 		<>
+			<div aria-live="polite" className="sr-only">
+				{shouldShowButton && !onboardingOpen && !panel?.open && insightsStage === "hidden"
+					? activeSuggestions.at(-1)?.label ?? ""
+					: ""}
+			</div>
 			<AnimatePresence>
 				{/* The nudge sits beside the button and the insights pill grows out of
 				    it, both toward the same open space — they can never share it. */}
-				{suggestion && shouldShowButton && !onboardingOpen && insightsStage === "hidden" ? (
+				{activeSuggestions.length > 0 && shouldShowButton && !onboardingOpen && !panel?.open && insightsStage === "hidden" ? (
 					<FloatingRovoButtonNudge
-						key={suggestion.id}
+						key="nudges"
 						placement={placement}
+						opensDialog={Boolean(panel)}
 						positioning={positioning}
 						shouldReduceMotion={shouldReduceMotion}
-						suggestion={suggestion}
+						suggestions={activeSuggestions}
 					/>
 				) : null}
 			</AnimatePresence>
@@ -154,6 +165,8 @@ export default function FloatingRovoButton({
 				{shouldRenderSurface ? (
 					<FloatingRovoButtonSurface
 						key="surface"
+						animateLogoOnMount={animateLogoOnMount}
+						panel={panel}
 						onboardingOpen={onboardingOpen}
 						onboarding={onboarding}
 						onOpenChange={setOnboardingOpen}
@@ -165,6 +178,7 @@ export default function FloatingRovoButton({
 						placement={placement}
 						positioning={positioning}
 						ariaLabel={resolvedAriaLabel}
+						logoAnimationTrigger={latestAnimatedSuggestion?.id}
 						onButtonClick={handleButtonClick}
 						persistentBar={persistentBar}
 						shouldReduceMotion={shouldReduceMotion}

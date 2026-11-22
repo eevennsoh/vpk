@@ -40,7 +40,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"chat-configuration": dynamic(() => import("../demos/blocks/chat-configuration-demo"), { ssr: false }),
 	"chat-gallery": dynamic(() => import("../demos/blocks/chat-gallery-demo"), { ssr: false }),
 	"chat-timeline": dynamic(() => import("../demos/blocks/chat-timeline-demo"), { ssr: false }),
-	chatbot: dynamic(() => import("../demos/blocks/chatbot-demo"), { ssr: false }),
 	chatgpt: dynamic(() => import("../demos/blocks/chatgpt-demo"), { ssr: false }),
 	"code-review": dynamic(() => import("../demos/blocks/code-review-demo"), { ssr: false }),
 	"conversation-starter": dynamic(() => import("../demos/blocks/conversation-starter-demo"), { ssr: false }),
@@ -56,6 +55,8 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	generative: dynamic(() => import("../demos/blocks/generative-demo"), { ssr: false }),
 	"html-selector": dynamic(() => import("../demos/blocks/html-selector-demo"), { ssr: false }),
 	"jira-activity": dynamic(() => import("../demos/blocks/jira-activity-demo"), { ssr: false }),
+	"jira-at-mention": dynamic(() => import("../demos/blocks/jira-at-mention-demo"), { ssr: false }),
+	"jira-backlog": dynamic(() => import("../demos/blocks/jira-backlog-demo"), { ssr: false }),
 	"jira-creating": dynamic(() => import("../demos/blocks/jira-creating-demo"), { ssr: false }),
 	"jira-dragging": dynamic(() => import("../demos/blocks/jira-dragging-demo"), { ssr: false }),
 	"jira-dropzone": dynamic(() => import("../demos/blocks/jira-dropzone-demo"), { ssr: false }),
@@ -72,6 +73,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-toolbar": dynamic(() => import("../demos/blocks/jira-toolbar-demo"), { ssr: false }),
 	"jira-view-configuration": dynamic(() => import("../demos/blocks/jira-view-configuration-demo"), { ssr: false }),
 	"jira-work-item": dynamic(() => import("../demos/blocks/jira-work-item-demo"), { ssr: false }),
+	"jira-work-item-timeline": dynamic(() => import("../demos/blocks/jira-work-item-timeline-demo"), { ssr: false }),
 	"knowledge-directory": dynamic(() => import("../demos/blocks/knowledge-directory-demo"), { ssr: false }),
 	"login-01": dynamic(() => import("../demos/blocks/login-01-demo"), { ssr: false }),
 	"login-02": dynamic(() => import("../demos/blocks/login-02-demo"), { ssr: false }),
@@ -130,7 +132,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"twg-agent-card": dynamic(() => import("../demos/blocks/twg-agent-card-demo"), { ssr: false }),
 	video: dynamic(() => import("../demos/blocks/video-demo"), { ssr: false }),
 	"visual-waveform": dynamic(() => import("../demos/blocks/visual-waveform-demo"), { ssr: false }),
-	workflow: dynamic(() => import("../demos/blocks/workflow-demo"), { ssr: false }),
 	// </generated: catalog-registry>
 	// By hand: demo keys, not manifest slugs, for the named exports of one demo module each (the
 	// standard and experimental app-directory, skill-directory and jira-work-item demos).

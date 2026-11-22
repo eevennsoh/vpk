@@ -8,6 +8,7 @@ import {
 	useCallback,
 	useMemo,
 	useRef,
+	useState,
 	type ComponentProps,
 	type ReactNode,
 	type RefObject,
@@ -17,39 +18,42 @@ import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
-	CommandInput,
 	CommandItem,
 	CommandList,
+	CommandPrimitiveInput,
 	CommandSeparator,
 	CommandShortcut,
 } from "@/components/ui/command";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuSearchField,
 	DropdownMenuTrigger,
+	dropdownStyles,
 } from "@/components/ui/dropdown-menu";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
-interface ModelSelectorContextValue {
-	close: () => void;
+// The menu shell is a Dropdown Menu; inside it, search, filtering and arrow-key
+// highlighting belong to cmdk, as in the agent selector.
+
+const ModelSelectorCloseContext = createContext<() => void>(() => {});
+
+interface ModelSelectorValueContextValue {
+	value?: string;
+	onValueChange?: (value: string) => void;
 }
 
-const ModelSelectorContext = createContext<ModelSelectorContextValue | null>(
-	null
-);
+const ModelSelectorValueContext = createContext<ModelSelectorValueContextValue>({});
 
 export type ModelSelectorProps = ComponentProps<typeof DropdownMenu>;
 
 type ModelSelectorActions =
-	NonNullable<ModelSelectorProps["actionsRef"]> extends RefObject<
-		infer Actions
-	>
-		? Actions
-		: never;
+	NonNullable<ModelSelectorProps["actionsRef"]> extends RefObject<infer Actions> ? Actions : never;
 
 export const ModelSelector = ({
 	actionsRef,
-	children,
 	modal = false,
 	...props
 }: Readonly<ModelSelectorProps>) => {
@@ -58,47 +62,38 @@ export const ModelSelector = ({
 	const close = useCallback(() => {
 		resolvedActionsRef.current?.close();
 	}, [resolvedActionsRef]);
-	const contextValue = useMemo(() => ({ close }), [close]);
 
 	return (
-		<ModelSelectorContext value={contextValue}>
-			<DropdownMenu actionsRef={resolvedActionsRef} modal={modal} {...props}>
-				{children}
-			</DropdownMenu>
-		</ModelSelectorContext>
+		<ModelSelectorCloseContext value={close}>
+			<DropdownMenu actionsRef={resolvedActionsRef} modal={modal} {...props} />
+		</ModelSelectorCloseContext>
 	);
 };
 
-export type ModelSelectorTriggerProps = ComponentProps<
-	typeof DropdownMenuTrigger
->;
+export type ModelSelectorTriggerProps = ComponentProps<typeof DropdownMenuTrigger>;
 
-export const ModelSelectorTrigger = (props: ModelSelectorTriggerProps) => (
+export const ModelSelectorTrigger = (props: Readonly<ModelSelectorTriggerProps>) => (
 	<DropdownMenuTrigger {...props} />
 );
 
-export type ModelSelectorContentProps = ComponentProps<
-	typeof DropdownMenuContent
-> & {
+export type ModelSelectorContentProps = ComponentProps<typeof DropdownMenuContent> & {
 	title?: ReactNode;
 };
 
 export const ModelSelectorContent = ({
 	className,
 	children,
-	portalled = false,
 	title = "Model Selector",
 	...props
-}: ModelSelectorContentProps) => (
+}: Readonly<ModelSelectorContentProps>) => (
 	<DropdownMenuContent
 		aria-label={typeof title === "string" ? title : undefined}
-		className={cn("w-80 p-0", className)}
-		portalled={portalled}
+		className={cn("flex w-56 flex-col overflow-hidden p-0", className)}
 		{...props}
 	>
-		{title ? <span className="sr-only">{title}</span> : null}
+		{title && typeof title !== "string" ? <span className="sr-only">{title}</span> : null}
 		<Command
-			className="rounded-lg! **:data-[slot=command-input-wrapper]:h-auto"
+			className={cn("min-h-0 flex-1 rounded-lg bg-transparent", dropdownStyles.padding)}
 			label={typeof title === "string" ? title : undefined}
 		>
 			{children}
@@ -106,40 +101,105 @@ export const ModelSelectorContent = ({
 	</DropdownMenuContent>
 );
 
-export type ModelSelectorDialogProps = ModelSelectorProps;
+export type ModelSelectorInputProps = {
+	placeholder?: string;
+	/** Controlled query; omit to let the input own it. */
+	value?: string;
+	onValueChange?: (value: string) => void;
+};
 
-export const ModelSelectorDialog = (props: ModelSelectorDialogProps) => (
-	<ModelSelector {...props} />
-);
-
-export type ModelSelectorInputProps = ComponentProps<typeof CommandInput>;
-
+/** The shared menu search field, flush with the menu's top edge like the agent selector's. */
 export const ModelSelectorInput = ({
+	placeholder = "Search models",
+	value,
+	onValueChange,
+}: Readonly<ModelSelectorInputProps>) => {
+	const [internalValue, setInternalValue] = useState("");
+	const query = value ?? internalValue;
+	const setQuery = (next: string) => {
+		setInternalValue(next);
+		onValueChange?.(next);
+	};
+
+	return (
+		<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-0.5 shrink-0 overflow-hidden rounded-t-lg">
+			<DropdownMenuSearchField
+				autoFocus
+				hostOwnsKeyNavigation
+				label={placeholder}
+				onClear={() => setQuery("")}
+				onValueChange={setQuery}
+				placeholder={placeholder}
+				renderInput={(input) => <CommandPrimitiveInput asChild value={query}>{input}</CommandPrimitiveInput>}
+				value={query}
+			/>
+		</div>
+	);
+};
+
+export type ModelSelectorListProps = Omit<ComponentProps<typeof CommandList>, "onChange"> & {
+	/** The selected model id. */
+	value?: string;
+	onValueChange?: (value: string) => void;
+};
+
+/** Scrollable list of models; fades its top edge once it scrolls, like the agent selector. */
+export const ModelSelectorList = ({
 	className,
+	onValueChange,
+	style,
+	value,
 	...props
-}: ModelSelectorInputProps) => (
-	<CommandInput className={cn(className)} {...props} />
-);
+}: Readonly<ModelSelectorListProps>) => {
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const maskStyle = {
+		...buildScrollMaskStyle({ fadeBottom: false, fadeSize: "3rem", fadeTop: showTopScrollMask }),
+		"--scroll-mask-top-fade-size": "3rem",
+	};
+	const valueContext = useMemo(() => ({ onValueChange, value }), [onValueChange, value]);
 
-export type ModelSelectorListProps = ComponentProps<typeof CommandList>;
-
-export const ModelSelectorList = (props: ModelSelectorListProps) => (
-	<CommandList {...props} />
-);
+	return (
+		<ModelSelectorValueContext value={valueContext}>
+			<CommandList
+				label="Models"
+				className={cn("max-h-72 min-h-0 flex-1 overscroll-contain p-0", className)}
+				ref={listRef}
+				showScrollbar
+				style={{ ...maskStyle, ...style }}
+				{...props}
+			/>
+		</ModelSelectorValueContext>
+	);
+};
 
 export type ModelSelectorEmptyProps = ComponentProps<typeof CommandEmpty>;
 
-export const ModelSelectorEmpty = (props: ModelSelectorEmptyProps) => (
-	<CommandEmpty {...props} />
+export const ModelSelectorEmpty = ({ className, ...props }: Readonly<ModelSelectorEmptyProps>) => (
+	<CommandEmpty className={cn("py-4 text-text-subtle", className)} {...props} />
 );
 
 export type ModelSelectorGroupProps = ComponentProps<typeof CommandGroup>;
 
-export const ModelSelectorGroup = (props: ModelSelectorGroupProps) => (
-	<CommandGroup {...props} />
+/**
+ * Dropdown menu groups have no padding: a subheading takes a 6px top margin when content sits above it,
+ * and none after a separator, whose own 6px margins space it.
+ */
+export const ModelSelectorGroup = ({ className, ...props }: Readonly<ModelSelectorGroupProps>) => (
+	<CommandGroup
+		className={cn(
+			"!p-0 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest [&:not(:first-child):not([cmdk-separator]+*)]:**:[[cmdk-group-heading]]:mt-1.5",
+			className
+		)}
+		{...props}
+	/>
 );
 
-export type ModelSelectorItemProps = ComponentProps<typeof CommandItem> & {
+export type ModelSelectorItemProps = Omit<ComponentProps<typeof CommandItem>, "onSelect" | "value"> & {
+	/** The model id this item selects. */
+	value: string;
+	/** Called with the item's model id when it is picked. */
+	onSelect?: (value: string) => void;
+	/** Close the menu after picking; defaults to true. */
 	closeOnSelect?: boolean;
 };
 
@@ -147,25 +207,29 @@ export const ModelSelectorItem = ({
 	className,
 	closeOnSelect = true,
 	onSelect,
-	showCheckIcon = false,
+	value,
 	...props
-}: ModelSelectorItemProps) => {
-	const context = use(ModelSelectorContext);
+}: Readonly<ModelSelectorItemProps>) => {
+	const close = use(ModelSelectorCloseContext);
+	const selection = use(ModelSelectorValueContext);
+	const isChecked = selection.value === value;
 
 	return (
 		<CommandItem
+			aria-checked={isChecked}
 			className={cn(
-				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
+				"h-8 rounded-lg pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
 				className
 			)}
-			showCheckIcon={showCheckIcon}
-			onSelect={(value) => {
+			data-checked={isChecked ? true : undefined}
+			onSelect={() => {
+				selection.onValueChange?.(value);
 				onSelect?.(value);
-
 				if (closeOnSelect) {
-					context?.close();
+					close();
 				}
 			}}
+			value={value}
 			{...props}
 		/>
 	);
@@ -173,16 +237,14 @@ export const ModelSelectorItem = ({
 
 export type ModelSelectorShortcutProps = ComponentProps<typeof CommandShortcut>;
 
-export const ModelSelectorShortcut = (props: ModelSelectorShortcutProps) => (
+export const ModelSelectorShortcut = (props: Readonly<ModelSelectorShortcutProps>) => (
 	<CommandShortcut {...props} />
 );
 
-export type ModelSelectorSeparatorProps = ComponentProps<
-	typeof CommandSeparator
->;
+export type ModelSelectorSeparatorProps = ComponentProps<typeof CommandSeparator>;
 
-export const ModelSelectorSeparator = (props: ModelSelectorSeparatorProps) => (
-	<CommandSeparator {...props} />
+export const ModelSelectorSeparator = ({ className, ...props }: Readonly<ModelSelectorSeparatorProps>) => (
+	<CommandSeparator className={cn("-mx-(--menu-inset) my-(--menu-inset)", className)} {...props} />
 );
 
 export type ModelSelectorLogoProps = Omit<

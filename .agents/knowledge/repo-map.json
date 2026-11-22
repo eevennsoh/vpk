@@ -465,13 +465,13 @@
 						"method": "GET",
 						"path": "/api/orchestrator/log",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/orchestrator/timeline",
 						"source": "backend/routes/orchestrator.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					}
 				]
 			},
@@ -609,7 +609,7 @@
 						"method": "GET",
 						"path": "/api/checkpoints",
 						"source": "backend/routes/rovo-app.js",
-						"runtimeAdmin": false
+						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
@@ -812,6 +812,12 @@
 					{
 						"method": "GET",
 						"path": "/api/status/rovo",
+						"source": "backend/routes/status.js",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "GET",
+						"path": "/api/whoami",
 						"source": "backend/routes/status.js",
 						"runtimeAdmin": false
 					},
@@ -2580,11 +2586,11 @@
 	"appPages": {
 		"summary": {
 			"ownerImportCount": 73,
-			"pageCount": 59,
+			"pageCount": 60,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
-				"inline": 2,
+				"inline": 3,
 				"redirect": 3,
 				"shell": 26
 			}
@@ -3579,6 +3585,18 @@
 				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/preview/blocks/jira-backlog/page.tsx"
+				},
+				"routePath": "/preview/blocks/jira-backlog",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/preview/blocks/jira-backlog/page.tsx"
+			},
+			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -4394,10 +4412,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 451,
+			"manifestEntryCount": 455,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 445,
+				"live": 449,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4446,7 +4464,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 123,
+				"entryCount": 124,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4667,13 +4685,6 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "chatbot",
-						"name": "Chatbot",
-						"importPath": "@/components/blocks/chatbot",
-						"status": "live"
-					},
-					{
-						"category": "blocks",
 						"slug": "chatgpt",
 						"name": "ChatGPT",
 						"importPath": "@/components/blocks/chatgpt",
@@ -4775,6 +4786,20 @@
 						"slug": "jira-activity",
 						"name": "Jira Activity",
 						"importPath": "@/components/blocks/jira-activity",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-at-mention",
+						"name": "Jira At-mention",
+						"importPath": "@/components/blocks/jira-at-mention",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-backlog",
+						"name": "Jira Backlog",
+						"importPath": "@/components/blocks/jira-backlog",
 						"status": "live"
 					},
 					{
@@ -4889,6 +4914,13 @@
 						"importPath": "@/components/blocks/jira-work-item",
 						"status": "live",
 						"note": "Variant dirs are independent forks with separate consumers, except experimental-v4 and experimental-v5: they render the experimental-v3 implementation and are reachable only from this block's own demos."
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-work-item-timeline",
+						"name": "Jira Work Item Timeline",
+						"importPath": "@/components/blocks/jira-work-item-timeline",
+						"status": "live"
 					},
 					{
 						"category": "blocks",
@@ -5302,13 +5334,6 @@
 						"name": "Visual Waveform",
 						"importPath": "@/components/blocks/visual-waveform",
 						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "workflow",
-						"name": "Workflow",
-						"importPath": "@/components/blocks/workflow",
-						"status": "live"
 					}
 				]
 			},
@@ -5474,7 +5499,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 81,
+				"entryCount": 100,
 				"entries": [
 					{
 						"category": "ui",
@@ -5590,6 +5615,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "chain-of-thought",
+						"name": "Chain of Thought",
+						"importPath": "@/components/ui/chain-of-thought",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "chart",
 						"name": "Chart",
 						"importPath": "@/components/ui/chart",
@@ -5600,6 +5632,20 @@
 						"slug": "checkbox",
 						"name": "Checkbox",
 						"importPath": "@/components/ui/checkbox",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "checkpoint",
+						"name": "Checkpoint",
+						"importPath": "@/components/ui/checkpoint",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "code-block",
+						"name": "Code Block",
+						"importPath": "@/components/ui/code-block",
 						"status": "live"
 					},
 					{
@@ -5628,6 +5674,13 @@
 						"slug": "comment",
 						"name": "Comment",
 						"importPath": "@/components/ui/comment",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "confirmation",
+						"name": "Confirmation",
+						"importPath": "@/components/ui/confirmation",
 						"status": "live"
 					},
 					{
@@ -5737,6 +5790,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "inline-citation",
+						"name": "Inline Citation",
+						"importPath": "@/components/ui/inline-citation",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "inline-edit",
 						"name": "Inline Edit",
 						"importPath": "@/components/ui/inline-edit",
@@ -5828,6 +5888,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "morphing-rovo",
+						"name": "Morphing Rovo",
+						"importPath": "@/components/ui/morphing-rovo",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "native-select",
 						"name": "Native Select",
 						"importPath": "@/components/ui/native-select",
@@ -5859,6 +5926,13 @@
 						"slug": "panel",
 						"name": "Panel",
 						"importPath": "@/components/ui/panel",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "plan",
+						"name": "Plan",
+						"importPath": "@/components/ui/plan",
 						"status": "live"
 					},
 					{
@@ -5898,9 +5972,23 @@
 					},
 					{
 						"category": "ui",
+						"slug": "queue",
+						"name": "Queue",
+						"importPath": "@/components/ui/queue",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "radio-group",
 						"name": "Radio Group",
 						"importPath": "@/components/ui/radio-group",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "reasoning",
+						"name": "Reasoning",
+						"importPath": "@/components/ui/reasoning",
 						"status": "live"
 					},
 					{
@@ -5947,6 +6035,13 @@
 					},
 					{
 						"category": "ui",
+						"slug": "shimmer",
+						"name": "Shimmer",
+						"importPath": "@/components/ui/shimmer",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "sidebar",
 						"name": "Sidebar",
 						"importPath": "@/components/ui/sidebar",
@@ -5975,9 +6070,37 @@
 					},
 					{
 						"category": "ui",
+						"slug": "sources",
+						"name": "Sources",
+						"importPath": "@/components/ui/sources",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "spinner",
 						"name": "Spinner",
 						"importPath": "@/components/ui/spinner",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "stack-trace",
+						"name": "Stack Trace",
+						"importPath": "@/components/ui/stack-trace",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "subagent",
+						"name": "Subagent",
+						"importPath": "@/components/ui/subagent",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "suggestion",
+						"name": "Suggestion",
+						"importPath": "@/components/ui/suggestion",
 						"status": "live"
 					},
 					{
@@ -6010,6 +6133,27 @@
 					},
 					{
 						"category": "ui",
+						"slug": "task",
+						"name": "Task",
+						"importPath": "@/components/ui/task",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "terminal",
+						"name": "Terminal",
+						"importPath": "@/components/ui/terminal",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "test-results",
+						"name": "Test Results",
+						"importPath": "@/components/ui/test-results",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "tile",
 						"name": "Tile",
 						"importPath": "@/components/ui/tile",
@@ -6038,9 +6182,23 @@
 					},
 					{
 						"category": "ui",
+						"slug": "tool",
+						"name": "Tool",
+						"importPath": "@/components/ui/tool",
+						"status": "live"
+					},
+					{
+						"category": "ui",
 						"slug": "tooltip",
 						"name": "Tooltip",
 						"importPath": "@/components/ui/tooltip",
+						"status": "live"
+					},
+					{
+						"category": "ui",
+						"slug": "trace",
+						"name": "Trace",
+						"importPath": "@/components/ui/trace",
 						"status": "live"
 					}
 				]
@@ -6221,7 +6379,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 78,
+				"entryCount": 61,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6267,13 +6425,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "attachment",
-						"name": "Attachment",
-						"importPath": "@/components/ui-custom/attachment",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "audio-player",
 						"name": "Audio Player",
 						"importPath": "@/components/ui-custom/audio-player",
@@ -6288,44 +6439,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "chain-of-thought",
-						"name": "Chain of Thought",
-						"importPath": "@/components/ui-custom/chain-of-thought",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "checkpoint",
-						"name": "Checkpoint",
-						"importPath": "@/components/ui-custom/checkpoint",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "code-block",
-						"name": "Code Block",
-						"importPath": "@/components/ui-custom/code-block",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "code-list",
 						"name": "Code List",
 						"importPath": "@/components/ui-custom/code-list",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "commit",
-						"name": "Commit",
-						"importPath": "@/components/ui-custom/commit",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "confirmation",
-						"name": "Confirmation",
-						"importPath": "@/components/ui-custom/confirmation",
 						"status": "live"
 					},
 					{
@@ -6351,16 +6467,16 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "control",
-						"name": "Control",
-						"importPath": "@/components/ui-custom/control",
+						"slug": "context-chip",
+						"name": "Context Chip",
+						"importPath": "@/components/ui-custom/context-chip",
 						"status": "live"
 					},
 					{
 						"category": "ui-custom",
-						"slug": "conversation",
-						"name": "Conversation",
-						"importPath": "@/components/ui-custom/conversation",
+						"slug": "control",
+						"name": "Control",
+						"importPath": "@/components/ui-custom/control",
 						"status": "live"
 					},
 					{
@@ -6386,6 +6502,13 @@
 					},
 					{
 						"category": "ui-custom",
+						"slug": "file-explorer",
+						"name": "File Explorer",
+						"importPath": "@/components/ui-custom/file-explorer",
+						"status": "live"
+					},
+					{
+						"category": "ui-custom",
 						"slug": "file-tree",
 						"name": "File Tree",
 						"importPath": "@/components/ui-custom/file-tree",
@@ -6393,9 +6516,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "file-tree-2",
-						"name": "File Tree 2",
-						"importPath": "@/components/ui-custom/file-tree-2",
+						"slug": "filter-chip",
+						"name": "Filter Chip",
+						"importPath": "@/components/ui-custom/filter-chip",
 						"status": "live"
 					},
 					{
@@ -6435,13 +6558,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "inline-citation",
-						"name": "Inline Citation",
-						"importPath": "@/components/ui-custom/inline-citation",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "jsx-preview",
 						"name": "JSX Preview",
 						"importPath": "@/components/ui-custom/jsx-preview",
@@ -6470,13 +6586,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "message",
-						"name": "Message",
-						"importPath": "@/components/ui-custom/message",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "mic-selector",
 						"name": "Mic Selector",
 						"importPath": "@/components/ui-custom/mic-selector",
@@ -6487,13 +6596,6 @@
 						"slug": "model-selector",
 						"name": "Model Selector",
 						"importPath": "@/components/ui-custom/model-selector",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "morphing-rovo",
-						"name": "Morphing Rovo",
-						"importPath": "@/components/ui-custom/morphing-rovo",
 						"status": "live"
 					},
 					{
@@ -6547,13 +6649,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "plan",
-						"name": "Plan",
-						"importPath": "@/components/ui-custom/plan",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "progress-circle",
 						"name": "Progress Circle",
 						"importPath": "@/components/ui-custom/progress-circle",
@@ -6571,20 +6666,6 @@
 						"slug": "prompt-input",
 						"name": "Prompt Input",
 						"importPath": "@/components/ui-custom/prompt-input",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "queue",
-						"name": "Queue",
-						"importPath": "@/components/ui-custom/queue",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "reasoning",
-						"name": "Reasoning",
-						"importPath": "@/components/ui-custom/reasoning",
 						"status": "live"
 					},
 					{
@@ -6631,13 +6712,6 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "shimmer",
-						"name": "Shimmer",
-						"importPath": "@/components/ui-custom/shimmer",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
 						"slug": "shimmer-wave",
 						"name": "Shimmer Wave",
 						"importPath": "@/components/ui-custom/shimmer-wave",
@@ -6666,9 +6740,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "source",
-						"name": "Source",
-						"importPath": "@/components/ui-custom/source",
+						"slug": "sources-menu",
+						"name": "Sources Menu",
+						"importPath": "@/components/ui-custom/sources-menu",
 						"status": "live"
 					},
 					{
@@ -6680,44 +6754,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "stack-trace",
-						"name": "Stack Trace",
-						"importPath": "@/components/ui-custom/stack-trace",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "suggestion",
-						"name": "Suggestion",
-						"importPath": "@/components/ui-custom/suggestion",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "task",
-						"name": "Task",
-						"importPath": "@/components/ui-custom/task",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "terminal",
-						"name": "Terminal",
-						"importPath": "@/components/ui-custom/terminal",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "test-result",
-						"name": "Test Result",
-						"importPath": "@/components/ui-custom/test-result",
-						"status": "live"
-					},
-					{
-						"category": "ui-custom",
-						"slug": "tool",
-						"name": "Tool",
-						"importPath": "@/components/ui-custom/tool",
+						"slug": "terminal-window",
+						"name": "Terminal Window",
+						"importPath": "@/components/ui-custom/terminal-window",
 						"status": "live"
 					},
 					{
@@ -6849,7 +6888,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 110,
+				"entryCount": 111,
 				"entries": [
 					{
 						"category": "visual",
@@ -6954,6 +6993,13 @@
 						"slug": "displacement-map",
 						"name": "Displacement Map",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "distortion-waves",
+						"name": "Distortion Waves",
+						"importPath": "@/components/visual/distortion-waves",
 						"status": "live"
 					},
 					{
@@ -7721,7 +7767,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-build"
 			},
 			{
-				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (ai-elements, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", or \"port ElevenLabs UI\". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.",
+				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity, or translate custom and third-party AI, voice, and audio UI (shadcn AI Elements, AI SDK Elements copies, ElevenLabs UI) into VPK-owned primitives. Use only when the user invokes vpk-component, names or links one of those sources, requests ADS/shadcn parity, or asks to \"migrate to ui-custom\", \"standardize AI components\", \"adopt shadcn AI Elements\", or \"port ElevenLabs UI\". Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.",
 				"name": "vpk-component",
 				"path": ".agents/skills/vpk-component/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"
@@ -7733,7 +7779,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-deploy"
 			},
 			{
-				"description": "Inspect Figma URLs, inventory or export design assets, and translate screenshots, mockups, or pixel-perfect specs into VPK code. Use the official Figma MCP first. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks, and vpk-component for ADS or shadcn component harvesting.",
+				"description": "Use this skill whenever the user hands you a visual design reference and wants VPK UI built, matched, or corrected to it: a Figma link or node, a screenshot, a mockup PNG, a slide or deck image, or a 'pixel-perfect' spec. Typical asks: 'recreate this', 'make this page match the mockup', 'build what the designer drew', 'the spacing is off vs the design file'. Also use it to pull assets out of Figma, such as icons, illustrations, or images, then compare them with local folders and export the missing files into the repo (e.g. public/). Inspect through the official Figma MCP first. Skip it for ADS/shadcn component harvesting (vpk-component), standalone ADS token or icon lookups, motion tweaks, refactors, and writing Figma plugins.",
 				"name": "vpk-design",
 				"path": ".agents/skills/vpk-design/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
@@ -7781,13 +7827,13 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
 			},
 			{
-				"description": "Plan in this Claude Code or Codex session — started on a subscription login (`claude`, `codex`) or API (`claude-gw`, `codex-gw`), detected automatically — and delegate implementation to headless workers billed through the local Proximity AI Gateway (localhost:29576): GPT (Sol/Terra/Luna) via Codex CLI or Claude (Opus/Sonnet) via claude -p. Workers report back here for verification and advisor review. Can also move this conversation onto API, on any Claude or GPT model and effort. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', 'move/switch this session to API', 'I'm out of credits, continue on sol', asks for a second opinion via the gateway, asks for a council review or vpk-council, wants plan-big-execute-small delegation, or asks to build/fix something via the gateway. Never activate from skill names in file paths, stack traces, pasted or quoted text, or prior turns.",
+				"description": "Use this skill when the user wants another model to do the work while this session supervises: handing a coding task to a named model (Opus, Sonnet, GPT, Sol, Terra, Luna), 'a cheaper model', 'a worker', or 'in the background', then checking its result. Covers farm out, offload, hand off, delegate, 'have X do it', 'you plan, it codes', 'route this through proximity'. Workers run headless through the local Proximity AI Gateway (Codex CLI or claude -p) and report back here for diff verification and advisor review. Also use for second opinions or council reviews from other models (vpk-council), task status checks, and moving this chat onto API or another model when credits or subscription limits run out. Trigger on /vpk-remote. Skip when a model name is just task text (e.g. 'luna theme'), for general questions about gateway code or pricing, plain reviews or shipping, or when the skill name appears in a path, stack trace, or quoted text.",
 				"name": "vpk-remote",
 				"path": ".agents/skills/vpk-remote/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-remote"
 			},
 			{
-				"description": "Shared execution policy for VPK scheduled jobs that investigate one maintenance candidate, make a review-ready change, and open or update a pull request. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, engineering-map, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
+				"description": "Shared execution policy for VPK scheduled jobs that investigate one maintenance candidate, make a review-ready change, open or update a pull request, and label it for merge eligibility without merging. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, main-health, baseline burn-down, skill-health, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
 				"name": "vpk-scheduled-automation",
 				"path": ".agents/skills/vpk-scheduled-automation/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-scheduled-automation"

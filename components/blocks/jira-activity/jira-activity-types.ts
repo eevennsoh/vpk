@@ -172,6 +172,7 @@ export interface JiraActivityReply {
 	timestamp: string;
 	createdAtMs?: number;
 	body: string;
+	replyTo?: Readonly<{ id: string; excerpt: string }>;
 	reactions?: readonly JiraActivityReaction[];
 	/** Optional agent-session summary used to open an embedded Rovo chat. */
 	sessionItem?: AgentListItem;

@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
 			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
 			splitChunks.cacheGroups = {
 				...splitChunks.cacheGroups,
-				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|spinner|select|select-tags|tag)\.tsx$/ },
+				uiPrimitives: { chunks: "all", enforce: true, name: "ui-primitives", priority: 30, test: /[\\/]components[\\/]ui[\\/](button|empty|spinner|select|select-tags|tag)\.tsx$/ },
 				logoMaps: { chunks: "all", enforce: true, name: "logo-maps", priority: 30, test: /[\\/]components[\\/]ui[\\/](data[\\/]logo-data\.ts|data[\\/]logo-third-party-icons\.ts|lazy-glyph\.tsx)$/ },
 			};
 		}

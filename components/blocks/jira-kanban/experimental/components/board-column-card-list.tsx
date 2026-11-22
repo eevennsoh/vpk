@@ -32,7 +32,7 @@ import {
 	BOARD_CARD_INSERTION_BAND_PX,
 	pickBoardCardInsertionAtPoint,
 } from "../lib/board-card-insertion";
-import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
+import { BoardCardGapCreateContext, BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 import { BoardEmptyColumnInsertionSlot } from "./board-card-insertion-line";
 import { BoardColumnAddButton } from "./create-work-item-drop-zone";
 
@@ -83,13 +83,16 @@ function collectHoverGapZones(cardList: HTMLElement) {
 export function BoardColumnCardList({
 	children,
 	chrome,
+	label,
 	columnTitle,
 	columnSizing = "fill",
 	count,
 	createdCardArrival,
 	creating = false,
 	createDraft,
+	createBeforeCardCode,
 	hideScrollbar = false,
+	pinCreateAction = false,
 	insertionArmed,
 	isEmpty,
 	isSessionDragging = false,
@@ -97,17 +100,20 @@ export function BoardColumnCardList({
 }: Readonly<{
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
+	label?: string;
 	columnTitle: string;
 	columnSizing?: "fill" | "content";
 	count: number;
 	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	creating?: boolean;
 	createDraft?: ReactNode;
+	createBeforeCardCode?: string;
 	hideScrollbar?: boolean;
+	pinCreateAction?: boolean;
 	insertionArmed: boolean;
 	isEmpty: boolean;
 	isSessionDragging?: boolean;
-	onStartCreate?: (trigger: HTMLElement) => void;
+	onStartCreate?: (trigger: HTMLElement, beforeCardCode?: string, returnFocus?: HTMLElement | null) => void;
 }>) {
 	const { ref, hasVerticalOverflow, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>({ trackAnimatedOverflow: true });
 	const cardListRef = useRef<HTMLDivElement | null>(null);
@@ -143,6 +149,7 @@ export function BoardColumnCardList({
 	const suppressCardInsertion = createdCardArrival !== undefined;
 
 	const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+		if (event.target instanceof Element && event.target.closest("[data-board-gap-create]")) return;
 		if (event.pointerType === "touch") {
 			return;
 		}
@@ -175,9 +182,28 @@ export function BoardColumnCardList({
 	const clearHoverInsertion = useCallback(() => {
 		setHoverInsertion((current) => (current === null ? current : null));
 	}, []);
+	const handlePointerLeave = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+		if (event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-board-gap-create]")) return;
+		if (document.activeElement instanceof Element && document.activeElement.matches("[data-board-gap-create]")) return;
+		clearHoverInsertion();
+	}, [clearHoverInsertion]);
+	const handleControlLeave = useCallback((next: EventTarget | null) => {
+		if (next instanceof Node && cardListRef.current?.contains(next)) return;
+		if (document.activeElement instanceof Element && document.activeElement.matches("[data-board-gap-create]")) return;
+		clearHoverInsertion();
+	}, [clearHoverInsertion]);
+	const creatingInGap = Boolean(createDraft && createBeforeCardCode);
+	const gapCreate = useMemo(() => ({
+		beforeCardCode: createBeforeCardCode,
+		createDraft: creatingInGap ? createDraft : undefined,
+		creating: creatingInGap,
+		onStartCreate,
+		onControlLeave: handleControlLeave,
+	}), [createBeforeCardCode, createDraft, creatingInGap, onStartCreate, handleControlLeave]);
 
 	return (
-		<BoardCardHoverInsertionContext value={suppressCardInsertion ? null : hoverInsertion}>
+		<BoardCardGapCreateContext value={gapCreate}>
+		<BoardCardHoverInsertionContext value={suppressCardInsertion || creating ? null : hoverInsertion}>
 			<ScrollAreaRoot
 				className="flex min-h-0 min-w-0 flex-col"
 				style={{
@@ -191,7 +217,7 @@ export function BoardColumnCardList({
 					inert={creating && !createDraft ? true : undefined}
 					tabIndex={-1}
 					role="region"
-					aria-label={`${columnTitle} work items`}
+					aria-label={label ?? `${columnTitle} work items`}
 					data-created-card-arrival-id={createdCardArrival?.id}
 					data-jira-kanban-card-list=""
 					className={cn(
@@ -203,7 +229,7 @@ export function BoardColumnCardList({
 						// Keep the viewport and card focus rings out of the edge fade.
 						"focus-visible:[mask-image:none]! focus-visible:[-webkit-mask-image:none]! has-[:focus-visible]:[mask-image:none]! has-[:focus-visible]:[-webkit-mask-image:none]!",
 					)}
-					onPointerLeave={clearHoverInsertion}
+					onPointerLeave={handlePointerLeave}
 					onPointerMove={handlePointerMove}
 					onScroll={clearHoverInsertion}
 					onWheel={clearHoverInsertion}
@@ -230,18 +256,18 @@ export function BoardColumnCardList({
 						data-jira-kanban-card-list-content=""
 						style={{ minWidth: 0, gap: chrome.cardList.gap ?? token("space.100") }}
 					>
-						<div inert={creating || undefined} className={cn("flex min-w-0 flex-col", creating ? "opacity-20" : null)} style={{ gap: chrome.cardList.gap ?? token("space.100") }}>
+						<div inert={creating && !creatingInGap || undefined} className={cn("flex min-w-0 flex-col", creating && !creatingInGap ? "opacity-20" : null)} style={{ gap: chrome.cardList.gap ?? token("space.100") }}>
 						{children}
-						{columnSizing === "fill" ? <div
+						{columnSizing === "fill" && !pinCreateAction ? <div
 							aria-hidden={isSessionDragging || undefined}
-							inert={isSessionDragging || undefined}
-							className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex")}
+								inert={isSessionDragging || creatingInGap || undefined}
+								className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex", creatingInGap ? "opacity-20" : null)}
 							data-board-work-item-create=""
 						>
 							<BoardColumnAddButton onStartCreate={onStartCreate} title={columnTitle} />
 						</div> : null}
 						</div>
-						{createDraft}
+						{creatingInGap ? null : createDraft}
 						{isEmpty && columnSizing === "fill" ? <BoardEmptyColumnInsertionSlot columnTitle={columnTitle} /> : null}
 					</ScrollAreaContent>
 				</ScrollAreaViewport>
@@ -249,5 +275,6 @@ export function BoardColumnCardList({
 				{hasVerticalOverflow && !hideScrollbar ? <ScrollBar visibility="auto" /> : null}
 			</ScrollAreaRoot>
 		</BoardCardHoverInsertionContext>
+		</BoardCardGapCreateContext>
 	);
 }

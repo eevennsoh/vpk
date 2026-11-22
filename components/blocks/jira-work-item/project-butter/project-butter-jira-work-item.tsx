@@ -14,16 +14,16 @@ import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data
 
 import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
 import { MERCHANT_ACKNOWLEDGMENT_DELAY_MS, merchantJourneyAuthoredActivity, merchantJourneyAuthoredUpdate, projectMerchantJourney, type ProjectButterJourneyPhase, type ProjectButterJourneyAuthoredField } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
-import { PROJECT_BUTTER_SUGGESTION_FIELDS } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
-import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
+import { PROJECT_BUTTER_SUGGESTION_FIELDS, type ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { ProjectButterSessionChat } from "@/components/blocks/jira-work-item/project-butter/project-butter-session-chat";
 import { ProjectButterShell } from "@/components/blocks/jira-work-item/project-butter/project-butter-shell";
 import type { ProjectButterPresentation, ProjectButterShellContext } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { useProjectButterSessions } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-sessions";
 import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
-import { activityScrollport } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityScrollport } from "@/components/blocks/jira-activity/activity-scrollport";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
+import { ProjectButterSuggestionTargets } from "./suggestion-targets";
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -39,7 +39,6 @@ export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
-	initialRelatedSectionOpen?: boolean;
 	compact?: boolean;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
@@ -52,7 +51,8 @@ export interface ProjectButterJiraWorkItemProps {
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: ReactNode;
 	developmentJourney?: ProjectButterDevelopmentJourneyProps;
-	suggestionProfile?: "default" | "payments";
+	suggestionProfile?: ProjectButterSuggestionProfile;
+	renderSuggestions?: React.ComponentProps<typeof ProjectButterDetails>["renderSuggestions"];
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
 	workItem?: WorkItemData;
@@ -64,6 +64,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onAgentAdded?: (session: ProjectButterSessionItem, workItem: { code: string; summary: string }) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
 	inlineSessionReplies?: boolean;
+	sessionActivityView?: boolean;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
 	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
@@ -79,7 +80,6 @@ export function ProjectButterJiraWorkItem({
 	open,
 	onClose,
 	initialPreset,
-	initialRelatedSectionOpen,
 	compact,
 	initialSuggestion = false,
 	defaultReporter,
@@ -93,6 +93,7 @@ export function ProjectButterJiraWorkItem({
 	journeyControls,
 	developmentJourney,
 	suggestionProfile = "default",
+	renderSuggestions,
 	initialPresentation = "full-screen",
 	shell = "standalone",
 	workItem,
@@ -104,6 +105,7 @@ export function ProjectButterJiraWorkItem({
 	onAgentAdded,
 	onOpenCloudSession,
 	inlineSessionReplies = false,
+	sessionActivityView = false,
 	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
@@ -160,10 +162,10 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity, defaultAssignee, initialRelatedSectionOpen },
+		{ currentUser, showAuditInActivity, defaultAssignee },
 	);
-	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
-	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity, initialRelatedSectionOpen });
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
@@ -256,7 +258,7 @@ export function ProjectButterJiraWorkItem({
 		setActiveSessionId,
 		setDrafts,
 	} = model;
-	const sessions = projection.sessions;
+	const sessions = projection.sessions.map((session) => currentContent.resumedSessionIds.includes(session.id) ? { ...session, state: "running" as const } : session);
 	const activeSession = sessions.find((session) => session.id === model.activeSessionId);
 	function changeEmpty(next: boolean) {
 		setDescriptionReveal(null);
@@ -319,6 +321,7 @@ export function ProjectButterJiraWorkItem({
 	function startAgentFromComment(agent: AgentSessionItem["agent"], prompt: string) {
 		const session = model.startAgent(agent, content.summary, prompt);
 		addInvocation(session);
+		onAgentAdded?.(session, { code: workItem?.code ?? "VITA-1", summary: content.summary });
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
@@ -370,6 +373,7 @@ export function ProjectButterJiraWorkItem({
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
 			panelOrder={panelOrder}
+			renderSuggestions={renderSuggestions}
 			sidePanel={sidePanel}
 			suggestion={suggestion}
 			suggestionProfile={suggestionProfile}
@@ -377,7 +381,7 @@ export function ProjectButterJiraWorkItem({
 	);
 	return (
 		<ProjectButterShell
-			toastSlot={<Toaster id={toasterId} position="bottom-left" />}
+			toastSlot={onAgentAdded ? undefined : <Toaster id={toasterId} position="bottom-left" />}
 			overlayContainerRef={overlayContainerRef}
 			empty={empty}
 			onClose={onClose}
@@ -390,15 +394,13 @@ export function ProjectButterJiraWorkItem({
 			chatPanel={chatPanel}
 			shell={shell}
 		>
+			<ProjectButterSuggestionTargets key={workItem?.code ?? "reference"}>
 			<ProjectButterHeader
 				key={workItem?.code ?? "reference"}
 				content={content}
 				onClose={onClose}
 				onPresentationChange={setPresentation}
 				showFullScreenClose={shell === "project"}
-				secondaryActions={
-					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
-				}
 				presentation={presentation}
 				workItem={workItem}
 			/>
@@ -425,7 +427,7 @@ export function ProjectButterJiraWorkItem({
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						inlineSessionReplies={inlineSessionReplies}
-						alwaysCollapsibleRelatedWork={initialRelatedSectionOpen === false}
+						sessionActivityView={sessionActivityView}
 						compact={compact}
 						key={workItem?.code ?? "reference"}
 						active={open}
@@ -453,6 +455,7 @@ export function ProjectButterJiraWorkItem({
 				)}
 			</div>
 			{detailsHost ? createPortal(details, detailsHost) : null}
+			</ProjectButterSuggestionTargets>
 			<ProjectButterSessionChat
 				onClose={() => setActiveSessionId(null)}
 				open={open && Boolean(activeSession && !isLocalAgentListItem(activeSession))}

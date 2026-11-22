@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupSearchAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { SonnerToast, type SonnerToastAppearance } from "@/components/ui/sonner";
@@ -32,9 +32,9 @@ function showInputGroupToast(title: string, appearance: SonnerToastAppearance = 
 export function InputGroupDemoDefault() {
 	return (
 		<InputGroup className="w-48">
-			<InputGroupAddon>
+			<InputGroupSearchAddon>
 				<SearchIcon />
-			</InputGroupAddon>
+			</InputGroupSearchAddon>
 			<InputGroupInput placeholder="Search..." />
 		</InputGroup>
 	);
@@ -314,9 +314,9 @@ export function InputGroupDemoWithAddons() {
 				</FieldLabel>
 				<InputGroup>
 					<InputGroupInput id="input-icon-left-05" />
-					<InputGroupAddon>
-						<SearchIcon className="text-muted-foreground" />
-					</InputGroupAddon>
+					<InputGroupSearchAddon>
+						<SearchIcon />
+					</InputGroupSearchAddon>
 				</InputGroup>
 			</Field>
 			<Field>
@@ -532,10 +532,10 @@ export function InputGroupDemoWithKbd() {
 					id="input-search-docs-27"
 					placeholder="Search documentation..."
 				/>
-				<InputGroupAddon>
+				<InputGroupSearchAddon>
 					<SearchIcon
 					/>
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 				<InputGroupAddon align="inline-end">12 results</InputGroupAddon>
 			</InputGroup>
 			<InputGroup data-disabled="true">
@@ -544,10 +544,10 @@ export function InputGroupDemoWithKbd() {
 					placeholder="Search documentation..."
 					disabled
 				/>
-				<InputGroupAddon>
+				<InputGroupSearchAddon>
 					<SearchIcon
 					/>
-				</InputGroupAddon>
+				</InputGroupSearchAddon>
 				<InputGroupAddon align="inline-end">Disabled</InputGroupAddon>
 			</InputGroup>
 			<FieldGroup className="grid grid-cols-2 gap-4">

@@ -97,29 +97,53 @@ function createRovoMarkerStreamAdapter({
 } = {}) {
 	let textBuffer = "";
 	let widgetType = null;
+	const markerPrefixes = [
+		WIDGET_LOADING_PREFIX,
+		WIDGET_DATA_PREFIX,
+		THINKING_STATUS_PREFIX,
+		AGENT_EXECUTION_PREFIX,
+		...(creationMode === "agent" ? [agentResultPrefix] : []),
+	];
 	const partialMarkerBufferLength =
-		Math.max(
-			WIDGET_LOADING_PREFIX.length,
-			WIDGET_DATA_PREFIX.length,
-			THINKING_STATUS_PREFIX.length,
-			AGENT_EXECUTION_PREFIX.length,
-			creationMode === "agent" ? agentResultPrefix.length : 0
-		) - 1;
+		Math.max(...markerPrefixes.map((prefix) => prefix.length)) - 1;
+	// Widget types this adapter acts on, the ones the marker protocol announced. A loading marker
+	// whose type is one of them in full is read at once rather than when its line ends; a type that
+	// another of them extends could still go on, so it waits like any other.
+	const knownWidgetTypes = ["plan", clarificationWidgetType, genuiWidgetType];
+	const wholeLoadingWidgetTypes = new Set(
+		knownWidgetTypes.filter((type) => !knownWidgetTypes.some((other) => other !== type && other.startsWith(type)))
+	);
 
 	const findNextMarkerIndex = (value) => {
-		const loadingIndex = value.indexOf(WIDGET_LOADING_PREFIX);
-		const dataIndex = value.indexOf(WIDGET_DATA_PREFIX);
-		const thinkingIndex = value.indexOf(THINKING_STATUS_PREFIX);
-		const agentExecIndex = value.indexOf(AGENT_EXECUTION_PREFIX);
-		const agentResultIndex =
-			creationMode === "agent" ? value.indexOf(agentResultPrefix) : -1;
 		let minIndex = -1;
-		for (const idx of [loadingIndex, dataIndex, thinkingIndex, agentExecIndex, agentResultIndex]) {
+		for (const prefix of markerPrefixes) {
+			const idx = value.indexOf(prefix);
 			if (idx !== -1 && (minIndex === -1 || idx < minIndex)) {
 				minIndex = idx;
 			}
 		}
 		return minIndex;
+	};
+
+	// How much of each prefix marks a started marker: through its first underscore, or the whole
+	// prefix when it has none.
+	const startedMarkerPrefixes = markerPrefixes.map((prefix) => ({
+		prefix,
+		startedLength: prefix.includes("_") ? prefix.indexOf("_") + 1 : prefix.length,
+	}));
+
+	/**
+	 * Length of the end of `value` that is a started marker: the start of a marker prefix that reaches
+	 * the prefix's first underscore (`WIDGET_`, `WIDGET_DA`). A shorter end (`W`, `WIDGET`) is text.
+	 */
+	const getStartedMarkerPrefixLength = (value) => {
+		for (let length = Math.min(value.length, partialMarkerBufferLength); length > 0; length -= 1) {
+			const tail = value.slice(-length);
+			if (startedMarkerPrefixes.some(({ prefix, startedLength }) => length >= startedLength && prefix.startsWith(tail))) {
+				return length;
+			}
+		}
+		return 0;
 	};
 
 	const emitInvalidPrefixOrWait = ({
@@ -190,6 +214,16 @@ function createRovoMarkerStreamAdapter({
 				emitTextDelta(textBuffer);
 				textBuffer = "";
 			}
+			return false;
+		}
+
+		// The type may go on in the next chunk until a character that cannot be part of it follows
+		// (producers end the marker's line) or the stream ends, unless it is a whole known type.
+		const typeComplete =
+			isFinalChunk ||
+			loadingMatch[0].length < textBuffer.length ||
+			wholeLoadingWidgetTypes.has(loadingMatch[1]);
+		if (!typeComplete) {
 			return false;
 		}
 
@@ -476,8 +510,32 @@ function createRovoMarkerStreamAdapter({
 	};
 
 	return {
+		/** End of stream: everything still held is final, so an unfinished marker goes out as text. */
 		flush() {
 			processTextBuffer(true);
+		},
+		/**
+		 * The stream stopped early (a failure): the held text the user was meant to see goes out, and
+		 * a marker that had only started (a held tail that reaches a marker prefix's first underscore,
+		 * or a prefix whose payload never finished) is dropped. Leaves the adapter empty.
+		 */
+		flushVisibleText() {
+			// A prefix with an invalid payload goes out as text and stops processing with the rest still
+			// held, so process until nothing moves.
+			let previousBuffer;
+			do {
+				previousBuffer = textBuffer;
+				processTextBuffer(false);
+			} while (textBuffer.length > 0 && textBuffer !== previousBuffer);
+
+			// What is left is either an unfinished marker at the start or a short plain tail.
+			const visibleText = findNextMarkerIndex(textBuffer) === 0
+				? ""
+				: textBuffer.slice(0, textBuffer.length - getStartedMarkerPrefixLength(textBuffer));
+			textBuffer = "";
+			if (visibleText) {
+				emitTextDelta(visibleText);
+			}
 		},
 		push(delta) {
 			if (typeof delta !== "string" || delta.length === 0) {

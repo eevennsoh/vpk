@@ -311,9 +311,10 @@ function createRovoTurnRunner(dependencies = {}) {
 				rovoMarkerStream,
 				stageTrace,
 			});
-			const resetAssistantTextForRetryAttempt = () => {
+			const resetAssistantTextForRetryAttempt = ({ continuesShownText = false } = {}) => {
+				// Text the marker stream still holds back was never shown; it is dropped with the attempt.
 				rovoMarkerStream.reset();
-				resetAssistantTextForRetryAttemptState();
+				resetAssistantTextForRetryAttemptState({ continuesShownText });
 			};
 			const exitPlanWidgetEmitter = createExitPlanWidgetEmitter({
 				getIsPlanWidgetLoading: () => facts().plan.loading,
@@ -470,14 +471,14 @@ function createRovoTurnRunner(dependencies = {}) {
 				buildInteractiveStuckPortFailureMessage,
 				clarificationSubmission,
 				clarificationToolCallId,
-				// Text the marker stream still holds back goes out first, so the notice follows it.
+				// The held text the user was meant to see goes out first, so the notice follows it; an
+				// unfinished marker is dropped.
 				emitFailureNotice: (notice) => {
-					rovoMarkerStream.flush();
+					rovoMarkerStream.flushVisibleText();
 					emitNoticeParagraph(notice);
 				},
 				getListeningPidsForPort,
 				getResolvedRovoPort: () => facts().port,
-				handleStreamTextDelta,
 				hasPausedClarificationToolCall,
 				interactiveChatForcePortRecoveryMaxAttempts: INTERACTIVE_CHAT_FORCE_PORT_RECOVERY_MAX_ATTEMPTS,
 				interactiveChatForcePortRecoveryTimeoutMs: INTERACTIVE_CHAT_FORCE_PORT_RECOVERY_TIMEOUT_MS,
