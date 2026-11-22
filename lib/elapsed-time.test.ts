@@ -58,8 +58,13 @@ test("describeRelativeTimeLabel spells out relative durations and recognizes nam
 	assert.equal(describeRelativeTimeLabel("1h"), "1 hour ago");
 	assert.equal(describeRelativeTimeLabel("29d"), "29 days ago");
 	assert.equal(describeRelativeTimeLabel("1mo"), "1 month ago");
-	assert.equal(describeRelativeTimeLabel("last week"), "Last week");
-	assert.equal(describeRelativeTimeLabel("Yesterday"), "Yesterday");
+	assert.equal(describeRelativeTimeLabel("last week"), "1 week ago");
+	assert.equal(describeRelativeTimeLabel("Yesterday"), "1 day ago");
+	assert.equal(describeRelativeTimeLabel("Today"), "Less than a day ago");
+	assert.equal(describeRelativeTimeLabel("Last month"), "1 month ago");
+	assert.equal(describeRelativeTimeLabel("Last year"), "1 year ago");
+	assert.equal(describeRelativeTimeLabel("Last week", Date.UTC(2026, 10, 10)), undefined);
+	assert.equal(describeRelativeTimeLabel("Yesterday", Date.UTC(2026, 10, 20)), "1 day ago");
 	assert.equal(describeRelativeTimeLabel("Just now"), "Less than a minute ago");
 	assert.equal(describeRelativeTimeLabel("Just now", Date.UTC(2026, 10, 20)), undefined);
 	assert.equal(describeRelativeTimeLabel("19 May"), undefined);
