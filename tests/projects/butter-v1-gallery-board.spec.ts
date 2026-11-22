@@ -3,6 +3,21 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("view settings header aligns with the board toolbar", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Customize" }).click();
+	const center = async (locator: ReturnType<typeof page.getByRole>) => {
+		const bounds = await locator.boundingBox();
+		if (!bounds) throw new Error("Expected a visible header control");
+		return bounds.y + bounds.height / 2;
+	};
+	const toolbarCenter = await center(page.getByRole("searchbox", { name: "Search board" }));
+	expect(Math.abs(await center(page.getByRole("heading", { name: "View settings" })) - toolbarCenter)).toBeLessThanOrEqual(1);
+	expect(Math.abs(await center(page.getByRole("button", { name: "Close view settings" })) - toolbarCenter)).toBeLessThanOrEqual(1);
+});
+
 test("saved board filters apply their conditions and can be pinned", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));

@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 
 import { DONE_OPTIONS, FIELDS, MUTE_OPTIONS, type JiraViewConfigurationValue } from "@/components/blocks/jira-view-configuration/model";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { IconTile } from "@/components/ui/icon-tile";
 import {
 	Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxTrigger, useComboboxAnchor,
@@ -127,7 +128,8 @@ export function JiraViewConfiguration({ value, onChange, onClose, className }: R
 								<ComboboxEmpty>No fields found</ComboboxEmpty>
 								<ComboboxList>
 									{(field: (typeof FIELDS)[number]) => (
-										<ComboboxItem key={field.value} value={field} aria-selected={value.visibleFieldIds.includes(field.value)}>
+										<ComboboxItem key={field.value} value={field} aria-selected={value.visibleFieldIds.includes(field.value)} className="gap-3">
+											<IconTile aria-hidden as="span" className="shrink-0 text-icon-subtle" icon={<field.icon label="" size="small" />} iconSize="small" label="" size="xxsmall" variant="transparent" />
 											{field.label}
 											{value.visibleFieldIds.includes(field.value) ? <span className="ml-auto" aria-hidden="true"><CheckMarkIcon label="" size="small" /></span> : null}
 										</ComboboxItem>
@@ -135,9 +137,9 @@ export function JiraViewConfiguration({ value, onChange, onClose, className }: R
 								</ComboboxList>
 							</ComboboxContent>
 						</Combobox>
-						<ul className="pt-3">
+						<ul className="menu-row-spacing pt-3">
 							{FIELDS.filter((field) => value.visibleFieldIds.includes(field.value)).map((field) => (
-								<li key={field.value} className="group flex h-10 items-center gap-2 rounded-md px-2 hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+								<li key={field.value} data-menu-row className={cn(dropdownStyles.itemBase, "group cursor-default gap-3 px-2 hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered active:bg-transparent")}>
 									<IconTile aria-hidden as="span" className="shrink-0 text-icon-subtle" icon={<field.icon label="" size="small" />} iconSize="small" label="" size="xxsmall" variant="transparent" />
 									<span className="min-w-0 flex-1 text-sm">{field.label}</span>
 									<Button variant="ghost" size="icon-compact" className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100" aria-label={`Remove ${field.label}`}

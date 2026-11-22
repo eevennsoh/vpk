@@ -89,7 +89,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 		/className=\{stateIcon \? "gap-2" : undefined\}/u,
 	);
 	assert.match(VIEW_MENU_SOURCE, /setSessionTypeFilterId\(id\)/u);
-	assert.doesNotMatch(VIEW_MENU_SOURCE, /AiAgentIcon/u);
+	assert.doesNotMatch(VIEW_MENU_SOURCE.match(/const AGENT_STATE_ICONS = \{[\s\S]*?\} as const/u)?.[0] ?? "", /AiAgentIcon/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
 		/setPullRequestFilterId\(null\);[\s\S]*setAgentFilterId\(null\);[\s\S]*setSessionTypeFilterId\(null\);/u,

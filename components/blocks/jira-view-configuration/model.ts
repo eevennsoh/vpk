@@ -4,7 +4,7 @@ import CalendarIcon from "@atlaskit/icon/core/calendar";
 import FlagIcon from "@atlaskit/icon/core/flag";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
-import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import TagIcon from "@atlaskit/icon/core/tag";
 import TaskIcon from "@atlaskit/icon/core/task";
 
@@ -38,7 +38,7 @@ export const FIELDS = [
 	{ value: "flagged", label: "Flagged", icon: FlagIcon },
 	{ value: "work-type", label: "Work type", icon: TaskIcon },
 	{ value: "priority", label: "Priority", icon: PriorityHighestIcon },
-	{ value: "status", label: "Status", icon: StatusInformationIcon },
+	{ value: "status", label: "Status", icon: ProjectStatusIcon },
 	{ value: "labels", label: "Labels", icon: TagIcon },
 ] as const;
 

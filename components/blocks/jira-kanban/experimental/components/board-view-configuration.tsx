@@ -16,7 +16,7 @@ export function BoardViewConfiguration({ container }: Readonly<{ container: RefO
 				<Icon render={<CustomizeIcon label="" />} />
 			</SheetTrigger>
 			<SheetContent contained portalContainer={container} side="right" aria-label="View settings" showOverlay={false} showCloseButton={false} className="pointer-events-auto data-[side=right]:w-[340px] max-w-full overflow-hidden">
-				<JiraViewConfiguration value={value} onChange={setValue} onClose={() => setOpen(false)} className="min-h-0 flex-1" />
+				<JiraViewConfiguration value={value} onChange={setValue} onClose={() => setOpen(false)} className="min-h-0 flex-1 [&_[data-slot=panel-header]]:h-19" />
 			</SheetContent>
 		</Sheet>
 	);

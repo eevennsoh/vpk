@@ -3,13 +3,20 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
 import { useRef, useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import EpicIcon from "@atlaskit/icon/core/epic";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PersonIcon from "@atlaskit/icon/core/person";
+import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityTrivialIcon from "@atlaskit/icon/core/priority-trivial";
+import ProjectIcon from "@atlaskit/icon/core/project";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import SubtasksIcon from "@atlaskit/icon/core/subtasks";
+import TagIcon from "@atlaskit/icon/core/tag";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
@@ -41,6 +48,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -81,6 +89,21 @@ const BOARD_SESSION_TYPE_OPTIONS = BOARD_AGENT_HOST_OPTIONS.filter(
 interface QuickViewOption<TId extends string = string> {
 	id: TId;
 	label: string;
+	icon?: ComponentType<NewCoreIconProps>;
+}
+
+const GROUP_OPTION_ICONS = {
+	agent: AiAgentIcon,
+	assignee: PersonIcon,
+	"atlassian-project": ProjectIcon,
+	epic: EpicIcon,
+	labels: TagIcon,
+	priority: PriorityHighestIcon,
+	subtask: SubtasksIcon,
+} satisfies Record<BoardGroupOptionId, ComponentType<NewCoreIconProps>>;
+
+function GroupOptionIcon({ icon: Glyph }: Readonly<{ icon: ComponentType<NewCoreIconProps> }>) {
+	return <IconTile aria-hidden as="span" className="mr-3 shrink-0 text-icon-subtle" icon={<Glyph label="" size="small" />} iconSize="small" label="" size="xxsmall" variant="transparent" />;
 }
 
 interface GlyphStateIcon {
@@ -193,6 +216,7 @@ export function BoardGroupByMenu({ compact = false, grouping }: Readonly<{ compa
 								onClick={option.id === selected?.id ? () => selectGroup(null) : undefined}
 								value={option.id}
 							>
+								<GroupOptionIcon icon={GROUP_OPTION_ICONS[option.id]} />
 								{option.label}
 							</DropdownMenuRadioItem>
 						))}
@@ -276,7 +300,7 @@ function QuickViewActionSubmenu<TId extends string>({
 								key={option.id}
 								value={option.id}
 							>
-								{stateIcon ? <MenuLeadingIcon icon={stateIcon} /> : null}
+								{option.icon ? <GroupOptionIcon icon={option.icon} /> : stateIcon ? <MenuLeadingIcon icon={stateIcon} /> : null}
 								{option.label}
 							</DropdownMenuRadioItem>
 						);
@@ -397,7 +421,7 @@ export function BoardViewMenu({
 				{showGrouping ? <QuickViewActionSubmenu
 					label="Group by"
 					onSelect={handleGroupBySelect}
-					options={grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS}
+					options={(grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS).map((option) => ({ ...option, icon: GROUP_OPTION_ICONS[option.id] }))}
 					selectedId={groupByFilterId}
 				/> : null}
 
