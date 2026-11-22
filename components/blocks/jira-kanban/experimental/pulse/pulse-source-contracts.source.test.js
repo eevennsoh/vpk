@@ -515,7 +515,7 @@ test("Experimental board consumers can disable the complete Insights surface", (
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/if \(insightsEnabled && \(fieldId === "parent" \|\| fieldId === "sprint"\)\)/u,
+		/usePageFilterActions\(boardFilter\.actions, boardFilter\.model\.conditions, insightsEnabled \? handleOpenTimeline : undefined\)/u,
 	);
 });
 
