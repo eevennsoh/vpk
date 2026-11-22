@@ -38,7 +38,7 @@ test("the List gallery item shows the interactive Jira list", async ({ page }) =
 	await expect(headerCells.first()).toHaveCSS("border-bottom-left-radius", "12px");
 	await expect(headerCells.last()).toHaveCSS("border-top-right-radius", "12px");
 	await expect(headerCells.last()).toHaveCSS("border-bottom-right-radius", "12px");
-	await expect(list.getByTestId("jira-list-sticky-footer")).toHaveCSS("border-top-width", "1px");
+	await expect(list.getByTestId("jira-list-sticky-footer")).toHaveCount(0);
 	await expect(list.getByRole("button", { name: "PAY-118", exact: true })).toBeVisible();
 	await list.getByRole("button", { name: "PAY-118", exact: true }).press("Enter");
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
@@ -255,7 +255,7 @@ test("expanded hierarchy chevrons do not look selected", async ({ page }) => {
 	expect(await list.getByRole("button", { name: "Collapse PAY-113" }).evaluate(styles)).toEqual(collapsedRow);
 });
 
-test("the list create line appears only when its control is hovered or focused", async ({ page }) => {
+test("the list separator reveals one create line and accepts a click across the row", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
@@ -268,8 +268,6 @@ test("the list create line appears only when its control is hovered or focused",
 	await page.mouse.move(x, upperBox.y + upperBox.height - 3);
 	const createAfter = list.getByRole("button", { name: "Create work item after PAY-118" });
 	await expect(createAfter).toHaveCSS("opacity", "1");
-	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
-	await createAfter.hover();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
 	const line = await list.locator("[data-insertion-line]").first().elementHandle();
 	const lineTop = await line!.evaluate((cell) => {
@@ -277,11 +275,9 @@ test("the list create line appears only when its control is hovered or focused",
 		const style = getComputedStyle(cell, "::after");
 		return bounds.top + (style.top === "auto" ? bounds.height - parseFloat(style.bottom) - parseFloat(style.height) : parseFloat(style.top));
 	});
-	await page.mouse.move(x, lowerBox.y + 3);
-	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
+	await page.mouse.move(x, lowerBox.y + 9);
 	const createBefore = list.getByRole("button", { name: "Create work item before PAY-999" });
 	await expect(createBefore).toHaveCSS("opacity", "1");
-	await createBefore.hover();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
 	const newLine = list.locator("[data-insertion-line]").first();
 	expect(await newLine.evaluate((cell, previous) => cell === previous, line)).toBe(true);
@@ -290,7 +286,7 @@ test("the list create line appears only when its control is hovered or focused",
 	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
 	await createAfter.focus();
 	await expect(lower.locator('[data-insertion-line="before"]')).not.toHaveCount(0);
-	await createAfter.press("Enter");
+	await page.mouse.click(x, upperBox.y + upperBox.height - 2);
 	await expect(upper.locator("xpath=following-sibling::tr[1]").getByRole("textbox", { name: "New work item summary" })).toBeVisible();
 });
 

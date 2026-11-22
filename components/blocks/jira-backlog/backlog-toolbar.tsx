@@ -9,15 +9,17 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupInput, InputGroupSearchAddon } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
-import { BACKLOG_STATUSES, type JiraBacklogStatus } from "./types";
+import { BACKLOG_STATUS_OPTIONS, type JiraBacklogProps, type JiraBacklogStatus } from "./types";
 
 interface BacklogToolbarProps {
 	query: string;
+	countLabel: string;
 	onQueryChange: (query: string) => void;
 	people: readonly JiraListPerson[];
 	assigneeIds: ReadonlySet<string | undefined>;
 	onToggleAssignee: (id: string | undefined) => void;
 	statuses: ReadonlySet<JiraBacklogStatus>;
+	statusOptions?: JiraBacklogProps["statusOptions"];
 	onToggleStatus: (status: JiraBacklogStatus) => void;
 }
 
@@ -46,11 +48,13 @@ function AssigneeFilter({ person, assigneeIds, onToggleAssignee }: Readonly<{
 
 export function BacklogToolbar({
 	query,
+	countLabel,
 	onQueryChange,
 	people,
 	assigneeIds,
 	onToggleAssignee,
 	statuses,
+	statusOptions = BACKLOG_STATUS_OPTIONS,
 	onToggleStatus,
 }: Readonly<BacklogToolbarProps>) {
 	return (
@@ -73,7 +77,8 @@ export function BacklogToolbar({
 					))}
 				</AvatarGroup>
 			) : null}
-			<div className="ml-auto">
+			<div className="ml-auto flex items-center gap-2">
+				<span className="text-xs text-text-subtle tabular-nums">{countLabel}</span>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={<Button aria-label="Filter backlog by status" aria-pressed={statuses.size > 0} size="icon" variant="outline" />}
@@ -81,7 +86,7 @@ export function BacklogToolbar({
 						<Icon render={<FilterIcon label="" />} />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						{BACKLOG_STATUSES.map((status) => (
+						{statusOptions.map(({ status }) => (
 							<DropdownMenuCheckboxItem key={status} checked={statuses.has(status)} onCheckedChange={() => onToggleStatus(status)}>
 								{status}
 							</DropdownMenuCheckboxItem>

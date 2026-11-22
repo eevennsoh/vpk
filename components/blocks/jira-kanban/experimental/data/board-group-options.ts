@@ -9,9 +9,15 @@ export const BOARD_GROUP_OPTIONS = [
 	{ id: "subtask", label: "Subtask" },
 ] as const;
 
-export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"];
 export const BOARD_SWIMLANE_OPTIONS = BOARD_GROUP_OPTIONS.filter((option) => option.id !== "atlassian-project");
-export type BoardSwimlaneOptionId = (typeof BOARD_SWIMLANE_OPTIONS)[number]["id"];
+export const TABLE_WORK_ITEM_GROUP_OPTIONS = [
+	{ id: "status", label: "Status" },
+	{ id: "work-type", label: "Work type" },
+	{ id: "parent", label: "Epic" },
+	...BOARD_SWIMLANE_OPTIONS.filter((option) => option.id !== "epic"),
+] as const;
+export type BoardSwimlaneOptionId = (typeof TABLE_WORK_ITEM_GROUP_OPTIONS)[number]["id"] | (typeof BOARD_SWIMLANE_OPTIONS)[number]["id"];
+export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"] | BoardSwimlaneOptionId;
 
 /**
  * Empty on purpose: the View menu opens with no grouping selected. The radio

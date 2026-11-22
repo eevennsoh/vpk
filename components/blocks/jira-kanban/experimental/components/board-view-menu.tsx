@@ -22,7 +22,7 @@ import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 
-import { BOARD_GROUP_OPTIONS, BOARD_SWIMLANE_OPTIONS, type BoardGroupOptionId, type BoardSwimlaneOptionId } from "../data/board-group-options";
+import { BOARD_GROUP_OPTIONS, BOARD_SWIMLANE_OPTIONS, TABLE_WORK_ITEM_GROUP_OPTIONS, type BoardGroupOptionId, type BoardSwimlaneOptionId } from "../data/board-group-options";
 import {
 	BOARD_AGENT_HOST_OPTIONS,
 	BOARD_AGENT_STATE_OPTIONS,
@@ -56,6 +56,7 @@ import { cn } from "@/lib/utils";
 export interface BoardGroupingControl {
 	value: BoardSwimlaneOptionId | null;
 	onChange: (group: BoardSwimlaneOptionId | null) => void;
+	table?: boolean;
 }
 
 interface BoardViewMenuProps {
@@ -100,6 +101,9 @@ const GROUP_OPTION_ICONS = {
 	labels: TagIcon,
 	priority: PriorityHighestIcon,
 	subtask: SubtasksIcon,
+	status: GroupIcon,
+	"work-type": ProjectIcon,
+	parent: EpicIcon,
 } satisfies Record<BoardGroupOptionId, ComponentType<NewCoreIconProps>>;
 
 function GroupOptionIcon({ icon: Glyph }: Readonly<{ icon: ComponentType<NewCoreIconProps> }>) {
@@ -187,11 +191,11 @@ export function BoardNeedsInputButton({
 export function BoardGroupByMenu({ compact = false, grouping }: Readonly<{ compact?: boolean; grouping?: BoardGroupingControl }>) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const [previewGroupId, setPreviewGroupId] = useState<BoardGroupOptionId | null>(null);
-	const options = grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS;
+	const options = grouping?.table ? TABLE_WORK_ITEM_GROUP_OPTIONS : grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS;
 	const selected = options.find((option) => option.id === (grouping ? grouping.value : previewGroupId));
 	const selectGroup = (id: string | null) => {
 		if (grouping) {
-			grouping.onChange(BOARD_SWIMLANE_OPTIONS.find((option) => option.id === id)?.id ?? null);
+			grouping.onChange((grouping.table ? TABLE_WORK_ITEM_GROUP_OPTIONS : BOARD_SWIMLANE_OPTIONS).find((option) => option.id === id)?.id ?? null);
 		} else {
 			setPreviewGroupId(BOARD_GROUP_OPTIONS.find((option) => option.id === id)?.id ?? null);
 		}

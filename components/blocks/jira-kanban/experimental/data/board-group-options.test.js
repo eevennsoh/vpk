@@ -1,8 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS, BOARD_SWIMLANE_OPTIONS } = require("./board-group-options.ts");
-const { groupBoardColumns, inlineCreateSwimlaneDefaults } = require("../lib/board-swimlanes.ts");
+const { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS, BOARD_SWIMLANE_OPTIONS, TABLE_WORK_ITEM_GROUP_OPTIONS } = require("./board-group-options.ts");
+const { groupBoardColumns, inlineCreateSwimlaneDefaults, toJiraWorkItemGroups } = require("../lib/board-swimlanes.ts");
 
 test("Group picker lists the production Jira dimensions in order", () => {
 	assert.deepEqual(
@@ -14,6 +14,12 @@ test("Group picker lists the production Jira dimensions in order", () => {
 test("Group picker default is ungrouped", () => {
 	assert.equal(BOARD_GROUP_DEFAULT_ID, "");
 	assert.ok(BOARD_GROUP_OPTIONS.every((option) => option.id !== BOARD_GROUP_DEFAULT_ID));
+});
+
+test("Table grouping offers one Epic option using parent grouping", () => {
+	assert.equal(TABLE_WORK_ITEM_GROUP_OPTIONS.filter(({ label }) => label === "Epic").length, 1);
+	assert.equal(TABLE_WORK_ITEM_GROUP_OPTIONS.find(({ label }) => label === "Epic").id, "parent");
+	assert.equal(TABLE_WORK_ITEM_GROUP_OPTIONS.some(({ label }) => label === "Parent"), false);
 });
 
 function card(code, fields = {}) {
@@ -59,6 +65,20 @@ test("Agent and Labels use one primary value per card and Agent omits work witho
 	assert.deepEqual(groups.map(({ label, count }) => [label, count]), [["Rovo", 2]]);
 	assert.equal(groups[0].columns[0].cards[0], visible);
 	assert.deepEqual(groupBoardColumns(columns, "labels").map(({ label, count }) => [label, count]), [["migration", 1], ["Uncategorised", 2]]);
+});
+
+test("Table grouping keeps the field visuals for each group", () => {
+	const parent = card("PAY-1", { title: "Parent", issueType: "epic" });
+	const child = card("PAY-2", { parentIssueKey: "PAY-1", issueType: "task", assignee: { id: "j", name: "Jamie", avatarSrc: "/jamie.png" }, agentActivities: [{ id: "a", name: "Rovo", agentVpkLogo: "rovo" }], tags: [{ text: "sdk" }] });
+	const columns = [column("To do", [parent, child])];
+	const visualFor = (dimension) => toJiraWorkItemGroups(groupBoardColumns(columns, dimension), dimension).find(({ issueKeys }) => issueKeys.includes("PAY-2")).visual;
+	assert.deepEqual(visualFor("assignee"), { kind: "assignee", person: child.assignee });
+	assert.deepEqual(visualFor("work-type"), { kind: "work-type", issueType: "task" });
+	assert.deepEqual(visualFor("priority"), { kind: "priority", priority: "medium" });
+	assert.deepEqual(visualFor("status"), { kind: "status" });
+	assert.deepEqual(visualFor("labels"), { kind: "label", hasValue: true });
+	assert.deepEqual(visualFor("parent"), { kind: "epic", key: "PAY-1", name: "Parent" });
+	assert.equal(visualFor("agent").vpkLogo, "rovo");
 });
 
 test("Epic and Subtask resolve parents outside the filtered board; Priority follows severity", () => {

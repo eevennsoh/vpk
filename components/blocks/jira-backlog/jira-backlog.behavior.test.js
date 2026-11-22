@@ -7,6 +7,24 @@ const items = [
 	{ id: "2", issueKey: "R1S-2", summary: "Second item", issueType: "story", priority: "major", status: "Done" },
 ];
 
+test("sprint hierarchy control toggles even when there are no subtasks", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-backlog/index.tsx",
+		exportName: "JiraBacklog",
+		props: { sprints: [{ id: "sprint", title: "Payments SDK sprint", items }], backlog: [] },
+	});
+	const expand = view.getByRole("button", { name: "Expand all subtasks in Payments SDK sprint" });
+	assert.equal(expand.disabled, false);
+	await view.focus(expand);
+	await view.press(null, " ");
+	const collapse = view.getByRole("button", { name: "Collapse all subtasks in Payments SDK sprint" });
+	assert.equal(collapse.getAttribute("aria-expanded"), "true");
+	assert.equal(view.isFocused(collapse), true);
+	await view.press(null, "Enter");
+	assert.equal(view.getByRole("button", { name: "Expand all subtasks in Payments SDK sprint" }).getAttribute("aria-expanded"), "false");
+	await view.unmount();
+});
+
 test("selection is scoped to a section and collapse preserves it", async () => {
 	const changes = [];
 	const view = await renderComponent({ entry: "components/blocks/jira-backlog/index.tsx", exportName: "JiraBacklog", props: {
@@ -52,7 +70,7 @@ test("assignee and status filters compose without clearing selected work", async
 	await view.click(view.getByRole("button", { name: "Filter backlog by Dirk Pink" }));
 	assert.match(view.container.textContent, /First item/);
 	assert.doesNotMatch(view.container.textContent, /Second item/);
-	assert.match(view.container.textContent, /0 of 1/);
+	assert.match(view.container.textContent, /1 of 2 work items/);
 
 	await view.click(view.getByRole("button", { name: "Filter backlog by status" }));
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Done" }));

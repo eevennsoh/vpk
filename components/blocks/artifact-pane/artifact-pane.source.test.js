@@ -270,7 +270,7 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*className="size-/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\([\s\S]*className="text-current"/u);
 	assert.match(PARENT_FIELD_SOURCE, /icon: null,[\s\S]*leadingVisual: <ArtifactEpicMenuIcon color=\{artifactEpicColor\(option\.key\)\} \/>/u);
-	assert.match(PARENT_FIELD_SOURCE, /<Tag[\s\S]*className="max-w-full self-center"[\s\S]*color=\{artifactEpicColor\(selected\.key\)\}[\s\S]*elemBefore=\{<ArtifactEpicIcon \/>\}[\s\S]*\{selected\.summary\}/u);
+	assert.match(PARENT_FIELD_SOURCE, /<ArtifactParentTag parent=\{selected\} \/>/u);
 	assert.doesNotMatch(PARENT_FIELD_SOURCE, /\{selected\.key\} \{selected\.summary\}/u);
 	assert.match(PARENT_FIELD_SOURCE, /\[&_\.rich-text-command-menu-item:hover\]:bg-bg-neutral-subtle-hovered!/u);
 	assert.doesNotMatch(DEMO_SOURCE, /<ParentRowField/u);

@@ -44,6 +44,15 @@ export function filterBoardByJiraConditions(columns: readonly JiraKanbanColumnDa
 	});
 }
 
+export function searchBoardWorkItems(columns: readonly JiraKanbanColumnData[], query: string): readonly JiraKanbanColumnData[] {
+	const search = query.trim().toLowerCase();
+	if (!search) return columns;
+	return columns.map((column) => {
+		const cards = column.cards.filter(({ code, title }) => `${code} ${title}`.toLowerCase().includes(search));
+		return cards.length === column.cards.length ? column : { ...column, cards, count: cards.length };
+	});
+}
+
 export function boardJiraFilterFields(columns: readonly JiraKanbanColumnData[], statusOptions?: readonly string[]): JiraFilterField[] {
 	const cards = columns.flatMap((column) => column.cards);
 	const options = (values: readonly string[]) => [...new Set(values)].map((value) => ({ value, label: value }));

@@ -21,7 +21,7 @@ function SwimlaneVisual({ identity, label }: Readonly<Pick<Swimlane, "identity" 
 				</Avatar>
 			) : <AvatarUnassigned kind="person" size="sm" label={label} />;
 		case "agent":
-			return <AgentAvatarVisual label={label} sizePx={24} avatarSrc={identity.avatarSrc} brandName={identity.brandName} vpkLogo={identity.vpkLogo} fallbackText={label.slice(0, 1)} />;
+			return <AgentAvatarVisual appearance="coding" label={label} sizePx={24} avatarSrc={identity.avatarSrc} brandName={identity.brandName} vpkLogo={identity.vpkLogo} fallbackText={label.slice(0, 1)} />;
 		case "priority": {
 			const PriorityIcon = PRIORITY_ICONS[identity.priority];
 			return <Icon render={<PriorityIcon color={PRIORITY_COLORS[identity.priority]} label="" />} />;

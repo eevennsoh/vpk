@@ -53,6 +53,17 @@ function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>)
 	);
 }
 
+export function ArtifactParentTag({ parent, placeholder = "Uncategorised" }: Readonly<{
+	parent: Pick<ParentOption, "key" | "summary"> | null;
+	placeholder?: string;
+}>) {
+	return (
+		<Tag className="max-w-full self-center" color={parent ? artifactEpicColor(parent.key) : "standard"} elemBefore={parent ? <ArtifactEpicIcon /> : undefined}>
+			{parent?.summary ?? placeholder}
+		</Tag>
+	);
+}
+
 export function ArtifactParentField({
 	value,
 	onChange,
@@ -77,13 +88,7 @@ export function ArtifactParentField({
 		<Popover onOpenChange={setOpen} open={open}>
 			{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<DetailValueTrigger aria-label={`Change ${fieldName}`} />}>
 				{selected ? (
-					<Tag
-						className="max-w-full self-center"
-						color={artifactEpicColor(selected.key)}
-						elemBefore={<ArtifactEpicIcon />}
-					>
-						{selected.summary}
-					</Tag>
+					<ArtifactParentTag parent={selected} />
 				) : (
 					<span className="text-sm text-text-subtlest">Add {fieldName}</span>
 				)}

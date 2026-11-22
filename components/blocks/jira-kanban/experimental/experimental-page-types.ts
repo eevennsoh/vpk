@@ -9,6 +9,7 @@ import type {
 	JiraListAgentSessionDropIntent,
 	JiraListInsertion,
 } from "@/components/blocks/jira-list";
+import type { JiraWorkItemGroup } from "@/components/blocks/jira-list/jira-list-grouping";
 import type {
 	JiraIssueAgentActivityLayout,
 	JiraIssueChrome,
@@ -35,6 +36,7 @@ export interface DraggedCardState {
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	groups?: readonly JiraWorkItemGroup[];
 	/**
 	 * True when Untracked is the in-flow column (Panel off). The list drops
 	 * its leading inset so it sits on the same rhythm as board statuses.
@@ -260,6 +262,12 @@ export interface ExperimentalJiraKanbanPageProps {
 	) => ReactNode;
 	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
+	/** Share functional search and grouping with the project’s list and alternate work item views. */
+	sharedWorkItemControls?: boolean;
+	alternateContent?: {
+		label: string;
+		render: (columns: readonly JiraKanbanColumnData[], groups?: readonly JiraWorkItemGroup[]) => ReactNode;
+	};
 	showAgentSessionColumn?: boolean;
 	/** Shows confidence rationale, actions, and status in untracked-session flyouts. Defaults to true. */
 	showAgentSessionFlyoutFooter?: boolean;

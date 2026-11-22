@@ -22,9 +22,11 @@ interface BoundaryDrag {
 function readRowEdges(root: HTMLElement, side: "sprint" | "backlog", top: number) {
 	return Array.from(root.querySelectorAll(`[data-sprint-boundary-side="${side}"] [data-backlog-item-row]`), (row) => {
 		const rect = row.getBoundingClientRect();
+		let last = row;
+		while (last.nextElementSibling?.hasAttribute("data-backlog-child-row")) last = last.nextElementSibling;
 		return {
 			midpoint: rect.top + rect.height / 2 - top,
-			edge: (side === "sprint" ? rect.top : rect.bottom) - top,
+			edge: (side === "sprint" ? rect.top : last.getBoundingClientRect().bottom) - top,
 		};
 	});
 }

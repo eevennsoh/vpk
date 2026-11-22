@@ -3,6 +3,38 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("list row create marker matches the board gap control", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	const cards = page.getByRole("region", { name: "To do work items" }).locator('[data-board-agent-session-drop-zone="issue"]');
+	await expect(cards.nth(1)).toBeVisible({ timeout: 30_000 });
+	const before = await cards.nth(0).boundingBox();
+	const after = await cards.nth(1).boundingBox();
+	const afterKey = await cards.nth(1).getAttribute("data-issue-key");
+	if (!before || !after || !afterKey) throw new Error("Expected two measurable board cards");
+	await page.mouse.move(after.x + 20, (before.y + before.height + after.y) / 2);
+	const boardControl = page.getByRole("button", { name: `Create work item before ${afterKey}` });
+	await expect(boardControl).toBeVisible();
+	const boardSize = await boardControl.evaluate((element) => {
+		const { width, height } = element.getBoundingClientRect();
+		return { width, height };
+	});
+
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const listControl = page.getByRole("button", { name: "Create work item after PAY-125" });
+	await listControl.focus();
+	const marker = listControl.locator("span.rounded-full");
+	await expect(marker).toBeVisible();
+	const listSize = await marker.evaluate((element) => {
+		const { width, height } = element.getBoundingClientRect();
+		return { width, height };
+	});
+	expect(listSize).toEqual(boardSize);
+	expect(listSize).toEqual({ width: 20, height: 20 });
+	await listControl.press("Enter");
+	await expect(page.getByRole("textbox", { name: "New work item summary" })).toBeFocused();
+});
+
 test("hovering a board gap keeps its create button opaque and opens the editor in place", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));

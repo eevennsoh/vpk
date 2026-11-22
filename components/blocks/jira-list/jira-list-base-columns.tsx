@@ -309,7 +309,7 @@ export function createJiraListBaseColumns({
 		},
 		...(showPullRequests ? [{
 			id: "pullRequest",
-			label: "Pull request",
+			label: "Pull requests",
 			widthClassName: "w-[240px]",
 			renderCell: (row: JiraListRowData) => <JiraListPullRequestCell issueKey={row.issueKey} pullRequests={row.pullRequests} />,
 		}] : []),

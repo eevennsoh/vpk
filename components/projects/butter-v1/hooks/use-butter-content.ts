@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState, type SetStateAction } from "r
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraBacklogSprintMove } from "@/components/blocks/jira-backlog";
+import { INITIAL_BUTTER_BACKLOG_ORDER, moveButterBacklogItems, type ButterBacklogOrder } from "../lib/backlog-order";
 import { createButterPayBoardColumns } from "../data/presentation-story";
 import { createButterWacBoardColumns, finishWacReviewAgents, normalizeWacBoardCurrentUser, WAC_REVIEW_FINISH_DELAY_MS } from "@/components/projects/butter-v1/data/wac-content";
 
@@ -12,6 +14,7 @@ type DetachedSessions = Readonly<Record<string, readonly AgentSessionItem[]>>;
 interface ContentSnapshot {
 	boardColumns: JiraKanbanColumnData[];
 	detachedAgentSessionsByCard: DetachedSessions;
+	backlogOrder: ButterBacklogOrder;
 }
 
 function resolveUpdate<T>(update: SetStateAction<T>, current: T): T {
@@ -22,8 +25,8 @@ function resolveUpdate<T>(update: SetStateAction<T>, current: T): T {
 export function useButterContent() {
 	const [contentMode, setContentMode] = useState<ContentMode>("default");
 	const [snapshots, setSnapshots] = useState<Record<ContentMode, ContentSnapshot>>(() => ({
-		default: { boardColumns: createButterPayBoardColumns(), detachedAgentSessionsByCard: {} },
-		wac: { boardColumns: createButterWacBoardColumns(), detachedAgentSessionsByCard: {} },
+		default: { boardColumns: createButterPayBoardColumns(), detachedAgentSessionsByCard: {}, backlogOrder: INITIAL_BUTTER_BACKLOG_ORDER },
+		wac: { boardColumns: createButterWacBoardColumns(), detachedAgentSessionsByCard: {}, backlogOrder: INITIAL_BUTTER_BACKLOG_ORDER },
 	}));
 	const defaultDetachedActivities = useRef<Record<string, JiraIssueAgentActivity>>({});
 	const wacDetachedActivities = useRef<Record<string, JiraIssueAgentActivity>>({});
@@ -75,6 +78,25 @@ export function useButterContent() {
 			},
 		}));
 	}, [contentMode]);
+	const moveBacklogItems = useCallback((move: JiraBacklogSprintMove) => {
+		setSnapshots((current) => ({
+			...current,
+			[contentMode]: {
+				...current[contentMode],
+				backlogOrder: moveButterBacklogItems(current[contentMode].backlogOrder, move),
+			},
+		}));
+	}, [contentMode]);
+	const updateBacklogOrder = useCallback((sectionId: string, issueKeys: readonly string[]) => {
+		setSnapshots((current) => {
+			const snapshot = current[contentMode];
+			const field = sectionId === "backlog" ? "backlogKeys" : "sprintKeys";
+			return {
+				...current,
+				[contentMode]: { ...snapshot, backlogOrder: { ...snapshot.backlogOrder, [field]: issueKeys } },
+			};
+		});
+	}, [contentMode]);
 	const toggleWacContent = useCallback(() => {
 		setContentMode((current) => current === "wac" ? "default" : "wac");
 	}, []);
@@ -85,6 +107,8 @@ export function useButterContent() {
 		detachedActivitiesByIdRef: contentMode === "wac" ? wacDetachedActivities : defaultDetachedActivities,
 		setBoardColumns,
 		setDetachedAgentSessionsByCard,
+		moveBacklogItems,
+		updateBacklogOrder,
 		toggleWacContent,
 		wacContent: contentMode === "wac",
 	};

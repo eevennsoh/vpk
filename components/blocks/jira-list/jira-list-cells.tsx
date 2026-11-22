@@ -99,17 +99,17 @@ function getPersonInitials(name: string): string {
 		.join("");
 }
 
-export function JiraListAvatar({ person }: Readonly<{ person: JiraListPerson }>) {
+export function JiraListAvatar({ person, size = "sm" }: Readonly<{ person: JiraListPerson; size?: "xs" | "sm" }>) {
 	if (person.avatarUnassignedKind) {
 		return (
-			<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size="sm">
+			<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size={size}>
 				<AvatarFallback>{person.avatarUnassignedKind === "agent" ? "AI" : "?"}</AvatarFallback>
 			</Avatar>
 		);
 	}
 
 	return (
-		<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size="sm">
+		<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size={size}>
 			{person.avatarSrc ? <AvatarImage alt="" src={person.avatarSrc} /> : null}
 			<AvatarFallback>{getPersonInitials(person.name)}</AvatarFallback>
 		</Avatar>

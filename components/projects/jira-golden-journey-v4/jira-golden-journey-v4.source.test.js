@@ -533,7 +533,7 @@ test("the Jira tab bar splits or collapses work items per Simple views", () => {
 	assert.match(PAGE_SOURCE, /const showBoardContent = activeTab\?\.hasContent === true;/u);
 	assert.match(PAGE_SOURCE, /showBoardContent=\{showBoardContent\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent \|\| Boolean\(alternateContent\)\}/u);
 });
 
 test("the Work items header switches between Board and List views with their icons", () => {
@@ -614,7 +614,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{workItemSurfaceLabel\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /ToggleGroup/u);
 	assert.match(

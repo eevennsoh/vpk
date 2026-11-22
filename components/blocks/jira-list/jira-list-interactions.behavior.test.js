@@ -7,6 +7,21 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("Epic grouping shows the epic tag and keeps its disclosure control", async () => {
+	const view = await renderComponent({ source: `
+		import { JiraListGroupHeader } from "@/components/blocks/jira-list/jira-list-table";
+		export default function Probe() {
+			return <table><tbody><JiraListGroupHeader columnCount={2} group={{ id: "PAY-1", label: "PAY-1 Payments", issueKeys: ["PAY-2", "PAY-3"], count: 2, collapsed: false, onToggle() {}, visual: { kind: "epic", key: "PAY-1", name: "Payments" } }} /></tbody></table>;
+		}
+	` });
+	const header = view.getByRole("button", { name: "Collapse PAY-1 Payments" });
+	const tag = header.closest("tr").querySelector('[data-slot="tag"]');
+	assert.equal(tag?.textContent, "Payments");
+	assert.ok(tag.querySelector("svg"));
+	assert.equal(header.getAttribute("aria-expanded"), "true");
+	await view.unmount();
+});
+
 test("Butter list PR titles stay non-navigating and reveal their card on keyboard focus", async () => {
 	const view = await renderComponent({ source: `
 		import { JiraList } from "@/components/blocks/jira-list";
@@ -23,7 +38,7 @@ test("Butter list PR titles stay non-navigating and reveal their card on keyboar
 			return <JiraList rows={createListRows(columns, [])} showPullRequests />;
 		}
 	` });
-	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull request" })), true);
+	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull requests" })), true);
 	const trigger = view.container.querySelector('[aria-label="Pull request #1851: Port 3DS flow"]');
 	assert.equal(trigger.textContent, "#1851 Port 3DS flow");
 	assert.equal(trigger.tagName, "SPAN");

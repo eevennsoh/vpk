@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import BacklogIcon from "@atlaskit/icon/core/backlog";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { Suspense, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import { useInstantLayoutTransition, useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -113,16 +113,19 @@ const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-di
 const SkillDirectoryDialog = dynamic(() => import("@/components/blocks/skill-directory").then((module) => module.SkillDirectoryDialog));
 const ButterGalleryPullRequest = dynamic(() => import("./components/butter-gallery-pull-request"));
 const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-development-journey").then((module) => module.ProjectButterDevelopmentGallery));
+const ButterBacklog = dynamic(() => import("./components/butter-backlog"));
 
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
 const BUTTER_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, BUTTER_DEFAULT_REPORTER];
 const BUTTER_FILTER_STATUSES = ["To do", "In progress", "In review", "Done"] as const;
 const WAC_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, WAC_DEFAULT_REPORTER];
+const BUTTER_WORK_ITEM_TABS = getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list");
+const BUTTER_BACKLOG_TAB = "Backlog";
 const BUTTER_TABS = [
-	{ label: "Backlog", icon: BacklogIcon, hasContent: false, placeholder: "No backlog content here yet" },
-	...getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list"),
+	{ label: BUTTER_BACKLOG_TAB, icon: BacklogIcon, hasContent: true },
+	...BUTTER_WORK_ITEM_TABS,
 ];
-const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
+const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_WORK_ITEM_TABS);
 const BUTTER_ADD_AGENT_LABEL = "Add agent";
 const BUTTER_PINNED_CODING_AGENT_IDS = BUTTER_PAY_BOARD_AGENTS.map((agent) => agent.id);
 const BUTTER_SETTINGS_DESIGN_VARIANT_IDS = [
@@ -350,10 +353,13 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		workItemRef.current?.open(card.code === BUTTER_SUGGESTION_DEMO_KEY ? merchantJourneyAuthoredCard(card) : card, columnTitle);
 	}, []);
 	const {
+		backlogOrder,
 		boardColumns,
 		contentMode,
 		detachedActivitiesByIdRef,
 		detachedAgentSessionsByCard,
+		moveBacklogItems,
+		updateBacklogOrder,
 		setBoardColumns,
 		setDetachedAgentSessionsByCard,
 		toggleWacContent,
@@ -408,11 +414,13 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 	const createWorkItemDropZoneLabel = "Drop to create work item";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(BUTTER_DEFAULT_TAB_LABEL);
+	const backlogPanelId = useId();
 	const startInstantTransition = useInstantTransition();
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = standaloneView ?? activeTab?.view ?? workItemView;
-	const showBoardContent = boardOnly || activeTab?.hasContent === true;
+	const showBacklog = !boardOnly && activeTab?.label === BUTTER_BACKLOG_TAB;
+	const showBoardContent = boardOnly || (!showBacklog && activeTab?.hasContent === true);
 	const [agentSessionColumnInteracting, setAgentSessionColumnInteracting] = useState(false);
 	const defaultSessionSync = useButterAgentSessionSync({
 		active: showBoardContent && !wacContent,
@@ -590,12 +598,12 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		const journey = !wacContent && !boardOnly && issueKey === BUTTER_SUGGESTION_DEMO_KEY && session.agent.name === "Claude" && phase === "invoke";
 		pendingWorkItemAssignment.current = { issueKey, session, journey };
 		if (journey) { setJourneySession(session); setPhase("starting"); }
-		else startAgentSession(issueKey, toButterAgentActivityFromSession(session));
-	}, [boardColumns, boardOnly, phase, setJourneySession, setPhase, startAgentSession, wacContent]);
+		else startAgentSession(issueKey, toButterAgentActivityFromSession(session), { animate: !showBacklog });
+	}, [boardColumns, boardOnly, phase, setJourneySession, setPhase, showBacklog, startAgentSession, wacContent]);
 	const handleWorkItemClose = useCallback(() => {
 		const pending = pendingWorkItemAssignment.current;
 		pendingWorkItemAssignment.current = null;
-		if (!pending) return;
+		if (!pending || showBacklog) return;
 		if (activeView === "list") {
 			const { issueKey, session } = pending;
 			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
@@ -603,7 +611,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		} else if (!pending.journey) {
 			setAgentAssignmentRequest(pending);
 		}
-	}, [activeView, flashListRow]);
+	}, [activeView, flashListRow, showBacklog]);
 	useImperativeHandle(ref, () => ({ cancelReplay, selectStep: (step) => {
 		startReplay(step);
 		const column = boardColumns.find((candidate) => candidate.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY));
@@ -627,6 +635,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		createBoardFromAgentSession,
 		createFromAgentSession,
 		getProps: getListProps,
+		onAssignedAgentIdsChange: onListAssignedAgentIdsChange,
 		onVisibleRowsChange,
 	} = useButterList({
 		agents: BUTTER_BOARD_AGENTS,
@@ -863,16 +872,38 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						showAgentSessionLinkWorkItemMenuItem={designVariants.manualLink}
 						showAgentSessionOverflow={false}
 						showBoardContent={showBoardContent}
+						sharedWorkItemControls
+						alternateContent={showBacklog ? {
+							label: "backlog",
+							render: (filteredColumns, groups) => (
+								<ButterBacklog
+									agentCatalog={agentCatalog}
+									columns={boardColumns}
+									filteredColumns={filteredColumns}
+									groups={groups}
+									onAssignedAgentIdsChange={onListAssignedAgentIdsChange}
+									onAssignedAgentSelect={handleListAssignedAgentSelect}
+									onIssueOpen={handleListIssueOpen}
+									onMove={moveBacklogItems}
+									onOrderChange={updateBacklogOrder}
+									order={backlogOrder}
+									panelId={backlogPanelId}
+									setBoardColumns={setBoardColumns}
+									wacContent={wacContent}
+								/>
+							),
+						} : undefined}
 						moreControlsPlacement="end"
 						headerControlsLayout="trailing-icons"
 						showMoreControls
-						showCustomizeControl
+						showCustomizeControl={showBoardContent && activeView === "board"}
 						simpleViews={false}
 						needsInputCount={needsInputCount}
 						showNeedsInputButton={false}
 						viewTabs={(
 							<JiraViewTabs
 								animateIndicator
+								externalPanelIds={{ [BUTTER_BACKLOG_TAB]: backlogPanelId }}
 								selectedTabLabel={selectedTabLabel}
 								onTabChange={handleTabChange}
 								tabs={tabs}

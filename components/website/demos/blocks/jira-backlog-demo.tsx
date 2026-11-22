@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { JiraBacklog, type JiraBacklogItem } from "@/components/blocks/jira-backlog";
+import { JiraBacklog, type JiraBacklogInlineCreate, type JiraBacklogItem, type JiraBacklogSprintMove } from "@/components/blocks/jira-backlog";
 import { PROJECT_BUTTER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agents";
 import type { JiraListAssignedAgent, JiraListPerson } from "@/components/blocks/jira-list/jira-list-types";
 
@@ -60,18 +60,51 @@ const INITIAL_ITEMS: JiraBacklogItem[] = [
 export default function JiraBacklogDemo() {
 	const [items, setItems] = useState(initialItems);
 	const [sprintSize, setSprintSize] = useState(3);
+	const sprint = items.slice(0, sprintSize);
+	const backlog = items.slice(sprintSize);
+	function moveBoundary({ itemIds, destination }: JiraBacklogSprintMove) {
+		const movedKeys = new Set(itemIds);
+		const moves = (item: JiraBacklogItem) => movedKeys.has(item.id) || Boolean(item.parentIssueKey && movedKeys.has(item.parentIssueKey));
+		const moved = items.filter(moves);
+		const nextSprint = destination === "sprint" ? [...sprint, ...moved] : sprint.filter((item) => !moves(item));
+		const nextBacklog = destination === "sprint" ? backlog.filter((item) => !moves(item)) : [...moved, ...backlog];
+		setItems([...nextSprint, ...nextBacklog]);
+		setSprintSize(nextSprint.length);
+	}
+	function createItem({ sectionId, summary, parentIssueKey, insertion }: JiraBacklogInlineCreate) {
+		const inSprint = sectionId === "sprint-4";
+		const anchor = items.findIndex(({ issueKey }) => issueKey === insertion?.relativeToIssueKey);
+		const index = anchor >= 0 ? anchor + Number(insertion?.position === "after") : inSprint ? sprintSize : items.length;
+		const id = `R1S-${Math.max(...items.map(({ issueKey }) => Number(issueKey.split("-").at(-1)))) + 1}`;
+		const item: JiraBacklogItem = { id, issueKey: id, summary, parentIssueKey, issueType: parentIssueKey ? "subtask" : "task", status: "To do", priority: "medium" };
+		setItems([...items.slice(0, index), item, ...items.slice(index)]);
+		if (inSprint) setSprintSize(sprintSize + 1);
+		return id;
+	}
+	function reorderItems(sectionId: string, keys: readonly string[]) {
+		const inSprint = sectionId === "sprint-4";
+		const section = inSprint ? sprint : backlog;
+		const byKey = new Map(section.map((item) => [item.issueKey, item]));
+		const ordered = keys.flatMap((key) => {
+			const item = byKey.get(key);
+			byKey.delete(key);
+			return item ? [item] : [];
+		});
+		const next = [...ordered, ...byKey.values()];
+		setItems(inSprint ? [...next, ...backlog] : [...sprint, ...next]);
+	}
 	return (
 		<div className="min-w-0 bg-surface p-4 md:p-6">
 			<JiraBacklog
-				sprints={[{ id: "sprint-4", title: "R1S Design Sprint 4", dateLabel: "3 Mar – 17 Mar", items: items.slice(0, sprintSize) }]}
-				backlog={items.slice(sprintSize)}
+				sprints={[{ id: "sprint-4", title: "R1S Design Sprint 4", dateLabel: "3 Mar – 17 Mar", items: sprint }]}
+				backlog={backlog}
 				sprintBoundary={{
 					sprintId: "sprint-4",
-					onMove: ({ itemIds, destination }) => setSprintSize((current) => (
-						destination === "sprint" ? current + itemIds.length : current - itemIds.length
-					)),
+					onMove: moveBoundary,
 				}}
 				people={PEOPLE}
+				onCreate={createItem}
+				onReorder={reorderItems}
 				onAssignedAgentIdsChange={(issueKey, agentIds) => setItems((current) => current.map((item) => (
 					item.issueKey === issueKey ? { ...item, agentSessions: demoSessions(item, agentIds) } : item
 				)))}

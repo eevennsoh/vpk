@@ -93,6 +93,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder?: string;
+	searchControl?: { value: string; onValueChange: (value: string) => void };
+	allowGroupingInList?: boolean;
 	selectedAssigneeIds?: ReadonlySet<string>;
 	/**
 	 * The control row (search, facepile, filter, group, right-hand icon
@@ -243,6 +245,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	agentFilterId,
 	onAgentFilterIdChange,
 	needsInputCount,
+	searchControl,
+	allowGroupingInList = false,
 	showNeedsInputButton = true,
 	simpleViews,
 	viewTabs,
@@ -272,6 +276,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 					onShownSessionStateIdsChange={onShownSessionStateIdsChange}
 					onViewChange={onViewChange}
 					searchPlaceholder={searchPlaceholder}
+					searchControl={searchControl}
+					allowGroupingInList={allowGroupingInList}
 					selectedAssigneeIds={selectedAssigneeIds}
 					showCustomizeControl={showCustomizeControl}
 					viewConfigurationHostRef={viewConfigurationHostRef}
@@ -461,6 +467,8 @@ function BoardHeaderControlsRow({
 	onShownSessionStateIdsChange,
 	onViewChange,
 	searchPlaceholder,
+	searchControl,
+	allowGroupingInList,
 	selectedAssigneeIds,
 	showCustomizeControl,
 	viewConfigurationHostRef,
@@ -494,6 +502,8 @@ function BoardHeaderControlsRow({
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder: string;
+	searchControl?: ExperimentalJiraKanbanBoardHeaderProps["searchControl"];
+	allowGroupingInList: boolean;
 	selectedAssigneeIds: ReadonlySet<string>;
 	showCustomizeControl: boolean;
 	viewConfigurationHostRef: RefObject<HTMLDivElement | null>;
@@ -504,8 +514,9 @@ function BoardHeaderControlsRow({
 	surfaceLabel: string;
 }>) {
 	const trailingIcons = headerControlsLayout === "trailing-icons";
-	const boardGrouping = activeView === "board" ? grouping : undefined;
-	const showGrouping = activeView === "board" || !grouping;
+	const canGroup = activeView === "board" || allowGroupingInList;
+	const boardGrouping = canGroup ? grouping : undefined;
+	const showGrouping = canGroup || !grouping;
 	const needsInputButton = showNeedsInputButton && needsInputCount !== undefined ? (
 		<BoardNeedsInputButton
 			agentFilterId={agentFilterId}
@@ -538,7 +549,14 @@ function BoardHeaderControlsRow({
 				<InputGroupSearchAddon>
 					<Icon render={<SearchIcon label="" size="small" />} />
 				</InputGroupSearchAddon>
-				<InputGroupInput type="search" aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
+				<InputGroupInput
+					type="search"
+					aria-label={searchPlaceholder}
+					placeholder={searchPlaceholder}
+					readOnly={!searchControl}
+					value={searchControl?.value}
+					onChange={searchControl ? (event) => searchControl.onValueChange(event.target.value) : undefined}
+				/>
 			</InputGroup>
 
 			{facepile ?? (

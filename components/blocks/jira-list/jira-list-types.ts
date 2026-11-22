@@ -97,11 +97,14 @@ export interface JiraListExtraColumn {
 }
 
 export interface JiraListDraftWorkItem {
+	afterIssueKey?: string;
+	createdIssueKeys?: readonly string[];
 	assignee?: JiraListPerson;
 	dueDate?: string;
 	insertAtIndex: number | null;
 	issueKeyLabel?: string;
 	issueType?: JiraListIssueType;
+	parentIssueKey?: string;
 	summary: string;
 }
 
@@ -125,6 +128,8 @@ export interface JiraListRowFlash {
 
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
+	groupHeaders?: ReadonlyMap<string, readonly import("./jira-list-grouping").JiraListGroupHeading[]>;
+	trailingGroupHeaders?: readonly import("./jira-list-grouping").JiraListGroupHeading[];
 	showPullRequests?: boolean;
 	addAgentLabel?: string;
 	activeIssueKey?: string;
@@ -133,6 +138,7 @@ export interface JiraListProps {
 	className?: string;
 	createLabel?: string;
 	footerCountAlignment?: "center" | "end";
+	hideStickyFooter?: boolean;
 	totalCountLabel?: string;
 	visibleCount?: number;
 	selectedIssueKeys?: ReadonlySet<string>;
@@ -146,7 +152,6 @@ export interface JiraListProps {
 	onAgentAssign?: (issueKey: string, agent: AgentSelectorAgent) => void;
 	/** Creates a work item. Omit to remove Create controls from the list. */
 	onCreate?: (insertion?: JiraListInsertion) => void;
-	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
 	/** Updates a work item's due date as a local calendar date (YYYY-MM-DD). */
 	onDueDateChange?: (issueKey: string, dueDate: string | undefined) => void;
@@ -154,6 +159,7 @@ export interface JiraListProps {
 	onDraftWorkItemAssigneeChange?: (assignee: JiraListPerson | undefined) => void;
 	onDraftWorkItemDueDateChange?: (dueDate: string | undefined) => void;
 	onDraftWorkItemIssueTypeChange?: (issueType: JiraListIssueType) => void;
+	onDraftWorkItemParentChange?: (parentIssueKey: string | undefined) => void;
 	onDraftWorkItemSubmit?: () => void;
 	onDraftWorkItemSummaryChange?: (summary: string) => void;
 	onIssueClick?: (row: JiraListRowData) => void;

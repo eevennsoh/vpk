@@ -1,14 +1,16 @@
 import { useRef, useState, type RefObject } from "react";
-import DragHandleHorizontalIcon from "@atlaskit/icon/core/drag-handle-horizontal";
+import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TOOLTIP_CONTENT_CLASS_NAME } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useSprintBoundaryDrag } from "./use-sprint-boundary-drag";
 import type { JiraBacklogItem, JiraBacklogProps, JiraBacklogSection } from "./types";
 
-function BoundaryRule() {
-	return <span aria-hidden className="h-px flex-1 bg-border" />;
+function BoundaryRule({ dragging = false }: Readonly<{ dragging?: boolean }>) {
+	return <span aria-hidden data-slot="sprint-boundary-rule" className={dragging ? "h-px flex-1 bg-icon-subtlest" : "h-px flex-1 bg-border [mask-image:repeating-linear-gradient(to_right,#000_0_3px,transparent_3px_9px)]"} />;
 }
 
 export function SprintBoundary({
@@ -63,13 +65,13 @@ export function SprintBoundary({
 					render={<Button
 						{...dragHandlers}
 						aria-label="Move work items between sprint and backlog"
-						className="-my-3 h-11 w-full cursor-ns-resize touch-none gap-2 px-0 hover:bg-transparent"
+						className="-my-3 h-11 w-full cursor-ns-resize touch-none gap-2 px-0 hover:bg-transparent active:bg-transparent in-data-[dragging-sprint-boundary]:opacity-0 [&:hover_[data-slot=sprint-boundary-rule]]:[mask-image:none] [&:not([aria-expanded=true])_svg]:text-icon-disabled! [&:hover:not([aria-expanded=true])_svg]:text-icon-subtlest! [&:focus-visible:not([aria-expanded=true])_svg]:text-icon-subtlest!"
 						selectedAppearance="icon-only"
 						variant="ghost"
 					/>}
 				>
 					<BoundaryRule />
-					<Icon render={<DragHandleHorizontalIcon label="" />} />
+					<Icon render={<GrowVerticalIcon label="" />} />
 					<BoundaryRule />
 				</PopoverTrigger>
 				<PopoverContent aria-label="Move work items" className="w-max max-w-(--available-width) gap-1 p-2">
@@ -98,8 +100,12 @@ export function SprintBoundary({
 				hidden
 				ref={lineRef}
 			>
-				<div className="h-0.5 bg-border-selected" />
-				<span className="absolute top-0 left-2 -translate-y-1/2 rounded-sm bg-bg-neutral-bold px-2 py-1 text-xs text-text-inverse shadow-sm" ref={labelRef} />
+				<div className="flex -translate-y-1/2 items-center gap-2 text-icon-subtlest">
+					<BoundaryRule dragging />
+					<Icon render={<GrowVerticalIcon label="" />} />
+					<BoundaryRule dragging />
+				</div>
+				<span className={cn(TOOLTIP_CONTENT_CLASS_NAME, "absolute top-0 left-2 -translate-y-1/2")} ref={labelRef} />
 			</div>
 			<span className="sr-only" role="status">{announcement}</span>
 		</>

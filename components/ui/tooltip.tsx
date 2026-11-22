@@ -14,6 +14,9 @@ const TooltipPortalContainerContext = React.createContext<
 export const TOOLTIP_POPUP_ANIMATION_CLASSES =
 	"transition-[opacity,translate] duration-normal ease-out-practical motion-reduce:transition-none data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=top]:data-starting-style:translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=inline-start]:data-starting-style:translate-x-2 data-[side=inline-end]:data-starting-style:-translate-x-2 data-[side=bottom]:data-ending-style:-translate-y-2 data-[side=top]:data-ending-style:translate-y-2 data-[side=left]:data-ending-style:translate-x-2 data-[side=right]:data-ending-style:-translate-x-2 data-[side=inline-start]:data-ending-style:translate-x-2 data-[side=inline-end]:data-ending-style:-translate-x-2"
 
+export const TOOLTIP_CONTENT_CLASS_NAME =
+	"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden"
+
 type TooltipProviderProps = TooltipPrimitive.Provider.Props & {
 	delay?: number
 	portalContainer?: TooltipPrimitive.Portal.Props["container"]
@@ -147,7 +150,7 @@ function TooltipContent({
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"
 					className={cn(
-						"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden",
+						TOOLTIP_CONTENT_CLASS_NAME,
 						shouldAnimate
 							? TOOLTIP_POPUP_ANIMATION_CLASSES
 							: "transition-none motion-reduce:transition-none",
