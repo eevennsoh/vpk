@@ -482,14 +482,14 @@ test("parent picker rows follow dropdown spacing and select a work item", async 
 	await expect(page.getByRole("button", { name: "Change parent" })).toContainText(selectedLabel);
 });
 
-test("board parent filter follows the searchable parent picker", async ({ page }) => {
+test("board epic filter follows the searchable parent picker", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Filter board", exact: true }).click();
-	await page.getByRole("menuitem", { name: "Parent Open submenu" }).hover();
-	const menu = page.getByRole("menu", { name: "Parent filter options" });
+	await page.getByRole("menuitem", { name: "Epic Open submenu" }).hover();
+	const menu = page.getByRole("menu", { name: "Epic filter options" });
 	await expect(menu).toHaveCSS("width", "320px");
-	const search = menu.getByRole("textbox", { name: "Search parent" });
-	await expect(search).toHaveAttribute("placeholder", "Search parent");
+	const search = menu.getByRole("textbox", { name: "Search epic" });
+	await expect(search).toHaveAttribute("placeholder", "Search epic");
 	await expect(search).toBeFocused();
 	const row = menu.getByRole("menuitemcheckbox", { name: "Retire LegacyGatewayAdapter (PAY-90)" });
 	await expect(row).toBeVisible();
@@ -508,7 +508,7 @@ test("board parent filter follows the searchable parent picker", async ({ page }
 	await search.fill("not a parent");
 	await expect(menu.getByText("No work items found")).toBeVisible();
 	await search.press("Escape");
-	await expect(page.getByRole("group", { name: "Parent is Webhooks and contract safety (PAY-91)" })).toBeVisible();
+	await expect(page.getByRole("group", { name: "Epic is Webhooks and contract safety (PAY-91)" })).toBeVisible();
 });
 
 test("board sprint filter uses the parent picker treatment", async ({ page }) => {
@@ -546,7 +546,7 @@ test("filter labels truncate before their hover and focus actions", async ({ pag
 	await page.getByRole("button", { name: "Filter board", exact: true }).click();
 	for (const [field, name, pinName] of [
 		["Sprint", "Groundwork for the adapter retirement (Sprint 23)", "Pin Groundwork for the adapter retirement (Sprint 23)"],
-		["Parent", "Retire LegacyGatewayAdapter (PAY-90)", "Pin Retire LegacyGatewayAdapter (PAY-90)"],
+		["Epic", "Retire LegacyGatewayAdapter (PAY-90)", "Pin Retire LegacyGatewayAdapter (PAY-90)"],
 		["Assignee", "Alexandra Constantinopoulos", "Pin Alexandra Constantinopoulos"],
 	] as const) {
 		await page.getByRole("menuitem", { name: `${field} Open submenu` }).hover();

@@ -1,15 +1,16 @@
 "use client";
 
-import { useId } from "react";
-import { AdvancedPanel } from "@/components/blocks/jira-filter/editor-panels";
+import { useId, useState } from "react";
+import { AdvancedFilterBuilder } from "@/components/blocks/jira-filter/advanced-filter-builder";
+import { JqlEditor } from "@/components/blocks/jira-filter/jql-editor";
 import {
 	parseJiraFilter,
 	type JiraFilterCondition,
 	type JiraFilterField,
 } from "@/components/blocks/jira-filter/model";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 export function ButterAdvancedPanel({
 	fields,
@@ -20,17 +21,7 @@ export function ButterAdvancedPanel({
 	draft: readonly JiraFilterCondition[];
 	onChange: (next: JiraFilterCondition[]) => void;
 }>) {
-	return (
-		<div className="max-h-60 overflow-y-auto">
-			<AdvancedPanel
-				compact
-				fields={fields}
-				conditions={draft}
-				onChange={onChange}
-				onClear={() => onChange([])}
-			/>
-		</div>
-	);
+	return <AdvancedFilterBuilder fields={fields} draft={draft} onChange={onChange} />;
 }
 
 export function ButterJqlPanel({
@@ -50,56 +41,17 @@ export function ButterJqlPanel({
 	onApply: (next: JiraFilterCondition[]) => void;
 	onError: (error: string | null) => void;
 }>) {
-	const errorId = useId();
+	const [expanded, setExpanded] = useState(false);
 	const apply = () => {
 		const result = parseJiraFilter(jql, fields);
 		onError(result.error);
 		if (!result.error) onApply(result.conditions);
 	};
-	return (
-		<div className="space-y-2 p-1" role="none">
-			<label htmlFor={`${errorId}-query`} className="text-sm font-medium">
-				JQL query
-			</label>
-			<Textarea
-				id={`${errorId}-query`}
-				isMonospaced
-				value={jql}
-				onChange={(event) => onDraftChange(event.target.value)}
-				onKeyDown={(event) => {
-					if (event.key === "Enter" && event.shiftKey) {
-						event.preventDefault();
-						apply();
-					}
-				}}
-				aria-invalid={Boolean(error)}
-				aria-describedby={error ? errorId : undefined}
-				className="min-h-24"
-			/>
-			{error ? (
-				<p id={errorId} role="alert" className="text-text-danger">
-					{error}
-				</p>
-			) : null}
-			<div className="flex items-center justify-between gap-2">
-				<Button
-					variant="ghost"
-					size="compact"
-					onClick={() => {
-						onDraftChange("");
-						onApply([]);
-					}}
-					disabled={!value.length && !jql}
-				>
-					Clear
-				</Button>
-				<span className="text-xs text-text-subtlest">Shift+Enter to apply</span>
-				<Button variant="secondary" size="compact" onClick={apply}>
-					Apply
-				</Button>
-			</div>
-		</div>
-	);
+	const clear = () => { onDraftChange(""); onApply([]); onError(null); };
+	return <>
+		<JqlEditor fields={fields} value={jql} error={error} canClear={Boolean(value.length || jql)} onValueChange={onDraftChange} onApply={apply} onClear={clear} onExpand={() => setExpanded(true)} />
+		<Dialog open={expanded} onOpenChange={setExpanded}><DialogContent size="lg" className="z-[750] gap-2" overlayProps={{ className: "z-[740]" }}><DialogTitle>JQL query</DialogTitle><DialogDescription>Write and apply a filter for the board.</DialogDescription><JqlEditor expanded fields={fields} value={jql} error={error} canClear={Boolean(value.length || jql)} onValueChange={onDraftChange} onApply={apply} onClear={clear} /></DialogContent></Dialog>
+	</>;
 }
 
 export function ButterNamePanel({

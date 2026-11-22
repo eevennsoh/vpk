@@ -3,6 +3,82 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("saved board filters apply their conditions and can be pinned", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Filter board", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Saved Open submenu" }).hover();
+	const saved = page.getByRole("menu", { name: "Saved filters" });
+	await expect(saved.getByRole("menuitemcheckbox")).toHaveText(["Open pull requests", "Reviews needing agent input", "Tasks in progress", "Priya’s work"]);
+	for (const row of await saved.getByRole("menuitemcheckbox").all()) {
+		const icon = row.locator('[data-slot="icon-tile"]');
+		await expect(icon).toHaveAttribute("aria-hidden", "true");
+		await expect(icon).toHaveCSS("width", "16px");
+		await expect(icon).toHaveCSS("height", "16px");
+		await expect(icon.locator("svg")).toHaveCSS("width", "12px");
+		await expect(icon.locator("svg")).toHaveCSS("height", "12px");
+	}
+	await saved.getByRole("menuitemcheckbox", { name: "Reviews needing agent input" }).click();
+	await expect(saved.getByRole("menuitemcheckbox", { name: "Reviews needing agent input" })).toHaveAttribute("aria-checked", "true");
+	await saved.getByRole("menuitem", { name: "Clear", exact: true }).hover();
+	await saved.getByRole("menuitem", { name: "Clear", exact: true }).focus();
+	const selected = saved.getByRole("menuitemcheckbox", { name: "Reviews needing agent input" });
+	const gap = await selected.evaluate((row) => {
+		const label = row.querySelector(".truncate")!.getBoundingClientRect();
+		const indicator = row.querySelector('[data-slot="dropdown-menu-checkbox-item-indicator"]')!.getBoundingClientRect();
+		return indicator.left - label.right;
+	});
+	expect(gap).toBeGreaterThanOrEqual(8);
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("group", { name: "Status is In review" })).toBeVisible();
+	await expect(page.getByRole("group", { name: "Agent status is Needs input" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-112: Confirm the sandbox key retention window before replay" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic" })).toHaveCount(0);
+	await page.getByRole("button", { name: "Filter board (2)", exact: true }).click();
+	await page.getByRole("menuitem", { name: "Saved Open submenu" }).hover();
+	const openPullRequests = saved.getByRole("menuitemcheckbox", { name: "Open pull requests" });
+	await openPullRequests.hover();
+	const measureAction = (element: Element) => {
+		const button = element.getBoundingClientRect();
+		const icon = element.querySelector("svg")!.getBoundingClientRect();
+		return { button: [button.width, button.height], icon: [icon.width, icon.height], inset: [icon.left - button.left, icon.top - button.top] };
+	};
+	const pin = saved.getByRole("menuitem", { name: "Pin Open pull requests" });
+	const deleteAction = saved.getByRole("menuitem", { name: "Delete Open pull requests" });
+	expect(await deleteAction.evaluate(measureAction)).toEqual(await pin.evaluate(measureAction));
+	expect(await deleteAction.evaluate(measureAction)).toEqual({ button: [24, 24], icon: [12, 12], inset: [6, 6] });
+	await saved.getByRole("menuitem", { name: "Pin Open pull requests" }).click();
+	await openPullRequests.click();
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("group", { name: "Pull request is Open" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "PAY-107: Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
+	await page.getByRole("button", { name: "Filter board (1)", exact: true }).click();
+	const pinned = page.getByRole("menuitemcheckbox", { name: "Open pull requests" });
+	await expect(pinned).toBeVisible();
+	await expect(pinned.locator('[data-slot="icon-tile"] svg')).toHaveCSS("width", "12px");
+});
+
+test("saved work and assignee filters show their matching cards", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	for (const [filter, card] of [
+		["Tasks in progress", "PAY-105: Port confirmPaymentIntent and the 3-D Secure challenge flow"],
+		["Priya’s work", "PAY-115: Rewrite the customer ship note after the wallet cut"],
+	] as const) {
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Filter board", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Saved Open submenu" }).hover();
+		await page.getByRole("menu", { name: "Saved filters" }).getByRole("menuitemcheckbox", { name: filter, exact: true }).click();
+		await page.keyboard.press("Escape");
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("button", { name: card, exact: true })).toBeVisible();
+		await expect(page.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic" })).toHaveCount(0);
+		await page.getByRole("button", { name: "Clear all filters" }).click();
+		await expect(page.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic" })).toBeVisible();
+	}
+});
+
 test("Board Card uses the board work item actions menu", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

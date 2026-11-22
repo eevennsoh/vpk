@@ -30,7 +30,7 @@ export const BOARD_FILTER_FIELD_LABELS: Readonly<Record<BoardFilterFieldId, stri
 	assignee: "Assignee",
 	days: "Filter by days",
 	labels: "Labels",
-	parent: "Parent",
+	parent: "Epic",
 	project: "Atlassian Project",
 	sprint: "Sprint",
 	status: "Status",

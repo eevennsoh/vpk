@@ -18,6 +18,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import SprintIcon from "@atlaskit/icon/core/sprint";
+import VideoWatchLaterSavedIcon from "@atlaskit/icon-lab/core/video-watch-later-saved";
 import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
 import { ProjectButterStatusGlyph } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
 import { Button } from "@/components/ui/button";
@@ -247,13 +248,13 @@ function SavedRow({
 	return (
 		<div className="group/filter-row relative flex items-center rounded-lg hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 			<DropdownMenuCheckboxItem
-				className={cn("min-w-0 group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0", canPin ? "group-hover/filter-row:pr-15 group-focus-within/filter-row:pr-15" : "group-hover/filter-row:pr-9 group-focus-within/filter-row:pr-9")}
+				className={cn("min-w-0 group-hover/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0 group-focus-within/filter-row:[&_[data-slot=dropdown-menu-checkbox-item-indicator]]:opacity-0", selected && "gap-2", canPin ? "group-hover/filter-row:pr-15 group-focus-within/filter-row:pr-15" : "group-hover/filter-row:pr-9 group-focus-within/filter-row:pr-9")}
 				checked={selected}
 				closeOnClick={false}
 				indicatorPlacement="end"
 				onCheckedChange={onSelect}
 			>
-				<span className="min-w-0 flex-1 truncate">{filter.name}</span>
+				<span className="flex min-w-0 flex-1 items-center gap-3"><span className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtle" aria-hidden="true">{jiraFilterMenuIcon(<VideoWatchLaterSavedIcon label="" />)}</span><span className="min-w-0 truncate">{filter.name}</span></span>
 			</DropdownMenuCheckboxItem>
 			<PinButton
 				saved
@@ -264,11 +265,11 @@ function SavedRow({
 			/>
 			<DropdownMenuItem
 				closeOnClick={false}
-				className="absolute right-1 size-6 p-0 opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center"
+				className="absolute right-1 size-6 p-0 leading-none opacity-0 group-hover/filter-row:opacity-100 group-focus-within/filter-row:opacity-100 data-[highlighted]:opacity-100 [&>span]:items-center [&>span>span]:flex [&_svg]:size-3!"
 				aria-label={`Delete ${filter.name}`}
 				onClick={onDelete}
 			>
-				<DeleteIcon label="" />
+				<DeleteIcon label="" size="small" />
 			</DropdownMenuItem>
 		</div>
 	);
@@ -598,7 +599,7 @@ export function ProjectButterFilter({
 								<DropdownMenuSubContent
 									aria-label="Advanced filter"
 									role="dialog"
-									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
+									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
 								>
 									<ButterAdvancedPanel
 										fields={fields}
@@ -627,7 +628,7 @@ export function ProjectButterFilter({
 								<DropdownMenuSubContent
 									aria-label="JQL filter"
 									role="dialog"
-									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
+									className="w-[min(460px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
 								>
 									<ButterJqlPanel
 										fields={fields}
@@ -668,7 +669,7 @@ export function ProjectButterFilter({
 											aria-label={`${field.label} filter options`}
 											className={field.id === "epic" || field.id === "sprint" || field.id === "label" ? "flex w-80 max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0" : "flex w-56 flex-col overflow-hidden p-0"}
 										>
-										{searchable ? <DropdownMenuSearchField autoFocus hostOwnsKeyNavigation iconContainerSize={field.id === "assignee" ? 24 : 16} label={field.id === "epic" ? "Search parent" : field.id === "sprint" ? "Search sprint" : field.id === "label" ? "Search labels" : "Search people"} onClear={() => setOptionSearch("")} onValueChange={setOptionSearch} value={optionSearch} onKeyDown={(event) => { if (event.key !== "Enter") return; event.preventDefault(); if (options[0]) toggleValue(field, options[0].value); }} /> : null}
+										{searchable ? <DropdownMenuSearchField autoFocus hostOwnsKeyNavigation iconContainerSize={field.id === "assignee" ? 24 : 16} label={field.id === "epic" ? `Search ${field.label.toLowerCase()}` : field.id === "sprint" ? "Search sprint" : field.id === "label" ? "Search labels" : "Search people"} onClear={() => setOptionSearch("")} onValueChange={setOptionSearch} value={optionSearch} onKeyDown={(event) => { if (event.key !== "Enter") return; event.preventDefault(); if (options[0]) toggleValue(field, options[0].value); }} /> : null}
 											<div className={searchable ? "max-h-72 min-h-0 overflow-y-auto p-1.5" : "min-h-0 overflow-y-auto p-1.5"}>
 												{options.map((option) => (
 													<ValueRow
