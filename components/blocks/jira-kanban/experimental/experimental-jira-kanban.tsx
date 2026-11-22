@@ -6,6 +6,8 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode, type ComponentType } from "react";
 import { hasJiraSelectionToggleModifier } from "../selection-modifiers";
 import { SessionColumnSlot, SessionColumnDropMarker } from "./components/session-column-placement";
+import { BoardSwimlanes } from "./components/board-swimlane";
+import { inlineCreateSwimlaneDefaults, type BoardSwimlane } from "./lib/board-swimlanes";
 import { BoardColumnDropRing } from "./components/board-column-drop-ring";
 import { LayoutGroup, useReducedMotion } from "motion/react";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
@@ -59,7 +61,7 @@ import {
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
 import { createIssueDragPreview } from "./lib/issue-drag-preview";
 import { issueRemovalSpacing, issueSelectionBackdrop } from "./lib/issue-selection-backdrop";
-import { useIssueCohortPreview } from "./hooks/use-issue-cohort-preview";
+import { useIssueCohortPreview, useNativeIssueDragImage } from "./hooks/use-issue-cohort-preview";
 import { useIssueMoveRequest, type JiraKanbanIssueMoveRequest } from "./hooks/use-issue-move-request";
 import { useBoardAutoArrange } from "./hooks/use-board-auto-arrange";
 import { useBoardCardRemoval } from "./hooks/use-board-card-removal";
@@ -116,6 +118,7 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	swimlanes?: readonly BoardSwimlane[];
 	/** Center columns when they fit, while retaining horizontal scrolling when they do not. */
 	contentAlignment?: "start" | "center";
 	/** Enables AI destination preview and Return during pointer-driven issue dragging. */
@@ -432,6 +435,7 @@ function ExperimentalJiraKanbanView({
 	assignedAgentIdsByColumn = {},
 	scrollEndInset = 0,
 	boardColumns,
+	swimlanes,
 	createWorkItemColumns,
 	createWorkItemAssignees,
 	inlineCreateComponent: InlineCreate = JiraInlineCreate,
@@ -500,6 +504,9 @@ function ExperimentalJiraKanbanView({
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
+	// The rail's 24px header slot sits inside a 2px drop shell and, when enclosed, its well border.
+	// Its centerline is 4px closer to the top of the slot than the swimlane's 32px disclosure.
+	const swimlaneHeaderPadding = `calc(${chrome.dropContentPadding?.paddingTop ?? "0px"} + ${chrome.header.paddingTop ?? "0px"} + ${chrome.headerFrame === "enclosed" ? token("border.width") : "0px"} - ${token("space.025")})`;
 	const columnRowPaddingInlineStart = chrome.dropContentPadding
 		? `calc(${token("space.300")} - 2px - ${chrome.dropContentPadding.paddingInline})`
 		: token("space.300");
@@ -516,13 +523,13 @@ function ExperimentalJiraKanbanView({
 	const issueCohortPreview = useIssueCohortPreview(issueSelectionAppearance === "fused-backdrop" || Boolean(onAutoArrange), draggedCardCode, onCardDragEnd);
 	// Auto arrange keeps its shortcut usable during pickup, independently of move visuals.
 	const { stop: stopPointerDrag } = useBoardIssuePointerDrag(boardScrollportRef, Boolean(onAutoArrange));
-	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop, releasePreview: issueCohortPreview.release });
+	const issueDropArrival = useIssueCardDropArrival({ boardRef: boardScrollportRef, enabled: !swimlanes && issueMoveVisual && Boolean(issueDragTransitions), getPreview: issueCohortPreview.getPreview, nativePreviewRef: issueDragImageRef, columns: boardColumns, createdArrival: createdCardArrival, draggedCardCode, selectedCardCodes, onDrop: onCardDrop, onMove: onIssueMove, onAutoArrange, onCreatedComplete: onCreatedCardArrivalComplete, solitaire: issueDropMotion === "solitaire", stopPreview: issueCohortPreview.stop, releasePreview: issueCohortPreview.release });
 	useIssueMoveRequest(issueMoveRequest, issueDropArrival.handleMove);
 	const autoArrange = useBoardAutoArrange({ columns: boardColumns, selected: selectedCardCodes, dragged: draggedCardCode, onArrange: issueDropArrival.handleAutoArrange, beforeArrange: stopPointerDrag, scopeId: autoArrangeScopeId });
 	const singleCardDrag = Boolean(onAutoArrange && draggedCardCode && autoArrange.codes.size === 1);
 	const { arrival: presentedCardArrival, inlineFlight } = useCreatedCardDropMotion({ arrival: createdCardArrival, boardRef: boardScrollportRef, receiving: receivingCreatedCards, reducedMotion: Boolean(shouldReduceMotion), onComplete: onCreatedCardArrivalComplete });
 	const boardContentUnderlapsRef = useRef(false);
-	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const dragImageRef = useNativeIssueDragImage();
 	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
 		issueDropArrival.handleComplete,
 	);
@@ -558,6 +565,7 @@ function ExperimentalJiraKanbanView({
 	const selectedColumnTitles = new Set(boardColumns.filter((column) => column.cards.some((card) => selectedCardCodes?.has(card.code))).map((column) => column.title));
 	const sourceColumn = boardColumns.find((column) => column.cards.some((card) => card.code === draggedCardCode));
 	const sourceCard = sourceColumn?.cards.find((card) => card.code === draggedCardCode);
+	const draggedLaneId = draggedCardCode ? swimlanes?.find((lane) => lane.columns.some((column) => column.cards.some((card) => card.code === draggedCardCode)))?.id : undefined;
 	const issueDragSource = issueDragTransitions && sourceCard && sourceColumn ? {
 		code: sourceCard.code,
 		columnTitle: sourceColumn.title,
@@ -631,6 +639,12 @@ function ExperimentalJiraKanbanView({
 			if (column !== hovered) setColumnDropArmed(column, false);
 		}
 	};
+	const guardLaneDrop = (event: React.DragEvent<HTMLElement>) => {
+		if (draggedLaneId && (event.target as Element).closest<HTMLElement>("[data-board-swimlane]")?.dataset.boardSwimlane !== draggedLaneId) {
+			event.dataTransfer.dropEffect = "none";
+			event.stopPropagation();
+		}
+	};
 
 	const handleColumnDrop = (event: React.DragEvent<HTMLDivElement>, targetColumnTitle: string) => {
 		event.preventDefault();
@@ -638,44 +652,7 @@ function ExperimentalJiraKanbanView({
 		issueDropArrival.handleDrop?.(targetColumnTitle);
 	};
 
-	// Cache the multi-drag preview DOM node once on mount. Previously this node
-	// was allocated synchronously inside `dragstart`, adding DOM work to the long
-	// task that starts a drag, and could leak if the user pressed Escape to
-	// cancel (the cached ref was only cleared by `dragend`).
-	useEffect(() => {
-		if (typeof document === "undefined") {
-			return;
-		}
-		const node = document.createElement("div");
-		node.setAttribute("aria-hidden", "true");
-		node.style.position = "fixed";
-		node.style.top = "-1000px";
-		node.style.left = "-1000px";
-		node.style.width = "104px";
-		node.style.height = "56px";
-		node.style.pointerEvents = "none";
-
-		const label = document.createElement("span");
-		label.style.position = "absolute";
-		label.style.top = "18px";
-		label.style.left = "6px";
-		label.style.padding = "6px 12px";
-		label.style.borderRadius = "6px";
-		label.style.background = "var(--ds-background-neutral-bold)";
-		label.style.color = "var(--ds-text-inverse)";
-		label.style.font = "var(--ds-font-body-small)";
-		label.style.boxShadow = "var(--ds-shadow-overlay)";
-		node.appendChild(label);
-
-		document.body.appendChild(node);
-		dragImageRef.current = node;
-
-		return () => {
-			node.remove();
-			dragImageRef.current = null;
-			issueDragImageRef.current?.remove();
-		};
-	}, []);
+	useEffect(() => () => issueDragImageRef.current?.remove(), []);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const handleCardDragStartInternal = (
@@ -800,6 +777,7 @@ function ExperimentalJiraKanbanView({
 						muted={createCard.column !== null}
 						agentSessionColumn={{
 							...agentSessionColumn,
+							growUnderlapSurface: !swimlanes?.length && agentSessionColumn.growUnderlapSurface,
 							highlightedItemId: highlightedSessionId,
 							onItemHover: handleColumnSessionHover,
 							onSelectedItemIdChange: handleSessionSelectionChange,
@@ -821,38 +799,54 @@ function ExperimentalJiraKanbanView({
 					data-jira-kanban-scrollport=""
 					tabIndex={-1}
 					aria-label={ariaLabel}
-					className="flex min-h-0 min-w-0 flex-1 select-none outline-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable=true]]:select-text"
+					className={cn("flex min-h-0 min-w-0 flex-1 select-none outline-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable=true]]:select-text", swimlanes && "overscroll-y-contain [&_[data-jira-kanban-card-list]]:overscroll-y-auto")}
 					onScroll={handleBoardScroll}
-					onDragOverCapture={clearOtherColumnHighlights}
+					onDragEnterCapture={swimlanes ? guardLaneDrop : undefined}
+					onDragOverCapture={(event) => { clearOtherColumnHighlights(event); if (swimlanes) guardLaneDrop(event); }}
+					onDropCapture={swimlanes ? guardLaneDrop : undefined}
 					style={{
 						flex: 1,
 						marginInlineStart: `calc(-1 * var(${IN_FLOW_AGENT_SESSION_COLUMN_FOOTPRINT_CSS_VAR}, 0px))`,
 						paddingTop: scrollportPaddingTop,
 						paddingBottom,
 						overflowX: "auto",
-						overflowY: "hidden",
+						overflowY: swimlanes ? "auto" : "hidden",
 						minHeight: 0,
 					}}
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
+					<BoardSwimlanes lanes={swimlanes} fluid={columnWidth === "fluid"} headerInsets={{ inlineStart: `calc(${resolvedColumnRowPaddingInlineStart} - 12px)`, insetBlockStart: scrollportPaddingTop ?? 0, paddingBlockStart: swimlaneHeaderPadding }} onCollapse={(lane) => {
+						if (createCard.column && lane.columns.some((column) => JSON.stringify([lane.id, column.title]) === createCard.column)) createCard.close();
+						if (lane.columns.some((column) => column.cards.some((card) => selectedCardCodes?.has(card.code)))) selectionToolbar?.onClearSelection?.();
+					}}>
+						{(lane) => {
+							const rowColumnSizing = lane ? "fill" : columnSizing;
+							const boardColumnsInRow = lane?.columns ?? boardColumns;
+							return (
 						<div
-							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full", contentAlignment === "center" ? "mx-auto" : null)}
+							className={cn("flex w-max items-stretch", lane ? "h-100 min-w-full" : columnSizing === "fill" ? "min-h-full min-w-full" : "h-full", contentAlignment === "center" ? "mx-auto" : null)}
 							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" ? "100%" : undefined }}
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
-						<SessionColumnDropMarker index={0} />
-						{boardColumns.map((column, columnIndex) => (
+						{lane ? null : <SessionColumnDropMarker index={0} />}
+						{boardColumnsInRow.map((column, columnIndex) => {
+						const createColumnId = lane ? JSON.stringify([lane.id, column.title]) : column.title;
+						const creatingHere = createCard.column === createColumnId;
+						const createdArrival = presentedCardArrival?.columnTitle === column.title
+							&& (!lane || column.cards.some((card) => presentedCardArrival.cardCodes.includes(card.code)))
+							? presentedCardArrival : undefined;
+						return (
 						<Fragment key={column.title}>
 						<BoardColumnShell
 							headerAccessory={<BoardAutoArrangeBadge count={autoArrange.incoming(column.title)} title={column.title} />}
 							chrome={chrome}
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
 							columnChrome={columnChrome}
-							columnSizing={columnSizing}
+							columnSizing={rowColumnSizing}
 							columnWidth={columnWidth}
 							count={column.cards.length}
-							createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+							createWorkItemDropZoneLabel={lane ? undefined : createWorkItemDropZoneLabel}
 							sessionDragTransaction={boardSessionDrag.transaction}
 							key={column.title}
 							onDragOver={handleColumnDragOver}
@@ -870,21 +864,21 @@ function ExperimentalJiraKanbanView({
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								cardInsertion={boardSessionDrag.cardInsertion}
+								cardListLabel={lane ? `${column.title} work items for ${lane.label}` : undefined}
 								chrome={chrome}
 								columnChrome={columnChrome}
-								columnSizing={columnSizing}
+								columnSizing={rowColumnSizing}
 								count={column.cards.length}
 								creating={createCard.column !== null}
-								createDraft={createCard.column === column.title ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft, createCard.beforeCardCode); createCard.close(); }} /> : undefined}
-								createBeforeCardCode={createCard.column === column.title && column.cards.some((card) => card.code === createCard.beforeCardCode) ? createCard.beforeCardCode : undefined}
-								createdCardArrival={presentedCardArrival?.columnTitle === column.title
-									? presentedCardArrival
-									: undefined}
-								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
-								hideScrollbar={cardAppearance === "project-butter"}
+								createDraft={creatingHere ? <InlineCreate ref={createCard.formRef} assignees={createWorkItemAssignees} columns={createWorkItemColumns ?? boardColumns} defaults={lane ? inlineCreateSwimlaneDefaults(lane) : undefined} issueKey={nextBoardIssueKey(createWorkItemColumns ?? boardColumns)} onCancel={createCard.close} onSave={(draft) => { onCreateWorkItem?.(column.title, draft, createCard.beforeCardCode); createCard.close(); }} /> : undefined}
+								createBeforeCardCode={creatingHere ? createCard.beforeCardCode : undefined}
+								createdCardArrival={createdArrival}
+								createWorkItemDropZoneLabel={lane ? undefined : createWorkItemDropZoneLabel}
+								pinCreateAction={Boolean(lane)}
+								hideScrollbar={Boolean(lane) || cardAppearance === "project-butter"}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
-								onStartCreate={onCreateWorkItem ? (trigger, beforeCardCode, returnFocus) => createCard.start(column.title, trigger, beforeCardCode, returnFocus) : undefined}
+								onStartCreate={onCreateWorkItem ? (trigger, beforeCardCode, returnFocus) => createCard.start(createColumnId, trigger, beforeCardCode, returnFocus) : undefined}
 								onToggleAgent={
 									onToggleColumnAgent
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
@@ -946,9 +940,7 @@ function ExperimentalJiraKanbanView({
 													layoutId: shouldAnimateCardPosition && !issueDropArrival.isReflowing ? `jira-kanban-card-${card.code}` : undefined,
 													transition: issueDropArrival.isReflowing ? JIRA_KANBAN_CARD_REFLOW : shouldAnimateCardPosition ? JIRA_KANBAN_CARD_MOVE : JIRA_KANBAN_CARD_LAYOUT,
 												}}
-												arrival={presentedCardArrival?.columnTitle === column.title
-													? presentedCardArrival
-													: undefined}
+												arrival={createdArrival}
 												moveArrival={issueDropArrival.arrivalForColumn(column.title)}
 												cardCode={card.code}
 												cardCount={column.cards.length}
@@ -1034,10 +1026,11 @@ function ExperimentalJiraKanbanView({
 							</BoardColumn>
 							)}
 						</BoardColumnShell>
-						<SessionColumnDropMarker index={columnIndex + 1} />
-						<SessionColumnSlot index={columnIndex + 1} />
+						{lane ? null : <SessionColumnDropMarker index={columnIndex + 1} />}
+						{lane ? null : <SessionColumnSlot index={columnIndex + 1} />}
 						</Fragment>
-						))}
+						);
+						})}
 						</div>
 						</ExclusiveCreateWellProximityProvider>
 						{/* Trailing gutter. It also absorbs `scrollEndInset`: the outer
@@ -1051,6 +1044,9 @@ function ExperimentalJiraKanbanView({
 							style={{ width: `calc(var(--spacing) * 6 + ${scrollEndInset}px)` }}
 						/>
 					</div>
+							);
+						}}
+					</BoardSwimlanes>
 				</LayoutGroup>
 				</section>
 				</JiraSessionFlyoutSuspensionProvider>

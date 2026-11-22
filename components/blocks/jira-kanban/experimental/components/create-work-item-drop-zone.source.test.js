@@ -58,7 +58,7 @@ test("columns keep drag targets at the bottom and select one creation owner", ()
 	assert.ok(actionRender > cards);
 	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
 	assert.match(FOOTER, /renderControl=\{columnSizing === "content"[\s\S]*<BoardColumnAddButton[\s\S]*reveal="always"/u);
-	assert.match(CARD_LIST, /columnSizing === "fill" \? <div/u);
+	assert.match(CARD_LIST, /columnSizing === "fill" && !pinCreateAction \? <div/u);
 	assert.match(CARD_LIST, /\{children\}[\s\S]*data-board-work-item-create[\s\S]*<BoardColumnAddButton/u);
 	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
 	assert.doesNotMatch(CARD_LIST, /order: isEmpty/u);

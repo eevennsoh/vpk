@@ -1,8 +1,9 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
+import CrossIcon from "@atlaskit/icon/core/cross";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityTrivialIcon from "@atlaskit/icon/core/priority-trivial";
@@ -14,7 +15,7 @@ import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 
-import { BOARD_GROUP_OPTIONS, type BoardGroupOptionId } from "../data/board-group-options";
+import { BOARD_GROUP_OPTIONS, BOARD_SWIMLANE_OPTIONS, type BoardGroupOptionId, type BoardSwimlaneOptionId } from "../data/board-group-options";
 import {
 	BOARD_AGENT_HOST_OPTIONS,
 	BOARD_AGENT_STATE_OPTIONS,
@@ -26,6 +27,7 @@ import {
 } from "../data/board-view-options";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -43,8 +45,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+export interface BoardGroupingControl {
+	value: BoardSwimlaneOptionId | null;
+	onChange: (group: BoardSwimlaneOptionId | null) => void;
+}
+
 interface BoardViewMenuProps {
 	compact?: boolean;
+	grouping?: BoardGroupingControl;
+	showGrouping?: boolean;
 	/** Kept for the experimental header's shared control contract. */
 	simpleViews?: boolean;
 	surfaceLabel?: string;
@@ -152,40 +161,60 @@ export function BoardNeedsInputButton({
 	);
 }
 
-export function BoardGroupByMenu({ compact = false }: Readonly<{ compact?: boolean }>) {
-	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
+export function BoardGroupByMenu({ compact = false, grouping }: Readonly<{ compact?: boolean; grouping?: BoardGroupingControl }>) {
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const [previewGroupId, setPreviewGroupId] = useState<BoardGroupOptionId | null>(null);
+	const options = grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS;
+	const selected = options.find((option) => option.id === (grouping ? grouping.value : previewGroupId));
+	const selectGroup = (id: string | null) => {
+		if (grouping) {
+			grouping.onChange(BOARD_SWIMLANE_OPTIONS.find((option) => option.id === id)?.id ?? null);
+		} else {
+			setPreviewGroupId(BOARD_GROUP_OPTIONS.find((option) => option.id === id)?.id ?? null);
+		}
+	};
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={<Button aria-label="Group" size={compact ? "icon" : undefined} variant="outline" />}
-			>
-				<Icon aria-hidden data-icon={compact ? undefined : "inline-start"} render={<GroupIcon label="" />} />
-				{compact ? null : "Group"}
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="min-w-56">
-				<DropdownMenuRadioGroup
-					aria-label="Group by"
-					onValueChange={(id) => {
-						const option = BOARD_GROUP_OPTIONS.find((candidate) => candidate.id === id);
-						if (option) {
-							setGroupByFilterId(option.id);
-						}
-					}}
-					value={groupByFilterId ?? ""}
+		<ButtonGroup aria-label="Board grouping">
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={<Button ref={triggerRef} aria-label={selected ? `Group by ${selected.label}` : "Group"} aria-pressed={Boolean(selected)} size={compact ? "icon" : undefined} variant="outline" />}
 				>
-					{BOARD_GROUP_OPTIONS.map((option) => (
-						<DropdownMenuRadioItem
-							indicatorPlacement="end"
-							key={option.id}
-							value={option.id}
-						>
-							{option.label}
-						</DropdownMenuRadioItem>
-					))}
-				</DropdownMenuRadioGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
+					<Icon aria-hidden data-icon={compact ? undefined : "inline-start"} render={<GroupIcon label="" />} />
+					{compact ? null : "Group"}
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align={compact ? "end" : "start"} className="min-w-56">
+					<DropdownMenuRadioGroup aria-label="Group by" onValueChange={selectGroup} value={selected?.id ?? ""}>
+						{options.map((option) => (
+							<DropdownMenuRadioItem
+								closeOnClick
+								indicatorPlacement="end"
+								key={option.id}
+								onClick={option.id === selected?.id ? () => selectGroup(null) : undefined}
+								value={option.id}
+							>
+								{option.label}
+							</DropdownMenuRadioItem>
+						))}
+					</DropdownMenuRadioGroup>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			{selected ? (
+				<Button
+					aria-label="Clear grouping"
+					className="border-border-selected bg-bg-selected text-text-selected hover:bg-bg-selected-hovered focus-visible:border-ring active:bg-bg-selected-pressed [&_svg]:text-icon-selected"
+					data-selected=""
+					onClick={() => {
+						selectGroup(null);
+						triggerRef.current?.focus();
+					}}
+					size="icon"
+					variant="outline"
+				>
+					<Icon render={<CrossIcon label="" size="small" />} />
+				</Button>
+			) : null}
+		</ButtonGroup>
 	);
 }
 
@@ -260,6 +289,8 @@ function QuickViewActionSubmenu<TId extends string>({
 
 export function BoardViewMenu({
 	compact = false,
+	grouping,
+	showGrouping = true,
 	surfaceLabel = "board",
 	agentFilterId: controlledAgentFilterId,
 	onAgentFilterIdChange,
@@ -267,7 +298,8 @@ export function BoardViewMenu({
 	const [pullRequestFilterId, setPullRequestFilterId] = useState<BoardPrStateId | null>(null);
 	const [sessionTypeFilterId, setSessionTypeFilterId] = useState<BoardSessionTypeId | null>(null);
 	const [uncontrolledAgentFilterId, setUncontrolledAgentFilterId] = useState<BoardAgentFilterId | null>(null);
-	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
+	const [previewGroupId, setPreviewGroupId] = useState<BoardGroupOptionId | null>(null);
+	const groupByFilterId = grouping ? grouping.value : previewGroupId;
 	const isAgentFilterControlled = onAgentFilterIdChange !== undefined;
 	const agentFilterId = isAgentFilterControlled
 		? (controlledAgentFilterId ?? null)
@@ -303,14 +335,20 @@ export function BoardViewMenu({
 	};
 
 	const handleGroupBySelect = (id: BoardGroupOptionId) => {
-		setGroupByFilterId(id);
+		if (grouping) {
+			const option = BOARD_SWIMLANE_OPTIONS.find((candidate) => candidate.id === id);
+			if (option) grouping.onChange(option.id);
+		} else {
+			setPreviewGroupId(id);
+		}
 	};
 
 	const clearQuickViewSelection = () => {
 		setPullRequestFilterId(null);
 		setAgentFilterId(null);
 		setSessionTypeFilterId(null);
-		setGroupByFilterId(null);
+		if (grouping) grouping.onChange(null);
+		else setPreviewGroupId(null);
 	};
 
 	return (
@@ -356,12 +394,12 @@ export function BoardViewMenu({
 					selectedId={sessionTypeFilterId}
 				/>
 
-				<QuickViewActionSubmenu
+				{showGrouping ? <QuickViewActionSubmenu
 					label="Group by"
 					onSelect={handleGroupBySelect}
-					options={BOARD_GROUP_OPTIONS}
+					options={grouping ? BOARD_SWIMLANE_OPTIONS : BOARD_GROUP_OPTIONS}
 					selectedId={groupByFilterId}
-				/>
+				/> : null}
 
 				{hasQuickViewSelection ? (
 					<>

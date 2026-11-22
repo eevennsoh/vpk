@@ -284,7 +284,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// inset keeps visible simple-column content on the 24px header line.
 	assert.match(
 		BOARD_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", lane \? "h-100 min-w-full" : columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is

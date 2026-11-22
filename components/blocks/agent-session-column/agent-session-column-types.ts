@@ -173,6 +173,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 * inside the elevated well while status columns underlap.
 	 */
 	showTrailingShadow?: boolean;
+	/** Allow the elevated well to extend above and below its layout slot. Defaults to true. */
+	growUnderlapSurface?: boolean;
 	/**
 	 * Expanded width in px. Defaults to the board column's 280. A wider host
 	 * (the docked rail) passes its content-box width so the well fills that

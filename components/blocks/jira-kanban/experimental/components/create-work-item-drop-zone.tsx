@@ -25,6 +25,7 @@ export function BoardColumnCreateAction({
 	columnSizing = "fill",
 	dropZoneLabel,
 	onStartCreate,
+	pinned = false,
 	placement = "bottom",
 	sessionDragTransaction,
 	title,
@@ -33,6 +34,7 @@ export function BoardColumnCreateAction({
 	columnSizing?: "fill" | "content";
 	dropZoneLabel?: string;
 	onStartCreate?: (trigger: HTMLElement) => void;
+	pinned?: boolean;
 	placement?: "top" | "bottom";
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
@@ -101,7 +103,7 @@ export function BoardColumnCreateAction({
 						/>
 					</div>
 				) : (
-					columnSizing === "content"
+				columnSizing === "content" || (pinned && onStartCreate)
 						? <div ref={targetRef} className="relative w-full">
 							<BoardColumnAddButton onStartCreate={onStartCreate} reveal="always" size="compact" title={title} />
 						</div>

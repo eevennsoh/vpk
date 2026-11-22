@@ -7,14 +7,16 @@ import { createJiraKanbanSelectionState, getSelectableJiraKanbanColumns, moveJir
 import { useJiraIssueSelectionKeyboard } from "@/components/blocks/jira-kanban/use-jira-issue-selection-keyboard";
 import { useJiraSelectionDismiss } from "@/components/blocks/jira-kanban/use-jira-selection-dismiss";
 import type { DraggedCardState, ExperimentalJiraKanbanPageProps } from "@/components/blocks/jira-kanban/experimental/experimental-page-types";
+import type { BoardSwimlane } from "../lib/board-swimlanes";
 
 /** Page-owned transactions reuse the same interaction contract as Jira Dragging. */
 export function usePageIssueSelection({
-	rootRef, enabled, filteredBoardColumns, collapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
+	rootRef, enabled, filteredBoardColumns, swimlanes, collapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
 }: Readonly<{
 	rootRef: RefObject<HTMLDivElement | null>;
 	enabled: boolean;
 	filteredBoardColumns: readonly JiraKanbanColumnData[];
+	swimlanes?: readonly BoardSwimlane[];
 	collapsedColumns: ReadonlySet<string>;
 	boardColumns: readonly JiraKanbanColumnData[];
 	selection: JiraKanbanSelectionState;
@@ -25,6 +27,10 @@ export function usePageIssueSelection({
 	onCardClick: ExperimentalJiraKanbanPageProps["onCardClick"];
 }>) {
 	const selectionColumns = getSelectableJiraKanbanColumns(filteredBoardColumns, collapsedColumns);
+	const columnsForCard = (code: string) => {
+		const lane = swimlanes?.find(({ columns }) => columns.some((column) => column.cards.some((card) => card.code === code)));
+		return lane ? getSelectableJiraKanbanColumns(lane.columns, collapsedColumns) : selectionColumns;
+	};
 	const dragCohort = useRef<readonly string[] | null>(null);
 	const handleCardDragEnd = () => { dragCohort.current = null; setDraggedCard(null); };
 	const onClearSelection = () => {
@@ -35,7 +41,8 @@ export function usePageIssueSelection({
 	};
 	const onSelectAll = () => {
 		handleCardDragEnd();
-		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, selectionColumns));
+		const columns = swimlanes ? getSelectableJiraKanbanColumns(swimlanes.flatMap((lane) => lane.columns), collapsedColumns) : selectionColumns;
+		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, columns));
 	};
 	const handleCardSelect = (
 		cardCode: string,
@@ -45,7 +52,7 @@ export function usePageIssueSelection({
 	) => {
 		if (enabled && !modifiers.shiftKey && !modifiers.metaOrCtrlKey && modifiers.source !== "selection-control") return;
 		handleCardDragEnd();
-		setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
+		setSelection((current) => selectJiraKanbanCard(current, columnsForCard(cardCode), {
 			cardCode,
 			columnTitle,
 			indexInColumn,
@@ -147,7 +154,7 @@ export function usePageIssueSelection({
 		rootRef, enabled, dragging: draggedCard !== null, onCancelDrag: handleCardDragEnd, onClearSelection,
 		onRangeSelect: (range) => {
 			handleCardDragEnd();
-			setSelection((current) => selectJiraKanbanCard(current, selectionColumns, {
+			setSelection((current) => selectJiraKanbanCard(current, columnsForCard(range.cardCode), {
 				...range, modifiers: { shiftKey: true, metaOrCtrlKey: false },
 			}));
 		},

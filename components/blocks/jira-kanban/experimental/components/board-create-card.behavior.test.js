@@ -2,9 +2,9 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
-for (const columnSizing of ["fill", "content"]) {
-	for (const dropZoneLabel of [undefined, "Create work item"]) {
-		test(`${columnSizing} column footer opens the same inline editor as its header (${dropZoneLabel ?? "no dropzone"})`, async () => {
+for (const [columnSizing, pinCreateAction] of [["fill", false], ["content", false], ["fill", true]]) {
+	for (const dropZoneLabel of pinCreateAction ? [undefined] : [undefined, "Create work item"]) {
+		test(`${pinCreateAction ? "pinned" : columnSizing} column footer opens the same inline editor as its header (${dropZoneLabel ?? "no dropzone"})`, async () => {
 			const view = await renderComponent({
 				source: `
 					import { useState } from "react";
@@ -18,6 +18,7 @@ for (const columnSizing of ["fill", "content"]) {
 						const [saved, setSaved] = useState("");
 						return <JiraDropzoneField><BoardColumn title="To do" count={0} assignedAgentIds={[]} cardInsertion={null}
 							chrome={resolveKanbanColumnChrome("default")} columnChrome="default" columnSizing="${columnSizing}"
+								pinCreateAction={${pinCreateAction}}
 							createWorkItemDropZoneLabel={${JSON.stringify(dropZoneLabel)}} sessionDragTransaction={null} onCollapse={() => {}}
 							onStartCreate={trigger => create.start("To do", trigger)} creating={create.column === "To do"}
 							createDraft={create.column === "To do" ? <JiraInlineCreate columns={[]} issueKey="PAY-1" onCancel={create.close} onSave={draft => { setSaved("To do: " + draft.summary); create.close(); }} /> : undefined}
@@ -28,6 +29,7 @@ for (const columnSizing of ["fill", "content"]) {
 			await view.click(view.getByRole("button", { name: "Create work item in To do" }));
 			await view.press(view.getByRole("textbox", { name: "Work item summary" }), "Escape");
 			assert.equal(view.queryByRole("textbox", { name: "Work item summary" }) === null, true);
+			assert.equal(view.container.querySelectorAll('button[aria-label="Create in To do"]').length, 1);
 			const footer = view.getByRole("button", { name: "Create in To do" });
 			await view.click(footer);
 			const summary = view.getByRole("textbox", { name: "Work item summary" });

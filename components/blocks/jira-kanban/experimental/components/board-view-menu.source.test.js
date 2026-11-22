@@ -66,11 +66,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/label="Group by"[\s\S]*onSelect=\{handleGroupBySelect\}[\s\S]*options=\{BOARD_GROUP_OPTIONS\}/u,
-	);
-	assert.match(
-		VIEW_MENU_SOURCE,
-		/label="Pull request"[\s\S]*options=\{BOARD_PR_STATE_OPTIONS\}[\s\S]*label="Agents"[\s\S]*options=\{BOARD_AGENT_STATE_OPTIONS\}[\s\S]*label="Session type"[\s\S]*options=\{BOARD_SESSION_TYPE_OPTIONS\}[\s\S]*label="Group by"[\s\S]*options=\{BOARD_GROUP_OPTIONS\}/u,
+		/label="Pull request"[\s\S]*options=\{BOARD_PR_STATE_OPTIONS\}[\s\S]*label="Agents"[\s\S]*options=\{BOARD_AGENT_STATE_OPTIONS\}[\s\S]*label="Session type"[\s\S]*options=\{BOARD_SESSION_TYPE_OPTIONS\}[\s\S]*label="Group by"/u,
 	);
 	assert.match(
 		VIEW_MENU_SOURCE,
@@ -96,7 +92,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /AiAgentIcon/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/setPullRequestFilterId\(null\);[\s\S]*setAgentFilterId\(null\);[\s\S]*setSessionTypeFilterId\(null\);[\s\S]*setGroupByFilterId\(null\);/u,
+		/setPullRequestFilterId\(null\);[\s\S]*setAgentFilterId\(null\);[\s\S]*setSessionTypeFilterId\(null\);/u,
 	);
 	assert.doesNotMatch(
 		VIEW_MENU_SOURCE,

@@ -78,7 +78,8 @@ export function useJiraIssueSelectionKeyboard({
 			const source = cardControl.closest<HTMLElement>(ISSUE);
 			if (!source?.dataset.issueKey || !source.dataset.boardColumnTitle) return;
 			const columnTitle = source.dataset.boardColumnTitle;
-			const cards = visibleJiraIssueCards(root).filter((node) => node.dataset.boardColumnTitle === columnTitle);
+			const lane = source.closest<HTMLElement>("[data-board-swimlane]");
+			const cards = visibleJiraIssueCards(lane ?? root).filter((node) => node.dataset.boardColumnTitle === columnTitle);
 			const index = cards.indexOf(source);
 			if (index < 0) return;
 			const next = cards[Math.max(0, Math.min(cards.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)))];

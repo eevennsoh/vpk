@@ -198,6 +198,7 @@ export function BoardColumn({
 	agents,
 	assignedAgentIds,
 	cardInsertion,
+	cardListLabel,
 	children,
 	chrome,
 	columnChrome,
@@ -209,6 +210,7 @@ export function BoardColumn({
 	onCreateAgent,
 	onStartCreate,
 	creating = false,
+	pinCreateAction = false,
 	createDraft,
 	createBeforeCardCode,
 	hideScrollbar = false,
@@ -227,6 +229,7 @@ export function BoardColumn({
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	cardInsertion: BoardAgentSessionDrag["cardInsertion"];
+	cardListLabel?: string;
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
 	columnChrome: KanbanColumnChrome;
@@ -238,6 +241,7 @@ export function BoardColumn({
 	onCreateAgent?: (columnTitle: string) => void;
 	onStartCreate?: (trigger: HTMLElement, beforeCardCode?: string, returnFocus?: HTMLElement | null) => void;
 	creating?: boolean;
+	pinCreateAction?: boolean;
 	createDraft?: ReactNode;
 	createBeforeCardCode?: string;
 	hideScrollbar?: boolean;
@@ -260,6 +264,7 @@ export function BoardColumn({
 		columnSizing={columnSizing}
 		dropZoneLabel={createWorkItemDropZoneLabel}
 		onStartCreate={onStartCreate}
+		pinned={pinCreateAction}
 		placement="bottom"
 		sessionDragTransaction={sessionDragTransaction}
 		title={title}
@@ -320,6 +325,7 @@ export function BoardColumn({
 				>
 					<BoardColumnCardList
 						chrome={chrome}
+						label={cardListLabel}
 						columnTitle={title}
 						columnSizing={columnSizing}
 						count={count}
@@ -332,6 +338,7 @@ export function BoardColumn({
 						isEmpty={isEmptyColumn}
 						isSessionDragging={sessionDragTransaction !== null}
 						onStartCreate={onStartCreate}
+						pinCreateAction={pinCreateAction}
 					>
 						{children}
 					</BoardColumnCardList>

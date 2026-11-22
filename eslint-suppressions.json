@@ -912,7 +912,7 @@
   },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
-      "count": 49
+      "count": 48
     }
   },
   "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {

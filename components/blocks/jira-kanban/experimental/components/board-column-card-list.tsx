@@ -83,6 +83,7 @@ function collectHoverGapZones(cardList: HTMLElement) {
 export function BoardColumnCardList({
 	children,
 	chrome,
+	label,
 	columnTitle,
 	columnSizing = "fill",
 	count,
@@ -91,6 +92,7 @@ export function BoardColumnCardList({
 	createDraft,
 	createBeforeCardCode,
 	hideScrollbar = false,
+	pinCreateAction = false,
 	insertionArmed,
 	isEmpty,
 	isSessionDragging = false,
@@ -98,6 +100,7 @@ export function BoardColumnCardList({
 }: Readonly<{
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
+	label?: string;
 	columnTitle: string;
 	columnSizing?: "fill" | "content";
 	count: number;
@@ -106,6 +109,7 @@ export function BoardColumnCardList({
 	createDraft?: ReactNode;
 	createBeforeCardCode?: string;
 	hideScrollbar?: boolean;
+	pinCreateAction?: boolean;
 	insertionArmed: boolean;
 	isEmpty: boolean;
 	isSessionDragging?: boolean;
@@ -213,7 +217,7 @@ export function BoardColumnCardList({
 					inert={creating && !createDraft ? true : undefined}
 					tabIndex={-1}
 					role="region"
-					aria-label={`${columnTitle} work items`}
+					aria-label={label ?? `${columnTitle} work items`}
 					data-created-card-arrival-id={createdCardArrival?.id}
 					data-jira-kanban-card-list=""
 					className={cn(
@@ -254,7 +258,7 @@ export function BoardColumnCardList({
 					>
 						<div inert={creating && !creatingInGap || undefined} className={cn("flex min-w-0 flex-col", creating && !creatingInGap ? "opacity-20" : null)} style={{ gap: chrome.cardList.gap ?? token("space.100") }}>
 						{children}
-						{columnSizing === "fill" ? <div
+						{columnSizing === "fill" && !pinCreateAction ? <div
 							aria-hidden={isSessionDragging || undefined}
 								inert={isSessionDragging || creatingInGap || undefined}
 								className={cn("shrink-0 justify-center py-1", isSessionDragging ? "hidden" : "flex", creatingInGap ? "opacity-20" : null)}

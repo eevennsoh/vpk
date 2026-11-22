@@ -9,18 +9,18 @@ import { JIRA_CREATABLE_ISSUE_TYPES, type JiraListIssueType } from "@/components
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
+import type { JiraInlineCreateProps } from "./types";
 import { JiraInlineCreateFields } from "./components/jira-inline-create-fields";
 
 export type { JiraInlineCreateDraft, JiraInlineCreateProps } from "./types";
 
-export function JiraInlineCreate({ assignees, columns, issueKey, onCancel, onSave, ref }: Readonly<JiraInlineCreateProps>) {
+export function JiraInlineCreate({ assignees, columns, defaults, issueKey, onCancel, onSave, ref }: Readonly<JiraInlineCreateProps>) {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const [summary, setSummary] = useState("");
 	const [issueType, setIssueType] = useState<JiraListIssueType>("task");
 	const [previewType, setPreviewType] = useState<JiraListIssueType>();
 	const [typeOpen, setTypeOpen] = useState(false);
-	const [metadata, setMetadata] = useState<Omit<JiraInlineCreateDraft, "summary" | "issueType">>({});
+	const [metadata, setMetadata] = useState(defaults ?? {});
 
 	useLayoutEffect(() => { inputRef.current?.focus({ preventScroll: true }); }, []);
 	useEffect(() => {

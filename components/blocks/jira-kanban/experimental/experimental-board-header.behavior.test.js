@@ -68,7 +68,7 @@ test("the default header keeps Group and Needs input inline", async () => {
 	const needsInput = view.getByRole("button", { name: "Needs input: 4 agents" });
 	const group = view.getByRole("button", { name: "Group" });
 	const customize = view.getByRole("button", { name: "Customize" });
-	assert.equal(group.nextElementSibling === needsInput, true);
+	assert.equal(group.parentElement.nextElementSibling === needsInput, true);
 	assert.equal(needsInput.parentElement === customize.parentElement, false);
 });
 
@@ -101,11 +101,32 @@ for (const activeView of ["board", "list"]) {
 		const group = view.getByRole("button", { name: "Group" });
 		const customize = view.getByRole("button", { name: "Customize" });
 		assert.equal(needsInput.textContent, "Needs input");
-		assert.equal(needsInput.parentElement === group.parentElement, true);
+		assert.equal(needsInput.parentElement === group.parentElement.parentElement, true);
 		assert.equal(needsInput.parentElement === customize.parentElement, true);
-		assert.equal(needsInput.nextElementSibling === group, true);
+		assert.equal(needsInput.nextElementSibling === group.parentElement, true);
 		assert.equal(group.textContent, "");
 		await view.press(needsInput, "Enter");
 		assert.deepEqual(selections, ["needs-input"]);
 	});
 }
+
+test("the board Group button reflects the active criterion and Clear grouping restores its focus", async () => {
+	const changes = [];
+	const onChange = (value) => changes.push(value);
+	const props = { needsInputCount: 1, grouping: { value: "assignee", onChange } };
+	const view = await renderComponent({
+		entry: "components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
+		exportName: "ExperimentalJiraKanbanBoardHeader",
+		props,
+	});
+
+	const group = view.getByRole("button", { name: "Group by Assignee" });
+	assert.equal(group.getAttribute("aria-pressed"), "true");
+	await view.click(view.getByRole("button", { name: "Clear grouping" }));
+	assert.deepEqual(changes, [null]);
+	assert.equal(view.isFocused(group), true);
+	await view.rerender({ ...props, grouping: { value: null, onChange } });
+	assert.equal(view.getByRole("button", { name: "Group" }).getAttribute("aria-pressed"), "false");
+	assert.equal(Boolean(view.queryByRole("button", { name: "Clear grouping" })), false);
+	await view.unmount();
+});

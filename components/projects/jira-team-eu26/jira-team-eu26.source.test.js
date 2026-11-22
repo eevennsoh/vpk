@@ -480,7 +480,7 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumns\.map\(/u,
+		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumnsInRow\.map\(/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,

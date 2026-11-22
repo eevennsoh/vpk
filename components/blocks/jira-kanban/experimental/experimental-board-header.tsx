@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
 import {
 	BoardGroupByMenu,
+	type BoardGroupingControl,
 	BoardNeedsInputButton,
 	BoardViewMenu,
 } from "./components/board-view-menu";
@@ -108,6 +109,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/** Shared Jira filter control. */
 	filterControl?: ReactNode;
 	filterSummary?: ReactNode;
+	grouping?: BoardGroupingControl;
 	headerControlsLayout?: "inline" | "trailing-icons";
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
@@ -226,6 +228,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	facepile,
 	filterControl,
 	filterSummary,
+	grouping,
 	headerControlsLayout = "inline",
 	modeToggle,
 	endSlot,
@@ -262,6 +265,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 					compact={compact}
 					controlsInsetEnd={controlsInsetEnd}
 					headerControlsLayout={headerControlsLayout}
+					grouping={grouping}
 					moreControlsPlacement={moreControlsPlacement}
 					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
 					onShowUntrackedChange={onShowUntrackedChange}
@@ -445,6 +449,7 @@ function BoardHeaderControlsRow({
 	endSlot,
 	facepile,
 	filterControl,
+	grouping,
 	headerControlsLayout,
 	modeToggle,
 	moreControlsPlacement,
@@ -477,6 +482,7 @@ function BoardHeaderControlsRow({
 	endSlot?: ReactNode;
 	facepile?: ReactNode;
 	filterControl?: ReactNode;
+	grouping?: BoardGroupingControl;
 	headerControlsLayout: "inline" | "trailing-icons";
 	modeToggle?: ReactNode;
 	moreControlsPlacement: "inline" | "end";
@@ -498,6 +504,8 @@ function BoardHeaderControlsRow({
 	surfaceLabel: string;
 }>) {
 	const trailingIcons = headerControlsLayout === "trailing-icons";
+	const boardGrouping = activeView === "board" ? grouping : undefined;
+	const showGrouping = activeView === "board" || !grouping;
 	const needsInputButton = showNeedsInputButton && needsInputCount !== undefined ? (
 		<BoardNeedsInputButton
 			agentFilterId={agentFilterId}
@@ -549,12 +557,14 @@ function BoardHeaderControlsRow({
 
 			{needsInputCount !== undefined ? (
 				<>
-					{trailingIcons ? null : <BoardGroupByMenu />}
+					{!trailingIcons && showGrouping ? <BoardGroupByMenu grouping={boardGrouping} /> : null}
 					{trailingIcons ? null : needsInputButton}
 				</>
 			) : (
 				<BoardViewMenu
 					compact={compact}
+					grouping={boardGrouping}
+					showGrouping={showGrouping}
 					agentFilterId={agentFilterId}
 					onAgentFilterIdChange={onAgentFilterIdChange}
 					onShownSessionStateIdsChange={onShownSessionStateIdsChange}
@@ -594,7 +604,7 @@ function BoardHeaderControlsRow({
 				{endSlot ? endSlot : null}
 				{trailingIcons ? needsInputButton : null}
 				{trailingIcons ? filterControl : null}
-				{trailingIcons && needsInputCount !== undefined ? <BoardGroupByMenu compact /> : null}
+				{trailingIcons && needsInputCount !== undefined && showGrouping ? <BoardGroupByMenu compact grouping={boardGrouping} /> : null}
 				{customizeControl}
 				{moreControlsPlacement === "end" ? moreControls : null}
 			</div>

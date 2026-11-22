@@ -1,7 +1,4 @@
-/**
- * Production Jira board Group picker labels. Selecting a row does not regroup
- * the board — this list is the chrome only.
- */
+/** Options used by the board controls and their standalone previews. */
 export const BOARD_GROUP_OPTIONS = [
 	{ id: "agent", label: "Agent" },
 	{ id: "assignee", label: "Assignee" },
@@ -13,6 +10,8 @@ export const BOARD_GROUP_OPTIONS = [
 ] as const;
 
 export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"];
+export const BOARD_SWIMLANE_OPTIONS = BOARD_GROUP_OPTIONS.filter((option) => option.id !== "atlassian-project");
+export type BoardSwimlaneOptionId = (typeof BOARD_SWIMLANE_OPTIONS)[number]["id"];
 
 /**
  * Empty on purpose: the View menu opens with no grouping selected. The radio

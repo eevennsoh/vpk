@@ -5,6 +5,45 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { createIssueCohortPreview } from "../lib/issue-drag-preview";
 import { createIssueCohortGatherKeyframes, ISSUE_COHORT_GATHER_TIMING, type IssueCohortGatherLayer } from "../lib/issue-cohort-gather";
 
+/** Cache the native multi-drag badge so pickup needs no DOM allocation. */
+export function useNativeIssueDragImage() {
+	const ref = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		if (typeof document === "undefined") {
+			return;
+		}
+		const node = document.createElement("div");
+		node.setAttribute("aria-hidden", "true");
+		node.style.position = "fixed";
+		node.style.top = "-1000px";
+		node.style.left = "-1000px";
+		node.style.width = "104px";
+		node.style.height = "56px";
+		node.style.pointerEvents = "none";
+
+		const label = document.createElement("span");
+		label.style.position = "absolute";
+		label.style.top = "18px";
+		label.style.left = "6px";
+		label.style.padding = "6px 12px";
+		label.style.borderRadius = "6px";
+		label.style.background = "var(--ds-background-neutral-bold)";
+		label.style.color = "var(--ds-text-inverse)";
+		label.style.font = "var(--ds-font-body-small)";
+		label.style.boxShadow = "var(--ds-shadow-overlay)";
+		node.appendChild(label);
+
+		document.body.appendChild(node);
+		ref.current = node;
+
+		return () => {
+			node.remove();
+			ref.current = null;
+		};
+	}, []);
+	return ref;
+}
+
 /** A visual traveller; native Jira drag/drop continues to own the transaction. */
 export function useIssueCohortPreview(enabled: boolean, draggedCardCode: string | null, onCancel?: () => void) {
 	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");

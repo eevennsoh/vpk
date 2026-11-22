@@ -19,3 +19,30 @@ test("collapsed and expanded board column counts share a centerline", async ({ p
 		return left && right ? Math.abs(left.y + left.height / 2 - right.y - right.height / 2) : Infinity;
 	}).toBeLessThan(0.5);
 });
+
+test("the Agent swimlane header shares the session count's vertical center", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 960, height: 900 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Group", exact: true }).click();
+	await page.getByRole("menuitemradio", { name: "Agent", exact: true }).click();
+
+	const sessionCount = page.locator("[data-agent-session-column-count]");
+	const laneHeader = page.locator("[data-board-swimlane]").first().getByRole("button", { name: /, \d+ work items?$/ });
+	await expect(sessionCount).toBeVisible();
+	await expect(laneHeader).toBeVisible();
+	const centerOffset = async () => {
+		const [count, header] = await Promise.all([sessionCount.boundingBox(), laneHeader.boundingBox()]);
+		return count && header ? Math.abs(count.y + count.height / 2 - header.y - header.height / 2) : Infinity;
+	};
+	await expect.poll(centerOffset).toBeLessThan(0.5);
+
+	const board = page.locator("[data-jira-kanban-scrollport]");
+	await board.evaluate((element) => {
+		element.scrollLeft = element.scrollWidth;
+		element.scrollTop = 100;
+	});
+	const railSurface = page.locator("[data-agent-session-column-surface]").filter({ has: sessionCount });
+	await expect(railSurface).toHaveClass(/\bbg-surface-overlay\b/);
+	await expect.poll(centerOffset).toBeLessThan(0.5);
+});
