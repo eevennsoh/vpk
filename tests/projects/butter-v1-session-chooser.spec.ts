@@ -52,12 +52,33 @@ test("selecting a session keeps the draft in the sticky composer", async ({ page
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
 	await expect(editor).toBeFocused();
 	await expect(editor).toContainText("Please check this");
+	await expect(editor.locator('[data-mention-category="subagent"]')).toHaveCount(1);
+	await expect(editor.locator('[data-mention-category="subagent"]')).toContainText("Claude");
 	await expect(page.getByTestId("reply-target-chip")).toContainText("Summarize onboarding feedback");
 	await expect(thread).toHaveAttribute("data-active", "");
 	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
 	await editor.press("Enter");
 	await expect(thread).toContainText("Please check this");
 	await expect(page.getByTestId("reply-target-chip")).toHaveCount(0);
+});
+
+test("selecting an existing session keeps the mention without enabling an empty reply", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).click();
+	await expect(editor.locator('[data-mention-category="subagent"]')).toHaveCount(1);
+	await expect(editor.locator('[data-mention-category="subagent"]')).toContainText("Claude");
+	await expect(editor.locator("xpath=..")).toHaveAttribute("data-instruction-placeholder", "true");
+	await editor.press("Enter");
+	await expect(editor.locator("xpath=..")).not.toHaveAttribute("data-instruction-placeholder");
+	await expect(page.getByTestId("reply-target-chip")).toBeVisible();
+	await expect(editor.locator('[data-mention-category="subagent"]')).toHaveCount(1);
 });
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an acknowledged reply resumes only the selected session (${reducedMotion})`, async ({ page }) => {

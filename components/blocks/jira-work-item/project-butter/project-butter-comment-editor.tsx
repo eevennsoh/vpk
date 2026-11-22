@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -105,6 +105,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	const replyAgent = replyMention?.agent;
 	const replyMentionRequestKey = replyMention?.requestKey;
 	const placeholderAgent = replyAgent?.name ?? instructionPlaceholderForAgent;
+	const [dismissedInstructionPlaceholder, setDismissedInstructionPlaceholder] = useState(false);
 	const voice = useJiraActivityComposerDictation({ value, onValueChange });
 	const extensions = useMemo(() => createRichTextEditorExtensions({ getMentionSources: () => ({ ...EDITOR_PALETTE_MENTION_SOURCES, subagent: agents.map(mapAgentToMentionItem).filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index) }), suggestionVariant: { mention: "flat", command: "flat" }, mentionSectionLabels: { subagent: "Agents" }, anchorToInput: true }), [agents]);
 	const editor = useEditor({
@@ -115,7 +116,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 				if (mentionHandoffPending && !["Shift", "Control", "Alt", "Meta"].includes(event.key)) onHandoffInterrupt?.();
 				if (event.isComposing) return false;
 				if (onCancel && event.key === "Escape" && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); onCancel(); return true; }
-				if (event.key === "Enter" && !event.shiftKey && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); save(); return true; }
+				if (event.key === "Enter" && !event.shiftKey && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); setDismissedInstructionPlaceholder(true); save(); return true; }
 				return false;
 			},
 			handleDOMEvents: {
@@ -126,6 +127,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		},
 		onCreate: ({ editor: activeEditor }) => reportMentions(activeEditor),
 		onUpdate: ({ editor: activeEditor }) => {
+			setDismissedInstructionPlaceholder(false);
 			const inserted = replyMentionState.current?.inserted;
 			const markdown = inserted && activeEditor.markdown
 				? activeEditor.markdown.serialize(removeReplyMention(activeEditor.state.tr, inserted).doc.toJSON())
@@ -140,7 +142,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		selector: ({ editor }) => ({
 			isEmpty: editor?.isEmpty ?? true,
 			canSubmit: Boolean(editor && (replyAgent ? getTextWithoutAgentMention(editor, replyAgent.name) : editor.getText().trim())),
-			showInstructionPlaceholder: Boolean(editor && !editor.isEmpty && placeholderAgent && !getTextWithoutAgentMention(editor, placeholderAgent)),
+			showInstructionPlaceholder: Boolean(editor && !editor.isEmpty && placeholderAgent && !getTextWithoutAgentMention(editor, placeholderAgent) && editor.state.doc.childCount === 1 && !editor.state.doc.firstChild?.content.content.some((node) => node.type.name === "hardBreak")),
 		}),
 	});
 	function reportMentions(activeEditor: Editor) {
@@ -259,7 +261,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			inputContext={inputContext}
 			onSubmit={() => save()}
 		>
-			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={contentState?.isEmpty ? "true" : undefined} data-instruction-placeholder={contentState?.showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
+			<EditorContent className="rich-text-editor-content rich-text-mention-caret max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={contentState?.isEmpty ? "true" : undefined} data-instruction-placeholder={contentState?.showInstructionPlaceholder && !dismissedInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
 		</FloatingComposer>
 	);
 }

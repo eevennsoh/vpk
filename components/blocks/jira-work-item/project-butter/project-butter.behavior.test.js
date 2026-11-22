@@ -28,13 +28,13 @@ test("continuing an agent sends the selected session and draft to its reply", as
 	assert.equal(view.queryByText("First session") !== null, true);
 	assert.equal(view.container.querySelector('[data-testid="agent-session-row-session-0"]') !== null, true);
 	await view.click(view.getByRole("button", { name: /First session/u }));
-	assert.deepEqual(opened, [["session-0", "follow up"]]);
+	assert.deepEqual(opened, [["session-0", "@Claude follow up"]]);
 
 	await view.rerender({ active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onReplyToSession: (session, draft) => { opened.push([session.id, draft]); return true; }, onPreviewSession() {}, onStartAgent() {}, sessions, sidePanel: false });
 	await view.click(view.getByRole("button", { name: "Mention Claude" }));
 	await view.click(view.getByRole("option", { name: /Continue in existing session/u }));
 	await view.click(view.getByRole("button", { name: /Second session/u }));
-	assert.deepEqual(opened[1], ["session-1", "follow up"]);
+	assert.deepEqual(opened[1], ["session-1", "@Claude follow up"]);
 });
 
 test("reply selection stays in the sticky composer until cleared", async () => {

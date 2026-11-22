@@ -141,12 +141,12 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 		}
 	}
 	async function openSelectedSession(session: ProjectButterSessionItem) {
-		const draft = mentionedAgent ? editorRef.current?.getDraftWithoutAgentMention(mentionedAgent.name) ?? "" : "";
 		if (onReplyToSession) {
-			if (onReplyToSession(session, draft)) { currentDraft.current = draft; setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setChoosingSession(false); setSelectedTargetIndex(0); onPreviewSession(null); }
+			if (onReplyToSession(session, currentDraft.current)) { setNewSessionAgentName(null); setChoosingSession(false); setSelectedTargetIndex(0); onPreviewSession(null); }
 			return;
 		}
 		if (!onOpenSession || openingSession.current) return;
+		const draft = mentionedAgent ? editorRef.current?.getDraftWithoutAgentMention(mentionedAgent.name) ?? "" : "";
 		openingSession.current = true;
 		const previousDraft = currentDraft.current;
 		try {
@@ -225,7 +225,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 				</div> : <RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={SESSION_TARGET_MENU_ITEMS} onHover={setSelectedTargetIndex} onSelect={(item) => chooseTarget(item.id === "new" ? "new" : "continue")} selectedIndex={selectedIndex} title="Choose agent session" />}
 			</div> : null}
 			<div onFocusCapture={() => setExpanded(true)}>
-				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest + replyFocusRequest} inputContext={replyTarget ? <ReplyContextChip entries={content.activityEntries} target={replyTarget} session={replySession} onRemove={() => { onClearReply?.(); setFocusRequest((value) => value + 1); }} /> : undefined} instructionPlaceholderForAgent={mentionedAgent && ((!choosingSession && showTargetMenu && selectedIndex === 1) || newSessionAgentName === mentionedAgent.name) ? mentionedAgent.name : undefined} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} replyMention={replyAgent ? { agent: replyAgent, requestKey: replyFocusRequest } : undefined} value={content.commentDraft} />
+				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest + replyFocusRequest} inputContext={replyTarget ? <ReplyContextChip entries={content.activityEntries} target={replyTarget} session={replySession} onRemove={() => { onClearReply?.(); setFocusRequest((value) => value + 1); }} /> : undefined} instructionPlaceholderForAgent={mentionedAgent && (showTargetMenu || newSessionAgentName === mentionedAgent.name) ? mentionedAgent.name : undefined} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} replyMention={replyAgent ? { agent: replyAgent, requestKey: replyFocusRequest } : undefined} value={content.commentDraft} />
 			</div>
 		</motion.div>
 	);

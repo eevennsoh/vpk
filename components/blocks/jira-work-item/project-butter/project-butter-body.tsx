@@ -75,7 +75,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 		}
 		content.setCommentDraft(draft);
 		content.setActivityFilters((current) => ({ ...current, agents: true }));
-		setReplyTarget({ entryId, targetId: entryId, actor: { id: session.agent.id ?? session.id, name: session.agent.name, kind: "agent" } });
+		setReplyTarget({ entryId, targetId: entryId, actor: { id: session.agent.id ?? session.id, name: session.agent.name, kind: "agent" }, mentionAgent: true });
 		setReplyFocusRequest((current) => current + 1);
 		return true;
 	}
