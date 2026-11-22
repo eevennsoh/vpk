@@ -912,7 +912,7 @@
   },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
-      "count": 48
+      "count": 47
     }
   },
   "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {
@@ -1091,7 +1091,7 @@
   },
   "components/blocks/jira-list/jira-list.source.test.js": {
     "no-restricted-syntax": {
-      "count": 325
+      "count": 312
     }
   },
   "components/blocks/jira-suggestion/components/card-faces.tsx": {
@@ -2618,11 +2618,6 @@
   "components/ui-custom/context-bar/context-bar.source.test.js": {
     "no-restricted-syntax": {
       "count": 71
-    }
-  },
-  "components/ui-custom/context.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 6
     }
   },
   "components/ui-custom/entity-card/agent-expanded.tsx": {

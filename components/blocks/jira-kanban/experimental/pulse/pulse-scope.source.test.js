@@ -412,6 +412,7 @@ const SCOPE_SOURCES = {
 	composer: readSource(joinPath(DIR, "components", "pulse-insights-composer.tsx"), "utf8"),
 	epic: readSource(joinPath(DIR, "components", "pulse-scope-brief-epic.tsx"), "utf8"),
 	header: readSource(joinPath(EXP, "experimental-board-header.tsx"), "utf8"),
+	filterActions: readSource(joinPath(EXP, "hooks", "use-page-content-model.ts"), "utf8"),
 	options: readSource(joinPath(EXP, "data", "board-filter-options.ts"), "utf8"),
 	shell: readSource(joinPath(DIR, "experimental-pulse.tsx"), "utf8"),
 	popover: readSource(joinPath(EXP, "components", "board-filter-popover.tsx"), "utf8"),
@@ -465,8 +466,8 @@ test("choosing a scope opens the surface the brief lives on", () => {
 	// restored on mount. `updateMode` rather than a raw setter: the mode may be
 	// controlled from outside, and a scope pick has to reach that owner too.
 	assert.match(
-		SCOPE_SOURCES.page,
-		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?handleOpenTimeline\(\)/u,
+		SCOPE_SOURCES.filterActions,
+		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?if \(fieldId === "parent" \|\| fieldId === "sprint"\) openTimeline\?\.\(\)/u,
 	);
 	assert.doesNotMatch(
 		SCOPE_SOURCES.page,
