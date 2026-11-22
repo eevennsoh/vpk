@@ -41,7 +41,7 @@ export function JiraListPullRequestCell({ issueKey, pullRequests = [] }: Readonl
 						if (event.detail > 0 && isMouse) event.preventBaseUIHandler();
 					}}
 					openOnHover
-					render={<Button aria-label={`${label} for ${issueKey}`} className="absolute inset-0 size-full justify-start gap-2 px-3 font-normal" type="button" variant="ghost" />}
+					render={<Button aria-label={`${label} for ${issueKey}`} className="absolute inset-0 size-full justify-start gap-2 px-3 font-normal hover:bg-transparent active:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring aria-expanded:[&_svg]:text-icon-subtle" type="button" variant="ghost" />}
 				>
 					<JiraIssuePullRequestStatusIcon status="draft" />
 					{label}

@@ -81,6 +81,8 @@ test("a List work item previews multiple pull requests beside its cell on hover"
 	await expect(preview).toBeHidden();
 	await trigger.hover();
 	await expect(preview).toBeVisible();
+	await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(trigger).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
 	const pullRequests = preview.getByRole("list", { name: "Pull requests" });
 	await expect(pullRequests.getByRole("listitem")).toHaveCount(3);
@@ -92,11 +94,17 @@ test("a List work item previews multiple pull requests beside its cell on hover"
 	await expect(pullRequests.getByRole("button", { name: "#1912 Update webhook contract fixtures Merged" })).toBeVisible();
 	await page.mouse.move(0, 0);
 	await expect(preview).toBeHidden();
+	await trigger.focus();
+	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Tab");
+	await expect(trigger).toBeFocused();
 	await trigger.press("Enter");
 	await expect(preview).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(preview).toBeHidden();
 	await expect(trigger).toBeFocused();
+	await expect.poll(() => trigger.evaluate((button) => button.matches(":focus-visible"))).toBe(true);
+	await expect(trigger).not.toHaveCSS("box-shadow", "none");
 });
 
 test("list rows cycle only agents with the same highest-priority active status", async ({ page }) => {
