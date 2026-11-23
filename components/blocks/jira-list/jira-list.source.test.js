@@ -534,7 +534,7 @@ test("JiraList exposes keyboard-accessible create controls at both row boundarie
 	assert.match(TYPES_SOURCE, /type JiraListInsertionPosition = "before" \| "after"/u);
 	assert.match(SOURCE, /function RowBoundaryCreateControls/u);
 	assert.match(SOURCE, /Create work item \$\{position\} \$\{row\.issueKey\}/u);
-	assert.match(SOURCE, /<TooltipContent side="right">Create<\/TooltipContent>/u);
+	assert.match(SOURCE, /<TooltipContent[\s\S]*?side="right"\s+sideOffset=\{4\}\s*>Create<\/TooltipContent>/u);
 	assert.match(SOURCE, /renderControl\(row, rowIndex, "before"\)/u);
 	assert.match(SOURCE, /renderControl\(row, rowIndex, "after"\)/u);
 	assert.match(SOURCE, /onFocus=/u);

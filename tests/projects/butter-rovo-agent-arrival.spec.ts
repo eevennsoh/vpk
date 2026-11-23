@@ -69,7 +69,7 @@ test("adding an agent in AI suggestions uses its Rovo button notification", asyn
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
 	const item = page.getByRole("region", { name: "Work item full screen view" });
 	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
-	const suggestions = page.getByRole("button", { name: /^\d+ suggestions$/ });
+	const suggestions = page.getByRole("button", { name: "Review suggestions", exact: true });
 	await expect(suggestions).toBeVisible();
 	await item.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Cursor", exact: true }).click();

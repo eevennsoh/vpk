@@ -25,6 +25,8 @@ function Launcher() {
 	examples: [
 		{ title: "Chat launcher", description: "The default button opens floating Rovo chat. Drag it to snap to a new position.", demoSlug: "rovo-button-demo-chat" },
 		{ title: "Persistent toolbar", description: "Pass persistentBar to attach quick actions to the launcher. This example opens live chat from the voice action.", demoSlug: "rovo-button-demo-toolbar" },
+		{ title: "Toolbar button transition", description: "The toolbar button expands into the panel by default.", demoSlug: "rovo-button-demo-button-transition" },
+		{ title: "Notification dot transition", description: "Set panelTransition to dot to morph the notification into the panel. The toolbar button is the default transition origin.", demoSlug: "rovo-button-demo-dot" },
 		{ title: "Proactive suggestion", description: "Select the launcher to add nudges. Hover or focus the stack to see and dismiss each suggestion.", demoSlug: "rovo-button-demo-proactive" },
 		{ title: "Daily insights", description: "Pass insights to show an unread count and open the digest card. Dismissing it does not mark insights as read.", demoSlug: "rovo-button-demo-insights" },
 		{ title: "Agent onboarding", description: "Pass onboarding to open an agent creation panel from the launcher.", demoSlug: "rovo-button-demo-onboarding" },
@@ -44,7 +46,7 @@ function Launcher() {
 		{ name: "onboarding", type: "FloatingRovoButtonOnboardingConfig | null", description: "Configures an agent onboarding panel. It shares the morphing surface with insights." },
 	],
 	subComponents: [
-		{ name: "FloatingRovoButtonPersistentBar", description: "A toolbar configured with items, an optional ariaLabel, and side (auto, top, or bottom). Each item supplies an id, icon, ariaLabel, and optional tooltipLabel, onClick, and indicator." },
+		{ name: "FloatingRovoButtonPersistentBar", description: "A toolbar configured with items, an optional ariaLabel, side (auto, top, or bottom), and panelTransition (button by default, or dot). Each item supplies an id, icon, ariaLabel, and optional tooltipLabel, onClick, and indicator." },
 		{ name: "FloatingRovoButtonSuggestion", description: "An id, label, and onSelect callback, with optional icon, ariaLabel, and onDismiss callback." },
 		{ name: "FloatingRovoButtonInsightsConfig", description: "An id, unread count, and rows, with optional overflow count, labels, callbacks, and controlled stage or defaultStage (hidden, pill, or card)." },
 		{ name: "FloatingRovoButtonOnboardingConfig", description: "Panel content, action labels, optional artwork and status, callbacks, and controlled open or defaultOpen state." },

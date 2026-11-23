@@ -24,6 +24,7 @@ import {
 	motion,
 	useIsPresent,
 	useMotionValue,
+	useTransform,
 	type MotionStyle,
 } from "motion/react";
 import { AnimatedRovo } from "@/components/ui-custom/animated-rovo";
@@ -63,6 +64,7 @@ import {
 } from "./motion";
 import { FloatingRovoButtonOnboardingPanelInner } from "./onboarding-panel";
 import { FloatingRovoButtonPersistentBarRail } from "./persistent-bar";
+import { NOTIFICATION_PANEL_CONTENT_ENTER, NotificationPanelMorph, type NotificationPanelAnchor } from "./notification-panel-morph";
 import type {
 	FloatingRovoButtonInsightsConfig,
 	FloatingRovoButtonInsightsStage,
@@ -78,6 +80,13 @@ const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2.5;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS = FLOATING_ROVO_BUTTON_LOGO_CYCLE_S * 1000;
 
+function getNotificationAnchor(surface: HTMLElement, positioning: FloatingRovoButtonPositioning): NotificationPanelAnchor | null {
+	const element = positioning === "container" && surface.offsetParent instanceof HTMLElement ? surface.offsetParent : null;
+	if (!element) return null;
+	const { x, y } = element.getBoundingClientRect();
+	return { element, x, y, scrollLeft: element.scrollLeft, scrollTop: element.scrollTop };
+}
+
 function FloatingRovoButtonInner({
 	onClick,
 	onDragMouseDown,
@@ -87,6 +96,7 @@ function FloatingRovoButtonInner({
 	opensDialog,
 	logo,
 	shouldReduceMotion,
+	transitioning,
 	ref,
 }: Readonly<{
 	onClick: () => void;
@@ -97,6 +107,7 @@ function FloatingRovoButtonInner({
 	opensDialog: boolean;
 	logo: ReactNode;
 	shouldReduceMotion: boolean;
+	transitioning: boolean;
 	ref?: Ref<HTMLButtonElement>;
 }>) {
 	const isPresent = useIsPresent();
@@ -109,13 +120,13 @@ function FloatingRovoButtonInner({
 			aria-haspopup={opensDialog ? "dialog" : undefined}
 			aria-label={ariaLabel}
 			// Keep the native click target mounted when first-hover animation swaps logos.
-			className={cn("flex h-full w-full items-center justify-center *:pointer-events-none", opensDialog ? null : "bg-bg-neutral-bold")}
+			className="flex h-full w-full items-center justify-center rounded-2xl bg-bg-neutral-bold *:pointer-events-none"
 			onClick={onClick}
 			onMouseDownCapture={onDragMouseDown}
 			onPointerEnter={onLogoPointerEnter}
 			onPointerDownCapture={onDragPointerDown}
 			type="button"
-			initial={shouldReduceMotion
+			initial={transitioning ? false : shouldReduceMotion
 				? { opacity: 0 }
 				: { opacity: 0, filter: "blur(6px)" }}
 			animate={shouldReduceMotion
@@ -126,8 +137,7 @@ function FloatingRovoButtonInner({
 				? { duration: 0 }
 				: { duration: 0.2, delay: 0.24, ease: motionEase.out }}
 			style={{
-				borderRadius: "inherit",
-				boxShadow: opensDialog ? undefined : token("elevation.shadow.overlay"),
+				boxShadow: token("elevation.shadow.overlay"),
 				willChange: "opacity, filter",
 			}}
 		>
@@ -174,19 +184,41 @@ export function FloatingRovoButtonSurface({
 	logoAnimationTrigger?: string;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
+	const [indicatorOrigin, setIndicatorOrigin] = useState<Readonly<{
+		bounds: DOMRect;
+		launcher: DOMRect;
+		anchor: NotificationPanelAnchor | null;
+		side: "top" | "bottom";
+		variant: "button" | "dot";
+	}> | null>(null);
+	const [indicatorMorphComplete, setIndicatorMorphComplete] = useState(false);
+	const finishIndicatorMorph = useCallback(() => {
+		if (panel?.closingToIndicator) panel.onCloseComplete?.();
+		else setIndicatorMorphComplete(true);
+	}, [panel?.closingToIndicator, panel?.onCloseComplete]);
 	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
-	const surfaceOwnsElevation = Boolean(panel) || cardOpen;
+	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && panel.openFromIndicator && indicatorOrigin && !shouldReduceMotion);
+	const closingToIndicator = Boolean(panel?.open && panel.closingToIndicator && indicatorOrigin && indicatorMorphComplete && !shouldReduceMotion);
+	const indicatorTransition = opensFromIndicator || closingToIndicator;
+	const morphingIndicator = closingToIndicator || (opensFromIndicator && !indicatorMorphComplete);
+	const surfaceOwnsElevation = cardOpen;
 	const configuredBarSide = persistentBar?.side ?? "auto";
 	const [barSide, setBarSide] = useState<"top" | "bottom">(
 		configuredBarSide === "bottom" ? "bottom" : "top",
 	);
+	useEffect(() => {
+		if (panel?.closingToIndicator && (!indicatorOrigin || !indicatorMorphComplete)) panel.onCloseComplete?.();
+	}, [indicatorMorphComplete, indicatorOrigin, panel?.closingToIndicator, panel?.onCloseComplete]);
 	// Drives the persistent bar's exit/enter: it tucks away once a drag actually
 	// moves the button and springs back when the drag is released.
 	const [isDragging, setIsDragging] = useState(false);
 	if (cardOpen && isDragging) setIsDragging(false);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
+	const launchersRef = useRef<HTMLDivElement>(null);
 	const buttonX = useMotionValue(0);
 	const buttonY = useMotionValue(0);
+	const pinnedLauncherX = useTransform(buttonX, (value) => -value);
+	const pinnedLauncherY = useTransform(buttonY, (value) => -value);
 	const [dragOrigin, setDragOrigin] = useState<FloatingRovoButtonSnapTarget | null>(null);
 	const [dragConstraints, setDragConstraints] = useState<FloatingRovoButtonDragConstraints>({
 		bottom: 0,
@@ -247,7 +279,6 @@ export function FloatingRovoButtonSurface({
 				}),
 		x: buttonX,
 		y: buttonY,
-		boxShadow: surfaceOwnsElevation ? token("elevation.shadow.overlay") : undefined,
 		transformOrigin: "center",
 		willChange: "transform, opacity",
 		backfaceVisibility: "hidden",
@@ -638,8 +669,18 @@ export function FloatingRovoButtonSurface({
 			return;
 		}
 
+		const surface = surfaceRef.current;
+		const action = [...(surface?.querySelectorAll<HTMLElement>("[data-toolbar-action-id]") ?? [])].find((element) => element.dataset.toolbarActionId === panel?.indicatorActionId);
+		const dot = action?.querySelector("[data-notification-dot]");
+		if (surface && action) {
+			const variant = persistentBar?.panelTransition === "dot" && dot ? "dot" : "button";
+			const rect = (variant === "dot" ? dot! : action).getBoundingClientRect();
+			const bounds = variant === "dot" ? rect : new DOMRect(rect.x + (rect.width - action.offsetWidth) / 2, rect.y + (rect.height - action.offsetHeight) / 2, action.offsetWidth, action.offsetHeight);
+			setIndicatorOrigin({ bounds, launcher: surface.getBoundingClientRect(), anchor: getNotificationAnchor(surface, positioning), side: barSide, variant });
+			setIndicatorMorphComplete(true);
+		}
 		onButtonClick();
-	}, [handleSuppressibleClick, onButtonClick]);
+	}, [barSide, handleSuppressibleClick, onButtonClick, panel?.indicatorActionId, persistentBar?.panelTransition, positioning]);
 	const logo = logoAnimating && !shouldReduceMotion ? (
 		<AnimatedRovo.Root key={`animated-rovo-logo-${logoAnimationRun}`} size={24} preset="full-cycle" cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S} />
 	) : <RovoColorIcon key="static-rovo-logo" size="small" />;
@@ -648,17 +689,19 @@ export function FloatingRovoButtonSurface({
 		<motion.div
 			ref={surfaceRef}
 			key="floating-rovo-button-surface"
-			layout
+			layout={!indicatorTransition}
+			data-notification-opening={morphingIndicator || undefined}
 			className={cn(
 				"z-[510]",
-				panel?.open ? "bg-surface-overlay" : insightsStage === "pill" && !cardOpen ? "bg-transparent" : "bg-bg-neutral-bold",
-				shouldReduceMotion ? null : "transition-[background-color] duration-slow ease-out",
+				surfaceOwnsElevation && !morphingIndicator ? "shadow-2xl" : null,
+				morphingIndicator ? "bg-transparent" : panel?.open ? "bg-surface-overlay" : panel || (insightsStage === "pill" && !cardOpen) ? "bg-transparent" : "bg-bg-neutral-bold",
+				shouldReduceMotion || indicatorTransition ? null : "transition-[background-color] duration-slow ease-out",
 				positioning === "container" ? "absolute" : "fixed",
 				!cardOpen ? "cursor-grab active:cursor-grabbing" : null,
 				// Three geometries, one `layout` element: the 48px button grows into
 				// the pill, and the pill grows into the card.
 				cardOpen
-					? cn("overflow-hidden", panel?.open ? "w-fit" : "w-[295px] max-w-[calc(100vw-32px)]")
+					? cn(!morphingIndicator && "overflow-hidden", panel?.open ? "w-fit" : "w-[295px] max-w-[calc(100vw-32px)]")
 					: insightsStage === "pill"
 						? "h-12 w-fit max-w-[calc(100vw-32px)]"
 						: "size-12",
@@ -677,80 +720,116 @@ export function FloatingRovoButtonSurface({
 			style={surfaceStyle}
 			onClickCapture={handleClickCapture}
 		>
-			{/* Hover/tap scale lives on this inner wrapper, not the surface, so the
-			    persistent bar (a sibling below) is not dragged around by the
-			    button's hover animation. */}
+			{morphingIndicator && indicatorOrigin ? (
+				<NotificationPanelMorph
+					origin={indicatorOrigin.bounds}
+					variant={indicatorOrigin.variant}
+					actionId={panel?.indicatorActionId}
+					closing={closingToIndicator}
+					launcherOrigin={indicatorOrigin.launcher}
+					anchor={indicatorOrigin.anchor}
+					launchersRef={launchersRef}
+					surfaceRef={surfaceRef}
+					launcherX={pinnedLauncherX}
+					launcherY={pinnedLauncherY}
+					onComplete={finishIndicatorMorph}
+				/>
+			) : null}
+			{panel?.open ? (
+				<motion.div
+					key={panel.id}
+					className={indicatorTransition ? "relative z-20" : undefined}
+					initial={shouldReduceMotion ? false : opensFromIndicator ? { opacity: 0, filter: "blur(5px)" } : { opacity: 0 }}
+					animate={indicatorTransition ? { opacity: morphingIndicator ? 0 : 1, filter: morphingIndicator ? "blur(5px)" : "blur(0px)" } : { opacity: 1 }}
+					onAnimationComplete={() => { if (!morphingIndicator && !panel.closingToIndicator) panel.onOpenComplete?.(); }}
+					transition={shouldReduceMotion ? { duration: 0 } : indicatorTransition ? NOTIFICATION_PANEL_CONTENT_ENTER : FLOATING_ROVO_BUTTON_CARD_ENTER}
+				>
+					{panel.content}
+				</motion.div>
+			) : null}
 			<motion.div
-				className="h-full w-full"
-				style={{ borderRadius: "inherit", transformOrigin: "center", willChange: "transform" }}
-				whileHover={hoverScale}
-				whileTap={tapScale}
+				ref={launchersRef}
+				className={morphingIndicator ? "pointer-events-none absolute z-20 size-12 rounded-2xl" : "contents"}
+				data-notification-launchers={morphingIndicator || undefined}
+				inert={morphingIndicator || undefined}
+				style={morphingIndicator ? { x: pinnedLauncherX, y: pinnedLauncherY } : { borderRadius: "inherit" }}
 			>
-				{panel?.open ? (
-					<motion.div
-						key={panel.id}
-						initial={shouldReduceMotion ? false : { opacity: 0 }}
-						animate={{ opacity: 1 }}
-						transition={shouldReduceMotion ? { duration: 0 } : FLOATING_ROVO_BUTTON_CARD_ENTER}
-					>
-						{panel.content}
-					</motion.div>
-				) : null}
-				<AnimatePresence mode="popLayout" initial={false}>
-					{panel?.open ? null : onboardingOpen && onboarding ? (
-						<FloatingRovoButtonOnboardingPanelInner
-							key="panel"
-							onboarding={onboarding}
-							onOpenChange={onOpenChange}
+				{/* Hover/tap scale lives on this inner wrapper, not the surface, so the
+				    persistent bar (a sibling below) is not dragged around by the
+				    button's hover animation. */}
+				<motion.div
+					className="h-full w-full"
+					style={{ borderRadius: "inherit", transformOrigin: "center", willChange: "transform" }}
+					whileHover={hoverScale}
+					whileTap={tapScale}
+				>
+					<AnimatePresence mode="popLayout" initial={false}>
+						{panel?.open && !morphingIndicator ? null : onboardingOpen && onboarding ? (
+							<FloatingRovoButtonOnboardingPanelInner
+								key="panel"
+								onboarding={onboarding}
+								onOpenChange={onOpenChange}
+								shouldReduceMotion={shouldReduceMotion}
+							/>
+						) : insightsStage === "card" && insights ? (
+							<FloatingRovoButtonDailyInsightsPanelInner
+								key="insights-card"
+								insights={insights}
+								onDismiss={onInsightsDismiss}
+								onPrimaryAction={onInsightsPrimaryAction}
+								onSecondaryAction={onInsightsSecondaryAction}
+								shouldReduceMotion={shouldReduceMotion}
+							/>
+						) : insightsStage === "pill" && insights ? (
+							<FloatingRovoButtonDailyInsightsPill
+								key="insights-pill"
+								ref={insightsPillRef}
+								insights={insights}
+								logo={logo}
+								onClick={handleButtonClick}
+								onLogoPointerEnter={handleLogoPointerEnter}
+								onDragMouseDown={handleDragMouseDown}
+								onDragPointerDown={handleDragPointerDown}
+								shouldReduceMotion={shouldReduceMotion}
+							/>
+						) : (
+							<FloatingRovoButtonInner
+								key="button"
+								ref={collapsedButtonRef}
+								onClick={handleButtonClick}
+								onDragMouseDown={handleDragMouseDown}
+								onDragPointerDown={handleDragPointerDown}
+								onLogoPointerEnter={handleLogoPointerEnter}
+								ariaLabel={ariaLabel}
+								opensDialog={Boolean(panel)}
+								logo={logo}
+								shouldReduceMotion={shouldReduceMotion}
+								transitioning={morphingIndicator}
+							/>
+						)}
+					</AnimatePresence>
+				</motion.div>
+				<AnimatePresence custom={indicatorTransition}>
+					{persistentBar && persistentBar.items.length > 0 && dragOrigin && (!cardOpen || morphingIndicator) && !isDragging ? (
+						<FloatingRovoButtonPersistentBarRail
+							key="persistent-bar"
+							bar={persistentBar}
+							indicatorActionId={panel?.indicatorActionId}
+							indicatorInFlight={morphingIndicator}
+							onIndicatorPress={(button, dot) => {
+								const surface = surfaceRef.current;
+								if (!surface) return;
+								const launcher = surface.getBoundingClientRect();
+								const variant = persistentBar.panelTransition === "dot" && dot ? "dot" : "button";
+								setIndicatorOrigin({ bounds: variant === "dot" ? dot! : button, launcher, anchor: getNotificationAnchor(surface, positioning), side: barSide, variant });
+								setIndicatorMorphComplete(false);
+							}}
+							side={morphingIndicator && indicatorOrigin ? indicatorOrigin.side : barSide}
 							shouldReduceMotion={shouldReduceMotion}
 						/>
-					) : insightsStage === "card" && insights ? (
-						<FloatingRovoButtonDailyInsightsPanelInner
-							key="insights-card"
-							insights={insights}
-							onDismiss={onInsightsDismiss}
-							onPrimaryAction={onInsightsPrimaryAction}
-							onSecondaryAction={onInsightsSecondaryAction}
-							shouldReduceMotion={shouldReduceMotion}
-						/>
-					) : insightsStage === "pill" && insights ? (
-						<FloatingRovoButtonDailyInsightsPill
-							key="insights-pill"
-							ref={insightsPillRef}
-							insights={insights}
-							logo={logo}
-							onClick={handleButtonClick}
-							onLogoPointerEnter={handleLogoPointerEnter}
-							onDragMouseDown={handleDragMouseDown}
-							onDragPointerDown={handleDragPointerDown}
-							shouldReduceMotion={shouldReduceMotion}
-						/>
-					) : (
-						<FloatingRovoButtonInner
-							key="button"
-							ref={collapsedButtonRef}
-							onClick={handleButtonClick}
-							onDragMouseDown={handleDragMouseDown}
-							onDragPointerDown={handleDragPointerDown}
-							onLogoPointerEnter={handleLogoPointerEnter}
-							ariaLabel={ariaLabel}
-							opensDialog={Boolean(panel)}
-							logo={logo}
-							shouldReduceMotion={shouldReduceMotion}
-						/>
-					)}
+					) : null}
 				</AnimatePresence>
 			</motion.div>
-			<AnimatePresence>
-				{persistentBar && persistentBar.items.length > 0 && dragOrigin && !cardOpen && !isDragging ? (
-					<FloatingRovoButtonPersistentBarRail
-						key="persistent-bar"
-						bar={persistentBar}
-						side={barSide}
-						shouldReduceMotion={shouldReduceMotion}
-					/>
-				) : null}
-			</AnimatePresence>
 		</motion.div>
 	);
 }

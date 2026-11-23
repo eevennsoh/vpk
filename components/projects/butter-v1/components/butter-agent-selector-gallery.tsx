@@ -28,7 +28,7 @@ export function ButterAgentSelectorControls({ presentation, onPresentationChange
 	</ToggleGroup>;
 }
 
-export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false, showCreateAgent = true }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean; showCreateAgent?: boolean }>) {
+export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean }>) {
 	const router = useRouter();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
 	const [favoriteAgentIds, setFavoriteAgentIds] = useState<readonly string[]>([]);
@@ -46,14 +46,14 @@ export function ButterAgentSelectorGallery({ presentation = "inline", label, clo
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
 				<section aria-label={label ?? "Project Butter agent selector"} className={cn("w-full", useSubmenu && "overflow-hidden rounded-lg bg-popover text-popover-foreground")} style={useSubmenu ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
-					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => setCloudStatus("Browse agents (preview)")} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} showCreateAgent={showCreateAgent} /> : <ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
+					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => setCloudStatus("Browse agents (preview)")} onCreateAgent={createAgent} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} onCreateAgent={createAgent} /> : <ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
 							key={pickerKey}
 							favoriteAgentIds={favoriteAgentIds}
 							onFavoriteAgentIdsChange={setFavoriteAgentIds}
 							onAssign={startSession}
 							onBrowseAgents={() => setDirectoryOpen(true)}
-							onCreateAgent={showCreateAgent ? createAgent : undefined}
+							onCreateAgent={createAgent}
 							selectedAgentIds={selectedAgentIds}
 							showSubmenuChevron
 						/>

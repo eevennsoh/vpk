@@ -18,6 +18,14 @@ export const BLOCK_VARIANT_CATALOG_DEMO_ENTRIES: Record<string, ComponentType> =
 		() => import("../demos/blocks/rovo-button-demo").then((mod) => ({ default: mod.RovoButtonDemoToolbar })),
 		{ ssr: false },
 	),
+	"rovo-button-demo-dot": dynamic(
+		() => import("../demos/blocks/rovo-button-demo").then((mod) => ({ default: mod.RovoButtonDemoDot })),
+		{ ssr: false },
+	),
+	"rovo-button-demo-button-transition": dynamic(
+		() => import("../demos/blocks/rovo-button-demo").then((mod) => ({ default: mod.RovoButtonDemoButtonTransition })),
+		{ ssr: false },
+	),
 	"rovo-button-demo-proactive": dynamic(
 		() => import("../demos/blocks/rovo-button-demo").then((mod) => ({ default: mod.RovoButtonDemoProactive })),
 		{ ssr: false },

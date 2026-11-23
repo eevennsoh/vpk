@@ -349,15 +349,15 @@ test("floating Rovo button default right reads the untracked panel width var", (
 test("floating Rovo button applies collapsed elevation to the button surface", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<motion\.button[\s\S]*opensDialog \? null : "bg-bg-neutral-bold"[\s\S]*boxShadow: opensDialog \? undefined : token\("elevation\.shadow\.overlay"\)/u,
+		/<motion\.button[\s\S]*bg-bg-neutral-bold[\s\S]*boxShadow: token\("elevation\.shadow\.overlay"\)/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const surfaceOwnsElevation = Boolean\(panel\) \|\| cardOpen;/u,
+		/const surfaceOwnsElevation = cardOpen;/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/boxShadow: surfaceOwnsElevation \? token\("elevation\.shadow\.overlay"\) : undefined/u,
+		/surfaceOwnsElevation && !morphingIndicator \? "shadow-2xl" : null/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -365,7 +365,7 @@ test("floating Rovo button applies collapsed elevation to the button surface", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/cardOpen\s*\?\s*cn\("overflow-hidden", panel\?\.open \? "w-fit" : "w-\[295px\] max-w-\[calc\(100vw-32px\)\]"\)\s*:\s*insightsStage === "pill"\s*\?\s*"h-12 w-fit max-w-\[calc\(100vw-32px\)\]"\s*:\s*"size-12"/u,
+		/cardOpen\s*\?\s*cn\(!morphingIndicator && "overflow-hidden", panel\?\.open \? "w-fit" : "w-\[295px\] max-w-\[calc\(100vw-32px\)\]"\)\s*:\s*insightsStage === "pill"\s*\?\s*"h-12 w-fit max-w-\[calc\(100vw-32px\)\]"\s*:\s*"size-12"/u,
 	);
 });
 

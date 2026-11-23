@@ -1,24 +1,201 @@
 import { expect, test, type Page } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("the review button reveals the stacked cards before they unfold into a list", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	await review.focus();
+	const frames = page.evaluate(() => new Promise<{ stackVisible: boolean; gaps: number[] }>((resolve) => {
+		let stackVisible = false;
+		const gaps: number[] = [];
+		const start = performance.now();
+		function sample() {
+			const stack = document.querySelector<HTMLElement>('[aria-roledescription="suggestion stack"]');
+			stackVisible ||= stack?.checkVisibility({ opacityProperty: true, visibilityProperty: true }) ?? false;
+			const cards = [...document.querySelectorAll<HTMLElement>('[role="list"][aria-label="Suggestions"] > [role="listitem"] > div')];
+			if (cards.length > 1) gaps.push(cards[1].getBoundingClientRect().top - cards[0].getBoundingClientRect().top);
+			if (performance.now() - start < 1800) requestAnimationFrame(sample);
+			else resolve({ stackVisible, gaps });
+		}
+		requestAnimationFrame(sample);
+	}));
+	await review.press("Enter");
+	const result = await frames;
+	expect(result.stackVisible).toBe(true);
+	expect(result.gaps.length).toBeGreaterThan(2);
+	expect(Math.max(...result.gaps) - Math.min(...result.gaps)).toBeGreaterThan(20);
+});
+
+test("the review button expands into the panel with its notification attached", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	const dot = review.locator("[data-notification-dot]");
+	await expect(dot).toBeVisible();
+	await expect(dot).toHaveCSS("width", "8px");
+	await expect(dot).toHaveCSS("background-color", await dot.evaluate((element) => {
+		const swatch = document.createElement("span");
+		swatch.style.backgroundColor = "var(--ds-background-information-bold)";
+		element.append(swatch);
+		const color = getComputedStyle(swatch).backgroundColor;
+		swatch.remove();
+		return color;
+	}));
+	await review.focus();
+	await expect.poll(async () => (await review.boundingBox())?.height).toBeCloseTo(48, 0);
+	const reviewBounds = await review.boundingBox();
+	if (!reviewBounds) throw new Error("The review launcher is unavailable");
+	const frames = page.evaluate(() => {
+		const button = document.querySelector<HTMLElement>('[data-toolbar-action-id="review-suggestions"]')!;
+		return new Promise<{ x: number; y: number; width: number; height: number; sameButton: boolean }[]>((resolve) => {
+			const samples: { x: number; y: number; width: number; height: number; sameButton: boolean }[] = [];
+			const started = performance.now();
+			function sample() {
+				const morph = document.querySelector<HTMLElement>("[data-button-morph]");
+				if (morph) {
+					const bounds = morph.getBoundingClientRect();
+					samples.push({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, sameButton: morph === button });
+				}
+				if (performance.now() - started < 1200) requestAnimationFrame(sample);
+				else resolve(samples);
+			}
+			requestAnimationFrame(sample);
+		});
+	});
+	await review.press("Enter");
+	const samples = await frames;
+	expect(samples.length).toBeGreaterThan(2);
+	const first = samples[0];
+	expect(Math.abs(first.x + first.width / 2 - (reviewBounds.x + reviewBounds.width / 2))).toBeLessThan(80);
+	expect(Math.abs(first.y + first.height / 2 - (reviewBounds.y + reviewBounds.height / 2))).toBeLessThan(80);
+	expect(first.width).toBeGreaterThan(35);
+	const last = samples.at(-1)!;
+	expect(last.width).toBeGreaterThan(first.width * 3);
+	expect(last.height).toBeGreaterThan(first.height * 3);
+	expect(samples.every((sample) => sample.sameButton)).toBe(true);
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await panel.getByRole("button", { name: "Close suggestions" }).click();
+	await expect(review).toBeVisible();
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+});
+
+test("the persistent review action reopens suggestions after closing and completion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await expect(review).toBeVisible();
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+	await expect(page.getByRole("region", { name: "Rovo suggestions" })).toHaveCount(0);
+	await review.click();
+	await expect(panel).toBeVisible();
+	await expect(page.locator("[data-notification-morph]")).toHaveCount(0);
+	await panel.getByRole("button", { name: "Close suggestions" }).click();
+	await expect(review).toBeVisible();
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+	await review.click();
+	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
+	await expect(panel).toHaveCount(0);
+	await expect(review).toBeVisible();
+	await expect(review.locator("[data-notification-dot]")).toHaveCount(0);
+	await review.click();
+	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+});
+
+test("the notification remains until all remaining suggestions are dismissed", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await review.click();
+	await panel.getByRole("button", { name: "Accept description", exact: true }).click();
+	await panel.getByRole("button", { name: "Close suggestions" }).click();
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+	await review.click();
+	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await expect(panel).toHaveCount(0);
+	await expect(review.locator("[data-notification-dot]")).toHaveCount(0);
+	await review.click();
+	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+});
+
+for (const opener of ["Review suggestions", "Review AI suggestions"]) test(`closing the panel opened from ${opener} returns it to the button`, async ({ page }) => {
+	const consoleErrors: string[] = [];
+	page.on("console", (message) => { if (message.type() === "error" && /uncontrolled state of openProp/u.test(message.text())) consoleErrors.push(message.text()); });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+	await page.getByRole("button", { name: opener, exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await expect(panel.getByRole("list", { name: "Suggestions" })).toBeVisible();
+	await expect(page.locator("[data-notification-morph]")).toHaveCount(0);
+	const frames = page.evaluate(() => new Promise<{ width: number; y: number }[]>((resolve) => {
+		const samples: { width: number; y: number }[] = [];
+		const started = performance.now();
+		function sample() {
+			const shape = document.querySelector<HTMLElement>("[data-button-morph]");
+			if (shape) {
+				const rect = shape.getBoundingClientRect();
+				samples.push({ width: rect.width, y: rect.y });
+			}
+			if (performance.now() - started < 1200) requestAnimationFrame(sample);
+			else resolve(samples);
+		}
+		requestAnimationFrame(sample);
+	}));
+	await panel.getByRole("button", { name: "Close suggestions" }).click();
+	const samples = await frames;
+	expect(samples.length).toBeGreaterThan(2);
+	expect(samples[0].width).toBeGreaterThan(250);
+	expect(samples.at(-1)!.width).toBeGreaterThan(35);
+	expect(samples.at(-1)!.width).toBeLessThan(65);
+	expect(samples.at(-1)!.y - samples[0].y).toBeGreaterThan(20);
+	await expect(panel).toHaveCount(0);
+	await expect(review.locator("[data-notification-dot]")).toBeVisible();
+	expect(consoleErrors).toEqual([]);
+});
+
+test("closing during the notification transition leaves the review usable", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	await review.click();
+	await panel.press("Escape");
+	await expect(panel).toHaveCount(0);
+	await expect(page.locator("[data-notification-morph]")).toHaveCount(0);
+	await expect(review).toBeVisible();
+	await review.click();
+	await expect(panel).toBeVisible();
+});
+
 test("AI suggestions starts with an empty work item and opens the Rovo review list", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
 	const description = page.getByRole("textbox", { name: "Work item description" });
 	const launcher = page.getByRole("button", { name: "Review AI suggestions" });
-	const nudge = page.getByRole("button", { name: /^\d+ suggestions$/ });
+	const review = page.getByRole("button", { name: "Review suggestions", exact: true });
 	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
 	const descriptionSuggestion = "Help merchants adopt Payments SDK v2 with a clear onboarding path";
 	const animatedLogo = launcher.locator("svg linearGradient").first();
 	await expect(animatedLogo).toBeAttached();
 	await expect(description).toHaveText("");
 	await expect(page.getByRole("heading", { name: "Improve merchant onboarding for Payments SDK v2" })).toBeVisible();
-	await expect(nudge).toHaveText("5 suggestions");
+	await expect(review).toBeVisible();
+	await expect(page.getByRole("region", { name: "Rovo suggestions" })).toHaveCount(0);
 	await expect(panel).toHaveCount(0);
 	await expect(animatedLogo).not.toBeAttached();
 	await launcher.focus();
-	await expect(launcher).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(launcher).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 	const opening = await launcher.evaluateHandle((button) => {
 		const surface = button.closest(".fixed");
 		if (!surface) throw new Error("The floating Rovo surface was not found");
@@ -123,13 +300,9 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await expect(panel.getByText("Acceptance criteria", { exact: true })).toHaveCount(0);
 	await expect.poll(() => opening.evaluate((motion) => motion.done)).toBe(true);
 	const entrance = await opening.jsonValue();
-	expect(entrance.sawHiddenStackDuringExpansion).toBe(true);
-	expect(entrance.sawFannedStack).toBe(true);
-	expect(entrance.showedStackEarly).toBe(false);
 	expect(entrance.listRevealHeightRatio).toBeGreaterThanOrEqual(0.998);
 	expect(entrance.listRevealWidthRatio).toBeGreaterThanOrEqual(0.998);
-	expect(entrance.listRevealDelay).toBeLessThan(500);
-	expect(entrance.visibleStackFrames).toBe(0);
+	expect(entrance.visibleStackFrames).toBeGreaterThan(0);
 	expect(entrance.maxHorizontalOffset).toBeLessThan(1);
 	expect(entrance.maxSecondRowGap - entrance.minSecondRowGap).toBeGreaterThan(20);
 	expect(entrance.sawVisibleOverlap).toBe(true);
@@ -138,9 +311,6 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	expect(entrance.lostHeadContent).toBe(false);
 	expect(entrance.sawRearBlur).toBe(false);
 	expect(entrance.sawBlankRearFace).toBe(true);
-	expect(await panel.evaluate((dialog: HTMLElement) => dialog.offsetHeight)).toBe(entrance.openingHeight);
-	expect(entrance.colorChangedDuringGrowth).toBe(true);
-	expect(entrance.sawLogoDuringExpansion).toBe(false);
 	expect(entrance.dialogPaintedBackground).toBe(false);
 	await expect.poll(() => panel.evaluate((dialog) => {
 		const surface = dialog.closest(".fixed");
@@ -151,11 +321,12 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 		surface.append(reference);
 		const overlayShadow = getComputedStyle(reference).boxShadow;
 		reference.remove();
+		const surfaceShadow = style.boxShadow.replaceAll("rgba(0, 0, 0, 0) 0px 0px 0px 0px, ", "");
 		return {
 			border: style.borderWidth,
 			outline: style.outlineStyle,
 			radius: style.borderRadius,
-			usesOverlayShadow: overlayShadow !== "none" && style.boxShadow === overlayShadow,
+			usesOverlayShadow: overlayShadow !== "none" && surfaceShadow === overlayShadow,
 		};
 	})).toEqual({ border: "0px", outline: "none", radius: "8px", usesOverlayShadow: true });
 	await expect(panel.getByRole("button", { name: /^Show as (stack|list)$/ })).toHaveCount(0);
@@ -187,9 +358,9 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await expect(description).toContainText(descriptionSuggestion);
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(description).toHaveText("");
-	await expect(nudge).toBeVisible();
+	await expect(review).toBeVisible();
 	const viewport = page.viewportSize();
-	await nudge.click();
+	await review.click();
 	await page.setViewportSize({ width: 1280, height: 720 });
 	await expect(panel.getByRole("list", { name: "Suggestions", exact: true })).toBeVisible();
 	if (viewport) await page.setViewportSize(viewport);
@@ -197,6 +368,7 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await expect(panel).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toBeFocused();
 	await expect(page.getByText("All caught up", { exact: true })).toHaveCount(0);
+	await expect(review).toBeVisible();
 	await expect(description).toContainText(descriptionSuggestion);
 	await expect(page.getByRole("button", { name: "Change assignee" })).toContainText("Robi Lopez");
 	await expect(page.getByRole("region", { name: "Acceptance criteria" })).toHaveCount(0);

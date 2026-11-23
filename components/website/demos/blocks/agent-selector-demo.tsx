@@ -5,7 +5,7 @@ import { ButterAgentSelectorGallery } from "@/components/projects/butter-v1/comp
 import type { ReactElement } from "react";
 
 export default function AgentSelectorDemo(): ReactElement {
-	return <div className="flex items-center justify-center p-6"><ButterAgentSelectorGallery cloudOnly showCreateAgent={false} /></div>;
+	return <div className="flex items-center justify-center p-6"><ButterAgentSelectorGallery cloudOnly /></div>;
 }
 
 export function AgentSelectorDemoIncludeByline(): ReactElement {

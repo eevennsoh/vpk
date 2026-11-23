@@ -27,6 +27,8 @@ export type FloatingRovoButtonPersistentBarSide = "auto" | "top" | "bottom";
 
 export interface FloatingRovoButtonPersistentBar {
 	items: FloatingRovoButtonPersistentBarItem[];
+	/** The toolbar action's surface opens the panel by default; "dot" animates its notification indicator. */
+	panelTransition?: "button" | "dot";
 	/**
 	 * Which edge of the button the bar attaches to. `"auto"` (default) places it
 	 * above the button when the button sits in the lower half of its space and
@@ -148,6 +150,11 @@ export interface FloatingRovoButtonPanel {
 	id: string;
 	open: boolean;
 	content: ReactNode;
+	indicatorActionId?: string;
+	openFromIndicator?: boolean;
+	closingToIndicator?: boolean;
+	onOpenComplete?: () => void;
+	onCloseComplete?: () => void;
 }
 
 export interface FloatingRovoButtonProps {

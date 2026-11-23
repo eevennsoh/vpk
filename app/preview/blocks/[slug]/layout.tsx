@@ -5,6 +5,8 @@ const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set([
 	"rovo-button",
 	"rovo-button-demo-chat",
 	"rovo-button-demo-toolbar",
+	"rovo-button-demo-dot",
+	"rovo-button-demo-button-transition",
 	"rovo-button-demo-proactive",
 	"rovo-button-demo-insights",
 	"rovo-button-demo-onboarding",

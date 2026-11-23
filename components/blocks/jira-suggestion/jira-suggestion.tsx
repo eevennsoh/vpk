@@ -1,6 +1,6 @@
 "use client";
 
-import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
+import TextReviewIcon from "@atlaskit/icon-lab/core/text-review";
 import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "motion/react";
@@ -26,13 +26,13 @@ import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 const FLOATING_PANEL_MAX_HEIGHT = 500;
 
 type FloatingPanelStage =
-	| { phase: "closed" | "reopening" | "measuring" | "list" | "caught-up" }
+	| { phase: "closed" | "reopening" | "measuring" | "list" | "caught-up" | "closing" }
 	| { phase: "expanding"; height: number };
 
-export function JiraFloatingSuggestions({ feed, notification, portalContainer, ref, workItemKey }: Readonly<{ feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
+export function JiraFloatingSuggestions({ feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
-	const [showNudge, setShowNudge] = useState(true);
+	const [openFromIndicator, setOpenFromIndicator] = useState(false);
 	const reduceMotion = useReducedMotion();
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -40,6 +40,7 @@ export function JiraFloatingSuggestions({ feed, notification, portalContainer, r
 	const deck = useDeck(feed, () => {});
 	const count = feed.review.pending.length;
 	const label = `${count} ${count === 1 ? "suggestion" : "suggestions"}`;
+	const hasNotification = count > 0;
 	const openingStage: FloatingPanelStage = reduceMotion ? { phase: "list" } : feed.runs.length === 1
 		? { phase: "expanding", height: FLOATING_PANEL_MAX_HEIGHT }
 		: { phase: "measuring" };
@@ -48,76 +49,73 @@ export function JiraFloatingSuggestions({ feed, notification, portalContainer, r
 	const isExpanding = phase === "expanding" && !reduceMotion;
 	const listStage = isMeasuring ? "measuring" : isExpanding ? "intro" : "list";
 	useEffect(() => {
-		if (!isMeasuring && !isExpanding) return;
-		let previous: DOMRect | undefined;
+		if (!isMeasuring) return;
 		const revealWhenSettled = () => {
 			const panel = panelRef.current;
-			if (!panel?.offsetHeight) {
-				previous = undefined;
-				return;
-			}
-
-			// Measure the compact results at their natural list height before building the stack.
-			if (isMeasuring) {
-				const height = panel.offsetHeight;
-				cancelFrame(revealWhenSettled);
-				setPanelStage((stage) => stage.phase === "measuring" ? { phase: "expanding", height } : stage);
-				return;
-			}
-
-			const bounds = panel.getBoundingClientRect();
-			const settled = previous?.x === bounds.x && previous.y === bounds.y
-				&& previous.width === bounds.width && previous.height === bounds.height
-				&& Math.abs(bounds.width - panel.offsetWidth) <= 0.5
-				&& Math.abs(bounds.height - panel.offsetHeight) <= 0.5;
-			previous = bounds;
-			if (!settled) return;
+			if (!panel?.offsetHeight) return;
+			const height = panel.offsetHeight;
 			cancelFrame(revealWhenSettled);
-			setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage);
+			setPanelStage((stage) => stage.phase === "measuring" ? { phase: "expanding", height } : stage);
 		};
 		frame.postRender(revealWhenSettled, true);
 		return () => cancelFrame(revealWhenSettled);
-	}, [isExpanding, isMeasuring]);
+	}, [isMeasuring]);
 
 	if (phase === "reopening") setPanelStage(count > 0 ? openingStage : { phase: "caught-up" });
 	else if (count === 0 && phase !== "closed" && phase !== "caught-up") setPanelStage({ phase: "closed" });
 	else if (count > 0 && phase === "caught-up") setPanelStage(openingStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
-		setShowNudge(false);
 		setPanelStage(openingStage);
 	};
-	const close = () => {
+	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
+		setOpenFromIndicator(false);
+	}, []);
+	const close = () => {
 		feed.acknowledgeNew();
+		if (count > 0 && !reduceMotion) setPanelStage({ phase: "closing" });
+		else finishClose();
 	};
-	useImperativeHandle(ref, () => ({
-		reopen: () => {
+	const reopen = (): true => {
+		feed.onOpenReview?.(panelId);
+		setOpenFromIndicator(false);
+		deck.restoreDismissed();
+		closeChat();
+		setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
+		return true;
+	};
+	useImperativeHandle(ref, () => ({ reopen }));
+	const openReview = () => {
+		setOpenFromIndicator(true);
+		if (count > 0) show();
+		else {
 			feed.onOpenReview?.(panelId);
-			deck.restoreDismissed();
-			closeChat();
-			setShowNudge(false);
-			setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
-			return true;
-		},
-	}));
+			setPanelStage({ phase: "caught-up" });
+		}
+	};
 
 	if (typeof document === "undefined") return null;
 	return createPortal(
 		<>
-			<span className="sr-only" role="status">{count === 0 ? deck.announcement : showNudge ? label : ""}</span>
+			<span className="sr-only" role="status">{count === 0 ? deck.announcement : label}</span>
 			<FloatingRovoButton
 				animateLogoOnMount
 				ariaLabel={count > 0 ? "Review AI suggestions" : "Open Rovo chat"}
-				onButtonClick={count > 0 ? show : undefined}
-				panel={count > 0 || phase !== "closed" ? {
+				onButtonClick={count > 0 ? () => { setOpenFromIndicator(false); show(); } : undefined}
+				panel={{
 					id: panelId,
 					open: phase !== "closed",
+					indicatorActionId: "review-suggestions",
+					openFromIndicator,
+					closingToIndicator: phase === "closing",
+					onOpenComplete: () => setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage),
+					onCloseComplete: finishClose,
 					content: (
 						<StackPanel
 							className={cn(
 								"max-w-[calc(100vw-3rem)] rounded-none bg-transparent shadow-none",
-								listStage !== "list" ? "[&_[data-scrollport]]:invisible" : null,
+								listStage === "measuring" ? "[&_[data-scrollport]]:invisible" : null,
 							)}
 							deck={deck}
 							deckRef={deckRef}
@@ -133,20 +131,11 @@ export function JiraFloatingSuggestions({ feed, notification, portalContainer, r
 							title={`Suggestions for ${workItemKey}`}
 						/>
 					),
-				} : undefined}
+				}}
 				positioning={portalContainer ? "container" : "viewport"}
 				product="jira"
-				suggestion={notification ?? (showNudge && count > 0 ? {
-					id: panelId,
-					label,
-					icon: (
-						<span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center text-icon-inverse">
-							<LightbulbIcon color="currentColor" label="" size="small" />
-						</span>
-					),
-					onSelect: show,
-					onDismiss: () => setShowNudge(false),
-				} : null)}
+				persistentBar={{ panelTransition, items: [{ id: "review-suggestions", ariaLabel: "Review suggestions", tooltipLabel: count > 0 ? label : "Review suggestions", icon: <TextReviewIcon color="currentColor" label="" />, indicator: hasNotification, onClick: openReview }] }}
+				suggestion={notification}
 			/>
 		</>,
 		portalContainer ?? document.body,

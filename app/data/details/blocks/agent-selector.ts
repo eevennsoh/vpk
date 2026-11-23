@@ -25,6 +25,7 @@ const agents: AgentSelectorAgent[] = [
     onSelect: () => console.log(agent.id),
   }]}
   onBrowseAgents={() => console.log("browse agents")}
+  onCreateAgent={() => console.log("create agent")}
 />`,
 		demoLayout: { previewHeight: "fixed", examplesContentWidth: "full" },
 		examples: [

@@ -121,6 +121,8 @@ export function RowBoundaryCreateControls({
 	showHoverGrip?: boolean;
 	onPointerLeave?: (event: PointerEvent<HTMLElement>) => void;
 }>) {
+	const [tooltipTarget, setTooltipTarget] = useState<{ key: string; anchor: HTMLElement } | null>(null);
+	const closeTooltip = (key: string) => setTooltipTarget((current) => current?.key === key ? null : current);
 	const renderControl = (
 		row: Pick<JiraListRowData, "issueKey">,
 		rowIndex: number,
@@ -129,10 +131,13 @@ export function RowBoundaryCreateControls({
 		const isActive = isInsertionTarget(activeTarget, row.issueKey, position);
 		const insertAtIndex = position === "before" ? rowIndex : rowIndex + 1;
 		const target = { issueKey: row.issueKey, position };
+		const tooltipKey = `${row.issueKey}-${position}`;
 
 		return (
-			<Tooltip key={`${row.issueKey}-${position}`}>
+			<Tooltip animate={false} key={tooltipKey} open={tooltipTarget?.key === tooltipKey} onOpenChange={(open) => { if (!open) closeTooltip(tooltipKey); }}>
 				<TooltipTrigger
+					closeDelay={0}
+					delay={0}
 					render={
 						<Button
 							aria-label={`Create work item ${position} ${row.issueKey}`}
@@ -142,13 +147,18 @@ export function RowBoundaryCreateControls({
 							)}
 							data-insertion-position={position}
 							data-insertion-issue-key={row.issueKey}
-							onBlur={() => onFocusedTargetChange(null)}
+							onBlur={() => { onFocusedTargetChange(null); closeTooltip(tooltipKey); }}
 							onClick={() => {
 								onFocusedTargetChange(null);
 								onHoveredTargetChange(null);
+								closeTooltip(tooltipKey);
 								onCreate?.({ insertAtIndex, position, relativeToIssueKey: row.issueKey });
 							}}
-							onFocus={() => onFocusedTargetChange(target)}
+							onFocus={(event) => {
+								onFocusedTargetChange(target);
+								const marker = event.currentTarget.querySelector<HTMLElement>("[data-create-marker]");
+								if (marker && event.currentTarget.matches(":focus-visible")) setTooltipTarget({ key: tooltipKey, anchor: marker });
+							}}
 							onPointerEnter={() => onHoveredTargetChange(target)}
 							onPointerLeave={(event) => {
 								if (event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-jira-list-work-row]")) return;
@@ -166,11 +176,28 @@ export function RowBoundaryCreateControls({
 						/>
 					}
 				>
-					<span className="absolute left-0 top-1/2 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-surface-overlay group-hover/create-gap:bg-surface-overlay-hovered group-active/create-gap:bg-surface-overlay-pressed group-focus-visible/create-gap:border-ring">
+					<span
+						className="absolute left-0 top-1/2 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-surface-overlay group-hover/create-gap:bg-surface-overlay-hovered group-active/create-gap:bg-surface-overlay-pressed group-focus-visible/create-gap:border-ring"
+						data-create-marker
+						onPointerEnter={(event) => { if (event.pointerType !== "touch") setTooltipTarget({ key: tooltipKey, anchor: event.currentTarget }); }}
+						onPointerLeave={(event) => {
+							if (event.relatedTarget instanceof Element && event.relatedTarget.closest('[data-slot="tooltip-content"]')) return;
+							if (!event.currentTarget.closest("button")?.matches(":focus-visible")) closeTooltip(tooltipKey);
+						}}
+					>
 						<Icon render={<AddIcon label="" size="small" />} />
 					</span>
 				</TooltipTrigger>
-				<TooltipContent side="right">Create</TooltipContent>
+				<TooltipContent
+					anchor={tooltipTarget?.key === tooltipKey ? tooltipTarget.anchor : undefined}
+					className="before:absolute before:inset-y-0 before:right-full before:w-1 before:content-[''] data-[side=left]:before:left-full data-[side=left]:before:right-auto"
+					onPointerLeave={(event) => {
+						if (event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-create-marker]")) return;
+						if (!tooltipTarget?.anchor.closest("button")?.matches(":focus-visible")) closeTooltip(tooltipKey);
+					}}
+					side="right"
+					sideOffset={4}
+				>Create</TooltipContent>
 			</Tooltip>
 		);
 	};

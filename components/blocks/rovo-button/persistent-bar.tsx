@@ -1,21 +1,31 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useIsPresent, usePresenceData } from "motion/react";
+import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { FloatingRovoButtonPersistentBar } from "./types";
+import type { FloatingRovoButtonPersistentBar, FloatingRovoButtonPersistentBarItem } from "./types";
 import { motionEase } from "@/lib/motion";
 
 export function FloatingRovoButtonPersistentBarRail({
 	bar,
+	indicatorActionId,
+	indicatorInFlight = false,
+	onIndicatorPress,
 	side,
 	shouldReduceMotion,
 }: Readonly<{
 	bar: FloatingRovoButtonPersistentBar;
+	indicatorActionId?: string;
+	indicatorInFlight?: boolean;
+	onIndicatorPress?: (button: DOMRect, dot: DOMRect | undefined, item: FloatingRovoButtonPersistentBarItem) => void;
 	side: "top" | "bottom";
 	shouldReduceMotion: boolean;
 }>) {
+	const isPresent = useIsPresent();
+	const opensFromIndicator = usePresenceData() === true;
+	const [tooltipItem, setTooltipItem] = useState<string | null>(null);
 	const singleAction = bar.items.length === 1;
 	// Tuck the bar slightly toward the button as it leaves/enters so the motion
 	// reads as "snapping out of / back into" the button rather than a flat fade.
@@ -65,6 +75,8 @@ export function FloatingRovoButtonPersistentBarRail({
 			},
 		};
 
+	if (!isPresent && opensFromIndicator) return null;
+
 	return (
 		<motion.div
 			key="floating-rovo-button-persistent-bar"
@@ -77,7 +89,7 @@ export function FloatingRovoButtonPersistentBarRail({
 				side === "top" ? "bottom-full mb-3" : "top-full mt-3",
 			)}
 			variants={railVariants}
-			initial="hidden"
+			initial={indicatorInFlight ? false : "hidden"}
 			animate="visible"
 			exit="exit"
 			style={{
@@ -92,30 +104,41 @@ export function FloatingRovoButtonPersistentBarRail({
 						<motion.button
 							key={item.id}
 							aria-label={item.ariaLabel}
+							data-toolbar-action-id={item.id}
 							className={cn(
 								"relative flex items-center justify-center text-icon transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:cursor-default disabled:text-icon-disabled",
 								singleAction ? "size-12 rounded-2xl bg-surface-raised" : "size-8 rounded-xl",
 								singleAction ? "enabled:active:bg-surface-raised-pressed" : "enabled:hover:bg-bg-neutral-subtle-hovered enabled:active:bg-bg-neutral-subtle-pressed",
 							)}
 							variants={itemVariants}
-							onClick={item.onClick}
+							onClick={(event) => {
+								setTooltipItem(null);
+								if (item.id === indicatorActionId) {
+									const dot = event.currentTarget.querySelector("[data-notification-dot]");
+									onIndicatorPress?.(event.currentTarget.getBoundingClientRect(), dot?.getBoundingClientRect(), item);
+								}
+								item.onClick?.();
+							}}
 							disabled={!item.onClick}
 							type="button"
-							whileHover={singleAction && item.onClick && !shouldReduceMotion ? { scale: 1.1 } : undefined}
+							whileHover={!indicatorInFlight && singleAction && item.onClick && !shouldReduceMotion ? { scale: 1.1 } : undefined}
 							style={{ willChange: "transform, opacity", boxShadow: singleAction ? token("elevation.shadow.overlay") : undefined }}
 						>
-							{item.icon}
-							{item.indicator ? (
-								<span
-									aria-hidden="true"
-									className="absolute top-1.5 right-1.5 size-2 rounded-full bg-bg-information ring-2 ring-surface-raised"
-								/>
-							) : null}
+							<span className="relative inline-flex shrink-0 items-center justify-center">
+								{item.icon}
+								{item.indicator && !(indicatorInFlight && item.id === indicatorActionId && bar.panelTransition === "dot") ? (
+									<span
+										aria-hidden="true"
+										className="absolute top-0 right-0 size-2 translate-x-1/2 -translate-y-1/2 rounded-full bg-info ring-2 ring-surface-raised"
+										data-notification-dot
+									/>
+								) : null}
+							</span>
 						</motion.button>
 					);
 
 					return item.tooltipLabel ? (
-						<Tooltip key={item.id}>
+						<Tooltip key={item.id} open={!indicatorInFlight && tooltipItem === item.id} onOpenChange={(open) => setTooltipItem((current) => open ? item.id : current === item.id ? null : current)}>
 							<TooltipTrigger render={actionButton} />
 							<TooltipContent side="left" positionerClassName="z-[520]">{item.tooltipLabel}</TooltipContent>
 						</Tooltip>

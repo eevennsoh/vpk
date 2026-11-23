@@ -259,7 +259,7 @@ export default function ButterPage(): React.ReactElement {
 						<h1 className="sr-only">Agent selector</h1>
 						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
 							<h2 className="text-center text-xs font-semibold text-text-subtlest">Cloud</h2>
-							<ButterAgentSelectorGallery cloudOnly showCreateAgent={false} />
+							<ButterAgentSelectorGallery cloudOnly />
 						</div>
 						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
 							<h2 className="text-center text-xs font-semibold text-text-subtlest">Local</h2>

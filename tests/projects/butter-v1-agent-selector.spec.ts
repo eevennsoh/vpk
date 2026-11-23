@@ -3,6 +3,58 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+for (const surface of ["Board", "List", "Work item", "AI suggestions"] as const) {
+	test(`${surface} agent picker offers Create agent and opens Studio`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.setViewportSize({ width: 1600, height: 1000 });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: `Select ${surface}`, exact: true }).click();
+		await page.getByRole("button", { name: "Close gallery" }).click();
+		if (surface === "Board") {
+			const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+			await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();
+			await page.keyboard.press("Enter");
+		} else if (surface === "List") {
+			const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+			await expect(list).toBeVisible();
+			await list.getByRole("button", { name: "Add agent to PAY-118" }).click();
+		} else {
+			const field = page.getByRole("region", { name: "Work item full screen view" }).getByRole("group", { name: "Agents field" });
+			await field.locator('[data-slot="popover-trigger"]').click();
+		}
+		const picker = page.getByRole("dialog", { name: surface === "Work item" || surface === "AI suggestions" ? "Add agent" : "Agents" });
+		const create = picker.getByRole("button", { name: "Create agent", exact: true });
+		await expect(create).toBeVisible();
+		await expect(create).toBeEnabled();
+		await picker.getByRole("textbox", { name: "Search agents" }).fill("no matching agent");
+		await expect(create).toBeVisible();
+		await create.click();
+		await expect(page).toHaveURL(/\/studio\/?$/u);
+	});
+}
+
+test("the original Agent Selector preview offers Create agent", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector"));
+	const preview = page.locator("#preview");
+	const create = preview.getByRole("button", { name: "Create agent", exact: true });
+	await expect(create).toBeVisible();
+	await expect(create).toBeEnabled();
+	await create.focus();
+	await page.keyboard.press("Enter");
+	await expect(page).toHaveURL(/\/studio\/?$/u);
+});
+
+test("the Butter selector gallery offers Create agent", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
+	const create = picker.getByRole("button", { name: "Create agent", exact: true });
+	await expect(create).toBeVisible();
+	await create.click();
+	await expect(page).toHaveURL(/\/studio\/?$/u);
+});
+
 test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
@@ -149,7 +201,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(page.getByRole("dialog", { name: "Rovo CLI local options" }).getByRole("textbox", { name: "Choose your directory" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(picker.getByRole("button", { name: "Browse agents" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Create agent" })).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "Create agent" })).toBeVisible();
 	await expect(page.getByLabel("Project Butter issue card")).toHaveCount(0);
 	await search.fill("Claude");
 	await expect(picker.getByRole("button", { name: "Claude (Recommended)" })).toBeVisible();
@@ -355,7 +407,7 @@ test("agent rows and footer actions use the same hover color across selector var
 	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
 	const inlineRow = inline.getByRole("button", { name: "Claude (Recommended)", exact: true });
-	await compare(inlineRow, inlineRow.locator("../.."), [inline.getByRole("button", { name: "Browse agents" })]);
+	await compare(inlineRow, inlineRow.locator("../.."), [inline.getByRole("button", { name: "Browse agents" }), inline.getByRole("button", { name: "Create agent" })]);
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	const localRow = local.getByRole("button", { name: "Claude", exact: true });
 	await compare(localRow, localRow.locator("../.."), [local.getByRole("button", { name: "Copy prompt" })]);
@@ -439,7 +491,7 @@ test("selector footer icons are 16 pixels in each presentation", async ({ page }
 			await expect(icon).toHaveCSS("height", "16px");
 		}
 	};
-	await checkIcons(picker, ["Browse agents"]);
+	await checkIcons(picker, ["Browse agents", "Create agent"]);
 
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	for (const label of ["Inline expansion agent selector"]) {
@@ -451,6 +503,7 @@ test("Agent Selector default selects an agent directly", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector"));
 	const preview = page.locator("#preview");
 	const claude = preview.getByRole("button", { name: "Claude (Recommended)" });
+	await expect(preview.getByRole("button", { name: "Create agent" })).toBeVisible();
 	await expect(claude).not.toHaveAttribute("aria-expanded");
 	await claude.click();
 	await expect(preview.getByRole("status")).toHaveText("Start on Cloud · Claude (preview)");

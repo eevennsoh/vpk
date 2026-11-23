@@ -66,9 +66,10 @@ export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Rea
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status, recommendationReason, issueTriggerRef }: Readonly<{
+export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
 	status?: string;
 	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
 	recommendationReason?: string;
@@ -84,6 +85,7 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}
 		onBrowseAgents={onBrowseAgents}
+		onCreateAgent={onCreateAgent}
 		renderAgentTrigger={(agent, trigger) => <HoverCardTrigger handle={handle} payload={agent} delay={150} closeDelay={150} render={trigger} />}
 		status={status}
 	/><HoverCard handle={handle}>{({ payload: agent }) => <AgentLanyardHoverContent variant={agent?.id === RECOMMENDED_AGENT_ID ? "recommended" : "agent"} side="right" align="start" sideOffset={({ side }) => {
