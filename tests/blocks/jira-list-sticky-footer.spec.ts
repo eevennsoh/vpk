@@ -7,6 +7,7 @@ const JIRA_GOLDEN_JOURNEY_V4_URL = appUrl("/jira-golden-journey-v4");
 interface ListFooterGeometry {
 	gapTableToFooter: number;
 	footerToSectionBottom: number;
+	lineToFooter: number;
 	scrollable: boolean;
 	rowCount: number;
 }
@@ -17,7 +18,8 @@ async function readListFooterGeometry(page: Page): Promise<ListFooterGeometry> {
 		const scrollport = document.querySelector("[data-testid=jira-list-table-scroll]");
 		const footer = document.querySelector("[data-testid=jira-list-sticky-footer]");
 		const table = scrollport?.querySelector("table");
-		if (!section || !scrollport || !footer || !table) {
+		const line = section?.querySelector("[data-boundary-line]");
+		if (!section || !scrollport || !footer || !table || !line) {
 			throw new Error("Jira list is not mounted");
 		}
 		const tableRect = table.getBoundingClientRect();
@@ -26,6 +28,7 @@ async function readListFooterGeometry(page: Page): Promise<ListFooterGeometry> {
 		return {
 			gapTableToFooter: footerRect.top - tableRect.bottom,
 			footerToSectionBottom: sectionRect.bottom - footerRect.bottom,
+			lineToFooter: footerRect.top - line.getBoundingClientRect().bottom,
 			scrollable: scrollport.scrollHeight > scrollport.clientHeight,
 			rowCount: scrollport.querySelectorAll("tbody tr").length,
 		};
@@ -53,6 +56,7 @@ test("the work items list hugs short content instead of stranding its footer", a
 	expect(geometry.scrollable).toBe(false);
 	// The footer sits directly under the last row — no slack absorbed above it.
 	expect(Math.abs(geometry.gapTableToFooter)).toBeLessThanOrEqual(1);
+	expect(Math.abs(geometry.lineToFooter)).toBeLessThanOrEqual(2);
 });
 
 test("the work items list anchors its footer once the rows overflow", async ({ page }) => {
@@ -63,6 +67,7 @@ test("the work items list anchors its footer once the rows overflow", async ({ p
 	expect(geometry.scrollable).toBe(true);
 	// Sticky footer stays parked on the card's bottom edge (1px border).
 	expect(geometry.footerToSectionBottom).toBeLessThanOrEqual(2);
+	expect(Math.abs(geometry.lineToFooter)).toBeLessThanOrEqual(2);
 });
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");

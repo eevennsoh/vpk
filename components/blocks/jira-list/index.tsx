@@ -972,6 +972,7 @@ export function JiraList({
 						anchorLabel={boundary.anchorLabel}
 						anchorSide={boundary.anchorSide}
 						boundaryIndex={boundary.boundaryIndex}
+						hasStickyFooter={!hideStickyFooter}
 						isTargeted={hoveredColumnBoundaryIndex === boundary.boundaryIndex}
 						key={boundary.boundaryIndex}
 						positionAnchor={boundary.positionAnchor}

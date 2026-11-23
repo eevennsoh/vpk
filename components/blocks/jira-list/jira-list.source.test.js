@@ -347,7 +347,7 @@ test("JiraList column controls use outside-top overlay geometry without reservin
 	assert.match(SOURCE, /overflow-visible rounded-xl border-x border-b/u);
 	assert.match(SOURCE, /data-testid="jira-list-table-scroll"/u);
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40 w-0 overflow-visible/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 z-40 w-0 overflow-visible/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /size-5 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay text-icon-subtle/u);
 	assert.match(
@@ -372,7 +372,7 @@ test("JiraList column add overlay paints above the sticky checkbox column", () =
 	assert.match(COLUMN_CONTROLS_SOURCE, /fixed z-50 grid size-5 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /top: "anchor\(top, -100vh\)"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /positionVisibility: "anchors-visible"/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40 w-0 overflow-visible/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 z-40 w-0 overflow-visible/u);
 	assert.match(
 		SOURCE,
 		/trailingEdgeLayout\.headerCellClassName,\s*"sticky left-0 z-30 px-0"/u,

@@ -3,6 +3,25 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+for (const height of [900, 1800]) test(`the column line reaches the bottom of the gallery list at ${height}px`, async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const list = page.getByTestId("jira-list");
+	const scrollport = list.getByTestId("jira-list-table-scroll");
+	await scrollport.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+	const line = list.getByTestId("jira-list-column-boundary-1").locator("[data-boundary-line]");
+	await list.getByRole("button", { name: "Add column between Work and Status" }).focus();
+	await expect(line).toHaveCSS("opacity", "1");
+	const [lineBounds, scrollBounds, lastRowBounds] = await Promise.all([
+		line.boundingBox(), scrollport.boundingBox(), scrollport.locator("tbody tr").last().boundingBox(),
+	]);
+	if (!lineBounds || !scrollBounds || !lastRowBounds) throw new Error("List geometry is unavailable");
+	expect(Math.abs(lineBounds.y + lineBounds.height - (scrollBounds.y + scrollBounds.height))).toBeLessThanOrEqual(1);
+	expect(lineBounds.y + lineBounds.height).toBeGreaterThanOrEqual(lastRowBounds.y + lastRowBounds.height - 1);
+});
+
 test("the column line and circle share hover, tooltip, and keyboard focus", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));

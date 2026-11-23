@@ -13,6 +13,7 @@ interface JiraListColumnBoundaryProps {
 	anchorLabel: string;
 	anchorSide: "left" | "right";
 	boundaryIndex: number;
+	hasStickyFooter: boolean;
 	isTargeted: boolean;
 	positionAnchor: string;
 	positionLabel: string;
@@ -22,6 +23,7 @@ export function JiraListColumnBoundary({
 	anchorLabel,
 	anchorSide,
 	boundaryIndex,
+	hasStickyFooter,
 	isTargeted,
 	positionAnchor,
 	positionLabel,
@@ -33,7 +35,7 @@ export function JiraListColumnBoundary({
 
 	return (
 		<div
-			className="pointer-events-none absolute top-0 bottom-10 z-40 w-0 overflow-visible"
+			className={cn("pointer-events-none absolute top-0 z-40 w-0 overflow-visible", hasStickyFooter ? "bottom-10" : "bottom-0")}
 			data-anchor-label={anchorLabel}
 			data-testid={`jira-list-column-boundary-${boundaryIndex}`}
 			style={{
