@@ -21,6 +21,10 @@ export interface FloatingRovoButtonPersistentBarItem {
 	tooltipLabel?: string;
 	onClick?: () => void;
 	indicator?: boolean;
+	/** The action is still working (e.g. finding suggestions); exposed as `aria-busy`. */
+	busy?: boolean;
+	/** Change to a new non-zero value to show the tooltip unprompted for a moment, as a nudge. */
+	nudge?: number;
 }
 
 export type FloatingRovoButtonPersistentBarSide = "auto" | "top" | "bottom";

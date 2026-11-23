@@ -1,12 +1,15 @@
 "use client";
 
-import { motion, useIsPresent, usePresenceData } from "motion/react";
-import { useState } from "react";
+import { AnimatePresence, motion, useIsPresent, usePresenceData } from "motion/react";
+import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { FloatingRovoButtonPersistentBar, FloatingRovoButtonPersistentBarItem } from "./types";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
+
+/** How long a nudge keeps its tooltip open before it steps back. */
+const NUDGE_MS = 3200;
 
 export function FloatingRovoButtonPersistentBarRail({
 	bar,
@@ -26,6 +29,27 @@ export function FloatingRovoButtonPersistentBarRail({
 	const isPresent = useIsPresent();
 	const opensFromIndicator = usePresenceData() === true;
 	const [tooltipItem, setTooltipItem] = useState<string | null>(null);
+	// Nudges already shown, seeded from mount so a remounted rail never repeats one.
+	const [seenNudges, setSeenNudges] = useState<Readonly<Record<string, number | undefined>>>(() => Object.fromEntries(bar.items.map((item) => [item.id, item.nudge])));
+	const [nudgedItem, setNudgedItem] = useState<string | null>(null);
+	// The dot pops in when it first appears, but returns silently after it flew into a panel and back.
+	const [dotPops, setDotPops] = useState(true);
+	const freshNudge = bar.items.find((item) => item.nudge && item.nudge !== seenNudges[item.id]);
+	if (freshNudge) {
+		setSeenNudges((seen) => ({ ...seen, [freshNudge.id]: freshNudge.nudge }));
+		setTooltipItem(freshNudge.id);
+		setNudgedItem(freshNudge.id);
+	}
+	if (indicatorInFlight && dotPops) setDotPops(false);
+	else if (!indicatorInFlight && !dotPops && !bar.items.some((item) => item.indicator)) setDotPops(true);
+	useEffect(() => {
+		if (!nudgedItem) return undefined;
+		const timer = window.setTimeout(() => {
+			setTooltipItem((current) => current === nudgedItem ? null : current);
+			setNudgedItem(null);
+		}, NUDGE_MS);
+		return () => window.clearTimeout(timer);
+	}, [nudgedItem]);
 	const singleAction = bar.items.length === 1;
 	// Tuck the bar slightly toward the button as it leaves/enters so the motion
 	// reads as "snapping out of / back into" the button rather than a flat fade.
@@ -103,6 +127,7 @@ export function FloatingRovoButtonPersistentBarRail({
 					const actionButton = (
 						<motion.button
 							key={item.id}
+							aria-busy={item.busy || undefined}
 							aria-label={item.ariaLabel}
 							data-toolbar-action-id={item.id}
 							className={cn(
@@ -126,13 +151,29 @@ export function FloatingRovoButtonPersistentBarRail({
 						>
 							<span className="relative inline-flex shrink-0 items-center justify-center">
 								{item.icon}
-								{item.indicator && !(indicatorInFlight && item.id === indicatorActionId && bar.panelTransition === "dot") ? (
-									<span
-										aria-hidden="true"
-										className="absolute top-0 right-0 size-2 translate-x-1/2 -translate-y-1/2 rounded-full bg-info ring-2 ring-surface-raised"
-										data-notification-dot
-									/>
-								) : null}
+								<AnimatePresence>
+									{item.indicator && !(indicatorInFlight && item.id === indicatorActionId && bar.panelTransition === "dot") ? (
+										<motion.span
+											animate={{ scale: 1, opacity: 1, transition: { type: "spring", visualDuration: 0.34, bounce: 0.5 } }}
+											aria-hidden="true"
+											className="absolute top-0 right-0 size-2 translate-x-1/2 -translate-y-1/2 rounded-full bg-info ring-2 ring-surface-raised"
+											data-notification-dot
+											exit={indicatorInFlight ? { opacity: 0, transition: { duration: 0 } } : { scale: 0, opacity: 0, transition: { duration: motionDuration.fast, ease: motionEase.in } }}
+											initial={dotPops && !shouldReduceMotion ? { scale: 0, opacity: 0 } : false}
+											style={{ willChange: "transform, opacity" }}
+										>
+											{dotPops && !shouldReduceMotion ? (
+												// One soft ping as the dot lands, so the eye finds it.
+												<motion.span
+													animate={{ scale: 2.8, opacity: 0, transition: { duration: motionDuration.slowest, ease: motionEase.out, delay: 0.12 } }}
+													className="absolute inset-0 rounded-full bg-info"
+													initial={{ scale: 1, opacity: 0.55 }}
+													style={{ willChange: "transform, opacity" }}
+												/>
+											) : null}
+										</motion.span>
+									) : null}
+								</AnimatePresence>
 							</span>
 						</motion.button>
 					);
