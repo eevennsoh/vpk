@@ -63,7 +63,7 @@ import { TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { JIRA_LIST_HEADER_CELL_CLASS, JiraListGroupHeader, JiraListTable as Table, JiraListTableCell as TableCell, JiraListTableHead as TableHead } from "@/components/blocks/jira-list/jira-list-table";
 import { getInlineDraftParent, handleInlineDraftKey } from "@/components/blocks/jira-list/jira-list-inline-draft";
 import { JiraListInlineDraftEditor, JiraListInlineDraftRow } from "@/components/blocks/jira-list/jira-list-inline-draft-editor";
-import { useJiraListRowHover } from "@/components/blocks/jira-list/use-jira-list-row-hover";
+import { JiraListAgentPickerContext, useJiraListAgentPicker, useJiraListRowHover } from "@/components/blocks/jira-list/use-jira-list-row-hover";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -303,12 +303,14 @@ export function JiraList({
 	const [draggingIssueKey, setDraggingIssueKey] = useState<string | null>(null);
 	const [dragOverIssueKey, setDragOverIssueKey] = useState<string | null>(null);
 	const [openCopyTooltipIssueKey, setOpenCopyTooltipIssueKey] = useState<string | null>(null);
+	const clearInsertionHover = useCallback(() => { setHoveredRowTarget(null); setHoveredColumnBoundaryIndex(null); setFocusedCreateTarget(null); }, [setHoveredRowTarget]);
+	const { openAgentPickerKey, handleAgentPickerChange } = useJiraListAgentPicker(clearInsertionHover);
 	const sessionInsertionTarget = getAgentSessionInsertionTarget(agentSessionDropIntent);
 	const flashingIssueKeys = useJiraListRowFlashKeys(rowFlash);
 	const hoverInsertion = hoveredRowTarget && hoveredRowTarget.zone !== "drag"
 		? { issueKey: hoveredRowTarget.issueKey, position: hoveredRowTarget.zone }
 		: null;
-	const activeInsertionTarget = draggingIssueKey || draftWorkItem ? null : sessionInsertionTarget ?? focusedCreateTarget ?? (onCreate ? hoverInsertion : null);
+	const activeInsertionTarget = draggingIssueKey || draftWorkItem || openAgentPickerKey ? null : sessionInsertionTarget ?? focusedCreateTarget ?? (onCreate ? hoverInsertion : null);
 	const insertionLineTarget = getInsertionLineTarget(activeInsertionTarget, rows, draftWorkItem?.insertAtIndex);
 	const draggingIndex = draggingIssueKey
 		? rows.findIndex((row) => row.issueKey === draggingIssueKey)
@@ -327,7 +329,7 @@ export function JiraList({
 		event: ReactPointerEvent<HTMLTableRowElement>,
 		row: JiraListRowData,
 	) => {
-		if (draggingIssueKey || draftWorkItem) return;
+		if (draggingIssueKey || draftWorkItem || openAgentPickerKey) return;
 		const rowBounds = event.currentTarget.getBoundingClientRect();
 		const rowOffset = event.clientY - rowBounds.top;
 		// Equal thirds keep boundary creation predictable while preserving a full
@@ -343,7 +345,7 @@ export function JiraList({
 		event: ReactPointerEvent<HTMLTableCellElement>,
 		columnIndex: number,
 	) => {
-		if (draggingIssueKey || draftWorkItem) return;
+		if (draggingIssueKey || draftWorkItem || openAgentPickerKey) return;
 		const columnBounds = event.currentTarget.getBoundingClientRect();
 		const columnOffset = event.clientX - columnBounds.left;
 		const boundaryIndex = getColumnBoundaryIndex(
@@ -626,6 +628,7 @@ export function JiraList({
 	};
 
 	return (
+		<JiraListAgentPickerContext value={handleAgentPickerChange}>
 		<section
 			aria-label={ariaLabel}
 			// The card hugs its rows and only scrolls once they outgrow the cap, so
@@ -964,7 +967,7 @@ export function JiraList({
 				data-testid="jira-list-column-boundary-overlay"
 				inert={Boolean(editingSummary)}
 			>
-				{!draggingIssueKey && !draftWorkItem ? columnBoundaries.map((boundary) => (
+				{!draggingIssueKey && !draftWorkItem && !openAgentPickerKey ? columnBoundaries.map((boundary) => (
 					<JiraListColumnBoundary
 						anchorLabel={boundary.anchorLabel}
 						anchorSide={boundary.anchorSide}
@@ -981,7 +984,7 @@ export function JiraList({
 					activeTarget={activeInsertionTarget}
 					gripHover={gripHover}
 					instanceId={insertionAnchorId}
-					onCreate={editingSummary || draggingIssueKey || draftWorkItem ? undefined : onCreate}
+					onCreate={editingSummary || draggingIssueKey || draftWorkItem || openAgentPickerKey ? undefined : onCreate}
 					onFocusedTargetChange={setFocusedCreateTarget}
 					onHoveredTargetChange={setInsertionHover}
 					overlayRef={setRowOverlayElement}
@@ -991,5 +994,6 @@ export function JiraList({
 				/>
 			) : null}
 		</section>
+		</JiraListAgentPickerContext>
 	);
 }

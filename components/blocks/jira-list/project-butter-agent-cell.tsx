@@ -1,5 +1,6 @@
 "use client";
 
+import { use, useEffect } from "react";
 import { ProjectButterAddAgent } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { PROJECT_BUTTER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agents";
 import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
@@ -10,6 +11,7 @@ import { sessionStatusPresentation } from "@/components/blocks/jira-work-item/pr
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraListProps, JiraListRowData } from "./jira-list-types";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { JiraListAgentPickerContext } from "./use-jira-list-row-hover";
 
 export function ButterListAgentCell({ agentCatalog = PROJECT_BUTTER_AGENTS, ...props }: Readonly<{
 	agentCatalog?: JiraListProps["agentCatalog"];
@@ -32,6 +34,12 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 	const sessions = assignedSessions.filter((session) => session.statusKind !== "finished");
 	const canAssign = Boolean(onAssignedAgentIdsChange || onAgentAssigned);
 	const phase = useProjectButterInvocationPhase();
+	const setOpenPicker = use(JiraListAgentPickerContext);
+	useEffect(() => {
+		if (phase !== "choosing" || !setOpenPicker) return;
+		setOpenPicker(row.issueKey, true);
+		return () => setOpenPicker(row.issueKey, false);
+	}, [phase, row.issueKey, setOpenPicker]);
 	const { agent: selectedAgent } = useProjectButterInvocationPreview();
 	const crewSessions: AgentSessionItem[] = sessions.map((session) => ({
 		id: session.id,

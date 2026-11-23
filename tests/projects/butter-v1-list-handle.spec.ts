@@ -9,6 +9,31 @@ async function openList(page: Page) {
 	return list;
 }
 
+test("agent picker suppresses row and column insertion controls until it closes", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	const list = await openList(page);
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const row = list.getByRole("button", { name: "PAY-127", exact: true }).locator("xpath=ancestor::tr");
+	const header = list.getByRole("columnheader", { name: /^Work/ });
+	const rowBounds = await row.boundingBox();
+	const headerBounds = await header.boundingBox();
+	if (!rowBounds || !headerBounds) throw new Error("List geometry is unavailable");
+	await list.getByRole("button", { name: "Add agent to PAY-127" }).click();
+	await expect(page.getByRole("textbox", { name: "Search agents" })).toBeVisible();
+	await page.mouse.move(rowBounds.x + 200, rowBounds.y + rowBounds.height - 2);
+	await expect(list.locator("[data-insertion-line]")).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "Create work item after PAY-127" })).toHaveCount(0);
+	await page.mouse.move(headerBounds.x + headerBounds.width - 2, headerBounds.y + headerBounds.height / 2);
+	await expect(list.getByRole("button", { name: "Add column between Work and Status" })).toHaveCount(0);
+	await page.mouse.click(10, 10);
+	await expect(page.getByRole("textbox", { name: "Search agents" })).toBeHidden();
+	await page.mouse.move(rowBounds.x + 200, rowBounds.y + rowBounds.height - 2);
+	await expect(list.getByRole("button", { name: "Create work item after PAY-127" })).toHaveCSS("opacity", "1");
+	await page.mouse.move(headerBounds.x + headerBounds.width - 2, headerBounds.y + headerBounds.height / 2);
+	await expect(list.getByRole("button", { name: "Add column between Work and Status" }).locator("[data-boundary-marker]")).toHaveCSS("opacity", "1");
+});
+
 function overlayPresentation(element: Element) {
 	const style = getComputedStyle(element);
 	return {

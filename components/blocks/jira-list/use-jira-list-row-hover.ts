@@ -1,6 +1,17 @@
-import { useEffect, useRef, useState, type PointerEvent, type SetStateAction } from "react";
+import { createContext, useCallback, useEffect, useRef, useState, type PointerEvent, type SetStateAction } from "react";
 
 import type { JiraListInsertionTarget, JiraListRowTarget } from "./jira-list-dnd";
+
+export const JiraListAgentPickerContext = createContext<((issueKey: string, open: boolean) => void) | null>(null);
+
+export function useJiraListAgentPicker(onOpen: () => void) {
+	const [openAgentPickerKey, setOpenAgentPickerKey] = useState<string | null>(null);
+	const handleAgentPickerChange = useCallback((issueKey: string, open: boolean) => {
+		setOpenAgentPickerKey((current) => open ? issueKey : current === issueKey ? null : current);
+		if (open) onOpen();
+	}, [onOpen]);
+	return { openAgentPickerKey, handleAgentPickerChange };
+}
 
 function createGripHover() {
 	let issueKey: string | null = null;
@@ -38,7 +49,7 @@ export function useJiraListRowHover() {
 		gripControlRef.current?.removeAttribute("data-row-drag-target");
 	}, []);
 
-	function setHovered(update: SetStateAction<JiraListRowTarget | null>) {
+	const setHovered = useCallback((update: SetStateAction<JiraListRowTarget | null>) => {
 		const previous = targetRef.current;
 		const next = typeof update === "function" ? update(previous) : update;
 		if (previous?.issueKey === next?.issueKey && previous?.zone === next?.zone) return;
@@ -68,7 +79,7 @@ export function useJiraListRowHover() {
 				setHoveredState(next);
 			}, 120);
 		}
-	}
+	}, [gripHover, overlay]);
 
 	function leave(event: PointerEvent<HTMLElement>) {
 		const next = event.relatedTarget;

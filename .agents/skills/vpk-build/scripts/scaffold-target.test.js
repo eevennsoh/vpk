@@ -8,7 +8,7 @@ const path = require("node:path");
 const SCAFFOLD_TARGET_PATH = path.resolve(__dirname, "scaffold-target.mjs");
 
 function writeDeliveryInputs(repoRoot) {
-	for (const relative of ["backend/lib/static-export-serving.js", "backend/lib/static-asset-delivery.js", "scripts/prepare-static-export.mjs"]) {
+	for (const relative of ["backend/lib/static-export-serving.js", "backend/lib/static-asset-delivery.js", "scripts/prepare-static-export.mjs", "lib/platform-feature-flags.ts"]) {
 		writeFile(path.join(repoRoot, relative), fs.readFileSync(path.resolve(__dirname, "../../../..", relative), "utf8"));
 	}
 }
@@ -29,7 +29,7 @@ async function renderGeneratedLayout(layout) {
 	const requireLayout = (specifier) => {
 		switch (specifier) {
 			case "./feature-flags-shim":
-				globalThis.__PLATFORM_FEATURE_FLAGS__ = { booleanResolver: () => false };
+				require(path.resolve(__dirname, "../../../..", "lib/platform-feature-flags.ts")).configurePlatformFeatureFlags();
 				return {};
 			case "./globals.css": return {};
 			case "next/font/google": return { Geist: () => ({ variable: "fixture-geist" }) };
@@ -247,8 +247,28 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 		assert.doesNotMatch(layout, /clientShim/);
 		assert.doesNotMatch(layout, /fonts\.googleapis\.com\/css2/);
 
-		assert.match(featureFlagsShim, /__PLATFORM_FEATURE_FLAGS__/);
-		assert.match(featureFlagsShim, /booleanResolver: \(\) => false/);
+		assert.match(renderedLayout, /<style data-theme="light-finesse">/);
+		assert.match(renderedLayout, /<style data-theme="dark-finesse">/);
+		const clientShim = fs.readFileSync(path.join(fixture.targetDir, "app", "feature-flags-shim-client.tsx"), "utf8");
+		for (const shim of [featureFlagsShim, clientShim]) {
+			const output = require("typescript").transpileModule(shim, { compilerOptions: { module: require("typescript").ModuleKind.CommonJS, jsx: require("typescript").JsxEmit.ReactJSX } }).outputText;
+			const previousFlags = globalThis.__PLATFORM_FEATURE_FLAGS__;
+			const previousEnv = process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE;
+			try {
+				delete process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE;
+				globalThis.__PLATFORM_FEATURE_FLAGS__ = { booleanResolver: (name) => name === "existing-flag" };
+				const sourceFlags = require(path.join(fixture.targetDir, "lib/platform-feature-flags.ts"));
+				new Function("require", "exports", "module", output)((name) => name === "@/lib/platform-feature-flags" ? sourceFlags : require(name), {}, { exports: {} });
+				assert.equal(globalThis.__PLATFORM_FEATURE_FLAGS__.booleanResolver("platform-dst-tokens-finesse"), true);
+				assert.equal(globalThis.__PLATFORM_FEATURE_FLAGS__.booleanResolver("existing-flag"), true);
+				process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE = "false";
+				assert.equal(globalThis.__PLATFORM_FEATURE_FLAGS__.booleanResolver("platform-dst-tokens-finesse"), false);
+			} finally {
+				if (previousEnv === undefined) delete process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE;
+				else process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE = previousEnv;
+				globalThis.__PLATFORM_FEATURE_FLAGS__ = previousFlags;
+			}
+		}
 
 		assert.equal(
 			fs.readFileSync(
