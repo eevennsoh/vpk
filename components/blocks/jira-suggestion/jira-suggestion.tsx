@@ -10,6 +10,7 @@ import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 import { MockDetailsRail } from "./components/mock-details-rail";
+import { reconcileFloatingPanelStage, type FloatingPanelStage } from "./floating-panel-stage";
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
 import { useSuggestionFeed } from "./hooks/use-suggestion-feed";
 import { WorkItemPreviewShell } from "./components/work-item-preview-shell";
@@ -27,12 +28,11 @@ const FLOATING_PANEL_MAX_HEIGHT = 500;
 /** How long the landing intro shows the agent still finding suggestions. */
 export const SUGGESTION_ANALYSIS_MS = 2600;
 
+/** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
+const IN_PLACE_UNPACK_MS = 260;
+
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";
-
-type FloatingPanelStage =
-	| { phase: "closed" | "reopening" | "measuring" | "list" | "caught-up" | "closing" }
-	| { phase: "expanding"; height: number };
 
 export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
@@ -58,7 +58,14 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const { phase } = panelStage;
 	const isMeasuring = phase === "measuring" && !reduceMotion;
 	const isExpanding = phase === "expanding" && !reduceMotion;
-	const listStage = isMeasuring ? "measuring" : isExpanding ? "intro" : "list";
+	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
+	const isUnpacking = phase === "unpacking";
+	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking ? "intro" : "list";
+	useEffect(() => {
+		if (!isUnpacking) return undefined;
+		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "unpacking" ? { phase: "list" } : stage), IN_PLACE_UNPACK_MS);
+		return () => window.clearTimeout(timer);
+	}, [isUnpacking]);
 	useEffect(() => {
 		if (!isMeasuring) return;
 		const revealWhenSettled = () => {
@@ -72,9 +79,8 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		return () => cancelFrame(revealWhenSettled);
 	}, [isMeasuring]);
 
-	if (phase === "reopening") setPanelStage(count > 0 ? openingStage : { phase: "caught-up" });
-	else if (count === 0 && phase !== "closed" && phase !== "caught-up" && phase !== "closing") setPanelStage({ phase: "closed" });
-	else if (count > 0 && phase === "caught-up") setPanelStage(openingStage);
+	const nextStage = reconcileFloatingPanelStage(panelStage, count, openingStage, reduceMotion ?? false);
+	if (nextStage) setPanelStage(nextStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
 		setPanelStage(openingStage);
