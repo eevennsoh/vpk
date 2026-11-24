@@ -208,7 +208,7 @@ test("pinning a comment from its header lifts it to the top of the feed until it
 	await view.click(pin);
 	const lead = rows()[0];
 	assert.equal(lead.dataset.jiraActivityEntryId, id);
-	assert.equal(lead.textContent.includes("Pinned"), true);
+	assert.equal(lead.textContent.includes("Pinned"), false);
 	assert.equal(lead.querySelector('button[aria-label="Unpin comment"]').getAttribute("aria-pressed"), "true");
 	// Regression (PR review): replying while pinned writes the row back to state; the transient tag must not persist.
 	await view.click([...lead.querySelectorAll("button")].find((button) => button.getAttribute("aria-label") === "Reply" || button.textContent === "Reply"));
@@ -267,9 +267,57 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	const deadline = Date.now() + 10000;
 	do {
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
-		reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+		reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].find((item) => item.querySelector('[data-jira-activity-agent-mention]'));
 	} while (!reply.textContent.includes("👀") && Date.now() < deadline);
 	assert.equal(reply.textContent.includes("👀"), true);
+});
+
+test("owned session replies stay private until the agent response is added publicly", { timeout: 30000 }, async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			const session = { id: "private-test", title: "Review the onboarding flow", agent: { id: "claude", name: "Claude", kind: "agent", brandName: "claude" }, host: "local", state: "running", timeLabel: "Just now", role: "owner", invokedBy: { name: "Venn" }, activityReplies: [{ id: "earlier-1", author: "Venn", body: "Earlier request", minutesAfter: 1 }, { id: "earlier-2", author: "Claude", body: "Earlier response", minutesAfter: 2 }] };
+			export default function ReplyProbe() {
+				const content = useProjectButterContent("filled", undefined, [session]);
+				return <ThemeWrapper><button onClick={() => content.submitActivityReply("invocation-private-test", "Please review this", ["claude"], { session })}>Send private request</button><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={[session]} sidePanel={false} latestReplyEntryIds={new Set(["invocation-private-test"])} /></ThemeWrapper>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Send private request" }));
+	let thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	assert.equal(thread.textContent.includes("Please review this"), true);
+	assert.equal(thread.textContent.includes("Only visible to you"), true);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 3400)); });
+	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	assert.equal(thread.textContent.includes("👀"), true);
+	assert.equal(Boolean(thread.querySelector('[role="progressbar"][aria-label="Agent is preparing a reply"]')), true);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10200)); });
+	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	assert.equal(thread.textContent.includes("I've received your request"), true);
+	assert.equal(thread.textContent.includes("Only visible to you"), true);
+	const replyRows = () => [...thread.querySelectorAll('[aria-label="Replies"] > div')];
+	const replyCount = replyRows().length;
+	const humanReply = replyRows().find((row) => row.textContent.includes("Please review this"));
+	const agentReply = replyRows().find((row) => row.textContent.includes("I've received your request"));
+	assert.equal(humanReply.textContent.includes("Only visible to you"), true);
+	assert.equal(humanReply.hidden, false);
+	await view.click([...agentReply.querySelectorAll("button")].find((button) => button.textContent === "Add reply"));
+	assert.equal(humanReply.hidden, false);
+	assert.equal(agentReply.textContent.includes("Only visible to you"), false);
+	const disclosure = [...thread.querySelectorAll("button")].find((button) => /Show \d+ replies/u.test(button.textContent));
+	await view.click(disclosure);
+	assert.equal(disclosure.getAttribute("aria-expanded"), "true");
+	await view.click([...humanReply.querySelectorAll("button")].find((button) => button.textContent === "Add reply"));
+	assert.equal(disclosure.getAttribute("aria-expanded"), "true");
+	assert.equal(humanReply.textContent.includes("Only visible to you"), false);
+	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	assert.equal(view.queryByRole("button", { name: "Add reply" }) === null, true);
+	assert.equal(thread.textContent.includes("I've received your request"), true);
+	const publicReply = [...thread.querySelectorAll('[aria-label="Replies"] > div')].at(-1);
+	assert.equal(thread.querySelectorAll('[aria-label="Replies"] > div').length, replyCount);
+	assert.equal(publicReply.textContent.includes("Claude"), true);
+	assert.equal(publicReply.textContent.includes("Only visible to you"), false);
 });
 
 test("starting an agent from the details field immediately highlights its activity card without scrolling", async () => {

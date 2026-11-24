@@ -67,7 +67,7 @@
   },
   "app/preview/projects/jira-for-you/page.test.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 2
     }
   },
   "app/preview/shadows/page.tsx": {
@@ -731,7 +731,7 @@
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
-      "count": 160
+      "count": 159
     },
     "vpk-tests/no-dom-node-assert": {
       "count": 17
@@ -787,12 +787,12 @@
   },
   "components/blocks/jira-issue/agent-activity-imports.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/blocks/jira-issue/agent-activity.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/blocks/jira-issue/agent-activity.tsx": {
@@ -857,7 +857,7 @@
   },
   "components/blocks/jira-issue/jira-issue.source.test.js": {
     "no-restricted-syntax": {
-      "count": 624
+      "count": 621
     }
   },
   "components/blocks/jira-issue/page.tsx": {
@@ -1848,7 +1848,7 @@
   },
   "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 234
+      "count": 231
     }
   },
   "components/projects/jira-for-you/jira-for-you.source.test.js": {
@@ -1928,7 +1928,7 @@
   },
   "components/projects/jira-golden-journey-v1/kanban-stage.source.test.js": {
     "no-restricted-syntax": {
-      "count": 100
+      "count": 99
     }
   },
   "components/projects/jira-golden-journey-v1/lib/terminal-demo-state.source.test.js": {

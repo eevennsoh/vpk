@@ -14,14 +14,13 @@ test("thread summaries align with their session card in both activity views", as
 		const summarize = thread.getByRole("button", { name: "Summarize thread" });
 		await summarize.focus();
 		await summarize.press("Enter");
-		const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Thread summary" });
+		const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Summary" });
 		const card = await thread.locator("[data-project-butter-session-start]").boundingBox();
-		const heading = await summary.getByText("Thread summary", { exact: true }).locator("..").boundingBox();
+		const heading = await summary.getByText("Summary", { exact: true }).locator("..").boundingBox();
 		const text = await summary.locator("p").first().boundingBox();
-		const restore = summary.getByRole("button", { name: "Show replies", exact: true });
-		const action = await restore.boundingBox();
+		const action = await summary.getByRole("button", { name: "Draft instruction" }).boundingBox();
 		if (!card || !heading || !text || !action) throw new Error("Missing session card or summary content");
 		for (const box of [heading, text, action]) expect(Math.abs(box.x - card.x)).toBeLessThanOrEqual(1);
-		await restore.click();
+		await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
 	}
 });

@@ -106,7 +106,8 @@ function createContent(
 	const activitySort: ProjectButterActivitySort = "newest";
 	const activityFilters: ProjectButterActivityFilters = PROJECT_BUTTER_ACTIVITY_FILTERS_ALL;
 	const replyDrafts: Readonly<Record<string, string>> = {};
-	const pendingAgentReactions: readonly { entryId: string; replyId: string; actorIds: readonly string[]; dueAtMs: number; sessionId?: string }[] = [];
+	const pendingAgentReactions: readonly { entryId: string; replyId: string; actorIds: readonly string[]; dueAtMs: number; sessionId?: string; response?: JiraActivityReply }[] = [];
+	const pendingAgentResponses: readonly { entryId: string; replyId: string; dueAtMs: number; body: string }[] = [];
 	const resumedSessionIds: readonly string[] = [];
 	/** Top-level comments pinned to the head of the feed, most recently pinned first. */
 	const pinnedCommentIds: readonly string[] = [];
@@ -139,6 +140,7 @@ function createContent(
 		activityFilters,
 		replyDrafts,
 		pendingAgentReactions,
+		pendingAgentResponses,
 		resumedSessionIds,
 		pinnedCommentIds,
 		auditChanges,
@@ -202,23 +204,44 @@ export function useProjectButterContent(
 				return {
 					...previous,
 					pendingAgentReactions: previous.pendingAgentReactions.filter((pending) => pending.dueAtMs > now),
+					pendingAgentResponses: [...previous.pendingAgentResponses, ...due.flatMap((pending) => pending.response ? [{ entryId: pending.entryId, replyId: pending.response.id, dueAtMs: now + 10000, body: pending.response.body }] : [])],
 					resumedSessionIds: [...new Set([...previous.resumedSessionIds, ...due.flatMap((pending) => pending.sessionId ? [pending.sessionId] : [])])],
 					activityEntries: previous.activityEntries.map((entry) => entry.kind !== "comment" ? entry : {
 						...entry,
-						replies: entry.replies?.map((reply) => {
+						replies: [...(entry.replies ?? []).map((reply) => {
 							const pending = due.find((item) => item.entryId === entry.id && item.replyId === reply.id);
 							if (!pending) return reply;
 							const reactions = reply.reactions ?? [];
 							const eyes = reactions.find((reaction) => reaction.emoji === "👀");
 							const reaction: JiraActivityReaction = { emoji: "👀", actorIds: [...new Set([...(eyes?.actorIds ?? []), ...pending.actorIds])] };
 							return { ...reply, reactions: eyes ? reactions.map((item) => item === eyes ? reaction : item) : [...reactions, reaction] };
-						}),
+						}), ...due.filter((pending) => pending.entryId === entry.id && pending.response).flatMap((pending) => pending.response ? [{ ...pending.response, generationStartedAtMs: now }] : [])],
 					}),
 				};
 			});
 		}, Math.max(0, nextDue - Date.now()));
 		return () => window.clearTimeout(timer);
 	}, [state.pendingAgentReactions, updateState]);
+	useEffect(() => {
+		if (!state.pendingAgentResponses.length) return;
+		const timer = window.setTimeout(() => {
+			const now = Date.now();
+			updateState((previous) => ({
+				...previous,
+				pendingAgentResponses: previous.pendingAgentResponses.filter((pending) => pending.dueAtMs > now),
+				activityEntries: previous.activityEntries.map((entry) => entry.kind !== "comment" ? entry : {
+					...entry,
+					replies: entry.replies?.map((reply) => {
+						const pending = previous.pendingAgentResponses.find((item) => item.entryId === entry.id && item.replyId === reply.id && item.dueAtMs <= now);
+						if (!pending) return reply;
+						const { generationStartedAtMs: _started, ...completed } = reply;
+						return { ...completed, body: pending.body };
+					}),
+				}),
+			}));
+		}, Math.max(0, Math.min(...state.pendingAgentResponses.map((pending) => pending.dueAtMs)) - Date.now()));
+		return () => window.clearTimeout(timer);
+	}, [state.pendingAgentResponses, updateState]);
 	const actions = useMemo(() => {
 		function audited<K extends keyof ProjectButterContentState>(
 			field: K,
@@ -247,9 +270,22 @@ export function useProjectButterContent(
 			};
 		}
 		return {
-			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[], { sessionId, replyToId }: Readonly<{ sessionId?: string; replyToId?: string }> = {}) => {
+			publishActivityReply: (replyId: string) => {
+				updateState((previous) => ({
+					...previous,
+					activityEntries: previous.activityEntries.map((entry) => {
+						if (entry.kind !== "comment") return entry;
+						const reply = entry.replies?.find((item) => item.id === replyId && item.visibility === "private" && item.generationStartedAtMs === undefined);
+						if (!reply) return entry;
+						return { ...entry, replies: entry.replies?.map((item) => item.id === replyId ? { ...item, visibility: undefined } : item) };
+					}),
+				}));
+			},
+			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[], { session, replyToId }: Readonly<{ session?: ProjectButterSessionItem; replyToId?: string }> = {}) => {
 				const createdAtMs = Date.now();
-				const reply: JiraActivityReply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body };
+				const owned = session && session.role !== "viewer" && session.invokedBy;
+				const reply: JiraActivityReply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body, ...(owned ? { visibility: "private" } : {}) };
+				const response: JiraActivityReply | undefined = owned ? { id: crypto.randomUUID(), actor: { id: session.agent.id ?? session.id, name: session.agent.name, kind: "agent", appearance: "coding", avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo }, timestamp: "Just now", createdAtMs: createdAtMs + 3000, body: `I've received your request and will follow up on ${session.title}.`, visibility: "private" } : undefined;
 				updateState((previous) => ({
 					...previous,
 					activityEntries: previous.activityEntries.map((entry) => {
@@ -258,7 +294,7 @@ export function useProjectButterContent(
 						const sentReply = target ? { ...reply, replyTo: { id: target.id, excerpt: getProjectButterReplyExcerpt(target.body) } } : reply;
 						return { ...entry, replies: [...(entry.replies ?? []), sentReply] };
 					}),
-					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000, sessionId }] : previous.pendingAgentReactions,
+					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000, sessionId: session?.id, response }] : previous.pendingAgentReactions,
 				}));
 			},
 			beginSuggestionAudit: (label: string, mode: "accept" | "undo") => {

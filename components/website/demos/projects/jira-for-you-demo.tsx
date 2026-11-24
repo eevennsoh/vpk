@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { JiraForYouWorkspace } from "@/components/projects/jira-for-you";
+import { JiraForYouProjectButter, JiraForYouWorkspace } from "@/components/projects/jira-for-you";
 
 export default function JiraForYouDemo() {
 	const pathname = usePathname();
@@ -11,10 +11,14 @@ export default function JiraForYouDemo() {
 	if (isStandalonePreview) {
 		return (
 			<div className="h-full min-h-0 overflow-hidden rounded-lg border border-border bg-surface">
-				<JiraForYouWorkspace chrome="plain" className="h-full min-h-0" />
+				<JiraForYouProjectButter />
 			</div>
 		);
 	}
 
-	return <JiraForYouWorkspace chrome="plain" className="h-full min-h-0" />;
+	return <JiraForYouProjectButter />;
+}
+
+export function JiraForYouWorkspaceDemo() {
+	return <div className="h-[600px] min-h-0 overflow-hidden"><JiraForYouWorkspace chrome="plain" className="h-full min-h-0" /></div>;
 }

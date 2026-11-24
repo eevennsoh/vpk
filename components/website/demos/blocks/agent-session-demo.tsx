@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { AGENT_SESSION_CLOUD_ITEMS, type AgentSessionItem } from "@/components/blocks/agent-session";
+import { AGENT_SESSION_CLOUD_ITEMS, AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
 import Page from "@/components/blocks/agent-session/page";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
@@ -13,6 +13,21 @@ import { AgentSessionShowcase, ButterSessionPermissionControls, type ButterSessi
 import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
 
 const TEAM_CHAT_PROFILES = agentSessionDemoProfiles(JGP_CHAT_AGENT_PROFILES, AGENT_SESSION_CLOUD_ITEMS);
+
+export function AgentSessionDemoJiraForYou() {
+	return (
+		<div className="w-full bg-surface p-4">
+			<AgentSession
+				className="w-[720px] max-w-full"
+				density="jira-for-you"
+				items={AGENT_SESSION_CLOUD_ITEMS}
+				localSessionAction="view"
+				onView={() => {}}
+				showWorkingSpinner
+			/>
+		</div>
+	);
+}
 
 export function AgentSessionDemoComparison() {
 	const [permission, setPermission] = useState<ButterSessionPermission>("mine");

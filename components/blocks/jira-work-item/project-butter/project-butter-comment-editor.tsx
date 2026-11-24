@@ -4,7 +4,7 @@ import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useSt
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import type { Transaction } from "@tiptap/pm/state";
+import { NodeSelection, TextSelection, type Transaction } from "@tiptap/pm/state";
 import { useJiraActivityComposerDictation } from "@/components/blocks/jira-activity/use-jira-activity-composer-dictation";
 import { EDITOR_PALETTE_MENTION_SOURCES, mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
@@ -75,7 +75,7 @@ export interface ProjectButterCommentEditorHandle {
  * mentions, dictation, and Enter-to-send keep working in one compact row.
  * Thread replies reuse it unchanged apart from their placeholder and label.
  */
-export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, inputContext, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, replyMention, textboxLabel = ariaLabel, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, handoffMentionId, inputContext, instructionPlaceholderForAgent, mentionHandoffPending = false, onCancel, onHandoffInterrupt, onMentionChange, onReplyMentionRemove, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, replyMention, textboxLabel = ariaLabel, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	ariaLabel?: string;
 	/** `flat` drops the floating shadow for boxes that sit inline in the feed, such as thread replies. */
@@ -89,6 +89,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	onCancel?: () => void;
 	onHandoffInterrupt?: () => void;
 	onMentionChange?: (agentNames: string[], hasMentions: boolean) => void;
+	onReplyMentionRemove?: () => void;
 	placeholder?: string;
 	/** The textbox's own name, when it should differ from the form's (replies keep "Leave a reply..."). */
 	textboxLabel?: string;
@@ -112,9 +113,37 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		extensions, content: value, contentType: "markdown", immediatelyRender: false,
 		editorProps: {
 			attributes: { role: "textbox", "aria-label": textboxLabel, "aria-multiline": "true", class: "tiptap-editor min-h-6! py-0! text-sm leading-6 outline-none" },
-			handleKeyDown: (_view, event) => {
+			handleKeyDown: (view, event) => {
 				if (mentionHandoffPending && !["Shift", "Control", "Alt", "Meta"].includes(event.key)) onHandoffInterrupt?.();
 				if (event.isComposing) return false;
+				const { doc, selection } = view.state;
+				const leading = doc.firstChild?.type.name === "paragraph" ? doc.firstChild.firstChild : null;
+				const replyMentionId = replyAgent ? mapAgentToMentionItem(replyAgent).id : undefined;
+				const isLeadingReply = leading?.type.name === "mention" && leading.attrs.id === replyMentionId;
+				if (isLeadingReply && event.key === "Home" && !event.shiftKey && !event.altKey && (event.metaKey || event.ctrlKey || selection.$from.start() === 1)) {
+					event.preventDefault();
+					view.dispatch(view.state.tr.setSelection(NodeSelection.create(doc, 1)));
+					return true;
+				}
+				if (isLeadingReply && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+					const nodeSelected = selection instanceof NodeSelection && selection.from === 1;
+					const separator = doc.resolve(2).nodeAfter?.text?.startsWith(" ") ? 1 : 0;
+					if ((event.key === "ArrowLeft" || event.key === "Backspace") && (nodeSelected ? event.key === "ArrowLeft" : selection.empty && selection.from <= 2 + separator)) {
+						event.preventDefault();
+						if (!nodeSelected) view.dispatch(view.state.tr.setSelection(NodeSelection.create(doc, 1)));
+						return true;
+					}
+					if (event.key === "ArrowRight" && nodeSelected) {
+						event.preventDefault();
+						view.dispatch(view.state.tr.setSelection(TextSelection.create(doc, 2 + separator)));
+						return true;
+					}
+					if ((event.key === "Backspace" || event.key === "Delete") && nodeSelected) {
+						event.preventDefault();
+						view.dispatch(view.state.tr.delete(1, 2 + separator));
+						return true;
+					}
+				}
 				if (onCancel && event.key === "Escape" && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); onCancel(); return true; }
 				if (event.key === "Enter" && !event.shiftKey && !document.querySelector("[data-suggestion-option]")) { event.preventDefault(); event.stopPropagation(); setDismissedInstructionPlaceholder(true); save(); return true; }
 				return false;
@@ -135,6 +164,18 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			lastEditorValue.current = markdown;
 			onValueChange(markdown);
 			reportMentions(activeEditor);
+			if (replyAgent && replyMentionState.current) {
+				let found = false;
+				activeEditor.state.doc.descendants((node) => { if (node.type.name === "mention" && node.attrs.id === mapAgentToMentionItem(replyAgent).id) found = true; });
+				if (!found) onReplyMentionRemove?.();
+			}
+		},
+		onSelectionUpdate: ({ editor: activeEditor }) => {
+			const { doc, selection } = activeEditor.state;
+			const leading = doc.firstChild?.type.name === "paragraph" ? doc.firstChild.firstChild : null;
+			if (activeEditor.isFocused && replyAgent && replyMentionState.current && selection.empty && selection.from === 1 && leading?.type.name === "mention" && leading.attrs.id === mapAgentToMentionItem(replyAgent).id) {
+				activeEditor.view.dispatch(activeEditor.state.tr.setSelection(NodeSelection.create(doc, 1)));
+			}
 		},
 	});
 	const contentState = useEditorState({

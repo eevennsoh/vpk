@@ -30,7 +30,7 @@ export function ProjectButterContentPreview({ children, expanded, forceExpanded 
 					<Button
 						aria-controls={id}
 						aria-expanded={open}
-						className={label === "description" ? "h-auto border-0 p-0 text-xs font-normal text-text-subtle aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent" : undefined}
+						className={label === "description" ? "h-auto border-0 p-0 text-xs font-normal text-text-subtlest aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent" : undefined}
 						onClick={() => onExpandedChange(!expanded)}
 						type="button"
 						variant={label === "description" ? "link" : "ghost"}

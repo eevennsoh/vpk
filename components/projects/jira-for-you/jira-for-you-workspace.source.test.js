@@ -77,7 +77,7 @@ const DEMO_SOURCE = readFileSync(
 	"utf8",
 );
 const PREVIEW_PAGE_SOURCE = readFileSync(
-	join(process.cwd(), "app/preview/projects/jira-for-you/page.tsx"),
+	join(process.cwd(), "app/preview/projects/jira-for-you-workspace/page.tsx"),
 	"utf8",
 );
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -132,11 +132,7 @@ test("the workspace owns open or close, focus restoration, and local user-messag
 	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = shouldRestoreFocusRef\.current[\s\S]*\? focusRestoreItemIdRef\.current[\s\S]*: null;[\s\S]*dispatchView\(\{ type: "close" \}\);/u);
 	assert.match(WORKSPACE_SOURCE, /createRovoAppUserMessage/u);
 	assert.match(WORKSPACE_SOURCE, /createId\("jira-for-you-user"\)/u);
-	assert.match(WORKSPACE_SOURCE, /const handleAgentPrompt = useCallback\(\(agentId: string, prompt: string\) => \{/u);
-	assert.match(WORKSPACE_SOURCE, /const targetAgentSession = assignedItemData\?\.agentSessions\.find/u);
-	assert.match(WORKSPACE_SOURCE, /\[assignedItemData\.item\.id\]: targetAgentSession\.id/u);
-	assert.match(WORKSPACE_SOURCE, /`\$\{assignedItemData\.item\.id\}:\$\{targetAgentSession\.id\}`/u);
-	assert.match(WORKSPACE_SOURCE, /onAgentPrompt=\{handleAgentPrompt\}/u);
+	assert.doesNotMatch(WORKSPACE_SOURCE, /onAgentPrompt=/u);
 	assert.match(WORKSPACE_SOURCE, /<JiraForYouConversation[\s\S]*key=\{`\$\{assignedItemData\.item\.id\}:\$\{selectedAgentSession\.id\}`\}/u);
 	assert.match(WORKSPACE_SOURCE, /const WIDE_FEED_MIN_WIDTH_PX = 420;/u);
 	assert.match(WORKSPACE_SOURCE, /maxWidth: `calc\(100% - \$\{WIDE_FEED_MIN_WIDTH_PX\}px\)`/u);
@@ -311,11 +307,11 @@ test("the header wraps tabs beneath the title when space gets tight without movi
 test("the detail panel includes an Agents selector and agent-specific details content", () => {
 	assert.match(DETAIL_PANEL_SOURCE, /import type \{ JiraSidebarSessionStatus \}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /AgentList/u);
-	assert.match(DETAIL_PANEL_SOURCE, /type AgentListItem/u);
+	assert.match(DETAIL_PANEL_SOURCE, /AgentListItem/u);
 	assert.match(DETAIL_PANEL_SOURCE, /aria-labelledby="jira-for-you-agents-heading"/u);
 	assert.match(DETAIL_PANEL_SOURCE, /<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents<\/JiraSessionSectionHeading>/u);
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
-	assert.match(DETAIL_PANEL_SOURCE, /onSubmitPrompt=\{\(sessionItem, prompt\) => onAgentPrompt\(sessionItem\.id, prompt\)\}/u);
+	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /onSubmitPrompt=/u);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /Shimmer|JiraSessionLifecycle|TileAvatar|<Tag/u);
@@ -368,15 +364,16 @@ test("workspace data stays deterministic, supports multi-agent items, and exhaus
 	assert.match(WORKSPACE_DATA_SOURCE, /details: createWorkspaceItemDetails/u);
 });
 
-test("the project demo and docs present the workspace instead of the list-only surface", () => {
+test("the project demo defaults to Project Butter and retains the work item workspace", () => {
 	assert.match(WORKSPACE_SOURCE, /chrome\?: "framed" \| "plain";/u);
 	assert.match(WORKSPACE_SOURCE, /chrome === "framed" \? "rounded-lg border border-border" : "rounded-\[inherit\]"/u);
-	assert.match(DEMO_SOURCE, /import \{ JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";/u);
+	assert.match(DEMO_SOURCE, /import \{ JiraForYouProjectButter, JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";/u);
 	assert.match(DEMO_SOURCE, /const isStandalonePreview = pathname\.startsWith\("\/preview\/"\);/u);
 	assert.match(DEMO_SOURCE, /<div className="h-full min-h-0 overflow-hidden rounded-lg border border-border bg-surface">/u);
+	assert.match(DEMO_SOURCE, /<JiraForYouProjectButter \/>/u);
 	assert.match(DEMO_SOURCE, /<JiraForYouWorkspace chrome="plain" className="h-full min-h-0" \/>/u);
 	assert.match(DETAIL_DOC_SOURCE, /"jira-for-you": \{/u);
-	assert.match(DETAIL_DOC_SOURCE, /importStatement: `import \{ JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";`/u);
+	assert.match(DETAIL_DOC_SOURCE, /importStatement: `import \{ JiraForYouProjectButter \} from "@\/components\/projects\/jira-for-you";`/u);
 	assert.match(DETAIL_DOC_SOURCE, /previewHeight: "fixed"/u);
 	assert.match(DETAIL_DOC_SOURCE, /previewContentWidth: "full"/u);
 });
@@ -432,5 +429,5 @@ test("the reusable Jira shell owns sidebar state, sidebar chat fallback, and the
 	assert.match(PAGE_SOURCE, /children\?: ReactNode;/u);
 	assert.match(PAGE_SOURCE, /\{children \?\? \(/u);
 	assert.match(PAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*chrome="plain"[\s\S]*className="h-full min-h-0 flex-1"[\s\S]*\/>/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouShell \/>/u);
+	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouWorkspacePreview \/>/u);
 });

@@ -51,8 +51,7 @@ export interface EmojiReactionPillProps {
  * which the shared Button base already maps to the selected token set — this
  * component must never hand-roll those colors.
  *
- * Geometry matches `components/ui/tag.tsx`: the squarish `rounded-sm` corner and
- * 12px `text-xs` label, so a reaction chip reads as the same family as a Tag.
+ * The chip uses the medium 6px radius and a 12px `text-xs` label.
  * The glyph is a plain span, so the button's font-size sizes it and the count
  * together.
  */
@@ -74,7 +73,7 @@ export function EmojiReactionPill({
 			aria-label={label ?? `${count} reacted with ${emojiLabel(emoji)}`}
 			aria-pressed={pressed}
 			className={cn(
-				"gap-1 rounded-sm px-2 text-xs font-normal tabular-nums duration-fast ease-out-practical motion-reduce:transition-none",
+				"gap-1 rounded-md px-2 text-xs font-normal tabular-nums duration-fast ease-out-practical motion-reduce:transition-none",
 				confirmed && "aria-pressed:bg-bg-selected-hovered",
 				className,
 			)}

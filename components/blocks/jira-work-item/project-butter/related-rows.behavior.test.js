@@ -28,20 +28,19 @@ const group = (type) => document.querySelector(`[data-related-type="${type}"]`);
 const rowsOf = (view, label) => [...view.getByRole("table", { name: label }).querySelector("tbody").children].filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
 const childTrigger = (view) => view.getByRole("button", { name: /^(Collapse|Expand) Child work items/u });
 
-test("the status menu offers three statuses with icons and updates the row and header counts", async () => {
+test("related status fields omit leading icons and update the row and header counts", async () => {
 	const view = await renderRelated();
 	const progress = childTrigger(view).querySelector('[data-slot="progress-circle"]');
 	assert.equal(progress?.getAttribute("aria-valuenow"), "10");
 	assert.equal(progress?.getAttribute("aria-valuemax"), "15");
 	assert.equal(progress?.querySelectorAll("circle").length, 2);
 	const trigger = view.getAllByRole("button", { name: "Edit status for VITA-4, In progress" })[0];
-	assert.equal(trigger.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "50", "the row circle matches the status");
+	assert.equal(trigger.querySelector('[data-slot="progress-circle"]') === null, true);
 	for (const label of ["Child work items", "Linked work"]) {
 		const statusButtons = view.getByRole("table", { name: label }).querySelectorAll('button[aria-label^="Edit status for "]');
 		assert.ok(statusButtons.length > 0);
 		for (const button of statusButtons) {
-			const dashes = button.querySelector('[data-slot="progress-circle-dashes"]');
-			if (dashes) assert.equal(dashes.style.animationPlayState, "paused", `${label} status stays still`);
+			assert.equal(button.querySelector('[data-slot="progress-circle"]') === null, true, `${label} status has no leading icon`);
 		}
 	}
 	await view.click(trigger);

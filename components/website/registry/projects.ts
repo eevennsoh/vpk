@@ -29,3 +29,7 @@ export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	studio: dynamic(() => import("../demos/projects/studio-demo"), { ssr: false }),
 	// </generated: catalog-registry>
 };
+
+export const PROJECT_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"jira-for-you-demo-workspace": dynamic(() => import("../demos/projects/jira-for-you-demo").then((module) => ({ default: module.JiraForYouWorkspaceDemo })), { ssr: false }),
+};

@@ -130,6 +130,7 @@ export function JiraActivityNode({
 	size = "event",
 	tone = "timeline",
 	actorAvatarSize = 32,
+	compactConnector = false,
 }: Readonly<{
 	actor: JiraActivityActor;
 	renderAvatar?: (avatar: ReactNode) => ReactNode;
@@ -141,6 +142,8 @@ export function JiraActivityNode({
 	/** `card` uses a 32px avatar track; `event` centers a 16px glyph in h-6. */
 	size?: "event" | "card";
 	actorAvatarSize?: 24 | 32;
+	/** Allow adjacent compact events to retain their existing row spacing. */
+	compactConnector?: boolean;
 }>) {
 	const isCard = size === "card";
 	const avatarSize = actor.kind === "agent" || actor.kind === "person" ? actorAvatarSize : 32;
@@ -168,7 +171,7 @@ export function JiraActivityNode({
 					<JiraActivityEntryGlyph actor={actor} icon={icon} />
 				)}
 			</div>
-			{isLast ? null : <div className={cn("min-h-4 w-px flex-1", isCard && avatarSize === 32 ? "mt-1" : null, tone === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-timeline-stem />}
+			{isLast ? null : <div className={cn("w-px flex-1", compactConnector ? "min-h-0" : "min-h-4", isCard && avatarSize === 32 ? "mt-1" : null, tone === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-timeline-stem />}
 		</div>
 	);
 }

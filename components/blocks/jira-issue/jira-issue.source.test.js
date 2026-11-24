@@ -652,12 +652,10 @@ test("Jira issue stroke chrome uses compact inline subtask counts", () => {
 });
 
 test("Jira issue renders one aggregate Figma-sized agent row and always exposes the shared flyout", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /import \{ Avatar, AvatarFallback \} from "@\/components\/ui\/avatar";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(visibleActivities\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const featuredActivity = summary\.featuredActivityIndex !== null[\s\S]*\? visibleActivities\[summary\.featuredActivityIndex\][\s\S]*: undefined;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(featuredActivity !== undefined\) \{[\s\S]*<AgentAvatarVisual[\s\S]*appearance="coding"[\s\S]*animate=\{false\}[\s\S]*avatarClassName="shrink-0"[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*sizePx=\{avatarSize\}[\s\S]*else if \(avatarLayout === "horizontal-group"\) \{[\s\S]*<AvatarGroup[\s\S]*else \{[\s\S]*<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && summary\.priorityState === "awaiting-input";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel|JiraIssueCyclingAgentLabel/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
@@ -838,7 +836,6 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| parentOwnsLayout \? false : "position"\}/);
 	assert.match(SOURCE, /layout=\{shouldReduceMotion \|\| agentActivityHoverOpen \|\| parentOwnsLayout \? false : "position"\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowLayout = shouldReduceMotion \|\| sessionDragging \|\| assignmentHoverOpen\s*\n\s*\? false\s*\n\s*: "position";/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentAvatarVisual[\s\S]*animate=\{false\}/u);
 	assert.match(SUBTASKS_SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);
 });
 

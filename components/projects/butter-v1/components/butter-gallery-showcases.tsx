@@ -14,7 +14,6 @@ const JiraIssuePage = dynamic(() => import("@/components/blocks/jira-issue/page"
 const BOARD_CARD_CHAT_AGENTS = { profiles: BUTTER_CHAT_AGENT_PROFILES, resolveId: resolveButterChatAgentId };
 
 const LOCAL_SESSIONS = AGENT_SESSION_ITEMS.map((item) => item.id === "lw-night-suite-session" ? { ...item, pullRequests: BUTTER_PAY_113_RELATED_PULL_REQUESTS } : item);
-
 export function ButterGalleryAgentSessions({ active, permission }: Readonly<{ active: boolean; galleryOpen: boolean; permission: ButterSessionPermission }>) {
 	return <AgentSessionShowcase active={active} className="pointer-events-none absolute inset-x-0 top-12 bottom-56 [&>div]:pointer-events-auto" localItems={LOCAL_SESSIONS} permission={permission} profiles={BUTTER_CHAT_AGENT_PROFILES} />;
 }

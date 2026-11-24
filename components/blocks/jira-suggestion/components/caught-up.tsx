@@ -6,6 +6,7 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/ui/icon-tile";
 import { motionRecipe } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
@@ -33,9 +34,7 @@ export function CaughtUp({ feed, deck, checkRef, onUndo }: Readonly<{ feed: Sugg
 	const reduced = useReducedMotion() ?? false;
 	return (
 		<motion.div animate={{ opacity: 1, transition: motionRecipe.popup.enter }} className="flex flex-col items-center gap-3.5 px-4 pt-5 pb-3 text-center" initial={{ opacity: 0 }}>
-			<span aria-hidden="true" className="flex size-9 items-center justify-center rounded-full bg-bg-success text-icon-success">
-				<CheckMarkIcon color="currentColor" label="" />
-			</span>
+			<IconTile aria-hidden as="span" icon={<CheckMarkIcon color="currentColor" label="" />} label="" size="large" variant="green" />
 			<div className="flex flex-col items-center gap-0.5">
 				<p className="text-text" style={{ font: token("font.heading.xsmall") }}>All caught up</p>
 				<p aria-live="polite" className="grid text-sm leading-5 text-text-subtle">

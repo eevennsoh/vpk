@@ -101,7 +101,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 			}} />
 			{/* Fill short feeds while canceling the extra flex gap introduced by the spacer. */}
 			{activityRows === "feed" ? <div aria-hidden className={cn("mt-auto", compact ? "-mb-4" : "-mb-6")} /> : null}
-			<ProjectButterCommentBar active={active} activityRows={activityRows} content={composerContent} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => { setReplyTarget(null); setInstructionDraft(null); }} onActivityReplySubmitted={(entryId) => setLatestReplyEntryIds((current) => new Set(current).add(entryId))} sessions={sessions} sidePanel={sidePanel} />
+			<ProjectButterCommentBar active={active} activityRows={activityRows} content={composerContent} empty={empty} onOpenSession={onOpenSession} onReplyToSession={inlineSessionReplies ? replyToSession : undefined} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} replyFocusRequest={replyFocusRequest} replySession={replySession} replyTarget={replyTarget} onClearReply={() => { if (instructionDraft !== null) content.setCommentDraft(instructionDraft); setReplyTarget(null); setInstructionDraft(null); }} onActivityReplySubmitted={(entryId) => setLatestReplyEntryIds((current) => new Set(current).add(entryId))} sessions={sessions} sidePanel={sidePanel} />
 		</div>
 	);
 }

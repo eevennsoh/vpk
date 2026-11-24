@@ -9,7 +9,9 @@ export function agentSessionDemoProfiles(base: readonly RovoAgentProfile[], item
 		...items.filter((item) => !base.some((profile) => profile.name.toLowerCase() === item.agent.name.toLowerCase())).map(({ agent }) => ({
 			id: agent.id ?? agent.name,
 			name: agent.name,
+			avatarSrc: agent.avatarSrc,
 			brandName: agent.brandName,
+			vpkLogo: agent.vpkLogo,
 			byline: "Cloud agent",
 			description: "A cloud agent session.",
 			starters: [],

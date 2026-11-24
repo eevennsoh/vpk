@@ -129,7 +129,7 @@ function ActivityThread({ selectedReply, onSelectReply, entries, onEntriesChange
 				onSelectReply={onSelectReply}
 				renderCommentAvatar={summary ? threadSummary.renderAvatar : undefined}
 				renderCommentTools={summary ? (entry, reply) => reply ? null : threadSummary.renderAction(entry.replies ?? []) : undefined}
-				renderCommentReplies={summary ? (_entry, replies, expandReplies) => threadSummary.renderReplies(replies, expandReplies, summary, onDraft) : undefined}
+				renderCommentReplies={summary ? (_entry, replies, expandReplies, disclosure) => threadSummary.renderReplies(<>{disclosure}{replies}</>, expandReplies, summary, onDraft) : undefined}
 				renderEarlierRepliesLabel={(replies, expanded) => (
 					<EarlierReplies replies={replies} expanded={expanded} collapseAll={!showLatestReply} />
 				)}

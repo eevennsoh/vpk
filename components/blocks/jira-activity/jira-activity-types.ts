@@ -172,6 +172,9 @@ export interface JiraActivityReply {
 	timestamp: string;
 	createdAtMs?: number;
 	body: string;
+	visibility?: "private";
+	/** A private agent response that is still being prepared. */
+	generationStartedAtMs?: number;
 	replyTo?: Readonly<{ id: string; excerpt: string }>;
 	reactions?: readonly JiraActivityReaction[];
 	/** Optional agent-session summary used to open an embedded Rovo chat. */

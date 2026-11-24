@@ -2585,12 +2585,12 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 60,
+			"ownerImportCount": 72,
+			"pageCount": 61,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
-				"inline": 3,
+				"inline": 4,
 				"redirect": 3,
 				"shell": 26
 			}
@@ -3844,49 +3844,46 @@
 				"source": "app/preview/projects/[slug]/page.tsx"
 			},
 			{
-				"ownerCount": 2,
+				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/app/contexts/context-rovo-chat",
-						"source": "app/contexts/context-rovo-chat",
+						"importPath": "@/components/projects/jira-for-you",
+						"source": "components/projects/jira-for-you",
 						"symbols": [
-							"RovoChatProvider"
-						]
-					},
-					{
-						"importPath": "@/components/projects/jira-for-you/page",
-						"source": "components/projects/jira-for-you/page",
-						"symbols": [
-							"JiraForYouShell"
+							"JiraForYouProjectButter"
 						]
 					}
 				],
 				"primaryOwner": {
 					"kind": "shell",
 					"sources": [
-						"app/contexts/context-rovo-chat",
-						"components/projects/jira-for-you/page"
+						"components/projects/jira-for-you"
 					]
 				},
 				"routePath": "/preview/projects/jira-for-you",
-				"shellOwnerCount": 2,
+				"shellOwnerCount": 1,
 				"shellOwners": [
 					{
-						"importPath": "@/app/contexts/context-rovo-chat",
-						"source": "app/contexts/context-rovo-chat",
+						"importPath": "@/components/projects/jira-for-you",
+						"source": "components/projects/jira-for-you",
 						"symbols": [
-							"RovoChatProvider"
-						]
-					},
-					{
-						"importPath": "@/components/projects/jira-for-you/page",
-						"source": "components/projects/jira-for-you/page",
-						"symbols": [
-							"JiraForYouShell"
+							"JiraForYouProjectButter"
 						]
 					}
 				],
 				"source": "app/preview/projects/jira-for-you/page.tsx"
+			},
+			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/preview/projects/jira-for-you-workspace/page.tsx"
+				},
+				"routePath": "/preview/projects/jira-for-you-workspace",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/preview/projects/jira-for-you-workspace/page.tsx"
 			},
 			{
 				"ownerCount": 0,

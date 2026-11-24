@@ -24,7 +24,7 @@ function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 
 /**
  * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced by a receipt for the latest change),
- * then Dismiss all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
+ * then Discard all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
  * when everything is caught up, where the body owns the summary.
  */
 export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; animateEntrance: boolean }>) {
@@ -54,7 +54,7 @@ export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; an
 			</div>
 			{pending > 0 ? (
 				<div className="flex shrink-0 items-center gap-1">
-					<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Dismiss all</Button>
+					<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
 					<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
 				</div>
 			) : null}

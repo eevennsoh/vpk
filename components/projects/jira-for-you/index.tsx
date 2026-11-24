@@ -4,6 +4,8 @@ import { useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import { cn } from "@/lib/utils";
 
+export { JiraForYouProjectButter } from "./jira-for-you-project-butter";
+
 import { JIRA_FOR_YOU_SECTIONS, JIRA_FOR_YOU_TABS } from "./data";
 import { JiraForYouHeader } from "./jira-for-you-header";
 import { JiraForYouSectionGroup } from "./jira-for-you-section";

@@ -156,6 +156,7 @@ export function RovoAppBrand({
 			label={attribution ? "" : selectedAgent.name}
 			logoName={selectedAgent.logoName}
 			sizePx={16}
+			vpkLogo={selectedAgent.vpkLogo}
 		/>
 	);
 	const identityItemVariants = shouldReduceMotion ? ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS : ROVO_APP_BRAND_ITEM_VARIANTS;

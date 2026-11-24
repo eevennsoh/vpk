@@ -450,25 +450,6 @@ export function JiraForYouWorkspace({
 		appendLocalMessage(sessionKey, payload);
 	}, [appendLocalMessage, sessionKey]);
 
-	const handleAgentPrompt = useCallback((agentId: string, prompt: string) => {
-		const trimmedPrompt = prompt.trim();
-		const targetAgentSession = assignedItemData?.agentSessions.find(
-			(agentSession) => agentSession.id === agentId,
-		);
-		if (!assignedItemData || !targetAgentSession || !trimmedPrompt) {
-			return;
-		}
-
-		setSelectedAgentByItemId((current) => ({
-			...current,
-			[assignedItemData.item.id]: targetAgentSession.id,
-		}));
-		appendLocalMessage(
-			`${assignedItemData.item.id}:${targetAgentSession.id}`,
-			{ files: [], text: trimmedPrompt },
-		);
-	}, [appendLocalMessage, assignedItemData]);
-
 	return (
 		<div
 			className={cn(
@@ -604,7 +585,6 @@ export function JiraForYouWorkspace({
 								details={assignedItemData.details}
 								isNarrow={isNarrow}
 								item={assignedItemData.item}
-								onAgentPrompt={handleAgentPrompt}
 								onAgentSelect={handleAgentSelect}
 								onClose={() => dispatchView({ type: "set-detail-panel", open: false })}
 								resize={detailPanelResize}

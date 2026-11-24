@@ -17,13 +17,15 @@ const AGENT_ACTIVITY_PRESENTATION_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("all Jira chin identity paths use the coding appearance", () => {
-	const rowContent = AGENT_ACTIVITY_PRESENTATION_SOURCE.slice(
-		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowContent"),
-		AGENT_ACTIVITY_PRESENTATION_SOURCE.indexOf("export function JiraIssueAgentRowSurface"),
-	);
-	assert.equal((rowContent.match(/<AgentAvatarVisual\s+appearance="coding"/gu) ?? []).length, 2);
-	assert.match(AGENT_ACTIVITY_PRESENTATION_SOURCE, /function toAgentLoadingAgent[\s\S]*?avatar: \{\s*appearance: "coding"/u);
+test("owner activity shows the invoker and autonomous activity shows only the agent", async () => {
+	for (const invokedBy of [{ name: "Venn" }, undefined]) {
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/agent-activity.tsx",
+			exportName: "JiraIssueAgentActivityRows",
+			props: { activities: [{ id: "session", name: "Claude", state: "working", label: "Working", role: "owner", invokedBy }], iconScale: "comfortable" },
+		});
+		assert.equal(view.container.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label") ?? null, invokedBy ? "Claude, used by Venn" : null);
+	}
 });
 
 test("assignment flyout access is independent of the session lifecycle", () => {

@@ -27,6 +27,8 @@ export interface JiraActivityCardProps {
 	tag?: { text: string; color?: TagColor };
 	/** Optional metadata rendered immediately after the plain-header timestamp. */
 	timestampMeta?: ReactNode;
+	/** Optional metadata rendered before the plain-header timestamp. */
+	timestampPrefix?: ReactNode;
 	/** Optional trailing header action supplied by the consuming surface. */
 	action?: ReactNode;
 	/** Optional leading identity shown in the plain activity-card header. */
@@ -70,6 +72,7 @@ export function JiraActivityCard({
 	timestampContent,
 	tag,
 	timestampMeta,
+	timestampPrefix,
 	action,
 	headerAvatar,
 	headerConnector,
@@ -126,6 +129,7 @@ export function JiraActivityCard({
 
 	return (
 		<div
+			data-jira-activity-card=""
 			className={cn(
 				// Hover/focus group wraps the full card (header, body, replies) so
 				// header actions stay interactive while the pointer is anywhere on
@@ -140,6 +144,7 @@ export function JiraActivityCard({
 			)}
 		>
 			<div
+				data-jira-activity-card-body=""
 				className={cn(
 					"group/activity-timestamp relative grid min-w-0",
 					hasExpandedLayout ? "gap-3" : "gap-2",
@@ -184,6 +189,7 @@ export function JiraActivityCard({
 										</span>
 									</div>
 									<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
+										{timestampPrefix}
 										<JiraActivityTimestamp content={timestampContent} timestamp={timestamp} />
 										{timestampMeta}
 										{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
@@ -192,6 +198,7 @@ export function JiraActivityCard({
 							) : (
 								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm leading-5">
 									<span className="font-medium text-text">{agentName}</span>
+									{timestampPrefix}
 									<JiraActivityTimestamp content={timestampContent} timestamp={timestamp} />
 									{timestampMeta}
 									{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
@@ -200,7 +207,7 @@ export function JiraActivityCard({
 							{action ? (
 								<div
 									className={cn(
-										"relative z-10 pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										"relative z-10 pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none has-[[data-persistent-activity-action]]:pointer-events-auto has-[[data-persistent-activity-action]]:opacity-100",
 										actionVisibilityClass,
 									)}
 								>

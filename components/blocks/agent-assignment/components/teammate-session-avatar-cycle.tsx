@@ -7,9 +7,9 @@ import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 
 type TeammateSessionIdentity = AgentLoadingAgent & Pick<AgentSessionItem, "invokedBy">;
 
-function renderIdentity({ avatar, invokedBy, name }: TeammateSessionIdentity, sizePx: 20 | 24) {
+export function renderSessionIdentity({ avatar, invokedBy, name }: TeammateSessionIdentity, sizePx: 16 | 20 | 24, fallbackToTeammate = false) {
 	const human = getAgentSessionAttribution({ invokedBy });
-	if (invokedBy && !human) {
+	if (!human && !fallbackToTeammate) {
 		return <AgentAvatarVisual {...avatar} animate={false} label={name} sizePx={sizePx} />;
 	}
 	return <HumanAgentAvatar agent={{ ...avatar, name }} human={human ?? { name: "Teammate" }} badgeSizePx={12} sizePx={sizePx} />;
@@ -19,7 +19,7 @@ export function TeammateSessionAvatarCycle({ sessions, sizePx = 20 }: Readonly<{
 	const first = sessions[0];
 	if (!first) return null;
 	if (sessions.length === 1) {
-		return <span className="inline-grid size-6 shrink-0 place-items-center">{renderIdentity(first, sizePx)}</span>;
+		return <span className="inline-grid size-6 shrink-0 place-items-center">{renderSessionIdentity(first, sizePx, true)}</span>;
 	}
 	const byId = new Map(sessions.map((session) => [session.id, session]));
 	return <AgentLoading
@@ -28,7 +28,7 @@ export function TeammateSessionAvatarCycle({ sessions, sizePx = 20 }: Readonly<{
 		cycleWhenFinished
 		renderVerticalAvatar={({ id }) => {
 			const session = byId.get(id);
-			return session ? renderIdentity(session, sizePx) : null;
+			return session ? renderSessionIdentity(session, sizePx, true) : null;
 		}}
 		variant="vertical"
 	/>;

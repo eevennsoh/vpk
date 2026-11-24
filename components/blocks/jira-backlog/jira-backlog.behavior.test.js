@@ -149,3 +149,28 @@ test("the sprint boundary menu moves adjacent items and stays unavailable when r
 	assert.match(view.container.textContent, /Expand both sections to move work items/);
 	await view.unmount();
 });
+
+test("the catalog sprint boundary moves a subtask with its parent", async () => {
+	const summary = "Check headlamp fit";
+	const view = await renderComponent({ entry: "components/website/demos/blocks/jira-backlog-demo.tsx" });
+	try {
+		await view.click(view.getByRole("button", { name: "Create work item after R1S-8" }));
+		const draft = view.getByRole("textbox", { name: "New work item summary" });
+		await view.fill(draft, summary);
+		await view.press(draft, "Tab");
+		await view.press(draft, "Enter");
+		await view.press(view.getByRole("textbox", { name: "New work item summary" }), "Escape");
+
+		const sprint = view.getByRole("table", { name: "R1S Design Sprint 4 work items" });
+		const backlog = view.getByRole("table", { name: "Backlog work items" });
+		assert.ok(sprint.contains(view.getByText(summary)));
+
+		await view.click(view.getByRole("button", { name: "Move work items between sprint and backlog" }));
+		await view.click(view.getByRole("button", { name: "Move last sprint item to backlog" }));
+		assert.ok(!sprint.textContent.includes(summary), "the subtask left the sprint with its parent");
+		await view.click(view.getByRole("button", { name: "Expand R1S-8" }));
+		assert.ok(backlog.contains(view.getByText(summary)));
+	} finally {
+		await view.unmount();
+	}
+});

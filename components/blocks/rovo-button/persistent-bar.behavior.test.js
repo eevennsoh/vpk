@@ -49,3 +49,20 @@ test("a tooltip closes during the notification transition without changing its s
 		console.error = originalError;
 	}
 });
+
+test("a fresh nudge opens the tooltip unprompted, and a rail that mounts with it already set stays quiet", async () => {
+	const item = { id: "review", ariaLabel: "Review suggestions", tooltipLabel: "5 suggestions", onClick() {} };
+	const props = { bar: { items: [{ ...item, busy: true, tooltipLabel: "Finding suggestions…" }] }, side: "top", shouldReduceMotion: true };
+	const view = await renderComponent({ entry: "components/blocks/rovo-button/persistent-bar.tsx", exportName: "FloatingRovoButtonPersistentBarRail", props });
+	const tooltip = () => view.container.ownerDocument.querySelector('[data-slot="tooltip-content"]')?.textContent ?? null;
+	assert.equal(view.getByRole("button", { name: "Review suggestions" }).getAttribute("aria-busy"), "true");
+	assert.equal(tooltip(), null);
+	await view.rerender({ ...props, bar: { items: [{ ...item, indicator: true, nudge: 1 }] } });
+	assert.equal(view.getByRole("button", { name: "Review suggestions" }).hasAttribute("aria-busy"), false);
+	assert.equal(tooltip(), "5 suggestions");
+	await view.unmount();
+
+	const remounted = await renderComponent({ entry: "components/blocks/rovo-button/persistent-bar.tsx", exportName: "FloatingRovoButtonPersistentBarRail", props: { ...props, bar: { items: [{ ...item, indicator: true, nudge: 1 }] } } });
+	assert.equal(remounted.container.ownerDocument.querySelector('[data-slot="tooltip-content"]') === null, true);
+	await remounted.unmount();
+});

@@ -92,9 +92,8 @@ test("the reaction pill inherits its selected styling from the Button base", () 
 	assert.doesNotMatch(REACTION_PILL_SOURCE, /text-text-selected|border-border-selected/u);
 	assert.match(REACTION_PILL_SOURCE, /variant="outline"/u);
 	assert.match(REACTION_PILL_SOURCE, /size="compact"/u);
-	// Chips share Tag's geometry: the squarish `rounded-sm` corner and a 12px
-	// label. `shape="circle"` would force `rounded-full!` and win over both.
-	assert.match(REACTION_PILL_SOURCE, /rounded-sm/u);
+	// The reaction chip uses a 6px corner and a 12px label.
+	assert.match(REACTION_PILL_SOURCE, /rounded-md/u);
 	assert.match(REACTION_PILL_SOURCE, /text-xs/u);
 	assert.doesNotMatch(REACTION_PILL_SOURCE, /shape="circle"/u);
 	// The count is visible text; only the glyph is hidden from screen readers.

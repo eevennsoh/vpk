@@ -21,7 +21,6 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
-import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
@@ -461,7 +460,7 @@ export function AgentSessionCard({
 	const cardAnchorRef = useRef<HTMLElement>(null);
 	const isCloudSession = !isLocalAgentListItem(item);
 	const isLongDensity = density === "long";
-	const isTitleLed = density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud";
+	const isTitleLed = density !== "jira-for-you" && (density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud");
 	const menu = useAgentSessionMenu({
 		canResume,
 		isCloud: isCloudSession,
@@ -484,7 +483,6 @@ export function AgentSessionCard({
 	const isLead = mark?.isLead ?? false;
 	const isTransferSource = Boolean(draggingIds?.has(item.id));
 	const attribution = getAgentSessionAttribution(item);
-	const showsAgentWithoutInvoker = item.invokedBy !== undefined && attribution === undefined && item.agent.kind !== "person";
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const {
 		handleArrivalComplete,
@@ -621,7 +619,7 @@ export function AgentSessionCard({
 	// and falls back to its own `STATE_META` indicator.
 	const lifecycleIndicator = role === "expired"
 		? null
-		: isLongDensity && lifecycleLabelPlacement === "trailing"
+		: (isLongDensity || density === "jira-for-you") && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
@@ -796,11 +794,11 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								keepLifecycleLabel={isLongDensity && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
+								keepLifecycleLabel={(isLongDensity || density === "jira-for-you") && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
 								lifecycle={lifecycleIndicator}
 								metadata={
-									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
+									isTitleLed || density === "jira-for-you"
+										? <AgentSessionLongMetadata compact={!isLongDensity && density !== "jira-for-you"} hideAgentAvatar={density === "jira-for-you"} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger
@@ -814,7 +812,7 @@ export function AgentSessionCard({
 											agent={item.agent}
 											attributedBy={attribution}
 											attributionOrder="agent-first"
-											sizePx={showsAgentWithoutInvoker ? humanAgentAvatarGeometry(SESSION_IDENTITY_FRAME_SIZE).agentSize : SESSION_IDENTITY_FRAME_SIZE}
+											sizePx={SESSION_IDENTITY_FRAME_SIZE}
 											animate={shouldRotateAvatar}
 											motion={STATUS_REENTRY_AVATAR_MOTION}
 											onAnimationComplete={handleAvatarComplete}
@@ -826,7 +824,7 @@ export function AgentSessionCard({
 									// pointerdown and flies out of it. Marked outside the
 									// select-mark branch so the origin exists in both.
 									return (
-										<span className={showsAgentWithoutInvoker ? "grid size-8 place-items-center" : "block"} data-session-drag-identity="">
+										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
 												? previewIdentity
 												: (

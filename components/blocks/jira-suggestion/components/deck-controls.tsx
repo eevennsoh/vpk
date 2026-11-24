@@ -61,7 +61,7 @@ export function DeckControls({ deck, label, armed, onCommit, onUndo }: Readonly<
 	return (
 		<div className="flex items-center justify-center" data-deck-controls="" style={{ gap: DISC_GAP }}>
 			<motion.div animate={{ x: room }} initial={false} transition={glide}>
-				<Disc armed={armed === "dismiss" ? ARMED.dismiss : null} hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onCommit("dismiss")} shortcut="←">
+				<Disc armed={armed === "dismiss" ? ARMED.dismiss : null} hint="Discard" label={`Discard ${field}`} onClick={() => onCommit("dismiss")} shortcut="←">
 					<CrossIcon color="currentColor" label="" />
 				</Disc>
 			</motion.div>

@@ -6,6 +6,11 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
+			title: "Jira for you",
+			description: "Borderless session rows with the agent and human identity in the leading slot.",
+			demoSlug: "agent-session-demo-jira-for-you",
+		},
+		{
 			title: "Session sizes and permissions",
 			description: "Compare large, medium, and small session rows across personal, private, and team sessions, including working, needs input, and finished states.",
 			demoSlug: "agent-session-demo-comparison",
@@ -87,10 +92,10 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "density",
-			type: '"unlinked" | "short" | "long"',
+			type: '"unlinked" | "short" | "long" | "jira-for-you"',
 			default: '"unlinked"',
 			description:
-				"Row shape for the large footprint. `unlinked` leads a local session with a 32px identity; `short` and `long` are title-led and show identity, pull request, host, and time metadata. Ignored by the medium and small footprints, which have fixed geometry.",
+				"Row shape for the large footprint. `jira-for-you` leads with the agent and human identity for both local and cloud sessions, in a borderless row. `unlinked` leads local sessions with an identity; `short` and `long` are title-led. Ignored by the medium and small footprints.",
 		},
 		{
 			name: "showBranch",

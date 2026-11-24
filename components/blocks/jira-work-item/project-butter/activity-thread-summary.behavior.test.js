@@ -43,7 +43,7 @@ test("reply actions select a target without staying pressed in either activity v
 	assert.equal(view.queryByRole("button", { name: "Remove reply target" }) !== null, true);
 });
 
-test("timeline summaries can be opened independently and restored", async () => {
+test("timeline summaries keep independent reply disclosures", async () => {
 	const view = await renderWorkItem();
 	const feed = document.querySelector("[data-project-butter-activity-feed]");
 	assert.equal(view.queryByRole("button", { name: "More comment actions" }) === null, true);
@@ -61,18 +61,21 @@ test("timeline summaries can be opened independently and restored", async () => 
 	const secondThread = actions[1].closest("li[data-jira-activity-entry-id]");
 	await view.click(actions[0]);
 	assert.equal(actions[0].getAttribute("aria-expanded"), "true");
-	assert.equal(firstThread.textContent.includes("Thread summary"), true);
+	assert.equal(firstThread.textContent.includes("Summary"), true);
 	assert.equal(firstThread.querySelector("[data-suggestion-text-reveal]") !== null, true);
 	assert.equal(actions[1].getAttribute("aria-expanded"), "false");
 	await view.click(actions[1]);
 	assert.equal(actions[1].getAttribute("aria-expanded"), "true");
-	assert.equal(secondThread.textContent.includes("Thread summary"), true);
-	await view.click([...firstThread.querySelectorAll("button")].find((button) => button.textContent === "Show replies"));
-	assert.equal(actions[0].getAttribute("aria-expanded"), "false");
-	assert.equal(firstThread.querySelector("[data-suggestion-text-reveal]") === null, true);
+	assert.equal(secondThread.textContent.includes("Summary"), true);
+	const summaryDisclosure = firstThread.querySelector('[data-jira-activity-replies-disclosure] button');
+	assert.equal(Boolean(summaryDisclosure), true);
+	assert.match(summaryDisclosure.textContent, /Show \d+ repl/u);
+	await view.click(summaryDisclosure);
+	assert.equal(summaryDisclosure.getAttribute("aria-expanded"), "true");
+	assert.equal(actions[0].getAttribute("aria-expanded"), "true");
 	assert.equal(actions[1].getAttribute("aria-expanded"), "true");
-	await view.click(actions[0]);
-	assert.equal(firstThread.querySelector("[data-suggestion-text-reveal]") !== null, true);
+	await view.click(summaryDisclosure);
+	assert.equal(summaryDisclosure.getAttribute("aria-expanded"), "false");
 	await view.click(view.getByRole("tab", { name: "Agent sessions" }));
 	assert.equal(view.getAllByRole("button", { name: "Summarize thread" }).length > 0, true);
 	assert.equal(view.queryByRole("button", { name: "More comment actions" }) === null, true);
@@ -89,7 +92,7 @@ test("the attributed pair finishes before later participants enter in order", as
 			] };
 			export default function Sequence() {
 				const summary = useWorkItemThreadSummary(entry);
-				return <ThemeWrapper>{summary.renderAvatar(entry, null)}{summary.renderAction(entry.replies)}{summary.renderReplies(null, () => {}, { text: "Summary", fixtureReplyCount: 2 })}</ThemeWrapper>;
+				return <ThemeWrapper>{summary.renderAvatar(entry, null)}{summary.renderAction(entry.replies, () => summary.setRepliesExpanded(false))}{summary.renderReplies(null, () => summary.setRepliesExpanded(true), { text: "Summary", fixtureReplyCount: 2 })}</ThemeWrapper>;
 			}`,
 		mocks: { "@/components/ui-custom/human-agent-avatar": `import React from "react"; export function HumanAgentAvatar({ onAnimationComplete }) { return <button data-pair-finished onClick={onAnimationComplete}>Finish pair</button>; }` },
 	});
@@ -135,7 +138,7 @@ test("pinning a session thread is shared between Timeline and Agent sessions", a
 	const sessionThread = [...document.querySelectorAll(`[data-jira-activity-entry-id="${id}"]`)].find((node) => !node.closest("[hidden]"));
 	assert.equal(Boolean(sessionThread), true);
 	assert.equal(sessionThread.querySelector('button[aria-label="Unpin comment"]') !== null, true);
-	assert.equal(sessionThread.textContent.includes("Pinned"), true);
+	assert.equal(sessionThread.textContent.includes("Pinned"), false);
 	await view.click(sessionThread.querySelector('button[aria-label="Unpin comment"]'));
 	await new Promise((resolve) => requestAnimationFrame(resolve));
 	assert.equal([...document.querySelectorAll(`[data-jira-activity-entry-id="${id}"]`)].filter((node) => !node.closest("[hidden]")).length, 1);

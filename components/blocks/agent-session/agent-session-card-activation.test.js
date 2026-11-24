@@ -208,6 +208,13 @@ async function withCard(props, verify, Component) {
 
 const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "local", state: "complete", agent: { id: "claude", name: "Claude", kind: "agent" } };
 
+test("Jira for you session cards do not open an Agent State flyout", async () => {
+	await withCard({ item: LOCAL_ITEM, density: "jira-for-you", onSubmitPrompt: () => {} }, async ({ document }) => {
+		assert.ok(document.querySelector("[data-testid='agent-session-row-local-readiness']"));
+		assert.equal(document.querySelector('[data-slot="agent-state"]') === null, true);
+	});
+});
+
 test("only the unlinked density leads a local row with its avatar; short is title-led like cloud", async () => {
 	const CLOUD_ITEM = { ...LOCAL_ITEM, id: "cloud-readiness", host: "cloud" };
 	const layouts = [];

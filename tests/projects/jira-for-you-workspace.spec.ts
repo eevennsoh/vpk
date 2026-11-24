@@ -7,7 +7,7 @@ import {
 
 import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_FOR_YOU_URL = appUrl("/preview/projects/jira-for-you");
+const JIRA_FOR_YOU_URL = appUrl("/preview/projects/jira-for-you-workspace");
 
 function getRow(pageTitle: string, page: Page) {
 	return page
@@ -593,6 +593,21 @@ test("row actions follow hover, focus, and open-menu state instead of selection"
 	await page.keyboard.press("Escape");
 	await page.getByRole("searchbox", { name: "Search work items" }).focus();
 	await expect(crmRow.locator('[data-slot="jira-for-you-actions"]')).toBeHidden();
+});
+
+test("work items render without a host chat provider", async ({ page }) => {
+	const errors: string[] = [];
+	page.on("pageerror", (error) => errors.push(error.message));
+	await page.goto(JIRA_FOR_YOU_URL);
+	await getRow("Resolve intermittent payment suite failures", page).locator('[data-slot="jira-for-you-row-button"]').click();
+	await expect(page.getByTestId("jira-for-you-work-item-workspace")).toBeVisible();
+	await expect(page.getByRole("region", { name: "Jira Work Item for PAY-88" })).toBeVisible();
+	await page.getByRole("button", { name: "Back to For you feed" }).click();
+	await getRow("CRM Analytics Dashboard", page).locator('[data-slot="jira-for-you-row-button"]').click();
+	await page.getByRole("button", { name: "Work item view" }).click();
+	await expect(page.getByTestId("jira-for-you-work-item-view")).toBeVisible();
+	await expect(page.getByRole("region", { name: "Work item: CRM-318" })).toBeVisible();
+	expect(errors).toEqual([]);
 });
 
 test("unassigned row and View activation embed canonical Jira Work Item wide and narrow", async ({ page }) => {

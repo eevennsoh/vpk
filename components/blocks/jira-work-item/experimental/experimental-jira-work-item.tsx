@@ -5,6 +5,8 @@ import { useId, useMemo } from "react";
 
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
+import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
@@ -50,6 +52,7 @@ const NOOP = () => undefined;
  * it interactive on the blanket without making the modal its positioning root.
  */
 export function ExperimentalJiraWorkItem(props: Readonly<ExperimentalJiraWorkItemProps>) {
+	const chatControls = useOptionalRovoChatControls();
 	const composerLayoutGroupId = useId();
 	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
@@ -75,7 +78,7 @@ export function ExperimentalJiraWorkItem(props: Readonly<ExperimentalJiraWorkIte
 	);
 	const workItem = props.workItem ?? defaultWorkItem;
 
-	return (
+	const workItemSurface = (
 		// Keep the WorkItemModalProvider mounted (isOpen always true) so the reused
 		// standard ModalHeader has its context and the Base UI dialog owns its own
 		// open/close lifecycle + enter/exit animation. Read-only reuse — the standard
@@ -109,6 +112,8 @@ export function ExperimentalJiraWorkItem(props: Readonly<ExperimentalJiraWorkIte
 			</JiraWorkItemProvider>
 		</WorkItemModalProvider>
 	);
+
+	return chatControls ? workItemSurface : <RovoChatProvider>{workItemSurface}</RovoChatProvider>;
 }
 
 export default ExperimentalJiraWorkItem;

@@ -21,6 +21,10 @@ export interface FloatingRovoButtonPersistentBarItem {
 	tooltipLabel?: string;
 	onClick?: () => void;
 	indicator?: boolean;
+	/** The action is still working (e.g. finding suggestions); exposed as `aria-busy`. */
+	busy?: boolean;
+	/** Change to a new non-zero value to show the tooltip unprompted for a moment, as a nudge. */
+	nudge?: number;
 }
 
 export type FloatingRovoButtonPersistentBarSide = "auto" | "top" | "bottom";
@@ -152,6 +156,11 @@ export interface FloatingRovoButtonPanel {
 	content: ReactNode;
 	indicatorActionId?: string;
 	openFromIndicator?: boolean;
+	/**
+	 * Asks for the panel to open from its toolbar action exactly as a click on it would, as soon as the action is on
+	 * screen and at rest (e.g. once Rovo chat has closed and the button is back). Clear it when the panel opens.
+	 */
+	openRequested?: boolean;
 	closingToIndicator?: boolean;
 	onOpenComplete?: () => void;
 	onCloseComplete?: () => void;

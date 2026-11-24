@@ -205,7 +205,7 @@ test("the shared stack accepts and dismisses Butter fields and supports undo", a
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");
 	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Show as list" }));
-	await view.click(view.getByRole("button", { name: "Dismiss parent" }));
+	await view.click(view.getByRole("button", { name: "Discard parent" }));
 	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "false");
 	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Show as list" }));
@@ -259,7 +259,7 @@ test("suggestions remain scoped to the work item", async () => {
 test("dismissed suggestions stay dismissed when the suggestion setting is toggled", async () => {
 	const view = await renderWorkItem({ initialSuggestion: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
-	await view.click(view.getByRole("button", { name: "Dismiss description" }));
+	await view.click(view.getByRole("button", { name: "Discard description" }));
 	await view.click(view.getByRole("button", { name: "Close suggestions" }));
 	await view.click(view.getByRole("button", { name: "Settings" }));
 	await view.click(view.getByRole("switch", { name: "Suggestion" }));
@@ -272,7 +272,7 @@ test("dismissed suggestions stay dismissed when the suggestion setting is toggle
 test("undoing a dismissal restores it to the work item", async () => {
 	const view = await renderWorkItem({ initialSuggestion: true });
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
-	await view.click(view.getByRole("button", { name: "Dismiss description" }));
+	await view.click(view.getByRole("button", { name: "Discard description" }));
 	await view.click(view.getByRole("button", { name: "Undo dismissing Description" }));
 	assert.equal(view.queryByRole("button", { name: /5 suggestions/iu }) !== null, true);
 	await view.unmount();

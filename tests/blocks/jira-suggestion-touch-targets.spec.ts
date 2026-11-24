@@ -34,7 +34,7 @@ test("Jira suggestion actions meet the touch target minimum in stack and list st
 	await dialog.getByRole("button", { name: "Show as list" }).click();
 	const list = dialog.getByRole("list", { name: "Suggestions" });
 	await expectTouchTarget(list.getByRole("button", { name: "Why description was suggested" }).first());
-	await expectTouchTarget(list.getByRole("button", { name: "Dismiss description" }));
+	await expectTouchTarget(list.getByRole("button", { name: "Discard description" }));
 	await expectTouchTarget(list.getByRole("button", { name: "Accept description" }));
 	const acceptDescription = list.getByRole("button", { name: "Accept description" });
 	await expect(acceptDescription.locator("..")).toHaveCSS("opacity", "1");

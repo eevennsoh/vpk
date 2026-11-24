@@ -44,7 +44,7 @@ export function getAgentSessionRole(item: AgentSessionItem): AgentSessionRole {
 }
 
 export function getAgentSessionAttribution(item: Pick<AgentSessionItem, "invokedBy">) {
-	return item.invokedBy?.name.trim().toLowerCase() === "venn" ? undefined : item.invokedBy;
+	return item.invokedBy;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface AgentSessionWorkItemDraft {
  * Visible identity for an agent session.
  *
  * Session behavior still belongs to `item.agent`; the leading face belongs to
- * the invoker, except Venn's own sessions keep the agent identity.
+ * the invoker when one is recorded.
  */
 export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentListAgent {
 	const invoker = getAgentSessionAttribution(item);
@@ -108,7 +108,7 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
-export type AgentSessionDensity = "unlinked" | "short" | "long";
+export type AgentSessionDensity = "unlinked" | "short" | "long" | "jira-for-you";
 
 /**
  * Finder-style modifiers for a selection gesture.

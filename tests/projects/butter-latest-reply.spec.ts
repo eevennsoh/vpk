@@ -1,6 +1,32 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("reply disclosure keeps the same gap above the first visible reply", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const activity = page.getByRole("region", { name: "Activity", exact: true });
+	await activity.getByRole("tab", { name: "Timeline", exact: true }).click();
+	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	const toggle = thread.locator("[data-jira-activity-replies-disclosure] button");
+	await expect(toggle).toHaveAttribute("aria-expanded", "false");
+	const gap = async () => {
+		const control = await toggle.boundingBox();
+		const reply = await thread.locator('[aria-label="Replies"] > div:visible').first().boundingBox();
+		if (!control || !reply) throw new Error("Missing reply disclosure or visible reply");
+		return reply.y - (control.y + control.height);
+	};
+	const collapsedGap = await gap();
+	await toggle.click();
+	await expect(toggle).toHaveAttribute("aria-expanded", "true");
+	expect(await gap()).toBeCloseTo(collapsedGap, 1);
+	await toggle.click();
+	await expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(await gap()).toBeCloseTo(collapsedGap, 1);
+});
+
 test("posting a reply shows only the latest reply in both activity views", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

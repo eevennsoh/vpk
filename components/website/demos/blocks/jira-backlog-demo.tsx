@@ -63,8 +63,9 @@ export default function JiraBacklogDemo() {
 	const sprint = items.slice(0, sprintSize);
 	const backlog = items.slice(sprintSize);
 	function moveBoundary({ itemIds, destination }: JiraBacklogSprintMove) {
-		const movedKeys = new Set(itemIds);
-		const moves = (item: JiraBacklogItem) => movedKeys.has(item.id) || Boolean(item.parentIssueKey && movedKeys.has(item.parentIssueKey));
+		const movedIds = new Set(itemIds);
+		const movedIssueKeys = new Set(items.filter(({ id }) => movedIds.has(id)).map(({ issueKey }) => issueKey));
+		const moves = (item: JiraBacklogItem) => movedIds.has(item.id) || (item.parentIssueKey !== undefined && movedIssueKeys.has(item.parentIssueKey));
 		const moved = items.filter(moves);
 		const nextSprint = destination === "sprint" ? [...sprint, ...moved] : sprint.filter((item) => !moves(item));
 		const nextBacklog = destination === "sprint" ? backlog.filter((item) => !moves(item)) : [...moved, ...backlog];

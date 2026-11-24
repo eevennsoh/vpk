@@ -53,7 +53,7 @@ const CARD_ITEM = {
 	timeLabel: "Just now",
 };
 
-test("Venn's session shows the agent alone while other invokers retain their avatars", async () => {
+test("sessions show their human invoker, while autonomous agents appear alone", async () => {
 	const { AgentSessionCard } = await loadCard();
 	const render = (role, name) => renderToStaticMarkup(createElement(AgentSessionCard, {
 		item: { ...CARD_ITEM, role, invokedBy: { name } },
@@ -62,9 +62,11 @@ test("Venn's session shows the agent alone while other invokers retain their ava
 	const owner = render("owner", "Venn");
 	const teammate = render("owner", "Maya");
 	const vennAsViewer = render("viewer", "Venn");
-	assert.doesNotMatch(owner, /data-slot="human-agent-avatar"/u);
-	assert.doesNotMatch(vennAsViewer, /data-slot="human-agent-avatar"/u);
+	assert.match(owner, /aria-label="Codex, used by Venn"/u);
+	assert.match(vennAsViewer, /aria-label="Codex, used by Venn"/u);
 	assert.match(teammate, /aria-label="Codex, used by Maya"/u);
+	const autonomous = renderToStaticMarkup(createElement(AgentSessionCard, { item: { ...CARD_ITEM, invokedBy: undefined } }));
+	assert.doesNotMatch(autonomous, /data-slot="human-agent-avatar"/u);
 });
 
 async function loadGlow() {
