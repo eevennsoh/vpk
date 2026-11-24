@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "./details-rail";
 import type { DetailSuggestionReveal } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { SuggestionValueReveal } from "./suggestion-rainbow-text";
+import { releasedPreviewPadding } from "./suggestion-preview-room";
 
 type Preview = Pick<WorkItemSuggestion, "id" | "valueText">;
 const TargetState = createContext<Preview | null>(null);
@@ -26,15 +27,36 @@ export function ProjectButterSuggestionTargets({ children }: Readonly<{ children
 	const [preview, setPreview] = useState<Preview | null>(null);
 	const [criteria, setCriteria] = useState<readonly string[] | null>(null);
 	const reviewId = useRef("");
-	const padding = useRef<{ port: HTMLElement; original: string; minimum: number } | null>(null);
+	const padding = useRef<{ port: HTMLElement; original: string; minimum: number; release?: () => void } | null>(null);
 	const actions = useMemo(() => {
 		const restorePadding = () => {
-			if (padding.current) padding.current.port.style.paddingBottom = padding.current.original;
+			if (padding.current) {
+				padding.current.release?.();
+				padding.current.port.style.paddingBottom = padding.current.original;
+			}
 			padding.current = null;
+		};
+		/**
+		 * Ends a preview without moving the view: dropping the room all at once would shrink the scrollport under the
+		 * reader and snap it back. Only the room below the viewport goes now; the rest goes as they scroll back up.
+		 */
+		const releasePadding = () => {
+			const held = padding.current;
+			if (!held || held.release) return;
+			const trim = () => {
+				const { port, minimum } = held;
+				const next = releasedPreviewPadding({ padding: parseFloat(port.style.paddingBottom), minimum, scrollHeight: port.scrollHeight, scrollTop: port.scrollTop, clientHeight: port.clientHeight });
+				if (next === null) restorePadding();
+				else port.style.paddingBottom = `${next}px`;
+			};
+			held.port.addEventListener("scroll", trim, { passive: true });
+			held.release = () => held.port.removeEventListener("scroll", trim);
+			trim();
 		};
 		return {
 			open(id: string) { reviewId.current = id; },
 			restorePadding,
+			releasePadding,
 			reveal(element: HTMLElement, reduced: boolean) {
 				const review = document.getElementById(reviewId.current)?.getBoundingClientRect();
 				const field = element.getBoundingClientRect();
@@ -47,6 +69,9 @@ export function ProjectButterSuggestionTargets({ children }: Readonly<{ children
 						if (padding.current?.port !== port) {
 							restorePadding();
 							padding.current = { port, original: port.style.paddingBottom, minimum: parseFloat(getComputedStyle(port).paddingBottom) };
+						} else if (padding.current.release) {
+							padding.current.release();
+							padding.current.release = undefined;
 						}
 						const clearance = review.top - 12;
 						port.style.paddingBottom = `${Math.max(padding.current.minimum, bounds.bottom - clearance)}px`;
@@ -64,7 +89,7 @@ export function ProjectButterSuggestionTargets({ children }: Readonly<{ children
 		};
 	}, []);
 	useEffect(() => {
-		if (!preview) actions.restorePadding();
+		if (!preview) actions.releasePadding();
 	}, [actions, preview]);
 	useEffect(() => actions.restorePadding, [actions]);
 	useEffect(() => {
