@@ -12,14 +12,14 @@ test("the Jira Suggestion preview offers Menu and Floating reviews", async ({ pa
 
 	await floating.click();
 	await expect(floating).toHaveAttribute("aria-pressed", "true");
-	await preview.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
+	await preview.getByRole("button", { name: "Review suggestions", exact: true }).click();
 	const panel = preview.getByRole("dialog", { name: /^Work item suggestions/ });
 	const list = panel.getByRole("list", { name: "Suggestions", exact: true });
 	await expect(list.locator(':scope > [role="listitem"]')).toHaveCount(6);
 	const tags = list.locator('[data-slot="tag"]');
 	await expect(tags).toHaveText(["onboarding", "sdk-v2", "merchant-experience", "q4-ga"]);
 	await expect.poll(() => tags.evaluateAll((elements) => new Set(elements.map((element) => getComputedStyle(element).borderTopColor)).size)).toBe(4);
-	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await panel.getByRole("button", { name: "Discard all", exact: true }).click();
 	await preview.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
 	await preview.getByRole("button", { name: "Suggest work item fields", exact: true }).click();
 	await expect(list.locator(':scope > [role="listitem"]')).toHaveCount(6);
@@ -27,7 +27,7 @@ test("the Jira Suggestion preview offers Menu and Floating reviews", async ({ pa
 	await menu.click();
 	await expect(menu).toHaveAttribute("aria-pressed", "true");
 	await expect(preview.getByRole("button", { name: "Show as list" })).toBeVisible();
-	await expect(page.getByRole("button", { name: "Review AI suggestions", exact: true })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Review suggestions", exact: true })).toHaveCount(0);
 });
 
 test("Butter's stacked suggestions settle into rows without jumping or stretching their content", async ({ page }) => {
@@ -35,7 +35,7 @@ test("Butter's stacked suggestions settle into rows without jumping or stretchin
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
-	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
+	const launcher = page.getByRole("button", { name: "Review suggestions", exact: true });
 	const opening = await launcher.evaluateHandle((button) => {
 		const samples: { listed: boolean; secondHeight: number; secondOpacity: number; tailTop: number; maxStretch: number; pointerTarget: boolean }[] = [];
 		const matrixFor = (element: Element) => {
@@ -98,7 +98,8 @@ test("the floating suggestions Close tooltip appears above its button", async ({
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
-	await page.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	await expect(page.getByRole("heading", { name: /Review suggestions for PAY-999/ })).toBeVisible();
 	const close = page.getByRole("button", { name: "Close suggestions", exact: true });
 	await close.hover();
 	const tooltip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: /^Close$/ });
@@ -113,7 +114,7 @@ test("closing floating suggestions clears the title before the launcher shrinks"
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
-	const launcher = page.getByRole("button", { name: "Review AI suggestions", exact: true });
+	const launcher = page.getByRole("button", { name: "Review suggestions", exact: true });
 	await launcher.click();
 	await expect(page.getByRole("list", { name: "Suggestions" })).toBeVisible();
 	const close = page.getByRole("button", { name: "Close suggestions", exact: true });

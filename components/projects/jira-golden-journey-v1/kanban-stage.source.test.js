@@ -108,18 +108,8 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /agentBrandName\?: ThirdPartyLogoName;/u);
-	// Dragged-out uses the shared drag pill (avatar lives inside it). The chin
-	// row keeps one AgentAvatarVisual for a featured agent. Multiple agents share
-	// the Agent Loading ferris instead of mapping a visual per agent.
-	//
-	// Another visual belongs to the `horizontal-group` avatar layout, which no
-	// caller selects: both callsites and the default pass `animated`, so these
-	// surfaces still reach the featured avatar and the shared ferris. Wiring a
-	// caller up to `horizontal-group` must re-prove that contract here.
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentSessionDragPill/u);
-	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /avatarLayout = "animated"/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /isCompletedRow\s*\? featuredActivity\?\.label \?\? "Finished"\s*: summary\.label;/u);

@@ -86,7 +86,7 @@ export function ProjectButterPinComment({ pinned, onToggle }: Readonly<{ pinned:
 	const label = pinned ? "Unpin comment" : "Pin comment";
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button aria-label={label} aria-pressed={pinned} onClick={onToggle} size="icon-compact" type="button" variant="ghost" />}>
+			<TooltipTrigger render={<Button aria-label={label} aria-pressed={pinned} className="order-last" data-persistent-activity-action={pinned ? "" : undefined} onClick={onToggle} selectedAppearance="icon-only" size="icon-compact" type="button" variant="ghost" />}>
 				{pinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
 			</TooltipTrigger>
 			<TooltipContent positionerClassName="z-[650]">{label}</TooltipContent>

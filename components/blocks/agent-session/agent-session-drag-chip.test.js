@@ -100,11 +100,11 @@ function session(id, invoker) {
 	};
 }
 
-test("Venn's sessions drag with the agent avatar alone", async () => {
+test("Venn's sessions drag with the human and agent avatars", async () => {
 	const harness = await loadDragChipHarness();
 	const markup = harness.renderChip({ cohort: cohort({ ...session("mine", { name: "Venn" }), role: "owner" }) });
-	assert.doesNotMatch(markup, /data-slot="human-agent-avatar"|data-shape="circle"/u);
-	assert.match(markup, /aria-label="Claude"/u);
+	assert.match(markup, /data-slot="human-agent-avatar"/u);
+	assert.match(markup, /Claude, used by Venn/u);
 });
 
 const ANNIE = { name: "Annie Chen" };

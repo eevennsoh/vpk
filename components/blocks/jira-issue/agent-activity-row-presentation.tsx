@@ -12,7 +12,7 @@ import {
 	type AgentAssignmentAgent,
 	type AgentAssignmentProps,
 } from "@/components/blocks/agent-assignment";
-import { TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
+import { renderSessionIdentity, TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -23,7 +23,6 @@ import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/proje
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
 import { getJiraIssueVisibleActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui/shimmer";
@@ -340,17 +339,7 @@ export function JiraIssueAgentRowContent({
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
-				<AgentAvatarVisual
-					appearance="coding"
-					animate={false}
-					avatarClassName="shrink-0"
-					avatarSrc={featuredActivity.avatarSrc}
-					brandName={featuredActivity.agentBrandName}
-					vpkLogo={featuredActivity.agentVpkLogo}
-					fallbackText={getAgentInitial(featuredActivity.name)}
-					label={featuredActivity.name}
-					sizePx={avatarSize}
-				/>
+				{renderSessionIdentity({ ...toAgentLoadingAgent(featuredActivity), invokedBy: featuredActivity.invokedBy }, avatarSize)}
 			</span>
 		);
 	} else if (avatarLayout === "horizontal-group") {
@@ -361,17 +350,7 @@ export function JiraIssueAgentRowContent({
 				size="sm"
 			>
 				{activities.map((activity) => (
-					<AgentAvatarVisual
-						appearance="coding"
-						animate={false}
-						avatarSrc={activity.avatarSrc}
-						brandName={activity.agentBrandName}
-						vpkLogo={activity.agentVpkLogo}
-						fallbackText={getAgentInitial(activity.name)}
-						key={activity.id}
-						label=""
-						sizePx={avatarSize}
-					/>
+					<span key={activity.id}>{renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, avatarSize)}</span>
 				))}
 			</AvatarGroup>
 		);
@@ -383,6 +362,10 @@ export function JiraIssueAgentRowContent({
 					announce={false}
 					className="shrink-0"
 					key={selectedAgent?.id ?? "default"}
+					renderVerticalAvatar={(agent, size) => {
+						const activity = activities.find((entry) => entry.id === agent.id);
+						return renderSessionIdentity({ ...agent, invokedBy: activity?.invokedBy }, size);
+					}}
 					variant="vertical"
 					verticalAvatarSize={avatarSize}
 				/>

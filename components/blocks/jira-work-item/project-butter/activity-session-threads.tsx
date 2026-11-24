@@ -18,7 +18,7 @@ import type { ProjectButterSessionItem } from "./data";
 type SessionThread = Readonly<{ entry: JiraActivityCommentEntry; session: ProjectButterSessionItem }>;
 type DraftInstruction = (thread: SessionThread, text: string) => void;
 type SummaryControl = ReturnType<ReturnType<typeof useWorkItemThreadSummaries>>;
-type ThreadProps = Pick<ComponentProps<typeof JiraActivity>, "actors" | "currentUser" | "onEntriesChange" | "onSelectReply" | "renderCommentTools" | "renderReplyBody" | "renderTimestamp" | "selectedReply">;
+type ThreadProps = Pick<ComponentProps<typeof JiraActivity>, "actors" | "currentUser" | "onEntriesChange" | "onSelectReply" | "renderCommentTools" | "renderReply" | "renderReplyBody" | "renderReplyFooter" | "renderTimestamp" | "selectedReply">;
 
 export function renderProjectButterEarlierRepliesLabel(replies: readonly JiraActivityReply[], expanded: boolean) {
 	if (expanded) return "Hide replies";
@@ -43,22 +43,26 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 	latestReplyEntryIds?: ReadonlySet<string>;
 }>) {
 	const { entry, session } = thread;
+	const canSummarize = getAgentSessionRole(session) === "owner";
 	const canDraft = onDraft && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
 	const previewLatest = latestReplyEntryIds?.has(entry.id) ?? false;
+	const previewCount = entry.replies?.at(-1)?.actor.kind === "agent" ? 2 : 1;
 
 	return (
-		<div style={{ "--summary-header-inset": `${summary.summarized ? summary.headerInset : 0}px` } as CSSProperties}>
+		<div style={{ "--summary-header-inset": `${summary.showAvatarStack ? summary.headerInset : 0}px` } as CSSProperties}>
 			<JiraActivity
 				actorAvatarSize={24}
 				{...activity}
 				showReplySelection={false}
-				className={cn(SESSION_THREAD_RAIL, SUMMARY_TRANSITION, summary.summarized && SUMMARIZED_THREAD)}
-				entries={pinProjectButterComments([{ ...entry, defaultRepliesExpanded: false, replyPreviewCount: previewLatest ? 1 : 0 }], pinned ? [entry.id] : []).map((item) => previewLatest && item.kind === "comment" ? { ...item, replyPreviewCount: 1 } : item)}
+				className={cn(SESSION_THREAD_RAIL, SUMMARY_TRANSITION, summary.showAvatarStack && SUMMARIZED_THREAD)}
+				onRepliesExpandedChange={canSummarize ? (_entry, expanded) => summary.setRepliesExpanded(expanded) : undefined}
+				entries={pinProjectButterComments([{ ...entry, defaultRepliesExpanded: false, replyPreviewCount: previewLatest ? previewCount : 0 }], pinned ? [entry.id] : []).map((item) => previewLatest && item.kind === "comment" ? { ...item, replyPreviewCount: previewCount } : item)}
 				replyCollapseKey={(item) => previewLatest ? `reply:${item.replies?.at(-1)?.id}` : pinned ? `pinned:${item.id}` : undefined}
 				activeEntryId={activity.selectedReply?.entryId}
 				composer={null}
 				hideHeader
 				connectorStyle="thread"
+				forceThreadConnector={() => summary.summarized || pinned}
 				commentHeaderLayout="inline"
 				commentActionsPlacement="hover"
 				renderCommentAction={() => <ProjectButterPinComment onToggle={() => onTogglePin(entry.id)} pinned={pinned} />}
@@ -66,14 +70,14 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 				earlierRepliesSelectedAppearance="icon-only"
 				showEarlierRepliesIcon={false}
 				renderCommentBody={() => <ProjectButterSessionStart onOpen={onOpenSession} session={session} />}
-				renderCommentAvatar={summary.renderAvatar}
-				renderCommentTools={(entry, reply) => (
+				renderCommentAvatar={canSummarize ? summary.renderAvatar : undefined}
+				renderCommentTools={(entry, reply, collapseReplies) => (
 					<>
-						{activity.renderCommentTools?.(entry, reply)}
-						{reply ? null : summary.renderAction(entry.replies ?? [])}
+						{activity.renderCommentTools?.(entry, reply, collapseReplies)}
+						{reply || !canSummarize ? null : summary.renderAction(entry.replies ?? [], collapseReplies)}
 					</>
 				)}
-				renderCommentReplies={(_entry, replies, expand) => summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined)}
+				renderCommentReplies={(_entry, replies, expand, disclosure, expanded) => canSummarize ? summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined, { disclosure, expanded }) : <>{disclosure}{replies}</>}
 				renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 			/>
 		</div>
@@ -92,7 +96,7 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 	latestReplyEntryIds?: ReadonlySet<string>;
 }>) {
 	const [expanded, setExpanded] = useState(false);
-	const summaryFor = useWorkItemThreadSummaries({ entries: entries.map(({ entry }) => entry), active, activatedAtMs, latestReplyEntryIds: props.latestReplyEntryIds });
+	const summaryFor = useWorkItemThreadSummaries({ entries: entries.filter(({ session }) => getAgentSessionRole(session) === "owner").map(({ entry }) => entry), active, activatedAtMs, latestReplyEntryIds: props.latestReplyEntryIds });
 	const listRef = useRef<HTMLDivElement>(null);
 	const id = useId();
 	const pinned = pinnedIds.flatMap((id) => entries.filter(({ entry }) => entry.id === id));
@@ -110,8 +114,7 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 	}
 	return (
 		<div className="grid gap-3" ref={listRef}>
-			{pinned.map((thread) => <SessionThreadCard key={thread.entry.id} thread={thread} summary={summaryFor(thread.entry)} pinned onTogglePin={togglePin} {...props} />)}
-			{mine.map((thread) => <SessionThreadCard key={thread.entry.id} thread={thread} summary={summaryFor(thread.entry)} pinned={false} onTogglePin={togglePin} {...props} />)}
+			{[...pinned, ...mine].map((thread) => <SessionThreadCard key={thread.entry.id} thread={thread} summary={summaryFor(thread.entry)} pinned={pinnedIds.includes(thread.entry.id)} onTogglePin={togglePin} {...props} />)}
 			{teammates.length ? (
 				<div>
 					<Button

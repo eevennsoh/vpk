@@ -158,7 +158,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 							onClose={close}
 							overlay={null}
 							panelRef={panelRef}
-							title={`Suggestions for ${workItemKey}`}
+							title={`Review suggestions for ${workItemKey}`}
 						/>
 					),
 				}}

@@ -1,8 +1,8 @@
 /**
  * Import contract for the aggregate agent activity row.
  *
- * The row draws its own avatars through `AgentAvatarVisual`, so it must not
- * pull agent-list or agent-state *components* into the Jira Issue bundle.
+ * The row uses shared session identities without pulling agent-list or
+ * agent-state components into the Jira Issue bundle.
  *
  * The guard reads value imports alone. Type-only specifiers erase at build
  * time and cost nothing, so barring them would police spelling rather than
@@ -31,13 +31,6 @@ const VALUE_IMPORTS = ROW_SOURCE.replace(/^import type [\s\S]*?;$/gmu, "");
 test("the aggregate agent row pulls no agent-list or agent-state components", () => {
 	assert.doesNotMatch(VALUE_IMPORTS, /from "@\/components\/blocks\/agent-list/u);
 	assert.doesNotMatch(VALUE_IMPORTS, /from "@\/components\/blocks\/agent-state/u);
-});
-
-test("the row still draws its own avatars through AgentAvatarVisual", () => {
-	assert.match(
-		ROW_SOURCE,
-		/import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u,
-	);
 });
 
 test("a type-only agent-list import is allowed, so the invoker model can be shared", () => {

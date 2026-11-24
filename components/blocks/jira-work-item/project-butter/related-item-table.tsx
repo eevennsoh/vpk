@@ -22,8 +22,8 @@ export function ProjectButterRelatedItemTable<T>({ columns, composer, empty, exp
 					{page.shown.length === 0 && !composer ? <TableRow className="border-0"><JiraListTableCell colSpan={columns.length}>{empty}</JiraListTableCell></TableRow> : null}
 				</TableBody>
 			</JiraListTable>
-			{page.showToggle ? <div className={cn("-ml-2 mt-2", toggleDisabled && "opacity-(--opacity-disabled)")} inert={toggleDisabled || undefined}>
-				<Button aria-expanded={expanded} aria-label={expanded ? `Show less ${noun}` : `Show ${page.hiddenCount} more ${noun}`} onClick={() => onExpandedChange(!expanded)} type="button" variant="ghost">{expanded ? "Show less" : `Show ${page.hiddenCount} more`}</Button>
+			{page.showToggle ? <div className={cn("mt-2", toggleDisabled && "opacity-(--opacity-disabled)")} inert={toggleDisabled || undefined}>
+				<Button aria-expanded={expanded} aria-label={expanded ? `Show less ${noun}` : `Show ${page.hiddenCount} more ${noun}`} className="h-auto border-0 p-0 text-xs font-normal text-text-subtlest aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent" onClick={() => onExpandedChange(!expanded)} type="button" variant="link">{expanded ? "Show less" : `Show ${page.hiddenCount} more`}</Button>
 			</div> : null}
 		</div>
 	);

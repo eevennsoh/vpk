@@ -221,11 +221,12 @@ test("the empty details agent field opens the searchable picker", async () => {
 test("the details agent field opens the searchable selector and continues sessions", async () => {
 	const opened = [];
 	const selected = [];
-	const sessions = [crewSession("existing", "running", "Claude"), crewSession("cursor", "running", "Cursor")];
+	const sessions = [crewSession("existing", "running", "Claude"), crewSession("cursor", "running", "Cursor")].map((session) => ({ ...session, invokedBy: { name: "Venn" } }));
 	const view = await renderCrew({ field: true, sessions, onStartAgent: (agent) => selected.push(agent.id), onOpenSession: (session) => opened.push(session.id) });
 	assert.equal(view.queryByText("Agents") !== null, true);
 	const field = view.getByRole("group", { name: "Agents field" });
 	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
+	assert.equal(field.querySelector('[data-slot="human-agent-avatar"]') === null, true);
 	assert.equal(field.textContent.trim(), "Agents");
 	await view.click(view.getByRole("button", { name: "2 agents" }));
 	assert.equal(view.queryByRole("dialog", { name: "Add agent" }) !== null, true);
@@ -306,12 +307,18 @@ test("the list session field shows the most urgent agent status and opens sessio
 });
 
 test("the list session field distinguishes personal and teammate sessions", async () => {
-	const mine = { ...crewSession("mine", "running", "Claude"), role: "owner" };
+	const mine = { ...crewSession("mine", "running", "Claude"), role: "owner", invokedBy: { name: "Venn" } };
 	const teammate = { ...crewSession("team", "needs-input", "Cursor"), role: "viewer", invokedBy: { name: "Maya Ferreira" } };
 	const secondTeammate = { ...crewSession("team-two", "running", "Figma"), role: "viewer", invokedBy: { name: "Jordan Okafor" } };
 	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, onOpenSession() {} };
 	const view = await renderCrew({ ...props, sessions: [mine] });
 	assert.equal(Boolean(view.queryByRole("button", { name: "Claude: Working" })), true);
+	assert.equal(view.container.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Venn");
+	await view.rerender({ ...props, sessions: [mine, { ...crewSession("mine-two", "running", "Cursor"), role: "owner", invokedBy: { name: "Venn" } }] });
+	assert.equal(Boolean(view.queryByRole("button", { name: "2 agents: Working" })), true);
+	assert.equal(view.container.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Venn");
+	await view.rerender({ ...props, sessions: [{ ...mine, invokedBy: undefined }] });
+	assert.equal(view.container.querySelector('[data-slot="human-agent-avatar"]') === null, true);
 	await view.rerender({ ...props, sessions: [teammate, secondTeammate] });
 	const field = view.getByRole("group", { name: "Agents field" });
 	const trigger = view.getByRole("button", { name: "Using agents", exact: true });

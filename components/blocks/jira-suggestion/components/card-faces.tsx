@@ -105,7 +105,7 @@ export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ sugg
 			actions={controls ? (
 				<>
 					{why && suggestion.reason.evidence.length ? <CardWhy anchor={why.whyAnchor} appearance="icon" container={why.whyContainer} onOpenChange={why.onWhyOpenChange} open={why.whyOpen} suggestion={suggestion} /> : null}
-					<RoundAction className="size-7 hover:[&_svg]:text-icon" hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onDecide("dismiss")}>
+					<RoundAction className="size-7 hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
 						<CrossIcon color="currentColor" label="" size="small" />
 					</RoundAction>
 					<RoundAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>

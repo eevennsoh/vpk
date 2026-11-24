@@ -51,6 +51,7 @@ function GroupComposition({
 			className={positionClassName}
 			data-avatar-role="human"
 			key="human"
+			layoutDependency={grouped}
 			layoutId="human"
 			transition={{ layout: transition }}
 			style={{ ...slotPositions.human, ...(!grouped && !agentFirst ? cutout : undefined), willChange }}
@@ -64,6 +65,7 @@ function GroupComposition({
 			className={positionClassName}
 			data-avatar-role="agent"
 			key="agent"
+			layoutDependency={grouped}
 			layoutId="agent"
 			transition={{ layout: transition }}
 			style={{ ...slotPositions.agent, ...(!grouped && agentFirst ? cutout : undefined), willChange }}

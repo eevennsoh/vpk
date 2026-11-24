@@ -787,7 +787,7 @@
   },
   "components/blocks/jira-issue/agent-activity-imports.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/blocks/jira-issue/agent-activity.source.test.js": {
@@ -857,7 +857,7 @@
   },
   "components/blocks/jira-issue/jira-issue.source.test.js": {
     "no-restricted-syntax": {
-      "count": 624
+      "count": 621
     }
   },
   "components/blocks/jira-issue/page.tsx": {
@@ -1928,7 +1928,7 @@
   },
   "components/projects/jira-golden-journey-v1/kanban-stage.source.test.js": {
     "no-restricted-syntax": {
-      "count": 100
+      "count": 99
     }
   },
   "components/projects/jira-golden-journey-v1/lib/terminal-demo-state.source.test.js": {

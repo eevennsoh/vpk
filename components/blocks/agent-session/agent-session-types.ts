@@ -44,7 +44,7 @@ export function getAgentSessionRole(item: AgentSessionItem): AgentSessionRole {
 }
 
 export function getAgentSessionAttribution(item: Pick<AgentSessionItem, "invokedBy">) {
-	return item.invokedBy?.name.trim().toLowerCase() === "venn" ? undefined : item.invokedBy;
+	return item.invokedBy;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface AgentSessionWorkItemDraft {
  * Visible identity for an agent session.
  *
  * Session behavior still belongs to `item.agent`; the leading face belongs to
- * the invoker, except Venn's own sessions keep the agent identity.
+ * the invoker when one is recorded.
  */
 export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentListAgent {
 	const invoker = getAgentSessionAttribution(item);

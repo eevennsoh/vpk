@@ -10,7 +10,7 @@ import { InlineAgentSelector } from "@/components/blocks/agent-selector";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { Icon } from "@/components/ui/icon";
 import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
-import { TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
+import { renderSessionIdentity, TeammateSessionAvatarCycle } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
 import { getTeammateSessionPeople, teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
@@ -137,11 +137,12 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	const selectedSession = selectedAgent ? agentSessions.find(({ id, agent }) => matchesInvocationAgent({ id, name: agent.name }, selectedAgent)) : undefined;
 	const loadingSessions = selectedSession ? [selectedSession, ...agentSessions.filter((session) => session !== selectedSession)] : agentSessions;
 	const puzzleHandoff = phase === "handoff" && statusPresentation.shouldCycle ? selectedSession : undefined;
-	const agentAvatars = loadingSessions.map(({ id, agent, state }) => {
+	const agentAvatars = loadingSessions.map(({ id, agent, invokedBy, state }) => {
 		const catalogAgent = fieldPickerAgents.find((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase());
 		const visual = catalogAgent ?? agent;
 		return {
 			id,
+			invokedBy,
 			name: agent.name,
 			identity: { id: catalogAgent?.id ?? agent.id ?? agent.name, name: agent.name, byline: catalogAgent?.byline ?? "", avatarSrc: visual.avatarSrc, brandName: visual.brandName, vpkLogo: visual.vpkLogo, logoName: catalogAgent?.logoName },
 			status: state === "complete" ? "finished" as const : "working" as const,
@@ -213,7 +214,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 					<PopoverTrigger render={<button aria-label={fieldLabel} aria-describedby={viewerOnly ? teammateNamesId : undefined} ref={pickerTriggerRef} className={cn("absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring", fieldSessionMenu ? "-inset-x-2" : "focus-visible:ring-inset")} onKeyDown={(event) => { if (!fieldSessionMenu && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); fieldScrollRef.current?.scrollBy({ left: event.key === "ArrowRight" ? 48 : -48 }); } }} disabled={!onStartAgent && sessions.length === 0} type="button" />} />
 					{viewerOnly ? <span className="sr-only" id={teammateNamesId}>{Array.from(getTeammateSessionPeople(sessions).values(), ({ name }) => name || "Teammate").join(", ")}</span> : null}
 					<div aria-hidden={fieldSessionMenu || showSessionStatus ? true : undefined} className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2">
-						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={fieldAvatarSize} defaultIcon={emptyFieldIcon} flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center"><AgentAvatarVisual {...agentAvatars[0].avatar} label="" sizePx={24} /></span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
+						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={fieldAvatarSize} defaultIcon={emptyFieldIcon} flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} renderVerticalAvatar={(agent, size) => renderSessionIdentity({ ...agent, invokedBy: agentAvatars.find((entry) => entry.id === agent.id)?.invokedBy }, size)} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center">{renderSessionIdentity(agentAvatars[0], 24)}</span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
 							const entering = enteringAgent?.name === name.toLowerCase() ? enteringAgent : null;
 							return <motion.span
 								animate={entering ? entering.isNew ? { opacity: [0, 1, 1, 1], transform: ["translateX(12px) scale(0.6)", "translateX(12px) scale(1.15)", "translateX(12px) scale(1.15)", "translateX(0px) scale(1)"] } : { opacity: 1, transform: ["scale(0.8)", "scale(1.12)", "scale(1)"] } : { opacity: 1, transform: "scale(1)" }}

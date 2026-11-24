@@ -130,7 +130,7 @@ test("Undo only exists once there is a decision to undo, and leaves again when i
 	const view = await renderComponent({ source: SOURCE });
 	assert.equal(undoButtons(view).length, 0, "no Undo at rest");
 
-	await view.click(view.getByRole("button", { name: "Dismiss description" }));
+	await view.click(view.getByRole("button", { name: "Discard description" }));
 	assert.equal(undoButtons(view).length, 1, "Undo appears after a decision");
 
 	await view.click(view.getByRole("button", { name: "Undo dismissing Description" }));
@@ -155,12 +155,12 @@ test("the stack unpacks into a list with per-card accept and dismiss, and gather
 	assert.equal(undoButtons(view).length, 0, "no Undo before anything is decided");
 
 	await view.click(view.getByRole("button", { name: "Accept assignee" }));
-	await view.click(view.getByRole("button", { name: "Dismiss labels" }));
+	await view.click(view.getByRole("button", { name: "Discard labels" }));
 	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) === null, true, "the accepted card folds");
 	assert.equal(view.queryByRole("button", { name: "Undo assignee" }) !== null, true, "…and offers its own Undo");
 
 	await view.click(view.getByRole("button", { name: "Undo labels" }));
-	assert.equal(view.queryByRole("button", { name: "Dismiss labels" }) !== null, true, "Undo returns the card to pending in place");
+	assert.equal(view.queryByRole("button", { name: "Discard labels" }) !== null, true, "Undo returns the card to pending in place");
 
 	await view.click(view.getByRole("button", { name: "Show as stack" }));
 	assert.equal(topCard.isConnected, true, "…and the same element again once the list gathers back");
@@ -184,7 +184,7 @@ test("Accept all can be undone in one step from the caught-up state", async () =
 
 test("arrow keys and undo work while focus is on the suggestion controls", async () => {
 	const view = await renderComponent({ source: SOURCE });
-	await view.focus(view.getByRole("button", { name: "Dismiss description" }));
+	await view.focus(view.getByRole("button", { name: "Discard description" }));
 	await view.press(null, "ArrowRight");
 	assert.equal(view.queryByRole("button", { name: "Accept assignee" }) !== null, true);
 	await view.press(null, "z", { metaKey: true });

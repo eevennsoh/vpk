@@ -64,6 +64,7 @@ test("continuing a session retains the draft in the bottom composer", async ({ p
 	const bar = page.getByRole("region", { name: "Work item full screen view" }).locator("[data-project-butter-comment-bar]");
 	await expect(bar).toHaveAttribute("data-visible", "true");
 	await expect(bar).not.toHaveAttribute("inert", "");
+	await page.getByTestId("reply-target-chip").hover();
 	await page.getByRole("button", { name: "Remove reply target" }).click();
 	await expect(editor).toBeFocused();
 	await expect(editor).toContainText("Review the action items");

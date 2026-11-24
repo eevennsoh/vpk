@@ -45,6 +45,8 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Connect every timeline entry, or draw branches only within comment threads. */
 	connectorStyle?: "timeline" | "thread";
+	/** Connect every top-level entry, adjacent event entries, or none. */
+	connectEntries?: boolean | "adjacent-events";
 	/** Continue the last timeline stem into a decorative fade. */
 	fadeAfterLast?: boolean;
 	/** Plain comment and reply header layout. */
@@ -54,15 +56,21 @@ export interface JiraActivityProps {
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	/** Additional footer tools for comments and their nested replies. */
-	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply, collapseReplies?: () => void) => ReactNode;
 	/** Wrap a comment's reply disclosure and replies with a host-owned presentation. */
-	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void) => ReactNode;
+	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void, disclosure: ReactNode, expanded: boolean) => ReactNode;
+	/** Notify the host when a comment's reply disclosure changes. */
+	onRepliesExpandedChange?: (entry: JiraActivityCommentEntry, expanded: boolean) => void;
+	/** Keep the thread stem for host-rendered content following collapsed replies. */
+	forceThreadConnector?: (entry: JiraActivityCommentEntry) => boolean;
 	/** Wrap a root comment's avatar while keeping its position on the activity rail. */
 	renderCommentAvatar?: (entry: JiraActivityCommentEntry, avatar: ReactNode) => ReactNode;
 	/** Optional replacement for a plain comment or reply header's timestamp. */
 	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
 	/** Rich reply content. Return undefined to use the plain-text body. */
 	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
+	/** Optional persistent action beside a reply's reactions. */
+	renderReplyFooter?: (reply: JiraActivityReply) => ReactNode;
 	/** Replace a reply card while retaining its thread position and visibility. */
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
@@ -164,15 +172,19 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	connectorStyle = "timeline",
+	connectEntries = true,
 	fadeAfterLast = false,
 	commentHeaderLayout,
 	actorAvatarSize,
 	renderCommentAction,
 	renderCommentTools,
 	renderCommentReplies,
+	onRepliesExpandedChange,
+	forceThreadConnector,
 	renderCommentAvatar,
 	renderTimestamp,
 	renderReplyBody,
+	renderReplyFooter,
 	renderReply,
 	replyDrafts,
 	onReplyDraftChange,
@@ -390,8 +402,11 @@ export function JiraActivity({
 								bodyContent={renderCommentBody?.(entry)}
 								renderCommentTools={renderCommentTools}
 								renderCommentReplies={renderCommentReplies}
+								onRepliesExpandedChange={onRepliesExpandedChange ? (expanded) => onRepliesExpandedChange(entry, expanded) : undefined}
+								forceThreadConnector={forceThreadConnector?.(entry)}
 								renderTimestamp={renderTimestamp}
 								renderReplyBody={renderReplyBody}
+								renderReplyFooter={renderReplyFooter}
 								renderReply={renderReply}
 								replyDraft={replyDrafts === undefined ? undefined : replyDrafts[entry.id] ?? ""}
 								onReplyDraftChange={onReplyDraftChange ? (value) => onReplyDraftChange(entry.id, value) : undefined}
@@ -441,6 +456,7 @@ export function JiraActivity({
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-entry-kind={entry.kind}
+								data-jira-activity-has-more={isLast && fadeAfterLast ? "" : undefined}
 								data-jira-activity-parent-id={
 									entry.kind === "comment" ? entry.parentId : undefined
 								}
@@ -460,6 +476,7 @@ export function JiraActivity({
 								) : (
 									<JiraActivityNode
 										actorAvatarSize={actorAvatarSize}
+										compactConnector={connectEntries === "adjacent-events"}
 										renderAvatar={entry.kind === "comment" && renderCommentAvatar ? (avatar) => renderCommentAvatar(entry, avatar) : undefined}
 										actor={entry.actor}
 										attributedBy={entry.kind === "comment" ? entry.attributedBy : undefined}
@@ -468,8 +485,8 @@ export function JiraActivity({
 												? (entry.pullRequest ? "pull-request" : entry.icon)
 												: undefined
 										}
-										// Threads keep one continuous spine: each stem runs on past its replies' branches to the next row.
-										isLast={isLast && !fadeAfterLast}
+										// A connected timeline extends each stem to the next row.
+										isLast={isLast && fadeAfterLast ? false : connectEntries === "adjacent-events" ? !(entry.kind === "event" && nextEntry?.kind === "event") : !connectEntries || isLast}
 										size={isCardEntry ? "card" : "event"}
 										tone={connectorStyle === "thread" ? "thread" : "timeline"}
 									/>

@@ -1,6 +1,73 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("the last activity line fades whenever more activity is available", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const activity = page.getByRole("region", { name: "Activity", exact: true });
+	const feed = activity.locator("[data-project-butter-activity-feed]");
+	const more = activity.getByRole("button", { name: "Show more activity", exact: true });
+	await expect(more).toBeVisible();
+	while (await more.isVisible()) {
+		const last = feed.locator('[data-jira-activity-entry-id]:visible').last();
+		const stem = last.locator("[data-jira-activity-timeline-stem]");
+		const fade = last.locator("[data-jira-activity-end-fade]");
+		await expect(stem).toBeVisible();
+		await expect(fade).toBeVisible();
+		await expect(fade).toHaveCSS("mask-image", /linear-gradient/);
+		const stemBox = await stem.boundingBox();
+		const fadeBox = await fade.boundingBox();
+		if (!stemBox || !fadeBox) throw new Error("Missing activity continuation");
+		expect(Math.abs(stemBox.x - fadeBox.x)).toBeLessThanOrEqual(1);
+		expect(Math.abs(stemBox.y + stemBox.height - fadeBox.y)).toBeLessThanOrEqual(1);
+		await more.click();
+	}
+	await expect(feed.locator("[data-jira-activity-end-fade]")).toHaveCount(0);
+});
+
+test("teammate session rows have equal spacing with and without reply disclosures", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const activity = page.getByRole("region", { name: "Activity", exact: true });
+	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();
+	await activity.getByRole("button", { name: /Other agent activity/u }).click();
+	const marcus = activity.locator('[data-jira-activity-entry-id="invocation-butter-marcus-accessibility"]:visible');
+	const sarah = activity.locator('[data-jira-activity-entry-id="invocation-butter-sarah-onboarding-copy"]:visible');
+	const annie = activity.locator('[data-jira-activity-entry-id="invocation-butter-coding"]:visible');
+	const card = await marcus.locator("[data-project-butter-session-start]").boundingBox();
+	const sarahHeader = await sarah.locator('[data-slot="jira-activity-comment-header"]').first().boundingBox();
+	const disclosure = await sarah.getByRole("button", { name: /^Show 1 reply/u }).boundingBox();
+	const annieHeader = await annie.locator('[data-slot="jira-activity-comment-header"]').first().boundingBox();
+	if (!card || !sarahHeader || !disclosure || !annieHeader) throw new Error("Missing session row geometry");
+	expect(Math.abs((sarahHeader.y - card.y - card.height) - (annieHeader.y - disclosure.y - disclosure.height))).toBeLessThanOrEqual(1);
+});
+
+test("only owned agent sessions offer thread summaries", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const activity = page.getByRole("region", { name: "Activity", exact: true });
+	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();
+	const mine = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	await expect(mine.getByText("Summary", { exact: true })).toBeVisible();
+	await expect(mine.getByRole("button", { name: "Summarize thread" })).toBeAttached();
+	await activity.getByRole("button", { name: "Other agent activity", exact: true }).click();
+	const teammate = activity.locator('[data-jira-activity-entry-id="invocation-butter-sarah-onboarding-copy"]:visible');
+	await expect(teammate.getByText("Summary", { exact: true })).toHaveCount(0);
+	await expect(teammate.getByRole("button", { name: "Summarize thread" })).toHaveCount(0);
+	await teammate.getByRole("button", { name: /^Show 1 reply/u }).click();
+	await expect(teammate.getByText(/I reviewed the setup copy/)).toBeVisible();
+	await teammate.getByRole("button", { name: "Pin comment" }).click();
+	await expect(teammate.getByText("Summary", { exact: true })).toHaveCount(0);
+	await activity.getByRole("tab", { name: "Timeline", exact: true }).click();
+	const timelineTeammate = activity.locator('[data-jira-activity-entry-id="invocation-butter-sarah-onboarding-copy"]:visible');
+	await expect(timelineTeammate.getByRole("button", { name: "Summarize thread" })).toHaveCount(0);
+	await expect(timelineTeammate.getByText("Summary", { exact: true })).toHaveCount(0);
+});
+
 test("activity icon tabs expose their labels above and switch views", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));
@@ -104,10 +171,10 @@ test("session summaries run once and refresh only for new replies", async ({ pag
 	const timeline = activity.getByRole("tab", { name: "Timeline", exact: true });
 	const sessions = activity.getByRole("tab", { name: "Agent sessions", exact: true });
 	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
-	const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Thread summary" });
+	const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Summary" });
 	await sessions.click();
 	await expect(summary).toBeVisible();
-	await expect(summary.getByText("Thread summary", { exact: true })).toBeVisible();
+	await expect(summary.getByText("Summary", { exact: true })).toBeVisible();
 	const time = summary.locator("time");
 	const firstRun = await time.getAttribute("datetime");
 	expect(firstRun).toBeTruthy();
@@ -178,13 +245,13 @@ test("summary last-run time uses the session relative-time format", async ({ pag
 	const activity = page.getByRole("region", { name: "Activity", exact: true });
 	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();
 	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
-	const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Thread summary" });
+	const summary = thread.locator('[id][aria-hidden="false"]').filter({ hasText: "Summary" });
 	const timestamp = summary.locator('[data-slot="jira-activity-timestamp"]');
 	const time = timestamp.locator("time");
 	await page.mouse.move(0, 0);
 	await expect(timestamp).toHaveCSS("opacity", "0");
 	await expect(time).toHaveText("Just now");
-	await summary.getByText("Thread summary", { exact: true }).hover();
+	await summary.getByText("Summary", { exact: true }).hover();
 	await expect(timestamp).toHaveCSS("opacity", "1");
 	await expect(timestamp).toHaveCSS("font-size", "12px");
 	await expect(timestamp.locator(":scope > :first-child")).toHaveText("·");
@@ -250,15 +317,11 @@ test("expanded replies align in Timeline and Agent sessions", async ({ page }) =
 		const row = activity.locator(`[data-project-butter-activity-feed] [data-jira-activity-entry-id="${id}"]`);
 		const geometry = await row.evaluate((element) => {
 			const avatar = element.firstElementChild?.querySelector('[data-slot="avatar"]');
-			const stem = element.firstElementChild?.querySelector("[data-jira-activity-timeline-stem]");
-			const previousStem = element.previousElementSibling?.querySelector("[data-jira-activity-timeline-stem]");
-			if (!avatar || !stem || !previousStem) throw new Error("Missing activity avatar or connector");
+			if (!avatar) throw new Error("Missing activity avatar");
 			const box = avatar.getBoundingClientRect();
-			return { size: [box.width, box.height], above: box.top - previousStem.getBoundingClientRect().bottom, below: stem.getBoundingClientRect().top - box.bottom };
+			return { size: [box.width, box.height] };
 		});
 		expect(geometry.size).toEqual([24, 24]);
-		expect(geometry.above).toBeCloseTo(4, 1);
-		expect(geometry.below).toBeCloseTo(4, 1);
 	}
 	await thread.getByRole("button", { name: /Show 4 replies/u }).click();
 	const timelineGap = await measure();
@@ -297,7 +360,8 @@ test("Butter work item keeps its Timeline and drafts instructions from Agent ses
 	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
 	await expect(timeline).toHaveAttribute("aria-selected", "true");
 	await expect(thread.getByText(/Thanks. Let's include both fixes/)).toBeVisible();
-	await expect(thread.locator("[data-jira-activity-timeline-stem]")).toBeVisible();
+	await expect(activity.locator("[data-project-butter-activity-feed] [data-jira-activity-timeline-stem]")).toHaveCount(0);
+	await expect(thread.locator("[data-jira-activity-thread-branch]:visible").first()).toBeVisible();
 	const composer = page.locator("[data-project-butter-comment-bar]:visible");
 	const editor = composer.getByRole("textbox");
 	await page.keyboard.press("m");
@@ -309,9 +373,9 @@ test("Butter work item keeps its Timeline and drafts instructions from Agent ses
 	await otherActivity.click();
 	await expect(otherActivity).toHaveAttribute("aria-expanded", "true");
 	await expect(activity.getByText(/Visuals are looking strong/).filter({ visible: true })).toHaveCount(0);
-	await expect(thread.getByText("Thread summary", { exact: true })).toBeVisible();
+	await expect(thread.getByText("Summary", { exact: true })).toBeVisible();
 	await timeline.click();
-	await expect(thread.locator('[id][aria-hidden="true"][inert]').filter({ hasText: "Thread summary" })).toHaveCount(1);
+	await expect(thread.locator('[id][aria-hidden="true"][inert]').filter({ hasText: "Summary" })).toHaveCount(1);
 	await expect(thread.getByText(/Thanks. Let's include both fixes/)).toBeVisible();
 	await sessions.click();
 	const reply = thread.getByRole("button", { name: "Reply", exact: true }).first();

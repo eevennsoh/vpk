@@ -11,6 +11,7 @@ import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { getSkillTagCatalogProps } from "@/components/ui-custom/skill-tag-catalog";
+import { cn } from "@/lib/utils";
 import { getMentionCategory } from "./extensions";
 import {
 	RichTextMentionVisualMark,
@@ -110,7 +111,7 @@ export function RichTextMentionNodeView({ node, selected }: Readonly<ReactNodeVi
 	return (
 		<NodeViewWrapper
 			as="span"
-			className="rich-text-mention-node inline-flex"
+			className={cn("rich-text-mention-node inline-flex", selected && "rounded-sm ring-2 ring-ring")}
 			data-mention-category={category}
 			data-mention-id={String(attrs.id ?? "")}
 			data-mention-has-visual={visual ? "true" : undefined}
