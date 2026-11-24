@@ -65,6 +65,13 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		size: "1x1",
 	},
 	{
+		id: "jira-for-you",
+		title: "Jira for you",
+		titleLines: ["Jira for you"],
+		description: "A personalized Jira workspace.",
+		size: "landscape",
+	},
+	{
 		id: "work-item",
 		title: "Work item",
 		description: "A Jira work item.",

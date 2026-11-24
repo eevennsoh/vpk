@@ -184,16 +184,17 @@ function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: Agen
 
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
+	hideAgentAvatar,
 	item,
 	lifecycleLabelPlacement,
 	renderAgentAvatar,
 	segment,
-}: Readonly<{ item: AgentSessionItem; lifecycleLabelPlacement: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
+}: Readonly<{ hideAgentAvatar?: boolean; item: AgentSessionItem; lifecycleLabelPlacement: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
 	switch (segment.kind) {
 		case "agent":
 			return (
 				<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">
-					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
+					{hideAgentAvatar ? null : <LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />}
 					{segment.label === undefined ? null : (
 						<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
 							{lifecycleLabelPlacement === "metadata" ? <AgentSessionLifecycleLabel state={item.state} /> : segment.label}
@@ -228,7 +229,7 @@ function LongMetadataSegment({
  * chunk list comes from the pure, unit-tested metadata builder.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showArtifact = true, showBranch = false }: Readonly<{ compact?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showArtifact?: boolean; showBranch?: boolean }>) {
+export function AgentSessionLongMetadata({ compact = false, hideAgentAvatar = false, item, lifecycleLabelPlacement = "trailing", renderAgentAvatar, showArtifact = true, showBranch = false }: Readonly<{ compact?: boolean; hideAgentAvatar?: boolean; item: AgentSessionItem; lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"]; renderAgentAvatar?: AgentSessionAvatarPreview; showArtifact?: boolean; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
@@ -261,7 +262,7 @@ export function AgentSessionLongMetadata({ compact = false, item, lifecycleLabel
 				>
 					{/* An unnamed avatar stack joins its first metadata clause directly. */}
 					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
-					<LongMetadataSegment item={item} lifecycleLabelPlacement={showLifecycleInMetadata ? "metadata" : "trailing"} renderAgentAvatar={renderAgentAvatar} segment={segment} />
+					<LongMetadataSegment hideAgentAvatar={hideAgentAvatar} item={item} lifecycleLabelPlacement={showLifecycleInMetadata ? "metadata" : "trailing"} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 					{segment.kind === "time" && access !== undefined ? <><MetadataDot /><AccessMark access={access} person={item.privateTo ?? item.invokedBy?.name} /></> : null}
 				</span>
 			))}

@@ -461,7 +461,7 @@ export function AgentSessionCard({
 	const cardAnchorRef = useRef<HTMLElement>(null);
 	const isCloudSession = !isLocalAgentListItem(item);
 	const isLongDensity = density === "long";
-	const isTitleLed = density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud";
+	const isTitleLed = density !== "jira-for-you" && (density !== "unlinked" || (item.host ?? item.sessionDetails?.host) === "cloud");
 	const menu = useAgentSessionMenu({
 		canResume,
 		isCloud: isCloudSession,
@@ -621,7 +621,7 @@ export function AgentSessionCard({
 	// and falls back to its own `STATE_META` indicator.
 	const lifecycleIndicator = role === "expired"
 		? null
-		: isLongDensity && lifecycleLabelPlacement === "trailing"
+		: (isLongDensity || density === "jira-for-you") && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
@@ -796,11 +796,11 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
-								keepLifecycleLabel={isLongDensity && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
+								keepLifecycleLabel={(isLongDensity || density === "jira-for-you") && lifecycleLabelPlacement === "trailing" && showLifecycleLabel}
 								lifecycle={lifecycleIndicator}
 								metadata={
-									isTitleLed
-										? <AgentSessionLongMetadata compact={!isLongDensity} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
+									isTitleLed || density === "jira-for-you"
+										? <AgentSessionLongMetadata compact={!isLongDensity && density !== "jira-for-you"} hideAgentAvatar={density === "jira-for-you"} item={item} lifecycleLabelPlacement={lifecycleLabelPlacement} renderAgentAvatar={renderAgentAvatar ?? avatarPreview ?? undefined} showArtifact={density !== "short"} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								metadataOutsideViewTrigger

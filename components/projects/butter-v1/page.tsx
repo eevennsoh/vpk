@@ -72,7 +72,7 @@ import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
 import { ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
-import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
+import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterGalleryJiraForYou, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
 import { ButterBoardCardControls, type ButterBoardCardState } from "./components/butter-board-card-controls";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -171,6 +171,7 @@ export default function ButterPage(): React.ReactElement {
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
 	const [developmentResetKey, setDevelopmentResetKey] = useState(0);
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
+	const [jiraForYouResetKey, setJiraForYouResetKey] = useState(0);
 	const [suggestionsResetKey, setSuggestionsResetKey] = useState(0);
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
@@ -233,7 +234,7 @@ export default function ButterPage(): React.ReactElement {
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
-				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", suggestionsActive || selectedId === "pull-request" || selectedId === "work-item" || selectedId === "duplicative-sessions" || selectedId === "agent-sessions" || selectedId === "board-card" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
+				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", suggestionsActive || selectedId === "jira-for-you" || selectedId === "pull-request" || selectedId === "work-item" || selectedId === "duplicative-sessions" || selectedId === "agent-sessions" || selectedId === "board-card" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
@@ -243,10 +244,10 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setSessionPermission("mine"); setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardState("default"); setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "ai-suggestions") { setSuggestionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "jira-for-you") { setJiraForYouResetKey((current) => current + 1); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setSessionPermission("mine"); setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardState("default"); setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "ai-suggestions") { setSuggestionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
-				renderSelectedItem={(item) => item.id === "development-panel" ? (
+				renderSelectedItem={(item) => item.id === "jira-for-you" ? null : item.id === "development-panel" ? (
 					<div className="pointer-events-auto h-64 w-full max-w-sm shrink-0">
 						<ProjectButterDevelopmentGallery author={{ ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } }} key={developmentResetKey} />
 					</div>
@@ -254,6 +255,9 @@ export default function ButterPage(): React.ReactElement {
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
 				)}
 			/>
+			{selectedId === "jira-for-you" ? (
+				<ButterGalleryJiraForYou key={jiraForYouResetKey} />
+			) : null}
 			<RetainedView active={selectedId === "agent-selector"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
 					<div key={agentSelectorResetKey} className="my-auto flex w-full flex-col items-center justify-center gap-6 md:flex-row md:items-start">

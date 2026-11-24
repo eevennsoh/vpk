@@ -467,7 +467,8 @@ test("sessions share one moving untracked-work flyout instead of a popup per row
 	// rows. Motion layout on the trigger host remounts it, which closes the card.
 	assert.equal(INDEX_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
 	assert.equal(INDEX_SOURCE.match(/createJiraSessionFlyoutHandle/gu)?.length, 2);
-	assert.doesNotMatch(CARD_SOURCE, /createJiraSessionFlyoutHandle|createHoverCardHandle|<HoverCard\b/u);
+	assert.doesNotMatch(CARD_SOURCE, /createJiraSessionFlyoutHandle|createHoverCardHandle/u);
+	assert.doesNotMatch(CARD_SOURCE, /AgentState|onSubmitPrompt/u);
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}[\s\S]*render=\{<div className="w-full" \/>\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*render=\{\s*<motion\.li/u);
 	assert.match(CARD_SOURCE, /<motion\.li[\s\S]*<JiraSessionFlyoutTrigger/u);
@@ -623,7 +624,7 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 });
 
 test("the long density is title-led, with its own metadata line and lifecycle", () => {
-	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "unlinked" \| "short" \| "long";/u);
+	assert.match(TYPES_SOURCE, /export type AgentSessionDensity = "unlinked" \| "short" \| "long" \| "jira-for-you";/u);
 	assert.match(TYPES_SOURCE, /density\?: AgentSessionDensity;/u);
 	assert.match(INDEX_SOURCE, /density = "unlinked",/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard[\s\S]*density=\{density\}/u);
@@ -638,7 +639,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,
-		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
+		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1" data-agent-session-agent="">\s*\{hideAgentAvatar \? null : <LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\}\s*\{segment\.label === undefined \? null : \(\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
@@ -911,7 +912,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 		}
 	}
 	assert.match(DETAIL_SOURCE, /name: "density"/u);
-	assert.match(DETAIL_SOURCE, /type: '"unlinked" \| "short" \| "long"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"unlinked" \| "short" \| "long" \| "jira-for-you"'/u);
 	// Cloud fixtures stay a separate list: the column and the Pulse rail render
 	// AGENT_SESSION_ITEMS, and flipping those to cloud would change what those
 	// demos demonstrate.
