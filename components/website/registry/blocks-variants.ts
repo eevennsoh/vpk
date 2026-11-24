@@ -151,6 +151,9 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	"agent-session-demo-unlinked": dynamic(() => import("../demos/blocks/agent-session-demo").then((mod) => ({
 		default: mod.AgentSessionDemoUnlinked,
 	})), { ssr: false }),
+	"agent-session-demo-jira-for-you": dynamic(() => import("../demos/blocks/agent-session-demo").then((mod) => ({
+		default: mod.AgentSessionDemoJiraForYou,
+	})), { ssr: false }),
 	"agent-session-demo-local-short": dynamic(() => import("../demos/blocks/agent-session-demo").then((mod) => ({
 		default: mod.AgentSessionDemoLocalShort,
 	})), { ssr: false }),

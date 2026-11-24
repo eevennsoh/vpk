@@ -3,6 +3,39 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("Jira for you groups session cards and preserves their hover actions", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Jira for you" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const section = page.locator("section").filter({ has: page.getByRole("heading", { name: "For you", exact: true }) });
+	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(9);
+	const session = section.locator('[data-testid="agent-session-row-working-tests"]');
+	await session.hover();
+	await expect(session.getByRole("button", { name: "More actions for Add coverage for the onboarding flow" })).toBeVisible();
+	await expect(session).toContainText("#1856");
+	for (const label of ["Needs input", "Working", "Finished"]) {
+		await expect(section.locator('[data-slot="collapsible-trigger"]').getByText(label, { exact: true })).toBeVisible();
+	}
+	const finished = section.locator('[data-slot="collapsible-trigger"]').filter({ hasText: "Finished" });
+	const chevron = finished.locator('[data-slot="icon"]');
+	await expect(chevron).toHaveCSS("rotate", "none");
+	await finished.click();
+	await expect(finished).toHaveAttribute("aria-expanded", "false");
+	await expect(chevron).toHaveCSS("rotate", "-90deg");
+	await finished.click();
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await expect(chevron).toHaveCSS("transition-property", /rotate/);
+	await expect(section.getByRole("tab", { name: "All" })).toBeVisible();
+	await section.getByRole("searchbox", { name: "Search work items" }).fill("roadmap");
+	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(1);
+	await section.getByRole("searchbox", { name: "Search work items" }).clear();
+	await section.getByRole("tab", { name: "Worked on" }).click();
+	await expect(section.getByRole("tab", { name: "Worked on" })).toHaveAttribute("aria-selected", "true");
+	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(5);
+	await expect(page.getByRole("region", { name: /Chat workspace/ })).toHaveCount(0);
+});
+
 test("the List gallery item shows the interactive Jira list", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

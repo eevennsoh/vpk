@@ -80,28 +80,25 @@ test("details place Agents directly after Development and keep shared flyouts un
 	assert.ok(agentIndex < sourcesIndex);
 });
 
-test("the Agents section directly reuses Agent List with native states and selection", () => {
+test("the Agents section uses the Jira for you session variant with selection", () => {
 	assert.match(
 		DETAIL_PANEL_SOURCE,
-		/import \{[\s\S]*AgentList,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u,
+		/import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u,
 	);
-	assert.match(DETAIL_PANEL_SOURCE, /<AgentList/u);
+	assert.match(DETAIL_PANEL_SOURCE, /<AgentSession/u);
 	assert.match(DETAIL_PANEL_SOURCE, /aria-labelledby="jira-for-you-agents-heading"/u);
 	assert.match(
 		DETAIL_PANEL_SOURCE,
 		/<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents<\/JiraSessionSectionHeading>/u,
 	);
-	assert.match(DETAIL_PANEL_SOURCE, /<AgentList[\s\S]*className="w-full"/u);
+	assert.match(DETAIL_PANEL_SOURCE, /<AgentSession[\s\S]*className="w-full"/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /className="flex w-full flex-col gap-1 divide-y-0"/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /divide-y-0/u);
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
-	assert.match(
-		DETAIL_PANEL_SOURCE,
-		/onSubmitPrompt=\{\(sessionItem, prompt\) => onAgentPrompt\(sessionItem\.id, prompt\)\}/u,
-	);
+	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /onSubmitPrompt=/u);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
-	assert.match(DETAIL_PANEL_SOURCE, /variant="compact"/u);
+	assert.match(DETAIL_PANEL_SOURCE, /density="jira-for-you"/u);
 	assert.match(DETAIL_PANEL_SOURCE, /title: agentSession\.activityTitle/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /title: itemTitle/u);
 	assert.match(

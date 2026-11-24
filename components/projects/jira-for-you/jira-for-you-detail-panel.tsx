@@ -3,10 +3,9 @@
 import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
-import {
-	AgentList,
-	type AgentListItem,
-} from "@/components/blocks/agent-list";
+import type { AgentListItem } from "@/components/blocks/agent-list";
+import { AgentSession } from "@/components/blocks/agent-session";
+import { PAY_STORY_PEOPLE } from "@/components/blocks/jira-work-item/project-butter/people";
 import type { JiraSidebarSessionStatus } from "@/components/blocks/product-sidebar/variants/jira";
 import { JiraSessionFlyoutBody, JiraSessionSectionHeading } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
@@ -128,13 +127,11 @@ function getPanelVariants(
 function AgentSection({
 	agentSessions,
 	branch,
-	onAgentPrompt,
 	onAgentSelect,
 	selectedAgentId,
 }: Readonly<{
 	agentSessions: readonly JiraForYouWorkspaceAgentSession[];
 	branch: string;
-	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	selectedAgentId: string;
 }>) {
@@ -147,6 +144,7 @@ function AgentSection({
 			},
 			branch,
 			id: agentSession.id,
+			invokedBy: PAY_STORY_PEOPLE.jordan,
 			prStatus: toAgentSessionPrStatus(agentSession.status),
 			state: toAgentSessionState(agentSession.status),
 			title: agentSession.activityTitle,
@@ -160,14 +158,13 @@ function AgentSection({
 			data-testid="jira-for-you-agent-section"
 		>
 			<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents</JiraSessionSectionHeading>
-			<AgentList
+			<AgentSession
 				className="w-full"
-				flyout="composer"
+				density="jira-for-you"
 				items={sessionItems}
-				onSubmitPrompt={(sessionItem, prompt) => onAgentPrompt(sessionItem.id, prompt)}
+				localSessionAction="view"
 				onView={(sessionItem) => onAgentSelect(sessionItem.id)}
 				selectedItemId={selectedAgentId}
-				variant="compact"
 			/>
 		</section>
 	);
@@ -228,7 +225,6 @@ function DetailPanelInner({
 	agentSessions,
 	details,
 	item,
-	onAgentPrompt,
 	onAgentSelect,
 	onClose,
 	selectedAgentId,
@@ -236,7 +232,6 @@ function DetailPanelInner({
 	agentSessions: readonly JiraForYouWorkspaceAgentSession[];
 	details: JiraForYouWorkspaceItemDetails;
 	item: JiraForYouItem;
-	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	onClose: () => void;
 	selectedAgentId: string;
@@ -267,7 +262,6 @@ function DetailPanelInner({
 					<AgentSection
 						agentSessions={agentSessions}
 						branch={details.session.branch ?? `jira/${item.issueKey.toLowerCase()}`}
-						onAgentPrompt={onAgentPrompt}
 						onAgentSelect={onAgentSelect}
 						selectedAgentId={selectedAgentId}
 					/>
@@ -283,7 +277,6 @@ interface JiraForYouDetailPanelProps {
 	details: JiraForYouWorkspaceItemDetails;
 	isNarrow: boolean;
 	item: JiraForYouItem;
-	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	onClose: () => void;
 	resize: Pick<
@@ -306,7 +299,6 @@ export function JiraForYouDetailPanel({
 	details,
 	isNarrow,
 	item,
-	onAgentPrompt,
 	onAgentSelect,
 	onClose,
 	resize,
@@ -334,7 +326,6 @@ export function JiraForYouDetailPanel({
 				agentSessions={agentSessions}
 				details={details}
 				item={item}
-				onAgentPrompt={onAgentPrompt}
 				onAgentSelect={onAgentSelect}
 				onClose={onClose}
 				selectedAgentId={selectedAgentId}

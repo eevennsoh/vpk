@@ -132,11 +132,7 @@ test("the workspace owns open or close, focus restoration, and local user-messag
 	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = shouldRestoreFocusRef\.current[\s\S]*\? focusRestoreItemIdRef\.current[\s\S]*: null;[\s\S]*dispatchView\(\{ type: "close" \}\);/u);
 	assert.match(WORKSPACE_SOURCE, /createRovoAppUserMessage/u);
 	assert.match(WORKSPACE_SOURCE, /createId\("jira-for-you-user"\)/u);
-	assert.match(WORKSPACE_SOURCE, /const handleAgentPrompt = useCallback\(\(agentId: string, prompt: string\) => \{/u);
-	assert.match(WORKSPACE_SOURCE, /const targetAgentSession = assignedItemData\?\.agentSessions\.find/u);
-	assert.match(WORKSPACE_SOURCE, /\[assignedItemData\.item\.id\]: targetAgentSession\.id/u);
-	assert.match(WORKSPACE_SOURCE, /`\$\{assignedItemData\.item\.id\}:\$\{targetAgentSession\.id\}`/u);
-	assert.match(WORKSPACE_SOURCE, /onAgentPrompt=\{handleAgentPrompt\}/u);
+	assert.doesNotMatch(WORKSPACE_SOURCE, /onAgentPrompt=/u);
 	assert.match(WORKSPACE_SOURCE, /<JiraForYouConversation[\s\S]*key=\{`\$\{assignedItemData\.item\.id\}:\$\{selectedAgentSession\.id\}`\}/u);
 	assert.match(WORKSPACE_SOURCE, /const WIDE_FEED_MIN_WIDTH_PX = 420;/u);
 	assert.match(WORKSPACE_SOURCE, /maxWidth: `calc\(100% - \$\{WIDE_FEED_MIN_WIDTH_PX\}px\)`/u);
@@ -311,11 +307,11 @@ test("the header wraps tabs beneath the title when space gets tight without movi
 test("the detail panel includes an Agents selector and agent-specific details content", () => {
 	assert.match(DETAIL_PANEL_SOURCE, /import type \{ JiraSidebarSessionStatus \}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /AgentList/u);
-	assert.match(DETAIL_PANEL_SOURCE, /type AgentListItem/u);
+	assert.match(DETAIL_PANEL_SOURCE, /AgentListItem/u);
 	assert.match(DETAIL_PANEL_SOURCE, /aria-labelledby="jira-for-you-agents-heading"/u);
 	assert.match(DETAIL_PANEL_SOURCE, /<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents<\/JiraSessionSectionHeading>/u);
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
-	assert.match(DETAIL_PANEL_SOURCE, /onSubmitPrompt=\{\(sessionItem, prompt\) => onAgentPrompt\(sessionItem\.id, prompt\)\}/u);
+	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /onSubmitPrompt=/u);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /Shimmer|JiraSessionLifecycle|TileAvatar|<Tag/u);

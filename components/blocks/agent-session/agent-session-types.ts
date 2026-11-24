@@ -108,7 +108,7 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
  * controls only. Same data either way; the difference is how much of it the
  * surface has room to state.
  */
-export type AgentSessionDensity = "unlinked" | "short" | "long";
+export type AgentSessionDensity = "unlinked" | "short" | "long" | "jira-for-you";
 
 /**
  * Finder-style modifiers for a selection gesture.

@@ -423,8 +423,7 @@ test("the composer variant keeps the per-row Agent State flyout on the left", ()
 	// and hover actions cannot drift between them.
 	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 4);
 	assert.match(CARD_SOURCE, /function AgentListRow\(/u);
-	// jira-for-you relies on the composer to reply to an agent inline.
-	assert.match(FOR_YOU_PANEL_SOURCE, /flyout="composer"/u);
+	assert.doesNotMatch(FOR_YOU_PANEL_SOURCE, /onSubmitPrompt=/u);
 });
 
 test("flyout=\"none\" renders the row alone for entries that are not agent sessions", () => {
