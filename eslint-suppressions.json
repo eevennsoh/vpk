@@ -731,7 +731,7 @@
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
-      "count": 160
+      "count": 159
     },
     "vpk-tests/no-dom-node-assert": {
       "count": 17
@@ -792,7 +792,7 @@
   },
   "components/blocks/jira-issue/agent-activity.source.test.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 5
     }
   },
   "components/blocks/jira-issue/agent-activity.tsx": {
@@ -882,7 +882,7 @@
   },
   "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 4
     }
   },
   "components/blocks/jira-kanban/board-header-avatar-stroke.source.test.js": {

@@ -211,7 +211,7 @@ const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "loc
 test("Jira for you session cards do not open an Agent State flyout", async () => {
 	await withCard({ item: LOCAL_ITEM, density: "jira-for-you", onSubmitPrompt: () => {} }, async ({ document }) => {
 		assert.ok(document.querySelector("[data-testid='agent-session-row-local-readiness']"));
-		assert.equal(document.querySelector('[data-slot="agent-state"]'), null);
+		assert.equal(document.querySelector('[data-slot="agent-state"]') === null, true);
 	});
 });
 

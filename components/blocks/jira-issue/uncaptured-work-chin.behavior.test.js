@@ -27,6 +27,19 @@ async function renderChin(props) {
 	return { calls, rerender: (nextProps) => view.rerender({ ...baseProps, ...nextProps }), view };
 }
 
+test("chin geometry matches the rendered footer and action row", async () => {
+	const { view } = await renderChin({ suggestedWorkItemKey: "ABC-1" });
+	const footer = view.container.querySelector('[data-slot="uncaptured-work-chin"]');
+	const row = footer.children[0];
+
+	assert.equal(footer.classList.contains("gap-0.5"), true);
+	assert.equal(footer.classList.contains("p-2"), true);
+	assert.equal(row.classList.contains("rounded-md"), true);
+	assert.equal(row.classList.contains("py-1"), true);
+	assert.equal(row.classList.contains("transition-colors"), true);
+	assert.equal(row.classList.contains("pl-0"), false);
+});
+
 test("captured work is removed from the keyboard action sequence", async () => {
 	const { calls, view } = await renderChin({ captured: true, suggestedWorkItemKey: "ABC-1" });
 	const captured = view.getByRole("button", { name: "Fix login captured" });
