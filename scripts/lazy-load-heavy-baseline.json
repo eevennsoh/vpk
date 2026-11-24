@@ -191,8 +191,7 @@
 			"./agent-templates.json",
 			"./knowledge.json",
 			"./skills.json",
-			"./tools.json",
-			"@tiptap/"
+			"./tools.json"
 		],
 		"app/rovo-button/layout.tsx": [
 			"./agent-templates.json",
