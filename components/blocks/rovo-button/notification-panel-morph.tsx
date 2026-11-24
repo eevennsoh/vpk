@@ -5,6 +5,8 @@ import { useLayoutEffect, useRef, type RefObject } from "react";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
+import type { FloatingRovoButtonMorphVariant } from "./indicator-origin";
+
 const SHELL_DURATION = motionDuration.slowest;
 const PANEL_RADIUS = 8;
 const MORPH_TIMES = [0, 0.16, 0.4, 0.52, 0.64, 0.76, 0.9, 1];
@@ -26,7 +28,7 @@ function frameAt(x: number, y: number, width: number, height: number, radius: nu
 	return { left: x - width / 2, top: y - height / 2, width, height, radius };
 }
 
-function getMorphFrames(origin: DOMRect, target: DOMRect, variant: "button" | "dot") {
+function getMorphFrames(origin: DOMRect, target: DOMRect, variant: FloatingRovoButtonMorphVariant) {
 	const x = origin.left + origin.width / 2;
 	const y = origin.top + origin.height / 2;
 	const targetX = target.left + target.width / 2;
@@ -36,6 +38,20 @@ function getMorphFrames(origin: DOMRect, target: DOMRect, variant: "button" | "d
 	const dotRadius = Math.min(origin.width, origin.height) / 2;
 	const grow = (widthProgress: number, heightProgress: number, riseProgress: number) =>
 		frameAt(x + (targetX - x) * widthProgress, y + rise * riseProgress, origin.width + (target.width - origin.width) * widthProgress, origin.height + (target.height - origin.height) * heightProgress, PANEL_RADIUS);
+	if (variant === "surface") {
+		// Another panel (Rovo chat) condenses into this one: it draws in a touch first, then gathers into place, with
+		// height leading width so it reads as the content settling rather than a box resizing.
+		return [
+			frameAt(x, y, origin.width, origin.height, 12),
+			frameAt(x, y, origin.width * 0.98, origin.height * 0.98, 12),
+			grow(0.08, 0.14, 0.1),
+			grow(0.24, 0.38, 0.3),
+			grow(0.48, 0.64, 0.56),
+			grow(0.74, 0.86, 0.8),
+			grow(0.93, 0.97, 0.95),
+			grow(1, 1, 1),
+		];
+	}
 	if (variant === "button") {
 		return [
 			frameAt(x, y, origin.width, origin.height, 16),
@@ -72,7 +88,7 @@ export function NotificationPanelMorph({
 	launcherX: MotionValue<number>;
 	launcherY: MotionValue<number>;
 	actionId?: string;
-	variant: "button" | "dot";
+	variant: FloatingRovoButtonMorphVariant;
 	closing?: boolean;
 	onComplete: () => void;
 }>) {
@@ -175,7 +191,8 @@ export function NotificationPanelMorph({
 			};
 		}
 		const initialColor = variant === "dot" ? blue : panel;
-		const duration = variant === "dot" ? SHELL_DURATION : motionDuration.slow + motionDuration.xxshort;
+		// A whole panel travelling into another is a large transition, so it takes the page-level duration.
+		const duration = variant === "dot" ? SHELL_DURATION : variant === "surface" ? motionDuration.slower : motionDuration.slow + motionDuration.xxshort;
 		shape.style.backgroundColor = closing ? panel : initialColor;
 		shadow.style.opacity = closing ? "1" : "0";
 		const geometry = animate(shape, {

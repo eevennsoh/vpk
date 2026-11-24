@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "motion/react";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
+import FloatingRovoButton, { findFloatingRovoSurface, measureToolbarActionOrigin, type FloatingRovoButtonIndicatorOrigin, type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
 const FLOATING_PANEL_MAX_HEIGHT = 500;
+const REVIEW_ACTION_ID = "review-suggestions";
 /** How long the landing intro shows the agent still finding suggestions. */
 export const SUGGESTION_ANALYSIS_MS = 2600;
 
@@ -34,10 +35,11 @@ const IN_PLACE_UNPACK_MS = 260;
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";
 
-export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
+export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: (chatBounds?: DOMRect) => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
 	const [openFromIndicator, setOpenFromIndicator] = useState(false);
+	const [openOrigin, setOpenOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
 	const reduceMotion = useReducedMotion();
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -88,6 +90,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
 		setOpenFromIndicator(false);
+		setOpenOrigin(null);
 	}, []);
 	const close = () => {
 		feed.acknowledgeNew();
@@ -95,9 +98,17 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		if (!reduceMotion) setPanelStage({ phase: "closing" });
 		else finishClose();
 	};
-	const reopen = (): true => {
+	/**
+	 * Opens the review from Rovo chat. Given the chat panel's bounds, the chat condenses into the suggestions panel;
+	 * either way the panel later closes back into the review action, exactly as when opened from it.
+	 */
+	const reopen = (chatBounds?: DOMRect): true => {
 		feed.onOpenReview?.(panelId);
-		setOpenFromIndicator(false);
+		const surface = findFloatingRovoSurface(portalContainer ?? document, REVIEW_ACTION_ID);
+		const actionOrigin = surface ? measureToolbarActionOrigin(surface, REVIEW_ACTION_ID, portalContainer ? "container" : "viewport", false) : null;
+		const morphFromChat = Boolean(actionOrigin && chatBounds && !reduceMotion);
+		setOpenOrigin(actionOrigin ? morphFromChat && chatBounds ? { ...actionOrigin, bounds: chatBounds, variant: "surface", returnTo: actionOrigin } : actionOrigin : null);
+		setOpenFromIndicator(morphFromChat);
 		deck.restoreDismissed();
 		closeChat();
 		setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
@@ -106,6 +117,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	useImperativeHandle(ref, () => ({ reopen }));
 	const openReview = () => {
 		setIntro("ready");
+		setOpenOrigin(null);
 		setOpenFromIndicator(true);
 		if (count > 0) show();
 		else {
@@ -120,13 +132,14 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 			<span className="sr-only" role="status">{intro === "analyzing" ? "Finding suggestions" : count === 0 ? deck.announcement : label}</span>
 			<FloatingRovoButton
 				animateLogoOnMount
-				ariaLabel={count > 0 ? "Review AI suggestions" : "Open Rovo chat"}
-				onButtonClick={count > 0 ? () => { setOpenFromIndicator(false); show(); } : undefined}
+				// The Rovo button always opens Rovo chat; the review action is the one way into suggestions.
+				ariaLabel="Open Rovo chat"
 				panel={{
 					id: panelId,
 					open: phase !== "closed",
-					indicatorActionId: "review-suggestions",
+					indicatorActionId: REVIEW_ACTION_ID,
 					openFromIndicator,
+					openOrigin,
 					closingToIndicator: phase === "closing",
 					onOpenComplete: () => setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage),
 					onCloseComplete: finishClose,
@@ -154,7 +167,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 				positioning={portalContainer ? "container" : "viewport"}
 				product="jira"
 				persistentBar={{ panelTransition, items: [{
-					id: "review-suggestions",
+					id: REVIEW_ACTION_ID,
 					ariaLabel: "Review suggestions",
 					busy: intro === "analyzing",
 					tooltipLabel: intro === "analyzing" ? "Finding suggestions…" : count > 0 ? label : "Review suggestions",

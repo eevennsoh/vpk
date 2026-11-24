@@ -64,7 +64,8 @@ import {
 } from "./motion";
 import { FloatingRovoButtonOnboardingPanelInner } from "./onboarding-panel";
 import { FloatingRovoButtonPersistentBarRail } from "./persistent-bar";
-import { NOTIFICATION_PANEL_CONTENT_ENTER, NotificationPanelMorph, type NotificationPanelAnchor } from "./notification-panel-morph";
+import { NOTIFICATION_PANEL_CONTENT_ENTER, NotificationPanelMorph } from "./notification-panel-morph";
+import { measureToolbarActionOrigin, type FloatingRovoButtonIndicatorOrigin } from "./indicator-origin";
 import type {
 	FloatingRovoButtonInsightsConfig,
 	FloatingRovoButtonInsightsStage,
@@ -79,13 +80,6 @@ import { motionDuration, motionEase } from "@/lib/motion";
 const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2.5;
 const FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS = FLOATING_ROVO_BUTTON_LOGO_CYCLE_S * 1000;
-
-function getNotificationAnchor(surface: HTMLElement, positioning: FloatingRovoButtonPositioning): NotificationPanelAnchor | null {
-	const element = positioning === "container" && surface.offsetParent instanceof HTMLElement ? surface.offsetParent : null;
-	if (!element) return null;
-	const { x, y } = element.getBoundingClientRect();
-	return { element, x, y, scrollLeft: element.scrollLeft, scrollTop: element.scrollTop };
-}
 
 function FloatingRovoButtonInner({
 	onClick,
@@ -184,17 +178,25 @@ export function FloatingRovoButtonSurface({
 	logoAnimationTrigger?: string;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
-	const [indicatorOrigin, setIndicatorOrigin] = useState<Readonly<{
-		bounds: DOMRect;
-		launcher: DOMRect;
-		anchor: NotificationPanelAnchor | null;
-		side: "top" | "bottom";
-		variant: "button" | "dot";
-	}> | null>(null);
+	const [indicatorOrigin, setIndicatorOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
 	const [indicatorMorphComplete, setIndicatorMorphComplete] = useState(false);
+	// A panel opened from elsewhere (e.g. Rovo chat) brings its own origin: adopt it once per open.
+	const [adoptedOpenOrigin, setAdoptedOpenOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
+	const openOrigin = panel?.open ? panel.openOrigin ?? null : null;
+	if (openOrigin !== adoptedOpenOrigin) {
+		setAdoptedOpenOrigin(openOrigin);
+		if (openOrigin) {
+			setIndicatorOrigin(openOrigin);
+			setIndicatorMorphComplete(false);
+		}
+	}
 	const finishIndicatorMorph = useCallback(() => {
 		if (panel?.closingToIndicator) panel.onCloseComplete?.();
-		else setIndicatorMorphComplete(true);
+		else {
+			// Having landed, a panel that flew in from another surface closes back into its toolbar action.
+			setIndicatorOrigin((origin) => origin?.returnTo ?? origin);
+			setIndicatorMorphComplete(true);
+		}
 	}, [panel?.closingToIndicator, panel?.onCloseComplete]);
 	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
 	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && panel.openFromIndicator && indicatorOrigin && !shouldReduceMotion);
@@ -670,17 +672,13 @@ export function FloatingRovoButtonSurface({
 		}
 
 		const surface = surfaceRef.current;
-		const action = [...(surface?.querySelectorAll<HTMLElement>("[data-toolbar-action-id]") ?? [])].find((element) => element.dataset.toolbarActionId === panel?.indicatorActionId);
-		const dot = action?.querySelector("[data-notification-dot]");
-		if (surface && action) {
-			const variant = persistentBar?.panelTransition === "dot" && dot ? "dot" : "button";
-			const rect = (variant === "dot" ? dot! : action).getBoundingClientRect();
-			const bounds = variant === "dot" ? rect : new DOMRect(rect.x + (rect.width - action.offsetWidth) / 2, rect.y + (rect.height - action.offsetHeight) / 2, action.offsetWidth, action.offsetHeight);
-			setIndicatorOrigin({ bounds, launcher: surface.getBoundingClientRect(), anchor: getNotificationAnchor(surface, positioning), side: barSide, variant });
+		const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, persistentBar?.panelTransition === "dot") : null;
+		if (origin) {
+			setIndicatorOrigin(origin);
 			setIndicatorMorphComplete(true);
 		}
 		onButtonClick();
-	}, [barSide, handleSuppressibleClick, onButtonClick, panel?.indicatorActionId, persistentBar?.panelTransition, positioning]);
+	}, [handleSuppressibleClick, onButtonClick, panel?.indicatorActionId, persistentBar?.panelTransition, positioning]);
 	const logo = logoAnimating && !shouldReduceMotion ? (
 		<AnimatedRovo.Root key={`animated-rovo-logo-${logoAnimationRun}`} size={24} preset="full-cycle" cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S} />
 	) : <RovoColorIcon key="static-rovo-logo" size="small" />;
@@ -688,6 +686,7 @@ export function FloatingRovoButtonSurface({
 	return (
 		<motion.div
 			ref={surfaceRef}
+			data-floating-rovo-surface=""
 			key="floating-rovo-button-surface"
 			layout={!indicatorTransition}
 			data-notification-opening={morphingIndicator || undefined}
@@ -816,12 +815,11 @@ export function FloatingRovoButtonSurface({
 							bar={persistentBar}
 							indicatorActionId={panel?.indicatorActionId}
 							indicatorInFlight={morphingIndicator}
-							onIndicatorPress={(button, dot) => {
+							onIndicatorPress={() => {
 								const surface = surfaceRef.current;
-								if (!surface) return;
-								const launcher = surface.getBoundingClientRect();
-								const variant = persistentBar.panelTransition === "dot" && dot ? "dot" : "button";
-								setIndicatorOrigin({ bounds: variant === "dot" ? dot! : button, launcher, anchor: getNotificationAnchor(surface, positioning), side: barSide, variant });
+								const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, persistentBar.panelTransition === "dot") : null;
+								if (!origin) return;
+								setIndicatorOrigin(origin);
 								setIndicatorMorphComplete(false);
 							}}
 							side={morphingIndicator && indicatorOrigin ? indicatorOrigin.side : barSide}

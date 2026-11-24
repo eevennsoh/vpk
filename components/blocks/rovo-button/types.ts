@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import type { FloatingRovoButtonIndicatorOrigin } from "./indicator-origin";
+
 export type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 export type FloatingRovoButtonOnboardingStatus = "idle" | "creating" | "created";
 
@@ -156,6 +158,12 @@ export interface FloatingRovoButtonPanel {
 	content: ReactNode;
 	indicatorActionId?: string;
 	openFromIndicator?: boolean;
+	/**
+	 * Opens the panel by morphing out of another surface (e.g. the Rovo chat panel) instead of the toolbar action.
+	 * Measure it with `measureToolbarActionOrigin`, set `variant: "surface"` and the chat bounds, and keep the
+	 * action's origin in `returnTo` so closing still flies back into the action. Requires `openFromIndicator`.
+	 */
+	openOrigin?: FloatingRovoButtonIndicatorOrigin | null;
 	closingToIndicator?: boolean;
 	onOpenComplete?: () => void;
 	onCloseComplete?: () => void;
