@@ -72,7 +72,8 @@ import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
 import { ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
-import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterGalleryJiraForYou, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
+import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
+import { JiraForYouProjectButter } from "@/components/projects/jira-for-you";
 import { ButterBoardCardControls, type ButterBoardCardState } from "./components/butter-board-card-controls";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -256,7 +257,7 @@ export default function ButterPage(): React.ReactElement {
 				)}
 			/>
 			{selectedId === "jira-for-you" ? (
-				<ButterGalleryJiraForYou key={jiraForYouResetKey} />
+				<div className="absolute inset-x-0 top-12 bottom-0 overflow-hidden"><JiraForYouProjectButter key={jiraForYouResetKey} /></div>
 			) : null}
 			<RetainedView active={selectedId === "agent-selector"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">

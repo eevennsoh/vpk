@@ -23,7 +23,7 @@ type CategoryRegistry = Readonly<{ demos: DemoTable; variants?: DemoTable }>;
 const CATEGORY_REGISTRY_LOADERS: Readonly<Record<DemoCategory, () => Promise<CategoryRegistry>>> = {
 	arts: () => import("@/components/website/registry/arts").then((module) => ({ demos: module.ARTS_DEMOS })),
 	blocks: () => import("@/components/website/registry/blocks").then((module) => ({ demos: module.BLOCK_DEMOS, variants: module.BLOCK_VARIANT_DEMOS })),
-	projects: () => import("@/components/website/registry/projects").then((module) => ({ demos: module.PROJECT_DEMOS })),
+	projects: () => import("@/components/website/registry/projects").then((module) => ({ demos: module.PROJECT_DEMOS, variants: module.PROJECT_VARIANT_DEMOS })),
 	"ui-charts": () => import("@/components/website/registry/ui-charts").then((module) => ({ demos: module.UI_CHARTS_DEMO, variants: module.UI_CHARTS_VARIANT_DEMOS })),
 	"ui-custom": () => import("@/components/website/registry/ui-custom").then((module) => ({ demos: module.UI_CUSTOM_DEMO, variants: module.UI_CUSTOM_VARIANT_DEMOS })),
 	ui: () => import("@/components/website/registry/ui").then((module) => ({ demos: module.UI_DEMO, variants: module.UI_VARIANT_DEMOS })),

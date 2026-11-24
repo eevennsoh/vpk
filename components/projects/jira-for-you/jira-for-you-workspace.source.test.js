@@ -77,7 +77,7 @@ const DEMO_SOURCE = readFileSync(
 	"utf8",
 );
 const PREVIEW_PAGE_SOURCE = readFileSync(
-	join(process.cwd(), "app/preview/projects/jira-for-you/page.tsx"),
+	join(process.cwd(), "app/preview/projects/jira-for-you-workspace/page.tsx"),
 	"utf8",
 );
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -364,15 +364,16 @@ test("workspace data stays deterministic, supports multi-agent items, and exhaus
 	assert.match(WORKSPACE_DATA_SOURCE, /details: createWorkspaceItemDetails/u);
 });
 
-test("the project demo and docs present the workspace instead of the list-only surface", () => {
+test("the project demo defaults to Project Butter and retains the work item workspace", () => {
 	assert.match(WORKSPACE_SOURCE, /chrome\?: "framed" \| "plain";/u);
 	assert.match(WORKSPACE_SOURCE, /chrome === "framed" \? "rounded-lg border border-border" : "rounded-\[inherit\]"/u);
-	assert.match(DEMO_SOURCE, /import \{ JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";/u);
+	assert.match(DEMO_SOURCE, /import \{ JiraForYouProjectButter, JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";/u);
 	assert.match(DEMO_SOURCE, /const isStandalonePreview = pathname\.startsWith\("\/preview\/"\);/u);
 	assert.match(DEMO_SOURCE, /<div className="h-full min-h-0 overflow-hidden rounded-lg border border-border bg-surface">/u);
+	assert.match(DEMO_SOURCE, /<JiraForYouProjectButter \/>/u);
 	assert.match(DEMO_SOURCE, /<JiraForYouWorkspace chrome="plain" className="h-full min-h-0" \/>/u);
 	assert.match(DETAIL_DOC_SOURCE, /"jira-for-you": \{/u);
-	assert.match(DETAIL_DOC_SOURCE, /importStatement: `import \{ JiraForYouWorkspace \} from "@\/components\/projects\/jira-for-you";`/u);
+	assert.match(DETAIL_DOC_SOURCE, /importStatement: `import \{ JiraForYouProjectButter \} from "@\/components\/projects\/jira-for-you";`/u);
 	assert.match(DETAIL_DOC_SOURCE, /previewHeight: "fixed"/u);
 	assert.match(DETAIL_DOC_SOURCE, /previewContentWidth: "full"/u);
 });
@@ -428,5 +429,5 @@ test("the reusable Jira shell owns sidebar state, sidebar chat fallback, and the
 	assert.match(PAGE_SOURCE, /children\?: ReactNode;/u);
 	assert.match(PAGE_SOURCE, /\{children \?\? \(/u);
 	assert.match(PAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*chrome="plain"[\s\S]*className="h-full min-h-0 flex-1"[\s\S]*\/>/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouShell \/>/u);
+	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouWorkspacePreview \/>/u);
 });

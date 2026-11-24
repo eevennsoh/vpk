@@ -3,6 +3,18 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("Jira for you defaults to the Project Butter variant in the catalog and fullscreen preview", async ({ page }) => {
+	await page.goto(appUrl("/components/projects/jira-for-you"));
+	const preview = page.locator("#preview");
+	await expect(preview.getByRole("heading", { name: "For you", exact: true })).toBeVisible();
+	await expect(preview.locator('[data-testid^="agent-session-row-"]')).toHaveCount(9);
+	await expect(page.getByText("Project Butter variant", { exact: false }).first()).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Work item workspace" })).toBeVisible();
+	await page.goto(appUrl("/preview/projects/jira-for-you"));
+	await expect(page.locator('[data-testid^="agent-session-row-"]')).toHaveCount(9);
+	await expect(page.getByRole("button", { name: "Open Rovo chat" })).toBeVisible();
+});
+
 test("Jira for you groups session cards and preserves their hover actions", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -34,6 +46,27 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	await expect(section.getByRole("tab", { name: "Worked on" })).toHaveAttribute("aria-selected", "true");
 	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(5);
 	await expect(page.getByRole("region", { name: /Chat workspace/ })).toHaveCount(0);
+});
+
+test("Jira for you opens Rovo and each session's conversation", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Jira for you" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Open Rovo chat" }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat).toBeVisible();
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	for (const [id, title] of [
+		["review-rollout", "Confirm the rollout plan for pilot customers"],
+		["working-tests", "Add coverage for the onboarding flow"],
+		["finished-accessibility", "Audit the checkout accessibility fixes"],
+	] as const) {
+		await page.getByTestId(`agent-session-row-${id}`).locator("article").click();
+		await expect(chat).toBeVisible();
+		await expect(chat).toContainText(title);
+		await chat.getByRole("button", { name: "Close", exact: true }).click();
+	}
 });
 
 test("the List gallery item shows the interactive Jira list", async ({ page }) => {

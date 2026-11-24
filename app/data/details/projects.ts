@@ -27,8 +27,10 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-for-you": {
-		description: "A personalized Jira workspace that combines assigned and recent work, agent sessions, work-item conversation, source and output details, and full Jira product chrome.",
-		importStatement: `import { JiraForYouWorkspace } from "@/components/projects/jira-for-you";`,
+		description: "Project Butter variant: a personalized agent-session feed grouped by status, with search, tabs, and floating Rovo chat. The work-item workspace remains available separately.",
+		importStatement: `import { JiraForYouProjectButter } from "@/components/projects/jira-for-you";`,
+		usage: `<JiraForYouProjectButter />`,
+		examples: [{ title: "Work item workspace", description: "The original work-item feed and conversation workspace.", demoSlug: "jira-for-you-demo-workspace" }],
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",

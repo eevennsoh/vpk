@@ -1,12 +1,9 @@
 "use client";
 
-import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { JiraForYouShell } from "@/components/projects/jira-for-you/page";
+import { JiraForYouProjectButter } from "@/components/projects/jira-for-you";
 
 export default function JiraForYouPreviewPage() {
 	return (
-		<RovoChatProvider>
-			<JiraForYouShell />
-		</RovoChatProvider>
+		<div className="h-dvh w-full"><JiraForYouProjectButter /></div>
 	);
 }

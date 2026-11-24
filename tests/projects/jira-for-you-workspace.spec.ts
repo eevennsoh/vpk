@@ -7,7 +7,7 @@ import {
 
 import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_FOR_YOU_URL = appUrl("/preview/projects/jira-for-you");
+const JIRA_FOR_YOU_URL = appUrl("/preview/projects/jira-for-you-workspace");
 
 function getRow(pageTitle: string, page: Page) {
 	return page

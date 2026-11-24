@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { JiraSidebar } from "@/components/blocks/product-sidebar/variants/jira";
 import AppLayout from "@/components/projects/page";
 
@@ -76,4 +77,8 @@ export function JiraForYouShell({
 			</section>
 		</AppLayout>
 	);
+}
+
+export function JiraForYouWorkspacePreview() {
+	return <RovoChatProvider><JiraForYouShell /></RovoChatProvider>;
 }

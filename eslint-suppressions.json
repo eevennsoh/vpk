@@ -67,7 +67,7 @@
   },
   "app/preview/projects/jira-for-you/page.test.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 2
     }
   },
   "app/preview/shadows/page.tsx": {
@@ -1848,7 +1848,7 @@
   },
   "components/projects/jira-for-you/jira-for-you-workspace.source.test.js": {
     "no-restricted-syntax": {
-      "count": 234
+      "count": 231
     }
   },
   "components/projects/jira-for-you/jira-for-you.source.test.js": {
