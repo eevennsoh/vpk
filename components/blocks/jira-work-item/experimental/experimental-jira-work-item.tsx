@@ -7,7 +7,6 @@ import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-wo
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { useOptionalRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journey-v0/data/agent-chat-data";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
@@ -114,7 +113,7 @@ export function ExperimentalJiraWorkItem(props: Readonly<ExperimentalJiraWorkIte
 		</WorkItemModalProvider>
 	);
 
-	return chatControls ? workItemSurface : <RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>{workItemSurface}</RovoChatProvider>;
+	return chatControls ? workItemSurface : <RovoChatProvider>{workItemSurface}</RovoChatProvider>;
 }
 
 export default ExperimentalJiraWorkItem;
