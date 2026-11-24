@@ -20,7 +20,6 @@ export type {
 	FloatingRovoButtonPositioning,
 	FloatingRovoButtonSuggestion,
 } from "./types";
-export { findFloatingRovoSurface, measureToolbarActionOrigin, type FloatingRovoButtonIndicatorOrigin } from "./indicator-origin";
 
 export default function FloatingRovoButton({
 	product,

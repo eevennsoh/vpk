@@ -180,14 +180,22 @@ export function FloatingRovoButtonSurface({
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 	const [indicatorOrigin, setIndicatorOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
 	const [indicatorMorphComplete, setIndicatorMorphComplete] = useState(false);
-	// A panel opened from elsewhere (e.g. Rovo chat) brings its own origin: adopt it once per open.
-	const [adoptedOpenOrigin, setAdoptedOpenOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
-	const openOrigin = panel?.open ? panel.openOrigin ?? null : null;
-	if (openOrigin !== adoptedOpenOrigin) {
-		setAdoptedOpenOrigin(openOrigin);
-		if (openOrigin) {
-			setIndicatorOrigin(openOrigin);
-			setIndicatorMorphComplete(false);
+	// The toolbar action measured where it last came to rest. The button and its rail unmount while Rovo chat is open,
+	// so a panel opened from there cannot measure the action; it opens from and closes into this instead.
+	const [restingOrigin, setRestingOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
+	const [wasPanelOpen, setWasPanelOpen] = useState(Boolean(panel?.open));
+	if (Boolean(panel?.open) !== wasPanelOpen) {
+		setWasPanelOpen(Boolean(panel?.open));
+		if (panel?.open && restingOrigin) {
+			if (panel.openFrom) {
+				// Another surface (Rovo chat) condenses into the panel, which later closes into the action.
+				setIndicatorOrigin({ ...restingOrigin, bounds: panel.openFrom, variant: "surface", returnTo: restingOrigin });
+				setIndicatorMorphComplete(false);
+			} else if (!panel.openFromIndicator) {
+				// A plain open has no flight in, but still closes into the action like every other panel.
+				setIndicatorOrigin(restingOrigin);
+				setIndicatorMorphComplete(true);
+			}
 		}
 	}
 	const finishIndicatorMorph = useCallback(() => {
@@ -199,7 +207,7 @@ export function FloatingRovoButtonSurface({
 		}
 	}, [panel?.closingToIndicator, panel?.onCloseComplete]);
 	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
-	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && panel.openFromIndicator && indicatorOrigin && !shouldReduceMotion);
+	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && (panel.openFromIndicator || panel.openFrom) && indicatorOrigin && !shouldReduceMotion);
 	const closingToIndicator = Boolean(panel?.open && panel.closingToIndicator && indicatorOrigin && indicatorMorphComplete && !shouldReduceMotion);
 	const indicatorTransition = opensFromIndicator || closingToIndicator;
 	const morphingIndicator = closingToIndicator || (opensFromIndicator && !indicatorMorphComplete);
@@ -686,7 +694,6 @@ export function FloatingRovoButtonSurface({
 	return (
 		<motion.div
 			ref={surfaceRef}
-			data-floating-rovo-surface=""
 			key="floating-rovo-button-surface"
 			layout={!indicatorTransition}
 			data-notification-opening={morphingIndicator || undefined}
@@ -821,6 +828,11 @@ export function FloatingRovoButtonSurface({
 								if (!origin) return;
 								setIndicatorOrigin(origin);
 								setIndicatorMorphComplete(false);
+							}}
+							onSettled={() => {
+								const surface = surfaceRef.current;
+								const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, false) : null;
+								if (origin) setRestingOrigin(origin);
 							}}
 							side={morphingIndicator && indicatorOrigin ? indicatorOrigin.side : barSide}
 							shouldReduceMotion={shouldReduceMotion}

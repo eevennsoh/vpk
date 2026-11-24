@@ -16,6 +16,7 @@ export function FloatingRovoButtonPersistentBarRail({
 	indicatorActionId,
 	indicatorInFlight = false,
 	onIndicatorPress,
+	onSettled,
 	side,
 	shouldReduceMotion,
 }: Readonly<{
@@ -23,6 +24,8 @@ export function FloatingRovoButtonPersistentBarRail({
 	indicatorActionId?: string;
 	indicatorInFlight?: boolean;
 	onIndicatorPress?: (button: DOMRect, dot: DOMRect | undefined, item: FloatingRovoButtonPersistentBarItem) => void;
+	/** The rail has landed at rest, so its actions can be measured as the place panels open from and close into. */
+	onSettled?: () => void;
 	side: "top" | "bottom";
 	shouldReduceMotion: boolean;
 }>) {
@@ -116,6 +119,7 @@ export function FloatingRovoButtonPersistentBarRail({
 			initial={indicatorInFlight ? false : "hidden"}
 			animate="visible"
 			exit="exit"
+			onAnimationComplete={(definition) => { if (definition === "visible") onSettled?.(); }}
 			style={{
 				boxShadow: singleAction ? undefined : token("elevation.shadow.overlay"),
 				transformOrigin: side === "top" ? "center bottom" : "center top",

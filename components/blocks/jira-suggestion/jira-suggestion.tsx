@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "motion/react";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import FloatingRovoButton, { findFloatingRovoSurface, measureToolbarActionOrigin, type FloatingRovoButtonIndicatorOrigin, type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
+import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
 	const [openFromIndicator, setOpenFromIndicator] = useState(false);
-	const [openOrigin, setOpenOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
+	const [openFrom, setOpenFrom] = useState<DOMRect | null>(null);
 	const reduceMotion = useReducedMotion();
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -92,7 +92,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
 		setOpenFromIndicator(false);
-		setOpenOrigin(null);
+		setOpenFrom(null);
 	}, []);
 	const close = () => {
 		feed.acknowledgeNew();
@@ -109,11 +109,8 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const reopen = (chatBounds?: DOMRect): true => {
 		feed.onOpenReview?.(panelId);
 		setSeenRuns(feed.runs.length);
-		const surface = findFloatingRovoSurface(portalContainer ?? document, REVIEW_ACTION_ID);
-		const actionOrigin = surface ? measureToolbarActionOrigin(surface, REVIEW_ACTION_ID, portalContainer ? "container" : "viewport", false) : null;
-		const morphFromChat = Boolean(actionOrigin && chatBounds && !reduceMotion);
-		setOpenOrigin(actionOrigin ? morphFromChat && chatBounds ? { ...actionOrigin, bounds: chatBounds, variant: "surface", returnTo: actionOrigin } : actionOrigin : null);
-		setOpenFromIndicator(morphFromChat);
+		setOpenFrom(chatBounds && !reduceMotion ? chatBounds : null);
+		setOpenFromIndicator(false);
 		deck.restoreDismissed();
 		closeChat();
 		setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
@@ -123,7 +120,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const openReview = () => {
 		setIntro("ready");
 		setSeenRuns(feed.runs.length);
-		setOpenOrigin(null);
+		setOpenFrom(null);
 		setOpenFromIndicator(true);
 		if (count > 0) show();
 		else {
@@ -145,7 +142,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 					open: phase !== "closed",
 					indicatorActionId: REVIEW_ACTION_ID,
 					openFromIndicator,
-					openOrigin,
+					openFrom,
 					closingToIndicator: phase === "closing",
 					onOpenComplete: () => setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage),
 					onCloseComplete: finishClose,

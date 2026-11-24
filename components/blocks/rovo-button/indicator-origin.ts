@@ -35,8 +35,3 @@ export function measureToolbarActionOrigin(surface: HTMLElement, actionId: strin
 	const side = bounds.top + bounds.height / 2 < launcher.top ? "top" : "bottom";
 	return { bounds, launcher, anchor: getNotificationAnchor(surface, positioning), side, variant: dot ? "dot" : "button" };
 }
-
-/** The floating Rovo button surface that owns a toolbar action, for measuring from outside the block. */
-export function findFloatingRovoSurface(root: ParentNode, actionId: string): HTMLElement | null {
-	return root.querySelector<HTMLElement>(`[data-toolbar-action-id="${CSS.escape(actionId)}"]`)?.closest<HTMLElement>("[data-floating-rovo-surface]") ?? null;
-}
