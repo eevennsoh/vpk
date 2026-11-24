@@ -5,7 +5,6 @@ import { AnimatePresence, animate, motion, useMotionValue, usePresence, usePrese
 
 import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { CARD_PAPER, CARD_PAPER_STYLE } from "./card-face";
@@ -88,7 +87,9 @@ export function SuggestionCard({
 	const top = role === "top";
 	const sheet = role === "sheet";
 	const showTopReason = top && !floating;
-	const floatingSheetEdge = floating && !parked && !elevated ? `inset 0px 0px 0px 1px ${token("color.border")}` : undefined;
+	// A class, not an inline Motion style: Motion leaves a stale inline shadow behind once the value turns undefined,
+	// which kept rear sheets bordered and shadowless after they unpacked into elevated rows.
+	const floatingSheetEdge = floating && !parked && !elevated ? "inset-ring inset-ring-border" : null;
 
 	const { dragX, progress, dragging, handlers } = useCardDrag({
 		enabled: top && isPresent,
@@ -234,6 +235,7 @@ export function SuggestionCard({
 					role === "row" ? "group/suggestion-card" : null,
 					previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
+					floatingSheetEdge,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.
 					"overflow-hidden",
 					sheet ? "h-full cursor-pointer" : null,
@@ -245,7 +247,7 @@ export function SuggestionCard({
 				layout
 				layoutAnchor={floating ? false : undefined}
 				{...(top ? handlers : null)}
-				style={{ ...CARD_PAPER_STYLE, boxShadow: floatingSheetEdge, x, y: poseY, rotate, opacity }}
+				style={{ ...CARD_PAPER_STYLE, x, y: poseY, rotate, opacity }}
 				transition={morph}
 			>
 				<motion.div

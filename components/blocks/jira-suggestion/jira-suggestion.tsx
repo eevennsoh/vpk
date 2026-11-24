@@ -1,6 +1,5 @@
 "use client";
 
-import TextReviewIcon from "@atlaskit/icon-lab/core/text-review";
 import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "motion/react";
@@ -11,6 +10,8 @@ import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 import { MockDetailsRail } from "./components/mock-details-rail";
+import { reconcileFloatingPanelStage, type FloatingPanelStage } from "./floating-panel-stage";
+import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
 import { useSuggestionFeed } from "./hooks/use-suggestion-feed";
 import { WorkItemPreviewShell } from "./components/work-item-preview-shell";
 import { StackMain } from "./components/stack-main";
@@ -24,15 +25,21 @@ import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
 const FLOATING_PANEL_MAX_HEIGHT = 500;
+const REVIEW_ACTION_ID = "review-suggestions";
+/** How long the landing intro shows the agent still finding suggestions. */
+export const SUGGESTION_ANALYSIS_MS = 2600;
 
-type FloatingPanelStage =
-	| { phase: "closed" | "reopening" | "measuring" | "list" | "caught-up" | "closing" }
-	| { phase: "expanding"; height: number };
+/** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
+const IN_PLACE_UNPACK_MS = 260;
 
-export function JiraFloatingSuggestions({ feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
+/** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
+type IntroPhase = "analyzing" | "resolving" | "ready";
+
+export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
 	const [openFromIndicator, setOpenFromIndicator] = useState(false);
+	const [openRequested, setOpenRequested] = useState(false);
 	const reduceMotion = useReducedMotion();
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -40,14 +47,29 @@ export function JiraFloatingSuggestions({ feed, notification, panelTransition, p
 	const deck = useDeck(feed, () => {});
 	const count = feed.review.pending.length;
 	const label = `${count} ${count === 1 ? "suggestion" : "suggestions"}`;
-	const hasNotification = count > 0;
+	const [intro, setIntro] = useState<IntroPhase>(analyzeOnMount ? "analyzing" : "ready");
+	// The dot means "unseen": opening the panel clears it, even without deciding, until a later run finds more.
+	const [seenRuns, setSeenRuns] = useState(0);
+	const hasNotification = count > 0 && intro === "ready" && feed.runs.length > seenRuns;
+	useEffect(() => {
+		if (intro === "ready") return undefined;
+		const timer = window.setTimeout(() => setIntro(intro === "analyzing" ? "resolving" : "ready"), intro === "analyzing" ? SUGGESTION_ANALYSIS_MS : SUGGESTIONS_ICON_RESOLVE_MS);
+		return () => window.clearTimeout(timer);
+	}, [intro]);
 	const openingStage: FloatingPanelStage = reduceMotion ? { phase: "list" } : feed.runs.length === 1
 		? { phase: "expanding", height: FLOATING_PANEL_MAX_HEIGHT }
 		: { phase: "measuring" };
 	const { phase } = panelStage;
 	const isMeasuring = phase === "measuring" && !reduceMotion;
 	const isExpanding = phase === "expanding" && !reduceMotion;
-	const listStage = isMeasuring ? "measuring" : isExpanding ? "intro" : "list";
+	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
+	const isUnpacking = phase === "unpacking";
+	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking ? "intro" : "list";
+	useEffect(() => {
+		if (!isUnpacking) return undefined;
+		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "unpacking" ? { phase: "list" } : stage), IN_PLACE_UNPACK_MS);
+		return () => window.clearTimeout(timer);
+	}, [isUnpacking]);
 	useEffect(() => {
 		if (!isMeasuring) return;
 		const revealWhenSettled = () => {
@@ -61,9 +83,8 @@ export function JiraFloatingSuggestions({ feed, notification, panelTransition, p
 		return () => cancelFrame(revealWhenSettled);
 	}, [isMeasuring]);
 
-	if (phase === "reopening") setPanelStage(count > 0 ? openingStage : { phase: "caught-up" });
-	else if (count === 0 && phase !== "closed" && phase !== "caught-up") setPanelStage({ phase: "closed" });
-	else if (count > 0 && phase === "caught-up") setPanelStage(openingStage);
+	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false);
+	if (nextStage) setPanelStage(nextStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
 		setPanelStage(openingStage);
@@ -74,19 +95,27 @@ export function JiraFloatingSuggestions({ feed, notification, panelTransition, p
 	}, []);
 	const close = () => {
 		feed.acknowledgeNew();
-		if (count > 0 && !reduceMotion) setPanelStage({ phase: "closing" });
+		// Anything a check found while the panel was open has been seen too.
+		setSeenRuns(feed.runs.length);
+		// Every close, including the caught-up state, flies the panel back into the button it opened from.
+		if (!reduceMotion) setPanelStage({ phase: "closing" });
 		else finishClose();
 	};
+	/**
+	 * Opens the review from Rovo chat. The chat closes and, once the review action is back on screen, the panel opens
+	 * from it exactly as a click would, so it grows out of and closes into the action like any other open.
+	 */
 	const reopen = (): true => {
-		feed.onOpenReview?.(panelId);
-		setOpenFromIndicator(false);
 		deck.restoreDismissed();
 		closeChat();
-		setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
+		setOpenRequested(true);
 		return true;
 	};
 	useImperativeHandle(ref, () => ({ reopen }));
 	const openReview = () => {
+		setIntro("ready");
+		setSeenRuns(feed.runs.length);
+		setOpenRequested(false);
 		setOpenFromIndicator(true);
 		if (count > 0) show();
 		else {
@@ -98,16 +127,17 @@ export function JiraFloatingSuggestions({ feed, notification, panelTransition, p
 	if (typeof document === "undefined") return null;
 	return createPortal(
 		<>
-			<span className="sr-only" role="status">{count === 0 ? deck.announcement : label}</span>
+			<span className="sr-only" role="status">{intro === "analyzing" ? "Finding suggestions" : count === 0 ? deck.announcement : label}</span>
 			<FloatingRovoButton
 				animateLogoOnMount
-				ariaLabel={count > 0 ? "Review AI suggestions" : "Open Rovo chat"}
-				onButtonClick={count > 0 ? () => { setOpenFromIndicator(false); show(); } : undefined}
+				// The Rovo button always opens Rovo chat; the review action is the one way into suggestions.
+				ariaLabel="Open Rovo chat"
 				panel={{
 					id: panelId,
 					open: phase !== "closed",
-					indicatorActionId: "review-suggestions",
+					indicatorActionId: REVIEW_ACTION_ID,
 					openFromIndicator,
+					openRequested,
 					closingToIndicator: phase === "closing",
 					onOpenComplete: () => setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage),
 					onCloseComplete: finishClose,
@@ -134,7 +164,16 @@ export function JiraFloatingSuggestions({ feed, notification, panelTransition, p
 				}}
 				positioning={portalContainer ? "container" : "viewport"}
 				product="jira"
-				persistentBar={{ panelTransition, items: [{ id: "review-suggestions", ariaLabel: "Review suggestions", tooltipLabel: count > 0 ? label : "Review suggestions", icon: <TextReviewIcon color="currentColor" label="" />, indicator: hasNotification, onClick: openReview }] }}
+				persistentBar={{ panelTransition, items: [{
+					id: REVIEW_ACTION_ID,
+					ariaLabel: "Review suggestions",
+					busy: intro === "analyzing",
+					tooltipLabel: intro === "analyzing" ? "Finding suggestions…" : count > 0 ? label : "Review suggestions",
+					icon: <SuggestionsStatusIcon state={intro === "analyzing" ? "loading" : "done"} />,
+					indicator: hasNotification,
+					nudge: analyzeOnMount && hasNotification ? 1 : undefined,
+					onClick: openReview,
+				}] }}
 				suggestion={notification}
 			/>
 		</>,

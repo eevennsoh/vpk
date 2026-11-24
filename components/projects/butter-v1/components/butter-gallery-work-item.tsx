@@ -85,7 +85,7 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 						onCreateAgent={() => router.push("/studio")}
 						onOpenCloudSession={openCloudSession}
 						open={open}
-						renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
+						renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions analyzeOnMount feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
 						sessionActivityView={sessionActivityView}
 						shell="gallery"
 						showAuditInActivity={showAiSuggestions}

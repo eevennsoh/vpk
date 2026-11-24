@@ -5,6 +5,8 @@ import { useLayoutEffect, useRef, type RefObject } from "react";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
+import type { FloatingRovoButtonMorphVariant } from "./indicator-origin";
+
 const SHELL_DURATION = motionDuration.slowest;
 const PANEL_RADIUS = 8;
 const MORPH_TIMES = [0, 0.16, 0.4, 0.52, 0.64, 0.76, 0.9, 1];
@@ -26,7 +28,7 @@ function frameAt(x: number, y: number, width: number, height: number, radius: nu
 	return { left: x - width / 2, top: y - height / 2, width, height, radius };
 }
 
-function getMorphFrames(origin: DOMRect, target: DOMRect, variant: "button" | "dot") {
+function getMorphFrames(origin: DOMRect, target: DOMRect, variant: FloatingRovoButtonMorphVariant) {
 	const x = origin.left + origin.width / 2;
 	const y = origin.top + origin.height / 2;
 	const targetX = target.left + target.width / 2;
@@ -72,7 +74,7 @@ export function NotificationPanelMorph({
 	launcherX: MotionValue<number>;
 	launcherY: MotionValue<number>;
 	actionId?: string;
-	variant: "button" | "dot";
+	variant: FloatingRovoButtonMorphVariant;
 	closing?: boolean;
 	onComplete: () => void;
 }>) {
