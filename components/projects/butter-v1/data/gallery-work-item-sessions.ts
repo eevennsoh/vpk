@@ -10,7 +10,7 @@ export const BUTTER_GALLERY_SESSIONS: readonly ProjectButterSessionItem[] = PROJ
 
 export const BUTTER_WORK_ITEM_SESSIONS: readonly ProjectButterSessionItem[] = [...BUTTER_GALLERY_SESSIONS
 	.filter((session) => session.id === "butter-coding" || session.id === "butter-cursor-forecast")
-	.map((session) => session.id === "butter-coding" ? {
+	.map<ProjectButterSessionItem>((session) => session.id === "butter-coding" ? {
 		...session,
 		invokedBy: PROJECT_BUTTER_SESSIONS.find(({ id }) => id === session.id)?.invokedBy,
 		role: "viewer",
