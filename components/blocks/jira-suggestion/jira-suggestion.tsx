@@ -10,7 +10,7 @@ import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 import { MockDetailsRail } from "./components/mock-details-rail";
-import { reconcileFloatingPanelStage, type FloatingPanelStage } from "./floating-panel-stage";
+import { reconcileFloatingPanelStage, settleMeasuredStage, type FloatingPanelStage } from "./floating-panel-stage";
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
 import { useSuggestionFeed } from "./hooks/use-suggestion-feed";
 import { WorkItemPreviewShell } from "./components/work-item-preview-shell";
@@ -58,12 +58,13 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	}, [intro]);
 	const openingStage: FloatingPanelStage = reduceMotion ? { phase: "list" } : feed.runs.length === 1
 		? { phase: "expanding", height: FLOATING_PANEL_MAX_HEIGHT }
-		: { phase: "measuring" };
+		: { phase: "measuring", then: "expanding" };
 	const { phase } = panelStage;
 	const isMeasuring = phase === "measuring" && !reduceMotion;
 	const isExpanding = phase === "expanding" && !reduceMotion;
 	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
 	const isUnpacking = phase === "unpacking";
+	const introHeight = panelStage.phase === "expanding" || panelStage.phase === "unpacking" ? panelStage.height : undefined;
 	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking ? "intro" : "list";
 	useEffect(() => {
 		if (!isUnpacking) return undefined;
@@ -77,7 +78,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 			if (!panel?.offsetHeight) return;
 			const height = panel.offsetHeight;
 			cancelFrame(revealWhenSettled);
-			setPanelStage((stage) => stage.phase === "measuring" ? { phase: "expanding", height } : stage);
+			setPanelStage((stage) => settleMeasuredStage(stage, height) ?? stage);
 		};
 		frame.postRender(revealWhenSettled, true);
 		return () => cancelFrame(revealWhenSettled);
@@ -152,7 +153,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 							feed={feed}
 							focusOnMount
 							id={panelId}
-							introHeight={isExpanding && panelStage.phase === "expanding" ? panelStage.height : undefined}
+							introHeight={isExpanding || isUnpacking ? introHeight : undefined}
 							listStage={listStage}
 							maxHeight={FLOATING_PANEL_MAX_HEIGHT}
 							onClose={close}
