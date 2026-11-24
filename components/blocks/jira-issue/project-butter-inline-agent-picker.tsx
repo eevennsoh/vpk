@@ -67,7 +67,7 @@ export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Rea
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef, cardTilt = false }: Readonly<{
+export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef, cardTilt = true }: Readonly<{
 	extraAgents?: readonly AgentSelectorAgent[];
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
@@ -76,7 +76,7 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
 	recommendationReason?: string;
 	issueTriggerRef?: RefObject<HTMLElement | null>;
-	/** Opt-in: the preview card tilts toward the picker while the pointer is over the card. */
+	/** The preview card tilts toward the picker while the pointer is over the card; pass false to keep it flat. */
 	cardTilt?: boolean;
 }>) {
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());

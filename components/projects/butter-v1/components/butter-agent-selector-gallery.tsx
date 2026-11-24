@@ -29,7 +29,7 @@ export function ButterAgentSelectorControls({ presentation, onPresentationChange
 	</ToggleGroup>;
 }
 
-export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false, cardTilt = false }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean; cardTilt?: boolean }>) {
+export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false, cardTilt = true }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean; cardTilt?: boolean }>) {
 	const router = useRouter();
 	const scriptedCreation = useButterScriptedCreation();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
