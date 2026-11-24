@@ -983,11 +983,14 @@
 	filter: drop-shadow(0 8px 12px rgb(30 31 33 / 0.15));
 }
 
-@utility agent-lanyard-recommendation-shadow {
-	filter: drop-shadow(0 0 0.5px rgb(30 31 33 / 0.31)) drop-shadow(0 8px 6px rgb(30 31 33 / 0.15));
+@keyframes agent-lanyard-chin-enter {
+	from { transform: translateY(-100%); }
+	to { transform: translateY(0); }
+}
 
-	[data-color-mode="dark"] & {
-		filter: drop-shadow(0 0 0.5px rgb(1 4 4 / 0.5)) drop-shadow(0 8px 6px rgb(1 4 4 / 0.36)) drop-shadow(0 0 0.5px rgb(189 189 189 / 0.12));
+@utility agent-lanyard-chin {
+	@media (prefers-reduced-motion: no-preference) {
+		animation: agent-lanyard-chin-enter var(--duration-slow) var(--ease-out) both;
 	}
 }
 

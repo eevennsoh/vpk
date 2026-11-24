@@ -38,6 +38,13 @@ const HOVER_TILT = "perspective(900px) rotateX(-1.2deg) rotateY(4.4deg) rotateZ(
 const REST_TILT = "perspective(900px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)";
 const ENTER = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
 const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+export const AGENT_LANYARD_CUTOUT_MASK = {
+	maskImage: `linear-gradient(#000 0 0), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6'%3E%3Crect width='40' height='6' rx='3' fill='white'/%3E%3C/svg%3E")`,
+	maskSize: "100% 100%, 40px 6px",
+	maskPosition: "center, center 7px",
+	maskRepeat: "no-repeat",
+	maskComposite: "exclude",
+};
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, recommendationReason, recommendationAppearance = "perforated", avatar, footer, verified = false,
@@ -59,7 +66,6 @@ export function AgentLanyardCard({
 			<div className={cn("relative h-[108px] shrink-0 overflow-hidden rounded-t-xl", showGrid && !mcpSetup ? "bg-bg-neutral" : "bg-surface-sunken", hoverSurface ? "-mx-px -mt-px h-[109px]" : null)} aria-hidden="true">
 				{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} /> : null}
 				<span data-slot="agent-lanyard-cutout" className="pointer-events-none absolute top-[7px] left-1/2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full">
-					<span className="absolute inset-0 rounded-[inherit] bg-surface" />
 					<span
 						data-slot="agent-lanyard-cutout-shadow"
 						className="absolute -inset-[0.5px] rounded-[inherit] text-border"
@@ -87,7 +93,7 @@ export function AgentLanyardCard({
 		// The outer hover target stays stationary while the inner material rotates.
 		<article
 			aria-label={`${name} ${variant}`}
-			className={cn("w-[252px] max-w-full", perforated ? "agent-lanyard-recommendation-shadow" : null, className)}
+			className={cn("flow-root w-[252px] max-w-full", perforated ? "rounded-xl shadow-2xl" : null, className)}
 			data-slot="agent-lanyard" data-agent-id={id} data-variant={variant}
 			data-perspective-tilt={tiltEnabled} data-grid-animation={gridEnabled}
 			onPointerEnter={(event) => { if (event.pointerType !== "touch") setHovered(true); }}
@@ -95,20 +101,26 @@ export function AgentLanyardCard({
 			onPointerCancel={() => setHovered(false)}
 		>
 			<motion.div
+				data-slot="agent-lanyard-cutout-mask"
+				className="-m-4 p-4"
+				style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 23px" }}
+				initial={false}
+				animate={{ transform: tiltEnabled ? (hovered ? HOVER_TILT : REST_TILT) : "none" }}
+				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
+			>
+			<div
 				ref={surfaceRef}
 				style={perforated ? AGENT_LANYARD_RECOMMENDATION_SURFACE_STYLE : undefined}
 				data-slot="agent-lanyard-surface"
 				className={cn(
-					"relative flex flex-col rounded-xl transition-[background-color,box-shadow] duration-normal ease-out-practical motion-reduce:transition-none",
-					hasChin ? "bg-bg-neutral shadow-2xl" : "bg-surface",
+					"relative flex flex-col rounded-xl",
+					recommended ? null : "transition-[background-color,box-shadow] duration-normal ease-out-practical motion-reduce:transition-none",
+					hasChin ? "bg-transparent" : "bg-surface",
 					recommended ? "border-0" : "border border-border",
 					mcpSetup ? "bg-clip-padding" : null,
 					recommended || mcpSetup ? null : "min-h-[280px]",
 					hoverSurface ? "border-transparent bg-surface-hovered shadow-2xl" : null,
 				)}
-				initial={false}
-				animate={{ transform: tiltEnabled ? (hovered ? HOVER_TILT : REST_TILT) : "none" }}
-				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
 			>
 				{onSelect && !recommended ? (
 					<button type="button" aria-label={variant === "template" ? `Use ${name} template` : `View ${name}`} onClick={onSelect} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50" />
@@ -116,14 +128,12 @@ export function AgentLanyardCard({
 				{recommended ? <>
 					<div
 						ref={identityRef}
-						className={hasChin ? cn(
-							"relative rounded-xl bg-surface-raised",
-							"after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-(--radius-xl) after:rounded-b-xl after:shadow-sm after:[clip-path:inset(0_0_-4px)]",
-						) : undefined}
+						className={hasChin ? "relative z-10 rounded-xl bg-surface-raised shadow-sm" : undefined}
 						data-slot="agent-lanyard-recommended-identity"
 					>{identity}</div>
-					<AgentLanyardRecommendation reason={recommendationReason} headingLevel={headingLevel} perforated={perforated} />
+					{hasChin ? <div className="agent-lanyard-chin -mt-(--radius-xl) rounded-b-xl bg-surface shadow-2xl"><div className="rounded-b-xl bg-bg-neutral pt-(--radius-xl)"><AgentLanyardRecommendation reason={recommendationReason} headingLevel={headingLevel} perforated={false} /></div></div> : <AgentLanyardRecommendation reason={recommendationReason} headingLevel={headingLevel} perforated />}
 				</> : identity}
+			</div>
 			</motion.div>
 		</article>
 	);

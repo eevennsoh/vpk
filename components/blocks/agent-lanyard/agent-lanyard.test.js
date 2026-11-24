@@ -88,12 +88,13 @@ test("brand-backed lanyards render through the shared agent visual", async () =>
 	}
 });
 
-test("the lanyard cutout paints its recessed shadow separately from the rim and fill", () => {
+test("the lanyard cutout has no opaque fill and retains its recessed rim", () => {
 	const card = renderCard(AGENT_LANYARD_AGENTS[0]);
 	const cutout = card.querySelector('[data-slot="agent-lanyard-cutout"]');
 	const shadow = cutout.querySelector('[data-slot="agent-lanyard-cutout-shadow"]');
 	assert.ok(shadow, "The shadow needs a full-rim layer instead of being inset inside the border");
-	assert.equal(cutout.children.length, 2, "White fill and recessed shading have separate paint layers");
+	assert.equal(cutout.children.length, 1);
+	assert.equal(card.querySelector('[data-slot="agent-lanyard-cutout-mask"]') !== null, true);
 	assert.equal(cutout.style.boxShadow, "");
 	assert.equal(shadow.style.boxShadow.match(/inset/gu).length, 3, "Fractional rim and both recess shadows are painted together");
 	assert.equal(cutout.parentElement.getAttribute("aria-hidden"), "true");
@@ -242,6 +243,7 @@ test("public recommended variant retains identity and description, updates calle
 		assert.equal(view.getByRole("heading", { name: "Claude" }).tagName, "H2");
 		assert.equal(view.getByRole("heading", { name: "Why recommended" }).tagName, "H3");
 		assert.equal(view.getByText("Another caller-owned reason.").textContent, "Another caller-owned reason.");
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-recommended-identity"]').classList.contains("shadow-sm"), true);
 		assert.equal(card.querySelector('[data-slot="agent-lanyard-tear-line"]') === null, true);
 		assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').style.maskImage, "");
 	} finally { await view.unmount(); }
@@ -307,14 +309,15 @@ test("the MCP setup gallery shows the invoker and copies the full prompt", async
 	assert.equal(view.queryByRole("button", { name: "Prompt copied" }) !== null, true);
 });
 
-test("recommended hover content preserves the shaped card shadow while ordinary popups use overlay elevation", async () => {
+test("lanyard hover content leaves elevation to the card", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyardHoverContent", props: { variant: "recommended" },
-		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style}) { return <div data-popup style={style} />; }' },
+		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style, className}) { return <div data-popup style={style} className={className} />; }' },
 	});
 	try {
-		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "none");
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "");
 		await view.rerender({});
-		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow.includes("--ds-shadow-overlay"), true);
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "");
+		assert.equal(view.container.querySelector("[data-popup]").className.includes("[&_[data-slot=agent-lanyard]]:shadow-2xl"), true);
 	} finally { await view.unmount(); }
 });

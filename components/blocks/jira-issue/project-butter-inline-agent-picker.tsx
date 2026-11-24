@@ -102,7 +102,7 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, onCrea
 			const firstParty = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((item) => item.id === agent.id);
 			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={false} />;
 			const lanyard = pickerLanyard(agent);
-			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" agent={lanyard} recommendationReason={reason} perspectiveTilt={false} />;
+			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" recommendationAppearance="chin" agent={lanyard} recommendationReason={reason} perspectiveTilt={false} />;
 			return <AgentLanyard agent={lanyard} perspectiveTilt={false} footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
 		})() : null}
 	</AgentLanyardHoverContent>}</HoverCard></ProjectButterAgentPreviewBoundary>;

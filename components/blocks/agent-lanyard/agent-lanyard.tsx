@@ -7,10 +7,9 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { AtlassianLogoMark } from "@/components/ui/logo-mark";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { AgentLanyardCard } from "./components/agent-lanyard-card";
+import { AGENT_LANYARD_CUTOUT_MASK, AgentLanyardCard } from "./components/agent-lanyard-card";
 import { AgentLanyardActions } from "./components/agent-lanyard-actions";
 import { AgentLanyardSetupPrompt } from "./components/agent-lanyard-setup-prompt";
 import { AgentLanyardTemplateAvatar } from "./agent-lanyard-template-avatar";
@@ -81,7 +80,7 @@ export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommended
 export type AgentLanyardHoverContentProps = ComponentProps<typeof HoverCardContent> & { variant?: "agent" | "recommended" };
 
 export function AgentLanyardHoverContent({ className, style, variant = "agent", ...props }: Readonly<AgentLanyardHoverContentProps>) {
-	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0", variant === "agent" ? "[&_[data-slot=agent-lanyard-surface]]:shadow-none" : null, className)} style={{ ...style, boxShadow: variant === "recommended" ? "none" : token("elevation.shadow.overlay") }} />;
+	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0", variant === "agent" ? "[&_[data-slot=agent-lanyard]]:rounded-xl [&_[data-slot=agent-lanyard]]:shadow-2xl [&_[data-slot=agent-lanyard-surface]]:shadow-none" : null, className)} style={style} />;
 }
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
@@ -110,7 +109,8 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 	if (variantProps.variant === "mcp-setup") {
 		const { invoker, setupPrompt } = variantProps;
 		return (
-			<div className={cn("flex w-[252px] max-w-full min-w-0 flex-col gap-2 rounded-xl bg-bg-neutral p-2 shadow-2xl", className)} data-slot="agent-lanyard-mcp-setup">
+			<div className={cn("w-[252px] max-w-full min-w-0 rounded-xl shadow-2xl", className)} data-slot="agent-lanyard-mcp-setup">
+			<div className="flex flex-col gap-2 rounded-xl bg-bg-neutral p-2" style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 15px" }}>
 				<AgentLanyardCard {...identity} variant="mcp-setup" avatar={defaultAvatar} headingLevel={headingLevel} perspectiveTilt={false} showDescription={false}
 					footer={
 						<ul className="flex flex-col gap-2 text-xs leading-4 text-text-subtle">
@@ -127,6 +127,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 					}
 				/>
 				<AgentLanyardSetupPrompt prompt={setupPrompt} />
+			</div>
 			</div>
 		);
 	}

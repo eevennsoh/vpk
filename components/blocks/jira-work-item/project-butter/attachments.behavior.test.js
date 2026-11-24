@@ -31,6 +31,21 @@ const manageButton = () => document.querySelector('#section-attachments [aria-la
 const byTestId = (id) => document.querySelector(`[data-testid="${id}"]`);
 const act = (run) => React.act(async () => { run(); });
 
+test("video arrival shows one video confirmation without extra labels", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/attachment-arrival.tsx",
+		exportName: "AttachmentArrival",
+		props: { item: { id: "video", kind: "video", name: "Demo", extension: "mov" }, onDone: () => {} },
+	});
+	try {
+		await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 900)); });
+		assert.equal(view.getByText("Video added").textContent, "Video added");
+		assert.equal(view.queryByText("MOV") === null, true);
+		assert.equal(view.queryByText("Video") === null, true);
+		assert.equal(view.queryByText("Added") === null, true);
+	} finally { await view.unmount(); }
+});
+
 async function switchToList(view) {
 	await view.click(manageButton());
 	await view.click(view.getByRole("menuitem", { name: "Switch to list view" }));
