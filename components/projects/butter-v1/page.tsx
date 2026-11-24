@@ -5,6 +5,7 @@ import BacklogIcon from "@atlaskit/icon/core/backlog";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import { useInstantLayoutTransition, useInstantTransition } from "motion/react";
+import { flushSync } from "react-dom";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS } from "@/app/data/directory";
@@ -145,7 +146,7 @@ const isButterLooseWorkResumable = () => true;
 export default function ButterPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState("e2e-journey");
 	const startGalleryLayoutTransition = useInstantLayoutTransition();
-	const selectGalleryItem = (id: string) => startGalleryLayoutTransition(() => setSelectedId(id));
+	const selectGalleryItem = (id: string) => startGalleryLayoutTransition(() => flushSync(() => setSelectedId(id)));
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
