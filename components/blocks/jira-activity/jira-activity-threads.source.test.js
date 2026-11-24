@@ -118,7 +118,7 @@ test("plain comments share the stacked identity header and the flush composer ge
 		/function ReopenThreadAction[\s\S]*aria-label="Reopen"[\s\S]*className="h-auto px-0 text-xs text-text-subtle"[\s\S]*variant="link"[\s\S]*>\s*Reopen\s*<\/Button>/u,
 	);
 	assert.doesNotMatch(
-		COMMENT_SOURCE,
+		COMMENT_SOURCE.slice(COMMENT_SOURCE.indexOf("function ReopenThreadAction"), COMMENT_SOURCE.indexOf("function ThreadContinuation")),
 		/aria-label="Reopen"[\s\S]*className="[^"]*(?:px-[1-9]|font-normal)/u,
 	);
 	assert.doesNotMatch(COMMENT_SOURCE, />\s*Resolved\s*<\/p>/u);
@@ -246,7 +246,7 @@ test("active thread replies have actions while only the latest resolved reply ca
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/resolved \? \(\s*onReopen \? <ReopenThreadAction onReopen=\{onReopen\} \/> : undefined\s*\) : commentActions === "none" \? undefined/u,
+		/resolved \? \(\s*onReopen \? <ReopenThreadAction onReopen=\{onReopen\} \/> : undefined\s*\) : commentActions === "none"/u,
 	);
 	assert.match(COMMENT_SOURCE, /\? \(\) => onReply\(replyButtonRef\.current\)/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
@@ -297,7 +297,7 @@ test("comments with nested replies expose one shared header control to collapse 
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/const headerAction = action \|\| repliesToggle \|\| addToChatAction(?: \|\| hoverActions)? \? \(\s*<div className="flex shrink-0 items-center gap-1">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
+		/const headerAction = action \|\| repliesToggle \|\| addToChatAction(?: \|\| hoverActions)? \? \(\s*<div className="flex shrink-0 items-center gap-1[^"]*">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
 	);
 	// The shared control rides the card's hover scope, but stays in the tab order:
 	// a `display: none` wrapper could never satisfy its own focus-visible reveal.
@@ -317,7 +317,7 @@ test("agent session cards keep header actions and replies toggle on the shared h
 	// full thread, including while the pointer is on nested replies.
 	assert.match(COMMENT_SOURCE, /item=\{entry\.sessionItem\}/u);
 	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
-	assert.match(COMMENT_SOURCE, /onClick=\{\(\) => setRepliesExpanded\(\(expanded\) => !expanded\)\}/u);
+	assert.match(COMMENT_SOURCE, /onClick=\{\(\) => changeRepliesExpanded\(!repliesExpanded\)\}/u);
 	assert.match(
 		CARD_SOURCE,
 		/Hover\/focus group wraps the full card[\s\S]*activityGroupClass,[\s\S]*"w-full min-w-0 overflow-visible bg-transparent"/u,
@@ -341,7 +341,7 @@ test("collapsed threads show a Slack-like participant, count, and timestamp summ
 	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/<CollapsedThreadSummary[\s\S]*onExpand=\{\(\) => setRepliesExpanded\(true\)\}[\s\S]*replies=\{replies\}[\s\S]*resolved=\{resolved\}/u,
+		/<CollapsedThreadSummary[\s\S]*onExpand=\{\(\) => changeRepliesExpanded\(true\)\}[\s\S]*replies=\{replies\}[\s\S]*resolved=\{resolved\}/u,
 	);
 });
 
@@ -781,6 +781,23 @@ test("the default activity connector remains a continuous timeline", async () =>
 	assert.equal(document.querySelector("[data-jira-activity-thread-stem]") === null, true);
 });
 
+test("adjacent events connect to each other but not to comments", async () => {
+	const actor = { id: "person", name: "Liam", kind: "person" };
+	const event = (id) => ({ id, kind: "event", actor, timestamp: "1h", icon: "edit", segments: [{ type: "text", text: id }] });
+	const comment = { id: "comment", kind: "comment", actor, timestamp: "1h", body: [{ type: "text", text: "Comment" }] };
+	const view = await renderComponent({
+		entry: "components/blocks/jira-activity/index.tsx",
+		exportName: "JiraActivity",
+		props: { entries: [event("first"), event("second"), comment, event("last")], connectEntries: "adjacent-events", connectorStyle: "thread", currentUser: actor, composer: null, hideHeader: true },
+	});
+	for (const [id, expected] of [["first", true], ["second", false], ["comment", false], ["last", false]]) {
+		const row = view.container.querySelector(`[data-jira-activity-entry-id="${id}"]`);
+		assert.equal(Boolean(row.querySelector("[data-jira-activity-timeline-stem]")), expected);
+	}
+	assert.equal(view.container.querySelector('[data-jira-activity-entry-id="first"] [data-jira-activity-timeline-stem]').classList.contains("min-h-0"), true);
+	await view.unmount();
+});
+
 test("the final timeline entry continues into a decorative fade when requested", async () => {
 	await renderThreadConnectors("thread", true);
 	const lastEntry = document.querySelector('[data-jira-activity-entry-id="standalone"]');
@@ -789,6 +806,24 @@ test("the final timeline entry continues into a decorative fade when requested",
 	assert.equal(stem !== null, true);
 	assert.equal(fade.getAttribute("aria-hidden"), "true");
 	assert.equal(lastEntry.contains(fade), true);
+});
+
+test("the more-activity fade follows the last event or comment with adjacent event connectors", async () => {
+	const actor = { id: "author", name: "Author", kind: "person" };
+	const event = { id: "event", kind: "event", actor, timestamp: "1h", icon: "edit", segments: [{ type: "text", text: "Updated" }] };
+	const comment = { id: "comment", kind: "comment", actor, timestamp: "1h", body: [{ type: "text", text: "Comment" }] };
+	const props = { entries: [event], connectEntries: "adjacent-events", connectorStyle: "thread", currentUser: actor, composer: null, hideHeader: true, fadeAfterLast: true };
+	const view = await renderComponent({ entry: "components/blocks/jira-activity/index.tsx", exportName: "JiraActivity", props });
+	for (const last of [event, comment]) {
+		await view.rerender({ ...props, entries: [last] });
+		const row = view.container.querySelector(`[data-jira-activity-entry-id="${last.id}"]`);
+		assert.equal(Boolean(row.querySelector("[data-jira-activity-timeline-stem]")), true);
+		assert.equal(Boolean(row.querySelector('[data-jira-activity-end-fade][aria-hidden="true"]')), true);
+		await view.rerender({ ...props, entries: [last], fadeAfterLast: false });
+		assert.equal(Boolean(row.querySelector("[data-jira-activity-end-fade]")), false);
+		assert.equal(Boolean(row.querySelector("[data-jira-activity-timeline-stem]")), false);
+	}
+	await view.unmount();
 });
 
 

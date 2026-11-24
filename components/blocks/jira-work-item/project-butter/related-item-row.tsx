@@ -62,7 +62,7 @@ export function ProjectButterRelatedItemRow({ actions, columns, dimmed, draft, e
 	return (
 		<motion.tr
 			className={cn(
-				"group/row group/work-row h-10 border-0 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered has-[:focus-visible]:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered",
+				"group/row group/work-row h-10 border-0",
 				dimmed && "pointer-events-none opacity-(--opacity-disabled)",
 				editing && "relative z-10",
 			)}
@@ -73,7 +73,7 @@ export function ProjectButterRelatedItemRow({ actions, columns, dimmed, draft, e
 			onBlur={(event) => { if (editing && !(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) onFinish(true); }}
 			transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}
 		>
-			{columns.map((column) => <JiraListTableCell className={cn(faded && !editing && FADE, editing && column.id !== "work" && "opacity-(--opacity-disabled)")} inert={editing && column.id !== "work" || undefined} key={column.id}>{renderCell(column)}</JiraListTableCell>)}
+			{columns.map((column) => <JiraListTableCell className={cn("first:rounded-l-xl last:rounded-r-xl group-hover/work-row:bg-bg-neutral-subtle-hovered group-has-[:focus-visible]/work-row:bg-bg-neutral-subtle-hovered group-has-[[aria-expanded=true]]/work-row:bg-bg-neutral-subtle-hovered", faded && !editing && FADE, editing && column.id !== "work" && "opacity-(--opacity-disabled)")} inert={editing && column.id !== "work" || undefined} key={column.id}>{renderCell(column)}</JiraListTableCell>)}
 		</motion.tr>
 	);
 }

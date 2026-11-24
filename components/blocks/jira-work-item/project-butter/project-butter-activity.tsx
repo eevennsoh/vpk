@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ProjectButterActivitySessionThreads, renderProjectButterEarlierRepliesLabel } from "./activity-session-threads";
 import { draftThreadInstruction, PINNED_THREAD_RAIL, summarizeReplies, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, useWorkItemThreadSummaries } from "./activity-thread-summary";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
+import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { motionDuration } from "@/lib/motion";
 import { ProjectButterCommentEditor } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
@@ -40,6 +41,7 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/activity-comment-tools";
 import { ProjectButterActivityFilterMenu } from "@/components/blocks/jira-work-item/project-butter/activity-filter-menu";
 import { ProjectButterSessionStart } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
+import { AgentReplyProgress, ProjectButterAgentReplyAction } from "@/components/blocks/jira-work-item/project-butter/activity-agent-reply";
 import { JiraWorkItemTimeline, useJiraWorkItemTimelineNavigation } from "@/components/blocks/jira-work-item-timeline";
 import { activityDateLabel, activityDayLabel, activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import { ProjectButterUpdateGroup } from "@/components/blocks/jira-work-item/project-butter/activity-update-group";
@@ -142,7 +144,7 @@ export function ProjectButterActivity({
 	const previewLimit = rowIndex(previewEntryId) + 1;
 	const selectedLimit = rowIndex(selectedReply?.entryId) + 1;
 	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1)).map((row) => row.kind === "comment" && latestReplyEntryIds?.has(row.id) ? { ...row, replyPreviewCount: 1 } : row);
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1)).map((row) => row.kind === "comment" && latestReplyEntryIds?.has(row.id) ? { ...row, replyPreviewCount: row.replies?.at(-1)?.actor.kind === "agent" ? 2 : 1 } : row);
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useJiraWorkItemTimelineNavigation(rows, { layoutKey: sidePanel, focusId: content.activityFocusId, viewKey: view });
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -188,6 +190,10 @@ export function ProjectButterActivity({
 	const sessionFor = (entryId: string) => {
 		const id = projectButterSessionIdFromEntry(entryId);
 		return id ? sessions.find((session) => session.id === id) : undefined;
+	};
+	const canSummarize = (entry: JiraActivityCommentEntry) => {
+		const session = sessionFor(entry.id);
+		return projectButterSessionIdFromEntry(entry.id) === null || (session !== undefined && getAgentSessionRole(session) === "owner");
 	};
 	const toggleTimelinePin = (entryId: string) => {
 		const focused = document.activeElement instanceof HTMLButtonElement && document.activeElement.closest("[data-jira-activity-entry-id]")?.getAttribute("data-jira-activity-entry-id") === entryId;
@@ -263,16 +269,17 @@ export function ProjectButterActivity({
 					earlierRepliesSelectedAppearance="icon-only"
 					showEarlierRepliesIcon={false}
 					composer={null}
+					connectEntries="adjacent-events"
+					fadeAfterLast={allRows.length > rows.length}
 					connectorStyle="thread"
+					forceThreadConnector={(entry) => summaryFor(entry).summarized || content.pinnedCommentIds.includes(entry.id)}
 					currentUser={content.currentUser}
-					entries={rows}
-					fadeAfterLast
+					entries={rows.map((row) => row.kind === "comment" && canSummarize(row) && summaryFor(row).summarized ? { ...row, replyPreviewCount: 0 } : row)}
 					hideHeader
 					onEntriesChange={(entries) => {
 						const ids = new Set(visible.map((entry) => entry.id));
 						const createdAtMs = Date.now();
-						// Pinned rows are presentation clones; restore their stored tag before writing back.
-						const normalized = unpinProjectButterEntries(entries, content.activityEntries)
+						const normalized = unpinProjectButterEntries(entries, content.activityEntries, content.pinnedCommentIds)
 							.filter((entry) => !groups.has(entry.id))
 							.map((entry) => entry.kind === "comment" ? { ...entry, replies: entry.replies?.map((reply) => ({ ...reply, createdAtMs: reply.createdAtMs ?? createdAtMs })) } : entry);
 						const groupedEvents = rows.flatMap((row) => groups.get(row.id) ?? []);
@@ -285,8 +292,8 @@ export function ProjectButterActivity({
 							return agent ? [agent.id] : [];
 						}))];
 						const session = sessionFor(entry.id);
-						const mentionsSessionAgent = session && mentionedAgentIds.some((id) => mentionAgentsById.get(id)?.name.toLowerCase() === session.agent.name.toLowerCase());
-						content.submitActivityReply(entry.id, body, actorIds, { sessionId: mentionsSessionAgent ? session.id : undefined });
+						if (session && session.role !== "viewer") actorIds.push(session.agent.id ?? session.id);
+						content.submitActivityReply(entry.id, body, [...new Set(actorIds)], { session });
 						onReplySubmitted?.();
 					}}
 					onViewSession={(session) => onOpenSession(session.id)}
@@ -296,12 +303,14 @@ export function ProjectButterActivity({
 						if (session) return <ProjectButterSessionStart onOpen={onOpenSession} session={session} />;
 						return entry.body.every((segment) => segment.type === "text") ? <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={jiraActivitySegmentsToPlainText(entry.body)} pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined} /> : undefined;
 					}}
-					renderCommentAvatar={(entry, avatar) => summaryFor(entry).renderAvatar(entry, avatar)}
-					renderCommentTools={(entry, reply) => <><ProjectButterCommentTools content={content} entry={entry} reply={reply} />{reply ? null : summaryFor(entry).renderAction(entry.replies ?? [])}</>}
-					renderCommentReplies={(entry, replies, expand) => {
+					renderCommentAvatar={(entry, avatar) => canSummarize(entry) ? summaryFor(entry).renderAvatar(entry, avatar) : avatar}
+					onRepliesExpandedChange={(entry, expanded) => { if (canSummarize(entry)) summaryFor(entry).setRepliesExpanded(expanded); }}
+					renderCommentTools={(entry, reply, collapseReplies) => <><ProjectButterCommentTools content={content} entry={entry} reply={reply} />{reply || !canSummarize(entry) ? null : summaryFor(entry).renderAction(entry.replies ?? [], collapseReplies)}</>}
+					renderCommentReplies={(entry, replies, expand, disclosure, expanded) => {
+						if (!canSummarize(entry)) return <>{disclosure}{replies}</>;
 						const session = sessionFor(entry.id);
 						const canDraft = session && onDraftSessionInstruction && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
-						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined);
+						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined, { disclosure, expanded });
 					}}
 					renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${entry.replies?.at(-1)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}
@@ -324,6 +333,8 @@ export function ProjectButterActivity({
 						) : renderEvent(entry);
 					}}
 					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
+					renderReplyFooter={(reply) => reply.visibility === "private" && reply.generationStartedAtMs === undefined ? <ProjectButterAgentReplyAction reply={reply} onPublish={content.publishActivityReply} /> : null}
+					renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} />}
 					renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					replyDrafts={content.replyDrafts}
 					sortOrder="ascending"
@@ -355,13 +366,15 @@ export function ProjectButterActivity({
 						latestReplyEntryIds={latestReplyEntryIds}
 						onEntriesChange={([updated]) => {
 							if (updated?.kind !== "comment") return;
-							const [canonical] = unpinProjectButterEntries([updated], content.activityEntries);
+							const [canonical] = unpinProjectButterEntries([updated], content.activityEntries, content.pinnedCommentIds);
 							if (canonical?.kind !== "comment") return;
 							const { replyPreviewCount: _preview, defaultRepliesExpanded: _expanded, ...changes } = canonical;
 							content.setActivityEntries((entries) => entries.map((entry) => entry.id === updated.id ? { ...entry, ...changes } : entry));
 						}}
 						renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
 						renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} />}
+						renderReplyFooter={(reply) => reply.visibility === "private" && reply.generationStartedAtMs === undefined ? <ProjectButterAgentReplyAction reply={reply} onPublish={content.publishActivityReply} /> : null}
+						renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} />}
 						renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					/>
 				</div>

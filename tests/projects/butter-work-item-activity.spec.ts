@@ -117,7 +117,7 @@ test("the notification remains until all remaining suggestions are dismissed", a
 	await panel.getByRole("button", { name: "Close suggestions" }).click();
 	await expect(review.locator("[data-notification-dot]")).toBeVisible();
 	await review.click();
-	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await panel.getByRole("button", { name: "Discard all", exact: true }).click();
 	await expect(panel).toHaveCount(0);
 	await expect(review.locator("[data-notification-dot]")).toHaveCount(0);
 	await review.click();
@@ -342,7 +342,7 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await expect(assigneeActions).toHaveCSS("opacity", "0");
 	await page.mouse.move(0, 0);
 	await expect(descriptionActions).toHaveCSS("opacity", "0");
-	await panel.getByRole("button", { name: "Dismiss description", exact: true }).focus();
+	await panel.getByRole("button", { name: "Discard description", exact: true }).focus();
 	await page.keyboard.press("Tab");
 	await expect(acceptDescription).toBeFocused();
 	await expect(descriptionActions).toHaveCSS("opacity", "1");
@@ -701,7 +701,7 @@ test("Suggest work item fields brings dismissed suggestions back for review", as
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
 	await page.getByRole("button", { name: "Review AI suggestions", exact: true }).click();
 	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
-	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await panel.getByRole("button", { name: "Discard all", exact: true }).click();
 	await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
 	await chat.getByRole("button", { name: "Suggest work item fields", exact: true }).click();

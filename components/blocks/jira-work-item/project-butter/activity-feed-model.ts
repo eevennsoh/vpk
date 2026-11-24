@@ -60,7 +60,7 @@ export function projectButterSessionInvocation(session: ProjectButterSessionItem
 	const person = invoker(session);
 	const agent = agentActor(session);
 	const reply = (id: string, actor: JiraActivityActor, body: string, atMs: number): JiraActivityReply => ({ id, actor, body, timestamp: relativeLabel(atMs, session.timeLabel ?? ""), createdAtMs: atMs });
-	const prompt = session.prompt ? [reply(`prompt-${session.id}`, person, session.prompt, createdAtMs)] : [];
+	const prompt = session.prompt ? [{ ...reply(`prompt-${session.id}`, person, session.prompt, createdAtMs), ...(session.role !== "viewer" && session.invokedBy ? { visibility: "private" as const } : {}) }] : [];
 	const dialogue = (session.activityReplies ?? []).map((item) => reply(item.id, item.author === session.agent.name ? agent : personActor(item.author), item.body, createdAtMs + item.minutesAfter * MINUTE));
 	const latest = dialogue.length === 0 && session.state !== "running" ? [reply(`response-${session.id}`, agent, session.message, createdAtMs + MINUTE)] : [];
 	const thread: JiraActivityCommentEntry = {
@@ -83,28 +83,26 @@ export function selectProjectButterActivity(entries: readonly JiraActivityEntry[
 		.sort((a, b) => ((a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)) * (sort === "oldest" ? 1 : -1));
 }
 
-const PINNED_TAG = { text: "Pinned", color: "gray" } as const;
-
-/** Pinned comments lead the feed in pin order and carry a "Pinned" tag; everything else keeps its order. */
+/** Pinned comments lead the feed in pin order; everything else keeps its order. */
 export function pinProjectButterComments(entries: readonly JiraActivityEntry[], pinnedIds: readonly string[]): readonly JiraActivityEntry[] {
 	if (pinnedIds.length === 0) return entries;
 	const byId = new Map(entries.map((entry) => [entry.id, entry]));
 	const pinned = pinnedIds.flatMap((id) => {
 		const entry = byId.get(id);
-		return entry?.kind === "comment" ? [{ ...entry, tag: PINNED_TAG, replyPreviewCount: 0 }] : [];
+		return entry?.kind === "comment" ? [{ ...entry, replyPreviewCount: 0 }] : [];
 	});
 	const pinnedSet = new Set(pinned.map((entry) => entry.id));
 	return [...pinned, ...entries.filter((entry) => !pinnedSet.has(entry.id))];
 }
 
-/** Undo `pinProjectButterComments` before persisting: pinned clones get their canonical tag back, so "Pinned" never reaches state. */
-export function unpinProjectButterEntries(entries: readonly JiraActivityEntry[], canonical: readonly JiraActivityEntry[]): JiraActivityEntry[] {
+/** Restore the stored reply preview before persisting a pinned presentation clone. */
+export function unpinProjectButterEntries(entries: readonly JiraActivityEntry[], canonical: readonly JiraActivityEntry[], pinnedIds: readonly string[]): JiraActivityEntry[] {
 	const byId = new Map(canonical.map((entry) => [entry.id, entry]));
 	return entries.map((entry) => {
-		if (entry.kind !== "comment" || entry.tag !== PINNED_TAG) return entry;
+		if (entry.kind !== "comment" || !pinnedIds.includes(entry.id)) return entry;
 		const original = byId.get(entry.id);
-		const { tag: _pinned, replyPreviewCount: _preview, ...rest } = entry;
-		return original?.kind === "comment" ? { ...rest, tag: original.tag, replyPreviewCount: original.replyPreviewCount } : rest;
+		const { replyPreviewCount: _preview, ...rest } = entry;
+		return original?.kind === "comment" ? { ...rest, replyPreviewCount: original.replyPreviewCount } : rest;
 	});
 }
 

@@ -21,7 +21,6 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
-import { humanAgentAvatarGeometry } from "@/components/ui-custom/human-agent-avatar-geometry";
 import {
 	CardGlowLayers,
 	cardGlowSurfaceStyle,
@@ -484,7 +483,6 @@ export function AgentSessionCard({
 	const isLead = mark?.isLead ?? false;
 	const isTransferSource = Boolean(draggingIds?.has(item.id));
 	const attribution = getAgentSessionAttribution(item);
-	const showsAgentWithoutInvoker = item.invokedBy !== undefined && attribution === undefined && item.agent.kind !== "person";
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const {
 		handleArrivalComplete,
@@ -814,7 +812,7 @@ export function AgentSessionCard({
 											agent={item.agent}
 											attributedBy={attribution}
 											attributionOrder="agent-first"
-											sizePx={showsAgentWithoutInvoker ? humanAgentAvatarGeometry(SESSION_IDENTITY_FRAME_SIZE).agentSize : SESSION_IDENTITY_FRAME_SIZE}
+											sizePx={SESSION_IDENTITY_FRAME_SIZE}
 											animate={shouldRotateAvatar}
 											motion={STATUS_REENTRY_AVATAR_MOTION}
 											onAnimationComplete={handleAvatarComplete}
@@ -826,7 +824,7 @@ export function AgentSessionCard({
 									// pointerdown and flies out of it. Marked outside the
 									// select-mark branch so the origin exists in both.
 									return (
-										<span className={showsAgentWithoutInvoker ? "grid size-8 place-items-center" : "block"} data-session-drag-identity="">
+										<span className="block" data-session-drag-identity="">
 											{mark === undefined || mark === null
 												? previewIdentity
 												: (

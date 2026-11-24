@@ -22,8 +22,8 @@ test("gathering extra suggestions does not deepen the visible stack shadow", asy
 	await expect.poll(async () => (await stackShadows(page)).map((card) => card?.opacity)).toEqual([1, 1, 1, 0, 0]);
 	await expect.poll(async () => (await stackShadows(page)).some((card) => card?.shadowAnimating)).toBe(false);
 	const five = await stackShadows(page);
-	await page.getByRole("button", { name: "Dismiss description" }).click();
-	await page.getByRole("button", { name: "Dismiss due date" }).click();
+	await page.getByRole("button", { name: "Discard description" }).click();
+	await page.getByRole("button", { name: "Discard due date" }).click();
 	await expect.poll(async () => (await stackShadows(page)).map((card) => card?.opacity)).toEqual([1, 1, 1]);
 	await expect.poll(async () => (await stackShadows(page)).some((card) => card?.shadowAnimating)).toBe(false);
 	const three = await stackShadows(page);

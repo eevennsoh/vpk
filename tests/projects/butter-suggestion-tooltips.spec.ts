@@ -35,7 +35,7 @@ test("suggestion tooltips remain above the panel on hover and keyboard focus", a
 	await expect(tooltip).toHaveText("Check again");
 	await expectTooltipAbovePanel(tooltip, panel);
 	await page.getByRole("button", { name: "Show as list" }).click();
-	await page.getByRole("list", { name: "Suggestions" }).getByRole("button", { name: "Dismiss description" }).hover();
-	await expect(tooltip).toHaveText("Dismiss");
+	await page.getByRole("list", { name: "Suggestions" }).getByRole("button", { name: "Discard description" }).hover();
+	await expect(tooltip).toHaveText("Discard");
 	await expectTooltipAbovePanel(tooltip, panel);
 });

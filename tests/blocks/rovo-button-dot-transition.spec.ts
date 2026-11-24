@@ -47,7 +47,7 @@ test("the dot variant flies into the panel and returns on close", async ({ page 
 	await panel.getByRole("button", { name: "Close suggestions" }).click();
 	await expect(dot).toBeVisible();
 	await review.click();
-	await panel.getByRole("button", { name: "Dismiss all", exact: true }).click();
+	await panel.getByRole("button", { name: "Discard all", exact: true }).click();
 	await expect(panel).toHaveCount(0);
 	await expect(dot).toHaveCount(0);
 });

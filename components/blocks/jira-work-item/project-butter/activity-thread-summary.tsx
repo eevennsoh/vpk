@@ -5,6 +5,7 @@ import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-
 import { JiraActivityEntryGlyph, type JiraActivityActor, type JiraActivityCommentEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { activityActorVpkLogo } from "@/components/blocks/jira-activity/jira-activity-actor-mention";
 import { JiraActivityTimestamp } from "@/components/blocks/jira-activity/jira-activity-timestamp";
+import { ThreadConnector } from "@/components/blocks/jira-activity/jira-activity-comment";
 import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ export type ThreadSummary = Readonly<{ text: string; fixtureReplyCount: number }
 export function summarizeReplies(replies: readonly JiraActivityReply[]): ThreadSummary {
 	if (["onboarding-cursor-reply-1", "onboarding-cursor-reply-2", "onboarding-cursor-reply-3", "onboarding-cursor-reply-4", "onboarding-cursor-reply-5"].every((id, index) => replies[index]?.id === id)) {
 		return {
-			text: "Annie asked Cursor to check account setup and keyboard navigation. Cursor found that the validation messages need recovery instructions and the error summary needs focus. Annie agreed to include both fixes in the next pass.",
+			text: "Annie asked Marcus to check account setup and keyboard navigation. Marcus found that the validation messages need recovery instructions and the error summary needs focus. Annie agreed to include both fixes in the next pass.",
 			fixtureReplyCount: 5,
 		};
 	}
@@ -29,37 +30,58 @@ export function draftThreadInstruction(sources: readonly JiraActivityReply[]) {
 	const context = [recap.text, ...sources.slice(recap.fixtureReplyCount).map((reply) => `${reply.actor.name}: ${reply.body}`)].join("\n\n");
 	return `Follow up on the work-item discussion:\n\n${context}\n\nAddress the agreed changes and report what you verified. Flag any open questions before proceeding.`;
 }
-export const THREAD_DISCLOSURE_SPACING = "[&_[data-jira-activity-replies-disclosure]:has(>div>button[aria-expanded=true])]:pb-1";
+export const THREAD_DISCLOSURE_SPACING = "[&_[data-jira-activity-replies-disclosure]]:pb-1";
 const VISIBLE_REPLIES_THREAD_RAIL = [
-	"[&_[data-jira-activity-entry-id]:has([aria-hidden=false]_[aria-label=Replies]:not([hidden])>div:not([hidden]))_[data-jira-activity-thread-stem]]:bg-bg-accent-gray-subtler",
-	"[&_[data-jira-activity-entry-id]:has([aria-hidden=false]_[aria-label=Replies]:not([hidden])>div:not([hidden]))_[data-jira-activity-thread-stem]]:[background-image:none]",
-	"[&_[data-jira-activity-entry-id]:has([aria-hidden=false]_[aria-label=Replies]:not([hidden])>div:not([hidden]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:bg-bg-accent-gray-subtler",
-	"[&_[data-jira-activity-entry-id]:has([aria-hidden=false]_[aria-label=Replies]:not([hidden])>div:not([hidden]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[background-image:none]",
-	"[&_[data-jira-activity-entry-id]:has([aria-hidden=false]_[aria-label=Replies]:not([hidden])>div:not([hidden]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[mask-image:none]",
+	"[&_[data-jira-activity-entry-id]:has([aria-label=Replies]:not([hidden])>div:not([hidden])):not(:has([aria-hidden=true]_[aria-label=Replies]))_[data-jira-activity-thread-stem]]:bg-bg-accent-gray-subtler",
+	"[&_[data-jira-activity-entry-id]:has([aria-label=Replies]:not([hidden])>div:not([hidden])):not(:has([aria-hidden=true]_[aria-label=Replies]))_[data-jira-activity-thread-stem]]:[background-image:none]",
+	"[&_[data-jira-activity-entry-id]:has([aria-label=Replies]:not([hidden])>div:not([hidden])):not(:has([aria-hidden=true]_[aria-label=Replies]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:bg-bg-accent-gray-subtler",
+	"[&_[data-jira-activity-entry-id]:has([aria-label=Replies]:not([hidden])>div:not([hidden])):not(:has([aria-hidden=true]_[aria-label=Replies]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[background-image:none]",
+	"[&_[data-jira-activity-entry-id]:has([aria-label=Replies]:not([hidden])>div:not([hidden])):not(:has([aria-hidden=true]_[aria-label=Replies]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[mask-image:none]",
+].join(" ");
+const HIDDEN_REPLIES_THREAD_RAIL = [
+	"[&_[data-jira-activity-entry-id]:has([aria-hidden=true]_[aria-label=Replies]):not(:has([data-summary-active])):not(:has(button[aria-label^=Unpin]))_[data-jira-activity-thread-stem]]:hidden",
+	"[&_[data-jira-activity-entry-id]:has([aria-hidden=true]_[aria-label=Replies]):not(:has([data-summary-active])):not(:has(button[aria-label^=Unpin]))_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:hidden",
+].join(" ");
+const PINNED_COLLAPSED_THREAD_RAIL = [
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-card]:has(>[data-jira-activity-card-body]>[data-jira-activity-thread-stem])]:relative!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-card-body]:has(>[data-jira-activity-thread-stem])]:static!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:bottom-8!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:bg-transparent!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-background-accent-gray-subtler)_0_2px,transparent_2px_5px)]!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:[mask-image:linear-gradient(to_bottom,black_60%,transparent)]!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-continuation]]:hidden!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-branch]]:hidden!",
 ].join(" ");
 export const SESSION_THREAD_RAIL = [
-	"[&_[data-jira-activity-thread-stem]]:bg-transparent",
-	"[&_[data-jira-activity-thread-stem]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)]",
-	"[&_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:bg-transparent",
-	"[&_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)]",
-	"[&_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[mask-image:linear-gradient(to_bottom,black,transparent)]",
+	"[&_[data-jira-activity-replies-disclosure]:not(:has(>div>button[aria-expanded=true]))]:pb-0",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-card]:has(>[data-jira-activity-card-body]>[data-jira-activity-thread-stem])]:relative",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-card-body]:has(>[data-jira-activity-thread-stem])]:static",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-thread-stem]]:bottom-8",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-thread-stem]]:[mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent)]",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-thread-continuation]]:hidden",
+	"[&_[data-jira-activity-entry-id]:not(:has([data-summary-active]))_[data-jira-activity-thread-branch]]:[clip-path:inset(0_0_0_1px)]",
+	"[&_[data-summary-thread-branch]]:[clip-path:none]",
+	"[&_[data-jira-activity-card]:has([data-summary-active])>[data-jira-activity-card-body]]:relative!",
+	"[&_[data-jira-activity-card]:has([data-summary-active])_[data-jira-activity-thread-stem]]:bottom-0!",
+	"[&_[data-jira-activity-card]:has([data-summary-active])_[data-jira-activity-thread-stem]]:[mask-image:none]!",
+	"[&_[data-jira-activity-card]:has([data-summary-active])_[data-jira-activity-thread-continuation]]:block!",
+	"[&_[data-jira-activity-card]:has([data-summary-active])_[data-jira-activity-thread-continuation]]:[mask-image:none]!",
+	"[&_[data-jira-activity-replies-disclosure]:not(:has(>div>button[aria-expanded=true]))>[data-jira-activity-thread-continuation]]:[mask-image:linear-gradient(to_bottom,black,transparent)]",
 	THREAD_DISCLOSURE_SPACING,
 	"[&_[data-jira-activity-replies-disclosure]:has(>div>button[aria-expanded=true])>[data-jira-activity-thread-continuation]]:[mask-image:none]",
 	VISIBLE_REPLIES_THREAD_RAIL,
+	HIDDEN_REPLIES_THREAD_RAIL,
+	PINNED_COLLAPSED_THREAD_RAIL,
 ].join(" ");
 export const PINNED_THREAD_RAIL = [
 	"[&>div>ol>li:has(button[aria-label^=Unpin])]:mb-3",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-timeline-stem]]:hidden",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-thread-stem]]:bg-transparent",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-thread-stem]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)]",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:bg-transparent",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)]",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-replies-disclosure]>[data-jira-activity-thread-continuation]]:[mask-image:linear-gradient(to_bottom,black,transparent)]",
-	"[&>div>ol>li:has(button[aria-label^=Unpin])_[data-jira-activity-replies-disclosure]:has(>div>button[aria-expanded=true])>[data-jira-activity-thread-continuation]]:[mask-image:none]",
+	"[&>div>ol>li:has(button[aria-label^=Unpin]):not([data-jira-activity-has-more])_[data-jira-activity-timeline-stem]]:hidden",
 	VISIBLE_REPLIES_THREAD_RAIL,
+	HIDDEN_REPLIES_THREAD_RAIL,
+	PINNED_COLLAPSED_THREAD_RAIL,
 ].join(" ");
-export const SUMMARY_TRANSITION = "[&_[data-jira-activity-entry-id]:has([data-summary-inset])_[data-jira-activity-thread-stem]]:transition-opacity [&_[data-jira-activity-entry-id]:has([data-summary-inset])_[data-jira-activity-thread-stem]]:duration-slow [&_[data-jira-activity-entry-id]:has([data-summary-inset])_[data-jira-activity-thread-stem]]:motion-reduce:transition-none [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:transition-[padding] [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:duration-slow [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ease-out-practical [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:motion-reduce:transition-none";
-export const SUMMARIZED_THREAD = "[&_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-(--summary-header-inset) [&_[data-jira-activity-thread-stem]]:opacity-60 [&_[data-summary-thread-continuation]]:block";
+export const SUMMARY_TRANSITION = "[&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:transition-[padding] [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:duration-slow [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ease-out-practical [&_[data-jira-activity-entry-id]:has([data-summary-avatar-stack])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:motion-reduce:transition-none";
+export const SUMMARIZED_THREAD = "[&_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-(--summary-header-inset)";
 const FOLD_TRANSITION = "transition-[grid-template-rows,opacity] duration-slow ease-out-practical motion-reduce:transition-none";
 const AVATAR_SIZE = 24;
 const AVATAR_STEP = 16;
@@ -128,7 +150,9 @@ type AutoSummary = Readonly<{ entries: readonly JiraActivityCommentEntry[]; acti
 
 export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 	const [state, setState] = useState<Readonly<{ active: boolean; runs: ReadonlyMap<string, SummaryRun> }>>(() => ({ active: false, runs: new Map() }));
+	const [expandedReplies, setExpandedReplies] = useState<ReadonlySet<string>>(() => new Set());
 	const restoreButtons = useRef(new Map<string, HTMLButtonElement>());
+	const disclosureContainers = useRef(new Map<string, HTMLDivElement>());
 	const triggers = useRef(new Map<string, HTMLButtonElement>());
 	const idPrefix = useId();
 	let runs = state.runs;
@@ -168,17 +192,27 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 		const entryId = entry?.id ?? "";
 		const run = runs.get(entryId);
 		const sources = run?.showing && (auto || run.sources === entry?.replies) ? run.sources : null;
+		const showAvatarStack = Boolean(entry?.replies?.length) && !expandedReplies.has(entryId);
 		const participants = entry ? threadParticipants(entry) : [];
 		const avatarWidth = AVATAR_SIZE + Math.max(0, Math.min(participants.length, 4) - 1) * AVATAR_STEP;
 		const summaryId = `${idPrefix}-${encodeURIComponent(entryId)}`;
 
 		return {
 			summarized: sources !== null,
+			showAvatarStack,
+			setRepliesExpanded(expanded: boolean) {
+				setExpandedReplies((current) => {
+					if (current.has(entryId) === expanded) return current;
+					const next = new Set(current);
+					if (expanded) next.add(entryId); else next.delete(entryId);
+					return next;
+				});
+			},
 			headerInset: Math.max(0, avatarWidth - 32),
 			renderAvatar(_entry: JiraActivityCommentEntry, avatar: ReactNode) {
-				return <ThreadHeaderAvatars entry={entry} participants={participants} width={avatarWidth} avatar={avatar} summarized={sources !== null} />;
+				return <ThreadHeaderAvatars entry={entry} participants={participants} width={avatarWidth} avatar={avatar} summarized={showAvatarStack} />;
 			},
-			renderAction(replies: readonly JiraActivityReply[]) {
+			renderAction(replies: readonly JiraActivityReply[], collapseReplies?: () => void) {
 				if (!replies.length) return null;
 				return (
 					<Tooltip>
@@ -193,13 +227,14 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 								aria-controls={summaryId}
 								aria-expanded={sources !== null}
 								onClick={() => {
+									collapseReplies?.();
 									setState((current) => {
 										const next = new Map(current.runs);
 										const previous = next.get(entryId);
 										next.set(entryId, auto && previous ? { ...previous, showing: true, animate: false } : { sources: replies, runAtMs: Date.now(), showing: true, animate: true });
 										return { ...current, runs: next };
 									});
-									requestAnimationFrame(() => restoreButtons.current.get(entryId)?.focus({ preventScroll: true }));
+									requestAnimationFrame(() => (restoreButtons.current.get(entryId) ?? disclosureContainers.current.get(entryId)?.querySelector("button"))?.focus({ preventScroll: true }));
 								}}
 							/>
 						}>
@@ -209,29 +244,29 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 					</Tooltip>
 				);
 			},
-			renderReplies(replies: ReactNode, expandReplies: () => void, summary: ThreadSummary, onDraft?: (sources: readonly JiraActivityReply[]) => void) {
+			renderReplies(replies: ReactNode, expandReplies: () => void, summary: ThreadSummary, onDraft?: (sources: readonly JiraActivityReply[]) => void, sessionDisclosure?: Readonly<{ disclosure: ReactNode; expanded: boolean }>) {
 				const result = auto && sources ? summarizeReplies(sources) : summary;
+				const replyContent = (
+					<div inert={sources !== null && !sessionDisclosure?.expanded} aria-hidden={sources !== null && !sessionDisclosure?.expanded} className={cn("grid", sources && !sessionDisclosure?.expanded ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]")}>
+						<div className="min-h-0" style={{ overflow: sources && !sessionDisclosure?.expanded ? "clip" : undefined }}>{replies}</div>
+					</div>
+				);
 				return (
 					<div className="grid">
-						<div
-							inert={sources !== null}
-							aria-hidden={sources !== null}
-							className={cn("grid", sources ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]")}
-						>
-							<div className="min-h-0" style={{ overflow: sources ? "clip" : undefined }}>{replies}</div>
-						</div>
+						{sessionDisclosure ? <><div ref={(node) => { if (node) disclosureContainers.current.set(entryId, node); else disclosureContainers.current.delete(entryId); }}>{sessionDisclosure.disclosure}</div>{replyContent}</> : replyContent}
 						<div
 							id={summaryId}
+							data-summary-active={sources ? "" : undefined}
 							inert={sources === null}
 							aria-hidden={sources === null}
 							className={cn("relative grid", sources && FOLD_TRANSITION, sources ? "grid-rows-[1fr]" : "grid-rows-[0fr] opacity-0")}
 						>
-							<span aria-hidden className="pointer-events-none absolute -left-6 bottom-8 top-0 hidden w-px -translate-x-1/2 opacity-60 [background-image:repeating-linear-gradient(to_bottom,var(--ds-border)_0_2px,transparent_2px_5px)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" data-summary-thread-continuation />
-							<div className="min-h-0 overflow-clip">
+							<div className={cn("min-h-0", sources ? "overflow-visible" : "overflow-clip")}>
 								<div className="mt-3 grid gap-2 rounded-lg bg-bg-neutral-subtle py-3 pr-3">
-									<div className="group/activity-timestamp flex flex-wrap items-center gap-2 text-sm font-medium">
+									<div className="group/activity-timestamp relative flex flex-wrap items-center gap-2 text-sm font-medium">
+										{sources ? <ThreadConnector centered continued={false} summary /> : null}
 										<AiGenerativeTextSummaryIcon label="" size="small" />
-										<span>Thread summary</span>
+										<span>Summary</span>
 										{sources && run && (!auto || (auto.active && visible)) ? (
 											<JiraActivityTimestamp content={
 												<Tooltip>
@@ -260,7 +295,7 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 										</ul>
 									) : null}
 									<div className="mt-2 flex flex-wrap items-center gap-2">
-										<Button ref={(node) => { if (node) restoreButtons.current.set(entryId, node); else restoreButtons.current.delete(entryId); }} variant="outline" onClick={() => {
+										{sessionDisclosure ? null : <Button ref={(node) => { if (node) restoreButtons.current.set(entryId, node); else restoreButtons.current.delete(entryId); }} variant="outline" onClick={() => {
 											expandReplies();
 											setState((current) => {
 												const next = new Map(current.runs);
@@ -270,7 +305,7 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 												return { ...current, runs: next };
 											});
 											requestAnimationFrame(() => triggers.current.get(entryId)?.focus({ preventScroll: true }));
-										}}>Show replies</Button>
+										}}>Show replies</Button>}
 										{onDraft && sources ? <Button variant="outline" onClick={() => onDraft(sources)}>{entry?.actor.kind === "agent" ? <span aria-hidden><JiraActivityEntryGlyph actor={entry.actor} animate={false} /></span> : null}Draft instruction</Button> : null}
 									</div>
 								</div>
