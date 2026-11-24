@@ -7,6 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import { AgentLanyard, AGENT_LANYARD_AGENTS, type AgentLanyardAgent } from "./index";
 
+const RECOMMENDATION_EXAMPLES = [
+	{ appearance: "perforated", label: "Perforated" },
+	{ appearance: "chin", label: "Chin" },
+] as const;
+
+const MCP_SETUP_PROMPT = "Set up Atlassian MCP for this agent using the official setup guide at https://support.atlassian.com/atlassian-ai-gateway/docs/get-started-with-the-atlassian-remote-mcp-server/ and the MCP server URL https://mcp.atlassian.com/v2/mcp. Then start the Atlassian MCP authentication flow so I can sign in.\n\nAfter setup, review Jira work item R1S-9: Instrument cluster night-mode legibility and show me the next update before posting.";
+
 export default function AgentLanyardPage() {
 	const [perspectiveTilt, setPerspectiveTilt] = useState(true);
 	const [animateGrid, setAnimateGrid] = useState(false);
@@ -66,10 +73,25 @@ export default function AgentLanyardPage() {
 						</div>
 					))}
 				</div>
-				<section aria-label="Recommended variant" className="flex flex-col items-start gap-3">
+				<section aria-label="Recommended variants" className="flex flex-col gap-3">
 					<h2 className="text-base font-medium text-text">Recommended</h2>
 					<p className="text-sm text-text-subtle">Illustrative demo reason based on the catalog description. No personalized evidence, measured performance or ranking is represented.</p>
-					<AgentLanyard variant="recommended" agent={AGENT_LANYARD_AGENTS[0]} recommendationReason="Claude can help with code suggestions and reviews." perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} />
+					<div className="flex flex-wrap items-start gap-4">
+						{RECOMMENDATION_EXAMPLES.map(({ appearance, label }) => (
+							<figure key={appearance} className="flex max-w-full flex-col gap-2">
+								<figcaption className="text-xs font-medium text-text-subtle">{label}</figcaption>
+								<AgentLanyard
+									variant="recommended" recommendationAppearance={appearance} agent={AGENT_LANYARD_AGENTS[0]}
+									recommendationReason="Claude can help with code suggestions and reviews."
+									perspectiveTilt={perspectiveTilt} animateGrid={animateGrid}
+								/>
+							</figure>
+						))}
+					</div>
+				</section>
+				<section aria-label="Atlassian MCP setup" className="flex flex-col gap-3">
+					<h2 className="text-base font-medium text-text">Atlassian MCP setup</h2>
+					<AgentLanyard variant="mcp-setup" agent={AGENT_LANYARD_AGENTS[0]} invoker={{ name: "Mia McDougall", avatarSrc: "/avatar-human/mia-mcdougall.png" }} setupPrompt={MCP_SETUP_PROMPT} />
 				</section>
 				<p role="status" className="min-h-5 text-sm text-text-subtle">{feedback}</p>
 			</div>

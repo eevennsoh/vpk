@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LANYARD_DETAIL: ComponentDetail = {
-	description: "An agent badge card with a dotted grid backdrop, verified identity, optional actions, and independently configurable hover tilt and grid waves. The recommended variant adds a caller-supplied explanation below a perforated seam.",
+	description: "An agent badge card with a dotted grid backdrop, verified identity, optional actions, and independently configurable hover tilt and grid waves. The recommended variant adds a caller-supplied explanation in a neutral chin or below a perforated seam.",
 	importStatement: `import { AgentLanyard, AGENT_LANYARD_AGENTS, AGENT_LANYARD_TEMPLATES } from "@/components/blocks/agent-lanyard";`,
 	usage: `import { AgentLanyard, AGENT_LANYARD_AGENTS, AGENT_LANYARD_TEMPLATES } from "@/components/blocks/agent-lanyard";
 
@@ -26,9 +26,17 @@ export const AGENT_LANYARD_DETAIL: ComponentDetail = {
 {/* Illustrative demo copy based on the catalog role, not a ranking or personalized evidence. */}
 <AgentLanyard
 	variant="recommended"
+	recommendationAppearance="chin"
 	agent={AGENT_LANYARD_AGENTS[0]}
 	recommendationReason="Claude can help with code suggestions and reviews."
 	perspectiveTilt={false}
+/>
+
+<AgentLanyard
+	variant="mcp-setup"
+	agent={AGENT_LANYARD_AGENTS[0]}
+	invoker={{ name: "Mia McDougall", avatarSrc: "/avatar-human/mia-mcdougall.png" }}
+	setupPrompt={prompt}
 />`,
 	demoLayout: { previewContentWidth: "full", examplesContentWidth: "full", previewHeight: "fit" },
 	examples: [
@@ -46,15 +54,18 @@ export const AGENT_LANYARD_DETAIL: ComponentDetail = {
 		],
 	}, {
 		name: "AgentLanyardHoverContent",
-		description: "A transparent, 252px hover popup for the lanyard. Import alongside the shared HoverCard and HoverCardTrigger. Match variant=\"recommended\" to the recommended card so its transparent notches and shaped shadow remain visible.",
+		description: "A transparent, 252px hover popup for the lanyard. Import alongside the shared HoverCard and HoverCardTrigger. Match variant=\"recommended\" to the recommended card so the card supplies its own elevation.",
 		props: [
-			{ name: "variant", type: '"agent" | "recommended"', default: '"agent"', description: "Recommended cards use a shaped shadow matched to overlay elevation; this mode removes the rectangular popup shadow. Other positioning and hover-card props pass through." },
+			{ name: "variant", type: '"agent" | "recommended"', default: '"agent"', description: "Recommended cards supply their own shadow. Other positioning and hover-card props pass through." },
 		],
 	}],
 	adsLinks: [{ label: "Source prototype", url: "https://bitbucket.org/atlassian/prototyping/branch/studio/main/agent-lifecycle" }],
 	props: [
-		{ name: "variant", type: '"agent" | "template" | "recommended"', default: '"agent"', description: "Agent cards show chat/connect actions; template cards show an outlined avatar and TWG Appstack. Recommended cards retain the description and add a borderless perforated explanation with no action/menu controls." },
-		{ name: "agent", type: "AgentLanyardAgent", description: "Required for agent and recommended variants. Identity, complete badge artwork, description, verification, action kind, and decorative accent color." },
+		{ name: "variant", type: '"agent" | "template" | "recommended" | "mcp-setup"', default: '"agent"', description: "Agent cards show chat/connect actions; template cards show an outlined avatar and TWG Appstack. Recommended cards add an explanation. MCP setup cards show the invoker and a scrollable, copyable prompt." },
+		{ name: "recommendationAppearance", type: '"perforated" | "chin"', default: '"perforated"', description: "Recommended variant only. Use chin to show the explanation on a neutral panel beneath the raised card." },
+		{ name: "agent", type: "AgentLanyardAgent", description: "Required for agent, recommended, and MCP setup variants. Identity, complete badge artwork, description, verification, action kind, and decorative accent color." },
+		{ name: "invoker", type: "{ name: string; avatarSrc?: string }", description: "Required for the MCP setup variant. Person who invoked the agent, with an optional avatar image." },
+		{ name: "setupPrompt", type: "string", description: "Required for the MCP setup variant. Full prompt displayed in the scrollable panel and copied to the clipboard." },
 		{ name: "recommendationReason", type: "string", description: "Required and non-empty with variant=\"recommended\". Caller-supplied plain text under Why recommended; the component does not infer evidence or rank agents. Action/menu callbacks, custom footers, hiding the description and overriding the avatar are excluded from AgentLanyardRecommendedProps." },
 		{ name: "template", type: "AgentLanyardTemplate", description: "Required with variant=\"template\". Name, description, template icon artwork, and connected app sources." },
 		{ name: "perspectiveTilt", type: "boolean", default: "true", description: "Enables the reference perspective tilt on hover. Disabled under reduced motion." },

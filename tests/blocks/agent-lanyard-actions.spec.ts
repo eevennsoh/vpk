@@ -22,9 +22,9 @@ test("third-party session lanyards show a centered, legible brand mark", async (
 
 test("avatar is centered below the lanyard hole", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/agent-lanyard"));
-	// The preview shows Claude as an agent card and as a recommended card; both share the cover.
+	// Claude appears in the agent card, both recommendations, and the MCP setup card.
 	const cards = page.locator('[data-agent-id="claude"]');
-	await expect(cards).toHaveCount(2);
+	await expect(cards).toHaveCount(4);
 	for (const card of await cards.all()) {
 		const variant = await card.getAttribute("data-variant");
 		const cover = await card.locator('[data-slot="agent-lanyard-cutout"]').locator("..").boundingBox();
@@ -36,11 +36,30 @@ test("avatar is centered below the lanyard hole", { tag: "@smoke" }, async ({ pa
 	}
 });
 
+test("the MCP setup prompt wraps its URLs, scrolls vertically, and confirms copy", async ({ context, page }) => {
+	await context.grantPermissions(["clipboard-write"], { origin: new URL(appUrl("/")).origin });
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto(appUrl("/components/blocks/agent-lanyard"));
+	await page.getByRole("button", { name: "Close sidebar", exact: true }).click();
+	const setup = page.getByRole("region", { name: "Atlassian MCP setup", exact: true });
+	const prompt = setup.locator("pre");
+	await expect(prompt).toBeVisible();
+	await expect.poll(() => prompt.evaluate((element) => ({
+		horizontalOverflow: element.scrollWidth - element.clientWidth,
+		verticalOverflow: element.scrollHeight > element.clientHeight,
+	}))).toEqual({ horizontalOverflow: 0, verticalOverflow: true });
+	await expect(prompt).toHaveCSS("overflow-x", "hidden");
+	await prompt.press("End");
+	await expect.poll(() => prompt.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await setup.getByRole("button", { name: "Copy setup prompt" }).click();
+	await expect(page.locator('[data-slot="tooltip-content"]').filter({ hasText: /^Prompt copied$/u })).toBeVisible();
+});
+
 test("card selection and built-in actions remain independently clickable", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/agent-lanyard"));
-	const card = page.locator('[data-agent-id="claude"]');
+	const card = page.locator('[data-agent-id="claude"][data-variant="agent"]');
 	await card.getByRole("button", { name: "Chat with Claude" }).click({ timeout: 5000 });
-	await expect(page.getByRole("status")).toHaveText("Selected: Chat with Claude");
+	await expect(page.locator('[data-slot="agent-lanyard-demo"]').getByRole("status")).toHaveText("Selected: Chat with Claude");
 	await card.getByRole("button", { name: "More actions for Claude" }).click();
 	await expect(page.getByRole("menuitem", { name: "View profile" })).toBeVisible();
 	await page.keyboard.press("Escape");
