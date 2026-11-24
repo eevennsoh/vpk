@@ -72,7 +72,7 @@ export function SuggestionsStatusIcon({ state }: Readonly<{ state: Phase }>) {
 	return (
 		<svg
 			aria-hidden="true"
-			className={cn("block size-4 overflow-visible transition-colors duration-slow ease-out", state === "loading" ? "text-icon-brand" : null)}
+			className={cn("block size-4 overflow-visible transition-colors duration-slow ease-out", state === "loading" ? "text-icon-subtlest" : null)}
 			data-state={state}
 			fill="none"
 			viewBox="0 0 16 16"

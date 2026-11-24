@@ -161,17 +161,7 @@ export function FloatingRovoButtonPersistentBarRail({
 											exit={indicatorInFlight ? { opacity: 0, transition: { duration: 0 } } : { scale: 0, opacity: 0, transition: { duration: motionDuration.fast, ease: motionEase.in } }}
 											initial={dotPops && !shouldReduceMotion ? { scale: 0, opacity: 0 } : false}
 											style={{ willChange: "transform, opacity" }}
-										>
-											{dotPops && !shouldReduceMotion ? (
-												// One soft ping as the dot lands, so the eye finds it.
-												<motion.span
-													animate={{ scale: 2.8, opacity: 0, transition: { duration: motionDuration.slowest, ease: motionEase.out, delay: 0.12 } }}
-													className="absolute inset-0 rounded-full bg-info"
-													initial={{ scale: 1, opacity: 0.55 }}
-													style={{ willChange: "transform, opacity" }}
-												/>
-											) : null}
-										</motion.span>
+										/>
 									) : null}
 								</AnimatePresence>
 							</span>

@@ -48,7 +48,9 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const count = feed.review.pending.length;
 	const label = `${count} ${count === 1 ? "suggestion" : "suggestions"}`;
 	const [intro, setIntro] = useState<IntroPhase>(analyzeOnMount ? "analyzing" : "ready");
-	const hasNotification = count > 0 && intro === "ready";
+	// The dot means "unseen": opening the panel clears it, even without deciding, until a later run finds more.
+	const [seenRuns, setSeenRuns] = useState(0);
+	const hasNotification = count > 0 && intro === "ready" && feed.runs.length > seenRuns;
 	useEffect(() => {
 		if (intro === "ready") return undefined;
 		const timer = window.setTimeout(() => setIntro(intro === "analyzing" ? "resolving" : "ready"), intro === "analyzing" ? SUGGESTION_ANALYSIS_MS : SUGGESTIONS_ICON_RESOLVE_MS);
@@ -94,6 +96,8 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	}, []);
 	const close = () => {
 		feed.acknowledgeNew();
+		// Anything a check found while the panel was open has been seen too.
+		setSeenRuns(feed.runs.length);
 		// Every close, including the caught-up state, flies the panel back into the button it opened from.
 		if (!reduceMotion) setPanelStage({ phase: "closing" });
 		else finishClose();
@@ -104,6 +108,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	 */
 	const reopen = (chatBounds?: DOMRect): true => {
 		feed.onOpenReview?.(panelId);
+		setSeenRuns(feed.runs.length);
 		const surface = findFloatingRovoSurface(portalContainer ?? document, REVIEW_ACTION_ID);
 		const actionOrigin = surface ? measureToolbarActionOrigin(surface, REVIEW_ACTION_ID, portalContainer ? "container" : "viewport", false) : null;
 		const morphFromChat = Boolean(actionOrigin && chatBounds && !reduceMotion);
@@ -117,6 +122,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	useImperativeHandle(ref, () => ({ reopen }));
 	const openReview = () => {
 		setIntro("ready");
+		setSeenRuns(feed.runs.length);
 		setOpenOrigin(null);
 		setOpenFromIndicator(true);
 		if (count > 0) show();
