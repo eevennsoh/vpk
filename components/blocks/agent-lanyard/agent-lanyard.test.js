@@ -269,6 +269,29 @@ test("recommended variant preserves the static grid and respects reduced motion 
 	}
 });
 
+test("inward tilt mirrors toward the trigger side of the hover-card popup", async () => {
+	const source = `
+		import { AgentLanyard, AGENT_LANYARD_AGENTS } from "@/components/blocks/agent-lanyard";
+		export default function Sides() {
+			return <>
+				{["right", "left"].map((side) => <div key={side} data-side={side}><AgentLanyard agent={{ ...AGENT_LANYARD_AGENTS[0], id: side }} perspectiveTilt tiltInward footer={null} /></div>)}
+				<AgentLanyard agent={{ ...AGENT_LANYARD_AGENTS[0], id: "catalog" }} perspectiveTilt footer={null} />
+			</>;
+		}
+	`;
+	const view = await renderComponent({ source, mocks: { "@/hooks/use-media-query": "export const useMediaQuery = () => false;" } });
+	try {
+		const direction = async (id) => {
+			const card = view.container.querySelector(`article[data-agent-id="${id}"]`);
+			await React.act(async () => { card.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
+			return card.dataset.tiltDirection;
+		};
+		assert.equal(await direction("right"), "-1");
+		assert.equal(await direction("left"), "1");
+		assert.equal(await direction("catalog"), "1");
+	} finally { await view.unmount(); }
+});
+
 const gallerySource = `
 	import AgentLanyardPage from "@/components/blocks/agent-lanyard/page";
 	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
