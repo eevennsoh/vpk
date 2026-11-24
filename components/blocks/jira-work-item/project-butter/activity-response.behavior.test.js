@@ -83,6 +83,28 @@ test("a session start presents the long-form agent session card in its thread", 
 	assert.equal(thread.querySelector("[data-jira-activity-agent-mention]") === null, true, "the invoker no longer at-mentions the agent");
 });
 
+test("owned session replies show private visibility", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			const base = { title: "Review", agent: { id: "claude", name: "Claude" }, host: "cloud", state: "complete", timeLabel: "Just now", message: "Finished", invokedBy: { name: "Venn" } };
+			const sessions = [{ ...base, id: "owned", role: "owner" }, { ...base, id: "viewed", role: "viewer" }];
+			export default function Probe() {
+				const content = useProjectButterContent("filled", undefined, sessions);
+				return <ThemeWrapper><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={sessions} sidePanel={false} /></ThemeWrapper>;
+			}`,
+	});
+	for (const [id, visible] of [["owned", true], ["viewed", false]]) {
+		const thread = view.container.querySelector(`[data-jira-activity-entry-id="invocation-${id}"]`);
+		const header = thread.querySelector('[data-slot="jira-activity-comment-header"]');
+		const reply = thread.querySelector('[aria-label="Replies"] > div');
+		assert.equal(header.textContent.includes("Only visible to you"), false);
+		assert.equal(reply.textContent.includes("Only visible to you"), visible);
+	}
+});
+
 test("a running session card opens chat with the keyboard", async () => {
 	const opened = [];
 	const view = await renderActivity({ onOpen: (id) => opened.push(id), owner: true });
@@ -312,7 +334,7 @@ test("owned session replies stay private until the agent response is added publi
 	assert.equal(disclosure.getAttribute("aria-expanded"), "true");
 	assert.equal(humanReply.textContent.includes("Only visible to you"), false);
 	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
-	assert.equal(view.queryByRole("button", { name: "Add reply" }) === null, true);
+	assert.equal([...humanReply.querySelectorAll("button")].some((button) => button.textContent === "Add reply"), false);
 	assert.equal(thread.textContent.includes("I've received your request"), true);
 	const publicReply = [...thread.querySelectorAll('[aria-label="Replies"] > div')].at(-1);
 	assert.equal(thread.querySelectorAll('[aria-label="Replies"] > div').length, replyCount);

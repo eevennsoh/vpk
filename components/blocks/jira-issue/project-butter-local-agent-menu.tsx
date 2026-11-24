@@ -78,6 +78,14 @@ export function ProjectButterLocalAgentMenu({
 		input.current?.focus();
 	};
 	const addWorkspace = async () => {
+		if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") {
+			const path = "/demo/payments-sdk";
+			focusCreatedWorkspace.current = true;
+			save({ paths: paths.includes(path) ? paths : [...paths, path], selected: path });
+			setDraft(null);
+			setOpen(true);
+			return;
+		}
 		if (!["localhost", "127.0.0.1"].includes(window.location.hostname) && !window.location.hostname.endsWith(".localhost")) {
 			setFolderError("Folder selection is available in the local macOS preview.");
 			return;
@@ -155,7 +163,7 @@ export function ProjectButterLocalAgentMenu({
 									buttons[(current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
 								}
 							}}>
-							<Button data-menu-row="" variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" disabled={selecting} onClick={() => { void addWorkspace(); }}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<AddIcon label="" size="small" />} />{selecting ? "Choosing workspace…" : "Add workspace"}</Button>
+							<Button data-menu-row="" variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" disabled={selecting} onClick={() => { void addWorkspace(); }}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<AddIcon label="" size="small" />} />{selecting ? "Choosing workspace…" : process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" ? "Add demo workspace" : "Add workspace"}</Button>
 							{!query ? <Button data-menu-row="" aria-current={selected === null ? "true" : undefined} variant="ghost" className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal" onClick={() => choose(null)}><Icon aria-hidden className="size-3 shrink-0 [&_svg]:size-3!" render={<FolderClosedIcon label="" size="small" />} />No workspace{selected === null ? <Icon aria-hidden className="ml-auto shrink-0 text-icon-subtle" render={<CheckMarkIcon label="" size="small" />} /> : null}</Button> : null}
 							{filtered.map((path) => (
 								<div data-menu-row="" className="group/workspace-row flex min-w-0 items-center rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" key={path}>

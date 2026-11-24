@@ -71,8 +71,12 @@ requests before claiming compatibility.
 
 Do not strip working features, inject mock APIs, put gateway credentials in
 browser code, or silently turn a backend-dependent project into a static demo.
-Creating a static-only variant requires the user's agreement. A successful
-export is not proof that the hosted experience works.
+If the user authorizes scripted behavior, follow [the scripted static demo
+workflow](references/scripted-demo.md): audit all reachable interactions, adapt
+the source at its behavior owner, and verify the hosted interaction matrix.
+The user's existing agreement applies; do not ask again. Otherwise explain the
+runtime gap and obtain agreement before replacing backend behavior with scripts.
+A successful export is not proof that the hosted experience works.
 
 ## Build for the hosted prefix
 
@@ -111,12 +115,15 @@ replace Next's router with the Vite guide's HashRouter example.
    the read-only commands in the reference. If setup is needed, resolve the
    namespace's owner and publishing group first. Keep existing grants.
 2. Record the selected source revision and dirty state, destination prefix,
-   export inventory, and archive checksum under ignored `output/statlas/`.
+   export inventory, archive checksum, and any uncommitted or extraction-only
+   adaptations under ignored `output/statlas/`. Include hashes of changed source
+   inputs; a clean baseline revision alone does not identify an adapted build.
    Review public content and bundled values. Package only the reviewed static
    export, never the checkout, `.next/`, credentials, or local reports.
-3. Build a fresh ZIP from inside the export directory. It must contain
-   `index.html`, `_next/...`, and other files at the archive root, without an
-   extra `out/` or `dist/` wrapper. Inspect its file list before uploading.
+3. Build fresh ZIPs from inside the export directory, with export-relative
+   paths and no extra `out/` or `dist/` wrapper. Include the full export or, for
+   a verified delta update, account for every omitted file against the prior
+   release inventory. Inspect the archive file lists before uploading.
 4. State the exact namespace, path, entry URL, and viewer access. An explicit
    hosting/update request with a resolved destination authorizes that upload;
    a request for research or a local package does not. Continue without another
@@ -124,8 +131,9 @@ replace Next's router with the Vite guide's HashRouter example.
 5. Upload with `atlas statlas post` to unpack the ZIP. If ZIP upload hangs or
    fails, inspect Kerberos and remote files before retrying. Use individual
    `put` uploads as the documented fallback, uploading assets/navigation
-   payloads before HTML entry files. An interrupted upload may be partial;
-   Statlas uploads are not assumed atomic.
+   payloads before HTML entry files. For delta updates, compare against a
+   verified complete prior inventory and retain old hashed assets. An interrupted
+   upload may be partial; Statlas uploads are not assumed atomic.
 
 Do not grant additional groups, delete namespaces, or prune remote files as
 part of publishing. For an explicitly requested deletion, follow Statlas's
@@ -141,6 +149,9 @@ actual hosted URL in a fresh browser, including nested-route reloads, changed
 interactions, console/network errors, and an accessibility check. Use the
 `agent-browser` skill first and keep proof under `output/agent-browser/`.
 If the user chooses manual verification, respect that and label it unverified.
+
+For scripted demos, report the interaction matrix, state lifetime, and any
+unverified or unscripted paths. Distinguish demo samples from real integrations.
 
 Use the working entry URL, including `index.html` when necessary. The guide
 does not establish directory-index, rewrite, cache-purge, or atomic-release

@@ -18,14 +18,16 @@ import { BUTTER_DEFAULT_REPORTER } from "../data/current-user";
 import { BUTTER_AI_SUGGESTION_GREETING, BUTTER_AI_SUGGESTION_ITEM, BUTTER_AI_SUGGESTION_STARTER_ID } from "../data/gallery-items";
 import { workItemChatSnapshot } from "../data/merchant-journey";
 import { agentAddedSuggestion } from "../lib/agent-added-suggestion";
+import { useButterScriptedCreation } from "./butter-scripted-creation";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
 type ButterGalleryWorkItemProps = Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions?: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean; showAiSuggestions?: boolean; portalContainer?: HTMLElement }>;
 
 export function ButterGalleryWorkItem(props: ButterGalleryWorkItemProps) {
+	const scriptedCreation = useButterScriptedCreation();
 	return (
-		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={scriptedCreation?.agents.length ? [...BUTTER_CHAT_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_CHAT_AGENT_PROFILES}>
 			<ButterGalleryWorkItemContent {...props} />
 		</RovoChatProvider>
 	);
@@ -33,8 +35,10 @@ export function ButterGalleryWorkItem(props: ButterGalleryWorkItemProps) {
 
 function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView = true, showAiSuggestions = false, portalContainer }: ButterGalleryWorkItemProps) {
 	const router = useRouter();
+	const scriptedCreation = useButterScriptedCreation();
 	const suggestionPanelRef = useRef<ComponentRef<typeof JiraFloatingSuggestions>>(null);
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
+	const createAgent = () => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setAgentsDirectoryOpen(false); scriptedCreation.open("agent"); } else router.push("/studio"); };
 	const [added, setAdded] = useState<{ session: ProjectButterSessionItem; workItem: { code: string; summary: string } } | null>(null);
 	const [wasOpen, setWasOpen] = useState(open);
 	if (wasOpen !== open) {
@@ -71,6 +75,7 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
 					<ProjectButterJiraWorkItem
 						cloudAgentSelector
+						extraAgents={scriptedCreation?.agents}
 						compact={compact}
 						currentUser={BUTTER_DEFAULT_REPORTER}
 						defaultAssignee={BUTTER_DEFAULT_REPORTER}
@@ -82,7 +87,7 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 						onAgentAdded={(session, workItem) => setAdded({ session, workItem })}
 						onBrowseAgents={() => setAgentsDirectoryOpen(true)}
 						onClose={() => { setAdded(null); onClose(); }}
-						onCreateAgent={() => router.push("/studio")}
+						onCreateAgent={createAgent}
 						onOpenCloudSession={openCloudSession}
 						open={open}
 						renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions analyzeOnMount feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
@@ -97,7 +102,7 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} contained={Boolean(portalContainer)} portalContainer={portalContainer} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} greeting={showAiSuggestions ? { ...BUTTER_AI_SUGGESTION_GREETING, onSuggestionSelect: ({ id }) => id === BUTTER_AI_SUGGESTION_STARTER_ID && suggestionPanelRef.current?.reopen() === true } : undefined} isSwitchingSession={isSwitchingSession} launcher={showAiSuggestions ? "hidden" : "auto"} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} suggestion={showAiSuggestions ? null : notification} /> : null}
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
-					<AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={() => router.push("/studio")} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />
+					<AgentsDirectoryDialog agents={scriptedCreation?.agents.length ? [...BUTTER_DIRECTORY_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={createAgent} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />
 				</Suspense>
 			</MountOnFirstUse>
 		</>

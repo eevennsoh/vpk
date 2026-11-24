@@ -270,6 +270,7 @@ interface RovoChatProviderProps {
 	autoSelectAgentId?: string;
 	children: ReactNode;
 	defaultPromptOptions?: SendPromptOptions;
+	localScriptedTurns?: boolean;
 	portIndex?: number;
 }
 
@@ -284,6 +285,7 @@ export function RovoChatProvider({
 	autoSelectAgentId,
 	children,
 	defaultPromptOptions,
+	localScriptedTurns = process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true",
 	portIndex,
 }: Readonly<RovoChatProviderProps>) {
 	const [selectedAgentId, setSelectedAgentId] = useState(ROVO_AGENT_ID);
@@ -318,6 +320,7 @@ export function RovoChatProvider({
 	const [threads, setThreads] = useState<RovoAppThread[]>([]);
 	const [threadsLoaded, setThreadsLoaded] = useState(false);
 	const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+	const scriptedTurnRef = useRef<((turn: RovoLocalTurn) => Promise<boolean>) | null>(null);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 	const [sessionAgentEntries, setSessionAgentEntries] = useState<SessionAgentEntry[]>([]);
 	const [sessionAgentSaveState, dispatchSessionAgentSave] = useReducer(
@@ -962,6 +965,10 @@ export function RovoChatProvider({
 	);
 
 	const refreshThreads = useCallback(async (transitionToken?: RovoChatTransitionToken) => {
+		if (localScriptedTurns) {
+			setThreadsLoaded(true);
+			return;
+		}
 		try {
 			const nextThreads = await listRovoAppThreads(COMPACT_HISTORY_LIMIT);
 			if (transitionToken && !isCurrentTransition(transitionToken)) {
@@ -976,7 +983,7 @@ export function RovoChatProvider({
 			console.warn("[RovoChatProvider] Failed to refresh Rovo thread history:", error);
 			setThreadsLoaded(true);
 		}
-	}, [isCurrentTransition]);
+	}, [isCurrentTransition, localScriptedTurns]);
 
 	useEffect(() => {
 		const wasStreaming = wasStreamingRef.current;
@@ -1197,6 +1204,17 @@ export function RovoChatProvider({
 			if (!trimmedPrompt && promptFiles.length === 0) {
 				return;
 			}
+			if (localScriptedTurns) {
+				const applyScriptedTurn = scriptedTurnRef.current;
+				if (!applyScriptedTurn) throw new Error("Scripted chat is not ready");
+				await applyScriptedTurn({
+					promptText: trimmedPrompt,
+					files: promptFiles,
+					userMetadata: options?.messageMetadata,
+					assistantParts: [{ type: "text", text: "Thanks, I’ll continue with that direction in this demo.", state: "done" }],
+				});
+				return;
+			}
 			if (transcriptAbortRef.current) {
 				transcriptAbortRef.current.abort();
 			}
@@ -1230,7 +1248,7 @@ export function RovoChatProvider({
 				},
 			});
 		},
-		[defaultPromptOptions, dispatchTurn, readTurnEnvironment, selectedAgent, setMessages, startSubmitPending, turnRef]
+		[defaultPromptOptions, dispatchTurn, localScriptedTurns, readTurnEnvironment, selectedAgent, setMessages, startSubmitPending, turnRef]
 	);
 
 	const acceptPlanReview = useCallback(
@@ -1307,6 +1325,21 @@ export function RovoChatProvider({
 			if (!message || message.role !== "user") {
 				return;
 			}
+			if (localScriptedTurns) {
+				const applyScriptedTurn = scriptedTurnRef.current;
+				if (!applyScriptedTurn) throw new Error("Scripted chat is not ready");
+				const priorMessages = rawUiMessages.slice(0, rawUiMessages.indexOf(message));
+				rawUiMessagesRef.current = priorMessages;
+				setMessages(priorMessages);
+				setEditingMessageId(null);
+				await applyScriptedTurn({
+					promptText: trimmedText,
+					files: message.parts.filter((part): part is FileUIPart => part.type === "file"),
+					userMetadata: message.metadata,
+					assistantParts: [{ type: "text", text: "Thanks, I’ll continue with that direction in this demo.", state: "done" }],
+				});
+				return;
+			}
 
 			if (transcriptAbortRef.current) {
 				transcriptAbortRef.current.abort();
@@ -1370,10 +1403,13 @@ export function RovoChatProvider({
 			defaultPromptOptions,
 			dispatchTurn,
 			ensureCompactThread,
+			localScriptedTurns,
 			queueTick,
 			rawUiMessages,
+			rawUiMessagesRef,
 			refreshThreads,
 			selectedAgent,
+			setMessages,
 			sendWithPartStateRecovery,
 			startSubmitPending,
 			stop,
@@ -1784,6 +1820,7 @@ export function RovoChatProvider({
 	}, [commitSessionAgentEntries, resetChat, setSelectedAgentIdState]);
 
 	const transcriptOwner = useMemo<RovoChatTranscriptOwner>(() => ({
+		localOnly: localScriptedTurns,
 		begin: (kind) => {
 			const token = beginTransition(kind);
 			const controller = new AbortController();
@@ -1817,9 +1854,13 @@ export function RovoChatProvider({
 			setMessages(sanitized);
 		},
 		selectAgent: (agentId) => selectAgent(agentId, { preserveCurrentThread: true }),
-	}), [beginTransition, clearChatErrors, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent]);
+	}), [beginTransition, clearChatErrors, isCurrentTransition, finishTransition, queueTick, cancelCurrentStream, ensureThreadForLocalTurn, localScriptedTurns, rawUiMessagesRef, resetTranscriptPending, setMessages, selectAgent]);
 	const transcript = useRovoChatTranscript(transcriptOwner);
 	const { activateSession, applyLocalTurn } = transcript;
+	useLayoutEffect(() => {
+		scriptedTurnRef.current = applyLocalTurn;
+		return () => { scriptedTurnRef.current = null; };
+	}, [applyLocalTurn]);
 
 	const queueCount = queuedPrompts.length;
 	const hasInFlightTurn =

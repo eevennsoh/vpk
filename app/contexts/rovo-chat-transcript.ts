@@ -39,6 +39,7 @@ export interface RovoLocalTurn {
 }
 
 export interface RovoChatTranscriptOwner {
+	localOnly?: boolean;
 	begin: (kind: RovoChatTransitionKind) => { token: RovoChatTransitionToken; signal: AbortSignal };
 	isCurrent: (token: RovoChatTransitionToken) => boolean;
 	finish: (token: RovoChatTransitionToken) => void;
@@ -109,7 +110,9 @@ export function createRovoChatTranscript(initialOwner: RovoChatTranscriptOwner) 
 				await owner.stop();
 				if (!active()) return false;
 				owner.resetPending();
-				await waitForThreadCreation(owner.ensureThread(turn.promptText || turn.files?.[0]?.filename || "New chat", turnSignal), turnSignal);
+				if (!owner.localOnly) {
+					await waitForThreadCreation(owner.ensureThread(turn.promptText || turn.files?.[0]?.filename || "New chat", turnSignal), turnSignal);
+				}
 				if (!active()) return false;
 				const base = turn.history === "replace" ? [] : owner.readMessages();
 				const createdAt = new Date().toISOString();

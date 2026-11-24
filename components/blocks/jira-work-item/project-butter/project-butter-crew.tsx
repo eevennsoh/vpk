@@ -7,6 +7,7 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import { InlineAgentSelector } from "@/components/blocks/agent-selector";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { Icon } from "@/components/ui/icon";
 import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
@@ -72,6 +73,7 @@ function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly
 
 type ProjectButterCrewProps = Readonly<{
 	assignee?: WorkItemPerson;
+	extraAgents?: readonly AgentSelectorAgent[];
 	cloudAgentSelector?: boolean;
 	currentUser?: WorkItemPerson;
 	field?: boolean;
@@ -91,7 +93,7 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 	return props.field && !props.fieldSessionMenu ? <ProjectButterInvocationProvider enabled><ProjectButterCrewContent {...props} /></ProjectButterInvocationProvider> : <ProjectButterCrewContent {...props} />;
 }
 
-function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
+function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const teammateNamesId = useId();
 	const [open, setOpen] = useState(false);
 	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
@@ -117,7 +119,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 		return true;
 	});
 	const agentSessions = showSessionStatus ? statusPresentation.cohort : distinctAgentSessions;
-	const pickerAgents = [...BUTTER_PICKER_AGENTS];
+	const pickerAgents = [...BUTTER_PICKER_AGENTS, ...extraAgents];
 	for (const { agent } of sessions) {
 		const id = agent.id ?? agent.name;
 		if (!pickerAgents.some((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase())) pickerAgents.push({ ...agent, id: pickerAgents.some((candidate) => candidate.id === id) ? `session-agent:${id}` : id, byline: "On this work item" });
@@ -245,7 +247,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 				</AvatarGroup>
 			</PopoverTrigger>}
 			<PopoverContent align={field ? "start" : "end"} aria-label={fieldSessionMenu ? "Agent assignment" : picking ? "Add agent" : "Agent sessions"} className={cn(field && !fieldSessionMenu ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", !(field && !fieldSessionMenu) && dropdownStyles.surface)} finalFocus={() => !selectedAgentRef.current} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" side={fieldSessionMenu ? "bottom" : undefined} sideOffset={field ? 8 : undefined}>
-				{fieldSessionMenu ? <AgentSessionsMenu items={orderedSessions} teammateSessionsPresentation={viewerOnly ? "count" : "expanded"} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} /> : field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
+				{fieldSessionMenu ? <AgentSessionsMenu items={orderedSessions} teammateSessionsPresentation={viewerOnly ? "count" : "expanded"} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} /> : field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker extraAgents={extraAgents} onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
 					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}

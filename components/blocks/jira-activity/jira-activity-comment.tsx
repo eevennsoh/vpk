@@ -230,6 +230,10 @@ export function ThreadConnector({ continued, centered = false, summary = false }
 	</>;
 }
 
+function PrivateVisibilityMetadata() {
+	return <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-normal text-text-subtlest"><span aria-hidden>·</span>Only visible to you</span>;
+}
+
 function ThreadReplyCard({
 	reply,
 	attributedBy,
@@ -297,7 +301,7 @@ function ThreadReplyCard({
 	}
 
 	const reactions = toggledReactions.reduce((current, emoji) => toggleActivityReaction(current, emoji, currentUser.id), reply.reactions ?? []);
-	const reactionSummaries = reactions.map((reaction) => ({
+const reactionSummaries = reactions.map((reaction) => ({
 		emoji: reaction.emoji,
 		count: reaction.actorIds.length,
 		reacted: reaction.actorIds.includes(currentUser.id),
@@ -348,7 +352,7 @@ function ThreadReplyCard({
 				}
 				timestamp={reply.timestamp}
 				timestampContent={timestampContent}
-				timestampPrefix={reply.visibility === "private" ? <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-normal text-text-subtlest"><span aria-hidden>·</span>Only visible to you</span> : undefined}
+				timestampPrefix={reply.visibility === "private" ? <PrivateVisibilityMetadata /> : undefined}
 				timestampMeta={
 					showResolvedStatus ? <Lozenge variant="success">Resolved</Lozenge> : undefined
 				}

@@ -14,8 +14,6 @@ import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/comp
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { Gallery } from "@/components/blocks/gallery";
 import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
-import { useRovoChat } from "@/app/contexts/context-rovo-chat";
-import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-inline-picker-context";
 import type {
@@ -34,6 +32,9 @@ import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/proje
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import { JiraInlineCreate } from "@/components/blocks/jira-inline-create";
+import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+import { WORK_ITEM_SKILLS } from "@/components/blocks/jira-work-item/lib/work-item-picker-options";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor/menus";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
 import {
@@ -50,6 +51,8 @@ import {
 
 import { HeaderLanyards } from "./components/header-lanyards";
 import { ButterWorkItemSurface, type ButterWorkItemHandle } from "./components/butter-work-item-surface";
+import { ButterSessionPromptObserver } from "./components/butter-session-prompt-observer";
+import { ButterScriptedCreationProvider, useButterScriptedCreation } from "./components/butter-scripted-creation";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
@@ -145,6 +148,11 @@ const BUTTER_SETTINGS_DESIGN_VARIANT_IDS = [
 const isButterLooseWorkResumable = () => true;
 
 export default function ButterPage(): React.ReactElement {
+	return <ButterScriptedCreationProvider><ButterPageContent /></ButterScriptedCreationProvider>;
+}
+
+function ButterPageContent(): React.ReactElement {
+	const scriptedCreation = useButterScriptedCreation();
 	const [selectedId, setSelectedId] = useState("e2e-journey");
 	const startGalleryLayoutTransition = useInstantLayoutTransition();
 	const selectGalleryItem = (id: string) => startGalleryLayoutTransition(() => flushSync(() => setSelectedId(id)));
@@ -298,27 +306,13 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={journeyActive || Boolean(standaloneView)} retain>
 				<div key={journeyResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">
-						<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
+						<RovoChatProvider agentProfiles={scriptedCreation?.agents.length ? [...BUTTER_CHAT_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_CHAT_AGENT_PROFILES}>
 					<ButterApp ref={journeyRef} onBoardCreateActiveChange={handleBoardCreateActiveChange} standaloneView={standaloneView} collapsedColumns={collapsedBoardColumns} onCollapsedColumnsChange={setCollapsedBoardColumns} phase={phase} pullRequestVisible={pullRequestVisible} setPhase={setPhase} onStartChecks={() => setChecksStarted(true)} journeySession={journeySession} setJourneySession={setJourneySession} journeyControls={<div data-merchant-journey-controls><div className="hidden lg:block"><MerchantJourneyControls {...controls} /></div><div className="lg:hidden"><MerchantJourneyCompactControls {...controls} /></div></div>} autoFixEnabled={autoFixEnabled} setAutoFixEnabled={setAutoFixEnabled} autoMergeEnabled={autoMergeEnabled} setAutoMergeEnabled={setAutoMergeEnabled} />
 						</RovoChatProvider>
 				</div>
 			</RetainedView>
 		</div>
 	);
-}
-
-function ButterSessionPromptObserver({ activeSessionId, isSwitchingSession, onPrompt }: Readonly<{
-	activeSessionId: string | null;
-	isSwitchingSession: boolean;
-	onPrompt: (sessionId: string, prompt: string) => void;
-}>) {
-	const { uiMessages } = useRovoChat();
-	useEffect(() => {
-		if (!activeSessionId || isSwitchingSession) return;
-		const firstPrompt = uiMessages.find((message) => message.role === "user");
-		if (firstPrompt) onPrompt(activeSessionId, getMessageText(firstPrompt));
-	}, [activeSessionId, isSwitchingSession, onPrompt, uiMessages]);
-	return null;
 }
 
 function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedColumns, onCollapsedColumnsChange, phase, pullRequestVisible, setPhase, onStartChecks, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
@@ -341,17 +335,20 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 }>): React.ReactElement {
 	const boardOnly = standaloneView !== undefined;
 	const router = useRouter();
+	const scriptedCreation = useButterScriptedCreation();
 	const { designVariants } = useDesignVariants();
 	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat, setSessionThinking } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillDirectoryOpen, setSkillDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
-	const createAgent = useCallback(() => router.push("/studio"), [router]);
+	const createAgent = useCallback(() => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setAgentsDirectoryOpen(false); scriptedCreation.open("agent"); } else router.push("/studio"); }, [router, scriptedCreation]);
+	const createSkill = useCallback(() => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setSkillDirectoryOpen(false); scriptedCreation.open("skill"); } else router.push("/skills"); }, [router, scriptedCreation]);
 	const workItemRef = useRef<ButterWorkItemHandle>(null);
 	const pendingWorkItemAssignment = useRef<Readonly<{ issueKey: string; session: AgentSessionItem; journey: boolean }> | null>(null);
 	const [agentAssignmentRequest, setAgentAssignmentRequest] = useState<Readonly<{ issueKey: string; session: AgentSessionItem }>>();
 	const [addedBoardAgent, setAddedBoardAgent] = useState<Readonly<{ agent: AgentSessionItem["agent"]; activity: JiraIssueAgentActivity; card: JiraKanbanCardData }> | null>(null);
-	const agentCatalog = useMemo(() => mergeJiraKanbanAgentCatalog(BUTTER_BOARD_AGENTS), []);
+	const boardAgents = useMemo(() => scriptedCreation?.agents.length ? [...BUTTER_BOARD_AGENTS, ...scriptedCreation.agents] : BUTTER_BOARD_AGENTS, [scriptedCreation?.agents]);
+	const agentCatalog = useMemo(() => mergeJiraKanbanAgentCatalog(boardAgents), [boardAgents]);
 	const openButterWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
 		pendingWorkItemAssignment.current = null;
 		setAgentAssignmentRequest(undefined);
@@ -372,7 +369,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		wacContent,
 	} = useButterContent();
 	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, queueUpdate, startAgentSession } = useButterAssignmentMove({
-		agents: BUTTER_BOARD_AGENTS,
+		agents: boardAgents,
 		boardColumns,
 		setBoardColumns,
 	});
@@ -411,7 +408,8 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		onBrowseAgents: browseAgents,
 		onBrowseSkills: () => setSkillDirectoryOpen(true),
 		onCreateAgent: createAgent,
-		onCreateSkill: () => router.push("/skills"),
+		onCreateSkill: createSkill,
+		...(scriptedCreation?.skills.length ? { skills: getMentionChildItems({ skill: [...WORK_ITEM_SKILLS, ...scriptedCreation.skills].map(mapSkillToMentionItem) }, "skill") } : {}),
 	};
 	// Team EU 26 keeps its page structure fixed: Board and List remain sibling
 	// tabs, untracked work remains an in-flow column, and standard kanban chrome
@@ -644,7 +642,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		onAssignedAgentIdsChange: onListAssignedAgentIdsChange,
 		onVisibleRowsChange,
 	} = useButterList({
-		agents: BUTTER_BOARD_AGENTS,
+		agents: boardAgents,
 		boardColumns,
 		contentMode,
 		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
@@ -823,7 +821,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 						}}
 						columnChrome="default"
 						columnSizing="content"
-						agents={BUTTER_BOARD_AGENTS}
+						agents={boardAgents}
 						ariaLabel={boardOnly ? "Payments SDK v2 Kanban board" : wacContent ? "Track the Checkout roadmap. Scroll horizontally to review all delivery statuses." : "Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."}
 						boardTitle={wacContent ? WAC_BOARD_TITLE : undefined}
 						boardColumns={boardColumns}
@@ -930,9 +928,9 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
 					<AgentsDirectoryDialog
-						agents={BUTTER_DIRECTORY_AGENT_PROFILES}
+						agents={scriptedCreation?.agents.length ? [...BUTTER_DIRECTORY_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_DIRECTORY_AGENT_PROFILES}
 						variant="standard-v2"
-						onCreateAgent={() => router.push("/studio")}
+						onCreateAgent={createAgent}
 						onOpenChange={setAgentsDirectoryOpen}
 						onSelectAgent={() => setAgentsDirectoryOpen(false)}
 						open={agentsDirectoryOpen}
@@ -941,14 +939,15 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			</MountOnFirstUse>
 			<MountOnFirstUse active={skillDirectoryOpen}>
 				<SkillDirectoryDialog
-					onCreateSkill={() => router.push("/skills")}
+					onCreateSkill={createSkill}
 					onOpenChange={setSkillDirectoryOpen}
 					open={skillDirectoryOpen}
-					skills={DEFAULT_SKILLS}
+					skills={scriptedCreation?.skills.length ? [...DEFAULT_SKILLS, ...scriptedCreation.skills] : DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>
 			<ButterWorkItemSurface
 				ref={workItemRef}
+				extraAgents={scriptedCreation?.agents}
 				suggestion={addedBoardAgent ? agentAddedSuggestion({ id: addedBoardAgent.activity.id, agent: addedBoardAgent.agent }, () => { handleViewChat(addedBoardAgent.activity, addedBoardAgent.card); setAddedBoardAgent(null); }, () => setAddedBoardAgent(null)) : null}
 				defaultReporter={wacContent ? WAC_DEFAULT_REPORTER : BUTTER_DEFAULT_REPORTER}
 				journeyPhase={!wacContent && (!boardOnly || phase !== "invoke") ? phase : undefined}

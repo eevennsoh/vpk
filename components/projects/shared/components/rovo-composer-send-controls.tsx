@@ -306,7 +306,7 @@ export function RovoComposerActionButton({
 	}, [clearRealtimeWaveformIntro, liveVoiceEnabled, onToggleRealtimeVoice, realtimeVoiceActive]);
 
 	const handleStartDictation = useCallback(() => {
-		setIsDictationOptimisticActive(true);
+		if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO !== "true") setIsDictationOptimisticActive(true);
 		onStartDictation?.();
 	}, [onStartDictation]);
 

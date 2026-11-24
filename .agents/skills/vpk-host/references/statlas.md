@@ -136,13 +136,18 @@ Then change to the archive's containing directory and use its basename:
 atlas statlas post \
   --file site-<release>.zip \
   --namespace <namespace> \
-  --subdirectory <project>/ \
+  --subdirectory <project> \
   --auth-group <group>
 ```
 
-`post` unpacks the ZIP, according to the September guide. Omit the
-`--subdirectory` option when publishing at namespace root. Include all
-exported files rather than only `index.html` and obvious JS/CSS assets.
+`post` unpacks the ZIP, according to the September guide. For a prefix, pass
+`--subdirectory <project>` without a trailing slash: current CLI help says a
+trailing slash appends the archive filename, and this was observed to create an
+unwanted archive-named directory. Omit `--subdirectory` at namespace root.
+For a full upload, include all exported files rather than only `index.html`
+and obvious JS/CSS assets. For a delta, establish the complete prior remote
+inventory, compare every exported file, and include every changed file. Upload
+changed assets and navigation payloads first, then HTML; retain old hashed assets.
 The prototype guide warns that ZIP uploads can hang. Check auth and remote
 state once, then choose a deliberate retry or individual-file fallback.
 Do not repeat a failed upload indefinitely.

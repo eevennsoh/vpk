@@ -11,6 +11,7 @@ import {
 	type JgpAgentChatScenario,
 } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
 import { getMessageText } from "@/lib/rovo-ui-messages";
+import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 export interface UseJgpAgentChatDemoResult {
@@ -22,10 +23,11 @@ export interface UseJgpAgentChatDemoResult {
 	setSessionThinking: (sessionId: string, messageId: string) => void;
 }
 
-export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
+export function useJgpAgentChatDemo({ localScriptedTurns = process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" }: Readonly<{ localScriptedTurns?: boolean }> = {}): UseJgpAgentChatDemoResult {
 	const { openChat, applyLocalTurn, selectAgent } = useRovoChatControls();
-	const { activeThreadId, activateSession, selectThread } = useRovoChat();
+	const { activeThreadId, activateSession, selectThread, uiMessages } = useRovoChat();
 	const sessionThreads = useRef(new Map<string, string>());
+	const sessionMessages = useRef(new Map<string, readonly RovoUIMessage[]>());
 	const sessionThinkingMessages = useRef(new Map<string, string>());
 	const pendingSession = useRef<{ sessionId: string; previousThreadId: string | null } | null>(null);
 	const [chatContextBar, setChatContextBar] = useState<ChatContextBarDescriptor | null>(null);
@@ -45,6 +47,9 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 
 	useEffect(() => cancelPlayback, [cancelPlayback]);
 	useEffect(() => {
+		if (localScriptedTurns && activeSessionId && !isSwitchingSession) sessionMessages.current.set(activeSessionId, uiMessages);
+	}, [activeSessionId, isSwitchingSession, localScriptedTurns, uiMessages]);
+	useEffect(() => {
 		if (pendingSession.current && activeThreadId && activeThreadId !== pendingSession.current.previousThreadId) {
 			sessionThreads.current.set(pendingSession.current.sessionId, activeThreadId);
 			pendingSession.current = null;
@@ -53,6 +58,7 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 
 	const openAgentChat = useCallback((scenario: JgpAgentChatScenario) => {
 		cancelPlayback();
+		if (localScriptedTurns && activeSessionId && !isSwitchingSession) sessionMessages.current.set(activeSessionId, uiMessages);
 		pendingSession.current = null;
 		const controller = new AbortController();
 		playbackAbortRef.current = controller;
@@ -63,11 +69,11 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 			setIsSwitchingSession(true);
 			return (async () => {
 				try {
-					const threadId = sessionThreads.current.get(sessionId);
+					const threadId = localScriptedTurns ? undefined : sessionThreads.current.get(sessionId);
 					if (threadId) {
 						await selectThread(threadId);
 					} else {
-						const activated = await activateSession({ agentId: scenario.agentId, threadId: null, messages: scenario.recordedSession?.messages ?? buildJgpAgentSessionMessages(scenario, sessionId) });
+						const activated = await activateSession({ agentId: scenario.agentId, threadId: null, messages: (localScriptedTurns ? sessionMessages.current.get(sessionId) : undefined) ?? scenario.recordedSession?.messages ?? buildJgpAgentSessionMessages(scenario, sessionId) });
 						if (!activated || controller.signal.aborted) return false;
 						pendingSession.current = { sessionId, previousThreadId: activeThreadId };
 					}
@@ -112,7 +118,7 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 		})();
 		return Promise.resolve(true);
 
-	}, [activeThreadId, activateSession, cancelPlayback, openChat, applyLocalTurn, selectAgent, selectThread]);
+	}, [activeSessionId, activeThreadId, activateSession, cancelPlayback, isSwitchingSession, localScriptedTurns, openChat, applyLocalTurn, selectAgent, selectThread, uiMessages]);
 
 	return { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat, setSessionThinking };
 }

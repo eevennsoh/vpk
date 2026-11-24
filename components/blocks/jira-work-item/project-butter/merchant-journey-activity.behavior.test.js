@@ -48,8 +48,8 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 		const venn = { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png" };
 		const session = { id: "journey-session", title: "Merchant onboarding", state: "running", host: "cloud", message: "Working", agent: { id: "claude", name: "Claude", brandName: "claude" }, invokedBy: { name: "Venn" }, timeLabel: "Just now" };
 		export default function Harness() {
-			const content = useProjectButterContent("empty", { code: "PAY-999", title: "Merchant onboarding" }, undefined, undefined, venn, { currentUser: venn, showAuditInActivity: true });
-			const projected = projectMerchantJourney({ content, sessions: [], phase: "working", session, autoAssignTo: venn });
+			const content = useProjectButterContent("empty", { code: "PAY-999", title: "Merchant onboarding" }, [session], undefined, venn, { currentUser: venn, showAuditInActivity: true });
+			const projected = projectMerchantJourney({ content, sessions: [session], phase: "working", session, autoAssignTo: venn });
 			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
 		}` });
 	const entries = document.querySelectorAll('[data-jira-activity-entry-id="invocation-journey-session"]');
@@ -59,6 +59,8 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 	assert.equal(entries[0].textContent.includes("Merchant onboarding"), true);
 	assert.equal(document.querySelector('[data-jira-activity-entry-id="merchant-assignment"]'), null);
 	assert.equal(entries[0].querySelector('[aria-label="Replies"]')?.textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
+	assert.equal(entries[0].querySelector('[data-slot="jira-activity-comment-header"]').textContent.includes("Only visible to you"), false);
+	assert.equal(entries[0].querySelector('[aria-label="Replies"]').textContent.includes("Only visible to you"), true);
 	const statusChange = document.querySelectorAll('[data-jira-activity-entry-id="merchant-status-journey-session"]');
 	assert.equal(statusChange.length, 1);
 	assert.match(statusChange[0].textContent, /Claude\s+changed status from To do to In progress/u);

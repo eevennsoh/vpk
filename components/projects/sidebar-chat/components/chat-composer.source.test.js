@@ -424,7 +424,7 @@ test("shared composer auto reasoning button opens a sources-free customize popov
 	assert.match(source, /className=\{autoReasoningButtonClassName\}/u);
 	assert.match(source, /\[&\[aria-expanded=true\]\]:bg-transparent/u);
 	assert.match(source, /PromptInputDictationControl/u);
-	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /aria-label="Start dictation"/u);
+	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /"Insert sample dictation" : "Start dictation"/u);
 	assert.match(source, /aria-label="Start live voice"/u);
 	assert.match(source, /aria-label="Stop live voice"/u);
 	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /aria-label="Stop dictation"/u);

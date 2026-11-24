@@ -22,6 +22,7 @@ import { BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/
 import { createButterPayBoardColumns } from "@/components/projects/butter-v1/data/presentation-story";
 import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter-v1/data/work-item-placeholders";
 import { useButterWorkItem } from "@/components/projects/butter-v1/hooks/use-butter-work-item";
+import { useButterScriptedCreation } from "./butter-scripted-creation";
 import { token } from "@/lib/tokens";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
@@ -62,8 +63,10 @@ const MULTIPLE_DEVELOPMENT_PULL_REQUESTS = MULTIPLE_PULL_REQUESTS.map(({ number,
 
 export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{ status?: ButterPullRequestStatus }>) {
 	const router = useRouter();
+	const scriptedCreation = useButterScriptedCreation();
 	const workItem = useButterWorkItem();
 	const [directoryOpen, setDirectoryOpen] = useState(false);
+	const createAgent = () => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setDirectoryOpen(false); scriptedCreation.open("agent"); } else router.push("/studio"); };
 	const [addedActivities, setAddedActivities] = useState<readonly JiraIssueAgentActivity[]>([]);
 	const phase = status === "merged" ? "merged" : "pr";
 	const baseCard = PULL_REQUEST_CARDS[status === "merged" ? "merged" : "open"];
@@ -74,7 +77,7 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 	};
 
 	return (
-		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider agentProfiles={scriptedCreation?.agents.length ? [...BUTTER_CHAT_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_CHAT_AGENT_PROFILES}>
 			<div className="flex h-full min-h-0 min-w-0 flex-col items-center overflow-y-auto bg-surface" data-butter-gallery-pull-request="">
 				<div className="my-auto flex w-full shrink-0 flex-col" style={{ maxWidth: BOARD_CARD_WIDTH }}>
 					<ButterInlineAgentPickerContext value>
@@ -84,10 +87,10 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 						agentActivities={card.agentActivities}
 						agentActivityMode={card.agentActivityMode}
 						assignment={{
-							agents: BUTTER_PICKER_AGENTS,
+							agents: scriptedCreation?.agents.length ? [...BUTTER_PICKER_AGENTS, ...scriptedCreation.agents] : BUTTER_PICKER_AGENTS,
 							onAgentAssign: addAgent,
 							onBrowseAgents: () => setDirectoryOpen(true),
-							onCreateAgent: () => router.push("/studio"),
+							onCreateAgent: createAgent,
 						}}
 						assigneeAvatarLabel={card.assignee?.name}
 						assigneeAvatarSrc={card.avatarSrc ?? card.assignee?.avatarSrc}
@@ -108,9 +111,10 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 					</ButterInlineAgentPickerContext>
 				</div>
 			</div>
-			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={() => router.push("/studio")} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
+			{directoryOpen ? <AgentsDirectoryDialog agents={scriptedCreation?.agents.length ? [...BUTTER_DIRECTORY_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={createAgent} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
 			{workItem.selection ? (
 				<ProjectButterJiraWorkItem
+					extraAgents={scriptedCreation?.agents}
 					inlineSessionReplies
 					autoAssignClaudeToCurrentUser
 					currentUser={CURRENT_USER}

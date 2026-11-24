@@ -364,6 +364,11 @@ export function useChatPanelRealtime({
 		realtime.disconnect();
 	}, [realtime]);
 	const handleStartDictation = useCallback(() => {
+		if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") {
+			setPrompt(appendDictationTranscript(promptRef.current, "Please summarize the next steps."));
+			requestComposerFocus();
+			return;
+		}
 		if (realtime.voiceState !== "idle") {
 			realtimeTranscriptRef.current = "";
 			realtime.disconnect();
@@ -376,7 +381,7 @@ export function useChatPanelRealtime({
 		dispatchDictation({ type: "start" });
 		requestComposerFocus();
 		realtime.connect({ transcriptionOnly: true });
-	}, [realtime]);
+	}, [realtime, requestComposerFocus, setPrompt, promptRef]);
 
 	const startRealtimeVoice = useCallback(() => {
 		if (isDictationActiveRef.current) {

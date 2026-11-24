@@ -58,11 +58,11 @@ test("PromptInput dictation supports disabled and unsupported hosts", () => {
 });
 
 test("PromptInput dictation has accessible labels, tooltip, and host callbacks", () => {
-	assert.match(DICTATION_SOURCE, /aria-label="Start dictation"/u);
+	assert.match(DICTATION_SOURCE, /"Insert sample dictation" : "Start dictation"/u);
 	assert.match(DICTATION_SOURCE, /aria-label="Stop dictation"/u);
 	assert.match(
 		DICTATION_SOURCE,
-		/tooltip=\{\{ content: "Dictate", delay: 0 \}\}/u,
+		/tooltip=\{\{ content: sample \? "Insert sample dictation" : "Dictate", delay: 0 \}\}/u,
 	);
 	assert.match(DICTATION_SOURCE, /onClick=\{onStart\}/u);
 	assert.match(DICTATION_SOURCE, /onClick=\{onStop\}/u);

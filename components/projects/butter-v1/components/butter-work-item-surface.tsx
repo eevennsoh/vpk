@@ -39,13 +39,14 @@ function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps
 	};
 }
 
-export function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySession, journeyControls, developmentJourney, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, suggestion, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+export function ButterWorkItemSurface({ ref, defaultReporter, extraAgents, journeyPhase, journeySession, journeyControls, developmentJourney, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, suggestion, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
 	/** Board cards as related-work matches, so composers offer this project's items. */
 	relatedCatalog: readonly ProjectButterRelatedSearchItem[];
 	ref: Ref<ButterWorkItemHandle>;
 	defaultReporter: ComponentProps<typeof ProjectButterJiraWorkItem>["defaultReporter"];
+	extraAgents?: ComponentProps<typeof ProjectButterJiraWorkItem>["extraAgents"];
 	journeyPhase?: ComponentProps<typeof ProjectButterJiraWorkItem>["journeyPhase"];
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: React.ReactNode;
@@ -81,6 +82,7 @@ export function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, jour
 			{workItem.selection ? (
 				<ButterWorkItemDialog
 					cloudAgentSelector
+					extraAgents={extraAgents}
 					initialPresentation="full-screen"
 					shell="project"
 					initialPreset="filled"

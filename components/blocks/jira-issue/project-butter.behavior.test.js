@@ -27,6 +27,19 @@ test("Butter cloud picker recommends Claude and keeps The Council selectable", a
 	await view.unmount();
 });
 
+test("Butter cloud picker can assign a scripted agent", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx",
+		exportName: "ProjectButterCloudAgentPicker",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+		props: { extraAgents: [{ id: "demo-agent-release", name: "Release assistant", byline: "Demo agent" }], onAssign: (agent) => assigned.push(agent.id) },
+	});
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Release assistant");
+	await view.click(view.getByRole("button", { name: "Release assistant" }));
+	assert.deepEqual(assigned, ["demo-agent-release"]);
+});
+
 test("Butter cloud picker previews the supplied reason only for recommended Claude and keeps keyboard selection", async () => {
 	const assigned = [];
 	const view = await renderComponent({

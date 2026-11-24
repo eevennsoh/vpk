@@ -13,6 +13,7 @@ import { InlineAgentSelectorDemo } from "@/components/website/demos/blocks/inlin
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useButterScriptedCreation } from "./butter-scripted-creation";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
@@ -30,12 +31,13 @@ export function ButterAgentSelectorControls({ presentation, onPresentationChange
 
 export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean }>) {
 	const router = useRouter();
+	const scriptedCreation = useButterScriptedCreation();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
 	const [favoriteAgentIds, setFavoriteAgentIds] = useState<readonly string[]>([]);
 	const [cloudStatus, setCloudStatus] = useState("");
 	const [directoryOpen, setDirectoryOpen] = useState(false);
 	const [pickerKey, setPickerKey] = useState(0);
-	const createAgent = () => router.push("/studio");
+	const createAgent = () => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setDirectoryOpen(false); scriptedCreation.open("agent"); } else router.push("/studio"); };
 	const startSession = (agent: (typeof BUTTER_PICKER_AGENTS)[number]) => {
 		setSelectedAgentIds([agent.id]);
 		setPickerKey((current) => current + 1);
@@ -46,7 +48,7 @@ export function ButterAgentSelectorGallery({ presentation = "inline", label, clo
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
 				<section aria-label={label ?? "Project Butter agent selector"} className={cn("w-full", useSubmenu && "overflow-hidden rounded-lg bg-popover text-popover-foreground")} style={useSubmenu ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
-					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => setCloudStatus("Browse agents (preview)")} onCreateAgent={createAgent} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} onCreateAgent={createAgent} /> : <ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
+					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker extraAgents={scriptedCreation?.agents} key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") setDirectoryOpen(true); else setCloudStatus("Browse agents (preview)"); }} onCreateAgent={createAgent} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} onCreateAgent={createAgent} /> : <ProjectButterInvocationProvider agents={scriptedCreation?.agents.length ? [...BUTTER_PICKER_AGENTS, ...scriptedCreation.agents] : BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
 							key={pickerKey}
 							favoriteAgentIds={favoriteAgentIds}
@@ -60,7 +62,7 @@ export function ButterAgentSelectorGallery({ presentation = "inline", label, clo
 					</ProjectButterInvocationProvider>}
 				</section>
 			</div>
-			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={createAgent} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
+			{directoryOpen ? <AgentsDirectoryDialog agents={scriptedCreation?.agents.length ? [...BUTTER_DIRECTORY_AGENT_PROFILES, ...scriptedCreation.agents] : BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={createAgent} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
 		</>
 	);
 }

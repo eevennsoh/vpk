@@ -238,7 +238,7 @@ interface ExperimentalJiraKanbanCardProps {
 	generativeActionSkills: JiraIssueGenerativeActionConfig["skills"];
 	generativeActionFooterActions?: Pick<
 		JiraIssueGenerativeActionConfig,
-		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill"
+		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill" | "skills"
 	>;
 	iconScale?: JiraIssueIconScale;
 	showPriorityIndicator?: boolean;
@@ -434,7 +434,7 @@ export function ExperimentalJiraKanbanCard({
 				onSubmit: (request) => {
 					void onGenerativeActionSubmit?.(request, card, columnTitle);
 				},
-				skills: generativeActionSkills,
+				skills: generativeActionFooterActions?.skills ?? generativeActionSkills,
 			}}
 			generativeActionPresentation={generativeActionPresentation}
 			issueKey={card.code}

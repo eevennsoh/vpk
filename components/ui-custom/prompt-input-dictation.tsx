@@ -58,15 +58,16 @@ export const PromptInputDictationControl = ({
 	}
 
 	if (state === "idle") {
+		const sample = process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true";
 		return (
 			<PromptInputButton
-				aria-label="Start dictation"
+				aria-label={sample ? "Insert sample dictation" : "Start dictation"}
 				className={cn(DICTATION_IDLE_SIZE_CLASS_NAME[size], className)}
 				data-screen-assistant-target={screenAssistantTarget}
 				disabled={disabled}
 				onClick={onStart}
 				size={size}
-				tooltip={{ content: "Dictate", delay: 0 }}
+				tooltip={{ content: sample ? "Insert sample dictation" : "Dictate", delay: 0 }}
 				variant="ghost"
 			>
 				<MicrophoneIcon label="" size={size === "icon-xs" ? "small" : undefined} />

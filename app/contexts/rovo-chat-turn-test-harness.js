@@ -150,8 +150,8 @@ function loadHarness() {
 				}
 				// \`hidden\` hides the provider through <Activity>, which cleans up its
 				// effects and sets them up again when shown, as retained views do.
-				export function Harness({ hidden = false, strict = false }) {
-					const chat = <Activity mode={hidden ? "hidden" : "visible"}><RovoChatProvider><Probe /></RovoChatProvider></Activity>;
+				export function Harness({ hidden = false, strict = false, localScriptedTurns = false }) {
+					const chat = <Activity mode={hidden ? "hidden" : "visible"}><RovoChatProvider localScriptedTurns={localScriptedTurns}><Probe /></RovoChatProvider></Activity>;
 					return strict ? <StrictMode>{chat}</StrictMode> : chat;
 				}
 			`,
@@ -302,7 +302,7 @@ async function waitFor(description, predicate, timeoutMs = 3000) {
 }
 
 // \`strict\` renders under React StrictMode (double effects in development).
-async function mountChat(t, { strict = false } = {}) {
+async function mountChat(t, { strict = false, localScriptedTurns = false } = {}) {
 	const harness = await loadHarness();
 	const server = createChatServer();
 	const originalFetch = globalThis.fetch;
@@ -321,7 +321,7 @@ async function mountChat(t, { strict = false } = {}) {
 		await React.act(async () => root.unmount());
 		mounted = false;
 	};
-	const render = (props) => React.act(async () => root.render(React.createElement(harness.Harness, { strict, ...props })));
+	const render = (props) => React.act(async () => root.render(React.createElement(harness.Harness, { strict, localScriptedTurns, ...props })));
 	await render({});
 	t.after(async () => {
 		delete window.onTestChatRender;

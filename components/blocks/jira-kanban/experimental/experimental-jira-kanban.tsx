@@ -211,7 +211,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Route-owned Browse/Create capabilities for card agent and skill pickers. */
 	cardGenerativeActionFooterActions?: Pick<
 		JiraIssueGenerativeActionConfig,
-		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill"
+		"onBrowseAgents" | "onBrowseSkills" | "onCreateAgent" | "onCreateSkill" | "skills"
 	>;
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;

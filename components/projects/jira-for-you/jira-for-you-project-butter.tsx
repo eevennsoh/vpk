@@ -11,6 +11,7 @@ import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v
 import { agentSessionDemoProfiles, agentSessionDemoScenario } from "@/components/projects/shared/lib/agent-session-demo-chat";
 import { renderAgentSessionDemoArtifacts } from "@/components/projects/shared/components/agent-session-demo-artifacts";
 import { BUTTER_CHAT_AGENT_PROFILES } from "@/components/projects/butter-v1/data/chat-agent-profiles";
+import { useButterScriptedCreation } from "@/components/projects/butter-v1/components/butter-scripted-creation";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
@@ -34,7 +35,8 @@ const JIRA_FOR_YOU_GROUPS = [
 const JIRA_FOR_YOU_CHAT_PROFILES = agentSessionDemoProfiles(BUTTER_CHAT_AGENT_PROFILES, JIRA_FOR_YOU_SESSIONS.map(({ item }) => item).filter((item, index, items) => items.findIndex((candidate) => candidate.agent.name === item.agent.name) === index));
 
 export function JiraForYouProjectButter() {
-	return <RovoChatProvider agentProfiles={JIRA_FOR_YOU_CHAT_PROFILES}><JiraForYouProjectButterContent /></RovoChatProvider>;
+	const scriptedCreation = useButterScriptedCreation();
+	return <RovoChatProvider agentProfiles={scriptedCreation?.agents.length ? [...JIRA_FOR_YOU_CHAT_PROFILES, ...scriptedCreation.agents] : JIRA_FOR_YOU_CHAT_PROFILES}><JiraForYouProjectButterContent /></RovoChatProvider>;
 }
 
 function JiraForYouProjectButterContent() {
@@ -56,7 +58,7 @@ function JiraForYouProjectButterContent() {
 	const sessions = JIRA_FOR_YOU_SESSIONS.filter(({ item, tabs }) =>
 		(activeTabId === "all" || tabs.includes(activeTabId))
 		&& item.title.toLowerCase().includes(query.trim().toLowerCase()),
-	).map(({ item }) => ({ ...item, shortTitle: item.title }));
+	).map(({ item }) => ({ ...item, state: answeredSessions.has(item.id) ? "running" as const : item.state, shortTitle: item.title }));
 	return (
 		<>
 		<div className="h-full min-h-0 w-full overflow-y-auto bg-surface">

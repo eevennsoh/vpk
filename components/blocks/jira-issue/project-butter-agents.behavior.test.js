@@ -260,6 +260,17 @@ test("directory label spacing dismisses the workspace menu without focusing its 
 	assert.equal(view.isFocused(field), false);
 });
 
+test("scripted hosting adds a demo workspace without contacting a local backend", async (t) => {
+	const previous = process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO;
+	process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO = "true";
+	t.after(() => { if (previous === undefined) delete process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO; else process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO = previous; });
+	t.mock.method(globalThis, "fetch", () => { throw new Error("Unexpected backend request"); });
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/project-butter-local-agent-menu.tsx", exportName: "ProjectButterLocalAgentMenu" });
+	await view.click(view.getByRole("textbox", { name: "Choose your directory" }));
+	await view.click(view.getByRole("button", { name: "Add demo workspace" }));
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "/demo/payments-sdk");
+});
+
 test("adding a workspace selects the chosen path, avoids duplicates, and handles cancellation", async (t) => {
 	let choices = 0;
 	t.mock.method(globalThis, "fetch", async (url) => {

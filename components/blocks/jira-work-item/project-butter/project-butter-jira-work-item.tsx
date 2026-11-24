@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SonnerToast, Toaster } from "@/components/ui/sonner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
@@ -45,6 +46,7 @@ export interface ProjectButterJiraWorkItemProps {
 	defaultAssignee?: WorkItemPerson;
 	currentUser?: WorkItemPerson;
 	cloudAgentSelector?: boolean;
+	extraAgents?: readonly AgentSelectorAgent[];
 	showAuditInActivity?: boolean;
 	autoAssignClaudeToCurrentUser?: boolean;
 	journeyPhase?: ProjectButterJourneyPhase;
@@ -86,6 +88,7 @@ export function ProjectButterJiraWorkItem({
 	defaultAssignee,
 	currentUser,
 	cloudAgentSelector = false,
+	extraAgents,
 	showAuditInActivity,
 	autoAssignClaudeToCurrentUser,
 	journeyPhase,
@@ -363,7 +366,7 @@ export function ProjectButterJiraWorkItem({
 	}, [detailsHost, layoutElement, sidePanel, workItem?.code]);
 	const details = (
 		<ProjectButterDetails
-			agentField={<ProjectButterCrew field showFieldLabel={false} cloudAgentSelector={cloudAgentSelector} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
+			agentField={<ProjectButterCrew field showFieldLabel={false} cloudAgentSelector={cloudAgentSelector} extraAgents={extraAgents} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
 			agentFieldHasSessions={sessions.length > 0}
 			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}

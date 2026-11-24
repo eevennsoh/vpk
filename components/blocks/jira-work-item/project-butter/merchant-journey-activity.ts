@@ -1,4 +1,5 @@
 import type { JiraActivityEntry, JiraActivityReply } from "@/components/blocks/jira-activity";
+import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
@@ -138,7 +139,7 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 			const visibleUpdates = new Set(updates.map((reply) => reply.id));
 			const replies = [...(thread.replies ?? []), ...(previous?.kind === "comment" ? previous.replies ?? [] : [])].filter((reply) => reply.id !== id && reply.id !== `response-${projectedSession.id}` && (!GENERATED_IDS.has(reply.id) || visibleUpdates.has(reply.id)));
 			const existingReplies = new Set(replies.map((reply) => reply.id));
-			if (showAcknowledgment) replies.unshift({ id, actor: thread.actor, timestamp: "Just now", createdAtMs: invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS, body: "I'm looking into this issue now. I'll report back here with updates as I make progress." });
+			if (showAcknowledgment) replies.unshift({ id, actor: thread.actor, timestamp: "Just now", createdAtMs: invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS, body: "I'm looking into this issue now. I'll report back here with updates as I make progress.", ...(getAgentSessionRole(projectedSession) === "owner" ? { visibility: "private" as const } : {}) });
 			for (const update of updates) {
 				if (!existingReplies.has(update.id)) { replies.push(update); existingReplies.add(update.id); }
 				const original = content.activityEntries.find((entry) => entry.id === update.id);

@@ -1,4 +1,5 @@
 import type { JiraActivityActor, JiraActivityCommentEntry, JiraActivityEntry, JiraActivityEventEntry, JiraActivityReply } from "@/components/blocks/jira-activity";
+import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -59,8 +60,9 @@ export function projectButterSessionInvocation(session: ProjectButterSessionItem
 	const timestamp = relativeLabel(createdAtMs, session.timeLabel ?? "Just now");
 	const person = invoker(session);
 	const agent = agentActor(session);
-	const reply = (id: string, actor: JiraActivityActor, body: string, atMs: number): JiraActivityReply => ({ id, actor, body, timestamp: relativeLabel(atMs, session.timeLabel ?? ""), createdAtMs: atMs });
-	const prompt = session.prompt ? [{ ...reply(`prompt-${session.id}`, person, session.prompt, createdAtMs), ...(session.role !== "viewer" && session.invokedBy ? { visibility: "private" as const } : {}) }] : [];
+	const privateVisibility = getAgentSessionRole(session) === "owner" ? { visibility: "private" as const } : {};
+	const reply = (id: string, actor: JiraActivityActor, body: string, atMs: number): JiraActivityReply => ({ id, actor, body, timestamp: relativeLabel(atMs, session.timeLabel ?? ""), createdAtMs: atMs, ...privateVisibility });
+	const prompt = session.prompt ? [reply(`prompt-${session.id}`, person, session.prompt, createdAtMs)] : [];
 	const dialogue = (session.activityReplies ?? []).map((item) => reply(item.id, item.author === session.agent.name ? agent : personActor(item.author), item.body, createdAtMs + item.minutesAfter * MINUTE));
 	const latest = dialogue.length === 0 && session.state !== "running" ? [reply(`response-${session.id}`, agent, session.message, createdAtMs + MINUTE)] : [];
 	const thread: JiraActivityCommentEntry = {

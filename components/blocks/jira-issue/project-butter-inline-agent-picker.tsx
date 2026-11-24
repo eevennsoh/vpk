@@ -66,7 +66,8 @@ export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Rea
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef }: Readonly<{
+export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef }: Readonly<{
+	extraAgents?: readonly AgentSelectorAgent[];
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
@@ -78,8 +79,9 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, onCrea
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
 	const pickerRef = useRef<HTMLDivElement>(null);
 	const reason = recommendationReason?.trim() || DEFAULT_RECOMMENDATION_REASON;
-	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS} ref={pickerRef}><InlineAgentSelector
-		agents={CLOUD_AGENTS}
+	const agents = extraAgents?.length ? [...CLOUD_AGENTS, ...extraAgents.filter((agent) => !CLOUD_AGENTS.some((candidate) => candidate.id === agent.id))] : CLOUD_AGENTS;
+	return <ProjectButterAgentPreviewBoundary agents={agents} ref={pickerRef}><InlineAgentSelector
+		agents={agents}
 		recommendedAgentId={RECOMMENDED_AGENT_ID}
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}

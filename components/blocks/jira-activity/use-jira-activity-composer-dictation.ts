@@ -124,6 +124,12 @@ export function useJiraActivityComposerDictation({
 	});
 
 	const onStartDictation = useCallback(() => {
+		if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") {
+			const nextText = appendDictationTranscript(valueRef.current, "Please summarize the next steps.");
+			valueRef.current = nextText;
+			onValueChangeRef.current(nextText);
+			return;
+		}
 		if (realtime.voiceState !== "idle") {
 			realtime.disconnect();
 		}

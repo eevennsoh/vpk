@@ -76,6 +76,14 @@ test("local turns await stop and ensure thread, preserve agent/history, and appl
 	assert.equal(selectedAgent, "kept-agent");
 });
 
+test("an in-memory scripted turn applies its reply without creating a server thread", async () => {
+	const view = harness({ localOnly: true, ensureThread: () => { throw new Error("Unexpected server thread"); } });
+	let applied = false;
+	assert.equal(await view.operations.applyLocalTurn({ promptText: "Continue", assistantParts: text("Working"), onApply: () => { applied = true; } }), true);
+	assert.equal(applied, true);
+	assert.equal(view.read().messages.at(-1).parts[0].text, "Working");
+});
+
 test("replace playback preserves supplied message identities and ordered final callbacks", async () => {
 	const view = harness();
 	const user = { id: "playback-user", role: "user", parts: text("Play") };
