@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useIsPresent, usePresenceData } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { motionDuration, motionEase } from "@/lib/motion";
 const NUDGE_MS = 3200;
 
 export function FloatingRovoButtonPersistentBarRail({
+	appearAtRest = false,
 	bar,
 	indicatorActionId,
 	indicatorInFlight = false,
@@ -20,6 +21,8 @@ export function FloatingRovoButtonPersistentBarRail({
 	side,
 	shouldReduceMotion,
 }: Readonly<{
+	/** Mount already in place, skipping the entrance, and report settled straight away. */
+	appearAtRest?: boolean;
 	bar: FloatingRovoButtonPersistentBar;
 	indicatorActionId?: string;
 	indicatorInFlight?: boolean;
@@ -53,6 +56,11 @@ export function FloatingRovoButtonPersistentBarRail({
 		}, NUDGE_MS);
 		return () => window.clearTimeout(timer);
 	}, [nudgedItem]);
+	// With no entrance there is no animation to complete, so a rail that appears at rest says so as it mounts.
+	const settleOnMount = useEffectEvent(() => {
+		if (appearAtRest) onSettled?.();
+	});
+	useEffect(() => settleOnMount(), []);
 	const singleAction = bar.items.length === 1;
 	// Tuck the bar slightly toward the button as it leaves/enters so the motion
 	// reads as "snapping out of / back into" the button rather than a flat fade.
@@ -116,7 +124,7 @@ export function FloatingRovoButtonPersistentBarRail({
 				side === "top" ? "bottom-full mb-3" : "top-full mt-3",
 			)}
 			variants={railVariants}
-			initial={indicatorInFlight ? false : "hidden"}
+			initial={indicatorInFlight || appearAtRest ? false : "hidden"}
 			animate="visible"
 			exit="exit"
 			onAnimationComplete={(definition) => { if (definition === "visible") onSettled?.(); }}

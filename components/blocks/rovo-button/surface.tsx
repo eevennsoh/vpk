@@ -14,6 +14,7 @@ import {
 	type Ref,
 	useCallback,
 	useEffect,
+	useEffectEvent,
 	useMemo,
 	useRef,
 	useState,
@@ -180,34 +181,39 @@ export function FloatingRovoButtonSurface({
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 	const [indicatorOrigin, setIndicatorOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
 	const [indicatorMorphComplete, setIndicatorMorphComplete] = useState(false);
-	// The toolbar action measured where it last came to rest. The button and its rail unmount while Rovo chat is open,
-	// so a panel opened from there cannot measure the action; it opens from and closes into this instead.
-	const [restingOrigin, setRestingOrigin] = useState<FloatingRovoButtonIndicatorOrigin | null>(null);
-	const [wasPanelOpen, setWasPanelOpen] = useState(Boolean(panel?.open));
-	if (Boolean(panel?.open) !== wasPanelOpen) {
-		setWasPanelOpen(Boolean(panel?.open));
-		if (panel?.open && restingOrigin) {
-			if (panel.openFrom) {
-				// Another surface (Rovo chat) condenses into the panel, which later closes into the action.
-				setIndicatorOrigin({ ...restingOrigin, bounds: panel.openFrom, variant: "surface", returnTo: restingOrigin });
-				setIndicatorMorphComplete(false);
-			} else if (!panel.openFromIndicator) {
-				// A plain open has no flight in, but still closes into the action like every other panel.
-				setIndicatorOrigin(restingOrigin);
-				setIndicatorMorphComplete(true);
-			}
-		}
-	}
+	// Whether the persistent bar has landed at rest, so its actions can be measured like a click would.
+	const [railSettled, setRailSettled] = useState(false);
+	// Mounted only to answer an open request (Rovo chat just closed): appear already at rest, with no logo cycle or
+	// entrance, so the panel grows out of the action straight away, exactly like a direct click.
+	const [mountedForOpenRequest] = useState(Boolean(panel?.openRequested));
 	const finishIndicatorMorph = useCallback(() => {
 		if (panel?.closingToIndicator) panel.onCloseComplete?.();
-		else {
-			// Having landed, a panel that flew in from another surface closes back into its toolbar action.
-			setIndicatorOrigin((origin) => origin?.returnTo ?? origin);
-			setIndicatorMorphComplete(true);
-		}
+		else setIndicatorMorphComplete(true);
 	}, [panel?.closingToIndicator, panel?.onCloseComplete]);
 	const cardOpen = Boolean(panel?.open || onboardingOpen || insightsStage === "card");
-	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && (panel.openFromIndicator || panel.openFrom) && indicatorOrigin && !shouldReduceMotion);
+	if (railSettled && cardOpen) setRailSettled(false);
+	/** What pressing the toolbar action does before it opens the panel: measure where the panel grows from. */
+	const measureIndicatorPress = () => {
+		const surface = surfaceRef.current;
+		const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, persistentBar?.panelTransition === "dot") : null;
+		if (!origin) return;
+		setIndicatorOrigin(origin);
+		setIndicatorMorphComplete(false);
+	};
+	// An open requested from elsewhere (e.g. Rovo chat) waits for the action to be on screen and at rest, then
+	// replays a press on it, so the panel opens and later closes exactly as if the action had been clicked.
+	const pressRequestedIndicator = useEffectEvent(() => {
+		if (!panel?.openRequested || panel.open) return;
+		measureIndicatorPress();
+		persistentBar?.items.find((item) => item.id === panel.indicatorActionId)?.onClick?.();
+	});
+	const openRequested = Boolean(panel?.openRequested);
+	useEffect(() => {
+		if (!openRequested || !railSettled) return undefined;
+		const id = requestAnimationFrame(() => pressRequestedIndicator());
+		return () => cancelAnimationFrame(id);
+	}, [openRequested, railSettled]);
+	const opensFromIndicator = Boolean(panel?.open && !panel.closingToIndicator && panel.openFromIndicator && indicatorOrigin && !shouldReduceMotion);
 	const closingToIndicator = Boolean(panel?.open && panel.closingToIndicator && indicatorOrigin && indicatorMorphComplete && !shouldReduceMotion);
 	const indicatorTransition = opensFromIndicator || closingToIndicator;
 	const morphingIndicator = closingToIndicator || (opensFromIndicator && !indicatorMorphComplete);
@@ -330,7 +336,7 @@ export function FloatingRovoButtonSurface({
 		startLogoAnimation();
 	}, [shouldReduceMotion, startLogoAnimation]);
 	useEffect(() => {
-		if (!animateLogoOnMount || shouldReduceMotion) return;
+		if (!animateLogoOnMount || shouldReduceMotion || mountedForOpenRequest) return;
 		logoAnimationPlayedRef.current = true;
 		const frame = window.requestAnimationFrame(startLogoAnimation);
 		return () => {
@@ -712,7 +718,7 @@ export function FloatingRovoButtonSurface({
 						? "h-12 w-fit max-w-[calc(100vw-32px)]"
 						: "size-12",
 			)}
-			initial={{ opacity: 0, borderRadius: cardOpen ? 8 : 16 }}
+			initial={mountedForOpenRequest ? false : { opacity: 0, borderRadius: cardOpen ? 8 : 16 }}
 			animate={{
 				opacity: 1,
 				borderRadius: cardOpen ? 8 : 16,
@@ -822,18 +828,9 @@ export function FloatingRovoButtonSurface({
 							bar={persistentBar}
 							indicatorActionId={panel?.indicatorActionId}
 							indicatorInFlight={morphingIndicator}
-							onIndicatorPress={() => {
-								const surface = surfaceRef.current;
-								const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, persistentBar.panelTransition === "dot") : null;
-								if (!origin) return;
-								setIndicatorOrigin(origin);
-								setIndicatorMorphComplete(false);
-							}}
-							onSettled={() => {
-								const surface = surfaceRef.current;
-								const origin = surface ? measureToolbarActionOrigin(surface, panel?.indicatorActionId, positioning, false) : null;
-								if (origin) setRestingOrigin(origin);
-							}}
+							appearAtRest={mountedForOpenRequest}
+							onIndicatorPress={measureIndicatorPress}
+							onSettled={() => setRailSettled(true)}
 							side={morphingIndicator && indicatorOrigin ? indicatorOrigin.side : barSide}
 							shouldReduceMotion={shouldReduceMotion}
 						/>

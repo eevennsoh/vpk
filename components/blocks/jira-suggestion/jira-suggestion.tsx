@@ -35,11 +35,11 @@ const IN_PLACE_UNPACK_MS = 260;
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";
 
-export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: (chatBounds?: DOMRect) => true }>; workItemKey: string }>) {
+export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
 	const [openFromIndicator, setOpenFromIndicator] = useState(false);
-	const [openFrom, setOpenFrom] = useState<DOMRect | null>(null);
+	const [openRequested, setOpenRequested] = useState(false);
 	const reduceMotion = useReducedMotion();
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		return () => cancelFrame(revealWhenSettled);
 	}, [isMeasuring]);
 
-	const nextStage = reconcileFloatingPanelStage(panelStage, count, openingStage, reduceMotion ?? false);
+	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false);
 	if (nextStage) setPanelStage(nextStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
@@ -92,7 +92,6 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
 		setOpenFromIndicator(false);
-		setOpenFrom(null);
 	}, []);
 	const close = () => {
 		feed.acknowledgeNew();
@@ -103,24 +102,20 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		else finishClose();
 	};
 	/**
-	 * Opens the review from Rovo chat. Given the chat panel's bounds, the chat condenses into the suggestions panel;
-	 * either way the panel later closes back into the review action, exactly as when opened from it.
+	 * Opens the review from Rovo chat. The chat closes and, once the review action is back on screen, the panel opens
+	 * from it exactly as a click would, so it grows out of and closes into the action like any other open.
 	 */
-	const reopen = (chatBounds?: DOMRect): true => {
-		feed.onOpenReview?.(panelId);
-		setSeenRuns(feed.runs.length);
-		setOpenFrom(chatBounds && !reduceMotion ? chatBounds : null);
-		setOpenFromIndicator(false);
+	const reopen = (): true => {
 		deck.restoreDismissed();
 		closeChat();
-		setPanelStage((stage) => stage.phase === "closed" ? { phase: "reopening" } : stage);
+		setOpenRequested(true);
 		return true;
 	};
 	useImperativeHandle(ref, () => ({ reopen }));
 	const openReview = () => {
 		setIntro("ready");
 		setSeenRuns(feed.runs.length);
-		setOpenFrom(null);
+		setOpenRequested(false);
 		setOpenFromIndicator(true);
 		if (count > 0) show();
 		else {
@@ -142,7 +137,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 					open: phase !== "closed",
 					indicatorActionId: REVIEW_ACTION_ID,
 					openFromIndicator,
-					openFrom,
+					openRequested,
 					closingToIndicator: phase === "closing",
 					onOpenComplete: () => setPanelStage((stage) => stage.phase === "expanding" ? { phase: "list" } : stage),
 					onCloseComplete: finishClose,

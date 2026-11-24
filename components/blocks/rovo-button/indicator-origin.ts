@@ -1,7 +1,7 @@
 import type { NotificationPanelAnchor } from "./notification-panel-morph";
 import type { FloatingRovoButtonPositioning } from "./types";
 
-export type FloatingRovoButtonMorphVariant = "button" | "dot" | "surface";
+export type FloatingRovoButtonMorphVariant = "button" | "dot";
 
 /** Where a panel morph starts (or ends), measured in viewport coordinates with the launcher it pins in place. */
 export type FloatingRovoButtonIndicatorOrigin = Readonly<{
@@ -10,8 +10,6 @@ export type FloatingRovoButtonIndicatorOrigin = Readonly<{
 	anchor: NotificationPanelAnchor | null;
 	side: "top" | "bottom";
 	variant: FloatingRovoButtonMorphVariant;
-	/** For a "surface" open (e.g. from Rovo chat): the toolbar action the panel closes back into. */
-	returnTo?: FloatingRovoButtonIndicatorOrigin;
 }>;
 
 export function getNotificationAnchor(surface: HTMLElement, positioning: FloatingRovoButtonPositioning): NotificationPanelAnchor | null {

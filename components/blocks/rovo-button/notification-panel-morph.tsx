@@ -38,20 +38,6 @@ function getMorphFrames(origin: DOMRect, target: DOMRect, variant: FloatingRovoB
 	const dotRadius = Math.min(origin.width, origin.height) / 2;
 	const grow = (widthProgress: number, heightProgress: number, riseProgress: number) =>
 		frameAt(x + (targetX - x) * widthProgress, y + rise * riseProgress, origin.width + (target.width - origin.width) * widthProgress, origin.height + (target.height - origin.height) * heightProgress, PANEL_RADIUS);
-	if (variant === "surface") {
-		// Another panel (Rovo chat) condenses into this one: it draws in a touch first, then gathers into place, with
-		// height leading width so it reads as the content settling rather than a box resizing.
-		return [
-			frameAt(x, y, origin.width, origin.height, 12),
-			frameAt(x, y, origin.width * 0.98, origin.height * 0.98, 12),
-			grow(0.08, 0.14, 0.1),
-			grow(0.24, 0.38, 0.3),
-			grow(0.48, 0.64, 0.56),
-			grow(0.74, 0.86, 0.8),
-			grow(0.93, 0.97, 0.95),
-			grow(1, 1, 1),
-		];
-	}
 	if (variant === "button") {
 		return [
 			frameAt(x, y, origin.width, origin.height, 16),
@@ -191,8 +177,7 @@ export function NotificationPanelMorph({
 			};
 		}
 		const initialColor = variant === "dot" ? blue : panel;
-		// A whole panel travelling into another is a large transition, so it takes the page-level duration.
-		const duration = variant === "dot" ? SHELL_DURATION : variant === "surface" ? motionDuration.slower : motionDuration.slow + motionDuration.xxshort;
+		const duration = variant === "dot" ? SHELL_DURATION : motionDuration.slow + motionDuration.xxshort;
 		shape.style.backgroundColor = closing ? panel : initialColor;
 		shadow.style.opacity = closing ? "1" : "0";
 		const geometry = animate(shape, {

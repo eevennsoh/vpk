@@ -157,10 +157,10 @@ export interface FloatingRovoButtonPanel {
 	indicatorActionId?: string;
 	openFromIndicator?: boolean;
 	/**
-	 * Opens the panel by condensing another surface (e.g. the Rovo chat panel, given as its viewport bounds) into it.
-	 * The panel still closes back into the toolbar action, exactly as when opened from it.
+	 * Asks for the panel to open from its toolbar action exactly as a click on it would, as soon as the action is on
+	 * screen and at rest (e.g. once Rovo chat has closed and the button is back). Clear it when the panel opens.
 	 */
-	openFrom?: DOMRect | null;
+	openRequested?: boolean;
 	closingToIndicator?: boolean;
 	onOpenComplete?: () => void;
 	onCloseComplete?: () => void;
