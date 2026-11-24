@@ -40,6 +40,7 @@ test("Butter cloud picker previews the supplied reason only for recommended Clau
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		const card = document.querySelector('article[data-variant="recommended"]');
 		assert.equal(card?.dataset.agentId, "claude");
+		assert.equal(card.querySelectorAll(".agent-lanyard-chin").length, 1);
 		assert.equal(card.textContent.includes("Collaborate on code with an AI that gives smart suggestions and reviews."), true);
 		assert.equal(view.getByRole("heading", { name: "Why recommended" }).nextElementSibling.textContent, "Illustrative caller-supplied reason for Claude.");
 		assert.equal(card.querySelectorAll("button, a, input").length, 0);

@@ -24,8 +24,8 @@ const ease = motionEase.outPractical;
 
 /**
  * Entrance for a grid card that was just added (reference AttachmentArrival): the file slides into a
- * dashed zone, a ring fills while it is "added", then chips settle on the bottom edge and the real card
- * takes over. Decorative (aria-hidden); the piles announce the addition. Only mounted when motion is allowed.
+ * dashed zone, a ring fills while it is "added", then the real card takes over.
+ * Decorative (aria-hidden); the piles announce the addition. Only mounted when motion is allowed.
  */
 export function AttachmentArrival({ item, onDone }: Readonly<{ item: ProjectButterAttachment; onDone: () => void }>) {
 	const [phase, setPhase] = useState<ArrivalPhase>("enter");
@@ -43,7 +43,6 @@ export function AttachmentArrival({ item, onDone }: Readonly<{ item: ProjectButt
 	}, []);
 	const extension = item.kind === "file" || item.kind === "image" || item.kind === "video" ? item.extension?.toUpperCase() : undefined;
 	const kind = attachmentKindLabel(item);
-	const chips = [...(extension ? [extension] : []), kind, "Added"];
 	const done = phase === "done" || phase === "leave";
 	const entered = phase !== "enter";
 	return (
@@ -71,15 +70,8 @@ export function AttachmentArrival({ item, onDone }: Readonly<{ item: ProjectButt
 						)}
 						<span className="relative flex">{done ? <CheckMarkIcon color="currentColor" label="" size="small" /> : <UploadIcon color="currentColor" label="" size="small" />}</span>
 					</span>
-					<span className="text-xs text-text-subtle">{done ? `${extension ?? kind} added` : `Adding · ${percent}%`}</span>
+					<span className="text-xs text-text-subtle">{done ? `${item.kind === "video" ? kind : extension ?? kind} added` : `Adding · ${percent}%`}</span>
 				</motion.div>
-				{done ? (
-					<div className="absolute inset-x-0 bottom-1.5 flex justify-center gap-1">
-						{chips.map((chip, index) => (
-							<motion.span animate={{ y: 0, opacity: 1 }} className="rounded-full bg-bg-neutral-bold px-1.5 py-0.5 text-xs leading-4 text-text-inverse" initial={{ y: 8, opacity: 0 }} key={chip} transition={{ duration: motionDuration.medium, ease, delay: [0, 0.1, 0.15][index] ?? 0.15 }}>{chip}</motion.span>
-						))}
-					</div>
-				) : null}
 			</div>
 		</motion.div>
 	);

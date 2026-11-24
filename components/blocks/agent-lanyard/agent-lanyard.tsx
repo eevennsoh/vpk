@@ -4,12 +4,14 @@ import Image from "next/image";
 import type { ComponentProps, ReactNode } from "react";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCardContent } from "@/components/ui/hover-card";
-import { token } from "@/lib/tokens";
+import { AtlassianLogoMark } from "@/components/ui/logo-mark";
 import { cn } from "@/lib/utils";
 
-import { AgentLanyardCard } from "./components/agent-lanyard-card";
+import { AGENT_LANYARD_CUTOUT_MASK, AgentLanyardCard } from "./components/agent-lanyard-card";
 import { AgentLanyardActions } from "./components/agent-lanyard-actions";
+import { AgentLanyardSetupPrompt } from "./components/agent-lanyard-setup-prompt";
 import { AgentLanyardTemplateAvatar } from "./agent-lanyard-template-avatar";
 import { AgentLanyardAvatarFrame } from "./agent-lanyard-first-party-avatar";
 import type { AgentLanyardMenuActions } from "./agent-lanyard-menu";
@@ -19,6 +21,7 @@ import type { AgentLanyardTemplate } from "./template-data";
 interface AgentLanyardAgentProps {
 	variant?: "agent";
 	recommendationReason?: never;
+	recommendationAppearance?: never;
 	agent: AgentLanyardAgent;
 	perspectiveTilt?: boolean;
 	animateGrid?: boolean;
@@ -45,6 +48,7 @@ export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProp
 	variant: "recommended";
 	/** Caller-owned, non-empty explanation. This component does not rank agents. */
 	recommendationReason: string;
+	recommendationAppearance?: "perforated" | "chin";
 	footer?: never;
 	avatar?: never;
 	showDescription?: never;
@@ -56,9 +60,16 @@ export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProp
 	starred?: never;
 }
 
-export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommendedProps | {
+export interface AgentLanyardMcpSetupProps extends Pick<AgentLanyardAgentProps, "agent" | "headingLevel" | "className"> {
+	variant: "mcp-setup";
+	invoker: { name: string; avatarSrc?: string };
+	setupPrompt: string;
+}
+
+export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommendedProps | AgentLanyardMcpSetupProps | {
 	variant: "template";
 	recommendationReason?: never;
+	recommendationAppearance?: never;
 	template: AgentLanyardTemplate;
 	templateIcon?: ReactNode;
 	perspectiveTilt?: boolean;
@@ -69,7 +80,7 @@ export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommended
 export type AgentLanyardHoverContentProps = ComponentProps<typeof HoverCardContent> & { variant?: "agent" | "recommended" };
 
 export function AgentLanyardHoverContent({ className, style, variant = "agent", ...props }: Readonly<AgentLanyardHoverContentProps>) {
-	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0 [&_[data-slot=agent-lanyard-surface]]:shadow-none", className)} style={{ ...style, boxShadow: variant === "recommended" ? "none" : token("elevation.shadow.overlay") }} />;
+	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0", variant === "agent" ? "[&_[data-slot=agent-lanyard]]:rounded-xl [&_[data-slot=agent-lanyard]]:shadow-2xl [&_[data-slot=agent-lanyard-surface]]:shadow-none" : null, className)} style={style} />;
 }
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
@@ -89,17 +100,48 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 		);
 	}
 
-	const { agent, perspectiveTilt, animateGrid, gridAnimationTrigger, headingLevel, showGrid, showDescription, avatar, footer, onSelect, className, ...actions } = props;
-	const recommended = props.variant === "recommended";
-	if (recommended && !props.recommendationReason?.trim()) throw new Error("AgentLanyard recommended variant requires a non-empty recommendationReason.");
+	const { agent, headingLevel, className, ...variantProps } = props;
+	const identity = { id: agent.id, name: agent.name, byline: agent.publisher, description: agent.description, verified: agent.verified, accentColor: agent.accentColor };
+	const defaultAvatar = <AgentLanyardAvatarFrame>{agent.brandName ? (
+		<AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} thirdPartyLogoSize="xlarge" label="" sizePx={48} />
+	) : <Image alt="" className={agent.avatarSrc.startsWith("/avatar-agent-new/") ? "h-full w-full" : "h-full w-full scale-110"} src={agent.avatarSrc} width={54} height={60} />}</AgentLanyardAvatarFrame>;
+
+	if (variantProps.variant === "mcp-setup") {
+		const { invoker, setupPrompt } = variantProps;
+		return (
+			<div className={cn("w-[252px] max-w-full min-w-0 rounded-xl shadow-2xl", className)} data-slot="agent-lanyard-mcp-setup">
+			<div className="flex flex-col gap-2 rounded-xl bg-bg-neutral p-2" style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 15px" }}>
+				<AgentLanyardCard {...identity} variant="mcp-setup" avatar={defaultAvatar} headingLevel={headingLevel} perspectiveTilt={false} showDescription={false}
+					footer={
+						<ul className="flex flex-col gap-2 text-xs leading-4 text-text-subtle">
+							<li className="flex items-center gap-1">
+								<Avatar animate={false} aria-hidden size="xs">
+									{invoker.avatarSrc ? <AvatarImage alt="" src={invoker.avatarSrc} /> : (
+										<AvatarFallback>{invoker.name.split(/\s+/u).map((part) => part[0]).slice(0, 2).join("")}</AvatarFallback>
+									)}
+								</Avatar>
+								<span className="min-w-0 wrap-anywhere">Invoked by {invoker.name}</span>
+							</li>
+							<li className="flex items-center gap-1"><AtlassianLogoMark name="atlassian" label="" frame="chip" />Using Atlassian MCP</li>
+						</ul>
+					}
+				/>
+				<AgentLanyardSetupPrompt prompt={setupPrompt} />
+			</div>
+			</div>
+		);
+	}
+
+	const { perspectiveTilt, animateGrid, gridAnimationTrigger, showGrid, showDescription, avatar, footer, onSelect, recommendationAppearance, ...actions } = variantProps;
+	const recommended = variantProps.variant === "recommended";
+	if (recommended && !variantProps.recommendationReason?.trim()) throw new Error("AgentLanyard recommended variant requires a non-empty recommendationReason.");
 	return (
 		<AgentLanyardCard
-			id={agent.id} name={agent.name} byline={agent.publisher} description={agent.description}
-			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? props.recommendationReason : undefined} verified={agent.verified} accentColor={agent.accentColor}
+			{...identity}
+			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? variantProps.recommendationReason : undefined}
+			recommendationAppearance={recommendationAppearance}
 			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
-			avatar={avatar ?? (agent.brandName ? (
-				<AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} thirdPartyLogoSize="xlarge" label="" sizePx={48} /></AgentLanyardAvatarFrame>
-			) : <AgentLanyardAvatarFrame><Image alt="" className={agent.avatarSrc.startsWith("/avatar-agent-new/") ? "h-full w-full" : "h-full w-full scale-110"} src={agent.avatarSrc} width={54} height={60} /></AgentLanyardAvatarFrame>)}
+			avatar={avatar ?? defaultAvatar}
 			footer={recommended || footer === null ? null : footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>
 				: <AgentLanyardActions agent={agent} {...actions} />}

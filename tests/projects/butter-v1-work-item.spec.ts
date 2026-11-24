@@ -315,6 +315,27 @@ async function expectSingleSelectorSurface(popup: Locator) {
 	await expect(selector).not.toHaveCSS("box-shadow", "none");
 }
 
+test("first Board selection does not animate cards from the journey layout", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await expect(page.locator('[data-butter-board-surface] [data-issue-key="PAY-118"]').first()).toBeVisible();
+	const positions = await page.evaluate(() => new Promise<number[]>((resolve) => {
+		const samples: number[] = [];
+		let started = 0;
+		const sample = (time: number) => {
+			started ||= time;
+			const card = document.querySelector<HTMLElement>('[aria-label="Payments SDK v2 Kanban board"] [data-issue-key="PAY-118"]');
+			if (card) samples.push(card.getBoundingClientRect().y);
+			if (time - started < 1200) requestAnimationFrame(sample);
+			else resolve(samples);
+		};
+		requestAnimationFrame(sample);
+		document.querySelector<HTMLButtonElement>('[aria-label="Select Board"]')?.click();
+	}));
+	expect(positions.length).toBeGreaterThan(2);
+	expect(Math.max(...positions) - Math.min(...positions)).toBeLessThanOrEqual(2);
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`the work item agent field previews the agent under the pointer while scrolling (${reducedMotion})`, async ({ page }) => {
 		await page.setViewportSize({ width: 1600, height: 1200 });

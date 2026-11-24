@@ -73,9 +73,8 @@ test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	await expect(lanyard.getByRole("heading", { name: "Why recommended" })).toBeVisible();
 	await expect(lanyard.getByText("Claude can help with code suggestions and reviews.", { exact: true })).toBeVisible();
 	const popup = page.locator('[data-slot="hover-card-content"]');
-	await expect(popup).toHaveCSS("box-shadow", "none");
-	await expect(lanyard).toHaveCSS("filter", /drop-shadow/u);
-	await expect(lanyard.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("mask-image", /radial-gradient/u);
+	await expect(popup).toHaveCSS("box-shadow", /^(none|rgba\(0, 0, 0, 0\))/u);
+	await expect(lanyard.locator('[data-slot="agent-lanyard-cutout-mask"]')).toHaveCSS("mask-image", /linear-gradient/u);
 	const issueBounds = await card.boundingBox();
 	const previewBounds = await lanyard.boundingBox();
 	if (!issueBounds || !previewBounds) throw new Error("Issue or agent preview is not visible");
@@ -83,7 +82,7 @@ test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
 	await cursor.hover();
 	await expect(lanyard.getByRole("heading", { name: "Cursor" })).toBeVisible();
-	await expect(popup).not.toHaveCSS("box-shadow", "none");
+	await expect(popup).toHaveCSS("box-shadow", /^(none|rgba\(0, 0, 0, 0\))/u);
 	await expect(lanyard).toHaveCSS("filter", "none");
 	await expect(lanyard).toHaveAttribute("data-variant", "agent");
 	await expect(lanyard.getByRole("heading", { name: "Why recommended" })).toHaveCount(0);
@@ -113,6 +112,7 @@ test("agent previews avoid the originating issue when the picker is near the vie
 	await page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: "Claude (Recommended)" }).focus();
 	const preview = page.locator('[data-slot="agent-lanyard"]');
 	await expect(preview.getByRole("heading", { name: "Claude" })).toBeVisible();
+	await expect(preview.locator('xpath=ancestor::*[@data-slot="hover-card-content"]')).toHaveCSS("opacity", "1");
 	const issueBounds = await card.boundingBox();
 	const previewBounds = await preview.boundingBox();
 	if (!issueBounds || !previewBounds) throw new Error("Issue or agent preview is not visible");

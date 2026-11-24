@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type CSSProperties } from "react";
 import { EXPANDED_TICKET_TEAR_LINE_STYLE } from "@/components/blocks/agent-card/components/agent-card-ticket-style";
+import { cn } from "@/lib/utils";
 
 const notchMask = [0, 100].map((edge) => `radial-gradient(circle var(--recommendation-notch-radius) at ${edge}% var(--recommendation-seam-y, -20px), transparent calc(var(--recommendation-notch-radius) - 0.5px), black var(--recommendation-notch-radius))`).join(", ");
 export const AGENT_LANYARD_RECOMMENDATION_SURFACE_STYLE = {
@@ -31,11 +32,11 @@ export function useAgentLanyardRecommendation(enabled: boolean) {
 	return { surfaceRef, identityRef };
 }
 
-export function AgentLanyardRecommendation({ reason, headingLevel }: Readonly<{ reason: string; headingLevel: 2 | 3 }>) {
+export function AgentLanyardRecommendation({ reason, headingLevel, perforated }: Readonly<{ reason: string; headingLevel: 2 | 3; perforated: boolean }>) {
 	const Heading = headingLevel === 2 ? "h3" : "h4";
 	return (
-		<div className="relative px-4 pt-4 pb-3" data-slot="agent-lanyard-recommendation-section">
-			<span aria-hidden="true" className="pointer-events-none absolute top-0 h-px bg-border" style={{ ...EXPANDED_TICKET_TEAR_LINE_STYLE, insetInline: "calc(var(--recommendation-notch-radius) - 2px)" }} data-slot="agent-lanyard-tear-line" />
+		<div className={cn("relative px-4 pt-4", perforated ? "pb-3" : "pb-4")} data-slot="agent-lanyard-recommendation-section">
+			{perforated ? <span aria-hidden="true" className="pointer-events-none absolute top-0 h-px bg-border" style={{ ...EXPANDED_TICKET_TEAR_LINE_STYLE, insetInline: "calc(var(--recommendation-notch-radius) - 2px)" }} data-slot="agent-lanyard-tear-line" /> : null}
 			<div data-slot="agent-lanyard-recommendation">
 				<Heading className="mb-1 p-0 text-xs leading-4 font-semibold text-text-subtlest">Why recommended</Heading>
 				<p className="wrap-anywhere text-xs text-text-subtle">{reason}</p>

@@ -88,12 +88,13 @@ test("brand-backed lanyards render through the shared agent visual", async () =>
 	}
 });
 
-test("the lanyard cutout paints its recessed shadow separately from the rim and fill", () => {
+test("the lanyard cutout has no opaque fill and retains its recessed rim", () => {
 	const card = renderCard(AGENT_LANYARD_AGENTS[0]);
 	const cutout = card.querySelector('[data-slot="agent-lanyard-cutout"]');
 	const shadow = cutout.querySelector('[data-slot="agent-lanyard-cutout-shadow"]');
 	assert.ok(shadow, "The shadow needs a full-rim layer instead of being inset inside the border");
-	assert.equal(cutout.children.length, 2, "White fill and recessed shading have separate paint layers");
+	assert.equal(cutout.children.length, 1);
+	assert.equal(card.querySelector('[data-slot="agent-lanyard-cutout-mask"]') !== null, true);
 	assert.equal(cutout.style.boxShadow, "");
 	assert.equal(shadow.style.boxShadow.match(/inset/gu).length, 3, "Fractional rim and both recess shadows are painted together");
 	assert.equal(cutout.parentElement.getAttribute("aria-hidden"), "true");
@@ -238,10 +239,13 @@ test("public recommended variant retains identity and description, updates calle
 		assert.equal(card.textContent.includes("Unwanted footer"), false);
 		assert.equal(card.querySelector('[data-slot="agent-lanyard-appstack"]') === null, true);
 		assert.equal(card.querySelectorAll('[data-slot="agent-lanyard-surface"]').length, 1);
-		await view.rerender({ ...props, headingLevel: 2, recommendationReason: "Another caller-owned reason." });
+		await view.rerender({ ...props, headingLevel: 2, recommendationAppearance: "chin", recommendationReason: "Another caller-owned reason." });
 		assert.equal(view.getByRole("heading", { name: "Claude" }).tagName, "H2");
 		assert.equal(view.getByRole("heading", { name: "Why recommended" }).tagName, "H3");
 		assert.equal(view.getByText("Another caller-owned reason.").textContent, "Another caller-owned reason.");
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-recommended-identity"]').classList.contains("shadow-sm"), true);
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-tear-line"]') === null, true);
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').style.maskImage, "");
 	} finally { await view.unmount(); }
 });
 
@@ -265,23 +269,55 @@ test("recommended variant preserves the static grid and respects reduced motion 
 	}
 });
 
-test("catalog pairs the illustrative recommended card with the existing actionable examples", async () => {
-	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/page.tsx" });
+const gallerySource = `
+	import AgentLanyardPage from "@/components/blocks/agent-lanyard/page";
+	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+	export default function Gallery() { return <ThemeWrapper><AgentLanyardPage /></ThemeWrapper>; }
+`;
+
+test("catalog shows both recommended treatments alongside the actionable examples", async () => {
+	const view = await renderComponent({ source: gallerySource });
 	try {
-		assert.equal(view.container.querySelector('article[data-variant="recommended"]').querySelectorAll("button").length, 0);
+		const recommended = view.getByRole("heading", { name: "Recommended", level: 2 }).closest("section");
+		const perforated = view.getByText("Perforated").closest("figure");
+		const chin = view.getByText("Chin").closest("figure");
+		assert.equal(recommended.querySelectorAll('article[data-variant="recommended"]').length, 2);
+		assert.equal(recommended.querySelectorAll("button").length, 0);
+		assert.equal(perforated.querySelectorAll('[data-slot="agent-lanyard-tear-line"]').length, 1);
+		assert.equal(chin.querySelectorAll('[data-slot="agent-lanyard-tear-line"]').length, 0);
 		assert.equal(view.container.querySelector('article[data-agent-id="claude"][data-variant="agent"]').querySelectorAll("button").length > 0, true);
 		assert.equal(view.getByText(/Illustrative demo reason based on the catalog description/u).textContent.includes("No personalized evidence"), true);
 	} finally { await view.unmount(); }
 });
 
-test("recommended hover content preserves the shaped card shadow while ordinary popups use overlay elevation", async () => {
+test("the MCP setup gallery shows the invoker and copies the full prompt", async (t) => {
+	const view = await renderComponent({ source: gallerySource });
+	t.after(view.unmount);
+	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+	const copied = [];
+	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (text) => copied.push(text) } });
+	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
+	assert.equal(view.getByText("Invoked by Mia McDougall").textContent, "Invoked by Mia McDougall");
+	assert.equal(view.queryByText("MM") === null, true);
+	assert.equal(view.getByText("Using Atlassian MCP").textContent.trim(), "Using Atlassian MCP");
+	const prompt = view.container.querySelector('pre[aria-label="Atlassian MCP setup prompt"]');
+	assert.equal(prompt.tabIndex, 0);
+	assert.equal(prompt.textContent.includes("https://mcp.atlassian.com/v2/mcp"), true);
+	assert.equal(prompt.textContent.endsWith("After setup, review Jira work item R1S-9: Instrument cluster night-mode legibility and show me the next update before posting."), true);
+	await view.click(view.getByRole("button", { name: "Copy setup prompt" }));
+	assert.deepEqual(copied, [prompt.textContent]);
+	assert.equal(view.queryByRole("button", { name: "Prompt copied" }) !== null, true);
+});
+
+test("lanyard hover content leaves elevation to the card", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyardHoverContent", props: { variant: "recommended" },
-		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style}) { return <div data-popup style={style} />; }' },
+		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style, className}) { return <div data-popup style={style} className={className} />; }' },
 	});
 	try {
-		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "none");
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "");
 		await view.rerender({});
-		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow.includes("--ds-shadow-overlay"), true);
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "");
+		assert.equal(view.container.querySelector("[data-popup]").className.includes("[&_[data-slot=agent-lanyard]]:shadow-2xl"), true);
 	} finally { await view.unmount(); }
 });
