@@ -3847,8 +3847,8 @@
 				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/components/projects/jira-for-you",
-						"source": "components/projects/jira-for-you",
+						"importPath": "@/components/projects/jira-for-you/jira-for-you-project-butter",
+						"source": "components/projects/jira-for-you/jira-for-you-project-butter",
 						"symbols": [
 							"JiraForYouProjectButter"
 						]
@@ -3857,15 +3857,15 @@
 				"primaryOwner": {
 					"kind": "shell",
 					"sources": [
-						"components/projects/jira-for-you"
+						"components/projects/jira-for-you/jira-for-you-project-butter"
 					]
 				},
 				"routePath": "/preview/projects/jira-for-you",
 				"shellOwnerCount": 1,
 				"shellOwners": [
 					{
-						"importPath": "@/components/projects/jira-for-you",
-						"source": "components/projects/jira-for-you",
+						"importPath": "@/components/projects/jira-for-you/jira-for-you-project-butter",
+						"source": "components/projects/jira-for-you/jira-for-you-project-butter",
 						"symbols": [
 							"JiraForYouProjectButter"
 						]
