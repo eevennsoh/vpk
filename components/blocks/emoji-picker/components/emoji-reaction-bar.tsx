@@ -91,7 +91,7 @@ export function EmojiReactionBar({
 			 * being pushed to the far edge — the row reads as one continuous group.
 			 * A consumer that wants them right-aligned can pass `ml-auto` itself.
 			 */}
-			{trailing ? <div className="flex items-center gap-1">{trailing}</div> : null}
+			{trailing ? <div className="flex items-center gap-1 empty:hidden">{trailing}</div> : null}
 		</div>
 	);
 }

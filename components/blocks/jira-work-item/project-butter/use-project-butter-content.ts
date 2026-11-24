@@ -277,7 +277,7 @@ export function useProjectButterContent(
 						if (entry.kind !== "comment") return entry;
 						const reply = entry.replies?.find((item) => item.id === replyId && item.visibility === "private" && item.generationStartedAtMs === undefined);
 						if (!reply) return entry;
-						return { ...entry, replies: entry.replies?.map((item) => item.id === replyId ? { ...item, visibility: undefined } : item) };
+						return { ...entry, replies: entry.replies?.map((item) => item.id === replyId ? { ...item, visibility: "public" } : item) };
 					}),
 				}));
 			},

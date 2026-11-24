@@ -39,6 +39,25 @@ function renderJourney(extra = {}) {
 	return renderComponent({ entry: "components/blocks/jira-work-item/project-butter/project-butter-jira-work-item.tsx", exportName: "ProjectButterJiraWorkItem", props: { ...props, ...extra }, mocks });
 }
 
+test("adding the generated acknowledgment publishes it and keeps it published", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-jira-work-item.tsx",
+		exportName: "ProjectButterJiraWorkItem",
+		props: { ...props, journeyPhase: "working" },
+		mocks: { ...mocks, "@/components/blocks/jira-work-item/project-butter/project-butter-body": `import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			export function ProjectButterBody({ content, sessions, detailsSlotRef }) { return <><ProjectButterActivity content={content} sessions={sessions} onOpenSession={() => {}} sidePanel={false} /><div ref={detailsSlotRef} /></>; }` },
+	});
+	const reply = () => document.querySelector('[data-jira-activity-entry-id="invocation-journey-session"] [aria-label="Replies"]');
+	assert.match(reply().textContent, /Only visible to you/u);
+	await view.click(view.getByRole("button", { name: "Add reply" }));
+	assert.doesNotMatch(reply().textContent, /Only visible to you/u);
+	assert.equal(view.queryByRole("button", { name: "Add reply" }) === null, true);
+	await view.rerender({ ...props, journeyPhase: "pr" });
+	assert.doesNotMatch(reply().textContent, /Only visible to you/u);
+	assert.match(reply().textContent, /I'm looking into this issue now/u);
+	await view.unmount();
+});
+
 test("Claude's journey uses the embedded session card and shows its acknowledgment as a reply", async () => {
 	const view = await renderComponent({ source: `import React from "react";
 		import { ThemeWrapper } from "@/components/utils/theme-wrapper";
@@ -57,7 +76,7 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 	assert.equal(entries[0].textContent.includes("Venn added Claude and self-assigned the issue"), true);
 	assert.equal(entries[0].querySelector('[data-project-butter-session-start="journey-session"]') !== null, true);
 	assert.equal(entries[0].textContent.includes("Merchant onboarding"), true);
-	assert.equal(document.querySelector('[data-jira-activity-entry-id="merchant-assignment"]'), null);
+	assert.equal(document.querySelector('[data-jira-activity-entry-id="merchant-assignment"]') === null, true);
 	assert.equal(entries[0].querySelector('[aria-label="Replies"]')?.textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
 	assert.equal(entries[0].querySelector('[data-slot="jira-activity-comment-header"]').textContent.includes("Only visible to you"), false);
 	assert.equal(entries[0].querySelector('[aria-label="Replies"]').textContent.includes("Only visible to you"), true);

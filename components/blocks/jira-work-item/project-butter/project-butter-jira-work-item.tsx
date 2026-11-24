@@ -210,8 +210,16 @@ export function ProjectButterJiraWorkItem({
 		if (!open || !workItem) return;
 		syncStoryPoints(workItem.storyPoints?.toString() ?? "");
 	}, [open, syncStoryPoints, workItem]);
+	function setPresentedActivityEntries(update: React.SetStateAction<typeof currentContent.activityEntries>) {
+		currentContent.setActivityEntries((stored) => {
+			const shown = projectMerchantJourney({ content: { ...currentContent, activityEntries: stored }, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields, showAcknowledgment }).content.activityEntries;
+			const next = typeof update === "function" ? update(shown) : update;
+			return merchantJourneyAuthoredActivity(stored, shown, next, journeySession);
+		});
+	}
 	const content = {
 		...projection.content,
+		publishActivityReply: (replyId: string) => setPresentedActivityEntries((entries) => entries.map((entry) => entry.kind === "comment" ? { ...entry, replies: entry.replies?.map((reply) => reply.id === replyId && reply.visibility === "private" && reply.generationStartedAtMs === undefined ? { ...reply, visibility: "public" } : reply) } : entry)),
 		setDescription: (update: React.SetStateAction<string>) => {
 			markJourneyAuthored("description");
 			currentContent.setDescription(update);
@@ -228,13 +236,7 @@ export function ProjectButterJiraWorkItem({
 			markJourneyAuthored("status");
 			currentContent.setStatus(update);
 		},
-		setActivityEntries: (update: React.SetStateAction<typeof currentContent.activityEntries>) => {
-			currentContent.setActivityEntries((stored) => {
-				const shown = projectMerchantJourney({ content: { ...currentContent, activityEntries: stored }, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields, showAcknowledgment }).content.activityEntries;
-				const next = typeof update === "function" ? update(shown) : update;
-				return merchantJourneyAuthoredActivity(stored, shown, next, journeySession);
-			});
-		},
+		setActivityEntries: setPresentedActivityEntries,
 		setAssignee: (update: React.SetStateAction<WorkItemPerson>) => {
 			const next = typeof update === "function" ? update(projection.content.assignee) : update;
 			markJourneyAuthored("assignee");

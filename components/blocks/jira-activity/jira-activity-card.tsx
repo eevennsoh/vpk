@@ -196,7 +196,7 @@ export function JiraActivityCard({
 									</div>
 								</div>
 							) : (
-								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm leading-5">
+								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm leading-5">
 									<span className="font-medium text-text">{agentName}</span>
 									{timestampPrefix}
 									<JiraActivityTimestamp content={timestampContent} timestamp={timestamp} />

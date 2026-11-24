@@ -17,7 +17,7 @@ export function JiraActivityTimestamp({ timestamp, content, icon, className }: R
 	return (
 		<span
 			className={cn(
-				"pointer-events-none inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-normal text-text-subtlest opacity-0",
+				"pointer-events-none inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-normal text-text-subtlest opacity-0",
 				"group-hover/activity-timestamp:pointer-events-auto group-hover/activity-timestamp:opacity-100",
 				"group-focus-visible/activity-timestamp:opacity-100 group-has-[:focus-visible]/activity-timestamp:pointer-events-auto group-has-[:focus-visible]/activity-timestamp:opacity-100",
 				"[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100",

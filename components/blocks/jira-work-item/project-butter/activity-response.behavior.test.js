@@ -330,12 +330,14 @@ test("owned session replies stay private until the agent response is added publi
 	await view.click([...agentReply.querySelectorAll("button")].find((button) => button.textContent === "Add reply"));
 	assert.equal(humanReply.hidden, false);
 	assert.equal(agentReply.textContent.includes("Only visible to you"), false);
+	assert.equal(agentReply.textContent.includes("Visible to everyone"), true);
 	const disclosure = [...thread.querySelectorAll("button")].find((button) => /Show \d+ replies/u.test(button.textContent));
 	await view.click(disclosure);
 	assert.equal(disclosure.getAttribute("aria-expanded"), "true");
 	await view.click([...humanReply.querySelectorAll("button")].find((button) => button.textContent === "Add reply"));
 	assert.equal(disclosure.getAttribute("aria-expanded"), "true");
 	assert.equal(humanReply.textContent.includes("Only visible to you"), false);
+	assert.equal(humanReply.textContent.includes("Visible to everyone"), true);
 	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
 	assert.equal([...humanReply.querySelectorAll("button")].some((button) => button.textContent === "Add reply"), false);
 	assert.equal(thread.textContent.includes("I've received your request"), true);

@@ -13,9 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Lozenge } from "@/components/ui/lozenge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
+import TextContinuity from "@/components/visual/text-continuity";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { motionDuration } from "@/lib/motion";
 import { useLatestRef } from "@/lib/use-latest-ref";
 
 import { activityActorVpkLogo } from "./jira-activity-actor-mention";
@@ -230,8 +232,17 @@ export function ThreadConnector({ continued, centered = false, summary = false }
 	</>;
 }
 
-function PrivateVisibilityMetadata() {
-	return <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-normal text-text-subtlest"><span aria-hidden>·</span>Only visible to you</span>;
+function PrivateVisibilityMetadata({ visibility }: Readonly<{ visibility: "private" | "public" }>) {
+	const [phase, setPhase] = useState<"visible" | "exiting" | "hidden">(visibility === "private" ? "visible" : "hidden");
+	const startedPrivate = useRef(visibility === "private");
+	useEffect(() => {
+		if (visibility !== "public" || !startedPrivate.current) return;
+		const exitTimer = window.setTimeout(() => setPhase("exiting"), 2000);
+		const hideTimer = window.setTimeout(() => setPhase("hidden"), 2000 + motionDuration.slower * 1000);
+		return () => { window.clearTimeout(exitTimer); window.clearTimeout(hideTimer); };
+	}, [visibility]);
+	if (phase === "hidden") return null;
+	return <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-normal text-text-subtlest" data-visibility-metadata><span aria-hidden className={cn("transition-opacity duration-slower ease-out-practical", phase === "exiting" ? "opacity-0" : null)}>·</span><TextContinuity>{phase === "exiting" ? "" : visibility === "private" ? "Only visible to you" : "Visible to everyone"}</TextContinuity></span>;
 }
 
 function ThreadReplyCard({
@@ -352,7 +363,7 @@ const reactionSummaries = reactions.map((reaction) => ({
 				}
 				timestamp={reply.timestamp}
 				timestampContent={timestampContent}
-				timestampPrefix={reply.visibility === "private" ? <PrivateVisibilityMetadata /> : undefined}
+				timestampPrefix={reply.visibility ? <PrivateVisibilityMetadata visibility={reply.visibility} /> : undefined}
 				timestampMeta={
 					showResolvedStatus ? <Lozenge variant="success">Resolved</Lozenge> : undefined
 				}

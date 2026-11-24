@@ -45,3 +45,41 @@ test("agent invocation uses the shared session card", async ({ page }) => {
 	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
 	await expect(invocation.locator("[data-project-butter-session-start]")).toBeVisible();
 });
+
+test("comment and reply action icons share the same right-hand columns", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "In progress", exact: true }).click();
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const invocation = page.getByRole("dialog", { name: "Project butter" }).locator('[data-jira-activity-entry-id^="invocation-"]');
+	await expect(invocation).toContainText("I'm looking into this issue now");
+	const header = invocation.locator('[data-slot="jira-activity-comment-header"]').first();
+	const reply = invocation.locator('[data-jira-activity-reply-header]').first();
+	const centers = await Promise.all([
+		header.getByRole("button", { name: "Summarize thread" }),
+		header.getByRole("button", { name: "Pin comment" }),
+		reply.getByRole("button", { name: "Reply" }),
+		reply.getByRole("button", { name: "Add reaction" }),
+	].map((button) => button.evaluate((element) => { const box = element.getBoundingClientRect(); return box.left + box.width / 2; })));
+	expect(Math.abs(centers[0] - centers[2])).toBeLessThanOrEqual(1);
+	expect(Math.abs(centers[1] - centers[3])).toBeLessThanOrEqual(1);
+});
+
+for (const motion of ["no-preference", "reduce"] as const) test(`adding a private agent reply changes its visibility label with ${motion} motion`, async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: motion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "In progress", exact: true }).click();
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const invocation = page.getByRole("dialog", { name: "Project butter" }).locator('[data-jira-activity-entry-id^="invocation-"]');
+	const reply = invocation.locator('[aria-label="Replies"] > div').filter({ hasText: "I'm looking into this issue now" });
+	await expect(reply).toContainText("Only visible to you");
+	await reply.getByRole("button", { name: "Add reply" }).click();
+	await expect(reply).toContainText("Visible to everyone");
+	const shownAt = Date.now();
+	await expect.poll(async () => (await reply.textContent())?.includes("Visible to everyone") && Date.now() - shownAt >= 900, { intervals: [100] }).toBe(true);
+	await expect(reply.getByRole("button", { name: "Add reply" })).toHaveCount(0);
+	if (motion === "no-preference") {
+		await expect.poll(() => reply.locator('[data-visibility-metadata] > span:last-child').evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === "running")), { intervals: [50], timeout: 2000 }).toBe(true);
+	}
+	await expect(reply).not.toContainText("Visible to everyone", { timeout: 5000 });
+});

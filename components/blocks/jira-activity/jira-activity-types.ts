@@ -172,7 +172,7 @@ export interface JiraActivityReply {
 	timestamp: string;
 	createdAtMs?: number;
 	body: string;
-	visibility?: "private";
+	visibility?: "private" | "public";
 	/** A private agent response that is still being prepared. */
 	generationStartedAtMs?: number;
 	replyTo?: Readonly<{ id: string; excerpt: string }>;

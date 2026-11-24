@@ -137,9 +137,10 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 			const previous = content.activityEntries.find((entry) => entry.id === id);
 			const updates = phase && phase !== "invoke" && phase !== "starting" && phase !== "working" ? merchantJourneyActivity(phase, invokedAtMs).filter((update) => update.id !== "merchant-merged") : [];
 			const visibleUpdates = new Set(updates.map((reply) => reply.id));
+			const acknowledgment = thread.replies?.find((reply) => reply.id === id);
 			const replies = [...(thread.replies ?? []), ...(previous?.kind === "comment" ? previous.replies ?? [] : [])].filter((reply) => reply.id !== id && reply.id !== `response-${projectedSession.id}` && (!GENERATED_IDS.has(reply.id) || visibleUpdates.has(reply.id)));
 			const existingReplies = new Set(replies.map((reply) => reply.id));
-			if (showAcknowledgment) replies.unshift({ id, actor: thread.actor, timestamp: "Just now", createdAtMs: invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS, body: "I'm looking into this issue now. I'll report back here with updates as I make progress.", ...(getAgentSessionRole(projectedSession) === "owner" ? { visibility: "private" as const } : {}) });
+			if (showAcknowledgment) replies.unshift(acknowledgment ?? { id, actor: thread.actor, timestamp: "Just now", createdAtMs: invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS, body: "I'm looking into this issue now. I'll report back here with updates as I make progress.", ...(getAgentSessionRole(projectedSession) === "owner" ? { visibility: "private" as const } : {}) });
 			for (const update of updates) {
 				if (!existingReplies.has(update.id)) { replies.push(update); existingReplies.add(update.id); }
 				const original = content.activityEntries.find((entry) => entry.id === update.id);
