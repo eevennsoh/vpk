@@ -75,7 +75,7 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
 	recommendationReason?: string;
 	issueTriggerRef?: RefObject<HTMLElement | null>;
-	/** Opt-in: the hover card settles into a small perspective tilt each time a row reveals it. */
+	/** Opt-in: the preview card does a small perspective tilt while the pointer is over the card. */
 	cardTilt?: boolean;
 }>) {
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
@@ -103,13 +103,11 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 		return 8;
 	}} positionerClassName="z-[700]" className="[&_[data-slot=agent-lanyard-surface]]:min-h-0 [&_[data-slot=agent-lanyard-surface]_p]:min-h-0">
 		{agent ? (() => {
-			// Keyed by agent so moving between rows replays the reveal tilt.
-			const tilt = { perspectiveTilt: cardTilt, tiltTrigger: "reveal" } as const;
 			const firstParty = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((item) => item.id === agent.id);
-			if (firstParty) return <AgentLanyardFirstParty key={agent.id} {...tilt} agent={firstParty} />;
+			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={cardTilt} />;
 			const lanyard = pickerLanyard(agent);
-			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard key={agent.id} variant="recommended" recommendationAppearance="chin" agent={lanyard} recommendationReason={reason} {...tilt} />;
-			return <AgentLanyard key={agent.id} {...tilt} agent={lanyard} footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
+			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" recommendationAppearance="chin" agent={lanyard} recommendationReason={reason} perspectiveTilt={cardTilt} />;
+			return <AgentLanyard agent={lanyard} perspectiveTilt={cardTilt} footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
 		})() : null}
 	</AgentLanyardHoverContent>}</HoverCard></ProjectButterAgentPreviewBoundary>;
 }

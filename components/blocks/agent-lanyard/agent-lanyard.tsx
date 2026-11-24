@@ -27,8 +27,6 @@ interface AgentLanyardAgentProps {
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
-	/** Tilt on card hover (default) or settle into the tilt when a preview reveals the card. */
-	tiltTrigger?: "hover" | "reveal";
 	headingLevel?: 2 | 3;
 	/** Replaces the action row; null hides it entirely. */
 	footer?: ReactNode;
@@ -46,7 +44,7 @@ interface AgentLanyardAgentProps {
 	className?: string;
 }
 
-export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProps, "agent" | "perspectiveTilt" | "tiltTrigger" | "animateGrid" | "gridAnimationTrigger" | "headingLevel" | "showGrid" | "className"> {
+export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProps, "agent" | "perspectiveTilt" | "animateGrid" | "gridAnimationTrigger" | "headingLevel" | "showGrid" | "className"> {
 	variant: "recommended";
 	/** Caller-owned, non-empty explanation. This component does not rank agents. */
 	recommendationReason: string;
@@ -136,7 +134,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 		);
 	}
 
-	const { perspectiveTilt, tiltTrigger, animateGrid, gridAnimationTrigger, showGrid, showDescription, avatar, footer, onSelect, recommendationAppearance, ...actions } = variantProps;
+	const { perspectiveTilt, animateGrid, gridAnimationTrigger, showGrid, showDescription, avatar, footer, onSelect, recommendationAppearance, ...actions } = variantProps;
 	const recommended = variantProps.variant === "recommended";
 	if (recommended && !variantProps.recommendationReason?.trim()) throw new Error("AgentLanyard recommended variant requires a non-empty recommendationReason.");
 	return (
@@ -144,7 +142,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 			{...identity}
 			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? variantProps.recommendationReason : undefined}
 			recommendationAppearance={recommendationAppearance}
-			perspectiveTilt={perspectiveTilt} tiltTrigger={tiltTrigger} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
+			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
 			avatar={avatar ?? defaultAvatar}
 			footer={recommended || footer === null ? null : footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>

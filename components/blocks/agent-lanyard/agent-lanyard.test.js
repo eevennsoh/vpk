@@ -269,23 +269,6 @@ test("recommended variant preserves the static grid and respects reduced motion 
 	}
 });
 
-test("reveal tilt is opt-in, settles without card hover, and yields to reduced motion", async () => {
-	for (const reducedMotion of [false, true]) {
-		const props = { agent: AGENT_LANYARD_AGENTS[0], perspectiveTilt: true, tiltTrigger: "reveal", footer: null };
-		const view = await renderComponent({
-			entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props,
-			mocks: { "@/hooks/use-media-query": `export const useMediaQuery = () => ${reducedMotion};` },
-		});
-		try {
-			const card = view.container.querySelector("article");
-			assert.equal(card.dataset.perspectiveTilt, String(!reducedMotion));
-			assert.equal(card.dataset.tiltTrigger ?? "none", reducedMotion ? "none" : "reveal");
-			await view.rerender({ ...props, perspectiveTilt: false });
-			assert.equal(card.dataset.tiltTrigger ?? "none", "none");
-		} finally { await view.unmount(); }
-	}
-});
-
 const gallerySource = `
 	import AgentLanyardPage from "@/components/blocks/agent-lanyard/page";
 	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
