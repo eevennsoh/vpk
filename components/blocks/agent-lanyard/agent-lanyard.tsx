@@ -24,6 +24,10 @@ interface AgentLanyardAgentProps {
 	recommendationAppearance?: never;
 	agent: AgentLanyardAgent;
 	perspectiveTilt?: boolean;
+	/** Multiplies the hover tilt angles; 1 is the catalog default. */
+	tiltStrength?: number;
+	/** Mirror the tilt so the edge facing a hover-card trigger leans in. */
+	tiltInward?: boolean;
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
@@ -44,7 +48,7 @@ interface AgentLanyardAgentProps {
 	className?: string;
 }
 
-export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProps, "agent" | "perspectiveTilt" | "animateGrid" | "gridAnimationTrigger" | "headingLevel" | "showGrid" | "className"> {
+export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProps, "agent" | "perspectiveTilt" | "tiltStrength" | "tiltInward" | "animateGrid" | "gridAnimationTrigger" | "headingLevel" | "showGrid" | "className"> {
 	variant: "recommended";
 	/** Caller-owned, non-empty explanation. This component does not rank agents. */
 	recommendationReason: string;
@@ -80,7 +84,9 @@ export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommended
 export type AgentLanyardHoverContentProps = ComponentProps<typeof HoverCardContent> & { variant?: "agent" | "recommended" };
 
 export function AgentLanyardHoverContent({ className, style, variant = "agent", ...props }: Readonly<AgentLanyardHoverContentProps>) {
-	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0", variant === "agent" ? "[&_[data-slot=agent-lanyard]]:rounded-xl [&_[data-slot=agent-lanyard]]:shadow-2xl [&_[data-slot=agent-lanyard-surface]]:shadow-none" : null, className)} style={style} />;
+	// A tilting card carries its elevation on the rotating surface so the shadow follows the tilt.
+	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0",
+		variant === "agent" ? "[&_[data-slot=agent-lanyard]]:rounded-xl [&_[data-slot=agent-lanyard][data-perspective-tilt=false]]:shadow-2xl [&_[data-slot=agent-lanyard-surface]]:shadow-none [&_[data-perspective-tilt=true]_[data-slot=agent-lanyard-surface]]:shadow-2xl" : null, className)} style={style} />;
 }
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
@@ -132,7 +138,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 		);
 	}
 
-	const { perspectiveTilt, animateGrid, gridAnimationTrigger, showGrid, showDescription, avatar, footer, onSelect, recommendationAppearance, ...actions } = variantProps;
+	const { perspectiveTilt, tiltStrength, tiltInward, animateGrid, gridAnimationTrigger, showGrid, showDescription, avatar, footer, onSelect, recommendationAppearance, ...actions } = variantProps;
 	const recommended = variantProps.variant === "recommended";
 	if (recommended && !variantProps.recommendationReason?.trim()) throw new Error("AgentLanyard recommended variant requires a non-empty recommendationReason.");
 	return (
@@ -140,7 +146,7 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 			{...identity}
 			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? variantProps.recommendationReason : undefined}
 			recommendationAppearance={recommendationAppearance}
-			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
+			perspectiveTilt={perspectiveTilt} tiltStrength={tiltStrength} tiltInward={tiltInward} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
 			avatar={avatar ?? defaultAvatar}
 			footer={recommended || footer === null ? null : footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>

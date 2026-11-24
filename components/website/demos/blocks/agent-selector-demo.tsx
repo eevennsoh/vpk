@@ -2,10 +2,20 @@
 
 import AgentSelectorPage from "@/components/blocks/agent-selector/page";
 import { ButterAgentSelectorGallery } from "@/components/projects/butter-v1/components/butter-agent-selector-gallery";
-import type { ReactElement } from "react";
+import { Switch } from "@/components/ui/switch";
+import { useState, type ReactElement } from "react";
 
 export default function AgentSelectorDemo(): ReactElement {
-	return <div className="flex items-center justify-center p-6"><ButterAgentSelectorGallery cloudOnly /></div>;
+	const [cardTilt, setCardTilt] = useState(true);
+	return (
+		<div className="flex flex-col items-center justify-center gap-4 p-6">
+			<div className="flex items-center gap-2 text-sm text-text">
+				<Switch checked={cardTilt} onCheckedChange={setCardTilt} label="Card tilt" />
+				Card tilt
+			</div>
+			<ButterAgentSelectorGallery cloudOnly cardTilt={cardTilt} />
+		</div>
+	);
 }
 
 export function AgentSelectorDemoIncludeByline(): ReactElement {
