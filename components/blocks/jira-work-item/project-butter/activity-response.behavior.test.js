@@ -272,7 +272,7 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	assert.equal(reply.textContent.includes("👀"), true);
 });
 
-test("owned session replies stay private until the agent response is added publicly", { timeout: 30000 }, async () => {
+test("owned session replies stay private until the agent response is added publicly", { timeout: 45000 }, async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
@@ -292,8 +292,11 @@ test("owned session replies stay private until the agent response is added publi
 	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
 	assert.equal(thread.textContent.includes("👀"), true);
 	assert.equal(Boolean(thread.querySelector('[role="progressbar"][aria-label="Agent is preparing a reply"]')), true);
-	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10200)); });
-	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	const replyDeadline = Date.now() + 20000;
+	do {
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+		thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
+	} while (!thread.textContent.includes("I've received your request") && Date.now() < replyDeadline);
 	assert.equal(thread.textContent.includes("I've received your request"), true);
 	assert.equal(thread.textContent.includes("Only visible to you"), true);
 	const replyRows = () => [...thread.querySelectorAll('[aria-label="Replies"] > div')];

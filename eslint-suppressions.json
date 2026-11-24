@@ -882,7 +882,7 @@
   },
   "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 4
     }
   },
   "components/blocks/jira-kanban/board-header-avatar-stroke.source.test.js": {
