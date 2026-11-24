@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { AgentLanyardGrid } from "../agent-lanyard-grid";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { AGENT_LANYARD_RECOMMENDATION_SURFACE_STYLE, AgentLanyardRecommendation, useAgentLanyardRecommendation } from "./agent-lanyard-recommendation";
 
 interface AgentLanyardCardProps {
@@ -29,6 +29,8 @@ interface AgentLanyardCardProps {
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
+	/** Tilt while the card is hovered, or settle into the tilt as soon as a preview reveals it. */
+	tiltTrigger?: "hover" | "reveal";
 	headingLevel?: 2 | 3;
 	onSelect?: () => void;
 	className?: string;
@@ -37,6 +39,7 @@ interface AgentLanyardCardProps {
 const HOVER_TILT = "perspective(900px) rotateX(-1.2deg) rotateY(4.4deg) rotateZ(-0.6deg)";
 const REST_TILT = "perspective(900px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)";
 const ENTER = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
+const REVEAL = { duration: motionDuration.slow, ease: motionEase.inOut }; // duration-slow + ease-in-out: settles in place while the popup fades in
 const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 export const AGENT_LANYARD_CUTOUT_MASK = {
 	maskImage: `linear-gradient(#000 0 0), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6'%3E%3Crect width='40' height='6' rx='3' fill='white'/%3E%3C/svg%3E")`,
@@ -48,12 +51,14 @@ export const AGENT_LANYARD_CUTOUT_MASK = {
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, recommendationReason, recommendationAppearance = "perforated", avatar, footer, verified = false,
-	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = false, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
+	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = false, gridAnimationTrigger = "hover", tiltTrigger = "hover", headingLevel = 3, onSelect, className,
 }: Readonly<AgentLanyardCardProps>) {
 	const Title = headingLevel === 2 ? "h2" : "h3";
 	const [hovered, setHovered] = useState(false);
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const tiltEnabled = perspectiveTilt && !reducedMotion;
+	const revealTilt = tiltTrigger === "reveal";
+	const tilted = revealTilt || hovered;
 	const gridEnabled = showGrid && animateGrid && !reducedMotion;
 	const recommended = variant === "recommended" && recommendationReason !== undefined;
 	const mcpSetup = variant === "mcp-setup";
@@ -95,7 +100,7 @@ export function AgentLanyardCard({
 			aria-label={`${name} ${variant}`}
 			className={cn("flow-root w-[252px] max-w-full", perforated ? "rounded-xl shadow-2xl" : null, className)}
 			data-slot="agent-lanyard" data-agent-id={id} data-variant={variant}
-			data-perspective-tilt={tiltEnabled} data-grid-animation={gridEnabled}
+			data-perspective-tilt={tiltEnabled} data-tilt-trigger={tiltEnabled ? tiltTrigger : undefined} data-grid-animation={gridEnabled}
 			onPointerEnter={(event) => { if (event.pointerType !== "touch") setHovered(true); }}
 			onPointerLeave={() => setHovered(false)}
 			onPointerCancel={() => setHovered(false)}
@@ -104,9 +109,9 @@ export function AgentLanyardCard({
 				data-slot="agent-lanyard-cutout-mask"
 				className="-m-4 p-4"
 				style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 23px" }}
-				initial={false}
-				animate={{ transform: tiltEnabled ? (hovered ? HOVER_TILT : REST_TILT) : "none" }}
-				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
+				initial={tiltEnabled && revealTilt ? { transform: REST_TILT } : false}
+				animate={{ transform: tiltEnabled ? (tilted ? HOVER_TILT : REST_TILT) : "none" }}
+				transition={tiltEnabled ? (tilted ? (revealTilt ? REVEAL : ENTER) : EXIT) : { duration: 0 }}
 			>
 			<div
 				ref={surfaceRef}
