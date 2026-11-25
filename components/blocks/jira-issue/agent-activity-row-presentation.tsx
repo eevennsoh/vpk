@@ -66,6 +66,7 @@ export type JiraIssueAgentAssignment = Partial<
 
 /** A card agent row's avatar: the agent, with its invoker's dot when someone started it. The invocation handoff renders the same one. */
 /** `badgeEntrance` scales the invoker's dot in, for the handoff that precedes the attached row. */
+// react-doctor-disable-next-line react-doctor/only-export-components -- The card chin's handoff renders the attached row's exact identity through this helper, so it lives beside the row that owns that identity.
 export function renderJiraIssueSessionIdentity(activity: JiraIssueAgentActivity, sizePx: 16 | 20 | 24, badgeEntrance = false): ReactElement {
 	return renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, sizePx, false, badgeEntrance);
 }

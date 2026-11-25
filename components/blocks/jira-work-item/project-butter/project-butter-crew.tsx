@@ -50,6 +50,10 @@ const CREW: readonly CrewMember[] = [
 	{ name: "Rovo", kind: "agent", state: "Completed", visual: { vpkLogo: "rovo" } },
 ];
 const SESSION_STATE: Readonly<Record<AgentSessionItem["state"], AgentCrewMember["state"]>> = { "needs-input": "Needs input", "ready-for-review": "Ready for review", attention: "Needs input", running: "Working", complete: "Completed" };
+/** The hexagon + waits out the agent glyph's fade-out (duration-normal) before revealing. Inline because no delay utility exists. */
+const WAIT_FOR_GLYPH_EXIT = { transitionDelay: "var(--duration-normal)" } as const;
+/** The board card's hover-out, in Motion: 150ms linear fade with a 200ms practical scale to 90%. */
+const GLYPH_EXIT = { opacity: { duration: motionDuration.normal, ease: motionEase.linear }, scale: { duration: motionDuration.medium, ease: motionEase.outPractical } } as const;
 
 function sameCrewAgent(member: AgentCrewMember, agent: AgentSessionItem["agent"]) {
 	return Boolean(member.id && member.id === agent.id)
@@ -202,10 +206,10 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 	// board card's hover reveal (150ms linear fade, 200ms 90%↔100% scale). The hexagon waits out the glyph's 150ms fade so the two never overlap.
 	const emptyFieldIcon = addVisualEntry > 0 ? (
 		<span className="relative flex size-6 shrink-0" key={`icon-${addVisualEntry}`}>
-			<span aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-icon-subtle opacity-0 transition-opacity duration-normal ease-linear motion-reduce:hidden starting:opacity-100" data-slot="agent-field-exiting-icon">
-				<span className="flex scale-90 transition-transform duration-medium ease-out-practical starting:scale-100"><AiAgentIcon label="" color="currentColor" /></span>
-			</span>
-			<span className="flex transition-opacity delay-(--duration-normal) duration-normal ease-linear motion-reduce:transition-none starting:opacity-0"><AgentAddVisual className="transition-transform delay-(--duration-normal) duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span>
+			<motion.span animate={{ opacity: 0, scale: 0.9 }} aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-icon-subtle" data-slot="agent-field-exiting-icon" initial={{ opacity: 1, scale: 1 }} style={{ willChange: "transform, opacity" }} transition={GLYPH_EXIT}>
+				<AiAgentIcon label="" color="currentColor" />
+			</motion.span>
+			<span className="flex transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0" style={WAIT_FOR_GLYPH_EXIT}><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" style={WAIT_FOR_GLYPH_EXIT} selected={open} /></span>
 		</span>
 	) : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (

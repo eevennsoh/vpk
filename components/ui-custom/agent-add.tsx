@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode, type RefObject } from "react";
+import { useId, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import { Avatar } from "@/components/ui/avatar";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
  * The persistent hexagon + used wherever an agent can be added. Hover, press,
  * and expanded tones key off the nearest `group/butter-add-agent-trigger`.
  */
-export function AgentAddVisual({ className, selected = false }: Readonly<{ className?: string; selected?: boolean }>) {
+export function AgentAddVisual({ className, selected = false, style }: Readonly<{ className?: string; selected?: boolean; style?: CSSProperties }>) {
 	return (
-		<span data-slot="jira-issue-add-agent-visual" className={cn("flex size-6 shrink-0", className)}>
+		<span data-slot="jira-issue-add-agent-visual" className={cn("flex size-6 shrink-0", className)} style={style}>
 			<Avatar aria-hidden animate={false} shape="hexagon" size="sm" borderTone={selected ? "selected" : "default"}>
 				<span className="flex size-full items-center justify-center bg-bg-neutral-subtle text-icon-subtlest transition-colors duration-fast ease-out-practical motion-reduce:transition-none group-hover/butter-add-agent-trigger:bg-bg-neutral-subtle-hovered group-active/butter-add-agent-trigger:bg-bg-neutral-subtle-pressed group-aria-expanded/butter-add-agent-trigger:bg-bg-selected group-aria-expanded/butter-add-agent-trigger:text-icon-selected">
 					<AddIcon label="" size="small" color="currentColor" />

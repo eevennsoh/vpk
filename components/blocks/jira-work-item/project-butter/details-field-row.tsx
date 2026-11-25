@@ -100,7 +100,7 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
 				<div className="relative -mx-2 flex min-w-0 items-center rounded-md px-2 py-1.5 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" data-project-butter-detail-value-row>
-					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:-my-1.5 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:min-h-0 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:py-1.5 [&_[data-slot=labels-field]]:py-0", id !== "status" ? "pr-8" : undefined)}>
+					<div className={cn("flex min-w-0 flex-1 items-center gap-2 butter-detail-row-triggers", id !== "status" ? "pr-8" : undefined)}>
 						{fieldIcon}
 						<div className="relative min-w-0 flex-1 has-[>[data-suggestion-preview]]:[&>[data-project-butter-field-control]:not(:focus-within)]:opacity-0!">
 							<motion.div
