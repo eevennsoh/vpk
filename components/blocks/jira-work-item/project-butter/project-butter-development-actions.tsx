@@ -41,7 +41,7 @@ export function ProjectButterDevelopmentActions({ code, description, presentatio
 	showStartCoding?: boolean;
 	summary: string;
 }>) {
-	const startCoding = <Button className={ACTION_ROW_CLASS} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>;
+	const startCoding = <Button className={ACTION_ROW_CLASS} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" />Start coding</Button>;
 	return <div className="-mx-2 flex flex-col">
 		{showStartCoding ? renderStartCoding ? renderStartCoding(startCoding) : startCoding : null}
 		{showCopyPrompt ? <CopyPromptAction code={code} description={description} presentation={presentation} summary={summary} /> : null}

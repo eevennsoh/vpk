@@ -49,7 +49,7 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	const { listeners, isDragging, setNodeRef, transform, transition } = useSortable({ id, transition: { duration: motionDuration.medium * 1000, easing: "var(--ease-out-practical)" } });
 	const label = id === "agents" ? "Agents" : PROJECT_BUTTER_DETAIL_FIELDS[id];
 	const FieldIcon = id === "agents" ? undefined : id === "reporter" && !filled ? PersonIcon : FIELD_ICONS[id];
-	const fieldIcon = FieldIcon ? <IconTile aria-hidden as="span" className="text-icon-subtle" data-field-icon={id} icon={<FieldIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /> : null;
+	const fieldIcon = FieldIcon ? <IconTile aria-hidden as="span" className="text-icon-subtle" data-field-icon={id} icon={<FieldIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" /> : null;
 	const usesInlineLabel = id === "assignee" || id === "dueDate" || (id === "reporter" && filled);
 	const rowReveal = usesInlineLabel ? undefined : reveal;
 	const isLabels = id === "labels";
