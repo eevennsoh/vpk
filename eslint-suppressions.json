@@ -1380,11 +1380,6 @@
       "count": 5
     }
   },
-  "components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js": {
-    "vpk-tests/no-dom-node-assert": {
-      "count": 1
-    }
-  },
   "components/blocks/jira-work-item/project-butter/project-butter-header.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
