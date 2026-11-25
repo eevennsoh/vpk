@@ -95,7 +95,7 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const teammateNamesId = useId();
 	const [open, setOpen] = useState(false);
-	/** Bumped on each close so the hexagon + re-enters like the board card's hover reveal. */
+	/** Bumped on each close to remount the hexagon + so it replays the board card's hover reveal (same classes, via @starting-style). */
 	const [addVisualEntry, setAddVisualEntry] = useState(0);
 	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
 	const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
@@ -197,7 +197,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 		if (!next && open) setAddVisualEntry((entry) => entry + 1);
 	}
-	const emptyFieldIcon = addVisualEntry > 0 ? <motion.span animate={{ opacity: 1, scale: 1 }} className="flex shrink-0" initial={{ opacity: 0, scale: 0.9 }} key={addVisualEntry} style={{ willChange: "transform, opacity" }} transition={{ opacity: { duration: motionDuration.normal, ease: motionEase.linear }, scale: { duration: motionDuration.medium, ease: motionEase.outPractical } }}><AgentAddVisual selected={open} /></motion.span> : <AgentAddVisual selected={open} />;
+	const emptyFieldIcon = addVisualEntry > 0 ? <span className="flex shrink-0 transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0" key={addVisualEntry}><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span> : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
 		<>
 			<TeammateSessionAvatarCycle sizePx={24} sessions={sessions.map(({ agent, id, invokedBy, state }) => ({
