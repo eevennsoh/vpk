@@ -2,8 +2,8 @@
  * `measuring` lays the list out unseen to learn the panel's full height, then hands it to the stage named by `then`:
  * `expanding` for an open (finished by the open animation) or `unpacking` for cards arriving in an already open panel.
  * Both hold the panel at that height while the stack unpacks, so the cards fan down into room that is already there.
- * `checking` gathers the list back into a stack, held at the panel's height and inert, while a check runs; when the
- * check ends (with finds or none, or cancelled) it unpacks in place.
+ * `checking` gathers the list back into an inert stack while a check runs, remembering the list's height; when the
+ * check ends (with finds or none, or cancelled) it unpacks in place back up to that height.
  */
 export type FloatingPanelStage =
 	| { phase: "closed" | "list" | "caught-up" | "closing" }

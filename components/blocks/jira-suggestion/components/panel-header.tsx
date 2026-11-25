@@ -5,13 +5,13 @@ import CollapseVerticalIcon from "@atlaskit/icon/core/collapse-vertical";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
-import TextReviewIcon from "@atlaskit/icon-lab/core/text-review";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
 import { LIST_HEADER_TOP_INSET } from "./constants";
+import { SuggestionsStatusIcon } from "./suggestions-status-icon";
 
 export type ViewMode = "stack" | "list";
 
@@ -27,14 +27,31 @@ export function runAge(at: number, now: number): string {
 	return hours < 24 ? `${hours} hr ago` : `${Math.floor(hours / 24)} d ago`;
 }
 
-/** The current time, refreshed every 30 seconds so run ages stay honest while the panel is open. */
-function useNow(): number {
+const plural = (count: number, unit: string) => `${count} ${unit}${count === 1 ? "" : "s"} ago`;
+
+/** The exact age for the check tooltip: "10 seconds ago", "5 minutes ago", "2 hours ago", never "just now". */
+export function preciseRunAge(at: number, now: number): string {
+	const seconds = Math.floor(Math.max(0, now - at) / 1000);
+	if (seconds < 60) return plural(seconds, "second");
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return plural(minutes, "minute");
+	const hours = Math.floor(minutes / 60);
+	return hours < 24 ? plural(hours, "hour") : plural(Math.floor(hours / 24), "day");
+}
+
+/** The current time, refreshed every `intervalMs` so run ages stay honest while they are on screen. */
+function useNow(intervalMs: number): number {
 	const [now, setNow] = useState(Date.now);
 	useEffect(() => {
-		const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+		const timer = window.setInterval(() => setNow(Date.now()), intervalMs);
 		return () => window.clearInterval(timer);
-	}, []);
+	}, [intervalMs]);
 	return now;
+}
+
+/** Mounted only while the tooltip is open, so it ticks every second without a clock running for a closed tooltip. */
+function LastRun({ at }: Readonly<{ at: number }>) {
+	return <>Last run {preciseRunAge(at, useNow(1000))}</>;
 }
 
 /** Acknowledge checks that found no new suggestions in the heading. */
@@ -44,7 +61,7 @@ export function headline(feed: SuggestionFeed, now: number): string {
 	return "Suggestions for you";
 }
 
-function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: string; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
+function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: ReactNode; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
 	const tooltip = (
 		<Tooltip>
 			<TooltipTrigger render={<button aria-disabled={disabled || undefined} aria-label={label} className={ICON_BUTTON} onClick={disabled ? undefined : onClick} ref={buttonRef} type="button" />}>
@@ -84,7 +101,7 @@ export interface PanelHeaderProps {
 
 export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onClose, toggleRef, rerunRef }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
-	const now = useNow();
+	const now = useNow(30_000);
 	const lastRun = feed.runs.at(-1);
 	return (
 		<header
@@ -112,13 +129,13 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 						label={running ? "Checking for new suggestions" : "Check for new suggestions"}
 						onClick={onRerun}
 						portalOutsidePanel={floating}
-						tip={running ? "Checking for new suggestions…" : lastRun ? `Last run ${runAge(lastRun.at, now)}` : "Check again"}
+						tip={running ? "Checking for new suggestions…" : lastRun ? <LastRun at={lastRun.at} /> : "Check again"}
 					>
-						{floating ? <TextReviewIcon color="currentColor" label="" size="small" /> : <RefreshGlyph running={running} />}
+						{floating ? <SuggestionsStatusIcon state={running ? "loading" : "done"} /> : <RefreshGlyph running={running} />}
 					</HeaderButton>
 				) : null}
 				<HeaderButton label="Close suggestions" onClick={onClose} portalOutsidePanel={floating} tip="Close">
-					<CrossIcon color="currentColor" label="" size="small" />
+					<CrossIcon color="currentColor" label="" size="medium" />
 				</HeaderButton>
 			</div>
 		</header>

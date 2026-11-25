@@ -64,7 +64,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const isExpanding = phase === "expanding" && !reduceMotion;
 	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
 	const isUnpacking = phase === "unpacking";
-	// A check gathers the list into an inert stack until it ends; reduced motion swaps rather than flies.
+	// A check gathers the list into an inert stack, the panel easing down to fit it, until the check ends.
 	const isChecking = phase === "checking";
 	const introHeight = panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "checking" ? panelStage.height : undefined;
 	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking || isChecking ? "intro" : "list";
@@ -162,6 +162,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 							feed={feed}
 							focusOnMount
 							id={panelId}
+							animateHeight={isChecking || isUnpacking}
 							checking={isChecking}
 							introHeight={isExpanding || isUnpacking || isChecking ? introHeight : undefined}
 							listStage={listStage}

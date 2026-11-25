@@ -69,3 +69,21 @@ test("a header check that finds suggestions unpacks them into the list", async (
 	assert.equal(after > before, true, `the new finds join the list (${before} → ${after})`);
 	await view.unmount();
 });
+
+test("a running check hides the last check's receipt and spins the check action", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	// The first check brings the follow-ups; the second finds nothing and says so in the footer.
+	for (let run = 0; run < 2; run += 1) {
+		await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+		await wait(2200);
+		await wait(900);
+	}
+	assert.equal(view.queryByText("No new suggestions") !== null, true, "a quiet check leaves its receipt");
+	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+	await wait(100);
+	assert.equal(view.queryByText("No new suggestions") === null, true, "the next check does not repeat the old receipt");
+	assert.equal(document.querySelector('[aria-label="Checking for new suggestions"] svg')?.getAttribute("data-state"), "loading", "the check action spins while it runs");
+	await wait(2200);
+	await view.unmount();
+});

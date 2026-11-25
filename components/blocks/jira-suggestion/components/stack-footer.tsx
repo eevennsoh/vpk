@@ -37,7 +37,8 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 	const reviewed = deck.reviewed.length;
 	const pending = deck.order.length;
 	const total = reviewed + pending;
-	const receipt = pending > 0 ? deck.receipt : null;
+	// A running check owns the moment: the last receipt (e.g. "No new suggestions") would describe the previous one.
+	const receipt = pending > 0 && !onCancel ? deck.receipt : null;
 	return (
 		<motion.footer
 			animate={{ height: FOOTER_HEIGHT, opacity: 1, transition: SETTLE }}
@@ -61,7 +62,7 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 			<AnimatePresence initial={false} mode="popLayout">
 				{onCancel ? (
 					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center" key="cancel">
-						<Button onClick={onCancel} type="button" variant="outline">Cancel</Button>
+						<Button onClick={onCancel} type="button">Cancel</Button>
 					</motion.div>
 				) : pending > 0 ? (
 					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center gap-1" key="decide">

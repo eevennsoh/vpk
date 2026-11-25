@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useId, useRef, useState, type RefObject } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useId, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, cancelFrame, frame, LayoutGroup, type MotionValue } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
@@ -37,13 +37,15 @@ export interface StackPanelProps {
 	onRerun?: () => void;
 	/** A check is running over an inert stack: the footer offers only Cancel. */
 	checking?: boolean;
+	/** Ease height changes, so the panel follows the cards as they gather for a check and unpack after it. */
+	animateHeight?: boolean;
 }
 
 /**
  * The suggestions popover: heading with view · re-run · close, a body that is the stack, the unpacked
  * list or the caught-up state, and the progress footer.
  */
-export function StackPanel({ id, className, title, listStage, introHeight, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose, onRerun, checking = false }: Readonly<StackPanelProps>) {
+export function StackPanel({ id, className, title, listStage, introHeight, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose, onRerun, checking = false, animateHeight = false }: Readonly<StackPanelProps>) {
 	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
 	const [grab, setGrab] = useState<{ id: SuggestionFieldId; progress: MotionValue<number> } | null>(null);
 	const checkRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +82,38 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 		view.undo();
 	};
 	// Cancel leaves with the check, whichever ends it; keep focus on the action that started the check.
+	// A height transition needs a length to start from: hold the list's height for a frame, then fit the stack.
+	const [fitStack, setFitStack] = useState(false);
+	useEffect(() => {
+		if (!checking) return undefined;
+		const raf = requestAnimationFrame(() => setFitStack(true));
+		return () => {
+			cancelAnimationFrame(raf);
+			setFitStack(false);
+		};
+	}, [checking]);
+	// The check's finds can swap in a shorter top card in the same commit that ends it, so the unpack would start from
+	// that height and dip first. Remember the stack's last height and start the unpack from there instead.
+	const stackHeight = useRef(0);
+	useEffect(() => {
+		const panel = panelRef.current;
+		if (!checking || !fitStack || !panel) return undefined;
+		const observer = new ResizeObserver(() => { stackHeight.current = panel.offsetHeight; });
+		observer.observe(panel);
+		return () => observer.disconnect();
+	}, [checking, fitStack, panelRef]);
+	useLayoutEffect(() => {
+		const panel = panelRef.current;
+		const from = stackHeight.current;
+		if (checking || !panel || from === 0) return;
+		stackHeight.current = 0;
+		const target = panel.style.height;
+		panel.style.transition = "none";
+		panel.style.height = `${from}px`;
+		void panel.offsetHeight;
+		panel.style.transition = "";
+		panel.style.height = target;
+	}, [checking, panelRef]);
 	const wasChecking = useRef(checking);
 	useEffect(() => {
 		const ended = wasChecking.current && !checking;
@@ -141,13 +175,15 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 			aria-labelledby={titleId}
 			className={cn(
 				"flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay shadow-2xl outline-none",
+				animateHeight ? "transition-[height] duration-medium ease-in-out" : null,
 				className,
 			)}
 			id={id}
 			ref={panelRef}
 			role="dialog"
 			style={listStage !== undefined ? {
-				height: mode === "caught-up" ? undefined : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
+				// While checking, the panel fits the gathered stack instead of holding the list's height.
+				height: mode === "caught-up" ? undefined : checking && fitStack ? "auto" : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
 				maxHeight: `min(${maxHeight}px, ${feed.onPreviewCard ? "56dvh" : "calc(100dvh - 3rem)"})`,
 			} : undefined}
 			tabIndex={-1}
