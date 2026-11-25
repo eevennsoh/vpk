@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type WorkItemSuggestion } from "../data/suggestions";
 import { useSuggestionReview, type SuggestionReview } from "./use-suggestion-review";
 
-/** Simulated agent latency for a re-run, long enough to show a working state. */
-export const SUGGESTION_RERUN_MS = 1800;
+/** Simulated agent latency for a re-run, long enough to read as real work while the panel waits folded. */
+export const SUGGESTION_RERUN_MS = 3200;
 
 export interface SuggestionRun {
 	/** 1-based run number. */

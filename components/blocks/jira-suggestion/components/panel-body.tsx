@@ -27,6 +27,8 @@ export interface PanelBodyProps {
 	stackInteractive: boolean;
 	/** A check is running: the gathered stack looks as it will when the check ends, but stays inert until then. */
 	checking?: boolean;
+	/** The panel has folded away for a check: the cards fade and drop out of view, and come back as it reopens. */
+	folded?: boolean;
 	/** The list's height budget: the popover's, less its header and footer. */
 	maxHeight: number;
 	grab: { id: SuggestionFieldId; progress: MotionValue<number> } | null;
@@ -49,7 +51,7 @@ const SWAP_OUT = { opacity: 0, transition: FADE_OUT };
  * The popover body, which is also the list's scrollport: the card deck (stack or list), and under the stack its
  * ✕ · ↶ · ✓ controls or the caught-up state. Its height eases with the morph; the list scrolls natively with depth.
  */
-export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, checking = false, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack }: Readonly<PanelBodyProps>) {
+export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, checking = false, folded = false, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack }: Readonly<PanelBodyProps>) {
 	const scroller = useRef<HTMLDivElement>(null);
 	const content = useRef<HTMLDivElement>(null);
 	const { height, settled, overflow, viewport } = useBodyHeight(content, mode, maxHeight);
@@ -73,7 +75,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 
 	return (
 		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
-			<div aria-busy={checking || undefined} className={floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5"} ref={content}>
+			<div aria-busy={checking || undefined} className={cn(floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5", floating ? "transition-[opacity,translate] duration-medium" : null, folded ? "translate-y-2 opacity-0 ease-in" : "ease-out")} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (
 						<motion.div animate={SWAP} className="pb-2.5" exit={SWAP_OUT} initial={{ opacity: 0 }} key="ghost"><GhostCard /></motion.div>

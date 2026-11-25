@@ -22,6 +22,10 @@ const SOURCE = `import React from "react";
 
 const wait = (ms) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
 const listShown = (view) => view.queryByRole("list", { name: "Suggestions" }) !== null;
+/** The check, the reopen and the unpack run on timers that happy-dom stretches; wait for the list rather than guess. */
+async function waitForList(view, timeout = 8000) {
+	for (let waited = 0; waited < timeout && !listShown(view); waited += 200) await wait(200);
+}
 
 async function openPanel(view) {
 	await view.click(view.getByRole("button", { name: "Review suggestions" }));
@@ -51,7 +55,7 @@ test("a header check gathers the list into an inert stack with only Cancel, and 
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Check for new suggestions" })), true, "focus returns to the check action");
 	const rows = () => document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
 	const listed = rows();
-	await wait(2200);
+	await wait(3600);
 	assert.equal(rows(), listed, "a cancelled check publishes nothing");
 	await view.unmount();
 });
@@ -61,8 +65,10 @@ test("a header check that finds suggestions unpacks them into the list", async (
 	await openPanel(view);
 	const before = document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
-	await wait(2200);
 	await wait(900);
+	const panel = document.querySelector("[role=dialog][aria-labelledby]");
+	assert.equal(panel.style.height, "108px", "once gathered, the panel folds to its header and footer while the check runs");
+	await waitForList(view);
 	assert.equal(listShown(view), true, "the finished check unpacks the stack");
 	assert.equal(view.queryByRole("button", { name: "Cancel" }) === null, true);
 	const after = document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
@@ -76,14 +82,14 @@ test("a running check hides the last check's receipt and spins the check action"
 	// The first check brings the follow-ups; the second finds nothing and says so in the footer.
 	for (let run = 0; run < 2; run += 1) {
 		await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
-		await wait(2200);
-		await wait(900);
+		await wait(400);
+		await waitForList(view);
 	}
 	assert.equal(view.queryByText("No new suggestions") !== null, true, "a quiet check leaves its receipt");
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
 	await wait(100);
 	assert.equal(view.queryByText("No new suggestions") === null, true, "the next check does not repeat the old receipt");
 	assert.equal(document.querySelector('[aria-label="Checking for new suggestions"] svg')?.getAttribute("data-state"), "loading", "the check action spins while it runs");
-	await wait(2200);
+	await wait(3600);
 	await view.unmount();
 });
