@@ -137,7 +137,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /><div className="-mx-2">{openIn}</div></div>}
+				); }) : <div className="-mb-2 flex flex-col gap-0.5"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /><div className="-mx-2">{openIn}</div></div>}
 			</div>
 		</TeamEuRailPanel>
 	);
