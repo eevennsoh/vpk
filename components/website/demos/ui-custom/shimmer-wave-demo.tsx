@@ -14,6 +14,7 @@ function ShimmerWaveDemoPreview() {
 	const [zDistance, setZDistance] = useState(12);
 	const [scaleDistance, setScaleDistance] = useState(1.12);
 	const [rotateYDistance, setRotateYDistance] = useState(14);
+	const [blurDistance, setBlurDistance] = useState(1.5);
 	const [repeatDelay, setRepeatDelay] = useState(0.1);
 	const hasHydratedRef = useRef(false);
 
@@ -26,6 +27,7 @@ function ShimmerWaveDemoPreview() {
 			zDistance,
 			scaleDistance,
 			rotateYDistance,
+			blurDistance,
 			transition: { ease: "easeInOut", repeatDelay },
 		}),
 		[
@@ -36,6 +38,7 @@ function ShimmerWaveDemoPreview() {
 			zDistance,
 			scaleDistance,
 			rotateYDistance,
+			blurDistance,
 			repeatDelay,
 		]
 	);
@@ -66,6 +69,7 @@ function ShimmerWaveDemoPreview() {
 					key={key}
 					baseColor="var(--color-muted-foreground)"
 					baseGradientColor={["#1868db", "#bf63f3", "#fca700"]}
+					blurDistance={blurDistance}
 					duration={duration}
 					rotateYDistance={rotateYDistance}
 					scaleDistance={scaleDistance}
@@ -164,6 +168,18 @@ function ShimmerWaveDemoPreview() {
 					onChange={setRotateYDistance}
 				/>
 				<GUI.Control
+					id="wave-blur-distance"
+					label="Blur"
+					description="How much each character blurs as the wave passes, before coming back into focus."
+					value={blurDistance}
+					defaultValue={1.5}
+					min={0}
+					max={8}
+					step={0.1}
+					unit="px"
+					onChange={setBlurDistance}
+				/>
+				<GUI.Control
 					id="wave-repeat-delay"
 					label="Repeat delay"
 					description="Pause time before the next wave cycle starts."
@@ -256,6 +272,7 @@ export function ShimmerWaveDemoFullConfig() {
 		<ShimmerWave
 			baseColor="var(--color-muted-foreground)"
 			baseGradientColor={["#1868db", "#bf63f3", "#fca700"]}
+			blurDistance={1.5}
 			duration={1.4}
 			rotateYDistance={14}
 			scaleDistance={1.12}

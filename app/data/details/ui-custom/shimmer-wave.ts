@@ -16,6 +16,7 @@ export const SHIMMER_WAVE_DETAIL: ComponentDetail = {
   zDistance={12}
   scaleDistance={1.12}
   rotateYDistance={14}
+  blurDistance={1.5}
   transition={{ ease: "easeInOut", repeatDelay: 0.1 }}
 >
   Full wave configuration
@@ -91,6 +92,12 @@ export const SHIMMER_WAVE_DETAIL: ComponentDetail = {
 			type: "number",
 			default: "10",
 			description: "Peak Y-axis rotation for wave characters.",
+		},
+		{
+			name: "blurDistance",
+			type: "number",
+			default: "0",
+			description: "Peak blur in px as the wave passes each character, which then comes back into focus. 0 keeps the text sharp.",
 		},
 		{
 			name: "transition",

@@ -18,6 +18,7 @@ const DEFAULT_WAVE_Y_DISTANCE = -2;
 const DEFAULT_WAVE_SCALE_DISTANCE = 1.1;
 const DEFAULT_WAVE_ROTATE_Y_DISTANCE = 10;
 const DEFAULT_WAVE_HIGHLIGHT_OPACITY = 0.88;
+const DEFAULT_WAVE_BLUR_DISTANCE = 0;
 
 export interface ShimmerWaveProps {
 	children: string;
@@ -30,6 +31,8 @@ export interface ShimmerWaveProps {
 	yDistance?: number;
 	scaleDistance?: number;
 	rotateYDistance?: number;
+	/** Peak blur in px as the wave passes each character, which then comes back into focus. 0 (default) keeps it sharp. */
+	blurDistance?: number;
 	transition?: Transition;
 	baseColor?: string;
 	baseGradientColor?: string | readonly string[];
@@ -56,6 +59,7 @@ const ShimmerWaveComponent = ({
 	yDistance = DEFAULT_WAVE_Y_DISTANCE,
 	scaleDistance = DEFAULT_WAVE_SCALE_DISTANCE,
 	rotateYDistance = DEFAULT_WAVE_ROTATE_Y_DISTANCE,
+	blurDistance = DEFAULT_WAVE_BLUR_DISTANCE,
 	transition,
 	baseColor,
 	baseGradientColor,
@@ -74,6 +78,7 @@ const ShimmerWaveComponent = ({
 			Math.max(resolvedSpread, 1),
 		[characters.length, resolvedSpread]
 	);
+	const blurs = blurDistance > 0;
 	const resolvedBaseColor = baseColor ?? "var(--color-muted-foreground)";
 	const resolvedBaseGradientColor = useMemo(
 		() =>
@@ -146,8 +151,12 @@ const ShimmerWaveComponent = ({
 								translateX: [0, xDistance, 0],
 								translateY: [0, yDistance, 0],
 								translateZ: [0, zDistance, 0],
+								...(blurs ? { filter: ["blur(0px)", `blur(${blurDistance}px)`, "blur(0px)"] } : null),
 							}}
-							className="relative inline-block whitespace-pre transform-gpu [backface-visibility:hidden] [transform-origin:50%_100%] [transform-style:preserve-3d] [will-change:transform]"
+							className={cn(
+								"relative inline-block whitespace-pre transform-gpu [backface-visibility:hidden] [transform-origin:50%_100%] [transform-style:preserve-3d]",
+								blurs ? "[will-change:transform,filter]" : "[will-change:transform]",
+							)}
 							initial={{
 								rotateY: 0,
 								scale: 1,
