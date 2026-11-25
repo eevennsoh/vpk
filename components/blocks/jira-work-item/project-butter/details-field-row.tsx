@@ -49,14 +49,14 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	const { listeners, isDragging, setNodeRef, transform, transition } = useSortable({ id, transition: { duration: motionDuration.medium * 1000, easing: "var(--ease-out-practical)" } });
 	const label = id === "agents" ? "Agents" : PROJECT_BUTTER_DETAIL_FIELDS[id];
 	const FieldIcon = id === "agents" ? undefined : id === "reporter" && !filled ? PersonIcon : FIELD_ICONS[id];
-	const fieldIcon = FieldIcon ? <IconTile aria-hidden as="span" className="text-icon-subtle" data-field-icon={id} icon={<FieldIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" /> : null;
+	const fieldIcon = FieldIcon ? <IconTile aria-hidden as="span" className={filled ? "text-icon-subtle" : "text-icon-subtlest"} data-field-icon={id} icon={<FieldIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" /> : null;
 	const usesInlineLabel = id === "assignee" || id === "dueDate" || (id === "reporter" && filled);
 	const rowReveal = usesInlineLabel ? undefined : reveal;
 	const isLabels = id === "labels";
 	const animateEntry = id === "parent" || id === "assetObject";
 	const sweep = rowReveal ? (
 		<SuggestionValueReveal
-			className={cn("flex text-sm leading-5", isLabels ? "items-start pt-1.5" : "items-center")}
+			className={cn("flex text-sm leading-5", isLabels ? "items-start" : "items-center")}
 			key={rowReveal.key}
 			reveal={rowReveal}
 			truncate={id === "parent"}
@@ -99,8 +99,8 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 		>
 			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
-				<div className="relative -mx-2 flex min-h-8 min-w-0 items-center rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" data-project-butter-detail-value-row>
-					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_[data-slot=detail-value-trigger]]:min-h-8", id !== "status" ? "pr-8" : undefined)}>
+				<div className="relative -mx-2 flex min-w-0 items-center rounded-md px-2 py-1.5 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered" data-project-butter-detail-value-row>
+					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:-my-1.5 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:min-h-0 [&_:is([data-slot=popover-trigger],[data-slot=dropdown-menu-trigger],[data-slot=inline-edit-read-view])]:py-1.5 [&_[data-slot=labels-field]]:py-0", id !== "status" ? "pr-8" : undefined)}>
 						{fieldIcon}
 						<div className="relative min-w-0 flex-1 has-[>[data-suggestion-preview]]:[&>[data-project-butter-field-control]:not(:focus-within)]:opacity-0!">
 							<motion.div

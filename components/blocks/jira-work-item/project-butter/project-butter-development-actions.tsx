@@ -6,7 +6,7 @@ import { CopyPromptButton } from "@/components/ui-custom/copy-prompt-button";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 
-const ACTION_ROW_CLASS = "h-8 w-full justify-start gap-2 border-0 px-2 font-normal";
+const ACTION_ROW_CLASS = "h-auto w-full justify-start gap-2 border-0 px-2 py-1.5 font-normal";
 
 function CopyPromptAction({ code, description, presentation, summary }: Readonly<{
 	code: string;
