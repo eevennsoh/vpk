@@ -1,59 +1,65 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { animate, cubicBezier, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 
 import { Shimmer } from "@/components/ui/shimmer";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
-/** One turn of the head while loading, matching the shared spinner's pace. */
-const TURN_SECONDS = 1.2;
-/** How long the head takes to reach 12 o'clock, with the tail chasing it, once the recommendation lands. */
-const FINISH_SECONDS = 0.6;
+/** One loop of the shared Spinner (components/ui/spinner.tsx): its dash animation and its rotation both last 1.2s. */
+const LOOP_SECONDS = 1.2;
+/** The shared Spinner's keySplines, 0.4 0 0 1. */
+const SPLINE = cubicBezier(...motionEase.inOut);
+const RADIUS = 20;
+
+/** The shared Spinner's arc at a point in its loop: the dash grows over the first half, then the tail sweeps onto the head. */
+function arcAt(phase: number) {
+	if (phase < 0.5) {
+		const eased = SPLINE(phase / 0.5);
+		return { dash: 1 + 88 * eased, offset: -35 * eased };
+	}
+	return { dash: 89, offset: -35 - 89 * SPLINE((phase - 0.5) / 0.5) };
+}
 
 /**
- * A spinner that can finish. Head and tail are positions in turns from 12 o'clock, clockwise. While loading the head
- * turns steadily and the arc breathes; once `done`, no new arc starts: the head runs on to the next 12 o'clock and the
- * tail catches it there, the arc closing to nothing, and then `onDone` fires.
+ * The shared Spinner, redrawn so it can stop. `loop` counts loops; each loop ends with the tail meeting the head at
+ * 12 o'clock. While loading it runs forever; once `done`, the loop in progress runs on at the same speed to its end,
+ * no new arc starts, the meeting point fades, and `onDone` fires.
  */
 function FinishingSpinner({ done, onDone }: Readonly<{ done: boolean; onDone: () => void }>) {
 	const reduced = useReducedMotion() ?? false;
-	const head = useMotionValue(0);
-	const length = useMotionValue(0.12);
+	const loop = useMotionValue(0);
 	const opacity = useMotionValue(1);
-	const tail = useTransform(() => head.get() - length.get());
-	const pathOffset = useTransform(() => ((tail.get() % 1) + 1) % 1);
+	// At a whole loop the arc has just closed, so read it as the end of that loop, not the start of the next.
+	const phase = useTransform(() => { const value = loop.get(); const whole = Math.floor(value); return value > 0 && value === whole ? 1 : value - whole; });
+	const strokeDasharray = useTransform(() => `${arcAt(phase.get()).dash} 200`);
+	const strokeDashoffset = useTransform(() => arcAt(phase.get()).offset);
+	const rotate = useTransform(() => phase.get() * 360);
 	const finished = useRef(onDone);
 	useEffect(() => { finished.current = onDone; });
 
 	useEffect(() => {
 		if (!done) {
-			const start = head.get();
-			const turn = animate(head, [start, start + 1], { duration: TURN_SECONDS, ease: motionEase.linear, repeat: Infinity });
-			const breathe = reduced ? null : animate(length, [0.12, 0.62], { duration: TURN_SECONDS * 0.9, ease: motionEase.inOut, repeat: Infinity, repeatType: "mirror" });
-			return () => { turn.stop(); breathe?.stop(); };
+			const start = loop.get();
+			const run = animate(loop, [start, start + 1], { duration: LOOP_SECONDS, ease: motionEase.linear, repeat: Infinity });
+			return () => run.stop();
 		}
-		if (reduced) {
-			finished.current();
-			return undefined;
-		}
-		// The next 12 o'clock at least a quarter turn ahead, so the head always visibly carries on into it. A spring that
-		// starts at the head's own speed (an eased tween would lurch forward first) brings it to rest there.
-		const target = Math.ceil(head.get() + 0.25);
-		const velocity = Math.min(Math.max(head.getVelocity(), 0), 2) || 1 / TURN_SECONDS;
-		const run = animate(head, target, { type: "spring", velocity, visualDuration: FINISH_SECONDS, bounce: 0 });
-		const close = animate(length, 0, { duration: FINISH_SECONDS, ease: motionEase.inOut });
-		// The round caps leave a dot at zero length; let it go as the tail lands.
-		const fade = animate(opacity, 0, { duration: FINISH_SECONDS * 0.3, delay: FINISH_SECONDS * 0.7, ease: motionEase.in });
-		// Hand over once the arc has closed and faded; the spring's last imperceptible settling need not hold the slot.
-		void Promise.all([close, fade]).then(() => finished.current());
-		return () => { run.stop(); close.stop(); fade.stop(); };
-	}, [done, reduced, head, length, opacity]);
+		const from = loop.get();
+		const end = Math.ceil(from) === from ? from : Math.ceil(from);
+		const remaining = reduced ? 0 : (end - from) * LOOP_SECONDS;
+		const run = animate(loop, end, { duration: remaining, ease: motionEase.linear });
+		let fade: ReturnType<typeof animate> | null = null;
+		void run.then(() => {
+			fade = animate(opacity, 0, { duration: reduced ? 0 : motionDuration.fast, ease: motionEase.in });
+			return fade.then(() => finished.current());
+		});
+		return () => { run.stop(); fade?.stop(); };
+	}, [done, reduced, loop, opacity]);
 
 	return (
-		<svg aria-hidden className="size-4 -rotate-90" fill="none" viewBox="0 0 16 16">
-			<motion.circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" style={{ pathLength: length, pathOffset, opacity }} />
-		</svg>
+		<motion.svg aria-hidden className="size-4" fill="none" style={{ rotate, opacity }} viewBox="0 0 50 50">
+			<motion.circle cx="25" cy="25" r={RADIUS} stroke="currentColor" strokeLinecap="round" strokeWidth="4" style={{ strokeDasharray, strokeDashoffset }} transform="rotate(-90 25 25)" />
+		</motion.svg>
 	);
 }
 
