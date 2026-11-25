@@ -44,9 +44,9 @@ import {
 } from "@/components/blocks/jira-issue/agent-activity-model";
 import {
 	sessionDragChipViewportStyle,
-	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragBinding,
 } from "@/components/blocks/jira-issue/agent-session-drag";
+import { resolveAgentTintSeed } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import { JiraIssueAttachChinSlot } from "@/components/blocks/jira-issue/attach-chin";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
@@ -910,11 +910,7 @@ export function JiraIssueAgentActivityRows({
 												id: activity.id,
 												invoker: activity.invokedBy,
 												name: activity.name,
-												tintSeed: sessionTransferTintSeed(
-													activity.agentBrandName,
-													activity.agentVpkLogo,
-													activity.name,
-												),
+												tintSeed: resolveAgentTintSeed({ avatarSrc: activity.avatarSrc, brandName: activity.agentBrandName, name: activity.name, vpkLogo: activity.agentVpkLogo }),
 											}],
 										},
 									});

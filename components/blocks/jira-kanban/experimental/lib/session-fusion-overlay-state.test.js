@@ -2,8 +2,10 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	resolveAgentBrandTint,
 	resolveAgentBrandTintColor,
 	resolveAgentBrandTintVariable,
+	resolveAgentTintSeed,
 } = require("../../../agent-session/agent-brand-tint.ts");
 
 const {
@@ -135,7 +137,32 @@ test("an unmapped brand still flashes, on a neutral accent", () => {
 		targetCardCode: "PAY-121",
 		token: 9,
 	});
-	assert.equal(flash.flash.tint, "var(--ds-background-accent-gray-bolder)");
+	assert.equal(flash.flash.tint, "var(--ds-icon-accent-gray)");
+});
+
+test("custom agents flash their collection accent from the avatar family", () => {
+	const cases = [
+		["/avatar-agent-new/lime/auto-review.svg", "#82B536"],
+		["/avatar-agent-new/purple/default.svg", "#BF63F3"],
+		["/avatar-agent-new/blue/backlog-buddy.svg", "#1868DB"],
+		["/avatar-agent-new/orange/default.svg", "#FCA700"],
+		["/avatar-agent-new/yellow/feature-flag.svg", "#FFC716"],
+	];
+	for (const [avatarSrc, accent] of cases) {
+		const seed = resolveAgentTintSeed({ avatarSrc, id: "custom-1", name: "Release Notes Drafter" });
+		assert.equal(resolveAgentBrandTintColor(seed), accent, avatarSrc);
+		assert.equal(resolveAgentBrandTintVariable(seed), undefined, avatarSrc);
+		assert.ok(resolveAgentBrandTint(seed), avatarSrc);
+	}
+});
+
+test("a brand mark wins over the avatar, and an undefined 2p/3p agent is platform gray", () => {
+	assert.equal(resolveAgentBrandTintColor(resolveAgentTintSeed({ avatarSrc: "/avatar-agent-new/purple/default.svg", brandName: "claude", name: "Claude" })), "#d97757");
+	assert.equal(resolveAgentBrandTintColor(resolveAgentTintSeed({ avatarSrc: "/avatar-agent-new/lime/auto-dev.svg", name: "Jira Coding Agent" })), "#94C748");
+	const unknown = resolveAgentTintSeed({ avatarSrc: "/3p/some-partner.svg", name: "Partner Agent" });
+	assert.equal(resolveAgentBrandTintColor(unknown), "var(--ds-icon-accent-gray)");
+	assert.equal(resolveAgentBrandTintVariable(unknown), "--ds-icon-accent-gray");
+	assert.equal(resolveAgentBrandTintColor(undefined), undefined);
 });
 
 test("an attach drop arms staggered flights into the chin row, not the shell centre", () => {

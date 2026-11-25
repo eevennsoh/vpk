@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
-import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
+import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor, resolveAgentTintSeed } from "@/components/blocks/agent-session/agent-brand-tint";
 import { createJiraLinkingCardGlow, type JiraCardGlowEffect } from "@/components/blocks/jira-linking/card-glow";
 import type { JiraLinkingVariant } from "@/components/blocks/jira-linking";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
@@ -38,7 +37,7 @@ export function useBulkAssignmentGlow({ boardColumns, boardRootRef, linkingVaria
 		if (codes.length === 0) return;
 		pendingRef.current = null;
 		if (shouldReduceMotion || linkingVariant !== "glow") return;
-		const color = resolveAgentBrandTintColor(sessionTransferTintSeed(pending.agent.brandName, pending.agent.vpkLogo, pending.agent.name, pending.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+		const color = resolveAgentBrandTintColor(resolveAgentTintSeed(pending.agent)) ?? AGENT_BRAND_TINT_FALLBACK;
 		frameRef.current = requestAnimationFrame(() => {
 			frameRef.current = null;
 			for (const code of codes) {

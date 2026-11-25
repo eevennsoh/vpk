@@ -1,11 +1,9 @@
-import {
-	sessionTransferTintSeed,
-	type JiraIssueAgentSessionTransferMember,
-} from "@/components/blocks/jira-issue/agent-session-drag";
+import type { JiraIssueAgentSessionTransferMember } from "@/components/blocks/jira-issue/agent-session-drag";
 
 import {
 	AGENT_BRAND_TINT_FALLBACK,
 	resolveAgentBrandTintColor,
+	resolveAgentTintSeed,
 } from "./agent-brand-tint";
 import type { AgentSessionItem } from "./agent-session-types";
 
@@ -17,11 +15,7 @@ import type { AgentSessionItem } from "./agent-session-types";
  * it lands on a work item.
  */
 export function agentSessionTintSeed(item: AgentSessionItem): string | undefined {
-	return sessionTransferTintSeed(
-		item.agent.brandName,
-		item.agent.vpkLogo,
-		item.agent.name,
-	);
+	return resolveAgentTintSeed(item.agent);
 }
 
 /**

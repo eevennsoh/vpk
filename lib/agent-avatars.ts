@@ -224,7 +224,7 @@ export const DEFAULT_AGENT_PROFILE_AVATAR_SRC = "/avatar-agent-new/blue/backlog-
  * Returns the family group segment (e.g. "teamwork-agents") for an avatar path,
  * or `undefined` if the path doesn't match the expected shape.
  */
-function getAgentAvatarGroup(avatarSrc: string): string | undefined {
+export function getAgentAvatarGroup(avatarSrc: string): string | undefined {
 	return avatarSrc.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 }
 
