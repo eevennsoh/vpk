@@ -32,8 +32,6 @@ export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
 	pullRequests?: readonly JiraIssuePullRequestItem[];
 	pullRequestChecks?: readonly PullRequestCheck[];
-	/** The session is shared with the team, including when viewed by its owner. */
-	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
 	privateTo?: string;
 };

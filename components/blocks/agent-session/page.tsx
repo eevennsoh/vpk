@@ -69,10 +69,9 @@ function sessionRoleLabel(role: AgentSessionRole): string {
 function withSessionRole(
 	items: readonly AgentSessionItem[],
 	role: AgentSessionRole,
-	team = false,
 	answeredSessionIds?: ReadonlySet<string>,
 ): readonly AgentSessionItem[] {
-	return items.map((item) => ({ ...item, role, ...(team ? { sharedWithTeam: true } : {}), ...(answeredSessionIds?.has(item.id) ? { state: "running" as const } : {}) }));
+	return items.map((item) => ({ ...item, role, ...(answeredSessionIds?.has(item.id) ? { state: "running" as const } : {}) }));
 }
 
 const NO_DRAGGING_IDS: ReadonlySet<string> = new Set<string>();
@@ -295,7 +294,7 @@ export default function AgentSessionPage({
 								capturedItemIds={capturedIds}
 								className={team ? "w-[720px] max-w-full gap-1.5 [&>[data-menu-row]]:rounded-lg [&>[data-menu-row]]:border [&>[data-menu-row]]:border-border [&>[data-menu-row]]:bg-surface" : isLong ? "w-[520px]" : "w-[320px]"}
 								density={density}
-								items={withSessionRole(items, role, team, answeredSessionIds)}
+								items={withSessionRole(items, role, answeredSessionIds)}
 								onContinueInAgent={handleCapture}
 								onCreateWorkItem={handleCapture}
 								onDeleteSession={handleRemove}

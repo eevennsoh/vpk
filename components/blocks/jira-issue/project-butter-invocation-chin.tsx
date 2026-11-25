@@ -24,7 +24,7 @@ function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agen
 		<span className={cn("flex shrink-0 items-center justify-center", sizePx === 16 ? "size-4" : "size-6")}>
 			{agent ? agent.visual ?? (
 				<AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={sizePx} animate={false} />
-			) : <AiAgentIcon label="" size="small" color="currentColor" />}
+			) : <AiAgentIcon label="" color="currentColor" />}
 		</span>
 	);
 }
