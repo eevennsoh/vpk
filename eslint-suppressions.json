@@ -65,6 +65,11 @@
       "count": 28
     }
   },
+  "app/layout.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    }
+  },
   "app/preview/projects/jira-for-you/page.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -83,8 +88,18 @@
       "count": 3
     }
   },
+  "app/sandbox/agent-selector-canvas/favorites-preview.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "app/sandbox/agent-selector-canvas/recommendation-previews.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "app/sandbox/agent-selector-canvas/teammate-activity-summary.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -98,7 +113,15 @@
       "count": 5
     }
   },
+  "app/sandbox/agent-selector-canvas/workspace.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 3
+    }
+  },
   "app/sandbox/screen-assistant/page.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 2
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -270,6 +293,11 @@
       "count": 4
     }
   },
+  "components/arts/rovo-fable/index.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 15
+    }
+  },
   "components/arts/rovo-p5/index.source.test.js": {
     "no-restricted-syntax": {
       "count": 129
@@ -283,6 +311,11 @@
   "components/blocks/agent-assignment/agent-assignment-session.source.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 22
+    }
+  },
+  "components/blocks/agent-assignment/components/agent-assignment.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/agent-assignment/components/agent-session-target-menu.tsx": {
@@ -319,6 +352,24 @@
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
+    },
+    "shadcn/no-arbitrary-values": {
+      "count": 4
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-compact-config-nav-rows.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 4
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-compact-config-nav.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 7
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-compact-conversation-starters-nav.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/agent-config-core/components/agent-compact-nav-menu.tsx": {
@@ -328,6 +379,21 @@
   },
   "components/blocks/agent-config-core/components/agent-config-profile.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-filled-config-summary.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-frame.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent-config-core/components/agent-reasoning-memory-selectors.tsx": {
+    "shadcn/require-static-classes": {
       "count": 2
     }
   },
@@ -356,6 +422,11 @@
       "count": 3
     }
   },
+  "components/blocks/agent-list/agent-list-card.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 3
+    }
+  },
   "components/blocks/agent-list/agent-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 326
@@ -377,6 +448,9 @@
   "components/blocks/agent-selector/components/agent-selector.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/agent-session-column/agent-session-column-arrival.source.test.js": {
@@ -387,6 +461,11 @@
   "components/blocks/agent-session-column/agent-session-column-capabilities.source.test.js": {
     "no-restricted-syntax": {
       "count": 96
+    }
+  },
+  "components/blocks/agent-session-column/agent-session-column-filter-menu.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/agent-session-column/agent-session-column-frame.source.test.js": {
@@ -560,6 +639,21 @@
       "count": 18
     }
   },
+  "components/blocks/agent/components/agent-compact-config-nav-rows.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 4
+    }
+  },
+  "components/blocks/agent/components/agent-compact-config-nav.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 7
+    }
+  },
+  "components/blocks/agent/components/agent-compact-conversation-starters-nav.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/agent/components/agent-compact-nav-menu.tsx": {
     "react-hooks/refs": {
       "count": 2
@@ -567,6 +661,21 @@
   },
   "components/blocks/agent/components/agent-config-profile.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent/components/agent-filled-config-summary.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/agent/components/agent-frame.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/agent/components/agent-reasoning-memory-selectors.tsx": {
+    "shadcn/require-static-classes": {
       "count": 2
     }
   },
@@ -588,6 +697,14 @@
   "components/blocks/artifact-pane/artifact-agents-field.tsx": {
     "no-restricted-imports": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/artifact-pane/artifact-labels-field.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/artifact-pane/artifact-pane.source.test.js": {
@@ -595,9 +712,37 @@
       "count": 196
     }
   },
+  "components/blocks/artifact-pane/artifact-parent-field.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/artifact-pane/artifact-project-field.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/blocks/artifact-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
+    }
+  },
+  "components/blocks/chat-composer/components/composer-actions.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 4
+    }
+  },
+  "components/blocks/chat-composer/page.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    },
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/chat/page.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/chatgpt/create-project-form.source.test.js": {
@@ -644,6 +789,9 @@
     }
   },
   "components/blocks/dashboard/components/section-cards.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -651,6 +799,11 @@
   "components/blocks/data-table/data-table.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
+    }
+  },
+  "components/blocks/development-panel/development-panel.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/editor-toolbar/editor-toolbar.source.test.js": {
@@ -720,13 +873,26 @@
     }
   },
   "components/blocks/jira-activity/jira-activity-changed-files.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-composer.tsx": {
+    "shadcn/require-static-classes": {
       "count": 2
     }
   },
   "components/blocks/jira-activity/jira-activity-event-row.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
+    }
+  },
+  "components/blocks/jira-activity/jira-activity-segments.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
@@ -740,6 +906,11 @@
   "components/blocks/jira-activity/jira-activity.source.test.js": {
     "no-restricted-syntax": {
       "count": 310
+    }
+  },
+  "components/blocks/jira-backlog/backlog-row.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 6
     }
   },
   "components/blocks/jira-creating/jira-creating-motion.test.js": {
@@ -767,6 +938,11 @@
       "count": 1
     }
   },
+  "components/blocks/jira-epic/components/jira-epic.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-epic/jira-epic.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
@@ -775,6 +951,16 @@
   "components/blocks/jira-filter/jira-filter.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 3
+    }
+  },
+  "components/blocks/jira-filter/jql-editor.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-inline-create/components/jira-inline-create-fields.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/jira-insight/components/jira-insight-timeline-rail.tsx": {
@@ -865,9 +1051,19 @@
       "count": 3
     }
   },
+  "components/blocks/jira-issue/project-butter-agent-picker.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-issue/project-butter-agents.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 20
+    }
+  },
+  "components/blocks/jira-issue/project-butter-assignee.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 3
     }
   },
   "components/blocks/jira-issue/project-butter-local-agent-menu.behavior.test.js": {
@@ -875,9 +1071,29 @@
       "count": 1
     }
   },
+  "components/blocks/jira-issue/project-butter-local-agent-menu.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/blocks/jira-issue/project-butter-subtasks.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-issue/project-butter.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 22
+    }
+  },
+  "components/blocks/jira-issue/pull-request-cluster.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 3
+    }
+  },
+  "components/blocks/jira-issue/summary-editor.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
     }
   },
   "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
@@ -895,6 +1111,16 @@
       "count": 17
     }
   },
+  "components/blocks/jira-kanban/experimental-v2/experimental-v2-board-header.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental-v2/experimental-v2-jira-kanban.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-kanban/experimental-v2/page.tsx": {
     "no-restricted-imports": {
       "count": 2
@@ -910,9 +1136,29 @@
       "count": 169
     }
   },
+  "components/blocks/jira-kanban/experimental/components/board-column-agent-assignment.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/board-column.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 3
+    }
+  },
   "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 47
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/collapsed-board-column.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx": {
@@ -928,6 +1174,9 @@
   "components/blocks/jira-kanban/experimental/components/in-flow-agent-session-column.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-kanban/experimental/components/in-flow-gutter-scroll-mask.test.js": {
@@ -942,6 +1191,11 @@
   },
   "components/blocks/jira-kanban/experimental/experimental-board-header.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/experimental-board-header.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -996,6 +1250,11 @@
   },
   "components/blocks/jira-kanban/experimental/pulse/components/pulse-embedded-chat.tsx": {
     "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-kanban/experimental/pulse/components/pulse-mode-controls.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -1084,14 +1343,34 @@
       "count": 1
     }
   },
+  "components/blocks/jira-list/index.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 13
+    }
+  },
+  "components/blocks/jira-list/jira-list-cells.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-list/jira-list-interactions.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 5
     }
   },
+  "components/blocks/jira-list/jira-list-table.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-list/jira-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 312
+    }
+  },
+  "components/blocks/jira-local-agent/inline-local-agent-picker.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/jira-suggestion/components/card-faces.tsx": {
@@ -1163,8 +1442,16 @@
     }
   },
   "components/blocks/jira-work-item/experimental-v2/components/attachments-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v2/components/context-editable-header.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v2/components/context-popover-parts.tsx": {
@@ -1183,6 +1470,9 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v2/components/development-repository-picker.tsx": {
@@ -1196,6 +1486,9 @@
     }
   },
   "components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
@@ -1214,9 +1507,15 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v2/components/subtasks-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
@@ -1240,8 +1539,16 @@
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/attachments-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/experimental-v3/components/context-editable-header.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/context-popover-parts.tsx": {
@@ -1257,6 +1564,9 @@
   "components/blocks/jira-work-item/experimental-v3/components/detail-field-editors.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/development-repository-picker.tsx": {
@@ -1270,6 +1580,9 @@
     }
   },
   "components/blocks/jira-work-item/experimental-v3/components/linked-work-items-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
@@ -1279,7 +1592,15 @@
       "count": 1
     }
   },
+  "components/blocks/jira-work-item/experimental-v3/components/pull-requests-select.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/experimental-v3/components/subtasks-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
@@ -1307,6 +1628,11 @@
       "count": 4
     }
   },
+  "components/blocks/jira-work-item/experimental/components/context-editable-header.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/blocks/jira-work-item/experimental/components/detail-field-editor-data.ts": {
     "no-restricted-imports": {
       "count": 1
@@ -1318,6 +1644,11 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/experimental/components/details-tab.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/blocks/jira-work-item/experimental/components/floating-session-surface.tsx": {
@@ -1375,13 +1706,33 @@
       "count": 40
     }
   },
+  "components/blocks/jira-work-item/project-butter/details-option-field.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/project-butter/development-journey.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 5
     }
   },
+  "components/blocks/jira-work-item/project-butter/project-butter-crew.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/project-butter/project-butter-header.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/project-butter-shell.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/jira-work-item/project-butter/related-row-fields.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -1411,8 +1762,16 @@
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/attachments-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 3
+    }
+  },
+  "components/blocks/jira-work-item/team-eu26/components/context-editable-header.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/context-popover-parts.tsx": {
@@ -1423,6 +1782,9 @@
   "components/blocks/jira-work-item/team-eu26/components/detail-field-editors.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 6
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/development-repository-picker.tsx": {
@@ -1435,7 +1797,15 @@
       "count": 3
     }
   },
+  "components/blocks/jira-work-item/team-eu26/components/high-confidence-work-item-body.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 10
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/linked-work-items-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
@@ -1450,12 +1820,23 @@
       "count": 1
     }
   },
+  "components/blocks/jira-work-item/team-eu26/components/pull-requests-select.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/jira-work-item/team-eu26/components/subtasks-popover.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 2
     }
   },
   "components/blocks/jira-work-item/team-eu26/components/work-items-table.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 14
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -1525,6 +1906,16 @@
       "count": 74
     }
   },
+  "components/blocks/pull-request/components/pull-request-checks-list.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/blocks/pull-request/components/pull-request-flyout-parts.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/blocks/pull-request/pull-request-flyout.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 1
@@ -1565,6 +1956,11 @@
       "count": 1
     }
   },
+  "components/blocks/rovo-button/onboarding-panel.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -1587,6 +1983,9 @@
   },
   "components/blocks/rovo-canvas/components/rovo-canvas.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -1646,11 +2045,17 @@
     }
   },
   "components/blocks/smart-link/components/smart-link-visuals.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/blocks/smart-link/components/smart-link.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -1672,6 +2077,9 @@
   },
   "components/blocks/subagent/subagent-navigator.tsx": {
     "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -1836,6 +2244,11 @@
       "count": 35
     }
   },
+  "components/projects/jira-for-you/jira-for-you-item.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/projects/jira-for-you/jira-for-you-work-item-integration.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
@@ -1863,6 +2276,21 @@
   },
   "components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journey-v0/components/terminal-stage-chrome.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journey-v0/components/terminal-stage-claude-pane.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journey-v0/components/terminal-stage-jira-pane.tsx": {
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -1913,6 +2341,21 @@
   },
   "components/projects/jira-golden-journey-v1/components/session-stage.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journey-v1/components/terminal-stage-chrome.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-golden-journey-v1/components/terminal-stage-claude-pane.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
+  "components/projects/jira-golden-journey-v1/components/terminal-stage-jira-pane.tsx": {
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -2006,6 +2449,41 @@
       "count": 10
     }
   },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-agent-effectiveness.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 5
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-agent-sessions.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 7
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-ai-capital.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 7
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-artifacts.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 5
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-parts.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-record-for-agent.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 6
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/bento/finale-bento-rovo-work-mode.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 10
+    }
+  },
   "components/projects/jira-team-eu26-end/finale/components/finale-card-space-gl.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
       "count": 1
@@ -2016,6 +2494,11 @@
   },
   "components/projects/jira-team-eu26-end/finale/components/finale-column-flash.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
+    }
+  },
+  "components/projects/jira-team-eu26-end/finale/components/finale-cursor.tsx": {
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -2092,6 +2575,11 @@
   "components/projects/jira-team-eu26/terminal-story.test.js": {
     "no-restricted-syntax": {
       "count": 14
+    }
+  },
+  "components/projects/jira/components/board-toolbar.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/projects/jira/components/rfp-agent-chat-details.source.test.js": {
@@ -2186,6 +2674,12 @@
     }
   },
   "components/projects/rovo-core/components/rovo-app-messages.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 3
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -2283,6 +2777,9 @@
   "components/projects/rovo/components/rovo-app-shell.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 4
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/projects/shared/components/agent-edit-summary-card.source.test.js": {
@@ -2298,9 +2795,29 @@
       "count": 3
     }
   },
+  "components/projects/shared/components/browser-preview-overlay.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
   "components/projects/shared/components/chat-context-bar.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
+    }
+  },
+  "components/projects/shared/components/chat-messages.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/projects/shared/components/composer-card-body.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
+  "components/projects/shared/components/eu26-header-lanyards.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
@@ -2319,6 +2836,9 @@
   "components/projects/shared/components/rovo-composer-send-controls.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 4
     }
   },
   "components/projects/shared/components/user-message-bubble.behavior.test.js": {
@@ -2341,6 +2861,11 @@
       "count": 3
     }
   },
+  "components/projects/shared/lib/tool-icon-resolver.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/projects/sidebar-chat/components/agent-result-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 38
@@ -2361,9 +2886,22 @@
       "count": 65
     }
   },
+  "components/projects/sidebar-chat/components/chat-composer.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    },
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/projects/sidebar-chat/components/chat-greeting.source.test.js": {
     "no-restricted-syntax": {
       "count": 68
+    }
+  },
+  "components/projects/sidebar-chat/components/chat-history-drawer.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/projects/sidebar-chat/components/message-bubble-plan-widget.source.test.js": {
@@ -2430,6 +2968,9 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 5
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
@@ -2463,6 +3004,9 @@
     }
   },
   "components/screen-assistant/screen-assistant-transcript.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 3
     }
@@ -2477,14 +3021,81 @@
       "count": 2
     }
   },
+  "components/ui-charts/area-value-labels.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/background.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/band.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/bar-depth.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 7
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/bar-pulse.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 11
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/candlestick.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/chart-brush.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 6
+    }
+  },
   "components/ui-charts/chart-loading-label.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "shadcn/no-arbitrary-values": {
+      "count": 2
     }
   },
   "components/ui-charts/chart-stat-flow.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
+    }
+  },
+  "components/ui-charts/choropleth/choropleth-feature.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/choropleth/choropleth-graticule.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/deadline.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 3
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/grid.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
     }
   },
   "components/ui-charts/heatmap/heatmap-cells.tsx": {
@@ -2497,8 +3108,18 @@
       "count": 1
     }
   },
+  "components/ui-charts/highlight-segment.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 4
+    }
+  },
   "components/ui-charts/legend/legend-progress.tsx": {
     "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/legend/legend.tsx": {
+    "shadcn/no-unknown-classes": {
       "count": 1
     }
   },
@@ -2507,13 +3128,93 @@
       "count": 4
     }
   },
+  "components/ui-charts/live-line.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 5
+    }
+  },
+  "components/ui-charts/loading-sweep.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/markers/marker-group.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
   "components/ui-charts/measured-parent-size.tsx": {
     "react-hooks/refs": {
       "count": 2
     }
   },
+  "components/ui-charts/patterns/circles.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 3
+    }
+  },
+  "components/ui-charts/patterns/hexagons.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/patterns/lines.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    }
+  },
+  "components/ui-charts/patterns/path.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/patterns/waves.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/projection-line.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/radial-line.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/reference-area.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/sankey/sankey-link.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/sankey/sankey-node.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/series-bar.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/shimmering-text.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
   "components/ui-charts/stat-card-chart.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "components/ui-charts/stat-card-choropleth-01/components/stat-card-choropleth.tsx": {
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -2527,6 +3228,11 @@
       "count": 2
     }
   },
+  "components/ui-charts/trend-line.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "components/ui-charts/use-animated-y-domains.ts": {
     "no-restricted-syntax": {
       "count": 1
@@ -2537,9 +3243,19 @@
       "count": 3
     }
   },
+  "components/ui-charts/weekends.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "components/ui-charts/x-axis.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "components/ui-custom/agent-avatar-visual.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 3
     }
   },
   "components/ui-custom/agent-loading.css-contract.source.test.js": {
@@ -2567,9 +3283,22 @@
       "count": 12
     }
   },
+  "components/ui-custom/animated-icon-ai-sparkle.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/animated-icon-art.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 8
+    }
+  },
   "components/ui-custom/animated-rovo.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 3
+    },
+    "shadcn/no-raw-colors": {
+      "count": 2
     }
   },
   "components/ui-custom/artifact-list/artifact-list.source.test.js": {
@@ -2580,6 +3309,11 @@
   "components/ui-custom/code-list/code-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "components/ui-custom/connection.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/ui-custom/context-bar/context-bar-create-pull-request.tsx": {
@@ -2600,6 +3334,9 @@
   "components/ui-custom/context-bar/context-bar-pull-request-ci.tsx": {
     "no-restricted-imports": {
       "count": 2
+    },
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/ui-custom/context-bar/context-bar-pull-request.tsx": {
@@ -2638,6 +3375,11 @@
       "count": 224
     },
     "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/entity-card/skill.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -2681,9 +3423,27 @@
       "count": 1
     }
   },
+  "components/ui-custom/human-agent-avatar-motion.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 5
+    }
+  },
+  "components/ui-custom/human-agent-avatar.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/ui-custom/jsx-preview.tsx": {
     "react-hooks/refs": {
       "count": 3
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/list.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
     }
   },
   "components/ui-custom/live-waveform.tsx": {
@@ -2699,6 +3459,21 @@
   "components/ui-custom/message-markdown.css-contract.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "components/ui-custom/mic-selector.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/model-selector.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/node.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/ui-custom/persona.tsx": {
@@ -2719,6 +3494,11 @@
       "count": 17
     }
   },
+  "components/ui-custom/progress-circle.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 2
+    }
+  },
   "components/ui-custom/prompt-input-attachments.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
       "count": 2
@@ -2727,6 +3507,11 @@
   "components/ui-custom/prompt-input-dictation.source.test.js": {
     "no-restricted-syntax": {
       "count": 30
+    }
+  },
+  "components/ui-custom/prompt-input-dictation.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
     }
   },
   "components/ui-custom/prompt-input/prompt-input-textarea.tsx": {
@@ -2740,6 +3525,9 @@
       "count": 1
     },
     "react-hooks/refs": {
+      "count": 1
+    },
+    "shadcn/no-unknown-classes": {
       "count": 1
     },
     "vpk-tokens/no-off-grid-spacing": {
@@ -2762,6 +3550,11 @@
   "components/ui-custom/rich-text-editor/mention-node-view.tsx": {
     "no-restricted-imports": {
       "count": 1
+    }
+  },
+  "components/ui-custom/rich-text-editor/mention-visual.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
     }
   },
   "components/ui-custom/rich-text-editor/reference-preview.tsx": {
@@ -2803,6 +3596,11 @@
       "count": 1
     }
   },
+  "components/ui-custom/rovo-cursor.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
   "components/ui-custom/rovo-generation-components.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2826,11 +3624,29 @@
   "components/ui-custom/rovo-illustration/spot-illustration.tsx": {
     "react-hooks/immutability": {
       "count": 2
+    },
+    "shadcn/no-raw-colors": {
+      "count": 1
     }
   },
   "components/ui-custom/rovo-sparkle/rovo-sparkle.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
+    }
+  },
+  "components/ui-custom/sandbox.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/schema-display.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/shimmer-wave.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 3
     }
   },
   "components/ui-custom/skill-tag-keyboard.behavior.test.js": {
@@ -2851,6 +3667,11 @@
       "count": 31
     }
   },
+  "components/ui-custom/sources-menu.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 2
+    }
+  },
   "components/ui-custom/speech-input.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -2867,6 +3688,9 @@
   "components/ui-custom/twg-appstack.tsx": {
     "react-hooks/refs": {
       "count": 5
+    },
+    "shadcn/require-static-classes": {
+      "count": 3
     }
   },
   "components/ui-custom/twg-loader/twg-loader.source.test.js": {
@@ -2874,8 +3698,23 @@
       "count": 13
     }
   },
+  "components/ui-custom/twg-loader/twg-loader.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 2
+    }
+  },
+  "components/ui-custom/twg-tool.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "components/ui-custom/use-human-agent-avatar-group-cycle.ts": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/ui-custom/voice-selector.tsx": {
+    "shadcn/require-static-classes": {
       "count": 1
     }
   },
@@ -2932,6 +3771,11 @@
       "count": 1
     }
   },
+  "components/ui/chain-of-thought.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "components/ui/chart.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
@@ -2955,6 +3799,11 @@
   "components/ui/elapsed-time.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
+    }
+  },
+  "components/ui/empty.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 12
     }
   },
   "components/ui/field.source.test.js": {
@@ -2999,6 +3848,9 @@
   "components/ui/input-otp.tsx": {
     "no-restricted-syntax": {
       "count": 1
+    },
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/ui/input.tsx": {
@@ -3042,6 +3894,9 @@
     }
   },
   "components/ui/navigation-menu.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 5
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -3081,6 +3936,11 @@
       "count": 14
     }
   },
+  "components/ui/reasoning.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "components/ui/select.source.test.js": {
     "no-restricted-syntax": {
       "count": 43
@@ -3097,6 +3957,9 @@
     }
   },
   "components/ui/sidebar.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 4
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -3104,6 +3967,11 @@
   "components/ui/slider.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
+    }
+  },
+  "components/ui/spinner.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
     }
   },
   "components/ui/tabs.source.test.js": {
@@ -3131,8 +3999,18 @@
       "count": 6
     }
   },
+  "components/ui/tile.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    }
+  },
   "components/ui/toggle.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
+      "count": 1
+    }
+  },
+  "components/ui/tool.tsx": {
+    "shadcn/no-unknown-classes": {
       "count": 1
     }
   },
@@ -3148,6 +4026,16 @@
   },
   "components/utils/gui-components.tsx": {
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/utils/gui-motion.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 2
+    }
+  },
+  "components/utils/gui-timeline.tsx": {
+    "shadcn/no-unknown-classes": {
       "count": 1
     }
   },
@@ -3212,6 +4100,9 @@
   "components/visual/ink-wash/index.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
+    },
+    "shadcn/no-arbitrary-values": {
+      "count": 1
     }
   },
   "components/visual/liquid-metal/data.test.js": {
@@ -3222,6 +4113,11 @@
   "components/visual/motion/data.ts": {
     "no-restricted-syntax": {
       "count": 5
+    }
+  },
+  "components/visual/motion/index.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
     }
   },
   "components/visual/peel/index.tsx": {
@@ -3418,6 +4314,11 @@
       "count": 5
     }
   },
+  "components/website/demos/ui-custom/pixel-loader-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 2
+    }
+  },
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -3428,7 +4329,20 @@
       "count": 6
     }
   },
+  "components/website/demos/ui-custom/sources-menu-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui-custom/twg-loader-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    }
+  },
   "components/website/demos/ui/accordion-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 36
+    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 4
     }
@@ -3453,8 +4367,36 @@
       "count": 12
     }
   },
+  "components/website/demos/ui/collapsible-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/dialog-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 39
+    }
+  },
+  "components/website/demos/ui/drawer-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui/dropdown-menu-demo.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 4
+    }
+  },
   "components/website/demos/ui/dropdown-menu-search-demo.behavior.test.js": {
     "vpk-tests/no-dom-node-assert": {
+      "count": 1
+    }
+  },
+  "components/website/demos/ui/forms-demo.tsx": {
+    "shadcn/no-raw-colors": {
+      "count": 1
+    },
+    "shadcn/no-unknown-classes": {
       "count": 1
     }
   },
@@ -3463,14 +4405,44 @@
       "count": 1
     }
   },
+  "components/website/demos/ui/input-otp-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 20
+    }
+  },
+  "components/website/demos/ui/navigation-menu-demo.tsx": {
+    "shadcn/require-static-classes": {
+      "count": 1
+    }
+  },
   "components/website/demos/ui/plan-demo.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
       "count": 4
     }
   },
+  "components/website/demos/ui/separator-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 4
+    }
+  },
+  "components/website/demos/ui/sheet-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 12
+    }
+  },
+  "components/website/demos/ui/shimmer-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    }
+  },
   "components/website/demos/ui/table-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "components/website/demos/ui/tabs-demo.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 50
     }
   },
   "components/website/demos/ui/toggle-group-demo.source.test.js": {
@@ -3483,6 +4455,9 @@
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -3530,6 +4505,9 @@
     }
   },
   "components/website/demos/visual/border-beam-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    },
     "vpk-tokens/no-raw-white-black": {
       "count": 1
     }
@@ -3590,6 +4568,9 @@
   "components/website/demos/visual/liquid-metal-demo.tsx": {
     "react-hooks/refs": {
       "count": 1
+    },
+    "shadcn/no-raw-colors": {
+      "count": 1
     }
   },
   "components/website/demos/visual/logo-crystal-demo.tsx": {
@@ -3598,6 +4579,9 @@
     }
   },
   "components/website/demos/visual/logo-glass-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 1
+    },
     "vpk-tokens/no-raw-white-black": {
       "count": 1
     }
@@ -3619,6 +4603,11 @@
   },
   "components/website/demos/visual/melt-demo.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
+      "count": 1
+    }
+  },
+  "components/website/demos/visual/noise-preview-surface.tsx": {
+    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -3680,6 +4669,11 @@
   "components/website/demos/visual/text-morphing-demo.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
+    }
+  },
+  "components/website/demos/visual/thinking-orbs-demo.tsx": {
+    "shadcn/no-arbitrary-values": {
+      "count": 4
     }
   },
   "components/website/registry/blocks-variants.source.test.js": {

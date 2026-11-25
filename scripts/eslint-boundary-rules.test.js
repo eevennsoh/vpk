@@ -328,6 +328,43 @@ export const Overlays = () => (
 	assert.match(findings[0].message, /overlay elevation/u);
 });
 
+test("theme-token rules reject undeclared colors, ungeneratable classes, arbitrary colors and dynamic classes", async () => {
+	const rules = ["shadcn/no-raw-colors", "shadcn/no-unknown-classes", "shadcn/no-arbitrary-values", "shadcn/require-static-classes"];
+	const findings = await ruleFindings(`
+import { Button } from "@/components/ui/button";
+export const Tokens = ({ tone }: { tone: string }) => (
+	<>
+		<div className="text-danger shadow-raised" />
+		<svg><path fill="#ff0000" className="bg-pink-500" /></svg>
+		<div className="overscroll-behavior-contain" />
+		<div className="bg-[#ff0000] text-[var(--ds-text)]" />
+		<Button className={\`bg-\${tone}\`} />
+		<div className="text-text-danger bg-surface-hovered shadow-md w-[360px] z-[502] text-[11px]" />
+		<div className="rich-text-command-menu tiptap-editor agent-instructions-tiptap-editor" />
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", rules);
+	const byRule = (ruleId) => [...new Set(findings.filter((finding) => finding.ruleId === ruleId).map(({ line }) => line))];
+	assert.deepEqual(byRule("shadcn/no-raw-colors"), [5, 6]);
+	assert.deepEqual(byRule("shadcn/no-unknown-classes"), [7]);
+	assert.deepEqual(byRule("shadcn/no-arbitrary-values"), [8]);
+	assert.deepEqual(byRule("shadcn/require-static-classes"), [9]);
+	assert.ok(findings.every(({ severity }) => severity === 2), "theme-token rules are errors");
+});
+
+test("primitives may compose dynamic classes and art scenes may pass literal colors", async () => {
+	const rules = ["shadcn/no-raw-colors", "shadcn/require-static-classes", "shadcn/no-arbitrary-values"];
+	const primitive = await ruleFindings(`
+import { Slot } from "@/components/ui/slot";
+export const Box = ({ size }: { size: string }) => <Slot className={\`h-\${size} w-[13px]\`} />;
+`, "components/ui/lint-contract-fixture.tsx", rules);
+	assert.deepEqual(primitive, []);
+	const art = await ruleFindings(`
+export const Scene = () => <mesh><meshBasicMaterial color="#8ec8ff" /></mesh>;
+`, "components/arts/demo/lint-contract-fixture.tsx", rules);
+	assert.deepEqual(art, []);
+});
+
 test("clickable UI is focusable and keyboard-operable, and hidden UI is unreachable", async () => {
 	const findings = await ruleFindings(`
 declare function open(): void;

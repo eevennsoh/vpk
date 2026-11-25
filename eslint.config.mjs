@@ -259,7 +259,22 @@ const eslintConfig = defineConfig([
 		rules: {
 			// Repo-wide contracts only for established policy; the pilot blocks below add the rest.
 			"shadcn/no-restyle": ["error", { allow: ["*"], contracts: [overlaySurfaceContract] }],
+			// Theme-token contracts. A class Tailwind cannot generate, or a color the theme does not
+			// declare (`text-danger`, `shadow-raised`), renders nothing, so these catch silent no-ops.
+			"shadcn/no-raw-colors": "error",
+			// The rich-text editor styles these hooks in its own stylesheets
+			// (components/ui-custom/rich-text-editor/*.css), which the linter does not read.
+			"shadcn/no-unknown-classes": ["error", { allow: ["rich-text-*", "tiptap-*", "*-tiptap-*"] }],
+			"shadcn/require-static-classes": "error",
+			// AGENTS.md: no `bg-[var(--ds-...)]` / `text-[#hex]`; use semantic token classes. Only
+			// colors are policy; arbitrary layout sizes (`w-[360px]`, `z-[502]`) stay allowed.
+			"shadcn/no-arbitrary-values": ["error", { deny: ["color"] }],
 		},
+	},
+	{
+		// Generative art and WebGL scenes pass literal colors to canvas, three.js, and shaders.
+		files: ["components/arts/**/*.{js,jsx,ts,tsx}", "components/visual/**/*.{js,jsx,ts,tsx}"],
+		rules: { "shadcn/no-raw-colors": "off" },
 	},
 	{
 		// Expand this pilot only after reviewing each consumer's customization.
@@ -322,7 +337,12 @@ const eslintConfig = defineConfig([
 	},
 	{
 		files: ["components/ui/**/*.{js,jsx,ts,tsx}"],
-		rules: { "shadcn/no-restyle": "off" },
+		// Primitives own their styling and compose class strings from props.
+		rules: {
+			"shadcn/no-restyle": "off",
+			"shadcn/no-arbitrary-values": "off",
+			"shadcn/require-static-classes": "off",
+		},
 	},
 	// Override default ignores of eslint-config-next.
 	globalIgnores([
