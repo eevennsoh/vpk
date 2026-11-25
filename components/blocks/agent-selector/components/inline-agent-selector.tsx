@@ -90,6 +90,14 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	// Once the slot has waited on a recommendation, the agent that fills it arrives with motion rather than appearing.
 	const [revealRecommendation, setRevealRecommendation] = useState(recommendationPending);
 	if (recommendationPending && !revealRecommendation) setRevealRecommendation(true);
+	// When the recommendation lands, the placeholder keeps the slot until its spinner has finished its turn.
+	const [wasPending, setWasPending] = useState(recommendationPending);
+	const [settling, setSettling] = useState(false);
+	if (wasPending !== recommendationPending) {
+		setWasPending(recommendationPending);
+		setSettling(!recommendationPending);
+	}
+	const holdingRecommendation = (recommendationPending || settling) && Boolean(recommendedAgentId) && !query;
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
 	const { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware } = groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, recommendedAgentId, query, expanded, initialSoftwareLimit });
 	const row = (agent: AgentSelectorAgent, reveal = false) => {
@@ -148,7 +156,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	}}>Show more</button> : null}</section> : null;
 	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("menu-row-spacing flex w-80 max-w-full flex-col overflow-hidden rounded-lg bg-popover text-popover-foreground", dropdownStyles.padding, compact ? "h-auto" : cn("h-[26rem] max-h-[var(--available-height,26rem)]", dropdownStyles.surface), className)}>
 		{showSearch ? <div className="-mx-(--menu-inset) -mt-(--menu-inset) shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
-		<div ref={listRef} className="-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)" style={listMaskStyle}>{recommendationPending && recommendedAgentId && !query ? <RecommendingAgentRow /> : recommendedAgent ? row(recommendedAgent, revealRecommendation) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!recommendationPending && !recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+		<div ref={listRef} className="-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)" style={listMaskStyle}>{holdingRecommendation ? <RecommendingAgentRow done={!recommendationPending} onDone={() => setSettling(false)} /> : recommendedAgent ? row(recommendedAgent, revealRecommendation) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!holdingRecommendation && !recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="-mx-(--menu-inset) shrink-0 px-(--menu-inset)"><DropdownMenuSeparator className="mt-0" />{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 	</div>;

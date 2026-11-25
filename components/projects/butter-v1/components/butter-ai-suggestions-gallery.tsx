@@ -9,7 +9,7 @@ import { ButterGalleryWorkItem } from "./butter-gallery-work-item";
 export type ButterAiSuggestionsView = "global" | "dropdown" | "inline";
 
 /** How long the Dropdown tab shows the agent selector working out its recommendation. */
-const RECOMMEND_AGENT_MS = 2400;
+const RECOMMEND_AGENT_MS = 3000;
 
 const VIEWS: readonly { value: ButterAiSuggestionsView; label: string }[] = [
 	{ value: "global", label: "Global" },
