@@ -14,8 +14,15 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { motionRecipe } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+
+/**
+ * The recommended agent arriving in the slot its spinner just finished in: the avatar grows in on a soft spring, and
+ * the name follows a beat later, so the reveal reads as one gradual arrival rather than a pop.
+ */
+const RECOMMENDATION_AVATAR_IN = { type: "spring", visualDuration: 0.45, bounce: 0.15, opacity: { duration: motionDuration.slower, ease: motionEase.outPractical } } as const;
+const RECOMMENDATION_NAME_IN = { duration: motionDuration.slower, ease: motionEase.outPractical, delay: 0.12 } as const;
 
 export interface InlineAgentAction {
 	id: string;
@@ -113,8 +120,8 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
-						<motion.span animate={{ opacity: 1, scale: 1, transition: motionRecipe.avatar.enter }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.6 } : false}>{avatar}</motion.span>
-						<motion.span animate={{ opacity: 1, x: 0, transition: motionRecipe.popup.enter }} className="menu-row-title min-w-0 flex-1 truncate" initial={reveal ? { opacity: 0, x: -4 } : false}>{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</motion.span>
+						<motion.span animate={{ opacity: 1, scale: 1, transition: RECOMMENDATION_AVATAR_IN }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.4 } : false}>{avatar}</motion.span>
+						<motion.span animate={{ opacity: 1, x: 0, transition: RECOMMENDATION_NAME_IN }} className="menu-row-title min-w-0 flex-1 truncate" initial={reveal ? { opacity: 0, x: -6 } : false}>{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</motion.span>
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
