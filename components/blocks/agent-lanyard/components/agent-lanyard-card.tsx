@@ -26,6 +26,13 @@ interface AgentLanyardCardProps {
 	showGrid?: boolean;
 	showDescription?: boolean;
 	perspectiveTilt?: boolean;
+	/** Multiplies the hover tilt angles; 1 is the catalog default. */
+	tiltStrength?: number;
+	/**
+	 * Mirror the tilt so the edge facing the trigger leans in. Reads the side
+	 * of the popup the card sits in (`data-side`) when the pointer enters.
+	 */
+	tiltInward?: boolean;
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
@@ -34,7 +41,10 @@ interface AgentLanyardCardProps {
 	className?: string;
 }
 
-const HOVER_TILT = "perspective(900px) rotateX(-1.2deg) rotateY(4.4deg) rotateZ(-0.6deg)";
+// `direction` 1 is the catalog tilt; -1 mirrors it horizontally.
+const hoverTilt = (strength: number, direction: 1 | -1) => `perspective(900px) rotateX(${-1.2 * strength}deg) rotateY(${4.4 * strength * direction}deg) rotateZ(${-0.6 * strength * direction}deg)`;
+// A card right of its trigger leans its left edge in, and vice versa.
+const inwardTiltDirection = (side: string | null | undefined): 1 | -1 => side === "left" ? 1 : -1;
 const REST_TILT = "perspective(900px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)";
 const ENTER = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
 const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
@@ -48,10 +58,11 @@ export const AGENT_LANYARD_CUTOUT_MASK = {
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, recommendationReason, recommendationAppearance = "perforated", avatar, footer, verified = false,
-	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = false, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
+	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, tiltStrength = 1, tiltInward = false, animateGrid = false, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
 }: Readonly<AgentLanyardCardProps>) {
 	const Title = headingLevel === 2 ? "h2" : "h3";
 	const [hovered, setHovered] = useState(false);
+	const [tiltDirection, setTiltDirection] = useState<1 | -1>(1);
 	const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const tiltEnabled = perspectiveTilt && !reducedMotion;
 	const gridEnabled = showGrid && animateGrid && !reducedMotion;
@@ -96,7 +107,12 @@ export function AgentLanyardCard({
 			className={cn("flow-root w-[252px] max-w-full", perforated ? "rounded-xl shadow-2xl" : null, className)}
 			data-slot="agent-lanyard" data-agent-id={id} data-variant={variant}
 			data-perspective-tilt={tiltEnabled} data-grid-animation={gridEnabled}
-			onPointerEnter={(event) => { if (event.pointerType !== "touch") setHovered(true); }}
+			data-tilt-direction={tiltEnabled ? tiltDirection : undefined}
+			onPointerEnter={(event) => {
+				if (event.pointerType === "touch") return;
+				if (tiltInward) setTiltDirection(inwardTiltDirection(event.currentTarget.closest("[data-side]")?.getAttribute("data-side")));
+				setHovered(true);
+			}}
 			onPointerLeave={() => setHovered(false)}
 			onPointerCancel={() => setHovered(false)}
 		>
@@ -105,7 +121,7 @@ export function AgentLanyardCard({
 				className="-m-4 p-4"
 				style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 23px" }}
 				initial={false}
-				animate={{ transform: tiltEnabled ? (hovered ? HOVER_TILT : REST_TILT) : "none" }}
+				animate={{ transform: tiltEnabled ? (hovered ? hoverTilt(tiltStrength, tiltDirection) : REST_TILT) : "none" }}
 				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
 			>
 			<div

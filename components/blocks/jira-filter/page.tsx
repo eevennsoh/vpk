@@ -197,7 +197,7 @@ const butterFields: JiraFilterField[] = [
 	},
 	{
 		id: "prStatus",
-		label: "PR",
+		label: "Pull request",
 		multiple: true,
 		options: [
 			{ value: "open", label: "Open" },
@@ -218,16 +218,6 @@ const butterFields: JiraFilterField[] = [
 			{ value: "kayla", label: "Kayla Parajuli" },
 			{ value: "raul", label: "Raul Gonzalez" },
 			{ value: "olivia", label: "Olivia Yang" },
-		],
-	},
-	{
-		id: "fixVersion",
-		label: "Fix version",
-		multiple: true,
-		options: [
-			{ value: "march", label: "Due in March 2026" },
-			{ value: "april", label: "Due in April 2026" },
-			{ value: "none", label: "No due date" },
 		],
 	},
 	{
@@ -264,7 +254,7 @@ const butterFields: JiraFilterField[] = [
 	},
 	{
 		id: "label",
-		label: "Label",
+		label: "Labels",
 		multiple: true,
 		options: [
 			{ value: "hmi", label: "HMI" },

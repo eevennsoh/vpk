@@ -28,7 +28,8 @@ import { Avatar, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
-import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { ScrollMaskEdgeOverlay, StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextSuggestionEmptyState } from "@/components/ui-custom/rich-text-editor/menus";
 import { labelColor } from "@/components/blocks/artifact-pane/label-color";
 import { Tag } from "@/components/ui/tag";
@@ -319,7 +320,7 @@ export function ProjectButterFilter({
 	const [open, setOpen] = useControllableState({ prop: controlledOpen, defaultProp: false, onChange: onOpenChange });
 	const [search, setSearch] = useState("");
 	const [optionSearch, setOptionSearch] = useState("");
-	const [scrolled, setScrolled] = useState(false);
+	const { ref: optionsScrollRef, hasScrolledFromTop, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const [visibleIds, setVisibleIds] = useState(() =>
 		defaultFieldIds.filter((id) => fields.some((field) => field.id === id)),
 	);
@@ -426,7 +427,6 @@ export function ProjectButterFilter({
 					setSavedBaseline(value);
 				} else {
 					setSearch("");
-					setScrolled(false);
 					setSavedOpen(false);
 					setSaveFormOpen(false);
 					setViewFormOpen(false);
@@ -453,14 +453,14 @@ export function ProjectButterFilter({
 						onEscape={() => (search ? setSearch("") : setOpen(false))}
 					/>
 					<StickyRowScrollFade
-						className={scrolled ? "h-12 opacity-100" : "h-12"}
+						className={hasScrolledFromTop ? "h-12 opacity-100" : "h-12"}
 					/>
 				</div>
 				<div
 					role="menu"
 					aria-label="Filter options"
+					ref={optionsScrollRef}
 					className="min-h-0 overflow-y-auto px-1.5 pt-1.5"
-					onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 0)}
 				>
 					{query ? (
 						<div aria-label="Available filters">
@@ -709,8 +709,9 @@ export function ProjectButterFilter({
 					<div
 						role="menu"
 						aria-label="Filter actions"
-						className="shrink-0 p-1.5 pt-0"
+						className="relative shrink-0 p-1.5 pt-0"
 					>
+						{showBottomScrollMask ? <ScrollMaskEdgeOverlay edge="bottom" color="var(--color-surface-overlay)" fadeSize={48} className="top-auto bottom-full" /> : null}
 						<DropdownMenuSeparator />
 						<DropdownMenuSub
 							open={saveFormOpen}

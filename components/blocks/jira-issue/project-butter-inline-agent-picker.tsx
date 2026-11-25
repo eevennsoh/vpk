@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { BUTTER_PICKER_AGENTS } from "./project-butter-agent-catalog";
 import { useProjectButterInvocationActions } from "./project-butter-invocation";
 
+const CARD_TILT_STRENGTH = 1.6;
 const RECOMMENDED_AGENT_ID = "claude-code";
 const DEFAULT_RECOMMENDATION_REASON = "Claude can help with code suggestions and reviews.";
 const SOFTWARE_IDS = ["jira-coding", RECOMMENDED_AGENT_ID, "test-agent", "review-agent", "release-agent", "rovo-cli"];
@@ -66,7 +67,7 @@ export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Rea
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef }: Readonly<{
+export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef, cardTilt = true }: Readonly<{
 	extraAgents?: readonly AgentSelectorAgent[];
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
@@ -75,6 +76,8 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
 	recommendationReason?: string;
 	issueTriggerRef?: RefObject<HTMLElement | null>;
+	/** The preview card tilts toward the picker while the pointer is over the card; pass false to keep it flat. */
+	cardTilt?: boolean;
 }>) {
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
 	const pickerRef = useRef<HTMLDivElement>(null);
@@ -102,10 +105,10 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 	}} positionerClassName="z-[700]" className="[&_[data-slot=agent-lanyard-surface]]:min-h-0 [&_[data-slot=agent-lanyard-surface]_p]:min-h-0">
 		{agent ? (() => {
 			const firstParty = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((item) => item.id === agent.id);
-			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={false} />;
+			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={cardTilt} tiltStrength={CARD_TILT_STRENGTH} tiltInward />;
 			const lanyard = pickerLanyard(agent);
-			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" recommendationAppearance="chin" agent={lanyard} recommendationReason={reason} perspectiveTilt={false} />;
-			return <AgentLanyard agent={lanyard} perspectiveTilt={false} footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
+			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" recommendationAppearance="chin" agent={lanyard} recommendationReason={reason} perspectiveTilt={cardTilt} tiltStrength={CARD_TILT_STRENGTH} tiltInward />;
+			return <AgentLanyard agent={lanyard} perspectiveTilt={cardTilt} tiltStrength={CARD_TILT_STRENGTH} tiltInward footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
 		})() : null}
 	</AgentLanyardHoverContent>}</HoverCard></ProjectButterAgentPreviewBoundary>;
 }

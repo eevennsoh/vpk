@@ -137,7 +137,7 @@ test("Project butter supports pinned and field selections and clearing", async (
 	await view.click(view.getByRole("button", { name: "Filter" }));
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Needs input" }));
 	assert.equal(view.getByRole("button", { name: "Filter (1)" }).getAttribute("aria-label"), "Filter (1)");
-	await view.press(view.getByRole("menuitem", { name: "PR" }), "ArrowRight");
+	await view.press(view.getByRole("menuitem", { name: "Pull request" }), "ArrowRight");
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Open" }));
 	assert.equal(view.getByRole("button", { name: "Filter (2)" }).getAttribute("aria-label"), "Filter (2)");
 	await view.click(view.getByRole("menuitem", { name: "Clear all" }));
@@ -168,12 +168,12 @@ test("Project butter limits pins and keeps pinned shortcuts usable", async () =>
 		exportName: "Example",
 	});
 	await view.click(view.getByRole("button", { name: "Filter" }));
-	await view.press(view.getByRole("menuitem", { name: "PR" }), "ArrowRight");
+	await view.press(view.getByRole("menuitem", { name: "Pull request" }), "ArrowRight");
 	await view.click(view.getByRole("menuitem", { name: "Pin Open" }));
 	await view.click(view.getByRole("menuitem", { name: "Pin Merged" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Pin Closed" }) === null, true);
 	await view.click(view.getByRole("menuitem", { name: "Unpin Needs input" }));
-	await view.press(view.getByRole("menuitem", { name: "PR" }), "ArrowRight");
+	await view.press(view.getByRole("menuitem", { name: "Pull request" }), "ArrowRight");
 	assert.equal(view.getByRole("menuitem", { name: "Pin Closed" }).getAttribute("aria-label"), "Pin Closed");
 });
 
@@ -260,4 +260,16 @@ test("saving a view can persist clearing its last filter", async () => {
 	await view.click(view.getByRole("menuitem", { name: "Clear all" }));
 	await view.click(view.getByRole("menuitem", { name: "Save view" }));
 	assert.equal(view.getByRole("status").textContent, "2");
+});
+
+test("Project butter preview lists the same field flyouts as the butter-v1 board", async () => {
+	const view = await renderComponent({
+		source: `import Page from "@/components/blocks/jira-filter/page";
+			export function Example() { return <Page variant="project-butter" />; }`,
+		exportName: "Example",
+	});
+	await view.click(view.getByRole("button", { name: "Filter" }));
+	const options = view.getByRole("menu", { name: "Filter options" });
+	const labels = [...options.querySelectorAll("[role=menuitem]")].map((item) => item.textContent.trim()).filter(Boolean);
+	assert.deepEqual(labels, ["Saved", "Advanced", "JQL", "Agent status", "Pull request", "Assignee", "Epic", "Sprint", "Work type", "Labels", "Status"]);
 });
