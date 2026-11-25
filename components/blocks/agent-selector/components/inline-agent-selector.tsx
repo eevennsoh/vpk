@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
 import { RecommendingAgentRow } from "./recommending-agent-row";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
@@ -18,11 +19,10 @@ import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * The recommended agent arriving in the slot its spinner just finished in: the avatar grows in on a soft spring, and
- * the name follows a beat later, so the reveal reads as one gradual arrival rather than a pop.
+ * The recommended agent arriving in the slot its spinner just finished in: the avatar grows in on a soft spring while
+ * its label writes itself in with the suggestion rainbow, so the reveal reads as one gradual arrival rather than a pop.
  */
 const RECOMMENDATION_AVATAR_IN = { type: "spring", visualDuration: 0.45, bounce: 0.15, opacity: { duration: motionDuration.slower, ease: motionEase.outPractical } } as const;
-const RECOMMENDATION_NAME_IN = { duration: motionDuration.slower, ease: motionEase.outPractical, delay: 0.12 } as const;
 
 export interface InlineAgentAction {
 	id: string;
@@ -121,7 +121,12 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
 						<motion.span animate={{ opacity: 1, scale: 1, transition: RECOMMENDATION_AVATAR_IN }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.4 } : false}>{avatar}</motion.span>
-						<motion.span animate={{ opacity: 1, x: 0, transition: RECOMMENDATION_NAME_IN }} className="menu-row-title min-w-0 flex-1 truncate" initial={reveal ? { opacity: 0, x: -6 } : false}>{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</motion.span>
+						{reveal ? (
+							// An AI pick, so it arrives with the rainbow sweep an accepted suggestion gets; "(Recommended)" keeps its subtler tone.
+							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child>span:first-child]:text-text-subtlest">
+								<SuggestionRainbowText text={`${agent.name} (Recommended)`} truncate />
+							</span>
+						) : <span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>}
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
