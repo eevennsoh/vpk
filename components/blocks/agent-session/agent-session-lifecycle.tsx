@@ -87,7 +87,7 @@ function IndicatorGlyph({
 					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
-					title="Finished"
+					title={LIFECYCLE_LABELS.complete}
 					variant="transparent"
 				/>
 			);

@@ -100,11 +100,11 @@ test("medium attached demonstrates one, many, and finished sessions", () => {
 	);
 	assert.match(DATA_SOURCE, /host: "local",\s*id: "PAY-112:claude"/u);
 	assert.match(DATA_SOURCE, /host: "cloud",\s*id: "PAY-112:cursor"/u);
-	assert.match(DATA_SOURCE, /AGENT_SESSION_ATTACHED_FINISHED_ITEMS:[\s\S]*state: "complete"[\s\S]*title: "Finished"/u);
+	assert.match(DATA_SOURCE, /AGENT_SESSION_ATTACHED_FINISHED_ITEMS:[\s\S]*state: "complete"[\s\S]*title: "Complete"/u);
 	assert.match(PAGE_SOURCE, /label: "1 agent working"/u);
 	assert.match(PAGE_SOURCE, /label: "1–n agents working"/u);
 	assert.match(PAGE_SOURCE, /label: "Needs input"/u);
-	assert.match(PAGE_SOURCE, /label: "Finished"/u);
+	assert.match(PAGE_SOURCE, /label: "Complete"/u);
 	assert.match(DATA_SOURCE, /AGENT_SESSION_ATTACHED_NEEDS_INPUT_ITEMS:[\s\S]*state: "needs-input"/u);
 	assert.match(
 		PAGE_SOURCE,

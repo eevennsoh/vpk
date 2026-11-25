@@ -52,7 +52,7 @@ export function isActiveAgentSessionState(state: AgentListState | undefined): bo
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
 export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>> = {
 	attention: "Needs attention",
-	complete: "Finished",
+	complete: "Complete",
 	"needs-input": "Needs input",
 	"ready-for-review": "Ready for review",
 	running: "Working",

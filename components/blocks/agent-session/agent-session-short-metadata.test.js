@@ -71,7 +71,7 @@ test("metadata placement shows the session state in a long row", async () => {
 		loader: { ".css": "empty" },
 	});
 	const { AgentSessionLongMetadata } = loadCjsModuleFromText(result.outputFiles[0].text);
-	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]]) {
+	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Complete"]]) {
 		const item = { id: state, title: "Session", state, agent: { id: "claude", kind: "agent", name: "Claude" }, timeLabel: "7m" };
 		const markup = renderToStaticMarkup(createElement(AgentSessionLongMetadata, { item, lifecycleLabelPlacement: "metadata" }));
 		assert.match(markup, new RegExp(`title="${label}"`, "u"));

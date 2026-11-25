@@ -126,7 +126,7 @@ test("the session card follows live session state", async () => {
 	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Needs input"]') !== null, true);
 	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
 	await view.rerender({ state: "complete", onOpen, owner: true });
-	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Finished"]') !== null, true);
+	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Complete"]') !== null, true);
 	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
 	assert.deepEqual(opened, ["butter-scoping", "butter-scoping"]);
 });

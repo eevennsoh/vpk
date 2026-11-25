@@ -46,7 +46,7 @@ const AGENT_SESSION_ATTACHED_STATES = [
 	{ items: AGENT_SESSION_ATTACHED_MULTI_WORKING_ITEMS, label: "1–n agents working" },
 	{ items: AGENT_SESSION_ATTACHED_NEEDS_INPUT_ITEMS, label: "Needs input" },
 	{ items: AGENT_SESSION_ATTACHED_READY_FOR_REVIEW_ITEMS, label: "Ready for review" },
-	{ items: AGENT_SESSION_ATTACHED_FINISHED_ITEMS, label: "Finished" },
+	{ items: AGENT_SESSION_ATTACHED_FINISHED_ITEMS, label: "Complete" },
 ] as const;
 
 const AGENT_SESSION_ROLES = ["owner", "viewer"] as const satisfies readonly AgentSessionRole[];

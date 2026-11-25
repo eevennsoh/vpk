@@ -21,7 +21,7 @@ const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...ext
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
 test("session menu shows each session's lifecycle indicator", async () => {
-	const states = [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Finished"]];
+	const states = [["running", "Working"], ["needs-input", "Needs input"], ["complete", "Complete"]];
 	const view = await renderMenu(menuProps(states.map(([state]) => session(state, "owner", { state }))));
 	try {
 		for (const [state, label] of states) {

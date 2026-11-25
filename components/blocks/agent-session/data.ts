@@ -436,7 +436,7 @@ export const AGENT_SESSION_ATTACHED_FINISHED_ITEMS: readonly AgentSessionItem[] 
 		},
 		state: "complete",
 		timeLabel: "Last week",
-		title: "Finished",
+		title: "Complete",
 	},
 ];
 

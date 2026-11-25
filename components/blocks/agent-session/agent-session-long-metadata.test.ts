@@ -99,7 +99,7 @@ test("the time chunk carries the declared host so icon and clock stay one clause
 test("status copy stays available for trailing indicators", () => {
 	assert.deepEqual(AGENT_SESSION_STATUS_LABEL, {
 		attention: "Needs attention",
-		complete: "Finished",
+		complete: "Complete",
 		"needs-input": "Needs input",
 		"ready-for-review": "Ready for review",
 		running: "Working",
