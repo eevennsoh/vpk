@@ -349,7 +349,7 @@ function LoadingScreen(): React.ReactElement {
 	return (
 		<div className="absolute inset-0 z-20 flex items-center justify-center bg-surface">
 			<div className="flex w-[min(360px,calc(100%-48px))] flex-col items-center gap-4 rounded-lg border border-border bg-surface-raised px-6 py-8 text-center shadow-lg">
-				<div className="grid size-11 place-items-center rounded-full bg-surface-accent-blue-subtle text-icon-information">
+				<div className="grid size-11 place-items-center rounded-full bg-bg-information text-icon-information">
 					<span className="text-lg font-semibold">R</span>
 				</div>
 				<div className="space-y-1">

@@ -19,7 +19,7 @@ const emptyVariants = cva("flex min-w-0 flex-1", {
 			// text as a single unit. Becomes a centered stack on very narrow
 			// containers (< @sm).
 			horizontal:
-				"@container flex-row flex-wrap items-center justify-start gap-x-5 gap-y-3 text-left max-@sm:flex-col max-@sm:items-center max-@sm:text-center max-@sm:text-balance",
+				"@container flex-row flex-wrap items-center justify-start gap-x-5 gap-y-3 text-left @max-sm:flex-col @max-sm:items-center @max-sm:text-center @max-sm:text-balance",
 		},
 	},
 	defaultVariants: {
@@ -77,7 +77,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
 				// Take the remaining row width so the actions sit on the far edge;
 				// recenters on very narrow containers where the layout stacks.
 				orientation === "horizontal" &&
-					"min-w-0 flex-1 items-start text-left max-@sm:flex-none max-@sm:items-center max-@sm:text-center",
+					"min-w-0 flex-1 items-start text-left @max-sm:flex-none @max-sm:items-center @max-sm:text-center",
 				className
 			)}
 			{...props}
@@ -103,7 +103,7 @@ function EmptyBody({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="empty-body"
 			className={cn(
-				"flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-5 gap-y-3 max-@sm:flex-col max-@sm:items-center",
+				"flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-5 gap-y-3 @max-sm:flex-col @max-sm:items-center",
 				className
 			)}
 			{...props}
@@ -202,7 +202,7 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
 				// Sits beside the text while it fits; when the container is tight
 				// the whole actions block wraps to a full-width row beneath the text.
 				orientation === "horizontal" &&
-					"w-auto flex-none items-end max-@md:basis-full max-@md:items-start max-@sm:items-center",
+					"w-auto flex-none items-end @max-md:basis-full @max-md:items-start @max-sm:items-center",
 				className
 			)}
 			{...props}

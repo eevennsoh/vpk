@@ -119,9 +119,6 @@
     }
   },
   "app/sandbox/screen-assistant/page.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 2
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -1984,9 +1981,6 @@
   "components/blocks/rovo-canvas/components/rovo-canvas.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
-    },
-    "shadcn/no-raw-colors": {
-      "count": 1
     }
   },
   "components/blocks/scrubber/components/scrubber-rail.tsx": {
@@ -2674,9 +2668,6 @@
     }
   },
   "components/projects/rovo-core/components/rovo-app-messages.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 3
-    },
     "shadcn/require-static-classes": {
       "count": 1
     },
@@ -2777,9 +2768,6 @@
   "components/projects/rovo/components/rovo-app-shell.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 4
-    },
-    "shadcn/no-unknown-classes": {
-      "count": 1
     }
   },
   "components/projects/shared/components/agent-edit-summary-card.source.test.js": {
@@ -2968,9 +2956,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 5
-    },
-    "shadcn/no-unknown-classes": {
-      "count": 1
     }
   },
   "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
@@ -3004,9 +2989,6 @@
     }
   },
   "components/screen-assistant/screen-assistant-transcript.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 1
-    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 3
     }
@@ -3441,11 +3423,6 @@
       "count": 1
     }
   },
-  "components/ui-custom/list.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 1
-    }
-  },
   "components/ui-custom/live-waveform.tsx": {
     "jsx-a11y/no-aria-hidden-on-focusable": {
       "count": 1
@@ -3801,11 +3778,6 @@
       "count": 2
     }
   },
-  "components/ui/empty.tsx": {
-    "shadcn/no-unknown-classes": {
-      "count": 12
-    }
-  },
   "components/ui/field.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
@@ -3894,9 +3866,6 @@
     }
   },
   "components/ui/navigation-menu.tsx": {
-    "shadcn/no-unknown-classes": {
-      "count": 5
-    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -3957,9 +3926,6 @@
     }
   },
   "components/ui/sidebar.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 4
-    },
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
     }
@@ -3997,11 +3963,6 @@
   "components/ui/tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
-    }
-  },
-  "components/ui/tile.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 1
     }
   },
   "components/ui/toggle.tsx": {
@@ -4392,14 +4353,6 @@
       "count": 1
     }
   },
-  "components/website/demos/ui/forms-demo.tsx": {
-    "shadcn/no-raw-colors": {
-      "count": 1
-    },
-    "shadcn/no-unknown-classes": {
-      "count": 1
-    }
-  },
   "components/website/demos/ui/inline-citation-demo.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
       "count": 1
@@ -4455,9 +4408,6 @@
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    },
-    "shadcn/no-raw-colors": {
       "count": 1
     }
   },
@@ -4603,11 +4553,6 @@
   },
   "components/website/demos/visual/melt-demo.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
-      "count": 1
-    }
-  },
-  "components/website/demos/visual/noise-preview-surface.tsx": {
-    "shadcn/no-raw-colors": {
       "count": 1
     }
   },

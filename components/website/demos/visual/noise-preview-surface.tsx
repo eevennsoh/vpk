@@ -54,7 +54,7 @@ export function NoisePreviewSurface({
 				<div className="hidden min-w-0 grid-rows-3 gap-3 sm:grid">
 					<div className="rounded-lg border border-border-inverse/20 bg-surface/85" />
 					<div className="rounded-lg border border-border-inverse/20 bg-bg-neutral-bold/70" />
-					<div className="rounded-lg border border-border-inverse/20 bg-bg-brand-bold/80" />
+					<div className="rounded-lg border border-border-inverse/20 bg-primary/80" />
 				</div>
 			</div>
 			<Noise

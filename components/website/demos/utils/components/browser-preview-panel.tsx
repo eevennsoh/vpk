@@ -104,7 +104,7 @@ function SnapshotView({
 						<button
 							type="button"
 							onClick={onRefresh}
-							className="text-brand text-sm font-medium hover:underline"
+							className="text-link text-sm font-medium hover:underline"
 						>
 							Retry
 						</button>
