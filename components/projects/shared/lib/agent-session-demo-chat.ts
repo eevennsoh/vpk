@@ -22,13 +22,16 @@ export function agentSessionDemoProfiles(base: readonly RovoAgentProfile[], item
 
 function sessionChatSnapshot(item: AgentSessionItem): { messages: RovoUIMessage[]; thinkingMessageId: string | null } {
 	const id = item.id;
-	if (item.state === "complete") {
+	if (item.state === "complete" || item.state === "ready-for-review") {
+		const summary = item.state === "ready-for-review"
+			? "The work is ready for your review."
+			: "The work is complete. The relevant details are ready for the team to review.";
 		return {
 			thinkingMessageId: null,
 			messages: [
 				{ id: `${id}-user`, role: "user", parts: [{ type: "text", text: item.title, state: "done" }] },
-				{ id: `${id}-complete`, role: "assistant", parts: [{ type: "text", text: "The work is complete. The relevant details are ready for the team to review.", state: "done" }] },
-				...(id === "cloud-figma-with-austin" ? [{ id: `${id}-handoff`, role: "assistant" as const, parts: [
+				{ id: `${id}-${item.state}`, role: "assistant", parts: [{ type: "text", text: summary, state: "done" }] },
+				...(item.state === "complete" && id === "cloud-figma-with-austin" ? [{ id: `${id}-handoff`, role: "assistant" as const, parts: [
 					{ type: "text" as const, text: "I’ve prepared the off-road suspension controls for engineering, including the design, handoff notes, and acceptance criteria.", state: "done" as const },
 					{ type: "data-widget-data" as const, data: { type: "agent-session-demo-artifacts", payload: "off-road-handoff" } },
 				] }] : []),

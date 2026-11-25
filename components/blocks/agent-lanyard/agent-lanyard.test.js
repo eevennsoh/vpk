@@ -292,6 +292,17 @@ test("inward tilt mirrors toward the trigger side of the hover-card popup", asyn
 	} finally { await view.unmount(); }
 });
 
+test("hovering a lanyard keeps its surface color", async () => {
+	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props: { agent: AGENT_LANYARD_AGENTS[0] } });
+	try {
+		const card = view.container.querySelector('[data-slot="agent-lanyard"]');
+		const surface = card.querySelector('[data-slot="agent-lanyard-surface"]');
+		await React.act(async () => { card.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
+		assert.equal(surface.classList.contains("bg-surface"), true);
+		assert.equal(surface.classList.contains("bg-surface-hovered"), false);
+	} finally { await view.unmount(); }
+});
+
 const gallerySource = `
 	import AgentLanyardPage from "@/components/blocks/agent-lanyard/page";
 	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
