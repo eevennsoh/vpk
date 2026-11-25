@@ -49,6 +49,7 @@ test("a header check folds the cards away inert with only Cancel, and Cancel unp
 	await wait(900);
 	assert.equal(listInDom(), false, "once folded, the cards wait as a stack");
 	assert.equal(view.queryByRole("button", { name: "Accept all" }) === null, true, "the bulk decisions step aside");
+	assert.equal(document.body.textContent.includes("reviewed"), false, "the progress line steps aside too, leaving only Cancel");
 	assert.equal(view.queryByRole("button", { name: "Discard all" }) === null, true);
 	const cancel = view.getByRole("button", { name: "Cancel" });
 

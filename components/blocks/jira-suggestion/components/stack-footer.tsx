@@ -37,8 +37,7 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 	const reviewed = deck.reviewed.length;
 	const pending = deck.order.length;
 	const total = reviewed + pending;
-	// A running check owns the moment: the last receipt (e.g. "No new suggestions") would describe the previous one.
-	const receipt = pending > 0 && !onCancel ? deck.receipt : null;
+	const receipt = pending > 0 ? deck.receipt : null;
 	return (
 		<motion.footer
 			animate={{ height: FOOTER_HEIGHT, opacity: 1, transition: SETTLE }}
@@ -48,15 +47,18 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 		>
 			<div aria-live="polite" className="grid min-w-0 flex-1 items-center">
 				<AnimatePresence initial={false} mode="popLayout">
-					<motion.span
-						animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
-						className="col-start-1 row-start-1 flex min-w-0"
-						exit={{ opacity: 0, y: -4, transition: motionRecipe.popup.exit }}
-						initial={{ opacity: 0, y: 4 }}
-						key={receipt ? `receipt-${receipt.key}` : "progress"}
-					>
-						{receipt ? <Receipt receipt={receipt} /> : <span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{reviewed} of {total} reviewed</span>}
-					</motion.span>
+					{/* A running check leaves the footer to Cancel: progress and receipts come back once it ends. */}
+					{onCancel ? null : (
+						<motion.span
+							animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
+							className="col-start-1 row-start-1 flex min-w-0"
+							exit={{ opacity: 0, y: -4, transition: motionRecipe.popup.exit }}
+							initial={{ opacity: 0, y: 4 }}
+							key={receipt ? `receipt-${receipt.key}` : "progress"}
+						>
+							{receipt ? <Receipt receipt={receipt} /> : <span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{reviewed} of {total} reviewed</span>}
+						</motion.span>
+					)}
 				</AnimatePresence>
 			</div>
 			<AnimatePresence initial={false} mode="popLayout">
