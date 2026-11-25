@@ -3,7 +3,7 @@
 import { animate, motion, useMotionValue, useReducedMotion, type Transition } from "motion/react";
 import { useEffect } from "react";
 
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /** The TextReview ring spans 270°, from 6 o'clock clockwise to 3 o'clock. */
@@ -62,11 +62,15 @@ export function SuggestionsStatusIcon({ state }: Readonly<{ state: Phase }>) {
 	}, [state, reduced, rotate, arc]);
 
 	const still: Transition = { duration: 0 };
+	// Going back to loading (a re-check), the check, sparkle and glints clear at once, before the arc starts turning
+	// through where they sit; the done timings' delays would leave them on screen under the spinning ring.
+	const clear: Transition = reduced ? still : { duration: motionDuration.fast, ease: motionEase.in };
+	const loading = state === "loading";
 	const transitions = {
 		body: reduced ? still : { duration: 0.62, times: [0, 0.38, 0.72, 1], ease: motionEase.inOut, delay: 0.12 },
-		check: reduced ? still : { pathLength: { duration: 0.32, ease: motionEase.out, delay: 0.34 }, opacity: { duration: 0.05, delay: 0.34 } },
-		sparkle: reduced ? still : { type: "spring" as const, visualDuration: 0.42, bounce: 0.5, delay: 0.56 },
-		glint: (index: number): Transition => reduced ? still : { duration: 0.48, ease: motionEase.out, delay: 0.64 + index * 0.015 },
+		check: loading ? clear : reduced ? still : { pathLength: { duration: 0.32, ease: motionEase.out, delay: 0.34 }, opacity: { duration: 0.05, delay: 0.34 } },
+		sparkle: loading ? clear : reduced ? still : { type: "spring" as const, visualDuration: 0.42, bounce: 0.5, delay: 0.56 },
+		glint: (index: number): Transition => loading ? clear : reduced ? still : { duration: 0.48, ease: motionEase.out, delay: 0.64 + index * 0.015 },
 	};
 
 	return (
