@@ -18,7 +18,10 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode; sizePx: 16 | 24 }>) {
+/** Chin avatar sizes. A host passes the same size its attached rows render, so browsing, handoff, and the added row never change size. */
+export type InvocationAvatarSize = 16 | 20 | 24;
+
+function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode; sizePx: InvocationAvatarSize }>) {
 	if (!agent && defaultIcon) return defaultIcon;
 	return (
 		<span className={cn("flex shrink-0 items-center justify-center", sizePx === 16 ? "size-4" : "size-6")}>
@@ -29,7 +32,7 @@ function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agen
 	);
 }
 
-export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, defaultIcon, flush = false, iconScale }: Readonly<{ avatarSizePx?: 16 | 24; className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, defaultIcon, flush = false, iconScale }: Readonly<{ avatarSizePx?: InvocationAvatarSize; className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -82,15 +85,22 @@ export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, d
 	);
 }
 
-function InvocationHandoff({ className, iconScale, showStatus }: Readonly<{ className?: string; iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
+/**
+ * The selected agent holds its browsing size while the label rolls to Working; only the invoker's
+ * dot scales in, as soon as the agent is chosen. It renders the attached row's own identity, so settling into
+ * the real row swaps nothing visible.
+ */
+function InvocationHandoff({ avatarSizePx, className, iconScale, identity, showStatus }: Readonly<{ avatarSizePx: InvocationAvatarSize; className?: string; iconScale?: JiraIssueIconScale; identity?: ReactNode; showStatus: boolean }>) {
 	const { agent } = useProjectButterInvocationPreview();
-	const reduce = useReducedMotion();
 	if (!agent) return null;
 	return (
 		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
-			<motion.span className="flex size-6 shrink-0 items-center justify-center" initial={reduce ? false : { transform: "scale(0.85)" }} animate={{ transform: "scale(1)" }} transition={reduce ? { duration: 0 } : { ...BUTTER_INVOCATION_HANDOFF, delay: BUTTER_INVOCATION_CYCLE.duration }} style={{ willChange: "transform" }}>
-				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={24} animate={false} />}
-			</motion.span>
+			<span
+				className={cn("flex shrink-0 items-center justify-center", avatarSizePx === 16 ? "size-4" : "size-6", "[&_[data-avatar-role=human]]:transition-[scale,opacity] [&_[data-avatar-role=human]]:duration-medium [&_[data-avatar-role=human]]:ease-out-practical [&_[data-avatar-role=human]]:starting:scale-0 [&_[data-avatar-role=human]]:starting:opacity-0")}
+				data-slot="jira-issue-agent-invocation-handoff-avatar"
+			>
+				{identity ?? agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={avatarSizePx} animate={false} />}
+			</span>
 			{showStatus ? <JiraIssueAgentHandoffLabel name={agent.name}>Working</JiraIssueAgentHandoffLabel> : null}
 		</div>
 	);
@@ -105,22 +115,25 @@ export function JiraIssueAgentHandoffLabel({ name, children }: Readonly<{ name: 
 	);
 }
 
-export function ProjectButterInvocationChin({
+export function ProjectButterInvocationChin<TActivity extends Readonly<{ id: string; name: string }>>({
 	hasChin,
 	iconScale,
 	activities,
+	avatarSizePx = 24,
+	renderIdentity,
 	allowPuzzle = false,
 	retainCompletedContent = false,
 	flushPreview = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly TActivity[]; /** Size of the host's attached-row avatars; browsing and handoff match it. */ avatarSizePx?: InvocationAvatarSize; /** The attached row's identity for an activity, so the handoff ends on exactly what the row shows. */ renderIdentity?: (activity: TActivity, sizePx: InvocationAvatarSize) => ReactNode; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const previewing = phase === "choosing" || phase === "handoff";
 	const selectedAgent = preview.agent;
-	const selectedAttached = selectedAgent && activities ? activities.some((activity) => matchesInvocationAgent(activity, selectedAgent)) : hasChin;
+	const selectedActivity = selectedAgent ? activities?.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
+	const selectedAttached = selectedAgent && activities ? selectedActivity !== undefined : hasChin;
 	const intoPuzzle = Boolean(phase === "handoff" && allowPuzzle && selectedAttached && activities && activities.length > 1);
 	useEffect(() => {
 		if (phase !== "handoff" || !actions) return;
@@ -150,7 +163,7 @@ export function ProjectButterInvocationChin({
 				{children}
 			</motion.div>
 			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0", !flushPreview && "p-1")}>
-				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
+				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} identity={selectedActivity && renderIdentity ? renderIdentity(selectedActivity, avatarSizePx) : undefined} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);
