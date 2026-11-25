@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { CARD_PAPER, CARD_PAPER_STYLE } from "./card-face";
 import { DecidedFace, RowFace, TopFace, TopWhy, type WhyProps } from "./card-faces";
-import { ARRIVAL_DROP, CONTENT_IN, FADE, FADE_OUT, FADE_START, FLY_DISTANCE, GATHER_CONTENT_OUT, INSTANT, LEAVE, MORPH, PARK, PARK_LANDING, PEEK_FROM, SETTLE, UNPARK, WHY_IN } from "./constants";
+import { ARRIVAL_DROP, CONTENT_IN, FADE, FADE_OUT, FADE_START, FLY_DISTANCE, GATHER_CONTENT_OUT, INSTANT, LEAVE, MORPH, PARK, PARK_LANDING, PEEK_FROM, SETTLE, UNPARK, UNPARK_CLEAR, WHY_IN } from "./constants";
 import { clamp, useCardDrag } from "./use-card-drag";
 import type { SwipeDirection } from "./use-deck";
 
@@ -143,7 +143,7 @@ export function SuggestionCard({
 	// callbacks are not reliable here: an interrupted flight never reports completing.)
 	const park = useEffectEvent((isParked: boolean) => {
 		if (reduced) return animate(shown, isParked ? 0 : 1, INSTANT);
-		if (!isParked) return animate(shown, 1, UNPARK);
+		if (!isParked) return animate(shown, 1, role === "row" ? { ...UNPARK, delay: delay + UNPARK_CLEAR } : UNPARK);
 		return animate(shown, 0, morphing ? { ...PARK, delay: delay + PARK_LANDING } : PARK);
 	});
 	const parkedDone = useEffectEvent(() => onParked?.());

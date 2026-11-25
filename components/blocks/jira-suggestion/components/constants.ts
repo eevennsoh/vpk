@@ -82,13 +82,16 @@ export const CONTROLS_IN = { duration: motionDuration.normal, ease: motionEase.o
 /** The list's depth tail ramps in alongside the unpack's flight (a beat in, landing with the cards), never after it. */
 export const DEPTH_IN = { type: "spring", visualDuration: motionDuration.slower, bounce: 0, delay: motionDuration.fast } as const;
 /**
- * A card parked out of sight behind the last sheet fades there, and back in as it starts to unpack. During a gather it
- * first waits out its own stagger plus PARK_LANDING (the morph spring's settle, with a beat of margin), so its rect is
- * inside the last sheet's before it dissolves however far it travelled.
+ * A card parked out of sight behind the last sheet fades there, and back in as it unpacks. During a gather it first
+ * waits out its own stagger plus PARK_LANDING (the morph spring's settle, with a beat of margin), so its rect is inside
+ * the last sheet's before it dissolves however far it travelled. Unpacking into rows, it waits out its stagger plus
+ * UNPARK_CLEAR, so it shows only once its flight has slid it out from under the stack: the list deals out of the three
+ * visible cards instead of every hidden card appearing on the last sheet at once and thickening its edge.
  */
 export const PARK = { duration: motionDuration.fast, ease: motionEase.in } as const;
 export const PARK_LANDING = motionDuration.slower + motionDuration.normal;
 export const UNPARK = { duration: motionDuration.fast, ease: motionEase.outPractical } as const;
+export const UNPARK_CLEAR = motionDuration.normal;
 export const FAN = { type: "spring", visualDuration: motionDuration.slow, bounce: 0.18 } as const;
 export const SETTLE = { duration: motionDuration.slow, ease: motionEase.inOut };
 export const LEAVE = { duration: motionDuration.medium, ease: motionEase.in };
