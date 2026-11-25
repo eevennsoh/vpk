@@ -123,7 +123,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 						<motion.span animate={{ opacity: 1, scale: 1, transition: RECOMMENDATION_AVATAR_IN }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.4 } : false}>{avatar}</motion.span>
 						{reveal ? (
 							// An AI pick, so it arrives with the rainbow sweep an accepted suggestion gets; "(Recommended)" keeps its subtler tone.
-							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child>span:first-child]:text-text-subtlest">
+							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child]:text-text-subtlest">
 								<SuggestionRainbowText text={`${agent.name} (Recommended)`} truncate />
 							</span>
 						) : <span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>}
