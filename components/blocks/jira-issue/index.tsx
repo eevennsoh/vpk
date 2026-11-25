@@ -889,7 +889,7 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale} retainCompletedContent={resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}><JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} avatarSizePx={20} hasChin={hasAgentActivityChin} iconScale={iconScale} retainCompletedContent={resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					avatarSize={agentActivityAvatarSize}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}

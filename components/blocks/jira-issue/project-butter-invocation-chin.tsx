@@ -6,6 +6,8 @@ import { useEffect, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { cn } from "@/lib/utils";
 import { motionDuration } from "@/lib/motion";
 import { getJiraIssueAgentRowInset } from "./agent-activity-avatar";
@@ -18,7 +20,7 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode; sizePx: 16 | 24 }>) {
+function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode; sizePx: 16 | 20 | 24 }>) {
 	if (!agent && defaultIcon) return defaultIcon;
 	return (
 		<span className={cn("flex shrink-0 items-center justify-center", sizePx === 16 ? "size-4" : "size-6")}>
@@ -29,7 +31,7 @@ function InvocationPreviewAvatar({ agent, defaultIcon, sizePx }: Readonly<{ agen
 	);
 }
 
-export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, defaultIcon, flush = false, iconScale }: Readonly<{ avatarSizePx?: 16 | 24; className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, defaultIcon, flush = false, iconScale }: Readonly<{ avatarSizePx?: 16 | 20 | 24; className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -82,14 +84,14 @@ export function ProjectButterInvocationPreview({ avatarSizePx = 24, className, d
 	);
 }
 
-function InvocationHandoff({ className, iconScale, showStatus }: Readonly<{ className?: string; iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
+function InvocationHandoff({ avatarSizePx, className, human, iconScale, showStatus }: Readonly<{ avatarSizePx: 20 | 24; className?: string; human?: AgentSessionItem["invokedBy"]; iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
 	const { agent } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	if (!agent) return null;
 	return (
 		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
 			<motion.span className="flex size-6 shrink-0 items-center justify-center" initial={reduce ? false : { transform: "scale(0.85)" }} animate={{ transform: "scale(1)" }} transition={reduce ? { duration: 0 } : { ...BUTTER_INVOCATION_HANDOFF, delay: BUTTER_INVOCATION_CYCLE.duration }} style={{ willChange: "transform" }}>
-				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={24} animate={false} />}
+				{human ? <HumanAgentAvatar agent={{ name: agent.name, appearance: "coding", avatarSrc: agent.avatarSrc, brandName: agent.brandName, logoName: agent.logoName, vpkLogo: agent.vpkLogo }} human={human} badgeEntrance badgeSizePx={12} sizePx={avatarSizePx} /> : agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={avatarSizePx} animate={false} />}
 			</motion.span>
 			{showStatus ? <JiraIssueAgentHandoffLabel name={agent.name}>Working</JiraIssueAgentHandoffLabel> : null}
 		</div>
@@ -107,19 +109,21 @@ export function JiraIssueAgentHandoffLabel({ name, children }: Readonly<{ name: 
 
 export function ProjectButterInvocationChin({
 	hasChin,
+	avatarSizePx = 24,
 	iconScale,
 	activities,
 	allowPuzzle = false,
 	retainCompletedContent = false,
 	flushPreview = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; avatarSizePx?: 20 | 24; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string; invokedBy?: AgentSessionItem["invokedBy"] }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const previewing = phase === "choosing" || phase === "handoff";
 	const selectedAgent = preview.agent;
+	const selectedActivity = selectedAgent ? activities?.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
 	const selectedAttached = selectedAgent && activities ? activities.some((activity) => matchesInvocationAgent(activity, selectedAgent)) : hasChin;
 	const intoPuzzle = Boolean(phase === "handoff" && allowPuzzle && selectedAttached && activities && activities.length > 1);
 	useEffect(() => {
@@ -150,7 +154,7 @@ export function ProjectButterInvocationChin({
 				{children}
 			</motion.div>
 			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0", !flushPreview && "p-1")}>
-				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
+				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} human={selectedActivity?.invokedBy} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);
