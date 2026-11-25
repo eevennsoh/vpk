@@ -198,14 +198,14 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 		if (!next && open) setAddVisualEntry((entry) => entry + 1);
 	}
-	// After the selector closes, the open state's agent glyph leaves and the hexagon + arrives in the same 24px slot, both on the
-	// board card's hover reveal (150ms linear fade, 200ms 90%↔100% scale) so the swap reads as one crossfade, not a cut.
+	// After the selector closes, the open state's agent glyph fully leaves, then the hexagon + arrives in the same 24px slot, both on the
+	// board card's hover reveal (150ms linear fade, 200ms 90%↔100% scale). The hexagon waits out the glyph's 150ms fade so the two never overlap.
 	const emptyFieldIcon = addVisualEntry > 0 ? (
 		<span className="relative flex size-6 shrink-0" key={`icon-${addVisualEntry}`}>
 			<span aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-icon-subtle opacity-0 transition-opacity duration-normal ease-linear motion-reduce:hidden starting:opacity-100" data-slot="agent-field-exiting-icon">
 				<span className="flex scale-90 transition-transform duration-medium ease-out-practical starting:scale-100"><AiAgentIcon label="" color="currentColor" /></span>
 			</span>
-			<span className="flex transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0"><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span>
+			<span className="flex transition-opacity delay-(--duration-normal) duration-normal ease-linear motion-reduce:transition-none starting:opacity-0"><AgentAddVisual className="transition-transform delay-(--duration-normal) duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span>
 		</span>
 	) : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
