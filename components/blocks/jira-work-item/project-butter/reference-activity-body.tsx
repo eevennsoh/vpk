@@ -45,13 +45,14 @@ function mentionMarkdown() {
 export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen = false }: Readonly<{ actor: JiraActivityActor; item: ProjectButterReferenceChange; timestamp: string; defaultOpen?: boolean }>) {
 	return (
 		<Collapsible className="min-w-0" defaultOpen={defaultOpen}>
-			<div className="group/activity-timestamp relative flex min-h-6 min-w-0 items-center gap-1">
-				<CollapsibleTrigger aria-label={[actor.name, item.action, timestamp].filter(Boolean).join(" ")} className="peer flex min-h-6 min-w-0 items-center gap-1 rounded-sm text-left text-sm text-text outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring">
-					<JiraActivitySegments className="inline-flex shrink-0 items-center [&_[data-tag-text]]:[text-box:trim-both_cap_alphabetic]" segments={[mentionSegmentForActor(actor)]} />
-					<span className="min-w-0 [text-box:trim-both_cap_alphabetic]">{item.action}</span>
+			{/* Top-aligned on a 24px first-line track: a wrapped action keeps the tag, timestamp and chevron on its first line. */}
+			<div className="group/activity-timestamp relative flex min-h-6 min-w-0 items-start gap-1">
+				<CollapsibleTrigger aria-label={[actor.name, item.action, timestamp].filter(Boolean).join(" ")} className="peer flex min-h-6 min-w-0 items-start gap-1 rounded-sm text-left text-sm text-text outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring">
+					<span className="flex h-6 shrink-0 items-center"><JiraActivitySegments className="inline-flex shrink-0 items-center [&_[data-tag-text]]:[text-box:trim-both_cap_alphabetic]" segments={[mentionSegmentForActor(actor)]} /></span>
+					<span className="min-w-0 py-[calc((--spacing(6)-1cap)/2)] [text-box:trim-both_cap_alphabetic]">{item.action}</span>
 				</CollapsibleTrigger>
-				<JiraActivityTimestamp className="relative z-[1] ms-0.5" timestamp={timestamp} />
-				<Icon aria-hidden className="pointer-events-none shrink-0 text-icon-subtlest opacity-0 transition-transform duration-fast ease-out-practical group-hover/activity-timestamp:opacity-100 peer-focus-visible:opacity-100 peer-aria-expanded:rotate-90 [@media(hover:none)]:opacity-100" data-activity-chevron render={<ChevronRightIcon color="currentColor" label="" size="small" />} />
+				<JiraActivityTimestamp className="relative z-[1] ms-0.5 h-6" timestamp={timestamp} />
+				<Icon aria-hidden className="pointer-events-none mt-1 shrink-0 text-icon-subtlest opacity-0 transition-transform duration-fast ease-out-practical group-hover/activity-timestamp:opacity-100 peer-focus-visible:opacity-100 peer-aria-expanded:rotate-90 [@media(hover:none)]:opacity-100" data-activity-chevron render={<ChevronRightIcon color="currentColor" label="" size="small" />} />
 			</div>
 			<CollapsibleContent>
 				<div className="pt-2"><dl className="space-y-3 rounded-lg bg-surface-sunken p-3 text-sm text-text">{item.changes.map((change, index) => <div className="space-y-1" key={`${change.label}-${index}`}><dt className="font-medium text-text-subtle">{change.label}</dt><dd className="whitespace-pre-wrap">{change.before ? <span className="mr-2 line-through">{change.before}</span> : null}{change.after ? <span>{change.after}</span> : <span>Removed</span>}</dd></div>)}</dl></div>
