@@ -23,9 +23,9 @@ const JIRA_FOR_YOU_SESSIONS: readonly { item: AgentSessionItem; tabs: readonly s
 	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], sessionDetails: { ...AGENT_SESSION_CLOUD_ITEMS[0].sessionDetails, pullRequestTitle: "Refactor off-road damping" } }, tabs: ["assigned", "worked-on"] },
 	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: AGENT_SESSION_ITEMS[1].invokedBy, id: "working-tests", title: "Add coverage for the onboarding flow", pullRequestChecks: undefined, sessionDetails: { host: "cloud", pullRequestNumber: 1856, pullRequestTitle: "Add onboarding coverage" }, timeLabel: "5m", updatedAtMs: undefined }, tabs: ["assigned", "viewed"] },
 	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "working-dashboard", title: "Investigate the payments dashboard regressions", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "12m", updatedAtMs: undefined }, tabs: ["worked-on"] },
-	{ item: AGENT_SESSION_CLOUD_ITEMS[2], tabs: ["worked-on", "viewed"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[2], agent: AGENT_SESSION_ITEMS[0].agent, invokedBy: AGENT_SESSION_ITEMS[0].invokedBy, id: "finished-quickstart", title: "Prepare the sandbox quickstart", sessionDetails: { host: "cloud" }, timeLabel: "Yesterday", updatedAtMs: undefined }, tabs: ["assigned", "worked-on"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[2], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "finished-accessibility", title: "Audit the checkout accessibility fixes", sessionDetails: { host: "cloud" }, timeLabel: "3d", updatedAtMs: undefined }, tabs: ["viewed"] },
+	{ item: AGENT_SESSION_CLOUD_ITEMS[3], tabs: ["worked-on", "viewed"] },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], agent: AGENT_SESSION_ITEMS[0].agent, invokedBy: AGENT_SESSION_ITEMS[0].invokedBy, id: "finished-quickstart", title: "Prepare the sandbox quickstart", sessionDetails: { host: "cloud" }, timeLabel: "Yesterday", updatedAtMs: undefined }, tabs: ["assigned", "worked-on"] },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "finished-accessibility", title: "Audit the checkout accessibility fixes", sessionDetails: { host: "cloud" }, timeLabel: "3d", updatedAtMs: undefined }, tabs: ["viewed"] },
 ];
 const JIRA_FOR_YOU_GROUPS = [
 	{ label: "Needs input", state: "needs-input" },

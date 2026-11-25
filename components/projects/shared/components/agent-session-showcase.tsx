@@ -46,9 +46,13 @@ function withPermission(item: AgentSessionItem, permission: ButterSessionPermiss
 	}
 }
 
-/** Working, Needs input, Finished — the three lifecycle states every row shows. */
-const SESSION_STATES = ["running", "needs-input", "complete"] as const satisfies readonly AgentSessionItem["state"][];
-const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => ({ ...items[index % items.length], state }));
+/** Working, Needs input, Ready for review, Finished — the lifecycle states every row shows. */
+const SESSION_STATES = ["running", "needs-input", "ready-for-review", "complete"] as const satisfies readonly AgentSessionItem["state"][];
+// A short source list repeats its rows, so a reused row gets its own id for chat and answers.
+const withLifecycleStates = (items: readonly AgentSessionItem[]) => SESSION_STATES.map((state, index) => {
+	const item = items[index % items.length];
+	return { ...item, id: index < items.length ? item.id : `${item.id}:${state}`, state };
+});
 
 const CLOUD_SESSIONS = withLifecycleStates(AGENT_SESSION_CLOUD_ITEMS);
 /**

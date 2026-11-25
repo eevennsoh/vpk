@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions come in large, medium detached, medium attached, and small footprints. Large rows support unlinked, short, and long densities, with agent, pull request, host, time, and access metadata where available. Hover or focus a timestamp to see its full date, or a pull request to see its preview. The trailing status shows Working, Needs input, or Finished. Owners have a more-actions menu; team viewers can open a read-only chat when the host enables it, while private and expired sessions retain their access restrictions. Local owners can continue in the agent or Terminal; cloud owners can rename or delete. The Team sessions example demonstrates the Rovo conversation and question flow for owners and viewers.',
+		'Agent sessions come in large, medium detached, medium attached, and small footprints. Large rows support unlinked, short, and long densities, with agent, pull request, host, time, and access metadata where available. Hover or focus a timestamp to see its full date, or a pull request to see its preview. The trailing status shows Working, Needs input, Ready for review, or Finished. Owners have a more-actions menu; team viewers can open a read-only chat when the host enables it, while private and expired sessions retain their access restrictions. Local owners can continue in the agent or Terminal; cloud owners can rename or delete. The Team sessions example demonstrates the Rovo conversation and question flow for owners and viewers.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
@@ -12,7 +12,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 		},
 		{
 			title: "Session sizes and permissions",
-			description: "Compare large, medium, and small session rows across personal, private, and team sessions, including working, needs input, and finished states.",
+			description: "Compare large, medium, and small session rows across personal, private, and team sessions, including working, needs input, ready for review, and finished states.",
 			demoSlug: "agent-session-demo-comparison",
 		},
 		{

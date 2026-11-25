@@ -265,6 +265,26 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 		title: "Active air suspension roadmap",
 	},
 	{
+		agent: CURSOR_AGENT,
+		host: "cloud",
+		id: "cloud-suspension-tuning-review",
+		invokedBy: {
+			avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+			name: "Andrea Wilson",
+		},
+		sessionDetails: {
+			host: "cloud",
+			issueKey: "PAY-207",
+			issueStatus: "In review",
+			issueSummary: "Tune off-road suspension presets",
+		},
+		shortTitle: "Suspension presets",
+		state: "ready-for-review",
+		timeLabel: "6m",
+		updatedAtMs: DEMO_UPDATED_AT - 6 * 60 * 1000,
+		title: "Tune off-road suspension presets",
+	},
+	{
 		agent: {
 			brandName: "figma",
 			id: "figma",
