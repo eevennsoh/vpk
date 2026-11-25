@@ -64,12 +64,12 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 			<AnimatePresence initial={false} mode="popLayout">
 				{onCancel ? (
 					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center" key="cancel">
-						<Button onClick={onCancel} type="button">Cancel</Button>
+						<Button key="cancel" onClick={onCancel} type="button">Cancel</Button>
 					</motion.div>
 				) : pending > 0 ? (
 					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center gap-1" key="decide">
-						<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
-						<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
+						<Button className="text-text-subtlest hover:text-text-subtle" key="discard" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
+						<Button key="accept" onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
 					</motion.div>
 				) : null}
 			</AnimatePresence>
