@@ -72,6 +72,33 @@ test("Butter v1 starts a working session with reduced motion", async ({ page }) 
 	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
 	await expect(card.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toHaveCount(0);
 	await expect(card.locator(".agent-loading-intro-front")).toHaveCount(0);
+	await expect(card.locator('[data-slot="human-agent-avatar"] [data-avatar-role="human"]')).toHaveCSS("opacity", "1");
+});
+
+test("the session owner appears during the agent handoff", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board", exact: true }).click();
+	const card = page.locator('[data-issue-key="PAY-203"][data-board-column-title]');
+	await openAgentPicker(page, card, "PAY-203");
+	const agent = page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true });
+	const samples = page.evaluate(async () => {
+		const button = document.querySelector<HTMLButtonElement>('[role="dialog"][aria-label="Agents"] button[data-agent-id="claude-code"]');
+		if (!button) throw new Error("Agent button not found");
+		await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
+		const values: number[] = [];
+		const start = performance.now();
+		while (performance.now() - start < 600) {
+			const badge = document.querySelector<HTMLElement>('[data-issue-key="PAY-203"][data-board-column-title] [data-slot="jira-issue-agent-invocation-handoff"] [data-avatar-role="human"]');
+			if (badge) values.push(Number(getComputedStyle(badge).opacity));
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return values;
+	});
+	await agent.click();
+	const opacity = await samples;
+	expect(opacity.some((value) => value < 1), JSON.stringify(opacity)).toBe(true);
+	await expect(card.locator('[data-slot="human-agent-avatar"] [data-avatar-role="human"]')).toHaveCSS("opacity", "1");
 });
 
 test("Butter v1 cycles one avatar for three working agents in the board chin", async ({ page }) => {

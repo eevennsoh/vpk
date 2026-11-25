@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { motion as motionElement } from "motion/react";
 import {
 	AgentAvatarVisual,
 	type AgentAvatarVisualProps,
@@ -13,6 +14,7 @@ import {
 	type AvatarProps,
 } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { motionRecipe } from "@/lib/motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { humanAgentAvatarCutout, humanAgentAvatarGeometry, humanAgentAvatarPositions } from "@/components/ui-custom/human-agent-avatar-geometry";
 
@@ -40,6 +42,8 @@ export interface HumanAgentAvatarProps {
 	sizePx?: number;
 	/** Override the smaller avatar's size for compact surfaces. */
 	badgeSizePx?: 12 | 16;
+	/** Reveal the human badge when a session is first attached. */
+	badgeEntrance?: boolean;
 	/** Avatar size in the horizontal group, independent of the compact badge size. */
 	groupSizePx?: 12 | 16 | 24;
 	className?: string;
@@ -75,6 +79,7 @@ export function HumanAgentAvatar({
 	attributionOrder = "agent-first",
 	sizePx = 32,
 	badgeSizePx,
+	badgeEntrance = false,
 	groupSizePx,
 	className,
 }: Readonly<HumanAgentAvatarProps>) {
@@ -139,15 +144,18 @@ export function HumanAgentAvatar({
 	}
 
 	const humanSlot = (
-		<span
+		<motionElement.span
 			aria-hidden="true"
 			className="absolute"
 			style={{ ...positions.human, ...(!agentFirst ? humanAgentAvatarCutout(geometry, false) : {}) }}
+			initial={badgeEntrance && !reducedMotion ? { opacity: 0, transform: "scale(0.75)" } : false}
+			animate={{ opacity: 1, transform: "scale(1)" }}
+			transition={motionRecipe.avatar.enter}
 			data-avatar-role="human"
-			key="human"
+			key={badgeEntrance ? "human-entrance" : "human"}
 		>
 			{humanAvatar()}
-		</span>
+		</motionElement.span>
 	);
 	const agentSlot = (
 		<span

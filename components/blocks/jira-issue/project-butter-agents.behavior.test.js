@@ -481,6 +481,29 @@ test("Butter lets a card with attached activity add another agent", async () => 
 	assert.deepEqual(assignments, [["reviewer", "writer"]]);
 });
 
+test("Butter card keeps the preview avatar at 20px through selection and handoff", async () => {
+	const view = await renderComponent({ source: `
+		import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
+		import { ProjectButterInvocationProvider, useProjectButterInvocationActions } from "@/components/blocks/jira-issue/project-butter-invocation";
+		const agents = [{ id: "claude", name: "Claude", brandName: "claude" }, { id: "cursor", name: "Cursor", brandName: "cursor" }];
+		function Controls() {
+			const actions = useProjectButterInvocationActions();
+			return <><button onClick={() => actions.open("footer")}>Open</button>{agents.map((agent, index) => <button key={agent.id} onClick={() => actions.preview(agent, index)}>{agent.name}</button>)}<button onClick={() => actions.commit(agents[1], 1)}>Assign</button><ProjectButterInvocationChin avatarSizePx={20} hasChin={false}><span>Working</span></ProjectButterInvocationChin></>;
+		}
+		export default function Fixture() { return <ProjectButterInvocationProvider agents={agents} enabled><Controls /></ProjectButterInvocationProvider>; }
+	` });
+	await view.click(view.getByRole("button", { name: "Open" }));
+	for (const name of ["Claude", "Cursor"]) {
+		await view.click(view.getByRole("button", { name }));
+		const avatar = view.container.querySelector('[data-slot="jira-issue-agent-invocation-preview"] [data-slot="avatar"]');
+		assert.equal(avatar?.classList.contains("size-5"), true, name);
+	}
+	await view.click(view.getByRole("button", { name: "Assign" }));
+	const handoffAvatar = view.container.querySelector('[data-slot="jira-issue-agent-invocation-handoff"] [data-slot="avatar"]');
+	assert.equal(handoffAvatar?.classList.contains("size-5"), true);
+	await view.unmount();
+});
+
 for (const role of ["owner", "viewer"]) {
 	test(`Butter can start another Cursor session when a ${role} session exists`, async () => {
 		const assignments = [];
