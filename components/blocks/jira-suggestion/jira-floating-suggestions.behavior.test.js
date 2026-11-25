@@ -48,8 +48,8 @@ test("a header check gathers the list into an inert stack with only Cancel, and 
 	const cancel = view.getByRole("button", { name: "Cancel" });
 
 	await view.click(cancel);
-	await wait(900);
-	assert.equal(listShown(view), true, "Cancel unpacks the list again");
+	await waitForList(view);
+	assert.equal(listShown(view), true, "Cancel reopens the panel and unpacks the list again");
 	assert.equal(view.queryByRole("button", { name: "Cancel" }) === null, true);
 	assert.equal(view.queryByRole("button", { name: "Accept all" }) !== null, true, "…with the decisions back");
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Check for new suggestions" })), true, "focus returns to the check action");
