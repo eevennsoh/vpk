@@ -32,9 +32,14 @@ export const SUGGESTION_ANALYSIS_MS = 2600;
 
 /** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
 const IN_PLACE_UNPACK_MS = 260;
-/** How long the panel takes to fold or grow back around a check, matching its height transition (slower). */
-const CHECK_REOPEN_MS = 420;
-const CHECK_FOLD_MS = CHECK_REOPEN_MS;
+/** How long the panel takes to fold around a check, matching its height transition (slower). */
+const CHECK_FOLD_MS = 420;
+/**
+ * How long the reopening panel shows the stack before it starts to unpack. The unpack's own hold (IN_PLACE_UNPACK_MS)
+ * follows, so the cards spread as the panel finishes growing (220 + 260 ms clears the 400 ms height transition)
+ * instead of waiting for it to settle first.
+ */
+const CHECK_REOPEN_MS = 220;
 /** The folded panel during a check: the list header's inset, the header and the footer. */
 const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT + LIST_HEADER_TOP_INSET;
 
