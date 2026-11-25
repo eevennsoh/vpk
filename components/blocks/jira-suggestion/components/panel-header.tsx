@@ -99,7 +99,7 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 					<span aria-live="polite" className="font-medium text-text">{title ?? headline(feed, now)}</span>
 				)}
 			</h2>
-			<div className="flex items-center gap-0.5">
+			<div className="flex items-center gap-1">
 				{onToggleView ? (
 					<HeaderButton buttonRef={toggleRef} label={view === "stack" ? "Show as list" : "Show as stack"} onClick={onToggleView} tip={view === "stack" ? "Show all" : "Stack"}>
 						{view === "stack" ? <ListBulletedIcon color="currentColor" label="" size="small" /> : <CollapseVerticalIcon color="currentColor" label="" size="small" />}
