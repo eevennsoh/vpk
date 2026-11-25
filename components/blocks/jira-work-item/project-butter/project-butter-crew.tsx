@@ -3,7 +3,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import { InlineAgentSelector } from "@/components/blocks/agent-selector";
@@ -15,10 +14,10 @@ import { renderSessionIdentity, TeammateSessionAvatarCycle } from "@/components/
 import { getTeammateSessionPeople, teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import { AgentAddVisual } from "@/components/ui-custom/agent-add";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
-import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
@@ -195,7 +194,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (field && !fieldSessionMenu) { if (next) invocation?.open("footer"); else invocation?.close(); }
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 	}
-	const emptyFieldIcon = <IconTile aria-hidden as="span" className="text-icon-subtlest" icon={<AiAgentIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" />;
+	const emptyFieldIcon = <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
 		<>
 			<TeammateSessionAvatarCycle sizePx={24} sessions={sessions.map(({ agent, id, invokedBy, state }) => ({
@@ -215,7 +214,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 					<PopoverTrigger render={<button aria-label={fieldLabel} aria-describedby={viewerOnly ? teammateNamesId : undefined} ref={pickerTriggerRef} className={cn("absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring", fieldSessionMenu ? "-inset-x-2" : "focus-visible:ring-inset")} onKeyDown={(event) => { if (!fieldSessionMenu && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); fieldScrollRef.current?.scrollBy({ left: event.key === "ArrowRight" ? 48 : -48 }); } }} disabled={!onStartAgent && sessions.length === 0} type="button" />} />
 					{viewerOnly ? <span className="sr-only" id={teammateNamesId}>{Array.from(getTeammateSessionPeople(sessions).values(), ({ name }) => name || "Teammate").join(", ")}</span> : null}
 					<div aria-hidden={fieldSessionMenu || showSessionStatus ? true : undefined} className={cn("pointer-events-none relative z-10 flex items-center gap-2", fieldSessionMenu ? "min-h-8" : "min-h-6")}>
-						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={24} defaultIcon={emptyFieldIcon} flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} renderVerticalAvatar={(agent, size) => renderSessionIdentity({ ...agent, invokedBy: agentAvatars.find((entry) => entry.id === agent.id)?.invokedBy }, size)} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center">{renderSessionIdentity(agentAvatars[0], 24)}</span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input" || fieldState === "Ready for review"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
+						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={24} className="h-6 py-0" defaultIcon={emptyFieldIcon} flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} renderVerticalAvatar={(agent, size) => renderSessionIdentity({ ...agent, invokedBy: agentAvatars.find((entry) => entry.id === agent.id)?.invokedBy }, size)} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center">{renderSessionIdentity(agentAvatars[0], 24)}</span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input" || fieldState === "Ready for review"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
 							const entering = enteringAgent?.name === name.toLowerCase() ? enteringAgent : null;
 							return <motion.span
 								animate={entering ? entering.isNew ? { opacity: [0, 1, 1, 1], transform: ["translateX(12px) scale(0.6)", "translateX(12px) scale(1.15)", "translateX(12px) scale(1.15)", "translateX(0px) scale(1)"] } : { opacity: 1, transform: ["scale(0.8)", "scale(1.12)", "scale(1)"] } : { opacity: 1, transform: "scale(1)" }}
@@ -227,7 +226,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 								onAnimationComplete={() => { if (entering) setEnteringAgent(null); }}
 								transition={entering?.isNew ? { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] } : { duration: motionDuration.slowest * 2, ease: motionEase.inOut }}
 							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={24} /></AgentAvatarLanyard></motion.span>;
-						})}</AvatarGroup> : <>{emptyFieldIcon}<span className="text-sm text-text-subtle">{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
+						})}</AvatarGroup> : <>{emptyFieldIcon}<span className="text-sm text-text-subtlest">{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
 						{!open && !showSessionStatus && agentAvatars.length === 1 ? <span aria-hidden="true" className="text-sm text-text">{agentAvatars[0].name}</span> : null}
 					</div>
 				</div>

@@ -7,6 +7,22 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+/**
+ * The persistent hexagon + used wherever an agent can be added. Hover, press,
+ * and expanded tones key off the nearest `group/butter-add-agent-trigger`.
+ */
+export function AgentAddVisual({ className, selected = false }: Readonly<{ className?: string; selected?: boolean }>) {
+	return (
+		<span data-slot="jira-issue-add-agent-visual" className={cn("flex size-6 shrink-0", className)}>
+			<Avatar aria-hidden animate={false} shape="hexagon" size="sm" borderTone={selected ? "selected" : "default"}>
+				<span className="flex size-full items-center justify-center bg-bg-neutral-subtle text-icon-subtlest transition-colors duration-fast ease-out-practical motion-reduce:transition-none group-hover/butter-add-agent-trigger:bg-bg-neutral-subtle-hovered group-active/butter-add-agent-trigger:bg-bg-neutral-subtle-pressed group-aria-expanded/butter-add-agent-trigger:bg-bg-selected group-aria-expanded/butter-add-agent-trigger:text-icon-selected">
+					<AddIcon label="" size="small" color="currentColor" />
+				</span>
+			</Avatar>
+		</span>
+	);
+}
+
 /** Hexagonal trigger and popover for an agent picker supplied by the host. */
 export function AgentAdd({ children, disabled = false, label = "Add agent", onOpenChange, open, triggerRef, visualClassName }: Readonly<{
 	children: ReactNode;
@@ -26,13 +42,7 @@ export function AgentAdd({ children, disabled = false, label = "Add agent", onOp
 		}}>
 			<Tooltip open={tooltipOpen && !open} onOpenChange={setTooltipOpen}>
 				<TooltipTrigger render={<PopoverTrigger render={<button ref={triggerRef} disabled={disabled} type="button" aria-label={label} aria-describedby={tooltipOpen && !open ? tooltipId : undefined} className="group/butter-add-agent-trigger relative inline-flex size-6 items-center justify-center rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} />} />}>
-					<span data-slot="jira-issue-add-agent-visual" className={cn("flex size-6", visualClassName)}>
-						<Avatar aria-hidden animate={false} shape="hexagon" size="sm" borderTone={open ? "selected" : "default"}>
-							<span className="flex size-full items-center justify-center bg-bg-neutral-subtle text-icon-subtlest transition-colors duration-fast ease-out-practical motion-reduce:transition-none group-hover/butter-add-agent-trigger:bg-bg-neutral-subtle-hovered group-active/butter-add-agent-trigger:bg-bg-neutral-subtle-pressed group-aria-expanded/butter-add-agent-trigger:bg-bg-selected group-aria-expanded/butter-add-agent-trigger:text-icon-selected">
-								<AddIcon label="" size="small" color="currentColor" />
-							</span>
-						</Avatar>
-					</span>
+					<AgentAddVisual className={visualClassName} selected={open} />
 				</TooltipTrigger>
 				<TooltipContent id={tooltipId} role="tooltip" side="top" sideOffset={8}>Add agent</TooltipContent>
 			</Tooltip>
