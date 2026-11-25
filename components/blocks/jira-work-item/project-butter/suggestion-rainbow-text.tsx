@@ -3,17 +3,26 @@
 import { useRef, type RefObject } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { DETAIL_VALUE_HANDOFF, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "@/components/blocks/jira-work-item/project-butter/details-rail";
+import { DETAIL_VALUE_HANDOFF } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import type { DetailSuggestionReveal } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
-import { resolveWaveHighlightColor } from "@/components/ui-custom/lib/shimmer-colors";
-import { getShimmerWaveCharacterDelay } from "@/components/ui-custom/lib/shimmer-wave-timing";
-import { motionDuration, motionEase } from "@/lib/motion";
+import { TEXT_EFFECTS } from "@/components/visual/text-effects/data";
 import { cn } from "@/lib/utils";
 
-export const SUGGESTION_RAINBOW_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
-/** Each word comes into focus as it fades in under the rainbow: from this blur to sharp over the focus duration. */
-export const SUGGESTION_REVEAL_BLUR = "blur(4px)";
-export const SUGGESTION_REVEAL_FOCUS = { duration: motionDuration.slower, ease: motionEase.outPractical } as const;
+/**
+ * AI-suggested text arrives with the Text Effects "Mask Reveal Up": each unit rises into place from below while it
+ * fades and comes into focus. Values come from that effect's spec so the two cannot drift; its 30px rise (drawn for a
+ * ~44px display heading) is kept as a proportion of the text, so it suits UI-sized type.
+ */
+const MASK_REVEAL = TEXT_EFFECTS["mask-reveal-up"];
+const RISE_EM = 0.7;
+export const SUGGESTION_REVEAL_FROM = { opacity: 0, y: `${RISE_EM}em`, filter: `blur(${MASK_REVEAL.from.blur ?? 0}px)` } as const;
+export const SUGGESTION_REVEAL_TO = { opacity: 1, y: "0em", filter: "blur(0px)" } as const;
+export const SUGGESTION_REVEAL_EASE = [...MASK_REVEAL.easing] as [number, number, number, number];
+export const SUGGESTION_REVEAL_SECONDS = MASK_REVEAL.durationMs / 1000;
+/** The effect's stagger, shortened for long values so the whole reveal still lands within about a second. */
+export function suggestionRevealStagger(units: number): number {
+	return Math.min(MASK_REVEAL.staggerMs / 1000, 0.6 / Math.max(units - 1, 1));
+}
 
 function finishesVisibleSweep(clip: HTMLElement, partIndex: number) {
 	const word = clip.querySelector(`[data-suggestion-rainbow-word="${partIndex}"]`);
@@ -40,32 +49,37 @@ export function SuggestionRainbowText({ text, onComplete, clipRef, truncate = fa
 	const textClass = truncate ? "block min-w-0 truncate" : "whitespace-pre-wrap";
 	if (reduced) return <span className={textClass}>{text}</span>;
 
-	const count = Array.from(text).length;
-	let offset = 0;
-	const parts: { part: string; characters: string[]; start: number }[] = [];
-	for (const part of text.split(/(\s+)/u)) {
-		const characters = Array.from(part);
-		parts.push({ part, characters, start: offset });
-		offset += characters.length;
-	}
-	const lastWord = parts.findLastIndex(({ part }) => /\S/u.test(part));
+	const parts = text.split(/(\s+)/u);
+	// Each part's place among the words, so every word can take its own slot in the stagger.
+	const wordOrder = parts.map((part, index) => parts.slice(0, index).filter((earlier) => /\S/u.test(earlier)).length);
+	const words = parts.filter((part) => /\S/u.test(part)).length;
+	const stagger = suggestionRevealStagger(words);
+	const lastWord = parts.findLastIndex((part) => /\S/u.test(part));
 	return (
 		<span className={textClass} data-suggestion-text-reveal="">
 			<span className="sr-only">{text}</span>
 			<span aria-hidden="true">
-				{parts.map(({ part, characters, start }, partIndex) => {
+				{parts.map((part, partIndex) => {
 					if (!part || /^\s+$/u.test(part)) return part;
-					const delay = getShimmerWaveCharacterDelay(start, count, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD);
+					const delay = wordOrder[partIndex] * stagger;
 					const finish = clipRef && onComplete ? () => {
 						const clip = clipRef.current;
 						if (partIndex === lastWord || (clip && finishesVisibleSweep(clip, partIndex))) onComplete();
 					} : partIndex === lastWord ? onComplete : undefined;
-					return <motion.span animate={{ opacity: 1, filter: "blur(0px)" }} className="relative inline-block whitespace-nowrap" data-suggestion-rainbow-word={clipRef ? partIndex : undefined} initial={{ opacity: 0, filter: SUGGESTION_REVEAL_BLUR }} key={partIndex} style={{ willChange: "opacity, filter" }} transition={{ delay, duration: motionDuration.medium, ease: motionEase.outPractical, filter: { ...SUGGESTION_REVEAL_FOCUS, delay } }}>
-						<span>{part}</span>
-						<motion.span animate={{ opacity: [0, 0.88, 0.88, 0] }} className="pointer-events-none absolute inset-0" data-suggestion-rainbow-band initial={{ opacity: 0 }} onAnimationComplete={finish} transition={{ delay, duration: SUGGESTION_REVEAL_DURATION, ease: motionEase.linear, times: [0, 0.17, 0.45, 1] }}>
-							{characters.map((character, index) => <span key={start + index} style={{ color: resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, start + index, count) }}>{character}</span>)}
+					return (
+						<motion.span
+							animate={SUGGESTION_REVEAL_TO}
+							className="inline-block whitespace-nowrap"
+							data-suggestion-rainbow-word={clipRef ? partIndex : undefined}
+							initial={SUGGESTION_REVEAL_FROM}
+							key={partIndex}
+							onAnimationComplete={finish}
+							style={{ willChange: "opacity, transform, filter" }}
+							transition={{ delay, duration: SUGGESTION_REVEAL_SECONDS, ease: SUGGESTION_REVEAL_EASE }}
+						>
+							{part}
 						</motion.span>
-					</motion.span>;
+					);
 				})}
 			</span>
 		</span>

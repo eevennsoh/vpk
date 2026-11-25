@@ -135,11 +135,11 @@ test("a suggested description reveals once, stays editable, and yields immediate
 		assert.equal(reveal?.getAttribute("aria-hidden"), "true");
 		const animatedText = reveal?.querySelector("[data-suggestion-text-reveal]");
 		assert.equal(animatedText !== null, true);
-		assert.equal(animatedText?.querySelectorAll('[style*="transform"]').length, 0);
-		const coloredWords = [...animatedText.querySelectorAll("[data-description-color]")];
-		assert.equal(coloredWords.length > 0, true);
-		assert.equal(coloredWords.every((word) => word.textContent === word.previousElementSibling?.textContent && word.children.length === 0), true);
-		assert.equal(new Set(coloredWords.map((word) => word.style.backgroundImage)).size > 1, true);
+		// Mask Reveal Up: each word starts below its line, transparent and blurred, as a single plain text node.
+		const words = [...animatedText.querySelectorAll("[data-description-word]")];
+		assert.equal(words.length > 0, true);
+		assert.equal(words.every((word) => word.children.length === 0 && word.style.transform.includes("translateY") && word.style.filter.includes("blur")), true);
+		assert.equal(animatedText.querySelector("[data-description-color]") === null, true, "no rainbow overlay");
 		assert.equal(editor.textContent.includes("Improve the onboarding experience"), true);
 		await view.focus(editor);
 		assert.equal(document.querySelector("[data-description-reveal]") === null, true);
