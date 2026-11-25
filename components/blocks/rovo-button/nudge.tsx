@@ -2,7 +2,7 @@
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconTile } from "@/components/ui/icon-tile";
 import { motionDuration } from "@/lib/motion";
@@ -17,6 +17,25 @@ import type {
 } from "./types";
 
 const SONNER_STACK_EASING = [0.25, 0.1, 0.25, 1] as const;
+
+/**
+ * Sonner-style countdown for one suggestion: paused while the stack is
+ * expanded, resumed with the remaining time, and cancelled on unmount.
+ */
+function NudgeAutoDismiss({ delayMs, onDismiss, paused }: Readonly<{ delayMs: number; onDismiss: () => void; paused: boolean }>) {
+	const remainingRef = useRef(delayMs);
+	const dismiss = useEffectEvent(onDismiss);
+	useEffect(() => {
+		if (paused) return;
+		const startedAt = Date.now();
+		const timer = window.setTimeout(() => dismiss(), remainingRef.current);
+		return () => {
+			window.clearTimeout(timer);
+			remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAt));
+		};
+	}, [paused]);
+	return null;
+}
 
 export function FloatingRovoButtonNudge({
 	suggestions,
@@ -93,6 +112,9 @@ export function FloatingRovoButtonNudge({
 				backfaceVisibility: "hidden",
 			}}
 		>
+			{suggestions.map((suggestion) => suggestion.autoDismissMs !== undefined && suggestion.onDismiss
+				? <NudgeAutoDismiss delayMs={suggestion.autoDismissMs} key={suggestion.id} onDismiss={suggestion.onDismiss} paused={expanded} />
+				: null)}
 			<div ref={stackRef} className="relative grid w-max max-w-full grid-cols-[minmax(0,1fr)] items-end" style={{ width: expanded ? undefined : frontWidth }}>
 				<div aria-hidden className="col-start-1 row-start-1" style={{ height: stackHeight }} />
 				<AnimatePresence initial={false}>

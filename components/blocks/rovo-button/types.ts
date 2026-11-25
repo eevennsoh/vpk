@@ -10,6 +10,12 @@ export interface FloatingRovoButtonSuggestion {
 	ariaLabel?: string;
 	/** Play the launcher's existing logo cycle when this suggestion arrives. */
 	animateLogoOnArrival?: boolean;
+	/**
+	 * Calls `onDismiss` after this many milliseconds, like a Sonner toast. The
+	 * countdown pauses while the stack is hovered or keyboard-focused and resumes
+	 * with the time that was left. Omit to keep the suggestion until acted on.
+	 */
+	autoDismissMs?: number;
 	onSelect: () => void;
 	onDismiss?: () => void;
 }
