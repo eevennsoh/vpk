@@ -9,6 +9,12 @@ import { motionRecipe } from "@/lib/motion";
 import { FOOTER_HEIGHT, SETTLE } from "./constants";
 import type { Deck, DeckReceipt } from "./use-deck";
 
+const ACTIONS_SWAP = {
+	animate: { opacity: 1, transition: motionRecipe.popup.enter },
+	exit: { opacity: 0, transition: motionRecipe.popup.exit },
+	initial: { opacity: 0 },
+} as const;
+
 /** One line in the progress slot: a mark for which way it went, then what. "Nothing new" after an empty re-run. */
 function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 	if (receipt.kind === "nothing-new") return <span className="text-xs whitespace-nowrap text-text-subtlest">No new suggestions</span>;
@@ -25,9 +31,9 @@ function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 /**
  * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced by a receipt for the latest change),
  * then Discard all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
- * when everything is caught up, where the body owns the summary.
+ * when everything is caught up, where the body owns the summary. While a check runs, the decisions give way to Cancel.
  */
-export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; animateEntrance: boolean }>) {
+export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck: Deck; animateEntrance: boolean; onCancel?: () => void }>) {
 	const reviewed = deck.reviewed.length;
 	const pending = deck.order.length;
 	const total = reviewed + pending;
@@ -52,12 +58,18 @@ export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; an
 					</motion.span>
 				</AnimatePresence>
 			</div>
-			{pending > 0 ? (
-				<div className="flex shrink-0 items-center gap-1">
-					<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
-					<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
-				</div>
-			) : null}
+			<AnimatePresence initial={false} mode="popLayout">
+				{onCancel ? (
+					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center" key="cancel">
+						<Button onClick={onCancel} type="button" variant="outline">Cancel</Button>
+					</motion.div>
+				) : pending > 0 ? (
+					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center gap-1" key="decide">
+						<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
+						<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 		</motion.footer>
 	);
 }

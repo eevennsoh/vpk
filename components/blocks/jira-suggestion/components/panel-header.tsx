@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode, type Ref } from "react";
+import { useEffect, useState, type ReactNode, type Ref } from "react";
 import CollapseVerticalIcon from "@atlaskit/icon/core/collapse-vertical";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
+import TextReviewIcon from "@atlaskit/icon-lab/core/text-review";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,15 +18,29 @@ export type ViewMode = "stack" | "list";
 const ICON_BUTTON =
 	"flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:hover:bg-transparent aria-disabled:hover:text-icon-subtle aria-disabled:active:bg-transparent";
 
-const relative = (ranAt: string) => {
-	const minutes = /^(\d+)m ago$/.exec(ranAt);
-	return minutes ? `${minutes[1]} min ago` : ranAt.toLowerCase();
-};
+/** How long ago a run finished: "just now", "5 min ago", "2 hr ago". */
+export function runAge(at: number, now: number): string {
+	const minutes = Math.floor(Math.max(0, now - at) / 60_000);
+	if (minutes < 1) return "just now";
+	if (minutes < 60) return `${minutes} min ago`;
+	const hours = Math.floor(minutes / 60);
+	return hours < 24 ? `${hours} hr ago` : `${Math.floor(hours / 24)} d ago`;
+}
+
+/** The current time, refreshed every 30 seconds so run ages stay honest while the panel is open. */
+function useNow(): number {
+	const [now, setNow] = useState(Date.now);
+	useEffect(() => {
+		const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+		return () => window.clearInterval(timer);
+	}, []);
+	return now;
+}
 
 /** Acknowledge checks that found no new suggestions in the heading. */
-export function headline(feed: SuggestionFeed): string {
+export function headline(feed: SuggestionFeed, now: number): string {
 	const last = feed.runs.at(-1);
-	if (last && feed.runs.length > 1 && last.ids.length === 0) return `Checked ${relative(last.ranAt)}`;
+	if (last && feed.runs.length > 1 && last.ids.length === 0) return `Checked ${runAge(last.at, now)}`;
 	return "Suggestions for you";
 }
 
@@ -60,14 +75,17 @@ export interface PanelHeaderProps {
 	floating: boolean;
 	/** Omitted when there is nothing to lay out (an empty stack). */
 	onToggleView?: () => void;
-	/** Re-run the suggestion check from the header. */
+	/** Re-run the suggestion check from the header; its tooltip says when the last run finished. */
 	onRerun?: () => void;
 	onClose: () => void;
 	toggleRef: Ref<HTMLButtonElement>;
+	rerunRef?: Ref<HTMLButtonElement>;
 }
 
-export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onClose, toggleRef }: Readonly<PanelHeaderProps>) {
+export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onClose, toggleRef, rerunRef }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
+	const now = useNow();
+	const lastRun = feed.runs.at(-1);
 	return (
 		<header
 			className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2", floating ? "relative z-10" : null)}
@@ -78,7 +96,7 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 				{running ? (
 					<Shimmer as="span" className="text-sm font-medium text-text-subtle">Checking for suggestions…</Shimmer>
 				) : (
-					<span aria-live="polite" className="font-medium text-text">{title ?? headline(feed)}</span>
+					<span aria-live="polite" className="font-medium text-text">{title ?? headline(feed, now)}</span>
 				)}
 			</h2>
 			<div className="flex items-center gap-0.5">
@@ -88,8 +106,15 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 					</HeaderButton>
 				) : null}
 				{onRerun ? (
-					<HeaderButton disabled={running} label={running ? "Checking for new suggestions" : "Check for new suggestions"} onClick={onRerun} tip="Check again">
-						<RefreshGlyph running={running} />
+					<HeaderButton
+						buttonRef={rerunRef}
+						disabled={running}
+						label={running ? "Checking for new suggestions" : "Check for new suggestions"}
+						onClick={onRerun}
+						portalOutsidePanel={floating}
+						tip={running ? "Checking for new suggestions…" : lastRun ? `Last run ${runAge(lastRun.at, now)}` : "Check again"}
+					>
+						{floating ? <TextReviewIcon color="currentColor" label="" size="small" /> : <RefreshGlyph running={running} />}
 					</HeaderButton>
 				) : null}
 				<HeaderButton label="Close suggestions" onClick={onClose} portalOutsidePanel={floating} tip="Close">

@@ -33,17 +33,22 @@ export interface StackPanelProps {
 	/** The popover's height budget inside the frame. */
 	maxHeight: number;
 	onClose: () => void;
+	/** Replaces the header's default check (inline popovers only) with the host's, e.g. one that gathers the cards first. */
+	onRerun?: () => void;
+	/** A check is running over an inert stack: the footer offers only Cancel. */
+	checking?: boolean;
 }
 
 /**
  * The suggestions popover: heading with view · re-run · close, a body that is the stack, the unpacked
  * list or the caught-up state, and the progress footer.
  */
-export function StackPanel({ id, className, title, listStage, introHeight, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose }: Readonly<StackPanelProps>) {
+export function StackPanel({ id, className, title, listStage, introHeight, focusOnMount = false, feed, deck, panelRef, deckRef, overlay, maxHeight, onClose, onRerun, checking = false }: Readonly<StackPanelProps>) {
 	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
 	const [grab, setGrab] = useState<{ id: SuggestionFieldId; progress: MotionValue<number> } | null>(null);
 	const checkRef = useRef<HTMLButtonElement>(null);
 	const toggleRef = useRef<HTMLButtonElement>(null);
+	const rerunRef = useRef<HTMLButtonElement>(null);
 	const layoutGroup = useId();
 	const titleId = `${id}-title`;
 	const view = useDeckView(feed, deck, listStage === "intro" ? "stack" : listStage === undefined ? undefined : "list");
@@ -73,6 +78,19 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 		// Undoing the only decision removes the Undo button; hand focus to the stack rather than dropping it.
 		if (deck.undoDepth === 1 && panelRef.current?.contains(document.activeElement) && document.activeElement?.closest("[data-deck-controls]")) deckRef.current?.focus({ preventScroll: true });
 		view.undo();
+	};
+	// Cancel leaves with the check, whichever ends it; keep focus on the action that started the check.
+	const wasChecking = useRef(checking);
+	useEffect(() => {
+		const ended = wasChecking.current && !checking;
+		wasChecking.current = checking;
+		if (!ended) return;
+		const active = document.activeElement;
+		if (active === document.body || active === null) rerunRef.current?.focus({ preventScroll: true });
+	}, [checking]);
+	const cancelCheck = () => {
+		rerunRef.current?.focus({ preventScroll: true });
+		feed.cancelRerun();
 	};
 	usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, pendingCount: deck.order.length });
 	useEffect(() => {
@@ -138,8 +156,9 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				feed={feed}
 				floating={listStage !== undefined}
 				onClose={onClose}
-				onRerun={listStage === undefined ? feed.rerun : undefined}
+				onRerun={onRerun ?? (listStage === undefined ? feed.rerun : undefined)}
 				onToggleView={listStage === undefined && feed.review.suggestions.length > 0 ? toggleView : undefined}
+				rerunRef={rerunRef}
 				title={title}
 				titleId={titleId}
 				toggleRef={toggleRef}
@@ -149,6 +168,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				<PanelBody
 					key={listStage === "measuring" ? "measure" : "review"}
 					checkRef={checkRef}
+					checking={checking}
 					deck={deck}
 					deckRef={deckRef}
 					feed={feed}
@@ -169,7 +189,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				/>
 			</LayoutGroup>
 			<AnimatePresence initial={false}>
-				{mode === "caught-up" ? null : <StackFooter animateEntrance={listStage === undefined} deck={deck} key="footer" />}
+				{mode === "caught-up" ? null : <StackFooter animateEntrance={listStage === undefined} deck={deck} key="footer" onCancel={checking ? cancelCheck : undefined} />}
 			</AnimatePresence>
 			<p aria-live="polite" className="sr-only">{deck.announcement}</p>
 		</div>

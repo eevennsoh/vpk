@@ -64,8 +64,10 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const isExpanding = phase === "expanding" && !reduceMotion;
 	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
 	const isUnpacking = phase === "unpacking";
-	const introHeight = panelStage.phase === "expanding" || panelStage.phase === "unpacking" ? panelStage.height : undefined;
-	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking ? "intro" : "list";
+	// A check gathers the list into an inert stack until it ends; reduced motion swaps rather than flies.
+	const isChecking = phase === "checking";
+	const introHeight = panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "checking" ? panelStage.height : undefined;
+	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking || isChecking ? "intro" : "list";
 	useEffect(() => {
 		if (!isUnpacking) return undefined;
 		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "unpacking" ? { phase: "list" } : stage), IN_PLACE_UNPACK_MS);
@@ -84,11 +86,18 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		return () => cancelFrame(revealWhenSettled);
 	}, [isMeasuring]);
 
-	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false);
+	const running = feed.status === "running";
+	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false, running);
 	if (nextStage) setPanelStage(nextStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
 		setPanelStage(openingStage);
+	};
+	/** Check again from the header: the list folds back into a stack and waits there until the check ends or is cancelled. */
+	const recheck = () => {
+		if (running) return;
+		feed.rerun();
+		if (phase === "list" || phase === "unpacking") setPanelStage({ phase: "checking", height: panelRef.current?.offsetHeight || FLOATING_PANEL_MAX_HEIGHT });
 	};
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
@@ -153,10 +162,12 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 							feed={feed}
 							focusOnMount
 							id={panelId}
-							introHeight={isExpanding || isUnpacking ? introHeight : undefined}
+							checking={isChecking}
+							introHeight={isExpanding || isUnpacking || isChecking ? introHeight : undefined}
 							listStage={listStage}
 							maxHeight={FLOATING_PANEL_MAX_HEIGHT}
 							onClose={close}
+							onRerun={recheck}
 							overlay={null}
 							panelRef={panelRef}
 							title={`Review suggestions for ${workItemKey}`}
