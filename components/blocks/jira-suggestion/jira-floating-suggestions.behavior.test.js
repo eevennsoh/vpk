@@ -1,5 +1,5 @@
 // Behavioral contract for the floating review panel's header check: it gathers the list into an inert stack, the
-// footer offers only Cancel while it runs, and cancelling (or finishing) unpacks the list again.
+// panel folds to its header, whose spinner stops the check, and stopping (or finishing) unpacks the list again.
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
@@ -33,7 +33,7 @@ async function openPanel(view) {
 	assert.equal(view.queryByRole("dialog", { name: /Review suggestions for PAY-999/ }) !== null, true, "the panel opens");
 }
 
-test("a header check folds the cards away inert with only Cancel, and Cancel unpacks them again", async () => {
+test("a header check folds the panel to its header, and its spinner stops the check and unpacks the cards again", async () => {
 	const view = await renderComponent({ source: SOURCE });
 	await openPanel(view);
 	assert.equal(listShown(view), true, "the open panel lists its suggestions");
@@ -49,14 +49,14 @@ test("a header check folds the cards away inert with only Cancel, and Cancel unp
 	await wait(900);
 	assert.equal(listInDom(), false, "once folded, the cards wait as a stack");
 	assert.equal(view.queryByRole("button", { name: "Accept all" }) === null, true, "the bulk decisions step aside");
-	assert.equal(document.body.textContent.includes("reviewed"), false, "the progress line steps aside too, leaving only Cancel");
+	assert.equal(document.body.textContent.includes("reviewed"), false, "the footer folds away with the cards");
 	assert.equal(view.queryByRole("button", { name: "Discard all" }) === null, true);
-	const cancel = view.getByRole("button", { name: "Cancel" });
+	const cancel = view.getByRole("button", { name: "Stop checking for suggestions" });
 
 	await view.click(cancel);
 	await waitForList(view);
-	assert.equal(listShown(view), true, "Cancel reopens the panel and unpacks the list again");
-	assert.equal(view.queryByRole("button", { name: "Cancel" }) === null, true);
+	assert.equal(listShown(view), true, "stopping reopens the panel and unpacks the list again");
+	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) === null, true);
 	assert.equal(view.queryByRole("button", { name: "Accept all" }) !== null, true, "…with the decisions back");
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Check for new suggestions" })), true, "focus returns to the check action");
 	const rows = () => document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
@@ -73,10 +73,10 @@ test("a header check that finds suggestions unpacks them into the list", async (
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
 	await wait(900);
 	const panel = document.querySelector("[role=dialog][aria-labelledby]");
-	assert.equal(panel.style.height, "108px", "once gathered, the panel folds to its header and footer while the check runs");
+	assert.equal(panel.style.height, "52px", "the panel folds to just its header while the check runs");
 	await waitForList(view);
 	assert.equal(listShown(view), true, "the finished check unpacks the stack");
-	assert.equal(view.queryByRole("button", { name: "Cancel" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) === null, true);
 	const after = document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
 	assert.equal(after > before, true, `the new finds join the list (${before} → ${after})`);
 	await view.unmount();
@@ -93,9 +93,10 @@ test("a running check hides the last check's receipt and spins the check action"
 	}
 	assert.equal(view.queryByText("No new suggestions") !== null, true, "a quiet check leaves its receipt");
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
-	await wait(100);
+	// The footer, receipt and all, folds away with the cards; let that fold finish.
+	await wait(700);
 	assert.equal(view.queryByText("No new suggestions") === null, true, "the next check does not repeat the old receipt");
-	assert.equal(document.querySelector('[aria-label="Checking for new suggestions"] svg')?.getAttribute("data-state"), "loading", "the check action spins while it runs");
+	assert.equal(document.querySelector('[aria-label="Stop checking for suggestions"] svg[data-state]')?.getAttribute("data-state"), "loading", "the check action spins while it runs, and is the way to stop it");
 	await wait(3600);
 	await view.unmount();
 });

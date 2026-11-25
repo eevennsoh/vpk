@@ -35,7 +35,7 @@ export interface StackPanelProps {
 	onClose: () => void;
 	/** Replaces the header's default check (inline popovers only) with the host's, e.g. one that gathers the cards first. */
 	onRerun?: () => void;
-	/** A check is running over an inert stack: the footer offers only Cancel. */
+	/** A check is running: the panel folds to its header, whose spinner doubles as the stop button. */
 	checking?: boolean;
 	/** Ease height changes, so the panel folds away for a check and grows back after it. */
 	animateHeight?: boolean;
@@ -163,6 +163,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				onClose={onClose}
 				onRerun={onRerun ?? (listStage === undefined ? feed.rerun : undefined)}
 				onToggleView={listStage === undefined && feed.review.suggestions.length > 0 ? toggleView : undefined}
+				onCancelRerun={checking ? cancelCheck : undefined}
 				rerunRef={rerunRef}
 				title={title}
 				titleId={titleId}
@@ -195,7 +196,8 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				/>
 			</LayoutGroup>
 			<AnimatePresence initial={false}>
-				{mode === "caught-up" ? null : <StackFooter animateEntrance={listStage === undefined} deck={deck} key="footer" onCancel={checking ? cancelCheck : undefined} />}
+				{/* The footer folds away with the cards while a check runs and comes back as the panel reopens. */}
+				{mode === "caught-up" || checking ? null : <StackFooter animateEntrance deck={deck} key="footer" />}
 			</AnimatePresence>
 			<p aria-live="polite" className="sr-only">{deck.announcement}</p>
 		</div>

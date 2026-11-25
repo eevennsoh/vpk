@@ -9,7 +9,7 @@ import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/compone
 import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-import { CHROME_HEIGHT, LIST_HEADER_TOP_INSET } from "./components/constants";
+import { CHROME_HEIGHT, FOOTER_HEIGHT, LIST_HEADER_TOP_INSET } from "./components/constants";
 import { MockDetailsRail } from "./components/mock-details-rail";
 import { reconcileFloatingPanelStage, settleMeasuredStage, type FloatingPanelStage } from "./floating-panel-stage";
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
@@ -40,8 +40,8 @@ const CHECK_FOLD_MS = 420;
  * instead of waiting for it to settle first.
  */
 const CHECK_REOPEN_MS = 220;
-/** The folded panel during a check: the list header's inset, the header and the footer. */
-const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT + LIST_HEADER_TOP_INSET;
+/** The folded panel during a check: just the list header's inset and the header. */
+const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT - FOOTER_HEIGHT + LIST_HEADER_TOP_INSET;
 
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";

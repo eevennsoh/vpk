@@ -5,6 +5,7 @@ import CollapseVerticalIcon from "@atlaskit/icon/core/collapse-vertical";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
+import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -64,7 +65,7 @@ export function headline(feed: SuggestionFeed, now: number): string {
 function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: ReactNode; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
 	const tooltip = (
 		<Tooltip>
-			<TooltipTrigger render={<button aria-disabled={disabled || undefined} aria-label={label} className={ICON_BUTTON} onClick={disabled ? undefined : onClick} ref={buttonRef} type="button" />}>
+			<TooltipTrigger render={<button aria-disabled={disabled || undefined} aria-label={label} className={cn(ICON_BUTTON, "group/header-button")} onClick={disabled ? undefined : onClick} ref={buttonRef} type="button" />}>
 				{children}
 			</TooltipTrigger>
 			<TooltipContent positionerClassName={portalOutsidePanel ? "z-[650]" : undefined}>{tip}</TooltipContent>
@@ -94,12 +95,14 @@ export interface PanelHeaderProps {
 	onToggleView?: () => void;
 	/** Re-run the suggestion check from the header; its tooltip says when the last run finished. */
 	onRerun?: () => void;
+	/** While a check runs, its spinner turns into a stop button (on hover or focus) that calls this. */
+	onCancelRerun?: () => void;
 	onClose: () => void;
 	toggleRef: Ref<HTMLButtonElement>;
 	rerunRef?: Ref<HTMLButtonElement>;
 }
 
-export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onClose, toggleRef, rerunRef }: Readonly<PanelHeaderProps>) {
+export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onCancelRerun, onClose, toggleRef, rerunRef }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
 	const now = useNow(30_000);
 	const lastRun = feed.runs.at(-1);
@@ -122,17 +125,30 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 						{view === "stack" ? <ListBulletedIcon color="currentColor" label="" size="small" /> : <CollapseVerticalIcon color="currentColor" label="" size="small" />}
 					</HeaderButton>
 				) : null}
-				{onRerun ? (
-					<HeaderButton
-						buttonRef={rerunRef}
-						disabled={running}
-						label={running ? "Checking for new suggestions" : "Check for new suggestions"}
-						onClick={onRerun}
-						portalOutsidePanel={floating}
-						tip={running ? "Checking for new suggestions…" : lastRun ? <LastRun at={lastRun.at} /> : "Check again"}
-					>
-						{floating ? <SuggestionsStatusIcon state={running ? "loading" : "done"} /> : <RefreshGlyph running={running} />}
-					</HeaderButton>
+				{onRerun && running && onCancelRerun ? (
+
+						<HeaderButton buttonRef={rerunRef} label="Stop checking for suggestions" onClick={onCancelRerun} portalOutsidePanel={floating} tip="Stop checking">
+							{/* The spinner says a check is running; hover or focus swaps in the stop that ends it. */}
+							<span className="grid">
+								<span className="col-start-1 row-start-1 flex transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-0 group-focus-visible/header-button:opacity-0">
+									<SuggestionsStatusIcon state="loading" />
+								</span>
+								<span className="col-start-1 row-start-1 flex opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-100 group-focus-visible/header-button:opacity-100">
+									<VideoStopIcon color="currentColor" label="" size="small" />
+								</span>
+							</span>
+						</HeaderButton>
+				) : onRerun ? (
+						<HeaderButton
+							buttonRef={rerunRef}
+							disabled={running}
+							label={running ? "Checking for new suggestions" : "Check for new suggestions"}
+							onClick={onRerun}
+							portalOutsidePanel={floating}
+							tip={running ? "Checking for new suggestions…" : lastRun ? <LastRun at={lastRun.at} /> : "Check again"}
+						>
+							{floating ? <SuggestionsStatusIcon state={running ? "loading" : "done"} /> : <RefreshGlyph running={running} />}
+						</HeaderButton>
 				) : null}
 				<HeaderButton label="Close suggestions" onClick={onClose} portalOutsidePanel={floating} tip="Close">
 					<CrossIcon color="currentColor" label="" size="medium" />

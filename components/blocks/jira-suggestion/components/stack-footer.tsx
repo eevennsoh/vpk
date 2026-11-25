@@ -9,12 +9,6 @@ import { motionRecipe } from "@/lib/motion";
 import { FOOTER_HEIGHT, SETTLE } from "./constants";
 import type { Deck, DeckReceipt } from "./use-deck";
 
-const ACTIONS_SWAP = {
-	animate: { opacity: 1, transition: motionRecipe.popup.enter },
-	exit: { opacity: 0, transition: motionRecipe.popup.exit },
-	initial: { opacity: 0 },
-} as const;
-
 /** One line in the progress slot: a mark for which way it went, then what. "Nothing new" after an empty re-run. */
 function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 	if (receipt.kind === "nothing-new") return <span className="text-xs whitespace-nowrap text-text-subtlest">No new suggestions</span>;
@@ -31,9 +25,9 @@ function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 /**
  * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced by a receipt for the latest change),
  * then Discard all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
- * when everything is caught up, where the body owns the summary. While a check runs, the decisions give way to Cancel.
+ * when everything is caught up, where the body owns the summary, and while a check runs, when the panel folds to its header.
  */
-export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck: Deck; animateEntrance: boolean; onCancel?: () => void }>) {
+export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; animateEntrance: boolean }>) {
 	const reviewed = deck.reviewed.length;
 	const pending = deck.order.length;
 	const total = reviewed + pending;
@@ -47,32 +41,23 @@ export function StackFooter({ deck, animateEntrance, onCancel }: Readonly<{ deck
 		>
 			<div aria-live="polite" className="grid min-w-0 flex-1 items-center">
 				<AnimatePresence initial={false} mode="popLayout">
-					{/* A running check leaves the footer to Cancel: progress and receipts come back once it ends. */}
-					{onCancel ? null : (
-						<motion.span
-							animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
-							className="col-start-1 row-start-1 flex min-w-0"
-							exit={{ opacity: 0, y: -4, transition: motionRecipe.popup.exit }}
-							initial={{ opacity: 0, y: 4 }}
-							key={receipt ? `receipt-${receipt.key}` : "progress"}
-						>
-							{receipt ? <Receipt receipt={receipt} /> : <span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{reviewed} of {total} reviewed</span>}
-						</motion.span>
-					)}
+					<motion.span
+						animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
+						className="col-start-1 row-start-1 flex min-w-0"
+						exit={{ opacity: 0, y: -4, transition: motionRecipe.popup.exit }}
+						initial={{ opacity: 0, y: 4 }}
+						key={receipt ? `receipt-${receipt.key}` : "progress"}
+					>
+						{receipt ? <Receipt receipt={receipt} /> : <span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{reviewed} of {total} reviewed</span>}
+					</motion.span>
 				</AnimatePresence>
 			</div>
-			<AnimatePresence initial={false} mode="popLayout">
-				{onCancel ? (
-					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center" key="cancel">
-						<Button key="cancel" onClick={onCancel} type="button">Cancel</Button>
-					</motion.div>
-				) : pending > 0 ? (
-					<motion.div {...ACTIONS_SWAP} className="flex shrink-0 items-center gap-1" key="decide">
-						<Button className="text-text-subtlest hover:text-text-subtle" key="discard" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
-						<Button key="accept" onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
-					</motion.div>
-				) : null}
-			</AnimatePresence>
+			{pending > 0 ? (
+				<div className="flex shrink-0 items-center gap-1">
+					<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
+					<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
+				</div>
+			) : null}
 		</motion.footer>
 	);
 }
