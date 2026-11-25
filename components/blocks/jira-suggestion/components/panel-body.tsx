@@ -25,7 +25,7 @@ export interface PanelBodyProps {
 	mode: BodyMode;
 	floating: boolean;
 	stackInteractive: boolean;
-	/** A check is running: the gathered stack stays visible but dimmed and inert until it ends. */
+	/** A check is running: the gathered stack looks as it will when the check ends, but stays inert until then. */
 	checking?: boolean;
 	/** The list's height budget: the popover's, less its header and footer. */
 	maxHeight: number;
@@ -73,7 +73,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 
 	return (
 		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
-			<div aria-busy={checking || undefined} className={cn(floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5", "transition-opacity duration-medium ease-in-out", checking ? "opacity-(--opacity-disabled)" : null)} ref={content}>
+			<div aria-busy={checking || undefined} className={floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5"} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (
 						<motion.div animate={SWAP} className="pb-2.5" exit={SWAP_OUT} initial={{ opacity: 0 }} key="ghost"><GhostCard /></motion.div>

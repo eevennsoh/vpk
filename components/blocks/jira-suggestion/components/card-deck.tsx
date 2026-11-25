@@ -77,7 +77,9 @@ export function CardDeck({
 	useEffect(() => () => onPreview?.(null), [onPreview]);
 	const fieldAt = (target: EventTarget) => target instanceof Element ? target.closest<HTMLElement>("[data-suggestion-field]")?.dataset.suggestionField : undefined;
 	const [grabbed, setGrabbed] = useState<MotionValue<number> | null>(null);
-	const layers = useDeckLayers(deck.formation);
+	// The floating stack only shows between list views (opening, checking, unpacking), so it keeps one fan: a check's
+	// finds swap the cards' content without re-rolling the sheets under them.
+	const layers = useDeckLayers(floating ? "floating" : deck.formation);
 	const running = feed.status === "running";
 	const orderIds = deck.order.map((suggestion) => suggestion.id);
 	const ids = listed ? listIds : [...orderIds, ...gathering.filter((id) => !orderIds.includes(id))];
@@ -204,7 +206,7 @@ export function CardDeck({
 				})}
 			</AnimatePresence>
 			<AnimatePresence initial={false}>
-				{running && top ? <StackSheetGhost key="ghost-sheet" pose={{ ...ghostLayer, rotate: -ghostLayer.rotate }} /> : null}
+				{running && top && !floating ? <StackSheetGhost key="ghost-sheet" pose={{ ...ghostLayer, rotate: -ghostLayer.rotate }} /> : null}
 			</AnimatePresence>
 		</div>
 	);
