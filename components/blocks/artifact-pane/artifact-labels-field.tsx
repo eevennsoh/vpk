@@ -117,7 +117,7 @@ export function ArtifactLabelsField({
 			}
 			setOpen(nextOpen);
 		}} open={open}>
-			<div className={trigger ? "contents" : "relative -mx-2 w-full min-w-0 px-2 py-1.5"} ref={fieldRef}>
+			<div className={trigger ? "contents" : "relative -mx-2 w-full min-w-0 px-2 py-1.5"} data-slot="labels-field" ref={fieldRef}>
 				{trigger ? null : <PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="absolute inset-0 m-0 h-full w-full" />} />}
 				{value.length > 0 ? (
 					<TagGroup className={trigger ? "contents" : "pointer-events-none relative gap-1 [&_[data-slot=tag-after]_button]:pointer-events-auto"}>

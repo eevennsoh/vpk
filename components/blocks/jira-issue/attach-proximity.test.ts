@@ -7,9 +7,7 @@ import {
 	JIRA_ISSUE_MOTION_BACKDROP_NEARNESS,
 	resolveJiraIssueAttachNearness,
 } from "./attach-proximity.ts";
-import {
-	sessionTransferTintSeed,
-} from "./agent-session-drag.ts";
+import { resolveAgentTintSeed } from "../agent-session/agent-brand-tint.ts";
 
 test("the approach ramp is clamped to 0..1", () => {
 	assert.equal(resolveJiraIssueAttachNearness(0, false), 0);
@@ -50,17 +48,17 @@ test("the backdrop catch-up uses duration-fast plus ease-out-practical", () => {
 });
 
 test("the tint seed prefers brand identity and lowercases it", () => {
-	assert.equal(sessionTransferTintSeed("claude", undefined, "Claude"), "claude");
-	assert.equal(sessionTransferTintSeed("openai-codex", undefined, "Codex"), "openai-codex");
-	assert.equal(sessionTransferTintSeed(undefined, undefined, undefined), undefined);
-	assert.equal(sessionTransferTintSeed(undefined, "  ", "Agent"), "agent");
+	assert.equal(resolveAgentTintSeed({ brandName: "claude", name: "Claude" }), "claude");
+	assert.equal(resolveAgentTintSeed({ brandName: "openai-codex", name: "Codex" }), "openai-codex");
+	assert.equal(resolveAgentTintSeed({}), undefined);
+	assert.equal(resolveAgentTintSeed({ vpkLogo: "  ", name: "Agent" }), "agent");
 });
 
 test("a Rovo session seeds the same tint whether it is detached or on a chin row", () => {
 	// Detached still knows `vpkLogo`; the chin row has lost every brand field to
 	// `toJiraIssueAgentActivityFromSession` and only still knows the name.
-	const detached = sessionTransferTintSeed(undefined, "rovo", "Rovo");
-	const chin = sessionTransferTintSeed(undefined, "Rovo");
+	const detached = resolveAgentTintSeed({ vpkLogo: "rovo", name: "Rovo" });
+	const chin = resolveAgentTintSeed({ name: "Rovo" });
 	assert.equal(detached, "rovo");
 	assert.equal(chin, detached);
 });

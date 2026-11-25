@@ -128,7 +128,7 @@ export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions =
 				content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, active.id, over?.id ?? null) }));
 			}} sensors={sensors}>
 				<SortableContext items={visible} strategy={verticalListSortingStrategy}>
-					<div className="flex min-w-0 flex-col gap-4 [&>[data-field-filled=false]+[data-field-filled=true]]:mt-1 [&>*+[data-field-filled=false]]:-mt-1">
+					<div className="flex min-w-0 flex-col gap-3">
 						{visible.map((field, index) => {
 							const filled = field === "agents" ? agentFieldHasSessions : isProjectButterDetailFieldFilled(field, content);
 							const required = field === "agents" || PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);

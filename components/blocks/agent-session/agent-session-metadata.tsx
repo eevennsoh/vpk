@@ -4,7 +4,6 @@ import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
-import TeamsIcon from "@atlaskit/icon/core/teams";
 import { useState } from "react";
 
 import {
@@ -41,17 +40,23 @@ function MetadataDot() {
 }
 
 /**
- * Trailing access mark. A team session — one the viewer can see but someone
- * else owns — shows the team glyph; a private session keeps the lock.
+ * Who a session is private to, or `null` for the viewer's own session. A
+ * session is either yours (no mark) or private to its owner — there is no
+ * team-shared state, so someone else's session always shows the padlock.
  */
-function AccessMark({ access, person }: Readonly<{ access: "team" | "private"; person?: string }>) {
-	const Glyph = access === "team" ? TeamsIcon : LockLockedIcon;
+function sessionAccessOwner(item: AgentSessionItem): string | null {
+	if (item.privateTo) return item.privateTo;
+	return getAgentSessionRole(item) === "viewer" ? item.invokedBy?.name ?? "" : null;
+}
+
+/** Trailing padlock for a session the viewer does not own. */
+function AccessMark({ person }: Readonly<{ person: string }>) {
 	const mark = (
-		<span aria-label={`${access === "team" ? "Team" : "Private"} session${person ? ` by ${person}` : ""}`} className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-icon-subtlest outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3!" data-access-mark={access} role="img" tabIndex={person ? 0 : undefined}>
-			<Glyph color="currentColor" label="" size="small" />
+		<span aria-label={`Private session${person ? ` by ${person}` : ""}`} className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-icon-subtlest outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3!" data-access-mark="private" role="img" tabIndex={person ? 0 : undefined}>
+			<LockLockedIcon color="currentColor" label="" size="small" />
 		</span>
 	);
-	return person ? <Tooltip><TooltipTrigger render={mark} /><TooltipContent positionerClassName="z-[650]" role="tooltip">Session by {person}{access === "team" ? " for the team" : null}</TooltipContent></Tooltip> : mark;
+	return person ? <Tooltip><TooltipTrigger render={mark} /><TooltipContent positionerClassName="z-[650]" role="tooltip">Session by {person}</TooltipContent></Tooltip> : mark;
 }
 
 /**
@@ -234,7 +239,7 @@ export function AgentSessionLongMetadata({ compact = false, hideAgentAvatar = fa
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
-	const access = item.privateTo ? "private" : item.sharedWithTeam || getAgentSessionRole(item) === "viewer" ? "team" : undefined;
+	const accessOwner = sessionAccessOwner(item);
 	const showLifecycleInMetadata = lifecycleLabelPlacement === "metadata";
 	const segments = toAgentSessionMetadataSegments({
 		agentName: showLifecycleInMetadata ? AGENT_SESSION_STATUS_LABEL[item.state] : item.agent.name,
@@ -263,7 +268,7 @@ export function AgentSessionLongMetadata({ compact = false, hideAgentAvatar = fa
 					{/* An unnamed avatar stack joins its first metadata clause directly. */}
 					{index > 0 && !(segments[index - 1]?.kind === "agent" && segments[index - 1]?.label === undefined) ? <MetadataDot /> : null}
 					<LongMetadataSegment hideAgentAvatar={hideAgentAvatar} item={item} lifecycleLabelPlacement={showLifecycleInMetadata ? "metadata" : "trailing"} renderAgentAvatar={renderAgentAvatar} segment={segment} />
-					{segment.kind === "time" && access !== undefined ? <><MetadataDot /><AccessMark access={access} person={item.privateTo ?? item.invokedBy?.name} /></> : null}
+					{segment.kind === "time" && accessOwner !== null ? <><MetadataDot /><AccessMark person={accessOwner} /></> : null}
 				</span>
 			))}
 		</span>
@@ -283,6 +288,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 	const declaredHost = item.host ?? item.sessionDetails?.host;
 	const pullRequestLabel = toPullRequestNumberLabel(item);
 	const pullRequestTitle = item.sessionDetails?.pullRequestTitle;
+	const accessOwner = sessionAccessOwner(item);
 
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtle">
@@ -302,7 +308,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 				)}
 				<SessionTimestamp item={item} />
 			</span>
-			{item.privateTo ? <><MetadataDot /><AccessMark access="private" person={item.privateTo} /></> : item.sharedWithTeam || getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><AccessMark access="team" person={item.invokedBy?.name} /></> : null}
+			{accessOwner === null ? null : <><MetadataDot /><AccessMark person={accessOwner} /></>}
 		</span>
 	);
 }

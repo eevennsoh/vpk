@@ -7,12 +7,12 @@ import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 
 type TeammateSessionIdentity = AgentLoadingAgent & Pick<AgentSessionItem, "invokedBy">;
 
-export function renderSessionIdentity({ avatar, invokedBy, name }: TeammateSessionIdentity, sizePx: 16 | 20 | 24, fallbackToTeammate = false) {
+export function renderSessionIdentity({ avatar, invokedBy, name }: TeammateSessionIdentity, sizePx: 16 | 20 | 24, fallbackToTeammate = false, badgeEntrance = false) {
 	const human = getAgentSessionAttribution({ invokedBy });
 	if (!human && !fallbackToTeammate) {
 		return <AgentAvatarVisual {...avatar} animate={false} label={name} sizePx={sizePx} />;
 	}
-	return <HumanAgentAvatar agent={{ ...avatar, name }} human={human ?? { name: "Teammate" }} badgeSizePx={12} sizePx={sizePx} />;
+	return <HumanAgentAvatar agent={{ ...avatar, name }} badgeEntrance={badgeEntrance} human={human ?? { name: "Teammate" }} badgeSizePx={12} sizePx={sizePx} />;
 }
 
 export function TeammateSessionAvatarCycle({ sessions, sizePx = 20 }: Readonly<{ sessions: readonly TeammateSessionIdentity[]; sizePx?: 20 | 24 }>) {

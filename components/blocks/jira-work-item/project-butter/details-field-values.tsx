@@ -20,17 +20,19 @@ import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-
 import { AvatarUnassigned } from "@/components/ui/avatar";
 import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { IconTile } from "@/components/ui/icon-tile";
+import { cn } from "@/lib/utils";
 import { DETAIL_VALUE_HANDOFF } from "./details-rail";
 import { SuggestionLabelReveal, SuggestionPreviewLabel } from "./suggestion-targets";
 
-const DETAIL_DUE_DATE_ICON = <IconTile aria-hidden as="span" className="text-icon-subtle" icon={<CalendarIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />;
-const DETAIL_UNASSIGNED_AVATAR = <AvatarUnassigned animate={false} label="" size="xs" />;
+const DETAIL_DUE_DATE_ICON = <IconTile aria-hidden as="span" className="text-icon-subtle" icon={<CalendarIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" />;
+const DETAIL_EMPTY_DUE_DATE_ICON = <IconTile aria-hidden as="span" className="text-icon-subtlest" icon={<CalendarIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" />;
+const DETAIL_UNASSIGNED_AVATAR = <AvatarUnassigned animate={false} label="" size="sm" />;
 
 function PersonValue({ field, person }: Readonly<{ field: "assignee" | "reporter"; person: AgentPlannerAssignee }>) {
 	const reveal = use(SuggestionLabelReveal);
 	const reduced = useReducedMotion();
 	const isAssignee = field === "assignee";
-	const personAvatar = <PersonLabelAvatar animate={false} person={person} size="xs" />;
+	const personAvatar = <PersonLabelAvatar animate={false} person={person} size="sm" />;
 	const avatar = isAssignee && !reduced ? (
 		<motion.span animate={{ opacity: 1, scale: 1 }} className="inline-flex shrink-0" initial={{ ...AVATAR_ENTER_FROM, scale: 0.6 }} style={{ willChange: "transform, opacity" }} transition={DETAIL_VALUE_HANDOFF}>
 			{personAvatar}
@@ -51,13 +53,13 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 	}
 	if (id === "status") return <ProjectButterStatus appearance="field" content={content} />;
 	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" compact onChange={content.setAssignee} people={[...PROJECT_BUTTER_ASSIGNEES, ...(content.defaultAssignee && !PEOPLE.some((person) => person.name === content.defaultAssignee?.name) ? [content.defaultAssignee] : [])]} placeholder="Unassigned" renderValue={(person) => <PersonValue field="assignee" person={person} />} value={content.assignee} />;
-	if (id === "priority") return <PriorityRowField onChange={content.setPriority} renderValue={(value) => <span className="[&_[data-slot=icon-tile]]:size-4"><PriorityLabel iconSize="small" value={value} /></span>} value={content.priority} />;
+	if (id === "priority") return <PriorityRowField onChange={content.setPriority} renderValue={(value) => <PriorityLabel iconSize="medium" value={value} />} value={content.priority} />;
 	if (id === "dueDate") {
 		const overdue = Boolean(content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28));
-		return <DateRowField ariaLabel={overdue ? "Change due date, overdue" : "Change due date"} CalendarComponent={Calendar} dateValueMode="utc-date" leadingVisual={DETAIL_DUE_DATE_ICON} onChange={content.setDueDate} placeholder="Add due date" renderLabel={(label) => <SuggestionPreviewLabel field="dueDate">{label}</SuggestionPreviewLabel>} trailingVisual={overdue ? <IconTile aria-hidden as="span" className="text-icon-danger" icon={<WarningIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /> : null} value={content.dueDate} />;
+		return <DateRowField ariaLabel={overdue ? "Change due date, overdue" : "Change due date"} CalendarComponent={Calendar} dateValueMode="utc-date" leadingVisual={content.dueDate ? DETAIL_DUE_DATE_ICON : DETAIL_EMPTY_DUE_DATE_ICON} onChange={content.setDueDate} placeholder="Add due date" renderLabel={(label) => <SuggestionPreviewLabel fill={false} field="dueDate">{label}</SuggestionPreviewLabel>} trailingVisual={overdue ? <IconTile aria-hidden as="span" className="text-icon-danger" icon={<WarningIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" /> : null} value={content.dueDate} />;
 	}
 	if (id === "reporter") return <PersonRowField ariaLabel="Change reporter" onChange={content.setReporter} people={PEOPLE} placeholder="Add reporter" renderValue={(person) => <PersonValue field="reporter" person={person} />} value={content.reporter} />;
-	if (id === "costPerReach") return <span className="flex min-h-8 items-center gap-2 text-sm text-text-subtle"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<DataFormulaIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span>{projectButterCostPerReach(fields) || "Calculated from budget and reach"}</span></span>;
+	if (id === "costPerReach") return <span className="flex items-center gap-2 text-sm text-text-subtle"><IconTile aria-hidden as="span" className={projectButterCostPerReach(fields) ? "text-icon-subtle" : "text-icon-subtlest"} icon={<DataFormulaIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" /><span className={projectButterCostPerReach(fields) ? undefined : "text-text-subtlest"}>{projectButterCostPerReach(fields) || "Calculated from budget and reach"}</span></span>;
 	if (id === "campaignRegion") return <div className="flex min-w-0 gap-2"><DetailsOptionField label="region" onChange={([region]) => setField("campaignRegion", { region, market: "" })} options={Object.keys(PROJECT_BUTTER_CAMPAIGN_MARKETS)} values={fields.campaignRegion.region ? [fields.campaignRegion.region] : []} />{fields.campaignRegion.region ? <DetailsOptionField label="market" onChange={([market]) => setField("campaignRegion", { ...fields.campaignRegion, market })} options={PROJECT_BUTTER_CAMPAIGN_MARKETS[fields.campaignRegion.region] ?? []} values={fields.campaignRegion.market ? [fields.campaignRegion.market] : []} /> : null}</div>;
 	if (id === "parent") {
 		const options = [...new Set([...(fields.parent ? [fields.parent] : []), ...PROJECT_BUTTER_DETAIL_OPTIONS.parent])].map((value) => {
@@ -69,5 +71,5 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 	if (id === "labels") return <ArtifactLabelsField hideSelected onChange={(values) => setField("labels", values)} options={PROJECT_BUTTER_DETAIL_OPTIONS.labels} value={fields.labels} />;
 	if (id === "fixVersion" || id === "costCenter" || id === "assetObject") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} onChange={([value]) => setField(id, value)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} tagAppearance={id === "assetObject" ? "asset" : "plain"} values={fields[id] ? [fields[id]] : []} />;
 	if (id === "components" || id === "targetPlatforms") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} multiple onChange={(values) => setField(id, values)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} values={fields[id]} />;
-	return <InlineEdit cancelButtonLabel={`Cancel ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()} changes`} confirmButtonLabel={`Save ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} editButtonLabel={`Change ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} inputProps={{ "aria-label": PROJECT_BUTTER_DETAIL_FIELDS[id], isCompact: true, ...(id === "storyPoints" ? { type: "number", min: 0, step: "any" } : {}) }} onConfirm={(value) => setField(id, value.trim())} placeholder={`Add ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} readViewClassName="min-h-8 h-auto px-0 py-1 hover:bg-transparent" validate={id === "storyPoints" ? (value) => value.trim() && (!Number.isFinite(Number(value)) || Number(value) < 0) ? "Enter a non-negative number" : undefined : undefined} value={fields[id]} />;
+	return <InlineEdit cancelButtonLabel={`Cancel ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()} changes`} confirmButtonLabel={`Save ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} editButtonLabel={`Change ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} inputProps={{ "aria-label": PROJECT_BUTTER_DETAIL_FIELDS[id], isCompact: true, ...(id === "storyPoints" ? { type: "number", min: 0, step: "any" } : {}) }} onConfirm={(value) => setField(id, value.trim())} placeholder={`Add ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} readViewClassName={cn("h-auto border-0 px-0 hover:bg-transparent", !fields[id] && "[&>span:last-child]:text-text-subtlest")} validate={id === "storyPoints" ? (value) => value.trim() && (!Number.isFinite(Number(value)) || Number(value) < 0) ? "Enter a non-negative number" : undefined : undefined} value={fields[id]} />;
 }

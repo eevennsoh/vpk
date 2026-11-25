@@ -219,7 +219,7 @@ test("each assigned agent plays a row glow in its avatar accent", async ({ page 
 	const list = await openList(page);
 	const fallbackVisible = await page.evaluate(() => {
 		const probe = document.createElement("div");
-		probe.style.backgroundImage = "linear-gradient(90deg, transparent, color-mix(in srgb, var(--ds-background-accent-gray-bolder) 28%, transparent), transparent)";
+		probe.style.backgroundImage = "linear-gradient(90deg, transparent, color-mix(in srgb, var(--ds-icon-accent-gray) 28%, transparent), transparent)";
 		document.body.append(probe);
 		const visible = getComputedStyle(probe).backgroundImage !== "none";
 		probe.remove();

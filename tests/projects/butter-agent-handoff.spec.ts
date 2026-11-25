@@ -167,7 +167,7 @@ async function selectCodingAgent(page: Page, key: string, { repeat = false } = {
 	const option = picker.locator('[role="option"][data-value="jira-coding"]');
 	await option.hover();
 	const observations = page.evaluate(async ({ issueKey, repeatSelection }) => {
-		const results = { glow: false, handoff: false, overlap: false, scaled: false, status: "", shadow: "" };
+		const results = { glow: false, handoff: false, overlap: false, agentScaled: false, dotScaled: false, status: "", shadow: "" };
 		await new Promise<void>((resolve) => {
 			const onClick = (event: MouseEvent) => {
 				const target = event.target instanceof Element ? event.target : null;
@@ -184,9 +184,11 @@ async function selectCodingAgent(page: Page, key: string, { repeat = false } = {
 			const handoff = card?.querySelector('[data-slot="jira-issue-agent-invocation-handoff"][data-agent-id="jira-coding"]');
 			const preview = card?.querySelector('[data-slot="jira-issue-agent-invocation-preview"]');
 			results.handoff ||= Boolean(handoff);
-			// The handoff avatar still scales in from 0.85 (project-butter-invocation-chin.tsx).
-			const avatar = handoff?.querySelector<HTMLElement>("span");
-			if (avatar) results.scaled ||= new DOMMatrixReadOnly(getComputedStyle(avatar).transform).a < 0.99;
+			// The handoff keeps the agent at its browsing size; only the invoker's dot scales in (project-butter-invocation-chin.tsx).
+			const avatar = handoff?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-invocation-handoff-avatar"]');
+			if (avatar) results.agentScaled ||= new DOMMatrixReadOnly(getComputedStyle(avatar).transform).a < 0.99;
+			const dot = avatar?.querySelector<HTMLElement>('[data-avatar-role="human"]');
+			if (dot) { const style = getComputedStyle(dot); results.dotScaled ||= Number(style.opacity) < 1 || (style.transform !== "none" && new DOMMatrixReadOnly(style.transform).a < 0.99); }
 			results.overlap ||= Boolean(handoff && preview);
 			const halo = card?.querySelector<HTMLElement>('[data-jira-linking-glow-halo]');
 			results.glow ||= Boolean(halo);
@@ -205,11 +207,11 @@ async function selectCodingAgent(page: Page, key: string, { repeat = false } = {
 	return { card, result };
 }
 
-test("the first selection hands off and scales in; repeated selections start a new session with the avatar-colored glow", { tag: "@smoke" }, async ({ page }) => {
+test("the first selection hands off with only the invoker dot scaling in; repeated selections start a new session with the avatar-colored glow", { tag: "@smoke" }, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	const { card, result } = await selectCodingAgent(page, "PAY-105");
-	expect(result).toMatchObject({ glow: true, handoff: true, overlap: false, scaled: true });
+	expect(result).toMatchObject({ glow: true, handoff: true, overlap: false, agentScaled: false, dotScaled: true });
 	expect(result.status).toContain("Needs input");
 	expect(result.shadow).toContain("rgb(148, 199, 72)");
 	await expect(card.getByRole("button", { name: "2 agents: Needs input" }).getByRole("img", { name: "Jira Coding Agent" })).toBeVisible();

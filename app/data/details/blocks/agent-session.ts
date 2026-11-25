@@ -114,7 +114,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",
 			description:
-				"Sessions to render. The host selects the metadata glyph and available menu; pull request details power the preview, and an absolute update time enables the timestamp tooltip. `sharedWithTeam` marks team access, while the invoker supplies the owner's identity.",
+				"Sessions to render. The host selects the metadata glyph and available menu; pull request details power the preview, and an absolute update time enables the timestamp tooltip. A viewer-role or `privateTo` session shows a padlock naming its owner; the viewer's own sessions show no access mark.",
 		},
 		{
 			name: "capturedItemIds",

@@ -36,27 +36,6 @@ export interface JiraIssueAgentSessionTransferMember {
 	readonly tintSeed?: string;
 }
 
-/**
- * First non-empty candidate, lowercased, as the member's tint seed.
- *
- * Brand ids come first because they are the identity that survives the
- * attach/detach round trip. Lowercasing is what makes the two drag sources
- * agree: a detached Rovo session carries `vpkLogo: "rovo"`, and the chin row
- * carries the same mark through its agent activity.
- */
-export function sessionTransferTintSeed(
-	...candidates: readonly (string | undefined)[]
-): string | undefined {
-	for (const candidate of candidates) {
-		const trimmed = candidate?.trim();
-		if (trimmed) {
-			return trimmed.toLowerCase();
-		}
-	}
-
-	return undefined;
-}
-
 export interface JiraIssueAgentSessionTransfer {
 	readonly key: string;
 	readonly members: readonly [

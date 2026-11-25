@@ -15,10 +15,10 @@ import { renderSessionIdentity, TeammateSessionAvatarCycle } from "@/components/
 import { getTeammateSessionPeople, teammateSessionUsageLabel } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import { AgentAddVisual } from "@/components/ui-custom/agent-add";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
-import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
@@ -50,6 +50,10 @@ const CREW: readonly CrewMember[] = [
 	{ name: "Rovo", kind: "agent", state: "Completed", visual: { vpkLogo: "rovo" } },
 ];
 const SESSION_STATE: Readonly<Record<AgentSessionItem["state"], AgentCrewMember["state"]>> = { "needs-input": "Needs input", "ready-for-review": "Ready for review", attention: "Needs input", running: "Working", complete: "Completed" };
+/** The hexagon + waits out the agent glyph's fade-out (duration-normal) before revealing. Inline because no delay utility exists. */
+const WAIT_FOR_GLYPH_EXIT = { transitionDelay: "var(--duration-normal)" } as const;
+/** The board card's hover-out, in Motion: 150ms linear fade with a 200ms practical scale to 90%. */
+const GLYPH_EXIT = { opacity: { duration: motionDuration.normal, ease: motionEase.linear }, scale: { duration: motionDuration.medium, ease: motionEase.outPractical } } as const;
 
 function sameCrewAgent(member: AgentCrewMember, agent: AgentSessionItem["agent"]) {
 	return Boolean(member.id && member.id === agent.id)
@@ -96,6 +100,8 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const teammateNamesId = useId();
 	const [open, setOpen] = useState(false);
+	/** Bumped on each close to remount the hexagon + so it replays the board card's hover reveal (same classes, via @starting-style). */
+	const [addVisualEntry, setAddVisualEntry] = useState(0);
 	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
 	const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
 	const fieldScrollRef = useRef<HTMLDivElement>(null);
@@ -194,8 +200,18 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (next) setView(onStartAgent && !field ? "picker" : "sessions");
 		if (field && !fieldSessionMenu) { if (next) invocation?.open("footer"); else invocation?.close(); }
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
+		if (!next && open) setAddVisualEntry((entry) => entry + 1);
 	}
-	const emptyFieldIcon = <IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />;
+	// After the selector closes, the open state's agent glyph fully leaves, then the hexagon + arrives in the same 24px slot, both on the
+	// board card's hover reveal (150ms linear fade, 200ms 90%↔100% scale). The hexagon waits out the glyph's 150ms fade so the two never overlap.
+	const emptyFieldIcon = addVisualEntry > 0 ? (
+		<span className="relative flex size-6 shrink-0" key={`icon-${addVisualEntry}`}>
+			<motion.span animate={{ opacity: 0, scale: 0.9 }} aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-icon-subtle" data-slot="agent-field-exiting-icon" initial={{ opacity: 1, scale: 1 }} style={{ willChange: "transform, opacity" }} transition={GLYPH_EXIT}>
+				<AiAgentIcon label="" color="currentColor" />
+			</motion.span>
+			<span className="flex transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0" style={WAIT_FOR_GLYPH_EXIT}><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" style={WAIT_FOR_GLYPH_EXIT} selected={open} /></span>
+		</span>
+	) : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
 		<>
 			<TeammateSessionAvatarCycle sizePx={24} sessions={sessions.map(({ agent, id, invokedBy, state }) => ({
@@ -210,25 +226,24 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 			</span>
 		</>
 	) : null;
-	const fieldAvatarSize = fieldSessionMenu ? 24 : 16;
 	const fieldControl = (
 				<div className={cn("relative", fieldSessionMenu ? "min-w-0" : "min-w-full w-max", enteringAgent?.isNew && !fieldSessionMenu && "pr-4")}>
 					<PopoverTrigger render={<button aria-label={fieldLabel} aria-describedby={viewerOnly ? teammateNamesId : undefined} ref={pickerTriggerRef} className={cn("absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring", fieldSessionMenu ? "-inset-x-2" : "focus-visible:ring-inset")} onKeyDown={(event) => { if (!fieldSessionMenu && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); fieldScrollRef.current?.scrollBy({ left: event.key === "ArrowRight" ? 48 : -48 }); } }} disabled={!onStartAgent && sessions.length === 0} type="button" />} />
 					{viewerOnly ? <span className="sr-only" id={teammateNamesId}>{Array.from(getTeammateSessionPeople(sessions).values(), ({ name }) => name || "Teammate").join(", ")}</span> : null}
-					<div aria-hidden={fieldSessionMenu || showSessionStatus ? true : undefined} className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2">
-						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={fieldAvatarSize} defaultIcon={emptyFieldIcon} flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} renderVerticalAvatar={(agent, size) => renderSessionIdentity({ ...agent, invokedBy: agentAvatars.find((entry) => entry.id === agent.id)?.invokedBy }, size)} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center">{renderSessionIdentity(agentAvatars[0], 24)}</span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input" || fieldState === "Ready for review"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
+					<div aria-hidden={fieldSessionMenu || showSessionStatus ? true : undefined} className={cn("pointer-events-none relative z-10 flex items-center gap-2", fieldSessionMenu ? "min-h-8" : "min-h-6")}>
+						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview avatarSizePx={24} className="h-6 py-0" flush /> : viewerOnly ? teammateIdentity : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{statusPresentation.shouldCycle ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} renderVerticalAvatar={(agent, size) => renderSessionIdentity({ ...agent, invokedBy: agentAvatars.find((entry) => entry.id === agent.id)?.invokedBy }, size)} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center">{renderSessionIdentity(agentAvatars[0], 24)}</span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input" || fieldState === "Ready for review"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className={cn("shrink-0", fieldSessionMenu && "-space-x-1.5")}>{agentAvatars.map(({ id, name, avatar, identity }) => {
 							const entering = enteringAgent?.name === name.toLowerCase() ? enteringAgent : null;
 							return <motion.span
 								animate={entering ? entering.isNew ? { opacity: [0, 1, 1, 1], transform: ["translateX(12px) scale(0.6)", "translateX(12px) scale(1.15)", "translateX(12px) scale(1.15)", "translateX(0px) scale(1)"] } : { opacity: 1, transform: ["scale(0.8)", "scale(1.12)", "scale(1)"] } : { opacity: 1, transform: "scale(1)" }}
-								className={cn("flex shrink-0 justify-center", fieldAvatarSize === 16 && "w-4", entering && "relative z-20")}
+								className={cn("flex shrink-0 justify-center", entering && "relative z-20")}
 								data-agent-id={id}
 								data-agent-name={name.toLowerCase()}
 								initial={entering ? entering.isNew ? { opacity: 0, transform: "translateX(12px) scale(0.6)" } : { opacity: 1, transform: "scale(0.8)" } : false}
 								key={id}
 								onAnimationComplete={() => { if (entering) setEnteringAgent(null); }}
 								transition={entering?.isNew ? { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] } : { duration: motionDuration.slowest * 2, ease: motionEase.inOut }}
-							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={fieldAvatarSize} /></AgentAvatarLanyard></motion.span>;
-						})}</AvatarGroup> : <>{emptyFieldIcon}<span className="text-sm text-text-subtle">{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
+							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={24} /></AgentAvatarLanyard></motion.span>;
+						})}</AvatarGroup> : <>{emptyFieldIcon}<span className={cn("text-sm text-text-subtlest", addVisualEntry > 0 && "transition-colors duration-normal ease-linear motion-reduce:transition-none starting:text-text")} key={`label-${addVisualEntry}`}>{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
 						{!open && !showSessionStatus && agentAvatars.length === 1 ? <span aria-hidden="true" className="text-sm text-text">{agentAvatars[0].name}</span> : null}
 					</div>
 				</div>
@@ -246,7 +261,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 					{onStartAgent ? <Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar> : null}
 				</AvatarGroup>
 			</PopoverTrigger>}
-			<PopoverContent align={field ? "start" : "end"} aria-label={fieldSessionMenu ? "Agent assignment" : picking ? "Add agent" : "Agent sessions"} className={cn(field && !fieldSessionMenu ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", !(field && !fieldSessionMenu) && dropdownStyles.surface)} finalFocus={() => !selectedAgentRef.current} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" side={fieldSessionMenu ? "bottom" : undefined} sideOffset={field ? 8 : undefined}>
+			<PopoverContent align={field ? "start" : "end"} aria-label={fieldSessionMenu ? "Agent assignment" : picking ? "Add agent" : "Agent sessions"} className={cn(field && !fieldSessionMenu ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", !(field && !fieldSessionMenu) && dropdownStyles.surface)} finalFocus={(closeType) => !selectedAgentRef.current && (!field || fieldSessionMenu || (closeType !== "mouse" && closeType !== "touch" && closeType !== "pen"))} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" side={fieldSessionMenu ? "bottom" : undefined} sideOffset={field ? 8 : undefined}>
 				{fieldSessionMenu ? <AgentSessionsMenu items={orderedSessions} teammateSessionsPresentation={viewerOnly ? "count" : "expanded"} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} /> : field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker extraAgents={extraAgents} onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
 					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}

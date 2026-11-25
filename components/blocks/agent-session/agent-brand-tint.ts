@@ -12,8 +12,11 @@
  * rather than inside `jira-kanban/experimental` because the shared session card
  * reads it too, and a shared owner must not import an experimental variant.
  *
- * Unlisted brands resolve to `undefined`, which leaves the fusion field on its
- * own deterministic ramp and every CSS consumer on {@link AGENT_BRAND_TINT_FALLBACK}.
+ * Custom agents have no brand mark; their avatar family under
+ * `/avatar-agent-new/<colour>/` is their collection accent (lime, purple, blue,
+ * orange, yellow), so {@link resolveAgentTintSeed} turns the avatar into an
+ * `accent:<colour>` seed. Every other unlisted 2p/3p agent resolves to the
+ * platform-skill gray ({@link AGENT_BRAND_TINT_FALLBACK}), never a hashed hue.
  */
 
 import {
@@ -23,6 +26,7 @@ import {
 	// import here in that shape, and keep this module dependency-light.
 } from "../../ui-custom/lib/shimmer-colors.ts";
 import { SOFTWARE_AGENT_COLOR } from "../../../lib/agent-avatar-visuals.ts";
+import { AGENT_AVATAR_GROUP_ACCENTS, getAgentAvatarGroup } from "../../../lib/agent-avatars.ts";
 
 const BRAND_TINT_HEX: Readonly<Record<string, string>> = {
 	claude: "#d97757",
@@ -53,17 +57,55 @@ const THEMEABLE_BRAND_TINT_VARIABLES: Readonly<Record<string, string>> = {
 	notion: "--color-icon",
 };
 
-/** Neutral stand-in when a brand has no mapped mark colour. */
-export const AGENT_BRAND_TINT_FALLBACK = "var(--ds-background-accent-gray-bolder)";
+/** The platform-skill gray accent, for 2p/3p agents with no defined colour. */
+const AGENT_TINT_FALLBACK_VARIABLE = "--ds-icon-accent-gray";
 
-/** The brand's mark colour as a CSS string, or `undefined` when unmapped. */
-export function resolveAgentBrandTintHex(tintSeed: string | undefined): string | undefined {
-	return tintSeed ? BRAND_TINT_HEX[tintSeed] : undefined;
+/** Neutral stand-in when an agent has neither a brand mark nor a collection accent. */
+export const AGENT_BRAND_TINT_FALLBACK = `var(${AGENT_TINT_FALLBACK_VARIABLE})`;
+
+const AGENT_ACCENT_SEED_PREFIX = "accent:";
+
+function hasBrandTint(seed: string): boolean {
+	return seed in BRAND_TINT_HEX || seed in THEMEABLE_BRAND_TINT_VARIABLES;
 }
 
-/** The semantic theme variable used by near-black brand marks, when needed. */
+/**
+ * The tint seed for an agent: its brand mark when one is listed, else its
+ * custom-agent collection accent (`accent:<colour>` from the avatar family),
+ * else its first identifier, which resolves to the platform gray.
+ */
+export function resolveAgentTintSeed({ avatarSrc, brandName, id, logoName, name, vpkLogo }: Readonly<{
+	avatarSrc?: string;
+	brandName?: string;
+	id?: string;
+	logoName?: string;
+	name?: string;
+	vpkLogo?: string;
+}>): string | undefined {
+	const candidates = [brandName, vpkLogo, logoName, name, id]
+		.map((candidate) => candidate?.trim().toLowerCase())
+		.filter((candidate): candidate is string => Boolean(candidate));
+	const brand = candidates.find(hasBrandTint);
+	if (brand) return brand;
+	const group = avatarSrc ? getAgentAvatarGroup(avatarSrc) : undefined;
+	if (group && AGENT_AVATAR_GROUP_ACCENTS[group]) return `${AGENT_ACCENT_SEED_PREFIX}${group}`;
+	return candidates[0];
+}
+
+/** The brand or collection accent as a CSS hex, or `undefined` when neither applies. */
+export function resolveAgentBrandTintHex(tintSeed: string | undefined): string | undefined {
+	if (!tintSeed) return undefined;
+	if (tintSeed.startsWith(AGENT_ACCENT_SEED_PREFIX)) return AGENT_AVATAR_GROUP_ACCENTS[tintSeed.slice(AGENT_ACCENT_SEED_PREFIX.length)];
+	return BRAND_TINT_HEX[tintSeed];
+}
+
+/**
+ * The theme variable for a seed with no fixed hex: near-black brand marks swap
+ * with the theme, and every other known agent takes the platform gray.
+ */
 export function resolveAgentBrandTintVariable(tintSeed: string | undefined): string | undefined {
-	return tintSeed ? THEMEABLE_BRAND_TINT_VARIABLES[tintSeed] : undefined;
+	if (!tintSeed) return undefined;
+	return THEMEABLE_BRAND_TINT_VARIABLES[tintSeed] ?? (resolveAgentBrandTintHex(tintSeed) ? undefined : AGENT_TINT_FALLBACK_VARIABLE);
 }
 
 /** Brand tint suitable for CSS effects in both light and dark themes. */

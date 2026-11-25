@@ -317,8 +317,8 @@ test("private viewer cards expose their explanation from the keyboard without an
 	});
 });
 
-test("team viewer cards omit the row tooltip while private cards explain access", async () => {
-	await withCard({ item: { ...LOCAL_ITEM, host: "cloud", role: "viewer", sharedWithTeam: true, invokedBy: { name: "Jordan Okafor" } }, allowViewerView: true, onView() {} }, async ({ document, render, click }) => {
+test("viewer cards that allow viewing omit the row tooltip while private cards explain access", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, host: "cloud", role: "viewer", invokedBy: { name: "Jordan Okafor" } }, allowViewerView: true, onView() {} }, async ({ document, render, click }) => {
 		assert.equal(document.querySelector('[role="tooltip"]'), null);
 		assert.notEqual(document.querySelector("[data-body-trigger]"), null);
 		await click(document.querySelector("[data-body-trigger]"));
