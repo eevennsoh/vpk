@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { animate, useReducedMotion } from "motion/react";
 
 import { DESCRIPTION_REVEAL_WORD_LIMIT, planDescriptionReveal } from "@/components/blocks/jira-work-item/project-butter/description-reveal-plan";
-import { SUGGESTION_RAINBOW_COLORS } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
+import { SUGGESTION_RAINBOW_COLORS, SUGGESTION_REVEAL_BLUR, SUGGESTION_REVEAL_FOCUS } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { resolveWaveHighlightColor } from "@/components/ui-custom/lib/shimmer-colors";
 import { motionDuration, motionEase } from "@/lib/motion";
 
@@ -61,6 +61,7 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 		for (const [index, word] of words.entries()) {
 			const delay = steps[index];
 			animations.push(animate(word, { opacity: 1 }, { delay, duration: motionDuration.medium, ease: motionEase.outPractical }));
+			animations.push(animate(word, { filter: [SUGGESTION_REVEAL_BLUR, "blur(0px)"] }, { ...SUGGESTION_REVEAL_FOCUS, delay }));
 			const offset = colorOffsets[index];
 			if (offset) {
 				offset.color.style.translate = `${offset.x}px ${offset.y}px`;
@@ -79,7 +80,7 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 
 	return <span className="whitespace-break-spaces" data-suggestion-text-reveal="" ref={rootRef}>
 		{paragraphs.map((parts, paragraph) => <span className="mb-2.5 block last:mb-0" key={paragraph}>
-			{parts.map((part, index) => part.word ? <span className="relative inline whitespace-nowrap" data-description-word="" key={index} style={{ opacity: 0 }}>
+			{parts.map((part, index) => part.word ? <span className="relative inline whitespace-nowrap" data-description-word="" key={index} style={{ opacity: 0, filter: SUGGESTION_REVEAL_BLUR, willChange: "opacity, filter" }}>
 				<span>{part.text}</span>
 				<span className="pointer-events-none absolute inset-0 bg-clip-text text-transparent" data-description-color="" style={{
 					backgroundImage: `linear-gradient(to right, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start, count)}, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start + Array.from(part.text).length - 1, count)})`,

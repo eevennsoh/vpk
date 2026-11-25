@@ -11,6 +11,9 @@ import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 export const SUGGESTION_RAINBOW_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
+/** Each word comes into focus as it fades in under the rainbow: from this blur to sharp over the focus duration. */
+export const SUGGESTION_REVEAL_BLUR = "blur(4px)";
+export const SUGGESTION_REVEAL_FOCUS = { duration: motionDuration.slower, ease: motionEase.outPractical } as const;
 
 function finishesVisibleSweep(clip: HTMLElement, partIndex: number) {
 	const word = clip.querySelector(`[data-suggestion-rainbow-word="${partIndex}"]`);
@@ -57,7 +60,7 @@ export function SuggestionRainbowText({ text, onComplete, clipRef, truncate = fa
 						const clip = clipRef.current;
 						if (partIndex === lastWord || (clip && finishesVisibleSweep(clip, partIndex))) onComplete();
 					} : partIndex === lastWord ? onComplete : undefined;
-					return <motion.span animate={{ opacity: 1 }} className="relative inline-block whitespace-nowrap" data-suggestion-rainbow-word={clipRef ? partIndex : undefined} initial={{ opacity: 0 }} key={partIndex} transition={{ delay, duration: motionDuration.medium, ease: motionEase.outPractical }}>
+					return <motion.span animate={{ opacity: 1, filter: "blur(0px)" }} className="relative inline-block whitespace-nowrap" data-suggestion-rainbow-word={clipRef ? partIndex : undefined} initial={{ opacity: 0, filter: SUGGESTION_REVEAL_BLUR }} key={partIndex} style={{ willChange: "opacity, filter" }} transition={{ delay, duration: motionDuration.medium, ease: motionEase.outPractical, filter: { ...SUGGESTION_REVEAL_FOCUS, delay } }}>
 						<span>{part}</span>
 						<motion.span animate={{ opacity: [0, 0.88, 0.88, 0] }} className="pointer-events-none absolute inset-0" data-suggestion-rainbow-band initial={{ opacity: 0 }} onAnimationComplete={finish} transition={{ delay, duration: SUGGESTION_REVEAL_DURATION, ease: motionEase.linear, times: [0, 0.17, 0.45, 1] }}>
 							{characters.map((character, index) => <span key={start + index} style={{ color: resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, start + index, count) }}>{character}</span>)}
