@@ -65,8 +65,9 @@ export type JiraIssueAgentAssignment = Partial<
 };
 
 /** A card agent row's avatar: the agent, with its invoker's dot when someone started it. The invocation handoff renders the same one. */
-export function renderJiraIssueSessionIdentity(activity: JiraIssueAgentActivity, sizePx: 16 | 20 | 24): ReactElement {
-	return renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, sizePx);
+/** `badgeEntrance` scales the invoker's dot in, for the handoff that precedes the attached row. */
+export function renderJiraIssueSessionIdentity(activity: JiraIssueAgentActivity, sizePx: 16 | 20 | 24, badgeEntrance = false): ReactElement {
+	return renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, sizePx, false, badgeEntrance);
 }
 
 /** Match the session column's 12px glyph while retaining the 24px status slot. */

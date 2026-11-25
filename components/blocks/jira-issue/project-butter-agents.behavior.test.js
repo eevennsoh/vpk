@@ -550,7 +550,10 @@ test("Butter card chin keeps the chosen agent at the row's 20px from browsing to
 	const handoff = view.container.querySelector('[data-slot="jira-issue-agent-invocation-handoff-avatar"]');
 	assert.equal(handoff !== null, true);
 	assert.equal(handoff.querySelector('[data-slot="human-agent-avatar"]')?.classList.contains("size-5"), true);
-	assert.match(handoff.className, /\[&_\[data-avatar-role=human\]\]:starting:scale-0/u);
+	// Only the invoker dot enters (HumanAgentAvatar badgeEntrance starts it hidden and scaled down); the agent frame stays put.
+	const dotStyle = handoff.querySelector('[data-avatar-role="human"]')?.getAttribute("style") ?? "";
+	assert.match(dotStyle, /opacity:\s*0/u, dotStyle);
+	assert.doesNotMatch(handoff.getAttribute("style") ?? "", /scale/u);
 	assert.doesNotMatch(handoff.outerHTML, /scale\(0\.85\)/u);
 });
 

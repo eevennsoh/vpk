@@ -96,7 +96,7 @@ function InvocationHandoff({ avatarSizePx, className, iconScale, identity, showS
 	return (
 		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
 			<span
-				className={cn("flex shrink-0 items-center justify-center", avatarSizePx === 16 ? "size-4" : "size-6", "[&_[data-avatar-role=human]]:transition-[scale,opacity] [&_[data-avatar-role=human]]:duration-medium [&_[data-avatar-role=human]]:ease-out-practical [&_[data-avatar-role=human]]:starting:scale-0 [&_[data-avatar-role=human]]:starting:opacity-0")}
+				className={cn("flex shrink-0 items-center justify-center", avatarSizePx === 16 ? "size-4" : "size-6")}
 				data-slot="jira-issue-agent-invocation-handoff-avatar"
 			>
 				{identity ?? agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={avatarSizePx} animate={false} />}
@@ -125,7 +125,7 @@ export function ProjectButterInvocationChin<TActivity extends Readonly<{ id: str
 	retainCompletedContent = false,
 	flushPreview = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly TActivity[]; /** Size of the host's attached-row avatars; browsing and handoff match it. */ avatarSizePx?: InvocationAvatarSize; /** The attached row's identity for an activity, so the handoff ends on exactly what the row shows. */ renderIdentity?: (activity: TActivity, sizePx: InvocationAvatarSize) => ReactNode; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly TActivity[]; /** Size of the host's attached-row avatars; browsing and handoff match it. */ avatarSizePx?: InvocationAvatarSize; /** The attached row's identity for an activity, so the handoff ends on exactly what the row shows. */ renderIdentity?: (activity: TActivity, sizePx: InvocationAvatarSize, badgeEntrance: boolean) => ReactNode; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
@@ -163,7 +163,7 @@ export function ProjectButterInvocationChin<TActivity extends Readonly<{ id: str
 				{children}
 			</motion.div>
 			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0", !flushPreview && "p-1")}>
-				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} identity={selectedActivity && renderIdentity ? renderIdentity(selectedActivity, avatarSizePx) : undefined} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
+				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} identity={selectedActivity && renderIdentity ? renderIdentity(selectedActivity, avatarSizePx, true) : undefined} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);
